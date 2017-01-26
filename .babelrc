@@ -1,0 +1,10 @@
+{
+  "plugins": [
+    "syntax-trailing-function-commas",
+    "transform-flow-strip-types",
+    "transform-es2015-destructuring",
+    "transform-es2015-parameters",
+    "transform-async-to-generator"
+  ],
+  "retainLines": true
+}

@@ -1,0 +1,4 @@
+{
+  "extends": "eslint-config-fb-strict",
+  "parser": "babel-eslint"
+}
