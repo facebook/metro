@@ -3,6 +3,7 @@
   "devDependencies": {
     "babel-core": "^6.18.2",
     "babel-eslint": "^7.1.1",
+    "babel-jest": "^19.0.0",
     "babel-plugin-syntax-trailing-function-commas": "^6.13.0",
     "babel-plugin-transform-async-to-generator": "^6.16.0",
     "babel-plugin-transform-es2015-destructuring": "^6.19.0",
@@ -21,9 +22,11 @@
     "glob": "^7.1.1",
     "istanbul-api": "^1.1.0",
     "istanbul-lib-coverage": "^1.0.0",
+    "jest": "^19.0.2",
     "lerna": "2.0.0-beta.32",
     "micromatch": "^2.3.11",
-    "mkdirp": "^0.5.1"
+    "mkdirp": "^0.5.1",
+    "sinon": "^1.17.7"
   },
   "scripts": {
     "build-clean": "rm -rf ./packages/*/build",
@@ -40,8 +43,5 @@
   },
   "jest": {
     "testEnvironment": "node"
-  },
-  "dependencies": {
-    "jest": "^18.1.0"
   }
 }
