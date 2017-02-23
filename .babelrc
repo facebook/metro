@@ -1,10 +1,11 @@
 {
   "plugins": [
     "syntax-trailing-function-commas",
-    "transform-flow-strip-types",
+    "transform-async-to-generator",
     "transform-es2015-destructuring",
     "transform-es2015-parameters",
-    "transform-async-to-generator"
+    "transform-flow-strip-types",
+    "transform-object-rest-spread"
   ],
   "retainLines": true
 }
