@@ -1,26 +1,9 @@
 {
-  "name": "metro-bundler",
-  "description": "The JavaScript bundler for React Native",
-  "version": "0.1.0",
-  "main": "build/index.js",
-  "bin": {
-    "metro-bundler": "./bin/metro-bundler.js"
-  },
-  "engines": {
-    "node": ">= 4"
-  },
+  "version": "0.5.0",
+  "name": "react-native-packager",
+  "description": "Build native apps with React!",
   "repository": {
     "type": "git",
-    "url": "https://github.com/facebook/metro-bundler"
-  },
-  "bugs": {
-    "url": "https://github.com/facebook/metro-bundler/issues"
-  },
-  "homepage": "http://facebook.github.io/metro-bundler/",
-  "keywords": [
-    "bundler",
-    "react",
-    "react-native"
-  ],
-  "license": "BSD-3-Clause"
+    "url": "git@github.com:facebook/react-native.git"
+  }
 }
