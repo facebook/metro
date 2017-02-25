@@ -1,4 +1,10 @@
 {
   "extends": "eslint-config-fb-strict",
-  "parser": "babel-eslint"
+  "parser": "babel-eslint",
+  "rules": {
+    "max-len": ["error", 100]
+    "no-var": 0,
+    "prefer-arrow-callback": 0,
+    "sort-keys": 0
+  }
 }
