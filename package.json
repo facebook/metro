@@ -22,7 +22,7 @@
     "istanbul-api": "^1.1.0",
     "istanbul-lib-coverage": "^1.0.0",
     "jest": "^19.0.2",
-    "lerna": "^2.0.0-beta.37",
+    "lerna": "v2.0.0-beta.38",
     "micromatch": "^2.3.11",
     "mkdirp": "^0.5.1",
     "sinon": "^1.17.7"
