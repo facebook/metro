@@ -1,5 +1,6 @@
 {
   "plugins": [
+    "babel-preset-fbjs/plugins/inline-requires",
     "syntax-trailing-function-commas",
     "transform-async-to-generator",
     "transform-es2015-destructuring",
