@@ -26,6 +26,7 @@
     "lerna": "v2.0.0-beta.38",
     "micromatch": "^2.3.11",
     "mkdirp": "^0.5.1",
+    "promise": "^7.1.1",
     "sinon": "^1.17.7"
   },
   "scripts": {
@@ -42,7 +43,18 @@
     "watch": "yarn run build; node ./scripts/watch.js"
   },
   "jest": {
+    "automock": true,
     "testEnvironment": "node",
-    "timers": "fake"
+    "timers": "fake",
+    "setupFiles": [
+      "<rootDir>/scripts/setupJest.js"
+    ],
+    "unmockedModulePathPatterns": [
+      "promise",
+      "source-map",
+      "denodeify",
+      "fbjs",
+      "sinon"
+    ]
   }
 }
