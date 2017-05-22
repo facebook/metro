@@ -33,7 +33,7 @@
   "scripts": {
     "build-clean": "rm -rf ./packages/*/build",
     "build": "node ./scripts/build.js",
-    "clean-all": "rm -rf ./node_modules; rm -rf ./packages/*/node_modules; yarn run build-clean",
+    "clean-all": "rm -rf ./node_modules && rm -rf ./packages/*/node_modules && yarn run build-clean",
     "jest-coverage": "yarn run jest -- --coverage",
     "lint": "eslint . --cache",
     "postinstall": "node ./scripts/postinstall.js && node ./scripts/build.js",
@@ -41,7 +41,7 @@
     "test-ci": "yarn run typecheck && yarn run lint && yarn run build && yarn run jest-coverage -- -i && node scripts/mapCoverage.js && codecov",
     "test": "yarn run typecheck && yarn run lint && yarn run build && yarn run jest && yarn run test-examples",
     "typecheck": "flow check",
-    "watch": "yarn run build; node ./scripts/watch.js"
+    "watch": "yarn run build --silent && node ./scripts/watch.js"
   },
   "jest": {
     "automock": true,

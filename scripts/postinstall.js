@@ -5,17 +5,14 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-'use strict';
 
 const path = require('path');
-const isWindows = process.platform === 'win32';
-const runCommands = require('./_runCommands');
+const runCommand = require('./_runCommand');
 
 console.log(`Setting up metro-bundler's development environment...`);
+const isWindows = process.platform === 'win32';
 const lerna = isWindows ? 'lerna.cmd' : 'lerna';
-const lernaCmd = path.resolve(
-  __dirname,
-  '../node_modules/.bin/' + lerna + ' bootstrap'
-);
+const lernaCmd = path.resolve(__dirname, '../node_modules/.bin/' + lerna);
+const args = process.env.CI ? ['bootstrap', '--concurrency=1'] : ['bootstrap'];
 
-runCommands(lernaCmd, path.resolve(__dirname, '..'));
+runCommand(lernaCmd, args, path.resolve(__dirname, '..'));
