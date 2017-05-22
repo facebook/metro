@@ -3,6 +3,7 @@
     "babel-preset-fbjs/plugins/inline-requires",
     "syntax-trailing-function-commas",
     "transform-async-to-generator",
+    "transform-class-properties",
     "transform-es2015-destructuring",
     "transform-es2015-parameters",
     "transform-flow-strip-types",
