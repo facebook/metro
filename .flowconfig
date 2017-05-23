@@ -1,4 +1,5 @@
 [ignore]
+.*/node_modules/conventional-changelog-core/test/fixtures/_malformation.json
 
 [options]
 module.name_mapper='^types/\(.*\)$' -> '<PROJECT_ROOT>/types/\1.js'
