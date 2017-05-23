@@ -29,7 +29,8 @@
     "micromatch": "^2.3.11",
     "mkdirp": "^0.5.1",
     "promise": "^7.1.1",
-    "sinon": "^2.3.1"
+    "sinon": "^2.3.1",
+    "temp": "^0.8.3"
   },
   "scripts": {
     "build-clean": "rm -rf ./packages/*/build",
