@@ -125,6 +125,9 @@ function buildFileFor(file, silent, env) {
   } else {
     const transformed = babel.transformFileSync(file, babelOptions).code;
     fs.writeFileSync(destPath, transformed);
+    if (/\@flow/.test(fs.readFileSync(file))) {
+      fs.createReadStream(file).pipe(fs.createWriteStream(destPath + '.flow'));
+    }
     silent ||
       process.stdout.write(
         chalk.green('  \u2022 ') +
