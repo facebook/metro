@@ -9,3 +9,4 @@
 'use strict';
 
 global.Promise = require('promise');
+require('../packages/metro-bundler/build/setupNodePolyfills');

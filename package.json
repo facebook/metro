@@ -57,7 +57,8 @@
       "source-map",
       "denodeify",
       "fbjs",
-      "sinon"
+      "sinon",
+      "core-js"
     ]
   }
 }
