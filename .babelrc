@@ -1,6 +1,5 @@
 {
   "plugins": [
-    "babel-preset-fbjs/plugins/inline-requires",
     "syntax-trailing-function-commas",
     "transform-async-to-generator",
     "transform-class-properties",
@@ -9,5 +8,12 @@
     "transform-flow-strip-types",
     "transform-object-rest-spread"
   ],
-  "retainLines": true
+  "retainLines": true,
+  "env": {
+    "test": {
+      "plugins": [
+        "babel-preset-fbjs/plugins/inline-requires"
+      ]
+    }
+  }
 }
