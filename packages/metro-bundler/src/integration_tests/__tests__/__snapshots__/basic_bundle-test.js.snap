@@ -1249,27 +1249,30 @@ __d(/* /TestBundle.js */function(global, require, module, exports) {
 
 'use strict';
 
-module.exports = { Foo: require(12     ), Bar: require(15     ) }; // 15 = ./Bar // 12 = ./Foo
+var Bar = require(12     ); // 12 = ./Bar
+var Foo = require(13     ); // 13 = ./Foo
+
+module.exports = { Foo: Foo, Bar: Bar };
 }, 0);
-__d(/* /Foo.js */function(global, require, module, exports) {
-
-'use strict';
-
-module.exports = { type: 'foo', asset: require(13          ) }; // 13 = ./test.png
-}, 12);
-__d(/* /test.png */function(global, require, module, exports) {module.exports=require(14                                          ).registerAsset({\\"__packager_asset\\":true,\\"httpServerLocation\\":\\"/assets\\",\\"width\\":8,\\"height\\":8,\\"scales\\":[1],\\"hash\\":\\"77d45c1f7fa73c0f6c444a830dc42f67\\",\\"name\\":\\"test\\",\\"type\\":\\"png\\"}); // 14 = react-native/Libraries/Image/AssetRegistry
-}, 13);
-__d(/* /node_modules/react-native/Libraries/Image/AssetRegistry.js */function(global, require, module, exports) {
-
-'use strict';
-
-module.export = {};
-}, 14);
 __d(/* /Bar.js */function(global, require, module, exports) {
 
 'use strict';
 
-module.exports = { type: 'bar', foo: require(12     ).type }; // 12 = ./Foo
+var Foo = require(13     ); // 13 = ./Foo
+
+module.exports = { type: 'bar', foo: Foo.type };
+}, 12);
+__d(/* /Foo.js */function(global, require, module, exports) {
+
+'use strict';
+
+var asset = require(14          ); // 14 = ./test.png
+
+module.exports = { type: 'foo', asset: asset };
+}, 13);
+__d(/* /test.png */function(global, require, module, exports) {module.exports=require(15                                          ).registerAsset({\\"__packager_asset\\":true,\\"httpServerLocation\\":\\"/assets\\",\\"width\\":8,\\"height\\":8,\\"scales\\":[1],\\"hash\\":\\"77d45c1f7fa73c0f6c444a830dc42f67\\",\\"name\\":\\"test\\",\\"type\\":\\"png\\"}); // 15 = react-native/Libraries/Image/AssetRegistry
+}, 14);
+__d(/* /node_modules/react-native/Libraries/Image/AssetRegistry.js */function(global, require, module, exports) {'use strict';
 }, 15);
 ;require(0);"
 `;
