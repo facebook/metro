@@ -288,7 +288,7 @@ class URIBasedGlobalTransformCache {
    * There may be other types of error we'd want to retry for, but these are
    * the ones we experienced the most in practice.
    */
-  static shouldRetryAfterThatError(error: Error): boolean {
+  static shouldRetryAfterThatError(error: mixed): boolean {
     return (
       error instanceof FetchError && error.type === 'request-timeout' || (
         error instanceof FetchFailedError &&
