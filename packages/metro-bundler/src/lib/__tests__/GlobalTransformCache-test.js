@@ -9,7 +9,6 @@
 
 'use strict';
 
-jest.disableAutomock();
 jest.useRealTimers();
 
 const mockFetch = jest.fn();

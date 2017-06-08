@@ -9,8 +9,7 @@
 'use strict';
 
 jest
-  .disableAutomock()
-  .setMock('fs', jest.genMockFromModule('fs'))
+  .mock('fs', () => jest.genMockFromModule('fs'))
   .mock('mkdirp');
 
 const wrapWorkerFn = require('../wrap-worker-fn');

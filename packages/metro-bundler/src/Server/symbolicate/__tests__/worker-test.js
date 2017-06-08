@@ -10,8 +10,6 @@
  */
 'use strict';
 
-jest.disableAutomock();
-
 const SourceMapGenerator = require('../../../Bundler/source-map/Generator');
 const {symbolicate} = require('../worker');
 

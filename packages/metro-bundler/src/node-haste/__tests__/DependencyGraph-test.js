@@ -10,7 +10,6 @@
  */
 'use strict';
 
-jest.disableAutomock();
 jest.useRealTimers();
 jest
   .mock('fs')

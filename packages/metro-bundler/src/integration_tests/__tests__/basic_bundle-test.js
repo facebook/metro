@@ -11,11 +11,9 @@
 
 'use strict';
 
-jest.disableAutomock();
-jest.useRealTimers();
-
-jest.dontMock('fs');
-jest.dontMock('graceful-fs');
+jest.useRealTimers()
+  .unmock('fs')
+  .unmock('graceful-fs');
 
 /**
  * Don't waste time creating a worker-farm from jest-haste-map, use the function

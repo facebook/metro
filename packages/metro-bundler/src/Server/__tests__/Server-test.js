@@ -9,8 +9,6 @@
 
 'use strict';
 
-jest.disableAutomock();
-
 jest.mock('../../worker-farm', () => () => () => {})
     .mock('worker-farm', () => () => () => {})
     .mock('timers', () => ({setImmediate: fn => setTimeout(fn, 0)}))

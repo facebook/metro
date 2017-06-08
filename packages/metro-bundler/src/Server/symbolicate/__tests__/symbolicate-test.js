@@ -8,9 +8,8 @@
  */
 'use strict';
 
-jest.disableAutomock();
-jest.mock('child_process');
-jest.mock('net');
+jest.mock('child_process')
+  .mock('net');
 
 const EventEmitter = require('events');
 const {Readable} = require('stream');

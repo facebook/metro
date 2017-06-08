@@ -8,8 +8,6 @@
  */
 'use strict';
 
-jest.disableAutomock();
-
 jest
   .setMock('worker-farm', () => () => undefined)
   .setMock('../../worker-farm', () => () => undefined)

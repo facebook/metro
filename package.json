@@ -46,19 +46,10 @@
     "watch": "yarn run build --silent && node ./scripts/watch.js"
   },
   "jest": {
-    "automock": true,
     "testEnvironment": "node",
     "timers": "fake",
     "setupFiles": [
       "<rootDir>/scripts/setupJest.js"
-    ],
-    "unmockedModulePathPatterns": [
-      "promise",
-      "source-map",
-      "denodeify",
-      "fbjs",
-      "sinon",
-      "core-js"
     ]
   }
 }

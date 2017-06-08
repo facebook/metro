@@ -9,9 +9,7 @@
 
 'use strict';
 
-jest
-  .useRealTimers()
-  .dontMock('../BatchProcessor');
+jest.useRealTimers();
 
 const BatchProcessor = require('../BatchProcessor');
 

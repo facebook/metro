@@ -11,8 +11,6 @@
 
 'use strict';
 
-jest.disableAutomock();
-
 const AssetResolutionCache = require('../AssetResolutionCache');
 
 const MOCK_FILE_NAMES = [

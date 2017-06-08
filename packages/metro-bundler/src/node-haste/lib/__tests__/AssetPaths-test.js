@@ -8,9 +8,6 @@
  */
 'use strict';
 
-jest.dontMock('../parsePlatformFilePath')
-    .dontMock('../AssetPaths');
-
 var AssetPaths = require('../AssetPaths');
 
 const TEST_PLATFORMS = new Set(['ios', 'android']);

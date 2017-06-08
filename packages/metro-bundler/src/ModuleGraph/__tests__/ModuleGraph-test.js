@@ -8,8 +8,6 @@
  */
 'use strict';
 
-jest.disableAutomock();
-
 const ModuleGraph = require('../ModuleGraph');
 const defaults = require('../../defaults');
 

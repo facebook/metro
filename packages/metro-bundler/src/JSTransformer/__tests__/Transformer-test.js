@@ -9,18 +9,10 @@
 'use strict';
 
 jest
-  .unmock('stream')
-  .unmock('crypto')
-  .unmock('../../lib/ModuleTransport')
-  .unmock('../');
-
-const fs = {writeFileSync: jest.fn()};
-const temp = {path: () => '/arbitrary/path'};
-const workerFarm = jest.fn();
-jest.setMock('fs', fs);
-jest.setMock('temp', temp);
-jest.setMock('worker-farm', workerFarm);
-jest.setMock('../../worker-farm', workerFarm);
+  .mock('fs', () => ({writeFileSync: jest.fn()}))
+  .mock('temp', () => ({path: () => '/arbitrary/path'}))
+  .mock('worker-farm', () => jest.fn())
+  .mock('../../worker-farm', () => jest.fn());
 
 var Transformer = require('../');
 
@@ -37,6 +29,8 @@ describe('Transformer', function() {
     Cache = jest.fn();
     Cache.prototype.get = jest.fn((a, b, c) => c());
 
+    const fs = require('fs');
+    const workerFarm = require('../../worker-farm');
     fs.writeFileSync.mockClear();
     workerFarm.mockClear();
     workerFarm.mockImplementation((opts, path, methods) => {

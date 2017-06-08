@@ -8,8 +8,6 @@
  */
 'use strict';
 
-jest.disableAutomock();
-
 const Generator = require('../Generator');
 const {compactMapping, fromRawMappings} = require('..');
 

@@ -11,7 +11,6 @@
 'use strict';
 
 declare var jest: any;
-jest.disableAutomock();
 
 const indexedRamBundle = require('../indexed-ram-bundle');
 const {addModuleIdsToModuleWrapper} = require('../util');

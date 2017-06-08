@@ -8,8 +8,6 @@
  */
 'use strict';
 
-jest.disableAutomock();
-
 const {match} = require('sinon');
 const {fn} = require('../../test-helpers');
 const {

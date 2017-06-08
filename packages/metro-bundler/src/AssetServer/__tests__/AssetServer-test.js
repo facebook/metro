@@ -9,8 +9,6 @@
 
 'use strict';
 
-jest.disableAutomock();
-
 jest.mock('fs');
 
 const AssetServer = require('../');

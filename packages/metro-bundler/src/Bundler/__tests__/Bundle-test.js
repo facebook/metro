@@ -10,8 +10,6 @@
  */
 'use strict';
 
-jest.disableAutomock();
-
 const Bundle = require('../Bundle');
 const ModuleTransport = require('../../lib/ModuleTransport');
 const crypto = require('crypto');

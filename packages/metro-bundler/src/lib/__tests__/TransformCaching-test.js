@@ -9,13 +9,6 @@
 
 'use strict';
 
-jest
-  .dontMock('json-stable-stringify')
-  .dontMock('../TransformCaching')
-  .dontMock('left-pad')
-  .dontMock('lodash/throttle')
-  .dontMock('crypto');
-
 const crypto = require('crypto');
 const jsonStableStringify = require('json-stable-stringify');
 
@@ -32,6 +25,7 @@ jest.mock('fs', () => ({
     // Not required for it to work.
     return [];
   },
+  mkdirSync: jest.fn(),
 }));
 
 jest.mock('write-file-atomic', () => ({

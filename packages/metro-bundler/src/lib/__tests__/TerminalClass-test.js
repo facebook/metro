@@ -9,8 +9,6 @@
 
 'use strict';
 
-jest.dontMock('../TerminalClass').dontMock('lodash/throttle');
-
 jest.mock('readline', () => ({
   moveCursor: (stream, dx, dy) => {
     const {cursor, columns} = stream;

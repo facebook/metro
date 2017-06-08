@@ -13,8 +13,6 @@
 
 'use strict';
 
-jest.disableAutomock();
-
 describe('Object (ES7)', () => {
   beforeEach(() => {
     delete Object.entries;

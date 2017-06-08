@@ -10,8 +10,6 @@
  */
 'use strict';
 
-jest.disableAutomock();
-
 const transformModule = require('../transform-module');
 
 const t = require('babel-types');

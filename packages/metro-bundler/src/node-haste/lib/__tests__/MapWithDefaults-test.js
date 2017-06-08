@@ -11,8 +11,6 @@
 
 'use strict';
 
-jest.disableAutomock();
-
 const MapWithDefaults = require('../MapWithDefaults');
 
 describe('MapWithDefaults', function() {

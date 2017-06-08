@@ -8,8 +8,6 @@
  */
 'use strict';
 
-jest.dontMock('../MultipartResponse');
-
 const MultipartResponse = require('../MultipartResponse');
 
 describe('MultipartResponse', () => {

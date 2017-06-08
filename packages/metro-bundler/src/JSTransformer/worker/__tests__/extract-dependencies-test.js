@@ -8,8 +8,6 @@
  */
 'use strict';
 
-jest.disableAutomock();
-
 const extractDependencies = require('../extract-dependencies');
 
 describe('Dependency extraction:', () => {

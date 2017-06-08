@@ -9,8 +9,6 @@
 
 'use strict';
 
-jest.disableAutomock();
-
 const {LazyPromise, LockingPromise} = require('../util');
 
 describe('Lazy Promise', () => {

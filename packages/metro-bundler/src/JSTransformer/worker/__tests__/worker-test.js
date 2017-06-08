@@ -8,11 +8,10 @@
  */
 'use strict';
 
-jest.disableAutomock();
-jest.mock('../constant-folding');
-jest.mock('../extract-dependencies');
-jest.mock('../inline');
-jest.mock('../minify');
+jest.mock('../constant-folding')
+  .mock('../extract-dependencies')
+  .mock('../inline')
+  .mock('../minify');
 
 const {objectContaining} = jasmine;
 

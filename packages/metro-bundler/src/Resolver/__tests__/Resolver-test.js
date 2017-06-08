@@ -10,8 +10,6 @@
 
 jest.useRealTimers();
 
-jest.unmock('../');
-jest.unmock('../../defaults');
 jest.mock('path');
 
 const {join: pathJoin} = require.requireActual('path');

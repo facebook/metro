@@ -9,7 +9,6 @@
 'use strict';
 
 jest
-  .disableAutomock()
   .useRealTimers()
   .mock('console');
 

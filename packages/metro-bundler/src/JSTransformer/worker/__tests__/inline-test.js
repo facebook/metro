@@ -10,7 +10,6 @@
 
 /* eslint-disable max-len */
 
-jest.disableAutomock();
 const inline = require('../inline');
 const {transform, transformFromAst} = require('babel-core');
 

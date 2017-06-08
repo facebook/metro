@@ -8,8 +8,6 @@
  */
 'use strict';
 
-jest.disableAutomock();
-
 const optimizeModule = require('../optimize-module');
 const transformModule = require('../transform-module');
 const transformer = require('../../../transformer.js');

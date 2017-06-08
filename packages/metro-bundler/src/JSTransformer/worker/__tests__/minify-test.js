@@ -8,17 +8,14 @@
  */
 'use strict';
 
-jest.disableAutomock();
-
-const uglify = {
+jest.mock('uglify-js', () => ({
   minify: jest.fn(code => {
     return {
       code: code.replace(/(^|\W)\s+/g, '$1'),
       map: {},
     };
   }),
-};
-jest.setMock('uglify-js', uglify);
+}));
 
 const minify = require('../minify');
 const {objectContaining} = jasmine;
@@ -27,8 +24,10 @@ describe('Minification:', () => {
   const filename = '/arbitrary/file.js';
   const code = 'arbitrary(code)';
   let map;
+  let uglify;
 
   beforeEach(() => {
+    uglify = require('uglify-js');
     uglify.minify.mockClear();
     uglify.minify.mockReturnValue({code: '', map: '{}'});
     map = {version: 3, sources: ['?'], mappings: ''};

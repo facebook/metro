@@ -8,21 +8,18 @@
  */
 'use strict';
 
-jest
-  .dontMock('absolute-path')
-  .dontMock('json-stable-stringify')
-  .dontMock('crypto')
-  .dontMock('../DependencyGraph/docblock')
-  .dontMock('../Module');
+jest.mock('fs')
+  .mock('graceful-fs')
+  .mock('../ModuleCache')
+  .mock('../DependencyGraph/DependencyGraphHelpers')
+  .mock('../../lib/TransformCaching');
 
-jest
-  .mock('fs');
-
+console.log(require.resolve('../../lib/TransformCaching'));
 const Module = require('../Module');
 const ModuleCache = require('../ModuleCache');
 const DependencyGraphHelpers = require('../DependencyGraph/DependencyGraphHelpers');
 const TransformCaching = require('../../lib/TransformCaching');
-const fs = require('graceful-fs');
+const fs = require('fs');
 
 const packageJson =
   JSON.stringify({

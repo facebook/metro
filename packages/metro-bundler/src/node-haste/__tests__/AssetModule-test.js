@@ -8,8 +8,6 @@
  */
 'use strict';
 
-jest.autoMockOff();
-
 const AssetModule = require('../AssetModule');
 
 describe('AssetModule:', () => {

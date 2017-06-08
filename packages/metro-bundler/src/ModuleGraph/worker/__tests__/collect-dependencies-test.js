@@ -8,8 +8,6 @@
  */
 'use strict';
 
-jest.disableAutomock();
-
 const collectDependencies = require('../collect-dependencies');
 const astFromCode = require('babylon').parse;
 const {codeFromAst, comparableCode} = require('../../test-helpers');

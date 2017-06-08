@@ -8,8 +8,6 @@
  */
 'use strict';
 
-jest.disableAutomock();
-
 const B64Builder = require('../B64Builder');
 
 let builder;
