@@ -32,7 +32,7 @@ describe('Terminal', () => {
   });
 
   function prepare(isTTY) {
-    const Terminal = require('../TerminalClass');
+    const Terminal = require('../Terminal');
     const lines = 10;
     const columns = 10;
     const stream = Object.create(

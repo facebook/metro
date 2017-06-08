@@ -14,7 +14,7 @@
 const chalk = require('chalk');
 const util = require('util');
 
-import type Terminal from './TerminalClass';
+import type Terminal from './Terminal';
 
 export type GlobalCacheDisabledReason = 'too_many_errors' | 'too_many_misses';
 

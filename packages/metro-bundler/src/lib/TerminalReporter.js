@@ -18,7 +18,7 @@ const reporting = require('./reporting');
 const throttle = require('lodash/throttle');
 const util = require('util');
 
-import type Terminal from './TerminalClass';
+import type Terminal from './Terminal';
 import type {ReportableEvent, GlobalCacheDisabledReason} from './reporting';
 
 const DEP_GRAPH_MESSAGE = 'Loading dependency graph';
