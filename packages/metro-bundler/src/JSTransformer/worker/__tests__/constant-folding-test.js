@@ -5,6 +5,8 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
 'use strict';
 
@@ -38,18 +40,19 @@ describe('constant expressions', () => {
         'foo'==='bar' ? b : c,
         f() ? g() : h()
       );`;
-    expect(normalize(constantFolding('arbitrary.js', parse(code))))
-      .toEqual('a(true,true,2,true,{},{a:1},c,f()?g():h());');
+    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual(
+      'a(true,true,2,true,{},{a:1},c,f()?g():h());',
+    );
   });
 
   it('can optimize ternary expressions with constant conditions', () => {
-    const code =
-      `var a = true ? 1 : 2;
+    const code = `var a = true ? 1 : 2;
        var b = 'android' == 'android'
          ? ('production' != 'production' ? 'a' : 'A')
          : 'i';`;
-    expect(normalize(constantFolding('arbitrary.js', parse(code))))
-      .toEqual('var a=1;var b=\'A\';');
+    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual(
+      "var a=1;var b='A';",
+    );
   });
 
   it('can optimize logical operator expressions with constant conditions', () => {
@@ -57,8 +60,9 @@ describe('constant expressions', () => {
       var a = true || 1;
       var b = 'android' == 'android' &&
         'production' != 'production' || null || "A";`;
-    expect(normalize(constantFolding('arbitrary.js', parse(code))))
-      .toEqual('var a=true;var b="A";');
+    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual(
+      'var a=true;var b="A";',
+    );
   });
 
   it('can optimize logical operators with partly constant operands', () => {
@@ -69,8 +73,9 @@ describe('constant expressions', () => {
       var d = null || z();
       var e = !1 && z();
     `;
-    expect(normalize(constantFolding('arbitrary.js', parse(code))))
-      .toEqual('var a="truthy";var b=z();var c=null;var d=z();var e=false;');
+    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual(
+      'var a="truthy";var b=z();var c=null;var d=z();var e=false;',
+    );
   });
 
   it('can remode an if statement with a falsy constant test', () => {
@@ -79,8 +84,7 @@ describe('constant expressions', () => {
         var a = 1;
       }
     `;
-    expect(normalize(constantFolding('arbitrary.js', parse(code))))
-      .toEqual('');
+    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual('');
   });
 
   it('can optimize if-else-branches with constant conditions', () => {
@@ -95,8 +99,9 @@ describe('constant expressions', () => {
         var a = 'b';
       }
     `;
-    expect(normalize(constantFolding('arbitrary.js', parse(code))))
-      .toEqual('{var a=3;var b=a+4;}');
+    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual(
+      '{var a=3;var b=a+4;}',
+    );
   });
 
   it('can optimize nested if-else constructs', () => {
@@ -115,7 +120,8 @@ describe('constant expressions', () => {
         }
       }
     `;
-    expect(normalize(constantFolding('arbitrary.js', parse(code))))
-      .toEqual('{{require(\'c\');}}');
+    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual(
+      "{{require('c');}}",
+    );
   });
 });

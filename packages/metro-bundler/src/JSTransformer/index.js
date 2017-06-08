@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -23,12 +24,18 @@ const workerFarm = require('../worker-farm');
 import type {Data as TransformData, Options as WorkerOptions} from './worker';
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
 import type {MappingsMap} from '../lib/SourceMap';
-import typeof {minify as Minify, transformAndExtractDependencies as TransformAndExtractDependencies} from './worker';
+import typeof {
+  minify as Minify,
+  transformAndExtractDependencies as TransformAndExtractDependencies,
+} from './worker';
 
 type CB<T> = (?Error, ?T) => mixed;
-type Denodeify =
-  & (<A, B, C, T>((A, B, C, CB<T>) => void) => (A, B, C) => Promise<T>)
-  & (<A, B, C, D, E, T>((A, B, C, D, E, CB<T>) => void) => (A, B, C, D, E) => Promise<T>);
+type Denodeify = (<A, B, C, T>(
+  (A, B, C, CB<T>) => void,
+) => (A, B, C) => Promise<T>) &
+  (<A, B, C, D, E, T>(
+    (A, B, C, D, E, CB<T>) => void,
+  ) => (A, B, C, D, E) => Promise<T>);
 
 // Avoid memory leaks caused in workers. This number seems to be a good enough number
 // to avoid any memory leak while not slowing down initial builds.
@@ -63,7 +70,6 @@ type Reporters = {
 };
 
 class Transformer {
-
   _workers: {[name: string]: Function};
   _transformModulePath: string;
   _transform: (
@@ -85,7 +91,10 @@ class Transformer {
     reporters: Reporters,
     workerPath: ?string,
   ) {
-    invariant(path.isAbsolute(transformModulePath), 'transform module path should be absolute');
+    invariant(
+      path.isAbsolute(transformModulePath),
+      'transform module path should be absolute',
+    );
     this._transformModulePath = transformModulePath;
 
     const farm = makeFarm(
@@ -102,7 +111,10 @@ class Transformer {
     });
 
     this._workers = farm.methods;
-    this._transform = denodeify((this._workers.transformAndExtractDependencies: TransformAndExtractDependencies));
+    this._transform = denodeify(
+      (this._workers
+        .transformAndExtractDependencies: TransformAndExtractDependencies),
+    );
     this.minify = denodeify((this._workers.minify: Minify));
   }
 
@@ -114,19 +126,19 @@ class Transformer {
     fileName: string,
     localPath: LocalPath,
     code: string,
-    options: WorkerOptions) {
+    options: WorkerOptions,
+  ) {
     if (!this._transform) {
       return Promise.reject(new Error('No transform module'));
     }
     debug('transforming file', fileName);
-    return this
-      ._transform(
-        this._transformModulePath,
-        fileName,
-        localPath,
-        code,
-        options,
-      )
+    return this._transform(
+      this._transformModulePath,
+      fileName,
+      localPath,
+      code,
+      options,
+    )
       .then(data => {
         Logger.log(data.transformFileStartLogEntry);
         Logger.log(data.transformFileEndLogEntry);
@@ -137,8 +149,8 @@ class Transformer {
         if (error.type === 'TimeoutError') {
           const timeoutErr = new Error(
             `TimeoutError: transforming ${fileName} took longer than ` +
-            `${TRANSFORM_TIMEOUT_INTERVAL / 1000} seconds.\n` +
-            'You can adjust timeout via the \'transformTimeoutInterval\' option'
+              `${TRANSFORM_TIMEOUT_INTERVAL / 1000} seconds.\n` +
+              "You can adjust timeout via the 'transformTimeoutInterval' option",
           );
           /* $FlowFixMe: monkey-patch Error */
           timeoutErr.type = 'TimeoutError';
@@ -146,7 +158,7 @@ class Transformer {
         } else if (error.type === 'ProcessTerminatedError') {
           const uncaughtError = new Error(
             'Uncaught error in the transformer worker: ' +
-            this._transformModulePath
+              this._transformModulePath,
           );
           /* $FlowFixMe: monkey-patch Error */
           uncaughtError.type = 'ProcessTerminatedError';

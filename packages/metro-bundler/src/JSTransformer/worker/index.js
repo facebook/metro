@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -41,7 +42,6 @@ export type Transformer<ExtraOptions: {} = {}> = {
   getCacheKey: () => string,
 };
 
-
 export type TransformOptionsStrict = {|
   +dev: boolean,
   +generateSourceMaps: boolean,
@@ -73,10 +73,7 @@ export type Data = {
   transformFileEndLogEntry: LogEntry,
 };
 
-type Callback<T> = (
-  error: ?Error,
-  data: ?T,
-) => mixed;
+type Callback<T> = (error: ?Error, data: ?T) => mixed;
 
 function transformCode(
   transformer: Transformer<*>,
@@ -124,8 +121,10 @@ function transformCode(
 
   var code, map;
   if (options.minify) {
-    ({code, map} =
-      constantFolding(filename, inline(filename, transformed, options)));
+    ({code, map} = constantFolding(
+      filename,
+      inline(filename, transformed, options),
+    ));
     invariant(code != null, 'Missing code from constant-folding transform.');
   } else {
     ({code, map} = transformed);
@@ -170,7 +169,14 @@ exports.transformAndExtractDependencies = (
   babelRegisterOnly([transform]);
   /* $FlowFixMe: impossible to type a dynamic require */
   const transformModule: Transformer<*> = require(transform);
-  transformCode(transformModule, filename, localPath, sourceCode, options, callback);
+  transformCode(
+    transformModule,
+    filename,
+    localPath,
+    sourceCode,
+    options,
+    callback,
+  );
 };
 
 exports.minify = (

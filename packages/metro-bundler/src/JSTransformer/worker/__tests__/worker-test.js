@@ -5,6 +5,8 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
 'use strict';
 
@@ -22,8 +24,9 @@ describe('code transformation worker:', () => {
   beforeEach(() => {
     jest.resetModules();
     ({transformCode} = require('..'));
-    extractDependencies =
-      require('../extract-dependencies').mockReturnValue({});
+    extractDependencies = require('../extract-dependencies').mockReturnValue(
+      {},
+    );
     transformer = {
       transform: jest.fn(({filename, options, src}) => ({
         code: src,
@@ -37,7 +40,14 @@ describe('code transformation worker:', () => {
     const localPath = `local/${filename}`;
     const sourceCode = 'arbitrary(code)';
     const transformOptions = {arbitrary: 'options'};
-    transformCode(transformer, filename, localPath, sourceCode, {transform: transformOptions}, () => {});
+    transformCode(
+      transformer,
+      filename,
+      localPath,
+      sourceCode,
+      {transform: transformOptions},
+      () => {},
+    );
     expect(transformer.transform).toBeCalledWith({
       filename,
       localPath,
@@ -65,26 +75,39 @@ describe('code transformation worker:', () => {
       map: {},
     };
 
-    transformCode(transformer, 'filename', 'local/filename', result.code, {}, (error, data) => {
-      expect(error).toBeNull();
-      expect(data.result).toEqual(objectContaining(result));
-      done();
-    });
+    transformCode(
+      transformer,
+      'filename',
+      'local/filename',
+      result.code,
+      {},
+      (error, data) => {
+        expect(error).toBeNull();
+        expect(data.result).toEqual(objectContaining(result));
+        done();
+      },
+    );
   });
 
   it(
     'removes the leading assignment to `module.exports` before passing ' +
-    'on the result if the file is a JSON file, even if minified',
+      'on the result if the file is a JSON file, even if minified',
     done => {
       const code = '{a:1,b:2}';
       const filePath = 'arbitrary/file.json';
-      transformCode(transformer, filePath, filePath, code, {}, (error, data) => {
-        expect(error).toBeNull();
-        expect(data.result.code).toEqual(code);
-        done();
-      },
+      transformCode(
+        transformer,
+        filePath,
+        filePath,
+        code,
+        {},
+        (error, data) => {
+          expect(error).toBeNull();
+          expect(data.result.code).toEqual(code);
+          done();
+        },
       );
-    }
+    },
   );
 
   it('removes shebang when present', done => {
@@ -93,13 +116,20 @@ describe('code transformation worker:', () => {
       code: `${shebang} \n arbitrary(code)`,
     };
     const filePath = 'arbitrary/file.js';
-    transformCode(transformer, filePath, filePath, result.code, {}, (error, data) => {
-      expect(error).toBeNull();
-      const {code} = data.result;
-      expect(code).not.toContain(shebang);
-      expect(code.split('\n').length).toEqual(result.code.split('\n').length);
-      done();
-    });
+    transformCode(
+      transformer,
+      filePath,
+      filePath,
+      result.code,
+      {},
+      (error, data) => {
+        expect(error).toBeNull();
+        const {code} = data.result;
+        expect(code).not.toContain(shebang);
+        expect(code.split('\n').length).toEqual(result.code.split('\n').length);
+        done();
+      },
+    );
   });
 
   it('calls back with any error yielded by the transform', done => {
@@ -108,51 +138,78 @@ describe('code transformation worker:', () => {
       throw new Error(message);
     });
 
-    transformCode(transformer, 'filename', 'local/filename', 'code', {}, error => {
-      expect(error.message).toBe(message);
-      done();
-    });
+    transformCode(
+      transformer,
+      'filename',
+      'local/filename',
+      'code',
+      {},
+      error => {
+        expect(error.message).toBe(message);
+        done();
+      },
+    );
   });
 
   describe('dependency extraction', () => {
     it('passes the transformed code the `extractDependencies`', done => {
       const code = 'arbitrary(code)';
 
-      transformCode(transformer, 'filename', 'local/filename', code, {}, error => {
-        expect(error).toBeNull();
-        expect(extractDependencies).toBeCalledWith(code);
-        done();
-      });
+      transformCode(
+        transformer,
+        'filename',
+        'local/filename',
+        code,
+        {},
+        error => {
+          expect(error).toBeNull();
+          expect(extractDependencies).toBeCalledWith(code);
+          done();
+        },
+      );
     });
 
     it(
       'uses `dependencies` and `dependencyOffsets` ' +
-      'provided by `extractDependencies` for the result',
+        'provided by `extractDependencies` for the result',
       done => {
         const dependencyData = {
           dependencies: ['arbitrary', 'list', 'of', 'dependencies'],
-          dependencyOffsets: [12,  119, 185, 328, 471],
+          dependencyOffsets: [12, 119, 185, 328, 471],
         };
         extractDependencies.mockReturnValue(dependencyData);
 
-        transformCode(transformer, 'filename', 'local/filename', 'code', {}, (error, data) => {
-          expect(error).toBeNull();
-          expect(data.result).toEqual(objectContaining(dependencyData));
-          done();
-        });
-      }
+        transformCode(
+          transformer,
+          'filename',
+          'local/filename',
+          'code',
+          {},
+          (error, data) => {
+            expect(error).toBeNull();
+            expect(data.result).toEqual(objectContaining(dependencyData));
+            done();
+          },
+        );
+      },
     );
 
     it('does not extract requires of JSON files', done => {
       const jsonStr = '{"arbitrary":"json"}';
-      transformCode(transformer, 'arbitrary.json', 'local/arbitrary.json', jsonStr, {}, (error, data) => {
-        expect(error).toBeNull();
-        const {dependencies, dependencyOffsets} = data.result;
-        expect(extractDependencies).not.toBeCalled();
-        expect(dependencies).toEqual([]);
-        expect(dependencyOffsets).toEqual([]);
-        done();
-      }
+      transformCode(
+        transformer,
+        'arbitrary.json',
+        'local/arbitrary.json',
+        jsonStr,
+        {},
+        (error, data) => {
+          expect(error).toBeNull();
+          const {dependencies, dependencyOffsets} = data.result;
+          expect(extractDependencies).not.toBeCalled();
+          expect(dependencies).toEqual([]);
+          expect(dependencyOffsets).toEqual([]);
+          done();
+        },
       );
     });
   });
@@ -165,8 +222,10 @@ describe('code transformation worker:', () => {
     const foldedMap = {version: 3, sources: ['fold.js']};
 
     beforeEach(() => {
-      constantFolding = require('../constant-folding')
-        .mockReturnValue({code: foldedCode, map: foldedMap});
+      constantFolding = require('../constant-folding').mockReturnValue({
+        code: foldedCode,
+        map: foldedMap,
+      });
       extractDependencies = require('../extract-dependencies');
       inline = require('../inline');
 
@@ -177,9 +236,12 @@ describe('code transformation worker:', () => {
       };
 
       extractDependencies.mockImplementation(
-        code => code === foldedCode ? dependencyData : {});
+        code => (code === foldedCode ? dependencyData : {}),
+      );
 
-      transformer.transform.mockImplementation((src, fileName, _) => transformResult);
+      transformer.transform.mockImplementation(
+        (src, fileName, _) => transformResult,
+      );
     });
 
     it('passes the transform result to `inline` for constant inlining', done => {
@@ -207,19 +269,34 @@ describe('code transformation worker:', () => {
     });
 
     it('uses the dependencies obtained from the optimized result', done => {
-      transformCode(transformer, filename, filename, 'code', options, (_, data) => {
-        const result = data.result;
-        expect(result.dependencies).toEqual(dependencyData.dependencies);
-        done();
-      });
+      transformCode(
+        transformer,
+        filename,
+        filename,
+        'code',
+        options,
+        (_, data) => {
+          const result = data.result;
+          expect(result.dependencies).toEqual(dependencyData.dependencies);
+          done();
+        },
+      );
     });
 
     it('uses data produced by `constant-folding` for the result', done => {
-      transformCode(transformer, 'filename', 'local/filename', 'code', options, (_, data) => {
-        expect(data.result)
-          .toEqual(objectContaining({code: foldedCode, map: foldedMap}));
-        done();
-      });
+      transformCode(
+        transformer,
+        'filename',
+        'local/filename',
+        'code',
+        options,
+        (_, data) => {
+          expect(data.result).toEqual(
+            objectContaining({code: foldedCode, map: foldedMap}),
+          );
+          done();
+        },
+      );
     });
   });
 });

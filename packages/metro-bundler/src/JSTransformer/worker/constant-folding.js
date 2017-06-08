@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -70,11 +71,14 @@ const plugin = {
   },
 };
 
-function constantFolding(filename: string, transformResult: {
-  ast: Ast,
-  code?: ?string,
-  map: ?MappingsMap,
-}) {
+function constantFolding(
+  filename: string,
+  transformResult: {
+    ast: Ast,
+    code?: ?string,
+    map: ?MappingsMap,
+  },
+) {
   return babel.transformFromAst(transformResult.ast, transformResult.code, {
     filename,
     plugins: [plugin],

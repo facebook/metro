@@ -5,6 +5,8 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
 'use strict';
 
@@ -22,8 +24,7 @@ describe('Dependency extraction:', () => {
       require
       ('more');`;
     const {dependencies, dependencyOffsets} = extractDependencies(code);
-    expect(dependencies)
-      .toEqual(['foo/bar', 'React', 'Component', 'more']);
+    expect(dependencies).toEqual(['foo/bar', 'React', 'Component', 'more']);
     expect(dependencyOffsets).toEqual([8, 46, 147, 203]);
   });
 
@@ -76,7 +77,7 @@ describe('Dependency extraction:', () => {
   });
 
   it('does not extract calls to function with names that start with "require"', () => {
-    const code = 'arbitraryrequire(\'foo\');';
+    const code = "arbitraryrequire('foo');";
 
     const {dependencies, dependencyOffsets} = extractDependencies(code);
     expect(dependencies).toEqual([]);
@@ -84,7 +85,7 @@ describe('Dependency extraction:', () => {
   });
 
   it('does not extract calls to require with non-static arguments', () => {
-    const code = 'require(\'foo/\' + bar)';
+    const code = "require('foo/' + bar)";
 
     const {dependencies, dependencyOffsets} = extractDependencies(code);
     expect(dependencies).toEqual([]);
@@ -101,7 +102,7 @@ describe('Dependency extraction:', () => {
   });
 
   it('can handle regular expressions', () => {
-    const code = 'require(\'a\'); /["\']/.test(\'foo\'); require("b");';
+    const code = "require('a'); /[\"']/.test('foo'); require(\"b\");";
 
     const {dependencies, dependencyOffsets} = extractDependencies(code);
     expect(dependencies).toEqual(['a', 'b']);

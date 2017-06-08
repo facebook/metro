@@ -5,6 +5,8 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
 'use strict';
 
@@ -35,11 +37,14 @@ describe('Minification:', () => {
 
   it('passes file name, code, and source map to `uglify`', () => {
     minify(filename, code, map);
-    expect(uglify.minify).toBeCalledWith(code, objectContaining({
-      fromString: true,
-      inSourceMap: map,
-      outSourceMap: true,
-    }));
+    expect(uglify.minify).toBeCalledWith(
+      code,
+      objectContaining({
+        fromString: true,
+        inSourceMap: map,
+        outSourceMap: true,
+      }),
+    );
   });
 
   it('returns the code provided by uglify', () => {

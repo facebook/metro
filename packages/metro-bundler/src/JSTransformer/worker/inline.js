@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -34,8 +35,7 @@ const importMap = new Map([['ReactNative', 'react-native']]);
 
 const isGlobal = binding => !binding;
 
-const isFlowDeclared = binding =>
-  t.isDeclareVariable(binding.path);
+const isFlowDeclared = binding => t.isDeclareVariable(binding.path);
 
 const isGlobalOrFlowDeclared = binding =>
   isGlobal(binding) || isFlowDeclared(binding);
@@ -43,7 +43,7 @@ const isGlobalOrFlowDeclared = binding =>
 const isToplevelBinding = (binding, isWrappedModule) =>
   isGlobal(binding) ||
   !binding.scope.parent ||
-  isWrappedModule && !binding.scope.parent.parent;
+  (isWrappedModule && !binding.scope.parent.parent);
 
 const isRequireCall = (node, dependencyId, scope) =>
   t.isCallExpression(node) &&
@@ -59,8 +59,8 @@ const isImport = (node, scope, patterns) =>
 function isImportOrGlobal(node, scope, patterns, isWrappedModule) {
   const identifier = patterns.find(pattern => t.isIdentifier(node, pattern));
   return (
-    identifier &&
-    isToplevelBinding(scope.getBinding(identifier.name), isWrappedModule) ||
+    (identifier &&
+      isToplevelBinding(scope.getBinding(identifier.name), isWrappedModule)) ||
     isImport(node, scope, patterns)
   );
 }
@@ -74,7 +74,11 @@ const isReactPlatformOS = (node, scope, isWrappedModule) =>
   t.isMemberExpression(node.object) &&
   t.isIdentifier(node.object.property, platform) &&
   isImportOrGlobal(
-    node.object.object, scope, [React, ReactNative], isWrappedModule);
+    node.object.object,
+    scope,
+    [React, ReactNative],
+    isWrappedModule,
+  );
 
 const isProcessEnvNodeEnv = (node, scope) =>
   t.isIdentifier(node.property, nodeEnv) &&
@@ -95,12 +99,16 @@ const isReactPlatformSelect = (node, scope, isWrappedModule) =>
   t.isMemberExpression(node.callee.object) &&
   t.isIdentifier(node.callee.object.property, platform) &&
   isImportOrGlobal(
-    node.callee.object.object, scope, [React, ReactNative], isWrappedModule);
+    node.callee.object.object,
+    scope,
+    [React, ReactNative],
+    isWrappedModule,
+  );
 
 const isDev = (node, parent, scope) =>
   t.isIdentifier(node, dev) &&
   isGlobalOrFlowDeclared(scope.getBinding(dev.name)) &&
-  !(t.isMemberExpression(parent));
+  !t.isMemberExpression(parent);
 
 function findProperty(objectExpression, key, fallback) {
   const property = objectExpression.properties.find(p => p.key.name === key);
@@ -126,7 +134,8 @@ const inlinePlugin = {
         path.replaceWith(t.stringLiteral(opts.platform));
       } else if (isProcessEnvNodeEnv(node, scope)) {
         path.replaceWith(
-          t.stringLiteral(opts.dev ? 'development' : 'production'));
+          t.stringLiteral(opts.dev ? 'development' : 'production'),
+        );
       }
     },
     CallExpression(path, state) {
@@ -155,10 +164,12 @@ const plugin = () => inlinePlugin;
 
 function checkRequireArgs(args, dependencyId) {
   const pattern = t.stringLiteral(dependencyId);
-  return t.isStringLiteral(args[0], pattern) ||
-         t.isMemberExpression(args[0]) &&
-         t.isNumericLiteral(args[0].property) &&
-         t.isStringLiteral(args[1], pattern);
+  return (
+    t.isStringLiteral(args[0], pattern) ||
+    (t.isMemberExpression(args[0]) &&
+      t.isNumericLiteral(args[0].property) &&
+      t.isStringLiteral(args[1], pattern))
+  );
 }
 
 type AstResult = {

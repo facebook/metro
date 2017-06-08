@@ -5,6 +5,8 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
 'use strict';
 
@@ -47,7 +49,9 @@ describe('inline constants', () => {
       var b = a.Platform.OS;
     }`;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
-    expect(toString(ast)).toEqual(normalize(code.replace(/Platform\.OS/, '"ios"')));
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/Platform\.OS/, '"ios"')),
+    );
   });
 
   it('replaces Platform.OS in the code if Platform is a top level import', () => {
@@ -58,7 +62,9 @@ describe('inline constants', () => {
         var b = a.Platform.OS;
       }`;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
-    expect(toString(ast)).toEqual(normalize(code.replace(/Platform\.OS/, '"ios"')));
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/Platform\.OS/, '"ios"')),
+    );
   });
 
   it('replaces Platform.OS in the code if Platform is a top level import from react-native', () => {
@@ -69,7 +75,9 @@ describe('inline constants', () => {
         var b = a.Platform.OS;
       }`;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
-    expect(toString(ast)).toEqual(normalize(code.replace(/Platform\.OS/, '"ios"')));
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/Platform\.OS/, '"ios"')),
+    );
   });
 
   it('replaces require("Platform").OS in the code', () => {
@@ -79,7 +87,8 @@ describe('inline constants', () => {
     }`;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'android'});
     expect(toString(ast)).toEqual(
-      normalize(code.replace(/require\('Platform'\)\.OS/, '"android"')));
+      normalize(code.replace(/require\('Platform'\)\.OS/, '"android"')),
+    );
   });
 
   it('replaces React.Platform.OS in the code if React is a global', () => {
@@ -88,7 +97,9 @@ describe('inline constants', () => {
       var b = a.React.Platform.OS;
     }`;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
-    expect(toString(ast)).toEqual(normalize(code.replace(/React\.Platform\.OS/, '"ios"')));
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/React\.Platform\.OS/, '"ios"')),
+    );
   });
 
   it('replaces ReactNative.Platform.OS in the code if ReactNative is a global', () => {
@@ -97,7 +108,9 @@ describe('inline constants', () => {
       var b = a.ReactNative.Platform.OS;
     }`;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
-    expect(toString(ast)).toEqual(normalize(code.replace(/ReactNative\.Platform\.OS/, '"ios"')));
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/ReactNative\.Platform\.OS/, '"ios"')),
+    );
   });
 
   it('replaces React.Platform.OS in the code if React is a top level import', () => {
@@ -108,7 +121,9 @@ describe('inline constants', () => {
         var b = a.React.Platform.OS;
       }`;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
-    expect(toString(ast)).toEqual(normalize(code.replace(/React.Platform\.OS/, '"ios"')));
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/React.Platform\.OS/, '"ios"')),
+    );
   });
 
   it('replaces require("React").Platform.OS in the code', () => {
@@ -118,7 +133,8 @@ describe('inline constants', () => {
     }`;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'android'});
     expect(toString(ast)).toEqual(
-      normalize(code.replace(/require\('React'\)\.Platform\.OS/, '"android"')));
+      normalize(code.replace(/require\('React'\)\.Platform\.OS/, '"android"')),
+    );
   });
 
   it('replaces ReactNative.Platform.OS in the code if ReactNative is a top level import', () => {
@@ -129,7 +145,9 @@ describe('inline constants', () => {
         var b = a.ReactNative.Platform.OS;
       }`;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'android'});
-    expect(toString(ast)).toEqual(normalize(code.replace(/ReactNative.Platform\.OS/, '"android"')));
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/ReactNative.Platform\.OS/, '"android"')),
+    );
   });
 
   it('replaces require("react-native").Platform.OS in the code', () => {
@@ -139,7 +157,10 @@ describe('inline constants', () => {
     }`;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'android'});
     expect(toString(ast)).toEqual(
-      normalize(code.replace(/require\('react-native'\)\.Platform\.OS/, '"android"')));
+      normalize(
+        code.replace(/require\('react-native'\)\.Platform\.OS/, '"android"'),
+      ),
+    );
   });
 
   it('inlines Platform.select in the code if Platform is a global and the argument is an object literal', () => {
@@ -148,16 +169,20 @@ describe('inline constants', () => {
       var b = a.Platform.select({ios: 1, android: 2});
     }`;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
-    expect(toString(ast)).toEqual(normalize(code.replace(/Platform\.select[^;]+/, '1')));
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/Platform\.select[^;]+/, '1')),
+    );
   });
 
-  it('inlines Platform.select in the code if Platform is a global and the argument doesn\'t have target platform in it\'s keys', () => {
+  it("inlines Platform.select in the code if Platform is a global and the argument doesn't have target platform in it's keys", () => {
     const code = `function a() {
       var a = Platform.select({ios: 1, default: 2});
       var b = a.Platform.select({ios: 1, default: 2});
     }`;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'android'});
-    expect(toString(ast)).toEqual(normalize(code.replace(/Platform\.select[^;]+/, '2')));
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/Platform\.select[^;]+/, '2')),
+    );
   });
 
   it('replaces Platform.select in the code if Platform is a top level import', () => {
@@ -168,7 +193,9 @@ describe('inline constants', () => {
         var b = a.Platform.select({});
       }`;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'android'});
-    expect(toString(ast)).toEqual(normalize(code.replace(/Platform\.select[^;]+/, '2')));
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/Platform\.select[^;]+/, '2')),
+    );
   });
 
   it('replaces Platform.select in the code if Platform is a top level import from react-native', () => {
@@ -179,7 +206,9 @@ describe('inline constants', () => {
         var b = a.Platform.select({});
       }`;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
-    expect(toString(ast)).toEqual(normalize(code.replace(/Platform\.select[^;]+/, '1')));
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/Platform\.select[^;]+/, '1')),
+    );
   });
 
   it('replaces require("Platform").select in the code', () => {
@@ -188,7 +217,9 @@ describe('inline constants', () => {
       var b = a.require('Platform').select({});
     }`;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'android'});
-    expect(toString(ast)).toEqual(normalize(code.replace(/Platform\.select[^;]+/, '2')));
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/Platform\.select[^;]+/, '2')),
+    );
   });
 
   it('replaces React.Platform.select in the code if React is a global', () => {
@@ -197,7 +228,9 @@ describe('inline constants', () => {
       var b = a.React.Platform.select({});
     }`;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
-    expect(toString(ast)).toEqual(normalize(code.replace(/React\.Platform\.select[^;]+/, '1')));
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/React\.Platform\.select[^;]+/, '1')),
+    );
   });
 
   it('replaces ReactNative.Platform.select in the code if ReactNative is a global', () => {
@@ -219,7 +252,9 @@ describe('inline constants', () => {
         var b = a.React.Platform.select({});
       }`;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
-    expect(toString(ast)).toEqual(normalize(code.replace(/React\.Platform\.select[^;]+/, '1')));
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/React\.Platform\.select[^;]+/, '1')),
+    );
   });
 
   it('replaces require("React").Platform.select in the code', () => {
@@ -229,7 +264,8 @@ describe('inline constants', () => {
     }`;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'android'});
     expect(toString(ast)).toEqual(
-      normalize(code.replace(/require\('React'\)\.Platform\.select[^;]+/, '2')));
+      normalize(code.replace(/require\('React'\)\.Platform\.select[^;]+/, '2')),
+    );
   });
 
   it('replaces ReactNative.Platform.select in the code if ReactNative is a top level import', () => {
@@ -252,14 +288,18 @@ describe('inline constants', () => {
     `;
     const {ast} = inline('arbitrary.js', {code}, {platform: 'android'});
     expect(toString(ast)).toEqual(
-      normalize(code.replace(/require\('react-native'\)\.Platform\.select[^;]+/, '2')));
+      normalize(
+        code.replace(/require\('react-native'\)\.Platform\.select[^;]+/, '2'),
+      ),
+    );
   });
 
   it('replaces non-existing properties with `undefined`', () => {
     const code = 'var a = Platform.select({ios: 1, android: 2})';
     const {ast} = inline('arbitrary.js', {code}, {platform: 'doesnotexist'});
     expect(toString(ast)).toEqual(
-      normalize(code.replace(/Platform\.select[^;]+/, 'undefined')));
+      normalize(code.replace(/Platform\.select[^;]+/, 'undefined')),
+    );
   });
 
   it('replaces process.env.NODE_ENV in the code', () => {
@@ -271,7 +311,8 @@ describe('inline constants', () => {
     }`;
     const {ast} = inline('arbitrary.js', {code}, {dev: false});
     expect(toString(ast)).toEqual(
-      normalize(code.replace(/process\.env\.NODE_ENV/, '"production"')));
+      normalize(code.replace(/process\.env\.NODE_ENV/, '"production"')),
+    );
   });
 
   it('accepts an AST as input', function() {
@@ -286,13 +327,16 @@ describe('inline constants', () => {
       var a = Platform.OS, b = Platform.select({android: 1, ios: 2});
     });`;
     const {ast} = inline(
-      'arbitrary', {code}, {dev: true, platform: 'android', isWrapped: true});
+      'arbitrary',
+      {code},
+      {dev: true, platform: 'android', isWrapped: true},
+    );
     expect(toString(ast)).toEqual(
       normalize(
         code
           .replace(/Platform\.OS/, '"android"')
-          .replace(/Platform\.select[^)]+\)/, 1)
-      )
+          .replace(/Platform\.select[^)]+\)/, 1),
+      ),
     );
   });
 
@@ -301,9 +345,13 @@ describe('inline constants', () => {
       var a = require(arbitraryMapName[123], 'react-native').Platform.OS;
     });`;
     const {ast} = inline(
-      'arbitrary', {code}, {dev: true, platform: 'android', isWrapped: true});
+      'arbitrary',
+      {code},
+      {dev: true, platform: 'android', isWrapped: true},
+    );
     expect(toString(ast)).toEqual(
-      normalize(code.replace(/require\([^)]+\)\.Platform\.OS/, '"android"')));
+      normalize(code.replace(/require\([^)]+\)\.Platform\.OS/, '"android"')),
+    );
   });
 
   it('works with flow-declared variables', () => {
@@ -311,10 +359,10 @@ describe('inline constants', () => {
     const code = `declare var __DEV__;
       const a: boolean = __DEV__;`;
 
-    const transformed = transform(
-      code,
-      {...babelOptions, plugins: [stripFlow, [inline.plugin, {dev: false}]]},
-    ).code;
+    const transformed = transform(code, {
+      ...babelOptions,
+      plugins: [stripFlow, [inline.plugin, {dev: false}]],
+    }).code;
 
     expect(transformed).toEqual('const a=false;');
   });
@@ -326,10 +374,10 @@ describe('inline constants', () => {
       const a: boolean = __DEV__;
     });`;
 
-    const transformed = transform(
-      code,
-      {...babelOptions, plugins: [stripFlow, [inline.plugin, {dev: true}]]},
-    ).code;
+    const transformed = transform(code, {
+      ...babelOptions,
+      plugins: [stripFlow, [inline.plugin, {dev: true}]],
+    }).code;
 
     expect(transformed).toEqual('__d(()=>{const a=true;});');
   });
