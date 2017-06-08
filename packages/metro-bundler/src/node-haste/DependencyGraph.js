@@ -234,9 +234,9 @@ class DependencyGraph extends EventEmitter {
     };
     const req = new ResolutionRequest({
       dirExists,
+      doesFileExist: this._doesFileExist,
       entryPath: absPath,
       extraNodeModules: this._opts.extraNodeModules,
-      hasteFS: this._hasteFS,
       helpers: this._helpers,
       moduleCache: this._moduleCache,
       moduleMap: this._moduleMap,
@@ -261,6 +261,10 @@ class DependencyGraph extends EventEmitter {
 
   matchFilesByPattern(pattern: RegExp) {
     return Promise.resolve(this._hasteFS.matchFiles(pattern));
+  }
+
+  _doesFileExist = (filePath: string): boolean => {
+    return this._hasteFS.exists(filePath);
   }
 
   _getRequestPlatform(entryPath: string, platform: ?string): ?string {

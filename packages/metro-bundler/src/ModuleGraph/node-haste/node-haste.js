@@ -121,9 +121,9 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     if (!resolutionRequest) {
       resolutionRequest = resolutionRequests[platform] = new ResolutionRequest({
         dirExists: filePath => hasteFS.dirExists(filePath),
+        doesFileExist: filePath => hasteFS.exists(filePath),
         entryPath: '',
         extraNodeModules,
-        hasteFS,
         helpers,
         moduleCache,
         moduleMap: getFakeModuleMap(hasteMap),

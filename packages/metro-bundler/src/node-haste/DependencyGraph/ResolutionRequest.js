@@ -23,7 +23,6 @@ const realPath = require('path');
 const invariant = require('fbjs/lib/invariant');
 const isAbsolutePath = require('absolute-path');
 
-import type {HasteFS} from '../types';
 import type DependencyGraphHelpers from './DependencyGraphHelpers';
 import type ResolutionResponse from './ResolutionResponse';
 import type {
@@ -80,9 +79,9 @@ export type ModuleishCache<TModule, TPackage> = {
 
 type Options<TModule, TPackage> = {|
   +dirExists: DirExistsFn,
+  +doesFileExist: (filePath: string) => boolean,
   +entryPath: string,
   +extraNodeModules: ?Object,
-  +hasteFS: HasteFS,
   +helpers: DependencyGraphHelpers,
   +moduleCache: ModuleishCache<TModule, TPackage>,
   +moduleMap: ModuleMap,
@@ -134,7 +133,6 @@ function tryResolveSync<T>(action: () => T, secondaryAction: () => T): T {
 }
 
 class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
-  _doesFileExist = filePath => this._options.hasteFS.exists(filePath);
   _immediateResolutionCache: {[key: string]: TModule};
   _options: Options<TModule, TPackage>;
 
@@ -648,7 +646,7 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
     if (this._options.helpers.isAssetFile(fileNameHint)) {
       return this._loadAsAssetFile(dirPath, fileNameHint);
     }
-    const doesFileExist = this._doesFileExist;
+    const {doesFileExist} = this._options;
     const resolver = new FileNameResolver({doesFileExist, dirPath});
     const fileName = this._tryToResolveAllFileNames(resolver, fileNameHint);
     if (fileName != null) {
@@ -788,7 +786,7 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
    */
   _loadAsDir(potentialDirPath: string): Resolution<TModule, DirCandidates> {
     const packageJsonPath = path.join(potentialDirPath, 'package.json');
-    if (this._options.hasteFS.exists(packageJsonPath)) {
+    if (this._options.doesFileExist(packageJsonPath)) {
       return this._loadAsPackage(packageJsonPath);
     }
     const result = this._loadAsFile(potentialDirPath, 'index');
