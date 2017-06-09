@@ -12,7 +12,6 @@
 
 'use strict';
 
-const babelRegisterOnly = require('../../babelRegisterOnly');
 const constantFolding = require('./constant-folding');
 const extractDependencies = require('./extract-dependencies');
 const inline = require('./inline');
@@ -166,7 +165,6 @@ exports.transformAndExtractDependencies = (
   options: Options,
   callback: Callback<Data>,
 ) => {
-  babelRegisterOnly([transform]);
   /* $FlowFixMe: impossible to type a dynamic require */
   const transformModule: Transformer<*> = require(transform);
   transformCode(
