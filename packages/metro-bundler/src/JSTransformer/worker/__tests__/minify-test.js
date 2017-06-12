@@ -36,7 +36,7 @@ describe('Minification:', () => {
   });
 
   it('passes file name, code, and source map to `uglify`', () => {
-    minify(filename, code, map);
+    minify.withSourceMap(code, map, filename);
     expect(uglify.minify).toBeCalledWith(
       code,
       objectContaining({
@@ -47,15 +47,27 @@ describe('Minification:', () => {
     );
   });
 
+  it('passes code to `uglify` when minifying without source map', () => {
+    minify.noSourceMap(code);
+    expect(uglify.minify).toBeCalledWith(
+      code,
+      objectContaining({
+        fromString: true,
+        outSourceMap: true,
+      }),
+    );
+  });
+
   it('returns the code provided by uglify', () => {
     uglify.minify.mockReturnValue({code, map: '{}'});
-    const result = minify('', '', {});
+    const result = minify.withSourceMap('', {}, '');
     expect(result.code).toBe(code);
+    expect(minify.noSourceMap('')).toBe(code);
   });
 
   it('parses the source map object provided by uglify and sets the sources property', () => {
     uglify.minify.mockReturnValue({map: JSON.stringify(map), code: ''});
-    const result = minify(filename, '', {});
+    const result = minify.withSourceMap('', {}, filename);
     expect(result.map).toEqual({...map, sources: [filename]});
   });
 });

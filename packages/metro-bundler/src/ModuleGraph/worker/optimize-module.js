@@ -75,10 +75,10 @@ function optimize(transformed, file, originalCode, options) {
   const inputMap = transformed.map;
   const gen = generate(optimized.ast, file, originalCode);
 
-  const min = minify(
-    file,
+  const min = minify.withSourceMap(
     gen.code,
     inputMap && mergeSourceMaps(file, inputMap, gen.map),
+    file,
   );
   return {code: min.code, map: min.map, dependencies};
 }

@@ -14,22 +14,43 @@
 
 const uglify = require('uglify-js');
 
-const {UGLIFY_JS_OUTPUT_OPTIONS} = require('./JsMinification');
-
 import type {MappingsMap} from '../../lib/SourceMap';
+type ResultWithMap = {
+  code: string,
+  map: MappingsMap,
+};
 
-function minify(filename: string, inputCode: string, sourceMap: ?MappingsMap) {
-  const result = uglify.minify(inputCode, {
+const UGLIFY_JS_OUTPUT_OPTIONS = {
+  ascii_only: true,
+  screw_ie8: true,
+};
+
+function noSourceMap(code: string): string {
+  return minify(code).code;
+}
+
+function withSourceMap(
+  code: string,
+  sourceMap: ?MappingsMap,
+  filename: string,
+): ResultWithMap {
+  const result = minify(code, sourceMap);
+
+  const map: MappingsMap = JSON.parse(result.map);
+  map.sources = [filename];
+  return {code: result.code, map};
+}
+
+function minify(inputCode: string, inputMap: ?MappingsMap) {
+  return uglify.minify(inputCode, {
     fromString: true,
-    inSourceMap: sourceMap,
+    inSourceMap: inputMap,
     outSourceMap: true,
     output: UGLIFY_JS_OUTPUT_OPTIONS,
   });
-
-  const code = result.code;
-  const map = JSON.parse(result.map);
-  map.sources = [filename];
-  return {code, map};
 }
 
-module.exports = minify;
+module.exports = {
+  noSourceMap,
+  withSourceMap,
+};

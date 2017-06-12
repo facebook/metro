@@ -185,7 +185,7 @@ exports.minify = (
 ) => {
   var result;
   try {
-    result = minify(filename, code, sourceMap);
+    result = minify.withSourceMap(code, sourceMap, filename);
   } catch (error) {
     callback(error);
   }
