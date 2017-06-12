@@ -13,6 +13,7 @@
 jest.useRealTimers();
 jest
   .mock('fs')
+  .mock('graceful-fs')
   .mock('../../Logger')
   .mock('../../lib/TransformCaching')
   // It's noticeably faster to prevent running watchman from FileWatcher.
@@ -30,6 +31,8 @@ jest.mock('../../JSTransformer/worker/extract-dependencies', () => {
   }
   return mockExtractDependencies;
 });
+
+jest.mock('graceful-fs', () => require('fs'));
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
 
@@ -5804,7 +5807,7 @@ describe('DependencyGraph', function() {
   }
 
   function setMockFileSystem(object) {
-    return require('graceful-fs').__setMockFilesystem(object);
+    return require('fs').__setMockFilesystem(object);
   }
 
   function triggerAndProcessWatchEvent(dgraphPromise, eventType, filename) {
@@ -5818,6 +5821,6 @@ describe('DependencyGraph', function() {
   }
 
   function triggerWatchEvent(eventType, filename) {
-    return require('graceful-fs').__triggerWatchEvent(eventType, filename);
+    return require('fs').__triggerWatchEvent(eventType, filename);
   }
 });
