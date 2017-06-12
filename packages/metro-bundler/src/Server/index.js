@@ -268,7 +268,6 @@ class Server {
       dependencyPairs: new Map(
         nonVirtual
           .filter(({meta}) => meta && meta.dependencyPairs)
-          /* $FlowFixMe: the filter above ensures `dependencyPairs` is not null. */
           .map(m => [m.sourcePath, m.meta.dependencyPairs])
       ),
       outdated: new Set(),
@@ -496,12 +495,12 @@ class Server {
    */
   _reportBundlePromise(
     buildID: string,
-    options: {entryFile: string},
+    options: BundleOptions,
     bundlePromise: Promise<Bundle>,
   ): Promise<Bundle> {
     this._reporter.update({
       buildID,
-      entryFilePath: options.entryFile,
+      bundleOptions: options,
       type: 'bundle_build_started',
     });
     return bundlePromise.then(bundle => {
@@ -586,7 +585,6 @@ class Server {
                   const moduleTransport = newModules[i];
                   const {meta, sourcePath} = moduleTransport;
                   if (outdated.has(sourcePath)) {
-                    /* $FlowFixMe: `meta` could be empty */
                     if (!contentsEqual(meta.dependencies, new Set(files.get(sourcePath)))) {
                       // bail out if any dependencies changed
                       return Promise.reject(Error(
@@ -594,7 +592,6 @@ class Server {
                           /* $FlowFixMe: `get` can return empty */
                           files.get(sourcePath).join(', ')
                         }] to [${
-                          /* $FlowFixMe: `meta` could be empty */
                           meta.dependencies.join(', ')
                         }]`
                       ));

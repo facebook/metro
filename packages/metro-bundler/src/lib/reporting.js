@@ -14,6 +14,7 @@
 const chalk = require('chalk');
 const util = require('util');
 
+import type {BundleOptions} from '../Server';
 import type Terminal from './Terminal';
 
 export type GlobalCacheDisabledReason = 'too_many_errors' | 'too_many_misses';
@@ -40,7 +41,7 @@ export type ReportableEvent = {
   type: 'bundle_build_failed',
 } | {
   buildID: string,
-  entryFilePath: string,
+  bundleOptions: BundleOptions,
   type: 'bundle_build_started',
 } | {
   error: Error,

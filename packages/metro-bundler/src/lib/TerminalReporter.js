@@ -18,6 +18,7 @@ const reporting = require('./reporting');
 const throttle = require('lodash/throttle');
 const util = require('util');
 
+import type {BundleOptions} from '../Server';
 import type Terminal from './Terminal';
 import type {ReportableEvent, GlobalCacheDisabledReason} from './reporting';
 
@@ -26,7 +27,7 @@ const GLOBAL_CACHE_DISABLED_MESSAGE_FORMAT =
   'The global cache is now disabled because %s';
 
 type BundleProgress = {
-  entryFilePath: string,
+  bundleOptions: BundleOptions,
   transformedFileCount: number,
   totalFileCount: number,
   ratio: number,
@@ -90,18 +91,26 @@ class TerminalReporter {
    *     Bunding `foo.js`  |####         | 34.2% (324/945)
    */
   _getBundleStatusMessage(
-    {entryFilePath, totalFileCount, transformedFileCount, ratio}: BundleProgress,
+    {
+      bundleOptions,
+      transformedFileCount,
+      totalFileCount,
+      ratio,
+    }: BundleProgress,
     phase: BuildPhase,
   ): string {
-    const localPath = path.relative('.', entryFilePath);
+    const localPath = path.relative('.', bundleOptions.entryFile);
     return util.format(
-      'Bundling `%s`  %s%s% (%s/%s)%s',
+      'Bundling `%s`  %s%s% (%s/%s)%s  %s, %s, %s',
       localPath,
       phase === 'in_progress' ? getProgressBar(ratio, 16) + '  ' : '',
       (100 * ratio).toFixed(1),
       transformedFileCount,
       totalFileCount,
       phase === 'done' ? ', done.' : (phase === 'failed' ? ', failed.' : ''),
+      bundleOptions.dev ? 'development' : 'production',
+      bundleOptions.minify ? 'minified' : 'non-minified',
+      bundleOptions.hot ? 'hmr enabled' : 'hmr disabled',
     );
   }
 
@@ -292,7 +301,7 @@ class TerminalReporter {
         break;
       case 'bundle_build_started':
         this._activeBundles.set(event.buildID, {
-          entryFilePath: event.entryFilePath,
+          bundleOptions: event.bundleOptions,
           transformedFileCount: 0,
           totalFileCount: 1,
           ratio: 0,

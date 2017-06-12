@@ -50,7 +50,7 @@ class BundleBase {
     this._mainModuleId = moduleId;
   }
 
-  addModule(module: ModuleTransport) {
+  addModule(module: ModuleTransport): number {
     if (!(module instanceof ModuleTransport)) {
       throw new Error('Expected a ModuleTransport object');
     }
