@@ -12,6 +12,8 @@
 
 'use strict';
 
+const TempDirs = require('./TempDirs');
+
 const crypto = require('crypto');
 const debugRead = require('debug')('RNP:TransformCache:Read');
 const fs = require('fs');
@@ -230,7 +232,8 @@ class FileBasedCache {
   }
 
   _resetCache(reporter: Reporter) {
-    rimraf.sync(this._rootPath);
+    rimraf.sync(path.join(this._rootPath, 'last_collected'));
+    rimraf.sync(path.join(this._rootPath, 'cache'));
     reporter.update({type: 'transform_cache_reset'});
     this._cacheWasReset = true;
     this._lastCollected = Date.now();
@@ -263,11 +266,10 @@ class FileBasedCache {
    * first.
    */
   _collectCacheIfOldSync() {
-    const cacheDirPath = this._rootPath;
-    mkdirp.sync(cacheDirPath);
-    const cacheCollectionFilePath = path.join(cacheDirPath, 'last_collected');
+    const {_rootPath} = this;
+    const cacheCollectionFilePath = path.join(_rootPath, 'last_collected');
     const lastCollected = Number.parseInt(
-      tryReadFileSync(cacheCollectionFilePath),
+      tryReadFileSync(cacheCollectionFilePath) || '',
       10,
     );
     if (
@@ -276,7 +278,7 @@ class FileBasedCache {
     ) {
       return;
     }
-    const effectiveCacheDirPath = path.join(cacheDirPath, CACHE_SUB_DIR);
+    const effectiveCacheDirPath = path.join(_rootPath, CACHE_SUB_DIR);
     mkdirp.sync(effectiveCacheDirPath);
     collectCacheSync(effectiveCacheDirPath);
     fs.writeFileSync(cacheCollectionFilePath, Date.now().toString());
@@ -323,17 +325,6 @@ function collectCacheSync(dirPath: string) {
         fs.unlinkSync(cacheFilePath);
       }
     }
-  }
-}
-
-function tryReadFileSync(filePath: string): string {
-  try {
-    return fs.readFileSync(filePath, 'utf8');
-  } catch (error) {
-    if (error.code !== 'ENOENT') {
-      throw error;
-    }
-    return '';
   }
 }
 
@@ -446,12 +437,58 @@ function useTempDir(): TransformCache {
   const tmpDir = require('os').tmpdir();
   const cacheName = 'react-native-packager-cache';
   const rootPath = path.join(tmpDir, cacheName + '-' + hash.digest('hex'));
+  mkdirp.sync(rootPath);
   return new FileBasedCache(rootPath);
 }
 
+/**
+ * Keep track of the path used for the cache in a local file so that a fresh
+ * clone gets a fresh cache, and so that the temp dir used cannot be predicted.
+ * Sometimes a different user build the same project, in which case we use a
+ * different subfolder of the temp directory.
+ */
 function useProjectDir(projectPath: string): TransformCache {
+  const metaDirPath = readMetaDirPath(projectPath);
+  const uidStr = process.getuid != null ? process.getuid().toString() : 'g';
+  const finalPath = path.join(metaDirPath, '_' + uidStr);
+  TempDirs.tryMkdirSync(finalPath, 448 /* == 0700 */);
+  return new FileBasedCache(finalPath);
+}
+
+function readMetaDirPath(projectPath: string): string {
   invariant(path.isAbsolute(projectPath), 'project path must be absolute');
-  return new FileBasedCache(path.join(projectPath, '.metro-bundler'));
+  const metaFilePath = path.resolve(projectPath, '.metro-bundler');
+  const metaFile = tryReadFileSync(metaFilePath);
+  if (metaFile != null) {
+    const metaDirPath = metaFile.split('\n')[0];
+    if (metaDirPath != null) {
+      return metaDirPath;
+    }
+  }
+  const tmpDirPath = tmpdir();
+  const metaDirPath = TempDirs.create(path.join(tmpDirPath, 'mb-'));
+  fs.writeFileSync(metaFilePath, metaDirPath + '\n');
+  return metaDirPath;
+}
+
+function tmpdir(): string {
+  const tmpDirPath = require('os').tmpdir();
+  invariant(
+    tmpDirPath != null && tmpDirPath.length > 0,
+    'os.tmpdir() returned nothing, a valid temp dir is required',
+  );
+  return tmpDirPath;
+}
+
+function tryReadFileSync(filePath): ?string {
+  try {
+    return fs.readFileSync(filePath, 'utf8');
+  } catch (error) {
+    if (error.code == 'ENOENT') {
+      return null;
+    }
+    throw error;
+  }
 }
 
 module.exports = {FileBasedCache, none, useTempDir, useProjectDir};
