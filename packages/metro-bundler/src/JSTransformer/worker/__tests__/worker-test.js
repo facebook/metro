@@ -10,7 +10,8 @@
  */
 'use strict';
 
-jest.mock('../constant-folding')
+jest
+  .mock('../constant-folding')
   .mock('../extract-dependencies')
   .mock('../inline')
   .mock('../minify');

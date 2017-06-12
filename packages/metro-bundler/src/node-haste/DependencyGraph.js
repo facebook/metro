@@ -265,7 +265,7 @@ class DependencyGraph extends EventEmitter {
 
   _doesFileExist = (filePath: string): boolean => {
     return this._hasteFS.exists(filePath);
-  }
+  };
 
   _getRequestPlatform(entryPath: string, platform: ?string): ?string {
     if (platform == null) {

@@ -1,7 +1,15 @@
 {
   "extends": "eslint-config-fb-strict",
+  "plugins": [
+    "prettier"
+  ],
   "parser": "babel-eslint",
   "rules": {
+    "prettier/prettier": [
+      "error",
+      "fb",
+      "@format"
+    ],
     "max-len": 0,
     "no-var": 0,
     "prefer-arrow-callback": 0,
