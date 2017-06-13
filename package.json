@@ -23,6 +23,7 @@
     "eslint-plugin-react": "^7.0.1",
     "flow-bin": "^0.46.0",
     "glob": "^7.1.1",
+    "image-size": "^0.5.1",
     "istanbul-api": "^1.1.0",
     "istanbul-lib-coverage": "^1.0.0",
     "jest": "^19.0.2",
