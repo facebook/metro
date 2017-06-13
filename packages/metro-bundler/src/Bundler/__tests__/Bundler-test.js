@@ -433,26 +433,5 @@ describe('Bundler', function() {
           '/root/img/new_image2@3x.png',
         ]));
     });
-
-    describe('number of workers', () => {
-      beforeEach(() => {
-        delete process.env.REACT_NATIVE_MAX_WORKERS;
-      });
-
-      afterEach(() => {
-        delete process.env.REACT_NATIVE_MAX_WORKERS;
-      });
-
-      it('return correct number of workers', () => {
-        os.cpus.mockReturnValue({length: 1});
-        expect(Bundler.getMaxWorkerCount()).toBe(1);
-        os.cpus.mockReturnValue({length: 8});
-        expect(Bundler.getMaxWorkerCount()).toBe(6);
-        os.cpus.mockReturnValue({length: 24});
-        expect(Bundler.getMaxWorkerCount()).toBe(14);
-        process.env.REACT_NATIVE_MAX_WORKERS = 5;
-        expect(Bundler.getMaxWorkerCount()).toBe(5);
-      });
-    });
   });
 });

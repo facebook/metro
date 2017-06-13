@@ -97,7 +97,7 @@ describe('DependencyGraph', function() {
       platforms: new Set(['ios', 'android']),
       useWatchman: false,
       ignoreFilePath: () => false,
-      maxWorkerCount: 1,
+      maxWorkers: 1,
       moduleOptions: {transformCache: require('TransformCaching').mocked()},
       resetCache: true,
       transformCode: (module, sourceCode, transformOptions) => {

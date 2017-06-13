@@ -28,16 +28,17 @@ exports.createServer = createServer;
 exports.Logger = Logger;
 
 type Options = {
-  hasteImpl?: HasteImpl,
-  globalTransformCache: ?GlobalTransformCache,
-  nonPersistent?: boolean,
-  postProcessModules?: PostProcessModules,
-  postMinifyProcess?: PostMinifyProcess,
-  projectRoots: $ReadOnlyArray<string>,
-  reporter?: Reporter,
   +sourceExts: ?Array<string>,
   +transformCache: TransformCache,
   +transformModulePath: string,
+  globalTransformCache: ?GlobalTransformCache,
+  hasteImpl?: HasteImpl,
+  +maxWorkers?: number,
+  nonPersistent?: boolean,
+  postMinifyProcess?: PostMinifyProcess,
+  postProcessModules?: PostProcessModules,
+  projectRoots: $ReadOnlyArray<string>,
+  reporter?: Reporter,
   watch?: boolean,
   workerPath: ?string,
 };

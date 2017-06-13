@@ -37,7 +37,7 @@ type Options = {|
   +getTransformCacheKey: GetTransformCacheKey,
   +globalTransformCache: ?GlobalTransformCache,
   +hasteImpl?: HasteImpl,
-  +maxWorkerCount: number,
+  +maxWorkers: number,
   +minifyCode: MinifyCode,
   +postMinifyProcess: PostMinifyProcess,
   +platforms: Set<string>,

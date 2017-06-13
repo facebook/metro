@@ -79,6 +79,7 @@ class Transformer {
     sourceCode: string,
     options: WorkerOptions,
   ) => Promise<TransformData>;
+  _usesFarm: boolean;
   minify: (
     filename: string,
     code: string,
@@ -87,7 +88,7 @@ class Transformer {
 
   constructor(
     transformModulePath: string,
-    maxWorkerCount: number,
+    maxWorkers: number,
     reporters: Reporters,
     workerPath: ?string,
   ) {
@@ -95,22 +96,32 @@ class Transformer {
       path.isAbsolute(transformModulePath),
       'transform module path should be absolute',
     );
+    if (!workerPath) {
+      workerPath = require.resolve('./worker');
+    }
+
     this._transformModulePath = transformModulePath;
+    this._usesFarm = false;
+    if (maxWorkers > 1) {
+      this._usesFarm = true;
+      const farm = makeFarm(
+        workerPath,
+        ['minify', 'transformAndExtractDependencies'],
+        TRANSFORM_TIMEOUT_INTERVAL,
+        maxWorkers,
+      );
+      farm.stdout.on('data', chunk => {
+        reporters.stdoutChunk(chunk.toString('utf8'));
+      });
+      farm.stderr.on('data', chunk => {
+        reporters.stderrChunk(chunk.toString('utf8'));
+      });
 
-    const farm = makeFarm(
-      workerPath || require.resolve('./worker'),
-      ['minify', 'transformAndExtractDependencies'],
-      TRANSFORM_TIMEOUT_INTERVAL,
-      maxWorkerCount,
-    );
-    farm.stdout.on('data', chunk => {
-      reporters.stdoutChunk(chunk.toString('utf8'));
-    });
-    farm.stderr.on('data', chunk => {
-      reporters.stderrChunk(chunk.toString('utf8'));
-    });
-
-    this._workers = farm.methods;
+      this._workers = farm.methods;
+    } else {
+      // $FlowFixMe
+      this._workers = require(workerPath);
+    }
     this._transform = denodeify(
       (this._workers
         .transformAndExtractDependencies: TransformAndExtractDependencies),
@@ -119,7 +130,9 @@ class Transformer {
   }
 
   kill() {
-    this._workers && workerFarm.end(this._workers);
+    if (this._usesFarm && this._workers) {
+      workerFarm.end(this._workers);
+    }
   }
 
   transformFile(

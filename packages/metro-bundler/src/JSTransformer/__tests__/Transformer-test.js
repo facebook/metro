@@ -54,7 +54,7 @@ describe('Transformer', function() {
     () => {
       const transformOptions = {arbitrary: 'options'};
       const code = 'arbitrary(code)';
-      new Transformer(transformModulePath).transformFile(
+      new Transformer(transformModulePath, 4).transformFile(
         fileName,
         localPath,
         code,
@@ -72,7 +72,7 @@ describe('Transformer', function() {
   );
 
   it('should add file info to parse errors', function() {
-    const transformer = new Transformer(transformModulePath);
+    const transformer = new Transformer(transformModulePath, 4);
     var message = 'message';
     var snippet = 'snippet';
 

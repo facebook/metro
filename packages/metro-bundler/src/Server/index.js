@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -15,23 +16,28 @@ const AssetServer = require('../AssetServer');
 const Bundler = require('../Bundler');
 const MultipartResponse = require('./MultipartResponse');
 
+const debug = require('debug')('RNP:Server');
 const defaults = require('../defaults');
 const emptyFunction = require('fbjs/lib/emptyFunction');
+const getMaxWorkers = require('../lib/getMaxWorkers');
 const mime = require('mime-types');
 const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
 const path = require('path');
 const symbolicate = require('./symbolicate');
 const url = require('url');
 
-const debug = require('debug')('RNP:Server');
-
 import type Module, {HasteImpl} from '../node-haste/Module';
 import type {IncomingMessage, ServerResponse} from 'http';
-import type ResolutionResponse from '../node-haste/DependencyGraph/ResolutionResponse';
+import type ResolutionResponse
+  from '../node-haste/DependencyGraph/ResolutionResponse';
 import type Bundle from '../Bundler/Bundle';
 import type HMRBundle from '../Bundler/HMRBundle';
 import type {Reporter} from '../lib/reporting';
-import type {GetTransformOptions, PostProcessModules, PostMinifyProcess} from '../Bundler';
+import type {
+  GetTransformOptions,
+  PostProcessModules,
+  PostMinifyProcess,
+} from '../Bundler';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {SourceMap, Symbolicate} from './symbolicate';
@@ -64,6 +70,7 @@ type Options = {
   getTransformOptions?: GetTransformOptions,
   globalTransformCache: ?GlobalTransformCache,
   hasteImpl?: HasteImpl,
+  maxWorkers?: number,
   moduleFormat?: string,
   platforms?: Array<string>,
   polyfillModuleNames?: Array<string>,
@@ -114,7 +121,6 @@ const bundleDeps = new WeakMap();
 const NODE_MODULES = `${path.sep}node_modules${path.sep}`;
 
 class Server {
-
   _opts: {
     assetExts: Array<string>,
     blacklistRE: void | RegExp,
@@ -122,6 +128,7 @@ class Server {
     extraNodeModules: {},
     getTransformOptions?: GetTransformOptions,
     hasteImpl?: HasteImpl,
+    maxWorkers: number,
     moduleFormat: string,
     platforms: Array<string>,
     polyfillModuleNames: Array<string>,
@@ -156,6 +163,7 @@ class Server {
   _nextBundleBuildID: number;
 
   constructor(options: Options) {
+    const maxWorkers = getMaxWorkers(options.maxWorkers);
     this._opts = {
       assetExts: options.assetExts || defaults.assetExts,
       blacklistRE: options.blacklistRE,
@@ -164,7 +172,10 @@ class Server {
       getTransformOptions: options.getTransformOptions,
       globalTransformCache: options.globalTransformCache,
       hasteImpl: options.hasteImpl,
-      moduleFormat: options.moduleFormat != null ? options.moduleFormat : 'haste',
+      maxWorkers,
+      moduleFormat: options.moduleFormat != null
+        ? options.moduleFormat
+        : 'haste',
       platforms: options.platforms || defaults.platforms,
       polyfillModuleNames: options.polyfillModuleNames || [],
       postProcessModules: options.postProcessModules,
@@ -182,8 +193,8 @@ class Server {
       workerPath: options.workerPath,
     };
 
-    const processFileChange =
-      ({type, filePath}) => this.onFileChange(type, filePath);
+    const processFileChange = ({type, filePath}) =>
+      this.onFileChange(type, filePath);
 
     this._reporter = options.reporter;
     this._projectRoots = this._opts.projectRoots;
@@ -207,29 +218,33 @@ class Server {
 
     // changes to the haste map can affect resolution of files in the bundle
     this._bundler.getResolver().then(resolver => {
-      resolver.getDependencyGraph().getWatcher().on(
-        'change',
-        ({eventsQueue}) => eventsQueue.forEach(processFileChange),
-      );
+      resolver
+        .getDependencyGraph()
+        .getWatcher()
+        .on('change', ({eventsQueue}) =>
+          eventsQueue.forEach(processFileChange),
+        );
     });
 
     this._debouncedFileChangeHandler = debounceAndBatch(filePaths => {
       // only clear bundles for non-JS changes
       if (filePaths.every(RegExp.prototype.test, /\.js(?:on)?$/i)) {
         for (const key in this._bundles) {
-          this._bundles[key].then(bundle => {
-            const deps = bundleDeps.get(bundle);
-            filePaths.forEach(filePath => {
-              // $FlowFixMe(>=0.37.0)
-              if (deps.files.has(filePath)) {
+          this._bundles[key]
+            .then(bundle => {
+              const deps = bundleDeps.get(bundle);
+              filePaths.forEach(filePath => {
                 // $FlowFixMe(>=0.37.0)
-                deps.outdated.add(filePath);
-              }
+                if (deps.files.has(filePath)) {
+                  // $FlowFixMe(>=0.37.0)
+                  deps.outdated.add(filePath);
+                }
+              });
+            })
+            .catch(e => {
+              debug(`Could not update bundle: ${e}, evicting from cache`);
+              delete this._bundles[key];
             });
-          }).catch(e => {
-            debug(`Could not update bundle: ${e}, evicting from cache`);
-            delete this._bundles[key];
-          });
         }
       } else {
         debug('Clearing bundles due to non-JS change');
@@ -246,7 +261,9 @@ class Server {
     return this._bundler.end();
   }
 
-  setHMRFileChangeListener(listener: ?(type: string, filePath: string) => mixed) {
+  setHMRFileChangeListener(
+    listener: ?(type: string, filePath: string) => mixed,
+  ) {
     this._hmrFileChangeListener = listener;
   }
 
@@ -261,14 +278,17 @@ class Server {
     const modules = bundle.getModules();
     const nonVirtual = modules.filter(m => !m.virtual);
     bundleDeps.set(bundle, {
-      files: new Map(nonVirtual.map(({sourcePath, meta}) =>
-        [sourcePath, meta != null ? meta.dependencies : []],
-      )),
+      files: new Map(
+        nonVirtual.map(({sourcePath, meta}) => [
+          sourcePath,
+          meta != null ? meta.dependencies : [],
+        ]),
+      ),
       idToIndex: new Map(modules.map(({id}, i) => [id, i])),
       dependencyPairs: new Map(
         nonVirtual
           .filter(({meta}) => meta && meta.dependencyPairs)
-          .map(m => [m.sourcePath, m.meta.dependencyPairs])
+          .map(m => [m.sourcePath, m.meta.dependencyPairs]),
       ),
       outdated: new Set(),
     });
@@ -291,11 +311,17 @@ class Server {
   getShallowDependencies(options: DependencyOptions): Promise<Array<Module>> {
     return Promise.resolve().then(() => {
       const platform = options.platform != null
-        ? options.platform : parsePlatformFilePath(options.entryFile, this._platforms).platform;
+        ? options.platform
+        : parsePlatformFilePath(options.entryFile, this._platforms).platform;
       const {entryFile, dev, minify, hot} = options;
-      return this._bundler.getShallowDependencies(
-        {entryFile, platform, dev, minify, hot, generateSourceMaps: false},
-      );
+      return this._bundler.getShallowDependencies({
+        entryFile,
+        platform,
+        dev,
+        minify,
+        hot,
+        generateSourceMaps: false,
+      });
     });
   }
 
@@ -303,14 +329,22 @@ class Server {
     return this._bundler.getModuleForPath(entryFile);
   }
 
-  getDependencies(options: DependencyOptions): Promise<ResolutionResponse<Module, *>> {
+  getDependencies(
+    options: DependencyOptions,
+  ): Promise<ResolutionResponse<Module, *>> {
     return Promise.resolve().then(() => {
       const platform = options.platform != null
-        ? options.platform : parsePlatformFilePath(options.entryFile, this._platforms).platform;
+        ? options.platform
+        : parsePlatformFilePath(options.entryFile, this._platforms).platform;
       const {entryFile, dev, minify, hot} = options;
-      return this._bundler.getDependencies(
-        {entryFile, platform, dev, minify, hot, generateSourceMaps: false},
-      );
+      return this._bundler.getDependencies({
+        entryFile,
+        platform,
+        dev,
+        minify,
+        hot,
+        generateSourceMaps: false,
+      });
     });
   }
 
@@ -345,10 +379,10 @@ class Server {
     }
 
     Promise.all(
-      this._fileChangeListeners.map(listener => listener(filePath))
+      this._fileChangeListeners.map(listener => listener(filePath)),
     ).then(
       () => this._onFileChangeComplete(filePath),
-      () => this._onFileChangeComplete(filePath)
+      () => this._onFileChangeComplete(filePath),
     );
   }
 
@@ -386,19 +420,21 @@ class Server {
       res.end(ret);
     } else if (parts[1] === 'bundles') {
       ret += '<h1> Cached Bundles </h1>';
-      Promise.all(Object.keys(this._bundles).map(optionsJson =>
-        this._bundles[optionsJson].then(p => {
-          ret += '<div><h2>' + optionsJson + '</h2>';
-          ret += p.getDebugInfo();
-        })
-      )).then(
+      Promise.all(
+        Object.keys(this._bundles).map(optionsJson =>
+          this._bundles[optionsJson].then(p => {
+            ret += '<div><h2>' + optionsJson + '</h2>';
+            ret += p.getDebugInfo();
+          }),
+        ),
+      ).then(
         () => res.end(ret),
         e => {
           res.writeHead(500);
           res.end('Internal Error');
           // FIXME: $FlowFixMe: that's a hack, doesn't work with JSON-mode output
           this._reporter.terminal && this._reporter.terminal.log(e.stack);
-        }
+        },
       );
     } else {
       res.writeHead(404);
@@ -432,10 +468,12 @@ class Server {
     assetPath: string,
   ) {
     if (req.headers && req.headers.range) {
-      const [rangeStart, rangeEnd] = req.headers.range.replace(/bytes=/, '').split('-');
+      const [rangeStart, rangeEnd] = req.headers.range
+        .replace(/bytes=/, '')
+        .split('-');
       const dataStart = parseInt(rangeStart, 10);
       const dataEnd = rangeEnd ? parseInt(rangeEnd, 10) : data.length - 1;
-      const chunksize = (dataEnd - dataStart) + 1;
+      const chunksize = dataEnd - dataStart + 1;
 
       res.writeHead(206, {
         'Accept-Ranges': 'bytes',
@@ -455,32 +493,32 @@ class Server {
     /* $FlowFixMe: could be empty if the url is invalid */
     const assetPath: string = urlObj.pathname.match(/^\/assets\/(.+)$/);
 
-    const processingAssetRequestLogEntry =
-      log(createActionStartEntry({
+    const processingAssetRequestLogEntry = log(
+      createActionStartEntry({
         action_name: 'Processing asset request',
         asset: assetPath[1],
-      }));
+      }),
+    );
 
     /* $FlowFixMe: query may be empty for invalid URLs */
-    this._assetServer.get(assetPath[1], urlObj.query.platform)
-      .then(
-        data => {
-          // Tell clients to cache this for 1 year.
-          // This is safe as the asset url contains a hash of the asset.
-          if (process.env.REACT_NATIVE_ENABLE_ASSET_CACHING === true) {
-            res.setHeader('Cache-Control', 'max-age=31536000');
-          }
-          res.end(this._rangeRequestMiddleware(req, res, data, assetPath));
-          process.nextTick(() => {
-            log(createActionEndEntry(processingAssetRequestLogEntry));
-          });
-        },
-        error => {
-          console.error(error.stack);
-          res.writeHead(404);
-          res.end('Asset not found');
+    this._assetServer.get(assetPath[1], urlObj.query.platform).then(
+      data => {
+        // Tell clients to cache this for 1 year.
+        // This is safe as the asset url contains a hash of the asset.
+        if (process.env.REACT_NATIVE_ENABLE_ASSET_CACHING === true) {
+          res.setHeader('Cache-Control', 'max-age=31536000');
         }
-      );
+        res.end(this._rangeRequestMiddleware(req, res, data, assetPath));
+        process.nextTick(() => {
+          log(createActionEndEntry(processingAssetRequestLogEntry));
+        });
+      },
+      error => {
+        console.error(error.stack);
+        res.writeHead(404);
+        res.end('Asset not found');
+      },
+    );
   }
 
   optionsHash(options: {}) {
@@ -503,19 +541,22 @@ class Server {
       bundleOptions: options,
       type: 'bundle_build_started',
     });
-    return bundlePromise.then(bundle => {
-      this._reporter.update({
-        buildID,
-        type: 'bundle_build_done',
-      });
-      return bundle;
-    }, error => {
-      this._reporter.update({
-        buildID,
-        type: 'bundle_build_failed',
-      });
-      return Promise.reject(error);
-    });
+    return bundlePromise.then(
+      bundle => {
+        this._reporter.update({
+          buildID,
+          type: 'bundle_build_done',
+        });
+        return bundle;
+      },
+      error => {
+        this._reporter.update({
+          buildID,
+          type: 'bundle_build_failed',
+        });
+        return Promise.reject(error);
+      },
+    );
   }
 
   useCachedOrUpdateOrCreateBundle(
@@ -535,12 +576,12 @@ class Server {
         // $FlowFixMe(>=0.37.0)
         const {dependencyPairs, files, idToIndex, outdated} = deps;
         if (outdated.size) {
-
-          const updatingExistingBundleLogEntry =
-            log(createActionStartEntry({
+          const updatingExistingBundleLogEntry = log(
+            createActionStartEntry({
               action_name: 'Updating existing bundle',
               outdated_modules: outdated.size,
-            }));
+            }),
+          );
 
           debug('Attempt to update existing bundle');
 
@@ -553,15 +594,18 @@ class Server {
           // to process requires after transform. By providing a
           // specific response we can compute a non recursive one which
           // is the least we need and improve performance.
-          const bundlePromise = this._bundles[optionsJson] =
-            Promise.all([
-              this.getDependencies({
-                platform, dev, hot, minify,
-                entryFile: options.entryFile,
-                recursive: false,
-              }),
-              Promise.all(Array.from(outdated, this.getModuleForPath, this)),
-            ]).then(([response, changedModules]) => {
+          const bundlePromise = (this._bundles[optionsJson] = Promise.all([
+            this.getDependencies({
+              platform,
+              dev,
+              hot,
+              minify,
+              entryFile: options.entryFile,
+              recursive: false,
+            }),
+            Promise.all(Array.from(outdated, this.getModuleForPath, this)),
+          ])
+            .then(([response, changedModules]) => {
               debug('Update bundle: rebuild shallow bundle');
 
               changedModules.forEach(m => {
@@ -585,19 +629,26 @@ class Server {
                   const moduleTransport = newModules[i];
                   const {meta, sourcePath} = moduleTransport;
                   if (outdated.has(sourcePath)) {
-                    if (!contentsEqual(meta.dependencies, new Set(files.get(sourcePath)))) {
+                    if (
+                      !contentsEqual(
+                        meta.dependencies,
+                        new Set(files.get(sourcePath)),
+                      )
+                    ) {
                       // bail out if any dependencies changed
-                      return Promise.reject(Error(
-                        `Dependencies of ${sourcePath} changed from [${
-                          /* $FlowFixMe: `get` can return empty */
-                          files.get(sourcePath).join(', ')
-                        }] to [${
-                          meta.dependencies.join(', ')
-                        }]`
-                      ));
+                      return Promise.reject(
+                        Error(
+                          `Dependencies of ${sourcePath} changed from [${/* $FlowFixMe: `get` can return empty */
+                          files
+                            .get(sourcePath)
+                            .join(', ')}] to [${meta.dependencies.join(', ')}]`,
+                        ),
+                      );
                     }
 
-                    oldModules[idToIndex.get(moduleTransport.id)] = moduleTransport;
+                    oldModules[
+                      idToIndex.get(moduleTransport.id)
+                    ] = moduleTransport;
                   }
                 }
 
@@ -608,10 +659,14 @@ class Server {
                 debug('Successfully updated existing bundle');
                 return bundle;
               });
-            }).catch(e => {
-              debug('Failed to update existing bundle, rebuilding...', e.stack || e.message);
+            })
+            .catch(e => {
+              debug(
+                'Failed to update existing bundle, rebuilding...',
+                e.stack || e.message,
+              );
               return bundleFromScratch();
-            });
+            }));
           return this._reportBundlePromise(buildID, options, bundlePromise);
         } else {
           debug('Using cached bundle');
@@ -623,11 +678,7 @@ class Server {
     return this._reportBundlePromise(buildID, options, bundleFromScratch());
   }
 
-  processRequest(
-    req: IncomingMessage,
-    res: ServerResponse,
-    next: () => mixed,
-  ) {
+  processRequest(req: IncomingMessage, res: ServerResponse, next: () => mixed) {
     const urlObj = url.parse(req.url, true);
     const {host} = req.headers;
     debug(`Handling request: ${host ? 'http://' + host : ''}${req.url}`);
@@ -659,12 +710,13 @@ class Server {
     }
 
     const options = this._getOptionsFromUrl(req.url);
-    const requestingBundleLogEntry =
-      log(createActionStartEntry({
+    const requestingBundleLogEntry = log(
+      createActionStartEntry({
         action_name: 'Requesting bundle',
         bundle_url: req.url,
         entry_point: options.entryFile,
-      }));
+      }),
+    );
 
     const buildID = this.getNewBuildID();
     let reportProgress = emptyFunction;
@@ -682,107 +734,117 @@ class Server {
     const mres = MultipartResponse.wrap(req, res);
     options.onProgress = (done, total) => {
       reportProgress(done, total);
-      mres.writeChunk({'Content-Type': 'application/json'}, JSON.stringify({done, total}));
+      mres.writeChunk(
+        {'Content-Type': 'application/json'},
+        JSON.stringify({done, total}),
+      );
     };
 
     debug('Getting bundle for request');
     const building = this.useCachedOrUpdateOrCreateBundle(buildID, options);
-    building.then(
-      p => {
-        if (requestType === 'bundle') {
-          debug('Generating source code');
-          const bundleSource = p.getSource({
-            inlineSourceMap: options.inlineSourceMap,
-            minify: options.minify,
-            dev: options.dev,
-          });
-          debug('Writing response headers');
-          const etag = p.getEtag();
-          mres.setHeader('Content-Type', 'application/javascript');
-          mres.setHeader('ETag', etag);
+    building
+      .then(
+        p => {
+          if (requestType === 'bundle') {
+            debug('Generating source code');
+            const bundleSource = p.getSource({
+              inlineSourceMap: options.inlineSourceMap,
+              minify: options.minify,
+              dev: options.dev,
+            });
+            debug('Writing response headers');
+            const etag = p.getEtag();
+            mres.setHeader('Content-Type', 'application/javascript');
+            mres.setHeader('ETag', etag);
 
-          if (req.headers['if-none-match'] === etag) {
-            debug('Responding with 304');
-            mres.writeHead(304);
-            mres.end();
-          } else {
-            mres.end(bundleSource);
+            if (req.headers['if-none-match'] === etag) {
+              debug('Responding with 304');
+              mres.writeHead(304);
+              mres.end();
+            } else {
+              mres.end(bundleSource);
+            }
+            debug('Finished response');
+            log(createActionEndEntry(requestingBundleLogEntry));
+          } else if (requestType === 'map') {
+            const sourceMap = p.getSourceMapString({
+              minify: options.minify,
+              dev: options.dev,
+            });
+
+            mres.setHeader('Content-Type', 'application/json');
+            mres.end(sourceMap);
+            log(createActionEndEntry(requestingBundleLogEntry));
+          } else if (requestType === 'assets') {
+            const assetsList = JSON.stringify(p.getAssets());
+            mres.setHeader('Content-Type', 'application/json');
+            mres.end(assetsList);
+            log(createActionEndEntry(requestingBundleLogEntry));
           }
-          debug('Finished response');
-          log(createActionEndEntry(requestingBundleLogEntry));
-        } else if (requestType === 'map') {
-          const sourceMap = p.getSourceMapString({
-            minify: options.minify,
-            dev: options.dev,
-          });
-
-          mres.setHeader('Content-Type', 'application/json');
-          mres.end(sourceMap);
-          log(createActionEndEntry(requestingBundleLogEntry));
-        } else if (requestType === 'assets') {
-          const assetsList = JSON.stringify(p.getAssets());
-          mres.setHeader('Content-Type', 'application/json');
-          mres.end(assetsList);
-          log(createActionEndEntry(requestingBundleLogEntry));
-        }
-      },
-      error => this._handleError(mres, this.optionsHash(options), error)
-    ).catch(error => {
-      process.nextTick(() => {
-        throw error;
+        },
+        error => this._handleError(mres, this.optionsHash(options), error),
+      )
+      .catch(error => {
+        process.nextTick(() => {
+          throw error;
+        });
       });
-    });
   }
 
   _symbolicate(req: IncomingMessage, res: ServerResponse) {
-    const symbolicatingLogEntry =
-      log(createActionStartEntry('Symbolicating'));
+    const symbolicatingLogEntry = log(createActionStartEntry('Symbolicating'));
 
     debug('Start symbolication');
 
     /* $FlowFixMe: where is `rowBody` defined? Is it added by
      * the `connect` framework? */
-    Promise.resolve(req.rawBody).then(body => {
-      const stack = JSON.parse(body).stack;
+    Promise.resolve(req.rawBody)
+      .then(body => {
+        const stack = JSON.parse(body).stack;
 
-      // In case of multiple bundles / HMR, some stack frames can have
-      // different URLs from others
-      const urls = new Set();
-      stack.forEach(frame => {
-        const sourceUrl = frame.file;
-        // Skip `/debuggerWorker.js` which drives remote debugging because it
-        // does not need to symbolication.
-        // Skip anything except http(s), because there is no support for that yet
-        if (!urls.has(sourceUrl) &&
+        // In case of multiple bundles / HMR, some stack frames can have
+        // different URLs from others
+        const urls = new Set();
+        stack.forEach(frame => {
+          const sourceUrl = frame.file;
+          // Skip `/debuggerWorker.js` which drives remote debugging because it
+          // does not need to symbolication.
+          // Skip anything except http(s), because there is no support for that yet
+          if (
+            !urls.has(sourceUrl) &&
             !sourceUrl.endsWith('/debuggerWorker.js') &&
-            sourceUrl.startsWith('http')) {
-          urls.add(sourceUrl);
-        }
-      });
-
-      const mapPromises =
-        Array.from(urls.values()).map(this._sourceMapForURL, this);
-
-      debug('Getting source maps for symbolication');
-      return Promise.all(mapPromises).then(maps => {
-        debug('Sending stacks and maps to symbolication worker');
-        const urlsToMaps = zip(urls.values(), maps);
-        return this._symbolicateInWorker(stack, urlsToMaps);
-      });
-    }).then(
-      stack => {
-        debug('Symbolication done');
-        res.end(JSON.stringify({stack}));
-        process.nextTick(() => {
-          log(createActionEndEntry(symbolicatingLogEntry));
+            sourceUrl.startsWith('http')
+          ) {
+            urls.add(sourceUrl);
+          }
         });
-      },
-      error => {
-        console.error(error.stack || error);
-        res.statusCode = 500;
-        res.end(JSON.stringify({error: error.message}));
-      }
-    );
+
+        const mapPromises = Array.from(urls.values()).map(
+          this._sourceMapForURL,
+          this,
+        );
+
+        debug('Getting source maps for symbolication');
+        return Promise.all(mapPromises).then(maps => {
+          debug('Sending stacks and maps to symbolication worker');
+          const urlsToMaps = zip(urls.values(), maps);
+          return this._symbolicateInWorker(stack, urlsToMaps);
+        });
+      })
+      .then(
+        stack => {
+          debug('Symbolication done');
+          res.end(JSON.stringify({stack}));
+          process.nextTick(() => {
+            log(createActionEndEntry(symbolicatingLogEntry));
+          });
+        },
+        error => {
+          console.error(error.stack || error);
+          res.statusCode = 500;
+          res.end(JSON.stringify({error: error.message}));
+        },
+      );
   }
 
   _sourceMapForURL(reqUrl: string): Promise<SourceMap> {
@@ -793,34 +855,47 @@ class Server {
       this.getNewBuildID(),
       options,
     );
-    return building.then(p => p.getSourceMap({
-      minify: options.minify,
-      dev: options.dev,
-    }));
+    return building.then(p =>
+      p.getSourceMap({
+        minify: options.minify,
+        dev: options.dev,
+      }),
+    );
   }
 
-  _handleError(res: ServerResponse, bundleID: string, error: {
-    status: number,
-    type: string,
-    description: string,
-    filename: string,
-    lineNumber: number,
-    errors: Array<{description: string, filename: string, lineNumber: number}>,
-  }) {
+  _handleError(
+    res: ServerResponse,
+    bundleID: string,
+    error: {
+      status: number,
+      type: string,
+      description: string,
+      filename: string,
+      lineNumber: number,
+      errors: Array<{
+        description: string,
+        filename: string,
+        lineNumber: number,
+      }>,
+    },
+  ) {
     res.writeHead(error.status || 500, {
       'Content-Type': 'application/json; charset=UTF-8',
     });
 
-    if (error instanceof Error && (
-          error.type === 'TransformError' ||
-          error.type === 'NotFoundError' ||
-          error.type === 'UnableToResolveError'
-        )) {
-      error.errors = [{
-        description: error.description,
-        filename: error.filename,
-        lineNumber: error.lineNumber,
-      }];
+    if (
+      error instanceof Error &&
+      (error.type === 'TransformError' ||
+        error.type === 'NotFoundError' ||
+        error.type === 'UnableToResolveError')
+    ) {
+      error.errors = [
+        {
+          description: error.description,
+          filename: error.filename,
+          lineNumber: error.lineNumber,
+        },
+      ];
       res.end(JSON.stringify(error));
 
       if (error.type === 'NotFoundError') {
@@ -829,11 +904,13 @@ class Server {
       this._reporter.update({error, type: 'bundling_error'});
     } else {
       console.error(error.stack || error);
-      res.end(JSON.stringify({
-        type: 'InternalError',
-        message: 'react-packager has encountered an internal error, ' +
-          'please check your terminal error output for more details',
-      }));
+      res.end(
+        JSON.stringify({
+          type: 'InternalError',
+          message: 'react-packager has encountered an internal error, ' +
+            'please check your terminal error output for more details',
+        }),
+      );
     }
   }
 
@@ -846,24 +923,35 @@ class Server {
 
     // Backwards compatibility. Options used to be as added as '.' to the
     // entry module name. We can safely remove these options.
-    const entryFile = pathname.replace(/^\//, '').split('.').filter(part => {
-      if (part === 'includeRequire' || part === 'runModule' ||
-          part === 'bundle' || part === 'map' || part === 'assets') {
-        return false;
-      }
-      return true;
-    }).join('.') + '.js';
+    const entryFile =
+      pathname
+        .replace(/^\//, '')
+        .split('.')
+        .filter(part => {
+          if (
+            part === 'includeRequire' ||
+            part === 'runModule' ||
+            part === 'bundle' ||
+            part === 'map' ||
+            part === 'assets'
+          ) {
+            return false;
+          }
+          return true;
+        })
+        .join('.') + '.js';
 
     // try to get the platform from the url
-    /* $FlowFixMe: `query` could be empty for an invalid URL */
-    const platform = urlObj.query.platform ||
+    const platform =
+      /* $FlowFixMe: `query` could be empty for an invalid URL */
+      urlObj.query.platform ||
       parsePlatformFilePath(pathname, this._platforms).platform;
 
     /* $FlowFixMe: `query` could be empty for an invalid URL */
     const assetPlugin = urlObj.query.assetPlugin;
-    const assetPlugins = Array.isArray(assetPlugin) ?
-      assetPlugin :
-      (typeof assetPlugin === 'string') ? [assetPlugin] : [];
+    const assetPlugins = Array.isArray(assetPlugin)
+      ? assetPlugin
+      : typeof assetPlugin === 'string' ? [assetPlugin] : [];
 
     const dev = this._getBoolOptionFromQuery(urlObj.query, 'dev', true);
     const minify = this._getBoolOptionFromQuery(urlObj.query, 'minify', false);
@@ -883,7 +971,7 @@ class Server {
       inlineSourceMap: this._getBoolOptionFromQuery(
         urlObj.query,
         'inlineSourceMap',
-        false
+        false,
       ),
       isolateModuleIDs: false,
       platform,
@@ -893,15 +981,20 @@ class Server {
         'entryModuleOnly',
         false,
       ),
-      generateSourceMaps:
-        minify || !dev || this._getBoolOptionFromQuery(urlObj.query, 'babelSourcemap', false),
+      generateSourceMaps: minify ||
+        !dev ||
+        this._getBoolOptionFromQuery(urlObj.query, 'babelSourcemap', false),
       assetPlugins,
       onProgress: null,
       unbundle: false,
     };
   }
 
-  _getBoolOptionFromQuery(query: ?{}, opt: string, defaultVal: boolean): boolean {
+  _getBoolOptionFromQuery(
+    query: ?{},
+    opt: string,
+    defaultVal: boolean,
+  ): boolean {
     /* $FlowFixMe: `query` could be empty when it comes from an invalid URL */
     if (query[opt] == null) {
       return defaultVal;
@@ -915,10 +1008,9 @@ class Server {
   }
 
   static DEFAULT_BUNDLE_OPTIONS;
-
 }
 
-Server.DEFAULT_BUNDLE_OPTIONS =  {
+Server.DEFAULT_BUNDLE_OPTIONS = {
   assetPlugins: [],
   dev: true,
   entryModuleOnly: false,

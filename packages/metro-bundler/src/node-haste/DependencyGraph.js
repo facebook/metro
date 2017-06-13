@@ -22,7 +22,6 @@ const ResolutionRequest = require('./DependencyGraph/ResolutionRequest');
 const ResolutionResponse = require('./DependencyGraph/ResolutionResponse');
 
 const fs = require('fs');
-const invariant = require('fbjs/lib/invariant');
 const isAbsolutePath = require('absolute-path');
 const parsePlatformFilePath = require('./lib/parsePlatformFilePath');
 const path = require('path');
@@ -53,7 +52,7 @@ type Options = {|
   +getTransformCacheKey: GetTransformCacheKey,
   +globalTransformCache: ?GlobalTransformCache,
   +ignoreFilePath: (filePath: string) => boolean,
-  +maxWorkerCount: number,
+  +maxWorkers: number,
   +moduleOptions: ModuleOptions,
   +platforms: Set<string>,
   +preferNativePlatform: boolean,
@@ -87,10 +86,6 @@ class DependencyGraph extends EventEmitter {
     +initialModuleMap: ModuleMap,
   |}) {
     super();
-    invariant(
-      config.opts.maxWorkerCount >= 1,
-      'worker count must be greater or equal to 1',
-    );
     this._opts = config.opts;
     this._filesByDirNameIndex = new FilesByDirNameIndex(
       config.initialHasteFS.getAllFiles(),
@@ -114,7 +109,7 @@ class DependencyGraph extends EventEmitter {
       extensions: opts.sourceExts.concat(opts.assetExts),
       forceNodeFilesystemAPI: opts.forceNodeFilesystemAPI,
       ignorePattern: opts.ignoreFilePath,
-      maxWorkers: opts.maxWorkerCount,
+      maxWorkers: opts.maxWorkers,
       mocksPattern: '',
       name: 'react-native-packager-' + JEST_HASTE_MAP_CACHE_BREAKER,
       platforms: Array.from(opts.platforms),

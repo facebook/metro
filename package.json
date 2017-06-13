@@ -49,6 +49,9 @@
     "watch": "yarn run build --silent && node ./scripts/watch.js"
   },
   "jest": {
+    "modulePathIgnorePatterns": [
+      "packages/.*/build"
+    ],
     "testEnvironment": "node",
     "timers": "fake",
     "setupFiles": [

@@ -42,7 +42,7 @@ class BundleBase {
     return this.__modules.length === 0 && this._assets.length === 0;
   }
 
-  getMainModuleId() {
+  getMainModuleId(): number | void {
     return this._mainModuleId;
   }
 
