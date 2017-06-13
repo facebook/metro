@@ -33,14 +33,16 @@ const {
   createActionStartEntry,
   log,
 } = require('../Logger');
+const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
 const {EventEmitter} = require('events');
 
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {GetTransformCacheKey} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
-import type {ModuleMap} from './DependencyGraph/ResolutionRequest';
+import type {ModuleMap} from './DependencyGraph/ModuleResolution';
 import type {Options as ModuleOptions, TransformCode} from './Module';
+import type Package from './Package';
 import type {HasteFS} from './types';
 
 type Options = {|
@@ -75,6 +77,7 @@ class DependencyGraph extends EventEmitter {
   _helpers: DependencyGraphHelpers;
   _moduleCache: ModuleCache;
   _moduleMap: ModuleMap;
+  _moduleResolver: ModuleResolver<Module, Package>;
   _opts: Options;
 
   constructor(config: {|
@@ -103,6 +106,7 @@ class DependencyGraph extends EventEmitter {
     this._helpers = new DependencyGraphHelpers(this._opts);
     this._haste.on('change', this._onHasteChange.bind(this));
     this._moduleCache = this._createModuleCache();
+    this._createModuleResolver();
   }
 
   static _createHaste(opts: Options): JestHasteMap {
@@ -162,7 +166,28 @@ class DependencyGraph extends EventEmitter {
     eventsQueue.forEach(({type, filePath}) =>
       this._moduleCache.processFileChange(type, filePath),
     );
+    this._createModuleResolver();
     this.emit('change');
+  }
+
+  _createModuleResolver() {
+    this._moduleResolver = new ModuleResolver({
+      dirExists: filePath => {
+        try {
+          return fs.lstatSync(filePath).isDirectory();
+        } catch (e) {}
+        return false;
+      },
+      doesFileExist: this._doesFileExist,
+      extraNodeModules: this._opts.extraNodeModules,
+      helpers: this._helpers,
+      moduleCache: this._moduleCache,
+      moduleMap: this._moduleMap,
+      preferNativePlatform: this._opts.preferNativePlatform,
+      resolveAsset: (dirPath, assetName, platform) =>
+        this._assetResolutionCache.resolve(dirPath, assetName, platform),
+      sourceExts: this._opts.sourceExts,
+    });
   }
 
   _createModuleCache() {
@@ -226,25 +251,12 @@ class DependencyGraph extends EventEmitter {
   }): Promise<ResolutionResponse<Module, T>> {
     platform = this._getRequestPlatform(entryPath, platform);
     const absPath = this._getAbsolutePath(entryPath);
-    const dirExists = filePath => {
-      try {
-        return fs.lstatSync(filePath).isDirectory();
-      } catch (e) {}
-      return false;
-    };
     const req = new ResolutionRequest({
-      dirExists,
-      doesFileExist: this._doesFileExist,
+      moduleResolver: this._moduleResolver,
       entryPath: absPath,
-      extraNodeModules: this._opts.extraNodeModules,
       helpers: this._helpers,
+      platform: platform != null ? platform : null,
       moduleCache: this._moduleCache,
-      moduleMap: this._moduleMap,
-      platform,
-      preferNativePlatform: this._opts.preferNativePlatform,
-      resolveAsset: (dirPath, assetName) =>
-        this._assetResolutionCache.resolve(dirPath, assetName, platform),
-      sourceExts: this._opts.sourceExts,
     });
 
     const response = new ResolutionResponse(options);

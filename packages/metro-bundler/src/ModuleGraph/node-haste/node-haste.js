@@ -32,6 +32,8 @@ const ResolutionRequest = require('../../node-haste/DependencyGraph/ResolutionRe
 
 const defaults = require('../../defaults');
 
+const {ModuleResolver} = require('../../node-haste/DependencyGraph/ModuleResolution');
+
 import type {Moduleish, Packageish} from '../../node-haste/DependencyGraph/ResolutionRequest';
 
 type ResolveOptions = {|
@@ -116,22 +118,28 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     getDirFiles: dirPath => filesByDirNameIndex.getAllFiles(dirPath),
     platforms,
   });
+  const moduleResolver = new ModuleResolver({
+    dirExists: filePath => hasteFS.dirExists(filePath),
+    doesFileExist: filePath => hasteFS.exists(filePath),
+    extraNodeModules,
+    helpers,
+    moduleCache,
+    moduleMap: getFakeModuleMap(hasteMap),
+    preferNativePlatform: true,
+    resolveAsset: (dirPath, assetName, platform) =>
+      assetResolutionCache.resolve(dirPath, assetName, platform),
+    sourceExts,
+  });
+
   return (id, source, platform, _, callback) => {
     let resolutionRequest = resolutionRequests[platform];
     if (!resolutionRequest) {
       resolutionRequest = resolutionRequests[platform] = new ResolutionRequest({
-        dirExists: filePath => hasteFS.dirExists(filePath),
-        doesFileExist: filePath => hasteFS.exists(filePath),
+        moduleResolver,
         entryPath: '',
-        extraNodeModules,
         helpers,
-        moduleCache,
-        moduleMap: getFakeModuleMap(hasteMap),
         platform,
-        preferNativePlatform: true,
-        resolveAsset: (dirPath, assetName) =>
-          assetResolutionCache.resolve(dirPath, assetName, platform),
-        sourceExts,
+        moduleCache,
       });
     }
 

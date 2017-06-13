@@ -75,7 +75,7 @@ class AssetResolutionCache {
   resolve(
     dirPath: string,
     assetName: string,
-    platform: ?string,
+    platform: string | null,
   ): $ReadOnlyArray<string> {
     const results = this._assetsByDirPath.get(dirPath);
     const assets = results.get(assetName);
