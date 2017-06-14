@@ -25,7 +25,7 @@ class CannotCreateTempDirError extends Error {
  * Claim a temporary directory that doesn't exist already and that cannot be
  * predicted, so that nobody can race us to it. This is similar to `mkdtemp(3)`.
  */
-function create(pathPrefix: string): string {
+function create(pathPrefix: string, mode: number): string {
   let resultPath;
   let i = 0;
   do {
@@ -34,7 +34,7 @@ function create(pathPrefix: string): string {
     if (++i === 10) {
       throw new CannotCreateTempDirError();
     }
-  } while (!tryMkdirSync(resultPath));
+  } while (!tryMkdirSync(resultPath, mode));
   return resultPath;
 }
 
