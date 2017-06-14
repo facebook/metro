@@ -12,6 +12,7 @@
 
 'use strict';
 
+const asyncify = require('async/asyncify');
 const constantFolding = require('./constant-folding');
 const extractDependencies = require('./extract-dependencies');
 const inline = require('./inline');
@@ -73,89 +74,94 @@ export type Data = {
 };
 
 type Callback<T> = (error: ?Error, data: ?T) => mixed;
+type TransformCode = (
+  Transformer<*>,
+  string,
+  LocalPath,
+  string,
+  Options,
+  Callback<Data>,
+) => void;
 
-function transformCode(
-  transformer: Transformer<*>,
-  filename: string,
-  localPath: LocalPath,
-  sourceCode: string,
-  options: Options,
-  callback: Callback<Data>,
-) {
-  invariant(
-    !options.minify || options.transform.generateSourceMaps,
-    'Minifying source code requires the `generateSourceMaps` option to be `true`',
-  );
+const transformCode: TransformCode = asyncify(
+  (
+    transformer: Transformer<*>,
+    filename: string,
+    localPath: LocalPath,
+    sourceCode: string,
+    options: Options,
+  ): Data => {
+    invariant(
+      !options.minify || options.transform.generateSourceMaps,
+      'Minifying source code requires the `generateSourceMaps` option to be `true`',
+    );
 
-  const isJson = filename.endsWith('.json');
-  if (isJson) {
-    sourceCode = 'module.exports=' + sourceCode;
-  }
+    const isJson = filename.endsWith('.json');
+    if (isJson) {
+      sourceCode = 'module.exports=' + sourceCode;
+    }
 
-  const transformFileStartLogEntry = {
-    action_name: 'Transforming file',
-    action_phase: 'start',
-    file_name: filename,
-    log_entry_label: 'Transforming file',
-    start_timestamp: process.hrtime(),
-  };
+    const transformFileStartLogEntry = {
+      action_name: 'Transforming file',
+      action_phase: 'start',
+      file_name: filename,
+      log_entry_label: 'Transforming file',
+      start_timestamp: process.hrtime(),
+    };
 
-  let transformed;
-  try {
-    transformed = transformer.transform({
+    const transformed = transformer.transform({
       filename,
       localPath,
       options: options.transform,
       src: sourceCode,
     });
-  } catch (error) {
-    callback(error);
-    return;
-  }
 
-  invariant(
-    transformed != null,
-    'Missing transform results despite having no error.',
-  );
+    invariant(
+      transformed != null,
+      'Missing transform results despite having no error.',
+    );
 
-  var code, map;
-  if (options.minify) {
-    ({code, map} = constantFolding(
-      filename,
-      inline(filename, transformed, options),
-    ));
-    invariant(code != null, 'Missing code from constant-folding transform.');
-  } else {
-    ({code, map} = transformed);
-  }
+    var code, map;
+    if (options.minify) {
+      ({code, map} = constantFolding(
+        filename,
+        inline(filename, transformed, options),
+      ));
+      invariant(code != null, 'Missing code from constant-folding transform.');
+    } else {
+      ({code, map} = transformed);
+    }
 
-  if (isJson) {
-    code = code.replace(/^\w+\.exports=/, '');
-  } else {
-    // Remove shebang
-    code = code.replace(/^#!.*/, '');
-  }
+    if (isJson) {
+      code = code.replace(/^\w+\.exports=/, '');
+    } else {
+      // Remove shebang
+      code = code.replace(/^#!.*/, '');
+    }
 
-  const depsResult = isJson
-    ? {dependencies: [], dependencyOffsets: []}
-    : extractDependencies(code);
+    const depsResult = isJson
+      ? {dependencies: [], dependencyOffsets: []}
+      : extractDependencies(code);
 
-  const timeDelta = process.hrtime(transformFileStartLogEntry.start_timestamp);
-  const duration_ms = Math.round((timeDelta[0] * 1e9 + timeDelta[1]) / 1e6);
-  const transformFileEndLogEntry = {
-    action_name: 'Transforming file',
-    action_phase: 'end',
-    file_name: filename,
-    duration_ms,
-    log_entry_label: 'Transforming file',
-  };
+    const timeDelta = process.hrtime(
+      transformFileStartLogEntry.start_timestamp,
+    );
+    const duration_ms = Math.round((timeDelta[0] * 1e9 + timeDelta[1]) / 1e6);
+    const transformFileEndLogEntry = {
+      action_name: 'Transforming file',
+      action_phase: 'end',
+      file_name: filename,
+      duration_ms,
+      log_entry_label: 'Transforming file',
+    };
 
-  callback(null, {
-    result: {...depsResult, code, map},
-    transformFileStartLogEntry,
-    transformFileEndLogEntry,
-  });
-}
+    return {
+      result: {...depsResult, code, map},
+      transformFileStartLogEntry,
+      transformFileEndLogEntry,
+    };
+  },
+);
 
 exports.transformAndExtractDependencies = (
   transform: string,

@@ -213,6 +213,24 @@ describe('code transformation worker:', () => {
         },
       );
     });
+
+    it('calls back with every error thrown by `extractDependencies`', done => {
+      const error = new Error('arbitrary');
+      extractDependencies.mockImplementation(() => {
+        throw error;
+      });
+      transformCode(
+        transformer,
+        'arbitrary.js',
+        'local/arbitrary.js',
+        'code',
+        {},
+        (e, data) => {
+          expect(e).toBe(error);
+          done();
+        },
+      );
+    });
   });
 
   describe('Minifications:', () => {
