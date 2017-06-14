@@ -10,7 +10,7 @@
  */
 'use strict';
 
-jest.mock('uglify-es', () => ({
+jest.mock('uglify-js', () => ({
   minify: jest.fn(code => {
     return {
       code: code.replace(/(^|\W)\s+/g, '$1'),
@@ -29,7 +29,7 @@ describe('Minification:', () => {
   let uglify;
 
   beforeEach(() => {
-    uglify = require('uglify-es');
+    uglify = require('uglify-js');
     uglify.minify.mockClear();
     uglify.minify.mockReturnValue({code: '', map: '{}'});
     map = {version: 3, sources: ['?'], mappings: ''};
@@ -40,10 +40,9 @@ describe('Minification:', () => {
     expect(uglify.minify).toBeCalledWith(
       code,
       objectContaining({
-        sourceMap: {
-          content: map,
-          includeSources: true,
-        },
+        fromString: true,
+        inSourceMap: map,
+        outSourceMap: true,
       }),
     );
   });
@@ -53,10 +52,8 @@ describe('Minification:', () => {
     expect(uglify.minify).toBeCalledWith(
       code,
       objectContaining({
-        sourceMap: {
-          content: undefined,
-          includeSources: true,
-        },
+        fromString: true,
+        outSourceMap: true,
       }),
     );
   });

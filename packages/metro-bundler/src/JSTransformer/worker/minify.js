@@ -12,12 +12,17 @@
 
 'use strict';
 
-const uglify = require('uglify-es');
+const uglify = require('uglify-js');
 
 import type {MappingsMap} from '../../lib/SourceMap';
 type ResultWithMap = {
   code: string,
   map: MappingsMap,
+};
+
+const UGLIFY_JS_OUTPUT_OPTIONS = {
+  ascii_only: true,
+  screw_ie8: true,
 };
 
 function noSourceMap(code: string): string {
@@ -37,28 +42,12 @@ function withSourceMap(
 }
 
 function minify(inputCode: string, inputMap: ?MappingsMap) {
-  const result = uglify.minify(inputCode, {
-    mangle: {toplevel: true},
-    output: {
-      ascii_only: true,
-      quote_style: 3,
-      wrap_iife: true,
-    },
-    sourceMap: {
-      content: inputMap,
-      includeSources: true,
-    },
-    toplevel: true,
+  return uglify.minify(inputCode, {
+    fromString: true,
+    inSourceMap: inputMap,
+    outSourceMap: true,
+    output: UGLIFY_JS_OUTPUT_OPTIONS,
   });
-
-  if (result.error) {
-    throw result.error;
-  }
-
-  return {
-    code: result.code,
-    map: result.map,
-  };
 }
 
 module.exports = {

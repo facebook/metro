@@ -11,7 +11,7 @@
 jest
   .setMock('worker-farm', () => () => undefined)
   .setMock('../../worker-farm', () => () => undefined)
-  .setMock('../../JSTransformer/worker/minify')
+  .setMock('uglify-js')
   .mock('image-size')
   .mock('fs')
   .mock('os')

@@ -12,7 +12,7 @@
 jest.mock('../../worker-farm', () => () => () => {})
     .mock('worker-farm', () => () => () => {})
     .mock('timers', () => ({setImmediate: fn => setTimeout(fn, 0)}))
-    .mock('../../JSTransformer/worker/minify')
+    .mock('uglify-js')
     .mock('crypto')
     .mock(
       '../symbolicate',
