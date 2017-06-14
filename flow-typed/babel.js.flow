@@ -57,7 +57,7 @@ type _Plugins = Array<string | Object | [InlinePlugin] | [InlinePlugin, mixed]>;
 type __TransformOptions = {
   filename?: string,
   filenameRelative?: string,
-  presets?: Array<string | Object>,
+  presets?: _Plugins,
   plugins?: _Plugins,
   parserOpts?: BabylonOptions,
   generatorOpts?: GeneratorOptions,
