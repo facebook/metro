@@ -114,13 +114,13 @@ function buildBabelConfig(filename, options) {
 
 type Params = {
   filename: string,
-  options: TransformOptions,
+  options: {+retainLines?: boolean} & TransformOptions,
   plugins?: BabelPlugins,
   src: string,
 };
 
 function transform({filename, options, src}: Params) {
-  options = options || {};
+  options = options || {platform: '', projectRoot: '', inlineRequires: false};
 
   const OLD_BABEL_ENV = process.env.BABEL_ENV;
   process.env.BABEL_ENV = options.dev ? 'development' : 'production';
@@ -141,6 +141,7 @@ function transform({filename, options, src}: Params) {
         comments: false,
         compact: false,
         filename,
+        retainLines: !!options.retainLines,
         sourceFileName: filename,
         sourceMaps: true,
       }, src);
@@ -166,4 +167,4 @@ function getCacheKey() {
 module.exports = ({
   transform,
   getCacheKey,
-}: Transformer<>);
+}: Transformer<{+retainLines?: boolean}>);
