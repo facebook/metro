@@ -16,7 +16,7 @@ const AsyncTaskGroup = require('../lib/AsyncTaskGroup');
 const MapWithDefaults = require('../lib/MapWithDefaults');
 const ModuleResolution = require('./ModuleResolution');
 
-const debug = require('debug')('RNP:DependencyGraph');
+const debug = require('debug')('Metro:DependencyGraph');
 const isAbsolutePath = require('absolute-path');
 const path = require('path');
 

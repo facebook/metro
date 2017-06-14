@@ -16,7 +16,7 @@ const AssetServer = require('../AssetServer');
 const Bundler = require('../Bundler');
 const MultipartResponse = require('./MultipartResponse');
 
-const debug = require('debug')('RNP:Server');
+const debug = require('debug')('Metro:Server');
 const defaults = require('../defaults');
 const emptyFunction = require('fbjs/lib/emptyFunction');
 const getMaxWorkers = require('../lib/getMaxWorkers');

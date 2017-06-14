@@ -14,7 +14,7 @@
 
 const Logger = require('../Logger');
 
-const debug = require('debug')('RNP:JStransformer');
+const debug = require('debug')('Metro:JStransformer');
 const denodeify: Denodeify = require('denodeify');
 const invariant = require('fbjs/lib/invariant');
 const path = require('path');

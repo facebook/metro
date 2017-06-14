@@ -13,7 +13,7 @@
 
 const assert = require('assert');
 const crypto = require('crypto');
-const debug = require('debug')('RNP:Bundler');
+const debug = require('debug')('Metro:Bundler');
 const emptyFunction = require('fbjs/lib/emptyFunction');
 const fs = require('fs');
 const Transformer = require('../JSTransformer');

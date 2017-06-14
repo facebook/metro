@@ -15,7 +15,7 @@
 const TempDirs = require('./TempDirs');
 
 const crypto = require('crypto');
-const debugRead = require('debug')('RNP:TransformCache:Read');
+const debugRead = require('debug')('Metro:TransformCache:Read');
 const fs = require('fs');
 const invariant = require('fbjs/lib/invariant');
 const mkdirp = require('mkdirp');
@@ -101,7 +101,7 @@ class FileBasedCache {
       path.isAbsolute(rootPath),
       'root path of the transform cache must be absolute',
     );
-    require('debug')('RNP:TransformCache:Dir')(
+    require('debug')('Metro:TransformCache:Dir')(
       `transform cache directory: ${rootPath}`,
     );
     this._rootPath = rootPath;

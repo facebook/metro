@@ -11,7 +11,7 @@
 'use strict';
 
 const concat = require('concat-stream');
-const debug = require('debug')('RNP:Symbolication');
+const debug = require('debug')('Metro:Symbolication');
 const net = require('net');
 const temp = require('temp');
 const xpipe = require('xpipe');

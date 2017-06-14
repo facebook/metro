@@ -16,7 +16,7 @@ const ModuleTransport = require('../lib/ModuleTransport');
 
 const _ = require('lodash');
 const crypto = require('crypto');
-const debug = require('debug')('RNP:Bundle');
+const debug = require('debug')('Metro:Bundle');
 const invariant = require('fbjs/lib/invariant');
 
 const {createRamBundleGroups} = require('./util');
