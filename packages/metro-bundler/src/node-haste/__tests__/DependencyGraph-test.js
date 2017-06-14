@@ -135,7 +135,21 @@ describe('DependencyGraph', function() {
       process.platform = realPlatform;
     });
 
-    it('should get dependencies', function() {
+    /**
+     * When running a test on the dependency graph, watch mode is enabled by
+     * default, so we must end the watcher to ensure the test does not hang up
+     * (regardless if the test passes or fails).
+     */
+    async function processDgraph(options, processor) {
+      const dgraph = await DependencyGraph.load(options);
+      try {
+        await processor(dgraph);
+      } finally {
+        dgraph.end();
+      }
+    }
+
+    it('should get dependencies', async function() {
       var root = '/root';
       setMockFileSystem({
         root: {
@@ -152,14 +166,12 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(
-        dgraph,
-        '/root/index.js',
-      ).then(function(deps) {
+      const opts = {...defaults, roots: [root]};
+      return await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          '/root/index.js',
+        );
         expect(deps).toEqual([
           {
             id: 'index',

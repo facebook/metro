@@ -220,6 +220,10 @@ class DependencyGraph extends EventEmitter {
     return this._haste;
   }
 
+  end() {
+    this._haste.end();
+  }
+
   /**
    * Returns the module object for the given path.
    */
