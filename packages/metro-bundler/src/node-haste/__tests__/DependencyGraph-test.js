@@ -1457,6 +1457,65 @@ describe('DependencyGraph', function() {
         },
       );
 
+      it(`should support mapping main in browser field json without path prefix ("${fieldName}")`, async () => {
+        var root = '/root';
+        setMockFileSystem({
+          root: {
+            'index.js': [
+              '/**',
+              ' * @providesModule index',
+              ' */',
+              'require("aPackage")',
+            ].join('\n'),
+            aPackage: {
+              'package.json': JSON.stringify(
+                replaceBrowserField(
+                  {
+                    name: 'aPackage',
+                    main: 'main.js',
+                    browser: {
+                      './main.js': './client.js',
+                    },
+                  },
+                  fieldName,
+                ),
+              ),
+              'main.js': 'some other code',
+              'client.js': '/* some code */',
+            },
+          },
+        });
+
+        const opts = {...defaults, assetExts: ['png', 'jpg'], roots: [root]};
+        await processDgraph(opts, async dgraph => {
+          const deps = await getOrderedDependenciesAsJSON(
+            dgraph,
+            '/root/index.js',
+          );
+          expect(deps).toEqual([
+            {
+              id: 'index',
+              path: '/root/index.js',
+              dependencies: ['aPackage'],
+              isAsset: false,
+              isJSON: false,
+              isPolyfill: false,
+              resolution: undefined,
+            },
+            {
+              id: 'aPackage/client.js',
+              path: '/root/aPackage/client.js',
+              dependencies: [],
+              isAsset: false,
+              isJSON: false,
+              isPolyfill: false,
+              resolution: undefined,
+              resolveDependency: undefined,
+            },
+          ]);
+        });
+      });
+
       it(
         'should work do correct browser mapping w/o js ext ("' +
           fieldName +
