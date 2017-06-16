@@ -183,19 +183,27 @@ exports.transformAndExtractDependencies = (
   );
 };
 
-exports.minify = (
-  filename: string,
-  code: string,
-  sourceMap: MappingsMap,
-  callback: Callback<{code: string, map: MappingsMap}>,
-) => {
-  var result;
-  try {
-    result = minify.withSourceMap(code, sourceMap, filename);
-  } catch (error) {
-    callback(error);
-  }
-  callback(null, result);
-};
+exports.minify = asyncify(
+  (filename: string, code: string, sourceMap: MappingsMap) => {
+    var result;
+    try {
+      result = minify.withSourceMap(code, sourceMap, filename);
+    } catch (error) {
+      if (error.constructor.name === 'JS_Parse_Error') {
+        throw new Error(
+          error.message +
+            ' in file "' +
+            filename +
+            '" at line ' +
+            error.line +
+            ':' +
+            error.col,
+        );
+      }
+      throw error;
+    }
+    return result;
+  },
+);
 
 exports.transformCode = transformCode; // for easier testing
