@@ -18,6 +18,7 @@ const reporting = require('./reporting');
 const throttle = require('lodash/throttle');
 const util = require('util');
 
+import type Transformer from '../JSTransformer';
 import type {BundleOptions} from '../Server';
 import type Terminal from './Terminal';
 import type {ReportableEvent, GlobalCacheDisabledReason} from './reporting';
@@ -248,8 +249,21 @@ class TerminalReporter {
    * these are operational errors, not programming errors, and the stacktrace
    * is not actionable to end users.
    */
-  _logBundlingError(error: Error) {
-    const str = JSON.stringify(error.message);
+  _logBundlingError(error: Error | Transformer.TransformError) {
+    //$FlowFixMe T19379628
+    let message = error.message;
+    //$FlowFixMe T19379628
+    if (error.filename && !message.includes(error.filename)) {
+      //$FlowFixMe T19379628
+      message += ` [${error.filename}]`;
+    }
+
+    let str = JSON.stringify(message);
+    if (error.snippet != null) {
+      //$FlowFixMe T19379628
+      str += '\n' + error.snippet;
+    }
+
     reporting.logError(this.terminal, 'bundling failed: %s', str);
   }
 
