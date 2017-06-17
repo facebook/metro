@@ -14,6 +14,7 @@
 const Logger = require('./Logger');
 const TransformCaching = require('./lib/TransformCaching');
 
+const blacklist = require('./blacklist');
 const debug = require('debug');
 const invariant = require('fbjs/lib/invariant');
 
@@ -26,6 +27,7 @@ import type {TransformCache} from './lib/TransformCaching';
 import type {Reporter} from './lib/reporting';
 import type {HasteImpl} from './node-haste/Module';
 
+exports.createBlacklist = blacklist;
 exports.sourceMaps = {fromRawMappings, compactMapping};
 exports.createServer = createServer;
 exports.Logger = Logger;
