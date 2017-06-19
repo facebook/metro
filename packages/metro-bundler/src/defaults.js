@@ -15,6 +15,7 @@ exports.assetExts = [
   'm4v', 'mov', 'mp4', 'mpeg', 'mpg', 'webm', // Video formats
   'aac', 'aiff', 'caf', 'm4a', 'mp3', 'wav', // Audio formats
   'html', 'pdf', // Document formats
+  'otf', 'ttf', // Font formats
 ];
 
 exports.sourceExts = ['js', 'json'];
