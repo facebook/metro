@@ -3692,8 +3692,9 @@ describe('DependencyGraph', function() {
     }
 
     const DependencyGraph = require('../DependencyGraph');
+    const processDgraph = processDgraphFor.bind(null, DependencyGraph);
 
-    it('should work with nested node_modules', function() {
+    it('should work with nested node_modules', async () => {
       var root = '/root';
       setMockFileSystem({
         root: {
@@ -3732,14 +3733,12 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(
-        dgraph,
-        '/root/index.js',
-      ).then(function(deps) {
+      const opts = {...defaults, roots: [root]};
+      await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          '/root/index.js',
+        );
         expect(deps).toEqual([
           {
             id: 'index',
@@ -3781,7 +3780,7 @@ describe('DependencyGraph', function() {
       });
     });
 
-    it('platform should work with node_modules', function() {
+    it('platform should work with node_modules', async () => {
       var root = '/root';
       setMockFileSystem({
         root: {
@@ -3810,14 +3809,12 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(
-        dgraph,
-        '/root/index.ios.js',
-      ).then(function(deps) {
+      const opts = {...defaults, roots: [root]};
+      await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          '/root/index.ios.js',
+        );
         expect(deps).toEqual([
           {
             id: 'index',
@@ -3850,7 +3847,7 @@ describe('DependencyGraph', function() {
       });
     });
 
-    it('nested node_modules with specific paths', function() {
+    it('nested node_modules with specific paths', async () => {
       var root = '/root';
       setMockFileSystem({
         root: {
@@ -3890,14 +3887,12 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(
-        dgraph,
-        '/root/index.js',
-      ).then(function(deps) {
+      const opts = {...defaults, roots: [root]};
+      await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          '/root/index.js',
+        );
         expect(deps).toEqual([
           {
             id: 'index',
@@ -3939,7 +3934,7 @@ describe('DependencyGraph', function() {
       });
     });
 
-    it('nested node_modules with browser field', function() {
+    it('nested node_modules with browser field', async () => {
       var root = '/root';
       setMockFileSystem({
         root: {
@@ -3983,14 +3978,12 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(
-        dgraph,
-        '/root/index.js',
-      ).then(function(deps) {
+      const opts = {...defaults, roots: [root]};
+      await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          '/root/index.js',
+        );
         expect(deps).toEqual([
           {
             id: 'index',
@@ -4032,7 +4025,7 @@ describe('DependencyGraph', function() {
       });
     });
 
-    it('node_modules should support multi level', function() {
+    it('node_modules should support multi level', async () => {
       var root = '/root';
       setMockFileSystem({
         root: {
@@ -4065,14 +4058,12 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(
-        dgraph,
-        '/root/index.js',
-      ).then(function(deps) {
+      const opts = {...defaults, roots: [root]};
+      await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          '/root/index.js',
+        );
         expect(deps).toEqual([
           {
             id: 'index',
@@ -4105,7 +4096,7 @@ describe('DependencyGraph', function() {
       });
     });
 
-    it('should selectively ignore providesModule in node_modules', function() {
+    it('should selectively ignore providesModule in node_modules', async () => {
       var root = '/root';
       var otherRoot = '/anotherRoot';
       setMockFileSystem({
@@ -4201,14 +4192,12 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root, otherRoot],
-      });
-      return getOrderedDependenciesAsJSON(
-        dgraph,
-        '/root/index.js',
-      ).then(function(deps) {
+      const opts = {...defaults, roots: [root]};
+      await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          '/root/index.js',
+        );
         expect(deps).toEqual([
           {
             id: 'index',
@@ -4275,7 +4264,7 @@ describe('DependencyGraph', function() {
       });
     });
 
-    it('should not be confused by prev occuring whitelisted names', function() {
+    it('should not be confused by prev occuring whitelisted names', async () => {
       var root = '/react-haste';
       setMockFileSystem({
         'react-haste': {
@@ -4299,14 +4288,12 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(
-        dgraph,
-        '/react-haste/index.js',
-      ).then(function(deps) {
+      const opts = {...defaults, roots: [root]};
+      await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          '/react-haste/index.js',
+        );
         expect(deps).toEqual([
           {
             id: 'index',
@@ -4330,7 +4317,7 @@ describe('DependencyGraph', function() {
       });
     });
 
-    it('should ignore modules it cant find (assumes own require system)', function() {
+    it('should ignore modules it cant find (assumes own require system)', async () => {
       // For example SourceMap.js implements it's own require system.
       var root = '/root';
       setMockFileSystem({
@@ -4353,14 +4340,12 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(
-        dgraph,
-        '/root/index.js',
-      ).then(function(deps) {
+      const opts = {...defaults, roots: [root]};
+      await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          '/root/index.js',
+        );
         expect(deps).toEqual([
           {
             id: 'index',
@@ -4375,7 +4360,7 @@ describe('DependencyGraph', function() {
       });
     });
 
-    it('should work with node packages with a .js in the name', function() {
+    it('should work with node packages with a .js in the name', async () => {
       var root = '/root';
       setMockFileSystem({
         root: {
@@ -4397,14 +4382,12 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(
-        dgraph,
-        '/root/index.js',
-      ).then(function(deps) {
+      const opts = {...defaults, roots: [root]};
+      await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          '/root/index.js',
+        );
         expect(deps).toEqual([
           {
             id: 'index',
@@ -4428,7 +4411,7 @@ describe('DependencyGraph', function() {
       });
     });
 
-    it('should work with multiple platforms (haste)', function() {
+    it('should work with multiple platforms (haste)', async () => {
       var root = '/root';
       setMockFileSystem({
         root: {
@@ -4456,14 +4439,12 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(
-        dgraph,
-        '/root/index.ios.js',
-      ).then(function(deps) {
+      const opts = {...defaults, roots: [root]};
+      await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          '/root/index.ios.js',
+        );
         expect(deps).toEqual([
           {
             id: 'index',
@@ -4487,7 +4468,7 @@ describe('DependencyGraph', function() {
       });
     });
 
-    it('should pick the generic file', function() {
+    it('should pick the generic file', async () => {
       var root = '/root';
       setMockFileSystem({
         root: {
@@ -4515,14 +4496,12 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(
-        dgraph,
-        '/root/index.ios.js',
-      ).then(function(deps) {
+      const opts = {...defaults, roots: [root]};
+      await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          '/root/index.ios.js',
+        );
         expect(deps).toEqual([
           {
             id: 'index',
@@ -4546,7 +4525,7 @@ describe('DependencyGraph', function() {
       });
     });
 
-    it('should work with multiple platforms (node)', function() {
+    it('should work with multiple platforms (node)', async () => {
       var root = '/root';
       setMockFileSystem({
         root: {
@@ -4562,14 +4541,12 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(
-        dgraph,
-        '/root/index.ios.js',
-      ).then(function(deps) {
+      const opts = {...defaults, roots: [root]};
+      await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          '/root/index.ios.js',
+        );
         expect(deps).toEqual([
           {
             id: 'index',
@@ -4593,7 +4570,7 @@ describe('DependencyGraph', function() {
       });
     });
 
-    it('should require package.json', () => {
+    it('should require package.json', async () => {
       var root = '/root';
       setMockFileSystem({
         root: {
@@ -4622,14 +4599,12 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(
-        dgraph,
-        '/root/index.js',
-      ).then(deps => {
+      const opts = {...defaults, roots: [root]};
+      await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          '/root/index.js',
+        );
         expect(deps).toEqual([
           {
             id: 'index',
