@@ -4650,17 +4650,19 @@ describe('DependencyGraph', function() {
   describe('file watch updating', function() {
     const realPlatform = process.platform;
     let DependencyGraph;
+    let processDgraph;
 
     beforeEach(function() {
       process.platform = 'linux';
       DependencyGraph = require('../DependencyGraph');
+      processDgraph = processDgraphFor.bind(null, DependencyGraph);
     });
 
     afterEach(function() {
       process.platform = realPlatform;
     });
 
-    it('updates module dependencies', function() {
+    it('updates module dependencies', async () => {
       var root = '/root';
       var filesystem = setMockFileSystem({
         root: {
@@ -4687,46 +4689,40 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(
-        dgraph,
-        '/root/index.js',
-      ).then(function() {
+      const opts = {...defaults, roots: [root]};
+      const entryPath = '/root/index.js';
+      await processDgraph(opts, async dgraph => {
+        await getOrderedDependenciesAsJSON(dgraph, entryPath);
         filesystem.root['index.js'] = filesystem.root['index.js'].replace(
           'require("foo")',
           '',
         );
-        return triggerAndProcessWatchEvent(dgraph, 'change', root + '/index.js')
-          .then(() => getOrderedDependenciesAsJSON(dgraph, '/root/index.js'))
-          .then(function(deps) {
-            expect(deps).toEqual([
-              {
-                id: 'index',
-                path: '/root/index.js',
-                dependencies: ['aPackage'],
-                isAsset: false,
-                isJSON: false,
-                isPolyfill: false,
-                resolution: undefined,
-              },
-              {
-                id: 'aPackage/main.js',
-                path: '/root/aPackage/main.js',
-                dependencies: [],
-                isAsset: false,
-                isJSON: false,
-                isPolyfill: false,
-                resolution: undefined,
-              },
-            ]);
-          });
+        await triggerAndProcessWatchEvent(dgraph, 'change', entryPath);
+        const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
+        expect(deps).toEqual([
+          {
+            id: 'index',
+            path: '/root/index.js',
+            dependencies: ['aPackage'],
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            resolution: undefined,
+          },
+          {
+            id: 'aPackage/main.js',
+            path: '/root/aPackage/main.js',
+            dependencies: [],
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            resolution: undefined,
+          },
+        ]);
       });
     });
 
-    it('updates module dependencies on file change', function() {
+    it('updates module dependencies on file change', async () => {
       var root = '/root';
       var filesystem = setMockFileSystem({
         root: {
@@ -4753,46 +4749,40 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(
-        dgraph,
-        '/root/index.js',
-      ).then(function() {
+      const opts = {...defaults, roots: [root]};
+      const entryPath = '/root/index.js';
+      await processDgraph(opts, async dgraph => {
+        await getOrderedDependenciesAsJSON(dgraph, entryPath);
         filesystem.root['index.js'] = filesystem.root['index.js'].replace(
           'require("foo")',
           '',
         );
-        return triggerAndProcessWatchEvent(dgraph, 'change', root + '/index.js')
-          .then(() => getOrderedDependenciesAsJSON(dgraph, '/root/index.js'))
-          .then(function(deps) {
-            expect(deps).toEqual([
-              {
-                id: 'index',
-                path: '/root/index.js',
-                dependencies: ['aPackage'],
-                isAsset: false,
-                isJSON: false,
-                isPolyfill: false,
-                resolution: undefined,
-              },
-              {
-                id: 'aPackage/main.js',
-                path: '/root/aPackage/main.js',
-                dependencies: [],
-                isAsset: false,
-                isJSON: false,
-                isPolyfill: false,
-                resolution: undefined,
-              },
-            ]);
-          });
+        await triggerAndProcessWatchEvent(dgraph, 'change', root + '/index.js');
+        const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
+        expect(deps).toEqual([
+          {
+            id: 'index',
+            path: '/root/index.js',
+            dependencies: ['aPackage'],
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            resolution: undefined,
+          },
+          {
+            id: 'aPackage/main.js',
+            path: '/root/aPackage/main.js',
+            dependencies: [],
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            resolution: undefined,
+          },
+        ]);
       });
     });
 
-    it('updates module dependencies on file delete', function() {
+    it('updates module dependencies on file delete', async () => {
       expect.assertions(1);
       var root = '/root';
       var filesystem = setMockFileSystem({
@@ -4820,22 +4810,22 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(
-        dgraph,
-        '/root/index.js',
-      ).then(function() {
+      const opts = {...defaults, roots: [root]};
+      const entryPath = '/root/index.js';
+      await processDgraph(opts, async dgraph => {
+        await getOrderedDependenciesAsJSON(dgraph, entryPath);
         delete filesystem.root['foo.js'];
-        return triggerAndProcessWatchEvent(dgraph, 'change', root + '/foo.js')
-          .then(() => getOrderedDependenciesAsJSON(dgraph, '/root/index.js'))
-          .catch(error => expect(error.type).toEqual('UnableToResolveError'));
+        await triggerAndProcessWatchEvent(dgraph, 'change', root + '/foo.js');
+        try {
+          await getOrderedDependenciesAsJSON(dgraph, '/root/index.js');
+          throw new Error('should be unreachable');
+        } catch (error) {
+          expect(error.type).toEqual('UnableToResolveError');
+        }
       });
     });
 
-    it('updates module dependencies on file add', function() {
+    it('updates module dependencies on file add', async () => {
       expect.assertions(1);
       var root = '/root';
       var filesystem = setMockFileSystem({
@@ -4863,78 +4853,68 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
+      const opts = {...defaults, roots: [root]};
+      const entryPath = '/root/index.js';
+      await processDgraph(opts, async dgraph => {
+        await getOrderedDependenciesAsJSON(dgraph, entryPath);
+        filesystem.root['bar.js'] = [
+          '/**',
+          ' * @providesModule bar',
+          ' */',
+          'require("foo")',
+        ].join('\n');
+        await triggerAndProcessWatchEvent(dgraph, 'change', root + '/bar.js');
+        filesystem.root.aPackage['main.js'] = 'require("bar")';
+        await triggerAndProcessWatchEvent(
+          dgraph,
+          'change',
+          root + '/aPackage/main.js',
+        );
+        const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
+        expect(deps).toEqual([
+          {
+            id: 'index',
+            path: '/root/index.js',
+            dependencies: ['aPackage', 'foo'],
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            resolution: undefined,
+          },
+          {
+            id: 'aPackage/main.js',
+            path: '/root/aPackage/main.js',
+            dependencies: ['bar'],
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            resolution: undefined,
+          },
+          {
+            id: 'bar',
+            path: '/root/bar.js',
+            dependencies: ['foo'],
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            resolution: undefined,
+            resolveDependency: undefined,
+          },
+          {
+            id: 'foo',
+            path: '/root/foo.js',
+            dependencies: ['aPackage'],
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            resolution: undefined,
+            resolveDependency: undefined,
+          },
+        ]);
       });
-      return getOrderedDependenciesAsJSON(dgraph, '/root/index.js')
-        .then(function() {
-          filesystem.root['bar.js'] = [
-            '/**',
-            ' * @providesModule bar',
-            ' */',
-            'require("foo")',
-          ].join('\n');
-          return triggerAndProcessWatchEvent(
-            dgraph,
-            'change',
-            root + '/bar.js',
-          );
-        })
-        .then(() => {
-          filesystem.root.aPackage['main.js'] = 'require("bar")';
-          return triggerAndProcessWatchEvent(
-            dgraph,
-            'change',
-            root + '/aPackage/main.js',
-          );
-        })
-        .then(() => getOrderedDependenciesAsJSON(dgraph, '/root/index.js'))
-        .then(function(deps) {
-          expect(deps).toEqual([
-            {
-              id: 'index',
-              path: '/root/index.js',
-              dependencies: ['aPackage', 'foo'],
-              isAsset: false,
-              isJSON: false,
-              isPolyfill: false,
-              resolution: undefined,
-            },
-            {
-              id: 'aPackage/main.js',
-              path: '/root/aPackage/main.js',
-              dependencies: ['bar'],
-              isAsset: false,
-              isJSON: false,
-              isPolyfill: false,
-              resolution: undefined,
-            },
-            {
-              id: 'bar',
-              path: '/root/bar.js',
-              dependencies: ['foo'],
-              isAsset: false,
-              isJSON: false,
-              isPolyfill: false,
-              resolution: undefined,
-              resolveDependency: undefined,
-            },
-            {
-              id: 'foo',
-              path: '/root/foo.js',
-              dependencies: ['aPackage'],
-              isAsset: false,
-              isJSON: false,
-              isPolyfill: false,
-              resolution: undefined,
-              resolveDependency: undefined,
-            },
-          ]);
-        });
     });
 
-    it('updates module dependencies on relative asset add', function() {
+    it('updates module dependencies on relative asset add', async () => {
       var root = '/root';
       var filesystem = setMockFileSystem({
         root: {
@@ -4950,52 +4930,44 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-        assetExts: ['png'],
-      });
-
-      return getOrderedDependenciesAsJSON(dgraph, '/root/index.js')
-        .catch(error => {
+      const opts = {...defaults, assetExts: ['png'], roots: [root]};
+      const entryPath = '/root/index.js';
+      await processDgraph(opts, async dgraph => {
+        try {
+          await getOrderedDependenciesAsJSON(dgraph, entryPath);
+          throw new Error('should be unreachable');
+        } catch (error) {
           expect(error.type).toEqual('UnableToResolveError');
-        })
-        .then(() => {
-          filesystem.root['foo.png'] = '';
-          return triggerAndProcessWatchEvent(
-            dgraph,
-            'change',
-            root + '/foo.png',
-          );
-        })
-        .then(() => getOrderedDependenciesAsJSON(dgraph, '/root/index.js'))
-        .then(function(deps2) {
-          expect(deps2).toEqual([
-            {
-              id: 'index',
-              path: '/root/index.js',
-              dependencies: ['./foo.png'],
-              isAsset: false,
-              isJSON: false,
-              isPolyfill: false,
-              resolution: undefined,
-              resolveDependency: undefined,
-            },
-            {
-              id: 'aPackage/foo.png',
-              path: '/root/foo.png',
-              dependencies: [],
-              isAsset: true,
-              resolution: 1,
-              isJSON: false,
-              isPolyfill: false,
-              resolveDependency: undefined,
-            },
-          ]);
-        });
+        }
+        filesystem.root['foo.png'] = '';
+        await triggerAndProcessWatchEvent(dgraph, 'change', root + '/foo.png');
+        const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
+        expect(deps).toEqual([
+          {
+            id: 'index',
+            path: '/root/index.js',
+            dependencies: ['./foo.png'],
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            resolution: undefined,
+            resolveDependency: undefined,
+          },
+          {
+            id: 'aPackage/foo.png',
+            path: '/root/foo.png',
+            dependencies: [],
+            isAsset: true,
+            resolution: 1,
+            isJSON: false,
+            isPolyfill: false,
+            resolveDependency: undefined,
+          },
+        ]);
+      });
     });
 
-    it('changes to browser field', function() {
+    it('changes to browser field', async () => {
       expect.assertions(1);
       var root = '/root';
       var filesystem = setMockFileSystem({
@@ -5017,51 +4989,47 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(dgraph, '/root/index.js')
-        .then(function() {
-          filesystem.root.aPackage['package.json'] = JSON.stringify({
-            name: 'aPackage',
-            main: 'main.js',
-            browser: 'browser.js',
-          });
-          return triggerAndProcessWatchEvent(
-            dgraph,
-            'change',
-            root + '/aPackage/package.json',
-          );
-        })
-        .then(() => getOrderedDependenciesAsJSON(dgraph, '/root/index.js'))
-        .then(function(deps) {
-          expect(deps).toEqual([
-            {
-              id: 'index',
-              path: '/root/index.js',
-              dependencies: ['aPackage'],
-              isAsset: false,
-              isJSON: false,
-              isPolyfill: false,
-              resolution: undefined,
-              resolveDependency: undefined,
-            },
-            {
-              id: 'aPackage/browser.js',
-              path: '/root/aPackage/browser.js',
-              dependencies: [],
-              isAsset: false,
-              isJSON: false,
-              isPolyfill: false,
-              resolution: undefined,
-              resolveDependency: undefined,
-            },
-          ]);
+      const opts = {...defaults, roots: [root]};
+      const entryPath = '/root/index.js';
+      await processDgraph(opts, async dgraph => {
+        await getOrderedDependenciesAsJSON(dgraph, entryPath);
+        filesystem.root.aPackage['package.json'] = JSON.stringify({
+          name: 'aPackage',
+          main: 'main.js',
+          browser: 'browser.js',
         });
+        await triggerAndProcessWatchEvent(
+          dgraph,
+          'change',
+          root + '/aPackage/package.json',
+        );
+        const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
+        expect(deps).toEqual([
+          {
+            id: 'index',
+            path: '/root/index.js',
+            dependencies: ['aPackage'],
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            resolution: undefined,
+            resolveDependency: undefined,
+          },
+          {
+            id: 'aPackage/browser.js',
+            path: '/root/aPackage/browser.js',
+            dependencies: [],
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            resolution: undefined,
+            resolveDependency: undefined,
+          },
+        ]);
+      });
     });
 
-    it('removes old package from cache', function() {
+    it('removes old package from cache', async () => {
       var root = '/root';
       var filesystem = setMockFileSystem({
         root: {
@@ -5082,58 +5050,51 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(dgraph, '/root/index.js')
-        .then(function() {
-          filesystem.root['index.js'] = [
-            '/**',
-            ' * @providesModule index',
-            ' */',
-            'require("bPackage")',
-          ].join('\n');
-          filesystem.root.aPackage['package.json'] = JSON.stringify({
-            name: 'bPackage',
-            main: 'main.js',
-          });
-          return dgraph.then(
-            dg =>
-              new Promise(resolve => {
-                dg.once('change', () => resolve());
-                triggerWatchEvent('change', root + '/index.js');
-                triggerWatchEvent('change', root + '/aPackage/package.json');
-              }),
-          );
-        })
-        .then(() => getOrderedDependenciesAsJSON(dgraph, '/root/index.js'))
-        .then(function(deps) {
-          expect(deps).toEqual([
-            {
-              dependencies: ['bPackage'],
-              id: 'index',
-              isAsset: false,
-              isJSON: false,
-              isPolyfill: false,
-              path: '/root/index.js',
-              resolution: undefined,
-              resolveDependency: undefined,
-            },
-            {
-              dependencies: [],
-              id: 'bPackage/main.js',
-              isAsset: false,
-              isJSON: false,
-              isPolyfill: false,
-              path: '/root/aPackage/main.js',
-              resolution: undefined,
-            },
-          ]);
+      const opts = {...defaults, roots: [root]};
+      const entryPath = '/root/index.js';
+      await processDgraph(opts, async dgraph => {
+        await getOrderedDependenciesAsJSON(dgraph, entryPath);
+        filesystem.root['index.js'] = [
+          '/**',
+          ' * @providesModule index',
+          ' */',
+          'require("bPackage")',
+        ].join('\n');
+        filesystem.root.aPackage['package.json'] = JSON.stringify({
+          name: 'bPackage',
+          main: 'main.js',
         });
+        await new Promise(resolve => {
+          dgraph.once('change', () => resolve());
+          triggerWatchEvent('change', root + '/index.js');
+          triggerWatchEvent('change', root + '/aPackage/package.json');
+        });
+        const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
+        expect(deps).toEqual([
+          {
+            dependencies: ['bPackage'],
+            id: 'index',
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            path: '/root/index.js',
+            resolution: undefined,
+            resolveDependency: undefined,
+          },
+          {
+            dependencies: [],
+            id: 'bPackage/main.js',
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            path: '/root/aPackage/main.js',
+            resolution: undefined,
+          },
+        ]);
+      });
     });
 
-    it('should update node package changes', function() {
+    it('should update node package changes', async () => {
       expect.assertions(2);
       var root = '/root';
       var filesystem = setMockFileSystem({
@@ -5165,80 +5126,76 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(dgraph, '/root/index.js')
-        .then(function(deps) {
-          expect(deps).toEqual([
-            {
-              id: 'index',
-              path: '/root/index.js',
-              dependencies: ['foo'],
-              isAsset: false,
-              isJSON: false,
-              isPolyfill: false,
-              resolution: undefined,
-              resolveDependency: undefined,
-            },
-            {
-              id: 'foo/main.js',
-              path: '/root/node_modules/foo/main.js',
-              dependencies: ['bar'],
-              isAsset: false,
-              isJSON: false,
-              isPolyfill: false,
-              resolution: undefined,
-              resolveDependency: undefined,
-            },
-            {
-              id: 'bar/main.js',
-              path: '/root/node_modules/foo/node_modules/bar/main.js',
-              dependencies: [],
-              isAsset: false,
-              isJSON: false,
-              isPolyfill: false,
-              resolution: undefined,
-              resolveDependency: undefined,
-            },
-          ]);
+      const opts = {...defaults, roots: [root]};
+      const entryPath = '/root/index.js';
+      await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
+        expect(deps).toEqual([
+          {
+            id: 'index',
+            path: '/root/index.js',
+            dependencies: ['foo'],
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            resolution: undefined,
+            resolveDependency: undefined,
+          },
+          {
+            id: 'foo/main.js',
+            path: '/root/node_modules/foo/main.js',
+            dependencies: ['bar'],
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            resolution: undefined,
+            resolveDependency: undefined,
+          },
+          {
+            id: 'bar/main.js',
+            path: '/root/node_modules/foo/node_modules/bar/main.js',
+            dependencies: [],
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            resolution: undefined,
+            resolveDependency: undefined,
+          },
+        ]);
 
-          filesystem.root.node_modules.foo['main.js'] = 'lol';
-          return triggerAndProcessWatchEvent(
-            dgraph,
-            'change',
-            root + '/node_modules/foo/main.js',
-          );
-        })
-        .then(() => getOrderedDependenciesAsJSON(dgraph, '/root/index.js'))
-        .then(function(deps2) {
-          expect(deps2).toEqual([
-            {
-              id: 'index',
-              path: '/root/index.js',
-              dependencies: ['foo'],
-              isAsset: false,
-              isJSON: false,
-              isPolyfill: false,
-              resolution: undefined,
-              resolveDependency: undefined,
-            },
-            {
-              id: 'foo/main.js',
-              path: '/root/node_modules/foo/main.js',
-              dependencies: [],
-              isAsset: false,
-              isJSON: false,
-              isPolyfill: false,
-              resolution: undefined,
-              resolveDependency: undefined,
-            },
-          ]);
-        });
+        filesystem.root.node_modules.foo['main.js'] = 'lol';
+        await triggerAndProcessWatchEvent(
+          dgraph,
+          'change',
+          root + '/node_modules/foo/main.js',
+        );
+        const deps2 = await getOrderedDependenciesAsJSON(dgraph, entryPath);
+        expect(deps2).toEqual([
+          {
+            id: 'index',
+            path: '/root/index.js',
+            dependencies: ['foo'],
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            resolution: undefined,
+            resolveDependency: undefined,
+          },
+          {
+            id: 'foo/main.js',
+            path: '/root/node_modules/foo/main.js',
+            dependencies: [],
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            resolution: undefined,
+            resolveDependency: undefined,
+          },
+        ]);
+      });
     });
 
-    it('should update node package main changes', function() {
+    it('should update node package main changes', async () => {
       expect.assertions(1);
       var root = '/root';
       var filesystem = setMockFileSystem({
@@ -5262,51 +5219,47 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-      });
-      return getOrderedDependenciesAsJSON(dgraph, '/root/index.js')
-        .then(function(deps) {
-          filesystem.root.node_modules.foo['package.json'] = JSON.stringify({
-            name: 'foo',
-            main: 'main.js',
-            browser: 'browser.js',
-          });
-          return triggerAndProcessWatchEvent(
-            dgraph,
-            'change',
-            root + '/node_modules/foo/package.json',
-          );
-        })
-        .then(() => getOrderedDependenciesAsJSON(dgraph, '/root/index.js'))
-        .then(function(deps2) {
-          expect(deps2).toEqual([
-            {
-              id: 'index',
-              path: '/root/index.js',
-              dependencies: ['foo'],
-              isAsset: false,
-              isJSON: false,
-              isPolyfill: false,
-              resolution: undefined,
-              resolveDependency: undefined,
-            },
-            {
-              id: 'foo/browser.js',
-              path: '/root/node_modules/foo/browser.js',
-              dependencies: [],
-              isAsset: false,
-              isJSON: false,
-              isPolyfill: false,
-              resolution: undefined,
-              resolveDependency: undefined,
-            },
-          ]);
+      const opts = {...defaults, roots: [root]};
+      const entryPath = '/root/index.js';
+      await processDgraph(opts, async dgraph => {
+        await getOrderedDependenciesAsJSON(dgraph, entryPath);
+        filesystem.root.node_modules.foo['package.json'] = JSON.stringify({
+          name: 'foo',
+          main: 'main.js',
+          browser: 'browser.js',
         });
+        await triggerAndProcessWatchEvent(
+          dgraph,
+          'change',
+          root + '/node_modules/foo/package.json',
+        );
+        const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
+        expect(deps).toEqual([
+          {
+            id: 'index',
+            path: '/root/index.js',
+            dependencies: ['foo'],
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            resolution: undefined,
+            resolveDependency: undefined,
+          },
+          {
+            id: 'foo/browser.js',
+            path: '/root/node_modules/foo/browser.js',
+            dependencies: [],
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            resolution: undefined,
+            resolveDependency: undefined,
+          },
+        ]);
+      });
     });
 
-    it('should not error when the watcher reports a known file as added', function() {
+    it('should not error when the watcher reports a known file as added', async () => {
       expect.assertions(1);
       var root = '/root';
       setMockFileSystem({
@@ -5326,19 +5279,14 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
+      const opts = {...defaults, roots: [root]};
+      const entryPath = '/root/index.js';
+      await processDgraph(opts, async dgraph => {
+        await getOrderedDependenciesAsJSON(dgraph, entryPath);
+        await triggerAndProcessWatchEvent(dgraph, 'change', root + '/index.js');
+        const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
+        expect(deps).toBeDefined();
       });
-
-      return getOrderedDependenciesAsJSON(dgraph, '/root/index.js')
-        .then(() =>
-          triggerAndProcessWatchEvent(dgraph, 'change', root + '/index.js'),
-        )
-        .then(() => getOrderedDependenciesAsJSON(dgraph, '/root/index.js'))
-        .then(deps => {
-          expect(deps).toBeDefined();
-        });
     });
 
     it('should recover from multiple modules with the same name', async () => {
@@ -5358,31 +5306,30 @@ describe('DependencyGraph', function() {
         },
       });
 
-      const dgraph = DependencyGraph.load({...defaults, roots: [root]});
-      await getOrderedDependenciesAsJSON(dgraph, root + '/index.js');
-      filesystem.root['b.js'] = ['/**', ' * @providesModule a', ' */'].join(
-        '\n',
-      );
-      await triggerAndProcessWatchEvent(dgraph, 'change', root + '/b.js');
-      try {
-        await getOrderedDependenciesAsJSON(dgraph, root + '/index.js');
-        throw new Error('expected `getOrderedDependenciesAsJSON` to fail');
-      } catch (error) {
-        if (error.type !== 'UnableToResolveError') {
-          throw error;
-        }
-        expect(console.warn).toBeCalled();
-        filesystem.root['b.js'] = ['/**', ' * @providesModule b', ' */'].join(
+      const opts = {...defaults, roots: [root]};
+      const entryPath = '/root/index.js';
+      await processDgraph(opts, async dgraph => {
+        await getOrderedDependenciesAsJSON(dgraph, entryPath);
+        filesystem.root['b.js'] = ['/**', ' * @providesModule a', ' */'].join(
           '\n',
         );
         await triggerAndProcessWatchEvent(dgraph, 'change', root + '/b.js');
-      }
-
-      const deps = await getOrderedDependenciesAsJSON(
-        dgraph,
-        root + '/index.js',
-      );
-      expect(deps).toMatchSnapshot();
+        try {
+          await getOrderedDependenciesAsJSON(dgraph, root + '/index.js');
+          throw new Error('expected `getOrderedDependenciesAsJSON` to fail');
+        } catch (error) {
+          if (error.type !== 'UnableToResolveError') {
+            throw error;
+          }
+          expect(console.warn).toBeCalled();
+          filesystem.root['b.js'] = ['/**', ' * @providesModule b', ' */'].join(
+            '\n',
+          );
+          await triggerAndProcessWatchEvent(dgraph, 'change', root + '/b.js');
+        }
+        const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
+        expect(deps).toMatchSnapshot();
+      });
     });
   });
 
