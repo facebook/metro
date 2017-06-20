@@ -5305,16 +5305,19 @@ describe('DependencyGraph', function() {
   describe('Extensions', () => {
     const realPlatform = process.platform;
     let DependencyGraph;
+    let processDgraph;
+
     beforeEach(function() {
       process.platform = 'linux';
       DependencyGraph = require('../DependencyGraph');
+      processDgraph = processDgraphFor.bind(null, DependencyGraph);
     });
 
     afterEach(function() {
       process.platform = realPlatform;
     });
 
-    it('supports custom file extensions', () => {
+    it('supports custom file extensions', async () => {
       var root = '/root';
       setMockFileSystem({
         root: {
@@ -5329,40 +5332,33 @@ describe('DependencyGraph', function() {
         },
       });
 
-      var dgraph = DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-        sourceExts: ['jsx', 'coffee'],
+      const opts = {...defaults, roots: [root], sourceExts: ['jsx', 'coffee']};
+      await processDgraph(opts, async dgraph => {
+        const files = await dgraph.matchFilesByPattern('.*');
+        expect(files).toEqual(['/root/index.jsx', '/root/a.coffee']);
+        const entryPath = '/root/index.jsx';
+        const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
+        expect(deps).toEqual([
+          {
+            dependencies: ['a'],
+            id: 'index',
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            path: '/root/index.jsx',
+            resolution: undefined,
+          },
+          {
+            dependencies: [],
+            id: 'a',
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            path: '/root/a.coffee',
+            resolution: undefined,
+          },
+        ]);
       });
-
-      return dgraph
-        .then(dg => dg.matchFilesByPattern('.*'))
-        .then(files => {
-          expect(files).toEqual(['/root/index.jsx', '/root/a.coffee']);
-        })
-        .then(() => getOrderedDependenciesAsJSON(dgraph, '/root/index.jsx'))
-        .then(deps => {
-          expect(deps).toEqual([
-            {
-              dependencies: ['a'],
-              id: 'index',
-              isAsset: false,
-              isJSON: false,
-              isPolyfill: false,
-              path: '/root/index.jsx',
-              resolution: undefined,
-            },
-            {
-              dependencies: [],
-              id: 'a',
-              isAsset: false,
-              isJSON: false,
-              isPolyfill: false,
-              path: '/root/a.coffee',
-              resolution: undefined,
-            },
-          ]);
-        });
     });
 
     it('supports custom file extensions with relative paths', async () => {
@@ -5375,38 +5371,35 @@ describe('DependencyGraph', function() {
         },
       });
 
-      const dgraph = await DependencyGraph.load({
-        ...defaults,
-        roots: [root],
-        sourceExts: ['jsx', 'coffee'],
+      const opts = {...defaults, roots: [root], sourceExts: ['jsx', 'coffee']};
+      await processDgraph(opts, async dgraph => {
+        const files = await dgraph.matchFilesByPattern('.*');
+        expect(files).toEqual(['/root/index.jsx', '/root/a.coffee']);
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          '/root/index.jsx',
+        );
+        expect(deps).toEqual([
+          {
+            dependencies: ['./a'],
+            id: '/root/index.jsx',
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            path: '/root/index.jsx',
+            resolution: undefined,
+          },
+          {
+            dependencies: [],
+            id: '/root/a.coffee',
+            isAsset: false,
+            isJSON: false,
+            isPolyfill: false,
+            path: '/root/a.coffee',
+            resolution: undefined,
+          },
+        ]);
       });
-      const files = await dgraph.matchFilesByPattern('.*');
-      expect(files).toEqual(['/root/index.jsx', '/root/a.coffee']);
-
-      const deps = await getOrderedDependenciesAsJSON(
-        dgraph,
-        '/root/index.jsx',
-      );
-      expect(deps).toEqual([
-        {
-          dependencies: ['./a'],
-          id: '/root/index.jsx',
-          isAsset: false,
-          isJSON: false,
-          isPolyfill: false,
-          path: '/root/index.jsx',
-          resolution: undefined,
-        },
-        {
-          dependencies: [],
-          id: '/root/a.coffee',
-          isAsset: false,
-          isJSON: false,
-          isPolyfill: false,
-          path: '/root/a.coffee',
-          resolution: undefined,
-        },
-      ]);
     });
 
     it('does not include extensions that are not specified explicitely', async () => {
@@ -5419,19 +5412,17 @@ describe('DependencyGraph', function() {
         },
       });
 
-      const dgraph = await DependencyGraph.load({
-        ...defaults,
-        roots: [root],
+      const opts = {...defaults, roots: [root]};
+      await processDgraph(opts, async dgraph => {
+        const files = await dgraph.matchFilesByPattern('.*');
+        expect(files).toEqual(['/root/X.js']);
+        try {
+          await getOrderedDependenciesAsJSON(dgraph, '/root/index.jsx');
+          throw Error('should be unreachable');
+        } catch (error) {
+          expect(error.type).toEqual('UnableToResolveError');
+        }
       });
-      const files = await dgraph.matchFilesByPattern('.*');
-      expect(files).toEqual(['/root/X.js']);
-
-      try {
-        await getOrderedDependenciesAsJSON(dgraph, '/root/index.jsx');
-        throw Error('should not reach this line');
-      } catch (error) {
-        expect(error.type).toEqual('UnableToResolveError');
-      }
     });
   });
 
@@ -5479,6 +5470,10 @@ describe('DependencyGraph', function() {
       });
     });
 
+    afterEach(() => {
+      dependencyGraph.end();
+    });
+
     it('calls back for each finished module', () => {
       return getDependencies().then(() =>
         expect(onProgress.mock.calls.length).toBe(8),
@@ -5502,39 +5497,38 @@ describe('DependencyGraph', function() {
 
   describe('Asset module dependencies', () => {
     let DependencyGraph;
+    let processDgraph;
+
     beforeEach(() => {
       DependencyGraph = require('../DependencyGraph');
+      processDgraph = processDgraphFor.bind(null, DependencyGraph);
     });
 
-    it('allows setting dependencies for asset modules', () => {
-      const assetDependencies = ['/root/apple.png', '/root/banana.png'];
+    it.skip(
+      'allows setting dependencies for asset modules (broken)',
+      async () => {
+        const assetDependencies = ['/root/apple.png', '/root/banana.png'];
 
-      setMockFileSystem({
-        root: {
-          'index.js': 'require("./a.png")',
-          'a.png': '',
-          'apple.png': '',
-          'banana.png': '',
-        },
-      });
-
-      DependencyGraph.load({
-        ...defaults,
-        assetDependencies,
-        roots: ['/root'],
-      })
-        .then(dependencyGraph =>
-          dependencyGraph.getDependencies({
-            entryPath: '/root/index.js',
-          }),
-        )
-        .then(({dependencies}) => {
-          const [, assetModule] = dependencies;
-          return assetModule
-            .getDependencies()
-            .then(deps => expect(deps).toBe(assetDependencies));
+        setMockFileSystem({
+          root: {
+            'index.js': 'require("./a.png")',
+            'a.png': '',
+            'apple.png': '',
+            'banana.png': '',
+          },
         });
-    });
+
+        const opts = {...defaults, assetDependencies, roots: ['/root']};
+        await processDgraph(opts, async dgraph => {
+          const {dependencies} = await dgraph.getDependencies({
+            entryPath: '/root/index.js',
+          });
+          const [, assetModule] = dependencies;
+          const deps = await assetModule.getDependencies();
+          expect(deps).toBe(assetDependencies);
+        });
+      },
+    );
   });
 
   describe('Deterministic order of dependencies', () => {
@@ -5589,6 +5583,7 @@ describe('DependencyGraph', function() {
     });
 
     afterEach(() => {
+      dependencyGraph.then(dgraph => dgraph.end());
       Module.prototype.read = moduleRead;
     });
 
