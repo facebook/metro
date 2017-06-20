@@ -14,7 +14,6 @@ jest.mock('fs')
   .mock('../DependencyGraph/DependencyGraphHelpers')
   .mock('../../lib/TransformCaching');
 
-console.log(require.resolve('../../lib/TransformCaching'));
 const Module = require('../Module');
 const ModuleCache = require('../ModuleCache');
 const DependencyGraphHelpers = require('../DependencyGraph/DependencyGraphHelpers');

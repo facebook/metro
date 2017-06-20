@@ -15,7 +15,7 @@ const nullthrows = require('fbjs/lib/nullthrows');
 
 const {createRamBundleGroups} = require('../../Bundler/util');
 const {buildTableAndContents, createModuleGroups} = require('../../shared/output/unbundle/as-indexed-file');
-const {addModuleIdsToModuleWrapper, concat} = require('./util');
+const {concat, getModuleCode, partition, toModuleTransport} = require('./util');
 
 import type {FBIndexMap} from '../../lib/SourceMap.js';
 import type {OutputFn} from '../types.flow';
@@ -50,35 +50,6 @@ function asIndexedRamBundle({
       startupModules: startupModules.map(m => toModuleTransport(m, idForPath)),
     }),
   };
-}
-
-function toModuleTransport(module, idForPath) {
-  const {dependencies, file} = module;
-  return {
-    code: getModuleCode(module, idForPath),
-    dependencies,
-    id: idForPath(file),
-    map: file.map,
-    name: file.path,
-    sourcePath: file.path,
-  };
-}
-
-function getModuleCode(module, idForPath) {
-  const {file} = module;
-  return file.type === 'module'
-    ? addModuleIdsToModuleWrapper(module, idForPath)
-    : file.code;
-}
-
-function partition(modules, preloadedModules) {
-  const startup = [];
-  const deferred = [];
-  for (const module of modules) {
-    (preloadedModules.has(module.file.path) ? startup : deferred).push(module);
-  }
-
-  return [startup, deferred];
 }
 
 function *subtree(

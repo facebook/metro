@@ -151,7 +151,7 @@ function groupCode(rootCode, moduleGroup, modulesById) {
   }
   const code = [rootCode];
   for (const id of moduleGroup) {
-    code.push((modulesById.get(id) || {}).code);
+    code.push((modulesById.get(id) || {code: ''}).code);
   }
 
   return code.join('\n');
