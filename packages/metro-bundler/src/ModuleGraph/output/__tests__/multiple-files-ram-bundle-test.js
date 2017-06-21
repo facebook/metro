@@ -21,7 +21,7 @@ declare var expect: any;
 declare var it: (string, () => ?Promise<any>) => void;
 declare var beforeAll: (() => ?Promise<any>) => void;
 
-let code: Buffer;
+let code;
 let map;
 let extraFiles;
 let ids, modules, requireCall;
@@ -46,7 +46,7 @@ it('does not start the bundle file with the magic number (not a binary one)', ()
 });
 
 it('contains the startup code on the main file', () => {
-  expect(code.toString()).toBe('require(1);');
+  expect(code).toBe('require(1);');
 });
 
 it('creates a source map', () => {

@@ -42,7 +42,7 @@ function asMultipleFilesRamBundle({
   deferredModules.forEach(deferredModule => {
     extraFiles.set(
       path.join(JS_MODULES, deferredModule.id + '.js'),
-      new Buffer(deferredModule.code),
+      deferredModule.code,
     );
   });
 
