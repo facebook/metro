@@ -1,4 +1,5 @@
 **/__mocks__/**
 **/__tests__/**
-src
+build
+src.real
 yarn.lock
