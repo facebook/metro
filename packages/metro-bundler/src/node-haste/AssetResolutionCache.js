@@ -102,9 +102,16 @@ class AssetResolutionCache {
         continue;
       }
       getWithDefaultArray(results, assetData.assetName).push({
-        platform: assetData.platform,
         fileName,
+        platform: assetData.platform,
       });
+      if (assetData.platform) {
+        const assetNameWithPlatform = `${assetData.name}.${assetData.platform}.${assetData.type}`;
+        getWithDefaultArray(results, assetNameWithPlatform).push({
+          fileName,
+          platform: null,
+        });
+      }
     }
     return results;
   };

@@ -38,7 +38,11 @@ describe('AssetResolutionCache', () => {
 
   it('finds the correct assets', () => {
     const results = cache.resolve('/assets', 'test.png', 'ios');
-    expect(results).toMatchSnapshot();
+    expect(results).toEqual([
+      'test@2x.ios.png',
+      'test@1x.ios.png',
+      'test@1.5x.ios.png',
+    ]);
   });
 
   it('correctly clears out', () => {
@@ -46,6 +50,20 @@ describe('AssetResolutionCache', () => {
     fileNames.push('test@3x.ios.png');
     cache.clear();
     const results = cache.resolve('/assets', 'test.png', 'ios');
-    expect(results).toMatchSnapshot();
+    expect(results).toEqual([
+      'test@2x.ios.png',
+      'test@1x.ios.png',
+      'test@1.5x.ios.png',
+      'test@3x.ios.png',
+    ]);
+  });
+
+  it('allows resolving assets with platform extension', () => {
+    const results = cache.resolve('/assets', 'test.ios.png', 'android');
+    expect(results).toEqual([
+      'test@2x.ios.png',
+      'test@1x.ios.png',
+      'test@1.5x.ios.png',
+    ]);
   });
 });
