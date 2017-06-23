@@ -373,11 +373,7 @@ INSPECTOR_LEVELS[LOG_LEVELS.error] = 'error';
 // strip method printing to originalConsole.
 const INSPECTOR_FRAMES_TO_SKIP = __DEV__ ? 2 : 1;
 
-function setupConsole(global) {
-  if (!global.nativeLoggingHook) {
-    return;
-  }
-
+if (global.nativeLoggingHook) {
   function getNativeLogFunction(level) {
     return function() {
       let str;
@@ -474,13 +470,7 @@ function setupConsole(global) {
     global.nativeLoggingHook('\n' + table.join('\n'), LOG_LEVELS.info);
   }
 
-  // Preserve the original `console` as `originalConsole`
-  var originalConsole = global.console;
-  var descriptor = Object.getOwnPropertyDescriptor(global, 'console');
-  if (descriptor) {
-    Object.defineProperty(global, 'originalConsole', descriptor);
-  }
-
+  const originalConsole = global.console;
   global.console = {
     error: getNativeLogFunction(LOG_LEVELS.error),
     info: getNativeLogFunction(LOG_LEVELS.info),
@@ -495,8 +485,14 @@ function setupConsole(global) {
   // sometimes useful. Ex: on OS X, this will let you see rich output in
   // the Safari Web Inspector console.
   if (__DEV__ && originalConsole) {
+    // Preserve the original `console` as `originalConsole`
+    const descriptor = Object.getOwnPropertyDescriptor(global, 'console');
+    if (descriptor) {
+      Object.defineProperty(global, 'originalConsole', descriptor);
+    }
+
     Object.keys(console).forEach(methodName => {
-      var reactNativeMethod = console[methodName];
+      const reactNativeMethod = console[methodName];
       if (originalConsole[methodName]) {
         console[methodName] = function() {
           originalConsole[methodName](...arguments);
@@ -505,10 +501,15 @@ function setupConsole(global) {
       }
     });
   }
-}
-
-if (typeof module !== 'undefined') {
-  module.exports = setupConsole;
-} else {
-  setupConsole(global);
+} else if (!global.console) {
+  function consoleLoggingStub() {};
+  global.console = {
+    error: consoleLoggingStub,
+    info: consoleLoggingStub,
+    log: consoleLoggingStub,
+    warn: consoleLoggingStub,
+    trace: consoleLoggingStub,
+    debug: consoleLoggingStub,
+    table: consoleLoggingStub
+  };
 }
