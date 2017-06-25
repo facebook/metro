@@ -545,11 +545,7 @@ INSPECTOR_LEVELS[LOG_LEVELS.error] = 'error';
 
 var INSPECTOR_FRAMES_TO_SKIP = __DEV__ ? 2 : 1;
 
-function setupConsole(global) {
-  if (!global.nativeLoggingHook) {
-    return;
-  }
-
+if (global.nativeLoggingHook) {
   function getNativeLogFunction(level) {
     return function () {
       var str = void 0;
@@ -633,11 +629,6 @@ function setupConsole(global) {
   }
 
   var originalConsole = global.console;
-  var descriptor = Object.getOwnPropertyDescriptor(global, 'console');
-  if (descriptor) {
-    Object.defineProperty(global, 'originalConsole', descriptor);
-  }
-
   global.console = {
     error: getNativeLogFunction(LOG_LEVELS.error),
     info: getNativeLogFunction(LOG_LEVELS.info),
@@ -649,6 +640,11 @@ function setupConsole(global) {
   };
 
   if (__DEV__ && originalConsole) {
+    var descriptor = Object.getOwnPropertyDescriptor(global, 'console');
+    if (descriptor) {
+      Object.defineProperty(global, 'originalConsole', descriptor);
+    }
+
     Object.keys(console).forEach(function (methodName) {
       var reactNativeMethod = console[methodName];
       if (originalConsole[methodName]) {
@@ -659,12 +655,17 @@ function setupConsole(global) {
       }
     });
   }
-}
-
-if (typeof module !== 'undefined') {
-  module.exports = setupConsole;
-} else {
-  setupConsole(global);
+} else if (!global.console) {
+  function consoleLoggingStub() {};
+  global.console = {
+    error: consoleLoggingStub,
+    info: consoleLoggingStub,
+    log: consoleLoggingStub,
+    warn: consoleLoggingStub,
+    trace: consoleLoggingStub,
+    debug: consoleLoggingStub,
+    table: consoleLoggingStub
+  };
 }
 })(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this);
 (function(global) {
