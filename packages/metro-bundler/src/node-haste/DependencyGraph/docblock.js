@@ -56,7 +56,7 @@ function parse(docblock: string): Array<[string, string]> {
   var result = [];
   var match;
   while ((match = propertyRe.exec(docblock))) {
-    result.push([match[1], match[2]]);
+    result.push([match[1], match[2].trim()]);
   }
 
   return result;
