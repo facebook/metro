@@ -37,6 +37,7 @@ import type {
   GetTransformOptions,
   PostProcessModules,
   PostMinifyProcess,
+  PostProcessBundleSourcemap,
 } from '../Bundler';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
@@ -76,6 +77,7 @@ type Options = {
   polyfillModuleNames?: Array<string>,
   postProcessModules?: PostProcessModules,
   postMinifyProcess: PostMinifyProcess,
+  postProcessBundleSourcemap: PostProcessBundleSourcemap,
   projectRoots: $ReadOnlyArray<string>,
   providesModuleNodeModules?: Array<string>,
   reporter: Reporter,
@@ -134,6 +136,7 @@ class Server {
     polyfillModuleNames: Array<string>,
     postProcessModules?: PostProcessModules,
     postMinifyProcess: PostMinifyProcess,
+    postProcessBundleSourcemap: PostProcessBundleSourcemap,
     projectRoots: $ReadOnlyArray<string>,
     providesModuleNodeModules?: Array<string>,
     reporter: Reporter,
@@ -180,6 +183,7 @@ class Server {
       polyfillModuleNames: options.polyfillModuleNames || [],
       postProcessModules: options.postProcessModules,
       postMinifyProcess: options.postMinifyProcess,
+      postProcessBundleSourcemap: options.postProcessBundleSourcemap,
       projectRoots: options.projectRoots,
       providesModuleNodeModules: options.providesModuleNodeModules,
       reporter: options.reporter,

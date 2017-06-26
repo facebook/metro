@@ -20,7 +20,7 @@ const invariant = require('fbjs/lib/invariant');
 
 const {fromRawMappings, compactMapping} = require('./Bundler/source-map');
 
-import type {PostProcessModules, PostMinifyProcess} from './Bundler';
+import type {PostProcessModules, PostMinifyProcess, PostProcessBundleSourcemap} from './Bundler';
 import type Server from './Server';
 import type {GlobalTransformCache} from './lib/GlobalTransformCache';
 import type {TransformCache} from './lib/TransformCaching';
@@ -41,6 +41,7 @@ type Options = {
   +maxWorkers?: number,
   nonPersistent?: boolean,
   postMinifyProcess?: PostMinifyProcess,
+  postProcessBundleSourcemap?: PostProcessBundleSourcemap,
   postProcessModules?: PostProcessModules,
   projectRoots: $ReadOnlyArray<string>,
   reporter?: Reporter,

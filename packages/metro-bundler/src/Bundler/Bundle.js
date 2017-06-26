@@ -26,6 +26,8 @@ const {isMappingsMap} = require('../lib/SourceMap');
 import type {IndexMap, MappingsMap, SourceMap} from '../lib/SourceMap';
 import type {GetSourceOptions, FinalizeOptions} from './BundleBase';
 
+import type {PostProcessBundleSourcemap} from './index.js';
+
 export type Unbundle = {
   startupModules: Array<*>,
   lazyModules: Array<*>,
@@ -47,12 +49,14 @@ class Bundle extends BundleBase {
   _sourceMap: string | null;
   _sourceMapFormat: SourceMapFormat;
   _sourceMapUrl: ?string;
+  postProcessBundleSourcemap: ?PostProcessBundleSourcemap;
 
-  constructor({sourceMapUrl, dev, minify, ramGroups}: {
+  constructor({sourceMapUrl, dev, minify, ramGroups, postProcessBundleSourcemap}: {
     sourceMapUrl: ?string,
     dev?: boolean,
     minify?: boolean,
     ramGroups?: Array<string>,
+    postProcessBundleSourcemap?: PostProcessBundleSourcemap,
   } = {}) {
     super();
     this._sourceMap = null;
@@ -64,6 +68,7 @@ class Bundle extends BundleBase {
 
     this._ramGroups = ramGroups;
     this._ramBundle = null; // cached RAM Bundle
+    this.postProcessBundleSourcemap = postProcessBundleSourcemap;
   }
 
   addModule(

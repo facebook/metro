@@ -112,6 +112,12 @@ export type PostMinifyProcess = ({
   map: MappingsMap,
 }) => {code: string, map: MappingsMap};
 
+export type PostProcessBundleSourcemap = ({
+  code: string,
+  map: string,
+  outFileName: string,
+}) => {code: string, map: string};
+
 type Options = {|
   +allowBundleUpdates: boolean,
   +assetExts: Array<string>,
@@ -126,6 +132,7 @@ type Options = {|
   +platforms: Array<string>,
   +polyfillModuleNames: Array<string>,
   +postMinifyProcess: PostMinifyProcess,
+  +postProcessBundleSourcemap?: PostProcessBundleSourcemap,
   +postProcessModules?: PostProcessModules,
   +projectRoots: $ReadOnlyArray<string>,
   +providesModuleNodeModules?: Array<string>,
@@ -251,11 +258,17 @@ class Bundler {
     sourceMapUrl: ?string,
   }): Promise<Bundle> {
     const {dev, minify, unbundle} = options;
+    const postProcessBundleSourcemap = this._opts.postProcessBundleSourcemap;
     return this._resolverPromise.then(
       resolver => resolver.getModuleSystemDependencies({dev, unbundle}),
     ).then(moduleSystemDeps => this._bundle({
       ...options,
-      bundle: new Bundle({dev, minify, sourceMapUrl: options.sourceMapUrl}),
+      bundle: new Bundle({
+        dev,
+        minify,
+        sourceMapUrl: options.sourceMapUrl,
+        postProcessBundleSourcemap,
+      }),
       moduleSystemDeps,
     }));
   }

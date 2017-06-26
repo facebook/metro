@@ -54,7 +54,10 @@ function saveBundleAndMap(
   } = options;
 
   log('start');
-  const codeWithMap = createCodeWithMap(bundle, !!dev, sourcemapSourcesRoot);
+  const origCodeWithMap = createCodeWithMap(bundle, !!dev, sourcemapSourcesRoot);
+  const codeWithMap = bundle.postProcessBundleSourcemap ?
+    bundle.postProcessBundleSourcemap({...origCodeWithMap, outFileName: bundleOutput}) :
+    origCodeWithMap;
   log('finish');
 
   log('Writing bundle output to:', bundleOutput);
