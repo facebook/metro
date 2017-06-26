@@ -17,6 +17,8 @@
  *  node ./scripts/build.js /user/c/metro-bundler/packages/metro-abc/src/abc.js
  */
 
+'use strict';
+
 const fs = require('fs');
 const path = require('path');
 const glob = require('glob');
@@ -43,7 +45,7 @@ const babelEs5Options = Object.assign(
   {},
   babelNodeOptions,
   {presets: 'env'},
-  {plugins: [...babelNodeOptions.plugins, 'transform-runtime']}
+  {plugins: [].concat(babelNodeOptions.plugins, 'transform-runtime')}
 );
 
 const fixedWidth = str => {
@@ -87,7 +89,7 @@ function buildFile(file, silent) {
     getPackageName(file),
     'package.json'
   );
-  const {browser} = require(pkgJsonPath);
+  const browser = require(pkgJsonPath).browser;
   if (browser) {
     if (browser.indexOf(BUILD_ES5_DIR) !== 0) {
       throw new Error(
