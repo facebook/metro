@@ -13,7 +13,7 @@
 'use strict';
 
 const crypto = require('crypto');
-const docblock = require('./DependencyGraph/docblock');
+const docblock = require('jest-docblock');
 const fs = require('fs');
 const invariant = require('fbjs/lib/invariant');
 const isAbsolutePath = require('absolute-path');
@@ -209,7 +209,7 @@ class Module {
 
   _readDocBlock(): DocBlock {
     if (this._docBlock == null) {
-      this._docBlock = docblock.parseAsObject(this._readSourceCode());
+      this._docBlock = docblock.parse(docblock.extract(this._readSourceCode()));
     }
     return this._docBlock;
   }

@@ -16,7 +16,7 @@ const JsFileWrapping = require('./JsFileWrapping');
 const asyncify = require('async/asyncify');
 const collectDependencies = require('./collect-dependencies');
 const defaults = require('../../defaults');
-const docblock = require('../../node-haste/DependencyGraph/docblock');
+const docblock = require('jest-docblock');
 const generate = require('./generate');
 const path = require('path');
 const series = require('async/series');
@@ -99,7 +99,7 @@ function transformModule(
       );
     });
 
-    const annotations = docblock.parseAsObject(docblock.extract(code));
+    const annotations = docblock.parse(docblock.extract(code));
 
     callback(null, {
       type: 'code',
