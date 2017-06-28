@@ -22,8 +22,7 @@ const toLocalPath = require('./lib/toLocalPath');
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {GetTransformCacheKey} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
-import type DependencyGraphHelpers
-  from './DependencyGraph/DependencyGraphHelpers';
+import type DependencyGraphHelpers from './DependencyGraph/DependencyGraphHelpers';
 import type {TransformCode, Options as ModuleOptions} from './Module';
 
 type GetClosestPackageFn = (filePath: string) => ?string;

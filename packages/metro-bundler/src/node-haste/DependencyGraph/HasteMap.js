@@ -1,4 +1,4 @@
- /**
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
@@ -35,7 +35,6 @@ type Options<TModule, TPackage> = {|
 |};
 
 class HasteMap<TModule: Moduleish, TPackage: Packageish> extends EventEmitter {
-
   _extensions: Array<string>;
   _files: Array<string>;
   _helpers: DependencyGraphHelpers;
@@ -61,8 +60,14 @@ class HasteMap<TModule: Moduleish, TPackage: Packageish> extends EventEmitter {
     this._platforms = platforms;
     this._preferNativePlatform = preferNativePlatform;
 
-    (this: any)._processHastePackage = throat(1, this._processHastePackage.bind(this));
-    (this: any)._processHasteModule = throat(1, this._processHasteModule.bind(this));
+    (this: any)._processHastePackage = throat(
+      1,
+      this._processHastePackage.bind(this),
+    );
+    (this: any)._processHasteModule = throat(
+      1,
+      this._processHasteModule.bind(this),
+    );
   }
 
   build() {
@@ -111,7 +116,10 @@ class HasteMap<TModule: Moduleish, TPackage: Packageish> extends EventEmitter {
         }
       }
 
-      if (type !== 'delete' && this._extensions.indexOf(this._helpers.extname(absPath)) !== -1) {
+      if (
+        type !== 'delete' &&
+        this._extensions.indexOf(this._helpers.extname(absPath)) !== -1
+      ) {
         if (path.basename(absPath) === 'package.json') {
           return this._processHastePackage(absPath, invalidated);
         } else {
@@ -151,36 +159,42 @@ class HasteMap<TModule: Moduleish, TPackage: Packageish> extends EventEmitter {
     const module = this._moduleCache.getModule(file);
     return Promise.resolve().then(() => {
       const isHaste = module.isHaste();
-      return isHaste && module.getName()
-        .then(name => {
+      return (
+        isHaste &&
+        module.getName().then(name => {
           const result = this._updateHasteMap(name, module);
           if (previousName && name !== previousName) {
             this.emit('change');
           }
           return result;
-        });
+        })
+      );
     });
   }
 
   _processHastePackage(file: string, previousName: ?string) {
     const p = this._moduleCache.getPackage(file);
-    return Promise.resolve().then(() => {
-      const isHaste = p.isHaste();
-      return isHaste && p.getName()
-        .then(name => {
-          const result = this._updateHasteMap(name, p);
-          if (previousName && name !== previousName) {
-            this.emit('change');
-          }
-          return result;
-        });
-    }).catch(e => {
-      if (e instanceof SyntaxError) {
-        // Malformed package.json.
-        return;
-      }
-      throw e;
-    });
+    return Promise.resolve()
+      .then(() => {
+        const isHaste = p.isHaste();
+        return (
+          isHaste &&
+          p.getName().then(name => {
+            const result = this._updateHasteMap(name, p);
+            if (previousName && name !== previousName) {
+              this.emit('change');
+            }
+            return result;
+          })
+        );
+      })
+      .catch(e => {
+        if (e instanceof SyntaxError) {
+          // Malformed package.json.
+          return;
+        }
+        throw e;
+      });
   }
 
   _updateHasteMap(name: string, mod: TModule | TPackage) {
@@ -204,10 +218,10 @@ class HasteMap<TModule: Moduleish, TPackage: Packageish> extends EventEmitter {
     if (existingModule && existingModule.path !== mod.path) {
       throw new Error(
         `@providesModule naming collision:\n` +
-        `  Duplicate module name: ${name}\n` +
-        `  Paths: ${mod.path} collides with ${existingModule.path}\n\n` +
-        'This error is caused by a @providesModule declaration ' +
-        'with the same name across two different files.'
+          `  Duplicate module name: ${name}\n` +
+          `  Paths: ${mod.path} collides with ${existingModule.path}\n\n` +
+          'This error is caused by a @providesModule declaration ' +
+          'with the same name across two different files.',
       );
     }
   }

@@ -352,10 +352,14 @@ function readMetadataFileSync(
   if (
     typeof cachedResultHash !== 'string' ||
     typeof cachedSourceHash !== 'string' ||
-    !(Array.isArray(dependencies) &&
-      dependencies.every(dep => typeof dep === 'string')) ||
-    !(Array.isArray(dependencyOffsets) &&
-      dependencyOffsets.every(offset => typeof offset === 'number')) ||
+    !(
+      Array.isArray(dependencies) &&
+      dependencies.every(dep => typeof dep === 'string')
+    ) ||
+    !(
+      Array.isArray(dependencyOffsets) &&
+      dependencyOffsets.every(offset => typeof offset === 'number')
+    ) ||
     !(sourceMap == null || typeof sourceMap === 'object')
   ) {
     return null;

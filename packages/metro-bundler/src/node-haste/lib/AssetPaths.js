@@ -1,4 +1,4 @@
- /**
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
@@ -47,10 +47,7 @@ function parseBaseName(
  * Return `null` if the `filePath` doesn't have a valid extension, required
  * to describe the type of an asset.
  */
-function tryParse(
-  filePath: string,
-  platforms: Set<string>,
-): ?AssetData {
+function tryParse(filePath: string, platforms: Set<string>): ?AssetData {
   const result = parsePlatformFilePath(filePath, platforms);
   const {dirPath, baseName, platform, extension} = result;
   if (extension == null) {
@@ -66,13 +63,10 @@ function tryParse(
   };
 }
 
-function parse(
-  filePath: string,
-  platforms: Set<string>,
-): AssetData {
+function parse(filePath: string, platforms: Set<string>): AssetData {
   const result = tryParse(filePath, platforms);
   if (result == null) {
-    throw new Error('invalid asset file path: \`${filePath}');
+    throw new Error('invalid asset file path: `${filePath}');
   }
   return result;
 }

@@ -33,8 +33,7 @@ import type {
   ReadTransformProps,
 } from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
-import type DependencyGraphHelpers
-  from './DependencyGraph/DependencyGraphHelpers';
+import type DependencyGraphHelpers from './DependencyGraph/DependencyGraphHelpers';
 import type ModuleCache from './ModuleCache';
 import type {LocalPath} from './lib/toLocalPath';
 

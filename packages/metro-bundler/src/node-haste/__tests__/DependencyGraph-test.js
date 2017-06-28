@@ -2247,7 +2247,8 @@ describe('DependencyGraph', function() {
                 'node-package-c': 'rn-package-c',
               },
             }),
-            'index.js': 'require("node-package-a"); require("node-package-b"); require("node-package-c");',
+            'index.js':
+              'require("node-package-a"); require("node-package-b"); require("node-package-c");',
             node_modules: {
               'node-package-a': {
                 'package.json': JSON.stringify({
@@ -3256,7 +3257,8 @@ describe('DependencyGraph', function() {
               },
               {
                 id: 'submodule/main.js',
-                path: '/root/node_modules/react-haste/node_modules/submodule/main.js',
+                path:
+                  '/root/node_modules/react-haste/node_modules/submodule/main.js',
                 dependencies: [],
                 isAsset: false,
                 isJSON: false,
@@ -4238,7 +4240,8 @@ describe('DependencyGraph', function() {
           },
           {
             id: 'submodule/main.js',
-            path: 'C:\\root\\node_modules\\react-haste\\node_modules\\submodule\\main.js',
+            path:
+              'C:\\root\\node_modules\\react-haste\\node_modules\\submodule\\main.js',
             dependencies: [],
             isAsset: false,
             isJSON: false,

@@ -49,7 +49,7 @@ describe('Bundle', () => {
             [
               'transformed foo;',
               'transformed bar;',
-              '\/\/# sourceMappingURL=test_url',
+              '//# sourceMappingURL=test_url',
             ].join('\n'),
           );
         });
@@ -112,7 +112,7 @@ describe('Bundle', () => {
               'transformed bar;',
               ';require("bar");',
               ';require("foo");',
-              '\/\/# sourceMappingURL=test_url',
+              '//# sourceMappingURL=test_url',
             ].join('\n'),
           );
         });
@@ -376,8 +376,12 @@ describe('Bundle', () => {
         const {groups} = bundle.getUnbundle(); //eslint-disable-line no-unused-vars
       }).toThrow(
         new Error(
-          `Module ${fsLocation('invariant')} belongs to groups ${fsLocation('React')}` +
-            `, and ${fsLocation('OtherFramework')}. Ensure that each module is only part of one group.`,
+          `Module ${fsLocation('invariant')} belongs to groups ${fsLocation(
+            'React',
+          )}` +
+            `, and ${fsLocation(
+              'OtherFramework',
+            )}. Ensure that each module is only part of one group.`,
         ),
       );
     });

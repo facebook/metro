@@ -28,8 +28,7 @@ const url = require('url');
 
 import type Module, {HasteImpl} from '../node-haste/Module';
 import type {IncomingMessage, ServerResponse} from 'http';
-import type ResolutionResponse
-  from '../node-haste/DependencyGraph/ResolutionResponse';
+import type ResolutionResponse from '../node-haste/DependencyGraph/ResolutionResponse';
 import type Bundle from '../Bundler/Bundle';
 import type HMRBundle from '../Bundler/HMRBundle';
 import type {Reporter} from '../lib/reporting';
@@ -176,9 +175,8 @@ class Server {
       globalTransformCache: options.globalTransformCache,
       hasteImpl: options.hasteImpl,
       maxWorkers,
-      moduleFormat: options.moduleFormat != null
-        ? options.moduleFormat
-        : 'haste',
+      moduleFormat:
+        options.moduleFormat != null ? options.moduleFormat : 'haste',
       platforms: options.platforms || defaults.platforms,
       polyfillModuleNames: options.polyfillModuleNames || [],
       postProcessModules: options.postProcessModules,
@@ -314,9 +312,10 @@ class Server {
 
   getShallowDependencies(options: DependencyOptions): Promise<Array<Module>> {
     return Promise.resolve().then(() => {
-      const platform = options.platform != null
-        ? options.platform
-        : parsePlatformFilePath(options.entryFile, this._platforms).platform;
+      const platform =
+        options.platform != null
+          ? options.platform
+          : parsePlatformFilePath(options.entryFile, this._platforms).platform;
       const {entryFile, dev, minify, hot} = options;
       return this._bundler.getShallowDependencies({
         entryFile,
@@ -337,9 +336,10 @@ class Server {
     options: DependencyOptions,
   ): Promise<ResolutionResponse<Module, *>> {
     return Promise.resolve().then(() => {
-      const platform = options.platform != null
-        ? options.platform
-        : parsePlatformFilePath(options.entryFile, this._platforms).platform;
+      const platform =
+        options.platform != null
+          ? options.platform
+          : parsePlatformFilePath(options.entryFile, this._platforms).platform;
       const {entryFile, dev, minify, hot} = options;
       return this._bundler.getDependencies({
         entryFile,
@@ -911,7 +911,8 @@ class Server {
       res.end(
         JSON.stringify({
           type: 'InternalError',
-          message: 'react-packager has encountered an internal error, ' +
+          message:
+            'react-packager has encountered an internal error, ' +
             'please check your terminal error output for more details',
         }),
       );
@@ -985,7 +986,8 @@ class Server {
         'entryModuleOnly',
         false,
       ),
-      generateSourceMaps: minify ||
+      generateSourceMaps:
+        minify ||
         !dev ||
         this._getBoolOptionFromQuery(urlObj.query, 'babelSourcemap', false),
       assetPlugins,

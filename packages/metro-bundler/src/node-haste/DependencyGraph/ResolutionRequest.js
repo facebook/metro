@@ -22,9 +22,7 @@ const path = require('path');
 
 import type DependencyGraphHelpers from './DependencyGraphHelpers';
 import type ResolutionResponse from './ResolutionResponse';
-import type {
-  Options as TransformWorkerOptions,
-} from '../../JSTransformer/worker';
+import type {Options as TransformWorkerOptions} from '../../JSTransformer/worker';
 import type {ReadResult, CachedReadResult} from '../Module';
 import type {ModuleResolver} from './ModuleResolution';
 
@@ -310,9 +308,10 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
          * not obsolete, and required from somewhere */
       });
     }
-    const dependencies = cached.result != null
-      ? cached.result.dependencies
-      : cached.outdatedDependencies;
+    const dependencies =
+      cached.result != null
+        ? cached.result.dependencies
+        : cached.outdatedDependencies;
     return this.tryResolveModuleDependencies(
       module,
       dependencies,

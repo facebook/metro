@@ -119,7 +119,9 @@ function transformModule(
 function transformJSON(json, options, callback) {
   const value = JSON.parse(json);
   const {filename} = options;
-  const code = `__d(function(${JsFileWrapping.MODULE_FACTORY_PARAMETERS.join(', ')}) { module.exports = \n${json}\n});`;
+  const code = `__d(function(${JsFileWrapping.MODULE_FACTORY_PARAMETERS.join(
+    ', ',
+  )}) { module.exports = \n${json}\n});`;
 
   const moduleData = {
     code,

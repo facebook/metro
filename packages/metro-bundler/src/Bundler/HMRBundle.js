@@ -16,8 +16,7 @@ const BundleBase = require('./BundleBase');
 const ModuleTransport = require('../lib/ModuleTransport');
 
 import type Resolver from '../Resolver';
-import type ResolutionResponse
-  from '../node-haste/DependencyGraph/ResolutionResponse';
+import type ResolutionResponse from '../node-haste/DependencyGraph/ResolutionResponse';
 import type Module from '../node-haste/Module';
 
 class HMRBundle extends BundleBase {
