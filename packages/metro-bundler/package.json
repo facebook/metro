@@ -31,7 +31,7 @@
     "graceful-fs": "^4.1.3",
     "image-size": "^0.3.5",
     "jest-docblock": "^20.0.3",
-    "jest-haste-map": "^20.0.4",
+    "jest-haste-map": "^20.1.0-alpha.1",
     "json-stable-stringify": "^1.0.1",
     "json5": "^0.4.0",
     "left-pad": "^1.1.3",
