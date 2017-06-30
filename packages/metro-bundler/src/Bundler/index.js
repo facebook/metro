@@ -41,7 +41,7 @@ const VERSION = require('../../package.json').version;
 import type AssetServer from '../AssetServer';
 import type Module, {HasteImpl} from '../node-haste/Module';
 import type ResolutionResponse from '../node-haste/DependencyGraph/ResolutionResponse';
-import type {MappingsMap} from '../lib/SourceMap';
+import type {MappingsMap, SourceMap} from '../lib/SourceMap';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type {Reporter} from '../lib/reporting';
 import type {TransformCache} from '../lib/TransformCaching';
@@ -113,10 +113,10 @@ export type PostMinifyProcess = ({
 }) => {code: string, map: MappingsMap};
 
 export type PostProcessBundleSourcemap = ({
-  code: string,
-  map: string,
+  code: Buffer | string,
+  map: SourceMap,
   outFileName: string,
-}) => {code: string, map: string};
+}) => {code: Buffer | string, map: SourceMap | string};
 
 type Options = {|
   +allowBundleUpdates: boolean,
@@ -132,7 +132,7 @@ type Options = {|
   +platforms: Array<string>,
   +polyfillModuleNames: Array<string>,
   +postMinifyProcess: PostMinifyProcess,
-  +postProcessBundleSourcemap?: PostProcessBundleSourcemap,
+  +postProcessBundleSourcemap: PostProcessBundleSourcemap,
   +postProcessModules?: PostProcessModules,
   +projectRoots: $ReadOnlyArray<string>,
   +providesModuleNodeModules?: Array<string>,

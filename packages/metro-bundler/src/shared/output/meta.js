@@ -22,25 +22,33 @@ const constantFor = encoding =>
   /^(?:utf-?16(?:le)?|ucs-?2)$/.test(encoding) ? 3 : 0;
 
 module.exports = function(
-  code: string,
+  code: Buffer | string,
   encoding: 'ascii' | 'utf8' | 'utf16le' = 'utf8',
 ): Buffer {
+  const buffer: Buffer = asBuffer(code, encoding);
   const hash = crypto.createHash('sha1');
-  // remove `new Buffer` calls when RN drops support for Node 4
-  hash.update(Buffer.from ? Buffer.from(code, encoding) : new Buffer(code, encoding));
+  hash.update(buffer);
   const digest = hash.digest();
   const signature = Buffer.alloc ? Buffer.alloc(digest.length + 1) : new Buffer(digest.length + 1);
   digest.copy(signature);
   signature.writeUInt8(
-    constantFor(tryAsciiPromotion(code, encoding)),
+    constantFor(tryAsciiPromotion(buffer, encoding)),
     signature.length - 1);
   return signature;
 };
 
-function tryAsciiPromotion(string, encoding) {
+function tryAsciiPromotion(buffer, encoding) {
   if (!isUTF8(encoding)) { return encoding; }
-  for (let i = 0, n = string.length; i < n; i++) {
-    if (string.charCodeAt(i) > 0x7f) { return encoding; }
+  for (let i = 0, n = buffer.length; i < n; i++) {
+    if (buffer[i] > 0x7f) { return encoding; }
   }
   return 'ascii';
+}
+
+function asBuffer(x, encoding): Buffer {
+  if (typeof x !== 'string') {
+    return x;
+  }
+  // remove `new Buffer` calls when RN drops support for Node 4
+  return Buffer.from ? Buffer.from(x, encoding) : new Buffer(x, encoding);
 }

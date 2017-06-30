@@ -49,14 +49,14 @@ class Bundle extends BundleBase {
   _sourceMap: string | null;
   _sourceMapFormat: SourceMapFormat;
   _sourceMapUrl: ?string;
-  postProcessBundleSourcemap: ?PostProcessBundleSourcemap;
+  postProcessBundleSourcemap: PostProcessBundleSourcemap;
 
   constructor({sourceMapUrl, dev, minify, ramGroups, postProcessBundleSourcemap}: {
     sourceMapUrl: ?string,
     dev?: boolean,
     minify?: boolean,
     ramGroups?: Array<string>,
-    postProcessBundleSourcemap?: PostProcessBundleSourcemap,
+    postProcessBundleSourcemap: PostProcessBundleSourcemap,
   } = {}) {
     super();
     this._sourceMap = null;

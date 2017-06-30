@@ -29,14 +29,18 @@ function buildBundle(packagerClient: Server, requestOptions: RequestOptions) {
   });
 }
 
-function createCodeWithMap(bundle: Bundle, dev: boolean, sourceMapSourcesRoot?: string): * {
+function createCodeWithMap(
+  bundle: Bundle,
+  dev: boolean,
+  sourceMapSourcesRoot?: string,
+): {code: string, map: SourceMap} {
   const map = bundle.getSourceMap({dev});
   const sourceMap = relativizeSourceMap(
     typeof map === 'string' ? (JSON.parse(map): SourceMap) : map,
     sourceMapSourcesRoot);
   return {
     code: bundle.getSource({dev}),
-    map: JSON.stringify(sourceMap),
+    map: sourceMap,
   };
 }
 
@@ -55,9 +59,10 @@ function saveBundleAndMap(
 
   log('start');
   const origCodeWithMap = createCodeWithMap(bundle, !!dev, sourcemapSourcesRoot);
-  const codeWithMap = bundle.postProcessBundleSourcemap ?
-    bundle.postProcessBundleSourcemap({...origCodeWithMap, outFileName: bundleOutput}) :
-    origCodeWithMap;
+  const codeWithMap = bundle.postProcessBundleSourcemap({
+    ...origCodeWithMap,
+    outFileName: bundleOutput,
+  });
   log('finish');
 
   log('Writing bundle output to:', bundleOutput);
@@ -73,7 +78,10 @@ function saveBundleAndMap(
 
   if (sourcemapOutput) {
     log('Writing sourcemap output to:', sourcemapOutput);
-    const writeMap = writeFile(sourcemapOutput, codeWithMap.map, null);
+    const map = typeof codeWithMap.map !== 'string'
+      ? JSON.stringify(codeWithMap.map)
+      : codeWithMap.map;
+    const writeMap = writeFile(sourcemapOutput, map, null);
     writeMap.then(() => log('Done writing sourcemap output'));
     return Promise.all([writeBundle, writeMetadata, writeMap]);
   } else {
