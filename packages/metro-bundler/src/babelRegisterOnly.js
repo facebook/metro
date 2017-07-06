@@ -13,6 +13,10 @@ require('./setupNodePolyfills');
 var _only = [];
 
 function registerOnly(onlyList) {
+  // This prevents `babel-register` from transforming the code of the
+  // plugins/presets that we are require-ing themselves before setting up the
+  // actual config.
+  require('babel-register')({only: [], babelrc: false});
   require('babel-register')(config(onlyList));
 }
 
