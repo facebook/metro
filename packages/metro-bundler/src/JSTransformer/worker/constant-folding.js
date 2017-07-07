@@ -13,9 +13,8 @@
 'use strict';
 
 const babel = require('babel-core');
-const invariant = require('fbjs/lib/invariant');
 
-import type {IntermediateTransformResult} from './types.flow';
+import type {Ast, SourceMap as MappingsMap} from 'babel-core';
 const t = babel.types;
 
 const Conditional = {
@@ -32,7 +31,7 @@ const Conditional = {
   },
 };
 
-const constantFoldingPlugin = {
+const plugin = {
   visitor: {
     BinaryExpression: {
       exit(path) {
@@ -72,32 +71,25 @@ const constantFoldingPlugin = {
   },
 };
 
-const plugin = () => constantFoldingPlugin;
-
 function constantFolding(
   filename: string,
-  transformResult: IntermediateTransformResult,
-  options: {+dev: boolean, +platform: ?string},
-): IntermediateTransformResult {
-  const code = transformResult.code;
-  const babelOptions = {
+  transformResult: {
+    ast: Ast,
+    code?: ?string,
+    map: ?MappingsMap,
+  },
+) {
+  return babel.transformFromAst(transformResult.ast, transformResult.code, {
     filename,
-    plugins: [[plugin, options]],
+    plugins: [plugin],
     inputSourceMap: transformResult.map,
     sourceMaps: true,
     sourceFileName: filename,
-    code: true,
     babelrc: false,
     compact: true,
-  };
-
-  const result = transformResult.ast
-    ? babel.transformFromAst(transformResult.ast, code, babelOptions)
-    : (code && babel.transform(code, babelOptions)) || {};
-  const {ast} = result;
-  invariant(ast != null, 'Missing AST in babel transform results.');
-  return {ast, code: result.code, map: result.map};
+    retainLines: true,
+  });
 }
 
-constantFolding.plugin = constantFoldingPlugin;
+constantFolding.plugin = plugin;
 module.exports = constantFolding;

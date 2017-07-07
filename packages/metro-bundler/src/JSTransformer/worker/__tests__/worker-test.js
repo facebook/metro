@@ -14,8 +14,7 @@ jest
   .mock('../constant-folding')
   .mock('../extract-dependencies')
   .mock('../inline')
-  .mock('../minify')
-  .mock('../regenerator-insertion');
+  .mock('../minify');
 
 const {objectContaining} = jasmine;
 
@@ -235,28 +234,19 @@ describe('code transformation worker:', () => {
   });
 
   describe('Minifications:', () => {
-    let constantFolding, inline, regeneratorInsertion;
-    let options;
+    let constantFolding, inline, options;
     let transformResult, dependencyData;
-
     const filename = 'arbitrary/file.js';
-    const resultCode = 'arbitrary(result(code));';
-    const resultMap = {version: 3, sources: ['abritrary/file.js']};
-
-    const result = {
-      ast: {},
-      code: resultCode,
-      map: resultMap,
-    };
+    const foldedCode = 'arbitrary(folded(code));';
+    const foldedMap = {version: 3, sources: ['fold.js']};
 
     beforeEach(() => {
+      constantFolding = require('../constant-folding').mockReturnValue({
+        code: foldedCode,
+        map: foldedMap,
+      });
       extractDependencies = require('../extract-dependencies');
-
-      constantFolding = require('../constant-folding').mockReturnValue(result);
-      inline = require('../inline').mockReturnValue(result);
-      regeneratorInsertion = require('../regenerator-insertion').mockReturnValue(
-        result,
-      );
+      inline = require('../inline');
 
       options = {minify: true, transform: {generateSourceMaps: true}};
       dependencyData = {
@@ -265,32 +255,18 @@ describe('code transformation worker:', () => {
       };
 
       extractDependencies.mockImplementation(
-        code => (code === resultCode ? dependencyData : {}),
+        code => (code === foldedCode ? dependencyData : {}),
       );
 
-      transformer.transform.mockImplementation((src, fileName, _) => result);
+      transformer.transform.mockImplementation(
+        (src, fileName, _) => transformResult,
+      );
     });
 
-    it('passes the transform result to `regenerator-insertion` for adding regeneratorRuntime', done => {
+    it('passes the transform result to `inline` for constant inlining', done => {
+      transformResult = {map: {version: 3}, code: 'arbitrary(code)'};
       transformCode(transformer, filename, filename, 'code', options, () => {
-        expect(regeneratorInsertion).toBeCalledWith(filename, result, options);
-        done();
-      });
-    });
-
-    it('passes the result obtained from `regenerator-insertion` on to `inline`', done => {
-      const regeneratorInsertionResult = {
-        map: {version: 3, sources: []},
-        ast: {},
-      };
-      regeneratorInsertion.mockReturnValue(regeneratorInsertionResult);
-
-      transformCode(transformer, filename, filename, 'code', options, () => {
-        expect(inline).toBeCalledWith(
-          filename,
-          regeneratorInsertionResult,
-          options,
-        );
+        expect(inline).toBeCalledWith(filename, transformResult, options);
         done();
       });
     });
@@ -298,16 +274,15 @@ describe('code transformation worker:', () => {
     it('passes the result obtained from `inline` on to `constant-folding`', done => {
       const inlineResult = {map: {version: 3, sources: []}, ast: {}};
       inline.mockReturnValue(inlineResult);
-
       transformCode(transformer, filename, filename, 'code', options, () => {
-        expect(constantFolding).toBeCalledWith(filename, inlineResult, options);
+        expect(constantFolding).toBeCalledWith(filename, inlineResult);
         done();
       });
     });
 
-    it('Uses the code obtained from the last plugin to extract dependencies', done => {
+    it('Uses the code obtained from `constant-folding` to extract dependencies', done => {
       transformCode(transformer, filename, filename, 'code', options, () => {
-        expect(extractDependencies).toBeCalledWith(resultCode);
+        expect(extractDependencies).toBeCalledWith(foldedCode);
         done();
       });
     });
@@ -327,7 +302,7 @@ describe('code transformation worker:', () => {
       );
     });
 
-    it('uses data produced by the last plugin for the result', done => {
+    it('uses data produced by `constant-folding` for the result', done => {
       transformCode(
         transformer,
         'filename',
@@ -336,7 +311,7 @@ describe('code transformation worker:', () => {
         options,
         (_, data) => {
           expect(data.result).toEqual(
-            objectContaining({code: resultCode, map: resultMap}),
+            objectContaining({code: foldedCode, map: foldedMap}),
           );
           done();
         },
