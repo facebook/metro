@@ -17,7 +17,11 @@ jest
   .mock('../../Logger')
   .mock('../../lib/TransformCaching')
   // It's noticeably faster to prevent running watchman from FileWatcher.
-  .mock('child_process', () => ({}));
+  .mock('child_process', () => ({}))
+  .mock('os', () => ({
+    ...require.requireActual('os'),
+    platform: () => 'test',
+  }));
 
 // This doesn't have state, and it's huge (Babel) so it's much faster to
 // require it only once. The variable name is prefixed with "mock" as an escape-hatch
@@ -1047,7 +1051,7 @@ describe('DependencyGraph', function() {
         root: {
           'index.js': ['/**', ' * @providesModule index', ' */'].join('\n'),
           aPackage: {
-            'package.json': 'lol',
+            'package.json': '{}',
             'main.js': 'lol',
           },
         },
