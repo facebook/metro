@@ -43,7 +43,7 @@
     "rimraf": "^2.5.4",
     "source-map": "^0.5.6",
     "temp": "0.8.3",
-    "throat": "^3.0.0",
+    "throat": "^4.1.0",
     "uglify-js": "2.7.5",
     "write-file-atomic": "^1.2.0",
     "xpipe": "^1.0.5"
