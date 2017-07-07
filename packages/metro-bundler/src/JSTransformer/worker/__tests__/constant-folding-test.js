@@ -10,26 +10,28 @@
  */
 'use strict';
 
-const babel = require('babel-core');
+/* eslint-disable max-len */
+
 const constantFolding = require('../constant-folding');
 
-function parse(code) {
-  return babel.transform(code, {code: false, babelrc: false, compact: true});
-}
+const {transform, transformFromAst} = require('babel-core');
 
 const babelOptions = {
   babelrc: false,
   compact: true,
-  retainLines: false,
 };
 
-function normalize({code}) {
-  return babel.transform(code, babelOptions).code;
+function toString(ast) {
+  return normalize(transformFromAst(ast, babelOptions).code);
+}
+
+function normalize(code) {
+  return transform(code, babelOptions).code;
 }
 
 describe('constant expressions', () => {
   it('can optimize conditional expressions with constant conditions', () => {
-    const code = `
+    const before = `
       a(
         'production'=="production",
         'production'!=='development',
@@ -39,56 +41,97 @@ describe('constant expressions', () => {
         'android'==='android' ? {a:1} : {a:0},
         'foo'==='bar' ? b : c,
         f() ? g() : h()
-      );`;
-    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual(
-      'a(true,true,2,true,{},{a:1},c,f()?g():h());',
-    );
+      );
+    `;
+
+    const after = `
+      a(
+        true,
+        true,
+        2,
+        true,
+        {},
+        {a:1},
+        c,
+        f() ? g() : h()
+      );
+    `;
+
+    const {ast} = constantFolding('arbitrary.js', {code: before});
+    expect(toString(ast)).toEqual(normalize(after));
   });
 
   it('can optimize ternary expressions with constant conditions', () => {
-    const code = `var a = true ? 1 : 2;
-       var b = 'android' == 'android'
-         ? ('production' != 'production' ? 'a' : 'A')
-         : 'i';`;
-    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual(
-      "var a=1;var b='A';",
-    );
+    const before = `
+      var a = true ? 1 : 2;
+      var b = 'android' == 'android'
+        ? ('production' != 'production' ? 'a' : 'A')
+        : 'i';
+    `;
+
+    const after = `
+      var a = 1;
+      var b = 'A';
+    `;
+
+    const {ast} = constantFolding('arbitrary.js', {code: before});
+    expect(toString(ast)).toEqual(normalize(after));
   });
 
   it('can optimize logical operator expressions with constant conditions', () => {
-    const code = `
+    const before = `
       var a = true || 1;
       var b = 'android' == 'android' &&
-        'production' != 'production' || null || "A";`;
-    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual(
-      'var a=true;var b="A";',
-    );
+        'production' != 'production' || null || "A";
+    `;
+
+    const after = `
+      var a = true;
+      var b = "A";
+    `;
+
+    const {ast} = constantFolding('arbitrary.js', {code: before});
+    expect(toString(ast)).toEqual(normalize(after));
   });
 
   it('can optimize logical operators with partly constant operands', () => {
-    const code = `
+    const before = `
       var a = "truthy" || z();
       var b = "truthy" && z();
       var c = null && z();
       var d = null || z();
       var e = !1 && z();
     `;
-    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual(
-      'var a="truthy";var b=z();var c=null;var d=z();var e=false;',
-    );
+
+    const after = `
+      var a = "truthy";
+      var b = z();
+      var c = null;
+      var d = z();
+      var e = false;
+    `;
+
+    const {ast} = constantFolding('arbitrary.js', {code: before});
+    expect(toString(ast)).toEqual(normalize(after));
   });
 
   it('can remode an if statement with a falsy constant test', () => {
-    const code = `
+    const before = `
       if ('production' === 'development' || false) {
         var a = 1;
       }
     `;
-    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual('');
+
+    // Intentionally empty: all dead code.
+    const after = `
+    `;
+
+    const {ast} = constantFolding('arbitrary.js', {code: before});
+    expect(toString(ast)).toEqual(normalize(after));
   });
 
   it('can optimize if-else-branches with constant conditions', () => {
-    const code = `
+    const before = `
       if ('production' == 'development') {
         var a = 1;
         var b = a + 2;
@@ -99,13 +142,20 @@ describe('constant expressions', () => {
         var a = 'b';
       }
     `;
-    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual(
-      '{var a=3;var b=a+4;}',
-    );
+
+    const after = `
+      {
+        var a = 3;
+        var b = a + 4;
+      }
+    `;
+
+    const {ast} = constantFolding('arbitrary.js', {code: before});
+    expect(toString(ast)).toEqual(normalize(after));
   });
 
   it('can optimize nested if-else constructs', () => {
-    const code = `
+    const before = `
       if ('ios' === "android") {
         if (true) {
           require('a');
@@ -120,8 +170,16 @@ describe('constant expressions', () => {
         }
       }
     `;
-    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual(
-      "{{require('c');}}",
-    );
+
+    const after = `
+      {
+        {
+          require('c');
+        }
+      }
+    `;
+
+    const {ast} = constantFolding('arbitrary.js', {code: before});
+    expect(toString(ast)).toEqual(normalize(after));
   });
 });
