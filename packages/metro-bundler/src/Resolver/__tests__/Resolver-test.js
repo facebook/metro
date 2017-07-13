@@ -123,15 +123,150 @@ describe('Resolver', function() {
       });
     });
 
-    it('should pass in more polyfills', function() {
-      expect.assertions(3);
+    it('should get dependencies with polyfills', function() {
+      expect.assertions(5);
 
       var module = createModule('index');
       var deps = [module];
 
       var depResolverPromise = Resolver.load({
-        getPolyfills: () => ['custom-polyfill-1', 'custom-polyfill-2'],
         projectRoot: '/root',
+      });
+
+      DependencyGraph.prototype.getDependencies.mockImplementation(function() {
+        return Promise.resolve(new ResolutionResponseMock({
+          dependencies: deps,
+          mainModuleId: 'index',
+        }));
+      });
+
+      const polyfill = {
+        id: 'polyfills/Object.es6.js',
+        file: 'polyfills/Object.es6.js',
+        dependencies: [],
+      };
+      DependencyGraph.prototype.createPolyfill.mockReturnValueOnce(polyfill);
+
+      return depResolverPromise
+        .then(r => r.getDependencies(
+          '/root/index.js',
+          {dev: false},
+          undefined,
+          undefined,
+          createGetModuleId()
+        )).then(function(result) {
+          expect(result.mainModuleId).toEqual('index');
+          expect(result.dependencies[result.dependencies.length - 1]).toBe(module);
+
+          expect(DependencyGraph.mock.instances[0].getDependencies)
+              .toBeCalledWith({entryPath: '/root/index.js', recursive: true});
+          expect(result.dependencies[0]).toEqual(polyfill);
+
+          expect(
+            DependencyGraph
+              .prototype
+              .createPolyfill
+              .mock
+              .calls
+              .map(call => call[0]))
+          .toEqual([
+            {id: 'polyfills/Object.es6.js',
+              file: 'polyfills/Object.es6.js',
+              dependencies: [],
+            },
+            {id: 'polyfills/console.js',
+              file: 'polyfills/console.js',
+              dependencies: [
+                'polyfills/Object.es6.js',
+              ],
+            },
+            {id: 'polyfills/error-guard.js',
+              file: 'polyfills/error-guard.js',
+              dependencies: [
+                'polyfills/Object.es6.js',
+                'polyfills/console.js',
+              ],
+            },
+            {id: 'polyfills/Number.es6.js',
+              file: 'polyfills/Number.es6.js',
+              dependencies: [
+                'polyfills/Object.es6.js',
+                'polyfills/console.js',
+                'polyfills/error-guard.js',
+              ],
+            },
+            {id: 'polyfills/String.prototype.es6.js',
+              file: 'polyfills/String.prototype.es6.js',
+              dependencies: [
+                'polyfills/Object.es6.js',
+                'polyfills/console.js',
+                'polyfills/error-guard.js',
+                'polyfills/Number.es6.js',
+              ],
+            },
+            {id: 'polyfills/Array.prototype.es6.js',
+              file: 'polyfills/Array.prototype.es6.js',
+              dependencies: [
+                'polyfills/Object.es6.js',
+                'polyfills/console.js',
+                'polyfills/error-guard.js',
+                'polyfills/Number.es6.js',
+                'polyfills/String.prototype.es6.js',
+              ],
+            },
+            {id: 'polyfills/Array.es6.js',
+              file: 'polyfills/Array.es6.js',
+              dependencies: [
+                'polyfills/Object.es6.js',
+                'polyfills/console.js',
+                'polyfills/error-guard.js',
+                'polyfills/Number.es6.js',
+                'polyfills/String.prototype.es6.js',
+                'polyfills/Array.prototype.es6.js',
+              ],
+            },
+            {id: 'polyfills/Object.es7.js',
+              file: 'polyfills/Object.es7.js',
+              dependencies: [
+                'polyfills/Object.es6.js',
+                'polyfills/console.js',
+                'polyfills/error-guard.js',
+                'polyfills/Number.es6.js',
+                'polyfills/String.prototype.es6.js',
+                'polyfills/Array.prototype.es6.js',
+                'polyfills/Array.es6.js',
+              ],
+            },
+            {id: 'polyfills/babelHelpers.js',
+              file: 'polyfills/babelHelpers.js',
+              dependencies: [
+                'polyfills/Object.es6.js',
+                'polyfills/console.js',
+                'polyfills/error-guard.js',
+                'polyfills/Number.es6.js',
+                'polyfills/String.prototype.es6.js',
+                'polyfills/Array.prototype.es6.js',
+                'polyfills/Array.es6.js',
+                'polyfills/Object.es7.js',
+              ],
+            },
+          ].map(({id, file, dependencies}) => ({
+            id: pathJoin(__dirname, '..', id),
+            file: pathJoin(__dirname, '..', file),
+            dependencies: dependencies.map(d => pathJoin(__dirname, '..', d)),
+          })));
+        });
+    });
+
+    it('should pass in more polyfills', function() {
+      expect.assertions(2);
+
+      var module = createModule('index');
+      var deps = [module];
+
+      var depResolverPromise = Resolver.load({
+        projectRoot: '/root',
+        polyfillModuleNames: ['some module'],
       });
 
       DependencyGraph.prototype.getDependencies.mockImplementation(function() {
@@ -150,21 +285,24 @@ describe('Resolver', function() {
           createGetModuleId()
         )).then(result => {
           expect(result.mainModuleId).toEqual('index');
-          const calls = DependencyGraph.prototype.createPolyfill.mock.calls;
-          const callPolyfill1 = calls[result.dependencies.length - 3];
-          const callPolyfill2 = calls[result.dependencies.length - 2];
-
-          expect(callPolyfill1).toEqual([{
-            file: 'custom-polyfill-1',
-            id: 'custom-polyfill-1',
-            dependencies: [],
-          }]);
-
-          expect(callPolyfill2).toEqual([{
-            file: 'custom-polyfill-2',
-            id: 'custom-polyfill-2',
-            dependencies: ['custom-polyfill-1'],
-          }]);
+          const calls =
+            DependencyGraph.prototype.createPolyfill.mock.calls[result.dependencies.length - 2];
+          expect(calls).toEqual([
+            {file: 'some module',
+              id: 'some module',
+              dependencies: [
+                'polyfills/Object.es6.js',
+                'polyfills/console.js',
+                'polyfills/error-guard.js',
+                'polyfills/Number.es6.js',
+                'polyfills/String.prototype.es6.js',
+                'polyfills/Array.prototype.es6.js',
+                'polyfills/Array.es6.js',
+                'polyfills/Object.es7.js',
+                'polyfills/babelHelpers.js',
+              ].map(d => pathJoin(__dirname, '..', d)),
+            },
+          ]);
         });
     });
   });

@@ -32,7 +32,6 @@ type BuildFn = (
 ) => void;
 
 type BuildOptions = {|
-  getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   optimize: boolean,
   platform: string,
 |};
@@ -44,7 +43,6 @@ exports.createBuildSetup = (
 ): BuildFn =>
   (entryPoints, options, callback) => {
     const {
-      getPolyfills = (({platform}) => []),
       optimize = false,
       platform = defaults.platforms[0],
     } = options;
@@ -70,7 +68,7 @@ exports.createBuildSetup = (
         cb,
       ),
       polyfills: cb => graphOnlyModules(
-        getPolyfills({platform}).map(translateDefaultsPath),
+        defaults.polyfills.map(translateDefaultsPath),
         cb,
       ),
     }, (
@@ -81,6 +79,7 @@ exports.createBuildSetup = (
         callback(error);
         return;
       }
+
 
       const {
         graph: {modules, entryModules},

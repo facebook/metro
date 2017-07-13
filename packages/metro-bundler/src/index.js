@@ -36,7 +36,6 @@ type Options = {
   +sourceExts: ?Array<string>,
   +transformCache: TransformCache,
   +transformModulePath: string,
-  getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   globalTransformCache: ?GlobalTransformCache,
   hasteImpl?: HasteImpl,
   +maxWorkers?: number,
