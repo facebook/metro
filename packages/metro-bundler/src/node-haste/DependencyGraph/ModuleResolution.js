@@ -178,21 +178,11 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         package_.root,
         path.relative(packageName, realModuleName),
       );
-      return tryResolveSync(
-        () =>
-          this._loadAsFileOrThrow(
-            potentialModulePath,
-            fromModule,
-            toModuleName,
-            platform,
-          ),
-        () =>
-          this._loadAsDirOrThrow(
-            potentialModulePath,
-            fromModule,
-            toModuleName,
-            platform,
-          ),
+      return this._loadAsFileOrDirOrThrow(
+        potentialModulePath,
+        fromModule,
+        toModuleName,
+        platform,
       );
     }
 
@@ -227,22 +217,11 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     if (realModuleName === false) {
       return this._getEmptyModule(fromModule, toModuleName);
     }
-
-    return tryResolveSync(
-      () =>
-        this._loadAsFileOrThrow(
-          realModuleName,
-          fromModule,
-          toModuleName,
-          platform,
-        ),
-      () =>
-        this._loadAsDirOrThrow(
-          realModuleName,
-          fromModule,
-          toModuleName,
-          platform,
-        ),
+    return this._loadAsFileOrDirOrThrow(
+      potentialModulePath,
+      fromModule,
+      toModuleName,
+      platform,
     );
   }
 
@@ -338,21 +317,11 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     platform: string | null,
   ): ?TModule {
     try {
-      return tryResolveSync(
-        () =>
-          this._loadAsFileOrThrow(
-            searchPath,
-            fromModule,
-            toModuleName,
-            platform,
-          ),
-        () =>
-          this._loadAsDirOrThrow(
-            searchPath,
-            fromModule,
-            toModuleName,
-            platform,
-          ),
+      return this._loadAsFileOrDirOrThrow(
+        searchPath,
+        fromModule,
+        toModuleName,
+        platform,
       );
     } catch (error) {
       if (error.type !== 'UnableToResolveError') {
@@ -369,31 +338,24 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
    * This function is meant to be a temporary proxy for _loadAsFile until
    * the callsites switch to that tracking structure.
    */
-  _loadAsFileOrThrow(
-    basePath: string,
+  _loadAsFileOrDirOrThrow(
+    potentialModulePath: string,
     fromModule: TModule,
-    toModule: string,
+    toModuleName: string,
     platform: string | null,
   ): TModule {
-    const dirPath = path.dirname(basePath);
-    const fileNameHint = path.basename(basePath);
+    const dirPath = path.dirname(potentialModulePath);
+    const fileNameHint = path.basename(potentialModulePath);
     const result = this._loadAsFile(dirPath, fileNameHint, platform);
     if (result.type === 'resolved') {
       return result.module;
     }
-    if (result.candidates.type === 'asset') {
-      const msg =
-        `Directory \`${dirPath}' doesn't contain asset ` +
-        `\`${result.candidates.name}'`;
-      throw new UnableToResolveError(fromModule, toModule, msg);
-    }
-    invariant(result.candidates.type === 'sources', 'invalid candidate type');
-    const msg =
-      `Could not resolve the base path \`${basePath}' into a module. The ` +
-      `folder \`${dirPath}' was searched for one of these files: ` +
-      result.candidates.fileNames.map(filePath => `\`${filePath}'`).join(', ') +
-      '.';
-    throw new UnableToResolveError(fromModule, toModule, msg);
+    return this._loadAsDirOrThrow(
+      potentialModulePath,
+      fromModule,
+      toModuleName,
+      platform,
+    );
   }
 
   _loadAsFile(
