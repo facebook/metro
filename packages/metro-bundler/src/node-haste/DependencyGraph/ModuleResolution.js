@@ -346,15 +346,27 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   ): TModule {
     const dirPath = path.dirname(potentialModulePath);
     const fileNameHint = path.basename(potentialModulePath);
-    const result = this._loadAsFile(dirPath, fileNameHint, platform);
-    if (result.type === 'resolved') {
-      return result.module;
+    const fileResult = this._loadAsFile(dirPath, fileNameHint, platform);
+    if (fileResult.type === 'resolved') {
+      return fileResult.module;
     }
-    return this._loadAsDirOrThrow(
-      potentialModulePath,
+    const dirResult = this._loadAsDir(potentialModulePath, platform);
+    if (dirResult.type === 'resolved') {
+      return dirResult.module;
+    }
+    if (dirResult.candidates.type === 'package') {
+      throw new UnableToResolveError(
+        fromModule,
+        toModuleName,
+        `could not resolve \`${potentialModulePath}' as a folder: it ` +
+          'contained a package, but its "main" could not be resolved',
+      );
+    }
+    invariant(dirResult.candidates.type === 'index', 'invalid candidate type');
+    throw new UnableToResolveError(
       fromModule,
       toModuleName,
-      platform,
+      `could not resolve \`${potentialModulePath}' as a file nor as a folder`,
     );
   }
 
@@ -470,37 +482,6 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       fromModule,
       toModuleName,
       "could not resolve `${ModuleResolver.EMPTY_MODULE}'",
-    );
-  }
-
-  /**
-   * Same as `_loadAsDir`, but throws instead of returning candidates in case of
-   * failure. We want to migrate all the callsites to `_loadAsDir` eventually.
-   */
-  _loadAsDirOrThrow(
-    potentialDirPath: string,
-    fromModule: TModule,
-    toModuleName: string,
-    platform: string | null,
-  ): TModule {
-    const result = this._loadAsDir(potentialDirPath, platform);
-    if (result.type === 'resolved') {
-      return result.module;
-    }
-    if (result.candidates.type === 'package') {
-      throw new UnableToResolveError(
-        fromModule,
-        toModuleName,
-        `could not resolve \`${potentialDirPath}' as a folder: it contained ` +
-          'a package, but its "main" could not be resolved',
-      );
-    }
-    invariant(result.candidates.type === 'index', 'invalid candidate type');
-    throw new UnableToResolveError(
-      fromModule,
-      toModuleName,
-      `could not resolve \`${potentialDirPath}' as a folder: it did not ` +
-        'contain a package, nor an index file',
     );
   }
 
