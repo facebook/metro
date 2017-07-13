@@ -97,6 +97,8 @@ type DirCandidates =
   | {|+type: 'package', +dir: DirCandidates, +file: FileCandidates|}
   | {|+type: 'index', +file: FileCandidates|};
 
+type FileAndDirCandidates = {|+dir: DirCandidates, +file: FileCandidates|};
+
 type Resolution<TModule, TCandidates> =
   | {|+type: 'resolved', +module: TModule|}
   | {|+type: 'failed', +candidates: TCandidates|};
@@ -274,14 +276,11 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
 
     const fullSearchQueue = searchQueue.concat(extraSearchQueue);
     for (let i = 0; i < fullSearchQueue.length; ++i) {
-      const resolvedModule = this._tryResolveNodeDep(
-        fullSearchQueue[i],
-        fromModule,
-        toModuleName,
-        platform,
-      );
-      if (resolvedModule != null) {
-        return resolvedModule;
+      const result = this._loadAsFileOrDir(fullSearchQueue[i], platform);
+      // Eventually we should aggregate the candidates so that we can
+      // report them with more accuracy in the error below.
+      if (result.type === 'resolved') {
+        return result.module;
       }
     }
 
@@ -307,31 +306,6 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   }
 
   /**
-   * This is written as a separate function because "try..catch" blocks cause
-   * the entire surrounding function to be deoptimized.
-   */
-  _tryResolveNodeDep(
-    searchPath: string,
-    fromModule: TModule,
-    toModuleName: string,
-    platform: string | null,
-  ): ?TModule {
-    try {
-      return this._loadAsFileOrDirOrThrow(
-        searchPath,
-        fromModule,
-        toModuleName,
-        platform,
-      );
-    } catch (error) {
-      if (error.type !== 'UnableToResolveError') {
-        throw error;
-      }
-      return null;
-    }
-  }
-
-  /**
    * Eventually we'd like to remove all the exception being throw in the middle
    * of the resolution algorithm, instead keeping track of tentatives in a
    * specific data structure, and building a proper error at the top-level.
@@ -344,17 +318,14 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     toModuleName: string,
     platform: string | null,
   ): TModule {
-    const dirPath = path.dirname(potentialModulePath);
-    const fileNameHint = path.basename(potentialModulePath);
-    const fileResult = this._loadAsFile(dirPath, fileNameHint, platform);
-    if (fileResult.type === 'resolved') {
-      return fileResult.module;
+    const result = this._loadAsFileOrDir(potentialModulePath, platform);
+    if (result.type === 'resolved') {
+      return result.module;
     }
-    const dirResult = this._loadAsDir(potentialModulePath, platform);
-    if (dirResult.type === 'resolved') {
-      return dirResult.module;
-    }
-    if (dirResult.candidates.type === 'package') {
+    // We ignore the `file` candidates as a temporary measure before this
+    // function is gotten rid of, because it's historically been ignored anyway.
+    const {dir} = result.candidates;
+    if (dir.type === 'package') {
       throw new UnableToResolveError(
         fromModule,
         toModuleName,
@@ -362,12 +333,35 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
           'contained a package, but its "main" could not be resolved',
       );
     }
-    invariant(dirResult.candidates.type === 'index', 'invalid candidate type');
+    invariant(dir.type === 'index', 'invalid candidate type');
     throw new UnableToResolveError(
       fromModule,
       toModuleName,
       `could not resolve \`${potentialModulePath}' as a file nor as a folder`,
     );
+  }
+
+  /**
+   * In the NodeJS-style module resolution scheme we want to check potential
+   * paths both as directories and as files. For example, `foo/bar` may resolve
+   * to `foo/bar.js` (preferred), but it might also be `foo/bar/index.js`, or
+   * even a package directory.
+   */
+  _loadAsFileOrDir(
+    potentialModulePath: string,
+    platform: string | null,
+  ): Resolution<TModule, FileAndDirCandidates> {
+    const dirPath = path.dirname(potentialModulePath);
+    const fileNameHint = path.basename(potentialModulePath);
+    const fileResult = this._loadAsFile(dirPath, fileNameHint, platform);
+    if (fileResult.type === 'resolved') {
+      return fileResult;
+    }
+    const dirResult = this._loadAsDir(potentialModulePath, platform);
+    if (dirResult.type === 'resolved') {
+      return dirResult;
+    }
+    return failedFor({file: fileResult.candidates, dir: dirResult.candidates});
   }
 
   _loadAsFile(
@@ -388,10 +382,10 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     if (fileName != null) {
       const filePath = path.join(dirPath, fileName);
       const module = this._options.moduleCache.getModule(filePath);
-      return {type: 'resolved', module};
+      return resolvedAs(module);
     }
     const fileNames = resolver.getTentativeFileNames();
-    return {type: 'failed', candidates: {type: 'sources', fileNames}};
+    return failedFor({type: 'sources', fileNames});
   }
 
   _loadAsAssetFile(
@@ -404,15 +398,9 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     const assetName = getArrayLowestItem(assetNames);
     if (assetName != null) {
       const assetPath = path.join(dirPath, assetName);
-      return {
-        type: 'resolved',
-        module: this._options.moduleCache.getAssetModule(assetPath),
-      };
+      return resolvedAs(this._options.moduleCache.getAssetModule(assetPath));
     }
-    return {
-      type: 'failed',
-      candidates: {type: 'asset', name: fileNameHint},
-    };
+    return failedFor({type: 'asset', name: fileNameHint});
   }
 
   /**
@@ -507,10 +495,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     if (result.type === 'resolved') {
       return result;
     }
-    return {
-      type: 'failed',
-      candidates: {type: 'index', file: result.candidates},
-    };
+    return failedFor({type: 'index', file: result.candidates});
   }
 
   /**
@@ -536,14 +521,11 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     if (dirResult.type === 'resolved') {
       return dirResult;
     }
-    return {
-      type: 'failed',
-      candidates: {
-        type: 'package',
-        dir: dirResult.candidates,
-        file: fileResult.candidates,
-      },
-    };
+    return failedFor({
+      type: 'package',
+      dir: dirResult.candidates,
+      file: fileResult.candidates,
+    });
   }
 }
 
@@ -582,6 +564,18 @@ function getArrayLowestItem(a: $ReadOnlyArray<string>): string | void {
     }
   }
   return lowest;
+}
+
+function resolvedAs<TModule, TCandidates>(
+  module: TModule,
+): Resolution<TModule, TCandidates> {
+  return {type: 'resolved', module};
+}
+
+function failedFor<TModule, TCandidates>(
+  candidates: TCandidates,
+): Resolution<TModule, TCandidates> {
+  return {type: 'failed', candidates};
 }
 
 class UnableToResolveError<TModule: Moduleish> extends Error {
