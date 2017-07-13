@@ -24,18 +24,6 @@ exports.moduleSystem = require.resolve('./Resolver/polyfills/require.js');
 
 exports.platforms = ['ios', 'android', 'windows', 'web'];
 
-exports.polyfills = [
-  require.resolve('./Resolver/polyfills/Object.es6.js'),
-  require.resolve('./Resolver/polyfills/console.js'),
-  require.resolve('./Resolver/polyfills/error-guard.js'),
-  require.resolve('./Resolver/polyfills/Number.es6.js'),
-  require.resolve('./Resolver/polyfills/String.prototype.es6.js'),
-  require.resolve('./Resolver/polyfills/Array.prototype.es6.js'),
-  require.resolve('./Resolver/polyfills/Array.es6.js'),
-  require.resolve('./Resolver/polyfills/Object.es7.js'),
-  require.resolve('./Resolver/polyfills/babelHelpers.js'),
-];
-
 exports.providesModuleNodeModules = [
   'react-native',
   'react-native-windows',

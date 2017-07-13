@@ -34,6 +34,7 @@ type Options = {|
   +assetExts: Array<string>,
   +blacklistRE?: RegExp,
   +extraNodeModules: ?{},
+  +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   +getTransformCacheKey: GetTransformCacheKey,
   +globalTransformCache: ?GlobalTransformCache,
   +hasteImpl?: HasteImpl,
@@ -55,11 +56,13 @@ type Options = {|
 class Resolver {
 
   _depGraph: DependencyGraph;
+  _getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>;
   _minifyCode: MinifyCode;
   _postMinifyProcess: PostMinifyProcess;
   _polyfillModuleNames: Array<string>;
 
   constructor(opts: Options, depGraph: DependencyGraph) {
+    this._getPolyfills = opts.getPolyfills;
     this._minifyCode = opts.minifyCode;
     this._postMinifyProcess = opts.postMinifyProcess;
     this._polyfillModuleNames = opts.polyfillModuleNames || [];
@@ -113,7 +116,7 @@ class Resolver {
       recursive,
       onProgress,
     }).then(resolutionResponse => {
-      this._getPolyfillDependencies().reverse().forEach(
+      this._getPolyfillDependencies(platform).reverse().forEach(
         polyfill => resolutionResponse.prependDependency(polyfill)
       );
 
@@ -141,8 +144,9 @@ class Resolver {
     }));
   }
 
-  _getPolyfillDependencies(): Array<Module> {
-    const polyfillModuleNames = defaults.polyfills.concat(this._polyfillModuleNames);
+  _getPolyfillDependencies(platform: ?string): Array<Module> {
+    const polyfillModuleNames = this._getPolyfills({platform})
+      .concat(this._polyfillModuleNames);
 
     return polyfillModuleNames.map(
       (polyfillModuleName, idx) => this._depGraph.createPolyfill({

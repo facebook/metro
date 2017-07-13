@@ -17,6 +17,7 @@ describe('build setup', () => {
   const buildSetup = ModuleGraph.createBuildSetup(graph, mds => {
     return [...mds].sort((l, r) => l.file.path > r.file.path);
   });
+  const polyfillOptions = {getPolyfills: () => ['polyfill-a', 'polyfill-b']};
   const noOptions = {};
   const noEntryPoints = [];
 
@@ -65,10 +66,10 @@ describe('build setup', () => {
   });
 
   it('places polyfills after the module system', done => {
-    buildSetup(noEntryPoints, noOptions, (error, result) => {
-      const polyfills =
-        Array.from(result.modules).slice(2, 2 + defaults.polyfills.length);
-      expect(polyfills).toEqual(defaults.polyfills.map(moduleFromPath));
+    buildSetup(noEntryPoints, polyfillOptions, (error, result) => {
+      const list = polyfillOptions.getPolyfills();
+      const polyfills = Array.from(result.modules).slice(2, list.length + 2);
+      expect(polyfills).toEqual(list.map(moduleFromPath));
       done();
     });
   });
