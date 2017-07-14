@@ -11,7 +11,6 @@
 
 jest.mock('../../worker-farm', () => () => () => {})
     .mock('worker-farm', () => () => () => {})
-    .mock('timers', () => ({setImmediate: fn => setTimeout(fn, 0)}))
     .mock('uglify-js')
     .mock('crypto')
     .mock(
@@ -25,13 +24,13 @@ jest.mock('../../worker-farm', () => () => () => {})
     .mock('../../lib/GlobalTransformCache');
 
 describe('processRequest', () => {
-  let Bundler, Server, AssetServer, Promise, symbolicate;
+  let Bundler, Server, AssetServer, symbolicate;
   beforeEach(() => {
+    jest.useFakeTimers();
     jest.resetModules();
     Bundler = require('../../Bundler');
     Server = require('../');
     AssetServer = require('../../AssetServer');
-    Promise = require('promise');
     symbolicate = require('../symbolicate');
   });
 
@@ -339,11 +338,14 @@ describe('processRequest', () => {
       };
     });
 
-    it('should hold on to request and inform on change', () => {
+    it('should hold on to request and inform on change', done => {
+      jest.useRealTimers();
       server.processRequest(req, res);
       server.onFileChange('all', options.projectRoots[0] + 'path/file.js');
-      jest.runAllTimers();
-      expect(res.end).toBeCalledWith(JSON.stringify({changed: true}));
+      res.end.mockImplementation(value => {
+        expect(value).toBe(JSON.stringify({changed: true}));
+        done();
+      });
     });
 
     it('should not inform changes on disconnected clients', () => {
@@ -357,30 +359,38 @@ describe('processRequest', () => {
   });
 
   describe('/assets endpoint', () => {
-    it('should serve simple case', () => {
+    beforeEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('should serve simple case', done => {
       const req = scaffoldReq({url: '/assets/imgs/a.png'});
       const res = {end: jest.fn(), setHeader: jest.fn()};
 
       AssetServer.prototype.get.mockImplementation(() => Promise.resolve('i am image'));
 
       server.processRequest(req, res);
-      jest.runAllTimers();
-      expect(res.end).toBeCalledWith('i am image');
+      res.end.mockImplementation(value => {
+        expect(value).toBe('i am image');
+        done();
+      });
     });
 
-    it('should parse the platform option', () => {
+    it('should parse the platform option', done => {
       const req = scaffoldReq({url: '/assets/imgs/a.png?platform=ios'});
       const res = {end: jest.fn(), setHeader: jest.fn()};
 
       AssetServer.prototype.get.mockImplementation(() => Promise.resolve('i am image'));
 
       server.processRequest(req, res);
-      jest.runAllTimers();
-      expect(AssetServer.prototype.get).toBeCalledWith('imgs/a.png', 'ios');
-      expect(res.end).toBeCalledWith('i am image');
+      res.end.mockImplementation(value => {
+        expect(AssetServer.prototype.get).toBeCalledWith('imgs/a.png', 'ios');
+        expect(value).toBe('i am image');
+        done();
+      });
     });
 
-    it('should serve range request', () => {
+    it('should serve range request', done => {
       const req = scaffoldReq({
         url: '/assets/imgs/a.png?platform=ios',
         headers: {range: 'bytes=0-3'},
@@ -391,24 +401,28 @@ describe('processRequest', () => {
       AssetServer.prototype.get.mockImplementation(() => Promise.resolve(mockData));
 
       server.processRequest(req, res);
-      jest.runAllTimers();
-      expect(AssetServer.prototype.get).toBeCalledWith('imgs/a.png', 'ios');
-      expect(res.end).toBeCalledWith(mockData.slice(0, 4));
+      res.end.mockImplementation(value => {
+        expect(AssetServer.prototype.get).toBeCalledWith('imgs/a.png', 'ios');
+        expect(value).toBe(mockData.slice(0, 4));
+        done();
+      });
     });
 
-    it('should serve assets files\'s name contain non-latin letter', () => {
+    it('should serve assets files\'s name contain non-latin letter', done => {
       const req = scaffoldReq({url: '/assets/imgs/%E4%B8%BB%E9%A1%B5/logo.png'});
       const res = {end: jest.fn(), setHeader: jest.fn()};
 
       AssetServer.prototype.get.mockImplementation(() => Promise.resolve('i am image'));
 
       server.processRequest(req, res);
-      jest.runAllTimers();
-      expect(AssetServer.prototype.get).toBeCalledWith(
-        'imgs/\u{4E3B}\u{9875}/logo.png',
-        undefined
-      );
-      expect(res.end).toBeCalledWith('i am image');
+      res.end.mockImplementation(value => {
+        expect(AssetServer.prototype.get).toBeCalledWith(
+          'imgs/\u{4E3B}\u{9875}/logo.png',
+          undefined
+        );
+        expect(value).toBe('i am image');
+        done();
+      });
     });
   });
 
