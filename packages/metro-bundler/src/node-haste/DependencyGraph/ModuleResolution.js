@@ -220,7 +220,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       return this._getEmptyModule(fromModule, toModuleName);
     }
     return this._loadAsFileOrDirOrThrow(
-      potentialModulePath,
+      realModuleName,
       fromModule,
       toModuleName,
       platform,
