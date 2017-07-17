@@ -32,10 +32,11 @@ exports.sourceMaps = {fromRawMappings, compactMapping};
 exports.createServer = createServer;
 exports.Logger = Logger;
 
-type Options = {
+type Options = {|
   +sourceExts: ?Array<string>,
   +transformCache: TransformCache,
   +transformModulePath: string,
+  getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   globalTransformCache: ?GlobalTransformCache,
   hasteImpl?: HasteImpl,
   +maxWorkers?: number,
@@ -47,7 +48,7 @@ type Options = {
   reporter?: Reporter,
   watch?: boolean,
   workerPath: ?string,
-};
+|};
 
 type StrictOptions = {...Options, reporter: Reporter};
 
