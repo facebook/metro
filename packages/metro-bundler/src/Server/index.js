@@ -769,6 +769,7 @@ class Server {
               mres.writeHead(304);
               mres.end();
             } else {
+              mres.setHeader('Content-Length', Buffer.byteLength(bundleSource));
               mres.end(bundleSource);
             }
             debug('Finished response');
