@@ -73,10 +73,7 @@ class Resolver {
     const depGraphOpts = Object.assign(Object.create(opts), {
       assetDependencies: ['react-native/Libraries/Image/AssetRegistry'],
       forceNodeFilesystemAPI: false,
-      ignoreFilePath(filepath) {
-        return filepath.indexOf('__tests__') !== -1 ||
-          (opts.blacklistRE != null && opts.blacklistRE.test(filepath));
-      },
+      ignoreFilePath: opts.blacklistRE,
       moduleOptions: {
         hasteImpl: opts.hasteImpl,
         resetCache: opts.resetCache,

@@ -51,7 +51,7 @@ type Options = {|
   +forceNodeFilesystemAPI: boolean,
   +getTransformCacheKey: GetTransformCacheKey,
   +globalTransformCache: ?GlobalTransformCache,
-  +ignoreFilePath: (filePath: string) => boolean,
+  +ignoreFilePath: RegExp,
   +maxWorkers: number,
   +moduleOptions: ModuleOptions,
   +platforms: Set<string>,
