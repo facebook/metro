@@ -70,19 +70,31 @@ class Resolver {
   }
 
   static async load(opts: Options): Promise<Resolver> {
-    const depGraphOpts = Object.assign(Object.create(opts), {
+    const depGraphOpts = {
       assetDependencies: ['react-native/Libraries/Image/AssetRegistry'],
+      assetExts: opts.assetExts,
+      extraNodeModules: opts.extraNodeModules,
       forceNodeFilesystemAPI: false,
+      getTransformCacheKey: opts.getTransformCacheKey,
+      globalTransformCache: opts.globalTransformCache,
       ignoreFilePath: opts.blacklistRE || / ^/ /* matches nothing */,
+      maxWorkers: opts.maxWorkers,
       moduleOptions: {
         hasteImpl: opts.hasteImpl,
         resetCache: opts.resetCache,
         transformCache: opts.transformCache,
       },
+      platforms: opts.platforms,
       preferNativePlatform: true,
+      providesModuleNodeModules: opts.providesModuleNodeModules,
+      reporter: opts.reporter,
+      resetCache: opts.resetCache,
       roots: opts.projectRoots,
+      sourceExts: opts.sourceExts,
+      transformCode: opts.transformCode,
       useWatchman: true,
-    });
+      watch: opts.watch,
+    };
     const depGraph = await DependencyGraph.load(depGraphOpts);
     return new Resolver(opts, depGraph);
   }
