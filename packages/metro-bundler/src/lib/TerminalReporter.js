@@ -363,8 +363,8 @@ class TerminalReporter {
   }
 
   /**
-   * Everything that happens goes through the same 3 steps. This makes the
-   * output more reliable and consistent, because no matter what additional.
+   * Single entry point for reporting events. That allows us to implement the
+   * corresponding JSON reporter easily and have a consistent reporting.
    */
   update(event: TerminalReportableEvent) {
     this._log(event);
