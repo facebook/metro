@@ -143,74 +143,78 @@ function moduleThrewError(id, error) {
 }
 
 if (__DEV__) {
-  _require.Systrace = { beginEvent: function beginEvent() {}, endEvent: function endEvent() {} };
+  var createHotReloadingObject;
 
-  var createHotReloadingObject = function createHotReloadingObject() {
-    var hot = {
-      acceptCallback: null,
-      accept: function accept(callback) {
-        hot.acceptCallback = callback;
-      }
+  (function () {
+    _require.Systrace = { beginEvent: function beginEvent() {}, endEvent: function endEvent() {} };
+
+    createHotReloadingObject = function createHotReloadingObject() {
+      var hot = {
+        acceptCallback: null,
+        accept: function accept(callback) {
+          hot.acceptCallback = callback;
+        }
+      };
+      return hot;
     };
-    return hot;
-  };
 
-  var acceptAll = function acceptAll(dependentModules, inverseDependencies) {
-    if (!dependentModules || dependentModules.length === 0) {
-      return true;
-    }
+    var acceptAll = function acceptAll(dependentModules, inverseDependencies) {
+      if (!dependentModules || dependentModules.length === 0) {
+        return true;
+      }
 
-    var notAccepted = dependentModules.filter(function (module) {
-      return !_accept(module, undefined, inverseDependencies);
-    });
+      var notAccepted = dependentModules.filter(function (module) {
+        return !accept(module, undefined, inverseDependencies);
+      });
 
-    var parents = [];
-    for (var i = 0; i < notAccepted.length; i++) {
-      if (inverseDependencies[notAccepted[i]].length === 0) {
+      var parents = [];
+      for (var i = 0; i < notAccepted.length; i++) {
+        if (inverseDependencies[notAccepted[i]].length === 0) {
+          return false;
+        }
+
+        parents.push.apply(parents, babelHelpers.toConsumableArray(inverseDependencies[notAccepted[i]]));
+      }
+
+      return acceptAll(parents, inverseDependencies);
+    };
+
+    var accept = function accept(id, factory, inverseDependencies) {
+      var mod = modules[id];
+
+      if (!mod && factory) {
+        define(factory, id);
+        return true;
+      }
+
+      var hot = mod.hot;
+
+      if (!hot) {
+        console.warn('Cannot accept module because Hot Module Replacement ' + 'API was not installed.');
         return false;
       }
 
-      parents.push.apply(parents, babelHelpers.toConsumableArray(inverseDependencies[notAccepted[i]]));
-    }
-
-    return acceptAll(parents, inverseDependencies);
-  };
-
-  var _accept = function _accept(id, factory, inverseDependencies) {
-    var mod = modules[id];
-
-    if (!mod && factory) {
-      define(factory, id);
-      return true;
-    }
-
-    var hot = mod.hot;
-
-    if (!hot) {
-      console.warn('Cannot accept module because Hot Module Replacement ' + 'API was not installed.');
-      return false;
-    }
-
-    if (factory) {
-      mod.factory = factory;
-    }
-    mod.hasError = false;
-    mod.isInitialized = false;
-    _require(id);
-
-    if (hot.acceptCallback) {
-      hot.acceptCallback();
-      return true;
-    } else {
-      if (!inverseDependencies) {
-        throw new Error('Undefined \`inverseDependencies\`');
+      if (factory) {
+        mod.factory = factory;
       }
+      mod.hasError = false;
+      mod.isInitialized = false;
+      _require(id);
 
-      return acceptAll(inverseDependencies[id], inverseDependencies);
-    }
-  };
+      if (hot.acceptCallback) {
+        hot.acceptCallback();
+        return true;
+      } else {
+        if (!inverseDependencies) {
+          throw new Error('Undefined \`inverseDependencies\`');
+        }
 
-  global.__accept = _accept;
+        return acceptAll(inverseDependencies[id], inverseDependencies);
+      }
+    };
+
+    global.__accept = accept;
+  })();
 }
 })(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this);
 (function(global) {
@@ -404,74 +408,78 @@ function moduleThrewError(id, error) {
 }
 
 if (__DEV__) {
-  _require.Systrace = { beginEvent: function beginEvent() {}, endEvent: function endEvent() {} };
+  var createHotReloadingObject;
 
-  var createHotReloadingObject = function createHotReloadingObject() {
-    var hot = {
-      acceptCallback: null,
-      accept: function accept(callback) {
-        hot.acceptCallback = callback;
-      }
+  (function () {
+    _require.Systrace = { beginEvent: function beginEvent() {}, endEvent: function endEvent() {} };
+
+    createHotReloadingObject = function createHotReloadingObject() {
+      var hot = {
+        acceptCallback: null,
+        accept: function accept(callback) {
+          hot.acceptCallback = callback;
+        }
+      };
+      return hot;
     };
-    return hot;
-  };
 
-  var acceptAll = function acceptAll(dependentModules, inverseDependencies) {
-    if (!dependentModules || dependentModules.length === 0) {
-      return true;
-    }
+    var acceptAll = function acceptAll(dependentModules, inverseDependencies) {
+      if (!dependentModules || dependentModules.length === 0) {
+        return true;
+      }
 
-    var notAccepted = dependentModules.filter(function (module) {
-      return !_accept(module, undefined, inverseDependencies);
-    });
+      var notAccepted = dependentModules.filter(function (module) {
+        return !accept(module, undefined, inverseDependencies);
+      });
 
-    var parents = [];
-    for (var i = 0; i < notAccepted.length; i++) {
-      if (inverseDependencies[notAccepted[i]].length === 0) {
+      var parents = [];
+      for (var i = 0; i < notAccepted.length; i++) {
+        if (inverseDependencies[notAccepted[i]].length === 0) {
+          return false;
+        }
+
+        parents.push.apply(parents, babelHelpers.toConsumableArray(inverseDependencies[notAccepted[i]]));
+      }
+
+      return acceptAll(parents, inverseDependencies);
+    };
+
+    var accept = function accept(id, factory, inverseDependencies) {
+      var mod = modules[id];
+
+      if (!mod && factory) {
+        define(factory, id);
+        return true;
+      }
+
+      var hot = mod.hot;
+
+      if (!hot) {
+        console.warn('Cannot accept module because Hot Module Replacement ' + 'API was not installed.');
         return false;
       }
 
-      parents.push.apply(parents, babelHelpers.toConsumableArray(inverseDependencies[notAccepted[i]]));
-    }
-
-    return acceptAll(parents, inverseDependencies);
-  };
-
-  var _accept = function _accept(id, factory, inverseDependencies) {
-    var mod = modules[id];
-
-    if (!mod && factory) {
-      define(factory, id);
-      return true;
-    }
-
-    var hot = mod.hot;
-
-    if (!hot) {
-      console.warn('Cannot accept module because Hot Module Replacement ' + 'API was not installed.');
-      return false;
-    }
-
-    if (factory) {
-      mod.factory = factory;
-    }
-    mod.hasError = false;
-    mod.isInitialized = false;
-    _require(id);
-
-    if (hot.acceptCallback) {
-      hot.acceptCallback();
-      return true;
-    } else {
-      if (!inverseDependencies) {
-        throw new Error('Undefined \`inverseDependencies\`');
+      if (factory) {
+        mod.factory = factory;
       }
+      mod.hasError = false;
+      mod.isInitialized = false;
+      _require(id);
 
-      return acceptAll(inverseDependencies[id], inverseDependencies);
-    }
-  };
+      if (hot.acceptCallback) {
+        hot.acceptCallback();
+        return true;
+      } else {
+        if (!inverseDependencies) {
+          throw new Error('Undefined \`inverseDependencies\`');
+        }
 
-  global.__accept = _accept;
+        return acceptAll(inverseDependencies[id], inverseDependencies);
+      }
+    };
+
+    global.__accept = accept;
+  })();
 }
 })(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this);
 (function(global) {
