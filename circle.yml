@@ -1,12 +1,15 @@
 machine:
   environment:
-    YARN_VERSION: 0.28.1
+    YARN_VERSION: 0.24.3
     PATH: "${PATH}:${HOME}/.yarn/bin:${HOME}/${CIRCLE_PROJECT_REPONAME}/node_modules/.bin"
   node:
     version: 8
 dependencies:
   pre:
-    - npm install -g yarn@${YARN_VERSION}
+    - |
+      if [[ ! -e ~/.yarn/bin/yarn || $(yarn --version) != "${YARN_VERSION}" ]]; then
+        curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version $YARN_VERSION
+      fi
     - nvm install 4
     - nvm install 6
 
