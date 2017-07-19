@@ -22,8 +22,7 @@ const minify = require('./minify');
 import type {LogEntry} from '../../Logger/Types';
 import type {MappingsMap} from '../../lib/SourceMap';
 import type {LocalPath} from '../../node-haste/lib/toLocalPath';
-import type {IntermediateTransformResult} from './types.flow';
-import type {Plugins as BabelPlugins} from 'babel-core';
+import type {Ast, Plugins as BabelPlugins} from 'babel-core';
 
 export type TransformedCode = {
   code: string,
@@ -39,7 +38,7 @@ export type Transformer<ExtraOptions: {} = {}> = {
     options: ExtraOptions & TransformOptions,
     plugins?: BabelPlugins,
     src: string,
-  |}) => IntermediateTransformResult,
+  |}) => {ast: ?Ast, code: string, map: ?MappingsMap},
   getCacheKey: () => string,
 };
 
@@ -84,8 +83,6 @@ type TransformCode = (
   Callback<Data>,
 ) => void;
 
-const transformers = [inline, constantFolding];
-
 const transformCode: TransformCode = asyncify(
   (
     transformer: Transformer<*>,
@@ -124,28 +121,16 @@ const transformCode: TransformCode = asyncify(
       'Missing transform results despite having no error.',
     );
 
-    let code;
-    let map;
-
+    var code, map;
     if (options.minify) {
-      let result = transformed;
-      const length = transformers.length;
-
-      for (let i = 0; i < length; i++) {
-        result = transformers[i](filename, result, options);
-      }
-
-      ({code, map} = result);
+      ({code, map} = constantFolding(
+        filename,
+        inline(filename, transformed, options),
+      ));
+      invariant(code != null, 'Missing code from constant-folding transform.');
     } else {
       ({code, map} = transformed);
     }
-
-    invariant(
-      code != null,
-      'The last transformer on the list (' +
-        transformers[transformers.length - 1].name +
-        ') has to output code',
-    );
 
     if (isJson) {
       code = code.replace(/^\w+\.exports=/, '');

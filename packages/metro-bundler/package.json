@@ -1,5 +1,5 @@
 {
-  "version": "0.10.0",
+  "version": "0.9.0",
   "name": "metro-bundler",
   "description": "🚇 The JavaScript bundler for React Native.",
   "main": "src/index.js",
@@ -19,7 +19,7 @@
     "babel-plugin-external-helpers": "^6.18.0",
     "babel-preset-es2015-node": "^6.1.1",
     "babel-preset-fbjs": "^2.1.4",
-    "babel-preset-react-native": "^2.1.0",
+    "babel-preset-react-native": "^2.0.0",
     "babel-register": "^6.24.1",
     "babylon": "^6.17.0",
     "chalk": "^1.1.1",

@@ -15,7 +15,7 @@
 const babel = require('babel-core');
 const invariant = require('fbjs/lib/invariant');
 
-import type {IntermediateTransformResult} from './types.flow';
+import type {Ast, SourceMap as MappingsMap} from 'babel-core';
 const t = babel.types;
 
 const React = {name: 'React'};
@@ -115,16 +115,6 @@ function findProperty(objectExpression, key, fallback) {
   return property ? property.value : fallback();
 }
 
-function checkRequireArgs(args, dependencyId) {
-  const pattern = t.stringLiteral(dependencyId);
-  return (
-    t.isStringLiteral(args[0], pattern) ||
-    (t.isMemberExpression(args[0]) &&
-      t.isNumericLiteral(args[0].property) &&
-      t.isStringLiteral(args[1], pattern))
-  );
-}
-
 const inlinePlugin = {
   visitor: {
     Identifier(path, state) {
@@ -172,11 +162,27 @@ const inlinePlugin = {
 
 const plugin = () => inlinePlugin;
 
+function checkRequireArgs(args, dependencyId) {
+  const pattern = t.stringLiteral(dependencyId);
+  return (
+    t.isStringLiteral(args[0], pattern) ||
+    (t.isMemberExpression(args[0]) &&
+      t.isNumericLiteral(args[0].property) &&
+      t.isStringLiteral(args[1], pattern))
+  );
+}
+
+type AstResult = {
+  ast: Ast,
+  code: ?string,
+  map: ?MappingsMap,
+};
+
 function inline(
   filename: string,
-  transformResult: IntermediateTransformResult,
+  transformResult: {ast?: ?Ast, code: string, map: ?MappingsMap},
   options: {+dev: boolean, +platform: ?string},
-): IntermediateTransformResult {
+): AstResult {
   const code = transformResult.code;
   const babelOptions = {
     filename,
@@ -191,7 +197,7 @@ function inline(
 
   const result = transformResult.ast
     ? babel.transformFromAst(transformResult.ast, code, babelOptions)
-    : (code && babel.transform(code, babelOptions)) || {};
+    : babel.transform(code, babelOptions);
   const {ast} = result;
   invariant(ast != null, 'Missing AST in babel transform results.');
   return {ast, code: result.code, map: result.map};
