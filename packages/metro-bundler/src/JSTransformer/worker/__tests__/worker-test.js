@@ -275,7 +275,7 @@ describe('code transformation worker:', () => {
       const inlineResult = {map: {version: 3, sources: []}, ast: {}};
       inline.mockReturnValue(inlineResult);
       transformCode(transformer, filename, filename, 'code', options, () => {
-        expect(constantFolding).toBeCalledWith(filename, inlineResult);
+        expect(constantFolding).toBeCalledWith(filename, inlineResult, options);
         done();
       });
     });
