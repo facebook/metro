@@ -46,7 +46,7 @@
     "publish": "yarn run build-clean && yarn run build && lerna run prepare-release && lerna publish",
     "postpublish": "lerna run cleanup-release",
     "test-ci": "yarn run typecheck && yarn run lint && yarn run build && yarn run jest-coverage -- -i && node scripts/mapCoverage.js && codecov",
-    "test": "yarn run typecheck && yarn run lint && yarn run build && yarn run jest && yarn run test-examples",
+    "test": "yarn run typecheck && yarn run lint && yarn run build && yarn run jest",
     "typecheck": "flow check",
     "watch": "yarn run build --silent && node ./scripts/watch.js"
   },
