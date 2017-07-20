@@ -18,6 +18,10 @@ const reporting = require('./reporting');
 const throttle = require('lodash/throttle');
 const util = require('util');
 
+const {
+  AmbiguousModuleResolutionError,
+} = require('../node-haste/DependencyGraph/ResolutionRequest');
+
 import type Transformer from '../JSTransformer';
 import type {BundleOptions} from '../Server';
 import type Terminal from './Terminal';
@@ -250,6 +254,21 @@ class TerminalReporter {
    * is not actionable to end users.
    */
   _logBundlingError(error: Error | Transformer.TransformError) {
+    if (error instanceof AmbiguousModuleResolutionError) {
+      const he = error.hasteError;
+      const message =
+        'ambiguous resolution: module `' +
+        `${error.fromModulePath}\` tries to require \`${he.hasteName}\`, but ` +
+        `there are several files providing this module. You can delete or ` +
+        'fix them: \n\n' +
+        Object.keys(he.duplicatesSet)
+          .sort()
+          .map(dupFilePath => `  * \`${dupFilePath}\`\n`)
+          .join('');
+      this._logBundlingErrorMessage(message);
+      return;
+    }
+
     //$FlowFixMe T19379628
     let message = error.message;
     //$FlowFixMe T19379628
@@ -264,7 +283,11 @@ class TerminalReporter {
       str += '\n' + error.snippet;
     }
 
-    reporting.logError(this.terminal, 'bundling failed: %s', str);
+    this._logBundlingErrorMessage(str);
+  }
+
+  _logBundlingErrorMessage(message: string) {
+    reporting.logError(this.terminal, 'bundling failed: %s', message);
   }
 
   _logWorkerChunk(origin: 'stdout' | 'stderr', chunk: string) {

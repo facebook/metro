@@ -20,6 +20,10 @@ const debug = require('debug')('Metro:DependencyGraph');
 const isAbsolutePath = require('absolute-path');
 const path = require('path');
 
+const {
+  DuplicateHasteCandidatesError,
+} = require('jest-haste-map/build/module_map');
+
 import type DependencyGraphHelpers from './DependencyGraphHelpers';
 import type ResolutionResponse from './ResolutionResponse';
 import type {Options as TransformWorkerOptions} from '../../JSTransformer/worker';
@@ -68,6 +72,7 @@ type Options<TModule, TPackage> = {|
 class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
   _immediateResolutionCache: {[key: string]: TModule};
   _options: Options<TModule, TPackage>;
+  static AmbiguousModuleResolutionError: Class<AmbiguousModuleResolutionError>;
 
   constructor(options: Options<TModule, TPackage>) {
     this._options = options;
@@ -95,8 +100,7 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
       !(isRelativeImport(toModuleName) || isAbsolutePath(toModuleName))
     ) {
       const result = ModuleResolution.tryResolveSync(
-        () =>
-          resolver.resolveHasteDependency(fromModule, toModuleName, platform),
+        () => this._resolveHasteDependency(fromModule, toModuleName, platform),
         () =>
           resolver.resolveNodeDependency(fromModule, toModuleName, platform),
       );
@@ -106,6 +110,22 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
     return cacheResult(
       resolver.resolveNodeDependency(fromModule, toModuleName, platform),
     );
+  }
+
+  _resolveHasteDependency(
+    fromModule: TModule,
+    toModuleName: string,
+    platform: string | null,
+  ): TModule {
+    const rs = this._options.moduleResolver;
+    try {
+      return rs.resolveHasteDependency(fromModule, toModuleName, platform);
+    } catch (error) {
+      if (error instanceof DuplicateHasteCandidatesError) {
+        throw new AmbiguousModuleResolutionError(fromModule.path, error);
+      }
+      throw error;
+    }
   }
 
   resolveModuleDependencies(
@@ -349,5 +369,21 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
 function resolutionHash(modulePath, depName) {
   return `${path.resolve(modulePath)}:${depName}`;
 }
+
+class AmbiguousModuleResolutionError extends Error {
+  fromModulePath: string;
+  hasteError: DuplicateHasteCandidatesError;
+
+  constructor(
+    fromModulePath: string,
+    hasteError: DuplicateHasteCandidatesError,
+  ) {
+    super();
+    this.fromModulePath = fromModulePath;
+    this.hasteError = hasteError;
+  }
+}
+
+ResolutionRequest.AmbiguousModuleResolutionError = AmbiguousModuleResolutionError;
 
 module.exports = ResolutionRequest;

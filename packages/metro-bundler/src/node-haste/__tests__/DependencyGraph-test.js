@@ -5295,9 +5295,9 @@ describe('DependencyGraph', function() {
           throw new Error('expected `getOrderedDependenciesAsJSON` to fail');
         } catch (error) {
           const {
-            DuplicateHasteCandidatesError,
-          } = require('jest-haste-map/build/module_map');
-          if (!(error instanceof DuplicateHasteCandidatesError)) {
+            AmbiguousModuleResolutionError,
+          } = require('../DependencyGraph/ResolutionRequest');
+          if (!(error instanceof AmbiguousModuleResolutionError)) {
             throw error;
           }
           expect(console.warn).toBeCalled();

@@ -26,6 +26,10 @@ const path = require('path');
 const symbolicate = require('./symbolicate');
 const url = require('url');
 
+const {
+  AmbiguousModuleResolutionError,
+} = require('../node-haste/DependencyGraph/ResolutionRequest');
+
 import type Module, {HasteImpl} from '../node-haste/Module';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type ResolutionResponse from '../node-haste/DependencyGraph/ResolutionResponse';
@@ -889,6 +893,22 @@ class Server {
     res.writeHead(error.status || 500, {
       'Content-Type': 'application/json; charset=UTF-8',
     });
+
+    if (error instanceof AmbiguousModuleResolutionError) {
+      const he = error.hasteError;
+      const message =
+        "Ambiguous resolution: module '" +
+        `${error.fromModulePath}\' tries to require \'${he.hasteName}\', but ` +
+        `there are several files providing this module. You can delete or ` +
+        'fix them: \n\n' +
+        Object.keys(he.duplicatesSet)
+          .sort()
+          .map(dupFilePath => `${dupFilePath}`)
+          .join('\n\n');
+      res.end(JSON.stringify({message, errors: [{description: message}]}));
+      this._reporter.update({error, type: 'bundling_error'});
+      return;
+    }
 
     if (
       error instanceof Error &&
