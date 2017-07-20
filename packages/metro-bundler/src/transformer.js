@@ -87,6 +87,9 @@ function buildBabelConfig(filename, options) {
   const babelRC = getBabelRC(options.projectRoot);
 
   const extraConfig = {
+    babelrc: typeof options.enableBabelRCLookup === 'boolean'
+      ? options.enableBabelRCLookup
+      : true,
     code: false,
     filename,
   };

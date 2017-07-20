@@ -43,6 +43,7 @@ export type Transformer<ExtraOptions: {} = {}> = {
 };
 
 export type TransformOptionsStrict = {|
+  +enableBabelRCLookup: boolean,
   +dev: boolean,
   +generateSourceMaps: boolean,
   +hot: boolean,
@@ -52,6 +53,7 @@ export type TransformOptionsStrict = {|
 |};
 
 export type TransformOptions = {
+  +enableBabelRCLookup?: boolean,
   +dev?: boolean,
   +generateSourceMaps?: boolean,
   +hot?: boolean,

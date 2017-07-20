@@ -36,6 +36,7 @@ type Options = {|
   +sourceExts: ?Array<string>,
   +transformCache: TransformCache,
   +transformModulePath: string,
+  enableBabelRCLookup?: boolean,
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   globalTransformCache: ?GlobalTransformCache,
   hasteImpl?: HasteImpl,
