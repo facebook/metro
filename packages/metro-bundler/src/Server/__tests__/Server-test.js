@@ -116,6 +116,16 @@ describe('processRequest', () => {
     });
   });
 
+  it('returns Content-Length header on request of *.bundle', () => {
+    return makeRequest(
+      requestHandler,
+      'mybundle.bundle?runModule=true'
+    ).then(response => {
+      expect(response.getHeader('Content-Length'))
+        .toBe(Buffer.byteLength(response.body));
+    });
+  });
+
   it('returns 304 on request of *.bundle when if-none-match equals the ETag', () => {
     return makeRequest(
       requestHandler,
