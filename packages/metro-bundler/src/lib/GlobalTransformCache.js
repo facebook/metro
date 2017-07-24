@@ -157,16 +157,36 @@ class TransformProfileSet {
 }
 
 type FetchFailedDetails =
-  {+type: 'unhandled_http_status', +statusCode: number} | {+type: 'unspecified'};
+  {
+    +statusCode: number,
+    +statusText: string,
+    +type: 'unhandled_http_status',
+    +uri: string,
+  } |
+  {+type: 'invalid_data'} |
+  {+type: 'invalid_key_data', key: string};
 
 class FetchFailedError extends Error {
   /** Separate object for details allows us to have a type union. */
   +details: FetchFailedDetails;
 
-  constructor(message: string, details: FetchFailedDetails) {
-    super();
-    this.message = message;
+  constructor(details: FetchFailedDetails) {
+    super(FetchFailedError._getMessage(details));
     (this: any).details = details;
+  }
+
+  static _getMessage(details: FetchFailedDetails): string {
+    if (details.type === 'unhandled_http_status') {
+      return (
+        `Unexpected HTTP status: ${details.statusCode} ` +
+          JSON.stringify(details.statusText) +
+          ` while fetching \`${details.uri}\``
+      );
+    }
+    if (details.type === 'invalid_key_data') {
+      return `Invalid data was returned for key \`${details.key}\``;
+    }
+    return `Invalid or empty data was returned.`;
   }
 }
 
@@ -197,7 +217,7 @@ class URIBasedGlobalTransformCache {
   _optionsHasher: OptionsHasher;
   _store: ?KeyResultStore;
 
-  static FetchFailedError;
+  static FetchFailedError: Class<FetchFailedError>;
 
   /**
    * For using the global cache one needs to have some kind of central key-value
@@ -246,16 +266,17 @@ class URIBasedGlobalTransformCache {
   static async _fetchResultFromURI(uri: string): Promise<CachedResult> {
     const response = await fetch(uri, {method: 'GET', timeout: 8000});
     if (response.status !== 200) {
-      const msg = `Unexpected HTTP status: ${response.status} ${response.statusText} `;
-      throw new FetchFailedError(msg, {
-        type: 'unhandled_http_status',
+      throw new FetchFailedError({
         statusCode: response.status,
+        statusText: response.statusText,
+        type: 'unhandled_http_status',
+        uri,
       });
     }
     const unvalidatedResult = await response.json();
     const result = validateCachedResult(unvalidatedResult);
     if (result == null) {
-      throw new FetchFailedError('Server returned invalid result.', {type: 'unspecified'});
+      throw new FetchFailedError({type: 'invalid_data'});
     }
     return result;
   }
