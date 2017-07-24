@@ -5,10 +5,14 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
+
 'use strict';
 
-jest.mock('fs')
+jest
+  .mock('fs')
   .mock('graceful-fs')
   .mock('../ModuleCache')
   .mock('../DependencyGraph/DependencyGraphHelpers')
@@ -20,12 +24,11 @@ const DependencyGraphHelpers = require('../DependencyGraph/DependencyGraphHelper
 const TransformCaching = require('../../lib/TransformCaching');
 const fs = require('fs');
 
-const packageJson =
-  JSON.stringify({
-    name: 'arbitrary',
-    version: '1.0.0',
-    description: "A require('foo') story",
-  });
+const packageJson = JSON.stringify({
+  name: 'arbitrary',
+  version: '1.0.0',
+  description: "A require('foo') story",
+});
 
 function mockFS(rootChildren) {
   fs.__setMockFilesystem({root: rootChildren});
@@ -46,9 +49,9 @@ describe('Module', () => {
   const transformCache = TransformCaching.mocked();
 
   const createCache = () => ({
-    get: jest.genMockFn().mockImplementation(
-      (filepath, field, cb) => cb(filepath)
-    ),
+    get: jest
+      .genMockFn()
+      .mockImplementation((filepath, field, cb) => cb(filepath)),
     invalidate: jest.genMockFn(),
     end: jest.genMockFn(),
   });
@@ -62,14 +65,14 @@ describe('Module', () => {
       },
       ...options,
       cache,
-      file: options && options.file || fileName,
+      file: (options && options.file) || fileName,
       depGraphHelpers: new DependencyGraphHelpers(),
       moduleCache: new ModuleCache({cache}),
       getTransformCacheKey: () => transformCacheKey,
     });
 
-  const createJSONModule =
-    options => createModule({...options, file: '/root/package.json'});
+  const createJSONModule = options =>
+    createModule({...options, file: '/root/package.json'});
 
   beforeEach(function() {
     process.platform = 'linux';
@@ -80,8 +83,7 @@ describe('Module', () => {
 
   describe('Module ID', () => {
     const moduleId = 'arbitraryModule';
-    const source =
-    `/**
+    const source = `/**
        * @providesModule ${moduleId}
        */
     `;
@@ -97,23 +99,24 @@ describe('Module', () => {
       });
 
       it('extracts the module name from the header', () =>
-        module.getName().then(name => expect(name).toEqual(moduleId))
-      );
+        module.getName().then(name => expect(name).toEqual(moduleId)));
 
       it('identifies the module as haste module', () =>
-        expect(module.isHaste()).toBe(true)
-      );
+        expect(module.isHaste()).toBe(true));
 
       it('does not transform the file in order to access the name', () => {
-        const transformCode =
-          jest.genMockFn().mockReturnValue(Promise.resolve());
-        return createModule({transformCode}).getName()
+        const transformCode = jest
+          .genMockFn()
+          .mockReturnValue(Promise.resolve());
+        return createModule({transformCode})
+          .getName()
           .then(() => expect(transformCode).not.toBeCalled());
       });
 
       it('does not transform the file in order to access the haste status', () => {
-        const transformCode =
-          jest.genMockFn().mockReturnValue(Promise.resolve());
+        const transformCode = jest
+          .genMockFn()
+          .mockReturnValue(Promise.resolve());
         createModule({transformCode}).isHaste();
         expect(transformCode).not.toBeCalled();
       });
@@ -125,23 +128,24 @@ describe('Module', () => {
       });
 
       it('uses the file name as module name', () =>
-        module.getName().then(name => expect(name).toEqual(fileName))
-      );
+        module.getName().then(name => expect(name).toEqual(fileName)));
 
       it('does not identify the module as haste module', () =>
-        expect(module.isHaste()).toBe(false)
-      );
+        expect(module.isHaste()).toBe(false));
 
       it('does not transform the file in order to access the name', () => {
-        const transformCode =
-          jest.genMockFn().mockReturnValue(Promise.resolve());
-        return createModule({transformCode}).getName()
+        const transformCode = jest
+          .genMockFn()
+          .mockReturnValue(Promise.resolve());
+        return createModule({transformCode})
+          .getName()
           .then(() => expect(transformCode).not.toBeCalled());
       });
 
       it('does not transform the file in order to access the haste status', () => {
-        const transformCode =
-          jest.genMockFn().mockReturnValue(Promise.resolve());
+        const transformCode = jest
+          .genMockFn()
+          .mockReturnValue(Promise.resolve());
         createModule({transformCode}).isHaste();
         expect(transformCode).not.toBeCalled();
       });
@@ -155,14 +159,10 @@ describe('Module', () => {
     });
 
     it('exposes file contents as `code` property on the data exposed by `read()`', () =>
-      createModule().read().then(({code}) =>
-        expect(code).toBe(fileContents))
-    );
+      createModule().read().then(({code}) => expect(code).toBe(fileContents)));
 
     it('exposes file contents via the `getCode()` method', () =>
-      createModule().getCode().then(code =>
-        expect(code).toBe(fileContents))
-    );
+      createModule().getCode().then(code => expect(code).toBe(fileContents)));
   });
 
   describe('Custom Code Transform', () => {
@@ -176,7 +176,8 @@ describe('Module', () => {
 
     beforeEach(function() {
       transformResult = {code: ''};
-      transformCode = jest.genMockFn()
+      transformCode = jest
+        .genMockFn()
         .mockImplementation((module, sourceCode, options) => {
           transformCache.writeSync({
             filePath: module.path,
@@ -192,18 +193,18 @@ describe('Module', () => {
 
     it('passes the module and file contents to the transform function when reading', () => {
       const module = createModule({transformCode});
-      return module.read()
-        .then(() => {
-          expect(transformCode).toBeCalledWith(module, fileContents, undefined);
-        });
+      return module.read().then(() => {
+        expect(transformCode).toBeCalledWith(module, fileContents, undefined);
+      });
     });
 
     it('passes any additional options to the transform function when reading', () => {
       const module = createModule({transformCode});
       const transformOptions = {arbitrary: Object()};
-      return module.read(transformOptions)
+      return module
+        .read(transformOptions)
         .then(() =>
-          expect(transformCode.mock.calls[0][2]).toBe(transformOptions)
+          expect(transformCode.mock.calls[0][2]).toBe(transformOptions),
         );
     });
 
@@ -255,85 +256,79 @@ describe('Module', () => {
     it('exposes the transformed code rather than the raw file contents', () => {
       transformResult = {code: exampleCode};
       const module = createModule({transformCode});
-      return Promise.all([module.read(), module.getCode()])
-        .then(([data, code]) => {
-          expect(data.code).toBe(exampleCode);
-          expect(code).toBe(exampleCode);
-        });
+      return Promise.all([
+        module.read(),
+        module.getCode(),
+      ]).then(([data, code]) => {
+        expect(data.code).toBe(exampleCode);
+        expect(code).toBe(exampleCode);
+      });
     });
 
     it('exposes the raw file contents as `source` property', () => {
       const module = createModule({transformCode});
-      return module.read()
-        .then(data => expect(data.source).toBe(fileContents));
+      return module.read().then(data => expect(data.source).toBe(fileContents));
     });
 
     it('exposes a source map returned by the transform', () => {
       const map = {version: 3};
       transformResult = {map, code: exampleCode};
       const module = createModule({transformCode});
-      return Promise.all([module.read(), module.getMap()])
-        .then(([data, sourceMap]) => {
-          expect(data.map).toBe(map);
-          expect(sourceMap).toBe(map);
-        });
+      return Promise.all([
+        module.read(),
+        module.getMap(),
+      ]).then(([data, sourceMap]) => {
+        expect(data.map).toBe(map);
+        expect(sourceMap).toBe(map);
+      });
     });
 
     it('caches the transform result for the same transform options', () => {
       let module = createModule({transformCode});
-      return module.read()
-        .then(() => {
+      return module.read().then(() => {
+        expect(transformCode).toHaveBeenCalledTimes(1);
+        // We want to check transform caching rather than shallow caching of
+        // Promises returned by read().
+        module = createModule({transformCode});
+        return module.read().then(() => {
           expect(transformCode).toHaveBeenCalledTimes(1);
-          // We want to check transform caching rather than shallow caching of
-          // Promises returned by read().
-          module = createModule({transformCode});
-          return module.read()
-            .then(() => {
-              expect(transformCode).toHaveBeenCalledTimes(1);
-            });
         });
+      });
     });
 
     it('triggers a new transform for different transform options', () => {
       const module = createModule({transformCode});
-      return module.read({foo: 1})
-        .then(() => {
-          expect(transformCode).toHaveBeenCalledTimes(1);
-          return module.read({foo: 2})
-            .then(() => {
-              expect(transformCode).toHaveBeenCalledTimes(2);
-            });
+      return module.read({foo: 1}).then(() => {
+        expect(transformCode).toHaveBeenCalledTimes(1);
+        return module.read({foo: 2}).then(() => {
+          expect(transformCode).toHaveBeenCalledTimes(2);
         });
+      });
     });
 
     it('triggers a new transform for different source code', () => {
       let module = createModule({transformCode});
-      return module.read()
-        .then(() => {
-          expect(transformCode).toHaveBeenCalledTimes(1);
-          cache = createCache();
-          mockIndexFile('test');
-          module = createModule({transformCode});
-          return module.read()
-            .then(() => {
-              expect(transformCode).toHaveBeenCalledTimes(2);
-            });
+      return module.read().then(() => {
+        expect(transformCode).toHaveBeenCalledTimes(1);
+        cache = createCache();
+        mockIndexFile('test');
+        module = createModule({transformCode});
+        return module.read().then(() => {
+          expect(transformCode).toHaveBeenCalledTimes(2);
         });
+      });
     });
 
     it('triggers a new transform for different transform cache key', () => {
       let module = createModule({transformCode});
-      return module.read()
-        .then(() => {
-          expect(transformCode).toHaveBeenCalledTimes(1);
-          transformCacheKey = 'other';
-          module = createModule({transformCode});
-          return module.read()
-            .then(() => {
-              expect(transformCode).toHaveBeenCalledTimes(2);
-            });
+      return module.read().then(() => {
+        expect(transformCode).toHaveBeenCalledTimes(1);
+        transformCacheKey = 'other';
+        module = createModule({transformCode});
+        return module.read().then(() => {
+          expect(transformCode).toHaveBeenCalledTimes(2);
         });
+      });
     });
-
   });
 });

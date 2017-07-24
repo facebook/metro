@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -18,7 +19,10 @@ export type LocalPath = OpaqueLocalPath & string;
 
 // FIXME: This function has the shortcoming of potentially returning identical
 // paths for two files in different roots.
-function toLocalPath(roots: $ReadOnlyArray<string>, absolutePath: string): LocalPath {
+function toLocalPath(
+  roots: $ReadOnlyArray<string>,
+  absolutePath: string,
+): LocalPath {
   for (let i = 0; i < roots.length; i++) {
     const localPath = relative(roots[i], absolutePath);
     if (localPath[0] !== '.') {
@@ -27,7 +31,7 @@ function toLocalPath(roots: $ReadOnlyArray<string>, absolutePath: string): Local
   }
 
   throw new Error(
-    'Expected root module to be relative to one of the project roots'
+    'Expected root module to be relative to one of the project roots',
   );
 }
 

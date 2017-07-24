@@ -8,6 +8,7 @@
  *
  * @format
  */
+
 'use strict';
 
 jest.useRealTimers();

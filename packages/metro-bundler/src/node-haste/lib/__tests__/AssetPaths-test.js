@@ -5,7 +5,10 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
+
 'use strict';
 
 var AssetPaths = require('../AssetPaths');
@@ -72,7 +75,7 @@ describe('AssetPaths', () => {
   });
 
   describe('resolution extraction', () => {
-    it('should extract resolution simple case', () =>  {
+    it('should extract resolution simple case', () => {
       var data = AssetPaths.parse('test@2x.png', TEST_PLATFORMS);
       expect(data).toEqual({
         assetName: 'test.png',
@@ -83,7 +86,7 @@ describe('AssetPaths', () => {
       });
     });
 
-    it('should default resolution to 1', () =>  {
+    it('should default resolution to 1', () => {
       var data = AssetPaths.parse('test.png', TEST_PLATFORMS);
       expect(data).toEqual({
         assetName: 'test.png',
@@ -94,7 +97,7 @@ describe('AssetPaths', () => {
       });
     });
 
-    it('should support float', () =>  {
+    it('should support float', () => {
       var data = AssetPaths.parse('test@1.1x.png', TEST_PLATFORMS);
       expect(data).toEqual({
         assetName: 'test.png',

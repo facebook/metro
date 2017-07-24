@@ -5,7 +5,10 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
+
 'use strict';
 
 var parsePlatformFilePath = require('../parsePlatformFilePath');
@@ -23,9 +26,17 @@ describe('parsePlatformFilePath', function() {
     expect(get('/b/c/a@1.5x.ios.png')).toBe('ios');
     expect(get('/b/c/a@1.5x.lol.png')).toBe(null);
     expect(get('/b/c/a.lol.png')).toBe(null);
-    expect(parsePlatformFilePath('a.ios.js', new Set(['ios'])).platform).toBe('ios');
-    expect(parsePlatformFilePath('a.android.js', new Set(['android'])).platform).toBe('android');
-    expect(parsePlatformFilePath('a.ios.js', new Set(['ubuntu'])).platform).toBe(null);
-    expect(parsePlatformFilePath('a.ubuntu.js', new Set(['ubuntu'])).platform).toBe('ubuntu');
+    expect(parsePlatformFilePath('a.ios.js', new Set(['ios'])).platform).toBe(
+      'ios',
+    );
+    expect(
+      parsePlatformFilePath('a.android.js', new Set(['android'])).platform,
+    ).toBe('android');
+    expect(
+      parsePlatformFilePath('a.ios.js', new Set(['ubuntu'])).platform,
+    ).toBe(null);
+    expect(
+      parsePlatformFilePath('a.ubuntu.js', new Set(['ubuntu'])).platform,
+    ).toBe('ubuntu');
   });
 });

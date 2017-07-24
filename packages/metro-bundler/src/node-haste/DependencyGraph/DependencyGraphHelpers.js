@@ -1,4 +1,4 @@
- /**
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -16,11 +17,13 @@ const path = require('path');
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
 
 class DependencyGraphHelpers {
-
   _providesModuleNodeModules: Array<string>;
   _assetExts: Array<string>;
 
-  constructor({providesModuleNodeModules, assetExts}: {
+  constructor({
+    providesModuleNodeModules,
+    assetExts,
+  }: {
     +providesModuleNodeModules: Array<string>,
     +assetExts: Array<string>,
   }) {

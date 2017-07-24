@@ -1,4 +1,4 @@
- /**
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -14,7 +15,6 @@
 const NO_OPTIONS = {};
 
 class ResolutionResponse<TModule: {hash(): string}, TOptions> {
-
   dependencies: Array<TModule>;
   mainModuleId: ?(number | string);
   mocks: mixed;
@@ -49,20 +49,16 @@ class ResolutionResponse<TModule: {hash(): string}, TOptions> {
       mocks = this.mocks,
     } = properties;
 
-    const numPrependedDependencies = dependencies === this.dependencies
-      ? this.numPrependedDependencies : 0;
+    const numPrependedDependencies =
+      dependencies === this.dependencies ? this.numPrependedDependencies : 0;
 
     /* $FlowFixMe: Flow doesn't like Object.assign on class-made objects. */
-    return Object.assign(
-      new this.constructor(this.options),
-      this,
-      {
-        dependencies,
-        mainModuleId,
-        mocks,
-        numPrependedDependencies,
-      },
-    );
+    return Object.assign(new this.constructor(this.options), this, {
+      dependencies,
+      mainModuleId,
+      mocks,
+      numPrependedDependencies,
+    });
   }
 
   _assertNotFinalized() {
@@ -119,7 +115,9 @@ class ResolutionResponse<TModule: {hash(): string}, TOptions> {
     this.mocks = mocks;
   }
 
-  getResolvedDependencyPairs(module: TModule): $ReadOnlyArray<[string, TModule]> {
+  getResolvedDependencyPairs(
+    module: TModule,
+  ): $ReadOnlyArray<[string, TModule]> {
     this._assertFinalized();
     return this._mappings[module.hash()];
   }

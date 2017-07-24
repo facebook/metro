@@ -5,7 +5,10 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
+
 'use strict';
 
 const {EventEmitter} = require('events');
@@ -169,20 +172,27 @@ fs.open.mockImplementation(function(filepath) {
   callback(error, fd);
 });
 
-fs.read.mockImplementation((fd, buffer, writeOffset, length, position, callback = noop) => {
-  let bytesWritten;
-  try {
-    if (position == null || position < 0) {
-      ({position} = fd);
+fs.read.mockImplementation(
+  (fd, buffer, writeOffset, length, position, callback = noop) => {
+    let bytesWritten;
+    try {
+      if (position == null || position < 0) {
+        ({position} = fd);
+      }
+      bytesWritten = fd.buffer.copy(
+        buffer,
+        writeOffset,
+        position,
+        position + length,
+      );
+      fd.position = position + bytesWritten;
+    } catch (e) {
+      callback(Error('invalid argument'));
+      return;
     }
-    bytesWritten = fd.buffer.copy(buffer, writeOffset, position, position + length);
-    fd.position = position + bytesWritten;
-  } catch (e) {
-    callback(Error('invalid argument'));
-    return;
-  }
-  callback(null, bytesWritten, buffer);
-});
+    callback(null, bytesWritten, buffer);
+  },
+);
 
 fs.close.mockImplementation((fd, callback = noop) => {
   try {
@@ -263,7 +273,9 @@ fs.watch.mockImplementation((filename, options, listener) => {
   fsWatcher.on('change', listener);
   fsWatcher.close = () => {
     watcherList.splice(watcherList.indexOf(fsWatcher), 1);
-    fsWatcher.close = () => { throw new Error('FSWatcher is already closed'); };
+    fsWatcher.close = () => {
+      throw new Error('FSWatcher is already closed');
+    };
   };
   watcherList.push(fsWatcher);
 });
@@ -273,7 +285,9 @@ fs.__triggerWatchEvent = (eventType, filename) => {
   directWatchers.forEach(wtc => wtc.emit('change', eventType));
   const dirPath = path.dirname(filename);
   const dirWatchers = watcherListByPath.get(dirPath) || [];
-  dirWatchers.forEach(wtc => wtc.emit('change', eventType, path.relative(dirPath, filename)));
+  dirWatchers.forEach(wtc =>
+    wtc.emit('change', eventType, path.relative(dirPath, filename)),
+  );
 };
 
 function getToNode(filepath) {

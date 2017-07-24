@@ -1,4 +1,4 @@
- /**
+/**
  * Copyright (c) 2016-present, Facebook, Inc.
  * All rights reserved.
  *
@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -19,7 +20,7 @@ module.exports = class AsyncTaskGroup<TTaskHandle> {
   constructor() {
     this._runningTasks = new Set();
     this._resolve = null;
-    this.done = new Promise(resolve => this._resolve = resolve);
+    this.done = new Promise(resolve => (this._resolve = resolve));
   }
 
   start(taskHandle: TTaskHandle) {
