@@ -70,6 +70,7 @@ type Options = {
   assetExts?: Array<string>,
   blacklistRE?: RegExp,
   cacheVersion?: string,
+  enableBabelRCLookup?: boolean,
   extraNodeModules?: {},
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   getTransformOptions?: GetTransformOptions,
@@ -131,6 +132,7 @@ class Server {
     assetExts: Array<string>,
     blacklistRE: void | RegExp,
     cacheVersion: string,
+    enableBabelRCLookup: boolean,
     extraNodeModules: {},
     getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
     getTransformOptions?: GetTransformOptions,
@@ -176,6 +178,10 @@ class Server {
       assetExts: options.assetExts || defaults.assetExts,
       blacklistRE: options.blacklistRE,
       cacheVersion: options.cacheVersion || '1.0',
+      enableBabelRCLookup:
+        options.enableBabelRCLookup != null
+          ? options.enableBabelRCLookup
+          : true,
       extraNodeModules: options.extraNodeModules || {},
       getPolyfills: options.getPolyfills,
       getTransformOptions: options.getTransformOptions,

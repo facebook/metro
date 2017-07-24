@@ -41,6 +41,7 @@ var commonOptions = {
   allowBundleUpdates: false,
   assetExts: defaults.assetExts,
   cacheVersion: 'smth',
+  enableBabelRCLookup: true,
   extraNodeModules: {},
   platforms: defaults.platforms,
   resetCache: false,
@@ -176,6 +177,7 @@ describe('Bundler', function() {
             minify: false,
             platform: undefined,
             transform: {
+              enableBabelRCLookup: true,
               dev: true,
               generateSourceMaps: false,
               hot: false,
