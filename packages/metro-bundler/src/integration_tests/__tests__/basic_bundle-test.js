@@ -92,7 +92,7 @@ describe('basic_bundle', () => {
     ).toMatchSnapshot();
   }
 
-  it('bundles package with polyfills as expected', async () => {
+  it('bundles package with polyfills', async () => {
     const bundleWithPolyfills = await Packager.buildBundle(
       {
         assetRegistryPath: ASSET_REGISTRY_PATH,
@@ -111,11 +111,11 @@ describe('basic_bundle', () => {
     verifyResultCode(bundleWithPolyfills.getSource());
   });
 
-  it('bundles package without polyfills as expected', async () => {
+  it('bundles package without polyfills', async () => {
     const bundleWithoutPolyfills = await Packager.buildBundle(
       {
         assetRegistryPath: ASSET_REGISTRY_PATH,
-        getPolyfills: () => [polyfill1, polyfill2],
+        getPolyfills: () => [],
         projectRoots: [INPUT_PATH, POLYFILLS_PATH],
         transformCache: Packager.TransformCaching.none(),
         transformModulePath: require.resolve('../../transformer'),

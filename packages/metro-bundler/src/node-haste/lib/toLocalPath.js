@@ -31,7 +31,7 @@ function toLocalPath(
   }
 
   throw new Error(
-    'Expected root module to be relative to one of the project roots',
+    `Expected path \`${absolutePath}\` to be relative to one of the project roots`,
   );
 }
 
