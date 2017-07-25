@@ -269,21 +269,21 @@ class TerminalReporter {
       return;
     }
 
-    //$FlowFixMe T19379628
-    let message = error.message;
+    let message = (error.snippet == null && error.stack != null)
+      ? error.stack
+      //$FlowFixMe T19379628
+      : error.message;
     //$FlowFixMe T19379628
     if (error.filename && !message.includes(error.filename)) {
       //$FlowFixMe T19379628
       message += ` [${error.filename}]`;
     }
 
-    let str = JSON.stringify(message);
     if (error.snippet != null) {
       //$FlowFixMe T19379628
-      str += '\n' + error.snippet;
+      message += '\n' + error.snippet;
     }
-
-    this._logBundlingErrorMessage(str);
+    this._logBundlingErrorMessage(message);
   }
 
   _logBundlingErrorMessage(message: string) {
