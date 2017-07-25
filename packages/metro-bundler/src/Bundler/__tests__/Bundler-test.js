@@ -40,6 +40,7 @@ const {any, objectContaining} = expect;
 var commonOptions = {
   allowBundleUpdates: false,
   assetExts: defaults.assetExts,
+  assetRegistryPath: '/AssetRegistry.js',
   cacheVersion: 'smth',
   enableBabelRCLookup: true,
   extraNodeModules: {},

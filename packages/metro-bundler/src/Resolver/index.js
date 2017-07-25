@@ -32,6 +32,7 @@ type ContainsTransformerOptions = {+transformer: JSTransformerOptions}
 
 type Options = {|
   +assetExts: Array<string>,
+  +assetRegistryPath: string,
   +blacklistRE?: RegExp,
   +extraNodeModules: ?{},
   +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
@@ -71,7 +72,7 @@ class Resolver {
 
   static async load(opts: Options): Promise<Resolver> {
     const depGraphOpts = {
-      assetDependencies: ['react-native/Libraries/Image/AssetRegistry'],
+      assetDependencies: [opts.assetRegistryPath],
       assetExts: opts.assetExts,
       extraNodeModules: opts.extraNodeModules,
       forceNodeFilesystemAPI: false,

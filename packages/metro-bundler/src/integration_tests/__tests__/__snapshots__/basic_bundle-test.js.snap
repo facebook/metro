@@ -237,8 +237,8 @@ __d(/* /TestBundle.js */function(global, require, module, exports) {
 
 'use strict';
 
-var Bar = require(5      ); // 5 = ./Bar
-var Foo = require(6      ); // 6 = ./Foo
+var Bar = require(5); // 5 = ./Bar
+var Foo = require(6); // 6 = ./Foo
 
 module.exports = { Foo: Foo, Bar: Bar };
 }, 0);
@@ -246,7 +246,7 @@ __d(/* /Bar.js */function(global, require, module, exports) {
 
 'use strict';
 
-var Foo = require(6      ); // 6 = ./Foo
+var Foo = require(6); // 6 = ./Foo
 
 module.exports = { type: 'bar', foo: Foo.type };
 }, 5);
@@ -254,13 +254,15 @@ __d(/* /Foo.js */function(global, require, module, exports) {
 
 'use strict';
 
-var asset = require(7           ); // 7 = ./test.png
+var asset = require(7); // 7 = ./test.png
 
 module.exports = { type: 'foo', asset: asset };
 }, 6);
-__d(/* /test.png */function(global, require, module, exports) {module.exports=require(8                                           ).registerAsset({\\"__packager_asset\\":true,\\"httpServerLocation\\":\\"/assets\\",\\"width\\":8,\\"height\\":8,\\"scales\\":[1],\\"hash\\":\\"77d45c1f7fa73c0f6c444a830dc42f67\\",\\"name\\":\\"test\\",\\"type\\":\\"png\\"}); // 8 = react-native/Libraries/Image/AssetRegistry
+__d(/* /test.png */function(global, require, module, exports) {module.exports=require(8).registerAsset({\\"__packager_asset\\":true,\\"httpServerLocation\\":\\"/assets\\",\\"width\\":8,\\"height\\":8,\\"scales\\":[1],\\"hash\\":\\"77d45c1f7fa73c0f6c444a830dc42f67\\",\\"name\\":\\"test\\",\\"type\\":\\"png\\"}); // 8 = /AssetRegistry
 }, 7);
-__d(/* /node_modules/react-native/Libraries/Image/AssetRegistry.js */function(global, require, module, exports) {'use strict';
+__d(/* /AssetRegistry.js */function(global, require, module, exports) {
+
+'use strict';
 }, 8);
 ;require(0);"
 `;
@@ -502,8 +504,8 @@ __d(/* /TestBundle.js */function(global, require, module, exports) {
 
 'use strict';
 
-var Bar = require(5      ); // 5 = ./Bar
-var Foo = require(6      ); // 6 = ./Foo
+var Bar = require(5); // 5 = ./Bar
+var Foo = require(6); // 6 = ./Foo
 
 module.exports = { Foo: Foo, Bar: Bar };
 }, 0);
@@ -511,7 +513,7 @@ __d(/* /Bar.js */function(global, require, module, exports) {
 
 'use strict';
 
-var Foo = require(6      ); // 6 = ./Foo
+var Foo = require(6); // 6 = ./Foo
 
 module.exports = { type: 'bar', foo: Foo.type };
 }, 5);
@@ -519,13 +521,15 @@ __d(/* /Foo.js */function(global, require, module, exports) {
 
 'use strict';
 
-var asset = require(7           ); // 7 = ./test.png
+var asset = require(7); // 7 = ./test.png
 
 module.exports = { type: 'foo', asset: asset };
 }, 6);
-__d(/* /test.png */function(global, require, module, exports) {module.exports=require(8                                           ).registerAsset({\\"__packager_asset\\":true,\\"httpServerLocation\\":\\"/assets\\",\\"width\\":8,\\"height\\":8,\\"scales\\":[1],\\"hash\\":\\"77d45c1f7fa73c0f6c444a830dc42f67\\",\\"name\\":\\"test\\",\\"type\\":\\"png\\"}); // 8 = react-native/Libraries/Image/AssetRegistry
+__d(/* /test.png */function(global, require, module, exports) {module.exports=require(8).registerAsset({\\"__packager_asset\\":true,\\"httpServerLocation\\":\\"/assets\\",\\"width\\":8,\\"height\\":8,\\"scales\\":[1],\\"hash\\":\\"77d45c1f7fa73c0f6c444a830dc42f67\\",\\"name\\":\\"test\\",\\"type\\":\\"png\\"}); // 8 = /AssetRegistry
 }, 7);
-__d(/* /node_modules/react-native/Libraries/Image/AssetRegistry.js */function(global, require, module, exports) {'use strict';
+__d(/* /AssetRegistry.js */function(global, require, module, exports) {
+
+'use strict';
 }, 8);
 ;require(0);"
 `;

@@ -68,6 +68,7 @@ function debounceAndBatch(fn, delay) {
 
 type Options = {
   assetExts?: Array<string>,
+  +assetRegistryPath: string,
   blacklistRE?: RegExp,
   cacheVersion?: string,
   enableBabelRCLookup?: boolean,
@@ -176,6 +177,7 @@ class Server {
     const maxWorkers = getMaxWorkers(options.maxWorkers);
     this._opts = {
       assetExts: options.assetExts || defaults.assetExts,
+      assetRegistryPath: options.assetRegistryPath,
       blacklistRE: options.blacklistRE,
       cacheVersion: options.cacheVersion || '1.0',
       enableBabelRCLookup:

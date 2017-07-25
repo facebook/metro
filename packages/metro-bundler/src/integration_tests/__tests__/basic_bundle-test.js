@@ -20,6 +20,10 @@ jasmine.DEFAULT_TIMEOUT_INTERVAL = 30 * 1000;
 
 const INPUT_PATH = path.resolve(__dirname, '../basic_bundle');
 const POLYFILLS_PATH = path.resolve(__dirname, '../../Resolver/polyfills');
+const ASSET_REGISTRY_PATH = path.resolve(
+  __dirname,
+  '../basic_bundle/AssetRegistry',
+);
 
 describe('basic_bundle', () => {
   const absPathRe = new RegExp(INPUT_PATH, 'g');
@@ -74,9 +78,24 @@ describe('basic_bundle', () => {
     jest.resetModules();
   });
 
+  /**
+   * On different machines and local repos the absolute paths are different so
+   * we relativize them to the root of the test. We also trim the spacing inside
+   * ID-based `require()` calls because the way the bundle appears to do it is
+   * by replacing path strings directly by numbers in the code, not the AST.
+   */
+  function verifyResultCode(code) {
+    expect(
+      code
+        .replace(absPathRe, '')
+        .replace(/require\(([0-9]*) *\)/g, 'require($1)'),
+    ).toMatchSnapshot();
+  }
+
   it('bundles package with polyfills as expected', async () => {
     const bundleWithPolyfills = await Packager.buildBundle(
       {
+        assetRegistryPath: ASSET_REGISTRY_PATH,
         getPolyfills: () => [polyfill1, polyfill2],
         projectRoots: [INPUT_PATH, POLYFILLS_PATH],
         transformCache: Packager.TransformCaching.none(),
@@ -89,15 +108,13 @@ describe('basic_bundle', () => {
         platform: 'ios',
       },
     );
-
-    expect(
-      bundleWithPolyfills.getSource().replace(absPathRe, ''),
-    ).toMatchSnapshot();
+    verifyResultCode(bundleWithPolyfills.getSource());
   });
 
   it('bundles package without polyfills as expected', async () => {
     const bundleWithoutPolyfills = await Packager.buildBundle(
       {
+        assetRegistryPath: ASSET_REGISTRY_PATH,
         getPolyfills: () => [polyfill1, polyfill2],
         projectRoots: [INPUT_PATH, POLYFILLS_PATH],
         transformCache: Packager.TransformCaching.none(),
@@ -110,9 +127,6 @@ describe('basic_bundle', () => {
         platform: 'ios',
       },
     );
-
-    expect(
-      bundleWithoutPolyfills.getSource().replace(absPathRe, ''),
-    ).toMatchSnapshot();
+    verifyResultCode(bundleWithoutPolyfills.getSource());
   });
 });

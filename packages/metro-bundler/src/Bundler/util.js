@@ -29,15 +29,16 @@ const assetPropertyBlacklist = new Set([
   'path',
 ]);
 
-const ASSET_REGISTRY_PATH = 'react-native/Libraries/Image/AssetRegistry';
-
-function generateAssetCodeFileAst(assetDescriptor: AssetDescriptor): Object {
+function generateAssetCodeFileAst(
+  assetRegistryPath: string,
+  assetDescriptor: AssetDescriptor,
+): Object {
   const properDescriptor = filterObject(assetDescriptor, assetPropertyBlacklist);
   const descriptorAst = babylon.parseExpression(JSON.stringify(properDescriptor));
   const t = babel.types;
   const moduleExports = t.memberExpression(t.identifier('module'), t.identifier('exports'));
   const requireCall =
-    t.callExpression(t.identifier('require'), [t.stringLiteral(ASSET_REGISTRY_PATH)]);
+    t.callExpression(t.identifier('require'), [t.stringLiteral(assetRegistryPath)]);
   const registerAssetFunction = t.memberExpression(requireCall, t.identifier('registerAsset'));
   const registerAssetCall = t.callExpression(registerAssetFunction, [descriptorAst]);
   return t.file(t.program([
@@ -45,17 +46,20 @@ function generateAssetCodeFileAst(assetDescriptor: AssetDescriptor): Object {
   ]));
 }
 
-function generateAssetTransformResult(assetDescriptor: AssetDescriptor): {|
+function generateAssetTransformResult(
+  assetRegistryPath: string,
+  assetDescriptor: AssetDescriptor,
+): {|
   code: string,
   dependencies: Array<string>,
   dependencyOffsets: Array<number>,
 |} {
   const {code} = babelGenerate(
-    generateAssetCodeFileAst(assetDescriptor),
+    generateAssetCodeFileAst(assetRegistryPath, assetDescriptor),
     {comments: false, compact: true},
   );
-  const dependencies = [ASSET_REGISTRY_PATH];
-  const dependencyOffsets = [code.indexOf(ASSET_REGISTRY_PATH) - 1];
+  const dependencies = [assetRegistryPath];
+  const dependencyOffsets = [code.indexOf(assetRegistryPath) - 1];
   return {code, dependencies, dependencyOffsets};
 }
 

@@ -33,6 +33,7 @@ exports.createServer = createServer;
 exports.Logger = Logger;
 
 type Options = {|
+  +assetRegistryPath: string,
   +sourceExts: ?Array<string>,
   +transformCache: TransformCache,
   +transformModulePath: string,

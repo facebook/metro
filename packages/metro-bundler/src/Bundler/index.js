@@ -121,6 +121,7 @@ export type PostProcessBundleSourcemap = ({
 type Options = {|
   +allowBundleUpdates: boolean,
   +assetExts: Array<string>,
+  +assetRegistryPath: string,
   +assetServer: AssetServer,
   +blacklistRE?: RegExp,
   +cacheVersion: string,
@@ -213,6 +214,7 @@ class Bundler {
 
     this._resolverPromise = Resolver.load({
       assetExts: opts.assetExts,
+      assetRegistryPath: opts.assetRegistryPath,
       blacklistRE: opts.blacklistRE,
       extraNodeModules: opts.extraNodeModules,
       getPolyfills: opts.getPolyfills,
@@ -740,7 +742,8 @@ class Bundler {
 
       return this._applyAssetPlugins(assetPlugins, asset);
     }).then(asset => {
-      const {code, dependencies, dependencyOffsets} = generateAssetTransformResult(asset);
+      const {code, dependencies, dependencyOffsets} =
+        generateAssetTransformResult(this._opts.assetRegistryPath, asset);
       return {
         asset,
         code,
