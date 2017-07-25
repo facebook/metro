@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -25,7 +26,6 @@ const readDir = denodeify(fs.readdir);
 const readFile = denodeify(fs.readFile);
 
 class AssetServer {
-
   _roots: $ReadOnlyArray<string>;
   _assetExts: $ReadOnlyArray<string>;
   _hashes: Map<?string, string>;
@@ -57,7 +57,10 @@ class AssetServer {
     });
   }
 
-  getAssetData(assetPath: string, platform: ?string = null): Promise<{|
+  getAssetData(
+    assetPath: string,
+    platform: ?string = null,
+  ): Promise<{|
     files: Array<string>,
     hash: string,
     name: string,
@@ -109,22 +112,17 @@ class AssetServer {
    * 4. Then try to pick platform-specific asset records
    * 5. Then pick the closest resolution (rounding up) to the requested one
    */
-  _getAssetRecord(assetPath: string, platform: ?string = null): Promise<{|
+  _getAssetRecord(
+    assetPath: string,
+    platform: ?string = null,
+  ): Promise<{|
     files: Array<string>,
     scales: Array<number>,
   |}> {
     const filename = path.basename(assetPath);
 
-    return (
-      this._findRoot(
-        this._roots,
-        path.dirname(assetPath),
-        assetPath,
-      )
-      .then(dir => Promise.all([
-        dir,
-        readDir(dir),
-      ]))
+    return this._findRoot(this._roots, path.dirname(assetPath), assetPath)
+      .then(dir => Promise.all([dir, readDir(dir)]))
       .then(res => {
         const dir = res[0];
         const files = res[1];
@@ -137,8 +135,9 @@ class AssetServer {
 
         let record;
         if (platform != null) {
-          record = map.get(getAssetKey(assetData.assetName, platform)) ||
-                   map.get(assetData.assetName);
+          record =
+            map.get(getAssetKey(assetData.assetName, platform)) ||
+            map.get(assetData.assetName);
         } else {
           record = map.get(assetData.assetName);
         }
@@ -146,33 +145,39 @@ class AssetServer {
         if (!record) {
           throw new Error(
             /* $FlowFixMe: platform can be null */
-            `Asset not found: ${assetPath} for platform: ${platform}`
+            `Asset not found: ${assetPath} for platform: ${platform}`,
           );
         }
 
         return record;
-      })
-    );
+      });
   }
 
-  _findRoot(roots: $ReadOnlyArray<string>, dir: string, debugInfoFile: string): Promise<string> {
+  _findRoot(
+    roots: $ReadOnlyArray<string>,
+    dir: string,
+    debugInfoFile: string,
+  ): Promise<string> {
     return Promise.all(
       roots.map(root => {
         const absRoot = path.resolve(root);
         // important: we want to resolve root + dir
         // to ensure the requested path doesn't traverse beyond root
         const absPath = path.resolve(root, dir);
-        return stat(absPath).then(fstat => {
-          // keep asset requests from traversing files
-          // up from the root (e.g. ../../../etc/hosts)
-          if (!absPath.startsWith(absRoot)) {
+        return stat(absPath).then(
+          fstat => {
+            // keep asset requests from traversing files
+            // up from the root (e.g. ../../../etc/hosts)
+            if (!absPath.startsWith(absRoot)) {
+              return {path: absPath, isValid: false};
+            }
+            return {path: absPath, isValid: fstat.isDirectory()};
+          },
+          _ => {
             return {path: absPath, isValid: false};
-          }
-          return {path: absPath, isValid: fstat.isDirectory()};
-        }, _ => {
-          return {path: absPath, isValid: false};
-        });
-      })
+          },
+        );
+      }),
     ).then(stats => {
       for (let i = 0; i < stats.length; i++) {
         if (stats[i].isValid) {
@@ -183,15 +188,22 @@ class AssetServer {
       const rootsString = roots.map(s => `'${s}'`).join(', ');
       throw new Error(
         `'${debugInfoFile}' could not be found, because '${dir}' is not a ` +
-        `subdirectory of any of the roots  (${rootsString})`,
+          `subdirectory of any of the roots  (${rootsString})`,
       );
     });
   }
 
-  _buildAssetMap(dir: string, files: $ReadOnlyArray<string>, platform: ?string): Map<string, {|
-    files: Array<string>,
-    scales: Array<number>,
-  |}> {
+  _buildAssetMap(
+    dir: string,
+    files: $ReadOnlyArray<string>,
+    platform: ?string,
+  ): Map<
+    string,
+    {|
+      files: Array<string>,
+      scales: Array<number>,
+    |},
+  > {
     const platforms = new Set(platform != null ? [platform] : []);
     const assets = files.map(this._getAssetDataFromName.bind(this, platforms));
     const map = new Map();
@@ -214,7 +226,7 @@ class AssetServer {
       const length = record.scales.length;
 
       for (insertIndex = 0; insertIndex < length; insertIndex++) {
-        if (asset.resolution <  record.scales[insertIndex]) {
+        if (asset.resolution < record.scales[insertIndex]) {
           break;
         }
       }
@@ -244,7 +256,8 @@ function hashFiles(files, hash, callback) {
     return;
   }
 
-  fs.createReadStream(files.shift())
+  fs
+    .createReadStream(files.shift())
     .on('data', data => hash.update(data))
     .once('end', () => hashFiles(files, hash, callback))
     .once('error', error => callback(error));

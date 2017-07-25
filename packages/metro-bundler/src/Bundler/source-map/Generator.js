@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -77,13 +78,16 @@ class Generator {
    */
   addSimpleMapping(generatedLine: number, generatedColumn: number): void {
     const last = this.last;
-    if (this.source === -1 ||
-        generatedLine === last.generatedLine &&
-        generatedColumn < last.generatedColumn ||
-        generatedLine < last.generatedLine) {
-      const msg = this.source === -1
-        ? 'Cannot add mapping before starting a file with `addFile()`'
-        : 'Mapping is for a position preceding an earlier mapping';
+    if (
+      this.source === -1 ||
+      (generatedLine === last.generatedLine &&
+        generatedColumn < last.generatedColumn) ||
+      generatedLine < last.generatedLine
+    ) {
+      const msg =
+        this.source === -1
+          ? 'Cannot add mapping before starting a file with `addFile()`'
+          : 'Mapping is for a position preceding an earlier mapping';
       throw new Error(msg);
     }
 
@@ -130,7 +134,11 @@ class Generator {
     name: string,
   ): void {
     this.addSourceMapping(
-      generatedLine, generatedColumn, sourceLine, sourceColumn);
+      generatedLine,
+      generatedColumn,
+      sourceLine,
+      sourceColumn,
+    );
 
     const last = this.last;
     const nameIndex = this.names.indexFor(name);
@@ -158,14 +166,16 @@ class Generator {
    * This is ~2.5x faster than calling `JSON.stringify(generator.toMap())`
    */
   toString(file?: string): string {
-    return ('{' +
+    return (
+      '{' +
       '"version":3,' +
       (file ? `"file":${JSON.stringify(file)},` : '') +
       `"sources":${JSON.stringify(this.sources)},` +
       `"sourcesContent":${JSON.stringify(this.sourcesContent)},` +
       `"names":${JSON.stringify(this.names.items())},` +
       `"mappings":"${this.builder.toString()}"` +
-    '}');
+      '}'
+    );
   }
 }
 

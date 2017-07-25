@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -36,10 +37,9 @@ export type Unbundle = {
 
 type SourceMapFormat = 'undetermined' | 'indexed' | 'flattened';
 
-const SOURCEMAPPING_URL = '\n\/\/# sourceMappingURL=';
+const SOURCEMAPPING_URL = '\n//# sourceMappingURL=';
 
 class Bundle extends BundleBase {
-
   _dev: boolean | void;
   _inlineSourceMap: string | void;
   _minify: boolean | void;
@@ -51,13 +51,21 @@ class Bundle extends BundleBase {
   _sourceMapUrl: ?string;
   postProcessBundleSourcemap: PostProcessBundleSourcemap;
 
-  constructor({sourceMapUrl, dev, minify, ramGroups, postProcessBundleSourcemap}: {
-    sourceMapUrl: ?string,
-    dev?: boolean,
-    minify?: boolean,
-    ramGroups?: Array<string>,
-    postProcessBundleSourcemap: PostProcessBundleSourcemap,
-  } = {}) {
+  constructor(
+    {
+      sourceMapUrl,
+      dev,
+      minify,
+      ramGroups,
+      postProcessBundleSourcemap,
+    }: {
+      sourceMapUrl: ?string,
+      dev?: boolean,
+      minify?: boolean,
+      ramGroups?: Array<string>,
+      postProcessBundleSourcemap: PostProcessBundleSourcemap,
+    } = {},
+  ) {
     super();
     this._sourceMap = null;
     this._sourceMapFormat = 'undetermined';
@@ -86,39 +94,44 @@ class Bundle extends BundleBase {
     /* $FlowFixMe: erroneous change of signature. */
   ): Promise<void> {
     const index = super.addModule(moduleTransport);
-    return resolver.wrapModule({
-      resolutionResponse,
-      module,
-      name: moduleTransport.name,
-      code: moduleTransport.code,
-      map: moduleTransport.map,
-      meta: moduleTransport.meta,
-      minify: this._minify,
-      dev: this._dev,
-    }).then(({code, map}) => {
-      // If we get a map from the transformer we'll switch to a mode
-      // were we're combining the source maps as opposed to
-      if (map) {
-        const usesRawMappings = isRawMappings(map);
+    return resolver
+      .wrapModule({
+        resolutionResponse,
+        module,
+        name: moduleTransport.name,
+        code: moduleTransport.code,
+        map: moduleTransport.map,
+        meta: moduleTransport.meta,
+        minify: this._minify,
+        dev: this._dev,
+      })
+      .then(({code, map}) => {
+        // If we get a map from the transformer we'll switch to a mode
+        // were we're combining the source maps as opposed to
+        if (map) {
+          const usesRawMappings = isRawMappings(map);
 
-        if (this._sourceMapFormat === 'undetermined') {
-          this._sourceMapFormat = usesRawMappings ? 'flattened' : 'indexed';
-        } else if (usesRawMappings && this._sourceMapFormat === 'indexed') {
-          throw new Error(
-            `Got at least one module with a full source map, but ${
-            moduleTransport.sourcePath} has raw mappings`
-          );
-        } else if (!usesRawMappings && this._sourceMapFormat === 'flattened') {
-          throw new Error(
-            `Got at least one module with raw mappings, but ${
-            moduleTransport.sourcePath} has a full source map`
-          );
+          if (this._sourceMapFormat === 'undetermined') {
+            this._sourceMapFormat = usesRawMappings ? 'flattened' : 'indexed';
+          } else if (usesRawMappings && this._sourceMapFormat === 'indexed') {
+            throw new Error(
+              `Got at least one module with a full source map, but ${moduleTransport.sourcePath} has raw mappings`,
+            );
+          } else if (
+            !usesRawMappings &&
+            this._sourceMapFormat === 'flattened'
+          ) {
+            throw new Error(
+              `Got at least one module with raw mappings, but ${moduleTransport.sourcePath} has a full source map`,
+            );
+          }
         }
-      }
 
-      this.replaceModuleAt(
-        index, new ModuleTransport({...moduleTransport, code, map}));
-    });
+        this.replaceModuleAt(
+          index,
+          new ModuleTransport({...moduleTransport, code, map}),
+        );
+      });
   }
 
   finalize(options: FinalizeOptions) {
@@ -138,15 +151,17 @@ class Bundle extends BundleBase {
   _addRequireCall(moduleId: string) {
     const code = `;require(${JSON.stringify(moduleId)});`;
     const name = 'require-' + moduleId;
-    super.addModule(new ModuleTransport({
-      name,
-      id: -this._numRequireCalls - 1,
-      code,
-      virtual: true,
-      sourceCode: code,
-      sourcePath: name + '.js',
-      meta: {preloaded: true},
-    }));
+    super.addModule(
+      new ModuleTransport({
+        name,
+        id: -this._numRequireCalls - 1,
+        code,
+        virtual: true,
+        sourceCode: code,
+        sourcePath: name + '.js',
+        meta: {preloaded: true},
+      }),
+    );
     this._numRequireCalls += 1;
   }
 
@@ -191,7 +206,11 @@ class Bundle extends BundleBase {
         lazyModules,
         get groups() {
           if (!groups) {
-            groups = createRamBundleGroups(ramGroups || [], lazyModules, subtree);
+            groups = createRamBundleGroups(
+              ramGroups || [],
+              lazyModules,
+              subtree,
+            );
           }
           return groups;
         },
@@ -226,10 +245,10 @@ class Bundle extends BundleBase {
         !Array.isArray(module.map),
         `Unexpected raw mappings for ${module.sourcePath}`,
       );
-      let map: SourceMap = module.map == null || module.virtual
-        ? generateSourceMapForVirtualModule(module)
-        : module.map;
-
+      let map: SourceMap =
+        module.map == null || module.virtual
+          ? generateSourceMapForVirtualModule(module)
+          : module.map;
 
       if (options.excludeSource && isMappingsMap(map)) {
         map = {...map, sourcesContent: []};
@@ -287,10 +306,12 @@ class Bundle extends BundleBase {
   }
 
   getJSModulePaths() {
-    return this.getModules()
-      // Filter out non-js files. Like images etc.
-      .filter(module => !module.virtual)
-      .map(module => module.sourcePath);
+    return (
+      this.getModules()
+        // Filter out non-js files. Like images etc.
+        .filter(module => !module.virtual)
+        .map(module => module.sourcePath)
+    );
   }
 
   getDebugInfo() {
@@ -308,11 +329,18 @@ class Bundle extends BundleBase {
       '}',
       '</style>',
       '<h3> Module paths and transformed code: </h3>',
-      this.getModules().map(function(m) {
-        return '<div> <h4> Path: </h4>' + m.sourcePath + '<br/> <h4> Source: </h4>' +
-               '<code><pre class="collapsed" onclick="this.classList.remove(\'collapsed\')">' +
-               _.escape(m.code) + '</pre></code></div>';
-      }).join('\n'),
+      this.getModules()
+        .map(function(m) {
+          return (
+            '<div> <h4> Path: </h4>' +
+            m.sourcePath +
+            '<br/> <h4> Source: </h4>' +
+            '<code><pre class="collapsed" onclick="this.classList.remove(\'collapsed\')">' +
+            _.escape(m.code) +
+            '</pre></code></div>'
+          );
+        })
+        .join('\n'),
     ].join('\n');
   }
 
@@ -326,7 +354,7 @@ function generateSourceMapForVirtualModule(module): MappingsMap {
   let mappings = 'AAAA;';
 
   for (let i = 1; i < module.code.split('\n').length; i++) {
-    mappings +=  'AACA;';
+    mappings += 'AACA;';
   }
 
   return {
@@ -350,7 +378,7 @@ function partition(array, predicate) {
   return [included, excluded];
 }
 
-function * subtree(
+function* subtree(
   moduleTransport: ModuleTransport,
   moduleTransportsByPath: Map<string, ModuleTransport>,
   seen = new Set(),
@@ -359,13 +387,14 @@ function * subtree(
   const {meta} = moduleTransport;
   invariant(
     meta != null,
-    'Unexpected module transport without meta information: ' + moduleTransport.sourcePath,
+    'Unexpected module transport without meta information: ' +
+      moduleTransport.sourcePath,
   );
   for (const [, {path}] of meta.dependencyPairs || []) {
     const dependency = moduleTransportsByPath.get(path);
     if (dependency && !seen.has(dependency.id)) {
       yield dependency.id;
-      yield * subtree(dependency, moduleTransportsByPath, seen);
+      yield* subtree(dependency, moduleTransportsByPath, seen);
     }
   }
 }

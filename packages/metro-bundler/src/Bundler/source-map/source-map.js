@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -18,10 +19,12 @@ import type {RawMapping as BabelRawMapping} from 'babel-generator';
 
 type GeneratedCodeMapping = [number, number];
 type SourceMapping = [number, number, number, number];
-type SourceMappingWithName =  [number, number, number, number, string];
+type SourceMappingWithName = [number, number, number, number, string];
 
 export type RawMapping =
-  SourceMappingWithName | SourceMapping | GeneratedCodeMapping;
+  | SourceMappingWithName
+  | SourceMapping
+  | GeneratedCodeMapping;
 
 /**
  * Creates a source map from modules with "raw mappings", i.e. an array of
@@ -40,7 +43,7 @@ function fromRawMappings(modules: Array<ModuleTransport>): Generator {
       addMappingsForFile(generator, map, module, carryOver);
     } else if (map != null) {
       throw new Error(
-        `Unexpected module with full source map found: ${module.sourcePath}`
+        `Unexpected module with full source map found: ${module.sourcePath}`,
       );
     }
 
@@ -74,7 +77,6 @@ function addMappingsForFile(generator, mappings, module, carryOver) {
   }
 
   generator.endFile();
-
 }
 
 function addMapping(generator, mapping, carryOver, columnOffset) {
@@ -89,8 +91,15 @@ function addMapping(generator, mapping, carryOver, columnOffset) {
     generator.addSourceMapping(line, column, mapping[2], mapping[3]);
   } else if (n === 5) {
     generator.addNamedSourceMapping(
+      line,
+      column,
       // $FlowIssue #15579526
-      line, column, mapping[2], mapping[3], mapping[4]);
+      mapping[2],
+      // $FlowIssue #15579526
+      mapping[3],
+      // $FlowIssue #15579526
+      mapping[4],
+    );
   } else {
     throw new Error(`Invalid mapping: [${mapping.join(', ')}]`);
   }

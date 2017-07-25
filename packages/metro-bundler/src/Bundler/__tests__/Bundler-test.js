@@ -5,7 +5,10 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
+
 'use strict';
 
 jest
@@ -23,8 +26,7 @@ jest
   .mock('../Bundle')
   .mock('../HMRBundle')
   .mock('../../Logger')
-  .mock('/path/to/transformer.js', () => ({}), {virtual: true})
-  ;
+  .mock('/path/to/transformer.js', () => ({}), {virtual: true});
 
 var Bundler = require('../');
 var Resolver = require('../../Resolver');
@@ -35,7 +37,6 @@ const os = require('os');
 const path = require('path');
 
 const {any, objectContaining} = expect;
-
 
 var commonOptions = {
   allowBundleUpdates: false,
@@ -52,7 +53,6 @@ var commonOptions = {
 };
 
 describe('Bundler', function() {
-
   function createModule({
     path,
     id,
@@ -100,10 +100,12 @@ describe('Bundler', function() {
         getModuleSystemDependencies,
       };
     });
-    Resolver.load = jest.fn().mockImplementation(opts => Promise.resolve(new Resolver(opts)));
+    Resolver.load = jest
+      .fn()
+      .mockImplementation(opts => Promise.resolve(new Resolver(opts)));
 
     fs.__setMockFilesystem({
-      'path': {'to': {'transformer.js': ''}},
+      path: {to: {'transformer.js': ''}},
     });
 
     fs.statSync.mockImplementation(function() {
@@ -151,7 +153,7 @@ describe('Bundler', function() {
         options: transformOptions,
         getModuleId: () => 123,
         getResolvedDependencyPairs: () => [],
-      })
+      }),
     );
 
     getModuleSystemDependencies.mockImplementation(function() {
@@ -188,12 +190,17 @@ describe('Bundler', function() {
             },
           },
         },
-      ])
+      ]),
     );
   });
 
   it('allows overriding the platforms array', () => {
-    expect(bundler._opts.platforms).toEqual(['ios', 'android', 'windows', 'web']);
+    expect(bundler._opts.platforms).toEqual([
+      'ios',
+      'android',
+      'windows',
+      'web',
+    ]);
     const b = new Bundler({
       ...commonOptions,
       projectRoots,
@@ -217,96 +224,115 @@ describe('Bundler', function() {
     };
 
     beforeEach(() => {
-      assetServer.getAssetData
-        .mockImplementation(() => Promise.resolve(mockAsset));
+      assetServer.getAssetData.mockImplementation(() =>
+        Promise.resolve(mockAsset),
+      );
     });
 
     it('creates a bundle', function() {
-      return bundler.bundle({
-        entryFile: '/root/foo.js',
-        runBeforeMainModule: [],
-        runModule: true,
-        sourceMapUrl: 'source_map_url',
-      }).then(bundle => {
-        const ithAddedModule = i => bundle.addModule.mock.calls[i][2].path;
-
-        expect(ithAddedModule(0)).toEqual('/root/foo.js');
-        expect(ithAddedModule(1)).toEqual('/root/bar.js');
-        expect(ithAddedModule(2)).toEqual('/root/img/new_image.png');
-        expect(ithAddedModule(3)).toEqual('/root/file.json');
-
-        expect(bundle.finalize.mock.calls[0]).toEqual([{
-          runModule: true,
+      return bundler
+        .bundle({
+          entryFile: '/root/foo.js',
           runBeforeMainModule: [],
-          allowUpdates: false,
-        }]);
+          runModule: true,
+          sourceMapUrl: 'source_map_url',
+        })
+        .then(bundle => {
+          const ithAddedModule = i => bundle.addModule.mock.calls[i][2].path;
 
-        expect(bundle.addAsset.mock.calls[0]).toEqual([{
-          __packager_asset: true,
-          fileSystemLocation: '/root/img',
-          httpServerLocation: '/assets/img',
-          width: 50,
-          height: 100,
-          scales: [1, 2, 3],
-          files: [
-            '/root/img/img.png',
-            '/root/img/img@2x.png',
-            '/root/img/img@3x.png',
-          ],
-          hash: 'i am a hash',
-          name: 'img',
-          type: 'png',
-        }]);
+          expect(ithAddedModule(0)).toEqual('/root/foo.js');
+          expect(ithAddedModule(1)).toEqual('/root/bar.js');
+          expect(ithAddedModule(2)).toEqual('/root/img/new_image.png');
+          expect(ithAddedModule(3)).toEqual('/root/file.json');
 
-        // TODO(amasad) This fails with 0 != 5 in OSS
-        //expect(ProgressBar.prototype.tick.mock.calls.length).toEqual(modules.length);
-      });
+          expect(bundle.finalize.mock.calls[0]).toEqual([
+            {
+              runModule: true,
+              runBeforeMainModule: [],
+              allowUpdates: false,
+            },
+          ]);
+
+          expect(bundle.addAsset.mock.calls[0]).toEqual([
+            {
+              __packager_asset: true,
+              fileSystemLocation: '/root/img',
+              httpServerLocation: '/assets/img',
+              width: 50,
+              height: 100,
+              scales: [1, 2, 3],
+              files: [
+                '/root/img/img.png',
+                '/root/img/img@2x.png',
+                '/root/img/img@3x.png',
+              ],
+              hash: 'i am a hash',
+              name: 'img',
+              type: 'png',
+            },
+          ]);
+
+          // TODO(amasad) This fails with 0 != 5 in OSS
+          //expect(ProgressBar.prototype.tick.mock.calls.length).toEqual(modules.length);
+        });
     });
 
     it('loads and runs asset plugins', function() {
-      jest.mock('mockPlugin1', () => {
-        return asset => {
-          asset.extraReverseHash = asset.hash.split('').reverse().join('');
-          return asset;
-        };
-      }, {virtual: true});
+      jest.mock(
+        'mockPlugin1',
+        () => {
+          return asset => {
+            asset.extraReverseHash = asset.hash.split('').reverse().join('');
+            return asset;
+          };
+        },
+        {virtual: true},
+      );
 
-      jest.mock('asyncMockPlugin2', () => {
-        return asset => {
-          expect(asset.extraReverseHash).toBeDefined();
-          return new Promise(resolve => {
-            asset.extraPixelCount = asset.width * asset.height;
-            resolve(asset);
-          });
-        };
-      }, {virtual: true});
+      jest.mock(
+        'asyncMockPlugin2',
+        () => {
+          return asset => {
+            expect(asset.extraReverseHash).toBeDefined();
+            return new Promise(resolve => {
+              asset.extraPixelCount = asset.width * asset.height;
+              resolve(asset);
+            });
+          };
+        },
+        {virtual: true},
+      );
 
-      return bundler.bundle({
-        entryFile: '/root/foo.js',
-        runBeforeMainModule: [],
-        runModule: true,
-        sourceMapUrl: 'source_map_url',
-        assetPlugins: ['mockPlugin1', 'asyncMockPlugin2'],
-      }).then(bundle => {
-        expect(bundle.addAsset.mock.calls[0]).toEqual([{
-          __packager_asset: true,
-          fileSystemLocation: '/root/img',
-          httpServerLocation: '/assets/img',
-          width: 50,
-          height: 100,
-          scales: [1, 2, 3],
-          files: [
-            '/root/img/img.png',
-            '/root/img/img@2x.png',
-            '/root/img/img@3x.png',
-          ],
-          hash: 'i am a hash',
-          name: 'img',
-          type: 'png',
-          extraReverseHash: 'hsah a ma i',
-          extraPixelCount: 5000,
-        }]);
-      });
+      return bundler
+        .bundle({
+          entryFile: '/root/foo.js',
+          runBeforeMainModule: [],
+          runModule: true,
+          sourceMapUrl: 'source_map_url',
+          assetPlugins: ['mockPlugin1', 'asyncMockPlugin2'],
+        })
+        .then(bundle => {
+          expect(bundle.addAsset.mock.calls[0]).toEqual([
+            {
+              __packager_asset: true,
+              fileSystemLocation: '/root/img',
+              httpServerLocation: '/assets/img',
+              width: 50,
+              height: 100,
+              scales: [1, 2, 3],
+              files: [
+                '/root/img/img.png',
+                '/root/img/img@2x.png',
+                '/root/img/img@3x.png',
+              ],
+              hash: 'i am a hash',
+              name: 'img',
+              type: 'png',
+              extraReverseHash: 'hsah a ma i',
+              extraPixelCount: 5000,
+            },
+          ]);
+        });
     });
 
     it('calls the module post-processing function', () => {
@@ -324,34 +350,39 @@ describe('Bundler', function() {
       const platform = 'arbitrary';
 
       const entryFile = '/root/foo.js';
-      return b.bundle({
-        dev,
-        entryFile,
-        minify,
-        platform,
-        runBeforeMainModule: [],
-        runModule: true,
-        sourceMapUrl: 'source_map_url',
-      }).then(() => {
-        expect(postProcessModules)
-          .toBeCalledWith(
-            modules.map(x => objectContaining({
-              name: any(String),
-              id: any(Number),
-              code: any(String),
-              sourceCode: any(String),
-              sourcePath: x.path,
-              meta: any(Object),
-              polyfill: !!x.isPolyfill(),
-            })),
+      return b
+        .bundle({
+          dev,
+          entryFile,
+          minify,
+          platform,
+          runBeforeMainModule: [],
+          runModule: true,
+          sourceMapUrl: 'source_map_url',
+        })
+        .then(() => {
+          expect(postProcessModules).toBeCalledWith(
+            modules.map(x =>
+              objectContaining({
+                name: any(String),
+                id: any(Number),
+                code: any(String),
+                sourceCode: any(String),
+                sourcePath: x.path,
+                meta: any(Object),
+                polyfill: !!x.isPolyfill(),
+              }),
+            ),
             entryFile,
             {dev, minify, platform},
           );
-      });
+        });
     });
 
     it('respects the order of modules returned by the post-processing function', () => {
-      const postProcessModules = jest.fn().mockImplementation((ms, e) => ms.reverse());
+      const postProcessModules = jest
+        .fn()
+        .mockImplementation((ms, e) => ms.reverse());
 
       const b = new Bundler({
         ...commonOptions,
@@ -361,21 +392,23 @@ describe('Bundler', function() {
       });
 
       const entryFile = '/root/foo.js';
-      return b.bundle({
-        entryFile,
-        runBeforeMainModule: [],
-        runModule: true,
-        sourceMapUrl: 'source_map_url',
-      }).then(bundle => {
-        const ithAddedModule = i => bundle.addModule.mock.calls[i][2].path;
+      return b
+        .bundle({
+          entryFile,
+          runBeforeMainModule: [],
+          runModule: true,
+          sourceMapUrl: 'source_map_url',
+        })
+        .then(bundle => {
+          const ithAddedModule = i => bundle.addModule.mock.calls[i][2].path;
 
-        [
-          '/root/file.json',
-          '/root/img/new_image.png',
-          '/root/bar.js',
-          '/root/foo.js',
-        ].forEach((path, ix) => expect(ithAddedModule(ix)).toEqual(path));
-      });
+          [
+            '/root/file.json',
+            '/root/img/new_image.png',
+            '/root/bar.js',
+            '/root/foo.js',
+          ].forEach((path, ix) => expect(ithAddedModule(ix)).toEqual(path));
+        });
     });
   });
 
@@ -423,18 +456,21 @@ describe('Bundler', function() {
         }),
       );
 
-      return bundler.getOrderedDependencyPaths('/root/foo.js', true)
-        .then(paths => expect(paths).toEqual([
-          '/root/foo.js',
-          '/root/bar.js',
-          '/root/img/new_image.png',
-          '/root/img/new_image@2x.png',
-          '/root/img/new_image@3x.png',
-          '/root/file.json',
-          '/root/img/new_image2.png',
-          '/root/img/new_image2@2x.png',
-          '/root/img/new_image2@3x.png',
-        ]));
+      return bundler
+        .getOrderedDependencyPaths('/root/foo.js', true)
+        .then(paths =>
+          expect(paths).toEqual([
+            '/root/foo.js',
+            '/root/bar.js',
+            '/root/img/new_image.png',
+            '/root/img/new_image@2x.png',
+            '/root/img/new_image@3x.png',
+            '/root/file.json',
+            '/root/img/new_image2.png',
+            '/root/img/new_image2@2x.png',
+            '/root/img/new_image2@3x.png',
+          ]),
+        );
     });
   });
 });

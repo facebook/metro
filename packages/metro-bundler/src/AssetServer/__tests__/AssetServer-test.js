@@ -5,6 +5,8 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
 
 'use strict';
@@ -26,7 +28,7 @@ describe('AssetServer', () => {
       });
 
       fs.__setMockFilesystem({
-        'root': {
+        root: {
           imgs: {
             'b.png': 'b image',
             'b@2x.png': 'b2 image',
@@ -37,11 +39,7 @@ describe('AssetServer', () => {
       return Promise.all([
         server.get('imgs/b.png'),
         server.get('imgs/b@1x.png'),
-      ]).then(resp =>
-        resp.forEach(data =>
-          expect(data).toBe('b image')
-        )
-      );
+      ]).then(resp => resp.forEach(data => expect(data).toBe('b image')));
     });
 
     it('should work for the simple case with platform ext', () => {
@@ -51,7 +49,7 @@ describe('AssetServer', () => {
       });
 
       fs.__setMockFilesystem({
-        'root': {
+        root: {
           imgs: {
             'b.ios.png': 'b ios image',
             'b.android.png': 'b android image',
@@ -62,24 +60,23 @@ describe('AssetServer', () => {
       });
 
       return Promise.all([
-        server.get('imgs/b.png', 'ios').then(
-          data => expect(data).toBe('b ios image')
-        ),
-        server.get('imgs/b.png', 'android').then(
-          data => expect(data).toBe('b android image')
-        ),
-        server.get('imgs/c.png', 'android').then(
-          data => expect(data).toBe('c android image')
-        ),
-        server.get('imgs/c.png', 'ios').then(
-          data => expect(data).toBe('c general image')
-        ),
-        server.get('imgs/c.png').then(
-          data => expect(data).toBe('c general image')
-        ),
+        server
+          .get('imgs/b.png', 'ios')
+          .then(data => expect(data).toBe('b ios image')),
+        server
+          .get('imgs/b.png', 'android')
+          .then(data => expect(data).toBe('b android image')),
+        server
+          .get('imgs/c.png', 'android')
+          .then(data => expect(data).toBe('c android image')),
+        server
+          .get('imgs/c.png', 'ios')
+          .then(data => expect(data).toBe('c general image')),
+        server
+          .get('imgs/c.png')
+          .then(data => expect(data).toBe('c general image')),
       ]);
     });
-
 
     it('should work for the simple case with jpg', () => {
       const server = new AssetServer({
@@ -88,7 +85,7 @@ describe('AssetServer', () => {
       });
 
       fs.__setMockFilesystem({
-        'root': {
+        root: {
           imgs: {
             'b.png': 'png image',
             'b.jpg': 'jpeg image',
@@ -99,12 +96,7 @@ describe('AssetServer', () => {
       return Promise.all([
         server.get('imgs/b.jpg'),
         server.get('imgs/b.png'),
-      ]).then(data =>
-        expect(data).toEqual([
-          'jpeg image',
-          'png image',
-        ])
-      );
+      ]).then(data => expect(data).toEqual(['jpeg image', 'png image']));
     });
 
     it('should pick the bigger one', () => {
@@ -114,7 +106,7 @@ describe('AssetServer', () => {
       });
 
       fs.__setMockFilesystem({
-        'root': {
+        root: {
           imgs: {
             'b@1x.png': 'b1 image',
             'b@2x.png': 'b2 image',
@@ -124,9 +116,9 @@ describe('AssetServer', () => {
         },
       });
 
-      return server.get('imgs/b@3x.png').then(data =>
-        expect(data).toBe('b4 image')
-      );
+      return server
+        .get('imgs/b@3x.png')
+        .then(data => expect(data).toBe('b4 image'));
     });
 
     it('should pick the bigger one with platform ext', () => {
@@ -136,7 +128,7 @@ describe('AssetServer', () => {
       });
 
       fs.__setMockFilesystem({
-        'root': {
+        root: {
           imgs: {
             'b@1x.png': 'b1 image',
             'b@2x.png': 'b2 image',
@@ -151,12 +143,10 @@ describe('AssetServer', () => {
       });
 
       return Promise.all([
-        server.get('imgs/b@3x.png').then(data =>
-          expect(data).toBe('b4 image')
-        ),
-        server.get('imgs/b@3x.png', 'ios').then(data =>
-          expect(data).toBe('b4 ios image')
-        ),
+        server.get('imgs/b@3x.png').then(data => expect(data).toBe('b4 image')),
+        server
+          .get('imgs/b@3x.png', 'ios')
+          .then(data => expect(data).toBe('b4 ios image')),
       ]);
     });
 
@@ -167,23 +157,23 @@ describe('AssetServer', () => {
       });
 
       fs.__setMockFilesystem({
-        'root': {
+        root: {
           imgs: {
             'b.png': 'b image',
           },
         },
-        'root2': {
-          'newImages': {
-            'imgs': {
+        root2: {
+          newImages: {
+            imgs: {
               'b@1x.png': 'b1 image',
             },
           },
         },
       });
 
-      return server.get('newImages/imgs/b.png').then(data =>
-        expect(data).toBe('b1 image')
-      );
+      return server
+        .get('newImages/imgs/b.png')
+        .then(data => expect(data).toBe('b1 image'));
     });
   });
 
@@ -195,7 +185,7 @@ describe('AssetServer', () => {
       });
 
       fs.__setMockFilesystem({
-        'root': {
+        root: {
           imgs: {
             'b@1x.png': 'b1 image',
             'b@2x.png': 'b2 image',
@@ -206,17 +196,19 @@ describe('AssetServer', () => {
       });
 
       return server.getAssetData('imgs/b.png').then(data => {
-        expect(data).toEqual(objectContaining({
-          type: 'png',
-          name: 'b',
-          scales: [1, 2, 4, 4.5],
-          files: [
-            '/root/imgs/b@1x.png',
-            '/root/imgs/b@2x.png',
-            '/root/imgs/b@4x.png',
-            '/root/imgs/b@4.5x.png',
-          ],
-        }));
+        expect(data).toEqual(
+          objectContaining({
+            type: 'png',
+            name: 'b',
+            scales: [1, 2, 4, 4.5],
+            files: [
+              '/root/imgs/b@1x.png',
+              '/root/imgs/b@2x.png',
+              '/root/imgs/b@4x.png',
+              '/root/imgs/b@4.5x.png',
+            ],
+          }),
+        );
       });
     });
 
@@ -227,7 +219,7 @@ describe('AssetServer', () => {
       });
 
       fs.__setMockFilesystem({
-        'root': {
+        root: {
           imgs: {
             'b@1x.jpg': 'b1 image',
             'b@2x.jpg': 'b2 image',
@@ -238,17 +230,19 @@ describe('AssetServer', () => {
       });
 
       return server.getAssetData('imgs/b.jpg').then(data => {
-        expect(data).toEqual(objectContaining({
-          type: 'jpg',
-          name: 'b',
-          scales: [1, 2, 4, 4.5],
-          files: [
-            '/root/imgs/b@1x.jpg',
-            '/root/imgs/b@2x.jpg',
-            '/root/imgs/b@4x.jpg',
-            '/root/imgs/b@4.5x.jpg',
-          ],
-        }));
+        expect(data).toEqual(
+          objectContaining({
+            type: 'jpg',
+            name: 'b',
+            scales: [1, 2, 4, 4.5],
+            files: [
+              '/root/imgs/b@1x.jpg',
+              '/root/imgs/b@2x.jpg',
+              '/root/imgs/b@4x.jpg',
+              '/root/imgs/b@4.5x.jpg',
+            ],
+          }),
+        );
       });
     });
 
@@ -261,7 +255,7 @@ describe('AssetServer', () => {
         });
 
         mockFS = {
-          'root': {
+          root: {
             imgs: {
               'b@1x.jpg': 'b1 image',
               'b@2x.jpg': 'b2 image',
@@ -280,18 +274,20 @@ describe('AssetServer', () => {
           hash.update(mockFS.root.imgs[name]);
         }
 
-        return server.getAssetData('imgs/b.jpg').then(data =>
-          expect(data).toEqual(objectContaining({hash: hash.digest('hex')}))
-        );
+        return server
+          .getAssetData('imgs/b.jpg')
+          .then(data =>
+            expect(data).toEqual(objectContaining({hash: hash.digest('hex')})),
+          );
       });
 
       it('changes the hash when the passed-in file watcher emits an `all` event', () => {
         return server.getAssetData('imgs/b.jpg').then(initialData => {
           mockFS.root.imgs['b@4x.jpg'] = 'updated data';
           server.onFileChange('all', '/root/imgs/b@4x.jpg');
-          return server.getAssetData('imgs/b.jpg').then(data =>
-            expect(data.hash).not.toEqual(initialData.hash)
-          );
+          return server
+            .getAssetData('imgs/b.jpg')
+            .then(data => expect(data.hash).not.toEqual(initialData.hash));
         });
       });
     });

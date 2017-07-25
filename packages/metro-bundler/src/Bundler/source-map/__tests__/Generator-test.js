@@ -5,7 +5,10 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
+
 'use strict';
 
 const Generator = require('../Generator');
@@ -26,11 +29,12 @@ it('adds file name and source code when starting a file', () => {
   generator.startFile(file1, source1);
   generator.startFile(file2, source2);
 
-  expect(generator.toMap())
-    .toEqual(objectContaining({
+  expect(generator.toMap()).toEqual(
+    objectContaining({
       sources: [file1, file2],
       sourcesContent: [source1, source2],
-    }));
+    }),
+  );
 });
 
 it('throws when adding a mapping without starting a file', () => {
@@ -46,29 +50,32 @@ it('throws when adding a mapping after ending a file', () => {
 it('can add a mapping for generated code without corresponding original source', () => {
   generator.startFile('apples', 'pears');
   generator.addSimpleMapping(12, 87);
-  expect(generator.toMap())
-    .toEqual(objectContaining({
+  expect(generator.toMap()).toEqual(
+    objectContaining({
       mappings: ';;;;;;;;;;;uF',
-    }));
+    }),
+  );
 });
 
 it('can add a mapping with corresponding location in the original source', () => {
   generator.startFile('apples', 'pears');
   generator.addSourceMapping(2, 3, 456, 7);
-  expect(generator.toMap())
-    .toEqual(objectContaining({
+  expect(generator.toMap()).toEqual(
+    objectContaining({
       mappings: ';GAucO',
-    }));
+    }),
+  );
 });
 
 it('can add a mapping with source location and symbol name', () => {
   generator.startFile('apples', 'pears');
   generator.addNamedSourceMapping(9, 876, 54, 3, 'arbitrary');
-  expect(generator.toMap())
-    .toEqual(objectContaining({
+  expect(generator.toMap()).toEqual(
+    objectContaining({
       mappings: ';;;;;;;;42BAqDGA',
       names: ['arbitrary'],
-    }));
+    }),
+  );
 });
 
 describe('full map generation', () => {
@@ -94,10 +101,11 @@ describe('full map generation', () => {
   });
 
   it('can add a `file` property to the map', () => {
-    expect(generator.toMap('arbitrary'))
-      .toEqual(objectContaining({
+    expect(generator.toMap('arbitrary')).toEqual(
+      objectContaining({
         file: 'arbitrary',
-      }));
+      }),
+    );
   });
 
   it('supports direct JSON serialization', () => {

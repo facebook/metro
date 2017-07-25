@@ -8,6 +8,7 @@
  *
  * @format
  */
+
 'use strict';
 
 const Bundle = require('../Bundle');

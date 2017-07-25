@@ -7,7 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
+
 'use strict';
 
 const ModuleTransport = require('../lib/ModuleTransport');
@@ -24,7 +26,6 @@ export type GetSourceOptions = {
 };
 
 class BundleBase {
-
   _assets: Array<mixed>;
   _finalized: boolean;
   _mainModuleId: number | void;
@@ -104,7 +105,9 @@ class BundleBase {
 
   assertFinalized(message?: string) {
     if (!this._finalized) {
-      throw new Error(message || 'Bundle needs to be finalized before getting any source');
+      throw new Error(
+        message || 'Bundle needs to be finalized before getting any source',
+      );
     }
   }
 

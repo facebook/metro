@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -23,27 +24,41 @@ type SubTree<T: ModuleTransportLike> = (
   moduleTransportsByPath: Map<string, T>,
 ) => Generator<number, void, void>;
 
-const assetPropertyBlacklist = new Set([
-  'files',
-  'fileSystemLocation',
-  'path',
-]);
+const assetPropertyBlacklist = new Set(['files', 'fileSystemLocation', 'path']);
 
 function generateAssetCodeFileAst(
   assetRegistryPath: string,
   assetDescriptor: AssetDescriptor,
 ): Object {
-  const properDescriptor = filterObject(assetDescriptor, assetPropertyBlacklist);
-  const descriptorAst = babylon.parseExpression(JSON.stringify(properDescriptor));
+  const properDescriptor = filterObject(
+    assetDescriptor,
+    assetPropertyBlacklist,
+  );
+  const descriptorAst = babylon.parseExpression(
+    JSON.stringify(properDescriptor),
+  );
   const t = babel.types;
-  const moduleExports = t.memberExpression(t.identifier('module'), t.identifier('exports'));
-  const requireCall =
-    t.callExpression(t.identifier('require'), [t.stringLiteral(assetRegistryPath)]);
-  const registerAssetFunction = t.memberExpression(requireCall, t.identifier('registerAsset'));
-  const registerAssetCall = t.callExpression(registerAssetFunction, [descriptorAst]);
-  return t.file(t.program([
-    t.expressionStatement(t.assignmentExpression('=', moduleExports, registerAssetCall)),
-  ]));
+  const moduleExports = t.memberExpression(
+    t.identifier('module'),
+    t.identifier('exports'),
+  );
+  const requireCall = t.callExpression(t.identifier('require'), [
+    t.stringLiteral(assetRegistryPath),
+  ]);
+  const registerAssetFunction = t.memberExpression(
+    requireCall,
+    t.identifier('registerAsset'),
+  );
+  const registerAssetCall = t.callExpression(registerAssetFunction, [
+    descriptorAst,
+  ]);
+  return t.file(
+    t.program([
+      t.expressionStatement(
+        t.assignmentExpression('=', moduleExports, registerAssetCall),
+      ),
+    ]),
+  );
 }
 
 function generateAssetTransformResult(
@@ -66,9 +81,11 @@ function generateAssetTransformResult(
 // Test extension against all types supported by image-size module.
 // If it's not one of these, we won't treat it as an image.
 function isAssetTypeAnImage(type: string): boolean {
-  return [
-    'png', 'jpg', 'jpeg', 'bmp', 'gif', 'webp', 'psd', 'svg', 'tiff',
-  ].indexOf(type) !== -1;
+  return (
+    ['png', 'jpg', 'jpeg', 'bmp', 'gif', 'webp', 'psd', 'svg', 'tiff'].indexOf(
+      type,
+    ) !== -1
+  );
 }
 
 function filterObject(object, blacklist) {
@@ -95,18 +112,17 @@ function createRamBundleGroups<T: ModuleTransportLike>(
 
   // build a map of group root IDs to an array of module IDs in the group
   const result: Map<number, Set<number>> = new Map(
-    ramGroups
-      .map(modulePath => {
-        const root = byPath.get(modulePath);
-        if (root == null) {
-          throw Error(`Group root ${modulePath} is not part of the bundle`);
-        }
-        return [
-          root.id,
-          // `subtree` yields the IDs of all transitive dependencies of a module
-          new Set(subtree(root, byPath)),
-        ];
-      })
+    ramGroups.map(modulePath => {
+      const root = byPath.get(modulePath);
+      if (root == null) {
+        throw Error(`Group root ${modulePath} is not part of the bundle`);
+      }
+      return [
+        root.id,
+        // `subtree` yields the IDs of all transitive dependencies of a module
+        new Set(subtree(root, byPath)),
+      ];
+    }),
   );
 
   if (ramGroups.length > 1) {
@@ -124,9 +140,10 @@ function createRamBundleGroups<T: ModuleTransportLike>(
       const parentNames = parents.map(byId.get, byId);
       const lastName = parentNames.pop();
       throw new Error(
-        `Module ${byId.get(moduleId) || moduleId} belongs to groups ${
-          parentNames.join(', ')}, and ${String(lastName)
-          }. Ensure that each module is only part of one group.`
+        `Module ${byId.get(moduleId) ||
+          moduleId} belongs to groups ${parentNames.join(', ')}, and ${String(
+          lastName,
+        )}. Ensure that each module is only part of one group.`,
       );
     }
   }
@@ -134,7 +151,7 @@ function createRamBundleGroups<T: ModuleTransportLike>(
   return result;
 }
 
-function * filter(iterator, predicate) {
+function* filter(iterator, predicate) {
   for (const value of iterator) {
     if (predicate(value)) {
       yield value;
