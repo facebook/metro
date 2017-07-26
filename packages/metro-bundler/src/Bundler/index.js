@@ -124,6 +124,7 @@ type Options = {|
   +assetServer: AssetServer,
   +blacklistRE?: RegExp,
   +cacheVersion: string,
+  +enableBabelRCLookup: boolean,
   +extraNodeModules: {},
   +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   +getTransformOptions?: GetTransformOptions,
@@ -545,6 +546,7 @@ class Bundler {
     return this.getTransformOptions(
       entryFile,
       {
+        enableBabelRCLookup: this._opts.enableBabelRCLookup,
         dev,
         generateSourceMaps,
         hot,
@@ -587,6 +589,7 @@ class Bundler {
     const bundlingOptions: BundlingOptions = await this.getTransformOptions(
       entryFile,
       {
+        enableBabelRCLookup: this._opts.enableBabelRCLookup,
         dev,
         platform,
         hot,
@@ -797,6 +800,7 @@ class Bundler {
   async getTransformOptions(
     mainModuleName: string,
     options: {|
+      enableBabelRCLookup: boolean,
       dev: boolean,
       generateSourceMaps: boolean,
       hot: boolean,
@@ -822,6 +826,7 @@ class Bundler {
         minify: options.minify,
         platform,
         transform: {
+          enableBabelRCLookup: options.enableBabelRCLookup,
           dev,
           generateSourceMaps: options.generateSourceMaps,
           hot,
