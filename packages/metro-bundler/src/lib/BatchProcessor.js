@@ -7,13 +7,16 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
 
 const invariant = require('fbjs/lib/invariant');
 
-type ProcessBatch<TItem, TResult> = (batch: Array<TItem>) => Promise<Array<TResult>>;
+type ProcessBatch<TItem, TResult> = (
+  batch: Array<TItem>,
+) => Promise<Array<TResult>>;
 
 type BatchProcessorOptions = {
   maximumDelayMs: number,
@@ -35,14 +38,16 @@ type QueueItem<TItem, TResult> = {
  * processing right away.
  */
 class BatchProcessor<TItem, TResult> {
-
   _currentProcessCount: number;
   _options: BatchProcessorOptions;
   _processBatch: ProcessBatch<TItem, TResult>;
   _queue: Array<QueueItem<TItem, TResult>>;
   _timeoutHandle: ?number;
 
-  constructor(options: BatchProcessorOptions, processBatch: ProcessBatch<TItem, TResult>) {
+  constructor(
+    options: BatchProcessorOptions,
+    processBatch: ProcessBatch<TItem, TResult>,
+  ) {
     this._options = options;
     this._processBatch = processBatch;
     this._queue = [];
@@ -56,7 +61,10 @@ class BatchProcessor<TItem, TResult> {
     this._processQueueOnceReady();
   }
 
-  _onBatchResults(jobs: Array<QueueItem<TItem, TResult>>, results: Array<TResult>) {
+  _onBatchResults(
+    jobs: Array<QueueItem<TItem, TResult>>,
+    results: Array<TResult>,
+  ) {
     invariant(results.length === jobs.length, 'Not enough results returned.');
     for (let i = 0; i < jobs.length; ++i) {
       jobs[i].resolve(results[i]);
@@ -104,7 +112,6 @@ class BatchProcessor<TItem, TResult> {
       this._processQueueOnceReady();
     });
   }
-
 }
 
 module.exports = BatchProcessor;

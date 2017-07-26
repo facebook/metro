@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -49,12 +50,14 @@ function getProgressBar(ratio: number, length: number) {
   );
 }
 
-export type TerminalReportableEvent = ReportableEvent | {
-  buildID: string,
-  type: 'bundle_transform_progressed_throttled',
-  transformedFileCount: number,
-  totalFileCount: number,
-};
+export type TerminalReportableEvent =
+  | ReportableEvent
+  | {
+      buildID: string,
+      type: 'bundle_transform_progressed_throttled',
+      transformedFileCount: number,
+      totalFileCount: number,
+    };
 
 type BuildPhase = 'in_progress' | 'done' | 'failed';
 
@@ -63,7 +66,6 @@ type BuildPhase = 'in_progress' | 'done' | 'failed';
  * This implements the `Reporter` interface from the './reporting' module.
  */
 class TerminalReporter {
-
   /**
    * The bundle builds for which we are actively maintaining the status on the
    * terminal, ie. showing a progress bar. There can be several bundles being
@@ -115,7 +117,7 @@ class TerminalReporter {
       (100 * ratio).toFixed(1),
       transformedFileCount,
       totalFileCount,
-      phase === 'done' ? ', done.' : (phase === 'failed' ? ', failed.' : ''),
+      phase === 'done' ? ', done.' : phase === 'failed' ? ', failed.' : '',
     );
   }
 
@@ -142,11 +144,14 @@ class TerminalReporter {
   _logBundleBuildDone(buildID: string) {
     const progress = this._activeBundles.get(buildID);
     if (progress != null) {
-      const msg = this._getBundleStatusMessage({
-        ...progress,
-        ratio: 1,
-        transformedFileCount: progress.totalFileCount,
-      }, 'done');
+      const msg = this._getBundleStatusMessage(
+        {
+          ...progress,
+          ratio: 1,
+          transformedFileCount: progress.totalFileCount,
+        },
+        'done',
+      );
       this.terminal.log(msg);
     }
   }
@@ -166,21 +171,21 @@ class TerminalReporter {
           port +
           '.\n\n' +
           'Keep this packager running while developing on any JS projects. ' +
-          'Feel free to close this tab and run your own packager instance if you ' +
-          'prefer.\n\n' +
+          'Feel free to close this tab and run your own packager instance ' +
+          'if you prefer.\n\n' +
           'https://github.com/facebook/react-native',
         {
           marginLeft: 1,
           marginRight: 1,
           paddingBottom: 1,
-        }
-      )
+        },
+      ),
     );
 
     this.terminal.log(
       'Looking for JS files in\n  ',
       chalk.dim(projectRoots.join('\n   ')),
-      '\n'
+      '\n',
     );
   }
 
@@ -188,9 +193,11 @@ class TerminalReporter {
     if (error.code === 'EADDRINUSE') {
       this.terminal.log(
         chalk.bgRed.bold(' ERROR '),
-        chalk.red("Packager can't listen on port", chalk.bold(port))
+        chalk.red("Packager can't listen on port", chalk.bold(port)),
       );
-      this.terminal.log('Most likely another process is already using this port');
+      this.terminal.log(
+        'Most likely another process is already using this port',
+      );
       this.terminal.log('Run the following command to find out which process:');
       this.terminal.log('\n  ', chalk.bold('lsof -i :' + port), '\n');
       this.terminal.log('Then, you can either shut down the other process:');
@@ -258,9 +265,9 @@ class TerminalReporter {
       const he = error.hasteError;
       const message =
         'ambiguous resolution: module `' +
-        `${error.fromModulePath}\` tries to require \`${he.hasteName}\`, but ` +
-        `there are several files providing this module. You can delete or ` +
-        'fix them: \n\n' +
+        `${error.fromModulePath}\` tries to require \`${he.hasteName}\`, ` +
+        `but there are several files providing this module. You can delete ` +
+        'or fix them: \n\n' +
         Object.keys(he.duplicatesSet)
           .sort()
           .map(dupFilePath => `  * \`${dupFilePath}\`\n`)
@@ -269,10 +276,11 @@ class TerminalReporter {
       return;
     }
 
-    let message = (error.snippet == null && error.stack != null)
-      ? error.stack
-      //$FlowFixMe T19379628
-      : error.message;
+    let message =
+      error.snippet == null && error.stack != null
+        ? error.stack
+        : //$FlowFixMe T19379628
+          error.message;
     //$FlowFixMe T19379628
     if (error.filename && !message.includes(error.filename)) {
       //$FlowFixMe T19379628
@@ -305,13 +313,15 @@ class TerminalReporter {
    * we know the `totalCount` is going to progressively increase as well. We
    * also prevent the ratio from going backwards.
    */
-  _updateBundleProgress(
-    {buildID, transformedFileCount, totalFileCount}: {
-      buildID: string,
-      transformedFileCount: number,
-      totalFileCount: number,
-    },
-  ) {
+  _updateBundleProgress({
+    buildID,
+    transformedFileCount,
+    totalFileCount,
+  }: {
+    buildID: string,
+    transformedFileCount: number,
+    totalFileCount: number,
+  }) {
     const currentProgress = this._activeBundles.get(buildID);
     if (currentProgress == null) {
       return;
@@ -377,12 +387,14 @@ class TerminalReporter {
    * different callsites overriding each other status messages.
    */
   _getStatusMessage(): string {
-    return [
-      this._getDepGraphStatusMessage(),
-    ].concat(Array.from(this._activeBundles.entries()).map(
-      ([_, progress]) =>
-        this._getBundleStatusMessage(progress, 'in_progress'),
-    )).filter(str => str != null).join('\n');
+    return [this._getDepGraphStatusMessage()]
+      .concat(
+        Array.from(this._activeBundles.entries()).map(([_, progress]) =>
+          this._getBundleStatusMessage(progress, 'in_progress'),
+        ),
+      )
+      .filter(str => str != null)
+      .join('\n');
   }
 
   /**
@@ -394,7 +406,6 @@ class TerminalReporter {
     this._updateState(event);
     this.terminal.status(this._getStatusMessage());
   }
-
 }
 
 module.exports = TerminalReporter;

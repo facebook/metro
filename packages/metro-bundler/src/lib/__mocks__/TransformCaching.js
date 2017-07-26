@@ -5,6 +5,8 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
 
 'use strict';
@@ -15,14 +17,22 @@ const jsonStableStringify = require('json-stable-stringify');
 const transformCache = new Map();
 
 const transformCacheKeyOf = props =>
-  props.filePath + '-' + crypto.createHash('md5')
+  props.filePath +
+  '-' +
+  crypto
+    .createHash('md5')
     .update(props.sourceCode)
-    .update(props.getTransformCacheKey(props.sourceCode, props.filePath, props.transformOptions))
+    .update(
+      props.getTransformCacheKey(
+        props.sourceCode,
+        props.filePath,
+        props.transformOptions,
+      ),
+    )
     .update(jsonStableStringify(props.transformOptions || {}))
     .digest('hex');
 
 class TransformCacheMock {
-
   constructor() {
     this.mock = {
       lastWrite: null,
@@ -39,9 +49,11 @@ class TransformCacheMock {
   }
 
   readSync(props) {
-    return {result: transformCache.get(transformCacheKeyOf(props)), outdatedDependencies: []};
+    return {
+      result: transformCache.get(transformCacheKeyOf(props)),
+      outdatedDependencies: [],
+    };
   }
-
 }
 
 module.exports = {mocked: () => new TransformCacheMock()};

@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -76,7 +77,6 @@ type URI = string;
  * ensures we do a single request at a time to avoid pressuring the I/O.
  */
 class KeyURIFetcher {
-
   _batchProcessor: BatchProcessor<string, ?URI>;
   _fetchResultURIs: FetchResultURIs;
 
@@ -96,24 +96,27 @@ class KeyURIFetcher {
 
   constructor(fetchResultURIs: FetchResultURIs) {
     this._fetchResultURIs = fetchResultURIs;
-    this._batchProcessor = new BatchProcessor({
-      maximumDelayMs: 10,
-      maximumItems: 500,
-      concurrency: 2,
-    }, this._processKeys.bind(this));
+    this._batchProcessor = new BatchProcessor(
+      {
+        maximumDelayMs: 10,
+        maximumItems: 500,
+        concurrency: 2,
+      },
+      this._processKeys.bind(this),
+    );
   }
-
 }
 
 type KeyedResult = {key: string, result: CachedResult};
 
 class KeyResultStore {
-
   _storeResults: StoreResults;
   _batchProcessor: BatchProcessor<KeyedResult, void>;
 
   async _processResults(keyResults: Array<KeyedResult>): Promise<Array<void>> {
-    const resultsByKey = new Map(keyResults.map(pair => [pair.key, pair.result]));
+    const resultsByKey = new Map(
+      keyResults.map(pair => [pair.key, pair.result]),
+    );
     await this._storeResults(resultsByKey);
     return new Array(keyResults.length);
   }
@@ -124,16 +127,22 @@ class KeyResultStore {
 
   constructor(storeResults: StoreResults) {
     this._storeResults = storeResults;
-    this._batchProcessor = new BatchProcessor({
-      maximumDelayMs: 1000,
-      maximumItems: 100,
-      concurrency: 10,
-    }, this._processResults.bind(this));
+    this._batchProcessor = new BatchProcessor(
+      {
+        maximumDelayMs: 1000,
+        maximumItems: 100,
+        concurrency: 10,
+      },
+      this._processResults.bind(this),
+    );
   }
-
 }
 
-export type TransformProfile = {+dev: boolean, +minify: boolean, +platform: ?string};
+export type TransformProfile = {
+  +dev: boolean,
+  +minify: boolean,
+  +platform: ?string,
+};
 
 function profileKey({dev, minify, platform}: TransformProfile): string {
   return jsonStableStringify({dev, minify, platform});
@@ -157,14 +166,14 @@ class TransformProfileSet {
 }
 
 type FetchFailedDetails =
-  {
-    +statusCode: number,
-    +statusText: string,
-    +type: 'unhandled_http_status',
-    +uri: string,
-  } |
-  {+type: 'invalid_data'} |
-  {+type: 'invalid_key_data', key: string};
+  | {
+      +statusCode: number,
+      +statusText: string,
+      +type: 'unhandled_http_status',
+      +uri: string,
+    }
+  | {+type: 'invalid_data'}
+  | {+type: 'invalid_key_data', key: string};
 
 class FetchFailedError extends Error {
   /** Separate object for details allows us to have a type union. */
@@ -179,8 +188,8 @@ class FetchFailedError extends Error {
     if (details.type === 'unhandled_http_status') {
       return (
         `Unexpected HTTP status: ${details.statusCode} ` +
-          JSON.stringify(details.statusText) +
-          ` while fetching \`${details.uri}\``
+        JSON.stringify(details.statusText) +
+        ` while fetching \`${details.uri}\``
       );
     }
     if (details.type === 'invalid_key_data') {
@@ -210,7 +219,6 @@ function validateCachedResult(cachedResult: mixed): ?CachedResult {
 }
 
 class URIBasedGlobalTransformCache {
-
   _fetcher: KeyURIFetcher;
   _fetchResultFromURI: FetchResultFromURI;
   _profileSet: TransformProfileSet;
@@ -249,7 +257,9 @@ class URIBasedGlobalTransformCache {
   keyOf(props: FetchProps) {
     const hash = crypto.createHash('sha1');
     const {sourceCode, localPath, transformOptions} = props;
-    hash.update(this._optionsHasher.getTransformWorkerOptionsDigest(transformOptions));
+    hash.update(
+      this._optionsHasher.getTransformWorkerOptionsDigest(transformOptions),
+    );
     const cacheKey = props.getTransformCacheKey(transformOptions);
     hash.update(JSON.stringify(cacheKey));
     hash.update(JSON.stringify(localPath));
@@ -287,7 +297,9 @@ class URIBasedGlobalTransformCache {
    * waiting a little time before retring if experience shows it's useful.
    */
   static _fetchResultFromURIWithRetry(uri: string): Promise<CachedResult> {
-    return URIBasedGlobalTransformCache._fetchResultFromURI(uri).catch(error => {
+    return URIBasedGlobalTransformCache._fetchResultFromURI(
+      uri,
+    ).catch(error => {
       if (!URIBasedGlobalTransformCache.shouldRetryAfterThatError(error)) {
         throw error;
       }
@@ -311,11 +323,10 @@ class URIBasedGlobalTransformCache {
    */
   static shouldRetryAfterThatError(error: mixed): boolean {
     return (
-      error instanceof FetchError && error.type === 'request-timeout' || (
-        error instanceof FetchFailedError &&
+      (error instanceof FetchError && error.type === 'request-timeout') ||
+      (error instanceof FetchFailedError &&
         error.details.type === 'unhandled_http_status' &&
-        (error.details.statusCode === 503 || error.details.statusCode === 502)
-      )
+        (error.details.statusCode === 503 || error.details.statusCode === 502))
     );
   }
 
@@ -340,11 +351,12 @@ class URIBasedGlobalTransformCache {
       this._store.store(this.keyOf(props), result);
     }
   }
-
 }
 
-URIBasedGlobalTransformCache.fetchResultFromURI =
-  throat(500, URIBasedGlobalTransformCache._fetchResultFromURIWithRetry);
+URIBasedGlobalTransformCache.fetchResultFromURI = throat(
+  500,
+  URIBasedGlobalTransformCache._fetchResultFromURIWithRetry,
+);
 
 class OptionsHasher {
   _rootPath: string;
@@ -383,15 +395,20 @@ class OptionsHasher {
    * many different fields including the optional Babel fields, and some serious
    * cleanup will be necessary to enable rock-solid typing.
    */
-  hashTransformWorkerOptions(hash: crypto$Hash, options: TransformWorkerOptions): crypto$Hash {
+  hashTransformWorkerOptions(
+    hash: crypto$Hash,
+    options: TransformWorkerOptions,
+  ): crypto$Hash {
     const {dev, minify, platform, transform, ...unknowns} = options;
     const unknownKeys = Object.keys(unknowns);
     if (unknownKeys.length > 0) {
-      const message = `these worker option fields are unknown: ${JSON.stringify(unknownKeys)}`;
+      const message = `these worker option fields are unknown: ${JSON.stringify(
+        unknownKeys,
+      )}`;
       throw new CannotHashOptionsError(message);
     }
     // eslint-disable-next-line no-undef, no-bitwise
-    hash.update(new Buffer([+dev | +minify << 1]));
+    hash.update(new Buffer([+dev | (+minify << 1)]));
     hash.update(JSON.stringify(platform));
     return this.hashTransformOptions(hash, transform);
   }
@@ -404,25 +421,45 @@ class OptionsHasher {
    * of the cache key as they should not affect the transformation of a single
    * particular file.
    */
-  hashTransformOptions(hash: crypto$Hash, options: TransformOptionsStrict): crypto$Hash {
+  hashTransformOptions(
+    hash: crypto$Hash,
+    options: TransformOptionsStrict,
+  ): crypto$Hash {
     const {
-      generateSourceMaps, dev, hot, inlineRequires, platform, projectRoot,
+      generateSourceMaps,
+      dev,
+      hot,
+      inlineRequires,
+      platform,
+      projectRoot,
       ...unknowns
     } = options;
     const unknownKeys = Object.keys(unknowns);
     if (unknownKeys.length > 0) {
-      const message = `these transform option fields are unknown: ${JSON.stringify(unknownKeys)}`;
+      const message = `these transform option fields are unknown: ${JSON.stringify(
+        unknownKeys,
+      )}`;
       throw new CannotHashOptionsError(message);
     }
 
-    hash.update(new Buffer([
-      // eslint-disable-next-line no-bitwise
-      +dev | +generateSourceMaps << 1 | +hot << 2 | +!!inlineRequires << 3,
-    ]));
+    hash.update(
+      new Buffer([
+        // eslint-disable-next-line no-bitwise
+        +dev |
+          // eslint-disable-next-line no-bitwise
+          (+generateSourceMaps << 1) |
+          // eslint-disable-next-line no-bitwise
+          (+hot << 2) |
+          // eslint-disable-next-line no-bitwise
+          (+!!inlineRequires << 3),
+      ]),
+    );
     hash.update(JSON.stringify(platform));
     let blacklistWithLocalPaths = [];
     if (typeof inlineRequires === 'object') {
-      blacklistWithLocalPaths = this.pathsToLocal(Object.keys(inlineRequires.blacklist));
+      blacklistWithLocalPaths = this.pathsToLocal(
+        Object.keys(inlineRequires.blacklist),
+      );
     }
     const localProjectRoot = this.toLocalPath(projectRoot);
     const optionTuple = [blacklistWithLocalPaths, localProjectRoot];

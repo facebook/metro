@@ -5,6 +5,8 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
 
 'use strict';
@@ -43,13 +45,14 @@ function cartesianProductOf(a1, a2) {
 }
 
 describe('TransformCaching.FileBasedCache', () => {
-
   let transformCache;
 
   beforeEach(() => {
     jest.resetModules();
     mockFS.clear();
-    transformCache = new (require('../TransformCaching').FileBasedCache)('/cache');
+    transformCache = new (require('../TransformCaching')).FileBasedCache(
+      '/cache',
+    );
   });
 
   it('is caching different files and options separately', () => {
@@ -60,8 +63,10 @@ describe('TransformCaching.FileBasedCache', () => {
         getTransformCacheKey: () => 'abcdef',
         filePath,
         transformOptions,
-        transformOptionsKey: crypto.createHash('md5')
-          .update(jsonStableStringify(transformOptions)).digest('hex'),
+        transformOptionsKey: crypto
+          .createHash('md5')
+          .update(jsonStableStringify(transformOptions))
+          .digest('hex'),
         result: {
           code: `/* result for ${key} */`,
           dependencies: ['foo', `dep of ${key}`],
@@ -74,9 +79,7 @@ describe('TransformCaching.FileBasedCache', () => {
       ['/some/project/sub/dir/file.js', '/some/project/other.js'],
       [{foo: 1}, {foo: 2}],
     );
-    allCases.forEach(
-      entry => transformCache.writeSync(argsFor(entry)),
-    );
+    allCases.forEach(entry => transformCache.writeSync(argsFor(entry)));
     allCases.forEach(entry => {
       const args = argsFor(entry);
       const {result} = args;
@@ -129,5 +132,4 @@ describe('TransformCaching.FileBasedCache', () => {
       expect(cachedResult.outdatedDependencies).toEqual(['foo', 'bar']);
     });
   });
-
 });

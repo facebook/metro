@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -24,7 +25,6 @@ type Metadata = {
 };
 
 class ModuleTransport {
-
   name: string;
   id: number;
   code: string;
@@ -67,7 +67,6 @@ class ModuleTransport {
 
     Object.freeze(this);
   }
-
 }
 
 module.exports = ModuleTransport;

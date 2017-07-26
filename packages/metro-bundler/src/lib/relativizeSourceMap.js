@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -17,7 +18,10 @@ const {isMappingsMap} = require('./SourceMap');
 
 import type {SourceMap} from './SourceMap';
 
-function relativizeSourceMapInternal(sourceMap: SourceMap, sourcesRoot: string) {
+function relativizeSourceMapInternal(
+  sourceMap: SourceMap,
+  sourcesRoot: string,
+) {
   if (!isMappingsMap(sourceMap)) {
     for (let i = 0; i < sourceMap.sections.length; i++) {
       relativizeSourceMapInternal(sourceMap.sections[i].map, sourcesRoot);
@@ -29,7 +33,10 @@ function relativizeSourceMapInternal(sourceMap: SourceMap, sourcesRoot: string) 
   }
 }
 
-function relativizeSourceMap(sourceMap: SourceMap, sourcesRoot?: string): SourceMap {
+function relativizeSourceMap(
+  sourceMap: SourceMap,
+  sourcesRoot?: string,
+): SourceMap {
   if (!sourcesRoot) {
     return sourceMap;
   }

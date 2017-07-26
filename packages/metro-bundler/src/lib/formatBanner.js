@@ -5,7 +5,10 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
+
 'use strict';
 
 var _ = require('lodash');
@@ -82,12 +85,20 @@ function formatBanner(message, options) {
 
   var horizontalBorderLine = repeatString(
     HORIZONTAL_LINE,
-    width - marginLeft - marginRight - 2
+    width - marginLeft - marginRight - 2,
   );
-  var top = spaces(marginLeft) + TOP_LEFT + horizontalBorderLine + TOP_RIGHT +
+  var top =
+    spaces(marginLeft) +
+    TOP_LEFT +
+    horizontalBorderLine +
+    TOP_RIGHT +
     spaces(marginRight);
-  var bottom = spaces(marginLeft) + BOTTOM_LEFT + horizontalBorderLine +
-    BOTTOM_RIGHT + spaces(marginRight);
+  var bottom =
+    spaces(marginLeft) +
+    BOTTOM_LEFT +
+    horizontalBorderLine +
+    BOTTOM_RIGHT +
+    spaces(marginRight);
   return _.flattenDeep([top, bodyLines, bottom]).join('\n');
 }
 

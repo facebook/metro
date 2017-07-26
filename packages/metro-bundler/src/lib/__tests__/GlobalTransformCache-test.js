@@ -5,6 +5,8 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
 
 'use strict';
@@ -18,7 +20,9 @@ const {URIBasedGlobalTransformCache} = require('../GlobalTransformCache');
 const FetchError = require('node-fetch/lib/fetch-error');
 const path = require('path');
 
-async function fetchResultURIs(keys: Array<string>): Promise<Map<string, string>> {
+async function fetchResultURIs(
+  keys: Array<string>,
+): Promise<Map<string, string>> {
   return new Map(keys.map(key => [key, `http://globalcache.com/${key}`]));
 }
 
@@ -31,7 +35,6 @@ async function fetchResultFromURI(uri: string): Promise<?CachedResult> {
 }
 
 describe('GlobalTransformCache', () => {
-
   it('fetches results', async () => {
     const cache = new URIBasedGlobalTransformCache({
       fetchResultFromURI,
@@ -53,22 +56,24 @@ describe('GlobalTransformCache', () => {
         projectRoot: path.join(__dirname, 'root'),
       },
     };
-    const result = await Promise.all([cache.fetch({
-      localPath: 'some/where/foo.js',
-      sourceCode: '/* beep */',
-      getTransformCacheKey: () => 'abcd',
-      transformOptions,
-    }), cache.fetch({
-      localPath: 'some/where/else/bar.js',
-      sourceCode: '/* boop */',
-      getTransformCacheKey: () => 'abcd',
-      transformOptions,
-    })]);
+    const result = await Promise.all([
+      cache.fetch({
+        localPath: 'some/where/foo.js',
+        sourceCode: '/* beep */',
+        getTransformCacheKey: () => 'abcd',
+        transformOptions,
+      }),
+      cache.fetch({
+        localPath: 'some/where/else/bar.js',
+        sourceCode: '/* boop */',
+        getTransformCacheKey: () => 'abcd',
+        transformOptions,
+      }),
+    ]);
     expect(result).toMatchSnapshot();
   });
 
   describe('fetchResultFromURI', () => {
-
     const defaultFetchMockImpl = async uri => ({
       status: 200,
       json: async () => ({
@@ -84,8 +89,9 @@ describe('GlobalTransformCache', () => {
 
     it('fetches result', async () => {
       mockFetch.mockImplementation(defaultFetchMockImpl);
-      const result = await URIBasedGlobalTransformCache
-        .fetchResultFromURI('http://globalcache.com/foo');
+      const result = await URIBasedGlobalTransformCache.fetchResultFromURI(
+        'http://globalcache.com/foo',
+      );
       expect(result).toMatchSnapshot();
     });
 
@@ -94,11 +100,10 @@ describe('GlobalTransformCache', () => {
         mockFetch.mockImplementation(defaultFetchMockImpl);
         throw new FetchError('timeout!', 'request-timeout');
       });
-      const result = await URIBasedGlobalTransformCache
-        .fetchResultFromURI('http://globalcache.com/foo');
+      const result = await URIBasedGlobalTransformCache.fetchResultFromURI(
+        'http://globalcache.com/foo',
+      );
       expect(result).toMatchSnapshot();
     });
-
   });
-
 });

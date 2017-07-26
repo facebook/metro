@@ -5,6 +5,8 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
 
 'use strict';
@@ -12,10 +14,13 @@
 jest.mock('readline', () => ({
   moveCursor: (stream, dx, dy) => {
     const {cursor, columns} = stream;
-    stream.cursor = Math.max(cursor - cursor % columns, cursor + dx) + dy * columns;
+    stream.cursor =
+      Math.max(cursor - cursor % columns, cursor + dx) + dy * columns;
   },
   clearLine: (stream, dir) => {
-    if (dir !== 0) {throw new Error('unsupported');}
+    if (dir !== 0) {
+      throw new Error('unsupported');
+    }
     const {cursor, columns} = stream;
     const curLine = cursor - cursor % columns;
     const nextLine = curLine + columns;
@@ -26,7 +31,6 @@ jest.mock('readline', () => ({
 }));
 
 describe('Terminal', () => {
-
   beforeEach(() => {
     jest.resetModules();
   });
@@ -46,7 +50,7 @@ describe('Terminal', () => {
       write(str) {
         for (let i = 0; i < str.length; ++i) {
           if (str[i] === '\n') {
-            this.cursor = this.cursor - (this.cursor % columns) + columns;
+            this.cursor = this.cursor - this.cursor % columns + columns;
           } else {
             this.buffer[this.cursor] = str[i];
             ++this.cursor;
@@ -81,10 +85,14 @@ describe('Terminal', () => {
     terminal.status('status2');
     terminal.log('bar');
     jest.runAllTimers();
-    expect(stream.buffer.join('').trim()).toEqual('foo       bar       status2');
+    expect(stream.buffer.join('').trim()).toEqual(
+      'foo       bar       status2',
+    );
     terminal.log('beep');
     jest.runAllTimers();
-    expect(stream.buffer.join('').trim()).toEqual('foo       bar       beep      status2');
+    expect(stream.buffer.join('').trim()).toEqual(
+      'foo       bar       beep      status2',
+    );
   });
 
   it('updates status when logging, multi-line', () => {
@@ -93,8 +101,9 @@ describe('Terminal', () => {
     terminal.status('status\nanother');
     terminal.log('bar');
     jest.runAllTimers();
-    expect(stream.buffer.join('').trim())
-      .toEqual('foo       bar       status    another');
+    expect(stream.buffer.join('').trim()).toEqual(
+      'foo       bar       status    another',
+    );
   });
 
   it('persists status', () => {
@@ -106,5 +115,4 @@ describe('Terminal', () => {
     jest.runAllTimers();
     expect(stream.buffer.join('').trim()).toEqual('foo       status    bar');
   });
-
 });

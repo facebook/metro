@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -32,7 +33,7 @@ export type FBIndexMap = IndexMap & FBExtensions;
 export type SourceMap = IndexMap | MappingsMap;
 export type FBSourceMap = FBIndexMap | (MappingsMap & FBExtensions);
 
-function isMappingsMap(map: SourceMap)/*: %checks*/ {
+function isMappingsMap(map: SourceMap): %checks {
   return map.mappings !== undefined;
 }
 

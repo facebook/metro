@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -14,7 +15,6 @@
 import {Writable} from 'stream';
 
 class JsonReporter<TEvent: {}> {
-
   _stream: Writable;
 
   constructor(stream: Writable) {
@@ -37,7 +37,6 @@ class JsonReporter<TEvent: {}> {
     }
     this._stream.write(JSON.stringify(event) + '\n');
   }
-
 }
 
 module.exports = JsonReporter;

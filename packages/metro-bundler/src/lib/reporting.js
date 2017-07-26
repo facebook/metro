@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -23,53 +24,68 @@ export type GlobalCacheDisabledReason = 'too_many_errors' | 'too_many_misses';
  * A tagged union of all the actions that may happen and we may want to
  * report to the tool user.
  */
-export type ReportableEvent = {
-  port: number,
-  projectRoots: $ReadOnlyArray<string>,
-  type: 'initialize_packager_started',
-} | {
-  type: 'initialize_packager_done',
-} | {
-  type: 'initialize_packager_failed',
-  port: number,
-  error: Error,
-} | {
-  buildID: string,
-  type: 'bundle_build_done',
-} | {
-  buildID: string,
-  type: 'bundle_build_failed',
-} | {
-  buildID: string,
-  bundleOptions: BundleOptions,
-  type: 'bundle_build_started',
-} | {
-  error: Error,
-  type: 'bundling_error',
-} | {
-  type: 'dep_graph_loading',
-} | {
-  type: 'dep_graph_loaded',
-} | {
-  buildID: string,
-  type: 'bundle_transform_progressed',
-  transformedFileCount: number,
-  totalFileCount: number,
-} | {
-  type: 'global_cache_error',
-  error: Error,
-} | {
-  type: 'global_cache_disabled',
-  reason: GlobalCacheDisabledReason,
-} | {
-  type: 'transform_cache_reset',
-} | {
-  type: 'worker_stdout_chunk',
-  chunk: string,
-} | {
-  type: 'worker_stderr_chunk',
-  chunk: string,
-};
+export type ReportableEvent =
+  | {
+      port: number,
+      projectRoots: $ReadOnlyArray<string>,
+      type: 'initialize_packager_started',
+    }
+  | {
+      type: 'initialize_packager_done',
+    }
+  | {
+      type: 'initialize_packager_failed',
+      port: number,
+      error: Error,
+    }
+  | {
+      buildID: string,
+      type: 'bundle_build_done',
+    }
+  | {
+      buildID: string,
+      type: 'bundle_build_failed',
+    }
+  | {
+      buildID: string,
+      bundleOptions: BundleOptions,
+      type: 'bundle_build_started',
+    }
+  | {
+      error: Error,
+      type: 'bundling_error',
+    }
+  | {
+      type: 'dep_graph_loading',
+    }
+  | {
+      type: 'dep_graph_loaded',
+    }
+  | {
+      buildID: string,
+      type: 'bundle_transform_progressed',
+      transformedFileCount: number,
+      totalFileCount: number,
+    }
+  | {
+      type: 'global_cache_error',
+      error: Error,
+    }
+  | {
+      type: 'global_cache_disabled',
+      reason: GlobalCacheDisabledReason,
+    }
+  | {
+      type: 'transform_cache_reset',
+    }
+  | {
+      type: 'worker_stdout_chunk',
+      chunk: string,
+    }
+  | {
+      type: 'worker_stderr_chunk',
+      chunk: string,
+    };
 
 /**
  * Code across the application takes a reporter as an option and calls the
@@ -99,7 +115,11 @@ export type Reporter = {
  * calling this, add a new type of ReportableEvent instead, and implement a
  * proper handler in the reporter(s).
  */
-function logWarning(terminal: Terminal, format: string, ...args: Array<mixed>): void {
+function logWarning(
+  terminal: Terminal,
+  format: string,
+  ...args: Array<mixed>
+): void {
   const str = util.format(format, ...args);
   terminal.log('%s: %s', chalk.yellow('warning'), str);
 }
@@ -107,7 +127,11 @@ function logWarning(terminal: Terminal, format: string, ...args: Array<mixed>): 
 /**
  * Similar to `logWarning`, but for messages that require the user to act.
  */
-function logError(terminal: Terminal, format: string, ...args: Array<mixed>): void {
+function logError(
+  terminal: Terminal,
+  format: string,
+  ...args: Array<mixed>
+): void {
   const str = util.format(format, ...args);
   terminal.log('%s: %s', chalk.red('error'), str);
 }
