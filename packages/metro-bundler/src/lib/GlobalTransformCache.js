@@ -426,6 +426,7 @@ class OptionsHasher {
     options: TransformOptionsStrict,
   ): crypto$Hash {
     const {
+      enableBabelRCLookup,
       generateSourceMaps,
       dev,
       hot,
@@ -451,7 +452,9 @@ class OptionsHasher {
           // eslint-disable-next-line no-bitwise
           (+hot << 2) |
           // eslint-disable-next-line no-bitwise
-          (+!!inlineRequires << 3),
+          (+!!inlineRequires << 3) |
+          // eslint-disable-next-line no-bitwise
+          (+enableBabelRCLookup << 4),
       ]),
     );
     hash.update(JSON.stringify(platform));
