@@ -44,7 +44,7 @@ function define(factory, moduleId, dependencyMap) {
 function _require(moduleId) {
   if (__DEV__ && typeof moduleId === 'string') {
     var _verboseName2 = moduleId;
-    moduleId = verboseNamesToModuleIds[moduleId];
+    moduleId = verboseNamesToModuleIds[_verboseName2];
     if (moduleId == null) {
       throw new Error('Unknown named module: \\\\'' + _verboseName2 + '\\\\'');
     } else {
@@ -311,7 +311,7 @@ function define(factory, moduleId, dependencyMap) {
 function _require(moduleId) {
   if (__DEV__ && typeof moduleId === 'string') {
     var _verboseName2 = moduleId;
-    moduleId = verboseNamesToModuleIds[moduleId];
+    moduleId = verboseNamesToModuleIds[_verboseName2];
     if (moduleId == null) {
       throw new Error('Unknown named module: \\\\'' + _verboseName2 + '\\\\'');
     } else {

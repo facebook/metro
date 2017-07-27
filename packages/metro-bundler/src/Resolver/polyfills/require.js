@@ -91,7 +91,7 @@ function define(
 function require(moduleId: ModuleID | VerboseModuleNameForDev) {
   if (__DEV__ && typeof moduleId === 'string') {
     const verboseName = moduleId;
-    moduleId = verboseNamesToModuleIds[moduleId];
+    moduleId = verboseNamesToModuleIds[verboseName];
     if (moduleId == null) {
       throw new Error(`Unknown named module: '${verboseName}'`);
     } else {
