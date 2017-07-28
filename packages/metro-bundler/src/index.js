@@ -21,7 +21,7 @@ const invariant = require('fbjs/lib/invariant');
 const {fromRawMappings, compactMapping} = require('./Bundler/source-map');
 
 import type {PostProcessModules, PostMinifyProcess, PostProcessBundleSourcemap} from './Bundler';
-import type Server from './Server';
+import type Server, {Options as ServerOptions} from './Server';
 import type {GlobalTransformCache} from './lib/GlobalTransformCache';
 import type {TransformCache} from './lib/TransformCaching';
 import type {Reporter} from './lib/reporting';
@@ -33,26 +33,12 @@ exports.createServer = createServer;
 exports.Logger = Logger;
 
 type Options = {|
-  +assetRegistryPath: string,
-  +sourceExts: ?Array<string>,
-  +transformCache: TransformCache,
-  +transformModulePath: string,
-  enableBabelRCLookup?: boolean,
-  getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
-  globalTransformCache: ?GlobalTransformCache,
-  hasteImpl?: HasteImpl,
-  +maxWorkers?: number,
-  nonPersistent?: boolean,
-  postMinifyProcess?: PostMinifyProcess,
-  postProcessBundleSourcemap?: PostProcessBundleSourcemap,
-  postProcessModules?: PostProcessModules,
-  projectRoots: $ReadOnlyArray<string>,
-  reporter?: Reporter,
-  watch?: boolean,
-  workerPath: ?string,
+  ...ServerOptions,
+  // optional types to force flow errors in `toServerOptions`
+  nonPersistent?: ?boolean,
+  transformCache?: ?TransformCache,
+  verbose?: ?boolean,
 |};
-
-type StrictOptions = {...Options, reporter: Reporter};
 
 type PublicBundleOptions = {
   +dev?: boolean,
@@ -127,7 +113,7 @@ function enableDebug() {
   debug.enable(debugPattern);
 }
 
-function createServer(options: StrictOptions): Server {
+function createServer(options: Options): Server {
   // the debug module is configured globally, we need to enable debugging
   // *before* requiring any packages that use `debug` for logging
   if (options.verbose) {
@@ -135,25 +121,45 @@ function createServer(options: StrictOptions): Server {
   }
 
   // Some callsites may not be Flowified yet.
-  invariant(options.reporter != null, 'createServer() requires reporter');
-  if (options.transformCache == null) {
-    options.transformCache = TransformCaching.useTempDir();
-  }
-  const serverOptions = Object.assign({}, options);
-  delete serverOptions.verbose;
+  invariant(options.assetRegistryPath != null, 'createServer() requires assetRegistryPath');
+
   const ServerClass = require('./Server');
-  return new ServerClass(serverOptions);
+  return new ServerClass(toServerOptions(options));
 }
 
 function createNonPersistentServer(options: Options): Server {
-  const serverOptions = {
-    // It's unsound to set-up the reporter here,
-    // but this allows backward compatibility.
-    reporter: options.reporter == null
-      ? require('./lib/reporting').nullReporter
-      : options.reporter,
-    ...options,
-    watch: !options.nonPersistent,
+  return createServer(options);
+}
+
+function toServerOptions(options: Options): ServerOptions {
+  return {
+    assetExts: options.assetExts,
+    assetRegistryPath: options.assetRegistryPath,
+    blacklistRE: options.blacklistRE,
+    cacheVersion: options.cacheVersion,
+    enableBabelRCLookup: options.enableBabelRCLookup,
+    extraNodeModules: options.extraNodeModules,
+    getPolyfills: options.getPolyfills,
+    getTransformOptions: options.getTransformOptions,
+    globalTransformCache: options.globalTransformCache,
+    hasteImpl: options.hasteImpl,
+    maxWorkers: options.maxWorkers,
+    moduleFormat: options.moduleFormat,
+    platforms: options.platforms,
+    polyfillModuleNames: options.polyfillModuleNames,
+    postProcessModules: options.postProcessModules,
+    postMinifyProcess: options.postMinifyProcess,
+    postProcessBundleSourcemap: options.postProcessBundleSourcemap,
+    projectRoots: options.projectRoots,
+    providesModuleNodeModules: options.providesModuleNodeModules,
+    reporter: options.reporter,
+    resetCache: options.resetCache,
+    silent: options.silent,
+    sourceExts: options.sourceExts,
+    transformCache: options.transformCache || TransformCaching.useTempDir(),
+    transformModulePath: options.transformModulePath,
+    transformTimeoutInterval: options.transformTimeoutInterval,
+    watch: typeof options.watch === 'boolean' ? options.watch : !!options.nonPersistent,
+    workerPath: options.workerPath,
   };
-  return createServer(serverOptions);
 }

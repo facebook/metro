@@ -66,7 +66,7 @@ function debounceAndBatch(fn, delay) {
   };
 }
 
-type Options = {
+export type Options = {|
   assetExts?: Array<string>,
   +assetRegistryPath: string,
   blacklistRE?: RegExp,
@@ -86,7 +86,7 @@ type Options = {
   postProcessBundleSourcemap: PostProcessBundleSourcemap,
   projectRoots: $ReadOnlyArray<string>,
   providesModuleNodeModules?: Array<string>,
-  reporter: Reporter,
+  reporter?: Reporter,
   resetCache?: boolean,
   silent?: boolean,
   +sourceExts: ?Array<string>,
@@ -95,7 +95,7 @@ type Options = {
   transformTimeoutInterval?: number,
   watch?: boolean,
   workerPath: ?string,
-};
+|};
 
 export type BundleOptions = {
   +assetPlugins: Array<string>,
@@ -174,6 +174,8 @@ class Server {
   _nextBundleBuildID: number;
 
   constructor(options: Options) {
+    const reporter =
+      options.reporter || require('../lib/reporting').nullReporter;
     const maxWorkers = getMaxWorkers(options.maxWorkers);
     this._opts = {
       assetExts: options.assetExts || defaults.assetExts,
@@ -199,7 +201,7 @@ class Server {
       postProcessBundleSourcemap: options.postProcessBundleSourcemap,
       projectRoots: options.projectRoots,
       providesModuleNodeModules: options.providesModuleNodeModules,
-      reporter: options.reporter,
+      reporter,
       resetCache: options.resetCache || false,
       silent: options.silent || false,
       sourceExts: options.sourceExts || defaults.sourceExts,
@@ -213,7 +215,7 @@ class Server {
     const processFileChange = ({type, filePath}) =>
       this.onFileChange(type, filePath);
 
-    this._reporter = options.reporter;
+    this._reporter = reporter;
     this._projectRoots = this._opts.projectRoots;
     this._bundles = Object.create(null);
     this._changeWatchers = [];
@@ -230,7 +232,7 @@ class Server {
     bundlerOpts.allowBundleUpdates = this._opts.watch;
     bundlerOpts.globalTransformCache = options.globalTransformCache;
     bundlerOpts.watch = this._opts.watch;
-    bundlerOpts.reporter = options.reporter;
+    bundlerOpts.reporter = reporter;
     this._bundler = new Bundler(bundlerOpts);
 
     // changes to the haste map can affect resolution of files in the bundle
