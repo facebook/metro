@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @polyfill
+ * @format
  */
 
 /* eslint-disable strict */
@@ -14,5 +15,5 @@
 global.__DEV__ = false;
 
 global.__BUNDLE_START_TIME__ = global.nativePerformanceNow
- ? global.nativePerformanceNow()
- : Date.now();
+  ? global.nativePerformanceNow()
+  : Date.now();

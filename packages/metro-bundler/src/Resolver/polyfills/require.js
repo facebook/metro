@@ -8,6 +8,7 @@
  *
  * @polyfill
  * @flow
+ * @format
  */
 
 'use strict';
@@ -43,8 +44,7 @@ type ModuleDefinition = {|
   isInitialized: boolean,
   verboseName?: string,
 |};
-type ModuleMap =
-  {[key: ModuleID]: (ModuleDefinition)};
+type ModuleMap = {[key: ModuleID]: ModuleDefinition};
 type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
 type VerboseModuleNameForDev = string;
 
@@ -97,7 +97,7 @@ function require(moduleId: ModuleID | VerboseModuleNameForDev) {
     } else {
       console.warn(
         `Requiring module '${verboseName}' by name is only supported for ` +
-        'debugging purposes and will BREAK IN PRODUCTION!'
+          'debugging purposes and will BREAK IN PRODUCTION!',
       );
     }
   }
@@ -155,7 +155,7 @@ function loadModuleImplementation(moduleId, module) {
   // factory to keep any require cycles inside the factory from causing an
   // infinite require loop.
   module.isInitialized = true;
-  const exports = module.exports = {};
+  const exports = (module.exports = {});
   const {factory, dependencyMap} = module;
   try {
     if (__DEV__) {
@@ -205,8 +205,13 @@ function unknownModuleError(id) {
 }
 
 function moduleThrewError(id, error: any) {
-  const displayName = __DEV__ && modules[id] && modules[id].verboseName || id;
-  return Error('Requiring module "' + displayName + '", which threw an exception: ' + error);
+  const displayName = (__DEV__ && modules[id] && modules[id].verboseName) || id;
+  return Error(
+    'Requiring module "' +
+      displayName +
+      '", which threw an exception: ' +
+      error,
+  );
 }
 
 if (__DEV__) {
@@ -216,21 +221,21 @@ if (__DEV__) {
   var createHotReloadingObject = function() {
     const hot: HotModuleReloadingData = {
       acceptCallback: null,
-      accept: callback => { hot.acceptCallback = callback; },
+      accept: callback => {
+        hot.acceptCallback = callback;
+      },
     };
     return hot;
   };
 
-  const acceptAll = function(
-    dependentModules,
-    inverseDependencies,
-  ) {
+  const acceptAll = function(dependentModules, inverseDependencies) {
     if (!dependentModules || dependentModules.length === 0) {
       return true;
     }
 
     const notAccepted = dependentModules.filter(
-      module => !accept(module, /*factory*/ undefined, inverseDependencies));
+      module => !accept(module, /*factory*/ undefined, inverseDependencies),
+    );
 
     const parents = [];
     for (let i = 0; i < notAccepted.length; i++) {
@@ -252,7 +257,8 @@ if (__DEV__) {
   ) {
     const mod = modules[id];
 
-    if (!mod && factory) { // new modules need a factory
+    if (!mod && factory) {
+      // new modules need a factory
       define(factory, id);
       return true; // new modules don't need to be accepted
     }
@@ -261,7 +267,7 @@ if (__DEV__) {
     if (!hot) {
       console.warn(
         'Cannot accept module because Hot Module Replacement ' +
-        'API was not installed.'
+          'API was not installed.',
       );
       return false;
     }

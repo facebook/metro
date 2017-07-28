@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -22,13 +23,19 @@ import type {MappingsMap} from '../lib/SourceMap';
 import type {PostMinifyProcess} from '../Bundler';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type {Reporter} from '../lib/reporting';
-import type {TransformCache, GetTransformCacheKey} from '../lib/TransformCaching';
+import type {
+  TransformCache,
+  GetTransformCacheKey,
+} from '../lib/TransformCaching';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 
-type MinifyCode = (filePath: string, code: string, map: MappingsMap) =>
-  Promise<{code: string, map: MappingsMap}>;
+type MinifyCode = (
+  filePath: string,
+  code: string,
+  map: MappingsMap,
+) => Promise<{code: string, map: MappingsMap}>;
 
-type ContainsTransformerOptions = {+transformer: JSTransformerOptions}
+type ContainsTransformerOptions = {+transformer: JSTransformerOptions};
 
 type Options = {|
   +assetExts: Array<string>,
@@ -55,7 +62,6 @@ type Options = {|
 |};
 
 class Resolver {
-
   _depGraph: DependencyGraph;
   _getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>;
   _minifyCode: MinifyCode;
@@ -119,51 +125,52 @@ class Resolver {
     getModuleId: mixed,
   ): Promise<ResolutionResponse<Module, T>> {
     const {platform, recursive = true} = options;
-    return this._depGraph.getDependencies({
-      entryPath,
-      platform,
-      options: bundlingOptions,
-      recursive,
-      onProgress,
-    }).then(resolutionResponse => {
-      this._getPolyfillDependencies(platform).reverse().forEach(
-        polyfill => resolutionResponse.prependDependency(polyfill)
-      );
+    return this._depGraph
+      .getDependencies({
+        entryPath,
+        platform,
+        options: bundlingOptions,
+        recursive,
+        onProgress,
+      })
+      .then(resolutionResponse => {
+        this._getPolyfillDependencies(platform)
+          .reverse()
+          .forEach(polyfill => resolutionResponse.prependDependency(polyfill));
 
-      /* $FlowFixMe: monkey patching */
-      resolutionResponse.getModuleId = getModuleId;
-      return resolutionResponse.finalize();
-    });
+        /* $FlowFixMe: monkey patching */
+        resolutionResponse.getModuleId = getModuleId;
+        return resolutionResponse.finalize();
+      });
   }
 
   getModuleSystemDependencies({dev = true}: {dev?: boolean}): Array<Module> {
-
     const prelude = dev
-        ? pathJoin(__dirname, 'polyfills/prelude_dev.js')
-        : pathJoin(__dirname, 'polyfills/prelude.js');
+      ? pathJoin(__dirname, 'polyfills/prelude_dev.js')
+      : pathJoin(__dirname, 'polyfills/prelude.js');
 
     const moduleSystem = defaults.moduleSystem;
 
-    return [
-      prelude,
-      moduleSystem,
-    ].map(moduleName => this._depGraph.createPolyfill({
-      file: moduleName,
-      id: moduleName,
-      dependencies: [],
-    }));
+    return [prelude, moduleSystem].map(moduleName =>
+      this._depGraph.createPolyfill({
+        file: moduleName,
+        id: moduleName,
+        dependencies: [],
+      }),
+    );
   }
 
   _getPolyfillDependencies(platform: ?string): Array<Module> {
-    const polyfillModuleNames = this._getPolyfills({platform})
-      .concat(this._polyfillModuleNames);
+    const polyfillModuleNames = this._getPolyfills({platform}).concat(
+      this._polyfillModuleNames,
+    );
 
-    return polyfillModuleNames.map(
-      (polyfillModuleName, idx) => this._depGraph.createPolyfill({
+    return polyfillModuleNames.map((polyfillModuleName, idx) =>
+      this._depGraph.createPolyfill({
         file: polyfillModuleName,
         id: polyfillModuleName,
         dependencies: polyfillModuleNames.slice(0, idx),
-      })
+      }),
     );
   }
 
@@ -177,7 +184,8 @@ class Resolver {
 
     // here, we build a map of all require strings (relative and absolute)
     // to the canonical ID of the module they reference
-    resolutionResponse.getResolvedDependencyPairs(module)
+    resolutionResponse
+      .getResolvedDependencyPairs(module)
       .forEach(([depName, depModule]) => {
         if (depModule) {
           /* $FlowFixMe: `getModuleId` is monkey-patched so may not exist */
@@ -193,13 +201,15 @@ class Resolver {
     //    require('./c') => require(3);
     // -- in b/index.js:
     //    require('../a/c') => require(3);
-    return dependencyOffsets.reduceRight(
-      ([unhandled, handled], offset) => [
-        unhandled.slice(0, offset),
-        replaceDependencyID(unhandled.slice(offset) + handled, resolvedDeps),
-      ],
-      [code, ''],
-    ).join('');
+    return dependencyOffsets
+      .reduceRight(
+        ([unhandled, handled], offset) => [
+          unhandled.slice(0, offset),
+          replaceDependencyID(unhandled.slice(offset) + handled, resolvedDeps),
+        ],
+        [code, ''],
+      )
+      .join('');
   }
 
   wrapModule<T: ContainsTransformerOptions>({
@@ -236,7 +246,7 @@ class Resolver {
         resolutionResponse,
         module,
         code,
-        meta.dependencyOffsets
+        meta.dependencyOffsets,
       );
       code = defineModuleCode(moduleId, code, name, dev);
     }
@@ -246,9 +256,15 @@ class Resolver {
       : Promise.resolve({code, map});
   }
 
-  minifyModule(
-    {path, code, map}: {path: string, code: string, map: MappingsMap},
-  ): Promise<{code: string, map: MappingsMap}> {
+  minifyModule({
+    path,
+    code,
+    map,
+  }: {
+    path: string,
+    code: string,
+    map: MappingsMap,
+  }): Promise<{code: string, map: MappingsMap}> {
     return this._minifyCode(path, code, map);
   }
 
