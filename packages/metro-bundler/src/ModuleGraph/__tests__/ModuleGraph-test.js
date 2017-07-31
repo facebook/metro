@@ -68,7 +68,7 @@ describe('build setup', () => {
   it('places polyfills after the module system', done => {
     buildSetup(noEntryPoints, polyfillOptions, (error, result) => {
       const list = polyfillOptions.getPolyfills();
-      const polyfills = Array.from(result.modules).slice(2, list.length + 2);
+      const polyfills = result.modules.slice(2, list.length + 2);
       expect(polyfills).toEqual(list.map(moduleFromPath));
       done();
     });
@@ -77,7 +77,7 @@ describe('build setup', () => {
   it('places all entry points and dependencies at the end, post-processed', done => {
     const entryPoints = ['b', 'c', 'd'];
     buildSetup(entryPoints, noOptions, (error, result) => {
-      expect(Array.from(result.modules).slice(-4))
+      expect(result.modules.slice(-4))
         .toEqual(['a', 'b', 'c', 'd'].map(moduleFromPath));
       done();
     });

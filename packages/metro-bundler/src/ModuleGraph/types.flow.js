@@ -52,8 +52,8 @@ type GraphOptions = {|
 |};
 
 export type GraphResult = {|
-  entryModules: Iterable<Module>,
-  modules: Iterable<Module>,
+  entryModules: $ReadOnlyArray<Module>,
+  modules: $ReadOnlyArray<Module>,
 |};
 
 export type IdForPathFn = {path: string} => number;
@@ -163,7 +163,11 @@ export type LibraryOptions = {|
 |};
 
 export type Base64Content = string;
-export type AssetContentsByPath = {[destFilePath: string]: Base64Content};
+export type AssetContents = {
+  +data: Base64Content,
+  +outputPath: string,
+};
+export type AssetContentsByPath = {+[moduleFilePath: string]: $ReadOnlyArray<AssetContents>};
 
 export type Library = {|
   +files: Array<TransformedCodeFile>,

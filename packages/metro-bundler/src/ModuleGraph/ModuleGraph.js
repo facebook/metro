@@ -92,7 +92,7 @@ exports.createBuildSetup = (
       const prependedScripts = [preludeScript, ...moduleSystem, ...polyfills];
       callback(null, {
         entryModules,
-        modules: concat(prependedScripts, modules),
+        modules: prependedScripts.concat(modules),
         prependedScripts,
       });
     });
