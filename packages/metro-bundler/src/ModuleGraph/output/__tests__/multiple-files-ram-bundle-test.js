@@ -14,7 +14,7 @@ declare var jest: any;
 
 const multipleFilesRamBundle = require('../multiple-files-ram-bundle');
 
-const {addModuleIdsToModuleWrapper} = require('../util');
+const {getModuleCode} = require('../util');
 
 declare var describe: any;
 declare var expect: any;
@@ -76,7 +76,7 @@ it('bundles each file separately', () => {
   modules.forEach((module, i) => {
     // $FlowFixMe "extraFiles" is always defined at this point.
     expect(extraFiles.get(`js-modules/${i}.js`).toString())
-      .toBe(expectedCode(modules[i]));
+      .toBe(getModuleCode(modules[i], idForPath));
   });
 });
 
@@ -130,13 +130,6 @@ function makeDependency(name) {
     id: name,
     path,
   };
-}
-
-function expectedCode(module) {
-  const {file} = module;
-  return file.type === 'module'
-    ? addModuleIdsToModuleWrapper(module, idForPath)
-    : file.code;
 }
 
 function getId(path) {

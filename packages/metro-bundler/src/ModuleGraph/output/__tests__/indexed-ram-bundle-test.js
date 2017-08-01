@@ -13,7 +13,8 @@
 declare var jest: any;
 
 const indexedRamBundle = require('../indexed-ram-bundle');
-const {addModuleIdsToModuleWrapper} = require('../util');
+
+const {getModuleCode} = require('../util');
 
 declare var describe: any;
 declare var expect: any;
@@ -240,10 +241,7 @@ function makeDependency(name) {
 }
 
 function expectedCode(module) {
-  const {file} = module;
-  return file.type === 'module'
-    ? addModuleIdsToModuleWrapper(module, idForPath)
-    : file.code;
+  return getModuleCode(module, idForPath);
 }
 
 function getId(path) {

@@ -13,7 +13,7 @@
 const meta = require('../../shared/output/meta');
 
 const {createIndexMap} = require('./source-map');
-const {addModuleIdsToModuleWrapper, concat} = require('./util');
+const {getModuleCode, concat} = require('./util');
 
 import type {OutputFn} from '../types.flow';
 
@@ -30,9 +30,7 @@ function asPlainBundle({
 
   for (const module of concat(modules, requireCalls)) {
     const {file} = module;
-    const moduleCode = file.type === 'module'
-      ? addModuleIdsToModuleWrapper(module, idForPath)
-      : file.code;
+    const moduleCode = getModuleCode(module, idForPath);
 
     code += moduleCode + '\n';
     if (file.map) {
