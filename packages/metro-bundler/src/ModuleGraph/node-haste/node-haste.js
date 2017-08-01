@@ -7,19 +7,10 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
-
-import type { // eslint-disable-line sort-requires
-  Extensions,
-  Path,
-} from './node-haste.flow';
-
-import type {
-  ResolveFn,
-  TransformedCodeFile,
-} from '../types.flow';
 
 const AssetResolutionCache = require('../../node-haste/AssetResolutionCache');
 const DependencyGraphHelpers = require('../../node-haste/DependencyGraph/DependencyGraphHelpers');
@@ -32,9 +23,20 @@ const ResolutionRequest = require('../../node-haste/DependencyGraph/ResolutionRe
 
 const defaults = require('../../defaults');
 
-const {ModuleResolver} = require('../../node-haste/DependencyGraph/ModuleResolution');
+const {
+  ModuleResolver,
+} = require('../../node-haste/DependencyGraph/ModuleResolution');
 
-import type {Moduleish, Packageish} from '../../node-haste/DependencyGraph/ResolutionRequest';
+import type {
+  Moduleish,
+  Packageish,
+} from '../../node-haste/DependencyGraph/ResolutionRequest';
+import type {ResolveFn, TransformedCodeFile} from '../types.flow';
+import type {
+  // eslint-disable-line sort-requires
+  Extensions,
+  Path,
+} from './node-haste.flow';
 
 type ResolveOptions = {|
   assetExts: Extensions,
@@ -69,19 +71,24 @@ const nullModule: Moduleish = {
   hash() {
     throw new Error('not implemented');
   },
-  readCached() { throw new Error('not implemented'); },
-  readFresh() { return Promise.reject(new Error('not implemented')); },
-  isHaste() { throw new Error('not implemented'); },
-  getName() { throw new Error('not implemented'); },
+  readCached() {
+    throw new Error('not implemented');
+  },
+  readFresh() {
+    return Promise.reject(new Error('not implemented'));
+  },
+  isHaste() {
+    throw new Error('not implemented');
+  },
+  getName() {
+    throw new Error('not implemented');
+  },
 };
 
-exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
-  const {
-    assetExts,
-    extraNodeModules,
-    transformedFiles,
-    sourceExts,
-  } = options;
+exports.createResolveFn = function(
+  options: ResolveOptions,
+): Promise<ResolveFn> {
+  const {assetExts, extraNodeModules, transformedFiles, sourceExts} = options;
   const files = Object.keys(transformedFiles);
   function getTransformedFile(path) {
     const result = transformedFiles[path];
@@ -131,7 +138,7 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     sourceExts,
   });
 
-  return (id, source, platform, _, callback) => {
+  return hasteMapBuilt.then(() => (id, source, platform, _, callback) => {
     let resolutionRequest = resolutionRequests[platform];
     if (!resolutionRequest) {
       resolutionRequest = resolutionRequests[platform] = new ResolutionRequest({
@@ -143,15 +150,10 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
       });
     }
 
-    const from = source != null
-      ? new Module(source, moduleCache, getTransformedFile(source))
-      : nullModule;
-    hasteMapBuilt
-      .then(() => resolutionRequest.resolveDependency(from, id))
-      .then(
-        // nextTick to escape promise error handling
-        module => process.nextTick(callback, null, module.path),
-        error => process.nextTick(callback, error),
-      );
-  };
+    const from =
+      source != null
+        ? new Module(source, moduleCache, getTransformedFile(source))
+        : nullModule;
+    return resolutionRequest.resolveDependency(from, id).path;
+  });
 };

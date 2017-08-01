@@ -23,7 +23,7 @@ import type {
   File,
   GraphFn,
   LoadFn,
-  ResolveFn,
+  ResolveFnCallback,
 } from './types.flow';
 
 type Async$Queue<T, C> = {
@@ -52,7 +52,7 @@ type LoadQueue =
 
 const NO_OPTIONS = {};
 
-exports.create = function create(resolve: ResolveFn, load: LoadFn): GraphFn {
+exports.create = function create(resolve: ResolveFnCallback, load: LoadFn): GraphFn {
   function Graph(entryPoints, platform, options, callback = emptyFunction) {
     const {
       log = (console: any),

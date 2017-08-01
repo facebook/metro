@@ -106,6 +106,13 @@ export type ResolveFn = (
   source: ?string,
   platform: string,
   options?: ResolveOptions,
+) => string;
+
+export type ResolveFnCallback = (
+  id: string,
+  source: ?string,
+  platform: string,
+  options?: ResolveOptions,
   callback: Callback<string>,
 ) => void;
 
