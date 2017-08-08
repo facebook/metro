@@ -20,12 +20,8 @@ const invariant = require('fbjs/lib/invariant');
 
 const {fromRawMappings, compactMapping} = require('./Bundler/source-map');
 
-import type {PostProcessModules, PostMinifyProcess, PostProcessBundleSourcemap} from './Bundler';
 import type Server, {Options as ServerOptions} from './Server';
-import type {GlobalTransformCache} from './lib/GlobalTransformCache';
 import type {TransformCache} from './lib/TransformCaching';
-import type {Reporter} from './lib/reporting';
-import type {HasteImpl} from './node-haste/Module';
 
 exports.createBlacklist = blacklist;
 exports.sourceMaps = {fromRawMappings, compactMapping};
