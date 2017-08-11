@@ -94,7 +94,7 @@ class Terminal {
   constructor(stream: net$Socket) {
     this._logLines = [];
     this._nextStatusStr = '';
-    this._scheduleUpdate = throttle(this._update, 0);
+    this._scheduleUpdate = throttle(this._update, 33);
     this._statusStr = '';
     this._stream = stream;
   }
