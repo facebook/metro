@@ -12,8 +12,6 @@
 
 'use strict';
 
-const TempDirs = require('./TempDirs');
-
 const crypto = require('crypto');
 const debugRead = require('debug')('Metro:TransformCache:Read');
 const fs = require('fs');
@@ -438,71 +436,11 @@ function useTempDir(): TransformCache {
   if (process.getuid != null) {
     hash.update(process.getuid().toString());
   }
-  const tmpDir = require('os').tmpdir();
+  const tmpDir = tmpdir();
   const cacheName = 'react-native-packager-cache';
   const rootPath = path.join(tmpDir, cacheName + '-' + hash.digest('hex'));
   mkdirp.sync(rootPath);
   return new FileBasedCache(rootPath);
-}
-
-/**
- * Keep track of the path used for the cache in a local file so that a fresh
- * clone gets a fresh cache, and so that the temp dir used cannot be predicted.
- * Sometimes a different user build the same project, in which case we use a
- * different subfolder of the temp directory.
- *
- * If the directory specified in the `.metro-bundler` doesn't exist anymore
- * (ex. after a machine reboot and `/tmp` has been cleaned), we just create
- * a new one.
- */
-function useProjectDir(projectPath: string): TransformCache {
-  invariant(path.isAbsolute(projectPath), 'project path must be absolute');
-  const metaFilePath = path.resolve(projectPath, '.metro-bundler');
-  const metaDirPath = readMetaDirPath(metaFilePath);
-  if (metaDirPath != null) {
-    try {
-      return useMetaDirPath(metaDirPath);
-    } catch (error) {
-      if (error.code !== 'ENOENT') {
-        throw error;
-      }
-    }
-  }
-  return useMetaDirPath(createMetaDir(metaFilePath));
-}
-
-/**
- * Use the specified path as cache, by creating a subdirectory specific to the
- * current user ID. This could fail if `metaDirPath` doesn't exist.
- */
-function useMetaDirPath(metaDirPath: string): TransformCache {
-  const uidStr = process.getuid != null ? process.getuid().toString() : 'g';
-  const finalPath = path.join(metaDirPath, '_' + uidStr);
-  TempDirs.tryMkdirSync(finalPath, 0o700);
-  return new FileBasedCache(finalPath);
-}
-
-/**
- * Return the path of the cache directory, if it's already been set for that
- * project, in the shape of a `.metro-bundler` file.
- */
-function readMetaDirPath(metaFilePath: string): ?string {
-  const metaFile = tryReadFileSync(metaFilePath);
-  if (metaFile == null) {
-    return null;
-  }
-  return metaFile.split('\n')[0];
-}
-
-/**
- * Create a new top-level directory to be used for the cache. We give all
- * permissions because different users might share that directory.
- */
-function createMetaDir(metaFilePath: string): string {
-  const tmpDirPath = tmpdir();
-  const metaDirPath = TempDirs.create(path.join(tmpDirPath, 'mb-'), 0o777);
-  fs.writeFileSync(metaFilePath, metaDirPath + '\n');
-  return metaDirPath;
 }
 
 function tmpdir(): string {
@@ -525,4 +463,4 @@ function tryReadFileSync(filePath): ?string {
   }
 }
 
-module.exports = {FileBasedCache, none, useTempDir, useProjectDir};
+module.exports = {FileBasedCache, none, useTempDir};
