@@ -102,6 +102,7 @@ export type BundleOptions = {
   dev: boolean,
   entryFile: string,
   +entryModuleOnly: boolean,
+  +excludeSource: boolean,
   +generateSourceMaps: boolean,
   +hot: boolean,
   +inlineSourceMap: boolean,
@@ -790,6 +791,7 @@ class Server {
             log(createActionEndEntry(requestingBundleLogEntry));
           } else if (requestType === 'map') {
             const sourceMap = p.getSourceMapString({
+              excludeSource: options.excludeSource,
               minify: options.minify,
               dev: options.dev,
             });
@@ -879,6 +881,7 @@ class Server {
     );
     return building.then(p =>
       p.getSourceMap({
+        excludeSource: options.excludeSource,
         minify: options.minify,
         dev: options.dev,
       }),
@@ -994,6 +997,12 @@ class Server {
 
     const dev = this._getBoolOptionFromQuery(urlObj.query, 'dev', true);
     const minify = this._getBoolOptionFromQuery(urlObj.query, 'minify', false);
+    const excludeSource = this._getBoolOptionFromQuery(
+      urlObj.query,
+      'excludeSource',
+      false,
+    );
+
     return {
       sourceMapUrl: url.format({
         hash: urlObj.hash,
@@ -1004,6 +1013,7 @@ class Server {
       entryFile,
       dev,
       minify,
+      excludeSource,
       hot: this._getBoolOptionFromQuery(urlObj.query, 'hot', false),
       runBeforeMainModule: defaults.runBeforeMainModule,
       runModule: this._getBoolOptionFromQuery(urlObj.query, 'runModule', true),
@@ -1054,6 +1064,7 @@ Server.DEFAULT_BUNDLE_OPTIONS = {
   assetPlugins: [],
   dev: true,
   entryModuleOnly: false,
+  excludeSource: false,
   generateSourceMaps: false,
   hot: false,
   inlineSourceMap: false,

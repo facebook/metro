@@ -149,12 +149,20 @@ class Generator {
   /**
    * Return the source map as object.
    */
-  toMap(file?: string): MappingsMap {
+  toMap(file?: string, options: {excludeSource?: boolean}): MappingsMap {
+    let content;
+
+    if (options && options.excludeSource) {
+      content = {};
+    } else {
+      content = {sourcesContent: this.sourcesContent.slice()};
+    }
+
     return {
       version: 3,
       file,
       sources: this.sources.slice(),
-      sourcesContent: this.sourcesContent.slice(),
+      ...content,
       names: this.names.items(),
       mappings: this.builder.toString(),
     };
@@ -165,13 +173,21 @@ class Generator {
    *
    * This is ~2.5x faster than calling `JSON.stringify(generator.toMap())`
    */
-  toString(file?: string): string {
+  toString(file?: string, options: {excludeSource?: boolean}): string {
+    let content;
+
+    if (options && options.excludeSource) {
+      content = '';
+    } else {
+      content = `"sourcesContent":${JSON.stringify(this.sourcesContent)},`;
+    }
+
     return (
       '{' +
       '"version":3,' +
       (file ? `"file":${JSON.stringify(file)},` : '') +
       `"sources":${JSON.stringify(this.sources)},` +
-      `"sourcesContent":${JSON.stringify(this.sourcesContent)},` +
+      content +
       `"names":${JSON.stringify(this.names.items())},` +
       `"mappings":"${this.builder.toString()}"` +
       '}'

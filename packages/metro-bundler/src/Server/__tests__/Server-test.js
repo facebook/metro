@@ -5,6 +5,8 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @emails oncall+javascript_tools
  */
 
 'use strict';
@@ -156,6 +158,7 @@ describe('processRequest', () => {
         dev: true,
         entryFile: 'index.ios.js',
         entryModuleOnly: false,
+        excludeSource: false,
         generateSourceMaps: false,
         hot: false,
         inlineSourceMap: false,
@@ -183,6 +186,7 @@ describe('processRequest', () => {
         dev: true,
         entryFile: 'index.js',
         entryModuleOnly: false,
+        excludeSource: false,
         generateSourceMaps: false,
         hot: false,
         inlineSourceMap: false,
@@ -210,6 +214,7 @@ describe('processRequest', () => {
         dev: true,
         entryFile: 'index.js',
         entryModuleOnly: false,
+        excludeSource: false,
         generateSourceMaps: false,
         hot: false,
         inlineSourceMap: false,
@@ -447,6 +452,7 @@ describe('processRequest', () => {
           dev: true,
           entryFile: 'foo file',
           entryModuleOnly: false,
+          excludeSource: false,
           generateSourceMaps: false,
           hot: false,
           inlineSourceMap: false,
@@ -466,13 +472,14 @@ describe('processRequest', () => {
 
   describe('buildBundleFromUrl(options)', () => {
     it('Calls the bundler with the correct args', () => {
-      return server.buildBundleFromUrl('/path/to/foo.bundle?dev=false&runModule=false')
+      return server.buildBundleFromUrl('/path/to/foo.bundle?dev=false&runModule=false&excludeSource=true')
         .then(() =>
           expect(Bundler.prototype.bundle).toBeCalledWith({
             assetPlugins: [],
             dev: false,
             entryFile: 'path/to/foo.js',
             entryModuleOnly: false,
+            excludeSource: true,
             generateSourceMaps: true,
             hot: false,
             inlineSourceMap: false,
@@ -483,7 +490,7 @@ describe('processRequest', () => {
             resolutionResponse: null,
             runBeforeMainModule: ['InitializeCore'],
             runModule: false,
-            sourceMapUrl: '/path/to/foo.map?dev=false&runModule=false',
+            sourceMapUrl: '/path/to/foo.map?dev=false&runModule=false&excludeSource=true',
             unbundle: false,
           })
         );

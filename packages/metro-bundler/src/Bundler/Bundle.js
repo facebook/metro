@@ -269,7 +269,7 @@ class Bundle extends BundleBase {
 
     return this._sourceMapFormat === 'indexed'
       ? this._getCombinedSourceMaps(options)
-      : fromRawMappings(this.getModules()).toMap();
+      : fromRawMappings(this.getModules()).toMap(undefined, options);
   }
 
   getSourceMapString(options: {excludeSource?: boolean}): string {
@@ -284,7 +284,10 @@ class Bundle extends BundleBase {
     let map = this._sourceMap;
     if (map == null) {
       debug('Start building flat source map');
-      map = this._sourceMap = fromRawMappings(this.getModules()).toString();
+      map = this._sourceMap = fromRawMappings(this.getModules()).toString(
+        undefined,
+        options,
+      );
       debug('End building flat source map');
     } else {
       debug('Returning cached source map');
