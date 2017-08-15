@@ -52,7 +52,15 @@ function makeFarm(worker, methods, timeout, maxConcurrentWorkers) {
   return workerFarm(
     {
       autoStart: true,
-      execArgv: [],
+      /**
+       * We whitelist only what would work. For example `--inspect` doesn't
+       * work in the workers because it tries to open the same debugging port.
+       * Feel free to add more cases to the RegExp. A whitelist is preferred, to
+       * guarantee robustness when upgrading node, etc.
+       */
+      execArgv: process.execArgv.filter(arg =>
+        /^--stack-trace-limit=[0-9]+$/.test(arg),
+      ),
       maxConcurrentCallsPerWorker: 1,
       maxConcurrentWorkers,
       maxCallsPerWorker: MAX_CALLS_PER_WORKER,
