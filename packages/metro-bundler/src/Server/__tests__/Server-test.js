@@ -160,7 +160,7 @@ describe('processRequest', () => {
         entryModuleOnly: false,
         excludeSource: false,
         generateSourceMaps: false,
-        hot: false,
+        hot: true,
         inlineSourceMap: false,
         isolateModuleIDs: false,
         minify: false,
@@ -188,7 +188,7 @@ describe('processRequest', () => {
         entryModuleOnly: false,
         excludeSource: false,
         generateSourceMaps: false,
-        hot: false,
+        hot: true,
         inlineSourceMap: false,
         isolateModuleIDs: false,
         minify: false,
@@ -216,7 +216,7 @@ describe('processRequest', () => {
         entryModuleOnly: false,
         excludeSource: false,
         generateSourceMaps: false,
-        hot: false,
+        hot: true,
         inlineSourceMap: false,
         isolateModuleIDs: false,
         minify: false,
@@ -481,7 +481,7 @@ describe('processRequest', () => {
             entryModuleOnly: false,
             excludeSource: true,
             generateSourceMaps: true,
-            hot: false,
+            hot: true,
             inlineSourceMap: false,
             isolateModuleIDs: false,
             minify: false,
@@ -491,6 +491,31 @@ describe('processRequest', () => {
             runBeforeMainModule: ['InitializeCore'],
             runModule: false,
             sourceMapUrl: '/path/to/foo.map?dev=false&runModule=false&excludeSource=true',
+            unbundle: false,
+          })
+        );
+    });
+
+    it('ignores the `hot` parameter (since it is not used anymore)', () => {
+      return server.buildBundleFromUrl('/path/to/foo.bundle?dev=false&hot=false&runModule=false')
+        .then(() =>
+          expect(Bundler.prototype.bundle).toBeCalledWith({
+            assetPlugins: [],
+            dev: false,
+            entryFile: 'path/to/foo.js',
+            entryModuleOnly: false,
+            excludeSource: false,
+            generateSourceMaps: true,
+            hot: true,
+            inlineSourceMap: false,
+            isolateModuleIDs: false,
+            minify: false,
+            onProgress: null,
+            platform: null,
+            resolutionResponse: null,
+            runBeforeMainModule: ['InitializeCore'],
+            runModule: false,
+            sourceMapUrl: '/path/to/foo.map?dev=false&hot=false&runModule=false',
             unbundle: false,
           })
         );

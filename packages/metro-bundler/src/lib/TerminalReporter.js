@@ -108,11 +108,10 @@ class TerminalReporter {
   ): string {
     const localPath = path.relative('.', bundleOptions.entryFile);
     return util.format(
-      'Bundling `%s`  [%s, %s, %s]  %s%s%% (%s/%s)%s',
+      'Bundling `%s`  [%s, %s]  %s%s%% (%s/%s)%s',
       localPath,
       bundleOptions.dev ? 'development' : 'production',
       bundleOptions.minify ? 'minified' : 'non-minified',
-      bundleOptions.hot ? 'hmr enabled' : 'hmr disabled',
       phase === 'in_progress' ? getProgressBar(ratio, 16) + '  ' : '',
       (100 * ratio).toFixed(1),
       transformedFileCount,

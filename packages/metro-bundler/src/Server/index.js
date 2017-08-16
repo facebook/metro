@@ -1014,7 +1014,7 @@ class Server {
       dev,
       minify,
       excludeSource,
-      hot: this._getBoolOptionFromQuery(urlObj.query, 'hot', false),
+      hot: true,
       runBeforeMainModule: defaults.runBeforeMainModule,
       runModule: this._getBoolOptionFromQuery(urlObj.query, 'runModule', true),
       inlineSourceMap: this._getBoolOptionFromQuery(
