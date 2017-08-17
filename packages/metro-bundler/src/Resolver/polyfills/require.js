@@ -110,6 +110,10 @@ function require(moduleId: ModuleID | VerboseModuleNameForDev) {
     : guardedLoadModule(moduleIdReallyIsNumber, module);
 }
 
+require.async = function(moduleId: ModuleID | VerboseModuleNameForDev) {
+  return Promise.resolve().then(() => require(moduleId));
+};
+
 let inGuard = false;
 function guardedLoadModule(moduleId: ModuleID, module) {
   if (!inGuard && global.ErrorUtils) {

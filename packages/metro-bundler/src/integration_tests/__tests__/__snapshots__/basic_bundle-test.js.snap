@@ -57,6 +57,12 @@ function _require(moduleId) {
   return module && module.isInitialized ? module.exports : guardedLoadModule(moduleIdReallyIsNumber, module);
 }
 
+_require.async = function (moduleId) {
+  return Promise.resolve().then(function () {
+    return _require(moduleId);
+  });
+};
+
 var inGuard = false;
 function guardedLoadModule(moduleId, module) {
   if (!inGuard && global.ErrorUtils) {
@@ -323,6 +329,12 @@ function _require(moduleId) {
   var module = modules[moduleIdReallyIsNumber];
   return module && module.isInitialized ? module.exports : guardedLoadModule(moduleIdReallyIsNumber, module);
 }
+
+_require.async = function (moduleId) {
+  return Promise.resolve().then(function () {
+    return _require(moduleId);
+  });
+};
 
 var inGuard = false;
 function guardedLoadModule(moduleId, module) {

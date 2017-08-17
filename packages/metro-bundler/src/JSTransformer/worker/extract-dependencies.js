@@ -33,19 +33,34 @@ function extractDependencies(code: string) {
   const dependencies = new Set();
   const dependencyOffsets = [];
 
+  function pushDependency(nodeArgs) {
+    const arg = nodeArgs[0];
+    if (nodeArgs.length != 1 || arg.type !== 'StringLiteral') {
+      throw new Error('require() must have a single string literal argument');
+    }
+    dependencyOffsets.push(arg.start);
+    dependencies.add(arg.value);
+  }
+
   babel.traverse(ast, {
     CallExpression(path) {
       const node = path.node;
       const callee = node.callee;
       if (callee.type === 'Identifier' && callee.name === 'require') {
-        const arg = node.arguments[0];
-        if (arg == null || arg.type !== 'StringLiteral') {
-          throw new Error(
-            'require() must have a single string literal argument',
-          );
-        }
-        dependencyOffsets.push(arg.start);
-        dependencies.add(arg.value);
+        pushDependency(node.arguments);
+      }
+      if (callee.type !== 'MemberExpression') {
+        return;
+      }
+      const obj = callee.object;
+      const prop = callee.property;
+      if (
+        obj.type === 'Identifier' &&
+        obj.name === 'require' &&
+        !callee.computed &&
+        prop.name === 'async'
+      ) {
+        pushDependency(node.arguments);
       }
     },
   });

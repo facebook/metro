@@ -30,6 +30,14 @@ describe('Dependency extraction:', () => {
     expect(dependencyOffsets).toEqual([8, 46, 147, 203]);
   });
 
+  it('can extract calls to require.async', () => {
+    const code = `foo();
+      require.async('bar').then(() => {});`;
+    const {dependencies, dependencyOffsets} = extractDependencies(code);
+    expect(dependencies).toEqual(['bar']);
+    expect(dependencyOffsets).toEqual([27]);
+  });
+
   it('does not extract require method calls', () => {
     const code = `
       require('a');
