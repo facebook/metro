@@ -58,8 +58,10 @@ function makeFarm(worker, methods, timeout, maxConcurrentWorkers) {
        * Feel free to add more cases to the RegExp. A whitelist is preferred, to
        * guarantee robustness when upgrading node, etc.
        */
-      execArgv: process.execArgv.filter(arg =>
-        /^--stack-trace-limit=[0-9]+$/.test(arg),
+      execArgv: process.execArgv.filter(
+        arg =>
+          /^--stack[_-]trace[_-]limit=[0-9]+$/.test(arg) ||
+          /^--heap[_-]growing[_-]percent=[0-9]+$/.test(arg),
       ),
       maxConcurrentCallsPerWorker: 1,
       maxConcurrentWorkers,
