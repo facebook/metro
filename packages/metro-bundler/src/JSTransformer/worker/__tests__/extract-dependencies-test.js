@@ -7,7 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @format
+ * @emails oncall+javascript_tools
  */
+
 'use strict';
 
 const extractDependencies = require('../extract-dependencies');
@@ -84,12 +86,12 @@ describe('Dependency extraction:', () => {
     expect(dependencyOffsets).toEqual([]);
   });
 
-  it('does not extract calls to require with non-static arguments', () => {
+  it('throws on calls to require with non-static arguments', () => {
     const code = "require('foo/' + bar)";
 
-    const {dependencies, dependencyOffsets} = extractDependencies(code);
-    expect(dependencies).toEqual([]);
-    expect(dependencyOffsets).toEqual([]);
+    expect(() => extractDependencies(code)).toThrowError(
+      'require() must have a single string literal argument',
+    );
   });
 
   it('does not get confused by previous states', () => {

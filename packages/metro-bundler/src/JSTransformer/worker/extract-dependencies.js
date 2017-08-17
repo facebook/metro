@@ -23,6 +23,10 @@ const babylon = require('babylon');
  * The result of the dependency extraction is an de-duplicated array of
  * dependencies, and an array of offsets to the string literals with module IDs.
  * The index points to the opening quote.
+ *
+ * Note the technique of recognizing the identifier "require" is not proper
+ * because it ignores that the scope may have reassigned or shadowed that value,
+ * but it's a tradeoff for simplicity.
  */
 function extractDependencies(code: string) {
   const ast = babylon.parse(code);
@@ -33,17 +37,16 @@ function extractDependencies(code: string) {
     CallExpression(path) {
       const node = path.node;
       const callee = node.callee;
-      const arg = node.arguments[0];
-      if (
-        callee.type !== 'Identifier' ||
-        callee.name !== 'require' ||
-        !arg ||
-        arg.type !== 'StringLiteral'
-      ) {
-        return;
+      if (callee.type === 'Identifier' && callee.name === 'require') {
+        const arg = node.arguments[0];
+        if (arg == null || arg.type !== 'StringLiteral') {
+          throw new Error(
+            'require() must have a single string literal argument',
+          );
+        }
+        dependencyOffsets.push(arg.start);
+        dependencies.add(arg.value);
       }
-      dependencyOffsets.push(arg.start);
-      dependencies.add(arg.value);
     },
   });
 
