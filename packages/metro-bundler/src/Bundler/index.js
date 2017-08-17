@@ -327,7 +327,7 @@ class Bundler {
       '?' +
       'platform=' +
       (platform || '') +
-      '&runModule=false&entryModuleOnly=true&hot=true'
+      '&runModule=false&entryModuleOnly=true'
     );
   }
 
