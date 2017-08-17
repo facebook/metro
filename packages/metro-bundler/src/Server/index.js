@@ -700,7 +700,11 @@ class Server {
     return this._reportBundlePromise(buildID, options, bundleFromScratch());
   }
 
-  processRequest(req: IncomingMessage, res: ServerResponse, next: () => mixed) {
+  processRequest(
+    req: IncomingMessage,
+    res: ServerResponse,
+    next?: () => mixed,
+  ) {
     const urlObj = url.parse(req.url, true);
     const {host} = req.headers;
     debug(`Handling request: ${host ? 'http://' + host : ''}${req.url}`);
@@ -726,8 +730,12 @@ class Server {
     } else if (pathname === '/symbolicate') {
       this._symbolicate(req, res);
       return;
-    } else {
+    } else if (next) {
       next();
+      return;
+    } else {
+      res.writeHead(404);
+      res.end();
       return;
     }
 
