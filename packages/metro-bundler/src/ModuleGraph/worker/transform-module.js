@@ -178,7 +178,7 @@ function makeResult(ast, filename, sourceCode, isPolyfill = false) {
     file = JsFileWrapping.wrapModule(ast, dependencyMapName);
   }
 
-  const gen = generate(file, filename, sourceCode);
+  const gen = generate(file, filename, sourceCode, false);
   return {code: gen.code, map: gen.map, dependencies, dependencyMapName};
 }
 

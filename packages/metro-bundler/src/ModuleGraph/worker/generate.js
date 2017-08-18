@@ -12,10 +12,10 @@
 
 const babelGenerate = require('babel-generator').default;
 
-function generate(ast: Object, filename: string, sourceCode: string) {
+function generate(ast: Object, filename: string, sourceCode: string, compact: boolean) {
   return babelGenerate(ast, {
     comments: false,
-    compact: true,
+    compact,
     filename,
     sourceFileName: filename,
     sourceMaps: true,

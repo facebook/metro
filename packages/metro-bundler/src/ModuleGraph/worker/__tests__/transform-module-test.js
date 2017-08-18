@@ -162,9 +162,11 @@ describe('transforming JS modules:', () => {
   it('creates source maps', done => {
     transformModule(sourceCode, options(), (error, result) => {
       const {code, map} = result.details.transformed.default;
-      const column = code.indexOf('code');
+      const position = findColumnAndLine(code, 'code');
+      expect(position).not.toBeNull();
+
       const consumer = new SourceMapConsumer(map);
-      expect(consumer.originalPositionFor({line: 1, column})).toEqual(
+      expect(consumer.originalPositionFor(position)).toEqual(
         expect.objectContaining({line: 1, column: sourceCode.indexOf('code')}),
       );
       done();
@@ -272,4 +274,16 @@ function createTestData() {
     sourceCode,
     transformedCode: generate(fileAst).code,
   };
+}
+
+function findColumnAndLine(text, string) {
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const column = lines[i].indexOf(string);
+    if (column !== -1) {
+      const line = i + 1;
+      return {line, column};
+    }
+  }
+  return null;
 }

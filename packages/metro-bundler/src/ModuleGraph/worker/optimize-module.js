@@ -73,7 +73,7 @@ function optimize(transformed, file, originalCode, options) {
   }
 
   const inputMap = transformed.map;
-  const gen = generate(optimized.ast, file, originalCode);
+  const gen = generate(optimized.ast, file, originalCode, true);
 
   const min = minify.withSourceMap(
     gen.code,
