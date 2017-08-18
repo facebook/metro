@@ -50,13 +50,14 @@ export type GlobalTransformCache = {
   fetch(props: FetchProps): Promise<?CachedResult>,
 
   /**
-   * Try to store a result, without waiting for the success or failure of the
-   * operation. Consequently, the actual storage operation could be done at a
-   * much later point if desired. It is recommended to actually have this
-   * function be a no-op in production, and only do the storage operation from
-   * a script running on your Continuous Integration platform.
+   * Try to store a result. Callsites won't necessarily wait for the success or
+   * failure of the Promise, so errors may be handled internally, they may
+   * otherwise be silently ignored. The actual storage operation could be done
+   * at a later point if desired. It is recommended to have this function be a
+   * no-op in production, and only do the storage operation from a script
+   * running on a Continuous Integration platform.
    */
-  store(props: FetchProps, result: CachedResult): void,
+  store(props: FetchProps, result: CachedResult): Promise<void>,
 };
 
 type FetchResultURIs = (keys: Array<string>) => Promise<Map<string, string>>;
@@ -112,6 +113,7 @@ type KeyedResult = {key: string, result: CachedResult};
 class KeyResultStore {
   _storeResults: StoreResults;
   _batchProcessor: BatchProcessor<KeyedResult, void>;
+  _promises: Array<Promise<void>>;
 
   async _processResults(keyResults: Array<KeyedResult>): Promise<Array<void>> {
     const resultsByKey = new Map(
@@ -121,8 +123,8 @@ class KeyResultStore {
     return new Array(keyResults.length);
   }
 
-  store(key: string, result: CachedResult) {
-    this._batchProcessor.queue({key, result});
+  async store(key: string, result: CachedResult): Promise<void> {
+    await this._batchProcessor.queue({key, result});
   }
 
   constructor(storeResults: StoreResults) {
@@ -135,6 +137,7 @@ class KeyResultStore {
       },
       this._processResults.bind(this),
     );
+    this._promises = [];
   }
 }
 
@@ -346,9 +349,9 @@ class URIBasedGlobalTransformCache {
     return await this._fetchResultFromURI(uri);
   }
 
-  store(props: FetchProps, result: CachedResult) {
+  async store(props: FetchProps, result: CachedResult): Promise<void> {
     if (this._store != null) {
-      this._store.store(this.keyOf(props), result);
+      await this._store.store(this.keyOf(props), result);
     }
   }
 }
