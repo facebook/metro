@@ -21,7 +21,7 @@
     "babel-preset-fbjs": "^2.1.4",
     "babel-preset-react-native": "^2.0.0",
     "babel-register": "^6.24.1",
-    "babylon": "^6.17.0",
+    "babylon": "^6.18.0",
     "chalk": "^1.1.1",
     "concat-stream": "^1.6.0",
     "core-js": "^2.2.2",
