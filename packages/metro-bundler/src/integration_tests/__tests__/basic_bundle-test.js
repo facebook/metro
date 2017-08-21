@@ -101,6 +101,7 @@ describe('basic_bundle', () => {
         transformCache: Packager.TransformCaching.none(),
         transformModulePath: require.resolve('../../transformer'),
         nonPersistent: true,
+        makeStableId: (m, id) => id,
       },
       {
         dev: false,
@@ -120,6 +121,7 @@ describe('basic_bundle', () => {
         transformCache: Packager.TransformCaching.none(),
         transformModulePath: require.resolve('../../transformer'),
         nonPersistent: true,
+        makeStableId: (m, id) => id,
       },
       {
         dev: false,

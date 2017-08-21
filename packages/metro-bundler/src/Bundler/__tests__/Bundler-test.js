@@ -50,6 +50,7 @@ var commonOptions = {
   sourceExts: defaults.sourceExts,
   transformModulePath: '/path/to/transformer.js',
   watch: false,
+  makeStableId: (m, id) => id,
 };
 
 describe('Bundler', function() {
@@ -151,7 +152,7 @@ describe('Bundler', function() {
         mainModuleId: 'foo',
         dependencies: modules,
         options: transformOptions,
-        getModuleId: () => 123,
+        getModuleId: () => ({id: 123, stable: 123}),
         getResolvedDependencyPairs: () => [],
       }),
     );

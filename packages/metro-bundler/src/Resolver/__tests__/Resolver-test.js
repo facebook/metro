@@ -237,7 +237,7 @@ describe('Resolver', function() {
           .map(([importId, module]) => [
             importId,
             padRight(
-              resolutionResponse.getModuleId(module),
+              resolutionResponse.getModuleId(module).id,
               importId.length + 2,
             ),
           ]),
@@ -268,7 +268,7 @@ describe('Resolver', function() {
               "require( 'z' )",
               'require( "a")',
               'require("b" )',
-              `}, ${resolutionResponse.getModuleId(module)});`,
+              `}, ${resolutionResponse.getModuleId(module).stable});`,
             ].join('\n'),
           );
         });
@@ -298,7 +298,7 @@ describe('Resolver', function() {
                 code,
               `}, ${resolutionResponse.getModuleId(
                 module,
-              )}, null, "test module");`,
+              ).stable}, null, "test module");`,
             ].join('\n'),
           ),
         );
@@ -374,7 +374,7 @@ describe('Resolver', function() {
                 `__d(/* ${id} */function(global, require, module, exports) {`,
                 `module.exports = ${code}\n}, ${resolutionResponse.getModuleId(
                   module,
-                )});`,
+                ).stable});`,
               ].join(''),
             ),
           );
@@ -409,7 +409,7 @@ describe('Resolver', function() {
         expect.assertions(1);
         const wrappedCode = `__d(/* ${id} */function(global, require, module, exports) {${code}\n}, ${resolutionResponse.getModuleId(
           module,
-        )});`;
+        ).stable});`;
         return depResolver
           .wrapModule({
             resolutionResponse,
