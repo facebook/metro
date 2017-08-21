@@ -6,15 +6,16 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @format
  * @flow
  */
 
 /* eslint-disable */
-const Farm = require('./farm')
+const Farm = require('./farm');
 
 import type {Readable} from 'stream';
 
-var farms = [] // keep record of farms so we can end() them if required
+var farms = []; // keep record of farms so we can end() them if required
 
 export type FarmAPI = {|
   methods: {[name: string]: Function},
@@ -27,10 +28,10 @@ function farm(
   path: string,
   methods: Array<string>,
 ): FarmAPI {
-  var f   = new Farm(options, path)
-    , api = f.setup(methods)
+  var f = new Farm(options, path),
+    api = f.setup(methods);
 
-  farms.push({ farm: f, api: api })
+  farms.push({farm: f, api: api});
 
   // $FlowFixMe: gotta type the Farm class.
   const {stdout, stderr} = f;
@@ -39,12 +40,11 @@ function farm(
   return {methods: (api: any), stdout, stderr};
 }
 
-function end (api, callback) {
+function end(api, callback) {
   for (var i = 0; i < farms.length; i++)
-    if (farms[i] && farms[i].api === api)
-      return farms[i].farm.end(callback)
-  process.nextTick(callback.bind(null, 'Worker farm not found!'))
+    if (farms[i] && farms[i].api === api) return farms[i].farm.end(callback);
+  process.nextTick(callback.bind(null, 'Worker farm not found!'));
 }
 
-module.exports     = farm
-module.exports.end = end
+module.exports = farm;
+module.exports.end = end;
