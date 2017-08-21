@@ -157,5 +157,6 @@ function toServerOptions(options: Options): ServerOptions {
     transformTimeoutInterval: options.transformTimeoutInterval,
     watch: typeof options.watch === 'boolean' ? options.watch : !!options.nonPersistent,
     workerPath: options.workerPath,
+    makeStableId: options.makeStableId,
   };
 }

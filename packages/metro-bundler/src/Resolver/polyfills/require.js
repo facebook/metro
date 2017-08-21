@@ -88,8 +88,14 @@ function define(
   }
 }
 
+const USING_STABLE_IDS = !!global.__requireModuleIdMap;
+
 function require(moduleId: ModuleID | VerboseModuleNameForDev) {
-  if (__DEV__ && typeof moduleId === 'string') {
+  if (
+    __DEV__ &&
+    typeof moduleId === 'string' &&
+    (!USING_STABLE_IDS || !(moduleId in global.__requireModuleIdMap))
+  ) {
     const verboseName = moduleId;
     moduleId = verboseNamesToModuleIds[verboseName];
     if (moduleId == null) {
@@ -131,10 +137,20 @@ function guardedLoadModule(moduleId: ModuleID, module) {
   }
 }
 
+function convertStableIdToModuleId(stableId) {
+  return global.__requireModuleIdMap[stableId];
+}
+
+function identity(id) {
+  return id;
+}
+
+const getNumericModuleId = USING_STABLE_IDS ? convertStableIdToModuleId : identity;
+
 function loadModuleImplementation(moduleId, module) {
   const nativeRequire = global.nativeRequire;
   if (!module && nativeRequire) {
-    nativeRequire(moduleId);
+    nativeRequire(getNumericModuleId(moduleId));
     module = modules[moduleId];
   }
 

@@ -41,6 +41,7 @@ import type {
   PostProcessModules,
   PostMinifyProcess,
   PostProcessBundleSourcemap,
+  ModuleIdObj,
 } from '../Bundler';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
@@ -95,6 +96,7 @@ export type Options = {|
   transformTimeoutInterval?: number,
   watch?: boolean,
   workerPath: ?string,
+  makeStableId: (m: Module, id: number) => string | number,
 |};
 
 export type BundleOptions = {
@@ -157,6 +159,7 @@ class Server {
     transformTimeoutInterval: ?number,
     watch: boolean,
     workerPath: ?string,
+    makeStableId: (m: Module, id: number) => string | number,
   };
   _projectRoots: $ReadOnlyArray<string>;
   _bundles: {};
@@ -211,6 +214,7 @@ class Server {
       transformTimeoutInterval: options.transformTimeoutInterval,
       watch: options.watch || false,
       workerPath: options.workerPath,
+      makeStableId: options.makeStableId,
     };
 
     const processFileChange = ({type, filePath}) =>

@@ -189,7 +189,7 @@ class Resolver {
       .forEach(([depName, depModule]) => {
         if (depModule) {
           /* $FlowFixMe: `getModuleId` is monkey-patched so may not exist */
-          resolvedDeps[depName] = resolutionResponse.getModuleId(depModule);
+          resolvedDeps[depName] = JSON.stringify(resolutionResponse.getModuleId(depModule).stable);
         }
       });
 
@@ -241,7 +241,7 @@ class Resolver {
       code = definePolyfillCode(code);
     } else {
       /* $FlowFixMe: `getModuleId` is monkey-patched so may not exist */
-      const moduleId = resolutionResponse.getModuleId(module);
+      const moduleId = resolutionResponse.getModuleId(module).stable;
       code = this.resolveRequires(
         resolutionResponse,
         module,

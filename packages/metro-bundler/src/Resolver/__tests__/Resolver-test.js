@@ -56,7 +56,7 @@ describe('Resolver', function() {
     constructor({dependencies, mainModuleId}) {
       this.dependencies = dependencies;
       this.mainModuleId = mainModuleId;
-      this.getModuleId = createGetModuleId();
+      this.getModuleId = createGetModuleId(f => f);
     }
 
     prependDependency(dependency) {
@@ -156,7 +156,7 @@ describe('Resolver', function() {
             {dev: false},
             undefined,
             undefined,
-            createGetModuleId(),
+            createGetModuleId(f => f),
           ),
         )
         .then(result => {
@@ -452,14 +452,14 @@ describe('Resolver', function() {
     });
   });
 
-  function createGetModuleId() {
+  function createGetModuleId(getStable) {
     let nextId = 1;
     const knownIds = new Map();
     function createId(path) {
-      const id = nextId;
+      const obj = { id: nextId, stable: getStable(path) };
       nextId += 1;
-      knownIds.set(path, id);
-      return id;
+      knownIds.set(path, obj);
+      return obj;
     }
 
     return ({path}) => knownIds.get(path) || createId(path);
