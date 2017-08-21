@@ -389,9 +389,11 @@ class Bundler {
     const onResolutionResponse = (
       response: ResolutionResponse<Module, BundlingOptions>,
     ) => {
-      /* $FlowFixMe: looks like ResolutionResponse is monkey-patched
-       * with `getModuleId`. */
-      bundle.setMainModuleId(response.getModuleId(getMainModule(response)).stable);
+      bundle.setMainModuleId(
+        /* $FlowFixMe: looks like ResolutionResponse is monkey-patched
+         * with `getModuleId`. */
+        response.getModuleId(getMainModule(response)).stable,
+      );
       if (entryModuleOnly && entryFile) {
         response.dependencies = response.dependencies.filter(module =>
           module.path.endsWith(entryFile || ''),
@@ -642,7 +644,9 @@ class Bundler {
       {dev, platform, recursive},
       bundlingOptions,
       onProgress,
-      isolateModuleIDs ? createModuleIdFactory(this._opts.makeStableId) : this._getModuleId,
+      isolateModuleIDs
+        ? createModuleIdFactory(this._opts.makeStableId)
+        : this._getModuleId,
     );
     return response;
   }
@@ -917,7 +921,9 @@ export type ModuleIdObj = {
   stable: number | string,
 };
 
-function createModuleIdFactory(makeStableId: (m: Module, id: number) => string | number) {
+function createModuleIdFactory(
+  makeStableId: (m: Module, id: number) => string | number,
+) {
   const fileToIdMap = Object.create(null);
   let nextId = 0;
   return (m: Module): ModuleIdObj => {

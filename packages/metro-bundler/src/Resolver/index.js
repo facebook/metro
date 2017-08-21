@@ -188,8 +188,10 @@ class Resolver {
       .getResolvedDependencyPairs(module)
       .forEach(([depName, depModule]) => {
         if (depModule) {
-          /* $FlowFixMe: `getModuleId` is monkey-patched so may not exist */
-          resolvedDeps[depName] = JSON.stringify(resolutionResponse.getModuleId(depModule).stable);
+          resolvedDeps[depName] = JSON.stringify(
+            /* $FlowFixMe: `getModuleId` is monkey-patched so may not exist */
+            resolutionResponse.getModuleId(depModule).stable,
+          );
         }
       });
 

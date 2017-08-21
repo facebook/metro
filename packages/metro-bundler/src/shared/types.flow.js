@@ -33,6 +33,8 @@ export type OutputOptions = {
   sourcemapOutput?: string,
   sourcemapSourcesRoot?: string,
   sourcemapUseAbsolutePath?: boolean,
+  indexedUnbundle?: boolean,
+  assetUnbundle?: boolean
 };
 
 export type RequestOptions = {|

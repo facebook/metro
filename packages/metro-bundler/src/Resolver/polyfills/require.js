@@ -145,7 +145,9 @@ function identity(id) {
   return id;
 }
 
-const getNumericModuleId = USING_STABLE_IDS ? convertStableIdToModuleId : identity;
+const getNumericModuleId = USING_STABLE_IDS
+  ? convertStableIdToModuleId
+  : identity;
 
 function loadModuleImplementation(moduleId, module) {
   const nativeRequire = global.nativeRequire;

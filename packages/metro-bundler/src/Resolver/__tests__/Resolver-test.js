@@ -452,11 +452,11 @@ describe('Resolver', function() {
     });
   });
 
-  function createGetModuleId(getStable) {
+  function createGetModuleId() {
     let nextId = 1;
     const knownIds = new Map();
     function createId(path) {
-      const obj = { id: nextId, stable: getStable(path) };
+      const obj = { id: nextId, stable: nextId };
       nextId += 1;
       knownIds.set(path, obj);
       return obj;
