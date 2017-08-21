@@ -126,6 +126,13 @@ type DependencyOptions = {|
   +recursive: boolean,
 |};
 
+type BuildInfo = {|
+  filesChangedCount: number,
+|};
+
+const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';
+const FILES_CHANGED_COUNT_REBUILD = -1;
+
 const bundleDeps = new WeakMap();
 const NODE_MODULES = `${path.sep}node_modules${path.sep}`;
 
@@ -160,6 +167,7 @@ class Server {
   };
   _projectRoots: $ReadOnlyArray<string>;
   _bundles: {};
+  _bundleBuildInfos: WeakMap<Bundle, BuildInfo>;
   _changeWatchers: Array<{
     req: IncomingMessage,
     res: ServerResponse,
@@ -219,6 +227,7 @@ class Server {
     this._reporter = reporter;
     this._projectRoots = this._opts.projectRoots;
     this._bundles = Object.create(null);
+    this._bundleBuildInfos = new WeakMap();
     this._changeWatchers = [];
     this._fileChangeListeners = [];
     this._platforms = new Set(this._opts.platforms);
@@ -589,7 +598,12 @@ class Server {
     const bundleFromScratch = () => {
       const building = this.buildBundle(options);
       this._bundles[optionsJson] = building;
-      return building;
+      return building.then(bundle => {
+        this._bundleBuildInfos.set(bundle, {
+          filesChangedCount: FILES_CHANGED_COUNT_REBUILD,
+        });
+        return bundle;
+      });
     };
 
     if (optionsJson in this._bundles) {
@@ -678,6 +692,10 @@ class Server {
 
                 log(createActionEndEntry(updatingExistingBundleLogEntry));
 
+                this._bundleBuildInfos.set(bundle, {
+                  filesChangedCount: outdated.size,
+                });
+
                 debug('Successfully updated existing bundle');
                 return bundle;
               });
@@ -691,6 +709,10 @@ class Server {
             }));
           return this._reportBundlePromise(buildID, options, bundlePromise);
         } else {
+          this._bundleBuildInfos.set(bundle, {
+            filesChangedCount: 0,
+          });
+
           debug('Using cached bundle');
           return bundle;
         }
@@ -792,6 +814,7 @@ class Server {
               mres.writeHead(304);
               mres.end();
             } else {
+              setBuildInfoHeaders(mres, this._bundleBuildInfos.get(p));
               mres.setHeader('Content-Length', Buffer.byteLength(bundleSource));
               mres.end(bundleSource);
             }
@@ -1099,6 +1122,15 @@ function* zip<X, Y>(xs: Iterable<X>, ys: Iterable<Y>): Iterable<[X, Y]> {
       return;
     }
     yield [x, y.value];
+  }
+}
+
+function setBuildInfoHeaders(
+  resp: MultipartResponse,
+  buildInfo: ?BuildInfo,
+): void {
+  if (buildInfo) {
+    resp.setHeader(FILES_CHANGED_COUNT_HEADER, buildInfo.filesChangedCount);
   }
 }
 

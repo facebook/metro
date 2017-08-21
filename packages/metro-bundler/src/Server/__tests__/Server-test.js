@@ -118,6 +118,15 @@ describe('processRequest', () => {
     });
   });
 
+  it('returns build info headers on request of *.bundle', () => {
+    return makeRequest(
+      requestHandler,
+      'mybundle.bundle?runModule=true'
+    ).then(response => {
+      expect(response.getHeader('X-Metro-Files-Changed-Count')).toBeDefined();
+    });
+  });
+
   it('returns Content-Length header on request of *.bundle', () => {
     return makeRequest(
       requestHandler,
