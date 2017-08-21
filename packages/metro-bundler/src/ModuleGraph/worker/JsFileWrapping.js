@@ -6,10 +6,13 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @format
  * @flow
  */
 
 'use strict';
+
+/* eslint-disable no-unclear-flowtypes */
 
 const babel = require('babel-core');
 
@@ -26,12 +29,18 @@ function wrapModule(fileAst: Object, dependencyMapName: string): Object {
 
 function wrapPolyfill(fileAst: Object): Object {
   const t = babel.types;
-  const factory = functionFromProgram(fileAst.program, POLYFILL_FACTORY_PARAMETERS);
+  const factory = functionFromProgram(
+    fileAst.program,
+    POLYFILL_FACTORY_PARAMETERS,
+  );
   const iife = t.callExpression(factory, [t.identifier('this')]);
   return t.file(t.program([t.expressionStatement(iife)]));
 }
 
-function functionFromProgram(program: Object, parameters: Array<string>): Object {
+function functionFromProgram(
+  program: Object,
+  parameters: Array<string>,
+): Object {
   const t = babel.types;
   return t.functionExpression(
     t.identifier(''),

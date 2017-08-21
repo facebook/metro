@@ -5,12 +5,14 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
+ * @emails oncall+javascript_tools
  */
+
 'use strict';
 
-jest
-  .mock('fs', () => jest.genMockFromModule('fs'))
-  .mock('mkdirp');
+jest.mock('fs', () => jest.genMockFromModule('fs')).mock('mkdirp');
 
 const wrapWorkerFn = require('../wrap-worker-fn');
 const {dirname} = require('path');
@@ -63,14 +65,20 @@ describe('wrapWorkerFn:', () => {
     workerFn.stub.yields(null, result);
     wrapped(infile, outfile, {}, () => {
       expect(mkdirp.sync).toBeCalledWith(dirname(outfile));
-      expect(fs.writeFileSync).toBeCalledWith(outfile, JSON.stringify(result), 'utf8');
+      expect(fs.writeFileSync).toBeCalledWith(
+        outfile,
+        JSON.stringify(result),
+        'utf8',
+      );
       done();
     });
   });
 
   it('calls back with any error thrown by `mkdirp.sync`', done => {
     const error = new Error();
-    mkdirp.sync.mockImplementationOnce(() => { throw error; });
+    mkdirp.sync.mockImplementationOnce(() => {
+      throw error;
+    });
     wrapped(infile, outfile, {}, e => {
       expect(e).toBe(error);
       done();
@@ -79,7 +87,9 @@ describe('wrapWorkerFn:', () => {
 
   it('calls back with any error thrown by `fs.writeFileSync`', done => {
     const error = new Error();
-    fs.writeFileSync.mockImplementationOnce(() => { throw error; });
+    fs.writeFileSync.mockImplementationOnce(() => {
+      throw error;
+    });
     wrapped(infile, outfile, {}, e => {
       expect(e).toBe(error);
       done();

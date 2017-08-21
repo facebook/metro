@@ -6,8 +6,10 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @format
  * @flow
  */
+
 'use strict';
 
 const nullthrows = require('fbjs/lib/nullthrows');
@@ -27,8 +29,10 @@ class Replacement {
 
   isRequireCall(callee, firstArg) {
     return (
-      callee.type === 'Identifier' && callee.name === 'require' &&
-      firstArg && isLiteralString(firstArg)
+      callee.type === 'Identifier' &&
+      callee.name === 'require' &&
+      firstArg &&
+      isLiteralString(firstArg)
     );
   }
 
@@ -82,8 +86,9 @@ class ProdReplacement {
     }
 
     throw new Error(
-      `${id} is not a known module ID. Existing mappings: ${
-       this.names.map((n, i) => `${i} => ${n}`).join(', ')}`
+      `${id} is not a known module ID. Existing mappings: ${this.names
+        .map((n, i) => `${i} => ${n}`)
+        .join(', ')}`,
     );
   }
 
@@ -107,26 +112,32 @@ function createMapLookup(dependencyMapIdentifier, propertyIdentifier) {
 
 function collectDependencies(ast, replacement, dependencyMapIdentifier) {
   const traversalState = {dependencyMapIdentifier};
-  traverse(ast, {
-    Program(path, state) {
-      if (!state.dependencyMapIdentifier) {
-        state.dependencyMapIdentifier =
-          path.scope.generateUidIdentifier('dependencyMap');
-      }
+  traverse(
+    ast,
+    {
+      Program(path, state) {
+        if (!state.dependencyMapIdentifier) {
+          state.dependencyMapIdentifier = path.scope.generateUidIdentifier(
+            'dependencyMap',
+          );
+        }
+      },
+      CallExpression(path, state) {
+        const node = path.node;
+        const arg = node.arguments[0];
+        if (replacement.isRequireCall(node.callee, arg)) {
+          const index = replacement.getIndex(arg);
+          node.arguments = replacement.makeArgs(
+            types.numericLiteral(index),
+            arg,
+            state.dependencyMapIdentifier,
+          );
+        }
+      },
     },
-    CallExpression(path, state) {
-      const node = path.node;
-      const arg = node.arguments[0];
-      if (replacement.isRequireCall(node.callee, arg)) {
-        const index = replacement.getIndex(arg);
-        node.arguments = replacement.makeArgs(
-          types.numericLiteral(index),
-          arg,
-          state.dependencyMapIdentifier,
-        );
-      }
-    },
-  }, null, traversalState);
+    null,
+    traversalState,
+  );
 
   return {
     dependencies: replacement.getNames(),
@@ -135,16 +146,22 @@ function collectDependencies(ast, replacement, dependencyMapIdentifier) {
 }
 
 function isLiteralString(node) {
-  return node.type === 'StringLiteral' ||
-         node.type === 'TemplateLiteral' && node.quasis.length === 1;
+  return (
+    node.type === 'StringLiteral' ||
+    (node.type === 'TemplateLiteral' && node.quasis.length === 1)
+  );
 }
 
-exports = module.exports =
-  (ast: AST) => collectDependencies(ast, new Replacement());
-exports.forOptimization =
-  (ast: AST, names: Array<string>, dependencyMapName?: string) =>
-    collectDependencies(
-      ast,
-      new ProdReplacement(names),
-      dependencyMapName ? types.identifier(dependencyMapName) : undefined,
-    );
+const xp = (module.exports = (ast: AST) =>
+  collectDependencies(ast, new Replacement()));
+
+xp.forOptimization = (
+  ast: AST,
+  names: Array<string>,
+  dependencyMapName?: string,
+) =>
+  collectDependencies(
+    ast,
+    new ProdReplacement(names),
+    dependencyMapName ? types.identifier(dependencyMapName) : undefined,
+  );

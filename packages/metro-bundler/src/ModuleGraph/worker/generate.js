@@ -6,21 +6,34 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @format
  * @flow
  */
+
 'use strict';
+
+/* eslint-disable no-unclear-flowtypes */
 
 const babelGenerate = require('babel-generator').default;
 
-function generate(ast: Object, filename: string, sourceCode: string, compact: boolean) {
-  return babelGenerate(ast, {
-    comments: false,
-    compact,
-    filename,
-    sourceFileName: filename,
-    sourceMaps: true,
-    sourceMapTarget: filename,
-  }, sourceCode);
+function generate(
+  ast: Object,
+  filename: string,
+  sourceCode: string,
+  compact: boolean,
+) {
+  return babelGenerate(
+    ast,
+    {
+      comments: false,
+      compact,
+      filename,
+      sourceFileName: filename,
+      sourceMaps: true,
+      sourceMapTarget: filename,
+    },
+    sourceCode,
+  );
 }
 
 module.exports = generate;

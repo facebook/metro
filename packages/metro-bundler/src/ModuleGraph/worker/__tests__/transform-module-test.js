@@ -7,7 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @format
+ * @emails oncall+javascript_tools
  */
+
 'use strict';
 
 const transformModule = require('../transform-module');

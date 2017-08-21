@@ -5,7 +5,11 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
+ * @emails oncall+javascript_tools
  */
+
 'use strict';
 
 const collectDependencies = require('../collect-dependencies');
@@ -24,46 +28,43 @@ describe('dependency collection from ASTs:', () => {
       }
     `);
 
-    expect(collectDependencies(ast).dependencies)
-      .toEqual(['b/lib/a', 'do', 'setup/something']);
+    expect(collectDependencies(ast).dependencies).toEqual([
+      'b/lib/a',
+      'do',
+      'setup/something',
+    ]);
   });
 
   it('supports template literals as arguments', () => {
     const ast = astFromCode('require(`left-pad`)');
 
-    expect(collectDependencies(ast).dependencies)
-      .toEqual(['left-pad']);
+    expect(collectDependencies(ast).dependencies).toEqual(['left-pad']);
   });
 
   it('ignores template literals with interpolations', () => {
     const ast = astFromCode('require(`left${"-"}pad`)');
 
-    expect(collectDependencies(ast).dependencies)
-      .toEqual([]);
+    expect(collectDependencies(ast).dependencies).toEqual([]);
   });
 
   it('ignores tagged template literals', () => {
     const ast = astFromCode('require(tag`left-pad`)');
 
-    expect(collectDependencies(ast).dependencies)
-      .toEqual([]);
+    expect(collectDependencies(ast).dependencies).toEqual([]);
   });
 
   it('exposes a string as `dependencyMapName`', () => {
     const ast = astFromCode('require("arbitrary")');
-    expect(collectDependencies(ast).dependencyMapName)
-      .toEqual(any(String));
+    expect(collectDependencies(ast).dependencyMapName).toEqual(any(String));
   });
 
   it('exposes a string as `dependencyMapName` even without collecting dependencies', () => {
     const ast = astFromCode('');
-    expect(collectDependencies(ast).dependencyMapName)
-      .toEqual(any(String));
+    expect(collectDependencies(ast).dependencyMapName).toEqual(any(String));
   });
 
-  it('replaces all required module ID strings with array lookups, keeps the ID as second argument',
-    () => {
-      const ast = astFromCode(`
+  it('replaces all required module ID strings with array lookups, keeps the ID as second argument', () => {
+    const ast = astFromCode(`
         const a = require('b/lib/a');
         const b = require(123);
         exports.do = () => require("do");
@@ -72,18 +73,19 @@ describe('dependency collection from ASTs:', () => {
         }
       `);
 
-      const {dependencyMapName} = collectDependencies(ast);
+    const {dependencyMapName} = collectDependencies(ast);
 
-      expect(codeFromAst(ast)).toEqual(comparableCode(`
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
         const a = require(${dependencyMapName}[0], 'b/lib/a');
         const b = require(123);
         exports.do = () => require(${dependencyMapName}[1], "do");
         if (!something) {
           require(${dependencyMapName}[2], "setup/something");
         }
-      `));
-    },
-  );
+      `),
+    );
+  });
 });
 
 describe('Dependency collection from optimized ASTs:', () => {
@@ -121,13 +123,15 @@ describe('Dependency collection from optimized ASTs:', () => {
 
   it('replaces all call signatures inserted by a prior call to `collectDependencies`', () => {
     forOptimization(ast, names, dependencyMapName);
-    expect(codeFromAst(ast)).toEqual(comparableCode(`
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
       const a = require(${dependencyMapName}[0]);
       const b = require(123);
       exports.do = () => require(${dependencyMapName}[1]);
       if (!something) {
         require(${dependencyMapName}[2]);
       }
-    `));
+    `),
+    );
   });
 });

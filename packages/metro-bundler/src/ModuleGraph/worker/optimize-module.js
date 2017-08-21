@@ -6,13 +6,16 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @format
  * @flow
  */
+
 'use strict';
 
 const babel = require('babel-core');
 const collectDependencies = require('./collect-dependencies');
-const constantFolding = require('../../JSTransformer/worker/constant-folding').plugin;
+const constantFolding = require('../../JSTransformer/worker/constant-folding')
+  .plugin;
 const generate = require('./generate');
 const inline = require('../../JSTransformer/worker/inline').plugin;
 const minify = require('../../JSTransformer/worker/minify');
@@ -21,7 +24,6 @@ const sourceMap = require('source-map');
 import type {TransformedSourceFile, TransformResult} from '../types.flow';
 import type {MappingsMap, SourceMap} from '../../lib/SourceMap';
 import type {PostMinifyProcess} from '../../Bundler/index.js';
-
 
 export type OptimizationOptions = {|
   dev: boolean,
@@ -46,9 +48,14 @@ function optimizeModule(
   const {postMinifyProcess} = optimizationOptions;
 
   //$FlowIssue #14545724
-  Object.entries(transformed).forEach(([k, t: TransformResult]: [*, TransformResult]) => {
+  Object.entries(
+    transformed,
+  ).forEach(([k, t: TransformResult]: [*, TransformResult]) => {
     const optimized = optimize(t, file, code, optimizationOptions);
-    const processed = postMinifyProcess({code: optimized.code, map: optimized.map});
+    const processed = postMinifyProcess({
+      code: optimized.code,
+      map: optimized.map,
+    });
     optimized.code = processed.code;
     optimized.map = processed.map;
     result.transformed[k] = optimized;
@@ -102,23 +109,22 @@ function mergeSourceMaps(
 ): MappingsMap {
   const merged = new sourceMap.SourceMapGenerator();
   const inputMap = new sourceMap.SourceMapConsumer(originalMap);
-  new sourceMap.SourceMapConsumer(secondMap)
-    .eachMapping(mapping => {
-      const original = inputMap.originalPositionFor({
-        line: mapping.originalLine,
-        column: mapping.originalColumn,
-      });
-      if (original.line == null) {
-        return;
-      }
-
-      merged.addMapping({
-        generated: {line: mapping.generatedLine, column: mapping.generatedColumn},
-        original: {line: original.line, column: original.column || 0},
-        source: file,
-        name: original.name || mapping.name,
-      });
+  new sourceMap.SourceMapConsumer(secondMap).eachMapping(mapping => {
+    const original = inputMap.originalPositionFor({
+      line: mapping.originalLine,
+      column: mapping.originalColumn,
     });
+    if (original.line == null) {
+      return;
+    }
+
+    merged.addMapping({
+      generated: {line: mapping.generatedLine, column: mapping.generatedColumn},
+      original: {line: original.line, column: original.column || 0},
+      source: file,
+      name: original.name || mapping.name,
+    });
+  });
   return merged.toJSON();
 }
 

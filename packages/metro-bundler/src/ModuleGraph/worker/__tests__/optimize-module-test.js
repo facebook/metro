@@ -5,7 +5,11 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
+ * @emails oncall+javascript_tools
  */
+
 'use strict';
 
 const optimizeModule = require('../optimize-module');
@@ -23,8 +27,7 @@ describe('optimizing JS modules', () => {
     platform: 'android',
     postMinifyProcess: x => x,
   };
-  const originalCode =
-    `if (Platform.OS !== 'android') {
+  const originalCode = `if (Platform.OS !== 'android') {
       require('arbitrary-dev');
     } else {
       __DEV__ ? require('arbitrary-android-dev') : require('arbitrary-android-prod');
@@ -55,12 +58,13 @@ describe('optimizing JS modules', () => {
       const result = optimizeModule(transformResult, optimizationOptions);
       optimized = result.details.transformed.default;
       injectedVars = optimized.code.match(/function\(([^)]*)/)[1].split(',');
-      [, requireName,,, dependencyMapName] = injectedVars;
+      [, requireName, , , dependencyMapName] = injectedVars;
     });
 
     it('optimizes code', () => {
-      expect(optimized.code)
-        .toEqual(`__d(function(${injectedVars}){${requireName}(${dependencyMapName}[0])});`);
+      expect(optimized.code).toEqual(
+        `__d(function(${injectedVars}){${requireName}(${dependencyMapName}[0])});`,
+      );
     });
 
     it('extracts dependencies', () => {
@@ -72,15 +76,16 @@ describe('optimizing JS modules', () => {
       const column = optimized.code.lastIndexOf(requireName + '(');
       const loc = findLast(originalCode, 'require');
 
-      expect(consumer.originalPositionFor({line: 1, column}))
-        .toEqual(objectContaining(loc));
+      expect(consumer.originalPositionFor({line: 1, column})).toEqual(
+        objectContaining(loc),
+      );
     });
 
     it('does not extract dependencies for polyfills', () => {
-      const result = optimizeModule(
-        transformResult,
-        {...optimizationOptions, isPolyfill: true},
-      ).details;
+      const result = optimizeModule(transformResult, {
+        ...optimizationOptions,
+        isPolyfill: true,
+      }).details;
       expect(result.transformed.default.dependencies).toEqual([]);
     });
   });
@@ -90,7 +95,10 @@ describe('optimizing JS modules', () => {
     beforeEach(() => {
       postMinifyProcess = fn();
       optimize = () =>
-        optimizeModule(transformResult, {...optimizationOptions, postMinifyProcess});
+        optimizeModule(transformResult, {
+          ...optimizationOptions,
+          postMinifyProcess,
+        });
     });
 
     it('passes the result to the provided postprocessing function', () => {
@@ -104,15 +112,17 @@ describe('optimizing JS modules', () => {
       const code = 'var postprocessed = "code";';
       const map = {version: 3, mappings: 'postprocessed'};
       postMinifyProcess.stub.returns({code, map});
-      expect(optimize().details.transformed.default)
-        .toEqual(objectContaining({code, map}));
+      expect(optimize().details.transformed.default).toEqual(
+        objectContaining({code, map}),
+      );
     });
   });
 
   it('passes through non-code data unmodified', () => {
     const data = {type: 'asset', details: {arbitrary: 'data'}};
-    expect(optimizeModule(JSON.stringify(data), {dev: true, platform: ''}))
-      .toEqual(data);
+    expect(
+      optimizeModule(JSON.stringify(data), {dev: true, platform: ''}),
+    ).toEqual(data);
   });
 });
 
