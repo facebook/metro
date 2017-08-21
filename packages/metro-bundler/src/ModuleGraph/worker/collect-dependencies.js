@@ -15,6 +15,7 @@
 const nullthrows = require('fbjs/lib/nullthrows');
 
 const {traverse, types} = require('babel-core');
+const prettyPrint = require('babel-generator').default;
 
 type AST = Object;
 
@@ -27,13 +28,16 @@ class Replacement {
     this.nextIndex = 0;
   }
 
-  isRequireCall(callee, firstArg) {
-    return (
-      callee.type === 'Identifier' &&
-      callee.name === 'require' &&
-      firstArg &&
-      isLiteralString(firstArg)
-    );
+  getRequireCallArg(node) {
+    const args = node.arguments;
+    if (args.length !== 1 || !isLiteralString(args[0])) {
+      throw new InvalidRequireCallError(
+        'Calls to require() expect exactly 1 string literal argument, but ' +
+          'this was found: ' +
+          prettyPrint(node).code,
+      );
+    }
+    return args[0];
   }
 
   getIndex(stringLiteralOrTemplateLiteral) {
@@ -59,6 +63,14 @@ class Replacement {
   }
 }
 
+function getInvalidProdRequireMessage(node) {
+  return (
+    'Post-transform calls to require() expect 2 arguments, the first ' +
+    'of which has the shape `_dependencyMapName[123]`, but this was found: ' +
+    prettyPrint(node).code
+  );
+}
+
 class ProdReplacement {
   replacement: Replacement;
   names: Array<string>;
@@ -68,15 +80,22 @@ class ProdReplacement {
     this.names = names;
   }
 
-  isRequireCall(callee, firstArg) {
-    return (
-      callee.type === 'Identifier' &&
-      callee.name === 'require' &&
-      firstArg &&
-      firstArg.type === 'MemberExpression' &&
-      firstArg.property &&
-      firstArg.property.type === 'NumericLiteral'
-    );
+  getRequireCallArg(node) {
+    const args = node.arguments;
+    if (args.length !== 2) {
+      throw new InvalidRequireCallError(getInvalidProdRequireMessage(node));
+    }
+    const arg = args[0];
+    if (
+      !(
+        arg.type === 'MemberExpression' &&
+        arg.property &&
+        arg.property.type === 'NumericLiteral'
+      )
+    ) {
+      throw new InvalidRequireCallError(getInvalidProdRequireMessage(node));
+    }
+    return args[0];
   }
 
   getIndex(memberExpression) {
@@ -111,6 +130,7 @@ function createMapLookup(dependencyMapIdentifier, propertyIdentifier) {
 }
 
 function collectDependencies(ast, replacement, dependencyMapIdentifier) {
+  const visited = new WeakSet();
   const traversalState = {dependencyMapIdentifier};
   traverse(
     ast,
@@ -124,14 +144,18 @@ function collectDependencies(ast, replacement, dependencyMapIdentifier) {
       },
       CallExpression(path, state) {
         const node = path.node;
-        const arg = node.arguments[0];
-        if (replacement.isRequireCall(node.callee, arg)) {
+        if (visited.has(node)) {
+          return;
+        }
+        if (isRequireCall(node.callee)) {
+          const arg = replacement.getRequireCallArg(node);
           const index = replacement.getIndex(arg);
           node.arguments = replacement.makeArgs(
             types.numericLiteral(index),
             arg,
             state.dependencyMapIdentifier,
           );
+          visited.add(node);
         }
       },
     },
@@ -152,6 +176,16 @@ function isLiteralString(node) {
   );
 }
 
+function isRequireCall(callee) {
+  return callee.type === 'Identifier' && callee.name === 'require';
+}
+
+class InvalidRequireCallError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
+
 const xp = (module.exports = (ast: AST) =>
   collectDependencies(ast, new Replacement()));
 
@@ -165,3 +199,5 @@ xp.forOptimization = (
     new ProdReplacement(names),
     dependencyMapName ? types.identifier(dependencyMapName) : undefined,
   );
+
+xp.InvalidRequireCallError = InvalidRequireCallError;

@@ -18,6 +18,8 @@ const {codeFromAst, comparableCode} = require('../../test-helpers');
 
 const {any} = expect;
 
+const {InvalidRequireCallError} = collectDependencies;
+
 describe('dependency collection from ASTs:', () => {
   it('collects dependency identifiers from the code', () => {
     const ast = astFromCode(`
@@ -41,16 +43,20 @@ describe('dependency collection from ASTs:', () => {
     expect(collectDependencies(ast).dependencies).toEqual(['left-pad']);
   });
 
-  it('ignores template literals with interpolations', () => {
+  it('throws on template literals with interpolations', () => {
     const ast = astFromCode('require(`left${"-"}pad`)');
 
-    expect(collectDependencies(ast).dependencies).toEqual([]);
+    expect(() => collectDependencies(ast).dependencies).toThrowError(
+      InvalidRequireCallError,
+    );
   });
 
-  it('ignores tagged template literals', () => {
+  it('throws on tagged template literals', () => {
     const ast = astFromCode('require(tag`left-pad`)');
 
-    expect(collectDependencies(ast).dependencies).toEqual([]);
+    expect(() => collectDependencies(ast).dependencies).toThrowError(
+      InvalidRequireCallError,
+    );
   });
 
   it('exposes a string as `dependencyMapName`', () => {
@@ -66,7 +72,6 @@ describe('dependency collection from ASTs:', () => {
   it('replaces all required module ID strings with array lookups, keeps the ID as second argument', () => {
     const ast = astFromCode(`
         const a = require('b/lib/a');
-        const b = require(123);
         exports.do = () => require("do");
         if (!something) {
           require("setup/something");
@@ -78,7 +83,6 @@ describe('dependency collection from ASTs:', () => {
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`
         const a = require(${dependencyMapName}[0], 'b/lib/a');
-        const b = require(123);
         exports.do = () => require(${dependencyMapName}[1], "do");
         if (!something) {
           require(${dependencyMapName}[2], "setup/something");
@@ -96,7 +100,6 @@ describe('Dependency collection from optimized ASTs:', () => {
   beforeEach(() => {
     ast = astFromCode(`
       const a = require(${dependencyMapName}[0], 'b/lib/a');
-      const b = require(123);
       exports.do = () => require(${dependencyMapName}[1], "do");
       if (!something) {
         require(${dependencyMapName}[2], "setup/something");
@@ -126,7 +129,6 @@ describe('Dependency collection from optimized ASTs:', () => {
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`
       const a = require(${dependencyMapName}[0]);
-      const b = require(123);
       exports.do = () => require(${dependencyMapName}[1]);
       if (!something) {
         require(${dependencyMapName}[2]);
