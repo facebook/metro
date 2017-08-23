@@ -294,6 +294,90 @@ describe('inline constants', () => {
     );
   });
 
+  it(`doesn't replace Platform.OS in the code if Platform is the left hand side of an assignment expression`, () => {
+    const code = `function a() {
+      Platform.OS = "test"
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
+
+    expect(toString(ast)).toEqual(normalize(code));
+  });
+
+  it('replaces Platform.OS in the code if Platform is the right hand side of an assignment expression', () => {
+    const code = `function a() {
+      var a;
+      a = Platform.OS;
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
+
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/Platform\.OS/, '"ios"')),
+    );
+  });
+
+  it(`doesn't replace React.Platform.OS in the code if Platform is the left hand side of an assignment expression`, () => {
+    const code = `function a() {
+      React.Platform.OS = "test"
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
+
+    expect(toString(ast)).toEqual(normalize(code));
+  });
+
+  it('replaces React.Platform.OS in the code if Platform is the right hand side of an assignment expression', () => {
+    const code = `function a() {
+      var a;
+      a = React.Platform.OS;
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
+
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/React\.Platform\.OS/, '"ios"')),
+    );
+  });
+
+  it(`doesn't replace ReactNative.Platform.OS in the code if Platform is the left hand side of an assignment expression`, () => {
+    const code = `function a() {
+      ReactNative.Platform.OS = "test"
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
+
+    expect(toString(ast)).toEqual(normalize(code));
+  });
+
+  it('replaces ReactNative.Platform.OS in the code if Platform is the right hand side of an assignment expression', () => {
+    const code = `function a() {
+      var a;
+      a = ReactNative.Platform.OS;
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
+
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/ReactNative\.Platform\.OS/, '"ios"')),
+    );
+  });
+
+  it(`doesn't replace require("React").Platform.OS in the code if Platform is the left hand side of an assignment expression`, () => {
+    const code = `function a() {
+      require("React").Platform.OS = "test"
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
+
+    expect(toString(ast)).toEqual(normalize(code));
+  });
+
+  it('replaces require("React").Platform.OS in the code if Platform is the right hand side of an assignment expression', () => {
+    const code = `function a() {
+      var a;
+      a = require("React").Platform.OS;
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
+
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/require\("React"\)\.Platform\.OS/, '"ios"')),
+    );
+  });
+
   it('replaces non-existing properties with `undefined`', () => {
     const code = 'var a = Platform.select({ios: 1, android: 2})';
     const {ast} = inline('arbitrary.js', {code}, {platform: 'doesnotexist'});
@@ -308,6 +392,25 @@ describe('inline constants', () => {
         return require('Prod');
       }
       return require('Dev');
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {dev: false});
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/process\.env\.NODE_ENV/, '"production"')),
+    );
+  });
+
+  it(`doesn't replace process.env.NODE_ENV in the code if NODE_ENV is the right hand side of an assignment expression`, () => {
+    const code = `function a() {
+      process.env.NODE_ENV = 'production';
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {dev: false});
+    expect(toString(ast)).toEqual(normalize(code));
+  });
+
+  it('replaces process.env.NODE_ENV in the code if NODE_ENV is the right hand side of an assignment expression', () => {
+    const code = `function a() {
+      var env;
+      env = process.env.NODE_ENV;
     }`;
     const {ast} = inline('arbitrary.js', {code}, {dev: false});
     expect(toString(ast)).toEqual(
