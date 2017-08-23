@@ -172,8 +172,7 @@ class Transformer {
         if (error.type === 'TimeoutError') {
           const timeoutErr = new Error(
             `TimeoutError: transforming ${fileName} took longer than ` +
-              `${TRANSFORM_TIMEOUT_INTERVAL / 1000} seconds.\n` +
-              "You can adjust timeout via the 'transformTimeoutInterval' option",
+              `${TRANSFORM_TIMEOUT_INTERVAL / 1000} seconds.\n`,
           );
           /* $FlowFixMe: monkey-patch Error */
           timeoutErr.type = 'TimeoutError';

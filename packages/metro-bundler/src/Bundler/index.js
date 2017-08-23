@@ -145,7 +145,6 @@ type Options = {|
   +sourceExts: Array<string>,
   +transformCache: TransformCache,
   +transformModulePath: string,
-  +transformTimeoutInterval: ?number,
   +watch: boolean,
   +workerPath: ?string,
 |};

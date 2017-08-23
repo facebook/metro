@@ -92,7 +92,6 @@ export type Options = {|
   +sourceExts: ?Array<string>,
   +transformCache: TransformCache,
   +transformModulePath: string,
-  transformTimeoutInterval?: number,
   watch?: boolean,
   workerPath: ?string,
 |};
@@ -161,7 +160,6 @@ class Server {
     +sourceExts: Array<string>,
     +transformCache: TransformCache,
     +transformModulePath: string,
-    transformTimeoutInterval: ?number,
     watch: boolean,
     workerPath: ?string,
   };
@@ -216,7 +214,6 @@ class Server {
       sourceExts: options.sourceExts || defaults.sourceExts,
       transformCache: options.transformCache,
       transformModulePath: options.transformModulePath,
-      transformTimeoutInterval: options.transformTimeoutInterval,
       watch: options.watch || false,
       workerPath: options.workerPath,
     };
