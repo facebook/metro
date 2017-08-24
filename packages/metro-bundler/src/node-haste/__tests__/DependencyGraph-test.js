@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @emails oncall+javascript_tools
  * @format
  */
 
@@ -5658,6 +5659,44 @@ describe('DependencyGraph', function() {
             'b.js',
           ]);
         });
+    });
+  });
+
+  describe('getModuleForPath()', () => {
+    let DependencyGraph;
+    let dependencyGraph;
+
+    beforeEach(async () => {
+      setMockFileSystem({
+        root: {
+          'index.js': ``,
+          imgs: {
+            'a.png': '',
+          },
+        },
+      });
+
+      DependencyGraph = require('../DependencyGraph');
+      dependencyGraph = await DependencyGraph.load({
+        ...defaults,
+        roots: ['/root'],
+      });
+    });
+
+    afterEach(() => {
+      dependencyGraph.end();
+    });
+
+    it('returns correctly a JS module', async () => {
+      const module = dependencyGraph.getModuleForPath('/root/index.js');
+      expect(await module.getName()).toBe('/root/index.js');
+      expect(module.isAsset()).toBe(false);
+    });
+
+    it('returns correctly an asset module', async () => {
+      const module = dependencyGraph.getModuleForPath('/root/imgs/a.png');
+      expect(await module.getName()).toBe('/root/imgs/a.png');
+      expect(module.isAsset()).toBe(true);
     });
   });
 

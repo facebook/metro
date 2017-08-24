@@ -364,12 +364,16 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     return failedFor({file: fileResult.candidates, dir: dirResult.candidates});
   }
 
+  isAssetFile(filename: string): boolean {
+    return this._options.helpers.isAssetFile(filename);
+  }
+
   _loadAsFile(
     dirPath: string,
     fileNameHint: string,
     platform: string | null,
   ): Resolution<TModule, FileCandidates> {
-    if (this._options.helpers.isAssetFile(fileNameHint)) {
+    if (this.isAssetFile(fileNameHint)) {
       return this._loadAsAssetFile(dirPath, fileNameHint, platform);
     }
     const {doesFileExist} = this._options;

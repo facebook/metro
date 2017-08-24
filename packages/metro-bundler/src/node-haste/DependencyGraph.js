@@ -224,10 +224,11 @@ class DependencyGraph extends EventEmitter {
     this._haste.end();
   }
 
-  /**
-   * Returns the module object for the given path.
-   */
   getModuleForPath(entryFile: string) {
+    if (this._moduleResolver.isAssetFile(entryFile)) {
+      return this._moduleCache.getAssetModule(entryFile);
+    }
+
     return this._moduleCache.getModule(entryFile);
   }
 
