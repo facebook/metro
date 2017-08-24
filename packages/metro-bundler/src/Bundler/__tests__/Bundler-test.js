@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @emails oncall+javascript_tools
  * @format
  */
 
@@ -167,31 +168,33 @@ describe('Bundler', function() {
 
   it('gets the list of dependencies from the resolver', function() {
     const entryFile = '/root/foo.js';
-    return bundler.getDependencies({entryFile, recursive: true}).then(() =>
-      // jest calledWith does not support jasmine.any
-      expect(getDependencies.mock.calls[0].slice(0, -2)).toEqual([
-        '/root/foo.js',
-        {dev: true, platform: undefined, recursive: true},
-        {
-          preloadedModules: undefined,
-          ramGroups: undefined,
-          transformer: {
-            dev: true,
-            minify: false,
-            platform: undefined,
-            transform: {
-              enableBabelRCLookup: true,
+    return bundler
+      .getDependencies({entryFile, rootEntryFile: entryFile, recursive: true})
+      .then(() =>
+        // jest calledWith does not support jasmine.any
+        expect(getDependencies.mock.calls[0].slice(0, -2)).toEqual([
+          '/root/foo.js',
+          {dev: true, platform: undefined, recursive: true},
+          {
+            preloadedModules: undefined,
+            ramGroups: undefined,
+            transformer: {
               dev: true,
-              generateSourceMaps: false,
-              hot: false,
-              inlineRequires: false,
+              minify: false,
               platform: undefined,
-              projectRoot: projectRoots[0],
+              transform: {
+                enableBabelRCLookup: true,
+                dev: true,
+                generateSourceMaps: false,
+                hot: false,
+                inlineRequires: false,
+                platform: undefined,
+                projectRoot: projectRoots[0],
+              },
             },
           },
-        },
-      ]),
-    );
+        ]),
+      );
   });
 
   it('allows overriding the platforms array', () => {

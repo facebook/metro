@@ -123,6 +123,7 @@ type DependencyOptions = {|
   +minify: boolean,
   +platform: ?string,
   +recursive: boolean,
+  +rootEntryFile: string,
 |};
 
 type BuildInfo = {|
@@ -340,9 +341,10 @@ class Server {
         options.platform != null
           ? options.platform
           : parsePlatformFilePath(options.entryFile, this._platforms).platform;
-      const {entryFile, dev, minify, hot} = options;
+      const {entryFile, dev, minify, hot, rootEntryFile} = options;
       return this._bundler.getShallowDependencies({
         entryFile,
+        rootEntryFile,
         platform,
         dev,
         minify,
@@ -364,7 +366,7 @@ class Server {
         options.platform != null
           ? options.platform
           : parsePlatformFilePath(options.entryFile, this._platforms).platform;
-      const {entryFile, dev, minify, hot} = options;
+      const {entryFile, dev, minify, hot, rootEntryFile} = options;
       return this._bundler.getDependencies({
         entryFile,
         platform,
@@ -372,6 +374,7 @@ class Server {
         minify,
         hot,
         generateSourceMaps: false,
+        rootEntryFile,
       });
     });
   }
@@ -634,6 +637,7 @@ class Server {
               hot,
               minify,
               entryFile: options.entryFile,
+              rootEntryFile: options.entryFile,
               recursive: false,
             }),
             Promise.all(Array.from(outdated, this.getModuleForPath, this)),

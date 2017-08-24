@@ -481,6 +481,7 @@ class Bundler {
     if (!resolutionResponse) {
       resolutionResponse = this.getDependencies({
         entryFile,
+        rootEntryFile: entryFile,
         dev,
         platform,
         hot,
@@ -565,6 +566,7 @@ class Bundler {
 
   getShallowDependencies({
     entryFile,
+    rootEntryFile,
     platform,
     dev = true,
     minify = !dev,
@@ -572,13 +574,14 @@ class Bundler {
     generateSourceMaps = false,
   }: {
     entryFile: string,
+    +rootEntryFile: string,
     platform: ?string,
     dev?: boolean,
     minify?: boolean,
     hot?: boolean,
     generateSourceMaps?: boolean,
   }): Promise<Array<Module>> {
-    return this.getTransformOptions(entryFile, {
+    return this.getTransformOptions(rootEntryFile, {
       enableBabelRCLookup: this._opts.enableBabelRCLookup,
       dev,
       generateSourceMaps,
@@ -608,6 +611,7 @@ class Bundler {
     recursive = true,
     generateSourceMaps = false,
     isolateModuleIDs = false,
+    rootEntryFile,
     onProgress,
   }: {
     entryFile: string,
@@ -618,10 +622,11 @@ class Bundler {
     recursive?: boolean,
     generateSourceMaps?: boolean,
     isolateModuleIDs?: boolean,
+    +rootEntryFile: string,
     onProgress?: ?(finishedModules: number, totalModules: number) => mixed,
   }): Promise<ResolutionResponse<Module, BundlingOptions>> {
     const bundlingOptions: BundlingOptions = await this.getTransformOptions(
-      entryFile,
+      rootEntryFile,
       {
         enableBabelRCLookup: this._opts.enableBabelRCLookup,
         dev,
@@ -659,6 +664,7 @@ class Bundler {
   }) {
     return this.getDependencies({
       entryFile,
+      rootEntryFile: entryFile,
       dev,
       platform,
       minify,
@@ -864,9 +870,11 @@ class Bundler {
     |},
   ): Promise<BundlingOptions> {
     const getDependencies = (entryFile: string) =>
-      this.getDependencies({...options, entryFile}).then(r =>
-        r.dependencies.map(d => d.path),
-      );
+      this.getDependencies({
+        ...options,
+        entryFile,
+        rootEntryFile: entryFile,
+      }).then(r => r.dependencies.map(d => d.path));
 
     const {dev, hot, platform} = options;
     const extraOptions: ExtraTransformOptions = this._getTransformOptions
