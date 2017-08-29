@@ -91,7 +91,7 @@ export type Options = {|
   silent?: boolean,
   +sourceExts: ?Array<string>,
   +transformCache: TransformCache,
-  +transformModulePath: string,
+  transformModulePath?: string,
   watch?: boolean,
   workerPath: ?string,
 |};
@@ -214,7 +214,8 @@ class Server {
       silent: options.silent || false,
       sourceExts: options.sourceExts || defaults.sourceExts,
       transformCache: options.transformCache,
-      transformModulePath: options.transformModulePath,
+      transformModulePath:
+        options.transformModulePath || defaults.transformModulePath,
       watch: options.watch || false,
       workerPath: options.workerPath,
     };
