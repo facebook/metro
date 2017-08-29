@@ -272,7 +272,7 @@ class FileBasedCache {
     );
     if (
       Number.isInteger(lastCollected) &&
-      Date.now() - lastCollected > GARBAGE_COLLECTION_PERIOD
+      Date.now() - lastCollected < GARBAGE_COLLECTION_PERIOD
     ) {
       return;
     }
