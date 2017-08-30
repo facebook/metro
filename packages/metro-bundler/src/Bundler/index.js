@@ -580,7 +580,7 @@ class Bundler {
     minify?: boolean,
     hot?: boolean,
     generateSourceMaps?: boolean,
-  }): Promise<Array<Module>> {
+  }): Promise<Array<string>> {
     return this.getTransformOptions(rootEntryFile, {
       enableBabelRCLookup: this._opts.enableBabelRCLookup,
       dev,

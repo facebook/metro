@@ -210,7 +210,7 @@ class DependencyGraph extends EventEmitter {
   getShallowDependencies(
     entryPath: string,
     transformOptions: JSTransformerOptions,
-  ): Promise<Array<Module>> {
+  ): Promise<Array<string>> {
     return this._moduleCache
       .getModule(entryPath)
       .getDependencies(transformOptions);

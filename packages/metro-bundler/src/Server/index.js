@@ -336,7 +336,7 @@ class Server {
     return this._bundler.hmrBundle(options, host, port);
   }
 
-  getShallowDependencies(options: DependencyOptions): Promise<Array<Module>> {
+  getShallowDependencies(options: DependencyOptions): Promise<Array<string>> {
     return Promise.resolve().then(() => {
       const platform =
         options.platform != null
