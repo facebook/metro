@@ -76,11 +76,12 @@ class HasteMap<TModule: Moduleish, TPackage: Packageish> extends EventEmitter {
     const promises = [];
     this._files.forEach(filePath => {
       if (!this._helpers.isNodeModulesDir(filePath)) {
-        if (this._extensions.indexOf(path.extname(filePath).substr(1)) !== -1) {
-          promises.push(this._processHasteModule(filePath));
-        }
         if (filePath.endsWith(PACKAGE_JSON)) {
           promises.push(this._processHastePackage(filePath));
+        } else if (
+          this._extensions.indexOf(path.extname(filePath).substr(1)) !== -1
+        ) {
+          promises.push(this._processHasteModule(filePath));
         }
       }
     });
