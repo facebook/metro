@@ -107,7 +107,7 @@ function buildBabelConfig(filename, options) {
 
   config.plugins = extraPlugins.concat(config.plugins);
 
-  if (options.hot) {
+  if (options.dev && options.hot) {
     const hmrConfig = makeHMRConfig(options, filename);
     config = Object.assign({}, config, hmrConfig);
   }
