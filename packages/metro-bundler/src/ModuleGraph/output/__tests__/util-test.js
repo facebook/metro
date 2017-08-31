@@ -5,15 +5,16 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @emails oncall+javascript_tools
+ * @format
  */
+
 'use strict';
 
-const {match} = require('sinon');
 const {fn} = require('../../test-helpers');
-const {
-  addModuleIdsToModuleWrapper,
-  createIdForPathFn,
-} = require('../util');
+const {addModuleIdsToModuleWrapper, createIdForPathFn} = require('../util');
+const {match} = require('sinon');
 
 const {any} = jasmine;
 
@@ -33,18 +34,23 @@ describe('`addModuleIdsToModuleWrapper`:', () => {
 
     const idForPath = fn();
     idForPath.stub
-      .withArgs(match({path})).returns(12)
-      .withArgs(match({path: dependencies[0].path})).returns(345)
-      .withArgs(match({path: dependencies[1].path})).returns(6);
+      .withArgs(match({path}))
+      .returns(12)
+      .withArgs(match({path: dependencies[0].path}))
+      .returns(345)
+      .withArgs(match({path: dependencies[1].path}))
+      .returns(6);
 
-    expect(addModuleIdsToModuleWrapper(module, idForPath))
-      .toEqual('__d(function(){},12,[345,6]);');
+    expect(addModuleIdsToModuleWrapper(module, idForPath)).toEqual(
+      '__d(function(){},12,[345,6]);',
+    );
   });
 
   it('omits the array of dependency IDs if it is empty', () => {
     const module = createModule();
-    expect(addModuleIdsToModuleWrapper(module, () => 98))
-      .toEqual(`__d(function(){},${98});`);
+    expect(addModuleIdsToModuleWrapper(module, () => 98)).toEqual(
+      `__d(function(){},${98});`,
+    );
   });
 });
 

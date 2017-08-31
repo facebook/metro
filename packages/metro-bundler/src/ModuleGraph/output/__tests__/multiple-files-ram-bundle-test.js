@@ -6,8 +6,11 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @emails oncall+javascript_tools
  * @flow
+ * @format
  */
+
 'use strict';
 
 declare var jest: any;
@@ -42,7 +45,7 @@ beforeAll(() => {
 });
 
 it('does not start the bundle file with the magic number (not a binary one)', () => {
-  expect(new Buffer(code).readUInt32LE(0)).not.toBe(0xFB0BD1E5);
+  expect(new Buffer(code).readUInt32LE(0)).not.toBe(0xfb0bd1e5);
 });
 
 it('contains the startup code on the main file', () => {
@@ -51,14 +54,16 @@ it('contains the startup code on the main file', () => {
 
 it('creates a source map', () => {
   let line = countLines(requireCall);
-  expect(map.sections.slice(1)).toEqual(modules.map(m => {
-    const section = {
-      map: m.file.map || lineByLineMap(m.file.path),
-      offset: {column: 0, line},
-    };
-    line += countLines(m);
-    return section;
-  }));
+  expect(map.sections.slice(1)).toEqual(
+    modules.map(m => {
+      const section = {
+        map: m.file.map || lineByLineMap(m.file.path),
+        offset: {column: 0, line},
+      };
+      line += countLines(m);
+      return section;
+    }),
+  );
   expect(map.x_facebook_offsets).toEqual([1, 2, 3, 4, 5, 6]);
 });
 
@@ -67,7 +72,7 @@ it('creates a magic file with the number', () => {
   // $FlowFixMe "extraFiles" is always defined at this point.
   expect(extraFiles.get('UNBUNDLE')).toBeDefined();
   // $FlowFixMe "extraFiles" is always defined at this point.
-  expect(extraFiles.get('UNBUNDLE').readUInt32LE(0)).toBe(0xFB0BD1E5);
+  expect(extraFiles.get('UNBUNDLE').readUInt32LE(0)).toBe(0xfb0bd1e5);
 });
 
 it('bundles each file separately', () => {
@@ -75,13 +80,17 @@ it('bundles each file separately', () => {
 
   modules.forEach((module, i) => {
     // $FlowFixMe "extraFiles" is always defined at this point.
-    expect(extraFiles.get(`js-modules/${i}.js`).toString())
-      .toBe(getModuleCode(modules[i], idForPath));
+    expect(extraFiles.get(`js-modules/${i}.js`).toString()).toBe(
+      getModuleCode(modules[i], idForPath),
+    );
   });
 });
 
 function createRamBundle(preloadedModules = new Set(), ramGroups) {
-  const build = multipleFilesRamBundle.createBuilder(preloadedModules, ramGroups);
+  const build = multipleFilesRamBundle.createBuilder(
+    preloadedModules,
+    ramGroups,
+  );
   const result = build({
     filename: 'arbitrary/filename.js',
     idForPath,
@@ -92,15 +101,18 @@ function createRamBundle(preloadedModules = new Set(), ramGroups) {
   return {code: result.code, map: result.map, extraFiles: result.extraFiles};
 }
 
-function makeModule(name, deps = [], type = 'module', moduleCode = `var ${name};`) {
+function makeModule(
+  name,
+  deps = [],
+  type = 'module',
+  moduleCode = `var ${name};`,
+) {
   const path = makeModulePath(name);
   return {
     dependencies: deps.map(makeDependency),
     file: {
       code: type === 'module' ? makeModuleCode(moduleCode) : moduleCode,
-      map: type !== 'module'
-        ? null
-        : makeModuleMap(name, path),
+      map: type !== 'module' ? null : makeModuleMap(name, path),
       path,
       type,
     },

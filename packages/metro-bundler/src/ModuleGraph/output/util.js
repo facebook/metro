@@ -7,7 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
+
 'use strict';
 
 const virtualModule = require('../module').virtual;
@@ -23,7 +25,7 @@ import type {IdForPathFn, Module} from '../types.flow';
 // the dependencies of the module before the closing parenthesis.
 function addModuleIdsToModuleWrapper(
   module: Module,
-  idForPath: {path: string} => number,
+  idForPath: ({path: string}) => number,
 ): string {
   const {dependencies, file} = module;
   const {code} = file;
@@ -36,24 +38,17 @@ function addModuleIdsToModuleWrapper(
 
   // This code runs for both development and production builds, after
   // minification. That's why we leave out all spaces.
-  const depencyIds =
-    dependencies.length ? `,[${dependencies.map(idForPath).join(',')}]` : '';
-  return (
-    code.slice(0, index) +
-    `,${fileId}` +
-    depencyIds +
-    code.slice(index)
-  );
+  const depencyIds = dependencies.length
+    ? `,[${dependencies.map(idForPath).join(',')}]`
+    : '';
+  return code.slice(0, index) + `,${fileId}` + depencyIds + code.slice(index);
 }
 
 exports.addModuleIdsToModuleWrapper = addModuleIdsToModuleWrapper;
 
 // Adds the module ids to a file if the file is a module. If it's not (e.g. a
 // script) it just keeps it as-is.
-function getModuleCode(
-  module: Module,
-  idForPath: IdForPathFn,
-) {
+function getModuleCode(module: Module, idForPath: IdForPathFn) {
   const {file} = module;
   return file.type === 'module'
     ? addModuleIdsToModuleWrapper(module, idForPath)
@@ -73,7 +68,7 @@ exports.concat = function* concat<T>(
 
 // Creates an idempotent function that returns numeric IDs for objects based
 // on their `path` property.
-exports.createIdForPathFn = (): ({path: string} => number) => {
+exports.createIdForPathFn = (): (({path: string}) => number) => {
   const seen = new Map();
   let next = 0;
   return ({path}) => {
@@ -88,7 +83,7 @@ exports.createIdForPathFn = (): ({path: string} => number) => {
 
 // creates a series of virtual modules with require calls to the passed-in
 // modules.
-exports.requireCallsTo = function* (
+exports.requireCallsTo = function*(
   modules: Iterable<Module>,
   idForPath: IdForPathFn,
 ): Iterable<Module> {
@@ -114,10 +109,7 @@ exports.partition = (
 
 // Transforms a new Module object into an old one, so that it can be passed
 // around code.
-exports.toModuleTransport = (
-  module: Module,
-  idForPath: IdForPathFn,
-) => {
+exports.toModuleTransport = (module: Module, idForPath: IdForPathFn) => {
   const {dependencies, file} = module;
   return {
     code: getModuleCode(module, idForPath),

@@ -6,8 +6,11 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @emails oncall+javascript_tools
  * @flow
+ * @format
  */
+
 'use strict';
 
 declare var jest: any;
@@ -39,25 +42,28 @@ describe('dependencies-dot', () => {
   });
 
   it('produces an ordered file for a standard list of modules', () => {
-    expect(dependenciesDot({modules: [
-      createModule('a', ['b']),
-      createModule('b', ['c']),
-      createModule('c', []),
-    ]})).toBeAMultilineString(
-      'digraph {',
-      '\t"a" -> "b";',
-      '\t"b" -> "c";',
-      '}',
-    );
+    expect(
+      dependenciesDot({
+        modules: [
+          createModule('a', ['b']),
+          createModule('b', ['c']),
+          createModule('c', []),
+        ],
+      }),
+    ).toBeAMultilineString('digraph {', '\t"a" -> "b";', '\t"b" -> "c";', '}');
   });
 
   it('writes one entry per dependency', () => {
-    expect(dependenciesDot({modules: [
-      createModule('a', ['b', 'c']),
-      createModule('b', ['d']),
-      createModule('c', []),
-      createModule('d', []),
-    ]})).toBeAMultilineString(
+    expect(
+      dependenciesDot({
+        modules: [
+          createModule('a', ['b', 'c']),
+          createModule('b', ['d']),
+          createModule('c', []),
+          createModule('d', []),
+        ],
+      }),
+    ).toBeAMultilineString(
       'digraph {',
       '\t"a" -> "b";',
       '\t"a" -> "c";',
@@ -67,26 +73,19 @@ describe('dependencies-dot', () => {
   });
 
   it('handles non-printable characters', () => {
-    expect(dependenciesDot({modules: [
-      createModule('"\n', ['\r\t']),
-      createModule('\r\t', []),
-    ]})).toBeAMultilineString(
-      'digraph {',
-      '\t"\\"\\n" -> "\\r\\t";',
-      '}',
-    );
+    expect(
+      dependenciesDot({
+        modules: [createModule('"\n', ['\r\t']), createModule('\r\t', [])],
+      }),
+    ).toBeAMultilineString('digraph {', '\t"\\"\\n" -> "\\r\\t";', '}');
   });
 
   it('handles circular dependencies', () => {
-    expect(dependenciesDot({modules: [
-      createModule('a', ['b']),
-      createModule('b', ['a']),
-    ]})).toBeAMultilineString(
-      'digraph {',
-      '\t"a" -> "b";',
-      '\t"b" -> "a";',
-      '}',
-    );
+    expect(
+      dependenciesDot({
+        modules: [createModule('a', ['b']), createModule('b', ['a'])],
+      }),
+    ).toBeAMultilineString('digraph {', '\t"a" -> "b";', '\t"b" -> "a";', '}');
   });
 });
 

@@ -7,7 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
+
 'use strict';
 
 const MAGIC_UNBUNDLE_NUMBER = require('../../shared/output/unbundle/magic-number');

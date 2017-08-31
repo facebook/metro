@@ -6,8 +6,11 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @emails oncall+javascript_tools
  * @flow
+ * @format
  */
+
 'use strict';
 
 declare var jest: any;
@@ -41,7 +44,7 @@ beforeAll(() => {
 });
 
 it('starts the bundle file with the magic number', () => {
-  expect(code.readUInt32LE(0)).toBe(0xFB0BD1E5);
+  expect(code.readUInt32LE(0)).toBe(0xfb0bd1e5);
 });
 
 it('contains the number of modules in the module table', () => {
@@ -49,34 +52,41 @@ it('contains the number of modules in the module table', () => {
 });
 
 it('has the length correct of the startup section', () => {
-  expect(code.readUInt32LE(SIZEOF_INT32 * 2))
-    .toBe(requireCall.file.code.length + 1);
+  expect(code.readUInt32LE(SIZEOF_INT32 * 2)).toBe(
+    requireCall.file.code.length + 1,
+  );
 });
 
 it('contains the code after the offset table', () => {
   const {codeOffset, startupSectionLength, table} = parseOffsetTable(code);
 
-  const startupSection =
-    code.slice(codeOffset, codeOffset + startupSectionLength - 1);
+  const startupSection = code.slice(
+    codeOffset,
+    codeOffset + startupSectionLength - 1,
+  );
   expect(startupSection.toString()).toBe(requireCall.file.code);
 
   table.forEach(([offset, length], i) => {
-    const moduleCode =
-      code.slice(codeOffset + offset, codeOffset + offset + length - 1);
+    const moduleCode = code.slice(
+      codeOffset + offset,
+      codeOffset + offset + length - 1,
+    );
     expect(moduleCode.toString()).toBe(expectedCode(modules[i]));
   });
 });
 
 it('creates a source map', () => {
   let line = countLines(requireCall);
-  expect(map.sections.slice(1)).toEqual(modules.map(m => {
-    const section = {
-      map: m.file.map || lineByLineMap(m.file.path),
-      offset: {column: 0, line},
-    };
-    line += countLines(m);
-    return section;
-  }));
+  expect(map.sections.slice(1)).toEqual(
+    modules.map(m => {
+      const section = {
+        map: m.file.map || lineByLineMap(m.file.path),
+        offset: {column: 0, line},
+      };
+      line += countLines(m);
+      return section;
+    }),
+  );
   expect(map.x_facebook_offsets).toEqual([1, 2, 3, 4, 5, 6]);
 });
 
@@ -91,11 +101,13 @@ describe('Startup section optimization', () => {
   it('supports additional modules in the startup section', () => {
     const {codeOffset, startupSectionLength, table} = parseOffsetTable(code);
 
-    const startupSection =
-      code.slice(codeOffset, codeOffset + startupSectionLength - 1);
-    expect(startupSection.toString())
-      .toBe(preloaded.concat([requireCall]).map(expectedCode).join('\n'));
-
+    const startupSection = code.slice(
+      codeOffset,
+      codeOffset + startupSectionLength - 1,
+    );
+    expect(startupSection.toString()).toBe(
+      preloaded.concat([requireCall]).map(expectedCode).join('\n'),
+    );
 
     preloaded.forEach(m => {
       const idx = idForPath(m.file);
@@ -104,8 +116,10 @@ describe('Startup section optimization', () => {
 
     table.forEach(([offset, length], i) => {
       if (offset !== 0 && length !== 0) {
-        const moduleCode =
-          code.slice(codeOffset + offset, codeOffset + offset + length - 1);
+        const moduleCode = code.slice(
+          codeOffset + offset,
+          codeOffset + offset + length - 1,
+        );
         expect(moduleCode.toString()).toBe(expectedCode(modules[i]));
       }
     });
@@ -117,30 +131,25 @@ describe('Startup section optimization', () => {
       countLines(requireCall),
     );
 
-    expect(map.x_facebook_offsets).toEqual([4, 5,,, 6]); // eslint-disable-line no-sparse-arrays
+    expect(map.x_facebook_offsets).toEqual([4, 5, , , 6]); // eslint-disable-line no-sparse-arrays
 
     expect(map.sections.slice(1)).toEqual(
-      modules
-        .filter(not(Set.prototype.has), new Set(preloaded))
-        .map(m => {
-          const section = {
-            map: m.file.map || lineByLineMap(m.file.path),
-            offset: {column: 0, line},
-          };
-          line += countLines(m);
-          return section;
-        }
-    ));
+      modules.filter(not(Set.prototype.has), new Set(preloaded)).map(m => {
+        const section = {
+          map: m.file.map || lineByLineMap(m.file.path),
+          offset: {column: 0, line},
+        };
+        line += countLines(m);
+        return section;
+      }),
+    );
   });
 });
 
 describe('RAM groups / common sections', () => {
   let groups, groupHeads;
   beforeAll(() => {
-    groups = [
-      [modules[1], modules[2], modules[5]],
-      [modules[3], modules[4]],
-    ];
+    groups = [[modules[1], modules[2], modules[5]], [modules[3], modules[4]]];
     groupHeads = groups.map(g => g[0]);
     ({code, map} = createRamBundle(undefined, groupHeads.map(getPath)));
   });
@@ -154,9 +163,11 @@ describe('RAM groups / common sections', () => {
       deps.forEach(id => expect(table[id]).toEqual(groupEntry));
 
       const [offset, length] = groupEntry;
-      const groupCode = code.slice(codeOffset + offset, codeOffset + offset + length - 1);
-      expect(groupCode.toString())
-        .toEqual(group.map(expectedCode).join('\n'));
+      const groupCode = code.slice(
+        codeOffset + offset,
+        codeOffset + offset + length - 1,
+      );
+      expect(groupCode.toString()).toEqual(group.map(expectedCode).join('\n'));
     });
   });
 
@@ -165,19 +176,21 @@ describe('RAM groups / common sections', () => {
     const maps = map.sections.slice(-2);
     const toplevelOffsets = [2, 5];
 
-    maps.map((groupMap, i) => [groups[i], groupMap]).forEach(([group, groupMap], i) => {
-      const offsets = group.reduce(moduleLineOffsets, [])[0];
-      expect(groupMap).toEqual({
-        map: {
-          version: 3,
-          sections: group.map((module, j) => ({
-            map: module.file.map,
-            offset: {line: offsets[j], column: 0},
-          })),
-        },
-        offset: {line: toplevelOffsets[i], column: 0},
+    maps
+      .map((groupMap, i) => [groups[i], groupMap])
+      .forEach(([group, groupMap], i) => {
+        const offsets = group.reduce(moduleLineOffsets, [])[0];
+        expect(groupMap).toEqual({
+          map: {
+            version: 3,
+            sections: group.map((module, j) => ({
+              map: module.file.map,
+              offset: {line: offsets[j], column: 0},
+            })),
+          },
+          offset: {line: toplevelOffsets[i], column: 0},
+        });
       });
-    });
   });
 
   function moduleLineOffsets([offsets = [], line = 0], module) {
@@ -200,15 +213,18 @@ function createRamBundle(preloadedModules = new Set(), ramGroups) {
   return {code: result.code, map: result.map};
 }
 
-function makeModule(name, deps = [], type = 'module', moduleCode = `var ${name};`) {
+function makeModule(
+  name,
+  deps = [],
+  type = 'module',
+  moduleCode = `var ${name};`,
+) {
   const path = makeModulePath(name);
   return {
     dependencies: deps.map(makeDependency),
     file: {
       code: type === 'module' ? makeModuleCode(moduleCode) : moduleCode,
-      map: type !== 'module'
-        ? null
-        : makeModuleMap(name, path),
+      map: type !== 'module' ? null : makeModuleMap(name, path),
       path,
       type,
     },
@@ -268,7 +284,10 @@ function parseOffsetTable(buffer) {
   const table = Array(n);
   for (let i = 0; i < n; ++i) {
     const offset = baseOffset + i * 2 * SIZEOF_INT32;
-    table[i] = [buffer.readUInt32LE(offset), buffer.readUInt32LE(offset + SIZEOF_INT32)];
+    table[i] = [
+      buffer.readUInt32LE(offset),
+      buffer.readUInt32LE(offset + SIZEOF_INT32),
+    ];
   }
   return {
     codeOffset: baseOffset + n * 2 * SIZEOF_INT32,
@@ -291,4 +310,7 @@ function lineByLineMap(file) {
   };
 }
 
-const not = fn => function() { return !fn.apply(this, arguments); };
+const not = fn =>
+  function() {
+    return !fn.apply(this, arguments);
+  };
