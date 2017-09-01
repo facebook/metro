@@ -564,7 +564,7 @@ class Bundler {
     });
   }
 
-  getShallowDependencies({
+  async getShallowDependencies({
     entryFile,
     rootEntryFile,
     platform,
@@ -572,6 +572,7 @@ class Bundler {
     minify = !dev,
     hot = false,
     generateSourceMaps = false,
+    bundlingOptions,
   }: {
     entryFile: string,
     +rootEntryFile: string,
@@ -580,19 +581,24 @@ class Bundler {
     minify?: boolean,
     hot?: boolean,
     generateSourceMaps?: boolean,
+    bundlingOptions?: BundlingOptions,
   }): Promise<Array<string>> {
-    return this.getTransformOptions(rootEntryFile, {
-      enableBabelRCLookup: this._opts.enableBabelRCLookup,
-      dev,
-      generateSourceMaps,
-      hot,
-      minify,
-      platform,
-      projectRoots: this._projectRoots,
-    }).then(bundlingOptions =>
-      this._resolverPromise.then(resolver =>
-        resolver.getShallowDependencies(entryFile, bundlingOptions.transformer),
-      ),
+    if (!bundlingOptions) {
+      bundlingOptions = await this.getTransformOptions(rootEntryFile, {
+        enableBabelRCLookup: this._opts.enableBabelRCLookup,
+        dev,
+        generateSourceMaps,
+        hot,
+        minify,
+        platform,
+        projectRoots: this._projectRoots,
+      });
+    }
+
+    const notNullOptions = bundlingOptions;
+
+    return this._resolverPromise.then(resolver =>
+      resolver.getShallowDependencies(entryFile, notNullOptions.transformer),
     );
   }
 

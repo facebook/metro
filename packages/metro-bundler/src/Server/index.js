@@ -33,6 +33,7 @@ const {
 import type Module, {HasteImpl} from '../node-haste/Module';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type ResolutionResponse from '../node-haste/DependencyGraph/ResolutionResponse';
+import type {BundlingOptions} from '../Bundler';
 import type Bundle from '../Bundler/Bundle';
 import type HMRBundle from '../Bundler/HMRBundle';
 import type {Reporter} from '../lib/reporting';
@@ -124,6 +125,7 @@ type DependencyOptions = {|
   +platform: ?string,
   +recursive: boolean,
   +rootEntryFile: string,
+  +bundlingOptions?: BundlingOptions,
 |};
 
 type BuildInfo = {|
@@ -342,7 +344,14 @@ class Server {
         options.platform != null
           ? options.platform
           : parsePlatformFilePath(options.entryFile, this._platforms).platform;
-      const {entryFile, dev, minify, hot, rootEntryFile} = options;
+      const {
+        entryFile,
+        dev,
+        minify,
+        hot,
+        rootEntryFile,
+        bundlingOptions,
+      } = options;
       return this._bundler.getShallowDependencies({
         entryFile,
         rootEntryFile,
@@ -351,6 +360,7 @@ class Server {
         minify,
         hot,
         generateSourceMaps: false,
+        bundlingOptions,
       });
     });
   }
