@@ -41,8 +41,10 @@ function define(factory, moduleId, dependencyMap) {
   }
 }
 
+var USING_STABLE_IDS = !!global.__requireModuleIdMap;
+
 function _require(moduleId) {
-  if (__DEV__ && typeof moduleId === 'string') {
+  if (__DEV__ && typeof moduleId === 'string' && (!USING_STABLE_IDS || !(moduleId in global.__requireModuleIdMap))) {
     var _verboseName2 = moduleId;
     moduleId = verboseNamesToModuleIds[_verboseName2];
     if (moduleId == null) {
@@ -80,10 +82,20 @@ function guardedLoadModule(moduleId, module) {
   }
 }
 
+function convertStableIdToModuleId(stableId) {
+  return global.__requireModuleIdMap[stableId];
+}
+
+function identity(id) {
+  return id;
+}
+
+var getNumericModuleId = USING_STABLE_IDS ? convertStableIdToModuleId : identity;
+
 function loadModuleImplementation(moduleId, module) {
   var nativeRequire = global.nativeRequire;
   if (!module && nativeRequire) {
-    nativeRequire(moduleId);
+    nativeRequire(getNumericModuleId(moduleId));
     module = modules[moduleId];
   }
 
@@ -314,8 +326,10 @@ function define(factory, moduleId, dependencyMap) {
   }
 }
 
+var USING_STABLE_IDS = !!global.__requireModuleIdMap;
+
 function _require(moduleId) {
-  if (__DEV__ && typeof moduleId === 'string') {
+  if (__DEV__ && typeof moduleId === 'string' && (!USING_STABLE_IDS || !(moduleId in global.__requireModuleIdMap))) {
     var _verboseName2 = moduleId;
     moduleId = verboseNamesToModuleIds[_verboseName2];
     if (moduleId == null) {
@@ -353,10 +367,20 @@ function guardedLoadModule(moduleId, module) {
   }
 }
 
+function convertStableIdToModuleId(stableId) {
+  return global.__requireModuleIdMap[stableId];
+}
+
+function identity(id) {
+  return id;
+}
+
+var getNumericModuleId = USING_STABLE_IDS ? convertStableIdToModuleId : identity;
+
 function loadModuleImplementation(moduleId, module) {
   var nativeRequire = global.nativeRequire;
   if (!module && nativeRequire) {
-    nativeRequire(moduleId);
+    nativeRequire(getNumericModuleId(moduleId));
     module = modules[moduleId];
   }
 

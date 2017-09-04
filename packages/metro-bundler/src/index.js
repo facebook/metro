@@ -156,5 +156,6 @@ function toServerOptions(options: Options): ServerOptions {
     transformModulePath: options.transformModulePath,
     watch: typeof options.watch === 'boolean' ? options.watch : !!options.nonPersistent,
     workerPath: options.workerPath,
+    makeStableId: options.makeStableId,
   };
 }

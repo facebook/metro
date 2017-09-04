@@ -147,13 +147,14 @@ type Options = {|
   +transformModulePath: string,
   +watch: boolean,
   +workerPath: ?string,
+  +makeStableId: (m: Module, id: number) => string | number,
 |};
 
 const {hasOwnProperty} = Object;
 
 class Bundler {
   _opts: Options;
-  _getModuleId: (opts: Module) => number;
+  _getModuleId: (opts: Module) => ModuleIdObj;
   _transformer: Transformer;
   _resolverPromise: Promise<Resolver>;
   _projectRoots: $ReadOnlyArray<string>;
@@ -183,7 +184,7 @@ class Bundler {
       transformModuleHash,
     ];
 
-    this._getModuleId = createModuleIdFactory();
+    this._getModuleId = createModuleIdFactory(this._opts.makeStableId);
 
     let getCacheKey = (options: mixed) => '';
     if (opts.transformModulePath) {
@@ -387,9 +388,11 @@ class Bundler {
     const onResolutionResponse = (
       response: ResolutionResponse<Module, BundlingOptions>,
     ) => {
-      /* $FlowFixMe: looks like ResolutionResponse is monkey-patched
-       * with `getModuleId`. */
-      bundle.setMainModuleId(response.getModuleId(getMainModule(response)));
+      bundle.setMainModuleId(
+        /* $FlowFixMe: looks like ResolutionResponse is monkey-patched
+         * with `getModuleId`. */
+        response.getModuleId(getMainModule(response)).stable,
+      );
       if (entryModuleOnly && entryFile) {
         response.dependencies = response.dependencies.filter(module =>
           module.path.endsWith(entryFile || ''),
@@ -422,7 +425,8 @@ class Bundler {
             ? runBeforeMainModule
                 .map(name => modulesByName[name])
                 .filter(Boolean)
-                .map(response.getModuleId)
+                // $FlowFixMe
+                .map(m => response.getModuleId(m).stable)
             : undefined;
 
           finalBundle.finalize({
@@ -650,7 +654,9 @@ class Bundler {
       {dev, platform, recursive},
       bundlingOptions,
       onProgress,
-      isolateModuleIDs ? createModuleIdFactory() : this._getModuleId,
+      isolateModuleIDs
+        ? createModuleIdFactory(this._opts.makeStableId)
+        : this._getModuleId,
     );
     return response;
   }
@@ -712,12 +718,12 @@ class Bundler {
     bundle: Bundle,
     entryFilePath: string,
     options: BundlingOptions,
-    getModuleId: (module: Module) => number,
+    getModuleId: (module: Module) => ModuleIdObj,
     dependencyPairs: Array<[string, Module]>,
     assetPlugins: Array<string>,
   }): Promise<ModuleTransport> {
     let moduleTransport;
-    const moduleId = getModuleId(module);
+    const moduleId = getModuleId(module).id;
     const transformOptions = options.transformer;
 
     if (module.isAsset()) {
@@ -923,15 +929,22 @@ function verifyRootExists(root) {
   assert(fs.statSync(root).isDirectory(), 'Root has to be a valid directory');
 }
 
-function createModuleIdFactory() {
+export type ModuleIdObj = {
+  id: number,
+  stable: number | string,
+};
+
+function createModuleIdFactory(
+  makeStableId: (m: Module, id: number) => string | number,
+) {
   const fileToIdMap = Object.create(null);
   let nextId = 0;
-  return ({path: modulePath}) => {
-    if (!(modulePath in fileToIdMap)) {
-      fileToIdMap[modulePath] = nextId;
+  return (m: Module): ModuleIdObj => {
+    if (!(m.path in fileToIdMap)) {
+      fileToIdMap[m.path] = {id: nextId, stable: makeStableId(m, nextId)};
       nextId += 1;
     }
-    return fileToIdMap[modulePath];
+    return fileToIdMap[m.path];
   };
 }
 

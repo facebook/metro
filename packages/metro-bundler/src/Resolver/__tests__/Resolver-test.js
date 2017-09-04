@@ -56,7 +56,7 @@ describe('Resolver', function() {
     constructor({dependencies, mainModuleId}) {
       this.dependencies = dependencies;
       this.mainModuleId = mainModuleId;
-      this.getModuleId = createGetModuleId();
+      this.getModuleId = createGetModuleId(f => f);
     }
 
     prependDependency(dependency) {
@@ -156,7 +156,7 @@ describe('Resolver', function() {
             {dev: false},
             undefined,
             undefined,
-            createGetModuleId(),
+            createGetModuleId(f => f),
           ),
         )
         .then(result => {
@@ -237,7 +237,7 @@ describe('Resolver', function() {
           .map(([importId, module]) => [
             importId,
             padRight(
-              resolutionResponse.getModuleId(module),
+              resolutionResponse.getModuleId(module).id,
               importId.length + 2,
             ),
           ]),
@@ -268,7 +268,7 @@ describe('Resolver', function() {
               "require( 'z' )",
               'require( "a")',
               'require("b" )',
-              `}, ${resolutionResponse.getModuleId(module)});`,
+              `}, ${resolutionResponse.getModuleId(module).stable});`,
             ].join('\n'),
           );
         });
@@ -298,7 +298,7 @@ describe('Resolver', function() {
                 code,
               `}, ${resolutionResponse.getModuleId(
                 module,
-              )}, null, "test module");`,
+              ).stable}, null, "test module");`,
             ].join('\n'),
           ),
         );
@@ -374,7 +374,7 @@ describe('Resolver', function() {
                 `__d(/* ${id} */function(global, require, module, exports) {`,
                 `module.exports = ${code}\n}, ${resolutionResponse.getModuleId(
                   module,
-                )});`,
+                ).stable});`,
               ].join(''),
             ),
           );
@@ -409,7 +409,7 @@ describe('Resolver', function() {
         expect.assertions(1);
         const wrappedCode = `__d(/* ${id} */function(global, require, module, exports) {${code}\n}, ${resolutionResponse.getModuleId(
           module,
-        )});`;
+        ).stable});`;
         return depResolver
           .wrapModule({
             resolutionResponse,
@@ -456,10 +456,10 @@ describe('Resolver', function() {
     let nextId = 1;
     const knownIds = new Map();
     function createId(path) {
-      const id = nextId;
+      const obj = { id: nextId, stable: nextId };
       nextId += 1;
-      knownIds.set(path, id);
-      return id;
+      knownIds.set(path, obj);
+      return obj;
     }
 
     return ({path}) => knownIds.get(path) || createId(path);
