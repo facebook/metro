@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @emails oncall+javascript_tools
  * @format
  */
 'use strict';
@@ -100,7 +101,9 @@ describe('Transformer', function() {
       .transformFile(fileName, localPath, '', {})
       .catch(function(error) {
         expect(error.type).toEqual('TransformError');
-        expect(error.message).toBe('SyntaxError ' + message);
+        expect(error.message).toBe(
+          'SyntaxError in /an/arbitrary/file.js: ' + message,
+        );
         expect(error.lineNumber).toBe(2);
         expect(error.column).toBe(15);
         expect(error.filename).toBe(fileName);
