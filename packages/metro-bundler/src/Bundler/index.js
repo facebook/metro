@@ -110,8 +110,8 @@ export type PostProcessModules = (
 
 export type PostMinifyProcess = ({
   code: string,
-  map: MappingsMap,
-}) => {code: string, map: MappingsMap};
+  map: ?MappingsMap,
+}) => {code: string, map: ?MappingsMap};
 
 export type PostProcessBundleSourcemap = ({
   code: Buffer | string,

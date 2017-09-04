@@ -93,8 +93,8 @@ class Transformer {
   minify: (
     filename: string,
     code: string,
-    sourceMap: MappingsMap,
-  ) => Promise<{code: string, map: MappingsMap}>;
+    sourceMap: ?MappingsMap,
+  ) => Promise<{code: string, map: ?MappingsMap}>;
 
   constructor(
     transformModulePath: string,

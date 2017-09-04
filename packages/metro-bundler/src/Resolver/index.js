@@ -32,8 +32,8 @@ import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 type MinifyCode = (
   filePath: string,
   code: string,
-  map: MappingsMap,
-) => Promise<{code: string, map: MappingsMap}>;
+  map: ?MappingsMap,
+) => Promise<{code: string, map: ?MappingsMap}>;
 
 type ContainsTransformerOptions = {+transformer: JSTransformerOptions};
 
@@ -225,7 +225,7 @@ class Resolver {
     resolutionResponse: ResolutionResponse<Module, T>,
     module: Module,
     name: string,
-    map: MappingsMap,
+    map: ?MappingsMap,
     code: string,
     meta?: {
       dependencyOffsets?: Array<number>,
@@ -263,8 +263,8 @@ class Resolver {
   }: {
     path: string,
     code: string,
-    map: MappingsMap,
-  }): Promise<{code: string, map: MappingsMap}> {
+    map: ?MappingsMap,
+  }): Promise<{code: string, map: ?MappingsMap}> {
     return this._minifyCode(path, code, map);
   }
 
