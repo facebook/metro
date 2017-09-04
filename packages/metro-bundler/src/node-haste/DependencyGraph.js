@@ -250,7 +250,7 @@ class DependencyGraph extends EventEmitter {
     recursive: boolean,
   }): Promise<ResolutionResponse<Module, T>> {
     platform = this._getRequestPlatform(entryPath, platform);
-    const absPath = this._getAbsolutePath(entryPath);
+    const absPath = this.getAbsolutePath(entryPath);
     const req = new ResolutionRequest({
       moduleResolver: this._moduleResolver,
       entryPath: absPath,
@@ -289,7 +289,7 @@ class DependencyGraph extends EventEmitter {
     return platform;
   }
 
-  _getAbsolutePath(filePath: string) {
+  getAbsolutePath(filePath: string) {
     if (isAbsolutePath(filePath)) {
       return path.resolve(filePath);
     }

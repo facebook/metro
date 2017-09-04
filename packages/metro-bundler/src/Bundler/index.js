@@ -153,7 +153,7 @@ const {hasOwnProperty} = Object;
 
 class Bundler {
   _opts: Options;
-  _getModuleId: (opts: Module) => number;
+  _getModuleId: ({path: string}) => number;
   _transformer: Transformer;
   _resolverPromise: Promise<Resolver>;
   _projectRoots: $ReadOnlyArray<string>;
@@ -282,6 +282,10 @@ class Bundler {
           moduleSystemDeps,
         }),
       );
+  }
+
+  getGetModuleIdFn(): ({path: string}) => number {
+    return this._getModuleId;
   }
 
   _sourceHMRURL(platform: ?string, hmrpath: string) {
@@ -765,7 +769,7 @@ class Bundler {
     });
   }
 
-  _generateAssetObjAndCode(
+  generateAssetObjAndCode(
     module: Module,
     assetPlugins: Array<string>,
     platform: ?string = null,
@@ -854,7 +858,7 @@ class Bundler {
   ) {
     return Promise.all([
       module.getName(),
-      this._generateAssetObjAndCode(module, assetPlugins, platform),
+      this.generateAssetObjAndCode(module, assetPlugins, platform),
     ]).then(([name, {asset, code, meta}]) => {
       bundle.addAsset(asset);
       return new ModuleTransport({
