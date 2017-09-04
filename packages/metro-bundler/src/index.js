@@ -154,6 +154,7 @@ function toServerOptions(options: Options): ServerOptions {
     sourceExts: options.sourceExts,
     transformCache: options.transformCache || TransformCaching.useTempDir(),
     transformModulePath: options.transformModulePath,
+    useDeltaBundler: options.useDeltaBundler,
     watch: typeof options.watch === 'boolean' ? options.watch : !!options.nonPersistent,
     workerPath: options.workerPath,
   };

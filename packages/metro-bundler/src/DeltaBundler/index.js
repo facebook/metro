@@ -12,6 +12,7 @@
 
 'use strict';
 
+const DeltaPatcher = require('./DeltaPatcher');
 const DeltaTransformer = require('./DeltaTransformer');
 
 import type Bundler from '../Bundler';
@@ -42,6 +43,7 @@ class DeltaBundler {
   _bundler: Bundler;
   _options: MainOptions;
   _deltaTransformers: Map<string, DeltaTransformer> = new Map();
+  _deltaPatchers: Map<string, DeltaPatcher> = new Map();
   _currentId: number = 0;
 
   constructor(bundler: Bundler, options: MainOptions) {
@@ -80,6 +82,20 @@ class DeltaBundler {
       ...response,
       id: bundleId,
     };
+  }
+
+  async buildFullBundle(options: Options): Promise<string> {
+    const deltaBundle = await this.build(options);
+
+    let deltaPatcher = this._deltaPatchers.get(deltaBundle.id);
+
+    if (!deltaPatcher) {
+      deltaPatcher = new DeltaPatcher();
+
+      this._deltaPatchers.set(deltaBundle.id, deltaPatcher);
+    }
+
+    return deltaPatcher.applyDelta(deltaBundle).stringify();
   }
 }
 

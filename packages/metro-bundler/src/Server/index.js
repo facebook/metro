@@ -14,8 +14,10 @@
 
 const AssetServer = require('../AssetServer');
 const Bundler = require('../Bundler');
+const DeltaBundler = require('../DeltaBundler');
 const MultipartResponse = require('./MultipartResponse');
 
+const crypto = require('crypto');
 const debug = require('debug')('Metro:Server');
 const defaults = require('../defaults');
 const emptyFunction = require('fbjs/lib/emptyFunction');
@@ -93,6 +95,7 @@ export type Options = {|
   +sourceExts: ?Array<string>,
   +transformCache: TransformCache,
   transformModulePath?: string,
+  useDeltaBundler: boolean,
   watch?: boolean,
   workerPath: ?string,
 |};
@@ -182,6 +185,7 @@ class Server {
   _symbolicateInWorker: Symbolicate;
   _platforms: Set<string>;
   _nextBundleBuildID: number;
+  _deltaBundler: DeltaBundler;
 
   constructor(options: Options) {
     const reporter =
@@ -218,6 +222,7 @@ class Server {
       transformCache: options.transformCache,
       transformModulePath:
         options.transformModulePath || defaults.transformModulePath,
+      useDeltaBundler: options.useDeltaBundler,
       watch: options.watch || false,
       workerPath: options.workerPath,
     };
@@ -285,6 +290,13 @@ class Server {
 
     this._symbolicateInWorker = symbolicate.createWorker();
     this._nextBundleBuildID = 1;
+
+    if (this._opts.useDeltaBundler) {
+      this._deltaBundler = new DeltaBundler(this._bundler, {
+        getPolyfills: this._opts.getPolyfills,
+        polyfillModuleNames: this._opts.polyfillModuleNames,
+      });
+    }
   }
 
   end(): mixed {
@@ -735,7 +747,7 @@ class Server {
     return this._reportBundlePromise(buildID, options, bundleFromScratch());
   }
 
-  processRequest(
+  async processRequest(
     req: IncomingMessage,
     res: ServerResponse,
     next?: () => mixed,
@@ -771,6 +783,11 @@ class Server {
     } else {
       res.writeHead(404);
       res.end();
+      return;
+    }
+
+    if (this._opts.useDeltaBundler && requestType === 'bundle') {
+      await this._processRequestUsingDeltaBundler(req, res);
       return;
     }
 
@@ -857,6 +874,67 @@ class Server {
           throw error;
         });
       });
+  }
+
+  async _processRequestUsingDeltaBundler(
+    req: IncomingMessage,
+    res: ServerResponse,
+  ) {
+    const options = this._getOptionsFromUrl(req.url);
+    const requestingBundleLogEntry = log(
+      createActionStartEntry({
+        action_name: 'Requesting bundle',
+        bundle_url: req.url,
+        entry_point: options.entryFile,
+      }),
+    );
+
+    const buildID = this.getNewBuildID();
+
+    if (!this._opts.silent) {
+      options.onProgress = (transformedFileCount, totalFileCount) => {
+        this._reporter.update({
+          buildID,
+          type: 'bundle_transform_progressed',
+          transformedFileCount,
+          totalFileCount,
+        });
+      };
+    }
+
+    this._reporter.update({
+      buildID,
+      bundleOptions: options,
+      type: 'bundle_build_started',
+    });
+
+    const bundle = await this._deltaBundler.buildFullBundle({
+      ...options,
+      deltaBundleId: this.optionsHash(options),
+    });
+
+    const etag = crypto.createHash('md5').update(bundle).digest('hex');
+
+    if (req.headers['if-none-match'] === etag) {
+      debug('Responding with 304');
+      res.writeHead(304);
+      res.end();
+
+      return;
+    }
+
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('ETag', etag);
+    res.setHeader('Content-Length', String(Buffer.byteLength(bundle)));
+    res.end(bundle);
+
+    this._reporter.update({
+      buildID,
+      type: 'bundle_build_done',
+    });
+
+    debug('Finished response');
+    log(createActionEndEntry(requestingBundleLogEntry));
   }
 
   _symbolicate(req: IncomingMessage, res: ServerResponse) {
