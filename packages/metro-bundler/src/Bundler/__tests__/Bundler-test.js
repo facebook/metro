@@ -169,12 +169,22 @@ describe('Bundler', function() {
   it('gets the list of dependencies from the resolver', function() {
     const entryFile = '/root/foo.js';
     return bundler
-      .getDependencies({entryFile, rootEntryFile: entryFile, recursive: true})
+      .getDependencies({
+        entryFile,
+        rootEntryFile: entryFile,
+        recursive: true,
+        prependPolyfills: true,
+      })
       .then(() =>
         // jest calledWith does not support jasmine.any
         expect(getDependencies.mock.calls[0].slice(0, -2)).toEqual([
           '/root/foo.js',
-          {dev: true, platform: undefined, recursive: true},
+          {
+            dev: true,
+            platform: undefined,
+            recursive: true,
+            prependPolyfills: true,
+          },
           {
             preloadedModules: undefined,
             ramGroups: undefined,

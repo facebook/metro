@@ -489,6 +489,7 @@ class Bundler {
         minify,
         isolateModuleIDs,
         generateSourceMaps: unbundle || minify || generateSourceMaps,
+        prependPolyfills: true,
       });
     }
 
@@ -591,6 +592,7 @@ class Bundler {
         hot,
         minify,
         platform,
+        prependPolyfills: false,
         projectRoots: this._projectRoots,
       });
     }
@@ -618,6 +620,7 @@ class Bundler {
     generateSourceMaps = false,
     isolateModuleIDs = false,
     rootEntryFile,
+    prependPolyfills,
     onProgress,
   }: {
     entryFile: string,
@@ -629,6 +632,7 @@ class Bundler {
     generateSourceMaps?: boolean,
     isolateModuleIDs?: boolean,
     +rootEntryFile: string,
+    +prependPolyfills: boolean,
     onProgress?: ?(finishedModules: number, totalModules: number) => mixed,
   }): Promise<ResolutionResponse<Module, BundlingOptions>> {
     const bundlingOptions: BundlingOptions = await this.getTransformOptions(
@@ -641,13 +645,14 @@ class Bundler {
         generateSourceMaps,
         minify,
         projectRoots: this._projectRoots,
+        prependPolyfills,
       },
     );
 
     const resolver = await this._resolverPromise;
     const response = await resolver.getDependencies(
       entryFile,
-      {dev, platform, recursive},
+      {dev, platform, recursive, prependPolyfills},
       bundlingOptions,
       onProgress,
       isolateModuleIDs ? createModuleIdFactory() : this._getModuleId,
@@ -675,6 +680,7 @@ class Bundler {
       platform,
       minify,
       generateSourceMaps,
+      prependPolyfills: true,
     }).then(({dependencies}) => {
       const ret = [];
       const promises = [];
@@ -873,6 +879,7 @@ class Bundler {
       minify: boolean,
       platform: ?string,
       projectRoots: $ReadOnlyArray<string>,
+      +prependPolyfills: boolean,
     |},
   ): Promise<BundlingOptions> {
     const getDependencies = (entryFile: string) =>

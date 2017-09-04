@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @emails oncall+javascript_tools
  * @format
  */
 
@@ -129,7 +130,7 @@ describe('Resolver', function() {
       });
     });
 
-    it('should pass in more polyfills', function() {
+    it('should pass in more polyfills when prependPolyfills is true', function() {
       expect.assertions(3);
 
       var module = createModule('index');
@@ -153,7 +154,7 @@ describe('Resolver', function() {
         .then(r =>
           r.getDependencies(
             '/root/index.js',
-            {dev: false},
+            {dev: false, prependPolyfills: true},
             undefined,
             undefined,
             createGetModuleId(),

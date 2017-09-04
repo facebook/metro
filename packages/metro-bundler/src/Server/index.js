@@ -386,6 +386,7 @@ class Server {
         hot,
         generateSourceMaps: false,
         rootEntryFile,
+        prependPolyfills: true,
       });
     });
   }

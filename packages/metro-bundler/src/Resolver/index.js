@@ -117,31 +117,36 @@ class Resolver {
     return this._depGraph.getModuleForPath(entryFile);
   }
 
-  getDependencies<T: ContainsTransformerOptions>(
+  async getDependencies<T: ContainsTransformerOptions>(
     entryPath: string,
-    options: {platform: ?string, recursive?: boolean},
+    options: {
+      platform: ?string,
+      recursive?: boolean,
+      prependPolyfills: boolean,
+    },
     bundlingOptions: T,
     onProgress?: ?(finishedModules: number, totalModules: number) => mixed,
     getModuleId: mixed,
   ): Promise<ResolutionResponse<Module, T>> {
-    const {platform, recursive = true} = options;
-    return this._depGraph
-      .getDependencies({
-        entryPath,
-        platform,
-        options: bundlingOptions,
-        recursive,
-        onProgress,
-      })
-      .then(resolutionResponse => {
-        this._getPolyfillDependencies(platform)
-          .reverse()
-          .forEach(polyfill => resolutionResponse.prependDependency(polyfill));
+    const {platform, recursive = true, prependPolyfills} = options;
 
-        /* $FlowFixMe: monkey patching */
-        resolutionResponse.getModuleId = getModuleId;
-        return resolutionResponse.finalize();
-      });
+    const resolutionResponse = await this._depGraph.getDependencies({
+      entryPath,
+      platform,
+      options: bundlingOptions,
+      recursive,
+      onProgress,
+    });
+
+    if (prependPolyfills) {
+      this._getPolyfillDependencies(platform)
+        .reverse()
+        .forEach(polyfill => resolutionResponse.prependDependency(polyfill));
+    }
+
+    /* $FlowFixMe: monkey patching */
+    resolutionResponse.getModuleId = getModuleId;
+    return resolutionResponse.finalize();
   }
 
   getModuleSystemDependencies({dev = true}: {dev?: boolean}): Array<Module> {
