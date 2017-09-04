@@ -179,24 +179,22 @@ class Resolver {
     );
   }
 
-  resolveRequires<T: ContainsTransformerOptions>(
-    resolutionResponse: ResolutionResponse<Module, T>,
+  resolveRequires(
     module: Module,
+    getModuleId: ({path: string}) => number,
     code: string,
+    dependencyPairs: $ReadOnlyArray<[string, Module]>,
     dependencyOffsets: Array<number> = [],
   ): string {
     const resolvedDeps = Object.create(null);
 
     // here, we build a map of all require strings (relative and absolute)
     // to the canonical ID of the module they reference
-    resolutionResponse
-      .getResolvedDependencyPairs(module)
-      .forEach(([depName, depModule]) => {
-        if (depModule) {
-          /* $FlowFixMe: `getModuleId` is monkey-patched so may not exist */
-          resolvedDeps[depName] = resolutionResponse.getModuleId(depModule);
-        }
-      });
+    dependencyPairs.forEach(([name, module], key) => {
+      if (module) {
+        resolvedDeps[name] = getModuleId(module);
+      }
+    });
 
     // if we have a canonical ID for the module imported here,
     // we use it, so that require() is always called with the same
@@ -217,27 +215,27 @@ class Resolver {
       .join('');
   }
 
-  wrapModule<T: ContainsTransformerOptions>({
-    resolutionResponse,
+  wrapModule({
     module,
+    getModuleId,
+    dependencyPairs,
+    dependencyOffsets,
     name,
     map,
     code,
-    meta = {},
     dev = true,
     minify = false,
   }: {
-    resolutionResponse: ResolutionResponse<Module, T>,
     module: Module,
+    getModuleId: ({path: string}) => number,
+    dependencyPairs: $ReadOnlyArray<[string, Module]>,
+    dependencyOffsets: Array<number>,
     name: string,
     map: ?MappingsMap,
     code: string,
-    meta?: {
-      dependencyOffsets?: Array<number>,
-    },
     dev?: boolean,
     minify?: boolean,
-  }) {
+  }): Promise<{code: string, map: ?MappingsMap}> {
     if (module.isJSON()) {
       code = `module.exports = ${code}`;
     }
@@ -245,13 +243,14 @@ class Resolver {
     if (module.isPolyfill()) {
       code = definePolyfillCode(code);
     } else {
-      /* $FlowFixMe: `getModuleId` is monkey-patched so may not exist */
-      const moduleId = resolutionResponse.getModuleId(module);
+      const moduleId = getModuleId(module);
+
       code = this.resolveRequires(
-        resolutionResponse,
         module,
+        getModuleId,
         code,
-        meta.dependencyOffsets,
+        dependencyPairs,
+        dependencyOffsets,
       );
       code = defineModuleCode(moduleId, code, name, dev);
     }

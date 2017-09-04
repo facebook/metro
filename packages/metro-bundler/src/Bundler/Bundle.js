@@ -87,7 +87,7 @@ class Bundle extends BundleBase {
      * refactored.
      */
     resolver: {wrapModule: (options: any) => Promise<{code: any, map: any}>},
-    resolutionResponse: mixed,
+    resolutionResponse: any,
     module: mixed,
     /* $FlowFixMe: erroneous change of signature. */
     moduleTransport: ModuleTransport,
@@ -96,12 +96,15 @@ class Bundle extends BundleBase {
     const index = super.addModule(moduleTransport);
     return resolver
       .wrapModule({
-        resolutionResponse,
         module,
+        getModuleId: resolutionResponse.getModuleId,
+        dependencyPairs: resolutionResponse.getResolvedDependencyPairs(module),
         name: moduleTransport.name,
         code: moduleTransport.code,
         map: moduleTransport.map,
-        meta: moduleTransport.meta,
+        dependencyOffsets: moduleTransport.meta
+          ? moduleTransport.meta.dependencyOffsets
+          : undefined,
         minify: this._minify,
         dev: this._dev,
       })

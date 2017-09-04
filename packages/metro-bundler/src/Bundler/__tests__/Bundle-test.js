@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @emails oncall+javascript_tools
  * @format
  */
 
@@ -14,6 +15,11 @@
 const Bundle = require('../Bundle');
 const ModuleTransport = require('../../lib/ModuleTransport');
 const crypto = require('crypto');
+
+const resolutionResponse = {
+  getModuleId() {},
+  getResolvedDependencyPairs() {},
+};
 
 describe('Bundle', () => {
   var bundle;
@@ -137,7 +143,12 @@ describe('Bundle', () => {
 
       const promise = Promise.all(
         moduleTransports.map(m =>
-          bundle.addModule(resolver, null, {isPolyfill: () => false}, m),
+          bundle.addModule(
+            resolver,
+            resolutionResponse,
+            {isPolyfill: () => false},
+            m,
+          ),
         ),
       ).then(() => {
         expect(bundle.getModules()).toEqual(moduleTransports);
@@ -471,7 +482,7 @@ function addModule({
 }) {
   return bundle.addModule(
     resolverFor(code, map),
-    null,
+    resolutionResponse,
     {isPolyfill: () => polyfill},
     createModuleTransport({
       code,

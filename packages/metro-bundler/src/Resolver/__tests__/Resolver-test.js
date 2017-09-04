@@ -246,11 +246,14 @@ describe('Resolver', function() {
 
       return depResolver
         .wrapModule({
-          resolutionResponse,
           module: module,
+          getModuleId: resolutionResponse.getModuleId,
+          dependencyPairs: resolutionResponse.getResolvedDependencyPairs(
+            module,
+          ),
           name: 'test module',
           code,
-          meta: {dependencyOffsets},
+          dependencyOffsets,
           dev: false,
         })
         .then(({code: processedCode}) => {
@@ -286,7 +289,10 @@ describe('Resolver', function() {
       });
       return depResolver
         .wrapModule({
-          resolutionResponse,
+          getModuleId: resolutionResponse.getModuleId,
+          dependencyPairs: resolutionResponse.getResolvedDependencyPairs(
+            module,
+          ),
           code,
           module,
           name: 'test module',
@@ -315,7 +321,10 @@ describe('Resolver', function() {
       const inputMap = {version: 3, mappings: 'ARBITRARY'};
       return depResolver
         .wrapModule({
-          resolutionResponse,
+          getModuleId: resolutionResponse.getModuleId,
+          dependencyPairs: resolutionResponse.getResolvedDependencyPairs(
+            module,
+          ),
           module,
           name: 'test module',
           code: 'arbitrary(code)',
@@ -368,7 +377,16 @@ describe('Resolver', function() {
       it('should prefix JSON files with `module.exports=`', () => {
         expect.assertions(1);
         return depResolver
-          .wrapModule({resolutionResponse, module, name: id, code, dev: false})
+          .wrapModule({
+            getModuleId: resolutionResponse.getModuleId,
+            dependencyPairs: resolutionResponse.getResolvedDependencyPairs(
+              module,
+            ),
+            module,
+            name: id,
+            code,
+            dev: false,
+          })
           .then(({code: processedCode}) =>
             expect(processedCode).toEqual(
               [
@@ -413,7 +431,10 @@ describe('Resolver', function() {
         )});`;
         return depResolver
           .wrapModule({
-            resolutionResponse,
+            getModuleId: resolutionResponse.getModuleId,
+            dependencyPairs: resolutionResponse.getResolvedDependencyPairs(
+              module,
+            ),
             module,
             name: id,
             code,
@@ -439,7 +460,10 @@ describe('Resolver', function() {
         );
         return depResolver
           .wrapModule({
-            resolutionResponse,
+            getModuleId: resolutionResponse.getModuleId,
+            dependencyPairs: resolutionResponse.getResolvedDependencyPairs(
+              module,
+            ),
             module,
             name: id,
             code,

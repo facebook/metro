@@ -50,9 +50,11 @@ class HMRBundle extends BundleBase {
     moduleTransport: ModuleTransport,
   ) {
     const code = resolver.resolveRequires(
-      response,
       module,
+      /* $FlowFixMe: `getModuleId` is monkey-patched so may not exist */
+      response.getModuleId,
       moduleTransport.code,
+      response.getResolvedDependencyPairs(module),
       /* $FlowFixMe: may not exist */
       moduleTransport.meta.dependencyOffsets,
     );

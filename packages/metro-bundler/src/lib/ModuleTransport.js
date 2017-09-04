@@ -22,6 +22,7 @@ type Metadata = {
   dependencies?: ?Array<string>,
   dependencyPairs?: Array<[string, Module]>,
   preloaded: ?boolean,
+  dependencyOffsets?: ?Array<number>,
 };
 
 class ModuleTransport {
