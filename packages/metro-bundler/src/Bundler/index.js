@@ -67,7 +67,7 @@ export type GetTransformOptionsOpts = {|
 |};
 
 export type GetTransformOptions = (
-  mainModuleName: string,
+  entryPoints: $ReadOnlyArray<string>,
   options: GetTransformOptionsOpts,
   getDependenciesOf: (string) => Promise<Array<string>>,
 ) => Promise<ExtraTransformOptions>;
@@ -896,7 +896,7 @@ class Bundler {
     const {dev, hot, platform} = options;
     const extraOptions: ExtraTransformOptions = this._getTransformOptions
       ? await this._getTransformOptions(
-          mainModuleName,
+          [mainModuleName],
           {dev, hot, platform},
           getDependencies,
         )
