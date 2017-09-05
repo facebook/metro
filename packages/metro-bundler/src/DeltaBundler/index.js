@@ -58,10 +58,19 @@ class DeltaBundler {
     this._options = options;
   }
 
-  /**
-   * Main method to build a Delta Bundler
-   */
   async build(options: Options): Promise<DeltaBundle> {
+    const {deltaTransformer, id} = await this.getDeltaTransformer(options);
+    const response = await deltaTransformer.getDelta();
+
+    return {
+      ...response,
+      id,
+    };
+  }
+
+  async getDeltaTransformer(
+    options: Options,
+  ): Promise<{deltaTransformer: DeltaTransformer, id: string}> {
     let bundleId = options.deltaBundleId;
 
     // If no bundle id is passed, generate a new one (which is going to be
@@ -83,10 +92,8 @@ class DeltaBundler {
       this._deltaTransformers.set(bundleId, deltaTransformer);
     }
 
-    const response = await deltaTransformer.getDelta();
-
     return {
-      ...response,
+      deltaTransformer,
       id: bundleId,
     };
   }

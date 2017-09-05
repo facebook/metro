@@ -12,6 +12,8 @@
 
 'use strict';
 
+const {EventEmitter} = require('events');
+
 import type Bundler, {BundlingOptions} from '../Bundler';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type Resolver from '../Resolver';
@@ -31,7 +33,7 @@ export type DeltaResult = {
  * traverse the files that have been changed between calls and avoid having to
  * traverse the whole dependency tree for trivial small changes.
  */
-class DeltaCalculator {
+class DeltaCalculator extends EventEmitter {
   _bundler: Bundler;
   _resolver: Resolver;
   _options: BundleOptions;
@@ -46,6 +48,8 @@ class DeltaCalculator {
   _inverseDependencies: Map<string, Set<string>> = new Map();
 
   constructor(bundler: Bundler, resolver: Resolver, options: BundleOptions) {
+    super();
+
     this._bundler = bundler;
     this._options = options;
     this._resolver = resolver;
@@ -166,8 +170,11 @@ class DeltaCalculator {
   }): mixed => {
     this._modifiedFiles.add(filePath);
 
-    // TODO: Check if path is in current dependencies. If so, send an updated
-    // bundle event.
+    // Notify users that there is a change in some of the bundle files. This
+    // way the client can choose to refetch the bundle.
+    if (this._dependencies.has(filePath)) {
+      this.emit('change');
+    }
   };
 
   async _getDelta(modifiedFiles: Set<string>): Promise<DeltaResult> {

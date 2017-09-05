@@ -187,4 +187,26 @@ describe('DeltaCalculator', () => {
       deleted: new Set(['/bar', '/baz']),
     });
   });
+
+  it('should emit an event when there is a relevant file change', async done => {
+    await deltaCalculator.getDelta();
+
+    deltaCalculator.on('change', () => done());
+
+    fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
+  });
+
+  it('should not emit an event when there is a file changed outside the bundle', async () => {
+    jest.useFakeTimers();
+
+    const onChangeFile = jest.fn();
+    await deltaCalculator.getDelta();
+
+    deltaCalculator.on('change', onChangeFile);
+    fileWatcher.emit('change', {eventsQueue: [{filePath: '/another'}]});
+
+    jest.runAllTimers();
+
+    expect(onChangeFile.mock.calls.length).toBe(0);
+  });
 });

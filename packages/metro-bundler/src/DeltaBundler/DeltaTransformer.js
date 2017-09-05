@@ -14,6 +14,8 @@
 
 const DeltaCalculator = require('./DeltaCalculator');
 
+const {EventEmitter} = require('events');
+
 import type Bundler from '../Bundler';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type Resolver from '../Resolver';
@@ -49,7 +51,7 @@ type Options = {|
  *     },
  *   }
  */
-class DeltaTransformer {
+class DeltaTransformer extends EventEmitter {
   _bundler: Bundler;
   _getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>;
   _polyfillModuleNames: $ReadOnlyArray<string>;
@@ -64,12 +66,16 @@ class DeltaTransformer {
     options: Options,
     bundleOptions: BundleOptions,
   ) {
+    super();
+
     this._bundler = bundler;
     this._deltaCalculator = deltaCalculator;
     this._getPolyfills = options.getPolyfills;
     this._polyfillModuleNames = options.polyfillModuleNames;
     this._getModuleId = this._bundler.getGetModuleIdFn();
     this._bundleOptions = bundleOptions;
+
+    this._deltaCalculator.on('change', this._onFileChange);
   }
 
   static async create(
@@ -95,6 +101,8 @@ class DeltaTransformer {
    * clean up memory and resources once this instance is not used anymore.
    */
   end() {
+    this._deltaCalculator.removeListener('change', this._onFileChange);
+
     return this._deltaCalculator.end();
   }
 
@@ -348,6 +356,10 @@ class DeltaTransformer {
 
     return await module.read(transformOptions);
   }
+
+  _onFileChange = () => {
+    this.emit('change');
+  };
 }
 
 module.exports = DeltaTransformer;
