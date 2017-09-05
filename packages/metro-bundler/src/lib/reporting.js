@@ -85,6 +85,10 @@ export type ReportableEvent =
   | {
       type: 'worker_stderr_chunk',
       chunk: string,
+    }
+  | {
+      type: 'hmr_client_error',
+      error: Error,
     };
 
 /**

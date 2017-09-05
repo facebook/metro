@@ -251,6 +251,9 @@ class TerminalReporter {
       case 'worker_stderr_chunk':
         this._logWorkerChunk('stderr', event.chunk);
         break;
+      case 'hmr_client_error':
+        this._logHmrClientError(event.error);
+        break;
     }
   }
 
@@ -394,6 +397,15 @@ class TerminalReporter {
       )
       .filter(str => str != null)
       .join('\n');
+  }
+
+  _logHmrClientError(e: Error): void {
+    reporting.logError(
+      this.terminal,
+      'A WebSocket client got a connection error. Please reload your device ' +
+        'to get HMR working again: %s',
+      e,
+    );
   }
 
   /**
