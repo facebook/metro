@@ -23,6 +23,7 @@ export type DeltaBundle = {
   pre: ?string,
   post: ?string,
   delta: {[key: string]: ?string},
+  inverseDependencies: {[key: string]: $ReadOnlyArray<string>},
 };
 
 type MainOptions = {|
@@ -30,7 +31,13 @@ type MainOptions = {|
   polyfillModuleNames: $ReadOnlyArray<string>,
 |};
 
-type Options = BundleOptions & {+deltaBundleId: ?string};
+type FullBuildOptions = BundleOptions & {
+  +deltaBundleId: ?string,
+};
+
+export type Options = FullBuildOptions & {
+  +wrapModules: boolean,
+};
 
 /**
  * `DeltaBundler` uses the `DeltaTransformer` to build bundle deltas. This
@@ -84,8 +91,11 @@ class DeltaBundler {
     };
   }
 
-  async buildFullBundle(options: Options): Promise<string> {
-    const deltaBundle = await this.build(options);
+  async buildFullBundle(options: FullBuildOptions): Promise<string> {
+    const deltaBundle = await this.build({
+      ...options,
+      wrapModules: true,
+    });
 
     let deltaPatcher = this._deltaPatchers.get(deltaBundle.id);
 

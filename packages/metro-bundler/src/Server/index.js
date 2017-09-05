@@ -291,12 +291,10 @@ class Server {
     this._symbolicateInWorker = symbolicate.createWorker();
     this._nextBundleBuildID = 1;
 
-    if (this._opts.useDeltaBundler) {
-      this._deltaBundler = new DeltaBundler(this._bundler, {
-        getPolyfills: this._opts.getPolyfills,
-        polyfillModuleNames: this._opts.polyfillModuleNames,
-      });
-    }
+    this._deltaBundler = new DeltaBundler(this._bundler, {
+      getPolyfills: this._opts.getPolyfills,
+      polyfillModuleNames: this._opts.polyfillModuleNames,
+    });
   }
 
   end(): mixed {
@@ -313,6 +311,10 @@ class Server {
     if (this._fileChangeListeners.indexOf(listener) === -1) {
       this._fileChangeListeners.push(listener);
     }
+  }
+
+  getDeltaBundler(): DeltaBundler {
+    return this._deltaBundler;
   }
 
   async buildBundle(options: BundleOptions): Promise<Bundle> {

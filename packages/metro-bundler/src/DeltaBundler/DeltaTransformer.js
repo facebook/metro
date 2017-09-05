@@ -17,14 +17,15 @@ const DeltaCalculator = require('./DeltaCalculator');
 import type Bundler from '../Bundler';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type Resolver from '../Resolver';
-import type {BundleOptions} from '../Server';
 import type {MappingsMap} from '../lib/SourceMap';
 import type Module from '../node-haste/Module';
+import type {Options as BundleOptions} from './';
 
 export type DeltaTransformResponse = {
   +pre: ?string,
   +post: ?string,
   +delta: {[key: string]: ?string},
+  +inverseDependencies: {[key: string]: $ReadOnlyArray<string>},
 };
 
 type Options = {|
@@ -159,10 +160,16 @@ class DeltaTransformer {
         )
       : null;
 
+    // Inverse dependencies are needed for HMR.
+    const inverseDependencies = this._getInverseDependencies(
+      this._deltaCalculator.getInverseDependencies(),
+    );
+
     return {
       pre: prependSources,
       post: appendSources,
       delta: {...modifiedDelta, ...deletedDelta},
+      inverseDependencies,
       reset,
     };
   }
@@ -237,6 +244,23 @@ class DeltaTransformer {
     return sources.join('\n');
   }
 
+  /**
+   * Converts the paths in the inverse dependendencies to module ids.
+   */
+  _getInverseDependencies(
+    inverseDependencies: Map<string, Set<string>>,
+  ): {[key: string]: $ReadOnlyArray<string>} {
+    const output = Object.create(null);
+
+    for (const [key, dependencies] of inverseDependencies) {
+      output[this._getModuleId({path: key})] = Array.from(
+        dependencies,
+      ).map(dep => this._getModuleId({path: dep}));
+    }
+
+    return output;
+  }
+
   async _transformModules(
     modules: Map<string, Module>,
     resolver: Resolver,
@@ -275,17 +299,27 @@ class DeltaTransformer {
 
     const dependencyPairsForModule = dependencyPairs.get(module.path) || [];
 
-    const wrapped = await resolver.wrapModule({
-      module,
-      getModuleId: this._getModuleId,
-      dependencyPairs: dependencyPairsForModule,
-      dependencyOffsets: metadata.dependencyOffsets || [],
-      name,
-      code: metadata.code,
-      map: metadata.map,
-      minify: this._bundleOptions.minify,
-      dev: this._bundleOptions.dev,
-    });
+    const wrapped = this._bundleOptions.wrapModules
+      ? await resolver.wrapModule({
+          module,
+          getModuleId: this._getModuleId,
+          dependencyPairs: dependencyPairsForModule,
+          dependencyOffsets: metadata.dependencyOffsets || [],
+          name,
+          code: metadata.code,
+          map: metadata.map,
+          minify: this._bundleOptions.minify,
+          dev: this._bundleOptions.dev,
+        })
+      : {
+          code: resolver.resolveRequires(
+            module,
+            this._getModuleId,
+            metadata.code,
+            dependencyPairsForModule,
+            metadata.dependencyOffsets || [],
+          ),
+        };
 
     return [this._getModuleId(module), wrapped.code];
   }
