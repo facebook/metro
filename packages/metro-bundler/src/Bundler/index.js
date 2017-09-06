@@ -255,6 +255,9 @@ class Bundler {
 
   end() {
     this._transformer.kill();
+    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.54 was deployed. To see the error delete this
+     * comment and run Flow. */
     return this._resolverPromise.then(resolver =>
       resolver.getDependencyGraph().getWatcher().end(),
     );
@@ -497,6 +500,9 @@ class Bundler {
       });
     }
 
+    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.54 was deployed. To see the error delete this
+     * comment and run Flow. */
     return Promise.all([
       this._resolverPromise,
       resolutionResponse,
@@ -677,6 +683,9 @@ class Bundler {
     +minify: boolean,
     +generateSourceMaps: boolean,
   }) {
+    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.54 was deployed. To see the error delete this
+     * comment and run Flow. */
     return this.getDependencies({
       entryFile,
       rootEntryFile: entryFile,
@@ -856,6 +865,9 @@ class Bundler {
     assetPlugins: Array<string> = [],
     platform: ?string = null,
   ) {
+    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.54 was deployed. To see the error delete this
+     * comment and run Flow. */
     return Promise.all([
       module.getName(),
       this.generateAssetObjAndCode(module, assetPlugins, platform),

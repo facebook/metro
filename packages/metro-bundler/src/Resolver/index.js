@@ -144,7 +144,6 @@ class Resolver {
         .forEach(polyfill => resolutionResponse.prependDependency(polyfill));
     }
 
-    /* $FlowFixMe: monkey patching */
     resolutionResponse.getModuleId = getModuleId;
     return resolutionResponse.finalize();
   }

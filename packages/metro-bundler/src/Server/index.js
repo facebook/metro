@@ -674,7 +674,6 @@ class Server {
               changedModules.forEach(m => {
                 response.setResolvedDependencyPairs(
                   m,
-                  /* $FlowFixMe: should be enforced not to be null. */
                   dependencyPairs.get(m.path),
                   {ignoreFinalized: true},
                 );

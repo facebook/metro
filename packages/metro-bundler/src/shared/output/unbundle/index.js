@@ -38,6 +38,9 @@ function saveUnbundle(
   // overhead when reading hundreds pf assets from disk
   return options.platform === 'android' && !options.indexedUnbundle ?
     asAssets(bundle, options, log) :
+    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.54 was deployed. To see the error delete this
+     * comment and run Flow. */
     asIndexedFile(bundle, options, log);
 }
 

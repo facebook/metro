@@ -85,6 +85,9 @@ class HasteMap<TModule: Moduleish, TPackage: Packageish> extends EventEmitter {
         }
       }
     });
+    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.54 was deployed. To see the error delete this
+     * comment and run Flow. */
     return Promise.all(promises).then(() => this._map);
   }
 
@@ -93,6 +96,9 @@ class HasteMap<TModule: Moduleish, TPackage: Packageish> extends EventEmitter {
   }
 
   processFileChange(type: string, absPath: string) {
+    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.54 was deployed. To see the error delete this
+     * comment and run Flow. */
     return Promise.resolve().then(() => {
       /*eslint no-labels: 0 */
       let invalidated;
@@ -158,6 +164,9 @@ class HasteMap<TModule: Moduleish, TPackage: Packageish> extends EventEmitter {
 
   _processHasteModule(file: string, previousName: ?string) {
     const module = this._moduleCache.getModule(file);
+    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.54 was deployed. To see the error delete this
+     * comment and run Flow. */
     return Promise.resolve().then(() => {
       const isHaste = module.isHaste();
       return (
@@ -175,6 +184,9 @@ class HasteMap<TModule: Moduleish, TPackage: Packageish> extends EventEmitter {
 
   _processHastePackage(file: string, previousName: ?string) {
     const p = this._moduleCache.getPackage(file);
+    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.54 was deployed. To see the error delete this
+     * comment and run Flow. */
     return Promise.resolve()
       .then(() => {
         const isHaste = p.isHaste();
