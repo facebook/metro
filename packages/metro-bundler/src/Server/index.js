@@ -668,7 +668,7 @@ class Server {
             }),
             Promise.all(Array.from(outdated, this.getModuleForPath, this)),
           ])
-            .then(([response, changedModules]) => {
+            .then(([response, changedModules]: [$FlowFixMe, *]) => {
               debug('Update bundle: rebuild shallow bundle');
 
               changedModules.forEach(m => {

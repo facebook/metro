@@ -47,13 +47,13 @@ function optimizeModule(
   const result = {...details, transformed: {}};
   const {postMinifyProcess} = optimizationOptions;
 
-  Object.entries(
-    transformed,
-    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an error
-   * found when Flow v0.54 was deployed. To see the error delete this comment
-   * and run Flow. */
-  ).forEach(([k, t: TransformResult]: [*, TransformResult]) => {
-    const optimized = optimize(t, file, code, optimizationOptions);
+  Object.entries(transformed).forEach(([k, t: TransformResult]) => {
+    const optimized = optimize(
+      (t: $FlowFixMe),
+      file,
+      code,
+      optimizationOptions,
+    );
     const processed = postMinifyProcess({
       code: optimized.code,
       map: optimized.map,
@@ -66,7 +66,7 @@ function optimizeModule(
   return {type: 'code', details: result};
 }
 
-function optimize(transformed, file, originalCode, options) {
+function optimize(transformed: TransformResult, file, originalCode, options) {
   const {code, dependencyMapName, map} = transformed;
   const optimized = optimizeCode(code, map, file, options);
 

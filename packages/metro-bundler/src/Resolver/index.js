@@ -130,7 +130,10 @@ class Resolver {
   ): Promise<ResolutionResponse<Module, T>> {
     const {platform, recursive = true, prependPolyfills} = options;
 
-    const resolutionResponse = await this._depGraph.getDependencies({
+    const resolutionResponse: ResolutionResponse<
+      Module,
+      T,
+    > = await this._depGraph.getDependencies({
       entryPath,
       platform,
       options: bundlingOptions,
@@ -144,6 +147,7 @@ class Resolver {
         .forEach(polyfill => resolutionResponse.prependDependency(polyfill));
     }
 
+    /* $FlowFixMe: monkey patching */
     resolutionResponse.getModuleId = getModuleId;
     return resolutionResponse.finalize();
   }
