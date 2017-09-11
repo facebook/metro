@@ -92,4 +92,29 @@ describe('DeltaPatcher', () => {
         .stringifyCode(),
     ).toMatchSnapshot();
   });
+
+  it('should return the number of modified files in the last Delta', () => {
+    deltaPatcher
+      .applyDelta({
+        reset: 1,
+        pre: new Map([[1, {code: 'pre'}]]),
+        post: new Map([[2, {code: 'post'}]]),
+        delta: new Map([[3, {code: 'middle'}]]),
+      })
+      .stringifyCode();
+
+    expect(deltaPatcher.getLastNumModifiedFiles()).toEqual(3);
+
+    deltaPatcher
+      .applyDelta({
+        reset: 1,
+        pre: new Map([[1, null]]),
+        post: new Map(),
+        delta: new Map([[3, {code: 'different'}]]),
+      })
+      .stringifyCode();
+
+    // A deleted module counts as a modified file.
+    expect(deltaPatcher.getLastNumModifiedFiles()).toEqual(2);
+  });
 });

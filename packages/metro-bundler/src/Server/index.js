@@ -924,12 +924,13 @@ class Server {
     );
 
     let bundle;
+    let numModifiedFiles;
 
     try {
-      bundle = await this._deltaBundler.buildFullBundle({
+      ({bundle, numModifiedFiles} = await this._deltaBundler.buildFullBundle({
         ...options,
         deltaBundleId: this.optionsHash(options),
-      });
+      }));
     } catch (error) {
       this._handleError(res, this.optionsHash(options), error);
 
@@ -947,14 +948,13 @@ class Server {
       debug('Responding with 304');
       res.writeHead(304);
       res.end();
-
-      return;
+    } else {
+      res.setHeader(FILES_CHANGED_COUNT_HEADER, String(numModifiedFiles));
+      res.setHeader('Content-Type', 'application/javascript');
+      res.setHeader('ETag', etag);
+      res.setHeader('Content-Length', String(Buffer.byteLength(bundle)));
+      res.end(bundle);
     }
-
-    res.setHeader('Content-Type', 'application/javascript');
-    res.setHeader('ETag', etag);
-    res.setHeader('Content-Length', String(Buffer.byteLength(bundle)));
-    res.end(bundle);
 
     this._reporter.update({
       buildID,
@@ -962,7 +962,10 @@ class Server {
     });
 
     debug('Finished response');
-    log(createActionEndEntry(requestingBundleLogEntry));
+    log({
+      ...createActionEndEntry(requestingBundleLogEntry),
+      outdated_modules: numModifiedFiles,
+    });
   }
 
   async _processSourceMapUsingDeltaBundler(

@@ -105,14 +105,20 @@ class DeltaBundler {
     };
   }
 
-  async buildFullBundle(options: FullBuildOptions): Promise<string> {
-    let output = (await this._getDeltaPatcher(options)).stringifyCode();
+  async buildFullBundle(
+    options: FullBuildOptions,
+  ): Promise<{bundle: string, numModifiedFiles: number}> {
+    const deltaPatcher = await this._getDeltaPatcher(options);
+    let bundle = deltaPatcher.stringifyCode();
 
     if (options.sourceMapUrl) {
-      output += '//# sourceMappingURL=' + options.sourceMapUrl;
+      bundle += '//# sourceMappingURL=' + options.sourceMapUrl;
     }
 
-    return output;
+    return {
+      bundle,
+      numModifiedFiles: deltaPatcher.getLastNumModifiedFiles(),
+    };
   }
 
   async buildFullSourceMap(options: FullBuildOptions): Promise<string> {

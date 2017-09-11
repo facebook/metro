@@ -28,6 +28,7 @@ class DeltaPatcher {
     modules: new Map(),
   };
   _initialized = false;
+  _lastNumModifiedFiles = 0;
 
   /**
    * Applies a Delta Bundle to the current bundle.
@@ -51,6 +52,9 @@ class DeltaPatcher {
       };
     }
 
+    this._lastNumModifiedFiles =
+      deltaBundle.pre.size + deltaBundle.post.size + deltaBundle.delta.size;
+
     this._patchMap(this._lastBundle.pre, deltaBundle.pre);
     this._patchMap(this._lastBundle.post, deltaBundle.post);
     this._patchMap(this._lastBundle.modules, deltaBundle.delta);
@@ -59,16 +63,26 @@ class DeltaPatcher {
   }
 
   /**
+   * Returns the number of modified files in the last received Delta. This is
+   * currently used to populate the `X-Metro-Files-Changed-Count` HTTP header
+   * when metro serves the whole JS bundle, and can potentially be removed once
+   * we only send the actual deltas to clients.
+   */
+  getLastNumModifiedFiles(): number {
+    return this._lastNumModifiedFiles;
+  }
+
+  /**
    * Converts the current delta bundle to a standard string bundle, ready to
    * be interpreted by any JS VM.
    */
-  stringifyCode() {
+  stringifyCode(): string {
     const code = this._getAllModules().map(m => m.code);
 
     return code.join('\n;');
   }
 
-  stringifyMap({excludeSource}: {excludeSource?: boolean}) {
+  stringifyMap({excludeSource}: {excludeSource?: boolean}): string {
     const mappings = fromRawMappings(this._getAllModules());
 
     return mappings.toString(undefined, {excludeSource});
