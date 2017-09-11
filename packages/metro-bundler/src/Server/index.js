@@ -787,9 +787,14 @@ class Server {
       return;
     }
 
-    if (this._opts.useDeltaBundler && requestType === 'bundle') {
-      await this._processRequestUsingDeltaBundler(req, res);
-      return;
+    if (this._opts.useDeltaBundler) {
+      if (requestType === 'bundle') {
+        await this._processBundleUsingDeltaBundler(req, res);
+        return;
+      } else if (requestType === 'map') {
+        await this._processSourceMapUsingDeltaBundler(req, res);
+        return;
+      }
     }
 
     const options = this._getOptionsFromUrl(req.url);
@@ -877,18 +882,10 @@ class Server {
       });
   }
 
-  async _processRequestUsingDeltaBundler(
+  _prepareDeltaBundler(
     req: IncomingMessage,
-    res: ServerResponse,
-  ) {
+  ): {options: BundleOptions, buildID: string} {
     const options = this._getOptionsFromUrl(req.url);
-    const requestingBundleLogEntry = log(
-      createActionStartEntry({
-        action_name: 'Requesting bundle',
-        bundle_url: req.url,
-        entry_point: options.entryFile,
-      }),
-    );
 
     const buildID = this.getNewBuildID();
 
@@ -909,10 +906,40 @@ class Server {
       type: 'bundle_build_started',
     });
 
-    const bundle = await this._deltaBundler.buildFullBundle({
-      ...options,
-      deltaBundleId: this.optionsHash(options),
-    });
+    return {options, buildID};
+  }
+
+  async _processBundleUsingDeltaBundler(
+    req: IncomingMessage,
+    res: ServerResponse,
+  ) {
+    const {options, buildID} = this._prepareDeltaBundler(req);
+
+    const requestingBundleLogEntry = log(
+      createActionStartEntry({
+        action_name: 'Requesting bundle',
+        bundle_url: req.url,
+        entry_point: options.entryFile,
+      }),
+    );
+
+    let bundle;
+
+    try {
+      bundle = await this._deltaBundler.buildFullBundle({
+        ...options,
+        deltaBundleId: this.optionsHash(options),
+      });
+    } catch (error) {
+      this._handleError(res, this.optionsHash(options), error);
+
+      this._reporter.update({
+        buildID,
+        type: 'bundle_build_failed',
+      });
+
+      return;
+    }
 
     const etag = crypto.createHash('md5').update(bundle).digest('hex');
 
@@ -935,6 +962,49 @@ class Server {
     });
 
     debug('Finished response');
+    log(createActionEndEntry(requestingBundleLogEntry));
+  }
+
+  async _processSourceMapUsingDeltaBundler(
+    req: IncomingMessage,
+    res: ServerResponse,
+  ) {
+    const {options, buildID} = this._prepareDeltaBundler(req);
+
+    const requestingBundleLogEntry = log(
+      createActionStartEntry({
+        action_name: 'Requesting sourcemap',
+        bundle_url: req.url,
+        entry_point: options.entryFile,
+      }),
+    );
+
+    let sourceMap;
+
+    try {
+      sourceMap = await this._deltaBundler.buildFullSourceMap({
+        ...options,
+        deltaBundleId: this.optionsHash(options),
+      });
+    } catch (error) {
+      this._handleError(res, this.optionsHash(options), error);
+
+      this._reporter.update({
+        buildID,
+        type: 'bundle_build_failed',
+      });
+
+      return;
+    }
+
+    res.setHeader('Content-Type', 'application/json');
+    res.end(sourceMap.toString());
+
+    this._reporter.update({
+      buildID,
+      type: 'bundle_build_done',
+    });
+
     log(createActionEndEntry(requestingBundleLogEntry));
   }
 
