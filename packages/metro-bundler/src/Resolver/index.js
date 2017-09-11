@@ -227,7 +227,6 @@ class Resolver {
     map,
     code,
     dev = true,
-    minify = false,
   }: {
     module: Module,
     getModuleId: ({path: string}) => number,
@@ -237,8 +236,7 @@ class Resolver {
     map: ?MappingsMap,
     code: string,
     dev?: boolean,
-    minify?: boolean,
-  }): Promise<{code: string, map: ?MappingsMap}> {
+  }): {code: string, map: ?MappingsMap} {
     if (module.isJSON()) {
       code = `module.exports = ${code}`;
     }
@@ -258,12 +256,10 @@ class Resolver {
       code = defineModuleCode(moduleId, code, name, dev);
     }
 
-    return minify
-      ? this._minifyCode(module.path, code, map).then(this._postMinifyProcess)
-      : Promise.resolve({code, map});
+    return {code, map};
   }
 
-  minifyModule({
+  async minifyModule({
     path,
     code,
     map,
@@ -272,7 +268,8 @@ class Resolver {
     code: string,
     map: ?MappingsMap,
   }): Promise<{code: string, map: ?MappingsMap}> {
-    return this._minifyCode(path, code, map);
+    const minified = await this._minifyCode(path, code, map);
+    return await this._postMinifyProcess(minified);
   }
 
   getDependencyGraph(): DependencyGraph {

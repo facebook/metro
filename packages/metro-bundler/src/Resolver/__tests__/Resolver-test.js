@@ -244,38 +244,34 @@ describe('Resolver', function() {
           ]),
       );
 
-      return depResolver
-        .wrapModule({
-          module: module,
-          getModuleId: resolutionResponse.getModuleId,
-          dependencyPairs: resolutionResponse.getResolvedDependencyPairs(
-            module,
-          ),
-          name: 'test module',
-          code,
-          dependencyOffsets,
-          dev: false,
-        })
-        .then(({code: processedCode}) => {
-          expect(processedCode).toEqual(
-            [
-              '__d(/* test module */function(global, require, module, exports) {' +
-                // require
-                `require(${moduleIds.get('x')}) // ${moduleIds
-                  .get('x')
-                  .trim()} = x`,
-              `require(${moduleIds.get('y')});require(${moduleIds.get(
-                'abc',
-              )}); // ${moduleIds.get('abc').trim()} = abc // ${moduleIds
-                .get('y')
-                .trim()} = y`,
-              "require( 'z' )",
-              'require( "a")',
-              'require("b" )',
-              `}, ${resolutionResponse.getModuleId(module)});`,
-            ].join('\n'),
-          );
-        });
+      const {code: processedCode} = depResolver.wrapModule({
+        module: module,
+        getModuleId: resolutionResponse.getModuleId,
+        dependencyPairs: resolutionResponse.getResolvedDependencyPairs(module),
+        name: 'test module',
+        code,
+        dependencyOffsets,
+        dev: false,
+      });
+
+      expect(processedCode).toEqual(
+        [
+          '__d(/* test module */function(global, require, module, exports) {' +
+            // require
+            `require(${moduleIds.get('x')}) // ${moduleIds
+              .get('x')
+              .trim()} = x`,
+          `require(${moduleIds.get('y')});require(${moduleIds.get(
+            'abc',
+          )}); // ${moduleIds.get('abc').trim()} = abc // ${moduleIds
+            .get('y')
+            .trim()} = y`,
+          "require( 'z' )",
+          'require( "a")',
+          'require("b" )',
+          `}, ${resolutionResponse.getModuleId(module)});`,
+        ].join('\n'),
+      );
     });
 
     it('should add module transport names as fourth argument to `__d`', () => {
@@ -287,28 +283,22 @@ describe('Resolver', function() {
         dependencies: [module],
         mainModuleId: 'test module',
       });
-      return depResolver
-        .wrapModule({
-          getModuleId: resolutionResponse.getModuleId,
-          dependencyPairs: resolutionResponse.getResolvedDependencyPairs(
-            module,
-          ),
-          code,
-          module,
-          name: 'test module',
-          dev: true,
-        })
-        .then(({code: processedCode}) =>
-          expect(processedCode).toEqual(
-            [
-              '__d(/* test module */function(global, require, module, exports) {' +
-                code,
-              `}, ${resolutionResponse.getModuleId(
-                module,
-              )}, null, "test module");`,
-            ].join('\n'),
-          ),
-        );
+
+      const {code: processedCode} = depResolver.wrapModule({
+        getModuleId: resolutionResponse.getModuleId,
+        dependencyPairs: resolutionResponse.getResolvedDependencyPairs(module),
+        code,
+        module,
+        name: 'test module',
+        dev: true,
+      });
+      expect(processedCode).toEqual(
+        [
+          '__d(/* test module */function(global, require, module, exports) {' +
+            code,
+          `}, ${resolutionResponse.getModuleId(module)}, null, "test module");`,
+        ].join('\n'),
+      );
     });
 
     it('should pass through passed-in source maps', () => {
@@ -319,42 +309,39 @@ describe('Resolver', function() {
         mainModuleId: 'test module',
       });
       const inputMap = {version: 3, mappings: 'ARBITRARY'};
-      return depResolver
-        .wrapModule({
-          getModuleId: resolutionResponse.getModuleId,
-          dependencyPairs: resolutionResponse.getResolvedDependencyPairs(
-            module,
-          ),
-          module,
-          name: 'test module',
-          code: 'arbitrary(code)',
-          map: inputMap,
-        })
-        .then(({map}) => expect(map).toBe(inputMap));
+
+      const {map} = depResolver.wrapModule({
+        getModuleId: resolutionResponse.getModuleId,
+        dependencyPairs: resolutionResponse.getResolvedDependencyPairs(module),
+        module,
+        name: 'test module',
+        code: 'arbitrary(code)',
+        map: inputMap,
+      });
+      expect(map).toBe(inputMap);
     });
 
-    it('should resolve polyfills', function() {
+    it('should resolve polyfills', async function() {
       expect.assertions(1);
       return Resolver.load({
         projectRoot: '/root',
       }).then(depResolver => {
         const polyfill = createPolyfill('test polyfill', []);
         const code = ['global.fetch = () => 1;'].join('');
-        return depResolver
-          .wrapModule({
-            module: polyfill,
-            code,
-          })
-          .then(({code: processedCode}) => {
-            expect(processedCode).toEqual(
-              [
-                '(function(global) {',
-                'global.fetch = () => 1;',
-                '\n})' +
-                  "(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this);",
-              ].join(''),
-            );
-          });
+
+        const {code: processedCode} = depResolver.wrapModule({
+          module: polyfill,
+          code,
+        });
+
+        expect(processedCode).toEqual(
+          [
+            '(function(global) {',
+            'global.fetch = () => 1;',
+            '\n})' +
+              "(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this);",
+          ].join(''),
+        );
       });
     });
 
@@ -376,27 +363,25 @@ describe('Resolver', function() {
 
       it('should prefix JSON files with `module.exports=`', () => {
         expect.assertions(1);
-        return depResolver
-          .wrapModule({
-            getModuleId: resolutionResponse.getModuleId,
-            dependencyPairs: resolutionResponse.getResolvedDependencyPairs(
-              module,
-            ),
+        const {code: processedCode} = depResolver.wrapModule({
+          getModuleId: resolutionResponse.getModuleId,
+          dependencyPairs: resolutionResponse.getResolvedDependencyPairs(
             module,
-            name: id,
-            code,
-            dev: false,
-          })
-          .then(({code: processedCode}) =>
-            expect(processedCode).toEqual(
-              [
-                `__d(/* ${id} */function(global, require, module, exports) {`,
-                `module.exports = ${code}\n}, ${resolutionResponse.getModuleId(
-                  module,
-                )});`,
-              ].join(''),
-            ),
-          );
+          ),
+          module,
+          name: id,
+          code,
+          dev: false,
+        });
+
+        expect(processedCode).toEqual(
+          [
+            `__d(/* ${id} */function(global, require, module, exports) {`,
+            `module.exports = ${code}\n}, ${resolutionResponse.getModuleId(
+              module,
+            )});`,
+          ].join(''),
+        );
       });
     });
 
@@ -419,36 +404,10 @@ describe('Resolver', function() {
         return Resolver.load({
           projectRoot: '/root',
           minifyCode,
+          postMinifyProcess: e => e,
         }).then(r => {
           depResolver = r;
         });
-      });
-
-      it('should invoke the minifier with the wrapped code', () => {
-        expect.assertions(1);
-        const wrappedCode = `__d(/* ${id} */function(global, require, module, exports) {${code}\n}, ${resolutionResponse.getModuleId(
-          module,
-        )});`;
-        return depResolver
-          .wrapModule({
-            getModuleId: resolutionResponse.getModuleId,
-            dependencyPairs: resolutionResponse.getResolvedDependencyPairs(
-              module,
-            ),
-            module,
-            name: id,
-            code,
-            map: sourceMap,
-            minify: true,
-            dev: false,
-          })
-          .then(() => {
-            expect(minifyCode).toBeCalledWith(
-              module.path,
-              wrappedCode,
-              sourceMap,
-            );
-          });
       });
 
       it('should use minified code', () => {
@@ -459,15 +418,10 @@ describe('Resolver', function() {
           Promise.resolve({code: minifiedCode, map: minifiedMap}),
         );
         return depResolver
-          .wrapModule({
-            getModuleId: resolutionResponse.getModuleId,
-            dependencyPairs: resolutionResponse.getResolvedDependencyPairs(
-              module,
-            ),
-            module,
+          .minifyModule({
+            path: module.path,
             name: id,
             code,
-            minify: true,
           })
           .then(({code, map}) => {
             expect(code).toEqual(minifiedCode);

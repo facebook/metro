@@ -86,16 +86,23 @@ class Bundle extends BundleBase {
      * using an instance typed as the base class would be broken. This must be
      * refactored.
      */
-    resolver: {wrapModule: (options: any) => Promise<{code: any, map: any}>},
+    resolver: {
+      wrapModule: (options: any) => {code: any, map: any},
+      minifyModule: ({code: any, map: any, path: any}) => Promise<{
+        code: any,
+        map: any,
+      }>,
+    },
     resolutionResponse: any,
-    module: mixed,
+    module: any,
     /* $FlowFixMe: erroneous change of signature. */
     moduleTransport: ModuleTransport,
     /* $FlowFixMe: erroneous change of signature. */
   ): Promise<void> {
     const index = super.addModule(moduleTransport);
-    return resolver
-      .wrapModule({
+
+    return Promise.resolve(
+      resolver.wrapModule({
         module,
         getModuleId: resolutionResponse.getModuleId,
         dependencyPairs: resolutionResponse.getResolvedDependencyPairs(module),
@@ -105,8 +112,13 @@ class Bundle extends BundleBase {
         dependencyOffsets: moduleTransport.meta
           ? moduleTransport.meta.dependencyOffsets
           : undefined,
-        minify: this._minify,
         dev: this._dev,
+      }),
+    )
+      .then(({code, map}) => {
+        return this._minify
+          ? resolver.minifyModule({code, map, path: module.path})
+          : {code, map};
       })
       .then(({code, map}) => {
         // If we get a map from the transformer we'll switch to a mode
