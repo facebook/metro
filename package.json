@@ -58,6 +58,7 @@
     "timers": "fake",
     "setupFiles": [
       "<rootDir>/scripts/setupJest.js"
-    ]
+    ],
+    "testEnvironment": "node"
   }
 }
