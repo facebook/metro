@@ -95,11 +95,11 @@ class HmrServer<TClient: Client> {
     const result = await client.deltaTransformer.getDelta();
     const modules = [];
 
-    for (const id in result.delta) {
+    for (const [id, module] of result.delta) {
       // The Delta Bundle can have null objects: these correspond to deleted
       // modules, which we don't need to send to the client.
-      if (result.delta[id] != null) {
-        modules.push({id, code: result.delta[id]});
+      if (module != null) {
+        modules.push({id, code: module.code});
       }
     }
 

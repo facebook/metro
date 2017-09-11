@@ -137,6 +137,7 @@ describe('DeltaCalculator', () => {
     expect(await deltaCalculator.getDelta()).toEqual({
       modified: new Map(),
       deleted: new Set(),
+      reset: false,
     });
   });
 
@@ -150,6 +151,7 @@ describe('DeltaCalculator', () => {
     expect(result).toEqual({
       modified: new Map([['/foo', moduleFoo]]),
       deleted: new Set(),
+      reset: false,
     });
   });
 
@@ -167,6 +169,7 @@ describe('DeltaCalculator', () => {
     expect(result).toEqual({
       modified: new Map([['/foo', moduleFoo]]),
       deleted: new Set(['/bar']),
+      reset: false,
     });
   });
 
@@ -185,6 +188,7 @@ describe('DeltaCalculator', () => {
     expect(result).toEqual({
       modified: new Map([['/foo', moduleFoo], ['/qux', moduleQux]]),
       deleted: new Set(['/bar', '/baz']),
+      reset: false,
     });
   });
 

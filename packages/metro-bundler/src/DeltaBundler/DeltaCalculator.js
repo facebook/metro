@@ -21,11 +21,11 @@ import type {BundleOptions} from '../Server';
 import type ResolutionResponse from '../node-haste/DependencyGraph/ResolutionResponse';
 import type Module from '../node-haste/Module';
 
-export type DeltaResult = {
-  modified: Map<string, Module>,
-  deleted: Set<string>,
-  reset?: boolean,
-};
+export type DeltaResult = {|
+  +modified: Map<string, Module>,
+  +deleted: Set<string>,
+  +reset: boolean,
+|};
 
 /**
  * This class is in charge of calculating the delta of changed modules that
@@ -199,7 +199,7 @@ class DeltaCalculator extends EventEmitter {
 
     // No changes happened. Return empty delta.
     if (modifiedArray.length === 0) {
-      return {modified: new Map(), deleted: new Set()};
+      return {modified: new Map(), deleted: new Set(), reset: false};
     }
 
     // Build the modules from the files that have been modified.
@@ -219,7 +219,7 @@ class DeltaCalculator extends EventEmitter {
     // If there is no file with changes in its dependencies, we can just
     // return the modified modules without recalculating the dependencies.
     if (!filesWithChangedDependencies.some(value => value)) {
-      return {modified, deleted: new Set()};
+      return {modified, deleted: new Set(), reset: false};
     }
 
     // Recalculate all dependencies and append the newly added files to the
@@ -233,6 +233,7 @@ class DeltaCalculator extends EventEmitter {
     return {
       modified,
       deleted,
+      reset: false,
     };
   }
 

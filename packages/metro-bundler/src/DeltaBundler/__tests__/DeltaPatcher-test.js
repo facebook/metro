@@ -24,9 +24,9 @@ describe('DeltaPatcher', () => {
   it('should throw if received a non-reset delta as the initial one', () => {
     expect(() =>
       deltaPatcher.applyDelta({
-        pre: 'pre',
-        post: 'post',
-        delta: {},
+        pre: new Map(),
+        post: new Map(),
+        delta: new Map(),
       }),
     ).toThrow();
   });
@@ -35,13 +35,11 @@ describe('DeltaPatcher', () => {
     const result = deltaPatcher
       .applyDelta({
         reset: 1,
-        pre: 'pre',
-        post: 'post',
-        delta: {
-          1: 'middle',
-        },
+        pre: new Map([[1, {code: 'pre'}]]),
+        post: new Map([[2, {code: 'post'}]]),
+        delta: new Map([[3, {code: 'middle'}]]),
       })
-      .stringify();
+      .stringifyCode();
 
     expect(result).toMatchSnapshot();
   });
@@ -50,56 +48,48 @@ describe('DeltaPatcher', () => {
     const result = deltaPatcher
       .applyDelta({
         reset: 1,
-        pre: 'pre',
-        post: 'post',
-        delta: {
-          1: 'middle',
-        },
+        pre: new Map([[1000, {code: 'pre'}]]),
+        post: new Map([[2000, {code: 'post'}]]),
+        delta: new Map([[1, {code: 'middle'}]]),
       })
       .applyDelta({
-        delta: {
-          2: 'another',
-        },
+        pre: new Map(),
+        post: new Map(),
+        delta: new Map([[2, {code: 'another'}]]),
       })
       .applyDelta({
-        delta: {
-          2: 'another',
-          87: 'third',
-        },
+        pre: new Map(),
+        post: new Map(),
+        delta: new Map([[2, {code: 'another'}], [87, {code: 'third'}]]),
       })
-      .stringify();
+      .stringifyCode();
 
     expect(result).toMatchSnapshot();
 
     const anotherResult = deltaPatcher
       .applyDelta({
-        pre: 'new pre',
-        delta: {
-          2: 'another',
-          1: null,
-        },
+        pre: new Map([[1000, {code: 'new pre'}]]),
+        post: new Map(),
+        delta: new Map([[2, {code: 'another'}], [1, null]]),
       })
       .applyDelta({
-        delta: {
-          2: null,
-          12: 'twelve',
-        },
+        pre: new Map(),
+        post: new Map(),
+        delta: new Map([[2, null], [12, {code: 'twelve'}]]),
       })
-      .stringify();
+      .stringifyCode();
 
     expect(anotherResult).toMatchSnapshot();
 
     expect(
       deltaPatcher
         .applyDelta({
-          pre: '1',
-          post: '1',
-          delta: {
-            12: 'ten',
-          },
+          pre: new Map([[1000, {code: '1'}]]),
+          post: new Map([[1000, {code: '1'}]]),
+          delta: new Map([[12, {code: 'ten'}]]),
           reset: true,
         })
-        .stringify(),
+        .stringifyCode(),
     ).toMatchSnapshot();
   });
 });

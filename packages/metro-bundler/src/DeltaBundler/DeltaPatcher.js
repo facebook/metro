@@ -12,6 +12,8 @@
 
 'use strict';
 
+const {fromRawMappings} = require('../Bundler/source-map');
+
 import type {DeltaBundle} from './';
 
 /**
@@ -21,16 +23,16 @@ import type {DeltaBundle} from './';
  */
 class DeltaPatcher {
   _lastBundle = {
-    pre: '',
-    post: '',
-    modules: {},
+    pre: new Map(),
+    post: new Map(),
+    modules: new Map(),
   };
   _initialized = false;
 
   /**
    * Applies a Delta Bundle to the current bundle.
    */
-  applyDelta(deltaBundle: DeltaBundle) {
+  applyDelta(deltaBundle: DeltaBundle): DeltaPatcher {
     // Make sure that the first received delta is a fresh one.
     if (!this._initialized && !deltaBundle.reset) {
       throw new Error(
@@ -43,30 +45,15 @@ class DeltaPatcher {
     // Reset the current delta when we receive a fresh delta.
     if (deltaBundle.reset) {
       this._lastBundle = {
-        pre: '',
-        post: '',
-        modules: {},
+        pre: new Map(),
+        post: new Map(),
+        modules: new Map(),
       };
     }
 
-    // Override the prepended sources.
-    if (deltaBundle.pre) {
-      this._lastBundle.pre = deltaBundle.pre;
-    }
-
-    // Override the appended sources.
-    if (deltaBundle.post) {
-      this._lastBundle.post = deltaBundle.post;
-    }
-
-    // Patch the received modules.
-    for (const i in deltaBundle.delta) {
-      if (deltaBundle.delta[i] == null) {
-        delete this._lastBundle.modules[i];
-      } else {
-        this._lastBundle.modules[i] = deltaBundle.delta[i];
-      }
-    }
+    this._patchMap(this._lastBundle.pre, deltaBundle.pre);
+    this._patchMap(this._lastBundle.post, deltaBundle.post);
+    this._patchMap(this._lastBundle.modules, deltaBundle.delta);
 
     return this;
   }
@@ -75,14 +62,34 @@ class DeltaPatcher {
    * Converts the current delta bundle to a standard string bundle, ready to
    * be interpreted by any JS VM.
    */
-  stringify() {
-    return []
-      .concat(
-        this._lastBundle.pre,
-        Object.values(this._lastBundle.modules),
-        this._lastBundle.post,
-      )
-      .join('\n;');
+  stringifyCode() {
+    const code = this._getAllModules().map(m => m.code);
+
+    return code.join('\n;');
+  }
+
+  stringifyMap({excludeSource}: {excludeSource?: boolean}) {
+    const mappings = fromRawMappings(this._getAllModules());
+
+    return mappings.toString(undefined, {excludeSource});
+  }
+
+  _getAllModules() {
+    return [].concat(
+      Array.from(this._lastBundle.pre.values()),
+      Array.from(this._lastBundle.modules.values()),
+      Array.from(this._lastBundle.post.values()),
+    );
+  }
+
+  _patchMap<K, V>(original: Map<K, V>, patch: Map<K, ?V>) {
+    for (const [key, value] of patch.entries()) {
+      if (value == null) {
+        original.delete(key);
+      } else {
+        original.set(key, value);
+      }
+    }
   }
 }
 

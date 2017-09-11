@@ -16,6 +16,7 @@ const DeltaCalculator = require('./DeltaCalculator');
 
 const {EventEmitter} = require('events');
 
+import type {RawMapping} from '../Bundler/source-map';
 import type Bundler from '../Bundler';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type Resolver from '../Resolver';
@@ -23,12 +24,23 @@ import type {MappingsMap} from '../lib/SourceMap';
 import type Module from '../node-haste/Module';
 import type {Options as BundleOptions} from './';
 
-export type DeltaTransformResponse = {
-  +pre: ?string,
-  +post: ?string,
-  +delta: {[key: string]: ?string},
+type DeltaEntry = {|
+  +code: string,
+  +map: ?Array<RawMapping>,
+  +name: string,
+  +path: string,
+  +source: string,
+|};
+
+export type DeltaEntries = Map<number, ?DeltaEntry>;
+
+export type DeltaTransformResponse = {|
+  +pre: DeltaEntries,
+  +post: DeltaEntries,
+  +delta: DeltaEntries,
   +inverseDependencies: {[key: string]: $ReadOnlyArray<string>},
-};
+  +reset: boolean,
+|};
 
 type Options = {|
   +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
@@ -37,18 +49,19 @@ type Options = {|
 
 /**
  * This class is in charge of creating the delta bundle with the actual
- * transformed source code for each of the modified modules.
+ * transformed source code for each of the modified modules. For each modified
+ * module it returns a `DeltaModule` object that contains the basic information
+ * about that file. Modules that have been deleted contain a `null` module
+ * parameter.
  *
- * The delta bundle format is the following:
+ * The actual return format is the following:
  *
  *   {
- *     pre: '...',   // source code to be prepended before all the modules.
- *     post: '...',  // source code to be appended after all the modules
- *                   // (normally here lay the require() call for the starup).
- *     delta: {
- *       27: '...',  // transformed source code of a modified module.
- *       56: null,   // deleted module.
- *     },
+ *     pre: [{id, module: {}}],   Scripts to be prepended before the actual
+ *                                modules.
+ *     post: [{id, module: {}}],  Scripts to be appended after all the modules
+ *                                (normally the initial require() calls).
+ *     delta: [{id, module: {}}], Actual bundle modules (dependencies).
  *   }
  */
 class DeltaTransformer extends EventEmitter {
@@ -142,22 +155,21 @@ class DeltaTransformer extends EventEmitter {
 
     // Get the transformed source code of each modified/added module.
     const modifiedDelta = await this._transformModules(
-      modified,
+      Array.from(modified.values()),
       resolver,
       transformerOptions,
       dependencyPairs,
     );
 
-    const deletedDelta = Object.create(null);
     deleted.forEach(id => {
-      deletedDelta[this._getModuleId({path: id})] = null;
+      modifiedDelta.set(this._getModuleId({path: id}), null);
     });
 
     // Return the source code that gets prepended to all the modules. This
     // contains polyfills and startup code (like the require() implementation).
     const prependSources = reset
       ? await this._getPrepend(transformerOptions, dependencyPairs)
-      : null;
+      : new Map();
 
     // Return the source code that gets appended to all the modules. This
     // contains the require() calls to startup the execution of the modules.
@@ -166,7 +178,7 @@ class DeltaTransformer extends EventEmitter {
           dependencyPairs,
           this._deltaCalculator.getModulesByName(),
         )
-      : null;
+      : new Map();
 
     // Inverse dependencies are needed for HMR.
     const inverseDependencies = this._getInverseDependencies(
@@ -176,7 +188,7 @@ class DeltaTransformer extends EventEmitter {
     return {
       pre: prependSources,
       post: appendSources,
-      delta: {...modifiedDelta, ...deletedDelta},
+      delta: modifiedDelta,
       inverseDependencies,
       reset,
     };
@@ -185,7 +197,7 @@ class DeltaTransformer extends EventEmitter {
   async _getPrepend(
     transformOptions: JSTransformerOptions,
     dependencyPairs: Map<string, $ReadOnlyArray<[string, Module]>>,
-  ): Promise<string> {
+  ): Promise<DeltaEntries> {
     const resolver = await this._bundler.getResolver();
 
     // Get all the polyfills from the relevant option params (the
@@ -210,25 +222,18 @@ class DeltaTransformer extends EventEmitter {
       ),
     );
 
-    const sources = await Promise.all(
-      modules.map(async module => {
-        const result = await this._transformModule(
-          module,
-          resolver,
-          transformOptions,
-          dependencyPairs,
-        );
-        return result[1];
-      }),
+    return await this._transformModules(
+      modules,
+      resolver,
+      transformOptions,
+      dependencyPairs,
     );
-
-    return sources.join('\n;');
   }
 
   async _getAppend(
     dependencyPairs: Map<string, $ReadOnlyArray<[string, Module]>>,
     modulesByName: Map<string, Module>,
-  ): Promise<string> {
+  ): Promise<DeltaEntries> {
     const resolver = await this._bundler.getResolver();
 
     // Get the absolute path of the entry file, in order to be able to get the
@@ -242,14 +247,29 @@ class DeltaTransformer extends EventEmitter {
     // First, get the modules correspondant to all the module names defined in
     // the `runBeforeMainModule` config variable. Then, append the entry point
     // module so the last thing that gets required is the entry point.
-    const sources = this._bundleOptions.runBeforeMainModule
-      .map(name => modulesByName.get(name))
-      .concat(entryPointModule)
-      .filter(Boolean)
-      .map(this._getModuleId)
-      .map(moduleId => `;require(${JSON.stringify(moduleId)});`);
+    return new Map(
+      this._bundleOptions.runBeforeMainModule
+        .map(name => modulesByName.get(name))
+        .concat(entryPointModule)
+        .filter(Boolean)
+        .map(this._getModuleId)
+        .map(moduleId => {
+          const code = `;require(${JSON.stringify(moduleId)});`;
+          const name = 'require-' + String(moduleId);
+          const path = name + '.js';
 
-    return sources.join('\n');
+          return [
+            moduleId,
+            {
+              code,
+              map: null,
+              name,
+              source: code,
+              path,
+            },
+          ];
+        }),
+    );
   }
 
   /**
@@ -270,28 +290,23 @@ class DeltaTransformer extends EventEmitter {
   }
 
   async _transformModules(
-    modules: Map<string, Module>,
+    modules: Array<Module>,
     resolver: Resolver,
     transformOptions: JSTransformerOptions,
     dependencyPairs: Map<string, $ReadOnlyArray<[string, Module]>>,
-  ): Promise<{[key: string]: string}> {
-    const transformedModules = await Promise.all(
-      Array.from(modules.values()).map(module =>
-        this._transformModule(
-          module,
-          resolver,
-          transformOptions,
-          dependencyPairs,
+  ): Promise<DeltaEntries> {
+    return new Map(
+      await Promise.all(
+        modules.map(module =>
+          this._transformModule(
+            module,
+            resolver,
+            transformOptions,
+            dependencyPairs,
+          ),
         ),
       ),
     );
-
-    const output = Object.create(null);
-    transformedModules.forEach(([id, source]) => {
-      output[id] = source;
-    });
-
-    return output;
   }
 
   async _transformModule(
@@ -299,7 +314,7 @@ class DeltaTransformer extends EventEmitter {
     resolver: Resolver,
     transformOptions: JSTransformerOptions,
     dependencyPairs: Map<string, $ReadOnlyArray<[string, Module]>>,
-  ): Promise<[number, string]> {
+  ): Promise<[number, ?DeltaEntry]> {
     const [name, metadata] = await Promise.all([
       module.getName(),
       this._getMetadata(module, transformOptions),
@@ -327,9 +342,25 @@ class DeltaTransformer extends EventEmitter {
             dependencyPairsForModule,
             metadata.dependencyOffsets || [],
           ),
+          map: metadata.map,
         };
 
-    return [this._getModuleId(module), wrapped.code];
+    // Ignore the Source Maps if the output of the transformer is not our
+    // custom rawMapping data structure, since the Delta bundler cannot process
+    // them. This can potentially happen when the minifier is enabled (since
+    // uglifyJS only returns standard Source Maps).
+    const map = Array.isArray(wrapped.map) ? wrapped.map : undefined;
+
+    return [
+      this._getModuleId(module),
+      {
+        code: wrapped.code,
+        map,
+        name,
+        source: metadata.source,
+        path: module.path,
+      },
+    ];
   }
 
   async _getMetadata(
@@ -338,7 +369,8 @@ class DeltaTransformer extends EventEmitter {
   ): Promise<{
     +code: string,
     +dependencyOffsets: ?Array<number>,
-    +map?: ?MappingsMap,
+    +map: ?MappingsMap,
+    +source: string,
   }> {
     if (module.isAsset()) {
       const asset = await this._bundler.generateAssetObjAndCode(
@@ -351,6 +383,7 @@ class DeltaTransformer extends EventEmitter {
         code: asset.code,
         dependencyOffsets: asset.meta.dependencyOffsets,
         map: undefined,
+        source: '',
       };
     }
 

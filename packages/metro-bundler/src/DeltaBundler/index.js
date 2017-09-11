@@ -17,14 +17,16 @@ const DeltaTransformer = require('./DeltaTransformer');
 
 import type Bundler from '../Bundler';
 import type {BundleOptions} from '../Server';
+import type {DeltaEntries} from './DeltaTransformer';
 
-export type DeltaBundle = {
-  id: string,
-  pre: ?string,
-  post: ?string,
-  delta: {[key: string]: ?string},
-  inverseDependencies: {[key: string]: $ReadOnlyArray<string>},
-};
+export type DeltaBundle = {|
+  +id: string,
+  +pre: DeltaEntries,
+  +post: DeltaEntries,
+  +delta: DeltaEntries,
+  +inverseDependencies: {[key: string]: $ReadOnlyArray<string>},
+  +reset: boolean,
+|};
 
 type MainOptions = {|
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
@@ -59,7 +61,12 @@ class DeltaBundler {
   }
 
   async build(options: Options): Promise<DeltaBundle> {
-    const {deltaTransformer, id} = await this.getDeltaTransformer(options);
+    const {deltaTransformer, id} = await this.getDeltaTransformer({
+      ...options,
+      // The Delta Bundler does not support minifying due to issues generating
+      // the source maps (T21699790).
+      minify: false,
+    });
     const response = await deltaTransformer.getDelta();
 
     return {
@@ -99,6 +106,22 @@ class DeltaBundler {
   }
 
   async buildFullBundle(options: FullBuildOptions): Promise<string> {
+    let output = (await this._getDeltaPatcher(options)).stringifyCode();
+
+    if (options.sourceMapUrl) {
+      output += '//# sourceMappingURL=' + options.sourceMapUrl;
+    }
+
+    return output;
+  }
+
+  async buildFullSourceMap(options: FullBuildOptions): Promise<string> {
+    return (await this._getDeltaPatcher(options)).stringifyMap({
+      excludeSource: options.excludeSource,
+    });
+  }
+
+  async _getDeltaPatcher(options: FullBuildOptions): Promise<DeltaPatcher> {
     const deltaBundle = await this.build({
       ...options,
       wrapModules: true,
@@ -108,11 +131,10 @@ class DeltaBundler {
 
     if (!deltaPatcher) {
       deltaPatcher = new DeltaPatcher();
-
       this._deltaPatchers.set(deltaBundle.id, deltaPatcher);
     }
 
-    return deltaPatcher.applyDelta(deltaBundle).stringify();
+    return deltaPatcher.applyDelta(deltaBundle);
   }
 }
 

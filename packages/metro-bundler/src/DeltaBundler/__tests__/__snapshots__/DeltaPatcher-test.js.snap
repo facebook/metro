@@ -16,8 +16,8 @@ exports[`DeltaPatcher should apply many different patches correctly 1`] = `
 
 exports[`DeltaPatcher should apply many different patches correctly 2`] = `
 "new pre
-;twelve
 ;third
+;twelve
 ;post"
 `;
 
