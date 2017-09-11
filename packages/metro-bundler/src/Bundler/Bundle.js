@@ -272,7 +272,7 @@ class Bundle extends BundleBase {
 
     return this._sourceMapFormat === 'indexed'
       ? this._getCombinedSourceMaps(options)
-      : fromRawMappings(this.getModules()).toMap(undefined, options);
+      : this._fromRawMappings().toMap(undefined, options);
   }
 
   getSourceMapString(options: {excludeSource?: boolean}): string {
@@ -287,7 +287,7 @@ class Bundle extends BundleBase {
     let map = this._sourceMap;
     if (map == null) {
       debug('Start building flat source map');
-      map = this._sourceMap = fromRawMappings(this.getModules()).toString(
+      map = this._sourceMap = this._fromRawMappings().toString(
         undefined,
         options,
       );
@@ -352,6 +352,17 @@ class Bundle extends BundleBase {
 
   setRamGroups(ramGroups: ?Array<string>) {
     this._ramGroups = ramGroups;
+  }
+
+  _fromRawMappings() {
+    return fromRawMappings(
+      this.getModules().map(module => ({
+        map: Array.isArray(module.map) ? module.map : undefined,
+        path: module.sourcePath,
+        source: module.sourceCode,
+        code: module.code,
+      })),
+    );
   }
 }
 

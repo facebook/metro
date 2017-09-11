@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @emails oncal+javascript_foundation
  * @format
  */
 
@@ -57,14 +58,14 @@ describe('build map from raw mappings', () => {
           [7, 8, 9, 10],
           [11, 12, 13, 14, 'pears'],
         ],
-        sourceCode: 'code1',
-        sourcePath: 'path1',
+        source: 'code1',
+        path: 'path1',
       },
       {
         code: lines(3),
         map: [[1, 2], [3, 4, 15, 16, 'bananas']],
-        sourceCode: 'code2',
-        sourcePath: 'path2',
+        source: 'code2',
+        path: 'path2',
       },
       {
         code: lines(23),
@@ -74,8 +75,8 @@ describe('build map from raw mappings', () => {
           [17, 18, 19, 110],
           [21, 112, 113, 114, 'pears'],
         ],
-        sourceCode: 'code3',
-        sourcePath: 'path3',
+        source: 'code3',
+        path: 'path3',
       },
     ];
 

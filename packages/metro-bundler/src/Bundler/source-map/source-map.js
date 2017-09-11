@@ -31,7 +31,14 @@ export type RawMapping =
  * tuples with either 2, 4, or 5 elements:
  * generated line, generated column, source line, source line, symbol name.
  */
-function fromRawMappings(modules: Array<ModuleTransport>): Generator {
+function fromRawMappings(
+  modules: Array<{
+    +map: ?Array<RawMapping>,
+    +path: string,
+    +source: string,
+    +code: string,
+  }>,
+): Generator {
   const generator = new Generator();
   let carryOver = 0;
 
@@ -43,7 +50,7 @@ function fromRawMappings(modules: Array<ModuleTransport>): Generator {
       addMappingsForFile(generator, map, module, carryOver);
     } else if (map != null) {
       throw new Error(
-        `Unexpected module with full source map found: ${module.sourcePath}`,
+        `Unexpected module with full source map found: ${module.path}`,
       );
     }
 
@@ -69,7 +76,7 @@ function compactMapping(mapping: BabelRawMapping): RawMapping {
 }
 
 function addMappingsForFile(generator, mappings, module, carryOver) {
-  generator.startFile(module.sourcePath, module.sourceCode);
+  generator.startFile(module.path, module.source);
 
   const columnOffset = module.code.indexOf('{') + 1;
   for (let i = 0, n = mappings.length; i < n; ++i) {
