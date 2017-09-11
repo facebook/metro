@@ -60,6 +60,12 @@ class DeltaBundler {
     this._options = options;
   }
 
+  end() {
+    this._deltaTransformers.forEach(DeltaTransformer => DeltaTransformer.end());
+    this._deltaTransformers = new Map();
+    this._deltaPatchers = new Map();
+  }
+
   async build(options: Options): Promise<DeltaBundle> {
     const {deltaTransformer, id} = await this.getDeltaTransformer({
       ...options,

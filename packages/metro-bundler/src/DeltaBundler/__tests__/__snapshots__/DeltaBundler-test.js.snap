@@ -1,0 +1,23 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DeltaBundler should build the whole stringified bundle 1`] = `
+Object {
+  "bundle": "pre
+;module3
+;another
+;post",
+  "numModifiedFiles": 4,
+}
+`;
+
+exports[`DeltaBundler should build the whole stringified bundle 2`] = `
+Object {
+  "bundle": "pre
+;more pre
+;modified module
+;post
+;bananas
+;apples",
+  "numModifiedFiles": 5,
+}
+`;

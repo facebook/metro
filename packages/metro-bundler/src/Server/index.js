@@ -297,8 +297,9 @@ class Server {
     });
   }
 
-  end(): mixed {
-    return this._bundler.end();
+  end() {
+    this._deltaBundler.end();
+    this._bundler.end();
   }
 
   setHMRFileChangeListener(
