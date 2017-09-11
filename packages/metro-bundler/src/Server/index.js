@@ -1153,10 +1153,7 @@ class Server {
         'entryModuleOnly',
         false,
       ),
-      generateSourceMaps:
-        minify ||
-        !dev ||
-        this._getBoolOptionFromQuery(urlObj.query, 'babelSourcemap', false),
+      generateSourceMaps: false,
       assetPlugins,
       onProgress: null,
       unbundle: false,
