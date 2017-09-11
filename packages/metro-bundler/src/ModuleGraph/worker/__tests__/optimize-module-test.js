@@ -34,14 +34,9 @@ describe('optimizing JS modules', () => {
     }`;
 
   let transformResult;
-  beforeAll(done => {
-    transformModule(originalCode, {filename, transformer}, (error, result) => {
-      if (error) {
-        throw error;
-      }
-      transformResult = JSON.stringify({type: 'code', details: result.details});
-      done();
-    });
+  beforeAll(() => {
+    const result = transformModule(originalCode, {filename, transformer});
+    transformResult = JSON.stringify({type: 'code', details: result.details});
   });
 
   it('copies everything from the transformed file, except for transform results', () => {

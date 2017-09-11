@@ -26,4 +26,4 @@ type Asyncify = <A, B, C>((A, B) => C) => (A, B, Callback<C>) => void;
 exports.optimizeModule =
   (wrapWorkerFn(asyncify(optimizeModule)): WorkerFnWithIO<OptimizationOptions>);
 exports.transformModule =
-  (wrapWorkerFn(transformModule): WorkerFnWithIO<TransformOptions>);
+  (wrapWorkerFn(asyncify(transformModule)): WorkerFnWithIO<TransformOptions>);

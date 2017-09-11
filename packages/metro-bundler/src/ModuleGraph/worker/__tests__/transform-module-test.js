@@ -45,49 +45,35 @@ describe('transforming JS modules:', () => {
     ast: t.file(t.program(body)),
   });
 
-  it('passes through file name and code', done => {
-    transformModule(sourceCode, options(), (error, result) => {
-      expect(result.type).toBe('code');
-      expect(result.details).toEqual(
-        expect.objectContaining({
-          code: sourceCode,
-          file: filename,
-        }),
-      );
-      done();
-    });
+  it('passes through file name and code', () => {
+    const result = transformModule(sourceCode, options());
+    expect(result.type).toBe('code');
+    expect(result.details).toEqual(
+      expect.objectContaining({
+        code: sourceCode,
+        file: filename,
+      }),
+    );
   });
 
-  it('exposes a haste ID if present', done => {
+  it('exposes a haste ID if present', () => {
     const hasteID = 'TheModule';
     const codeWithHasteID = `/** @providesModule ${hasteID} */`;
-    transformModule(codeWithHasteID, options(), (error, result) => {
-      expect(result.type).toBe('code');
-      expect(result.details).toEqual(expect.objectContaining({hasteID}));
-      done();
-    });
+    const result = transformModule(codeWithHasteID, options());
+    expect(result.type).toBe('code');
+    expect(result.details).toEqual(expect.objectContaining({hasteID}));
   });
 
-  it('sets `type` to `"module"` by default', done => {
-    transformModule(sourceCode, options(), (error, result) => {
-      expect(result.type).toBe('code');
-      expect(result.details).toEqual(expect.objectContaining({type: 'module'}));
-      done();
-    });
+  it('sets `type` to `"module"` by default', () => {
+    const result = transformModule(sourceCode, options());
+    expect(result.type).toBe('code');
+    expect(result.details).toEqual(expect.objectContaining({type: 'module'}));
   });
 
-  it('sets `type` to `"script"` if the input is a polyfill', done => {
-    transformModule(
-      sourceCode,
-      {...options(), polyfill: true},
-      (error, result) => {
-        expect(result.type).toBe('code');
-        expect(result.details).toEqual(
-          expect.objectContaining({type: 'script'}),
-        );
-        done();
-      },
-    );
+  it('sets `type` to `"script"` if the input is a polyfill', () => {
+    const result = transformModule(sourceCode, {...options(), polyfill: true});
+    expect(result.type).toBe('code');
+    expect(result.details).toEqual(expect.objectContaining({type: 'script'}));
   });
 
   const defaults = {
@@ -102,95 +88,79 @@ describe('transforming JS modules:', () => {
   it(
     'calls the passed-in transform function with code, file name, and options ' +
       'for all passed in variants',
-    done => {
+    () => {
       const variants = {dev: {dev: true}, prod: {dev: false}};
 
-      transformModule(sourceCode, options(variants), () => {
-        expect(transformer.transform).toBeCalledWith({
-          filename,
-          localPath: filename,
-          options: {...defaults, ...variants.dev},
-          src: sourceCode,
-        });
-        expect(transformer.transform).toBeCalledWith({
-          filename,
-          localPath: filename,
-          options: {...defaults, ...variants.prod},
-          src: sourceCode,
-        });
-        done();
+      transformModule(sourceCode, options(variants));
+      expect(transformer.transform).toBeCalledWith({
+        filename,
+        localPath: filename,
+        options: {...defaults, ...variants.dev},
+        src: sourceCode,
+      });
+      expect(transformer.transform).toBeCalledWith({
+        filename,
+        localPath: filename,
+        options: {...defaults, ...variants.prod},
+        src: sourceCode,
       });
     },
   );
 
-  it('calls back with any error yielded by the transform function', done => {
+  it('calls back with any error yielded by the transform function', () => {
     const error = new Error();
     transformer.transform.stub.throws(error);
-
-    transformModule(sourceCode, options(), e => {
+    try {
+      transformModule(sourceCode, options());
+      throw new Error('should not be reached');
+    } catch (e) {
       expect(e).toBe(error);
-      done();
-    });
+    }
   });
 
-  it('wraps the code produced by the transform function into a module factory', done => {
-    transformModule(sourceCode, options(), (error, result) => {
-      expect(error).toEqual(null);
+  it('wraps the code produced by the transform function into a module factory', () => {
+    const result = transformModule(sourceCode, options());
 
-      const {code, dependencyMapName} = result.details.transformed.default;
-      expect(code.replace(/\s+/g, '')).toEqual(
-        `__d(function(global,require,module,exports,${dependencyMapName}){${transformedCode}});`,
-      );
-      done();
-    });
-  });
-
-  it('wraps the code produced by the transform function into an IIFE for polyfills', done => {
-    transformModule(
-      sourceCode,
-      {...options(), polyfill: true},
-      (error, result) => {
-        expect(error).toEqual(null);
-
-        const {code} = result.details.transformed.default;
-        expect(code.replace(/\s+/g, '')).toEqual(
-          `(function(global){${transformedCode}})(this);`,
-        );
-        done();
-      },
+    const {code, dependencyMapName} = result.details.transformed.default;
+    expect(code.replace(/\s+/g, '')).toEqual(
+      `__d(function(global,require,module,exports,${dependencyMapName}){${transformedCode}});`,
     );
   });
 
-  it('creates source maps', done => {
-    transformModule(sourceCode, options(), (error, result) => {
-      const {code, map} = result.details.transformed.default;
-      const position = findColumnAndLine(code, 'code');
-      expect(position).not.toBeNull();
-
-      const consumer = new SourceMapConsumer(map);
-      expect(consumer.originalPositionFor(position)).toEqual(
-        expect.objectContaining({line: 1, column: sourceCode.indexOf('code')}),
-      );
-      done();
-    });
+  it('wraps the code produced by the transform function into an IIFE for polyfills', () => {
+    const result = transformModule(sourceCode, {...options(), polyfill: true});
+    const {code} = result.details.transformed.default;
+    expect(code.replace(/\s+/g, '')).toEqual(
+      `(function(global){${transformedCode}})(this);`,
+    );
   });
 
-  it('extracts dependencies (require calls)', done => {
+  it('creates source maps', () => {
+    const result = transformModule(sourceCode, options());
+    const {code, map} = result.details.transformed.default;
+    const position = findColumnAndLine(code, 'code');
+    expect(position).not.toBeNull();
+
+    const consumer = new SourceMapConsumer(map);
+    expect(consumer.originalPositionFor(position)).toEqual(
+      expect.objectContaining({line: 1, column: sourceCode.indexOf('code')}),
+    );
+  });
+
+  it('extracts dependencies (require calls)', () => {
     const dep1 = 'foo';
     const dep2 = 'bar';
     const code = `require('${dep1}'),require('${dep2}')`;
     const {body} = parse(code).program;
     transformer.transform.stub.returns(transformResult(body));
 
-    transformModule(code, options(), (error, result) => {
-      expect(result.details.transformed.default).toEqual(
-        expect.objectContaining({dependencies: [dep1, dep2]}),
-      );
-      done();
-    });
+    const result = transformModule(code, options());
+    expect(result.details.transformed.default).toEqual(
+      expect.objectContaining({dependencies: [dep1, dep2]}),
+    );
   });
 
-  it('transforms for all variants', done => {
+  it('transforms for all variants', () => {
     const variants = {dev: {dev: true}, prod: {dev: false}};
     transformer.transform.stub
       .withArgs(filename, sourceCode, variants.dev)
@@ -198,49 +168,35 @@ describe('transforming JS modules:', () => {
       .withArgs(filename, sourceCode, variants.prod)
       .returns(transformResult([]));
 
-    transformModule(sourceCode, options(variants), (error, result) => {
-      const {dev, prod} = result.details.transformed;
-      expect(dev.code.replace(/\s+/g, '')).toEqual(
-        `__d(function(global,require,module,exports,${dev.dependencyMapName}){arbitrary(code);});`,
-      );
-      expect(prod.code.replace(/\s+/g, '')).toEqual(
-        `__d(function(global,require,module,exports,${prod.dependencyMapName}){arbitrary(code);});`,
-      );
-      done();
-    });
+    const result = transformModule(sourceCode, options(variants));
+    const {dev, prod} = result.details.transformed;
+    expect(dev.code.replace(/\s+/g, '')).toEqual(
+      `__d(function(global,require,module,exports,${dev.dependencyMapName}){arbitrary(code);});`,
+    );
+    expect(prod.code.replace(/\s+/g, '')).toEqual(
+      `__d(function(global,require,module,exports,${prod.dependencyMapName}){arbitrary(code);});`,
+    );
   });
 
-  it('prefixes JSON files with `module.exports = `', done => {
+  it('prefixes JSON files with `module.exports = `', () => {
     const json = '{"foo":"bar"}';
 
-    transformModule(
-      json,
-      {...options(), filename: 'some.json'},
-      (error, result) => {
-        const {code} = result.details.transformed.default;
-        expect(code.replace(/\s+/g, '')).toEqual(
-          '__d(function(global,require,module,exports){' +
-            `module.exports=${json}});`,
-        );
-        done();
-      },
+    const result = transformModule(json, {...options(), filename: 'some.json'});
+    const {code} = result.details.transformed.default;
+    expect(code.replace(/\s+/g, '')).toEqual(
+      '__d(function(global,require,module,exports){' +
+        `module.exports=${json}});`,
     );
   });
 
-  it('does not create source maps for JSON files', done => {
-    transformModule(
-      '{}',
-      {...options(), filename: 'some.json'},
-      (error, result) => {
-        expect(result.details.transformed.default).toEqual(
-          expect.objectContaining({map: null}),
-        );
-        done();
-      },
+  it('does not create source maps for JSON files', () => {
+    const result = transformModule('{}', {...options(), filename: 'some.json'});
+    expect(result.details.transformed.default).toEqual(
+      expect.objectContaining({map: null}),
     );
   });
 
-  it('adds package data for `package.json` files', done => {
+  it('adds package data for `package.json` files', () => {
     const pkg = {
       name: 'package-name',
       main: 'package/main',
@@ -248,14 +204,11 @@ describe('transforming JS modules:', () => {
       'react-native': {'react-native': 'defs'},
     };
 
-    transformModule(
-      JSON.stringify(pkg),
-      {...options(), filename: 'arbitrary/package.json'},
-      (error, result) => {
-        expect(result.details.package).toEqual(pkg);
-        done();
-      },
-    );
+    const result = transformModule(JSON.stringify(pkg), {
+      ...options(),
+      filename: 'arbitrary/package.json',
+    });
+    expect(result.details.package).toEqual(pkg);
   });
 });
 

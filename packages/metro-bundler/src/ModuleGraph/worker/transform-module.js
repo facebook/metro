@@ -9,29 +9,28 @@
  * @flow
  * @format
  */
+
 'use strict';
 
 const JsFileWrapping = require('./JsFileWrapping');
 
-const asyncify = require('async/asyncify');
 const collectDependencies = require('./collect-dependencies');
 const defaults = require('../../defaults');
 const docblock = require('jest-docblock');
 const generate = require('./generate');
+const invariant = require('fbjs/lib/invariant');
 const path = require('path');
-const series = require('async/series');
 
 const {basename} = require('path');
 
 import type {
-  Callback,
   TransformedCodeFile,
   TransformedSourceFile,
   Transformer,
-  TransformerResult,
   TransformResult,
   TransformVariants,
 } from '../types.flow';
+import type {Ast} from 'babel-core';
 
 export type TransformOptions = {|
   filename: string,
@@ -55,68 +54,46 @@ const ASSET_EXTENSIONS = new Set(defaults.assetExts);
 function transformModule(
   content: Buffer,
   options: TransformOptions,
-  callback: Callback<TransformedSourceFile>,
-): void {
+): TransformedSourceFile {
   if (ASSET_EXTENSIONS.has(path.extname(options.filename).substr(1))) {
-    transformAsset(content, options, callback);
-    return;
+    return transformAsset(content, options);
   }
 
   const code = content.toString('utf8');
   if (options.filename.endsWith('.json')) {
-    transformJSON(code, options, callback);
-    return;
+    return transformJSON(code, options);
   }
 
-  const {filename, transformer, variants = defaultVariants} = options;
-  const tasks = {};
-  Object.keys(variants).forEach(name => {
-    tasks[name] = asyncify(() =>
-      transformer.transform({
-        filename,
-        localPath: filename,
-        options: {...defaultTransformOptions, ...variants[name]},
-        src: code,
-      }),
-    );
-  });
+  const {filename, transformer, polyfill, variants = defaultVariants} = options;
+  const transformed: {[key: string]: TransformResult} = {};
 
-  series(tasks, (error, results: {[key: string]: TransformerResult}) => {
-    if (error) {
-      callback(error);
-      return;
-    }
-
-    const transformed: {[key: string]: TransformResult} = {};
-
-    //$FlowIssue #14545724
-    Object.entries(results).forEach(([key, value]: [*, TransformFnResult]) => {
-      transformed[key] = makeResult(
-        value.ast,
-        filename,
-        code,
-        options.polyfill,
-      );
+  for (const variantName of Object.keys(variants)) {
+    const {ast} = transformer.transform({
+      filename,
+      localPath: filename,
+      options: {...defaultTransformOptions, ...variants[variantName]},
+      src: code,
     });
+    invariant(ast != null, 'ast required from the transform results');
+    transformed[variantName] = makeResult(ast, filename, code, polyfill);
+  }
 
-    const annotations = docblock.parse(docblock.extract(code));
+  const annotations = docblock.parse(docblock.extract(code));
 
-    callback(null, {
-      type: 'code',
-      details: {
-        assetContent: null,
-        code,
-        file: filename,
-        hasteID: annotations.providesModule || null,
-        transformed,
-        type: options.polyfill ? 'script' : 'module',
-      },
-    });
-  });
-  return;
+  return {
+    details: {
+      assetContent: null,
+      code,
+      file: filename,
+      hasteID: annotations.providesModule || null,
+      transformed,
+      type: options.polyfill ? 'script' : 'module',
+    },
+    type: 'code',
+  };
 }
 
-function transformJSON(json, options, callback) {
+function transformJSON(json, options): TransformedSourceFile {
   const value = JSON.parse(json);
   const {filename} = options;
   const code = `__d(function(${JsFileWrapping.MODULE_FACTORY_PARAMETERS.join(
@@ -151,24 +128,23 @@ function transformJSON(json, options, callback) {
       'react-native': value['react-native'],
     };
   }
-  callback(null, {type: 'code', details: result});
+  return {type: 'code', details: result};
 }
 
 function transformAsset(
   content: Buffer,
   options: TransformOptions,
-  callback: Callback<TransformedSourceFile>,
-) {
-  callback(null, {
+): TransformedSourceFile {
+  return {
     details: {
       assetContentBase64: content.toString('base64'),
       filePath: options.filename,
     },
     type: 'asset',
-  });
+  };
 }
 
-function makeResult(ast, filename, sourceCode, isPolyfill = false) {
+function makeResult(ast: Ast, filename, sourceCode, isPolyfill = false) {
   let dependencies, dependencyMapName, file;
   if (isPolyfill) {
     dependencies = [];
