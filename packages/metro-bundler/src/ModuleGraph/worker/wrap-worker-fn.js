@@ -17,47 +17,22 @@ const mkdirp = require('mkdirp');
 
 const {dirname} = require('path');
 
-import type {Callback} from '../types.flow';
-
 type Path = string;
-type WorkerFn<Options> = (
-  fileContents: Buffer,
-  options: Options,
-  callback: Callback<Object>,
-) => void;
+type WorkerFn<Options> = (fileContents: Buffer, options: Options) => mixed;
 export type WorkerFnWithIO<Options> = (
   infile: Path,
   outfile: Path,
   options: Options,
-  callback: Callback<>,
 ) => void;
 
 function wrapWorkerFn<Options>(
   workerFunction: WorkerFn<Options>,
 ): WorkerFnWithIO<Options> {
-  return (
-    infile: Path,
-    outfile: Path,
-    options: Options,
-    callback: Callback<>,
-  ) => {
+  return (infile: Path, outfile: Path, options: Options) => {
     const contents = fs.readFileSync(infile);
-    workerFunction(contents, options, (error, result) => {
-      if (error) {
-        callback(error);
-        return;
-      }
-
-      try {
-        mkdirp.sync(dirname(outfile));
-        fs.writeFileSync(outfile, JSON.stringify(result), 'utf8');
-      } catch (writeError) {
-        callback(writeError);
-        return;
-      }
-
-      callback(null);
-    });
+    const result = workerFunction(contents, options);
+    mkdirp.sync(dirname(outfile));
+    fs.writeFileSync(outfile, JSON.stringify(result), 'utf8');
   };
 }
 

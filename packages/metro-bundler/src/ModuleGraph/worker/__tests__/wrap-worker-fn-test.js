@@ -27,72 +27,71 @@ describe('wrapWorkerFn:', () => {
   let workerFn, wrapped;
   beforeEach(() => {
     workerFn = fn();
-    workerFn.stub.yields();
     wrapped = wrapWorkerFn(workerFn);
   });
 
   const fs = require('fs');
   const mkdirp = require('mkdirp');
 
-  it('reads the passed-in file synchronously as buffer', done => {
-    wrapped(infile, outfile, {}, () => {
-      expect(fs.readFileSync).toBeCalledWith(infile);
-      done();
-    });
+  it('reads the passed-in file synchronously as buffer', () => {
+    wrapped(infile, outfile, {});
+    expect(fs.readFileSync).toBeCalledWith(infile);
   });
 
-  it('calls the worker function with file contents and options', done => {
+  it('calls the worker function with file contents and options', () => {
     const contents = 'arbitrary(contents);';
     const options = {arbitrary: 'options'};
     fs.readFileSync.mockReturnValue(contents);
-    wrapped(infile, outfile, options, () => {
-      expect(workerFn).toBeCalledWith(contents, options, any(Function));
-      done();
-    });
+    wrapped(infile, outfile, options);
+    expect(workerFn).toBeCalledWith(contents, options);
   });
 
-  it('passes through any error that the worker function calls back with', done => {
+  it('passes through any error that the worker function calls back with', () => {
     const error = new Error();
-    workerFn.stub.yields(error);
-    wrapped(infile, outfile, {}, e => {
+    workerFn.stub.throws(error);
+    try {
+      wrapped(infile, outfile, {});
+      throw new Error('should not reach');
+    } catch (e) {
       expect(e).toBe(error);
-      done();
-    });
+    }
   });
 
-  it('writes the result to disk', done => {
+  it('writes the result to disk', () => {
     const result = {arbitrary: 'result'};
-    workerFn.stub.yields(null, result);
-    wrapped(infile, outfile, {}, () => {
-      expect(mkdirp.sync).toBeCalledWith(dirname(outfile));
-      expect(fs.writeFileSync).toBeCalledWith(
-        outfile,
-        JSON.stringify(result),
-        'utf8',
-      );
-      done();
-    });
+    workerFn.stub.returns(result);
+    wrapped(infile, outfile, {});
+    expect(mkdirp.sync).toBeCalledWith(dirname(outfile));
+    expect(fs.writeFileSync).toBeCalledWith(
+      outfile,
+      JSON.stringify(result),
+      'utf8',
+    );
   });
 
-  it('calls back with any error thrown by `mkdirp.sync`', done => {
+  it('calls back with any error thrown by `mkdirp.sync`', () => {
     const error = new Error();
     mkdirp.sync.mockImplementationOnce(() => {
       throw error;
     });
-    wrapped(infile, outfile, {}, e => {
+    try {
+      wrapped(infile, outfile, {});
+      throw new Error('should not reach');
+    } catch (e) {
       expect(e).toBe(error);
-      done();
-    });
+    }
   });
 
-  it('calls back with any error thrown by `fs.writeFileSync`', done => {
+  it('calls back with any error thrown by `fs.writeFileSync`', () => {
     const error = new Error();
     fs.writeFileSync.mockImplementationOnce(() => {
       throw error;
     });
-    wrapped(infile, outfile, {}, e => {
+    try {
+      wrapped(infile, outfile, {});
+      throw new Error('should not reach');
+    } catch (e) {
       expect(e).toBe(error);
-      done();
-    });
+    }
   });
 });

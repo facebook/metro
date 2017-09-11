@@ -10,20 +10,15 @@
  */
 'use strict';
 
-const asyncify: Asyncify = require('async/asyncify');
 const optimizeModule = require('./worker/optimize-module');
 const transformModule = require('./worker/transform-module');
 const wrapWorkerFn = require('./worker/wrap-worker-fn');
 
-import type {Callback} from './types.flow';
 import type {OptimizationOptions} from './worker/optimize-module';
 import type {TransformOptions} from './worker/transform-module';
 import type {WorkerFnWithIO} from './worker/wrap-worker-fn';
 
-type Asyncify = <A, B, C>((A, B) => C) => (A, B, Callback<C>) => void;
-
-
 exports.optimizeModule =
-  (wrapWorkerFn(asyncify(optimizeModule)): WorkerFnWithIO<OptimizationOptions>);
+  (wrapWorkerFn(optimizeModule): WorkerFnWithIO<OptimizationOptions>);
 exports.transformModule =
-  (wrapWorkerFn(asyncify(transformModule)): WorkerFnWithIO<TransformOptions>);
+  (wrapWorkerFn(transformModule): WorkerFnWithIO<TransformOptions>);
