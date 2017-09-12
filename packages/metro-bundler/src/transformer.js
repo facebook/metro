@@ -9,6 +9,7 @@
  * Note: This is a fork of the fb-specific transform.js
  *
  * @flow
+ * @format
  */
 'use strict';
 
@@ -62,13 +63,14 @@ const getBabelRC = (function() {
     // use the Babel config provided with react-native.
     if (!projectBabelRCPath || !fs.existsSync(projectBabelRCPath)) {
       babelRC = json5.parse(
-        fs.readFileSync(
-          path.resolve(__dirname, '..', 'rn-babelrc.json'))
-        );
+        fs.readFileSync(path.resolve(__dirname, '..', 'rn-babelrc.json')),
+      );
 
       // Require the babel-preset's listed in the default babel config
-      // $FlowFixMe: dynamic require can't be avoided
-      babelRC.presets = babelRC.presets.map(preset => require('babel-preset-' + preset));
+      babelRC.presets = babelRC.presets.map(preset =>
+        // $FlowFixMe: dynamic require can't be avoided
+        require('babel-preset-' + preset),
+      );
       babelRC.plugins = resolvePlugins(babelRC.plugins);
     } else {
       // if we find a .babelrc file we tell babel to use it
@@ -87,9 +89,10 @@ function buildBabelConfig(filename, options) {
   const babelRC = getBabelRC(options.projectRoot);
 
   const extraConfig = {
-    babelrc: typeof options.enableBabelRCLookup === 'boolean'
-      ? options.enableBabelRCLookup
-      : true,
+    babelrc:
+      typeof options.enableBabelRCLookup === 'boolean'
+        ? options.enableBabelRCLookup
+        : true,
     code: false,
     filename,
   };
@@ -100,7 +103,8 @@ function buildBabelConfig(filename, options) {
   const extraPlugins = [externalHelpersPlugin];
 
   var inlineRequires = options.inlineRequires;
-  var blacklist = typeof inlineRequires === 'object' ? inlineRequires.blacklist : null;
+  var blacklist =
+    typeof inlineRequires === 'object' ? inlineRequires.blacklist : null;
   if (inlineRequires && !(blacklist && filename in blacklist)) {
     extraPlugins.push(inlineRequiresPlugin);
   }
@@ -140,20 +144,26 @@ function transform({filename, options, src}: Params) {
         map: null,
       };
     } else {
-      const result = generate(ast, {
-        comments: false,
-        compact: false,
-        filename,
-        retainLines: !!options.retainLines,
-        sourceFileName: filename,
-        sourceMaps: true,
-      }, src);
+      const result = generate(
+        ast,
+        {
+          comments: false,
+          compact: false,
+          filename,
+          retainLines: !!options.retainLines,
+          sourceFileName: filename,
+          sourceMaps: true,
+        },
+        src,
+      );
 
       return {
         ast,
         code: result.code,
         filename,
-        map: options.generateSourceMaps ? result.map : result.rawMappings.map(compactMapping),
+        map: options.generateSourceMaps
+          ? result.map
+          : result.rawMappings.map(compactMapping),
       };
     }
   } finally {

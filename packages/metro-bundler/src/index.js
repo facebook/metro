@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -55,44 +56,79 @@ exports.TransformCaching = TransformCaching;
  * refine these values completely.
  */
 function assertPublicBundleOptions(bo: mixed): PublicBundleOptions {
-  invariant(typeof bo === 'object' && bo != null, 'bundle options must be an object');
-  invariant(bo.dev === undefined || typeof bo.dev === 'boolean', 'bundle options field `dev` must be a boolean');
+  invariant(
+    typeof bo === 'object' && bo != null,
+    'bundle options must be an object',
+  );
+  invariant(
+    bo.dev === undefined || typeof bo.dev === 'boolean',
+    'bundle options field `dev` must be a boolean',
+  );
   const {entryFile} = bo;
-  invariant(typeof entryFile === 'string', 'bundle options must contain a string field `entryFile`');
-  invariant(bo.generateSourceMaps === undefined || typeof bo.generateSourceMaps === 'boolean', 'bundle options field `generateSourceMaps` must be a boolean');
-  invariant(bo.inlineSourceMap === undefined || typeof bo.inlineSourceMap === 'boolean', 'bundle options field `inlineSourceMap` must be a boolean');
-  invariant(bo.minify === undefined || typeof bo.minify === 'boolean', 'bundle options field `minify` must be a boolean');
-  invariant(bo.platform === undefined || typeof bo.platform === 'string', 'bundle options field `platform` must be a string');
-  invariant(bo.runModule === undefined || typeof bo.runModule === 'boolean', 'bundle options field `runModule` must be a boolean');
-  invariant(bo.sourceMapUrl === undefined || typeof bo.sourceMapUrl === 'string', 'bundle options field `sourceMapUrl` must be a boolean');
+  invariant(
+    typeof entryFile === 'string',
+    'bundle options must contain a string field `entryFile`',
+  );
+  invariant(
+    bo.generateSourceMaps === undefined ||
+      typeof bo.generateSourceMaps === 'boolean',
+    'bundle options field `generateSourceMaps` must be a boolean',
+  );
+  invariant(
+    bo.inlineSourceMap === undefined || typeof bo.inlineSourceMap === 'boolean',
+    'bundle options field `inlineSourceMap` must be a boolean',
+  );
+  invariant(
+    bo.minify === undefined || typeof bo.minify === 'boolean',
+    'bundle options field `minify` must be a boolean',
+  );
+  invariant(
+    bo.platform === undefined || typeof bo.platform === 'string',
+    'bundle options field `platform` must be a string',
+  );
+  invariant(
+    bo.runModule === undefined || typeof bo.runModule === 'boolean',
+    'bundle options field `runModule` must be a boolean',
+  );
+  invariant(
+    bo.sourceMapUrl === undefined || typeof bo.sourceMapUrl === 'string',
+    'bundle options field `sourceMapUrl` must be a boolean',
+  );
   return {entryFile, ...bo};
 }
 
-exports.buildBundle = function(options: Options, bundleOptions: PublicBundleOptions) {
+exports.buildBundle = function(
+  options: Options,
+  bundleOptions: PublicBundleOptions,
+) {
   var server = createNonPersistentServer(options);
   const ServerClass = require('./Server');
-  return server.buildBundle({
-    ...ServerClass.DEFAULT_BUNDLE_OPTIONS,
-    ...assertPublicBundleOptions(bundleOptions),
-  }).then(p => {
-    server.end();
-    return p;
-  });
+  return server
+    .buildBundle({
+      ...ServerClass.DEFAULT_BUNDLE_OPTIONS,
+      ...assertPublicBundleOptions(bundleOptions),
+    })
+    .then(p => {
+      server.end();
+      return p;
+    });
 };
 
-exports.getOrderedDependencyPaths = function(options: Options, depOptions: {
-  +entryFile: string,
-  +dev: boolean,
-  +platform: string,
-  +minify: boolean,
-  +generateSourceMaps: boolean,
-}) {
+exports.getOrderedDependencyPaths = function(
+  options: Options,
+  depOptions: {
+    +entryFile: string,
+    +dev: boolean,
+    +platform: string,
+    +minify: boolean,
+    +generateSourceMaps: boolean,
+  },
+) {
   var server = createNonPersistentServer(options);
-  return server.getOrderedDependencyPaths(depOptions)
-    .then(function(paths) {
-      server.end();
-      return paths;
-    });
+  return server.getOrderedDependencyPaths(depOptions).then(function(paths) {
+    server.end();
+    return paths;
+  });
 };
 
 function enableDebug() {
@@ -117,7 +153,10 @@ function createServer(options: Options): Server {
   }
 
   // Some callsites may not be Flowified yet.
-  invariant(options.assetRegistryPath != null, 'createServer() requires assetRegistryPath');
+  invariant(
+    options.assetRegistryPath != null,
+    'createServer() requires assetRegistryPath',
+  );
 
   const ServerClass = require('./Server');
   return new ServerClass(toServerOptions(options));
@@ -155,7 +194,10 @@ function toServerOptions(options: Options): ServerOptions {
     transformCache: options.transformCache || TransformCaching.useTempDir(),
     transformModulePath: options.transformModulePath,
     useDeltaBundler: options.useDeltaBundler,
-    watch: typeof options.watch === 'boolean' ? options.watch : !!options.nonPersistent,
+    watch:
+      typeof options.watch === 'boolean'
+        ? options.watch
+        : !!options.nonPersistent,
     workerPath: options.workerPath,
   };
 }

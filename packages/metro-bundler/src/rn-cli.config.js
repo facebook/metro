@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * React Native CLI configuration file
+ *
+ * @format
  */
 'use strict';
 
@@ -46,5 +48,4 @@ module.exports = {
   getTransformModulePath() {
     return require.resolve('./transformer');
   },
-
 };

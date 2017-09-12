@@ -7,15 +7,40 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 'use strict';
 
 exports.assetExts = [
-  'bmp', 'gif', 'jpg', 'jpeg', 'png', 'psd', 'svg', 'webp', // Image formats
-  'm4v', 'mov', 'mp4', 'mpeg', 'mpg', 'webm', // Video formats
-  'aac', 'aiff', 'caf', 'm4a', 'mp3', 'wav', // Audio formats
-  'html', 'pdf', // Document formats
-  'otf', 'ttf', // Font formats
+  // Image formats
+  'bmp',
+  'gif',
+  'jpg',
+  'jpeg',
+  'png',
+  'psd',
+  'svg',
+  'webp',
+  // Video formats
+  'm4v',
+  'mov',
+  'mp4',
+  'mpeg',
+  'mpg',
+  'webm',
+  // Audio formats
+  'aac',
+  'aiff',
+  'caf',
+  'm4a',
+  'mp3',
+  'wav',
+  // Document formats
+  'html',
+  'pdf',
+  // Font formats
+  'otf',
+  'ttf',
 ];
 
 exports.sourceExts = ['js', 'json'];
@@ -24,10 +49,7 @@ exports.moduleSystem = require.resolve('./Resolver/polyfills/require.js');
 
 exports.platforms = ['ios', 'android', 'windows', 'web'];
 
-exports.providesModuleNodeModules = [
-  'react-native',
-  'react-native-windows',
-];
+exports.providesModuleNodeModules = ['react-native', 'react-native-windows'];
 
 exports.transformModulePath = require.resolve('./defaultTransform.js');
 
