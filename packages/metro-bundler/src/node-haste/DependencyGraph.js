@@ -51,7 +51,7 @@ type Options = {|
   +forceNodeFilesystemAPI: boolean,
   +getTransformCacheKey: GetTransformCacheKey,
   +globalTransformCache: ?GlobalTransformCache,
-  +ignoreFilePath: RegExp,
+  +ignorePattern: RegExp,
   +maxWorkers: number,
   +moduleOptions: ModuleOptions,
   +platforms: Set<string>,
@@ -108,7 +108,7 @@ class DependencyGraph extends EventEmitter {
     return new JestHasteMap({
       extensions: opts.sourceExts.concat(opts.assetExts),
       forceNodeFilesystemAPI: opts.forceNodeFilesystemAPI,
-      ignorePattern: opts.ignoreFilePath,
+      ignorePattern: opts.ignorePattern,
       maxWorkers: opts.maxWorkers,
       mocksPattern: '',
       name: 'metro-bundler-' + JEST_HASTE_MAP_CACHE_BREAKER,

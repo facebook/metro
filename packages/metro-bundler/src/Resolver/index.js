@@ -77,14 +77,14 @@ class Resolver {
   }
 
   static async load(opts: Options): Promise<Resolver> {
-    const depGraphOpts = {
+    const depGraph = await DependencyGraph.load({
       assetDependencies: [opts.assetRegistryPath],
       assetExts: opts.assetExts,
       extraNodeModules: opts.extraNodeModules,
       forceNodeFilesystemAPI: false,
       getTransformCacheKey: opts.getTransformCacheKey,
       globalTransformCache: opts.globalTransformCache,
-      ignoreFilePath: opts.blacklistRE || / ^/ /* matches nothing */,
+      ignorePattern: opts.blacklistRE || / ^/ /* matches nothing */,
       maxWorkers: opts.maxWorkers,
       moduleOptions: {
         hasteImpl: opts.hasteImpl,
@@ -101,8 +101,7 @@ class Resolver {
       transformCode: opts.transformCode,
       useWatchman: true,
       watch: opts.watch,
-    };
-    const depGraph = await DependencyGraph.load(depGraphOpts);
+    });
     return new Resolver(opts, depGraph);
   }
 

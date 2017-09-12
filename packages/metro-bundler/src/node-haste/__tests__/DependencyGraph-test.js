@@ -102,7 +102,8 @@ describe('DependencyGraph', function() {
       providesModuleNodeModules: ['haste-fbjs', 'react-haste', 'react-native'],
       platforms: new Set(['ios', 'android']),
       useWatchman: false,
-      ignoreFilePath: () => false,
+      // This pattern is not expected to match anything.
+      ignorePattern: /🚇/,
       maxWorkers: 1,
       moduleOptions: {transformCache: require('TransformCaching').mocked()},
       resetCache: true,
