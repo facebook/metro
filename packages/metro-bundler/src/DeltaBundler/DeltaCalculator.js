@@ -269,21 +269,19 @@ class DeltaCalculator extends EventEmitter {
     this._lastBundlingOptions = response.options;
 
     currentDependencies.forEach(module => {
-      if (this._dependencies.has(module.path)) {
-        // It's not a new dependency, we don't need to do anything.
-        return;
-      }
-
       const dependencyPairs = response.getResolvedDependencyPairs(module);
 
-      this._dependencies.add(module.path);
       this._shallowDependencies.set(
         module.path,
         new Set(dependencyPairs.map(([name, module]) => name)),
       );
       this._dependencyPairs.set(module.path, dependencyPairs);
 
-      added.set(module.path, module);
+      // Only add it to the delta bundle if it did not exist before.
+      if (!this._dependencies.has(module.path)) {
+        added.set(module.path, module);
+        this._dependencies.add(module.path);
+      }
     });
 
     const deleted = new Set();

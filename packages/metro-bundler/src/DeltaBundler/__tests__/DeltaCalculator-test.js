@@ -52,6 +52,7 @@ describe('DeltaCalculator', () => {
   function createModule({path, name, isAsset, isJSON}) {
     return {
       path,
+      name,
       async getName() {
         return name;
       },
@@ -190,6 +191,28 @@ describe('DeltaCalculator', () => {
       deleted: new Set(['/bar', '/baz']),
       reset: false,
     });
+  });
+
+  it('should calculate the dependencyPairs correctly after adding/removing dependencies', async () => {
+    // Get initial delta
+    await deltaCalculator.getDelta();
+
+    expect(deltaCalculator.getDependencyPairs().size).toBe(3);
+
+    fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
+
+    // Add moduleQux
+    const moduleQux = createModule({path: '/qux', name: 'qux'});
+    mockedDependencyTree.set(moduleFoo, [moduleBar, moduleBaz, moduleQux]);
+    mockedDependencies = [moduleFoo, moduleBar, moduleBaz, moduleQux];
+
+    await deltaCalculator.getDelta();
+
+    const dependencyPairs = deltaCalculator.getDependencyPairs();
+
+    expect(dependencyPairs.size).toBe(4);
+    expect(dependencyPairs.get('/foo')[2][0]).toEqual('qux');
+    expect(dependencyPairs.get('/foo')[2][1].path).toEqual('/qux');
   });
 
   it('should emit an event when there is a relevant file change', async done => {
