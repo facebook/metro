@@ -153,6 +153,14 @@ class FileBasedCache {
     return result;
   }
 
+  resetCache(reporter: Reporter) {
+    rimraf.sync(path.join(this._rootPath, 'last_collected'));
+    rimraf.sync(path.join(this._rootPath, 'cache'));
+    reporter.update({type: 'transform_cache_reset'});
+    this._cacheWasReset = true;
+    this._lastCollected = Date.now();
+  }
+
   /**
    * We verify the source hash matches to ensure we always favor rebuilding when
    * source change (rather than just using fs.mtime(), a bit less robust).
@@ -217,7 +225,7 @@ class FileBasedCache {
    */
   _collectIfNecessarySync(options: CacheOptions) {
     if (options.resetCache && !this._cacheWasReset) {
-      this._resetCache(options.reporter);
+      this.resetCache(options.reporter);
       return;
     }
     const lastCollected = this._lastCollected;
@@ -227,14 +235,6 @@ class FileBasedCache {
     ) {
       this._collectSyncNoThrow(options.reporter);
     }
-  }
-
-  _resetCache(reporter: Reporter) {
-    rimraf.sync(path.join(this._rootPath, 'last_collected'));
-    rimraf.sync(path.join(this._rootPath, 'cache'));
-    reporter.update({type: 'transform_cache_reset'});
-    this._cacheWasReset = true;
-    this._lastCollected = Date.now();
   }
 
   /**
