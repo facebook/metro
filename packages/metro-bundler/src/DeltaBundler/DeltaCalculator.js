@@ -60,15 +60,6 @@ class DeltaCalculator extends EventEmitter {
       .on('change', this._handleMultipleFileChanges);
   }
 
-  static async create(
-    bundler: Bundler,
-    options: BundleOptions,
-  ): Promise<DeltaCalculator> {
-    const resolver = await bundler.getResolver();
-
-    return new DeltaCalculator(bundler, resolver, options);
-  }
-
   /**
    * Stops listening for file changes and clears all the caches.
    */
@@ -204,12 +195,10 @@ class DeltaCalculator extends EventEmitter {
 
     // Build the modules from the files that have been modified.
     const modified = new Map(
-      await Promise.all(
-        modifiedArray.map(async file => {
-          const module = await this._bundler.getModuleForPath(file);
-          return [file, module];
-        }),
-      ),
+      modifiedArray.map(file => {
+        const module = this._resolver.getModuleForPath(file);
+        return [file, module];
+      }),
     );
 
     const filesWithChangedDependencies = await Promise.all(
@@ -238,7 +227,7 @@ class DeltaCalculator extends EventEmitter {
   }
 
   async _hasChangedDependencies(file: string) {
-    const module = await this._bundler.getModuleForPath(file);
+    const module = this._resolver.getModuleForPath(file);
 
     if (!this._dependencies.has(module.path)) {
       return false;

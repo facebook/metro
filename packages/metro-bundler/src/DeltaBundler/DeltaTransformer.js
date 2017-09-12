@@ -66,6 +66,7 @@ type Options = {|
  */
 class DeltaTransformer extends EventEmitter {
   _bundler: Bundler;
+  _resolver: Resolver;
   _getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>;
   _polyfillModuleNames: $ReadOnlyArray<string>;
   _getModuleId: ({path: string}) => number;
@@ -75,6 +76,7 @@ class DeltaTransformer extends EventEmitter {
 
   constructor(
     bundler: Bundler,
+    resolver: Resolver,
     deltaCalculator: DeltaCalculator,
     options: Options,
     bundleOptions: BundleOptions,
@@ -82,6 +84,7 @@ class DeltaTransformer extends EventEmitter {
     super();
 
     this._bundler = bundler;
+    this._resolver = resolver;
     this._deltaCalculator = deltaCalculator;
     this._getPolyfills = options.getPolyfills;
     this._polyfillModuleNames = options.polyfillModuleNames;
@@ -96,13 +99,17 @@ class DeltaTransformer extends EventEmitter {
     options: Options,
     bundleOptions: BundleOptions,
   ): Promise<DeltaTransformer> {
-    const deltaCalculator = await DeltaCalculator.create(
+    const resolver = await bundler.getResolver();
+
+    const deltaCalculator = new DeltaCalculator(
       bundler,
+      resolver,
       bundleOptions,
     );
 
     return new DeltaTransformer(
       bundler,
+      resolver,
       deltaCalculator,
       options,
       bundleOptions,
@@ -151,12 +158,10 @@ class DeltaTransformer extends EventEmitter {
 
     const transformerOptions = this._deltaCalculator.getTransformerOptions();
     const dependencyPairs = this._deltaCalculator.getDependencyPairs();
-    const resolver = await this._bundler.getResolver();
 
     // Get the transformed source code of each modified/added module.
     const modifiedDelta = await this._transformModules(
       Array.from(modified.values()),
-      resolver,
       transformerOptions,
       dependencyPairs,
     );
@@ -198,8 +203,6 @@ class DeltaTransformer extends EventEmitter {
     transformOptions: JSTransformerOptions,
     dependencyPairs: Map<string, $ReadOnlyArray<[string, Module]>>,
   ): Promise<DeltaEntries> {
-    const resolver = await this._bundler.getResolver();
-
     // Get all the polyfills from the relevant option params (the
     // `getPolyfills()` method and the `polyfillModuleNames` variable).
     const polyfillModuleNames = this._getPolyfills({
@@ -208,13 +211,13 @@ class DeltaTransformer extends EventEmitter {
 
     // The module system dependencies are scripts that need to be included at
     // the very beginning of the bundle (before any polyfill).
-    const moduleSystemDeps = resolver.getModuleSystemDependencies({
+    const moduleSystemDeps = this._resolver.getModuleSystemDependencies({
       dev: this._bundleOptions.dev,
     });
 
     const modules = moduleSystemDeps.concat(
       polyfillModuleNames.map((polyfillModuleName, idx) =>
-        resolver.getDependencyGraph().createPolyfill({
+        this._resolver.getDependencyGraph().createPolyfill({
           file: polyfillModuleName,
           id: polyfillModuleName,
           dependencies: [],
@@ -224,7 +227,6 @@ class DeltaTransformer extends EventEmitter {
 
     return await this._transformModules(
       modules,
-      resolver,
       transformOptions,
       dependencyPairs,
     );
@@ -234,15 +236,13 @@ class DeltaTransformer extends EventEmitter {
     dependencyPairs: Map<string, $ReadOnlyArray<[string, Module]>>,
     modulesByName: Map<string, Module>,
   ): Promise<DeltaEntries> {
-    const resolver = await this._bundler.getResolver();
-
     // Get the absolute path of the entry file, in order to be able to get the
     // actual correspondant module (and its moduleId) to be able to add the
     // correct require(); call at the very end of the bundle.
-    const absPath = resolver
+    const absPath = this._resolver
       .getDependencyGraph()
       .getAbsolutePath(this._bundleOptions.entryFile);
-    const entryPointModule = await this._bundler.getModuleForPath(absPath);
+    const entryPointModule = this._resolver.getModuleForPath(absPath);
 
     // First, get the modules correspondant to all the module names defined in
     // the `runBeforeMainModule` config variable. Then, append the entry point
@@ -291,19 +291,13 @@ class DeltaTransformer extends EventEmitter {
 
   async _transformModules(
     modules: Array<Module>,
-    resolver: Resolver,
     transformOptions: JSTransformerOptions,
     dependencyPairs: Map<string, $ReadOnlyArray<[string, Module]>>,
   ): Promise<DeltaEntries> {
     return new Map(
       await Promise.all(
         modules.map(module =>
-          this._transformModule(
-            module,
-            resolver,
-            transformOptions,
-            dependencyPairs,
-          ),
+          this._transformModule(module, transformOptions, dependencyPairs),
         ),
       ),
     );
@@ -311,7 +305,6 @@ class DeltaTransformer extends EventEmitter {
 
   async _transformModule(
     module: Module,
-    resolver: Resolver,
     transformOptions: JSTransformerOptions,
     dependencyPairs: Map<string, $ReadOnlyArray<[string, Module]>>,
   ): Promise<[number, ?DeltaEntry]> {
@@ -323,7 +316,7 @@ class DeltaTransformer extends EventEmitter {
     const dependencyPairsForModule = dependencyPairs.get(module.path) || [];
 
     const wrapped = this._bundleOptions.wrapModules
-      ? await resolver.wrapModule({
+      ? await this._resolver.wrapModule({
           module,
           getModuleId: this._getModuleId,
           dependencyPairs: dependencyPairsForModule,
@@ -335,7 +328,7 @@ class DeltaTransformer extends EventEmitter {
           dev: this._bundleOptions.dev,
         })
       : {
-          code: resolver.resolveRequires(
+          code: this._resolver.resolveRequires(
             module,
             this._getModuleId,
             metadata.code,

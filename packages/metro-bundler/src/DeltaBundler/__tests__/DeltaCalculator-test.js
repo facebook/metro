@@ -13,9 +13,11 @@
 'use strict';
 
 jest.mock('../../Bundler');
+jest.mock('../../Resolver');
 
 const Bundler = require('../../Bundler');
 const {EventEmitter} = require('events');
+const Resolver = require('../../Resolver');
 
 const DeltaCalculator = require('../DeltaCalculator');
 
@@ -71,16 +73,14 @@ describe('DeltaCalculator', () => {
 
     fileWatcher = new EventEmitter();
 
-    Bundler.prototype.getResolver.mockReturnValue(
-      Promise.resolve({
-        getDependencyGraph() {
-          return {
-            getWatcher() {
-              return fileWatcher;
-            },
-          };
-        },
-      }),
+    Resolver.prototype.getDependencyGraph.mockReturnValue({
+      getWatcher() {
+        return fileWatcher;
+      },
+    });
+
+    Resolver.prototype.getModuleForPath.mockImplementation(
+      path => mockedDependencies.filter(dep => dep.path === path)[0],
     );
 
     Bundler.prototype.getDependencies.mockImplementation(async () => {
@@ -94,10 +94,6 @@ describe('DeltaCalculator', () => {
       };
     });
 
-    Bundler.prototype.getModuleForPath.mockImplementation(async path => {
-      return mockedDependencies.filter(dep => dep.path === path)[0];
-    });
-
     Bundler.prototype.getShallowDependencies.mockImplementation(
       async module => {
         const deps = mockedDependencyTree.get(module);
@@ -105,7 +101,9 @@ describe('DeltaCalculator', () => {
       },
     );
 
-    deltaCalculator = await DeltaCalculator.create(bundlerMock, options);
+    const resolverMock = new Resolver();
+
+    deltaCalculator = new DeltaCalculator(bundlerMock, resolverMock, options);
   });
 
   it('should start listening for file changes after being initialized', async () => {
