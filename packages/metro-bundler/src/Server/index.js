@@ -921,6 +921,7 @@ class Server {
         action_name: 'Requesting bundle',
         bundle_url: req.url,
         entry_point: options.entryFile,
+        bundler: 'delta',
       }),
     );
 
@@ -966,6 +967,7 @@ class Server {
     log({
       ...createActionEndEntry(requestingBundleLogEntry),
       outdated_modules: numModifiedFiles,
+      bundler: 'delta',
     });
   }
 
@@ -980,6 +982,7 @@ class Server {
         action_name: 'Requesting sourcemap',
         bundle_url: req.url,
         entry_point: options.entryFile,
+        bundler: 'delta',
       }),
     );
 
@@ -1009,7 +1012,12 @@ class Server {
       type: 'bundle_build_done',
     });
 
-    log(createActionEndEntry(requestingBundleLogEntry));
+    log(
+      createActionEndEntry({
+        ...requestingBundleLogEntry,
+        bundler: 'delta',
+      }),
+    );
   }
 
   _symbolicate(req: IncomingMessage, res: ServerResponse) {
