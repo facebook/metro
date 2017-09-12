@@ -30,12 +30,12 @@ export type ModuleMap = {
   getModule(
     name: string,
     platform: string | null,
-    supportsNativePlatform: boolean,
+    supportsNativePlatform: ?boolean,
   ): ?string,
   getPackage(
     name: string,
     platform: string | null,
-    supportsNativePlatform: boolean,
+    supportsNativePlatform: ?boolean,
   ): ?string,
 };
 

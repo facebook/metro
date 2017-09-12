@@ -18,7 +18,7 @@ import type ModuleCache from './ModuleCache';
 module.exports = class Module {
   hasteID: ?string;
   moduleCache: ModuleCache;
-  name: Promise<string>;
+  name: string;
   path: string;
   type: 'Module';
 
@@ -29,7 +29,7 @@ module.exports = class Module {
   ) {
     this.hasteID = info.hasteID;
     this.moduleCache = moduleCache;
-    this.name = Promise.resolve(this.hasteID || getName(path));
+    this.name = this.hasteID || getName(path);
     this.path = path;
     this.type = 'Module';
   }
@@ -42,8 +42,8 @@ module.exports = class Module {
     return Promise.reject(new Error('not implemented'));
   }
 
-  getName() {
-    return this.name;
+  getName(): Promise<string> {
+    return Promise.resolve(this.name);
   }
 
   getPackage() {
