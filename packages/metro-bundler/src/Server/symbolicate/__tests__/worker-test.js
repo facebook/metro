@@ -10,6 +10,10 @@
  */
 'use strict';
 
+jest.mock('net', () => ({
+  createServer: () => ({listen: () => {}}),
+}));
+
 const SourceMapGenerator = require('../../../Bundler/source-map/Generator');
 const {symbolicate} = require('../worker');
 
