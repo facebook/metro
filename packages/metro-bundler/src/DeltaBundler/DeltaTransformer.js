@@ -14,6 +14,8 @@
 
 const DeltaCalculator = require('./DeltaCalculator');
 
+const createModuleIdFactory = require('../lib/createModuleIdFactory');
+
 const {EventEmitter} = require('events');
 
 import type {RawMapping} from '../Bundler/source-map';
@@ -46,6 +48,8 @@ type Options = {|
   +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   +polyfillModuleNames: $ReadOnlyArray<string>,
 |};
+
+const globalCreateModuleId = createModuleIdFactory();
 
 /**
  * This class is in charge of creating the delta bundle with the actual
@@ -88,8 +92,18 @@ class DeltaTransformer extends EventEmitter {
     this._deltaCalculator = deltaCalculator;
     this._getPolyfills = options.getPolyfills;
     this._polyfillModuleNames = options.polyfillModuleNames;
-    this._getModuleId = this._bundler.getGetModuleIdFn();
     this._bundleOptions = bundleOptions;
+
+    // Only when isolateModuleIDs is true the Module IDs of this instance are
+    // sandboxed from the rest.
+    // Isolating them makes sense when we want to get consistent module IDs
+    // between different builds of the same bundle (for example when building
+    // production builds), while coupling them makes sense when we want
+    // different bundles to share the same ids (on HMR, where we need to patch
+    // the correct module).
+    this._getModuleId = this._bundleOptions.isolateModuleIDs
+      ? createModuleIdFactory()
+      : globalCreateModuleId;
 
     this._deltaCalculator.on('change', this._onFileChange);
   }

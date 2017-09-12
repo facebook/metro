@@ -27,6 +27,7 @@ const path = require('path');
 const denodeify = require('denodeify');
 const defaults = require('../defaults');
 const toLocalPath = require('../node-haste/lib/toLocalPath');
+const createModuleIdFactory = require('../lib/createModuleIdFactory');
 
 const {generateAssetTransformResult, isAssetTypeAnImage} = require('./util');
 
@@ -285,10 +286,6 @@ class Bundler {
           moduleSystemDeps,
         }),
       );
-  }
-
-  getGetModuleIdFn(): ({path: string}) => number {
-    return this._getModuleId;
   }
 
   _sourceHMRURL(platform: ?string, hmrpath: string) {
@@ -944,18 +941,6 @@ class Bundler {
 function verifyRootExists(root) {
   // Verify that the root exists.
   assert(fs.statSync(root).isDirectory(), 'Root has to be a valid directory');
-}
-
-function createModuleIdFactory() {
-  const fileToIdMap = Object.create(null);
-  let nextId = 0;
-  return ({path: modulePath}) => {
-    if (!(modulePath in fileToIdMap)) {
-      fileToIdMap[modulePath] = nextId;
-      nextId += 1;
-    }
-    return fileToIdMap[modulePath];
-  };
 }
 
 function getMainModule({dependencies, numPrependedDependencies = 0}) {
