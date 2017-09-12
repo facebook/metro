@@ -28,13 +28,13 @@ export type ReportableEvent =
   | {
       port: number,
       projectRoots: $ReadOnlyArray<string>,
-      type: 'initialize_packager_started',
+      type: 'initialize_started',
     }
   | {
-      type: 'initialize_packager_done',
+      type: 'initialize_done',
     }
   | {
-      type: 'initialize_packager_failed',
+      type: 'initialize_failed',
       port: number,
       error: Error,
     }
@@ -115,7 +115,7 @@ export type Reporter = {
 
 /**
  * A standard way to log a warning to the terminal. This should not be called
- * from some arbitrary packager logic, only from the reporters. Instead of
+ * from some arbitrary Metro Bundler logic, only from the reporters. Instead of
  * calling this, add a new type of ReportableEvent instead, and implement a
  * proper handler in the reporter(s).
  */

@@ -176,7 +176,7 @@ class Bundler {
     });
 
     const cacheKeyParts = [
-      'react-packager-cache',
+      'metro-bundler-cache',
       VERSION,
       opts.cacheVersion,
       stableProjectRoots.join(',').split(pathSeparator).join('-'),

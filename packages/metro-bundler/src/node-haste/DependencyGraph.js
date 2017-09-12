@@ -111,7 +111,7 @@ class DependencyGraph extends EventEmitter {
       ignorePattern: opts.ignoreFilePath,
       maxWorkers: opts.maxWorkers,
       mocksPattern: '',
-      name: 'react-native-packager-' + JEST_HASTE_MAP_CACHE_BREAKER,
+      name: 'metro-bundler-' + JEST_HASTE_MAP_CACHE_BREAKER,
       platforms: Array.from(opts.platforms),
       providesModuleNodeModules: opts.providesModuleNodeModules,
       resetCache: opts.resetCache,
@@ -123,13 +123,12 @@ class DependencyGraph extends EventEmitter {
   }
 
   static async load(opts: Options): Promise<DependencyGraph> {
-    const initializingPackagerLogEntry = log(
-      createActionStartEntry('Initializing Packager'),
-    );
     opts.reporter.update({type: 'dep_graph_loading'});
     const haste = DependencyGraph._createHaste(opts);
     const {hasteFS, moduleMap} = await haste.build();
-    log(createActionEndEntry(initializingPackagerLogEntry));
+    log(createActionEndEntry(log(
+      createActionStartEntry('Initializing Metro Bundler'),
+    )));
     opts.reporter.update({type: 'dep_graph_loaded'});
     return new DependencyGraph({
       haste,

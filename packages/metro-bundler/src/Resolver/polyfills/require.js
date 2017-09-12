@@ -173,8 +173,8 @@ function loadModuleImplementation(moduleId, module) {
     }
 
     // keep args in sync with with defineModuleCode in
-    // packager/src//Resolver/index.js
-    // and packager/src//ModuleGraph/worker.js
+    // metro-bundler/src/Resolver/index.js
+    // and metro-bundler/src/ModuleGraph/worker.js
     factory(global, require, moduleObject, exports, dependencyMap);
 
     // avoid removing factory in DEV mode as it breaks HMR
@@ -202,8 +202,8 @@ function unknownModuleError(id) {
   let message = 'Requiring unknown module "' + id + '".';
   if (__DEV__) {
     message +=
-      'If you are sure the module is there, try restarting the packager. ' +
-      'You may also want to run `npm install`, or `yarn` (depending on your environment).';
+      'If you are sure the module is there, try restarting Metro Bundler. ' +
+      'You may also want to run `yarn`, or `npm install` (depending on your environment).';
   }
   return Error(message);
 }

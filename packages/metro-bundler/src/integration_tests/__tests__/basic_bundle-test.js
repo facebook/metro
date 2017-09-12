@@ -13,7 +13,7 @@
 
 jest.useRealTimers().unmock('fs').unmock('graceful-fs');
 
-const Packager = require('../..');
+const Metro = require('../..');
 const path = require('path');
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 30 * 1000;
@@ -93,12 +93,12 @@ describe('basic_bundle', () => {
   }
 
   it('bundles package with polyfills', async () => {
-    const bundleWithPolyfills = await Packager.buildBundle(
+    const bundleWithPolyfills = await Metro.buildBundle(
       {
         assetRegistryPath: ASSET_REGISTRY_PATH,
         getPolyfills: () => [polyfill1, polyfill2],
         projectRoots: [INPUT_PATH, POLYFILLS_PATH],
-        transformCache: Packager.TransformCaching.none(),
+        transformCache: Metro.TransformCaching.none(),
         transformModulePath: require.resolve('../../transformer'),
         nonPersistent: true,
       },
@@ -112,12 +112,12 @@ describe('basic_bundle', () => {
   });
 
   it('bundles package without polyfills', async () => {
-    const bundleWithoutPolyfills = await Packager.buildBundle(
+    const bundleWithoutPolyfills = await Metro.buildBundle(
       {
         assetRegistryPath: ASSET_REGISTRY_PATH,
         getPolyfills: () => [],
         projectRoots: [INPUT_PATH, POLYFILLS_PATH],
-        transformCache: Packager.TransformCaching.none(),
+        transformCache: Metro.TransformCaching.none(),
         transformModulePath: require.resolve('../../transformer'),
         nonPersistent: true,
       },

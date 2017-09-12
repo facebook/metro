@@ -36,7 +36,7 @@ function createEntry(data: LogEntry | string): LogEntry {
   return {
     ...logEntry,
     log_session,
-    packager_version: VERSION,
+    metro_bundler_version: VERSION,
   };
 }
 

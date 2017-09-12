@@ -33,7 +33,7 @@ describe('Logger', () => {
     expect(logEntry).toEqual({
       log_entry_label: 'Test',
       log_session: jasmine.any(String),
-      packager_version: jasmine.any(String),
+      metro_bundler_version: jasmine.any(String),
     });
   });
 
@@ -44,7 +44,7 @@ describe('Logger', () => {
       action_phase: 'start',
       log_entry_label: 'Test',
       log_session: jasmine.any(String),
-      packager_version: jasmine.any(String),
+      metro_bundler_version: jasmine.any(String),
       start_timestamp: jasmine.any(Object),
     });
   });
@@ -57,7 +57,7 @@ describe('Logger', () => {
       duration_ms: jasmine.any(Number),
       log_entry_label: 'Test',
       log_session: jasmine.any(String),
-      packager_version: jasmine.any(String),
+      metro_bundler_version: jasmine.any(String),
       start_timestamp: jasmine.any(Object),
     });
   });

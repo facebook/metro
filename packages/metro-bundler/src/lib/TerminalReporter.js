@@ -163,15 +163,15 @@ class TerminalReporter {
     }
   }
 
-  _logPackagerInitializing(port: number, projectRoots: $ReadOnlyArray<string>) {
+  _logInitializing(port: number, projectRoots: $ReadOnlyArray<string>) {
     this.terminal.log(
       formatBanner(
-        'Running packager on port ' +
+        'Running Metro Bundler on port ' +
           port +
           '.\n\n' +
-          'Keep this packager running while developing on any JS projects. ' +
-          'Feel free to close this tab and run your own packager instance ' +
-          'if you prefer.\n\n' +
+          'Keep Metro Bundler running while developing on any JS projects. ' +
+          'Feel free to close this tab and run your own Metro Bundler ' +
+          ' instance if you prefer.\n\n' +
           'https://github.com/facebook/react-native',
         {
           marginLeft: 1,
@@ -188,11 +188,11 @@ class TerminalReporter {
     );
   }
 
-  _logPackagerInitializingFailed(port: number, error: Error) {
+  _logInitializingFailed(port: number, error: Error) {
     if (error.code === 'EADDRINUSE') {
       this.terminal.log(
         chalk.bgRed.bold(' ERROR '),
-        chalk.red("Packager can't listen on port", chalk.bold(port)),
+        chalk.red('Metro Bundler can\'t listen on port', chalk.bold(port)),
       );
       this.terminal.log(
         'Most likely another process is already using this port',
@@ -201,7 +201,7 @@ class TerminalReporter {
       this.terminal.log('\n  ', chalk.bold('lsof -i :' + port), '\n');
       this.terminal.log('Then, you can either shut down the other process:');
       this.terminal.log('\n  ', chalk.bold('kill -9 <PID>'), '\n');
-      this.terminal.log('or run packager on different port.');
+      this.terminal.log('or run Metro Bundler on different port.');
     } else {
       this.terminal.log(chalk.bgRed.bold(' ERROR '), chalk.red(error.message));
       const errorAttributes = JSON.stringify(error);
@@ -218,14 +218,14 @@ class TerminalReporter {
    */
   _log(event: TerminalReportableEvent): void {
     switch (event.type) {
-      case 'initialize_packager_started':
-        this._logPackagerInitializing(event.port, event.projectRoots);
+      case 'initialize_started':
+        this._logInitializing(event.port, event.projectRoots);
         break;
-      case 'initialize_packager_done':
-        this.terminal.log('\nReact packager ready.\n');
+      case 'initialize_done':
+        this.terminal.log('\nMetro Bundler ready.\n');
         break;
-      case 'initialize_packager_failed':
-        this._logPackagerInitializingFailed(event.port, event.error);
+      case 'initialize_failed':
+        this._logInitializingFailed(event.port, event.error);
         break;
       case 'bundle_build_done':
         this._logBundleBuildDone(event.buildID);

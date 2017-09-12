@@ -90,7 +90,7 @@ class FileBasedCache {
   /**
    * The root path is where the data will be stored. It shouldn't contain
    * other files other than the cache's own files, so it should start empty
-   * when the packager is first run. When doing a cache reset, it may be
+   * when Metro Bundler is first run. When doing a cache reset, it may be
    * completely deleted.
    */
   constructor(rootPath: string) {
@@ -259,7 +259,7 @@ class FileBasedCache {
   }
 
   /**
-   * When restarting packager we want to avoid running the collection over
+   * When restarting Metro Bundler we want to avoid running the collection over
    * again, so we store the last collection time in a file and we check that
    * first.
    */
@@ -426,9 +426,9 @@ function none(): TransformCache {
 }
 
 /**
- * If packager is running for two different directories, we don't want the
+ * If Metro Bundler is running for two different directories, we don't want the
  * caches to conflict with each other. `__dirname` carries that because
- * packager will be, for example, installed in a different `node_modules/`
+ * Metro Bundler will be, for example, installed in a different `node_modules/`
  * folder for different projects.
  */
 function useTempDir(): TransformCache {
@@ -437,7 +437,7 @@ function useTempDir(): TransformCache {
     hash.update(process.getuid().toString());
   }
   const tmpDir = tmpdir();
-  const cacheName = 'react-native-packager-cache';
+  const cacheName = 'metro-bundler-cache';
   const rootPath = path.join(tmpDir, cacheName + '-' + hash.digest('hex'));
   mkdirp.sync(rootPath);
   return new FileBasedCache(rootPath);

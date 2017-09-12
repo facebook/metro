@@ -1146,7 +1146,7 @@ class Server {
         JSON.stringify({
           type: 'InternalError',
           message:
-            'react-packager has encountered an internal error, ' +
+            'Metro Bundler has encountered an internal error, ' +
             'please check your terminal error output for more details',
         }),
       );
