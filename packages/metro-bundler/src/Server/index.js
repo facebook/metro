@@ -21,6 +21,7 @@ const crypto = require('crypto');
 const debug = require('debug')('Metro:Server');
 const defaults = require('../defaults');
 const emptyFunction = require('fbjs/lib/emptyFunction');
+const formatBundlingError = require('../lib/formatBundlingError');
 const getMaxWorkers = require('../lib/getMaxWorkers');
 const mime = require('mime-types');
 const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
@@ -28,10 +29,7 @@ const path = require('path');
 const symbolicate = require('./symbolicate');
 const url = require('url');
 
-const {
-  AmbiguousModuleResolutionError,
-} = require('../node-haste/DependencyGraph/ResolutionRequest');
-
+import type {CustomError} from '../lib/formatBundlingError';
 import type Module, {HasteImpl} from '../node-haste/Module';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type ResolutionResponse from '../node-haste/DependencyGraph/ResolutionResponse';
@@ -1093,72 +1091,20 @@ class Server {
     );
   }
 
-  _handleError(
-    res: ServerResponse,
-    bundleID: string,
-    error: {
-      status: number,
-      type: string,
-      description: string,
-      filename: string,
-      lineNumber: number,
-      errors: Array<{
-        description: string,
-        filename: string,
-        lineNumber: number,
-      }>,
-    },
-  ) {
+  _handleError(res: ServerResponse, bundleID: string, error: CustomError) {
     res.writeHead(error.status || 500, {
       'Content-Type': 'application/json; charset=UTF-8',
     });
 
-    if (error instanceof AmbiguousModuleResolutionError) {
-      const he = error.hasteError;
-      const message =
-        "Ambiguous resolution: module '" +
-        `${error.fromModulePath}\' tries to require \'${he.hasteName}\', but ` +
-        `there are several files providing this module. You can delete or ` +
-        'fix them: \n\n' +
-        Object.keys(he.duplicatesSet)
-          .sort()
-          .map(dupFilePath => `${dupFilePath}`)
-          .join('\n\n');
-      res.end(JSON.stringify({message, errors: [{description: message}]}));
-      this._reporter.update({error, type: 'bundling_error'});
-      return;
+    const formattedError = formatBundlingError(error);
+
+    res.end(JSON.stringify(formattedError));
+
+    if (error instanceof Error && error.type === 'NotFoundError') {
+      delete this._bundles[bundleID];
     }
 
-    if (
-      error instanceof Error &&
-      (error.type === 'TransformError' ||
-        error.type === 'NotFoundError' ||
-        error.type === 'UnableToResolveError')
-    ) {
-      error.errors = [
-        {
-          description: error.description,
-          filename: error.filename,
-          lineNumber: error.lineNumber,
-        },
-      ];
-      res.end(JSON.stringify(error));
-
-      if (error.type === 'NotFoundError') {
-        delete this._bundles[bundleID];
-      }
-      this._reporter.update({error, type: 'bundling_error'});
-    } else {
-      console.error(error.stack || error);
-      res.end(
-        JSON.stringify({
-          type: 'InternalError',
-          message:
-            'Metro Bundler has encountered an internal error, ' +
-            'please check your terminal error output for more details',
-        }),
-      );
-    }
+    this._reporter.update({error, type: 'bundling_error'});
   }
 
   _getOptionsFromUrl(reqUrl: string): BundleOptions {

@@ -12,6 +12,7 @@
 
 'use strict';
 
+const formatBundlingError = require('../lib/formatBundlingError');
 const getBundlingOptionsForHmr = require('./getBundlingOptionsForHmr');
 const querystring = require('querystring');
 const url = require('url');
@@ -92,7 +93,17 @@ class HmrServer<TClient: Client> {
   }
 
   async _prepareResponse(client: Client): Promise<{type: string, body: {}}> {
-    const result = await client.deltaTransformer.getDelta();
+    let result;
+
+    try {
+      result = await client.deltaTransformer.getDelta();
+    } catch (error) {
+      const formattedError = formatBundlingError(error);
+
+      this._reporter.update({type: 'bundling_error', error});
+
+      return {type: 'error', body: formattedError};
+    }
     const modules = [];
 
     for (const [id, module] of result.delta) {
