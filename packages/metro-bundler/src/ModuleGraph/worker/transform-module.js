@@ -23,6 +23,7 @@ const path = require('path');
 
 const {basename} = require('path');
 
+import type {HasteImpl} from '../../node-haste/Module';
 import type {
   TransformedCodeFile,
   TransformedSourceFile,
@@ -34,11 +35,13 @@ import type {Ast} from 'babel-core';
 
 export type TransformOptions = {|
   filename: string,
+  hasteImpl?: HasteImpl,
   polyfill?: boolean,
   transformer: Transformer<*>,
   variants?: TransformVariants,
 |};
 
+const NODE_MODULES = path.sep + 'node_modules' + path.sep;
 const defaultTransformOptions = {
   dev: true,
   generateSourceMaps: true,
@@ -78,14 +81,23 @@ function transformModule(
     transformed[variantName] = makeResult(ast, filename, code, polyfill);
   }
 
-  const annotations = docblock.parse(docblock.extract(code));
+  let hasteID = null;
+  if (filename.indexOf(NODE_MODULES) === -1) {
+    hasteID = docblock.parse(docblock.extract(code)).providesModule;
+    if (options.hasteImpl) {
+      if (options.hasteImpl.enforceHasteNameMatches) {
+        options.hasteImpl.enforceHasteNameMatches(filename, hasteID);
+      }
+      hasteID = options.hasteImpl.getHasteName(filename);
+    }
+  }
 
   return {
     details: {
       assetContent: null,
       code,
       file: filename,
-      hasteID: annotations.providesModule || null,
+      hasteID: hasteID || null,
       transformed,
       type: options.polyfill ? 'script' : 'module',
     },
