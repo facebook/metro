@@ -14,11 +14,20 @@
 
 const DeltaPatcher = require('../DeltaPatcher');
 
+const INITIAL_TIME = 1482363367000;
+
 describe('DeltaPatcher', () => {
+  const OriginalDate = global.Date;
   let deltaPatcher;
+
+  function setCurrentTime(time: number) {
+    global.Date = jest.fn(() => new OriginalDate(time));
+  }
 
   beforeEach(() => {
     deltaPatcher = new DeltaPatcher();
+
+    setCurrentTime(INITIAL_TIME);
   });
 
   it('should throw if received a non-reset delta as the initial one', () => {
@@ -116,5 +125,45 @@ describe('DeltaPatcher', () => {
 
     // A deleted module counts as a modified file.
     expect(deltaPatcher.getLastNumModifiedFiles()).toEqual(2);
+  });
+
+  it('should return the time it was last modified', () => {
+    deltaPatcher
+      .applyDelta({
+        reset: 1,
+        pre: new Map([[1, {code: 'pre'}]]),
+        post: new Map([[2, {code: 'post'}]]),
+        delta: new Map([[3, {code: 'middle'}]]),
+      })
+      .stringifyCode();
+
+    expect(deltaPatcher.getLastModifiedDate().getTime()).toEqual(INITIAL_TIME);
+    setCurrentTime(INITIAL_TIME + 1000);
+
+    // Apply empty delta
+    deltaPatcher
+      .applyDelta({
+        reset: 1,
+        pre: new Map(),
+        post: new Map(),
+        delta: new Map(),
+      })
+      .stringifyCode();
+
+    expect(deltaPatcher.getLastModifiedDate().getTime()).toEqual(INITIAL_TIME);
+    setCurrentTime(INITIAL_TIME + 2000);
+
+    deltaPatcher
+      .applyDelta({
+        reset: 1,
+        pre: new Map(),
+        post: new Map([[2, {code: 'newpost'}]]),
+        delta: new Map(),
+      })
+      .stringifyCode();
+
+    expect(deltaPatcher.getLastModifiedDate().getTime()).toEqual(
+      INITIAL_TIME + 2000,
+    );
   });
 });

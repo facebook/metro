@@ -6,6 +6,7 @@ Object {
 ;module3
 ;another
 ;post",
+  "lastModified": 2016-12-21T23:36:07.000Z,
   "numModifiedFiles": 4,
 }
 `;
@@ -18,6 +19,7 @@ Object {
 ;post
 ;bananas
 ;apples",
+  "lastModified": 2016-12-21T23:36:07.000Z,
   "numModifiedFiles": 5,
 }
 `;

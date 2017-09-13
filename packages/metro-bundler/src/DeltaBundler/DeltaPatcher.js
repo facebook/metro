@@ -29,6 +29,7 @@ class DeltaPatcher {
   };
   _initialized = false;
   _lastNumModifiedFiles = 0;
+  _lastModifiedDate = new Date();
 
   /**
    * Applies a Delta Bundle to the current bundle.
@@ -55,6 +56,10 @@ class DeltaPatcher {
     this._lastNumModifiedFiles =
       deltaBundle.pre.size + deltaBundle.post.size + deltaBundle.delta.size;
 
+    if (this._lastNumModifiedFiles > 0) {
+      this._lastModifiedDate = new Date();
+    }
+
     this._patchMap(this._lastBundle.pre, deltaBundle.pre);
     this._patchMap(this._lastBundle.post, deltaBundle.post);
     this._patchMap(this._lastBundle.modules, deltaBundle.delta);
@@ -70,6 +75,10 @@ class DeltaPatcher {
    */
   getLastNumModifiedFiles(): number {
     return this._lastNumModifiedFiles;
+  }
+
+  getLastModifiedDate(): Date {
+    return this._lastModifiedDate;
   }
 
   /**

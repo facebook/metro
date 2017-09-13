@@ -923,14 +923,13 @@ class Server {
       }),
     );
 
-    let bundle;
-    let numModifiedFiles;
+    let result;
 
     try {
-      ({bundle, numModifiedFiles} = await this._deltaBundler.buildFullBundle({
+      result = await this._deltaBundler.buildFullBundle({
         ...options,
         deltaBundleId: this.optionsHash(options),
-      }));
+      });
     } catch (error) {
       this._handleError(res, this.optionsHash(options), error);
 
@@ -942,18 +941,24 @@ class Server {
       return;
     }
 
-    const etag = crypto.createHash('md5').update(bundle).digest('hex');
-
-    if (req.headers['if-none-match'] === etag) {
+    if (
+      // We avoid parsing the dates since the client should never send a more
+      // recent date than the one returned by the Delta Bundler (if that's the
+      // case it's fine to return the whole bundle).
+      req.headers['if-modified-since'] === result.lastModified.toUTCString()
+    ) {
       debug('Responding with 304');
       res.writeHead(304);
       res.end();
     } else {
-      res.setHeader(FILES_CHANGED_COUNT_HEADER, String(numModifiedFiles));
+      res.setHeader(
+        FILES_CHANGED_COUNT_HEADER,
+        String(result.numModifiedFiles),
+      );
       res.setHeader('Content-Type', 'application/javascript');
-      res.setHeader('ETag', etag);
-      res.setHeader('Content-Length', String(Buffer.byteLength(bundle)));
-      res.end(bundle);
+      res.setHeader('Last-Modified', result.lastModified.toUTCString());
+      res.setHeader('Content-Length', String(Buffer.byteLength(result.bundle)));
+      res.end(result.bundle);
     }
 
     this._reporter.update({
@@ -964,7 +969,7 @@ class Server {
     debug('Finished response');
     log({
       ...createActionEndEntry(requestingBundleLogEntry),
-      outdated_modules: numModifiedFiles,
+      outdated_modules: result.numModifiedFiles,
       bundler: 'delta',
     });
   }

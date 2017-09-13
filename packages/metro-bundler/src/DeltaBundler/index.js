@@ -113,7 +113,7 @@ class DeltaBundler {
 
   async buildFullBundle(
     options: FullBuildOptions,
-  ): Promise<{bundle: string, numModifiedFiles: number}> {
+  ): Promise<{bundle: string, numModifiedFiles: number, lastModified: Date}> {
     const deltaPatcher = await this._getDeltaPatcher(options);
     let bundle = deltaPatcher.stringifyCode();
 
@@ -123,6 +123,7 @@ class DeltaBundler {
 
     return {
       bundle,
+      lastModified: deltaPatcher.getLastModifiedDate(),
       numModifiedFiles: deltaPatcher.getLastNumModifiedFiles(),
     };
   }

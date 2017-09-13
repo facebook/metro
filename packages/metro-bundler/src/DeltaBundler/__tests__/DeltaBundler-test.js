@@ -21,6 +21,7 @@ const DeltaTransformer = require('../DeltaTransformer');
 const DeltaBundler = require('../');
 
 describe('DeltaBundler', () => {
+  const OriginalDate = global.Date;
   let deltaBundler;
   let bundler;
   const initialTransformerResponse = {
@@ -30,6 +31,10 @@ describe('DeltaBundler', () => {
     inverseDependencies: [],
     reset: true,
   };
+
+  function setCurrentTime(time: number) {
+    global.Date = jest.fn(() => new OriginalDate(time));
+  }
 
   beforeEach(() => {
     DeltaTransformer.prototype.getDelta = jest
@@ -42,6 +47,8 @@ describe('DeltaBundler', () => {
 
     bundler = new Bundler();
     deltaBundler = new DeltaBundler(bundler, {});
+
+    setCurrentTime(1482363367000);
   });
 
   it('should create a new transformer to build the initial bundle', async () => {
