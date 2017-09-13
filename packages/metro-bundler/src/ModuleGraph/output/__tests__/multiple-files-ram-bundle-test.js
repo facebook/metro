@@ -70,9 +70,11 @@ it('creates a source map', () => {
 it('creates a magic file with the number', () => {
   expect(extraFiles).toBeDefined();
   // $FlowFixMe "extraFiles" is always defined at this point.
-  expect(extraFiles.get('UNBUNDLE')).toBeDefined();
+  expect(extraFiles.get('js-modules/UNBUNDLE')).toBeDefined();
   // $FlowFixMe "extraFiles" is always defined at this point.
-  expect(extraFiles.get('UNBUNDLE').readUInt32LE(0)).toBe(0xfb0bd1e5);
+  expect(extraFiles.get('js-modules/UNBUNDLE').readUInt32LE(0)).toBe(
+    0xfb0bd1e5,
+  );
 });
 
 it('bundles each file separately', () => {

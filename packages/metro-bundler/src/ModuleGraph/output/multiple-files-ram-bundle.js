@@ -50,7 +50,10 @@ function asMultipleFilesRamBundle({
 
   // Prepare and write magic number file.
   magicFileContents.writeUInt32LE(MAGIC_UNBUNDLE_NUMBER, 0);
-  extraFiles.set(MAGIC_UNBUNDLE_FILENAME, magicFileContents);
+  extraFiles.set(
+    path.join(JS_MODULES, MAGIC_UNBUNDLE_FILENAME),
+    magicFileContents,
+  );
 
   // Create the source map (with no module groups, as they are ignored).
   const map = buildSourceMapWithMetaData({
