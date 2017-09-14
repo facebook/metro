@@ -17,6 +17,12 @@ const getBundlingOptionsForHmr = require('./getBundlingOptionsForHmr');
 const querystring = require('querystring');
 const url = require('url');
 
+const {
+  createActionStartEntry,
+  createActionEndEntry,
+  log,
+} = require('../Logger');
+
 import type DeltaTransformer from '../DeltaBundler/DeltaTransformer';
 import type PackagerServer from '../Server';
 import type {Reporter} from '../lib/reporting';
@@ -87,9 +93,22 @@ class HmrServer<TClient: Client> {
   }
 
   async _handleFileChange(client: Client) {
+    const processingHmrChange = log(
+      createActionStartEntry({action_name: 'Processing HMR change'}),
+    );
+
     client.sendFn(JSON.stringify({type: 'update-start'}));
-    client.sendFn(JSON.stringify(await this._prepareResponse(client)));
+    const response = await this._prepareResponse(client);
+
+    client.sendFn(JSON.stringify(response));
     client.sendFn(JSON.stringify({type: 'update-done'}));
+
+    log({
+      ...createActionEndEntry(processingHmrChange),
+      outdated_modules: Array.isArray(response.body.modules)
+        ? response.body.modules.length
+        : null,
+    });
   }
 
   async _prepareResponse(client: Client): Promise<{type: string, body: {}}> {
