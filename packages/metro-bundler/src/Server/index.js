@@ -883,6 +883,7 @@ class Server {
 
   _prepareDeltaBundler(
     req: IncomingMessage,
+    mres: MultipartResponse,
   ): {options: BundleOptions, buildID: string} {
     const options = this._getOptionsFromUrl(req.url);
 
@@ -890,6 +891,11 @@ class Server {
 
     if (!this._opts.silent) {
       options.onProgress = (transformedFileCount, totalFileCount) => {
+        mres.writeChunk(
+          {'Content-Type': 'application/json'},
+          JSON.stringify({done: transformedFileCount, total: totalFileCount}),
+        );
+
         this._reporter.update({
           buildID,
           type: 'bundle_transform_progressed',
@@ -912,7 +918,8 @@ class Server {
     req: IncomingMessage,
     res: ServerResponse,
   ) {
-    const {options, buildID} = this._prepareDeltaBundler(req);
+    const mres = MultipartResponse.wrap(req, res);
+    const {options, buildID} = this._prepareDeltaBundler(req, mres);
 
     const requestingBundleLogEntry = log(
       createActionStartEntry({
@@ -948,17 +955,20 @@ class Server {
       req.headers['if-modified-since'] === result.lastModified.toUTCString()
     ) {
       debug('Responding with 304');
-      res.writeHead(304);
-      res.end();
+      mres.writeHead(304);
+      mres.end();
     } else {
-      res.setHeader(
+      mres.setHeader(
         FILES_CHANGED_COUNT_HEADER,
         String(result.numModifiedFiles),
       );
-      res.setHeader('Content-Type', 'application/javascript');
-      res.setHeader('Last-Modified', result.lastModified.toUTCString());
-      res.setHeader('Content-Length', String(Buffer.byteLength(result.bundle)));
-      res.end(result.bundle);
+      mres.setHeader('Content-Type', 'application/javascript');
+      mres.setHeader('Last-Modified', result.lastModified.toUTCString());
+      mres.setHeader(
+        'Content-Length',
+        String(Buffer.byteLength(result.bundle)),
+      );
+      mres.end(result.bundle);
     }
 
     this._reporter.update({
@@ -978,7 +988,8 @@ class Server {
     req: IncomingMessage,
     res: ServerResponse,
   ) {
-    const {options, buildID} = this._prepareDeltaBundler(req);
+    const mres = MultipartResponse.wrap(req, res);
+    const {options, buildID} = this._prepareDeltaBundler(req, mres);
 
     const requestingBundleLogEntry = log(
       createActionStartEntry({
@@ -997,7 +1008,7 @@ class Server {
         deltaBundleId: this.optionsHash(options),
       });
     } catch (error) {
-      this._handleError(res, this.optionsHash(options), error);
+      this._handleError(mres, this.optionsHash(options), error);
 
       this._reporter.update({
         buildID,
@@ -1007,8 +1018,8 @@ class Server {
       return;
     }
 
-    res.setHeader('Content-Type', 'application/json');
-    res.end(sourceMap.toString());
+    mres.setHeader('Content-Type', 'application/json');
+    mres.end(sourceMap.toString());
 
     this._reporter.update({
       buildID,
