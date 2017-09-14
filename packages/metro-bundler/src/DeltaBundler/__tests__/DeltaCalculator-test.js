@@ -234,4 +234,19 @@ describe('DeltaCalculator', () => {
 
     expect(onChangeFile.mock.calls.length).toBe(0);
   });
+
+  it('should retry to build the last delta after getting an error', async () => {
+    await deltaCalculator.getDelta();
+
+    fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
+
+    Bundler.prototype.getShallowDependencies.mockImplementation(async () => {
+      throw new Error('error');
+    });
+
+    await expect(deltaCalculator.getDelta()).rejects.toBeInstanceOf(Error);
+
+    // This second time it should still throw an error.
+    await expect(deltaCalculator.getDelta()).rejects.toBeInstanceOf(Error);
+  });
 });

@@ -103,6 +103,14 @@ class DeltaCalculator extends EventEmitter {
 
     try {
       result = await this._currentBuildPromise;
+    } catch (error) {
+      // In case of error, we don't want to mark the modified files as
+      // processed (since we haven't actually created any delta). If we do not
+      // do so, asking for a delta after an error will produce an empty Delta,
+      // which is not correct.
+      modifiedFiles.forEach(file => this._modifiedFiles.add(file));
+
+      throw error;
     } finally {
       this._currentBuildPromise = null;
     }
