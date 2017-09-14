@@ -900,6 +900,7 @@ class Bundler {
         ...options,
         entryFile,
         rootEntryFile: entryFile,
+        prependPolyfills: false,
       }).then(r => r.dependencies.map(d => d.path));
 
     const {dev, hot, platform} = options;
