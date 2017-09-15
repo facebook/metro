@@ -11,15 +11,20 @@
  */
 'use strict';
 
+const blacklist = require('./blacklist');
+const path = require('path');
+
+const {providesModuleNodeModules} = require('./defaults');
+
 import type {
   GetTransformOptions,
   PostMinifyProcess,
   PostProcessModules,
   PostProcessBundleSourcemap,
 } from './Bundler';
-import type {HasteImpl} from './node-haste/Module';
-import type {TransformVariants} from './ModuleGraph/types.flow';
 import type {PostProcessModules as PostProcessModulesForBuck} from './ModuleGraph/types.flow.js';
+import type {TransformVariants} from './ModuleGraph/types.flow';
+import type {HasteImpl} from './node-haste/Module';
 
 export type ConfigT = {
   extraNodeModules: {[id: string]: string},
@@ -123,4 +128,47 @@ export type ConfigT = {
   hasteImpl?: HasteImpl,
 
   transformVariants: () => TransformVariants,
+};
+
+const DEFAULT = ({
+  extraNodeModules: Object.create(null),
+  getAssetExts: () => [],
+  getBlacklistRE: () => blacklist(),
+  getEnableBabelRCLookup: () => false,
+  getPlatforms: () => [],
+  getPolyfillModuleNames: () => [],
+  getProjectRoots: () => {
+    // We assume the default project path is two levels up from
+    // node_modules/metro-bundler/
+    return [path.resolve(__dirname, '../..')];
+  },
+  getProvidesModuleNodeModules: () => providesModuleNodeModules.slice(),
+  getSourceExts: () => [],
+  getTransformModulePath: () =>
+    require.resolve('metro-bundler/src/transformer.js'),
+  getTransformOptions: async () => ({}),
+  getPolyfills: () => [],
+  postMinifyProcess: x => x,
+  postProcessModules: modules => modules,
+  postProcessModulesForBuck: modules => modules,
+  postProcessBundleSourcemap: ({code, map, outFileName}) => ({code, map}),
+  transformVariants: () => ({default: {}}),
+  getWorkerPath: () => null,
+}: ConfigT);
+
+const normalize = (initialConfig: ConfigT, defaults?: ConfigT): ConfigT => {
+  return {
+    ...(defaults || DEFAULT),
+    ...initialConfig,
+  };
+};
+
+const load = (configFile: string, defaults?: ConfigT) =>
+  // $FlowFixMe dynamic require
+  normalize(require(configFile), defaults);
+
+module.exports = {
+  DEFAULT,
+  load,
+  normalize,
 };
