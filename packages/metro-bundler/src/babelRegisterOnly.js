@@ -12,6 +12,19 @@ require('./setupNodePolyfills');
 
 var _only = [];
 
+const PLUGINS = [
+  'transform-flow-strip-types',
+  'transform-object-rest-spread',
+  'transform-class-properties',
+];
+
+if (/^v[0-7]\./.test(process.version)) {
+  PLUGINS.push(
+    'transform-async-to-generator',
+    'syntax-trailing-function-commas'
+  );
+}
+
 function registerOnly(onlyList) {
   // This prevents `babel-register` from transforming the code of the
   // plugins/presets that we are require-ing themselves before setting up the
@@ -24,13 +37,7 @@ function config(onlyList) {
   _only = _only.concat(onlyList);
   return {
     presets: [require('babel-preset-es2015-node')],
-    plugins: [
-      'transform-flow-strip-types',
-      'syntax-trailing-function-commas',
-      'transform-object-rest-spread',
-      'transform-async-to-generator',
-      'transform-class-properties',
-    ].map(pluginName => require(`babel-plugin-${pluginName}`)),
+    plugins: PLUGINS.map(pluginName => require(`babel-plugin-${pluginName}`)),
     only: _only,
     retainLines: true,
     sourceMaps: 'inline',
