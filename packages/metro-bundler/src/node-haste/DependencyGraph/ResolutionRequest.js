@@ -80,7 +80,7 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
   }
 
   resolveDependency(fromModule: TModule, toModuleName: string): TModule {
-    const resHash = resolutionHash(fromModule.path, toModuleName);
+    const resHash = getResolutionCacheKey(fromModule.path, toModuleName);
 
     const immediateResolution = this._immediateResolutionCache[resHash];
     if (immediateResolution) {
@@ -367,9 +367,13 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
   _resetResolutionCache() {
     this._immediateResolutionCache = Object.create(null);
   }
+
+  getResolutionCache(): {[key: string]: TModule} {
+    return this._immediateResolutionCache;
+  }
 }
 
-function resolutionHash(modulePath, depName) {
+function getResolutionCacheKey(modulePath, depName) {
   return `${path.resolve(modulePath)}:${depName}`;
 }
 
