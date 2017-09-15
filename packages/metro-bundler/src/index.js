@@ -23,12 +23,14 @@ const {fromRawMappings, compactMapping} = require('./Bundler/source-map');
 
 import type Server, {Options as ServerOptions} from './Server';
 import type {TransformCache} from './lib/TransformCaching';
+import type {ConfigT as MetroConfig} from './Config';
 
 exports.createBlacklist = blacklist;
 exports.sourceMaps = {fromRawMappings, compactMapping};
 exports.createServer = createServer;
 exports.Logger = Logger;
 
+export type ConfigT = MetroConfig;
 type Options = {|
   ...ServerOptions,
   // optional types to force flow errors in `toServerOptions`

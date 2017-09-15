@@ -1,0 +1,126 @@
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @flow
+ * @format
+ */
+'use strict';
+
+import type {
+  GetTransformOptions,
+  PostMinifyProcess,
+  PostProcessModules,
+  PostProcessBundleSourcemap,
+} from './Bundler';
+import type {HasteImpl} from './node-haste/Module';
+import type {TransformVariants} from './ModuleGraph/types.flow';
+import type {PostProcessModules as PostProcessModulesForBuck} from './ModuleGraph/types.flow.js';
+
+export type ConfigT = {
+  extraNodeModules: {[id: string]: string},
+  /**
+   * Specify any additional asset file extensions to be used by the packager.
+   * For example, if you want to include a .ttf file, you would return ['ttf']
+   * from here and use `require('./fonts/example.ttf')` inside your app.
+   */
+  getAssetExts: () => Array<string>,
+
+  /**
+   * Returns a regular expression for modules that should be ignored by the
+   * packager on a given platform.
+   */
+  getBlacklistRE(): RegExp,
+
+  /**
+   * Specify whether or not to enable Babel's behavior for looking up .babelrc
+   * files. If false, only the .babelrc file (if one exists) in the main project
+   * root is used.
+   */
+  getEnableBabelRCLookup(): boolean,
+
+  /**
+   * Specify any additional polyfill modules that should be processed
+   * before regular module loading.
+   */
+  getPolyfillModuleNames: () => Array<string>,
+
+  /**
+   * Specify any additional platforms to be used by the packager.
+   * For example, if you want to add a "custom" platform, and use modules
+   * ending in .custom.js, you would return ['custom'] here.
+   */
+  getPlatforms: () => Array<string>,
+
+  getProjectRoots(): Array<string>,
+
+  /**
+   * Specify any additional node modules that should be processed for
+   * providesModule declarations.
+   */
+  getProvidesModuleNodeModules?: () => Array<string>,
+
+  /**
+   * Specify any additional source file extensions to be used by the packager.
+   * For example, if you want to include a .ts file, you would return ['ts']
+   * from here and use `require('./module/example')` to require the file with
+   * path 'module/example.ts' inside your app.
+   */
+  getSourceExts: () => Array<string>,
+
+  /**
+   * Returns the path to a custom transformer. This can also be overridden
+   * with the --transformer commandline argument.
+   */
+  getTransformModulePath: () => string,
+  getTransformOptions: GetTransformOptions,
+
+  /**
+   * Returns the path to the worker that is used for transformation.
+   */
+  getWorkerPath: () => ?string,
+
+  /**
+   * An optional list of polyfills to include in the bundle. The list defaults
+   * to a set of common polyfills for Number, String, Array, Object...
+   */
+  getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
+
+  /**
+   * An optional function that can modify the code and source map of bundle
+   * after the minifaction took place. (Function applied per module).
+   */
+  postMinifyProcess: PostMinifyProcess,
+
+  /**
+   * An optional function that can modify the module array before the bundle is
+   * finalized.
+   */
+  postProcessModules: PostProcessModules,
+
+  /**
+   * An optional function that can modify the code and source map of the bundle
+   * before it is written. Applied once for the entire bundle, only works if
+   * output is a plainBundle.
+   */
+  postProcessBundleSourcemap: PostProcessBundleSourcemap,
+
+  /**
+   * Same as `postProcessModules` but for the Buck worker. Eventually we do want
+   * to unify both variants.
+   */
+  postProcessModulesForBuck: PostProcessModulesForBuck,
+
+  /**
+   * A module that exports:
+   * - a `getHasteName(filePath)` method that returns `hasteName` for module at
+   *  `filePath`, or undefined if `filePath` is not a haste module.
+   */
+  hasteImpl?: HasteImpl,
+
+  transformVariants: () => TransformVariants,
+};
