@@ -46,7 +46,9 @@ class MultipartResponse {
       chunk += `${CRLF}--${BOUNDARY}--${CRLF}`;
     }
 
-    this.res.write(chunk);
+    if (!this.res.finished) {
+      this.res.write(chunk);
+    }
   }
 
   writeHead(status, headers) {

@@ -938,7 +938,7 @@ class Server {
         deltaBundleId: this.optionsHash(options),
       });
     } catch (error) {
-      this._handleError(res, this.optionsHash(options), error);
+      this._handleError(mres, this.optionsHash(options), error);
 
       this._reporter.update({
         buildID,
