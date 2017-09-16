@@ -235,6 +235,21 @@ describe('DeltaCalculator', () => {
     expect(onChangeFile.mock.calls.length).toBe(0);
   });
 
+  it('should not emit an event when there is a file deleted', async () => {
+    jest.useFakeTimers();
+
+    const onChangeFile = jest.fn();
+    await deltaCalculator.getDelta();
+
+    deltaCalculator.on('delete', onChangeFile);
+
+    fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
+
+    jest.runAllTimers();
+
+    expect(onChangeFile.mock.calls.length).toBe(0);
+  });
+
   it('should retry to build the last delta after getting an error', async () => {
     await deltaCalculator.getDelta();
 

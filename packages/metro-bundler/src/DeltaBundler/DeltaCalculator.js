@@ -167,6 +167,17 @@ class DeltaCalculator extends EventEmitter {
     type: string,
     filePath: string,
   }): mixed => {
+    // We do not want to keep track of deleted files, since this can cause
+    // issues when moving files (or even deleting files).
+    // The only issue with this approach is that the user removes a file that
+    // is needed, the bundler will still create a correct bundle (since it
+    // won't detect any modified file). Once we have our own dependency
+    // traverser in Delta Bundler this will be easy to fix.
+    if (type === 'delete') {
+      this._dependencies.delete(filePath);
+      return;
+    }
+
     this._modifiedFiles.add(filePath);
 
     // Notify users that there is a change in some of the bundle files. This
