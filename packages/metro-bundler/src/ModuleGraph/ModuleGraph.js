@@ -7,29 +7,25 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 'use strict';
 
 const defaults = require('../defaults');
-const nullthrows = require('fbjs/lib/nullthrows');
-const parallel = require('async/parallel');
-const seq = require('async/seq');
+const denodeify: Denodeify = require('denodeify');
 const virtualModule = require('./module').virtual;
 
 import type {
   BuildResult,
   Callback,
   GraphFn,
-  GraphResult,
-  Module,
   PostProcessModules,
 } from './types.flow';
 
-type BuildFn = (
+export type BuildFn = (
   entryPoints: Iterable<string>,
   options: BuildOptions,
-  callback: Callback<BuildResult>,
-) => void;
+) => Promise<BuildResult>;
 
 type BuildOptions = {|
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
@@ -37,78 +33,50 @@ type BuildOptions = {|
   platform: string,
 |};
 
+type Denodeify = <A, B, C, T>(
+  (A, B, C, Callback<T>) => void,
+) => (A, B, C) => Promise<T>;
+
 exports.createBuildSetup = (
-  graph: GraphFn,
+  graphFn: GraphFn,
   postProcessModules: PostProcessModules,
   translateDefaultsPath: string => string = x => x,
-): BuildFn =>
-  (entryPoints, options, callback) => {
-    const {
-      getPolyfills = (({platform}) => []),
-      optimize = false,
-      platform = defaults.platforms[0],
-    } = options;
-    const graphOptions = {optimize};
+): BuildFn => async (entryPoints, options) => {
+  const {
+    getPolyfills = ({platform}) => [],
+    optimize = false,
+    platform = defaults.platforms[0],
+  } = options;
+  const graphOptions = {optimize};
 
-    const graphWithOptions =
-      (entry, cb) => graph(entry, platform, graphOptions, cb);
-    const graphOnlyModules = seq(graphWithOptions, getModules);
+  const pgraph = denodeify(graphFn);
+  const graphWithOptions = entry => pgraph(entry, platform, graphOptions);
+  const graphOnlyModules = async m => (await graphWithOptions(m)).modules;
 
-    parallel({
-      graph: cb => graphWithOptions(entryPoints, (error, result) => {
-        if (error) {
-          cb(error);
-          return;
-        }
-        /* $FlowFixMe: not undefined if there is no error */
-        const {modules, entryModules} = result;
-        const prModules = postProcessModules(modules, [...entryPoints]);
-        cb(null, {modules: prModules, entryModules});
-      }),
-      moduleSystem: cb => graphOnlyModules(
-        [translateDefaultsPath(defaults.moduleSystem)],
-        cb,
-      ),
-      polyfills: cb => graphOnlyModules(
-        getPolyfills({platform}).map(translateDefaultsPath),
-        cb,
-      ),
-    }, (
-      error: ?Error,
-      result?: {graph: GraphResult, moduleSystem: Array<Module>, polyfills: Array<Module>},
-    ) => {
-      if (error) {
-        callback(error);
-        return;
-      }
+  const [graph, moduleSystem, polyfills] = await Promise.all([
+    (async () => {
+      const result = await graphWithOptions(entryPoints);
+      const {modules, entryModules} = result;
+      const prModules = postProcessModules(modules, [...entryPoints]);
+      return {modules: prModules, entryModules};
+    })(),
+    graphOnlyModules([translateDefaultsPath(defaults.moduleSystem)]),
+    graphOnlyModules(getPolyfills({platform}).map(translateDefaultsPath)),
+  ]);
 
-      const {
-        graph: {modules, entryModules},
-        moduleSystem,
-        polyfills,
-      } = nullthrows(result);
-
-      const preludeScript = prelude(optimize);
-      const prependedScripts = [preludeScript, ...moduleSystem, ...polyfills];
-      callback(null, {
-        entryModules,
-        modules: prependedScripts.concat(modules),
-        prependedScripts,
-      });
-    });
+  const {entryModules} = graph;
+  const preludeScript = prelude(optimize);
+  const prependedScripts = [preludeScript, ...moduleSystem, ...polyfills];
+  return {
+    entryModules,
+    modules: [...prependedScripts, ...graph.modules],
+    prependedScripts,
   };
-
-const getModules = (x, cb) => cb(null, x.modules);
-
-function* concat<T>(...iterables: Array<Iterable<T>>): Iterable<T> {
-  for (const it of iterables) {
-    yield* it;
-  }
-}
+};
 
 function prelude(optimize) {
   return virtualModule(
     `var __DEV__=${String(!optimize)},` +
-    '__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now();'
+      '__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now();',
   );
 }

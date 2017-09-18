@@ -5,10 +5,15 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @emails oncall+javascript_foundation
+ * @format
  */
+
 'use strict';
 
 const ModuleGraph = require('../ModuleGraph');
+
 const defaults = require('../../defaults');
 
 const FILE_TYPE = 'module';
@@ -21,66 +26,58 @@ describe('build setup', () => {
   const noOptions = {};
   const noEntryPoints = [];
 
-  it('adds a prelude containing start time and `__DEV__` to the build', done => {
-    buildSetup(noEntryPoints, noOptions, (error, result) => {
-      expect(error).toEqual(null);
+  it('adds a prelude containing start time and `__DEV__` to the build', async () => {
+    const result = await buildSetup(noEntryPoints, noOptions);
 
-      const [prelude] = result.modules;
-      expect(prelude).toEqual({
-        dependencies: [],
-        file: {
-          code: 'var __DEV__=true,__BUNDLE_START_TIME__=' +
-            'this.nativePerformanceNow?nativePerformanceNow():Date.now();',
-          map: null,
-          path: '',
-          type: 'script',
-        },
-      });
-      done();
+    const [prelude] = result.modules;
+    expect(prelude).toEqual({
+      dependencies: [],
+      file: {
+        code:
+          'var __DEV__=true,__BUNDLE_START_TIME__=' +
+          'this.nativePerformanceNow?nativePerformanceNow():Date.now();',
+        map: null,
+        path: '',
+        type: 'script',
+      },
     });
   });
 
-  it('sets `__DEV__` to false in the prelude if optimization is enabled', done => {
-    buildSetup(noEntryPoints, {optimize: true}, (error, result) => {
-      const [prelude] = result.modules;
-      expect(prelude.file.code)
-        .toEqual('var __DEV__=false,__BUNDLE_START_TIME__=' +
-            'this.nativePerformanceNow?nativePerformanceNow():Date.now();');
-      done();
+  it('sets `__DEV__` to false in the prelude if optimization is enabled', async () => {
+    const result = await buildSetup(noEntryPoints, {optimize: true});
+    const [prelude] = result.modules;
+    expect(prelude.file.code).toEqual(
+      'var __DEV__=false,__BUNDLE_START_TIME__=' +
+        'this.nativePerformanceNow?nativePerformanceNow():Date.now();',
+    );
+  });
+
+  it('places the module system implementation directly after the prelude', async () => {
+    const result = await buildSetup(noEntryPoints, noOptions);
+    const [, moduleSystem] = result.modules;
+    expect(moduleSystem).toEqual({
+      dependencies: [],
+      file: {
+        code: '',
+        path: defaults.moduleSystem,
+        type: FILE_TYPE,
+      },
     });
   });
 
-  it('places the module system implementation directly after the prelude', done => {
-    buildSetup(noEntryPoints, noOptions, (error, result) => {
-      const [, moduleSystem] = result.modules;
-      expect(moduleSystem).toEqual({
-        dependencies: [],
-        file: {
-          code: '',
-          path: defaults.moduleSystem,
-          type: FILE_TYPE,
-        },
-      });
-      done();
-    });
+  it('places polyfills after the module system', async () => {
+    const result = await buildSetup(noEntryPoints, polyfillOptions);
+    const list = polyfillOptions.getPolyfills();
+    const polyfills = result.modules.slice(2, list.length + 2);
+    expect(polyfills).toEqual(list.map(moduleFromPath));
   });
 
-  it('places polyfills after the module system', done => {
-    buildSetup(noEntryPoints, polyfillOptions, (error, result) => {
-      const list = polyfillOptions.getPolyfills();
-      const polyfills = result.modules.slice(2, list.length + 2);
-      expect(polyfills).toEqual(list.map(moduleFromPath));
-      done();
-    });
-  });
-
-  it('places all entry points and dependencies at the end, post-processed', done => {
+  it('places all entry points and dependencies at the end, post-processed', async () => {
     const entryPoints = ['b', 'c', 'd'];
-    buildSetup(entryPoints, noOptions, (error, result) => {
-      expect(result.modules.slice(-4))
-        .toEqual(['a', 'b', 'c', 'd'].map(moduleFromPath));
-      done();
-    });
+    const result = await buildSetup(entryPoints, noOptions);
+    expect(result.modules.slice(-4)).toEqual(
+      ['a', 'b', 'c', 'd'].map(moduleFromPath),
+    );
   });
 });
 
