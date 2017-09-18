@@ -129,7 +129,10 @@ class HmrServer<TClient: Client> {
       // The Delta Bundle can have null objects: these correspond to deleted
       // modules, which we don't need to send to the client.
       if (module != null) {
-        modules.push({id, code: module.code});
+        // When there are new modules added on the dependency tree, they are
+        // appended on the Delta Bundle, but HMR needs to have them at the
+        // beginning.
+        modules.unshift({id, code: module.code});
       }
     }
 
