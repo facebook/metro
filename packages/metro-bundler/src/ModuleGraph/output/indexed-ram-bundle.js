@@ -13,7 +13,6 @@
 'use strict';
 
 const buildSourceMapWithMetaData = require('../../shared/output/unbundle/build-unbundle-sourcemap-with-metadata.js');
-const nullthrows = require('fbjs/lib/nullthrows');
 
 const {createRamBundleGroups} = require('../../Bundler/util');
 const {
@@ -64,8 +63,8 @@ function asIndexedRamBundle({
 function* subtree(moduleTransport, moduleTransportsByPath, seen = new Set()) {
   seen.add(moduleTransport.id);
   for (const {path} of moduleTransport.dependencies) {
-    const dependency = nullthrows(moduleTransportsByPath.get(path));
-    if (!seen.has(dependency.id)) {
+    const dependency = moduleTransportsByPath.get(path);
+    if (dependency && !seen.has(dependency.id)) {
       yield dependency.id;
       yield* subtree(dependency, moduleTransportsByPath, seen);
     }
