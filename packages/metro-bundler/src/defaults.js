@@ -43,7 +43,7 @@ exports.assetExts = [
   'ttf',
 ];
 
-exports.sourceExts = ['js', 'json'];
+exports.sourceExts = ['js', 'json', 'mjs'];
 
 exports.moduleSystem = require.resolve('./Resolver/polyfills/require.js');
 
