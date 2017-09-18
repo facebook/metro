@@ -330,7 +330,7 @@ class DeltaTransformer extends EventEmitter {
     const dependencyPairsForModule = dependencyPairs.get(module.path) || [];
 
     const wrapped = this._bundleOptions.wrapModules
-      ? await this._resolver.wrapModule({
+      ? this._resolver.wrapModule({
           module,
           getModuleId: this._getModuleId,
           dependencyPairs: dependencyPairsForModule,
