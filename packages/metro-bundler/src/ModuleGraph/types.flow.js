@@ -57,7 +57,7 @@ export type GraphResult = {|
 
 export type IdForPathFn = {path: string} => number;
 
-type LoadResult = {
+export type LoadResult = {
   file: File,
   dependencies: Array<string>,
 };

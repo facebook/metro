@@ -30,7 +30,10 @@ describe('Graph:', () => {
     load = fn();
     resolve = fn();
     resolve.stub.returns('arbitrary file');
-    load.stub.returns({file: createFile('arbitrary file'), dependencies: []});
+    load.stub.returns({
+      file: createFileFromId('arbitrary file'),
+      dependencies: [],
+    });
 
     graph = Graph.create(resolve, load);
   });
@@ -198,6 +201,40 @@ describe('Graph:', () => {
     expect(load).toBeCalledWith(path2, any(Object));
   });
 
+  it('calls `load` only once for each file', async () => {
+    load.stub.reset();
+
+    resolve.stub.callsFake(idToPath);
+    load.stub
+      .withArgs(idToPath('a'))
+      .returns({file: createFileFromId('a'), dependencies: ['b', 'c']})
+      .withArgs(idToPath('b'))
+      .returns({file: createFileFromId('b'), dependencies: ['c']})
+      .withArgs(idToPath('c'))
+      .returns({file: createFileFromId('c'), dependencies: []});
+
+    await graph(['a'], anyPlatform, noOpts);
+    expect(load).toHaveBeenCalledTimes(3);
+  });
+
+  it('works when `load` returns promises', async () => {
+    load.stub.callsFake(path =>
+      Promise.resolve({
+        file: createFileFromPath(path),
+        dependencies: [],
+      }),
+    );
+    resolve.stub.callsFake(idToPath);
+
+    const entryPoints = ['a', 'b', 'c', 'd', 'e'];
+    const expectedModules = entryPoints.map(x => createModule(x));
+    const result = await graph(entryPoints, anyPlatform, noOpts);
+    expect(result).toEqual({
+      entryModules: expectedModules,
+      modules: expectedModules,
+    });
+  });
+
   it('resolves modules in depth-first traversal order, regardless of the order of loading', async () => {
     load.stub.reset();
     resolve.stub.reset();
@@ -208,15 +245,15 @@ describe('Graph:', () => {
       resolve.stub.withArgs(id).returns(path);
       load.stub
         .withArgs(path)
-        .returns({file: createFile(id), dependencies: []});
+        .returns({file: createFileFromId(id), dependencies: []});
     });
     load.stub
       .withArgs(idToPath('a'))
-      .returns({file: createFile('a'), dependencies: ['b', 'e', 'h']});
+      .returns({file: createFileFromId('a'), dependencies: ['b', 'e', 'h']});
 
     // load certain files later
-    const b = deferred({file: createFile('b'), dependencies: ['c', 'd']});
-    const e = deferred({file: createFile('e'), dependencies: ['f', 'g']});
+    const b = deferred({file: createFileFromId('b'), dependencies: ['c', 'd']});
+    const e = deferred({file: createFileFromId('e'), dependencies: ['f', 'g']});
     load.stub
       .withArgs(idToPath('b'))
       .returns(b.promise)
@@ -229,7 +266,7 @@ describe('Graph:', () => {
         // `b` loads after `a`
         process.nextTick(b.resolve);
       });
-      return {file: createFile('h'), dependencies: []};
+      return {file: createFileFromId('h'), dependencies: []};
     };
 
     const result = await graph(['a'], anyPlatform, noOpts);
@@ -251,16 +288,16 @@ describe('Graph:', () => {
 
     load.stub
       .withArgs(idToPath('a'))
-      .returns({file: createFile('a'), dependencies: ['b']});
+      .returns({file: createFileFromId('a'), dependencies: ['b']});
     load.stub
       .withArgs(idToPath('b'))
-      .returns({file: createFile('b'), dependencies: []});
+      .returns({file: createFileFromId('b'), dependencies: []});
     load.stub
       .withArgs(idToPath('c'))
-      .returns({file: createFile('c'), dependencies: ['d']});
+      .returns({file: createFileFromId('c'), dependencies: ['d']});
     load.stub
       .withArgs(idToPath('d'))
-      .returns({file: createFile('d'), dependencies: []});
+      .returns({file: createFileFromId('d'), dependencies: []});
 
     'abcd'
       .split('')
@@ -279,10 +316,10 @@ describe('Graph:', () => {
 
     load.stub
       .withArgs(idToPath('a'))
-      .returns({file: createFile('a'), dependencies: ['b']});
+      .returns({file: createFileFromId('a'), dependencies: ['b']});
     load.stub
       .withArgs(idToPath('b'))
-      .returns({file: createFile('b'), dependencies: []});
+      .returns({file: createFileFromId('b'), dependencies: []});
 
     'ab'
       .split('')
@@ -302,12 +339,12 @@ describe('Graph:', () => {
       resolve.stub.withArgs(id).returns(path);
       load.stub
         .withArgs(path)
-        .returns({file: createFile(id), dependencies: []});
+        .returns({file: createFileFromId(id), dependencies: []});
     });
     ['a', 'd'].forEach(id =>
       load.stub
         .withArgs(idToPath(id))
-        .returns({file: createFile(id), dependencies: ['b', 'c']}),
+        .returns({file: createFileFromId(id), dependencies: ['b', 'c']}),
     );
 
     const result = await graph(['a', 'd', 'b'], anyPlatform, noOpts);
@@ -329,11 +366,11 @@ describe('Graph:', () => {
       .returns(idToPath('c'));
     load.stub
       .withArgs(idToPath('a'))
-      .returns({file: createFile('a'), dependencies: ['b']})
+      .returns({file: createFileFromId('a'), dependencies: ['b']})
       .withArgs(idToPath('b'))
-      .returns({file: createFile('b'), dependencies: ['c']})
+      .returns({file: createFileFromId('b'), dependencies: ['c']})
       .withArgs(idToPath('c'))
-      .returns({file: createFile('c'), dependencies: ['a']});
+      .returns({file: createFileFromId('c'), dependencies: ['a']});
 
     const result = await graph(['a'], anyPlatform, noOpts);
     expect(result.modules).toEqual([
@@ -349,13 +386,13 @@ describe('Graph:', () => {
     );
     load.stub
       .withArgs(idToPath('a'))
-      .returns({file: createFile('a'), dependencies: ['b', 'c', 'd']})
+      .returns({file: createFileFromId('a'), dependencies: ['b', 'c', 'd']})
       .withArgs(idToPath('b'))
-      .returns({file: createFile('b'), dependencies: ['e']});
+      .returns({file: createFileFromId('b'), dependencies: ['e']});
     ['c', 'd', 'e'].forEach(id =>
       load.stub
         .withArgs(idToPath(id))
-        .returns({file: createFile(id), dependencies: []}),
+        .returns({file: createFileFromId(id), dependencies: []}),
     );
     const skip = new Set([idToPath('b'), idToPath('c')]);
 
@@ -371,13 +408,17 @@ function createDependency(id) {
   return {id, path: idToPath(id)};
 }
 
-function createFile(id) {
-  return {ast: {}, path: idToPath(id)};
+function createFileFromId(id) {
+  return createFileFromPath(idToPath(id));
+}
+
+function createFileFromPath(path) {
+  return {ast: {}, path};
 }
 
 function createModule(id, dependencies = []): Module {
   return {
-    file: createFile(id),
+    file: createFileFromId(id),
     dependencies: dependencies.map(createDependency),
   };
 }
