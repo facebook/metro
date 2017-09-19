@@ -121,7 +121,6 @@ describe('Resolver', function() {
     it('passes custom platforms to the dependency graph', function() {
       expect.assertions(1);
       return Resolver.load({
-        // eslint-disable-line no-new
         projectRoot: '/root',
         platforms: ['ios', 'windows', 'vr'],
       }).then(() => {
@@ -198,7 +197,6 @@ describe('Resolver', function() {
     it('should resolve modules', function() {
       expect.assertions(1);
 
-      /*eslint-disable */
       var code = [
         // require
         'require("x")',

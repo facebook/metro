@@ -410,7 +410,7 @@ class OptionsHasher {
       )}`;
       throw new CannotHashOptionsError(message);
     }
-    // eslint-disable-next-line no-undef, no-bitwise
+    // eslint-disable-next-line no-bitwise
     hash.update(new Buffer([+dev | (+minify << 1)]));
     hash.update(JSON.stringify(platform));
     return this.hashTransformOptions(hash, transform);

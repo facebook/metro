@@ -10,8 +10,6 @@
  */
 'use strict';
 
-/* eslint-disable max-len */
-
 const inline = require('../inline');
 const {transform, transformFromAst} = require('babel-core');
 
