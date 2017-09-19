@@ -31,7 +31,11 @@ const {ModuleMap} = require('jest-haste-map');
 
 import type {Moduleish} from '../../node-haste/DependencyGraph/ResolutionRequest';
 import type {ResolveFn, TransformedCodeFile} from '../types.flow';
-import type {Extensions, Path} from './node-haste.flow';
+import type {
+  // eslint-disable-line sort-requires
+  Extensions,
+  Path,
+} from './node-haste.flow';
 
 type ResolveOptions = {|
   assetExts: Extensions,
