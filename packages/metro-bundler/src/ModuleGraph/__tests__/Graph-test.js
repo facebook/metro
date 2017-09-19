@@ -28,8 +28,8 @@ describe('Graph:', () => {
   beforeEach(() => {
     load = fn();
     resolve = fn();
-    resolve.stub.yields(null, 'arbitrary file');
-    load.stub.yields(null, createFile('arbitrary file'), []);
+    resolve.stub.returns('arbitrary file');
+    load.stub.returns({file: createFile('arbitrary file'), dependencies: []});
 
     graph = Graph.create(resolve, load);
   });
@@ -45,7 +45,7 @@ describe('Graph:', () => {
     const entryPoint = '/arbitrary/path';
     graph([entryPoint], anyPlatform, noOpts, () => {
       expect(resolve).toBeCalledWith(
-        entryPoint, null, any(String), any(Object), any(Function));
+        entryPoint, null, any(String), any(Object));
       done();
     });
   });
@@ -54,9 +54,9 @@ describe('Graph:', () => {
     const entryPoints = ['Arbitrary', '../entry.js'];
     graph(entryPoints, anyPlatform, noOpts, () => {
       expect(resolve).toBeCalledWith(
-        entryPoints[0], null, any(String), any(Object), any(Function));
+        entryPoints[0], null, any(String), any(Object));
       expect(resolve).toBeCalledWith(
-        entryPoints[1], null, any(String), any(Object), any(Function));
+        entryPoints[1], null, any(String), any(Object));
       done();
     });
 
@@ -73,7 +73,7 @@ describe('Graph:', () => {
     const platform = 'any';
     graph(anyEntry, platform, noOpts, () => {
       expect(resolve).toBeCalledWith(
-        any(String), null, platform, any(Object), any(Function));
+        any(String), null, platform, any(Object));
       done();
     });
   });
@@ -82,14 +82,14 @@ describe('Graph:', () => {
     const log = new Console();
     graph(anyEntry, anyPlatform, {log}, () => {
       expect(resolve).toBeCalledWith(
-        any(String), null, any(String), objectContaining({log}), any(Function));
+        any(String), null, any(String), objectContaining({log}));
       done();
     });
   });
 
   it('calls back with every error produced by `resolve`', done => {
     const error = Error();
-    resolve.stub.yields(error);
+    resolve.stub.throws(error);
     graph(anyEntry, anyPlatform, noOpts, e => {
       expect(e).toBe(error);
       done();
@@ -97,10 +97,13 @@ describe('Graph:', () => {
   });
 
   it('only calls back once if two parallel invocations of `resolve` fail', done => {
-    load.stub.yields(null, createFile('with two deps'), ['depA', 'depB']);
+    load.stub.returns({
+      file: createFile('with two deps'),
+      dependencies: ['depA', 'depB']},
+    );
     resolve.stub
-      .withArgs('depA').yieldsAsync(new Error())
-      .withArgs('depB').yieldsAsync(new Error());
+      .withArgs('depA').throws(new Error())
+      .withArgs('depB').throws(new Error());
 
     let calls = 0;
     function callback() {
@@ -122,13 +125,13 @@ describe('Graph:', () => {
       ['../entry.js', '/whereever/is/entry.js'],
     ]);
     for (const [id, file] of modules) {
-      resolve.stub.withArgs(id).yields(null, file);
+      resolve.stub.withArgs(id).returns(file);
     }
     const [file1, file2] = modules.values();
 
     graph(modules.keys(), anyPlatform, noOpts, () => {
-      expect(load).toBeCalledWith(file1, any(Object), any(Function));
-      expect(load).toBeCalledWith(file2, any(Object), any(Function));
+      expect(load).toBeCalledWith(file1, any(Object));
+      expect(load).toBeCalledWith(file2, any(Object));
       done();
     });
   });
@@ -136,7 +139,7 @@ describe('Graph:', () => {
   it('passes the `optimize` flag on to `load`', done => {
     graph(anyEntry, anyPlatform, {optimize: true}, () => {
       expect(load).toBeCalledWith(
-        any(String), objectContaining({optimize: true}), any(Function));
+        any(String), objectContaining({optimize: true}));
       done();
     });
   });
@@ -144,7 +147,7 @@ describe('Graph:', () => {
   it('uses `false` as the default for the `optimize` flag', done => {
     graph(anyEntry, anyPlatform, noOpts, () => {
       expect(load).toBeCalledWith(
-        any(String), objectContaining({optimize: false}), any(Function));
+        any(String), objectContaining({optimize: false}));
       done();
     });
   });
@@ -153,14 +156,14 @@ describe('Graph:', () => {
     const log = new Console();
     graph(anyEntry, anyPlatform, {log}, () => {
       expect(load)
-        .toBeCalledWith(any(String), objectContaining({log}), any(Function));
+        .toBeCalledWith(any(String), objectContaining({log}));
       done();
     });
   });
 
   it('calls back with every error produced by `load`', done => {
     const error = Error();
-    load.stub.yields(error);
+    load.stub.throws(error);
     graph(anyEntry, anyPlatform, noOpts, e => {
       expect(e).toBe(error);
       done();
@@ -171,15 +174,17 @@ describe('Graph:', () => {
     const entryPath = '/path/to/entry.js';
     const id1 = 'required/id';
     const id2 = './relative/import';
-    resolve.stub.withArgs('entry').yields(null, entryPath);
-    load.stub.withArgs(entryPath)
-      .yields(null, {path: entryPath}, [id1, id2]);
+    resolve.stub.withArgs('entry').returns(entryPath);
+    load.stub.withArgs(entryPath).returns({
+      file: {path: entryPath},
+      dependencies: [id1, id2],
+    });
 
     graph(['entry'], anyPlatform, noOpts, () => {
       expect(resolve).toBeCalledWith(
-        id1, entryPath, any(String), any(Object), any(Function));
+        id1, entryPath, any(String), any(Object));
       expect(resolve).toBeCalledWith(
-        id2, entryPath, any(String), any(Object), any(Function));
+        id2, entryPath, any(String), any(Object));
       done();
     });
   });
@@ -192,22 +197,22 @@ describe('Graph:', () => {
     const path2 = '/path/to/dep/2';
 
     resolve.stub
-      .withArgs(id1).yields(null, path1)
-      .withArgs(id2).yields(null, path2)
-      .withArgs('entry').yields(null, entryPath);
+      .withArgs(id1).returns(path1)
+      .withArgs(id2).returns(path2)
+      .withArgs('entry').returns(entryPath);
     load.stub
-      .withArgs(entryPath).yields(null, {path: entryPath}, [id1])
-      .withArgs(path1).yields(null, {path: path1}, [id2]);
+      .withArgs(entryPath).returns({file: {path: entryPath}, dependencies: [id1]})
+      .withArgs(path1).returns({file: {path: path1}, dependencies: [id2]});
 
     graph(['entry'], anyPlatform, noOpts, () => {
-      expect(resolve).toBeCalledWith(id2, path1, any(String), any(Object), any(Function));
-      expect(load).toBeCalledWith(path1, any(Object), any(Function));
-      expect(load).toBeCalledWith(path2, any(Object), any(Function));
+      expect(resolve).toBeCalledWith(id2, path1, any(String), any(Object));
+      expect(load).toBeCalledWith(path1, any(Object));
+      expect(load).toBeCalledWith(path2, any(Object));
       done();
     });
   });
 
-  it('resolves modules in depth-first traversal order, regardless of the order of resolution',
+  it('resolves modules in depth-first traversal order, regardless of the order of loading',
     done => {
       load.stub.reset();
       resolve.stub.reset();
@@ -222,20 +227,26 @@ describe('Graph:', () => {
       ];
       ids.forEach(id => {
         const path = idToPath(id);
-        resolve.stub.withArgs(id).yields(null, path);
-        load.stub.withArgs(path).yields(null, createFile(id), []);
+        resolve.stub.withArgs(id).returns(path);
+        load.stub.withArgs(path).returns({file: createFile(id), dependencies: []});
       });
-      load.stub.withArgs(idToPath('a')).yields(null, createFile('a'), ['b', 'e', 'h']);
-      load.stub.withArgs(idToPath('b')).yields(null, createFile('b'), ['c', 'd']);
-      load.stub.withArgs(idToPath('e')).yields(null, createFile('e'), ['f', 'g']);
+      load.stub.withArgs(idToPath('a')).returns({file: createFile('a'), dependencies: ['b', 'e', 'h']});
 
-      // load certain ids later
-      ['b', 'e', 'h'].forEach(id => resolve.stub.withArgs(id).resetBehavior());
-      resolve.stub.withArgs('h').func = (a, b, c, d, callback) => {
-        callback(null, idToPath('h'));
-        ['e', 'b'].forEach(
-          id => resolve.stub.withArgs(id).yield(null, idToPath(id)));
-      };
+      // load certain files later
+      const b = deferred({file: createFile('b'), dependencies: ['c', 'd']});
+      const e = deferred({file: createFile('e'), dependencies: ['f', 'g']});
+      load.stub
+        .withArgs(idToPath('b')).returns(b.promise)
+        .withArgs(idToPath('e')).returns(e.promise)
+        .withArgs(idToPath('h')).func = (f, o) => {
+          process.nextTick(() => {
+            // `e` loads after `h`
+            e.resolve();
+            // `b` loads after `a`
+            process.nextTick(b.resolve);
+          });
+          return {file: createFile('h'), dependencies: []};
+        };
 
       graph(['a'], anyPlatform, noOpts, (error, result) => {
         expect(error).toEqual(null);
@@ -258,13 +269,13 @@ describe('Graph:', () => {
     load.stub.reset();
     resolve.stub.reset();
 
-    load.stub.withArgs(idToPath('a')).yields(null, createFile('a'), ['b']);
-    load.stub.withArgs(idToPath('b')).yields(null, createFile('b'), []);
-    load.stub.withArgs(idToPath('c')).yields(null, createFile('c'), ['d']);
-    load.stub.withArgs(idToPath('d')).yields(null, createFile('d'), []);
+    load.stub.withArgs(idToPath('a')).returns({file: createFile('a'), dependencies: ['b']});
+    load.stub.withArgs(idToPath('b')).returns({file: createFile('b'), dependencies: []});
+    load.stub.withArgs(idToPath('c')).returns({file: createFile('c'), dependencies: ['d']});
+    load.stub.withArgs(idToPath('d')).returns({file: createFile('d'), dependencies: []});
 
     'abcd'.split('')
-      .forEach(id => resolve.stub.withArgs(id).yields(null, idToPath(id)));
+      .forEach(id => resolve.stub.withArgs(id).returns(idToPath(id)));
 
     graph(['a', 'c'], anyPlatform, noOpts, (error, result) => {
       expect(result.entryModules).toEqual([
@@ -279,11 +290,11 @@ describe('Graph:', () => {
     load.stub.reset();
     resolve.stub.reset();
 
-    load.stub.withArgs(idToPath('a')).yields(null, createFile('a'), ['b']);
-    load.stub.withArgs(idToPath('b')).yields(null, createFile('b'), []);
+    load.stub.withArgs(idToPath('a')).returns({file: createFile('a'), dependencies: ['b']});
+    load.stub.withArgs(idToPath('b')).returns({file: createFile('b'), dependencies: []});
 
     'ab'.split('')
-      .forEach(id => resolve.stub.withArgs(id).yields(null, idToPath(id)));
+      .forEach(id => resolve.stub.withArgs(id).returns(idToPath(id)));
 
     graph(['a', 'b'], anyPlatform, noOpts, (error, result) => {
       expect(result.entryModules).toEqual([
@@ -298,12 +309,12 @@ describe('Graph:', () => {
     const ids = ['a', 'b', 'c', 'd'];
     ids.forEach(id => {
       const path = idToPath(id);
-      resolve.stub.withArgs(id).yields(null, path);
-      load.stub.withArgs(path).yields(null, createFile(id), []);
+      resolve.stub.withArgs(id).returns(path);
+      load.stub.withArgs(path).returns({file: createFile(id), dependencies: []});
     });
     ['a', 'd'].forEach(id =>
       load.stub
-        .withArgs(idToPath(id)).yields(null, createFile(id), ['b', 'c']));
+        .withArgs(idToPath(id)).returns({file: createFile(id), dependencies: ['b', 'c']}));
 
     graph(['a', 'd', 'b'], anyPlatform, noOpts, (error, result) => {
       expect(error).toEqual(null);
@@ -319,13 +330,13 @@ describe('Graph:', () => {
 
   it('handles dependency cycles', done => {
     resolve.stub
-      .withArgs('a').yields(null, idToPath('a'))
-      .withArgs('b').yields(null, idToPath('b'))
-      .withArgs('c').yields(null, idToPath('c'));
+      .withArgs('a').returns(idToPath('a'))
+      .withArgs('b').returns(idToPath('b'))
+      .withArgs('c').returns(idToPath('c'));
     load.stub
-      .withArgs(idToPath('a')).yields(null, createFile('a'), ['b'])
-      .withArgs(idToPath('b')).yields(null, createFile('b'), ['c'])
-      .withArgs(idToPath('c')).yields(null, createFile('c'), ['a']);
+      .withArgs(idToPath('a')).returns({file: createFile('a'), dependencies: ['b']})
+      .withArgs(idToPath('b')).returns({file: createFile('b'), dependencies: ['c']})
+      .withArgs(idToPath('c')).returns({file: createFile('c'), dependencies: ['a']});
 
     graph(['a'], anyPlatform, noOpts, (error, result) => {
       expect(result.modules).toEqual([
@@ -339,12 +350,12 @@ describe('Graph:', () => {
 
   it('can skip files', done => {
     ['a', 'b', 'c', 'd', 'e'].forEach(
-      id => resolve.stub.withArgs(id).yields(null, idToPath(id)));
+      id => resolve.stub.withArgs(id).returns(idToPath(id)));
     load.stub
-      .withArgs(idToPath('a')).yields(null, createFile('a'), ['b', 'c', 'd'])
-      .withArgs(idToPath('b')).yields(null, createFile('b'), ['e']);
+      .withArgs(idToPath('a')).returns({file: createFile('a'), dependencies: ['b', 'c', 'd']})
+      .withArgs(idToPath('b')).returns({file: createFile('b'), dependencies: ['e']});
     ['c', 'd', 'e'].forEach(id =>
-      load.stub.withArgs(idToPath(id)).yields(null, createFile(id), []));
+      load.stub.withArgs(idToPath(id)).returns({file: createFile(id), dependencies: []}));
     const skip = new Set([idToPath('b'), idToPath('c')]);
 
     graph(['a'], anyPlatform, {skip}, (error, result) => {
@@ -374,4 +385,10 @@ function createModule(id, dependencies = []): Module {
 
 function idToPath(id) {
   return '/path/to/' + id;
+}
+
+function deferred(value) {
+  let resolve;
+  const promise = new Promise(res => resolve = res);
+  return {promise, resolve: () => resolve(value)};
 }

@@ -58,11 +58,15 @@ export type GraphResult = {|
 
 export type IdForPathFn = {path: string} => number;
 
+type LoadResult = {
+  file: File,
+  dependencies: Array<string>,
+};
+
 export type LoadFn = (
   file: string,
   options: LoadOptions,
-  callback: Callback<File, Array<string>>,
-) => void;
+) => LoadResult | Promise<LoadResult>;
 
 type LoadOptions = {|
   log?: Console,
@@ -107,14 +111,6 @@ export type ResolveFn = (
   platform: string,
   options?: ResolveOptions,
 ) => string;
-
-export type ResolveFnCallback = (
-  id: string,
-  source: ?string,
-  platform: string,
-  options?: ResolveOptions,
-  callback: Callback<string>,
-) => void;
 
 type ResolveOptions = {
   log?: Console,

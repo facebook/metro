@@ -10,6 +10,7 @@
  */
 'use strict';
 
+const asyncify = require('async/asyncify');
 const emptyFunction = require('fbjs/lib/emptyFunction');
 const invariant = require('fbjs/lib/invariant');
 const memoize = require('async/memoize');
@@ -23,7 +24,7 @@ import type {
   File,
   GraphFn,
   LoadFn,
-  ResolveFnCallback,
+  ResolveFn,
 } from './types.flow';
 
 type Async$Queue<T, C> = {
@@ -52,7 +53,10 @@ type LoadQueue =
 
 const NO_OPTIONS = {};
 
-exports.create = function create(resolve: ResolveFnCallback, load: LoadFn): GraphFn {
+exports.create = function create(resolve: ResolveFn, load: LoadFn): GraphFn {
+  const resolveCallback = asyncify(resolve);
+  const loadCallback = asyncify(load);
+
   function Graph(entryPoints, platform, options, callback = emptyFunction) {
     const {
       log = (console: any),
@@ -67,8 +71,9 @@ exports.create = function create(resolve: ResolveFnCallback, load: LoadFn): Grap
     }
 
     const loadQueue: LoadQueue = queue(seq(
-      ({id, parent}, cb) => resolve(id, parent, platform, options || NO_OPTIONS, cb),
-      memoize((file, cb) => load(file, {log, optimize}, cb)),
+      ({id, parent}, cb) => resolveCallback(id, parent, platform, options || NO_OPTIONS, cb),
+      memoize((file, cb) => loadCallback(file, {log, optimize}, cb)),
+      ({file, dependencies}, cb) => cb(null, file, dependencies),
     ), Number.MAX_SAFE_INTEGER);
 
     const {collect, loadModule} = createGraphHelpers(loadQueue, skip);
