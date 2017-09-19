@@ -35,108 +35,80 @@ describe('Graph:', () => {
     graph = Graph.create(resolve, load);
   });
 
-  it('calls back an error when called without any entry point', done => {
-    graph([], anyPlatform, {log: quiet}, error => {
+  it('calls back an error when called without any entry point', async () => {
+    expect.assertions(1);
+    try {
+      await graph([], anyPlatform, {log: quiet});
+    } catch (error) {
       expect(error).toEqual(any(Error));
-      done();
-    });
+    }
   });
 
-  it('resolves the entry point with the passed-in `resolve` function', done => {
+  it('resolves the entry point with the passed-in `resolve` function', async () => {
     const entryPoint = '/arbitrary/path';
-    graph([entryPoint], anyPlatform, noOpts, () => {
-      expect(resolve).toBeCalledWith(
-        entryPoint,
-        null,
-        any(String),
-        any(Object),
-      );
-      done();
-    });
+    await graph([entryPoint], anyPlatform, noOpts);
+
+    expect(resolve).toBeCalledWith(entryPoint, null, any(String), any(Object));
   });
 
-  it('allows to specify multiple entry points', done => {
+  it('allows to specify multiple entry points', async () => {
     const entryPoints = ['Arbitrary', '../entry.js'];
-    graph(entryPoints, anyPlatform, noOpts, () => {
-      expect(resolve).toBeCalledWith(
-        entryPoints[0],
-        null,
-        any(String),
-        any(Object),
-      );
-      expect(resolve).toBeCalledWith(
-        entryPoints[1],
-        null,
-        any(String),
-        any(Object),
-      );
-      done();
-    });
+    await graph(entryPoints, anyPlatform, noOpts);
+
+    expect(resolve).toBeCalledWith(
+      entryPoints[0],
+      null,
+      any(String),
+      any(Object),
+    );
+    expect(resolve).toBeCalledWith(
+      entryPoints[1],
+      null,
+      any(String),
+      any(Object),
+    );
   });
 
-  it('calls back with an error when called without `platform` option', done => {
-    graph(anyEntry, undefined, {log: quiet}, error => {
+  it('calls back with an error when called without `platform` option', async () => {
+    expect.assertions(1);
+    try {
+      await graph(anyEntry, undefined, {log: quiet});
+    } catch (error) {
       expect(error).toEqual(any(Error));
-      done();
-    });
+    }
   });
 
-  it('forwards a passed-in `platform` to `resolve`', done => {
+  it('forwards a passed-in `platform` to `resolve`', async () => {
     const platform = 'any';
-    graph(anyEntry, platform, noOpts, () => {
-      expect(resolve).toBeCalledWith(any(String), null, platform, any(Object));
-      done();
-    });
+    await graph(anyEntry, platform, noOpts);
+
+    expect(resolve).toBeCalledWith(any(String), null, platform, any(Object));
   });
 
-  it('forwards a passed-in `log` option to `resolve`', done => {
+  it('forwards a passed-in `log` option to `resolve`', async () => {
     const log = new Console();
-    graph(anyEntry, anyPlatform, {log}, () => {
-      expect(resolve).toBeCalledWith(
-        any(String),
-        null,
-        any(String),
-        objectContaining({log}),
-      );
-      done();
-    });
+    await graph(anyEntry, anyPlatform, {log});
+    expect(resolve).toBeCalledWith(
+      any(String),
+      null,
+      any(String),
+      objectContaining({log}),
+    );
   });
 
-  it('calls back with every error produced by `resolve`', done => {
+  it('calls back with every error produced by `resolve`', async () => {
+    expect.assertions(1);
     const error = Error();
     resolve.stub.throws(error);
-    graph(anyEntry, anyPlatform, noOpts, e => {
+
+    try {
+      await graph(anyEntry, anyPlatform, noOpts);
+    } catch (e) {
       expect(e).toBe(error);
-      done();
-    });
-  });
-
-  it('only calls back once if two parallel invocations of `resolve` fail', done => {
-    load.stub.returns({
-      file: createFile('with two deps'),
-      dependencies: ['depA', 'depB'],
-    });
-    resolve.stub
-      .withArgs('depA')
-      .throws(new Error())
-      .withArgs('depB')
-      .throws(new Error());
-
-    let calls = 0;
-    function callback() {
-      if (calls === 0) {
-        process.nextTick(() => {
-          expect(calls).toEqual(1);
-          done();
-        });
-      }
-      ++calls;
     }
-
-    graph(['entryA', 'entryB'], anyPlatform, noOpts, callback);
   });
 
-  it('passes the files returned by `resolve` on to the `load` function', done => {
+  it('passes the files returned by `resolve` on to the `load` function', async () => {
     const modules = new Map([
       ['Arbitrary', '/absolute/path/to/Arbitrary.js'],
       ['../entry.js', '/whereever/is/entry.js'],
@@ -146,51 +118,46 @@ describe('Graph:', () => {
     }
     const [file1, file2] = modules.values();
 
-    graph(modules.keys(), anyPlatform, noOpts, () => {
-      expect(load).toBeCalledWith(file1, any(Object));
-      expect(load).toBeCalledWith(file2, any(Object));
-      done();
-    });
+    await graph(modules.keys(), anyPlatform, noOpts);
+    expect(load).toBeCalledWith(file1, any(Object));
+    expect(load).toBeCalledWith(file2, any(Object));
   });
 
-  it('passes the `optimize` flag on to `load`', done => {
-    graph(anyEntry, anyPlatform, {optimize: true}, () => {
-      expect(load).toBeCalledWith(
-        any(String),
-        objectContaining({optimize: true}),
-      );
-      done();
-    });
+  it('passes the `optimize` flag on to `load`', async () => {
+    await graph(anyEntry, anyPlatform, {optimize: true});
+    expect(load).toBeCalledWith(
+      any(String),
+      objectContaining({optimize: true}),
+    );
   });
 
-  it('uses `false` as the default for the `optimize` flag', done => {
-    graph(anyEntry, anyPlatform, noOpts, () => {
-      expect(load).toBeCalledWith(
-        any(String),
-        objectContaining({optimize: false}),
-      );
-      done();
-    });
+  it('uses `false` as the default for the `optimize` flag', async () => {
+    await graph(anyEntry, anyPlatform, noOpts);
+    expect(load).toBeCalledWith(
+      any(String),
+      objectContaining({optimize: false}),
+    );
   });
 
-  it('forwards a passed-in `log` to `load`', done => {
+  it('forwards a passed-in `log` to `load`', async () => {
     const log = new Console();
-    graph(anyEntry, anyPlatform, {log}, () => {
-      expect(load).toBeCalledWith(any(String), objectContaining({log}));
-      done();
-    });
+    await graph(anyEntry, anyPlatform, {log});
+    expect(load).toBeCalledWith(any(String), objectContaining({log}));
   });
 
-  it('calls back with every error produced by `load`', done => {
+  it('calls back with every error produced by `load`', async () => {
+    expect.assertions(1);
     const error = Error();
     load.stub.throws(error);
-    graph(anyEntry, anyPlatform, noOpts, e => {
+
+    try {
+      await graph(anyEntry, anyPlatform, noOpts);
+    } catch (e) {
       expect(e).toBe(error);
-      done();
-    });
+    }
   });
 
-  it('resolves any dependencies provided by `load`', done => {
+  it('resolves any dependencies provided by `load`', async () => {
     const entryPath = '/path/to/entry.js';
     const id1 = 'required/id';
     const id2 = './relative/import';
@@ -200,14 +167,12 @@ describe('Graph:', () => {
       dependencies: [id1, id2],
     });
 
-    graph(['entry'], anyPlatform, noOpts, () => {
-      expect(resolve).toBeCalledWith(id1, entryPath, any(String), any(Object));
-      expect(resolve).toBeCalledWith(id2, entryPath, any(String), any(Object));
-      done();
-    });
+    await graph(['entry'], anyPlatform, noOpts);
+    expect(resolve).toBeCalledWith(id1, entryPath, any(String), any(Object));
+    expect(resolve).toBeCalledWith(id2, entryPath, any(String), any(Object));
   });
 
-  it('loads transitive dependencies', done => {
+  it('loads transitive dependencies', async () => {
     const entryPath = '/path/to/entry.js';
     const id1 = 'required/id';
     const id2 = './relative/import';
@@ -227,15 +192,13 @@ describe('Graph:', () => {
       .withArgs(path1)
       .returns({file: {path: path1}, dependencies: [id2]});
 
-    graph(['entry'], anyPlatform, noOpts, () => {
-      expect(resolve).toBeCalledWith(id2, path1, any(String), any(Object));
-      expect(load).toBeCalledWith(path1, any(Object));
-      expect(load).toBeCalledWith(path2, any(Object));
-      done();
-    });
+    await graph(['entry'], anyPlatform, noOpts);
+    expect(resolve).toBeCalledWith(id2, path1, any(String), any(Object));
+    expect(load).toBeCalledWith(path1, any(Object));
+    expect(load).toBeCalledWith(path2, any(Object));
   });
 
-  it('resolves modules in depth-first traversal order, regardless of the order of loading', done => {
+  it('resolves modules in depth-first traversal order, regardless of the order of loading', async () => {
     load.stub.reset();
     resolve.stub.reset();
 
@@ -269,23 +232,20 @@ describe('Graph:', () => {
       return {file: createFile('h'), dependencies: []};
     };
 
-    graph(['a'], anyPlatform, noOpts, (error, result) => {
-      expect(error).toEqual(null);
-      expect(result.modules).toEqual([
-        createModule('a', ['b', 'e', 'h']),
-        createModule('b', ['c', 'd']),
-        createModule('c'),
-        createModule('d'),
-        createModule('e', ['f', 'g']),
-        createModule('f'),
-        createModule('g'),
-        createModule('h'),
-      ]);
-      done();
-    });
+    const result = await graph(['a'], anyPlatform, noOpts);
+    expect(result.modules).toEqual([
+      createModule('a', ['b', 'e', 'h']),
+      createModule('b', ['c', 'd']),
+      createModule('c'),
+      createModule('d'),
+      createModule('e', ['f', 'g']),
+      createModule('f'),
+      createModule('g'),
+      createModule('h'),
+    ]);
   });
 
-  it('calls back with the resolved modules of the entry points', done => {
+  it('calls back with the resolved modules of the entry points', async () => {
     load.stub.reset();
     resolve.stub.reset();
 
@@ -306,16 +266,14 @@ describe('Graph:', () => {
       .split('')
       .forEach(id => resolve.stub.withArgs(id).returns(idToPath(id)));
 
-    graph(['a', 'c'], anyPlatform, noOpts, (error, result) => {
-      expect(result.entryModules).toEqual([
-        createModule('a', ['b']),
-        createModule('c', ['d']),
-      ]);
-      done();
-    });
+    const result = await graph(['a', 'c'], anyPlatform, noOpts);
+    expect(result.entryModules).toEqual([
+      createModule('a', ['b']),
+      createModule('c', ['d']),
+    ]);
   });
 
-  it('resolves modules for all entry points correctly if one is a dependency of another', done => {
+  it('resolves modules for all entry points correctly if one is a dependency of another', async () => {
     load.stub.reset();
     resolve.stub.reset();
 
@@ -330,16 +288,14 @@ describe('Graph:', () => {
       .split('')
       .forEach(id => resolve.stub.withArgs(id).returns(idToPath(id)));
 
-    graph(['a', 'b'], anyPlatform, noOpts, (error, result) => {
-      expect(result.entryModules).toEqual([
-        createModule('a', ['b']),
-        createModule('b', []),
-      ]);
-      done();
-    });
+    const result = await graph(['a', 'b'], anyPlatform, noOpts);
+    expect(result.entryModules).toEqual([
+      createModule('a', ['b']),
+      createModule('b', []),
+    ]);
   });
 
-  it('does not include dependencies more than once', done => {
+  it('does not include dependencies more than once', async () => {
     const ids = ['a', 'b', 'c', 'd'];
     ids.forEach(id => {
       const path = idToPath(id);
@@ -354,19 +310,16 @@ describe('Graph:', () => {
         .returns({file: createFile(id), dependencies: ['b', 'c']}),
     );
 
-    graph(['a', 'd', 'b'], anyPlatform, noOpts, (error, result) => {
-      expect(error).toEqual(null);
-      expect(result.modules).toEqual([
-        createModule('a', ['b', 'c']),
-        createModule('b'),
-        createModule('c'),
-        createModule('d', ['b', 'c']),
-      ]);
-      done();
-    });
+    const result = await graph(['a', 'd', 'b'], anyPlatform, noOpts);
+    expect(result.modules).toEqual([
+      createModule('a', ['b', 'c']),
+      createModule('b'),
+      createModule('c'),
+      createModule('d', ['b', 'c']),
+    ]);
   });
 
-  it('handles dependency cycles', done => {
+  it('handles dependency cycles', async () => {
     resolve.stub
       .withArgs('a')
       .returns(idToPath('a'))
@@ -382,17 +335,15 @@ describe('Graph:', () => {
       .withArgs(idToPath('c'))
       .returns({file: createFile('c'), dependencies: ['a']});
 
-    graph(['a'], anyPlatform, noOpts, (error, result) => {
-      expect(result.modules).toEqual([
-        createModule('a', ['b']),
-        createModule('b', ['c']),
-        createModule('c', ['a']),
-      ]);
-      done();
-    });
+    const result = await graph(['a'], anyPlatform, noOpts);
+    expect(result.modules).toEqual([
+      createModule('a', ['b']),
+      createModule('b', ['c']),
+      createModule('c', ['a']),
+    ]);
   });
 
-  it('can skip files', done => {
+  it('can skip files', async () => {
     ['a', 'b', 'c', 'd', 'e'].forEach(id =>
       resolve.stub.withArgs(id).returns(idToPath(id)),
     );
@@ -408,13 +359,11 @@ describe('Graph:', () => {
     );
     const skip = new Set([idToPath('b'), idToPath('c')]);
 
-    graph(['a'], anyPlatform, {skip}, (error, result) => {
-      expect(result.modules).toEqual([
-        createModule('a', ['b', 'c', 'd']),
-        createModule('d', []),
-      ]);
-      done();
-    });
+    const result = await graph(['a'], anyPlatform, {skip});
+    expect(result.modules).toEqual([
+      createModule('a', ['b', 'c', 'd']),
+      createModule('d', []),
+    ]);
   });
 });
 

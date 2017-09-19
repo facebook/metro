@@ -57,7 +57,7 @@ exports.create = function create(resolve: ResolveFn, load: LoadFn): GraphFn {
   const resolveCallback = asyncify(resolve);
   const loadCallback = asyncify(load);
 
-  function Graph(entryPoints, platform, options, callback = emptyFunction) {
+  function Graph(entryPoints, platform, options) {
     const {
       log = (console: any),
       optimize = false,
@@ -66,8 +66,7 @@ exports.create = function create(resolve: ResolveFn, load: LoadFn): GraphFn {
 
     if (typeof platform !== 'string') {
       log.error('`Graph`, called without a platform');
-      callback(Error('The target platform has to be passed'));
-      return;
+      return Promise.reject(new Error('The target platform has to be passed'));
     }
 
     const loadQueue: LoadQueue = queue(seq(
@@ -78,14 +77,16 @@ exports.create = function create(resolve: ResolveFn, load: LoadFn): GraphFn {
 
     const {collect, loadModule} = createGraphHelpers(loadQueue, skip);
 
+    const result = deferred();
+
     loadQueue.drain = () => {
       loadQueue.kill();
-      callback(null, collect());
+      result.resolve(collect());
     };
     loadQueue.error = error => {
       loadQueue.error = emptyFunction;
       loadQueue.kill();
-      callback(error);
+      result.reject(error);
     };
 
     let i = 0;
@@ -96,8 +97,10 @@ exports.create = function create(resolve: ResolveFn, load: LoadFn): GraphFn {
     if (i === 0) {
       log.error('`Graph` called without any entry points');
       loadQueue.kill();
-      callback(Error('At least one entry point has to be passed.'));
+      return Promise.reject(new Error('At least one entry point has to be passed.'));
     }
+
+    return result.promise;
   }
 
   return Graph;
@@ -172,4 +175,18 @@ function createGraphHelpers(loadQueue, skip) {
   }
 
   return {collect, loadModule};
+}
+
+function deferred<T>(): {
+  promise: Promise<T>,
+  reject: Error => void,
+  resolve: T => void,
+} {
+  let reject, resolve;
+  const promise = new Promise((res, rej) => {
+    reject = rej;
+    resolve = res;
+  });
+
+  return {promise, reject: nullthrows(reject), resolve: nullthrows(resolve)};
 }

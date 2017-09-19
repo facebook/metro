@@ -42,8 +42,7 @@ export type GraphFn = (
   entryPoints: Iterable<string>,
   platform: string,
   options?: ?GraphOptions,
-  callback?: Callback<GraphResult>,
-) => void;
+) => Promise<GraphResult>;
 
 type GraphOptions = {|
   log?: Console,

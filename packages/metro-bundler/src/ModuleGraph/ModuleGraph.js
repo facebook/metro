@@ -12,15 +12,9 @@
 'use strict';
 
 const defaults = require('../defaults');
-const denodeify: Denodeify = require('denodeify');
 const virtualModule = require('./module').virtual;
 
-import type {
-  BuildResult,
-  Callback,
-  GraphFn,
-  PostProcessModules,
-} from './types.flow';
+import type {BuildResult, GraphFn, PostProcessModules} from './types.flow';
 
 export type BuildFn = (
   entryPoints: Iterable<string>,
@@ -32,10 +26,6 @@ type BuildOptions = {|
   optimize: boolean,
   platform: string,
 |};
-
-type Denodeify = <A, B, C, T>(
-  (A, B, C, Callback<T>) => void,
-) => (A, B, C) => Promise<T>;
 
 exports.createBuildSetup = (
   graphFn: GraphFn,
@@ -49,8 +39,7 @@ exports.createBuildSetup = (
   } = options;
   const graphOptions = {optimize};
 
-  const pgraph = denodeify(graphFn);
-  const graphWithOptions = entry => pgraph(entry, platform, graphOptions);
+  const graphWithOptions = entry => graphFn(entry, platform, graphOptions);
   const graphOnlyModules = async m => (await graphWithOptions(m)).modules;
 
   const [graph, moduleSystem, polyfills] = await Promise.all([

@@ -92,14 +92,14 @@ function moduleFromPath(path) {
   };
 }
 
-function graph(entryPoints, platform, options, callback) {
+async function graph(entryPoints, platform, options, callback) {
   const modules = Array.from(entryPoints, moduleFromPath);
   const depModules = Array.prototype.concat.apply(
     [],
     modules.map(x => x.dependencies.map(moduleFromPath)),
   );
-  callback(null, {
+  return {
     entryModules: modules,
     modules: modules.concat(depModules),
-  });
+  };
 }
