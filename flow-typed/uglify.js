@@ -9,6 +9,60 @@
 
 'use strict';
 
+type _Input =
+  | string // code or file name
+  | Array<string> // array of file names
+  | {[filename: string]: string}; // file names and corresponding code
+
+
+type _Options = {
+  // https://github.com/mishoo/UglifyJS2/tree/harmony#compress-options
+  compress?: false | Object,
+  ie8?: boolean,
+  mangle?: boolean | {
+    eval?: boolean,
+    keep_fnames?: boolean,
+    properties?: boolean | {
+      builtins?: boolean,
+      debug?: boolean,
+      keep_quoted?: boolean,
+      regex?: RegExp,
+      reserved?: Array<string>,
+    },
+    reserved?: Array<string>,
+    safari10?: boolean,
+    toplevel?: boolean,
+  },
+  output?: {
+    ascii_only?: boolean,
+    beautify?: boolean,
+    bracketize?: boolean,
+    comments?: boolean | 'all' | 'some' | RegExp | Function,
+    ecma?: 5 | 6,
+    indent_level?: number,
+    indent_start?: number,
+    inline_script?: number,
+    keep_quoted_props?: boolean,
+    max_line_len?: false | number,
+    preamble?: string,
+    preserve_line?: boolean,
+    quote_keys?: boolean,
+    quote_style?: 0 | 1 | 2 | 3,
+    semicolons?: boolean,
+    shebang?: boolean,
+    width?: number,
+    wrap_iife?: boolean,
+  },
+  parse?: {
+    bare_returns: boolean,
+    html5_comments: boolean,
+    shebang: boolean,
+  },
+  sourceMap?: false,
+  toplevel?: boolean,
+  warnings?: boolean | 'verbose',
+};
+
 type _SourceMap = {
   file?: string,
   mappings: string,
@@ -19,53 +73,24 @@ type _SourceMap = {
   version: number,
 };
 
-type _Result<MapT> = {
-  code: string,
-  map: MapT,
+type _SourceMapOptions = true | {
+  filename?: string,
+  content?: ?string | _SourceMap,
+  includeSources?: boolean,
+  root?: string,
+  url?: string,
 };
 
-type _Options = {
-  compress?: false | {||},
-  fromString?: boolean,
-  inSourceMap?: string | ?_SourceMap,
-  mangle?: boolean | {|
-    except?: Array<string>,
-    toplevel?: boolean,
-    eval?: boolean,
-    keep_fnames?: boolean,
-  |},
-  mangleProperties?: boolean | {|
-    regex?: RegExp,
-    ignore_quoted?: boolean,
-    debug?: false | string,
-  |},
-  outFileName?: string,
-  output?: {|
-    ascii_only?: boolean,
-    screw_ie8?: boolean,
-  |},
-  parse?: {|
-    strict?: boolean,
-    bare_returns?: boolean,
-    filename?: string,
-  |},
-  sourceMapUrl?: string,
-  sourceRoot?: string,
-  warnings?: boolean,
-};
+type _Error = {|error: Error|};
+type _Result = {|code: string, warnings?: Array<string>|};
 
-type _Input =
-  | string // code or file name
-  | Array<string> // array of file names
-  | {[filename: string]: string}; // file names and corresponding code
-
-declare module 'uglify-js' {
+declare module 'uglify-es' {
   declare function minify(
-    fileOrFilesOrCode: _Input,
-    options?: _Options & {outSourceMap?: ?false | ''},
-  ): _Result<void>;
+    code: _Input,
+    options?: _Options,
+  ): _Error | _Result;
   declare function minify(
-    fileOrFilesOrCode: _Input,
-    options?: _Options & {outSourceMap: true | string},
-  ): _Result<string>;
+    code: _Input,
+    options: {..._Options, sourceMap: _SourceMapOptions},
+  ): _Error | {|..._Result, map: string|};
 }

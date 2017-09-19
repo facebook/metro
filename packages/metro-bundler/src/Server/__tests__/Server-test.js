@@ -13,7 +13,7 @@
 
 jest.mock('../../worker-farm', () => () => () => {})
     .mock('worker-farm', () => () => () => {})
-    .mock('uglify-js')
+    .mock('../../JSTransformer/worker/minify')
     .mock('crypto')
     .mock(
       '../symbolicate',
