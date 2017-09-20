@@ -33,11 +33,11 @@ import type {
 } from '../types.flow';
 import type {Ast} from 'babel-core';
 
-export type TransformOptions = {|
+export type TransformOptions<ExtraOptions> = {|
   filename: string,
   hasteImpl?: HasteImpl,
   polyfill?: boolean,
-  transformer: Transformer<*>,
+  transformer: Transformer<ExtraOptions>,
   variants?: TransformVariants,
 |};
 
@@ -56,7 +56,7 @@ const ASSET_EXTENSIONS = new Set(defaults.assetExts);
 
 function transformModule(
   content: Buffer,
-  options: TransformOptions,
+  options: TransformOptions<{+retainLines?: boolean}>,
 ): TransformedSourceFile {
   if (ASSET_EXTENSIONS.has(path.extname(options.filename).substr(1))) {
     return transformAsset(content, options);
@@ -143,9 +143,9 @@ function transformJSON(json, options): TransformedSourceFile {
   return {type: 'code', details: result};
 }
 
-function transformAsset(
+function transformAsset<ExtraOptions: {}>(
   content: Buffer,
-  options: TransformOptions,
+  options: TransformOptions<ExtraOptions>,
 ): TransformedSourceFile {
   return {
     details: {

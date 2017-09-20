@@ -21,4 +21,4 @@ import type {WorkerFnWithIO} from './worker/wrap-worker-fn';
 exports.optimizeModule =
   (wrapWorkerFn(optimizeModule): WorkerFnWithIO<OptimizationOptions>);
 exports.transformModule =
-  (wrapWorkerFn(transformModule): WorkerFnWithIO<TransformOptions>);
+  (wrapWorkerFn(transformModule): WorkerFnWithIO<TransformOptions<{+retainLines?: boolean}>>);
