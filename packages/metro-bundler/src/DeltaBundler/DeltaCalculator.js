@@ -37,6 +37,7 @@ class DeltaCalculator extends EventEmitter {
   _bundler: Bundler;
   _resolver: Resolver;
   _options: BundleOptions;
+  _transformerOptions: ?JSTransformerOptions;
 
   _dependencies: Set<string> = new Set();
   _shallowDependencies: Map<string, Set<string>> = new Map();
@@ -44,7 +45,6 @@ class DeltaCalculator extends EventEmitter {
   _currentBuildPromise: ?Promise<DeltaResult>;
   _dependencyPairs: Map<string, $ReadOnlyArray<[string, Module]>> = new Map();
   _modulesByName: Map<string, Module> = new Map();
-  _lastBundlingOptions: ?BundlingOptions;
   _inverseDependencies: Map<string, Set<string>> = new Map();
 
   constructor(bundler: Bundler, resolver: Resolver, options: BundleOptions) {
@@ -124,10 +124,10 @@ class DeltaCalculator extends EventEmitter {
    * any module very fast (since the options object instance will be the same).
    */
   getTransformerOptions(): JSTransformerOptions {
-    if (!this._lastBundlingOptions) {
+    if (!this._transformerOptions) {
       throw new Error('Calculate a bundle first');
     }
-    return this._lastBundlingOptions.transformer;
+    return this._transformerOptions;
   }
 
   /**
@@ -274,7 +274,7 @@ class DeltaCalculator extends EventEmitter {
     const response = await this._getAllDependencies();
     const currentDependencies = response.dependencies;
 
-    this._lastBundlingOptions = response.options;
+    this._transformerOptions = response.options.transformer;
 
     currentDependencies.forEach(module => {
       const dependencyPairs = response.getResolvedDependencyPairs(module);
@@ -364,7 +364,7 @@ class DeltaCalculator extends EventEmitter {
       entryFile: module.path,
       rootEntryFile: this._options.entryFile,
       generateSourceMaps: false,
-      bundlingOptions: this._lastBundlingOptions || undefined,
+      transformerOptions: this._transformerOptions || undefined,
     });
 
     return new Set(dependencies);

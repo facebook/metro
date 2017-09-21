@@ -373,7 +373,7 @@ class Server {
         minify,
         hot,
         generateSourceMaps: false,
-        bundlingOptions,
+        transformOptions: bundlingOptions && bundlingOptions.transformer,
       });
     });
   }

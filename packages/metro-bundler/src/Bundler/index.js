@@ -580,7 +580,7 @@ class Bundler {
     minify = !dev,
     hot = false,
     generateSourceMaps = false,
-    bundlingOptions,
+    transformerOptions,
   }: {
     entryFile: string,
     +rootEntryFile: string,
@@ -589,25 +589,23 @@ class Bundler {
     minify?: boolean,
     hot?: boolean,
     generateSourceMaps?: boolean,
-    bundlingOptions?: BundlingOptions,
+    transformerOptions?: JSTransformerOptions,
   }): Promise<Array<string>> {
-    if (!bundlingOptions) {
-      bundlingOptions = await this.getTransformOptions(rootEntryFile, {
-        enableBabelRCLookup: this._opts.enableBabelRCLookup,
+    if (!transformerOptions) {
+      transformerOptions = (await this.getTransformOptions(rootEntryFile, {
         dev,
         generateSourceMaps,
         hot,
         minify,
         platform,
         prependPolyfills: false,
-        projectRoots: this._projectRoots,
-      });
+      })).transformer;
     }
 
-    const notNullOptions = bundlingOptions;
+    const notNullOptions = transformerOptions;
 
     return this._resolverPromise.then(resolver =>
-      resolver.getShallowDependencies(entryFile, notNullOptions.transformer),
+      resolver.getShallowDependencies(entryFile, notNullOptions),
     );
   }
 
@@ -645,13 +643,11 @@ class Bundler {
     const bundlingOptions: BundlingOptions = await this.getTransformOptions(
       rootEntryFile,
       {
-        enableBabelRCLookup: this._opts.enableBabelRCLookup,
         dev,
         platform,
         hot,
         generateSourceMaps,
         minify,
-        projectRoots: this._projectRoots,
         prependPolyfills,
       },
     );
@@ -885,20 +881,20 @@ class Bundler {
   async getTransformOptions(
     mainModuleName: string,
     options: {|
-      enableBabelRCLookup: boolean,
       dev: boolean,
       generateSourceMaps: boolean,
       hot: boolean,
       minify: boolean,
       platform: ?string,
-      projectRoots: $ReadOnlyArray<string>,
       +prependPolyfills: boolean,
     |},
   ): Promise<BundlingOptions> {
     const getDependencies = (entryFile: string) =>
       this.getDependencies({
         ...options,
+        enableBabelRCLookup: this._opts.enableBabelRCLookup,
         entryFile,
+        projectRoots: this._projectRoots,
         rootEntryFile: entryFile,
         prependPolyfills: false,
       }).then(r => r.dependencies.map(d => d.path));
@@ -920,13 +916,13 @@ class Bundler {
         minify: options.minify,
         platform,
         transform: {
-          enableBabelRCLookup: options.enableBabelRCLookup,
+          enableBabelRCLookup: this._opts.enableBabelRCLookup,
           dev,
           generateSourceMaps: options.generateSourceMaps,
           hot,
           inlineRequires: transform.inlineRequires || false,
           platform,
-          projectRoot: options.projectRoots[0],
+          projectRoot: this._projectRoots[0],
         },
       },
       preloadedModules: extraOptions.preloadedModules,
