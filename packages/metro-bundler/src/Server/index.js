@@ -17,7 +17,6 @@ const Bundler = require('../Bundler');
 const DeltaBundler = require('../DeltaBundler');
 const MultipartResponse = require('./MultipartResponse');
 
-const crypto = require('crypto');
 const debug = require('debug')('Metro:Server');
 const defaults = require('../defaults');
 const emptyFunction = require('fbjs/lib/emptyFunction');
