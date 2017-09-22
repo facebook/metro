@@ -12,19 +12,24 @@
 
 'use strict';
 
+const AssetPaths = require('../../node-haste/lib/AssetPaths');
 const JsFileWrapping = require('./JsFileWrapping');
+const Platforms = require('./Platforms');
 
 const collectDependencies = require('./collect-dependencies');
 const defaults = require('../../defaults');
 const docblock = require('jest-docblock');
 const generate = require('./generate');
+const getImageSize = require('image-size');
 const invariant = require('fbjs/lib/invariant');
 const path = require('path');
 
+const {isAssetTypeAnImage} = require('../../Bundler/util');
 const {basename} = require('path');
 
 import type {HasteImpl} from '../../node-haste/Module';
 import type {
+  ImageSize,
   TransformedCodeFile,
   TransformedSourceFile,
   Transformer,
@@ -147,13 +152,27 @@ function transformAsset<ExtraOptions: {}>(
   content: Buffer,
   options: TransformOptions<ExtraOptions>,
 ): TransformedSourceFile {
-  return {
-    details: {
-      assetContentBase64: content.toString('base64'),
-      filePath: options.filename,
-    },
-    type: 'asset',
+  const filePath = options.filename;
+  const assetData = AssetPaths.parse(filePath, Platforms.VALID_PLATFORMS);
+  const contentType = path.extname(filePath).slice(1);
+  const details = {
+    assetPath: assetData.assetName,
+    contentBase64: content.toString('base64'),
+    contentType,
+    filePath,
+    physicalSize: getAssetSize(contentType, content),
+    platform: assetData.platform,
+    scale: assetData.resolution,
   };
+  return {details, type: 'asset'};
+}
+
+function getAssetSize(type: string, content: Buffer): ?ImageSize {
+  if (!isAssetTypeAnImage(type)) {
+    return null;
+  }
+  const {width, height} = getImageSize(content);
+  return {width, height};
 }
 
 function makeResult(ast: Ast, filename, sourceCode, isPolyfill = false) {
