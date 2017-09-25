@@ -10,6 +10,8 @@
  * @format
  */
 
+/* eslint-disable no-bitwise */
+
 'use strict';
 
 const babel = require('babel-core');
@@ -71,9 +73,11 @@ describe('require', () => {
         },
       );
 
-    moduleSystem.nativeRequire = jest.fn().mockImplementation(moduleId => {
-      moduleSystem.__d(mockFactory, moduleId, [2, 3]);
-    });
+    moduleSystem.nativeRequire = jest
+      .fn()
+      .mockImplementation((localId, bundleId) => {
+        moduleSystem.__d(mockFactory, (bundleId << 16) + localId, [2, 3]);
+      });
     createModuleSystem(moduleSystem, false);
     expect(moduleSystem.require).not.toBeUndefined();
     expect(moduleSystem.__d).not.toBeUndefined();
@@ -81,14 +85,21 @@ describe('require', () => {
     expect(moduleSystem.nativeRequire).not.toBeCalled();
     expect(mockFactory).not.toBeCalled();
 
-    const m = moduleSystem.require(1);
+    const CASES = [[1, 1, 0], [42, 42, 0], [196650, 42, 3]];
 
-    expect(moduleSystem.nativeRequire.mock.calls.length).toBe(1);
-    expect(moduleSystem.nativeRequire).toBeCalledWith(1);
+    CASES.forEach(([moduleId, localId, bundleId]) => {
+      moduleSystem.nativeRequire.mockClear();
+      mockFactory.mockClear();
 
-    expect(mockFactory.mock.calls.length).toBe(1);
-    expect(mockFactory.mock.calls[0][0]).toBe(moduleSystem);
-    expect(m).toBe(mockExports);
-    expect(mockFactory.mock.calls[0][4]).toEqual([2, 3]);
+      const m = moduleSystem.require(moduleId);
+
+      expect(moduleSystem.nativeRequire.mock.calls.length).toBe(1);
+      expect(moduleSystem.nativeRequire).toBeCalledWith(localId, bundleId);
+
+      expect(mockFactory.mock.calls.length).toBe(1);
+      expect(mockFactory.mock.calls[0][0]).toBe(moduleSystem);
+      expect(m).toBe(mockExports);
+      expect(mockFactory.mock.calls[0][4]).toEqual([2, 3]);
+    });
   });
 });

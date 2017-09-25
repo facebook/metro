@@ -13,6 +13,8 @@
 
 'use strict';
 
+/* eslint-disable no-bitwise */
+
 declare var __DEV__: boolean;
 
 type DependencyMap = Array<ModuleID>;
@@ -131,10 +133,15 @@ function guardedLoadModule(moduleId: ModuleID, module) {
   }
 }
 
+const ID_MASK_SHIFT = 16;
+const LOCAL_ID_MASK = ~0 >>> ID_MASK_SHIFT;
+
 function loadModuleImplementation(moduleId, module) {
   const nativeRequire = global.nativeRequire;
   if (!module && nativeRequire) {
-    nativeRequire(moduleId);
+    const bundleId = moduleId >>> ID_MASK_SHIFT;
+    const localId = moduleId & LOCAL_ID_MASK;
+    nativeRequire(localId, bundleId);
     module = modules[moduleId];
   }
 
