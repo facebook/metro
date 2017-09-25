@@ -20,9 +20,7 @@ const debug = require('debug')('Metro:DependencyGraph');
 const isAbsolutePath = require('absolute-path');
 const path = require('path');
 
-const {
-  DuplicateHasteCandidatesError,
-} = require('jest-haste-map/build/module_map');
+const {DuplicateHasteCandidatesError} = require('jest-haste-map').ModuleMap;
 
 import type DependencyGraphHelpers from './DependencyGraphHelpers';
 import type ResolutionResponse from './ResolutionResponse';
