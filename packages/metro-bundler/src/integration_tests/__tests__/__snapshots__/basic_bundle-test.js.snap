@@ -80,10 +80,15 @@ function guardedLoadModule(moduleId, module) {
   }
 }
 
+var ID_MASK_SHIFT = 16;
+var LOCAL_ID_MASK = ~0 >>> ID_MASK_SHIFT;
+
 function loadModuleImplementation(moduleId, module) {
   var nativeRequire = global.nativeRequire;
   if (!module && nativeRequire) {
-    nativeRequire(moduleId);
+    var bundleId = moduleId >>> ID_MASK_SHIFT;
+    var localId = moduleId & LOCAL_ID_MASK;
+    nativeRequire(localId, bundleId);
     module = modules[moduleId];
   }
 
@@ -353,10 +358,15 @@ function guardedLoadModule(moduleId, module) {
   }
 }
 
+var ID_MASK_SHIFT = 16;
+var LOCAL_ID_MASK = ~0 >>> ID_MASK_SHIFT;
+
 function loadModuleImplementation(moduleId, module) {
   var nativeRequire = global.nativeRequire;
   if (!module && nativeRequire) {
-    nativeRequire(moduleId);
+    var bundleId = moduleId >>> ID_MASK_SHIFT;
+    var localId = moduleId & LOCAL_ID_MASK;
+    nativeRequire(localId, bundleId);
     module = modules[moduleId];
   }
 
