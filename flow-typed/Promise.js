@@ -33,6 +33,6 @@ declare class Promise<+R> {
   static resolve<T>(object?: Promise<T> | T): Promise<T>;
   static reject<T>(error?: mixed): Promise<T>;
 
-  static all<Elem, T:Iterable<Elem>>(promises: T): Promise<$TupleMap<T, typeof $await>>;
+  static all<T: Iterable<mixed>>(promises: T): Promise<$TupleMap<T, typeof $await>>;
   static race<T>(promises: Array<Promise<T>>): Promise<T>;
 }
