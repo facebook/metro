@@ -142,14 +142,6 @@ class DeltaCalculator extends EventEmitter {
     return this._shallowDependencies;
   }
 
-  /**
-   * Returns a map of module names to Module objects (module name being the
-   * result of calling `Module.getName()`).
-   */
-  getModulesByName(): Map<string, Module> {
-    return this._modulesByName;
-  }
-
   getInverseDependencies(): Map<string, Set<string>> {
     return this._inverseDependencies;
   }
@@ -315,16 +307,6 @@ class DeltaCalculator extends EventEmitter {
         deleted.add(file);
       });
     }
-
-    // Last iteration through all dependencies to populate the modulesByName
-    // cache (we could get rid of this if the `runBeforeMainModule` option was
-    // an asbsolute path).
-    await Promise.all(
-      currentDependencies.map(async module => {
-        const name = await module.getName();
-        this._modulesByName.set(name, module);
-      }),
-    );
 
     // Yet another iteration through all the dependencies. This one is to
     // calculate the inverse dependencies. Right now we cannot do a faster

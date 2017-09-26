@@ -44,6 +44,7 @@ describe('processRequest', () => {
     cacheVersion: null,
     polyfillModuleNames: null,
     reporter: require('../../lib/reporting').nullReporter,
+    runBeforeMainModule: ['InitializeCore'],
   };
 
   const makeRequest = (reqHandler, requrl, reqOptions) => new Promise(resolve =>
@@ -470,7 +471,7 @@ describe('processRequest', () => {
           onProgress: null,
           platform: undefined,
           resolutionResponse: null,
-          runBeforeMainModule: ['InitializeCore'],
+          runBeforeMainModule: [],
           runModule: true,
           sourceMapUrl: null,
           unbundle: false,

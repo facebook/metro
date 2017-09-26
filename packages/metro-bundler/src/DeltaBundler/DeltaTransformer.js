@@ -194,10 +194,7 @@ class DeltaTransformer extends EventEmitter {
     // Return the source code that gets appended to all the modules. This
     // contains the require() calls to startup the execution of the modules.
     const appendSources = reset
-      ? await this._getAppend(
-          dependencyPairs,
-          this._deltaCalculator.getModulesByName(),
-        )
+      ? await this._getAppend(dependencyPairs)
       : new Map();
 
     // Inverse dependencies are needed for HMR.
@@ -249,7 +246,6 @@ class DeltaTransformer extends EventEmitter {
 
   async _getAppend(
     dependencyPairs: ShallowDependencies,
-    modulesByName: Map<string, Module>,
   ): Promise<DeltaEntries> {
     // Get the absolute path of the entry file, in order to be able to get the
     // actual correspondant module (and its moduleId) to be able to add the
@@ -264,9 +260,8 @@ class DeltaTransformer extends EventEmitter {
     // module so the last thing that gets required is the entry point.
     return new Map(
       this._bundleOptions.runBeforeMainModule
-        .map(name => modulesByName.get(name))
+        .map(path => this._resolver.getModuleForPath(path))
         .concat(entryPointModule)
-        .filter(Boolean)
         .map(this._getModuleId)
         .map(moduleId => {
           const code = `;require(${JSON.stringify(moduleId)});`;

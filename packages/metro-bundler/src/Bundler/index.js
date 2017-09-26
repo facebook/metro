@@ -384,7 +384,7 @@ class Bundler {
     onProgress?: () => void,
     platform?: ?string,
     resolutionResponse?: ResolutionResponse<Module, BundlingOptions>,
-    runBeforeMainModule?: boolean,
+    runBeforeMainModule?: Array<string>,
     runModule?: boolean,
     unbundle?: boolean,
   }) {
@@ -406,12 +406,10 @@ class Bundler {
       bundle: finalBundle,
       transformedModules,
       response,
-      modulesByName,
     }: {
       bundle: Bundle,
       transformedModules: Array<{module: Module, transformed: ModuleTransport}>,
       response: ResolutionResponse<Module, BundlingOptions>,
-      modulesByName: {[name: string]: Module},
     }) =>
       this._resolverPromise
         .then(resolver =>
@@ -422,16 +420,20 @@ class Bundler {
           ),
         )
         .then(() => {
-          const runBeforeMainModuleIds = Array.isArray(runBeforeMainModule)
-            ? runBeforeMainModule
-                .map(name => modulesByName[name])
-                .filter(Boolean)
-                .map(response.getModuleId)
-            : undefined;
-
+          return Promise.all(
+            runBeforeMainModule
+              ? runBeforeMainModule.map(path => this.getModuleForPath(path))
+              : [],
+          );
+        })
+        .then(runBeforeMainModules => {
           finalBundle.finalize({
             runModule,
-            runBeforeMainModule: runBeforeMainModuleIds,
+            runBeforeMainModule: runBeforeMainModules.map(module =>
+              /* $FlowFixMe: looks like ResolutionResponse is monkey-patched
+               * with `getModuleId`. */
+              response.getModuleId(module),
+            ),
             allowUpdates: this._opts.allowBundleUpdates,
           });
           return finalBundle;
@@ -479,8 +481,6 @@ class Bundler {
         environment: dev ? 'dev' : 'prod',
       }),
     );
-
-    const modulesByName = Object.create(null);
 
     if (!resolutionResponse) {
       resolutionResponse = this.getDependencies({
@@ -539,7 +539,6 @@ class Bundler {
           dependencyPairs: response.getResolvedDependencyPairs(module),
         }).then(transformed => {
           modulesByTransport.set(transformed, module);
-          modulesByName[transformed.name] = module;
           onModuleTransformed({
             module,
             response,
@@ -565,7 +564,6 @@ class Bundler {
             bundle,
             transformedModules,
             response,
-            modulesByName,
           });
         })
         .then(() => bundle);

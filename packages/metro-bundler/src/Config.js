@@ -128,6 +128,12 @@ export type ConfigT = {
   hasteImpl?: HasteImpl,
 
   transformVariants: () => TransformVariants,
+
+  /**
+   * An array of modules to be required before the entry point. It should
+   * contain the absolute path of each module.
+   */
+  runBeforeMainModule: Array<string>,
 };
 
 const DEFAULT = ({
@@ -152,6 +158,7 @@ const DEFAULT = ({
   postProcessModules: modules => modules,
   postProcessModulesForBuck: modules => modules,
   postProcessBundleSourcemap: ({code, map, outFileName}) => ({code, map}),
+  runBeforeMainModule: [],
   transformVariants: () => ({default: {}}),
   getWorkerPath: () => null,
 }: ConfigT);

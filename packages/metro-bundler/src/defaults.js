@@ -52,8 +52,3 @@ exports.platforms = ['ios', 'android', 'windows', 'web'];
 exports.providesModuleNodeModules = ['react-native', 'react-native-windows'];
 
 exports.transformModulePath = require.resolve('./defaultTransform.js');
-
-exports.runBeforeMainModule = [
-  // Ensures essential globals are available and are patched correctly.
-  'InitializeCore',
-];
