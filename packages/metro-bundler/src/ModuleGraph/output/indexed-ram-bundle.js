@@ -26,15 +26,16 @@ import type {OutputFn} from '../types.flow';
 
 function asIndexedRamBundle({
   filename,
-  idForPath,
+  idsForPath,
   modules,
   preloadedModules,
   ramGroupHeads,
   requireCalls,
 }) {
+  const idForPath = x => idsForPath(x).moduleId;
   const [startup, deferred] = partition(modules, preloadedModules);
   const startupModules = Array.from(concat(startup, requireCalls));
-  const deferredModules = deferred.map(m => toModuleTransport(m, idForPath));
+  const deferredModules = deferred.map(m => toModuleTransport(m, idsForPath));
   const ramGroups = createRamBundleGroups(
     ramGroupHeads || [],
     deferredModules,
@@ -55,7 +56,7 @@ function asIndexedRamBundle({
       fixWrapperOffset: false,
       lazyModules: deferredModules,
       moduleGroups,
-      startupModules: startupModules.map(m => toModuleTransport(m, idForPath)),
+      startupModules: startupModules.map(m => toModuleTransport(m, idsForPath)),
     }),
   };
 }

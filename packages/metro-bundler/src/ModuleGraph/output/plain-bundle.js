@@ -21,7 +21,7 @@ import type {OutputFn} from '../types.flow';
 
 function asPlainBundle({
   filename,
-  idForPath,
+  idsForPath,
   modules,
   requireCalls,
   sourceMapPath,
@@ -29,10 +29,11 @@ function asPlainBundle({
   let code = '';
   let line = 0;
   const sections = [];
+  const modIdForPath = x => idsForPath(x).moduleId;
 
   for (const module of concat(modules, requireCalls)) {
     const {file} = module;
-    const moduleCode = getModuleCode(module, idForPath);
+    const moduleCode = getModuleCode(module, modIdForPath);
 
     code += moduleCode + '\n';
     if (file.map) {

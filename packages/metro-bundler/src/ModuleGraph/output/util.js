@@ -14,7 +14,7 @@
 
 const virtualModule = require('../module').virtual;
 
-import type {IdForPathFn, Module} from '../types.flow';
+import type {IdsForPathFn, Module} from '../types.flow';
 
 // Transformed modules have the form
 //   __d(function(require, module, global, exports, dependencyMap) {
@@ -45,6 +45,8 @@ function addModuleIdsToModuleWrapper(
 }
 
 exports.addModuleIdsToModuleWrapper = addModuleIdsToModuleWrapper;
+
+type IdForPathFn = ({path: string}) => number;
 
 // Adds the module ids to a file if the file is a module. If it's not (e.g. a
 // script) it just keeps it as-is.
@@ -109,12 +111,12 @@ exports.partition = (
 
 // Transforms a new Module object into an old one, so that it can be passed
 // around code.
-exports.toModuleTransport = (module: Module, idForPath: IdForPathFn) => {
+exports.toModuleTransport = (module: Module, idsForPath: IdsForPathFn) => {
   const {dependencies, file} = module;
   return {
-    code: getModuleCode(module, idForPath),
+    code: getModuleCode(module, x => idsForPath(x).moduleId),
     dependencies,
-    id: idForPath(file),
+    id: idsForPath(file).localId,
     map: file.map,
     name: file.path,
     sourcePath: file.path,

@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 'use strict';
 
@@ -20,9 +21,8 @@ export type BuildResult = {|
   prependedScripts: $ReadOnlyArray<Module>,
 |};
 
-export type Callback<A = void, B = void>
-  = (Error => void)
-  & ((null | void, A, B) => void);
+export type Callback<A = void, B = void> = (Error => void) &
+  ((null | void, A, B) => void);
 
 type Dependency = {|
   id: string,
@@ -55,7 +55,27 @@ export type GraphResult = {|
   modules: $ReadOnlyArray<Module>,
 |};
 
-export type IdForPathFn = {path: string} => number;
+export type ModuleIds = {|
+  /**
+   * The module ID is global across all bundles and identifies the module
+   * uniquely. This is useful to cache modules that has been loaded already at
+   * the app level.
+   */
+  +moduleId: number,
+  /**
+   * The local ID is local to each bundle. For example bundle zero may have a
+   * module with local ID 1, and bundle one a module with the same local ID.
+   * This is useful so that RAM bundles tables start at zero, but the `moduleId`
+   * will be used otherwise.
+   */
+  +localId: number,
+|};
+
+/**
+ * Indempotent function that gets us the IDs corresponding to a particular
+ * module identified by path.
+ */
+export type IdsForPathFn = ({path: string}) => ModuleIds;
 
 export type LoadResult = {
   file: File,
@@ -85,7 +105,7 @@ export type PostProcessModules = (
 
 export type OutputFn<M: FBSourceMap | SourceMap = FBSourceMap | SourceMap> = ({|
   filename: string,
-  idForPath: IdForPathFn,
+  idsForPath: IdsForPathFn,
   modules: Iterable<Module>,
   requireCalls: Iterable<Module>,
   sourceMapPath?: string,
@@ -184,14 +204,13 @@ export type AssetFile = {|
 
 export type TransformedSourceFile =
   | {|
-    +type: 'code',
-    +details: TransformedCodeFile,
-  |}
+      +type: 'code',
+      +details: TransformedCodeFile,
+    |}
   | {|
-    +type: 'asset',
-    +details: AssetFile,
-  |}
-  ;
+      +type: 'asset',
+      +details: AssetFile,
+    |};
 
 export type LibraryOptions = {|
   dependencies?: Array<string>,
@@ -205,7 +224,9 @@ export type AssetContents = {
   +data: Base64Content,
   +outputPath: string,
 };
-export type AssetContentsByPath = {+[moduleFilePath: string]: $ReadOnlyArray<AssetContents>};
+export type AssetContentsByPath = {
+  +[moduleFilePath: string]: $ReadOnlyArray<AssetContents>,
+};
 
 export type Library = {|
   +files: Array<TransformedCodeFile>,

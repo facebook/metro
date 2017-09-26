@@ -28,7 +28,10 @@ let code;
 let map;
 let extraFiles;
 let ids, modules, requireCall;
-const idForPath = ({path}) => getId(path);
+const idsForPath = ({path}) => {
+  const id = getId(path);
+  return {moduleId: id, localId: id};
+};
 
 beforeAll(() => {
   modules = [
@@ -83,7 +86,7 @@ it('bundles each file separately', () => {
   modules.forEach((module, i) => {
     // $FlowFixMe "extraFiles" is always defined at this point.
     expect(extraFiles.get(`js-modules/${i}.js`).toString()).toBe(
-      getModuleCode(modules[i], idForPath),
+      getModuleCode(modules[i], x => idsForPath(x).moduleId),
     );
   });
 });
@@ -95,7 +98,7 @@ function createRamBundle(preloadedModules = new Set(), ramGroups) {
   );
   const result = build({
     filename: 'arbitrary/filename.js',
-    idForPath,
+    idsForPath,
     modules,
     requireCalls: [requireCall],
   });

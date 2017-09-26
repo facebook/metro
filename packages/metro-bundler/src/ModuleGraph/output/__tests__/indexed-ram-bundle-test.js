@@ -27,7 +27,11 @@ declare var beforeAll: (() => ?Promise<any>) => void;
 let code: Buffer;
 let map;
 let ids, modules, requireCall;
-const idForPath = ({path}) => getId(path);
+const idsForPath = ({path}) => {
+  const id = getId(path);
+  return {moduleId: id, localId: id};
+};
+
 beforeAll(() => {
   modules = [
     makeModule('a', [], 'script'),
@@ -110,7 +114,7 @@ describe('Startup section optimization', () => {
     );
 
     preloaded.forEach(m => {
-      const idx = idForPath(m.file);
+      const idx = idsForPath(m.file).moduleId;
       expect(table[idx]).toEqual(m === last ? undefined : [0, 0]);
     });
 
@@ -158,7 +162,7 @@ describe('RAM groups / common sections', () => {
     const {codeOffset, table} = parseOffsetTable(code);
 
     groups.forEach(group => {
-      const [head, ...deps] = group.map(x => idForPath(x.file));
+      const [head, ...deps] = group.map(x => idsForPath(x.file).moduleId);
       const groupEntry = table[head];
       deps.forEach(id => expect(table[id]).toEqual(groupEntry));
 
@@ -202,7 +206,7 @@ function createRamBundle(preloadedModules = new Set(), ramGroups) {
   const build = indexedRamBundle.createBuilder(preloadedModules, ramGroups);
   const result = build({
     filename: 'arbitrary/filename.js',
-    idForPath,
+    idsForPath,
     modules,
     requireCalls: [requireCall],
   });
@@ -257,7 +261,7 @@ function makeDependency(name) {
 }
 
 function expectedCode(module) {
-  return getModuleCode(module, idForPath);
+  return getModuleCode(module, x => idsForPath(x).moduleId);
 }
 
 function getId(path) {
