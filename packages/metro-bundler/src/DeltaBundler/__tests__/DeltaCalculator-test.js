@@ -191,11 +191,11 @@ describe('DeltaCalculator', () => {
     });
   });
 
-  it('should calculate the dependencyPairs correctly after adding/removing dependencies', async () => {
+  it('should calculate the shallowDependencies correctly after adding/removing dependencies', async () => {
     // Get initial delta
     await deltaCalculator.getDelta();
 
-    expect(deltaCalculator.getDependencyPairs().size).toBe(3);
+    expect(deltaCalculator.getShallowDependencies().size).toBe(3);
 
     fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
 
@@ -206,11 +206,10 @@ describe('DeltaCalculator', () => {
 
     await deltaCalculator.getDelta();
 
-    const dependencyPairs = deltaCalculator.getDependencyPairs();
+    const shallowDependencies = deltaCalculator.getShallowDependencies();
 
-    expect(dependencyPairs.size).toBe(4);
-    expect(dependencyPairs.get('/foo')[2][0]).toEqual('qux');
-    expect(dependencyPairs.get('/foo')[2][1].path).toEqual('/qux');
+    expect(shallowDependencies.size).toBe(4);
+    expect(shallowDependencies.get('/foo').get('qux')).toEqual('/qux');
   });
 
   it('should emit an event when there is a relevant file change', async done => {

@@ -27,6 +27,10 @@ export type DeltaResult = {|
   +reset: boolean,
 |};
 
+export type ShallowDependencies = Map<string, Map<string, string>>;
+export type ModulePaths = Set<string>;
+export type InverseDependencies = Map<string, Set<string>>;
+
 /**
  * This class is in charge of calculating the delta of changed modules that
  * happen between calls. To do so, it subscribes to file changes, so it can
@@ -39,13 +43,13 @@ class DeltaCalculator extends EventEmitter {
   _options: BundleOptions;
   _transformerOptions: ?JSTransformerOptions;
 
-  _dependencies: Set<string> = new Set();
-  _shallowDependencies: Map<string, Set<string>> = new Map();
-  _modifiedFiles: Set<string> = new Set();
   _currentBuildPromise: ?Promise<DeltaResult>;
-  _dependencyPairs: Map<string, $ReadOnlyArray<[string, Module]>> = new Map();
+  _modifiedFiles: Set<string> = new Set();
+
+  _modules: ModulePaths = new Set();
+  _shallowDependencies: ShallowDependencies = new Map();
   _modulesByName: Map<string, Module> = new Map();
-  _inverseDependencies: Map<string, Set<string>> = new Map();
+  _inverseDependencies: InverseDependencies = new Map();
 
   constructor(bundler: Bundler, resolver: Resolver, options: BundleOptions) {
     super();
@@ -70,10 +74,9 @@ class DeltaCalculator extends EventEmitter {
       .removeListener('change', this._handleMultipleFileChanges);
 
     // Clean up all the cache data structures to deallocate memory.
-    this._dependencies = new Set();
+    this._modules = new Set();
     this._shallowDependencies = new Map();
     this._modifiedFiles = new Set();
-    this._dependencyPairs = new Map();
     this._modulesByName = new Map();
   }
 
@@ -135,8 +138,8 @@ class DeltaCalculator extends EventEmitter {
    * pair consists of a string which corresponds to the relative path used in
    * the `require()` statement and the Module object for that dependency.
    */
-  getDependencyPairs(): Map<string, $ReadOnlyArray<[string, Module]>> {
-    return this._dependencyPairs;
+  getShallowDependencies(): ShallowDependencies {
+    return this._shallowDependencies;
   }
 
   /**
@@ -174,7 +177,7 @@ class DeltaCalculator extends EventEmitter {
     // won't detect any modified file). Once we have our own dependency
     // traverser in Delta Bundler this will be easy to fix.
     if (type === 'delete') {
-      this._dependencies.delete(filePath);
+      this._modules.delete(filePath);
       return;
     }
 
@@ -182,7 +185,7 @@ class DeltaCalculator extends EventEmitter {
 
     // Notify users that there is a change in some of the bundle files. This
     // way the client can choose to refetch the bundle.
-    if (this._dependencies.has(filePath)) {
+    if (this._modules.has(filePath)) {
       this.emit('change');
     }
   };
@@ -190,7 +193,7 @@ class DeltaCalculator extends EventEmitter {
   async _getDelta(modifiedFiles: Set<string>): Promise<DeltaResult> {
     // If we call getDelta() without being initialized, we need get all
     // dependencies and return a reset delta.
-    if (this._dependencies.size === 0) {
+    if (this._modules.size === 0) {
       const {added} = await this._calculateAllDependencies();
 
       return {
@@ -204,7 +207,7 @@ class DeltaCalculator extends EventEmitter {
     // If any of these files is required by an existing file, it will
     // automatically be picked up when calculating all dependencies.
     const modifiedArray = Array.from(modifiedFiles).filter(file =>
-      this._dependencies.has(file),
+      this._modules.has(file),
     );
 
     // No changes happened. Return empty delta.
@@ -248,19 +251,19 @@ class DeltaCalculator extends EventEmitter {
   async _hasChangedDependencies(file: string) {
     const module = this._resolver.getModuleForPath(file);
 
-    if (!this._dependencies.has(module.path)) {
+    if (!this._modules.has(module.path)) {
       return false;
     }
 
+    const oldDependenciesMap =
+      this._shallowDependencies.get(module.path) || new Set();
+
     const newDependencies = await this._getShallowDependencies(module);
-    const oldDependencies = this._shallowDependencies.get(module.path);
+    const oldDependencies = new Set(oldDependenciesMap.keys());
 
     if (!oldDependencies) {
       return false;
     }
-
-    // Update the dependency and inverse dependency caches for this module.
-    this._shallowDependencies.set(module.path, newDependencies);
 
     return areDifferent(oldDependencies, newDependencies);
   }
@@ -279,16 +282,17 @@ class DeltaCalculator extends EventEmitter {
     currentDependencies.forEach(module => {
       const dependencyPairs = response.getResolvedDependencyPairs(module);
 
-      this._shallowDependencies.set(
-        module.path,
-        new Set(dependencyPairs.map(([name, module]) => name)),
-      );
-      this._dependencyPairs.set(module.path, dependencyPairs);
+      const shallowDependencies = new Map();
+      for (const [relativePath, module] of dependencyPairs) {
+        shallowDependencies.set(relativePath, module.path);
+      }
+
+      this._shallowDependencies.set(module.path, shallowDependencies);
 
       // Only add it to the delta bundle if it did not exist before.
-      if (!this._dependencies.has(module.path)) {
+      if (!this._modules.has(module.path)) {
         added.set(module.path, module);
-        this._dependencies.add(module.path);
+        this._modules.add(module.path);
       }
     });
 
@@ -297,17 +301,16 @@ class DeltaCalculator extends EventEmitter {
     // We know that some files have been removed only if the size of the current
     // dependencies is different that the size of the old dependencies after
     // adding the new files.
-    if (currentDependencies.length !== this._dependencies.size) {
+    if (currentDependencies.length !== this._modules.size) {
       const currentSet = new Set(currentDependencies.map(dep => dep.path));
 
-      this._dependencies.forEach(file => {
+      this._modules.forEach(file => {
         if (currentSet.has(file)) {
           return;
         }
 
-        this._dependencies.delete(file);
+        this._modules.delete(file);
         this._shallowDependencies.delete(file);
-        this._dependencyPairs.delete(file);
 
         deleted.add(file);
       });
@@ -335,14 +338,15 @@ class DeltaCalculator extends EventEmitter {
     this._inverseDependencies = new Map();
 
     currentDependencies.forEach(module => {
-      const dependencies = this._dependencyPairs.get(module.path) || [];
+      const dependencies =
+        this._shallowDependencies.get(module.path) || new Map();
 
-      dependencies.forEach(([name, dependencyModule]) => {
-        let inverse = this._inverseDependencies.get(dependencyModule.path);
+      dependencies.forEach((relativePath, path) => {
+        let inverse = this._inverseDependencies.get(path);
 
         if (!inverse) {
           inverse = new Set();
-          this._inverseDependencies.set(dependencyModule.path, inverse);
+          this._inverseDependencies.set(path, inverse);
         }
         inverse.add(module.path);
       });

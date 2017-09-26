@@ -101,11 +101,20 @@ class Bundle extends BundleBase {
   ): Promise<void> {
     const index = super.addModule(moduleTransport);
 
+    const dependencyPairs = resolutionResponse.getResolvedDependencyPairs(
+      module,
+    );
+
+    const dependencyPairsMap = new Map();
+    for (const [relativePath, dependencyModule] of dependencyPairs) {
+      dependencyPairsMap.set(relativePath, dependencyModule.path);
+    }
+
     return Promise.resolve(
       resolver.wrapModule({
         module,
         getModuleId: resolutionResponse.getModuleId,
-        dependencyPairs: resolutionResponse.getResolvedDependencyPairs(module),
+        dependencyPairs: dependencyPairsMap,
         name: moduleTransport.name,
         code: moduleTransport.code,
         map: moduleTransport.map,

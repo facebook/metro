@@ -49,12 +49,19 @@ class HMRBundle extends BundleBase {
     /* $FlowFixMe: broken OOP design: function signature should be the same */
     moduleTransport: ModuleTransport,
   ) {
+    const dependencyPairs = response.getResolvedDependencyPairs(module);
+
+    const dependencyPairsMap = new Map();
+    for (const [relativePath, module] of dependencyPairs) {
+      dependencyPairsMap.set(relativePath, module.path);
+    }
+
     const code = resolver.resolveRequires(
       module,
       /* $FlowFixMe: `getModuleId` is monkey-patched so may not exist */
       response.getModuleId,
       moduleTransport.code,
-      response.getResolvedDependencyPairs(module),
+      dependencyPairsMap,
       /* $FlowFixMe: may not exist */
       moduleTransport.meta.dependencyOffsets,
     );

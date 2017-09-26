@@ -25,6 +25,7 @@ import type Resolver from '../Resolver';
 import type {MappingsMap} from '../lib/SourceMap';
 import type Module from '../node-haste/Module';
 import type {Options as BundleOptions} from './';
+import type {ShallowDependencies} from './DeltaCalculator';
 
 type DeltaEntry = {|
   +code: string,
@@ -171,7 +172,7 @@ class DeltaTransformer extends EventEmitter {
     const {modified, deleted, reset} = await this._deltaCalculator.getDelta();
 
     const transformerOptions = this._deltaCalculator.getTransformerOptions();
-    const dependencyPairs = this._deltaCalculator.getDependencyPairs();
+    const dependencyPairs = this._deltaCalculator.getShallowDependencies();
 
     // Get the transformed source code of each modified/added module.
     const modifiedDelta = await this._transformModules(
@@ -215,7 +216,7 @@ class DeltaTransformer extends EventEmitter {
 
   async _getPrepend(
     transformOptions: JSTransformerOptions,
-    dependencyPairs: Map<string, $ReadOnlyArray<[string, Module]>>,
+    dependencyPairs: ShallowDependencies,
   ): Promise<DeltaEntries> {
     // Get all the polyfills from the relevant option params (the
     // `getPolyfills()` method and the `polyfillModuleNames` variable).
@@ -247,7 +248,7 @@ class DeltaTransformer extends EventEmitter {
   }
 
   async _getAppend(
-    dependencyPairs: Map<string, $ReadOnlyArray<[string, Module]>>,
+    dependencyPairs: ShallowDependencies,
     modulesByName: Map<string, Module>,
   ): Promise<DeltaEntries> {
     // Get the absolute path of the entry file, in order to be able to get the
@@ -306,7 +307,7 @@ class DeltaTransformer extends EventEmitter {
   async _transformModules(
     modules: Array<Module>,
     transformOptions: JSTransformerOptions,
-    dependencyPairs: Map<string, $ReadOnlyArray<[string, Module]>>,
+    dependencyPairs: ShallowDependencies,
   ): Promise<DeltaEntries> {
     return new Map(
       await Promise.all(
@@ -320,14 +321,15 @@ class DeltaTransformer extends EventEmitter {
   async _transformModule(
     module: Module,
     transformOptions: JSTransformerOptions,
-    dependencyPairs: Map<string, $ReadOnlyArray<[string, Module]>>,
+    dependencyPairs: ShallowDependencies,
   ): Promise<[number, ?DeltaEntry]> {
     const [name, metadata] = await Promise.all([
       module.getName(),
       this._getMetadata(module, transformOptions),
     ]);
 
-    const dependencyPairsForModule = dependencyPairs.get(module.path) || [];
+    const dependencyPairsForModule =
+      dependencyPairs.get(module.path) || new Map();
 
     const wrapped = this._bundleOptions.wrapModules
       ? this._resolver.wrapModule({

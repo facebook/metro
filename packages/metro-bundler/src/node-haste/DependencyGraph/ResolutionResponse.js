@@ -119,7 +119,7 @@ class ResolutionResponse<TModule: {hash(): string}, TOptions> {
     module: TModule,
   ): $ReadOnlyArray<[string, TModule]> {
     this._assertFinalized();
-    return this._mappings[module.hash()];
+    return this._mappings[module.hash()] || [];
   }
 }
 

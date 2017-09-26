@@ -18,7 +18,9 @@ const crypto = require('crypto');
 
 const resolutionResponse = {
   getModuleId() {},
-  getResolvedDependencyPairs() {},
+  getResolvedDependencyPairs() {
+    return [];
+  },
 };
 
 describe('Bundle', () => {

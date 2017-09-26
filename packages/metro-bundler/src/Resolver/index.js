@@ -185,18 +185,16 @@ class Resolver {
     module: Module,
     getModuleId: ({path: string}) => number,
     code: string,
-    dependencyPairs: $ReadOnlyArray<[string, Module]>,
+    dependencyPairs: Map<string, string>,
     dependencyOffsets: Array<number> = [],
   ): string {
     const resolvedDeps = Object.create(null);
 
     // here, we build a map of all require strings (relative and absolute)
     // to the canonical ID of the module they reference
-    dependencyPairs.forEach(([name, module], key) => {
-      if (module) {
-        resolvedDeps[name] = getModuleId(module);
-      }
-    });
+    for (const [name, path] of dependencyPairs) {
+      resolvedDeps[name] = getModuleId({path});
+    }
 
     // if we have a canonical ID for the module imported here,
     // we use it, so that require() is always called with the same
@@ -229,7 +227,7 @@ class Resolver {
   }: {
     module: Module,
     getModuleId: ({path: string}) => number,
-    dependencyPairs: $ReadOnlyArray<[string, Module]>,
+    dependencyPairs: Map<string, string>,
     dependencyOffsets: Array<number>,
     name: string,
     map: ?MappingsMap,

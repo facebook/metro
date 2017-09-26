@@ -242,10 +242,18 @@ describe('Resolver', function() {
           ]),
       );
 
+      const dependencyPairs = new Map();
+      for (const [
+        relativePath,
+        dependencyModule,
+      ] of resolutionResponse.getResolvedDependencyPairs(module)) {
+        dependencyPairs.set(relativePath, dependencyModule.path);
+      }
+
       const {code: processedCode} = depResolver.wrapModule({
         module: module,
         getModuleId: resolutionResponse.getModuleId,
-        dependencyPairs: resolutionResponse.getResolvedDependencyPairs(module),
+        dependencyPairs,
         name: 'test module',
         code,
         dependencyOffsets,
