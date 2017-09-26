@@ -133,7 +133,6 @@ export type TransformResults = {[string]: TransformResult};
 export type TransformVariants = {+[name: string]: {}, +default: {}};
 
 export type TransformedCodeFile = {
-  +code: string,
   +file: string,
   +hasteID: ?string,
   package?: PackageData,

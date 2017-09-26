@@ -46,7 +46,7 @@ function minify(inputCode: string, inputMap: ?MappingsMap) {
     },
     sourceMap: {
       content: inputMap,
-      includeSources: true,
+      includeSources: false,
     },
     toplevel: true,
   });

@@ -43,17 +43,12 @@ function optimizeModule(
   }
 
   const {details} = data;
-  const {code, file, transformed} = details;
+  const {file, transformed} = details;
   const result = {...details, transformed: {}};
   const {postMinifyProcess} = optimizationOptions;
 
   Object.entries(transformed).forEach(([k, t: TransformResult]) => {
-    const optimized = optimize(
-      (t: $FlowFixMe),
-      file,
-      code,
-      optimizationOptions,
-    );
+    const optimized = optimize((t: $FlowFixMe), file, optimizationOptions);
     const processed = postMinifyProcess({
       code: optimized.code,
       map: optimized.map,
@@ -66,7 +61,7 @@ function optimizeModule(
   return {type: 'code', details: result};
 }
 
-function optimize(transformed: TransformResult, file, originalCode, options) {
+function optimize(transformed: TransformResult, file, options) {
   const {code, dependencyMapName, map} = transformed;
   const optimized = optimizeCode(code, map, file, options);
 
@@ -82,7 +77,7 @@ function optimize(transformed: TransformResult, file, originalCode, options) {
   }
 
   const inputMap = transformed.map;
-  const gen = generate(optimized.ast, file, originalCode, true);
+  const gen = generate(optimized.ast, file, '', true);
 
   const min = minify.withSourceMap(
     gen.code,

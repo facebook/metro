@@ -42,7 +42,7 @@ describe('Minification:', () => {
       objectContaining({
         sourceMap: {
           content: map,
-          includeSources: true,
+          includeSources: false,
         },
       }),
     );
@@ -55,7 +55,7 @@ describe('Minification:', () => {
       objectContaining({
         sourceMap: {
           content: undefined,
-          includeSources: true,
+          includeSources: false,
         },
       }),
     );

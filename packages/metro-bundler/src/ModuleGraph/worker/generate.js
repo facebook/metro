@@ -22,7 +22,7 @@ function generate(
   sourceCode: string,
   compact: boolean,
 ) {
-  return babelGenerate(
+  const generated = babelGenerate(
     ast,
     {
       comments: false,
@@ -34,6 +34,9 @@ function generate(
     },
     sourceCode,
   );
+
+  delete generated.map.sourcesContent;
+  return generated;
 }
 
 module.exports = generate;
