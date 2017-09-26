@@ -14,7 +14,6 @@
 
 const Generator = require('./Generator');
 
-import type ModuleTransport from '../../lib/ModuleTransport';
 import type {RawMapping as BabelRawMapping} from 'babel-generator';
 
 type GeneratedCodeMapping = [number, number];

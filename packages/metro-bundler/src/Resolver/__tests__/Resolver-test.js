@@ -16,7 +16,6 @@ jest.useRealTimers();
 
 jest.mock('path');
 
-const {join: pathJoin} = require.requireActual('path');
 const DependencyGraph = jest.fn();
 jest.setMock('../../node-haste/DependencyGraph', DependencyGraph);
 let Module;
@@ -219,14 +218,14 @@ describe('Resolver', function() {
       const module = createModule('test module', ['x', 'y']);
       const resolutionResponse = new ResolutionResponseMock({
         dependencies: [module],
-        mainModuleId: 'test module',
+        mainModuleId: 'test module'
       });
 
       resolutionResponse.getResolvedDependencyPairs = module => {
         return [
           ['x', createModule('changed')],
           ['y', createModule('Y')],
-          ['abc', createModule('abc')],
+          ['abc', createModule('abc')]
         ];
       };
 
@@ -237,9 +236,9 @@ describe('Resolver', function() {
             importId,
             padRight(
               resolutionResponse.getModuleId(module),
-              importId.length + 2,
-            ),
-          ]),
+              importId.length + 2
+            )
+          ])
       );
 
       const dependencyPairs = new Map();
@@ -257,7 +256,7 @@ describe('Resolver', function() {
         name: 'test module',
         code,
         dependencyOffsets,
-        dev: false,
+        dev: false
       });
 
       expect(processedCode).toEqual(
@@ -268,15 +267,15 @@ describe('Resolver', function() {
               .get('x')
               .trim()} = x`,
           `require(${moduleIds.get('y')});require(${moduleIds.get(
-            'abc',
+            'abc'
           )}); // ${moduleIds.get('abc').trim()} = abc // ${moduleIds
             .get('y')
             .trim()} = y`,
           "require( 'z' )",
           'require( "a")',
           'require("b" )',
-          `}, ${resolutionResponse.getModuleId(module)});`,
-        ].join('\n'),
+          `}, ${resolutionResponse.getModuleId(module)});`
+        ].join('\n')
       );
     });
 
@@ -287,7 +286,7 @@ describe('Resolver', function() {
       const code = 'arbitrary(code)';
       const resolutionResponse = new ResolutionResponseMock({
         dependencies: [module],
-        mainModuleId: 'test module',
+        mainModuleId: 'test module'
       });
 
       const {code: processedCode} = depResolver.wrapModule({
@@ -296,14 +295,14 @@ describe('Resolver', function() {
         code,
         module,
         name: 'test module',
-        dev: true,
+        dev: true
       });
       expect(processedCode).toEqual(
         [
           '__d(/* test module */function(global, require, module, exports) {' +
             code,
-          `}, ${resolutionResponse.getModuleId(module)}, null, "test module");`,
-        ].join('\n'),
+          `}, ${resolutionResponse.getModuleId(module)}, null, "test module");`
+        ].join('\n')
       );
     });
 
@@ -312,7 +311,7 @@ describe('Resolver', function() {
       const module = createModule('test module');
       const resolutionResponse = new ResolutionResponseMock({
         dependencies: [module],
-        mainModuleId: 'test module',
+        mainModuleId: 'test module'
       });
       const inputMap = {version: 3, mappings: 'ARBITRARY'};
 
@@ -322,7 +321,7 @@ describe('Resolver', function() {
         module,
         name: 'test module',
         code: 'arbitrary(code)',
-        map: inputMap,
+        map: inputMap
       });
       expect(map).toBe(inputMap);
     });
@@ -330,14 +329,14 @@ describe('Resolver', function() {
     it('should resolve polyfills', async function() {
       expect.assertions(1);
       return Resolver.load({
-        projectRoot: '/root',
+        projectRoot: '/root'
       }).then(depResolver => {
         const polyfill = createPolyfill('test polyfill', []);
         const code = ['global.fetch = () => 1;'].join('');
 
         const {code: processedCode} = depResolver.wrapModule({
           module: polyfill,
-          code,
+          code
         });
 
         expect(processedCode).toEqual(
@@ -345,8 +344,8 @@ describe('Resolver', function() {
             '(function(global) {',
             'global.fetch = () => 1;',
             '\n})' +
-              "(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this);",
-          ].join(''),
+              "(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this);"
+          ].join('')
         );
       });
     });
@@ -362,7 +361,7 @@ describe('Resolver', function() {
           module = createJsonModule(id);
           resolutionResponse = new ResolutionResponseMock({
             dependencies: [module],
-            mainModuleId: id,
+            mainModuleId: id
           });
         });
       });
@@ -372,21 +371,21 @@ describe('Resolver', function() {
         const {code: processedCode} = depResolver.wrapModule({
           getModuleId: resolutionResponse.getModuleId,
           dependencyPairs: resolutionResponse.getResolvedDependencyPairs(
-            module,
+            module
           ),
           module,
           name: id,
           code,
-          dev: false,
+          dev: false
         });
 
         expect(processedCode).toEqual(
           [
             `__d(/* ${id} */function(global, require, module, exports) {`,
             `module.exports = ${code}\n}, ${resolutionResponse.getModuleId(
-              module,
-            )});`,
-          ].join(''),
+              module
+            )});`
+          ].join('')
         );
       });
     });
@@ -398,19 +397,19 @@ describe('Resolver', function() {
 
       beforeEach(() => {
         minifyCode = jest.fn((filename, code, map) =>
-          Promise.resolve({code, map}),
+          Promise.resolve({code, map})
         );
         module = createModule(id);
         module.path = '/arbitrary/path.js';
         resolutionResponse = new ResolutionResponseMock({
           dependencies: [module],
-          mainModuleId: id,
+          mainModuleId: id
         });
         sourceMap = {version: 3, sources: ['input'], mappings: 'whatever'};
         return Resolver.load({
           projectRoot: '/root',
           minifyCode,
-          postMinifyProcess: e => e,
+          postMinifyProcess: e => e
         }).then(r => {
           depResolver = r;
         });
@@ -421,13 +420,13 @@ describe('Resolver', function() {
         const minifiedCode = 'minified(code)';
         const minifiedMap = {version: 3, file: ['minified']};
         minifyCode.mockReturnValue(
-          Promise.resolve({code: minifiedCode, map: minifiedMap}),
+          Promise.resolve({code: minifiedCode, map: minifiedMap})
         );
         return depResolver
           .minifyModule({
             path: module.path,
             name: id,
-            code,
+            code
           })
           .then(({code, map}) => {
             expect(code).toEqual(minifiedCode);

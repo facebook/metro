@@ -49,7 +49,6 @@ beforeEach(() => {
 
 describe('DependencyGraph', function() {
   let Module;
-  let ResolutionRequest;
   let defaults;
   let emptyTransformOptions;
 
@@ -93,7 +92,7 @@ describe('DependencyGraph', function() {
     jest.resetModules();
 
     Module = require('../Module');
-    ResolutionRequest = require('../DependencyGraph/ResolutionRequest');
+    require('../DependencyGraph/ResolutionRequest');
 
     emptyTransformOptions = {transformer: {transform: {}}};
     defaults = {
@@ -1095,7 +1094,6 @@ describe('DependencyGraph', function() {
       // FIXME: This is broken, jest-haste-map does not fatal on modules with
       // the same name, because not fataling was required for supporting some
       // OSS projects. We'd like to enable it someday.
-
       //try {
       await processDgraph(opts, async dgraph => {});
       //   throw new Error('should be unreachable');
@@ -1273,10 +1271,8 @@ describe('DependencyGraph', function() {
         json[fieldName] = json.browser;
         delete json.browser;
       }
-
       return json;
     }
-
     function testBrowserField(fieldName) {
       it(
         'should support simple browser field in packages ("' + fieldName + '")',
@@ -2097,7 +2093,6 @@ describe('DependencyGraph', function() {
         },
       );
     }
-
     it('should fall back to browser mapping from react-native mapping', async () => {
       var root = '/root';
       setMockFileSystem({
@@ -5451,7 +5446,6 @@ describe('DependencyGraph', function() {
         dependencies.map(d => `require(${JSON.stringify(d)});`).join('\n')
       );
     }
-
     function getDependencies() {
       return dependencyGraph.getDependencies({
         entryPath: '/root/index.js',
@@ -5459,7 +5453,6 @@ describe('DependencyGraph', function() {
         options: emptyTransformOptions,
       });
     }
-
     beforeEach(function() {
       onProgress = jest.genMockFn();
       setMockFileSystem({
@@ -5590,7 +5583,6 @@ describe('DependencyGraph', function() {
           }
           return deferred.promise;
         }
-
         return returnValue;
       });
     });
@@ -5705,8 +5697,11 @@ describe('DependencyGraph', function() {
    * When running a test on the dependency graph, watch mode is enabled by
    * default, so we must end the watcher to ensure the test does not hang up
    * (regardless if the test passes or fails).
-   */
-  async function processDgraphFor(DependencyGraph, options, processor) {
+   */ async function processDgraphFor(
+    DependencyGraph,
+    options,
+    processor,
+  ) {
     const dgraph = await DependencyGraph.load(options);
     try {
       await processor(dgraph);
@@ -5714,7 +5709,6 @@ describe('DependencyGraph', function() {
       dgraph.end();
     }
   }
-
   function defer(value) {
     let resolve;
     const promise = new Promise(r => {
@@ -5722,11 +5716,9 @@ describe('DependencyGraph', function() {
     });
     return {promise, resolve: () => resolve(value)};
   }
-
   function setMockFileSystem(object) {
     return require('fs').__setMockFilesystem(object);
   }
-
   function triggerAndProcessWatchEvent(dgraphPromise, eventType, filename) {
     return Promise.resolve(dgraphPromise).then(
       dgraph =>
@@ -5736,7 +5728,6 @@ describe('DependencyGraph', function() {
         }),
     );
   }
-
   function triggerWatchEvent(eventType, filename) {
     return require('fs').__triggerWatchEvent(eventType, filename);
   }
