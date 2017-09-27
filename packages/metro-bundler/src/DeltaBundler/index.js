@@ -12,32 +12,18 @@
 
 'use strict';
 
-const DeltaPatcher = require('./DeltaPatcher');
 const DeltaTransformer = require('./DeltaTransformer');
 
 import type Bundler from '../Bundler';
 import type {BundleOptions} from '../Server';
-import type {DeltaEntries} from './DeltaTransformer';
-
-export type DeltaBundle = {|
-  +id: string,
-  +pre: DeltaEntries,
-  +post: DeltaEntries,
-  +delta: DeltaEntries,
-  +inverseDependencies: {[key: string]: $ReadOnlyArray<string>},
-  +reset: boolean,
-|};
 
 type MainOptions = {|
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   polyfillModuleNames: $ReadOnlyArray<string>,
 |};
 
-type FullBuildOptions = BundleOptions & {
+export type Options = BundleOptions & {
   +deltaBundleId: ?string,
-};
-
-export type Options = FullBuildOptions & {
   +wrapModules: boolean,
 };
 
@@ -52,7 +38,6 @@ class DeltaBundler {
   _bundler: Bundler;
   _options: MainOptions;
   _deltaTransformers: Map<string, DeltaTransformer> = new Map();
-  _deltaPatchers: Map<string, DeltaPatcher> = new Map();
   _currentId: number = 0;
 
   constructor(bundler: Bundler, options: MainOptions) {
@@ -63,22 +48,6 @@ class DeltaBundler {
   end() {
     this._deltaTransformers.forEach(DeltaTransformer => DeltaTransformer.end());
     this._deltaTransformers = new Map();
-    this._deltaPatchers = new Map();
-  }
-
-  async build(options: Options): Promise<DeltaBundle> {
-    const {deltaTransformer, id} = await this.getDeltaTransformer({
-      ...options,
-      // The Delta Bundler does not support minifying due to issues generating
-      // the source maps (T21699790).
-      minify: false,
-    });
-    const response = await deltaTransformer.getDelta();
-
-    return {
-      ...response,
-      id,
-    };
   }
 
   async getDeltaTransformer(
@@ -99,7 +68,10 @@ class DeltaBundler {
       deltaTransformer = await DeltaTransformer.create(
         this._bundler,
         this._options,
-        options,
+        {
+          ...options, // The Delta Bundler does not support minifying due to
+          minify: false, // issues generating the source maps (T21699790).
+        },
       );
 
       this._deltaTransformers.set(bundleId, deltaTransformer);
@@ -109,45 +81,6 @@ class DeltaBundler {
       deltaTransformer,
       id: bundleId,
     };
-  }
-
-  async buildFullBundle(
-    options: FullBuildOptions,
-  ): Promise<{bundle: string, numModifiedFiles: number, lastModified: Date}> {
-    const deltaPatcher = await this._getDeltaPatcher(options);
-    let bundle = deltaPatcher.stringifyCode();
-
-    if (options.sourceMapUrl) {
-      bundle += '//# sourceMappingURL=' + options.sourceMapUrl;
-    }
-
-    return {
-      bundle,
-      lastModified: deltaPatcher.getLastModifiedDate(),
-      numModifiedFiles: deltaPatcher.getLastNumModifiedFiles(),
-    };
-  }
-
-  async buildFullSourceMap(options: FullBuildOptions): Promise<string> {
-    return (await this._getDeltaPatcher(options)).stringifyMap({
-      excludeSource: options.excludeSource,
-    });
-  }
-
-  async _getDeltaPatcher(options: FullBuildOptions): Promise<DeltaPatcher> {
-    const deltaBundle = await this.build({
-      ...options,
-      wrapModules: true,
-    });
-
-    let deltaPatcher = this._deltaPatchers.get(deltaBundle.id);
-
-    if (!deltaPatcher) {
-      deltaPatcher = new DeltaPatcher();
-      this._deltaPatchers.set(deltaBundle.id, deltaPatcher);
-    }
-
-    return deltaPatcher.applyDelta(deltaBundle);
   }
 }
 

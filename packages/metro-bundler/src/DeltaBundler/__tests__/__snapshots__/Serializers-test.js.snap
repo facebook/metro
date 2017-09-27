@@ -1,0 +1,43 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Serializers should build the full JS bundle 1`] = `
+Object {
+  "bundle": "pre;
+module3;
+another;
+post;",
+  "lastModified": 2016-12-21T23:36:07.000Z,
+  "numModifiedFiles": 4,
+}
+`;
+
+exports[`Serializers should build the full JS bundle 2`] = `
+Object {
+  "bundle": "pre;
+more pre;
+modified module;
+post;
+bananas;
+apples;",
+  "lastModified": 2016-12-21T23:36:12.000Z,
+  "numModifiedFiles": 5,
+}
+`;
+
+exports[`Serializers should build the full Source Maps 1`] = `"{\\"version\\":3,\\"sources\\":[],\\"sourcesContent\\":[],\\"names\\":[],\\"mappings\\":\\"\\"}"`;
+
+exports[`Serializers should build the full Source Maps 2`] = `"{\\"version\\":3,\\"sources\\":[],\\"sourcesContent\\":[],\\"names\\":[],\\"mappings\\":\\"\\"}"`;
+
+exports[`Serializers should return the stringified delta bundle 1`] = `
+Object {
+  "bundle": "{\\"id\\":\\"1234\\",\\"pre\\":[[1,\\"pre;\\"]],\\"post\\":[[2,\\"post;\\"]],\\"delta\\":[[3,\\"module3;\\"],[4,\\"another;\\"]],\\"reset\\":true}",
+  "numModifiedFiles": 4,
+}
+`;
+
+exports[`Serializers should return the stringified delta bundle 2`] = `
+Object {
+  "bundle": "{\\"id\\":\\"1234\\",\\"pre\\":[],\\"post\\":[],\\"delta\\":[[3,\\"modified module;\\"],[4,null]]}",
+  "numModifiedFiles": 2,
+}
+`;

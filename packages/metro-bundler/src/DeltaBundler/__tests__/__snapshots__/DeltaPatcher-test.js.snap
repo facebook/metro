@@ -1,28 +1,66 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`DeltaPatcher should apply an initial delta correctly 1`] = `
-"pre
-;middle
-;post"
+Array [
+  Object {
+    "code": "pre",
+  },
+  Object {
+    "code": "middle",
+  },
+  Object {
+    "code": "post",
+  },
+]
 `;
 
 exports[`DeltaPatcher should apply many different patches correctly 1`] = `
-"pre
-;middle
-;another
-;third
-;post"
+Array [
+  Object {
+    "code": "pre",
+  },
+  Object {
+    "code": "middle",
+  },
+  Object {
+    "code": "another",
+  },
+  Object {
+    "code": "third",
+  },
+  Object {
+    "code": "post",
+  },
+]
 `;
 
 exports[`DeltaPatcher should apply many different patches correctly 2`] = `
-"new pre
-;third
-;twelve
-;post"
+Array [
+  Object {
+    "code": "new pre",
+  },
+  Object {
+    "code": "third",
+  },
+  Object {
+    "code": "twelve",
+  },
+  Object {
+    "code": "post",
+  },
+]
 `;
 
 exports[`DeltaPatcher should apply many different patches correctly 3`] = `
-"1
-;ten
-;1"
+Array [
+  Object {
+    "code": "1",
+  },
+  Object {
+    "code": "ten",
+  },
+  Object {
+    "code": "1",
+  },
+]
 `;

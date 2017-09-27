@@ -12,16 +12,16 @@
 
 'use strict';
 
-const {fromRawMappings} = require('../Bundler/source-map');
-
-import type {DeltaBundle} from './';
+import type {DeltaTransformResponse as DeltaBundle} from './DeltaTransformer';
 
 /**
  * This is a reference client for the Delta Bundler: it maintains cached the
  * last patched bundle delta and it's capable of applying new Deltas received
- * from the Bundler and stringify them to convert them into a full bundle.
+ * from the Bundler.
  */
 class DeltaPatcher {
+  static _deltaPatchers: Map<string, DeltaPatcher> = new Map();
+
   _lastBundle = {
     pre: new Map(),
     post: new Map(),
@@ -30,6 +30,17 @@ class DeltaPatcher {
   _initialized = false;
   _lastNumModifiedFiles = 0;
   _lastModifiedDate = new Date();
+
+  static get(id: string): DeltaPatcher {
+    let deltaPatcher = this._deltaPatchers.get(id);
+
+    if (!deltaPatcher) {
+      deltaPatcher = new DeltaPatcher();
+      this._deltaPatchers.set(id, deltaPatcher);
+    }
+
+    return deltaPatcher;
+  }
 
   /**
    * Applies a Delta Bundle to the current bundle.
@@ -81,23 +92,7 @@ class DeltaPatcher {
     return this._lastModifiedDate;
   }
 
-  /**
-   * Converts the current delta bundle to a standard string bundle, ready to
-   * be interpreted by any JS VM.
-   */
-  stringifyCode(): string {
-    const code = this._getAllModules().map(m => m.code);
-
-    return code.join('\n;');
-  }
-
-  stringifyMap({excludeSource}: {excludeSource?: boolean}): string {
-    const mappings = fromRawMappings(this._getAllModules());
-
-    return mappings.toString(undefined, {excludeSource});
-  }
-
-  _getAllModules() {
+  getAllModules() {
     return [].concat(
       Array.from(this._lastBundle.pre.values()),
       Array.from(this._lastBundle.modules.values()),

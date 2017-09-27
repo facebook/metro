@@ -16,8 +16,7 @@ const AssetServer = require('../AssetServer');
 const Bundler = require('../Bundler');
 const DeltaBundler = require('../DeltaBundler');
 const MultipartResponse = require('./MultipartResponse');
-
-const crypto = require('crypto');
+const Serializers = require('../DeltaBundler/Serializers');
 const debug = require('debug')('Metro:Server');
 const defaults = require('../defaults');
 const emptyFunction = require('fbjs/lib/emptyFunction');
@@ -37,6 +36,7 @@ import type {BundlingOptions} from '../Bundler';
 import type Bundle from '../Bundler/Bundle';
 import type HMRBundle from '../Bundler/HMRBundle';
 import type {Reporter} from '../lib/reporting';
+import type {Options as DeltaBundlerOptions} from '../DeltaBundler/Serializers';
 import type {
   GetTransformOptions,
   PostProcessModules,
@@ -469,7 +469,7 @@ class Server {
     this._changeWatchers = [];
   }
 
-  _processDebugRequest(reqUrl: string, res: ServerResponse) {
+  _processdebugRequest(reqUrl: string, res: ServerResponse) {
     let ret = '<!doctype html>';
     const pathname = url.parse(reqUrl).pathname;
     /* $FlowFixMe: pathname would be null for an invalid URL */
@@ -768,8 +768,11 @@ class Server {
       requestType = 'map';
     } else if (pathname.match(/\.assets$/)) {
       requestType = 'assets';
+    } else if (pathname.match(/\.delta$/)) {
+      this._processDeltaRequest(req, res);
+      return;
     } else if (pathname.match(/^\/debug/)) {
-      this._processDebugRequest(req.url, res);
+      this._processdebugRequest(req.url, res);
       return;
     } else if (pathname.match(/^\/onchange\/?$/)) {
       this._processOnChangeRequest(req, res);
@@ -887,7 +890,7 @@ class Server {
   _prepareDeltaBundler(
     req: IncomingMessage,
     mres: MultipartResponse,
-  ): {options: BundleOptions, buildID: string} {
+  ): {options: DeltaBundlerOptions, buildID: string} {
     const options = this._getOptionsFromUrl(req.url);
 
     const buildID = this.getNewBuildID();
@@ -917,6 +920,52 @@ class Server {
     return {options, buildID};
   }
 
+  async _processDeltaRequest(req: IncomingMessage, res: ServerResponse) {
+    const mres = MultipartResponse.wrap(req, res);
+    const {options, buildID} = this._prepareDeltaBundler(req, mres);
+
+    const requestingBundleLogEntry = log(
+      createActionStartEntry({
+        action_name: 'Requesting delta',
+        bundle_url: req.url,
+        entry_point: options.entryFile,
+      }),
+    );
+
+    let output;
+
+    try {
+      output = await Serializers.deltaBundle(this._deltaBundler, {
+        ...options,
+        deltaBundleId: options.deltaBundleId,
+      });
+    } catch (error) {
+      this._handleError(res, this.optionsHash(options), error);
+
+      this._reporter.update({
+        buildID,
+        type: 'bundle_build_failed',
+      });
+
+      return;
+    }
+
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Content-Length', String(Buffer.byteLength(output.bundle)));
+    res.end(output.bundle);
+
+    this._reporter.update({
+      buildID,
+      type: 'bundle_build_done',
+    });
+
+    debug('Finished response');
+    log({
+      ...createActionEndEntry(requestingBundleLogEntry),
+      outdated_modules: output.numModifiedFiles,
+    });
+  }
+
   async _processBundleUsingDeltaBundler(
     req: IncomingMessage,
     res: ServerResponse,
@@ -936,7 +985,7 @@ class Server {
     let result;
 
     try {
-      result = await this._deltaBundler.buildFullBundle({
+      result = await Serializers.fullBundle(this._deltaBundler, {
         ...options,
         deltaBundleId: this.optionsHash(options),
       });
@@ -1006,7 +1055,7 @@ class Server {
     let sourceMap;
 
     try {
-      sourceMap = await this._deltaBundler.buildFullSourceMap({
+      sourceMap = await Serializers.fullSourceMap(this._deltaBundler, {
         ...options,
         deltaBundleId: this.optionsHash(options),
       });
@@ -1126,7 +1175,7 @@ class Server {
     this._reporter.update({error, type: 'bundling_error'});
   }
 
-  _getOptionsFromUrl(reqUrl: string): BundleOptions {
+  _getOptionsFromUrl(reqUrl: string): BundleOptions & DeltaBundlerOptions {
     // `true` to parse the query param as an object.
     const urlObj = url.parse(reqUrl, true);
 
@@ -1145,6 +1194,7 @@ class Server {
             part === 'runModule' ||
             part === 'bundle' ||
             part === 'map' ||
+            part === 'delta' ||
             part === 'assets'
           ) {
             return false;
@@ -1158,6 +1208,9 @@ class Server {
       /* $FlowFixMe: `query` could be empty for an invalid URL */
       urlObj.query.platform ||
       parsePlatformFilePath(pathname, this._platforms).platform;
+
+    /* $FlowFixMe: `query` could be empty for an invalid URL */
+    const deltaBundleId = urlObj.query.deltaBundleId;
 
     /* $FlowFixMe: `query` could be empty for an invalid URL */
     const assetPlugin = urlObj.query.assetPlugin;
@@ -1176,11 +1229,12 @@ class Server {
     return {
       sourceMapUrl: url.format({
         hash: urlObj.hash,
-        pathname: pathname.replace(/\.bundle$/, '.map'),
+        pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
         query: urlObj.query,
         search: urlObj.search,
       }),
       entryFile,
+      deltaBundleId,
       dev,
       minify,
       excludeSource,

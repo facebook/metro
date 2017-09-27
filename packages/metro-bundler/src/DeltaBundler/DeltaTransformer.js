@@ -258,13 +258,13 @@ class DeltaTransformer extends EventEmitter {
     // First, get the modules correspondant to all the module names defined in
     // the `runBeforeMainModule` config variable. Then, append the entry point
     // module so the last thing that gets required is the entry point.
-    return new Map(
+    const append = new Map(
       this._bundleOptions.runBeforeMainModule
         .map(path => this._resolver.getModuleForPath(path))
         .concat(entryPointModule)
         .map(this._getModuleId)
         .map(moduleId => {
-          const code = `;require(${JSON.stringify(moduleId)});`;
+          const code = `;require(${JSON.stringify(moduleId)})`;
           const name = 'require-' + String(moduleId);
           const path = name + '.js';
 
@@ -280,6 +280,20 @@ class DeltaTransformer extends EventEmitter {
           ];
         }),
     );
+
+    if (this._bundleOptions.sourceMapUrl) {
+      const code = '//# sourceMappingURL=' + this._bundleOptions.sourceMapUrl;
+
+      append.set(this._getModuleId({path: '/sourcemap.js'}), {
+        code,
+        map: null,
+        name: 'sourcemap.js',
+        path: '/sourcemap.js',
+        source: code,
+      });
+    }
+
+    return append;
   }
 
   /**
@@ -355,7 +369,7 @@ class DeltaTransformer extends EventEmitter {
     return [
       this._getModuleId(module),
       {
-        code: wrapped.code,
+        code: ';' + wrapped.code,
         map,
         name,
         source: metadata.source,

@@ -41,16 +41,16 @@ describe('DeltaPatcher', () => {
   });
 
   it('should apply an initial delta correctly', () => {
-    const result = deltaPatcher
-      .applyDelta({
-        reset: 1,
-        pre: new Map([[1, {code: 'pre'}]]),
-        post: new Map([[2, {code: 'post'}]]),
-        delta: new Map([[3, {code: 'middle'}]]),
-      })
-      .stringifyCode();
-
-    expect(result).toMatchSnapshot();
+    expect(
+      deltaPatcher
+        .applyDelta({
+          reset: 1,
+          pre: new Map([[1, {code: 'pre'}]]),
+          post: new Map([[2, {code: 'post'}]]),
+          delta: new Map([[3, {code: 'middle'}]]),
+        })
+        .getAllModules(),
+    ).toMatchSnapshot();
   });
 
   it('should apply many different patches correctly', () => {
@@ -71,7 +71,7 @@ describe('DeltaPatcher', () => {
         post: new Map(),
         delta: new Map([[2, {code: 'another'}], [87, {code: 'third'}]]),
       })
-      .stringifyCode();
+      .getAllModules();
 
     expect(result).toMatchSnapshot();
 
@@ -86,7 +86,7 @@ describe('DeltaPatcher', () => {
         post: new Map(),
         delta: new Map([[2, null], [12, {code: 'twelve'}]]),
       })
-      .stringifyCode();
+      .getAllModules();
 
     expect(anotherResult).toMatchSnapshot();
 
@@ -98,69 +98,59 @@ describe('DeltaPatcher', () => {
           delta: new Map([[12, {code: 'ten'}]]),
           reset: true,
         })
-        .stringifyCode(),
+        .getAllModules(),
     ).toMatchSnapshot();
   });
 
   it('should return the number of modified files in the last Delta', () => {
-    deltaPatcher
-      .applyDelta({
-        reset: 1,
-        pre: new Map([[1, {code: 'pre'}]]),
-        post: new Map([[2, {code: 'post'}]]),
-        delta: new Map([[3, {code: 'middle'}]]),
-      })
-      .stringifyCode();
+    deltaPatcher.applyDelta({
+      reset: 1,
+      pre: new Map([[1, {code: 'pre'}]]),
+      post: new Map([[2, {code: 'post'}]]),
+      delta: new Map([[3, {code: 'middle'}]]),
+    });
 
     expect(deltaPatcher.getLastNumModifiedFiles()).toEqual(3);
 
-    deltaPatcher
-      .applyDelta({
-        reset: 1,
-        pre: new Map([[1, null]]),
-        post: new Map(),
-        delta: new Map([[3, {code: 'different'}]]),
-      })
-      .stringifyCode();
+    deltaPatcher.applyDelta({
+      reset: 1,
+      pre: new Map([[1, null]]),
+      post: new Map(),
+      delta: new Map([[3, {code: 'different'}]]),
+    });
 
     // A deleted module counts as a modified file.
     expect(deltaPatcher.getLastNumModifiedFiles()).toEqual(2);
   });
 
   it('should return the time it was last modified', () => {
-    deltaPatcher
-      .applyDelta({
-        reset: 1,
-        pre: new Map([[1, {code: 'pre'}]]),
-        post: new Map([[2, {code: 'post'}]]),
-        delta: new Map([[3, {code: 'middle'}]]),
-      })
-      .stringifyCode();
+    deltaPatcher.applyDelta({
+      reset: 1,
+      pre: new Map([[1, {code: 'pre'}]]),
+      post: new Map([[2, {code: 'post'}]]),
+      delta: new Map([[3, {code: 'middle'}]]),
+    });
 
     expect(deltaPatcher.getLastModifiedDate().getTime()).toEqual(INITIAL_TIME);
     setCurrentTime(INITIAL_TIME + 1000);
 
     // Apply empty delta
-    deltaPatcher
-      .applyDelta({
-        reset: 1,
-        pre: new Map(),
-        post: new Map(),
-        delta: new Map(),
-      })
-      .stringifyCode();
+    deltaPatcher.applyDelta({
+      reset: 1,
+      pre: new Map(),
+      post: new Map(),
+      delta: new Map(),
+    });
 
     expect(deltaPatcher.getLastModifiedDate().getTime()).toEqual(INITIAL_TIME);
     setCurrentTime(INITIAL_TIME + 2000);
 
-    deltaPatcher
-      .applyDelta({
-        reset: 1,
-        pre: new Map(),
-        post: new Map([[2, {code: 'newpost'}]]),
-        delta: new Map(),
-      })
-      .stringifyCode();
+    deltaPatcher.applyDelta({
+      reset: 1,
+      pre: new Map(),
+      post: new Map([[2, {code: 'newpost'}]]),
+      delta: new Map(),
+    });
 
     expect(deltaPatcher.getLastModifiedDate().getTime()).toEqual(
       INITIAL_TIME + 2000,
