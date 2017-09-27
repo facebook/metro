@@ -110,7 +110,10 @@ describe('Startup section optimization', () => {
       codeOffset + startupSectionLength - 1,
     );
     expect(startupSection.toString()).toBe(
-      preloaded.concat([requireCall]).map(expectedCode).join('\n'),
+      preloaded
+        .concat([requireCall])
+        .map(expectedCode)
+        .join('\n'),
     );
 
     preloaded.forEach(m => {

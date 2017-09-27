@@ -12,7 +12,10 @@
 
 'use strict';
 
-jest.useRealTimers().unmock('fs').unmock('graceful-fs');
+jest
+  .useRealTimers()
+  .unmock('fs')
+  .unmock('graceful-fs');
 
 const Metro = require('../..');
 const path = require('path');

@@ -137,7 +137,10 @@ class FileBasedCache {
     writeFileAtomicSync(
       cacheFilePath.metadata,
       JSON.stringify([
-        crypto.createHash('sha1').update(result.code).digest('hex'),
+        crypto
+          .createHash('sha1')
+          .update(result.code)
+          .digest('hex'),
         hashSourceCode(props),
         result.dependencies,
         result.dependencyOffsets,

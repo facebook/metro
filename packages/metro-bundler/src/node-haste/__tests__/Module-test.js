@@ -163,10 +163,14 @@ describe('Module', () => {
     });
 
     it('exposes file contents as `code` property on the data exposed by `read()`', () =>
-      createModule().read().then(({code}) => expect(code).toBe(fileContents)));
+      createModule()
+        .read()
+        .then(({code}) => expect(code).toBe(fileContents)));
 
     it('exposes file contents via the `getCode()` method', () =>
-      createModule().getCode().then(code => expect(code).toBe(fileContents)));
+      createModule()
+        .getCode()
+        .then(code => expect(code).toBe(fileContents)));
   });
 
   describe('Custom Code Transform', () => {

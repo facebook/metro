@@ -320,9 +320,12 @@ class Bundle extends BundleBase {
   }
 
   getEtag() {
-    /* $FlowFixMe: we must pass options, or rename the
-     * base `getSource` function, as it does not actually need options. */
-    var eTag = crypto.createHash('md5').update(this.getSource()).digest('hex');
+    var eTag = crypto
+      .createHash('md5')
+      /* $FlowFixMe: we must pass options, or rename the
+       * base `getSource` function, as it does not actually need options. */
+      .update(this.getSource())
+      .digest('hex');
     return eTag;
   }
 

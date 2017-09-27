@@ -180,7 +180,10 @@ class Bundler {
       'metro-bundler-cache',
       VERSION,
       opts.cacheVersion,
-      stableProjectRoots.join(',').split(pathSeparator).join('-'),
+      stableProjectRoots
+        .join(',')
+        .split(pathSeparator)
+        .join('-'),
       transformModuleHash,
     ];
 
@@ -260,7 +263,10 @@ class Bundler {
      * error found when Flow v0.54 was deployed. To see the error delete this
      * comment and run Flow. */
     return this._resolverPromise.then(resolver =>
-      resolver.getDependencyGraph().getWatcher().end(),
+      resolver
+        .getDependencyGraph()
+        .getWatcher()
+        .end(),
     );
   }
 
