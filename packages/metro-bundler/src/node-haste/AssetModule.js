@@ -54,9 +54,7 @@ class AssetModule extends Module {
   }
 
   getName() {
-    return super
-      .getName()
-      .then(id => id.replace(/\/[^\/]+$/, `/${this._name}.${this._type}`));
+    return super.getName().replace(/\/[^\/]+$/, `/${this._name}.${this._type}`);
   }
 
   hash() {

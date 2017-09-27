@@ -318,11 +318,8 @@ class DeltaTransformer extends EventEmitter {
     transformOptions: JSTransformerOptions,
     dependencyPairs: ShallowDependencies,
   ): Promise<[number, ?DeltaEntry]> {
-    const [name, metadata] = await Promise.all([
-      module.getName(),
-      this._getMetadata(module, transformOptions),
-    ]);
-
+    const name = module.getName();
+    const metadata = await this._getMetadata(module, transformOptions);
     const dependencyPairsForModule =
       dependencyPairs.get(module.path) || new Map();
 

@@ -32,7 +32,7 @@ const {UnableToResolveError, isRelativeImport} = ModuleResolution;
 
 export type Packageish = {
   isHaste(): boolean,
-  getName(): Promise<string>,
+  getName(): string,
   path: string,
   redirectRequire(toModuleName: string): string | false,
   getMain(): string,
@@ -42,7 +42,7 @@ export type Packageish = {
 export type Moduleish = {
   +path: string,
   isHaste(): boolean,
-  getName(): Promise<string>,
+  getName(): string,
   getPackage(): ?Packageish,
   hash(): string,
   readCached(transformOptions: TransformWorkerOptions): CachedReadResult,

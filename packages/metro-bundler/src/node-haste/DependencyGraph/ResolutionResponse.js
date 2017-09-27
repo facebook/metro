@@ -74,9 +74,9 @@ class ResolutionResponse<TModule: {hash(): string}, TOptions> {
   }
 
   finalize(): Promise<this> {
-    /* $FlowFixMe: _mainModule is not initialized in the constructor. */
-    return this._mainModule.getName().then(id => {
-      this.mainModuleId = id;
+    return Promise.resolve().then(() => {
+      /* $FlowFixMe: _mainModule is not initialized in the constructor. */
+      this.mainModuleId = this._mainModule.getName();
       this._finalized = true;
       return this;
     });

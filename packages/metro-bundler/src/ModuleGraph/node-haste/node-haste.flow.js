@@ -24,7 +24,7 @@ export type Extensions = Array<string>;
 export type Module = {
   path: Path,
   type: 'Module',
-  getName(): Promise<ModuleID>,
+  getName(): ModuleID,
   getPackage(): ?Package,
   isHaste(): Promise<boolean>,
 };
@@ -34,7 +34,7 @@ export type Package = {
   root: Path,
   type: 'Package',
   getMain(): Path,
-  getName(): Promise<ModuleID>,
+  getName(): ModuleID,
   isHaste(): Promise<boolean>,
   redirectRequire(id: ModuleID): Path | false,
 };

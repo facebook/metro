@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @emails oncall+javascript_foundation
  * @format
  */
 
@@ -98,19 +99,21 @@ describe('Module', () => {
         mockIndexFile(source);
       });
 
-      it('extracts the module name from the header', () =>
-        module.getName().then(name => expect(name).toEqual(moduleId)));
+      it('extracts the module name from the header', () => {
+        expect(module.getName()).toEqual(moduleId);
+      });
 
-      it('identifies the module as haste module', () =>
-        expect(module.isHaste()).toBe(true));
+      it('identifies the module as haste module', () => {
+        expect(module.isHaste()).toBe(true);
+      });
 
       it('does not transform the file in order to access the name', () => {
         const transformCode = jest
           .genMockFn()
           .mockReturnValue(Promise.resolve());
-        return createModule({transformCode})
-          .getName()
-          .then(() => expect(transformCode).not.toBeCalled());
+
+        createModule({transformCode}).getName();
+        expect(transformCode).not.toBeCalled();
       });
 
       it('does not transform the file in order to access the haste status', () => {
@@ -127,8 +130,9 @@ describe('Module', () => {
         mockIndexFile('arbitrary(code);');
       });
 
-      it('uses the file name as module name', () =>
-        module.getName().then(name => expect(name).toEqual(fileName)));
+      it('uses the file name as module name', () => {
+        expect(module.getName()).toEqual(fileName);
+      });
 
       it('does not identify the module as haste module', () =>
         expect(module.isHaste()).toBe(false));
@@ -137,9 +141,9 @@ describe('Module', () => {
         const transformCode = jest
           .genMockFn()
           .mockReturnValue(Promise.resolve());
-        return createModule({transformCode})
-          .getName()
-          .then(() => expect(transformCode).not.toBeCalled());
+
+        createModule({transformCode}).getName();
+        expect(transformCode).not.toBeCalled();
       });
 
       it('does not transform the file in order to access the haste status', () => {

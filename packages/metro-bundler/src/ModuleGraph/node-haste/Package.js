@@ -49,8 +49,8 @@ module.exports = class Package {
     return path.join(this.root, main);
   }
 
-  getName(): Promise<string> {
-    return Promise.resolve(nullthrows(this.data.name));
+  getName(): string {
+    return nullthrows(this.data.name);
   }
 
   isHaste(): boolean {

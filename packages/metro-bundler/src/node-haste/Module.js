@@ -158,31 +158,28 @@ class Module {
     return this.read(transformOptions).then(({map}) => map);
   }
 
-  getName(): Promise<string> {
-    return Promise.resolve().then(() => {
-      const name = this._getHasteName();
-      if (name != null) {
-        return name;
-      }
+  getName(): string {
+    const name = this._getHasteName();
+    if (name != null) {
+      return name;
+    }
 
-      const p = this.getPackage();
+    const p = this.getPackage();
 
-      if (!p) {
-        // Name is full path
-        return this.path;
-      }
+    if (!p) {
+      // Name is full path
+      return this.path;
+    }
 
-      return p.getName().then(packageName => {
-        if (!packageName) {
-          return this.path;
-        }
+    const packageName = p.getName();
+    if (!packageName) {
+      return this.path;
+    }
 
-        return joinPath(packageName, relativePath(p.root, this.path)).replace(
-          /\\/g,
-          '/',
-        );
-      });
-    });
+    return joinPath(packageName, relativePath(p.root, this.path)).replace(
+      /\\/g,
+      '/',
+    );
   }
 
   getPackage() {

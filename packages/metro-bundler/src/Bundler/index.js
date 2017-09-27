@@ -744,29 +744,30 @@ class Bundler {
       return Promise.resolve(moduleTransport);
     }
 
-    return Promise.all([
-      module.getName(),
-      module.read(transformOptions),
-    ]).then(([name, {code, dependencies, dependencyOffsets, map, source}]) => {
-      const {preloadedModules} = options;
-      const isPolyfill = module.isPolyfill();
-      const preloaded =
-        module.path === entryFilePath ||
-        isPolyfill ||
-        (preloadedModules &&
-          hasOwnProperty.call(preloadedModules, module.path));
+    return module
+      .read(transformOptions)
+      .then(({code, dependencies, dependencyOffsets, map, source}) => {
+        const name = module.getName();
 
-      return new ModuleTransport({
-        name,
-        id: moduleId,
-        code,
-        map,
-        meta: {dependencies, dependencyOffsets, preloaded, dependencyPairs},
-        polyfill: isPolyfill,
-        sourceCode: source,
-        sourcePath: module.path,
+        const {preloadedModules} = options;
+        const isPolyfill = module.isPolyfill();
+        const preloaded =
+          module.path === entryFilePath ||
+          isPolyfill ||
+          (preloadedModules &&
+            hasOwnProperty.call(preloadedModules, module.path));
+
+        return new ModuleTransport({
+          name,
+          id: moduleId,
+          code,
+          map,
+          meta: {dependencies, dependencyOffsets, preloaded, dependencyPairs},
+          polyfill: isPolyfill,
+          sourceCode: source,
+          sourcePath: module.path,
+        });
       });
-    });
   }
 
   generateAssetObjAndCode(
@@ -856,16 +857,14 @@ class Bundler {
     assetPlugins: Array<string> = [],
     platform: ?string = null,
   ) {
-    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.54 was deployed. To see the error delete this
-     * comment and run Flow. */
-    return Promise.all([
-      module.getName(),
-      this.generateAssetObjAndCode(module, assetPlugins, platform),
-    ]).then(([name, {asset, code, meta}]) => {
+    return this.generateAssetObjAndCode(
+      module,
+      assetPlugins,
+      platform,
+    ).then(({asset, code, meta}) => {
       bundle.addAsset(asset);
       return new ModuleTransport({
-        name,
+        name: module.getName(),
         id: moduleId,
         code,
         meta,

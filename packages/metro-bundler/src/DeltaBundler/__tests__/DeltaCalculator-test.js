@@ -55,7 +55,7 @@ describe('DeltaCalculator', () => {
     return {
       path,
       name,
-      async getName() {
+      getName() {
         return name;
       },
       isAsset() {

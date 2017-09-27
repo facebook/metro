@@ -80,8 +80,8 @@ class Package {
     return !!this.read().name;
   }
 
-  getName(): Promise<string> {
-    return Promise.resolve().then(() => this.read().name);
+  getName(): string {
+    return this.read().name;
   }
 
   invalidate() {

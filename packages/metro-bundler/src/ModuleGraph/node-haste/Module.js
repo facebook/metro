@@ -42,8 +42,8 @@ module.exports = class Module {
     return Promise.reject(new Error('not implemented'));
   }
 
-  getName(): Promise<string> {
-    return Promise.resolve(this.name);
+  getName(): string {
+    return this.name;
   }
 
   getPackage() {

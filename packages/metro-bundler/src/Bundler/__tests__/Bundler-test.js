@@ -67,11 +67,11 @@ describe('Bundler', function() {
       path,
       resolution,
       getDependencies: () => Promise.resolve(dependencies),
-      getName: () => Promise.resolve(id),
+      getName: () => id,
       isJSON: () => isJSON,
       isAsset: () => isAsset,
       isPolyfill: () => isPolyfill,
-      read: () => ({
+      read: async () => ({
         code: 'arbitrary',
         source: 'arbitrary',
       }),

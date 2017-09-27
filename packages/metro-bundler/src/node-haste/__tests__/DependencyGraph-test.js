@@ -72,16 +72,13 @@ describe('DependencyGraph', function() {
       .then(({dependencies}) =>
         Promise.all(
           dependencies.map(dep =>
-            Promise.all([
-              dep.getName(),
-              dep.getDependencies(),
-            ]).then(([name, moduleDependencies]) => ({
+            dep.getDependencies().then(moduleDependencies => ({
               path: dep.path,
               isJSON: dep.isJSON(),
               isAsset: dep.isAsset(),
               isPolyfill: dep.isPolyfill(),
               resolution: dep.resolution,
-              id: name,
+              id: dep.getName(),
               dependencies: moduleDependencies,
             })),
           ),
@@ -103,7 +100,7 @@ describe('DependencyGraph', function() {
       platforms: new Set(['ios', 'android']),
       useWatchman: false,
       // This pattern is not expected to match anything.
-      ignorePattern: /🚇/,
+      ignorePattern: /.^/,
       maxWorkers: 1,
       moduleOptions: {transformCache: require('TransformCaching').mocked()},
       resetCache: true,
@@ -5690,13 +5687,13 @@ describe('DependencyGraph', function() {
 
     it('returns correctly a JS module', async () => {
       const module = dependencyGraph.getModuleForPath('/root/index.js');
-      expect(await module.getName()).toBe('/root/index.js');
+      expect(module.getName()).toBe('/root/index.js');
       expect(module.isAsset()).toBe(false);
     });
 
     it('returns correctly an asset module', async () => {
       const module = dependencyGraph.getModuleForPath('/root/imgs/a.png');
-      expect(await module.getName()).toBe('/root/imgs/a.png');
+      expect(module.getName()).toBe('/root/imgs/a.png');
       expect(module.isAsset()).toBe(true);
     });
   });
