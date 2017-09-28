@@ -132,14 +132,18 @@ async function traverseDependenciesForSingleFile(
           dependencyGraph,
           transformOptions,
           edges,
+          () => {
+            total++;
+            onProgress(numProcessed, total);
+          },
+          () => {
+            numProcessed++;
+            onProgress(numProcessed, total);
+          },
         );
       } else {
         newDependencies = new Set();
       }
-
-      numProcessed += newDependencies.size + 1;
-      total += newDependencies.size;
-      onProgress(numProcessed, total);
 
       return newDependencies;
     }),
@@ -177,6 +181,8 @@ async function addDependency(
   dependencyGraph: DependencyGraph,
   transformOptions: JSTransformerOptions,
   edges: DependencyEdges,
+  onDependencyAdd: () => mixed,
+  onDependencyAdded: () => mixed,
 ): Promise<Set<string>> {
   const parentModule = dependencyGraph.getModuleForPath(parentEdge.path);
   const module = dependencyGraph.resolveDependency(
@@ -196,6 +202,8 @@ async function addDependency(
 
     return new Set();
   }
+
+  onDependencyAdd();
 
   // Create the new edge and traverse all its subdependencies, looking for new
   // subdependencies recursively.
@@ -219,6 +227,8 @@ async function addDependency(
         dependencyGraph,
         transformOptions,
         edges,
+        onDependencyAdd,
+        onDependencyAdded,
       ),
     ),
   );
@@ -226,6 +236,8 @@ async function addDependency(
   for (const newDependency of flatten(added)) {
     addedDependencies.add(newDependency);
   }
+
+  onDependencyAdded();
 
   return addedDependencies;
 }
