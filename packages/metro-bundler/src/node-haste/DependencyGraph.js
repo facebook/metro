@@ -237,6 +237,22 @@ class DependencyGraph extends EventEmitter {
     return Promise.resolve(this._moduleCache.getAllModules());
   }
 
+  resolveDependency(
+    fromModule: Module,
+    toModuleName: string,
+    platform: ?string,
+  ): Module {
+    const req = new ResolutionRequest({
+      moduleResolver: this._moduleResolver,
+      entryPath: fromModule.path,
+      helpers: this._helpers,
+      platform: platform || null,
+      moduleCache: this._moduleCache,
+    });
+
+    return req.resolveDependency(fromModule, toModuleName);
+  }
+
   getDependencies<T: {+transformer: JSTransformerOptions}>({
     entryPath,
     options,
