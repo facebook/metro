@@ -143,15 +143,12 @@ const DEFAULT = ({
   getEnableBabelRCLookup: () => false,
   getPlatforms: () => [],
   getPolyfillModuleNames: () => [],
-  getProjectRoots: () => {
-    // We assume the default project path is two levels up from
-    // node_modules/metro-bundler/
-    return [path.resolve(__dirname, '../..')];
-  },
+  // We assume the default project path is two levels up from
+  // node_modules/metro-bundler/
+  getProjectRoots: () => [path.resolve(__dirname, '../..')],
   getProvidesModuleNodeModules: () => providesModuleNodeModules.slice(),
   getSourceExts: () => [],
-  getTransformModulePath: () =>
-    require.resolve('metro-bundler/src/transformer.js'),
+  getTransformModulePath: () => require.resolve('./transformer.js'),
   getTransformOptions: async () => ({}),
   getPolyfills: () => [],
   postMinifyProcess: x => x,
