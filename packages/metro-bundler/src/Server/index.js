@@ -1142,8 +1142,16 @@ class Server {
       );
   }
 
-  _sourceMapForURL(reqUrl: string): Promise<SourceMap> {
-    const options = this._getOptionsFromUrl(reqUrl);
+  async _sourceMapForURL(reqUrl: string): Promise<SourceMap> {
+    const options: DeltaBundlerOptions = this._getOptionsFromUrl(reqUrl);
+
+    if (this._opts.useDeltaBundler) {
+      return await Serializers.fullSourceMapObject(this._deltaBundler, {
+        ...options,
+        deltaBundleId: this.optionsHash(options),
+      });
+    }
+
     // We're not properly reporting progress here. Reporting should be done
     // from within that function.
     const building = this.useCachedOrUpdateOrCreateBundle(

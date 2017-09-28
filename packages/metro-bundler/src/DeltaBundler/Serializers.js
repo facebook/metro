@@ -17,6 +17,7 @@ const DeltaPatcher = require('./DeltaPatcher');
 const {fromRawMappings} = require('../Bundler/source-map');
 
 import type {BundleOptions} from '../Server';
+import type {MappingsMap} from '../lib/SourceMap';
 import type DeltaBundler, {Options as BuildOptions} from './';
 import type {DeltaTransformResponse} from './DeltaTransformer';
 
@@ -73,6 +74,22 @@ async function fullSourceMap(
   });
 }
 
+async function fullSourceMapObject(
+  deltaBundler: DeltaBundler,
+  options: Options,
+): Promise<MappingsMap> {
+  const {id, delta} = await _build(deltaBundler, {
+    ...options,
+    wrapModules: true,
+  });
+
+  const deltaPatcher = DeltaPatcher.get(id).applyDelta(delta);
+
+  return fromRawMappings(deltaPatcher.getAllModules()).toMap(undefined, {
+    excludeSource: options.excludeSource,
+  });
+}
+
 /**
  * Returns the full JS bundle, which can be directly parsed by a JS interpreter
  */
@@ -113,4 +130,5 @@ module.exports = {
   deltaBundle,
   fullBundle,
   fullSourceMap,
+  fullSourceMapObject,
 };
