@@ -25,7 +25,7 @@ import type Resolver from '../Resolver';
 import type {MappingsMap} from '../lib/SourceMap';
 import type Module from '../node-haste/Module';
 import type {Options as BundleOptions} from './';
-import type {ShallowDependencies} from './DeltaCalculator';
+import type {DependencyEdges} from './traverseDependencies';
 
 type DeltaEntry = {|
   +code: string,
@@ -118,7 +118,7 @@ class DeltaTransformer extends EventEmitter {
 
     const deltaCalculator = new DeltaCalculator(
       bundler,
-      resolver,
+      resolver.getDependencyGraph(),
       bundleOptions,
     );
 
@@ -171,14 +171,14 @@ class DeltaTransformer extends EventEmitter {
     // Calculate the delta of modules.
     const {modified, deleted, reset} = await this._deltaCalculator.getDelta();
 
-    const transformerOptions = this._deltaCalculator.getTransformerOptions();
-    const dependencyPairs = this._deltaCalculator.getShallowDependencies();
+    const transformerOptions = await this._deltaCalculator.getTransformerOptions();
+    const dependencyEdges = this._deltaCalculator.getDependencyEdges();
 
     // Get the transformed source code of each modified/added module.
     const modifiedDelta = await this._transformModules(
       Array.from(modified.values()),
       transformerOptions,
-      dependencyPairs,
+      dependencyEdges,
     );
 
     deleted.forEach(id => {
@@ -188,19 +188,17 @@ class DeltaTransformer extends EventEmitter {
     // Return the source code that gets prepended to all the modules. This
     // contains polyfills and startup code (like the require() implementation).
     const prependSources = reset
-      ? await this._getPrepend(transformerOptions, dependencyPairs)
+      ? await this._getPrepend(transformerOptions, dependencyEdges)
       : new Map();
 
     // Return the source code that gets appended to all the modules. This
     // contains the require() calls to startup the execution of the modules.
     const appendSources = reset
-      ? await this._getAppend(dependencyPairs)
+      ? await this._getAppend(dependencyEdges)
       : new Map();
 
     // Inverse dependencies are needed for HMR.
-    const inverseDependencies = this._getInverseDependencies(
-      this._deltaCalculator.getInverseDependencies(),
-    );
+    const inverseDependencies = this._getInverseDependencies(dependencyEdges);
 
     return {
       pre: prependSources,
@@ -213,7 +211,7 @@ class DeltaTransformer extends EventEmitter {
 
   async _getPrepend(
     transformOptions: JSTransformerOptions,
-    dependencyPairs: ShallowDependencies,
+    dependencyEdges: DependencyEdges,
   ): Promise<DeltaEntries> {
     // Get all the polyfills from the relevant option params (the
     // `getPolyfills()` method and the `polyfillModuleNames` variable).
@@ -240,13 +238,11 @@ class DeltaTransformer extends EventEmitter {
     return await this._transformModules(
       modules,
       transformOptions,
-      dependencyPairs,
+      dependencyEdges,
     );
   }
 
-  async _getAppend(
-    dependencyPairs: ShallowDependencies,
-  ): Promise<DeltaEntries> {
+  async _getAppend(dependencyEdges: DependencyEdges): Promise<DeltaEntries> {
     // Get the absolute path of the entry file, in order to be able to get the
     // actual correspondant module (and its moduleId) to be able to add the
     // correct require(); call at the very end of the bundle.
@@ -300,13 +296,13 @@ class DeltaTransformer extends EventEmitter {
    * Converts the paths in the inverse dependendencies to module ids.
    */
   _getInverseDependencies(
-    inverseDependencies: Map<string, Set<string>>,
+    dependencyEdges: DependencyEdges,
   ): {[key: string]: $ReadOnlyArray<string>} {
     const output = Object.create(null);
 
-    for (const [key, dependencies] of inverseDependencies) {
-      output[this._getModuleId({path: key})] = Array.from(
-        dependencies,
+    for (const [path, {inverseDependencies}] of dependencyEdges.entries()) {
+      output[this._getModuleId({path})] = Array.from(
+        inverseDependencies,
       ).map(dep => this._getModuleId({path: dep}));
     }
 
@@ -316,12 +312,12 @@ class DeltaTransformer extends EventEmitter {
   async _transformModules(
     modules: Array<Module>,
     transformOptions: JSTransformerOptions,
-    dependencyPairs: ShallowDependencies,
+    dependencyEdges: DependencyEdges,
   ): Promise<DeltaEntries> {
     return new Map(
       await Promise.all(
         modules.map(module =>
-          this._transformModule(module, transformOptions, dependencyPairs),
+          this._transformModule(module, transformOptions, dependencyEdges),
         ),
       ),
     );
@@ -330,18 +326,18 @@ class DeltaTransformer extends EventEmitter {
   async _transformModule(
     module: Module,
     transformOptions: JSTransformerOptions,
-    dependencyPairs: ShallowDependencies,
+    dependencyEdges: DependencyEdges,
   ): Promise<[number, ?DeltaEntry]> {
     const name = module.getName();
     const metadata = await this._getMetadata(module, transformOptions);
-    const dependencyPairsForModule =
-      dependencyPairs.get(module.path) || new Map();
+    const edge = dependencyEdges.get(module.path);
+    const dependencyPairs = edge ? edge.dependencies : new Map();
 
     const wrapped = this._bundleOptions.wrapModules
       ? this._resolver.wrapModule({
           module,
           getModuleId: this._getModuleId,
-          dependencyPairs: dependencyPairsForModule,
+          dependencyPairs,
           dependencyOffsets: metadata.dependencyOffsets || [],
           name,
           code: metadata.code,
@@ -354,7 +350,7 @@ class DeltaTransformer extends EventEmitter {
             module,
             this._getModuleId,
             metadata.code,
-            dependencyPairsForModule,
+            dependencyPairs,
             metadata.dependencyOffsets || [],
           ),
           map: metadata.map,

@@ -14,14 +14,19 @@
 
 jest.mock('../../Bundler');
 jest.mock('../../Resolver');
+jest.mock('../traverseDependencies');
 
 const Bundler = require('../../Bundler');
 const {EventEmitter} = require('events');
-const Resolver = require('../../Resolver');
 
 const DeltaCalculator = require('../DeltaCalculator');
+const {
+  initialTraverseDependencies,
+  traverseDependencies,
+} = require('../traverseDependencies');
 
 describe('DeltaCalculator', () => {
+  const entryModule = createModule({path: '/bundle', name: 'bundle'});
   const moduleFoo = createModule({path: '/foo', name: 'foo'});
   const moduleBar = createModule({path: '/bar', name: 'bar'});
   const moduleBaz = createModule({path: '/baz', name: 'baz'});
@@ -29,14 +34,13 @@ describe('DeltaCalculator', () => {
   let deltaCalculator;
   let fileWatcher;
   let mockedDependencies;
-  let mockedDependencyTree;
 
   const bundlerMock = new Bundler();
 
   const options = {
     assetPlugins: [],
     dev: true,
-    entryFile: 'bundle.js',
+    entryFile: 'bundle',
     entryModuleOnly: false,
     excludeSource: false,
     generateSourceMaps: false,
@@ -68,42 +72,49 @@ describe('DeltaCalculator', () => {
   }
 
   beforeEach(async () => {
-    mockedDependencies = [moduleFoo, moduleBar, moduleBaz];
-    mockedDependencyTree = new Map([[moduleFoo, [moduleBar, moduleBaz]]]);
+    mockedDependencies = [entryModule, moduleFoo, moduleBar, moduleBaz];
 
     fileWatcher = new EventEmitter();
 
-    Resolver.prototype.getDependencyGraph.mockReturnValue({
+    const dependencyGraph = {
       getWatcher() {
         return fileWatcher;
       },
-    });
+      getAbsolutePath(path) {
+        return '/' + path;
+      },
+      getModuleForPath(path) {
+        return mockedDependencies.filter(dep => dep.path === path)[0];
+      },
+    };
 
-    Resolver.prototype.getModuleForPath.mockImplementation(
-      path => mockedDependencies.filter(dep => dep.path === path)[0],
-    );
+    initialTraverseDependencies.mockImplementationOnce(
+      async (path, dg, opt, edges) => {
+        edges.set('/foo', moduleFoo);
 
-    Bundler.prototype.getDependencies.mockImplementation(async () => {
-      return {
-        options: {},
-        dependencies: mockedDependencies,
-        getResolvedDependencyPairs(module) {
-          const deps = mockedDependencyTree.get(module);
-          return deps ? deps.map(dep => [dep.name, dep]) : [];
-        },
-      };
-    });
-
-    Bundler.prototype.getShallowDependencies.mockImplementation(
-      async module => {
-        const deps = mockedDependencyTree.get(module);
-        return deps ? await Promise.all(deps.map(dep => dep.getName())) : [];
+        return {
+          added: new Set(['/foo', '/bar', '/baz']),
+          deleted: new Set(),
+        };
       },
     );
 
-    const resolverMock = new Resolver();
+    Bundler.prototype.getTransformOptions.mockImplementation(async () => {
+      return {
+        transformer: {},
+      };
+    });
 
-    deltaCalculator = new DeltaCalculator(bundlerMock, resolverMock, options);
+    deltaCalculator = new DeltaCalculator(
+      bundlerMock,
+      dependencyGraph,
+      options,
+    );
+  });
+
+  afterEach(() => {
+    initialTraverseDependencies.mockReset();
+    traverseDependencies.mockReset();
   });
 
   it('should start listening for file changes after being initialized', async () => {
@@ -116,11 +127,12 @@ describe('DeltaCalculator', () => {
     expect(fileWatcher.listeners('change')).toHaveLength(0);
   });
 
-  it('should calculate the initial bundle correctly', async () => {
+  it('should include the entry file when calculating the initial bundle', async () => {
     const result = await deltaCalculator.getDelta();
 
     expect(result).toEqual({
       modified: new Map([
+        ['/bundle', entryModule],
         ['/foo', moduleFoo],
         ['/bar', moduleBar],
         ['/baz', moduleBaz],
@@ -138,20 +150,31 @@ describe('DeltaCalculator', () => {
       deleted: new Set(),
       reset: false,
     });
+
+    expect(traverseDependencies.mock.calls.length).toBe(0);
   });
 
   it('should calculate a delta after a simple modification', async () => {
-    // Get initial delta
     await deltaCalculator.getDelta();
 
     fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
 
+    traverseDependencies.mockReturnValue(
+      Promise.resolve({
+        added: new Set(),
+        deleted: new Set(),
+      }),
+    );
+
     const result = await deltaCalculator.getDelta();
+
     expect(result).toEqual({
       modified: new Map([['/foo', moduleFoo]]),
       deleted: new Set(),
       reset: false,
     });
+
+    expect(traverseDependencies.mock.calls.length).toBe(1);
   });
 
   it('should calculate a delta after removing a dependency', async () => {
@@ -160,16 +183,22 @@ describe('DeltaCalculator', () => {
 
     fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
 
-    // Remove moduleBar
-    mockedDependencyTree.set(moduleFoo, [moduleBaz]);
-    mockedDependencies = [moduleFoo, moduleBaz];
+    traverseDependencies.mockReturnValue(
+      Promise.resolve({
+        added: new Set(),
+        deleted: new Set(['/baz']),
+      }),
+    );
 
     const result = await deltaCalculator.getDelta();
+
     expect(result).toEqual({
       modified: new Map([['/foo', moduleFoo]]),
-      deleted: new Set(['/bar']),
+      deleted: new Set(['/baz']),
       reset: false,
     });
+
+    expect(traverseDependencies.mock.calls.length).toBe(1);
   });
 
   it('should calculate a delta after adding/removing dependencies', async () => {
@@ -178,10 +207,14 @@ describe('DeltaCalculator', () => {
 
     fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
 
-    // Add moduleQux
     const moduleQux = createModule({path: '/qux', name: 'qux'});
-    mockedDependencyTree.set(moduleFoo, [moduleQux]);
-    mockedDependencies = [moduleFoo, moduleQux];
+
+    traverseDependencies.mockReturnValue(
+      Promise.resolve({
+        added: new Set([moduleQux.path]),
+        deleted: new Set(['/bar', '/baz']),
+      }),
+    );
 
     const result = await deltaCalculator.getDelta();
     expect(result).toEqual({
@@ -191,47 +224,12 @@ describe('DeltaCalculator', () => {
     });
   });
 
-  it('should calculate the shallowDependencies correctly after adding/removing dependencies', async () => {
-    // Get initial delta
-    await deltaCalculator.getDelta();
-
-    expect(deltaCalculator.getShallowDependencies().size).toBe(3);
-
-    fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
-
-    // Add moduleQux
-    const moduleQux = createModule({path: '/qux', name: 'qux'});
-    mockedDependencyTree.set(moduleFoo, [moduleBar, moduleBaz, moduleQux]);
-    mockedDependencies = [moduleFoo, moduleBar, moduleBaz, moduleQux];
-
-    await deltaCalculator.getDelta();
-
-    const shallowDependencies = deltaCalculator.getShallowDependencies();
-
-    expect(shallowDependencies.size).toBe(4);
-    expect(shallowDependencies.get('/foo').get('qux')).toEqual('/qux');
-  });
-
   it('should emit an event when there is a relevant file change', async done => {
     await deltaCalculator.getDelta();
 
     deltaCalculator.on('change', () => done());
 
     fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
-  });
-
-  it('should not emit an event when there is a file changed outside the bundle', async () => {
-    jest.useFakeTimers();
-
-    const onChangeFile = jest.fn();
-    await deltaCalculator.getDelta();
-
-    deltaCalculator.on('change', onChangeFile);
-    fileWatcher.emit('change', {eventsQueue: [{filePath: '/another'}]});
-
-    jest.runAllTimers();
-
-    expect(onChangeFile.mock.calls.length).toBe(0);
   });
 
   it('should not emit an event when there is a file deleted', async () => {
@@ -254,9 +252,7 @@ describe('DeltaCalculator', () => {
 
     fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
 
-    Bundler.prototype.getShallowDependencies.mockImplementation(async () => {
-      throw new Error('error');
-    });
+    traverseDependencies.mockReturnValue(Promise.reject(new Error()));
 
     await expect(deltaCalculator.getDelta()).rejects.toBeInstanceOf(Error);
 

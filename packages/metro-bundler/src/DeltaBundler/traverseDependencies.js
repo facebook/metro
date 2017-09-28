@@ -14,17 +14,6 @@
 
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type DependencyGraph from '../node-haste/DependencyGraph';
-import type {
-  InverseDependencies,
-  ModulePaths,
-  ShallowDependencies,
-} from './DeltaCalculator';
-
-export type Caches = {|
-  inverseDependencies: InverseDependencies,
-  modules: ModulePaths,
-  shallowDependencies: ShallowDependencies,
-|};
 
 export type DependencyEdge = {|
   dependencies: Map<string, string>,

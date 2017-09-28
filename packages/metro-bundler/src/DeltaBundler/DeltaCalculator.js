@@ -12,13 +12,16 @@
 
 'use strict';
 
+const {
+  initialTraverseDependencies,
+  traverseDependencies,
+} = require('./traverseDependencies');
 const {EventEmitter} = require('events');
 
-import type Bundler, {BundlingOptions} from '../Bundler';
+import type Bundler from '../Bundler';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
-import type Resolver from '../Resolver';
 import type {BundleOptions} from '../Server';
-import type ResolutionResponse from '../node-haste/DependencyGraph/ResolutionResponse';
+import type DependencyGraph from '../node-haste/DependencyGraph';
 import type Module from '../node-haste/Module';
 
 export type DeltaResult = {|
@@ -27,9 +30,7 @@ export type DeltaResult = {|
   +reset: boolean,
 |};
 
-export type ShallowDependencies = Map<string, Map<string, string>>;
-export type ModulePaths = Set<string>;
-export type InverseDependencies = Map<string, Set<string>>;
+import type {DependencyEdges} from './traverseDependencies';
 
 /**
  * This class is in charge of calculating the delta of changed modules that
@@ -39,27 +40,28 @@ export type InverseDependencies = Map<string, Set<string>>;
  */
 class DeltaCalculator extends EventEmitter {
   _bundler: Bundler;
-  _resolver: Resolver;
+  _dependencyGraph: DependencyGraph;
   _options: BundleOptions;
   _transformerOptions: ?JSTransformerOptions;
 
   _currentBuildPromise: ?Promise<DeltaResult>;
+  _deletedFiles: Set<string> = new Set();
   _modifiedFiles: Set<string> = new Set();
 
-  _modules: ModulePaths = new Set();
-  _shallowDependencies: ShallowDependencies = new Map();
-  _modulesByName: Map<string, Module> = new Map();
-  _inverseDependencies: InverseDependencies = new Map();
+  _dependencyEdges: DependencyEdges = new Map();
 
-  constructor(bundler: Bundler, resolver: Resolver, options: BundleOptions) {
+  constructor(
+    bundler: Bundler,
+    dependencyGraph: DependencyGraph,
+    options: BundleOptions,
+  ) {
     super();
 
     this._bundler = bundler;
     this._options = options;
-    this._resolver = resolver;
+    this._dependencyGraph = dependencyGraph;
 
-    this._resolver
-      .getDependencyGraph()
+    this._dependencyGraph
       .getWatcher()
       .on('change', this._handleMultipleFileChanges);
   }
@@ -68,16 +70,14 @@ class DeltaCalculator extends EventEmitter {
    * Stops listening for file changes and clears all the caches.
    */
   end() {
-    this._resolver
-      .getDependencyGraph()
+    this._dependencyGraph
       .getWatcher()
       .removeListener('change', this._handleMultipleFileChanges);
 
     // Clean up all the cache data structures to deallocate memory.
-    this._modules = new Set();
-    this._shallowDependencies = new Map();
     this._modifiedFiles = new Set();
-    this._modulesByName = new Map();
+    this._deletedFiles = new Set();
+    this._dependencyEdges = new Map();
   }
 
   /**
@@ -96,13 +96,20 @@ class DeltaCalculator extends EventEmitter {
     // and creating a new instance for the file watcher.
     const modifiedFiles = this._modifiedFiles;
     this._modifiedFiles = new Set();
+    const deletedFiles = this._deletedFiles;
+    this._deletedFiles = new Set();
 
     // Concurrent requests should reuse the same bundling process. To do so,
     // this method stores the promise as an instance variable, and then it's
     // removed after it gets resolved.
-    this._currentBuildPromise = this._getDelta(modifiedFiles);
+    this._currentBuildPromise = this._getChangedDependencies(
+      modifiedFiles,
+      deletedFiles,
+    );
 
     let result;
+
+    const numDependencies = this._dependencyEdges.size;
 
     try {
       result = await this._currentBuildPromise;
@@ -112,6 +119,14 @@ class DeltaCalculator extends EventEmitter {
       // do so, asking for a delta after an error will produce an empty Delta,
       // which is not correct.
       modifiedFiles.forEach(file => this._modifiedFiles.add(file));
+      deletedFiles.forEach(file => this._deletedFiles.add(file));
+
+      // If after an error the number of edges has changed, we could be in
+      // a weird state. As a safe net we clean the dependency edges to force
+      // a clean traversal of the graph next time.
+      if (this._dependencyEdges.size !== numDependencies) {
+        this._dependencyEdges = new Map();
+      }
 
       throw error;
     } finally {
@@ -126,24 +141,30 @@ class DeltaCalculator extends EventEmitter {
    * read all the modules. This can be used by external objects to read again
    * any module very fast (since the options object instance will be the same).
    */
-  getTransformerOptions(): JSTransformerOptions {
+  async getTransformerOptions(): Promise<JSTransformerOptions> {
     if (!this._transformerOptions) {
-      throw new Error('Calculate a bundle first');
+      this._transformerOptions = (await this._bundler.getTransformOptions(
+        this._options.entryFile,
+        {
+          dev: this._options.dev,
+          generateSourceMaps: false,
+          hot: this._options.hot,
+          minify: this._options.minify,
+          platform: this._options.platform,
+          prependPolyfills: false,
+        },
+      )).transformer;
     }
     return this._transformerOptions;
   }
 
   /**
-   * Returns all the dependency pairs for each of the modules. Each dependency
-   * pair consists of a string which corresponds to the relative path used in
-   * the `require()` statement and the Module object for that dependency.
+   * Returns all the dependency edges from the graph. Each edge contains the
+   * needed information to do the traversing (dependencies, inverseDependencies)
+   * plus some metadata.
    */
-  getShallowDependencies(): ShallowDependencies {
-    return this._shallowDependencies;
-  }
-
-  getInverseDependencies(): Map<string, Set<string>> {
-    return this._inverseDependencies;
+  getDependencyEdges(): DependencyEdges {
+    return this._dependencyEdges;
   }
 
   _handleMultipleFileChanges = ({eventsQueue}) => {
@@ -162,75 +183,87 @@ class DeltaCalculator extends EventEmitter {
     type: string,
     filePath: string,
   }): mixed => {
-    // We do not want to keep track of deleted files, since this can cause
-    // issues when moving files (or even deleting files).
-    // The only issue with this approach is that the user removes a file that
-    // is needed, the bundler will still create a correct bundle (since it
-    // won't detect any modified file). Once we have our own dependency
-    // traverser in Delta Bundler this will be easy to fix.
     if (type === 'delete') {
-      this._modules.delete(filePath);
-      return;
+      this._deletedFiles.add(filePath);
+    } else {
+      this._modifiedFiles.add(filePath);
     }
-
-    this._modifiedFiles.add(filePath);
 
     // Notify users that there is a change in some of the bundle files. This
     // way the client can choose to refetch the bundle.
-    if (this._modules.has(filePath)) {
-      this.emit('change');
-    }
+    this.emit('change');
   };
 
-  async _getDelta(modifiedFiles: Set<string>): Promise<DeltaResult> {
-    // If we call getDelta() without being initialized, we need get all
-    // dependencies and return a reset delta.
-    if (this._modules.size === 0) {
-      const {added} = await this._calculateAllDependencies();
+  async _getChangedDependencies(
+    modifiedFiles: Set<string>,
+    deletedFiles: Set<string>,
+  ): Promise<DeltaResult> {
+    const transformerOptions = await this.getTransformerOptions();
+
+    if (!this._dependencyEdges.size) {
+      const path = this._dependencyGraph.getAbsolutePath(
+        this._options.entryFile,
+      );
+
+      const modified = new Map([
+        [path, this._dependencyGraph.getModuleForPath(path)],
+      ]);
+
+      const {added} = await initialTraverseDependencies(
+        path,
+        this._dependencyGraph,
+        transformerOptions,
+        this._dependencyEdges,
+        this._options.onProgress || undefined,
+      );
+
+      for (const path of added) {
+        modified.set(path, this._dependencyGraph.getModuleForPath(path));
+      }
 
       return {
-        modified: added,
+        modified,
         deleted: new Set(),
         reset: true,
       };
     }
 
-    // We don't care about modified files that are not depended in the bundle.
-    // If any of these files is required by an existing file, it will
-    // automatically be picked up when calculating all dependencies.
-    const modifiedArray = Array.from(modifiedFiles).filter(file =>
-      this._modules.has(file),
+    // If a file has been deleted, we want to invalidate any other file that
+    // depends on it, so we can process it and correctly return an error.
+    deletedFiles.forEach(filePath => {
+      const edge = this._dependencyEdges.get(filePath);
+
+      if (edge) {
+        edge.inverseDependencies.forEach(path => modifiedFiles.add(path));
+      }
+    });
+
+    // We only want to process files that are in the bundle.
+    const modifiedDependencies = Array.from(modifiedFiles).filter(filePath =>
+      this._dependencyEdges.has(filePath),
     );
 
     // No changes happened. Return empty delta.
-    if (modifiedArray.length === 0) {
+    if (modifiedDependencies.length === 0) {
       return {modified: new Map(), deleted: new Set(), reset: false};
     }
 
-    // Build the modules from the files that have been modified.
-    const modified = new Map(
-      modifiedArray.map(file => {
-        const module = this._resolver.getModuleForPath(file);
-        return [file, module];
-      }),
+    const {added, deleted} = await traverseDependencies(
+      modifiedDependencies,
+      this._dependencyGraph,
+      transformerOptions,
+      this._dependencyEdges,
+      this._options.onProgress || undefined,
     );
 
-    const filesWithChangedDependencies = await Promise.all(
-      modifiedArray.map(this._hasChangedDependencies, this),
-    );
+    const modified = new Map();
 
-    // If there is no file with changes in its dependencies, we can just
-    // return the modified modules without recalculating the dependencies.
-    if (!filesWithChangedDependencies.some(value => value)) {
-      return {modified, deleted: new Set(), reset: false};
+    for (const path of modifiedDependencies) {
+      modified.set(path, this._dependencyGraph.getModuleForPath(path));
     }
 
-    // Recalculate all dependencies and append the newly added files to the
-    // modified files.
-    const {added, deleted} = await this._calculateAllDependencies();
-
-    for (const [key, value] of added) {
-      modified.set(key, value);
+    for (const path of added) {
+      modified.set(path, this._dependencyGraph.getModuleForPath(path));
     }
 
     return {
@@ -239,146 +272,6 @@ class DeltaCalculator extends EventEmitter {
       reset: false,
     };
   }
-
-  async _hasChangedDependencies(file: string) {
-    const module = this._resolver.getModuleForPath(file);
-
-    if (!this._modules.has(module.path)) {
-      return false;
-    }
-
-    const oldDependenciesMap =
-      this._shallowDependencies.get(module.path) || new Set();
-
-    const newDependencies = await this._getShallowDependencies(module);
-    const oldDependencies = new Set(oldDependenciesMap.keys());
-
-    if (!oldDependencies) {
-      return false;
-    }
-
-    return areDifferent(oldDependencies, newDependencies);
-  }
-
-  async _calculateAllDependencies(): Promise<{
-    added: Map<string, Module>,
-    deleted: Set<string>,
-  }> {
-    const added = new Map();
-
-    const response = await this._getAllDependencies();
-    const currentDependencies = response.dependencies;
-
-    this._transformerOptions = response.options.transformer;
-
-    currentDependencies.forEach(module => {
-      const dependencyPairs = response.getResolvedDependencyPairs(module);
-
-      const shallowDependencies = new Map();
-      for (const [relativePath, module] of dependencyPairs) {
-        shallowDependencies.set(relativePath, module.path);
-      }
-
-      this._shallowDependencies.set(module.path, shallowDependencies);
-
-      // Only add it to the delta bundle if it did not exist before.
-      if (!this._modules.has(module.path)) {
-        added.set(module.path, module);
-        this._modules.add(module.path);
-      }
-    });
-
-    const deleted = new Set();
-
-    // We know that some files have been removed only if the size of the current
-    // dependencies is different that the size of the old dependencies after
-    // adding the new files.
-    if (currentDependencies.length !== this._modules.size) {
-      const currentSet = new Set(currentDependencies.map(dep => dep.path));
-
-      this._modules.forEach(file => {
-        if (currentSet.has(file)) {
-          return;
-        }
-
-        this._modules.delete(file);
-        this._shallowDependencies.delete(file);
-
-        deleted.add(file);
-      });
-    }
-
-    // Yet another iteration through all the dependencies. This one is to
-    // calculate the inverse dependencies. Right now we cannot do a faster
-    // iteration to only calculate this for changed files since
-    // `Bundler.getShallowDependencies()` return the relative name of the
-    // dependencies (this logic is very similar to the one in
-    // getInverseDependencies.js on the react-native repo).
-    //
-    // TODO: consider moving this calculation directly to
-    // `getInverseDependencies()`.
-    this._inverseDependencies = new Map();
-
-    currentDependencies.forEach(module => {
-      const dependencies =
-        this._shallowDependencies.get(module.path) || new Map();
-
-      dependencies.forEach((relativePath, path) => {
-        let inverse = this._inverseDependencies.get(path);
-
-        if (!inverse) {
-          inverse = new Set();
-          this._inverseDependencies.set(path, inverse);
-        }
-        inverse.add(module.path);
-      });
-    });
-
-    return {
-      added,
-      deleted,
-    };
-  }
-
-  async _getShallowDependencies(module: Module): Promise<Set<string>> {
-    if (module.isAsset() || module.isJSON()) {
-      return new Set();
-    }
-
-    const dependencies = await this._bundler.getShallowDependencies({
-      ...this._options,
-      entryFile: module.path,
-      rootEntryFile: this._options.entryFile,
-      generateSourceMaps: false,
-      transformerOptions: this._transformerOptions || undefined,
-    });
-
-    return new Set(dependencies);
-  }
-
-  async _getAllDependencies(): Promise<
-    ResolutionResponse<Module, BundlingOptions>,
-  > {
-    return await this._bundler.getDependencies({
-      ...this._options,
-      rootEntryFile: this._options.entryFile,
-      generateSourceMaps: this._options.generateSourceMaps,
-      prependPolyfills: false,
-    });
-  }
-}
-
-function areDifferent<T>(first: Set<T>, second: Set<T>): boolean {
-  if (first.size !== second.size) {
-    return true;
-  }
-
-  for (const element of first) {
-    if (!second.has(element)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 module.exports = DeltaCalculator;
