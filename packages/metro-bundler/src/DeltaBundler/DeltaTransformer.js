@@ -27,12 +27,20 @@ import type Module from '../node-haste/Module';
 import type {Options as BundleOptions} from './';
 import type {DependencyEdges} from './traverseDependencies';
 
-type DeltaEntry = {|
+export type DeltaEntryType =
+  | 'asset'
+  | 'module'
+  | 'script'
+  | 'comment'
+  | 'require';
+
+export type DeltaEntry = {|
   +code: string,
   +map: ?Array<RawMapping>,
   +name: string,
   +path: string,
   +source: string,
+  +type: DeltaEntryType,
 |};
 
 export type DeltaEntries = Map<number, ?DeltaEntry>;
@@ -272,6 +280,7 @@ class DeltaTransformer extends EventEmitter {
               name,
               source: code,
               path,
+              type: 'require',
             },
           ];
         }),
@@ -286,6 +295,7 @@ class DeltaTransformer extends EventEmitter {
         name: 'sourcemap.js',
         path: '/sourcemap.js',
         source: code,
+        type: 'comment',
       });
     }
 
@@ -370,8 +380,21 @@ class DeltaTransformer extends EventEmitter {
         name,
         source: metadata.source,
         path: module.path,
+        type: this._getModuleType(module),
       },
     ];
+  }
+
+  _getModuleType(module: Module): DeltaEntryType {
+    if (module.isAsset()) {
+      return 'asset';
+    }
+
+    if (module.isPolyfill()) {
+      return 'script';
+    }
+
+    return 'module';
   }
 
   async _getMetadata(

@@ -19,7 +19,7 @@ const {fromRawMappings} = require('../Bundler/source-map');
 import type {BundleOptions} from '../Server';
 import type {MappingsMap} from '../lib/SourceMap';
 import type DeltaBundler, {Options as BuildOptions} from './';
-import type {DeltaTransformResponse} from './DeltaTransformer';
+import type {DeltaEntry, DeltaTransformResponse} from './DeltaTransformer';
 
 export type Options = BundleOptions & {
   deltaBundleId: ?string,
@@ -112,6 +112,20 @@ async function fullBundle(
   };
 }
 
+async function getAllModules(
+  deltaBundler: DeltaBundler,
+  options: Options,
+): Promise<Array<DeltaEntry>> {
+  const {id, delta} = await _build(deltaBundler, {
+    ...options,
+    wrapModules: true,
+  });
+
+  return DeltaPatcher.get(id)
+    .applyDelta(delta)
+    .getAllModules();
+}
+
 async function _build(
   deltaBundler: DeltaBundler,
   options: BuildOptions,
@@ -131,4 +145,5 @@ module.exports = {
   fullBundle,
   fullSourceMap,
   fullSourceMapObject,
+  getAllModules,
 };

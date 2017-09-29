@@ -22,6 +22,7 @@ const defaults = require('../defaults');
 const emptyFunction = require('fbjs/lib/emptyFunction');
 const formatBundlingError = require('../lib/formatBundlingError');
 const getMaxWorkers = require('../lib/getMaxWorkers');
+const getOrderedDependencyPaths = require('../lib/getOrderedDependencyPaths');
 const mime = require('mime-types');
 const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
 const path = require('path');
@@ -407,16 +408,36 @@ class Server {
     });
   }
 
-  getOrderedDependencyPaths(options: {
+  async getOrderedDependencyPaths(options: {
     +entryFile: string,
     +dev: boolean,
     +platform: string,
     +minify: boolean,
     +generateSourceMaps: boolean,
-  }): Promise<mixed> {
-    return Promise.resolve().then(() => {
-      return this._bundler.getOrderedDependencyPaths(options);
-    });
+  }): Promise<Array<string>> {
+    if (this._opts.useDeltaBundler) {
+      const bundleOptions = {
+        ...Server.DEFAULT_BUNDLE_OPTIONS,
+        ...options,
+        deltaBundleId: null,
+      };
+
+      if (!bundleOptions.platform) {
+        bundleOptions.platform = parsePlatformFilePath(
+          bundleOptions.entryFile,
+          this._platforms,
+        ).platform;
+      }
+
+      return await getOrderedDependencyPaths(
+        this._deltaBundler,
+        this._assetServer,
+        this._projectRoots,
+        bundleOptions,
+      );
+    }
+
+    return this._bundler.getOrderedDependencyPaths(options);
   }
 
   onFileChange(type: string, filePath: string) {

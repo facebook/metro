@@ -32,7 +32,7 @@ export type RawMapping =
  * generated line, generated column, source line, source line, symbol name.
  */
 function fromRawMappings(
-  modules: Array<{
+  modules: $ReadOnlyArray<{
     +map: ?Array<RawMapping>,
     +path: string,
     +source: string,

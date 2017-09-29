@@ -28,6 +28,46 @@ exports[`Serializers should build the full Source Maps 1`] = `"{\\"version\\":3,
 
 exports[`Serializers should build the full Source Maps 2`] = `"{\\"version\\":3,\\"sources\\":[],\\"sourcesContent\\":[],\\"names\\":[],\\"mappings\\":\\"\\"}"`;
 
+exports[`Serializers should return all the bundle modules 1`] = `
+Array [
+  Object {
+    "code": "pre;",
+  },
+  Object {
+    "code": "module3;",
+  },
+  Object {
+    "code": "another;",
+  },
+  Object {
+    "code": "post;",
+  },
+]
+`;
+
+exports[`Serializers should return all the bundle modules 2`] = `
+Array [
+  Object {
+    "code": "pre;",
+  },
+  Object {
+    "code": "more pre;",
+  },
+  Object {
+    "code": "modified module;",
+  },
+  Object {
+    "code": "post;",
+  },
+  Object {
+    "code": "bananas;",
+  },
+  Object {
+    "code": "apples;",
+  },
+]
+`;
+
 exports[`Serializers should return the stringified delta bundle 1`] = `
 Object {
   "bundle": "{\\"id\\":\\"1234\\",\\"pre\\":[[1,\\"pre;\\"]],\\"post\\":[[2,\\"post;\\"]],\\"delta\\":[[3,\\"module3;\\"],[4,\\"another;\\"]],\\"reset\\":true}",

@@ -114,4 +114,23 @@ describe('Serializers', () => {
       await Serializers.fullSourceMap(deltaBundler, {deltaBundleId: 10}),
     ).toMatchSnapshot();
   });
+
+  it('should return all the bundle modules', async () => {
+    expect(
+      await Serializers.getAllModules(deltaBundler, {deltaBundleId: 10}),
+    ).toMatchSnapshot();
+
+    getDelta.mockReturnValueOnce(
+      Promise.resolve({
+        delta: new Map([[3, {code: 'modified module;'}], [4, null]]),
+        pre: new Map([[5, {code: 'more pre;'}]]),
+        post: new Map([[6, {code: 'bananas;'}], [7, {code: 'apples;'}]]),
+        inverseDependencies: [],
+      }),
+    );
+
+    expect(
+      await Serializers.getAllModules(deltaBundler, {deltaBundleId: 10}),
+    ).toMatchSnapshot();
+  });
 });

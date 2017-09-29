@@ -12,7 +12,10 @@
 
 'use strict';
 
-import type {DeltaTransformResponse as DeltaBundle} from './DeltaTransformer';
+import type {
+  DeltaTransformResponse as DeltaBundle,
+  DeltaEntry,
+} from './DeltaTransformer';
 
 /**
  * This is a reference client for the Delta Bundler: it maintains cached the
@@ -92,7 +95,7 @@ class DeltaPatcher {
     return this._lastModifiedDate;
   }
 
-  getAllModules() {
+  getAllModules(): Array<DeltaEntry> {
     return [].concat(
       Array.from(this._lastBundle.pre.values()),
       Array.from(this._lastBundle.modules.values()),
