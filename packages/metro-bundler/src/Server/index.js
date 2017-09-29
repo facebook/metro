@@ -891,7 +891,13 @@ class Server {
     req: IncomingMessage,
     mres: MultipartResponse,
   ): {options: DeltaBundlerOptions, buildID: string} {
-    const options = this._getOptionsFromUrl(req.url);
+    const options = this._getOptionsFromUrl(
+      url.format({
+        ...url.parse(req.url),
+        protocol: 'http',
+        host: req.headers.host,
+      }),
+    );
 
     const buildID = this.getNewBuildID();
 
@@ -1236,10 +1242,8 @@ class Server {
 
     return {
       sourceMapUrl: url.format({
-        hash: urlObj.hash,
+        ...urlObj,
         pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
-        query: urlObj.query,
-        search: urlObj.search,
       }),
       entryFile,
       deltaBundleId,

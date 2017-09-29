@@ -576,6 +576,35 @@ describe('processRequest', () => {
         );
     });
 
+    it('Passes the full url as the sourcemap url', () => {
+      return server
+        .buildBundleFromUrl(
+          'http://localhost:8081/path/to/foo.bundle?dev=false&runModule=false&excludeSource=true',
+        )
+        .then(() =>
+          expect(Bundler.prototype.bundle).toBeCalledWith({
+            assetPlugins: [],
+            dev: false,
+            entryFile: 'path/to/foo.js',
+            entryModuleOnly: false,
+            excludeSource: true,
+            generateSourceMaps: false,
+            hot: true,
+            inlineSourceMap: false,
+            isolateModuleIDs: false,
+            minify: false,
+            onProgress: null,
+            platform: null,
+            resolutionResponse: null,
+            runBeforeMainModule: ['InitializeCore'],
+            runModule: false,
+            sourceMapUrl:
+              'http://localhost:8081/path/to/foo.map?dev=false&runModule=false&excludeSource=true',
+            unbundle: false,
+          }),
+        );
+    });
+
     it('ignores the `hot` parameter (since it is not used anymore)', () => {
       return server
         .buildBundleFromUrl(
@@ -659,17 +688,6 @@ describe('processRequest', () => {
         });
         expect(console.error).toBeCalled();
       });
-    });
-  });
-
-  describe('_getOptionsFromUrl', () => {
-    it('ignores protocol, host and port of the passed in URL', () => {
-      const short =
-        '/path/to/entry-file.js??platform=ios&dev=true&minify=false';
-      const long = `http://localhost:8081${short}`;
-      expect(server._getOptionsFromUrl(long)).toEqual(
-        server._getOptionsFromUrl(short),
-      );
     });
   });
 
