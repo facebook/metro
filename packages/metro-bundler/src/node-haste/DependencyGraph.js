@@ -332,7 +332,6 @@ class DependencyGraph extends EventEmitter {
 }
 
 function NotFoundError(...args) {
-  /* $FlowFixMe: monkey-patching */
   Error.call(this);
   Error.captureStackTrace(this, this.constructor);
   var msg = util.format.apply(util, args);

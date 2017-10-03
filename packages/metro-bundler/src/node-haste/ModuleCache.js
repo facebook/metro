@@ -72,8 +72,14 @@ class ModuleCache {
     this._getTransformCacheKey = getTransformCacheKey;
     this._globalTransformCache = globalTransformCache;
     this._depGraphHelpers = depGraphHelpers;
+    /* $FlowFixMe(>=0.56.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.56 was deployed. To see the error delete this
+     * comment and run Flow. */
     this._moduleCache = Object.create(null);
     this._moduleOptions = moduleOptions;
+    /* $FlowFixMe(>=0.56.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.56 was deployed. To see the error delete this
+     * comment and run Flow. */
     this._packageCache = Object.create(null);
     this._packageModuleMap = new WeakMap();
     this._platforms = platforms;

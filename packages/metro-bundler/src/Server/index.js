@@ -234,6 +234,9 @@ class Server {
 
     this._reporter = reporter;
     this._projectRoots = this._opts.projectRoots;
+    /* $FlowFixMe(>=0.56.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.56 was deployed. To see the error delete this
+     * comment and run Flow. */
     this._bundles = Object.create(null);
     this._bundleBuildInfos = new WeakMap();
     this._changeWatchers = [];
@@ -473,6 +476,9 @@ class Server {
   }
 
   _clearBundles() {
+    /* $FlowFixMe(>=0.56.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.56 was deployed. To see the error delete this
+     * comment and run Flow. */
     this._bundles = Object.create(null);
   }
 

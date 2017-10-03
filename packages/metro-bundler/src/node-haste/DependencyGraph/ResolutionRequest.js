@@ -363,6 +363,9 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
   }
 
   _resetResolutionCache() {
+    /* $FlowFixMe(>=0.56.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.56 was deployed. To see the error delete this
+     * comment and run Flow. */
     this._immediateResolutionCache = Object.create(null);
   }
 

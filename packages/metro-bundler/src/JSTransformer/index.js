@@ -141,6 +141,9 @@ class Transformer {
 
   kill() {
     if (this._usesFarm && this._workers) {
+      /* $FlowFixMe(>=0.56.0 site=react_native_fb) This comment suppresses an
+       * error found when Flow v0.56 was deployed. To see the error delete this
+       * comment and run Flow. */
       workerFarm.end(this._workers);
     }
   }

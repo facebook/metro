@@ -169,7 +169,6 @@ function getReplacements(pkg: PackageContent): mixed {
 
   // merge with "browser" as default,
   // "react-native" as override
-  // $FlowFixMe(>=0.35.0) browser and rn should be objects
   return {...browser, ...rn};
 }
 
