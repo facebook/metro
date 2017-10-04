@@ -185,6 +185,7 @@ class DeltaCalculator extends EventEmitter {
   }): mixed => {
     if (type === 'delete') {
       this._deletedFiles.add(filePath);
+      this._modifiedFiles.delete(filePath);
     } else {
       this._modifiedFiles.add(filePath);
     }

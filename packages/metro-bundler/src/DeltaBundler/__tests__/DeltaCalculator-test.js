@@ -90,10 +90,13 @@ describe('DeltaCalculator', () => {
 
     initialTraverseDependencies.mockImplementationOnce(
       async (path, dg, opt, edges) => {
-        edges.set('/foo', moduleFoo);
+        edges.set('/bundle', entryModule);
+        edges.set('/foo', {...moduleFoo, inverseDependencies: ['/bundle']});
+        edges.set('/bar', {...moduleBar, inverseDependencies: ['/bundle']});
+        edges.set('/baz', {...moduleBaz, inverseDependencies: ['/bundle']});
 
         return {
-          added: new Set(['/foo', '/bar', '/baz']),
+          added: new Set(['/bundle', '/foo', '/bar', '/baz']),
           deleted: new Set(),
         };
       },
@@ -240,11 +243,13 @@ describe('DeltaCalculator', () => {
 
     deltaCalculator.on('delete', onChangeFile);
 
-    fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
+    fileWatcher.emit('change', {
+      eventsQueue: [{type: 'delete', filePath: '/foo'}],
+    });
 
     jest.runAllTimers();
 
-    expect(onChangeFile.mock.calls.length).toBe(0);
+    expect(onChangeFile).not.toHaveBeenCalled();
   });
 
   it('should retry to build the last delta after getting an error', async () => {
@@ -258,5 +263,32 @@ describe('DeltaCalculator', () => {
 
     // This second time it should still throw an error.
     await expect(deltaCalculator.getDelta()).rejects.toBeInstanceOf(Error);
+  });
+
+  it('should never try to traverse a file after deleting it', async () => {
+    await deltaCalculator.getDelta();
+
+    // First modify the file
+    fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
+
+    // Then delete that same file
+    fileWatcher.emit('change', {
+      eventsQueue: [{type: 'delete', filePath: '/foo'}],
+    });
+
+    traverseDependencies.mockReturnValue(
+      Promise.resolve({
+        added: new Set(),
+        deleted: new Set(['/foo']),
+      }),
+    );
+
+    expect(await deltaCalculator.getDelta()).toEqual({
+      modified: new Map([['/bundle', entryModule]]),
+      deleted: new Set(['/foo']),
+      reset: false,
+    });
+
+    expect(traverseDependencies.mock.calls[0][0]).toEqual(['/bundle']);
   });
 });
