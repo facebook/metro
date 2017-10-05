@@ -12,9 +12,10 @@
 
 const denodeify = require('denodeify');
 const fs = require('fs');
+const throat = require('throat');
 
 type WriteFn =
   (file: string, data: string | Buffer, encoding?: ?string) => Promise<mixed>;
-const writeFile: WriteFn = denodeify(fs.writeFile);
+const writeFile: WriteFn = throat(128, denodeify(fs.writeFile));
 
 module.exports = writeFile;
