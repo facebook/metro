@@ -18,6 +18,7 @@ const extractDependencies = require('./extract-dependencies');
 const inline = require('./inline');
 const invariant = require('fbjs/lib/invariant');
 const minify = require('./minify');
+const path = require('path')
 
 import type {LogEntry} from '../../Logger/Types';
 import type {MappingsMap} from '../../lib/SourceMap';
@@ -85,6 +86,11 @@ type TransformCode = (
   Callback<Data>,
 ) => void;
 
+const pathToRequirePolyfill = path.resolve(
+  __dirname,
+  '../../Resolver/polyfills/require.js'
+)
+
 const transformCode: TransformCode = asyncify(
   (
     transformer: Transformer<*>,
@@ -141,8 +147,8 @@ const transformCode: TransformCode = asyncify(
       code = code.replace(/^#!.*/, '');
     }
 
-    const depsResult = isJson
-      ? {dependencies: [], dependencyOffsets: []}
+    const depsResult = isJson || filename === pathToRequirePolyfill
+      ? { dependencies: [], dependencyOffsets: [] }
       : extractDependencies(code);
 
     const timeDelta = process.hrtime(
