@@ -189,4 +189,22 @@ describe('edge cases', () => {
       deleted: new Set(['/baz']),
     });
   });
+
+  it('move a file to a different folder', async () => {
+    const edges = new Map();
+    await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
+
+    const moduleBazMoved = createModule({path: '/baz-moved', name: 'baz'});
+    mockedDependencyTree.set(moduleFoo.path, [moduleBar, moduleBazMoved]);
+    mockedDependencies.add(moduleBazMoved);
+    mockedDependencies.delete(moduleBaz);
+
+    // Modify /baz, rename it to /qux and modify it again.
+    expect(
+      await traverseDependencies(['/foo'], dependencyGraph, {}, edges),
+    ).toEqual({
+      added: new Set(['/baz-moved']),
+      deleted: new Set(['/baz']),
+    });
+  });
 });

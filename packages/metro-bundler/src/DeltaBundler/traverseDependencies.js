@@ -108,27 +108,45 @@ async function traverseDependenciesForSingleFile(
     return {added: new Set(), deleted: new Set()};
   }
 
-  const currentDependencies = new Set(
+  // Get the absolute path of all sub-dependencies (some of them could have been
+  // moved but maintain the same relative path).
+  const currentDependencies = resolveDependencies(
+    path,
     await dependencyGraph.getShallowDependencies(path, transformOptions),
+    dependencyGraph,
+    transformOptions,
   );
-  const previousDependencies = new Set(edge.dependencies.keys());
+
+  const previousDependencies = new Set(edge.dependencies.values());
 
   const nonNullEdge = edge;
 
   let numProcessed = 0;
   let total = currentDependencies.size;
 
+  const deleted = Array.from(edge.dependencies.entries())
+    .map(([relativePath, absolutePath]) => {
+      if (!currentDependencies.has(absolutePath)) {
+        return removeDependency(nonNullEdge, relativePath, edges);
+      } else {
+        return undefined;
+      }
+    })
+    .filter(Boolean);
+
   // Check all the module dependencies and start traversing the tree from each
   // added and removed dependency, to get all the modules that have to be added
   // and removed from the dependency graph.
   const added = await Promise.all(
-    Array.from(currentDependencies).map(async dependency => {
+    Array.from(
+      currentDependencies,
+    ).map(async ([absolutePath, relativePath]) => {
       let newDependencies;
 
-      if (!previousDependencies.has(dependency)) {
+      if (!previousDependencies.has(absolutePath)) {
         newDependencies = await addDependency(
           nonNullEdge,
-          dependency,
+          relativePath,
           dependencyGraph,
           transformOptions,
           edges,
@@ -148,26 +166,6 @@ async function traverseDependenciesForSingleFile(
       return newDependencies;
     }),
   );
-
-  // Check if all currentDependencies are still in the bundle (some files can
-  // have been removed).
-  checkModuleDependencies(
-    path,
-    currentDependencies,
-    dependencyGraph,
-    transformOptions,
-    edges,
-  );
-
-  const deleted = Array.from(previousDependencies)
-    .map(dependency => {
-      if (!currentDependencies.has(dependency)) {
-        return removeDependency(nonNullEdge, dependency, edges);
-      } else {
-        return undefined;
-      }
-    })
-    .filter(Boolean);
 
   return {
     added: flatten(added),
@@ -311,22 +309,24 @@ function resolveEdge(
   return edges.get(absolutePath);
 }
 
-function checkModuleDependencies(
+function resolveDependencies(
   parentPath,
-  dependencies: Set<string>,
+  dependencies: Array<string>,
   dependencyGraph: DependencyGraph,
   transformOptions: JSTransformerOptions,
-  edges: DependencyEdges,
-) {
+): Map<string, string> {
   const parentModule = dependencyGraph.getModuleForPath(parentPath);
 
-  for (const dependency of dependencies.values()) {
-    dependencyGraph.resolveDependency(
-      parentModule,
-      dependency,
-      transformOptions.platform,
-    );
-  }
+  return new Map(
+    dependencies.map(relativePath => [
+      dependencyGraph.resolveDependency(
+        parentModule,
+        relativePath,
+        transformOptions.platform,
+      ).path,
+      relativePath,
+    ]),
+  );
 }
 
 function flatten<T>(input: Iterable<Iterable<T>>): Set<T> {
