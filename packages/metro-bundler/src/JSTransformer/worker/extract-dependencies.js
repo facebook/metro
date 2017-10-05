@@ -33,21 +33,27 @@ function extractDependencies(code: string) {
   const dependencies = new Set();
   const dependencyOffsets = [];
 
-  function pushDependency(nodeArgs) {
+  function pushDependency(nodeArgs, tryCatchDepth) {
     const arg = nodeArgs[0];
     if (nodeArgs.length != 1 || arg.type !== 'StringLiteral') {
-      throw new Error('require() must have a single string literal argument');
+      if (tryCatchDepth === 0) {
+        // Attempting to call require with a value that will throw and error production
+        throw new Error('require() must have a single string literal argument');
+      } else {
+        // Attempting to call require with an invalid value, but handling the potential error
+        return;
+      }
     }
     dependencyOffsets.push(arg.start);
     dependencies.add(arg.value);
   }
 
   babel.traverse(ast, {
-    CallExpression(path) {
+    CallExpression(path, state) {
       const node = path.node;
       const callee = node.callee;
       if (callee.type === 'Identifier' && callee.name === 'require') {
-        pushDependency(node.arguments);
+        pushDependency(node.arguments, state.tryCatchDepth);
       }
       if (callee.type !== 'MemberExpression') {
         return;
@@ -60,10 +66,41 @@ function extractDependencies(code: string) {
         !callee.computed &&
         prop.name === 'async'
       ) {
-        pushDependency(node.arguments);
+        pushDependency(node.arguments, state.tryCatchDepth);
       }
     },
-  });
+    /**
+     * This visitor resets the try/catch counter in order to ensure that
+     * require statments validity is checked within the scope of a reachable
+     * block.
+     */
+    Function: {
+      enter(path, state) {
+        state.tryCatchHistroy.push(state.tryCatchDepth);
+        state.tryCatchDepth = 0;
+      },
+      exit(path, state) {
+        state.tryCatchDepth = state.tryCatchHistroy.pop();
+      }
+    },
+    /**
+     * This visitor tracks try/catch statements in order to ensure that
+     * non-string literals required within such do not result in bundling
+     * errors.
+     */
+    TryStatement: {
+      enter(path, state) {
+        if (path.node.handler !== null) {
+          state.tryCatchDepth++;
+        }
+      },
+      exit(path, state) {
+        if (path.node.handler !== null) {
+          state.tryCatchDepth--;
+        }
+      },
+    },
+  }, null, {tryCatchDepth: 0, tryCatchHistroy: []});
 
   return {dependencyOffsets, dependencies: Array.from(dependencies)};
 }
