@@ -102,6 +102,22 @@ describe('Dependency extraction:', () => {
     );
   });
 
+  it('throws on calls to require with non-static arguments, nested deeper than one level inside of a try block', () => {
+    const code = "try { if (1) { require('foo/' + bar) } } catch (e) { }";
+
+    expect(() => extractDependencies(code)).toThrowError(
+      'require() must have a single string literal argument',
+    );
+  });
+
+  it('does not throw on calls to require with non-static arguments, nested directly inside of a try block', () => {
+    const code = "try { require('foo/' + bar) } catch (e) { }";
+
+    const {dependencies, dependencyOffsets} = extractDependencies(code);
+    expect(dependencies).toEqual([]);
+    expect(dependencyOffsets).toEqual([]);
+  });
+
   it('does not get confused by previous states', () => {
     // yes, this was a bug
     const code = 'require("a");/* a comment */ var a = /[a]/.test(\'a\');';
