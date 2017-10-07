@@ -61,7 +61,8 @@ function makeFarm(worker, methods, timeout, maxConcurrentWorkers) {
       execArgv: process.execArgv.filter(
         arg =>
           /^--stack[_-]trace[_-]limit=[0-9]+$/.test(arg) ||
-          /^--heap[_-]growing[_-]percent=[0-9]+$/.test(arg),
+          /^--heap[_-]growing[_-]percent=[0-9]+$/.test(arg) ||
+          /^--max[_-]old[_-]space[_-]size=[0-9]+$/.test(arg)
       ),
       maxConcurrentCallsPerWorker: 1,
       maxConcurrentWorkers,
