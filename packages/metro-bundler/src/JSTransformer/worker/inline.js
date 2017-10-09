@@ -65,6 +65,9 @@ function isImportOrGlobal(node, scope, patterns, isWrappedModule) {
   );
 }
 
+const isLeftHandSideOfAssignmentExpression = (node, parent) =>
+  t.isAssignmentExpression(parent) && parent.left === node;
+
 const isPlatformOS = (node, scope, isWrappedModule) =>
   t.isIdentifier(node.property, os) &&
   isImportOrGlobal(node.object, scope, [platform], isWrappedModule);
@@ -127,15 +130,17 @@ const inlinePlugin = {
       const scope = path.scope;
       const opts = state.opts;
 
-      if (
-        isPlatformOS(node, scope, opts.isWrapped) ||
-        isReactPlatformOS(node, scope, opts.isWrapped)
-      ) {
-        path.replaceWith(t.stringLiteral(opts.platform));
-      } else if (isProcessEnvNodeEnv(node, scope)) {
-        path.replaceWith(
-          t.stringLiteral(opts.dev ? 'development' : 'production'),
-        );
+      if (!isLeftHandSideOfAssignmentExpression(node, path.parent)) {
+        if (
+          isPlatformOS(node, scope, opts.isWrapped) ||
+          isReactPlatformOS(node, scope, opts.isWrapped)
+        ) {
+          path.replaceWith(t.stringLiteral(opts.platform));
+        } else if (isProcessEnvNodeEnv(node, scope)) {
+          path.replaceWith(
+            t.stringLiteral(opts.dev ? 'development' : 'production'),
+          );
+        }
       }
     },
     CallExpression(path, state) {
