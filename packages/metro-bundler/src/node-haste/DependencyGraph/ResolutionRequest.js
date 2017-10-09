@@ -386,7 +386,10 @@ class AmbiguousModuleResolutionError extends Error {
     fromModulePath: string,
     hasteError: DuplicateHasteCandidatesError,
   ) {
-    super();
+    super(
+      `Ambiguous module resolution from \`${fromModulePath}\`: ` +
+        hasteError.message,
+    );
     this.fromModulePath = fromModulePath;
     this.hasteError = hasteError;
   }
