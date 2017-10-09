@@ -29,7 +29,7 @@ const babylon = require('babylon');
  * but it's a tradeoff for simplicity.
  */
 function extractDependencies(code: string) {
-  const ast = babylon.parse(code);
+  const ast = babylon.parse(code, {sourceType: 'module'});
   const dependencies = new Set();
   const dependencyOffsets = [];
 
