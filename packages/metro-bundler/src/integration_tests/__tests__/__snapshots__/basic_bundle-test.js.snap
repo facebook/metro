@@ -159,6 +159,10 @@ if (__DEV__) {
   (function () {
     _require.Systrace = { beginEvent: function beginEvent() {}, endEvent: function endEvent() {} };
 
+    _require.getModules = function () {
+      return modules;
+    };
+
     createHotReloadingObject = function createHotReloadingObject() {
       var hot = {
         acceptCallback: null,
@@ -436,6 +440,10 @@ if (__DEV__) {
 
   (function () {
     _require.Systrace = { beginEvent: function beginEvent() {}, endEvent: function endEvent() {} };
+
+    _require.getModules = function () {
+      return modules;
+    };
 
     createHotReloadingObject = function createHotReloadingObject() {
       var hot = {

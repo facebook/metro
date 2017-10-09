@@ -234,6 +234,10 @@ function moduleThrewError(id, error: any) {
 if (__DEV__) {
   require.Systrace = {beginEvent: () => {}, endEvent: () => {}};
 
+  require.getModules = () => {
+    return modules;
+  };
+
   // HOT MODULE RELOADING
   var createHotReloadingObject = function() {
     const hot: HotModuleReloadingData = {
