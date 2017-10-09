@@ -12,7 +12,7 @@
 
 'use strict';
 
-const {relative} = require('path');
+const {relative, basename} = require('path');
 
 declare class OpaqueLocalPath {}
 export type LocalPath = OpaqueLocalPath & string;
@@ -25,7 +25,7 @@ function toLocalPath(
 ): LocalPath {
   for (let i = 0; i < roots.length; i++) {
     const localPath = relative(roots[i], absolutePath);
-    if (localPath[0] !== '.') {
+    if (localPath[0] !== '.' || basename(absolutePath) == localPath) {
       return (localPath: any);
     }
   }
