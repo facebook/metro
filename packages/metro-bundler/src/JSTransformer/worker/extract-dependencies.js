@@ -33,9 +33,13 @@ function extractDependencies(code: string) {
   const dependencies = new Set();
   const dependencyOffsets = [];
 
-  function pushDependency(nodeArgs) {
+  function pushDependency(nodeArgs, parentType) {
     const arg = nodeArgs[0];
     if (nodeArgs.length != 1 || arg.type !== 'StringLiteral') {
+      // Dynamic requires directly inside of a try statement are considered optional dependencies
+      if (parentType === 'TryStatement') {
+        return;
+      }
       throw new Error('require() must have a single string literal argument');
     }
     dependencyOffsets.push(arg.start);
@@ -46,8 +50,9 @@ function extractDependencies(code: string) {
     CallExpression(path) {
       const node = path.node;
       const callee = node.callee;
+      const parent = path.scope.parentBlock;
       if (callee.type === 'Identifier' && callee.name === 'require') {
-        pushDependency(node.arguments);
+        pushDependency(node.arguments, parent.type);
       }
       if (callee.type !== 'MemberExpression') {
         return;
