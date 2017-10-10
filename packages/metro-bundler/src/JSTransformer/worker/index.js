@@ -143,7 +143,7 @@ const transformCode: TransformCode = asyncify(
 
     const depsResult = isJson
       ? {dependencies: [], dependencyOffsets: []}
-      : extractDependencies(code);
+      : extractDependencies(code, filename);
 
     const timeDelta = process.hrtime(
       transformFileStartLogEntry.start_timestamp,

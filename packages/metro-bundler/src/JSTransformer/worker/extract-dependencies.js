@@ -28,7 +28,8 @@ const babylon = require('babylon');
  * because it ignores that the scope may have reassigned or shadowed that value,
  * but it's a tradeoff for simplicity.
  */
-function extractDependencies(code: string) {
+
+function extractDependencies(code: string, filename: string) {
   const ast = babylon.parse(code, {sourceType: 'module'});
   const dependencies = new Set();
   const dependencyOffsets = [];
@@ -40,7 +41,10 @@ function extractDependencies(code: string) {
       if (parentType === 'TryStatement') {
         return;
       }
-      throw new Error('require() must have a single string literal argument');
+      throw new Error(
+        `require() must have a single string literal argument: ${filename}:${arg
+          .loc.start.line - 1}`,
+      );
     }
     dependencyOffsets.push(arg.start);
     dependencies.add(arg.value);

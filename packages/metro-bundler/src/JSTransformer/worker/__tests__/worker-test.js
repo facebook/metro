@@ -164,7 +164,7 @@ describe('code transformation worker:', () => {
         {},
         error => {
           expect(error).toBeNull();
-          expect(extractDependencies).toBeCalledWith(code);
+          expect(extractDependencies).toBeCalledWith(code, 'filename');
           done();
         },
       );
@@ -282,7 +282,7 @@ describe('code transformation worker:', () => {
 
     it('Uses the code obtained from `constant-folding` to extract dependencies', done => {
       transformCode(transformer, filename, filename, 'code', options, () => {
-        expect(extractDependencies).toBeCalledWith(foldedCode);
+        expect(extractDependencies).toBeCalledWith(foldedCode, filename);
         done();
       });
     });
