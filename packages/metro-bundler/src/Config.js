@@ -95,6 +95,8 @@ export type ConfigT = {
    */
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
 
+  getUseGlobalHotkey: () => boolean,
+
   /**
    * An optional function that can modify the code and source map of bundle
    * after the minifaction took place. (Function applied per module).
@@ -154,6 +156,7 @@ const DEFAULT = ({
   getTransformModulePath: () => require.resolve('./transformer.js'),
   getTransformOptions: async () => ({}),
   getPolyfills: () => [],
+  getUseGlobalHotkey: () => true,
   postMinifyProcess: x => x,
   postProcessModules: modules => modules,
   postProcessModulesForBuck: modules => modules,

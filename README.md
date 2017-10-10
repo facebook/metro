@@ -23,7 +23,7 @@ Within the object returned, two main methods are given:
 
 ## Method `createServer(serverOptions)`
 
-Given a set of options (same ones as the `buildBundle`, a `metro-server` will be returned. You can then hook this into a proper HTTP(S) server by using its `processRequest` method: 
+Given a set of options (same ones as the `buildBundle`, a `metro-server` will be returned. You can then hook this into a proper HTTP(S) server by using its `processRequest` method:
 
 
 ```
@@ -85,11 +85,12 @@ Given a set of options that you would typically pass to a server, plus a set of 
 * `enableBabelRCLookup (boolean)`: True if `.babelrc` files coming from other Node modules have to be looked up or not (i.e. if their transforms have to be applied to the files contained within the module).
 * `getPolyfills ((platform) => Array<string>)`: Method that returns a list of paths to polyfills to be added to the bundle. The platform (if provided) will be passed as the only argument of the method. Polyfills are guaranteed to be loaded before any code, and in the provided order in the array.
 * `getTransformOptions ((mainModuleName, options, getDependenciesOf) => Promise<Array<string>>)`:
+* `getUseGlobalHotkey (() => boolean)`: Method that returns whether the global hotkey should be used or not. Useful especially on Linux servers.
 * `maxWorkers (number)`: Maximum amount of workers to use when transforming and bundling. By default it uses an amount computed using the available cores of the processor (approximately 50% of them).
 * `platforms (Array<string>)`: Array of platforms supported. Currently you can pass `'ios'` and `'android'` there. This information will be used for bundle generation (both the code included and the format to be served).
 * `postProcessModules ((modules, entryPoints) => Array<Module>)`: Allows to post process the list of modules, either by adding, removing or modifying the existing ones.
 * `projectRoots (Array<string>)`: List of all directories to look for source files. When asking for a particular bundle, each of the roots will be examined to see if the requested file exists in one of these.
-* `reporter (Reporter)`: a reporter instance that will be used to report progress. Various reporters are provided with Metro Bundler, 
+* `reporter (Reporter)`: a reporter instance that will be used to report progress. Various reporters are provided with Metro Bundler,
 * `resetCache (boolean)`: Metro bundler holds an internal, persisted cache where all the transformed modules (using the provided transformer in `transformModulePath`) is stored. If the file does not change, the transformed file will be served. When passing `true` to `resetCache`, all of the cache will be thrown away.
 * `silent (boolean)`: Whether bundling progress should be reported to the reporter given in the `reporter` option. Defaults to `false`.
 * `sourceExts`: List of extensions that should be considered as source code. Source code files are files that will be transformed and bundled all at once. Defaults to JS and JSON extensions.
@@ -98,7 +99,7 @@ Given a set of options that you would typically pass to a server, plus a set of 
 ## Possible bundle options:
 
 * `dev (boolean)`: optional boolean indicating if the bundle has to be built in development mode. Implies things like setting `__DEV__` to `true`. Defaults to `false`.
-* `entryFile (string)`: entry point for bundling the file. 
+* `entryFile (string)`: entry point for bundling the file.
 * `generateSourceMaps (boolean)`: whether source Maps should be generated or not. Defaults to `false`.
 * `inlineSourceMap (boolean)`: indicates whether the source map is provided inlined with the bundle (as a bas64 encoded URL), or in a separate file. When provided as a separate file, the URL where it will be found can be customized with `sourceMapUrl`. Defaults to `false`.
 * `minify (boolean)`: whether code should be minified. Defaults to `false`.
