@@ -15,7 +15,7 @@ This project was previously part of the [react-native](https://github.com/facebo
 
 Right now, Metro Bundler cannot run by itself. Instead, some functions are exposed so that the configuration can be passed into it. First, require the module by doing:
 
-```
+```js
 const metroBundler = require('metro-bundler');
 ```
 
@@ -26,7 +26,7 @@ Within the object returned, two main methods are given:
 Given a set of options (same ones as the `buildBundle`, a `metro-server` will be returned. You can then hook this into a proper HTTP(S) server by using its `processRequest` method:
 
 
-```
+```js
 'use strict';
 
 const http = require('http');
@@ -49,7 +49,7 @@ httpServer.listen(8081);
 
 In order to be also compatible with express apps, processRequest will also call its third parameter when the request could not be handled by Metro bundler. This will allow you integrating the server in your existing server, or extend a new one:
 
-```
+```js
 const httpServer = http.createServer((req, res) => {
   metroBundlerServer.processRequest(req, res, () => {
     // Metro does not know how to handle the request.
@@ -59,7 +59,7 @@ const httpServer = http.createServer((req, res) => {
 
 If you are using [Express](http://expressjs.com/), you can just pass `processRequest` as a middleware:
 
-```
+```js
 const express = require('express');
 const app = express();
 
@@ -139,7 +139,7 @@ The JavaScript transformer (`transformModulePath`) is the place where JS code wi
 
 Mandatory method that will transform code. The object received has information about the module being transformed (e.g its path, code...) and the returned object has to contain a `code` key that is the result of the transform. The default transformer shipped is a pretty good place to start:
 
-```
+```js
 module.exports.transform = file => {
   return {
     code: file.src,
@@ -149,7 +149,7 @@ module.exports.transform = file => {
 
 If you would like to plug-in babel, you can simply do that by passing the code to it:
 
-```
+```js
 const {transform} = require('babel-core');
 
 module.exports.transform = file => {
