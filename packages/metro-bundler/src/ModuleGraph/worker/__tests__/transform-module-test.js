@@ -21,6 +21,10 @@ const {parse} = require('babylon');
 const generate = require('babel-generator').default;
 const {traverse} = require('babel-core');
 
+jest.mock('image-size', () => buffer => {
+  return JSON.parse(buffer.toString('utf8')).__size;
+});
+
 describe('transforming JS modules:', () => {
   const filename = 'arbitrary';
 
@@ -212,6 +216,18 @@ describe('transforming JS modules:', () => {
   });
 
   describe('assets', () => {
+    it('extract image sizes, platform, scale', () => {
+      const image = {__size: {width: 30, height: 20}};
+      ['foo.png', 'foo@2x.ios.png'].forEach(filePath => {
+        expect(
+          transformModule(new Buffer(JSON.stringify(image), 'utf8'), {
+            ...options(),
+            filename: filePath,
+          }),
+        ).toMatchSnapshot();
+      });
+    });
+
     it('throws on empty images', () => {
       expect(() =>
         transformModule(new Buffer(0), {...options(), filename: 'foo.png'}),
