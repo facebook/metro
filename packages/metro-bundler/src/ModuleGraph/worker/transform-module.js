@@ -64,7 +64,7 @@ function transformModule(
   options: TransformOptions<{+retainLines?: boolean}>,
 ): TransformedSourceFile {
   if (ASSET_EXTENSIONS.has(path.extname(options.filename).substr(1))) {
-    return transformAsset(content, options);
+    return transformAsset(content, options.filename);
   }
 
   const code = content.toString('utf8');
@@ -148,11 +148,10 @@ function transformJSON(json, options): TransformedSourceFile {
   return {type: 'code', details: result};
 }
 
-function transformAsset<ExtraOptions: {}>(
+function transformAsset(
   content: Buffer,
-  options: TransformOptions<ExtraOptions>,
+  filePath: string,
 ): TransformedSourceFile {
-  const filePath = options.filename;
   const assetData = AssetPaths.parse(filePath, Platforms.VALID_PLATFORMS);
   const contentType = path.extname(filePath).slice(1);
   const details = {
@@ -160,16 +159,23 @@ function transformAsset<ExtraOptions: {}>(
     contentBase64: content.toString('base64'),
     contentType,
     filePath,
-    physicalSize: getAssetSize(contentType, content),
+    physicalSize: getAssetSize(contentType, content, filePath),
     platform: assetData.platform,
     scale: assetData.resolution,
   };
   return {details, type: 'asset'};
 }
 
-function getAssetSize(type: string, content: Buffer): ?ImageSize {
+function getAssetSize(
+  type: string,
+  content: Buffer,
+  filePath: string,
+): ?ImageSize {
   if (!isAssetTypeAnImage(type)) {
     return null;
+  }
+  if (content.length === 0) {
+    throw new Error(`Image asset \`${filePath}\` cannot be an empty file.`);
   }
   const {width, height} = getImageSize(content);
   return {width, height};

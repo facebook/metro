@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`transforming JS modules: assets throws on empty images 1`] = `"Image asset \`foo.png\` cannot be an empty file."`;

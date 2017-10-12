@@ -210,6 +210,14 @@ describe('transforming JS modules:', () => {
     });
     expect(result.details.package).toEqual(pkg);
   });
+
+  describe('assets', () => {
+    it('throws on empty images', () => {
+      expect(() =>
+        transformModule(new Buffer(0), {...options(), filename: 'foo.png'}),
+      ).toThrowErrorMatchingSnapshot();
+    });
+  });
 });
 
 function createTestData() {
