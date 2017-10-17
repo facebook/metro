@@ -28,7 +28,7 @@ expect.extend({
 
     return {
       pass: received === built,
-      message: `Expected ${received} to equal ${built}`,
+      message: () => `Expected ${received} to equal ${built}`,
     };
   },
 });
@@ -42,56 +42,85 @@ describe('dependencies-dot', () => {
   });
 
   it('produces an ordered file for a standard list of modules', () => {
-    expect(
-      dependenciesDot({
-        modules: [
-          createModule('a', ['b']),
-          createModule('b', ['c']),
-          createModule('c', []),
-        ],
-      }),
-    ).toBeAMultilineString('digraph {', '\t"a" -> "b";', '\t"b" -> "c";', '}');
+    const modules = [
+      createModule('a', ['b']),
+      createModule('b', ['c']),
+      createModule('c', []),
+    ];
+    expect(dependenciesDot({modules})).toBeAMultilineString(
+      'digraph {',
+      '\t"a" -> "b";',
+      '\t"b" -> "c";',
+      ...metadata(modules),
+      '}',
+    );
   });
 
   it('writes one entry per dependency', () => {
+    const modules = [
+      createModule('a', ['b', 'c']),
+      createModule('b', ['d']),
+      createModule('c', []),
+      createModule('d', []),
+    ];
     expect(
       dependenciesDot({
-        modules: [
-          createModule('a', ['b', 'c']),
-          createModule('b', ['d']),
-          createModule('c', []),
-          createModule('d', []),
-        ],
+        modules,
       }),
     ).toBeAMultilineString(
       'digraph {',
       '\t"a" -> "b";',
       '\t"a" -> "c";',
       '\t"b" -> "d";',
+      ...metadata(modules),
       '}',
     );
   });
 
   it('handles non-printable characters', () => {
+    const modules = [createModule('"\n', ['\r\t']), createModule('\r\t', [])];
     expect(
       dependenciesDot({
-        modules: [createModule('"\n', ['\r\t']), createModule('\r\t', [])],
+        modules,
       }),
-    ).toBeAMultilineString('digraph {', '\t"\\"\\n" -> "\\r\\t";', '}');
+    ).toBeAMultilineString(
+      'digraph {',
+      '\t"\\"\\n" -> "\\r\\t";',
+      ...metadata(modules),
+      '}',
+    );
   });
 
   it('handles circular dependencies', () => {
+    const modules = [createModule('a', ['b']), createModule('b', ['a'])];
     expect(
       dependenciesDot({
-        modules: [createModule('a', ['b']), createModule('b', ['a'])],
+        modules,
       }),
-    ).toBeAMultilineString('digraph {', '\t"a" -> "b";', '\t"b" -> "a";', '}');
+    ).toBeAMultilineString(
+      'digraph {',
+      '\t"a" -> "b";',
+      '\t"b" -> "a";',
+      ...metadata(modules),
+      '}',
+    );
   });
 });
 
 function createModule(path: string, deps: Array<string>) {
   return {
-    file: {code: '', map: null, path, type: 'module'},
+    file: {
+      code: `var path = ${JSON.stringify(path)};`,
+      map: null,
+      path,
+      type: 'module',
+    },
     dependencies: deps.map(d => ({id: d, path: d})),
   };
+}
+
+function metadata(modules) {
+  return modules.map(
+    m => `\t${JSON.stringify(m.file.path)}[fb_size=${m.file.code.length}];`,
+  );
 }
