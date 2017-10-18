@@ -608,8 +608,15 @@ class Server {
   }
 
   optionsHash(options: {}) {
-    // onProgress is a function, can't be serialized
-    return JSON.stringify(Object.assign({}, options, {onProgress: null}));
+    // List of option parameters that won't affect the build result, so they
+    // can be ignored to calculate the options hash.
+    const ignoredParams = {
+      onProgress: null,
+      excludeSource: null,
+      sourceMapUrl: null,
+    };
+
+    return JSON.stringify(Object.assign({}, options, ignoredParams));
   }
 
   /**
