@@ -266,6 +266,7 @@ class DeltaTransformer extends EventEmitter {
       this._bundleOptions.runBeforeMainModule
         .map(path => this._resolver.getModuleForPath(path))
         .concat(entryPointModule)
+        .filter(module => dependencyEdges.has(module.path))
         .map(this._getModuleId)
         .map(moduleId => {
           const code = `;require(${JSON.stringify(moduleId)})`;

@@ -412,10 +412,12 @@ class Bundler {
       bundle: finalBundle,
       transformedModules,
       response,
+      modulesByPath,
     }: {
       bundle: Bundle,
       transformedModules: Array<{module: Module, transformed: ModuleTransport}>,
       response: ResolutionResponse<Module, BundlingOptions>,
+      modulesByPath: {[path: string]: Module},
     }) =>
       this._resolverPromise
         .then(resolver =>
@@ -433,6 +435,10 @@ class Bundler {
           );
         })
         .then(runBeforeMainModules => {
+          runBeforeMainModules = runBeforeMainModules
+            .map(module => modulesByPath[module.path])
+            .filter(Boolean);
+
           finalBundle.finalize({
             runModule,
             runBeforeMainModule: runBeforeMainModules.map(module =>
@@ -487,6 +493,8 @@ class Bundler {
         environment: dev ? 'dev' : 'prod',
       }),
     );
+
+    const modulesByPath = Object.create(null);
 
     if (!resolutionResponse) {
       resolutionResponse = this.getDependencies({
@@ -545,6 +553,7 @@ class Bundler {
           dependencyPairs: response.getResolvedDependencyPairs(module),
         }).then(transformed => {
           modulesByTransport.set(transformed, module);
+          modulesByPath[module.path] = module;
           onModuleTransformed({
             module,
             response,
@@ -570,6 +579,7 @@ class Bundler {
             bundle,
             transformedModules,
             response,
+            modulesByPath,
           });
         })
         .then(() => bundle);

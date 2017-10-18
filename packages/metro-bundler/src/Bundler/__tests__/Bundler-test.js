@@ -99,6 +99,9 @@ describe('Bundler', function() {
       return {
         getDependencies,
         getModuleSystemDependencies,
+        getModuleForPath(path) {
+          return {path};
+        },
       };
     });
     Resolver.load = jest
@@ -152,7 +155,7 @@ describe('Bundler', function() {
         mainModuleId: 'foo',
         dependencies: modules,
         options: transformOptions,
-        getModuleId: () => 123,
+        getModuleId: ({path}) => path,
         getResolvedDependencyPairs: () => [],
       }),
     );
@@ -290,6 +293,44 @@ describe('Bundler', function() {
         });
     });
 
+    it('passes runBeforeMainModule correctly to finalize', function() {
+      return bundler
+        .bundle({
+          entryFile: '/root/foo.js',
+          runBeforeMainModule: ['/root/bar.js'],
+          runModule: true,
+          sourceMapUrl: 'source_map_url',
+        })
+        .then(bundle => {
+          expect(bundle.finalize.mock.calls[0]).toEqual([
+            {
+              runModule: true,
+              runBeforeMainModule: ['/root/bar.js'],
+              allowUpdates: false,
+            },
+          ]);
+        });
+    });
+
+    it('ignores runBeforeMainModule when it is not part of the bundle', function() {
+      return bundler
+        .bundle({
+          entryFile: '/root/foo.js',
+          runBeforeMainModule: ['/root/not-valid.js'],
+          runModule: true,
+          sourceMapUrl: 'source_map_url',
+        })
+        .then(bundle => {
+          expect(bundle.finalize.mock.calls[0]).toEqual([
+            {
+              runModule: true,
+              runBeforeMainModule: [],
+              allowUpdates: false,
+            },
+          ]);
+        });
+    });
+
     it('loads and runs asset plugins', function() {
       jest.mock(
         'mockPlugin1',
@@ -381,7 +422,7 @@ describe('Bundler', function() {
             modules.map(x =>
               objectContaining({
                 name: any(String),
-                id: any(Number),
+                id: any(String), // Our mock of getModuleId returns a string
                 code: any(String),
                 sourceCode: any(String),
                 sourcePath: x.path,
