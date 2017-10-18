@@ -182,9 +182,14 @@ class DeltaTransformer extends EventEmitter {
     const transformerOptions = await this._deltaCalculator.getTransformerOptions();
     const dependencyEdges = this._deltaCalculator.getDependencyEdges();
 
+    // Precalculate all module ids sequentially. We do this to be sure that the
+    // mapping between module -> moduleId is deterministic between runs.
+    const modules = Array.from(modified.values());
+    modules.forEach(module => this._getModuleId(module));
+
     // Get the transformed source code of each modified/added module.
     const modifiedDelta = await this._transformModules(
-      Array.from(modified.values()),
+      modules,
       transformerOptions,
       dependencyEdges,
     );
