@@ -85,7 +85,7 @@ const getBabelRC = (function() {
  * Given a filename and options, build a Babel
  * config object with the appropriate plugins.
  */
-function buildBabelConfig(filename, options) {
+function buildBabelConfig(filename, options, plugins?: BabelPlugins = []) {
   const babelRC = getBabelRC(options.projectRoot);
 
   const extraConfig = {
@@ -109,7 +109,7 @@ function buildBabelConfig(filename, options) {
     extraPlugins.push(inlineRequiresPlugin);
   }
 
-  config.plugins = extraPlugins.concat(config.plugins);
+  config.plugins = extraPlugins.concat(config.plugins, plugins);
 
   if (options.dev && options.hot) {
     const hmrConfig = makeHMRConfig(options, filename);
@@ -126,14 +126,14 @@ type Params = {
   src: string,
 };
 
-function transform({filename, options, src}: Params) {
+function transform({filename, options, src, plugins}: Params) {
   options = options || {platform: '', projectRoot: '', inlineRequires: false};
 
   const OLD_BABEL_ENV = process.env.BABEL_ENV;
   process.env.BABEL_ENV = options.dev ? 'development' : 'production';
 
   try {
-    const babelConfig = buildBabelConfig(filename, options);
+    const babelConfig = buildBabelConfig(filename, options, plugins);
     const {ast, ignored} = babel.transform(src, babelConfig);
 
     if (ignored) {

@@ -111,10 +111,15 @@ const transformCode: TransformCode = asyncify(
       start_timestamp: process.hrtime(),
     };
 
+    const plugins = options.dev
+      ? []
+      : [[inline.plugin, options], [constantFolding.plugin, options]];
+
     const transformed = transformer.transform({
       filename,
       localPath,
       options: options.transform,
+      plugins,
       src: sourceCode,
     });
 
@@ -123,16 +128,7 @@ const transformCode: TransformCode = asyncify(
       'Missing transform results despite having no error.',
     );
 
-    var code, map;
-    if (options.minify) {
-      ({code, map} = constantFolding(
-        filename,
-        inline(filename, transformed, options),
-      ));
-      invariant(code != null, 'Missing code from constant-folding transform.');
-    } else {
-      ({code, map} = transformed);
-    }
+    let {code, map} = transformed;
 
     if (isJson) {
       code = code.replace(/^\w+\.exports=/, '');

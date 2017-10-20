@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @emails oncall+javascript_foundation
  * @format
  */
 'use strict';
@@ -46,26 +47,56 @@ describe('code transformation worker:', () => {
       filename,
       localPath,
       sourceCode,
-      {transform: transformOptions},
+      {dev: true, transform: transformOptions},
       () => {},
     );
     expect(transformer.transform).toBeCalledWith({
       filename,
       localPath,
       options: transformOptions,
+      plugins: [],
       src: sourceCode,
     });
+  });
+
+  it('calls the transform with two plugins when not in dev mode', () => {
+    const filename = 'arbitrary/file.js';
+    const localPath = `local/${filename}`;
+    const sourceCode = 'arbitrary(code)';
+    const options = {dev: false, transform: {arbitrary: 'options'}};
+
+    transformCode(
+      transformer,
+      filename,
+      localPath,
+      sourceCode,
+      options,
+      () => {},
+    );
+
+    const plugins = transformer.transform.mock.calls[0][0].plugins;
+
+    expect(plugins[0]).toEqual([expect.any(Object), options]);
+    expect(plugins[1]).toEqual([expect.any(Object), options]);
   });
 
   it('prefixes JSON files with an assignment to module.exports to make the code valid', function() {
     const filename = 'arbitrary/file.json';
     const localPath = `local/${filename}`;
     const sourceCode = '{"arbitrary":"property"}';
-    transformCode(transformer, filename, localPath, sourceCode, {}, () => {});
+    transformCode(
+      transformer,
+      filename,
+      localPath,
+      sourceCode,
+      {dev: true},
+      () => {},
+    );
     expect(transformer.transform).toBeCalledWith({
       filename,
       localPath,
       options: undefined,
+      plugins: [],
       src: `module.exports=${sourceCode}`,
     });
   });
@@ -227,92 +258,6 @@ describe('code transformation worker:', () => {
         {},
         (e, data) => {
           expect(e).toBe(error);
-          done();
-        },
-      );
-    });
-  });
-
-  describe('Minifications:', () => {
-    let constantFolding, inline, options;
-    let transformResult, dependencyData;
-    const filename = 'arbitrary/file.js';
-    const foldedCode = 'arbitrary(folded(code));';
-    const foldedMap = {version: 3, sources: ['fold.js']};
-
-    beforeEach(() => {
-      constantFolding = require('../constant-folding').mockReturnValue({
-        code: foldedCode,
-        map: foldedMap,
-      });
-      extractDependencies = require('../extract-dependencies');
-      inline = require('../inline');
-
-      options = {minify: true, transform: {generateSourceMaps: true}};
-      dependencyData = {
-        dependencies: ['a', 'b', 'c'],
-        dependencyOffsets: [100, 120, 140],
-      };
-
-      extractDependencies.mockImplementation(
-        code => (code === foldedCode ? dependencyData : {}),
-      );
-
-      transformer.transform.mockImplementation(
-        (src, fileName, _) => transformResult,
-      );
-    });
-
-    it('passes the transform result to `inline` for constant inlining', done => {
-      transformResult = {map: {version: 3}, code: 'arbitrary(code)'};
-      transformCode(transformer, filename, filename, 'code', options, () => {
-        expect(inline).toBeCalledWith(filename, transformResult, options);
-        done();
-      });
-    });
-
-    it('passes the result obtained from `inline` on to `constant-folding`', done => {
-      const inlineResult = {map: {version: 3, sources: []}, ast: {}};
-      inline.mockReturnValue(inlineResult);
-      transformCode(transformer, filename, filename, 'code', options, () => {
-        expect(constantFolding).toBeCalledWith(filename, inlineResult);
-        done();
-      });
-    });
-
-    it('Uses the code obtained from `constant-folding` to extract dependencies', done => {
-      transformCode(transformer, filename, filename, 'code', options, () => {
-        expect(extractDependencies).toBeCalledWith(foldedCode, filename);
-        done();
-      });
-    });
-
-    it('uses the dependencies obtained from the optimized result', done => {
-      transformCode(
-        transformer,
-        filename,
-        filename,
-        'code',
-        options,
-        (_, data) => {
-          const result = data.result;
-          expect(result.dependencies).toEqual(dependencyData.dependencies);
-          done();
-        },
-      );
-    });
-
-    it('uses data produced by `constant-folding` for the result', done => {
-      transformCode(
-        transformer,
-        'filename',
-        'local/filename',
-        'code',
-        options,
-        (_, data) => {
-          expect(data.result).toEqual(
-            objectContaining({code: foldedCode, map: foldedMap}),
-          );
           done();
         },
       );

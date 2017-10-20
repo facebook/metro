@@ -15,9 +15,7 @@ global.require = _require;
 global.__d = define;
 
 var modules = Object.create(null);
-if (__DEV__) {
-  var verboseNamesToModuleIds = Object.create(null);
-}
+
 
 function define(factory, moduleId, dependencyMap) {
   if (moduleId in modules) {
@@ -30,28 +28,9 @@ function define(factory, moduleId, dependencyMap) {
     hasError: false,
     isInitialized: false
   };
-  if (__DEV__) {
-    modules[moduleId].hot = createHotReloadingObject();
-
-    var _verboseName = arguments[3];
-    if (_verboseName) {
-      modules[moduleId].verboseName = _verboseName;
-      verboseNamesToModuleIds[_verboseName] = moduleId;
-    }
-  }
 }
 
 function _require(moduleId) {
-  if (__DEV__ && typeof moduleId === 'string') {
-    var _verboseName2 = moduleId;
-    moduleId = verboseNamesToModuleIds[_verboseName2];
-    if (moduleId == null) {
-      throw new Error('Unknown named module: \\\\'' + _verboseName2 + '\\\\'');
-    } else {
-      console.warn('Requiring module \\\\'' + _verboseName2 + '\\\\' by name is only supported for ' + 'debugging purposes and will BREAK IN PRODUCTION!');
-    }
-  }
-
   var moduleIdReallyIsNumber = moduleId;
   var module = modules[moduleIdReallyIsNumber];
   return module && module.isInitialized ? module.exports : guardedLoadModule(moduleIdReallyIsNumber, module);
@@ -100,10 +79,6 @@ function loadModuleImplementation(moduleId, module) {
     throw moduleThrewError(moduleId, module.error);
   }
 
-  if (__DEV__) {
-    var Systrace = _require.Systrace;
-  }
-
   module.isInitialized = true;
   var exports = module.exports = {};
   var _module = module,
@@ -111,25 +86,16 @@ function loadModuleImplementation(moduleId, module) {
       dependencyMap = _module.dependencyMap;
 
   try {
-    if (__DEV__) {
-      Systrace.beginEvent('JS_require_' + (module.verboseName || moduleId));
-    }
 
     var _moduleObject = { exports: exports };
-    if (__DEV__ && module.hot) {
-      _moduleObject.hot = module.hot;
-    }
 
     factory(global, _require, _moduleObject, exports, dependencyMap);
 
-    if (!__DEV__) {
+    {
       module.factory = undefined;
       module.dependencyMap = undefined;
     }
 
-    if (__DEV__) {
-      Systrace.endEvent();
-    }
     return module.exports = _moduleObject.exports;
   } catch (e) {
     module.hasError = true;
@@ -142,94 +108,13 @@ function loadModuleImplementation(moduleId, module) {
 
 function unknownModuleError(id) {
   var message = 'Requiring unknown module \\"' + id + '\\".';
-  if (__DEV__) {
-    message += 'If you are sure the module is there, try restarting Metro Bundler. ' + 'You may also want to run \`yarn\`, or \`npm install\` (depending on your environment).';
-  }
+
   return Error(message);
 }
 
 function moduleThrewError(id, error) {
-  var displayName = __DEV__ && modules[id] && modules[id].verboseName || id;
+  var displayName = id;
   return Error('Requiring module \\"' + displayName + '\\", which threw an exception: ' + error);
-}
-
-if (__DEV__) {
-  var createHotReloadingObject;
-
-  (function () {
-    _require.Systrace = { beginEvent: function beginEvent() {}, endEvent: function endEvent() {} };
-
-    _require.getModules = function () {
-      return modules;
-    };
-
-    createHotReloadingObject = function createHotReloadingObject() {
-      var hot = {
-        acceptCallback: null,
-        accept: function accept(callback) {
-          hot.acceptCallback = callback;
-        }
-      };
-      return hot;
-    };
-
-    var acceptAll = function acceptAll(dependentModules, inverseDependencies) {
-      if (!dependentModules || dependentModules.length === 0) {
-        return true;
-      }
-
-      var notAccepted = dependentModules.filter(function (module) {
-        return !accept(module, undefined, inverseDependencies);
-      });
-
-      var parents = [];
-      for (var i = 0; i < notAccepted.length; i++) {
-        if (inverseDependencies[notAccepted[i]].length === 0) {
-          return false;
-        }
-
-        parents.push.apply(parents, babelHelpers.toConsumableArray(inverseDependencies[notAccepted[i]]));
-      }
-
-      return acceptAll(parents, inverseDependencies);
-    };
-
-    var accept = function accept(id, factory, inverseDependencies) {
-      var mod = modules[id];
-
-      if (!mod && factory) {
-        define(factory, id);
-        return true;
-      }
-
-      var hot = mod.hot;
-
-      if (!hot) {
-        console.warn('Cannot accept module because Hot Module Replacement ' + 'API was not installed.');
-        return false;
-      }
-
-      if (factory) {
-        mod.factory = factory;
-      }
-      mod.hasError = false;
-      mod.isInitialized = false;
-      _require(id);
-
-      if (hot.acceptCallback) {
-        hot.acceptCallback();
-        return true;
-      } else {
-        if (!inverseDependencies) {
-          throw new Error('Undefined \`inverseDependencies\`');
-        }
-
-        return acceptAll(inverseDependencies[id], inverseDependencies);
-      }
-    };
-
-    global.__accept = accept;
-  })();
 }
 })(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this);
 (function(global) {
@@ -297,9 +182,7 @@ global.require = _require;
 global.__d = define;
 
 var modules = Object.create(null);
-if (__DEV__) {
-  var verboseNamesToModuleIds = Object.create(null);
-}
+
 
 function define(factory, moduleId, dependencyMap) {
   if (moduleId in modules) {
@@ -312,28 +195,9 @@ function define(factory, moduleId, dependencyMap) {
     hasError: false,
     isInitialized: false
   };
-  if (__DEV__) {
-    modules[moduleId].hot = createHotReloadingObject();
-
-    var _verboseName = arguments[3];
-    if (_verboseName) {
-      modules[moduleId].verboseName = _verboseName;
-      verboseNamesToModuleIds[_verboseName] = moduleId;
-    }
-  }
 }
 
 function _require(moduleId) {
-  if (__DEV__ && typeof moduleId === 'string') {
-    var _verboseName2 = moduleId;
-    moduleId = verboseNamesToModuleIds[_verboseName2];
-    if (moduleId == null) {
-      throw new Error('Unknown named module: \\\\'' + _verboseName2 + '\\\\'');
-    } else {
-      console.warn('Requiring module \\\\'' + _verboseName2 + '\\\\' by name is only supported for ' + 'debugging purposes and will BREAK IN PRODUCTION!');
-    }
-  }
-
   var moduleIdReallyIsNumber = moduleId;
   var module = modules[moduleIdReallyIsNumber];
   return module && module.isInitialized ? module.exports : guardedLoadModule(moduleIdReallyIsNumber, module);
@@ -382,10 +246,6 @@ function loadModuleImplementation(moduleId, module) {
     throw moduleThrewError(moduleId, module.error);
   }
 
-  if (__DEV__) {
-    var Systrace = _require.Systrace;
-  }
-
   module.isInitialized = true;
   var exports = module.exports = {};
   var _module = module,
@@ -393,25 +253,16 @@ function loadModuleImplementation(moduleId, module) {
       dependencyMap = _module.dependencyMap;
 
   try {
-    if (__DEV__) {
-      Systrace.beginEvent('JS_require_' + (module.verboseName || moduleId));
-    }
 
     var _moduleObject = { exports: exports };
-    if (__DEV__ && module.hot) {
-      _moduleObject.hot = module.hot;
-    }
 
     factory(global, _require, _moduleObject, exports, dependencyMap);
 
-    if (!__DEV__) {
+    {
       module.factory = undefined;
       module.dependencyMap = undefined;
     }
 
-    if (__DEV__) {
-      Systrace.endEvent();
-    }
     return module.exports = _moduleObject.exports;
   } catch (e) {
     module.hasError = true;
@@ -424,94 +275,13 @@ function loadModuleImplementation(moduleId, module) {
 
 function unknownModuleError(id) {
   var message = 'Requiring unknown module \\"' + id + '\\".';
-  if (__DEV__) {
-    message += 'If you are sure the module is there, try restarting Metro Bundler. ' + 'You may also want to run \`yarn\`, or \`npm install\` (depending on your environment).';
-  }
+
   return Error(message);
 }
 
 function moduleThrewError(id, error) {
-  var displayName = __DEV__ && modules[id] && modules[id].verboseName || id;
+  var displayName = id;
   return Error('Requiring module \\"' + displayName + '\\", which threw an exception: ' + error);
-}
-
-if (__DEV__) {
-  var createHotReloadingObject;
-
-  (function () {
-    _require.Systrace = { beginEvent: function beginEvent() {}, endEvent: function endEvent() {} };
-
-    _require.getModules = function () {
-      return modules;
-    };
-
-    createHotReloadingObject = function createHotReloadingObject() {
-      var hot = {
-        acceptCallback: null,
-        accept: function accept(callback) {
-          hot.acceptCallback = callback;
-        }
-      };
-      return hot;
-    };
-
-    var acceptAll = function acceptAll(dependentModules, inverseDependencies) {
-      if (!dependentModules || dependentModules.length === 0) {
-        return true;
-      }
-
-      var notAccepted = dependentModules.filter(function (module) {
-        return !accept(module, undefined, inverseDependencies);
-      });
-
-      var parents = [];
-      for (var i = 0; i < notAccepted.length; i++) {
-        if (inverseDependencies[notAccepted[i]].length === 0) {
-          return false;
-        }
-
-        parents.push.apply(parents, babelHelpers.toConsumableArray(inverseDependencies[notAccepted[i]]));
-      }
-
-      return acceptAll(parents, inverseDependencies);
-    };
-
-    var accept = function accept(id, factory, inverseDependencies) {
-      var mod = modules[id];
-
-      if (!mod && factory) {
-        define(factory, id);
-        return true;
-      }
-
-      var hot = mod.hot;
-
-      if (!hot) {
-        console.warn('Cannot accept module because Hot Module Replacement ' + 'API was not installed.');
-        return false;
-      }
-
-      if (factory) {
-        mod.factory = factory;
-      }
-      mod.hasError = false;
-      mod.isInitialized = false;
-      _require(id);
-
-      if (hot.acceptCallback) {
-        hot.acceptCallback();
-        return true;
-      } else {
-        if (!inverseDependencies) {
-          throw new Error('Undefined \`inverseDependencies\`');
-        }
-
-        return acceptAll(inverseDependencies[id], inverseDependencies);
-      }
-    };
-
-    global.__accept = accept;
-  })();
 }
 })(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this);
 __d(/* /TestBundle.js */function(global, require, module, exports) {
