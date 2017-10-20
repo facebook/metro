@@ -86,6 +86,7 @@ export type AssetDescriptor = {
 
 export type ExtendedAssetDescriptor = AssetDescriptor & {
   +fileSystemLocation: string,
+  +files: Array<string>,
 };
 
 const sizeOf = denodeify(imageSize);

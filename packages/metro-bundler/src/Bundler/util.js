@@ -16,7 +16,7 @@ const babel = require('babel-core');
 const babelGenerate = require('babel-generator').default;
 const babylon = require('babylon');
 
-import type {AssetDescriptor, ExtendedAssetDescriptor} from '.';
+import type {AssetDescriptor} from '.';
 import type {ModuleTransportLike} from '../shared/types.flow';
 
 type SubTree<T: ModuleTransportLike> = (
@@ -26,104 +26,10 @@ type SubTree<T: ModuleTransportLike> = (
 
 const assetPropertyBlacklist = new Set(['files', 'fileSystemLocation', 'path']);
 
-// Structure of the object: dir.name.scale = asset
-export type RemoteFileMap = {
-  [string]: {
-    [string]: {
-      [number]: string,
-    },
-  },
-};
-
-// Structure of the object: platform.dir.name.scale = asset
-export type PlatformRemoteFileMap = {
-  ['ios' | 'android']: RemoteFileMap,
-};
-
-type AssetResult = {
-  remote: boolean,
-  ast: Ast,
-};
-
-/**
- * Generates the code involved in requiring an asset, but to be loaded remotely.
- * If the asset cannot be found within the map, then it falls back to the
- * standard asset.
- */
-function generateRemoteAssetCodeFileAst(
-  assetSourceResolverPath: string,
-  assetDescriptor: ExtendedAssetDescriptor,
-  remoteServer: string,
-  remoteFileMap: RemoteFileMap,
-): ?AssetResult {
-  const t = babel.types;
-
-  const file = remoteFileMap[assetDescriptor.fileSystemLocation];
-  const descriptor = file && file[assetDescriptor.name];
-
-  if (!descriptor) {
-    return null;
-  }
-
-  // require('AssetSourceResolver')
-  const requireCall = t.callExpression(t.identifier('require'), [
-    t.stringLiteral(assetSourceResolverPath),
-  ]);
-
-  // require('AssetSourceResolver').pickScale
-  const pickScale = t.memberExpression(requireCall, t.identifier('pickScale'));
-
-  // require('AssetSourceResolver').pickScale([2, 3, ...])
-  const call = t.callExpression(pickScale, [
-    t.arrayExpression(
-      Object.keys(descriptor)
-        .map(Number)
-        .sort((a, b) => a - b)
-        .map(scale => t.numericLiteral(scale)),
-    ),
-  ]);
-
-  // {2: 'path/to/image@2x', 3: 'path/to/image@3x', ...}
-  const data = babylon.parseExpression(JSON.stringify(descriptor));
-
-  // ({2: '...', 3: '...'})[require(...).pickScale(...)]
-  const handler = t.memberExpression(data, call, true);
-
-  // 'https://remote.server.com/' + ({2: ...})[require(...).pickScale(...)]
-  const result = t.binaryExpression(
-    '+',
-    t.stringLiteral(remoteServer),
-    handler,
-  );
-
-  // module.exports
-  const moduleExports = t.memberExpression(
-    t.identifier('module'),
-    t.identifier('exports'),
-  );
-
-  return {
-    remote: true,
-    ast: t.file(
-      t.program([
-        t.expressionStatement(
-          t.assignmentExpression(
-            '=',
-            moduleExports,
-            t.objectExpression([
-              t.objectProperty(t.stringLiteral('uri'), result),
-            ]),
-          ),
-        ),
-      ]),
-    ),
-  };
-}
-
 function generateAssetCodeFileAst(
   assetRegistryPath: string,
   assetDescriptor: AssetDescriptor,
-): AssetResult {
+): Object {
   const properDescriptor = filterObject(
     assetDescriptor,
     assetPropertyBlacklist,
@@ -146,16 +52,13 @@ function generateAssetCodeFileAst(
   const registerAssetCall = t.callExpression(registerAssetFunction, [
     descriptorAst,
   ]);
-  return {
-    remote: false,
-    ast: t.file(
-      t.program([
-        t.expressionStatement(
-          t.assignmentExpression('=', moduleExports, registerAssetCall),
-        ),
-      ]),
-    ),
-  };
+  return t.file(
+    t.program([
+      t.expressionStatement(
+        t.assignmentExpression('=', moduleExports, registerAssetCall),
+      ),
+    ]),
+  );
 }
 
 function generateAssetTransformResult(
@@ -167,7 +70,7 @@ function generateAssetTransformResult(
   dependencyOffsets: Array<number>,
 |} {
   const {code} = babelGenerate(
-    generateAssetCodeFileAst(assetRegistryPath, assetDescriptor).ast,
+    generateAssetCodeFileAst(assetRegistryPath, assetDescriptor),
     {comments: false, compact: true},
   );
   const dependencies = [assetRegistryPath];
@@ -274,6 +177,5 @@ module.exports = {
   createRamBundleGroups,
   generateAssetCodeFileAst,
   generateAssetTransformResult,
-  generateRemoteAssetCodeFileAst,
   isAssetTypeAnImage,
 };

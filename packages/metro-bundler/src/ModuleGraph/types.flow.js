@@ -157,7 +157,6 @@ export type TransformedCodeFile = {
   +hasteID: ?string,
   package?: PackageData,
   +transformed: TransformResults,
-  +remoteAsset?: boolean,
   +type: CodeFileTypes,
 };
 
