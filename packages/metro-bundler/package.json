@@ -45,6 +45,7 @@
     "temp": "0.8.3",
     "throat": "^4.1.0",
     "uglify-es": "^3.1.0",
+    "wordwrap": "^1.0.0",
     "write-file-atomic": "^1.2.0",
     "xpipe": "^1.0.5"
   }
