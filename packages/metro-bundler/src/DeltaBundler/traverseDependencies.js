@@ -141,34 +141,30 @@ async function traverseDependenciesForSingleFile(
     Array.from(
       currentDependencies,
     ).map(async ([absolutePath, relativePath]) => {
-      let newDependencies;
-
-      if (!previousDependencies.has(absolutePath)) {
-        newDependencies = await addDependency(
-          nonNullEdge,
-          relativePath,
-          dependencyGraph,
-          transformOptions,
-          edges,
-          () => {
-            total++;
-            onProgress(numProcessed, total);
-          },
-          () => {
-            numProcessed++;
-            onProgress(numProcessed, total);
-          },
-        );
-      } else {
-        newDependencies = new Set();
+      if (previousDependencies.has(absolutePath)) {
+        return new Set();
       }
 
-      return newDependencies;
+      return await addDependency(
+        nonNullEdge,
+        relativePath,
+        dependencyGraph,
+        transformOptions,
+        edges,
+        () => {
+          total++;
+          onProgress(numProcessed, total);
+        },
+        () => {
+          numProcessed++;
+          onProgress(numProcessed, total);
+        },
+      );
     }),
   );
 
   return {
-    added: flatten(added),
+    added: flatten(reorderDependencies(added, edges)),
     deleted: flatten(deleted),
   };
 }
@@ -327,6 +323,42 @@ function resolveDependencies(
       relativePath,
     ]),
   );
+}
+
+/**
+ * Retraverse the dependency graph in DFS order to reorder the modules and
+ * guarantee the same order between runs.
+ */
+function reorderDependencies(
+  dependencies: Array<Set<string>>,
+  edges: DependencyEdges,
+): Array<Set<string>> {
+  const flatDependencies = flatten(dependencies);
+
+  return dependencies.map(dependencies =>
+    reorderDependency(Array.from(dependencies)[0], flatDependencies, edges),
+  );
+}
+
+function reorderDependency(
+  path: string,
+  dependencies: Set<string>,
+  edges: DependencyEdges,
+  orderedDependencies?: Set<string> = new Set(),
+): Set<string> {
+  const edge = edges.get(path);
+
+  if (!edge || !dependencies.has(path) || orderedDependencies.has(path)) {
+    return orderedDependencies;
+  }
+
+  orderedDependencies.add(path);
+
+  edge.dependencies.forEach(path =>
+    reorderDependency(path, dependencies, edges, orderedDependencies),
+  );
+
+  return orderedDependencies;
 }
 
 function flatten<T>(input: Iterable<Iterable<T>>): Set<T> {

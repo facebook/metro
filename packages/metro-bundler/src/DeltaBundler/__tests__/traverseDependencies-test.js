@@ -26,6 +26,13 @@ let dependencyGraph;
 let mockedDependencies;
 let mockedDependencyTree;
 
+function deferred(value) {
+  let resolve;
+  const promise = new Promise(res => (resolve = res));
+
+  return {promise, resolve: () => resolve(value)};
+}
+
 function createModule({path, name, isAsset, isJSON}) {
   return {
     path,
@@ -206,5 +213,70 @@ describe('edge cases', () => {
       added: new Set(['/baz-moved']),
       deleted: new Set(['/baz']),
     });
+  });
+
+  it('should traverse the dependency tree in a deterministic order', async () => {
+    // Mocks the shallow dependency call, always resolving the module in
+    // `slowPath` after the module in `fastPath`.
+    function mockShallowDependencies(slowPath, fastPath) {
+      let deferredSlow;
+      let fastResolved = false;
+
+      dependencyGraph.getShallowDependencies = async path => {
+        const deps = mockedDependencyTree.get(path);
+
+        const result = deps
+          ? await Promise.all(deps.map(dep => dep.getName()))
+          : [];
+
+        if (path === slowPath && !fastResolved) {
+          // Return a Promise that won't be resolved after fastPath.
+          deferredSlow = deferred(result);
+          return deferredSlow.promise;
+        }
+
+        if (path === fastPath) {
+          fastResolved = true;
+
+          if (deferredSlow) {
+            return new Promise(async resolve => {
+              await resolve(result);
+
+              deferredSlow.resolve();
+            });
+          }
+        }
+
+        return result;
+      };
+    }
+
+    async function assertOrder() {
+      expect(
+        Array.from(
+          (await initialTraverseDependencies(
+            '/bundle',
+            dependencyGraph,
+            {},
+            new Map(),
+          )).added,
+        ),
+      ).toEqual(['/foo', '/baz', '/bar']);
+    }
+
+    // Create a dependency tree where moduleBaz has two inverse dependencies.
+    mockedDependencyTree = new Map([
+      [entryModule.path, [moduleFoo, moduleBar]],
+      [moduleFoo.path, [moduleBaz]],
+      [moduleBar.path, [moduleBaz]],
+    ]);
+
+    // Test that even when having different modules taking longer, the order
+    // remains the same.
+    mockShallowDependencies('/foo', '/bar');
+    await assertOrder();
+
+    mockShallowDependencies('/bar', '/foo');
+    await assertOrder();
   });
 });
