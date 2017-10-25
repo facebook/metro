@@ -19,6 +19,8 @@ const inline = require('./inline');
 const invariant = require('fbjs/lib/invariant');
 const minify = require('./minify');
 
+const {compactMapping} = require('../../Bundler/source-map');
+
 import type {LogEntry} from '../../Logger/Types';
 import type {MappingsMap} from '../../lib/SourceMap';
 import type {LocalPath} from '../../node-haste/lib/toLocalPath';
@@ -122,6 +124,11 @@ const transformCode: TransformCode = asyncify(
       plugins,
       src: sourceCode,
     });
+
+    // TODO: Add more robust check once the transformer only returns rawMappings
+    if (Array.isArray(transformed.map)) {
+      transformed.map = transformed.map.map(compactMapping);
+    }
 
     invariant(
       transformed != null,

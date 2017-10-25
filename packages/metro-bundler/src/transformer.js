@@ -24,8 +24,6 @@ const makeHMRConfig = require('babel-preset-react-native/configs/hmr');
 const path = require('path');
 const resolvePlugins = require('babel-preset-react-native/lib/resolvePlugins');
 
-const {compactMapping} = require('./Bundler/source-map');
-
 import type {Plugins as BabelPlugins} from 'babel-core';
 import type {Transformer, TransformOptions} from './JSTransformer/worker';
 
@@ -161,9 +159,7 @@ function transform({filename, options, src, plugins}: Params) {
         ast,
         code: result.code,
         filename,
-        map: options.generateSourceMaps
-          ? result.map
-          : result.rawMappings.map(compactMapping),
+        map: options.generateSourceMaps ? result.map : result.rawMappings,
       };
     }
   } finally {
