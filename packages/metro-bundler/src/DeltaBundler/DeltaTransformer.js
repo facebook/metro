@@ -36,6 +36,7 @@ export type DeltaEntryType =
 
 export type DeltaEntry = {|
   +code: string,
+  +id: number,
   +map: ?Array<RawMapping>,
   +name: string,
   +path: string,
@@ -182,6 +183,12 @@ class DeltaTransformer extends EventEmitter {
     const transformerOptions = await this._deltaCalculator.getTransformerOptions();
     const dependencyEdges = this._deltaCalculator.getDependencyEdges();
 
+    // Return the source code that gets prepended to all the modules. This
+    // contains polyfills and startup code (like the require() implementation).
+    const prependSources = reset
+      ? await this._getPrepend(transformerOptions, dependencyEdges)
+      : new Map();
+
     // Precalculate all module ids sequentially. We do this to be sure that the
     // mapping between module -> moduleId is deterministic between runs.
     const modules = Array.from(modified.values());
@@ -197,12 +204,6 @@ class DeltaTransformer extends EventEmitter {
     deleted.forEach(id => {
       modifiedDelta.set(this._getModuleId({path: id}), null);
     });
-
-    // Return the source code that gets prepended to all the modules. This
-    // contains polyfills and startup code (like the require() implementation).
-    const prependSources = reset
-      ? await this._getPrepend(transformerOptions, dependencyEdges)
-      : new Map();
 
     // Return the source code that gets appended to all the modules. This
     // contains the require() calls to startup the execution of the modules.
@@ -282,6 +283,7 @@ class DeltaTransformer extends EventEmitter {
             moduleId,
             {
               code,
+              id: moduleId,
               map: null,
               name,
               source: code,
@@ -294,9 +296,11 @@ class DeltaTransformer extends EventEmitter {
 
     if (this._bundleOptions.sourceMapUrl) {
       const code = '//# sourceMappingURL=' + this._bundleOptions.sourceMapUrl;
+      const id = this._getModuleId({path: '/sourcemap.js'});
 
-      append.set(this._getModuleId({path: '/sourcemap.js'}), {
+      append.set(id, {
         code,
+        id,
         map: null,
         name: 'sourcemap.js',
         path: '/sourcemap.js',
@@ -381,10 +385,13 @@ class DeltaTransformer extends EventEmitter {
     // uglifyJS only returns standard Source Maps).
     const map = Array.isArray(wrapped.map) ? wrapped.map : undefined;
 
+    const id = this._getModuleId(module);
+
     return [
-      this._getModuleId(module),
+      id,
       {
         code: ';' + wrapped.code,
+        id,
         map,
         name,
         source: metadata.source,
