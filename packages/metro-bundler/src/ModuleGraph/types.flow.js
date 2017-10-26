@@ -152,13 +152,13 @@ export type TransformResults = {[string]: TransformResult};
 
 export type TransformVariants = {+[name: string]: {}, +default: {}};
 
-export type TransformedCodeFile = {
+export type TransformedCodeFile = {|
   +file: string,
   +hasteID: ?string,
   package?: PackageData,
   +transformed: TransformResults,
   +type: CodeFileTypes,
-};
+|};
 
 export type ImageSize = {|+width: number, +height: number|};
 

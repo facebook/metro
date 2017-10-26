@@ -49,12 +49,11 @@ describe('transforming JS modules:', () => {
     ast: t.file(t.program(body)),
   });
 
-  it('passes through file name and code', () => {
+  it('passes through file name', () => {
     const result = transformModule(sourceCode, options());
     expect(result.type).toBe('code');
     expect(result.details).toEqual(
       expect.objectContaining({
-        code: sourceCode,
         file: filename,
       }),
     );

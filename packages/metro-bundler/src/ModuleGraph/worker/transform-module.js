@@ -99,8 +99,6 @@ function transformModule(
 
   return {
     details: {
-      assetContent: null,
-      code,
       file: filename,
       hasteID: hasteID || null,
       transformed,
@@ -129,8 +127,6 @@ function transformJSON(json, options): TransformedSourceFile {
   );
 
   const result: TransformedCodeFile = {
-    assetContent: null,
-    code: json,
     file: filename,
     hasteID: value.name,
     transformed,
