@@ -37,6 +37,20 @@ describe('dependency collection from ASTs:', () => {
     ]);
   });
 
+  it('collects asynchronous dependencies', () => {
+    const ast = astFromCode(`
+      const a = require('b/lib/a');
+      if (!something) {
+        require.async("some/async/module").then(foo => {});
+      }
+    `);
+
+    expect(collectDependencies(ast).dependencies).toEqual([
+      'b/lib/a',
+      'some/async/module',
+    ]);
+  });
+
   it('supports template literals as arguments', () => {
     const ast = astFromCode('require(`left-pad`)');
 
@@ -101,11 +115,12 @@ describe('Dependency collection from optimized ASTs:', () => {
     ast = astFromCode(`
       const a = require(${dependencyMapName}[0], 'b/lib/a');
       exports.do = () => require(${dependencyMapName}[1], "do");
+      require.async(${dependencyMapName}[2], 'some/async/module').then(foo => {});
       if (!something) {
-        require(${dependencyMapName}[2], "setup/something");
+        require(${dependencyMapName}[3], "setup/something");
       }
     `);
-    names = ['b/lib/a', 'do', 'setup/something'];
+    names = ['b/lib/a', 'do', 'some/async/module', 'setup/something'];
   });
 
   it('passes the `dependencyMapName` through', () => {
@@ -130,8 +145,9 @@ describe('Dependency collection from optimized ASTs:', () => {
       comparableCode(`
       const a = require(${dependencyMapName}[0]);
       exports.do = () => require(${dependencyMapName}[1]);
+      require.async(${dependencyMapName}[2]).then(foo => {});
       if (!something) {
-        require(${dependencyMapName}[2]);
+        require(${dependencyMapName}[3]);
       }
     `),
     );

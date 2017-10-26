@@ -132,6 +132,16 @@ function createMapLookup(dependencyMapIdentifier, propertyIdentifier) {
 function collectDependencies(ast, replacement, dependencyMapIdentifier) {
   const visited = new WeakSet();
   const traversalState = {dependencyMapIdentifier};
+  function processRequireCall(node, state, isAsync) {
+    const arg = replacement.getRequireCallArg(node);
+    const index = replacement.getIndex(arg);
+    node.arguments = replacement.makeArgs(
+      types.numericLiteral(index),
+      arg,
+      state.dependencyMapIdentifier,
+    );
+    visited.add(node);
+  }
   traverse(
     ast,
     {
@@ -148,14 +158,9 @@ function collectDependencies(ast, replacement, dependencyMapIdentifier) {
           return;
         }
         if (isRequireCall(node.callee)) {
-          const arg = replacement.getRequireCallArg(node);
-          const index = replacement.getIndex(arg);
-          node.arguments = replacement.makeArgs(
-            types.numericLiteral(index),
-            arg,
-            state.dependencyMapIdentifier,
-          );
-          visited.add(node);
+          processRequireCall(node, state, false);
+        } else if (isAsyncRequireCall(node.callee)) {
+          processRequireCall(node, state, true);
         }
       },
     },
@@ -178,6 +183,15 @@ function isLiteralString(node) {
 
 function isRequireCall(callee) {
   return callee.type === 'Identifier' && callee.name === 'require';
+}
+
+function isAsyncRequireCall(callee) {
+  return (
+    callee.type === 'MemberExpression' &&
+    !callee.computed &&
+    callee.property.name === 'async' &&
+    isRequireCall(callee.object)
+  );
 }
 
 class InvalidRequireCallError extends Error {
