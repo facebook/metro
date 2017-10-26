@@ -33,14 +33,16 @@ export type TransformedCode = {
   map?: ?MappingsMap,
 };
 
+export type Transform<ExtraOptions: {}> = ({|
+  filename: string,
+  localPath: string,
+  options: ExtraOptions & TransformOptions,
+  plugins?: BabelPlugins,
+  src: string,
+|}) => {ast: ?Ast, code: string, map: ?MappingsMap};
+
 export type Transformer<ExtraOptions: {} = {}> = {
-  transform: ({|
-    filename: string,
-    localPath: string,
-    options: ExtraOptions & TransformOptions,
-    plugins?: BabelPlugins,
-    src: string,
-  |}) => {ast: ?Ast, code: string, map: ?MappingsMap},
+  transform: Transform<ExtraOptions>,
   getCacheKey: () => string,
 };
 
