@@ -6,17 +6,21 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @format
  * @emails oncall+javascript_foundation
+ * @flow
+ * @format
  */
 
 'use strict';
 
+const invariant = require('fbjs/lib/invariant');
+const nullthrows = require('fbjs/lib/nullthrows');
 const optimizeModule = require('../optimize-module');
 const transformModule = require('../transform-module');
 const transformer = require('../../../transformer.js');
-const {SourceMapConsumer} = require('source-map');
+
 const {fn} = require('../../test-helpers');
+const {SourceMapConsumer} = require('source-map');
 
 const {objectContaining} = jasmine;
 
@@ -27,21 +31,27 @@ describe('optimizing JS modules', () => {
     platform: 'android',
     postMinifyProcess: x => x,
   };
-  const originalCode = `if (Platform.OS !== 'android') {
+  const originalCode = new Buffer(
+    `if (Platform.OS !== 'android') {
       require('arbitrary-dev');
     } else {
       __DEV__ ? require('arbitrary-android-dev') : require('arbitrary-android-prod');
-    }`;
+    }`,
+    'utf8',
+  );
 
   let transformResult;
   beforeAll(() => {
     const result = transformModule(originalCode, {filename, transformer});
-    transformResult = JSON.stringify({type: 'code', details: result.details});
+    transformResult = new Buffer(
+      JSON.stringify({type: 'code', details: result.details}),
+      'utf8',
+    );
   });
 
   it('copies everything from the transformed file, except for transform results', () => {
     const result = optimizeModule(transformResult, optimizationOptions);
-    const expected = JSON.parse(transformResult).details;
+    const expected = JSON.parse(transformResult.toString('utf8')).details;
     delete expected.transformed;
     expect(result.type).toBe('code');
     expect(result.details).toEqual(objectContaining(expected));
@@ -51,14 +61,19 @@ describe('optimizing JS modules', () => {
     let dependencyMapName, injectedVars, optimized, requireName;
     beforeAll(() => {
       const result = optimizeModule(transformResult, optimizationOptions);
+      invariant(result.type === 'code', 'result must be code');
       optimized = result.details.transformed.default;
-      injectedVars = optimized.code.match(/function\(([^)]*)/)[1].split(',');
+      injectedVars = nullthrows(
+        optimized.code.match(/function\(([^)]*)/),
+      )[1].split(',');
       [, requireName, , , dependencyMapName] = injectedVars;
     });
 
     it('optimizes code', () => {
       expect(optimized.code).toEqual(
-        `__d(function(${injectedVars}){${requireName}(${dependencyMapName}[0])});`,
+        `__d(function(${injectedVars.join(
+          ',',
+        )}){${requireName}(${dependencyMapName}[0])});`,
       );
     });
 
@@ -69,7 +84,9 @@ describe('optimizing JS modules', () => {
     it('creates source maps', () => {
       const consumer = new SourceMapConsumer(optimized.map);
       const column = optimized.code.lastIndexOf(requireName + '(');
-      const loc = findLast(originalCode, 'require');
+      const loc = nullthrows(
+        findLast(originalCode.toString('utf8'), 'require'),
+      );
 
       expect(consumer.originalPositionFor({line: 1, column})).toEqual(
         objectContaining(loc),
@@ -80,8 +97,9 @@ describe('optimizing JS modules', () => {
       const result = optimizeModule(transformResult, {
         ...optimizationOptions,
         isPolyfill: true,
-      }).details;
-      expect(result.transformed.default.dependencies).toEqual([]);
+      });
+      invariant(result.type === 'code', 'result must be code');
+      expect(result.details.transformed.default.dependencies).toEqual([]);
     });
   });
 
@@ -99,6 +117,7 @@ describe('optimizing JS modules', () => {
     it('passes the result to the provided postprocessing function', () => {
       postMinifyProcess.stub.callsFake(x => x);
       const result = optimize();
+      invariant(result.type === 'code', 'result must be code');
       const {code, map} = result.details.transformed.default;
       expect(postMinifyProcess).toBeCalledWith({code, map});
     });
@@ -107,7 +126,9 @@ describe('optimizing JS modules', () => {
       const code = 'var postprocessed = "code";';
       const map = {version: 3, mappings: 'postprocessed'};
       postMinifyProcess.stub.returns({code, map});
-      expect(optimize().details.transformed.default).toEqual(
+      const result = optimize();
+      invariant(result.type === 'code', 'result must be code');
+      expect(result.details.transformed.default).toEqual(
         objectContaining({code, map}),
       );
     });
@@ -116,7 +137,11 @@ describe('optimizing JS modules', () => {
   it('passes through non-code data unmodified', () => {
     const data = {type: 'asset', details: {arbitrary: 'data'}};
     expect(
-      optimizeModule(JSON.stringify(data), {dev: true, platform: ''}),
+      optimizeModule(new Buffer(JSON.stringify(data), 'utf8'), {
+        dev: true,
+        platform: '',
+        postMinifyProcess: ({code, map}) => ({code, map}),
+      }),
     ).toEqual(data);
   });
 });

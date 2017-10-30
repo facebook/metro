@@ -150,7 +150,7 @@ export type TransformResult = {|
 
 export type TransformResults = {[string]: TransformResult};
 
-export type TransformVariants = {+[name: string]: {}, +default: {}};
+export type TransformVariants = {+[name: string]: {}};
 
 export type TransformedCodeFile = {|
   +file: string,

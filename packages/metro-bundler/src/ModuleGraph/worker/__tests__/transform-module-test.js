@@ -6,20 +6,25 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @format
  * @emails oncall+javascript_foundation
+ * @flow
+ * @format
  */
 
 'use strict';
 
+const invariant = require('fbjs/lib/invariant');
+const nullthrows = require('fbjs/lib/nullthrows');
+const t = require('babel-types');
 const transformModule = require('../transform-module');
 
-const t = require('babel-types');
-const {SourceMapConsumer} = require('source-map');
 const {fn} = require('../../test-helpers');
 const {parse} = require('babylon');
+const {SourceMapConsumer} = require('source-map');
 const generate = require('babel-generator').default;
 const {traverse} = require('babel-core');
+
+import type {TransformVariants} from '../../types.flow';
 
 jest.mock('image-size', () => buffer => {
   return JSON.parse(buffer.toString('utf8')).__size;
@@ -33,13 +38,14 @@ describe('transforming JS modules:', () => {
   beforeEach(() => {
     transformer = {
       transform: fn(),
+      getCacheKey: () => 'foo',
     };
     transformer.transform.stub.returns(transformResult());
   });
 
   const {bodyAst, sourceCode, transformedCode} = createTestData();
 
-  const options = variants => ({
+  const options = (variants?: TransformVariants) => ({
     filename,
     transformer,
     variants,
@@ -61,7 +67,7 @@ describe('transforming JS modules:', () => {
 
   it('exposes a haste ID if present', () => {
     const hasteID = 'TheModule';
-    const codeWithHasteID = `/** @providesModule ${hasteID} */`;
+    const codeWithHasteID = toBuffer(`/** @providesModule ${hasteID} */`);
     const result = transformModule(codeWithHasteID, options());
     expect(result.type).toBe('code');
     expect(result.details).toEqual(expect.objectContaining({hasteID}));
@@ -88,27 +94,23 @@ describe('transforming JS modules:', () => {
     projectRoot: '',
   };
 
-  it(
-    'calls the passed-in transform function with code, file name, and options ' +
-      'for all passed in variants',
-    () => {
-      const variants = {dev: {dev: true}, prod: {dev: false}};
+  it('calls the passed-in transform function with code, file name, and options for all passed in variants', () => {
+    const variants = {dev: {dev: true}, prod: {dev: false}};
 
-      transformModule(sourceCode, options(variants));
-      expect(transformer.transform).toBeCalledWith({
-        filename,
-        localPath: filename,
-        options: {...defaults, ...variants.dev},
-        src: sourceCode,
-      });
-      expect(transformer.transform).toBeCalledWith({
-        filename,
-        localPath: filename,
-        options: {...defaults, ...variants.prod},
-        src: sourceCode,
-      });
-    },
-  );
+    transformModule(sourceCode, options(variants));
+    expect(transformer.transform).toBeCalledWith({
+      filename,
+      localPath: filename,
+      options: {...defaults, ...variants.dev},
+      src: sourceCode.toString('utf8'),
+    });
+    expect(transformer.transform).toBeCalledWith({
+      filename,
+      localPath: filename,
+      options: {...defaults, ...variants.prod},
+      src: sourceCode.toString('utf8'),
+    });
+  });
 
   it('calls back with any error yielded by the transform function', () => {
     const error = new Error();
@@ -124,7 +126,9 @@ describe('transforming JS modules:', () => {
   it('wraps the code produced by the transform function into a module factory', () => {
     const result = transformModule(sourceCode, options());
 
+    invariant(result.type === 'code', 'result must be code');
     const {code, dependencyMapName} = result.details.transformed.default;
+    invariant(dependencyMapName != null, 'dependencyMapName cannot be null');
     expect(code.replace(/\s+/g, '')).toEqual(
       `__d(function(global,require,module,exports,${dependencyMapName}){${transformedCode}});`,
     );
@@ -132,6 +136,7 @@ describe('transforming JS modules:', () => {
 
   it('wraps the code produced by the transform function into an IIFE for polyfills', () => {
     const result = transformModule(sourceCode, {...options(), polyfill: true});
+    invariant(result.type === 'code', 'result must be code');
     const {code} = result.details.transformed.default;
     expect(code.replace(/\s+/g, '')).toEqual(
       `(function(global){${transformedCode}})(this);`,
@@ -140,6 +145,7 @@ describe('transforming JS modules:', () => {
 
   it('creates source maps', () => {
     const result = transformModule(sourceCode, options());
+    invariant(result.type === 'code', 'result must be code');
     const {code, map} = result.details.transformed.default;
     const position = findColumnAndLine(code, 'code');
     expect(position).not.toBeNull();
@@ -157,7 +163,8 @@ describe('transforming JS modules:', () => {
     const {body} = parse(code).program;
     transformer.transform.stub.returns(transformResult(body));
 
-    const result = transformModule(code, options());
+    const result = transformModule(toBuffer(code), options());
+    invariant(result.type === 'code', 'result must be code');
     expect(result.details.transformed.default).toEqual(
       expect.objectContaining({dependencies: [dep1, dep2]}),
     );
@@ -172,19 +179,28 @@ describe('transforming JS modules:', () => {
       .returns(transformResult([]));
 
     const result = transformModule(sourceCode, options(variants));
+    invariant(result.type === 'code', 'result must be code');
     const {dev, prod} = result.details.transformed;
     expect(dev.code.replace(/\s+/g, '')).toEqual(
-      `__d(function(global,require,module,exports,${dev.dependencyMapName}){arbitrary(code);});`,
+      `__d(function(global,require,module,exports,${nullthrows(
+        dev.dependencyMapName,
+      )}){arbitrary(code);});`,
     );
     expect(prod.code.replace(/\s+/g, '')).toEqual(
-      `__d(function(global,require,module,exports,${prod.dependencyMapName}){arbitrary(code);});`,
+      `__d(function(global,require,module,exports,${nullthrows(
+        prod.dependencyMapName,
+      )}){arbitrary(code);});`,
     );
   });
 
   it('prefixes JSON files with `module.exports = `', () => {
     const json = '{"foo":"bar"}';
 
-    const result = transformModule(json, {...options(), filename: 'some.json'});
+    const result = transformModule(toBuffer(json), {
+      ...options(),
+      filename: 'some.json',
+    });
+    invariant(result.type === 'code', 'result must be code');
     const {code} = result.details.transformed.default;
     expect(code.replace(/\s+/g, '')).toEqual(
       '__d(function(global,require,module,exports){' +
@@ -193,7 +209,11 @@ describe('transforming JS modules:', () => {
   });
 
   it('does not create source maps for JSON files', () => {
-    const result = transformModule('{}', {...options(), filename: 'some.json'});
+    const result = transformModule(toBuffer('{}'), {
+      ...options(),
+      filename: 'some.json',
+    });
+    invariant(result.type === 'code', 'result must be code');
     expect(result.details.transformed.default).toEqual(
       expect.objectContaining({map: null}),
     );
@@ -207,10 +227,11 @@ describe('transforming JS modules:', () => {
       'react-native': {'react-native': 'defs'},
     };
 
-    const result = transformModule(JSON.stringify(pkg), {
+    const result = transformModule(toBuffer(JSON.stringify(pkg)), {
       ...options(),
       filename: 'arbitrary/package.json',
     });
+    invariant(result.type === 'code', 'result must be code');
     expect(result.details.package).toEqual(pkg);
   });
 
@@ -219,7 +240,7 @@ describe('transforming JS modules:', () => {
       const image = {__size: {width: 30, height: 20}};
       ['foo.png', 'foo@2x.ios.png'].forEach(filePath => {
         expect(
-          transformModule(new Buffer(JSON.stringify(image), 'utf8'), {
+          transformModule(toBuffer(JSON.stringify(image)), {
             ...options(),
             filename: filePath,
           }),
@@ -249,7 +270,7 @@ function createTestData() {
   });
   return {
     bodyAst: fileAst.program.body,
-    sourceCode,
+    sourceCode: toBuffer(sourceCode),
     transformedCode: generate(fileAst).code,
   };
 }
@@ -264,4 +285,8 @@ function findColumnAndLine(text, string) {
     }
   }
   return null;
+}
+
+function toBuffer(str) {
+  return new Buffer(str, 'utf8');
 }
