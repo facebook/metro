@@ -248,6 +248,10 @@ class Bundler {
     this._getTransformOptions = opts.getTransformOptions;
   }
 
+  getAssetServer(): AssetServer {
+    return this._assetServer;
+  }
+
   end() {
     this._transformer.kill();
     /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an

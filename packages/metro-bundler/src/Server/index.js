@@ -47,6 +47,8 @@ import type {
 import type {TransformCache} from '../lib/TransformCaching';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {SourceMap, Symbolicate} from './symbolicate';
+import type {AssetData} from '../AssetServer';
+import type {RamBundleInfo} from '../DeltaBundler/Serializers';
 
 const {
   createActionStartEntry,
@@ -346,6 +348,31 @@ class Server {
       outdated: new Set(),
     });
     return bundle;
+  }
+
+  async build(options: BundleOptions): Promise<{code: string, map: string}> {
+    options = {
+      ...options,
+      deltaBundleId: null,
+    };
+
+    return {
+      code: (await Serializers.fullBundle(this._deltaBundler, options)).bundle,
+      map: await Serializers.fullSourceMap(this._deltaBundler, options),
+    };
+  }
+
+  async getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo> {
+    options = {...options, deltaBundleId: null};
+
+    return await Serializers.getRamBundleInfo(this._deltaBundler, options);
+  }
+
+  async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {
+    return await Serializers.getAssets(this._deltaBundler, {
+      ...options,
+      deltaBundleId: null,
+    });
   }
 
   buildBundleFromUrl(reqUrl: string): Promise<Bundle> {

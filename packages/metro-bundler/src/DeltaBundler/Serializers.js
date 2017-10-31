@@ -16,13 +16,23 @@ const DeltaPatcher = require('./DeltaPatcher');
 
 const {fromRawMappings} = require('../Bundler/source-map');
 
+import type {AssetData} from '../AssetServer';
 import type {BundleOptions} from '../Server';
 import type {MappingsMap} from '../lib/SourceMap';
+import type {ModuleTransportLike} from '../shared/types.flow';
 import type DeltaBundler, {Options as BuildOptions} from './';
 import type {DeltaEntry, DeltaTransformResponse} from './DeltaTransformer';
 
 export type Options = BundleOptions & {
   deltaBundleId: ?string,
+};
+
+export type RamModule = ModuleTransportLike;
+
+export type RamBundleInfo = {
+  startupModules: $ReadOnlyArray<ModuleTransportLike>,
+  lazyModules: $ReadOnlyArray<ModuleTransportLike>,
+  groups: Map<number, Set<number>>,
 };
 
 /**
@@ -115,7 +125,7 @@ async function fullBundle(
 async function getAllModules(
   deltaBundler: DeltaBundler,
   options: Options,
-): Promise<Array<DeltaEntry>> {
+): Promise<$ReadOnlyArray<DeltaEntry>> {
   const {id, delta} = await _build(deltaBundler, {
     ...options,
     wrapModules: true,
@@ -124,6 +134,59 @@ async function getAllModules(
   return DeltaPatcher.get(id)
     .applyDelta(delta)
     .getAllModules();
+}
+
+async function getRamBundleInfo(
+  deltaBundler: DeltaBundler,
+  options: Options,
+): Promise<RamBundleInfo> {
+  let modules = await getAllModules(deltaBundler, options);
+
+  modules = modules.map(module => {
+    const map = fromRawMappings([module]).toMap(module.path, {
+      excludeSource: options.excludeSource,
+    });
+
+    return {
+      id: module.id,
+      code: module.code,
+      map,
+      name: module.name,
+      sourcePath: module.path,
+      source: module.source,
+      type: module.type,
+    };
+  });
+
+  const startupModules = modules.filter(module => {
+    return module.type === 'script' || module.type === 'require';
+  });
+  const lazyModules = modules.filter(module => {
+    return module.type === 'asset' || module.type === 'module';
+  });
+
+  // TODO: Implement RAM groups functionality in Delta Bundler.
+  return {startupModules, lazyModules, groups: new Map()};
+}
+
+async function getAssets(
+  deltaBundler: DeltaBundler,
+  options: Options,
+): Promise<$ReadOnlyArray<AssetData>> {
+  const modules = await getAllModules(deltaBundler, options);
+
+  const assets = await Promise.all(
+    modules.map(async module => {
+      if (module.type === 'asset') {
+        return await deltaBundler
+          .getAssetServer()
+          .getAssetData(module.path, options.platform);
+      }
+      return null;
+    }),
+  );
+
+  return assets.filter(Boolean);
 }
 
 async function _build(
@@ -146,4 +209,6 @@ module.exports = {
   fullSourceMap,
   fullSourceMapObject,
   getAllModules,
+  getAssets,
+  getRamBundleInfo,
 };

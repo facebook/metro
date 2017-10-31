@@ -50,6 +50,10 @@ class DeltaBundler {
     this._deltaTransformers = new Map();
   }
 
+  getAssetServer() {
+    return this._bundler.getAssetServer();
+  }
+
   async getDeltaTransformer(
     options: Options,
   ): Promise<{deltaTransformer: DeltaTransformer, id: string}> {

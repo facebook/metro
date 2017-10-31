@@ -32,15 +32,27 @@ exports[`Serializers should return all the bundle modules 1`] = `
 Array [
   Object {
     "code": "pre;",
+    "id": 1,
+    "path": "/pre.js",
+    "type": "script",
   },
   Object {
     "code": "module3;",
+    "id": 3,
+    "path": "/3.js",
+    "type": "module",
   },
   Object {
     "code": "another;",
+    "id": 4,
+    "path": "/4.js",
+    "type": "module",
   },
   Object {
     "code": "post;",
+    "id": 2,
+    "path": "/p",
+    "type": "require",
   },
 ]
 `;
@@ -49,6 +61,9 @@ exports[`Serializers should return all the bundle modules 2`] = `
 Array [
   Object {
     "code": "pre;",
+    "id": 1,
+    "path": "/pre.js",
+    "type": "script",
   },
   Object {
     "code": "more pre;",
@@ -58,12 +73,287 @@ Array [
   },
   Object {
     "code": "post;",
+    "id": 2,
+    "path": "/p",
+    "type": "require",
   },
   Object {
     "code": "bananas;",
   },
   Object {
     "code": "apples;",
+  },
+]
+`;
+
+exports[`Serializers should return the RAM bundle info 1`] = `
+Object {
+  "groups": Map {},
+  "lazyModules": Array [
+    Object {
+      "code": "module3;",
+      "id": 3,
+      "map": Object {
+        "file": "/3.js",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/3.js",
+      "type": "module",
+    },
+    Object {
+      "code": "another;",
+      "id": 4,
+      "map": Object {
+        "file": "/4.js",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/4.js",
+      "type": "module",
+    },
+  ],
+  "startupModules": Array [
+    Object {
+      "code": "pre;",
+      "id": 1,
+      "map": Object {
+        "file": "/pre.js",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/pre.js",
+      "type": "script",
+    },
+    Object {
+      "code": "post;",
+      "id": 2,
+      "map": Object {
+        "file": "/p",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/p",
+      "type": "require",
+    },
+  ],
+}
+`;
+
+exports[`Serializers should return the RAM bundle info 2`] = `
+Object {
+  "groups": Map {},
+  "lazyModules": Array [
+    Object {
+      "code": "modified;",
+      "id": 3,
+      "map": Object {
+        "file": "/foo/3.js",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/foo/3.js",
+      "type": "module",
+    },
+    Object {
+      "code": "another;",
+      "id": 4,
+      "map": Object {
+        "file": "/4.js",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/4.js",
+      "type": "module",
+    },
+    Object {
+      "code": "code",
+      "id": 7,
+      "map": Object {
+        "file": "/foo/path.png",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/foo/path.png",
+      "type": "asset",
+    },
+    Object {
+      "code": "code",
+      "id": 8,
+      "map": Object {
+        "file": "/foo/8.js",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/foo/8.js",
+      "type": "module",
+    },
+    Object {
+      "code": "code",
+      "id": 9,
+      "map": Object {
+        "file": "/foo/path3.png",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/foo/path3.png",
+      "type": "asset",
+    },
+  ],
+  "startupModules": Array [
+    Object {
+      "code": "pre;",
+      "id": 1,
+      "map": Object {
+        "file": "/pre.js",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/pre.js",
+      "type": "script",
+    },
+    Object {
+      "code": "more pre;",
+      "id": 5,
+      "map": Object {
+        "file": "/foo/5.js",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/foo/5.js",
+      "type": "script",
+    },
+    Object {
+      "code": "post;",
+      "id": 2,
+      "map": Object {
+        "file": "/p",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/p",
+      "type": "require",
+    },
+    Object {
+      "code": "bananas;",
+      "id": 6,
+      "map": Object {
+        "file": "/foo/6.js",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/foo/6.js",
+      "type": "require",
+    },
+  ],
+}
+`;
+
+exports[`Serializers should return the bundle assets 1`] = `
+Array [
+  Object {
+    "code": "pre;",
+    "id": 1,
+    "path": "/pre.js",
+    "type": "script",
+  },
+  Object {
+    "code": "module3;",
+    "id": 3,
+    "path": "/3.js",
+    "type": "module",
+  },
+  Object {
+    "code": "another;",
+    "id": 4,
+    "path": "/4.js",
+    "type": "module",
+  },
+  Object {
+    "code": "post;",
+    "id": 2,
+    "path": "/p",
+    "type": "require",
+  },
+]
+`;
+
+exports[`Serializers should return the bundle assets 2`] = `
+Array [
+  Object {
+    "assetData": true,
+    "path": "/foo/path.png",
+    "platform": "ios",
+  },
+  Object {
+    "assetData": true,
+    "path": "/foo/path3.png",
+    "platform": "ios",
   },
 ]
 `;
