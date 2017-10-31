@@ -37,7 +37,7 @@ export type DeltaEntryType =
 export type DeltaEntry = {|
   +code: string,
   +id: number,
-  +map: ?CompactRawMappings,
+  +map: CompactRawMappings,
   +name: string,
   +path: string,
   +source: string,
@@ -284,7 +284,7 @@ class DeltaTransformer extends EventEmitter {
             {
               code,
               id: moduleId,
-              map: null,
+              map: [],
               name,
               source: code,
               path,
@@ -301,7 +301,7 @@ class DeltaTransformer extends EventEmitter {
       append.set(id, {
         code,
         id,
-        map: null,
+        map: [],
         name: 'sourcemap.js',
         path: '/sourcemap.js',
         source: code,
@@ -417,7 +417,7 @@ class DeltaTransformer extends EventEmitter {
   ): Promise<{
     +code: string,
     +dependencyOffsets: ?Array<number>,
-    +map: ?CompactRawMappings,
+    +map: CompactRawMappings,
     +source: string,
   }> {
     if (module.isAsset()) {
@@ -430,7 +430,7 @@ class DeltaTransformer extends EventEmitter {
       return {
         code: asset.code,
         dependencyOffsets: asset.meta.dependencyOffsets,
-        map: undefined,
+        map: [],
         source: '',
       };
     }

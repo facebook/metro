@@ -230,10 +230,10 @@ class Resolver {
     dependencyPairs: Map<string, string>,
     dependencyOffsets: Array<number>,
     name: string,
-    map: ?CompactRawMappings,
+    map: CompactRawMappings,
     code: string,
     dev?: boolean,
-  }): {code: string, map: ?CompactRawMappings} {
+  }): {code: string, map: CompactRawMappings} {
     if (module.isJSON()) {
       code = `module.exports = ${code}`;
     }

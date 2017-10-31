@@ -28,7 +28,7 @@ import type {
 
 type ResultWithMap = {
   code: string,
-  map: ?MappingsMap,
+  map: MappingsMap,
 };
 
 function noSourceMap(code: string): string {
@@ -55,14 +55,14 @@ function withSourceMap(
 
 function withRawMappings(
   code: string,
-  map: ?RawMappings,
+  map: RawMappings,
   filename: string,
-): {code: string, map: ?CompactRawMappings} {
+): {code: string, map: CompactRawMappings} {
   const result = withSourceMap(code, map, filename);
 
   return {
     code: result.code,
-    map: result.map ? toRawMappings(result.map).map(compactMapping) : undefined,
+    map: toRawMappings(result.map).map(compactMapping),
   };
 }
 
