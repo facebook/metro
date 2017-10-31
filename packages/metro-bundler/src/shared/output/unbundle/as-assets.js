@@ -22,7 +22,7 @@ const writeSourceMap = require('./write-sourcemap');
 
 const {joinModules} = require('./util');
 
-import type Bundle from '../../../Bundler/Bundle';
+import type {RamBundleInfo} from '../../../DeltaBundler/Serializers';
 import type {OutputOptions} from '../../types.flow';
 
 // must not start with a dot, as that won't go into the apk
@@ -37,7 +37,7 @@ const MODULES_DIR = 'js-modules';
  * directory as the startup file.
  */
 function saveAsAssets(
-  bundle: Bundle,
+  bundle: RamBundleInfo,
   options: OutputOptions,
   log: (...args: Array<string>) => void,
 ): Promise<mixed> {
@@ -49,7 +49,7 @@ function saveAsAssets(
   } = options;
 
   log('start');
-  const {startupModules, lazyModules} = bundle.getUnbundle();
+  const {startupModules, lazyModules} = bundle;
   log('finish');
   const startupCode = joinModules(startupModules);
 

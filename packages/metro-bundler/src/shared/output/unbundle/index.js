@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @format
  * @flow
  * @format
  */
@@ -17,20 +18,23 @@ const Server = require('../../../Server');
 const asAssets = require('./as-assets');
 const asIndexedFile = require('./as-indexed-file').save;
 
-import type Bundle from '../../../Bundler/Bundle';
 import type {OutputOptions, RequestOptions} from '../../types.flow';
+import type {RamBundleInfo} from '../../../DeltaBundler/Serializers';
 
-function buildBundle(packagerClient: Server, requestOptions: RequestOptions) {
-  return packagerClient.buildBundle({
+async function buildBundle(
+  packagerClient: Server,
+  requestOptions: RequestOptions,
+): Promise<RamBundleInfo> {
+  const options = {
     ...Server.DEFAULT_BUNDLE_OPTIONS,
     ...requestOptions,
-    unbundle: true,
     isolateModuleIDs: true,
-  });
+  };
+  return await packagerClient.getRamBundleInfo(options);
 }
 
 function saveUnbundle(
-  bundle: Bundle,
+  bundle: RamBundleInfo,
   options: OutputOptions,
   log: (x: string) => void,
 ): Promise<mixed> {

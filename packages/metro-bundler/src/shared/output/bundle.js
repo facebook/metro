@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @format
  * @flow
  * @format
  */
@@ -18,12 +19,14 @@ const meta = require('./meta');
 const relativizeSourceMap = require('../../lib/relativizeSourceMap');
 const writeFile = require('./writeFile');
 
-import type Bundle from '../../Bundler/Bundle';
 import type {SourceMap} from '../../lib/SourceMap';
 import type {OutputOptions, RequestOptions} from '../types.flow';
 
-function buildBundle(packagerClient: Server, requestOptions: RequestOptions) {
-  return packagerClient.buildBundle({
+function buildBundle(
+  packagerClient: Server,
+  requestOptions: RequestOptions,
+): Promise<{code: string, map: string}> {
+  return packagerClient.build({
     ...Server.DEFAULT_BUNDLE_OPTIONS,
     ...requestOptions,
     isolateModuleIDs: true,
@@ -31,29 +34,26 @@ function buildBundle(packagerClient: Server, requestOptions: RequestOptions) {
 }
 
 function createCodeWithMap(
-  bundle: Bundle,
+  bundle: {code: string, map: string},
   dev: boolean,
   sourceMapSourcesRoot?: string,
 ): {code: string, map: SourceMap} {
-  const map = bundle.getSourceMap({dev});
+  const map = bundle.map;
   const sourceMap = relativizeSourceMap(
-    typeof map === 'string' ? (JSON.parse(map): SourceMap) : map,
+    (JSON.parse(map): SourceMap),
     sourceMapSourcesRoot,
   );
   return {
-    code: bundle.getSource({dev}),
+    code: bundle.code,
     map: sourceMap,
   };
 }
 
 function saveBundleAndMap(
-  bundle: Bundle,
+  bundle: {code: string, map: string},
   options: OutputOptions,
   log: (...args: Array<string>) => {},
-  /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an error
- * found when Flow v0.54 was deployed. To see the error delete this comment and
- * run Flow. */
-): Promise<> {
+): Promise<mixed> {
   const {
     bundleOutput,
     bundleEncoding: encoding,
@@ -63,15 +63,7 @@ function saveBundleAndMap(
   } = options;
 
   log('start');
-  const origCodeWithMap = createCodeWithMap(
-    bundle,
-    !!dev,
-    sourcemapSourcesRoot,
-  );
-  const codeWithMap = bundle.postProcessBundleSourcemap({
-    ...origCodeWithMap,
-    outFileName: bundleOutput,
-  });
+  const codeWithMap = createCodeWithMap(bundle, !!dev, sourcemapSourcesRoot);
   log('finish');
 
   log('Writing bundle output to:', bundleOutput);

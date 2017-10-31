@@ -20,7 +20,7 @@ const writeSourceMap = require('./write-sourcemap');
 
 const {joinModules} = require('./util');
 
-import type Bundle from '../../../Bundler/Bundle';
+import type {RamBundleInfo} from '../../../DeltaBundler/Serializers';
 import type {
   ModuleGroups,
   ModuleTransportLike,
@@ -37,7 +37,7 @@ const SIZEOF_UINT32 = 4;
  * empty string.
  */
 function saveAsIndexedFile(
-  bundle: Bundle,
+  bundle: RamBundleInfo,
   options: OutputOptions,
   log: (...args: Array<string>) => void,
   /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an error
@@ -52,7 +52,7 @@ function saveAsIndexedFile(
   } = options;
 
   log('start');
-  const {startupModules, lazyModules, groups} = bundle.getUnbundle();
+  const {startupModules, lazyModules, groups} = bundle;
   log('finish');
 
   const moduleGroups = createModuleGroups(groups, lazyModules);

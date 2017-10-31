@@ -13,6 +13,7 @@
 
 const invariant = require('fbjs/lib/invariant');
 
+import type {RamModule} from '../../../DeltaBundler/Serializers';
 import type {
   FBIndexMap,
   IndexMap,
@@ -55,7 +56,7 @@ const Section = (line: number, column: number, map: SourceMap) => ({
 type CombineOptions = {fixWrapperOffset: boolean};
 
 function combineSourceMaps(
-  modules: $ReadOnlyArray<ModuleTransportLike>,
+  modules: $ReadOnlyArray<ModuleTransportLike | RamModule>,
   moduleGroups?: ModuleGroups,
   options?: ?CombineOptions,
 ): IndexMap {
@@ -64,7 +65,7 @@ function combineSourceMaps(
 }
 
 function combineSourceMapsAddingOffsets(
-  modules: $ReadOnlyArray<ModuleTransportLike>,
+  modules: $ReadOnlyArray<ModuleTransportLike | RamModule>,
   moduleGroups?: ?ModuleGroups,
   options?: ?CombineOptions,
 ): FBIndexMap {
@@ -78,7 +79,12 @@ function combineSourceMapsAddingOffsets(
   return {sections, version: 3, x_facebook_offsets};
 }
 
-function combineMaps(modules, offsets: ?Array<number>, moduleGroups, options) {
+function combineMaps(
+  modules: $ReadOnlyArray<ModuleTransportLike | RamModule>,
+  offsets: ?Array<number>,
+  moduleGroups,
+  options,
+) {
   const sections = [];
 
   let line = 0;

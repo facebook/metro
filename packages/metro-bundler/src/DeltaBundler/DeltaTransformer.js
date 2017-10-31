@@ -275,7 +275,7 @@ class DeltaTransformer extends EventEmitter {
         .filter(module => dependencyEdges.has(module.path))
         .map(this._getModuleId)
         .map(moduleId => {
-          const code = `;require(${JSON.stringify(moduleId)})`;
+          const code = `require(${JSON.stringify(moduleId)});`;
           const name = 'require-' + String(moduleId);
           const path = name + '.js';
 
@@ -388,7 +388,7 @@ class DeltaTransformer extends EventEmitter {
     return [
       id,
       {
-        code: ';' + code,
+        code,
         id,
         map,
         name,
