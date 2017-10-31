@@ -13,7 +13,8 @@
 'use strict';
 
 const Generator = require('../Generator');
-const {compactMapping, fromRawMappings} = require('..');
+
+const {compactMapping, fromRawMappings, toRawMappings} = require('..');
 
 describe('flattening mappings / compacting', () => {
   it('flattens simple mappings', () => {
@@ -88,6 +89,19 @@ describe('build map from raw mappings', () => {
       sourcesContent: ['code1', 'code2', 'code3'],
       version: 3,
     });
+  });
+
+  describe('convert a sourcemap into raw mappings', () => {
+    expect(
+      toRawMappings({
+        mappings:
+          'E;;IAIMA;;;;QAII;;;;YAIIC;E;;ICEEC;;;;;;;;;;;Y;;cCAAA;;;;kBAI8F;;;;gHA8FID',
+        names: ['apples', 'pears', 'bananas'],
+        sources: ['path1', 'path2', 'path3'],
+        sourcesContent: ['code1', 'code2', 'code3'],
+        version: 3,
+      }),
+    ).toMatchSnapshot();
   });
 });
 

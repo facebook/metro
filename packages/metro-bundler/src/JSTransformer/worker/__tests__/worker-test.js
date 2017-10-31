@@ -32,7 +32,7 @@ describe('code transformation worker:', () => {
     transformer = {
       transform: jest.fn(({filename, options, src}) => ({
         code: src,
-        map: {},
+        map: [],
       })),
     };
   });
@@ -104,7 +104,7 @@ describe('code transformation worker:', () => {
   it('calls back with the result of the transform in the cache', done => {
     const result = {
       code: 'some.other(code)',
-      map: {},
+      map: [],
     };
 
     transformCode(

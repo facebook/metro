@@ -15,14 +15,14 @@
 const DeltaCalculator = require('./DeltaCalculator');
 
 const createModuleIdFactory = require('../lib/createModuleIdFactory');
+const minify = require('../JSTransformer/worker/minify');
 
 const {EventEmitter} = require('events');
 
-import type {RawMapping} from '../Bundler/source-map';
 import type Bundler from '../Bundler';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type Resolver from '../Resolver';
-import type {MappingsMap} from '../lib/SourceMap';
+import type {CompactRawMappings} from '../lib/SourceMap';
 import type Module from '../node-haste/Module';
 import type {Options as BundleOptions} from './';
 import type {DependencyEdges} from './traverseDependencies';
@@ -37,7 +37,7 @@ export type DeltaEntryType =
 export type DeltaEntry = {|
   +code: string,
   +id: number,
-  +map: ?Array<RawMapping>,
+  +map: ?CompactRawMappings,
   +name: string,
   +path: string,
   +source: string,
@@ -379,18 +379,16 @@ class DeltaTransformer extends EventEmitter {
           map: metadata.map,
         };
 
-    // Ignore the Source Maps if the output of the transformer is not our
-    // custom rawMapping data structure, since the Delta bundler cannot process
-    // them. This can potentially happen when the minifier is enabled (since
-    // uglifyJS only returns standard Source Maps).
-    const map = Array.isArray(wrapped.map) ? wrapped.map : undefined;
+    const {code, map} = transformOptions.minify
+      ? minify.withRawMappings(wrapped.code, wrapped.map, module.path)
+      : wrapped;
 
     const id = this._getModuleId(module);
 
     return [
       id,
       {
-        code: ';' + wrapped.code,
+        code: ';' + code,
         id,
         map,
         name,
@@ -419,7 +417,7 @@ class DeltaTransformer extends EventEmitter {
   ): Promise<{
     +code: string,
     +dependencyOffsets: ?Array<number>,
-    +map: ?MappingsMap,
+    +map: ?CompactRawMappings,
     +source: string,
   }> {
     if (module.isAsset()) {

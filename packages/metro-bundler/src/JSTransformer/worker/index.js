@@ -16,13 +16,16 @@ const asyncify = require('async/asyncify');
 const constantFolding = require('./constant-folding');
 const extractDependencies = require('./extract-dependencies');
 const inline = require('./inline');
-const invariant = require('fbjs/lib/invariant');
 const minify = require('./minify');
 
-const {compactMapping} = require('../../Bundler/source-map');
+const {compactMapping, toRawMappings} = require('../../Bundler/source-map');
 
 import type {LogEntry} from '../../Logger/Types';
-import type {MappingsMap} from '../../lib/SourceMap';
+import type {
+  CompactRawMappings,
+  MappingsMap,
+  RawMappings,
+} from '../../lib/SourceMap';
 import type {LocalPath} from '../../node-haste/lib/toLocalPath';
 import type {Ast, Plugins as BabelPlugins} from 'babel-core';
 
@@ -30,7 +33,7 @@ export type TransformedCode = {
   code: string,
   dependencies: Array<string>,
   dependencyOffsets: Array<number>,
-  map?: ?MappingsMap,
+  map?: ?CompactRawMappings,
 };
 
 export type Transform<ExtraOptions: {}> = ({|
@@ -39,7 +42,7 @@ export type Transform<ExtraOptions: {}> = ({|
   options: ExtraOptions & TransformOptions,
   plugins?: BabelPlugins,
   src: string,
-|}) => {ast: ?Ast, code: string, map: ?MappingsMap};
+|}) => {ast: ?Ast, code: string, map: ?MappingsMap | RawMappings};
 
 export type Transformer<ExtraOptions: {} = {}> = {
   transform: Transform<ExtraOptions>,
@@ -97,11 +100,6 @@ const transformCode: TransformCode = asyncify(
     sourceCode: string,
     options: Options,
   ): Data => {
-    invariant(
-      !options.minify || options.transform.generateSourceMaps,
-      'Minifying source code requires the `generateSourceMaps` option to be `true`',
-    );
-
     const isJson = filename.endsWith('.json');
     if (isJson) {
       sourceCode = 'module.exports=' + sourceCode;
@@ -127,18 +125,17 @@ const transformCode: TransformCode = asyncify(
       src: sourceCode,
     });
 
-    // TODO: Add more robust check once the transformer only returns rawMappings
-    if (Array.isArray(transformed.map)) {
-      transformed.map = transformed.map.map(compactMapping);
-    }
+    // If the transformer returns standard sourcemaps, we need to transform them
+    // to rawMappings so we can process them correctly.
+    const rawMappings =
+      transformed.map && !Array.isArray(transformed.map)
+        ? toRawMappings(transformed.map)
+        : transformed.map;
 
-    invariant(
-      transformed != null,
-      'Missing transform results despite having no error.',
-    );
+    // Convert the sourcemaps to Compact Raw source maps.
+    const map = rawMappings ? rawMappings.map(compactMapping) : null;
 
-    let {code, map} = transformed;
-
+    let code = transformed.code;
     if (isJson) {
       code = code.replace(/^\w+\.exports=/, '');
     } else {
@@ -191,7 +188,7 @@ exports.transformAndExtractDependencies = (
 };
 
 exports.minify = asyncify(
-  (filename: string, code: string, sourceMap: MappingsMap) => {
+  (filename: string, code: string, sourceMap: RawMappings) => {
     var result;
     try {
       result = minify.withSourceMap(code, sourceMap, filename);

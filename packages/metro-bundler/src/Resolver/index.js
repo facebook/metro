@@ -19,7 +19,7 @@ const pathJoin = require('path').join;
 
 import type ResolutionResponse from '../node-haste/DependencyGraph/ResolutionResponse';
 import type Module, {HasteImpl, TransformCode} from '../node-haste/Module';
-import type {MappingsMap} from '../lib/SourceMap';
+import type {MappingsMap, CompactRawMappings} from '../lib/SourceMap';
 import type {PostMinifyProcess} from '../Bundler';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type {Reporter} from '../lib/reporting';
@@ -230,10 +230,10 @@ class Resolver {
     dependencyPairs: Map<string, string>,
     dependencyOffsets: Array<number>,
     name: string,
-    map: ?MappingsMap,
+    map: ?CompactRawMappings,
     code: string,
     dev?: boolean,
-  }): {code: string, map: ?MappingsMap} {
+  }): {code: string, map: ?CompactRawMappings} {
     if (module.isJSON()) {
       code = `module.exports = ${code}`;
     }

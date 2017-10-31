@@ -68,10 +68,7 @@ class DeltaBundler {
       deltaTransformer = await DeltaTransformer.create(
         this._bundler,
         this._options,
-        {
-          ...options, // The Delta Bundler does not support minifying due to
-          minify: false, // issues generating the source maps (T21699790).
-        },
+        options,
       );
 
       this._deltaTransformers.set(bundleId, deltaTransformer);

@@ -13,11 +13,15 @@
 'use strict';
 
 import type {SourceMap as MappingsMap} from 'babel-core';
+import type {RawMapping} from 'babel-generator';
+import type {RawMapping as CompactRawMapping} from 'source-map';
 
 export type IndexMapSection = {
   map: SourceMap,
   offset: {line: number, column: number},
 };
+
+export type RawMappings = Array<RawMapping>;
 
 type FBExtensions = {x_facebook_offsets: Array<number>};
 
@@ -32,6 +36,8 @@ export type IndexMap = {
 export type FBIndexMap = IndexMap & FBExtensions;
 export type SourceMap = IndexMap | MappingsMap;
 export type FBSourceMap = FBIndexMap | (MappingsMap & FBExtensions);
+
+export type CompactRawMappings = Array<CompactRawMapping>;
 
 function isMappingsMap(map: SourceMap): %checks {
   return map.mappings !== undefined;

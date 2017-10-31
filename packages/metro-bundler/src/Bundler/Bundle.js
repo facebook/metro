@@ -133,7 +133,14 @@ class Bundle extends BundleBase {
         // If we get a map from the transformer we'll switch to a mode
         // were we're combining the source maps as opposed to
         if (map) {
-          const usesRawMappings = isRawMappings(map);
+          let usesRawMappings = isRawMappings(map);
+
+          // Transform the raw mappings into standard source maps so the RAM
+          // bundler for production can build the source maps correctly.
+          if (usesRawMappings) {
+            map = fromRawMappings(module).toMap(undefined, {});
+            usesRawMappings = false;
+          }
 
           if (this._sourceMapFormat === 'undetermined') {
             this._sourceMapFormat = usesRawMappings ? 'flattened' : 'indexed';

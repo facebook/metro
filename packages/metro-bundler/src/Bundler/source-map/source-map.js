@@ -13,8 +13,10 @@
 'use strict';
 
 const Generator = require('./Generator');
+const SourceMap = require('source-map');
 
 import type ModuleTransport from '../../lib/ModuleTransport';
+import type {MappingsMap, RawMappings} from '../../lib/SourceMap';
 import type {RawMapping as BabelRawMapping} from 'babel-generator';
 
 type GeneratedCodeMapping = [number, number];
@@ -58,6 +60,31 @@ function fromRawMappings(
   }
 
   return generator;
+}
+
+/**
+ * Transforms a standard source map object into a Raw Mappings object, to be
+ * used across the bundler.
+ */
+function toRawMappings(sourceMap: MappingsMap): RawMappings {
+  const rawMappings = [];
+
+  new SourceMap.SourceMapConsumer(sourceMap).eachMapping(map => {
+    rawMappings.push({
+      generated: {
+        line: map.generatedLine,
+        column: map.generatedColumn,
+      },
+      original: {
+        line: map.originalLine,
+        column: map.originalColumn,
+      },
+      source: map.source,
+      name: map.name,
+    });
+  });
+
+  return rawMappings;
 }
 
 function compactMapping(mapping: BabelRawMapping): RawMapping {
@@ -116,5 +143,8 @@ function countLines(string) {
   return string.split('\n').length;
 }
 
-exports.fromRawMappings = fromRawMappings;
-exports.compactMapping = compactMapping;
+module.exports = {
+  fromRawMappings,
+  toRawMappings,
+  compactMapping,
+};

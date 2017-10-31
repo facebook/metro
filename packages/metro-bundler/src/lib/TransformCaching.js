@@ -22,7 +22,7 @@ const rimraf = require('rimraf');
 const writeFileAtomicSync = require('write-file-atomic').sync;
 
 import type {Options as WorkerOptions} from '../JSTransformer/worker';
-import type {MappingsMap} from './SourceMap';
+import type {CompactRawMappings} from './SourceMap';
 import type {Reporter} from './reporting';
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
 
@@ -35,7 +35,7 @@ export type CachedResult = {
   code: string,
   dependencies: Array<string>,
   dependencyOffsets: Array<number>,
-  map?: ?MappingsMap,
+  map?: ?CompactRawMappings,
 };
 
 export type TransformCacheResult = {|
@@ -336,7 +336,7 @@ function readMetadataFileSync(
   cachedSourceHash: string,
   dependencies: Array<string>,
   dependencyOffsets: Array<number>,
-  sourceMap: ?MappingsMap,
+  sourceMap: ?CompactRawMappings,
 } {
   const metadataStr = fs.readFileSync(metadataFilePath, 'utf8');
   const metadata = tryParseJSON(metadataStr);
