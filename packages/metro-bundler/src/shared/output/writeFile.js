@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 'use strict';
 
@@ -14,8 +15,11 @@ const denodeify = require('denodeify');
 const fs = require('fs');
 const throat = require('throat');
 
-type WriteFn =
-  (file: string, data: string | Buffer, encoding?: ?string) => Promise<mixed>;
+type WriteFn = (
+  file: string,
+  data: string | Buffer,
+  encoding?: ?string,
+) => Promise<mixed>;
 const writeFile: WriteFn = throat(128, denodeify(fs.writeFile));
 
 module.exports = writeFile;

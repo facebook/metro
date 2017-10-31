@@ -7,20 +7,28 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 'use strict';
 
 const invariant = require('fbjs/lib/invariant');
 
-import type {FBIndexMap, IndexMap, MappingsMap, SourceMap} from '../../../lib/SourceMap';
+import type {
+  FBIndexMap,
+  IndexMap,
+  MappingsMap,
+  SourceMap,
+} from '../../../lib/SourceMap';
 import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
 
 const newline = /\r\n?|\n|\u2028|\u2029/g;
 // fastest implementation
 const countLines = (string: string) => (string.match(newline) || []).length + 1;
 
-
-function lineToLineSourceMap(source: string, filename: string = ''): MappingsMap {
+function lineToLineSourceMap(
+  source: string,
+  filename: string = '',
+): MappingsMap {
   // The first line mapping in our package is the base64vlq code for zeros (A).
   const firstLine = 'AAAA;';
 
@@ -39,9 +47,10 @@ function lineToLineSourceMap(source: string, filename: string = ''): MappingsMap
 
 const wrapperEnd = wrappedCode => wrappedCode.indexOf('{') + 1;
 
-const Section =
-  (line: number, column: number, map: SourceMap) =>
-    ({map, offset: {line, column}});
+const Section = (line: number, column: number, map: SourceMap) => ({
+  map,
+  offset: {line, column},
+});
 
 type CombineOptions = {fixWrapperOffset: boolean};
 
@@ -60,7 +69,12 @@ function combineSourceMapsAddingOffsets(
   options?: ?CombineOptions,
 ): FBIndexMap {
   const x_facebook_offsets = [];
-  const sections = combineMaps(modules, x_facebook_offsets, moduleGroups, options);
+  const sections = combineMaps(
+    modules,
+    x_facebook_offsets,
+    moduleGroups,
+    options,
+  );
   return {sections, version: 3, x_facebook_offsets};
 }
 
@@ -80,15 +94,15 @@ function combineMaps(modules, offsets: ?Array<number>, moduleGroups, options) {
       return;
     }
 
-
     if (offsets != null) {
       group = moduleGroups && moduleGroups.groups.get(id);
       if (group && moduleGroups) {
         const {modulesById} = moduleGroups;
-        const otherModules: $ReadOnlyArray<ModuleTransportLike> =
-          Array.from(group || [])
-            .map(moduleId => modulesById.get(moduleId))
-            .filter(Boolean); // needed to appease flow
+        const otherModules: $ReadOnlyArray<ModuleTransportLike> = Array.from(
+          group || [],
+        )
+          .map(moduleId => modulesById.get(moduleId))
+          .filter(Boolean); // needed to appease flow
         otherModules.forEach(m => {
           groupLines += countLines(m.code);
         });
@@ -102,7 +116,9 @@ function combineMaps(modules, offsets: ?Array<number>, moduleGroups, options) {
       !Array.isArray(map),
       'Random Access Bundle source maps cannot be built from raw mappings',
     );
-    sections.push(Section(line, column, map || lineToLineSourceMap(code, name)));
+    sections.push(
+      Section(line, column, map || lineToLineSourceMap(code, name)),
+    );
     if (offsets != null && id != null) {
       offsets[id] = line;
       for (const moduleId of group || []) {
@@ -115,9 +131,8 @@ function combineMaps(modules, offsets: ?Array<number>, moduleGroups, options) {
   return sections;
 }
 
-const joinModules =
-  (modules: $ReadOnlyArray<{+code: string}>): string =>
-    modules.map(m => m.code).join('\n');
+const joinModules = (modules: $ReadOnlyArray<{+code: string}>): string =>
+  modules.map(m => m.code).join('\n');
 
 module.exports = {
   combineSourceMaps,

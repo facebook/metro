@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 'use strict';
 
@@ -17,9 +18,11 @@ const crypto = require('crypto');
 const isUTF8 = encoding => /^utf-?8$/i.test(encoding);
 
 const constantFor = encoding =>
-  /^ascii$/i.test(encoding) ? 1 :
-  isUTF8(encoding) ? 2 :
-  /^(?:utf-?16(?:le)?|ucs-?2)$/.test(encoding) ? 3 : 0;
+  /^ascii$/i.test(encoding)
+    ? 1
+    : isUTF8(encoding)
+      ? 2
+      : /^(?:utf-?16(?:le)?|ucs-?2)$/.test(encoding) ? 3 : 0;
 
 module.exports = function(
   code: Buffer | string,
@@ -29,18 +32,25 @@ module.exports = function(
   const hash = crypto.createHash('sha1');
   hash.update(buffer);
   const digest = hash.digest();
-  const signature = Buffer.alloc ? Buffer.alloc(digest.length + 1) : new Buffer(digest.length + 1);
+  const signature = Buffer.alloc
+    ? Buffer.alloc(digest.length + 1)
+    : new Buffer(digest.length + 1);
   digest.copy(signature);
   signature.writeUInt8(
     constantFor(tryAsciiPromotion(buffer, encoding)),
-    signature.length - 1);
+    signature.length - 1,
+  );
   return signature;
 };
 
 function tryAsciiPromotion(buffer, encoding) {
-  if (!isUTF8(encoding)) { return encoding; }
+  if (!isUTF8(encoding)) {
+    return encoding;
+  }
   for (let i = 0, n = buffer.length; i < n; i++) {
-    if (buffer[i] > 0x7f) { return encoding; }
+    if (buffer[i] > 0x7f) {
+      return encoding;
+    }
   }
   return 'ascii';
 }

@@ -5,11 +5,12 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
 'use strict';
 
-jest.mock('child_process')
-  .mock('net');
+jest.mock('child_process').mock('net');
 
 const EventEmitter = require('events');
 const {Readable} = require('stream');
@@ -38,18 +39,17 @@ beforeEach(() => {
 
 it('sends a socket path to the child process', () => {
   socketResponse = '{}';
-  return worker([], fakeSourceMaps())
-    .then(() => expect(childProcess.send).toBeCalledWith(expect.any(String)));
+  return worker([], fakeSourceMaps()).then(() =>
+    expect(childProcess.send).toBeCalledWith(expect.any(String)),
+  );
 });
 
 it('fails if the child process emits an error', () => {
   const error = new Error('Expected error');
-  childProcess.send.mockImplementation(() =>
-    childProcess.emit('error', error));
+  childProcess.send.mockImplementation(() => childProcess.emit('error', error));
 
   expect.assertions(1);
-  return worker([], fakeSourceMaps())
-    .catch(e => expect(e).toBe(error));
+  return worker([], fakeSourceMaps()).catch(e => expect(e).toBe(error));
 });
 
 it('fails if the socket connection emits an error', () => {
@@ -57,46 +57,51 @@ it('fails if the socket connection emits an error', () => {
   socket._read = () => socket.emit('error', error);
 
   expect.assertions(1);
-  return worker([], fakeSourceMaps())
-    .catch(e => expect(e).toBe(error));
+  return worker([], fakeSourceMaps()).catch(e => expect(e).toBe(error));
 });
 
 it('sends the passed in stack and maps over the socket', () => {
   socketResponse = '{}';
   const stack = ['the', 'stack'];
-  return worker(stack, fakeSourceMaps())
-    .then(() =>
-      expect(socket.end).toBeCalledWith(JSON.stringify({
+  return worker(stack, fakeSourceMaps()).then(() =>
+    expect(socket.end).toBeCalledWith(
+      JSON.stringify({
         maps: Array.from(fakeSourceMaps()),
         stack,
-      })));
+      }),
+    ),
+  );
 });
 
 it('resolves to the `result` property of the message returned over the socket', () => {
   socketResponse = '{"result": {"the": "result"}}';
-  return worker([], fakeSourceMaps())
-    .then(response => expect(response).toEqual({the: 'result'}));
+  return worker([], fakeSourceMaps()).then(response =>
+    expect(response).toEqual({the: 'result'}),
+  );
 });
 
 it('rejects with the `error` property of the message returned over the socket', () => {
   socketResponse = '{"error": "the error message"}';
 
   expect.assertions(1);
-  return worker([], fakeSourceMaps())
-    .catch(error => expect(error).toEqual(new Error('the error message')));
+  return worker([], fakeSourceMaps()).catch(error =>
+    expect(error).toEqual(new Error('the error message')),
+  );
 });
 
 it('rejects if the socket response cannot be parsed as JSON', () => {
   socketResponse = '{';
 
   expect.assertions(1);
-  return worker([], fakeSourceMaps())
-    .catch(error => expect(error).toBeInstanceOf(SyntaxError));
+  return worker([], fakeSourceMaps()).catch(error =>
+    expect(error).toBeInstanceOf(SyntaxError),
+  );
 });
 
 function setupCommunication() {
   childProcess.send.mockImplementation(() =>
-    process.nextTick(() => childProcess.emit('message')));
+    process.nextTick(() => childProcess.emit('message')),
+  );
 }
 
 function* fakeSourceMaps() {

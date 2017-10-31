@@ -5,6 +5,8 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
 
 'use strict';
@@ -17,13 +19,16 @@ const concat = require('concat-stream');
 const net = require('net');
 
 process.once('message', socket => {
-  net.createServer({allowHalfOpen: true}, connection => {
-    connection.setEncoding('utf8');
-    connection.pipe(concat(data =>
-      symbolicate(connection, data)
-        .catch(console.error) // log the error as a last resort
-    ));
-  }).listen(socket, () => process.send(null));
+  net
+    .createServer({allowHalfOpen: true}, connection => {
+      connection.setEncoding('utf8');
+      connection.pipe(
+        concat(
+          data => symbolicate(connection, data).catch(console.error), // log the error as a last resort
+        ),
+      );
+    })
+    .listen(socket, () => process.send(null));
 });
 
 function symbolicate(connection, data) {
@@ -64,7 +69,7 @@ function mapFrame(frame, consumers) {
 
 function makeErrorMessage(error) {
   return JSON.stringify({
-    error: String(error && error.message || error),
+    error: String((error && error.message) || error),
   });
 }
 

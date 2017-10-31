@@ -7,9 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 'use strict';
-
 
 import type {Module} from './types.flow';
 
@@ -17,7 +17,7 @@ exports.empty = (): Module => virtual('');
 
 // creates a virtual module (i.e. not corresponding to a file on disk)
 // with the given source code.
-const virtual = exports.virtual = (code: string): Module => ({
+const virtual = (exports.virtual = (code: string): Module => ({
   dependencies: [],
   file: {
     code,
@@ -25,4 +25,4 @@ const virtual = exports.virtual = (code: string): Module => ({
     path: '',
     type: 'script',
   },
-});
+}));

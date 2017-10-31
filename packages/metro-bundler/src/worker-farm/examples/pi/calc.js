@@ -5,6 +5,8 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
 
 /* eslint-disable */
@@ -18,13 +20,12 @@
  * increase accuracy.
  */
 
-module.exports = function (points, callback) {
-  var inside = 0
-    , i = points
+module.exports = function(points, callback) {
+  var inside = 0,
+    i = points;
 
   while (i--)
-    if (Math.pow(Math.random(), 2) + Math.pow(Math.random(), 2) <= 1)
-      inside++
+    if (Math.pow(Math.random(), 2) + Math.pow(Math.random(), 2) <= 1) inside++;
 
-  callback(null, (inside / points) * 4)
-}
+  callback(null, inside / points * 4);
+};

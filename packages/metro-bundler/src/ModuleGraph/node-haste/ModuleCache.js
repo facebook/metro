@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -59,7 +60,7 @@ module.exports = class ModuleCache {
   getPackageData(path: string): PackageData {
     const pkg = this.getTransformedFile(path).package;
     if (!pkg) {
-        throw new Error(`"${path}" does not exist`);
+      throw new Error(`"${path}" does not exist`);
     }
     return pkg;
   }

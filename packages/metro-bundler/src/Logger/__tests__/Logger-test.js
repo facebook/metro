@@ -8,6 +8,8 @@
  *
  * eslint-disable no-console
  *
+ *
+ * @format
  */
 'use strict';
 
@@ -50,7 +52,9 @@ describe('Logger', () => {
   });
 
   it('creates action end log entries', () => {
-    const actionEndLogEntry = createActionEndEntry(createActionStartEntry('Test'));
+    const actionEndLogEntry = createActionEndEntry(
+      createActionStartEntry('Test'),
+    );
     expect(actionEndLogEntry).toEqual({
       action_name: 'Test',
       action_phase: 'end',

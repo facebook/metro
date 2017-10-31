@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 'use strict';
 
@@ -26,11 +27,8 @@ const NO_OPTIONS = {};
 
 exports.create = function create(resolve: ResolveFn, load: LoadFn): GraphFn {
   async function Graph(entryPoints, platform, options) {
-    const {
-      log = (console: any),
-      optimize = false,
-      skip,
-    } = options || NO_OPTIONS;
+    const {log = (console: any), optimize = false, skip} =
+      options || NO_OPTIONS;
 
     if (typeof platform !== 'string') {
       log.error('`Graph`, called without a platform');
@@ -40,8 +38,21 @@ exports.create = function create(resolve: ResolveFn, load: LoadFn): GraphFn {
     const loadOptions = {log, optimize};
     const memoizingLoad = memoizeLoad(load);
 
-    const queue: Queue<{id: string, parent: ?string, parentDependencyIndex: number, skip: ?Set<string>}, LoadResult, Map<?string, Module>> = new Queue(
-      ({id, parent}) => memoizingLoad(resolve(id, parent, platform, options || NO_OPTIONS), loadOptions),
+    const queue: Queue<
+      {
+        id: string,
+        parent: ?string,
+        parentDependencyIndex: number,
+        skip: ?Set<string>,
+      },
+      LoadResult,
+      Map<?string, Module>,
+    > = new Queue(
+      ({id, parent}) =>
+        memoizingLoad(
+          resolve(id, parent, platform, options || NO_OPTIONS),
+          loadOptions,
+        ),
       onFileLoaded,
       new Map([[null, emptyModule()]]),
     );
@@ -55,9 +66,10 @@ exports.create = function create(resolve: ResolveFn, load: LoadFn): GraphFn {
 
     if (tasks.length === 0) {
       log.error('`Graph` called without any entry points');
-      return Promise.reject(new Error('At least one entry point has to be passed.'));
+      return Promise.reject(
+        new Error('At least one entry point has to be passed.'),
+      );
     }
-
 
     queue.enqueue(...tasks);
     return collect(await queue.result);
@@ -77,7 +89,11 @@ class Queue<T, R, A> {
   _running: boolean;
   result: Promise<A>;
 
-  constructor(runTask: T => R | Promise<R>, accumulate: (Queue<T, R, A>, A, R, T) => A, initial: A) {
+  constructor(
+    runTask: T => R | Promise<R>,
+    accumulate: (Queue<T, R, A>, A, R, T) => A,
+    initial: A,
+  ) {
     this._runTask = runTask;
     this._accumulate = accumulate;
     this._result = initial;
@@ -117,7 +133,10 @@ class Queue<T, R, A> {
       const result = runTask(task);
       if (isPromise(result)) {
         this._pending.add(task);
-        result.then(result => this._onAsyncTaskDone(result, task), this._reject);
+        result.then(
+          result => this._onAsyncTaskDone(result, task),
+          this._reject,
+        );
       } else {
         this._onTaskDone(result, task);
       }
@@ -130,7 +149,12 @@ class Queue<T, R, A> {
   }
 }
 
-function onFileLoaded(queue, modules, {file, dependencies}, {id, parent, parentDependencyIndex, skip}) {
+function onFileLoaded(
+  queue,
+  modules,
+  {file, dependencies},
+  {id, parent, parentDependencyIndex, skip},
+) {
   const {path} = file;
   const parentModule = modules.get(parent);
 
@@ -139,12 +163,14 @@ function onFileLoaded(queue, modules, {file, dependencies}, {id, parent, parentD
 
   if ((!skip || !skip.has(path)) && !modules.has(path)) {
     modules.set(path, {file, dependencies: Array(dependencies.length)});
-    queue.enqueue(...dependencies.map((id, i) => ({
-      id,
-      parent: path,
-      parentDependencyIndex: i,
-      skip,
-    })));
+    queue.enqueue(
+      ...dependencies.map((id, i) => ({
+        id,
+        parent: path,
+        parentDependencyIndex: i,
+        skip,
+      })),
+    );
   }
 
   return modules;
@@ -163,8 +189,9 @@ function collect(
 
   const {dependencies} = module;
   if (path === null) {
-    serialized.entryModules =
-      dependencies.map(dep => nullthrows(modules.get(dep.path)));
+    serialized.entryModules = dependencies.map(dep =>
+      nullthrows(modules.get(dep.path)),
+    );
   } else {
     serialized.modules.push(module);
     seen.add(path);

@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 'use strict';
 
@@ -19,12 +20,14 @@ const xpipe = require('xpipe');
 const {LazyPromise, LockingPromise} = require('./util');
 const {fork} = require('child_process');
 
-export type {SourceMap as SourceMap};
+export type {SourceMap};
 import type {SourceMap} from '../../lib/SourceMap';
 
 export type Stack = Array<{file: string, lineNumber: number, column: number}>;
-export type Symbolicate =
-  (Stack, Iterable<[string, SourceMap]>) => Promise<Stack>;
+export type Symbolicate = (
+  Stack,
+  Iterable<[string, SourceMap]>,
+) => Promise<Stack>;
 
 const affixes = {prefix: 'metro-bundler-symbolicate', suffix: '.sock'};
 const childPath = require.resolve('./worker');
@@ -32,31 +35,29 @@ const childPath = require.resolve('./worker');
 exports.createWorker = (): Symbolicate => {
   // There are issues with named sockets on windows that cause the connection to
   // close too early so run the symbolicate server on a random localhost port.
-  const socket = process.platform === 'win32'
-    ? 34712
-    : xpipe.eq(temp.path(affixes));
+  const socket =
+    process.platform === 'win32' ? 34712 : xpipe.eq(temp.path(affixes));
   const child = new LockingPromise(new LazyPromise(() => startupChild(socket)));
 
   return (stack, sourceMaps) =>
     child
       .then(() => connectAndSendJob(socket, message(stack, sourceMaps)))
       .then(JSON.parse)
-      .then(response =>
-        'error' in response
-          ? Promise.reject(new Error(response.error))
-          : response.result
+      .then(
+        response =>
+          'error' in response
+            ? Promise.reject(new Error(response.error))
+            : response.result,
       );
 };
 
 function startupChild(socket) {
   const child = fork(childPath);
   return new Promise((resolve, reject) => {
-    child
-      .once('error', reject)
-      .once('message', () => {
-        child.removeAllListeners();
-        resolve(child);
-      });
+    child.once('error', reject).once('message', () => {
+      child.removeAllListeners();
+      resolve(child);
+    });
     // $FlowFixMe ChildProcess.send should accept any type.
     child.send(socket);
   });

@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 'use strict';
 
@@ -20,7 +21,11 @@ const writeSourceMap = require('./write-sourcemap');
 const {joinModules} = require('./util');
 
 import type Bundle from '../../../Bundler/Bundle';
-import type {ModuleGroups, ModuleTransportLike, OutputOptions} from '../../types.flow';
+import type {
+  ModuleGroups,
+  ModuleTransportLike,
+  OutputOptions,
+} from '../../types.flow';
 
 const SIZEOF_UINT32 = 4;
 
@@ -35,7 +40,7 @@ function saveAsIndexedFile(
   bundle: Bundle,
   options: OutputOptions,
   log: (...args: Array<string>) => void,
-/* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an error
+  /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an error
  * found when Flow v0.54 was deployed. To see the error delete this comment and
  * run Flow. */
 ): Promise<> {
@@ -56,23 +61,23 @@ function saveAsIndexedFile(
   log('Writing unbundle output to:', bundleOutput);
   const writeUnbundle = writeBuffers(
     fs.createWriteStream(bundleOutput),
-    buildTableAndContents(startupCode, lazyModules, moduleGroups, encoding)
+    buildTableAndContents(startupCode, lazyModules, moduleGroups, encoding),
   ).then(() => log('Done writing unbundle output'));
 
-  const sourceMap =
-    relativizeSourceMap(
-      buildSourceMapWithMetaData({
-        startupModules: startupModules.concat(),
-        lazyModules: lazyModules.concat(),
-        moduleGroups,
-        fixWrapperOffset: true,
-      }),
-      sourcemapSourcesRoot
-    );
+  const sourceMap = relativizeSourceMap(
+    buildSourceMapWithMetaData({
+      startupModules: startupModules.concat(),
+      lazyModules: lazyModules.concat(),
+      moduleGroups,
+      fixWrapperOffset: true,
+    }),
+    sourcemapSourcesRoot,
+  );
 
   return Promise.all([
     writeUnbundle,
-    sourcemapOutput && writeSourceMap(sourcemapOutput, JSON.stringify(sourceMap), log),
+    sourcemapOutput &&
+      writeSourceMap(sourcemapOutput, JSON.stringify(sourceMap), log),
   ]);
 }
 
@@ -163,15 +168,13 @@ function groupCode(rootCode, moduleGroup, modulesById) {
 function buildModuleBuffers(modules, moduleGroups, encoding) {
   return modules
     .filter(m => !moduleGroups.modulesInGroups.has(m.id))
-    .map(({id, code}) => moduleToBuffer(
-      id,
-      groupCode(
-        code,
-        moduleGroups.groups.get(id),
-        moduleGroups.modulesById,
+    .map(({id, code}) =>
+      moduleToBuffer(
+        id,
+        groupCode(code, moduleGroups.groups.get(id), moduleGroups.modulesById),
+        encoding,
       ),
-      encoding
-    ));
+    );
 }
 
 function buildTableAndContents(
@@ -188,13 +191,15 @@ function buildTableAndContents(
 
   const startupCodeBuffer = nullTerminatedBuffer(startupCode, encoding);
   const moduleBuffers = buildModuleBuffers(modules, moduleGroups, encoding);
-  const table = buildModuleTable(startupCodeBuffer, moduleBuffers, moduleGroups);
-
-  return [
-    fileHeader,
-    table,
+  const table = buildModuleTable(
     startupCodeBuffer,
-  ].concat(moduleBuffers.map(({buffer}) => buffer));
+    moduleBuffers,
+    moduleGroups,
+  );
+
+  return [fileHeader, table, startupCodeBuffer].concat(
+    moduleBuffers.map(({buffer}) => buffer),
+  );
 }
 
 function createModuleGroups(
@@ -208,9 +213,9 @@ function createModuleGroups(
   };
 }
 
-function * concat(iterators) {
+function* concat(iterators) {
   for (const it of iterators) {
-    yield * it;
+    yield* it;
   }
 }
 

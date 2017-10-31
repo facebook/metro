@@ -6,29 +6,30 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 'use strict';
 
-declare module "console" {
+declare module 'console' {
   declare export class Console {
-    constructor(stdout: mixed, stderr: mixed): void;
-    assert(value: mixed, message?: string, ...messageParts: Array<mixed>): void;
-    dir(data: mixed, options?: Object): void;
+    constructor(stdout: mixed, stderr: mixed): void,
+    assert(value: mixed, message?: string, ...messageParts: Array<mixed>): void,
+    dir(data: mixed, options?: Object): void,
 
-    error(msg: string, ...msgParts: Array<mixed>): void;
-    error(data: mixed): void;
+    error(msg: string, ...msgParts: Array<mixed>): void,
+    error(data: mixed): void,
 
-    info(msg: string, ...msgParts: Array<mixed>): void;
-    info(data: mixed): void;
+    info(msg: string, ...msgParts: Array<mixed>): void,
+    info(data: mixed): void,
 
-    log(msg: string, ...msgParts: Array<mixed>): void;
-    log(data: mixed): void;
+    log(msg: string, ...msgParts: Array<mixed>): void,
+    log(data: mixed): void,
 
-    time(label: string): void;
-    timeEnd(label: string): void;
-    trace(msg: string, ...msgParts: Array<mixed>): void;
+    time(label: string): void,
+    timeEnd(label: string): void,
+    trace(msg: string, ...msgParts: Array<mixed>): void,
 
-    warn(msg: string, ...msgParts: Array<mixed>): void;
-    warn(data: mixed): void;
+    warn(msg: string, ...msgParts: Array<mixed>): void,
+    warn(data: mixed): void,
   }
 }

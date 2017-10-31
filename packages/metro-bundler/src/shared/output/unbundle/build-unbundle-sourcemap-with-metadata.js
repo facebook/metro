@@ -7,10 +7,15 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 'use strict';
 
-const {combineSourceMaps, combineSourceMapsAddingOffsets, joinModules} = require('./util');
+const {
+  combineSourceMaps,
+  combineSourceMapsAddingOffsets,
+  joinModules,
+} = require('./util');
 
 import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
 
@@ -21,11 +26,16 @@ type Params = {|
   startupModules: $ReadOnlyArray<ModuleTransportLike>,
 |};
 
-module.exports = ({fixWrapperOffset, lazyModules, moduleGroups, startupModules}: Params) => {
+module.exports = ({
+  fixWrapperOffset,
+  lazyModules,
+  moduleGroups,
+  startupModules,
+}: Params) => {
   const options = fixWrapperOffset ? {fixWrapperOffset: true} : undefined;
   const startupModule: ModuleTransportLike = {
     code: joinModules(startupModules),
-    id:  Number.MIN_SAFE_INTEGER,
+    id: Number.MIN_SAFE_INTEGER,
     map: combineSourceMaps(startupModules, undefined, options),
     sourcePath: '',
   };

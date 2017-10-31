@@ -5,6 +5,8 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
 'use strict';
 
@@ -29,7 +31,9 @@ class MultipartResponse {
     res.writeHead(200, {
       'Content-Type': `multipart/mixed; boundary="${BOUNDARY}"`,
     });
-    res.write('If you are seeing this, your client does not support multipart response');
+    res.write(
+      'If you are seeing this, your client does not support multipart response',
+    );
   }
 
   writeChunk(headers, data, isLast = false) {

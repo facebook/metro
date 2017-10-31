@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 'use strict';
 
@@ -18,7 +19,9 @@ import type {OptimizationOptions} from './worker/optimize-module';
 import type {TransformOptions} from './worker/transform-module';
 import type {WorkerFnWithIO} from './worker/wrap-worker-fn';
 
-exports.optimizeModule =
-  (wrapWorkerFn(optimizeModule): WorkerFnWithIO<OptimizationOptions>);
-exports.transformModule =
-  (wrapWorkerFn(transformModule): WorkerFnWithIO<TransformOptions<{+retainLines?: boolean}>>);
+exports.optimizeModule = (wrapWorkerFn(optimizeModule): WorkerFnWithIO<
+  OptimizationOptions,
+>);
+exports.transformModule = (wrapWorkerFn(transformModule): WorkerFnWithIO<
+  TransformOptions<{+retainLines?: boolean}>,
+>);

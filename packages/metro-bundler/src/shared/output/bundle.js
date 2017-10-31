@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -37,7 +38,8 @@ function createCodeWithMap(
   const map = bundle.getSourceMap({dev});
   const sourceMap = relativizeSourceMap(
     typeof map === 'string' ? (JSON.parse(map): SourceMap) : map,
-    sourceMapSourcesRoot);
+    sourceMapSourcesRoot,
+  );
   return {
     code: bundle.getSource({dev}),
     map: sourceMap,
@@ -48,7 +50,7 @@ function saveBundleAndMap(
   bundle: Bundle,
   options: OutputOptions,
   log: (...args: Array<string>) => {},
-/* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an error
+  /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an error
  * found when Flow v0.54 was deployed. To see the error delete this comment and
  * run Flow. */
 ): Promise<> {
@@ -61,7 +63,11 @@ function saveBundleAndMap(
   } = options;
 
   log('start');
-  const origCodeWithMap = createCodeWithMap(bundle, !!dev, sourcemapSourcesRoot);
+  const origCodeWithMap = createCodeWithMap(
+    bundle,
+    !!dev,
+    sourcemapSourcesRoot,
+  );
   const codeWithMap = bundle.postProcessBundleSourcemap({
     ...origCodeWithMap,
     outFileName: bundleOutput,
@@ -75,15 +81,18 @@ function saveBundleAndMap(
   const writeMetadata = writeFile(
     bundleOutput + '.meta',
     meta(code, encoding),
-    'binary');
-  Promise.all([writeBundle, writeMetadata])
-    .then(() => log('Done writing bundle output'));
+    'binary',
+  );
+  Promise.all([writeBundle, writeMetadata]).then(() =>
+    log('Done writing bundle output'),
+  );
 
   if (sourcemapOutput) {
     log('Writing sourcemap output to:', sourcemapOutput);
-    const map = typeof codeWithMap.map !== 'string'
-      ? JSON.stringify(codeWithMap.map)
-      : codeWithMap.map;
+    const map =
+      typeof codeWithMap.map !== 'string'
+        ? JSON.stringify(codeWithMap.map)
+        : codeWithMap.map;
     const writeMap = writeFile(sourcemapOutput, map, null);
     writeMap.then(() => log('Done writing sourcemap output'));
     return Promise.all([writeBundle, writeMetadata, writeMap]);

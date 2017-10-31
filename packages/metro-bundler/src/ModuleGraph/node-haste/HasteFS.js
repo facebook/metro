@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -51,9 +52,7 @@ module.exports = class HasteFS {
   }
 
   matchFiles() {
-    throw new Error(
-      'HasteFS.matchFiles is not implemented yet.'
-    );
+    throw new Error('HasteFS.matchFiles is not implemented yet.');
   }
 
   matches(directory: string, pattern: RegExp) {

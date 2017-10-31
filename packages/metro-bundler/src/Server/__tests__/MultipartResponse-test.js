@@ -5,6 +5,8 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
 'use strict';
 
@@ -36,29 +38,31 @@ describe('MultipartResponse', () => {
     res.setHeader('Result-Header-2', 2);
     res.end('Hello, world!');
 
-    expect(nres.toString()).toEqual([
-      'HTTP/1.1 200',
-      'Content-Type: multipart/mixed; boundary="3beqjf3apnqeu3h5jqorms4i"',
-      '',
-      'If you are seeing this, your client does not support multipart response',
-      '--3beqjf3apnqeu3h5jqorms4i',
-      'foo: bar',
-      '',
-      'first chunk',
-      '--3beqjf3apnqeu3h5jqorms4i',
-      'test: 2',
-      '',
-      'second chunk',
-      '--3beqjf3apnqeu3h5jqorms4i',
-      'empty headers third chunk',
-      '--3beqjf3apnqeu3h5jqorms4i',
-      'Result-Header-1: 1',
-      'Result-Header-2: 2',
-      '',
-      'Hello, world!',
-      '--3beqjf3apnqeu3h5jqorms4i--',
-      '',
-    ].join('\r\n'));
+    expect(nres.toString()).toEqual(
+      [
+        'HTTP/1.1 200',
+        'Content-Type: multipart/mixed; boundary="3beqjf3apnqeu3h5jqorms4i"',
+        '',
+        'If you are seeing this, your client does not support multipart response',
+        '--3beqjf3apnqeu3h5jqorms4i',
+        'foo: bar',
+        '',
+        'first chunk',
+        '--3beqjf3apnqeu3h5jqorms4i',
+        'test: 2',
+        '',
+        'second chunk',
+        '--3beqjf3apnqeu3h5jqorms4i',
+        'empty headers third chunk',
+        '--3beqjf3apnqeu3h5jqorms4i',
+        'Result-Header-1: 1',
+        'Result-Header-2: 2',
+        '',
+        'Hello, world!',
+        '--3beqjf3apnqeu3h5jqorms4i--',
+        '',
+      ].join('\r\n'),
+    );
   });
 
   it('sends status code as last chunk header', () => {
@@ -72,23 +76,25 @@ describe('MultipartResponse', () => {
     });
     res.end('{}');
 
-    expect(nres.toString()).toEqual([
-      'HTTP/1.1 200',
-      'Content-Type: multipart/mixed; boundary="3beqjf3apnqeu3h5jqorms4i"',
-      '',
-      'If you are seeing this, your client does not support multipart response',
-      '--3beqjf3apnqeu3h5jqorms4i',
-      'foo: bar',
-      '',
-      'first chunk',
-      '--3beqjf3apnqeu3h5jqorms4i',
-      'X-Http-Status: 500',
-      'Content-Type: application/json; boundary="3beqjf3apnqeu3h5jqorms4i"',
-      '',
-      '{}',
-      '--3beqjf3apnqeu3h5jqorms4i--',
-      '',
-    ].join('\r\n'));
+    expect(nres.toString()).toEqual(
+      [
+        'HTTP/1.1 200',
+        'Content-Type: multipart/mixed; boundary="3beqjf3apnqeu3h5jqorms4i"',
+        '',
+        'If you are seeing this, your client does not support multipart response',
+        '--3beqjf3apnqeu3h5jqorms4i',
+        'foo: bar',
+        '',
+        'first chunk',
+        '--3beqjf3apnqeu3h5jqorms4i',
+        'X-Http-Status: 500',
+        'Content-Type: application/json; boundary="3beqjf3apnqeu3h5jqorms4i"',
+        '',
+        '{}',
+        '--3beqjf3apnqeu3h5jqorms4i--',
+        '',
+      ].join('\r\n'),
+    );
   });
 
   it('supports empty responses', () => {
@@ -101,19 +107,21 @@ describe('MultipartResponse', () => {
     });
     res.end();
 
-    expect(nres.toString()).toEqual([
-      'HTTP/1.1 200',
-      'Content-Type: multipart/mixed; boundary="3beqjf3apnqeu3h5jqorms4i"',
-      '',
-      'If you are seeing this, your client does not support multipart response',
-      '--3beqjf3apnqeu3h5jqorms4i',
-      'X-Http-Status: 304',
-      'Content-Type: application/json; boundary="3beqjf3apnqeu3h5jqorms4i"',
-      '',
-      '',
-      '--3beqjf3apnqeu3h5jqorms4i--',
-      '',
-    ].join('\r\n'));
+    expect(nres.toString()).toEqual(
+      [
+        'HTTP/1.1 200',
+        'Content-Type: multipart/mixed; boundary="3beqjf3apnqeu3h5jqorms4i"',
+        '',
+        'If you are seeing this, your client does not support multipart response',
+        '--3beqjf3apnqeu3h5jqorms4i',
+        'X-Http-Status: 304',
+        'Content-Type: application/json; boundary="3beqjf3apnqeu3h5jqorms4i"',
+        '',
+        '',
+        '--3beqjf3apnqeu3h5jqorms4i--',
+        '',
+      ].join('\r\n'),
+    );
   });
 });
 
@@ -130,9 +138,15 @@ function mockNodeResponse() {
       status = st;
       headers = {...headers, ...hdrs};
     }),
-    setHeader: jest.fn((key, val) => { headers[key] = val; }),
-    write: jest.fn(data => { body += data; }),
-    end: jest.fn(data => { body += (data || ''); }),
+    setHeader: jest.fn((key, val) => {
+      headers[key] = val;
+    }),
+    write: jest.fn(data => {
+      body += data;
+    }),
+    end: jest.fn(data => {
+      body += data || '';
+    }),
 
     // For testing only
     toString() {

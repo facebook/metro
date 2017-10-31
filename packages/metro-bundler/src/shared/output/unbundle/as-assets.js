@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 'use strict';
 
@@ -54,37 +55,38 @@ function saveAsAssets(
 
   log('Writing bundle output to:', bundleOutput);
   const modulesDir = path.join(path.dirname(bundleOutput), MODULES_DIR);
-  const writeUnbundle =
-    createDir(modulesDir).then( // create the modules directory first
-      () => Promise.all([
+  const writeUnbundle = createDir(modulesDir).then(
+    // create the modules directory first
+    () =>
+      Promise.all([
         writeModules(lazyModules, modulesDir, encoding),
         writeFile(bundleOutput, startupCode, encoding),
         writeMagicFlagFile(modulesDir),
-      ])
-    );
+      ]),
+  );
   writeUnbundle.then(() => log('Done writing unbundle output'));
 
-  const sourceMap =
-    relativizeSourceMap(
-      buildSourceMapWithMetaData({
-        fixWrapperOffset: true,
-        lazyModules: lazyModules.concat(),
-        moduleGroups: null,
-        startupModules: startupModules.concat(),
-      }),
-      sourcemapSourcesRoot
-    );
-
+  const sourceMap = relativizeSourceMap(
+    buildSourceMapWithMetaData({
+      fixWrapperOffset: true,
+      lazyModules: lazyModules.concat(),
+      moduleGroups: null,
+      startupModules: startupModules.concat(),
+    }),
+    sourcemapSourcesRoot,
+  );
 
   return Promise.all([
     writeUnbundle,
-    sourcemapOutput && writeSourceMap(sourcemapOutput, JSON.stringify(sourceMap), log),
+    sourcemapOutput &&
+      writeSourceMap(sourcemapOutput, JSON.stringify(sourceMap), log),
   ]);
 }
 
 function createDir(dirName) {
   return new Promise((resolve, reject) =>
-    mkdirp(dirName, error => error ? reject(error) : resolve()));
+    mkdirp(dirName, error => (error ? reject(error) : resolve())),
+  );
 }
 
 function writeModuleFile(module, modulesDir, encoding) {
@@ -93,8 +95,9 @@ function writeModuleFile(module, modulesDir, encoding) {
 }
 
 function writeModules(modules, modulesDir, encoding) {
-  const writeFiles =
-    modules.map(module => writeModuleFile(module, modulesDir, encoding));
+  const writeFiles = modules.map(module =>
+    writeModuleFile(module, modulesDir, encoding),
+  );
   return Promise.all(writeFiles);
 }
 

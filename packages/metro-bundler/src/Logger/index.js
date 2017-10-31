@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -17,11 +18,7 @@ const {EventEmitter} = require('events');
 
 const VERSION = require('../../package.json').version;
 
-import type {
-  ActionLogEntryData,
-  ActionStartLogEntry,
-  LogEntry,
-} from './Types';
+import type {ActionLogEntryData, ActionStartLogEntry, LogEntry} from './Types';
 
 const log_session = `${os.hostname()}-${Date.now()}`;
 const eventEmitter = new EventEmitter();
@@ -54,11 +51,7 @@ function createActionStartEntry(data: ActionLogEntryData | string): LogEntry {
 }
 
 function createActionEndEntry(logEntry: ActionStartLogEntry): LogEntry {
-  const {
-    action_name,
-    action_phase,
-    start_timestamp,
-  } = logEntry;
+  const {action_name, action_phase, start_timestamp} = logEntry;
 
   if (action_phase !== 'start' || !Array.isArray(start_timestamp)) {
     throw new Error('Action has not started or has already ended');

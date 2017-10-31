@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -39,7 +40,8 @@ module.exports = class Package {
     let main = getMain(this.data);
 
     if (replacements && typeof replacements === 'object') {
-      main = replacements[main] ||
+      main =
+        replacements[main] ||
         replacements[main + '.js'] ||
         replacements[main + '.json'] ||
         replacements[main.replace(/(\.js|\.json)$/, '')] ||
@@ -68,9 +70,7 @@ module.exports = class Package {
     if (!path.isAbsolute(name)) {
       const replacement = replacements[name];
       // support exclude with "someDependency": false
-      return replacement === false
-        ? false
-        : replacement || name;
+      return replacement === false ? false : replacement || name;
     }
 
     let relPath = './' + path.relative(this.root, name);
@@ -94,10 +94,7 @@ module.exports = class Package {
     }
 
     if (redirect) {
-      return path.join(
-        this.root,
-        redirect
-      );
+      return path.join(this.root, redirect);
     }
 
     return name;

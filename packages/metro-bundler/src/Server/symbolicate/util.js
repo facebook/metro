@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 
 'use strict';
@@ -14,7 +15,7 @@
 type PromiseLike<R> = {
   catch<U>(onReject?: (error: any) => ?Promise<U> | U): Promise<U>,
   then<U>(
-    fulfilled?: R => Promise<U> | U,
+    fulfilled?: (R) => Promise<U> | U,
     rejected?: (error: any) => Promise<U> | U,
   ): Promise<U>,
 };
@@ -38,14 +39,12 @@ exports.LazyPromise = class LazyPromise<T> {
 
   then<U>(
     fulfilled?: (value: T) => Promise<U> | U,
-    rejected?: (error: any) => Promise<U> | U
+    rejected?: (error: any) => Promise<U> | U,
   ): Promise<U> {
     return this._promise.then(fulfilled, rejected);
   }
 
-  catch<U>(
-    rejected?: (error: any) => ?Promise<U> | U
-  ): Promise<U> {
+  catch<U>(rejected?: (error: any) => ?Promise<U> | U): Promise<U> {
     return this._promise.catch(rejected);
   }
 };
@@ -56,8 +55,8 @@ exports.LazyPromise = class LazyPromise<T> {
  * asynchronous work.
  */
 exports.LockingPromise = class LockingPromise<T> {
-  _gate: PromiseLike<any>
-  _promise: PromiseLike<T>
+  _gate: PromiseLike<any>;
+  _promise: PromiseLike<T>;
 
   constructor(promise: PromiseLike<T>) {
     this._gate = this._promise = promise;
@@ -65,7 +64,7 @@ exports.LockingPromise = class LockingPromise<T> {
 
   then<U>(
     fulfilled?: (value: T) => Promise<U> | U,
-    rejected?: (error: any) => Promise<U> | U
+    rejected?: (error: any) => Promise<U> | U,
   ): Promise<U> {
     const whenUnlocked = () => {
       const promise = this._promise.then(fulfilled, rejected);
@@ -76,9 +75,7 @@ exports.LockingPromise = class LockingPromise<T> {
     return this._gate.then(whenUnlocked, whenUnlocked);
   }
 
-  catch<U>(
-    rejected?: (error: any) => ?Promise<U> | U
-  ): Promise<U> {
+  catch<U>(rejected?: (error: any) => ?Promise<U> | U): Promise<U> {
     return this._promise.catch(rejected);
   }
 };

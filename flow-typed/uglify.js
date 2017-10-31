@@ -5,6 +5,8 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
 
 'use strict';
@@ -14,25 +16,28 @@ type _Input =
   | Array<string> // array of file names
   | {[filename: string]: string}; // file names and corresponding code
 
-
 type _Options = {
   // https://github.com/mishoo/UglifyJS2/tree/harmony#compress-options
   compress?: false | Object,
   ie8?: boolean,
-  mangle?: boolean | {
-    eval?: boolean,
-    keep_fnames?: boolean,
-    properties?: boolean | {
-      builtins?: boolean,
-      debug?: boolean,
-      keep_quoted?: boolean,
-      regex?: RegExp,
-      reserved?: Array<string>,
-    },
-    reserved?: Array<string>,
-    safari10?: boolean,
-    toplevel?: boolean,
-  },
+  mangle?:
+    | boolean
+    | {
+        eval?: boolean,
+        keep_fnames?: boolean,
+        properties?:
+          | boolean
+          | {
+              builtins?: boolean,
+              debug?: boolean,
+              keep_quoted?: boolean,
+              regex?: RegExp,
+              reserved?: Array<string>,
+            },
+        reserved?: Array<string>,
+        safari10?: boolean,
+        toplevel?: boolean,
+      },
   output?: {
     ascii_only?: boolean,
     beautify?: boolean,
@@ -73,22 +78,21 @@ type _SourceMap = {
   version: number,
 };
 
-type _SourceMapOptions = true | {
-  filename?: string,
-  content?: ?string | _SourceMap,
-  includeSources?: boolean,
-  root?: string,
-  url?: string,
-};
+type _SourceMapOptions =
+  | true
+  | {
+      filename?: string,
+      content?: ?string | _SourceMap,
+      includeSources?: boolean,
+      root?: string,
+      url?: string,
+    };
 
 type _Error = {|error: Error|};
 type _Result = {|code: string, warnings?: Array<string>|};
 
 declare module 'uglify-es' {
-  declare function minify(
-    code: _Input,
-    options?: _Options,
-  ): _Error | _Result;
+  declare function minify(code: _Input, options?: _Options): _Error | _Result;
   declare function minify(
     code: _Input,
     options: {..._Options, sourceMap: _SourceMapOptions},

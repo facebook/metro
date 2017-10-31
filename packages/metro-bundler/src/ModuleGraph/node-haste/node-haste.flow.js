@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @flow
+ * @format
  */
 'use strict';
 
@@ -44,7 +45,7 @@ export type ModuleCache = {
   getModule(path: Path): Module,
   getPackage(path: Path): Package,
   getPackageOf(path: Path): ?Package,
-}
+};
 
 export type FastFS = {
   dirExists(path: Path): boolean,

@@ -4,6 +4,8 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
 
 const spawn = require('child_process').spawnSync;
@@ -14,9 +16,8 @@ module.exports = function runCommand(cmd, args, cwd) {
     cwd = __dirname;
   }
 
-  const displayArgs = args.length > 25
-    ? args.slice(0, 25) + '...'
-    : args.join(' ');
+  const displayArgs =
+    args.length > 25 ? args.slice(0, 25) + '...' : args.join(' ');
   console.log(chalk.dim('$ cd ' + cwd + `\n$ ${cmd} ${displayArgs}\n`));
   const result = spawn(cmd, args, {
     cwd,

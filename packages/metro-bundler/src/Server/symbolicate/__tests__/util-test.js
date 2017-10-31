@@ -5,6 +5,8 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @format
  */
 
 'use strict';
@@ -39,8 +41,7 @@ describe('Lazy Promise', () => {
   describe('value and error propagation', () => {
     it('resolves to the value provided by the factory', () => {
       expect.assertions(1);
-      return new LazyPromise(factory)
-        .then(v => expect(v).toBe(value));
+      return new LazyPromise(factory).then(v => expect(v).toBe(value));
     });
 
     it('passes through errors if not handled', () => {
@@ -48,9 +49,7 @@ describe('Lazy Promise', () => {
       factory.mockReturnValue(Promise.reject(error));
 
       expect.assertions(1);
-      return new LazyPromise(factory)
-        .then()
-        .catch(e => expect(e).toBe(error));
+      return new LazyPromise(factory).then().catch(e => expect(e).toBe(error));
     });
 
     it('uses rejection handlers passed to `then()`', () => {
@@ -58,8 +57,10 @@ describe('Lazy Promise', () => {
       factory.mockReturnValue(Promise.reject(error));
 
       expect.assertions(1);
-      return new LazyPromise(factory)
-        .then(() => {}, e => expect(e).toBe(error));
+      return new LazyPromise(factory).then(
+        () => {},
+        e => expect(e).toBe(error),
+      );
     });
 
     it('uses rejection handlers passed to `catch()`', () => {
@@ -67,8 +68,7 @@ describe('Lazy Promise', () => {
       factory.mockReturnValue(Promise.reject(error));
 
       expect.assertions(1);
-      return new LazyPromise(factory)
-        .catch(e => expect(e).toBe(error));
+      return new LazyPromise(factory).catch(e => expect(e).toBe(error));
     });
   });
 });
@@ -78,8 +78,9 @@ describe('Locking Promise', () => {
     const value = {};
 
     expect.assertions(1);
-    return new LockingPromise(Promise.resolve(value))
-      .then(v => expect(v).toBe(value));
+    return new LockingPromise(Promise.resolve(value)).then(v =>
+      expect(v).toBe(value),
+    );
   });
 
   it('passes through rejections', () => {
@@ -95,16 +96,19 @@ describe('Locking Promise', () => {
     const error = new Error('Must be handled');
 
     expect.assertions(1);
-    return new LockingPromise(Promise.reject(error))
-      .then(x => x, e => expect(e).toBe(error));
+    return new LockingPromise(Promise.reject(error)).then(
+      x => x,
+      e => expect(e).toBe(error),
+    );
   });
 
   it('uses rejection handlers passed to `catch()`', () => {
     const error = new Error('Must be handled');
 
     expect.assertions(1);
-    return new LockingPromise(Promise.reject(error))
-      .catch(e => expect(e).toBe(error));
+    return new LockingPromise(Promise.reject(error)).catch(e =>
+      expect(e).toBe(error),
+    );
   });
 
   describe('locking', () => {
@@ -113,7 +117,6 @@ describe('Locking Promise', () => {
     beforeEach(() => {
       locking = new LockingPromise(Promise.resolve(value));
     });
-
 
     it('only allows one handler to access the promise value', () => {
       const deferred = defer();
@@ -137,19 +140,19 @@ describe('Locking Promise', () => {
 
       deferred.resolve();
 
-      return Promise.all([x, y, z])
-        .then(([first, second, third]) => {
-          expect(first).toEqual([1, value]);
-          expect(second).toEqual([2, value]);
-          expect(third).toEqual([3, value]);
-        });
+      return Promise.all([x, y, z]).then(([first, second, third]) => {
+        expect(first).toEqual([1, value]);
+        expect(second).toEqual([2, value]);
+        expect(third).toEqual([3, value]);
+      });
     });
   });
 });
 
-
 function defer() {
   let resolve;
-  const promise = new Promise(res => { resolve = res; });
+  const promise = new Promise(res => {
+    resolve = res;
+  });
   return {promise, resolve};
 }
