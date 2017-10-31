@@ -17,9 +17,34 @@ const AssetPaths = require('../node-haste/lib/AssetPaths');
 const crypto = require('crypto');
 const denodeify = require('denodeify');
 const fs = require('fs');
+const imageSize = require('image-size');
 const path = require('path');
+const toLocalPath = require('../node-haste/lib/toLocalPath');
 
-import type {AssetData} from '../node-haste/lib/AssetPaths';
+const {isAssetTypeAnImage} = require('../Bundler/util');
+
+import type {AssetPath} from '../node-haste/lib/AssetPaths';
+
+type AssetInfo = {|
+  files: Array<string>,
+  hash: string,
+  name: string,
+  scales: Array<number>,
+  type: string,
+|};
+
+export type AssetData = {|
+  __packager_asset: boolean,
+  fileSystemLocation: string,
+  httpServerLocation: string,
+  width: ?number,
+  height: ?number,
+  scales: Array<number>,
+  files: Array<string>,
+  hash: string,
+  name: string,
+  type: string,
+|};
 
 const stat = denodeify(fs.stat);
 const readDir = denodeify(fs.readdir);
@@ -57,16 +82,10 @@ class AssetServer {
     });
   }
 
-  getAssetData(
+  _getAssetInfo(
     assetPath: string,
     platform: ?string = null,
-  ): Promise<{|
-    files: Array<string>,
-    hash: string,
-    name: string,
-    scales: Array<number>,
-    type: string,
-  |}> {
+  ): Promise<AssetInfo> {
     const nameData = AssetPaths.parse(
       assetPath,
       new Set(platform != null ? [platform] : []),
@@ -95,6 +114,37 @@ class AssetServer {
         });
       });
     });
+  }
+
+  async getAssetData(
+    assetPath: string,
+    platform: ?string = null,
+  ): Promise<AssetData> {
+    const localPath = toLocalPath(this._roots, assetPath);
+    var assetUrlPath = path.join('/assets', path.dirname(localPath));
+
+    // On Windows, change backslashes to slashes to get proper URL path from file path.
+    if (path.sep === '\\') {
+      assetUrlPath = assetUrlPath.replace(/\\/g, '/');
+    }
+
+    const isImage = isAssetTypeAnImage(path.extname(assetPath).slice(1));
+    const assetData = await this._getAssetInfo(localPath, platform);
+    const dimensions = isImage ? imageSize(assetData.files[0]) : null;
+    const scale = assetData.scales[0];
+
+    return {
+      __packager_asset: true,
+      fileSystemLocation: path.dirname(assetPath),
+      httpServerLocation: assetUrlPath,
+      width: dimensions ? dimensions.width / scale : undefined,
+      height: dimensions ? dimensions.height / scale : undefined,
+      scales: assetData.scales,
+      files: assetData.files,
+      hash: assetData.hash,
+      name: assetData.name,
+      type: assetData.type,
+    };
   }
 
   onFileChange(type: string, filePath: string) {
@@ -164,6 +214,7 @@ class AssetServer {
         // important: we want to resolve root + dir
         // to ensure the requested path doesn't traverse beyond root
         const absPath = path.resolve(root, dir);
+
         return stat(absPath).then(
           fstat => {
             // keep asset requests from traversing files
@@ -237,7 +288,7 @@ class AssetServer {
     return map;
   }
 
-  _getAssetDataFromName(platforms: Set<string>, file: string): ?AssetData {
+  _getAssetDataFromName(platforms: Set<string>, file: string): ?AssetPath {
     return AssetPaths.tryParse(file, platforms);
   }
 }

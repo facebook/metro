@@ -22,21 +22,14 @@ const Resolver = require('../Resolver');
 const Bundle = require('./Bundle');
 const HMRBundle = require('./HMRBundle');
 const ModuleTransport = require('../lib/ModuleTransport');
-const imageSize = require('image-size');
 const path = require('path');
-const denodeify = require('denodeify');
 const defaults = require('../defaults');
 const toLocalPath = require('../node-haste/lib/toLocalPath');
 const createModuleIdFactory = require('../lib/createModuleIdFactory');
 
-const {generateAssetTransformResult, isAssetTypeAnImage} = require('./util');
+const {generateAssetTransformResult} = require('./util');
 
-const {
-  sep: pathSeparator,
-  join: joinPath,
-  dirname: pathDirname,
-  extname,
-} = require('path');
+const {sep: pathSeparator} = require('path');
 
 const VERSION = require('../../package.json').version;
 
@@ -88,8 +81,6 @@ export type ExtendedAssetDescriptor = AssetDescriptor & {
   +fileSystemLocation: string,
   +files: Array<string>,
 };
-
-const sizeOf = denodeify(imageSize);
 
 const {
   createActionStartEntry,
@@ -791,41 +782,9 @@ class Bundler {
     assetPlugins: Array<string>,
     platform: ?string = null,
   ) {
-    const localPath = toLocalPath(this._projectRoots, module.path);
-    var assetUrlPath = joinPath('/assets', pathDirname(localPath));
-
-    // On Windows, change backslashes to slashes to get proper URL path from file path.
-    if (pathSeparator === '\\') {
-      assetUrlPath = assetUrlPath.replace(/\\/g, '/');
-    }
-
-    const isImage = isAssetTypeAnImage(extname(module.path).slice(1));
-
     return this._assetServer
-      .getAssetData(localPath, platform)
-      .then(assetData => {
-        return Promise.all([
-          isImage ? sizeOf(assetData.files[0]) : null,
-          assetData,
-        ]);
-      })
-      .then(res => {
-        const dimensions = res[0];
-        const assetData = res[1];
-        const scale = assetData.scales[0];
-        const asset = {
-          __packager_asset: true,
-          fileSystemLocation: pathDirname(module.path),
-          httpServerLocation: assetUrlPath,
-          width: dimensions ? dimensions.width / scale : undefined,
-          height: dimensions ? dimensions.height / scale : undefined,
-          scales: assetData.scales,
-          files: assetData.files,
-          hash: assetData.hash,
-          name: assetData.name,
-          type: assetData.type,
-        };
-
+      .getAssetData(module.path, platform)
+      .then(asset => {
         return this._applyAssetPlugins(assetPlugins, asset);
       })
       .then(asset => {

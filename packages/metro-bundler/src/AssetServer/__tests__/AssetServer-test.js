@@ -6,16 +6,23 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @emails oncall+javascript_foundation
  * @format
  */
 
 'use strict';
 
 jest.mock('fs');
+jest.mock('image-size');
 
 const AssetServer = require('../');
 const crypto = require('crypto');
 const fs = require('fs');
+
+require('image-size').mockReturnValue({
+  width: 300,
+  height: 200,
+});
 
 const {objectContaining} = jasmine;
 
@@ -195,12 +202,15 @@ describe('AssetServer', () => {
         },
       });
 
-      return server.getAssetData('imgs/b.png').then(data => {
+      return server.getAssetData('/root/imgs/b.png').then(data => {
         expect(data).toEqual(
           objectContaining({
+            __packager_asset: true,
             type: 'png',
             name: 'b',
             scales: [1, 2, 4, 4.5],
+            fileSystemLocation: '/root/imgs',
+            httpServerLocation: '/assets/imgs',
             files: [
               '/root/imgs/b@1x.png',
               '/root/imgs/b@2x.png',
@@ -229,12 +239,15 @@ describe('AssetServer', () => {
         },
       });
 
-      return server.getAssetData('imgs/b.jpg').then(data => {
+      return server.getAssetData('/root/imgs/b.jpg').then(data => {
         expect(data).toEqual(
           objectContaining({
+            __packager_asset: true,
             type: 'jpg',
             name: 'b',
             scales: [1, 2, 4, 4.5],
+            fileSystemLocation: '/root/imgs',
+            httpServerLocation: '/assets/imgs',
             files: [
               '/root/imgs/b@1x.jpg',
               '/root/imgs/b@2x.jpg',
@@ -275,18 +288,18 @@ describe('AssetServer', () => {
         }
 
         return server
-          .getAssetData('imgs/b.jpg')
+          .getAssetData('/root/imgs/b.jpg')
           .then(data =>
             expect(data).toEqual(objectContaining({hash: hash.digest('hex')})),
           );
       });
 
       it('changes the hash when the passed-in file watcher emits an `all` event', () => {
-        return server.getAssetData('imgs/b.jpg').then(initialData => {
+        return server.getAssetData('/root/imgs/b.jpg').then(initialData => {
           mockFS.root.imgs['b@4x.jpg'] = 'updated data';
           server.onFileChange('all', '/root/imgs/b@4x.jpg');
           return server
-            .getAssetData('imgs/b.jpg')
+            .getAssetData('/root/imgs/b.jpg')
             .then(data => expect(data.hash).not.toEqual(initialData.hash));
         });
       });

@@ -228,6 +228,8 @@ describe('Bundler', function() {
 
   describe('.bundle', () => {
     const mockAsset = {
+      __packager_asset: true,
+      fileSystemLocation: '/root/img',
       scales: [1, 2, 3],
       files: [
         '/root/img/img.png',
@@ -235,8 +237,11 @@ describe('Bundler', function() {
         '/root/img/img@3x.png',
       ],
       hash: 'i am a hash',
+      height: 100,
+      httpServerLocation: '/assets/img',
       name: 'img',
       type: 'png',
+      width: 50,
     };
 
     beforeEach(() => {

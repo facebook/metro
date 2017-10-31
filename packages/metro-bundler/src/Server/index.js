@@ -438,7 +438,6 @@ class Server {
       return await getOrderedDependencyPaths(
         this._deltaBundler,
         this._assetServer,
-        this._projectRoots,
         bundleOptions,
       );
     }

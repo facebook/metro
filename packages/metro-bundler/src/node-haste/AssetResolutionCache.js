@@ -15,7 +15,7 @@
 const AssetPaths = require('./lib/AssetPaths');
 const MapWithDefaults = require('./lib/MapWithDefaults');
 
-import type {AssetData} from './lib/AssetPaths';
+import type {AssetPath} from './lib/AssetPaths';
 
 type Options = {|
   /**
@@ -116,7 +116,7 @@ class AssetResolutionCache {
     return results;
   };
 
-  _isValidAsset(assetData: AssetData): boolean {
+  _isValidAsset(assetData: AssetPath): boolean {
     return this._opts.assetExtensions.has(assetData.type);
   }
 }

@@ -15,8 +15,7 @@
 const parsePlatformFilePath = require('./parsePlatformFilePath');
 const path = require('path');
 
-export type AssetData = {|
-  // TODO: rename to "assetPath", what it actually is.
+export type AssetPath = {|
   assetName: string,
   name: string,
   platform: ?string,
@@ -47,7 +46,7 @@ function parseBaseName(
  * Return `null` if the `filePath` doesn't have a valid extension, required
  * to describe the type of an asset.
  */
-function tryParse(filePath: string, platforms: Set<string>): ?AssetData {
+function tryParse(filePath: string, platforms: Set<string>): ?AssetPath {
   const result = parsePlatformFilePath(filePath, platforms);
   const {dirPath, baseName, platform, extension} = result;
   if (extension == null) {
@@ -63,7 +62,7 @@ function tryParse(filePath: string, platforms: Set<string>): ?AssetData {
   };
 }
 
-function parse(filePath: string, platforms: Set<string>): AssetData {
+function parse(filePath: string, platforms: Set<string>): AssetPath {
   const result = tryParse(filePath, platforms);
   if (result == null) {
     throw new Error('invalid asset file path: `${filePath}');

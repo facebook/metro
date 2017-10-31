@@ -14,8 +14,6 @@
 
 const Serializers = require('../DeltaBundler/Serializers');
 
-const toLocalPath = require('../node-haste/lib/toLocalPath');
-
 import type AssetsServer from '../AssetServer';
 import type {Options} from '../DeltaBundler/Serializers';
 import type DeltaBundler from '../DeltaBundler';
@@ -23,7 +21,6 @@ import type DeltaBundler from '../DeltaBundler';
 async function getOrderedDependencyPaths(
   deltaBundler: DeltaBundler,
   assetsServer: AssetsServer,
-  projectRoots: $ReadOnlyArray<string>,
   options: Options,
 ): Promise<Array<string>> {
   const modules = await Serializers.getAllModules(deltaBundler, options);
@@ -34,7 +31,7 @@ async function getOrderedDependencyPaths(
         return [module.path];
       } else {
         const assetData = await assetsServer.getAssetData(
-          toLocalPath(projectRoots, module.path),
+          module.path,
           options.platform,
         );
 

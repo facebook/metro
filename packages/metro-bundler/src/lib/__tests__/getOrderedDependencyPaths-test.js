@@ -63,11 +63,11 @@ describe('getOrderedDependencyPaths', () => {
       await getOrderedDependencyPaths(deltaBundler, assetsServer, ['/tmp'], {}),
     ).toEqual([
       '/tmp/1.js',
-      '2.png@2x',
-      '2.png@3x',
+      '/tmp/2.png@2x',
+      '/tmp/2.png@3x',
       '/tmp/3.js',
-      '4.png@2x',
-      '4.png@3x',
+      '/tmp/4.png@2x',
+      '/tmp/4.png@3x',
       '/tmp/5.js',
     ]);
   });
