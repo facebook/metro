@@ -135,7 +135,7 @@ var Bar = require(5); // 5 = ./Bar
 var Foo = require(6); // 6 = ./Foo
 
 module.exports = { Foo: Foo, Bar: Bar };
-}, 0);
+}, 4);
 __d(/* /Bar.js */function(global, require, module, exports) {
 
 'use strict';
@@ -158,7 +158,7 @@ __d(/* /AssetRegistry.js */function(global, require, module, exports) {
 
 'use strict';
 }, 8);
-;require(0);"
+require(4);"
 `;
 
 exports[`basic_bundle bundles package without polyfills 1`] = `
@@ -280,7 +280,7 @@ var Bar = require(3); // 3 = ./Bar
 var Foo = require(4); // 4 = ./Foo
 
 module.exports = { Foo: Foo, Bar: Bar };
-}, 0);
+}, 2);
 __d(/* /Bar.js */function(global, require, module, exports) {
 
 'use strict';
@@ -303,5 +303,5 @@ __d(/* /AssetRegistry.js */function(global, require, module, exports) {
 
 'use strict';
 }, 6);
-;require(0);"
+require(2);"
 `;

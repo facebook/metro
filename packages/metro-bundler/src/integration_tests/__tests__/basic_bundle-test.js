@@ -97,7 +97,7 @@ describe('basic_bundle', () => {
   }
 
   it('bundles package with polyfills', async () => {
-    const bundleWithPolyfills = await Metro.buildBundle(
+    const bundleWithPolyfills = await Metro.build(
       {
         assetRegistryPath: ASSET_REGISTRY_PATH,
         getPolyfills: () => [polyfill1, polyfill2],
@@ -112,11 +112,11 @@ describe('basic_bundle', () => {
         platform: 'ios',
       },
     );
-    verifyResultCode(bundleWithPolyfills.getSource());
+    verifyResultCode(bundleWithPolyfills.code);
   });
 
   it('bundles package without polyfills', async () => {
-    const bundleWithoutPolyfills = await Metro.buildBundle(
+    const bundleWithoutPolyfills = await Metro.build(
       {
         assetRegistryPath: ASSET_REGISTRY_PATH,
         getPolyfills: () => [],
@@ -131,6 +131,6 @@ describe('basic_bundle', () => {
         platform: 'ios',
       },
     );
-    verifyResultCode(bundleWithoutPolyfills.getSource());
+    verifyResultCode(bundleWithoutPolyfills.code);
   });
 });

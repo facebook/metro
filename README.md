@@ -23,7 +23,7 @@ Within the object returned, two main methods are given:
 
 ## Method `createServer(serverOptions)`
 
-Given a set of options (same ones as the `buildBundle`, a `metro-server` will be returned. You can then hook this into a proper HTTP(S) server by using its `processRequest` method:
+Given a set of options (same ones as the `build` method), a `metro-server` will be returned. You can then hook this into a proper HTTP(S) server by using its `processRequest` method:
 
 
 ```js
@@ -70,9 +70,9 @@ app.use(
 app.listen(8081);
 ```
 
-## Method `buildBundle(serverOptions, bundleOptions)`
+## Method `build(serverOptions, bundleOptions)`
 
-Given a set of options that you would typically pass to a server, plus a set of options specific to the bundle itself, a bundle will be built. This is useful at build time.
+Given a set of options that you would typically pass to a server, plus a set of options specific to the bundle itself, a bundle will be built. The return value is a Promise that resolves to an object with two properties, `code` and `map`. This is useful at build time.
 
 # Available options
 

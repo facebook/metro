@@ -101,24 +101,23 @@ function assertPublicBundleOptions(bo: mixed): PublicBundleOptions {
   return {entryFile, ...bo};
 }
 
-exports.buildBundle = function(
+exports.build = async function(
   options: Options,
   bundleOptions: PublicBundleOptions,
-) {
+): Promise<{code: string, map: string}> {
   var server = createNonPersistentServer(options);
   const ServerClass = require('./Server');
-  return server
-    .buildBundle({
-      ...ServerClass.DEFAULT_BUNDLE_OPTIONS,
-      ...assertPublicBundleOptions(bundleOptions),
-    })
-    .then(p => {
-      server.end();
-      return p;
-    });
+
+  const result = await server.build({
+    ...ServerClass.DEFAULT_BUNDLE_OPTIONS,
+    ...assertPublicBundleOptions(bundleOptions),
+  });
+  server.end();
+
+  return result;
 };
 
-exports.getOrderedDependencyPaths = function(
+exports.getOrderedDependencyPaths = async function(
   options: Options,
   depOptions: {
     +entryFile: string,
@@ -127,12 +126,13 @@ exports.getOrderedDependencyPaths = function(
     +minify: boolean,
     +generateSourceMaps: boolean,
   },
-) {
+): Promise<Array<string>> {
   var server = createNonPersistentServer(options);
-  return server.getOrderedDependencyPaths(depOptions).then(function(paths) {
-    server.end();
-    return paths;
-  });
+
+  const paths = await server.getOrderedDependencyPaths(depOptions);
+  server.end();
+
+  return paths;
 };
 
 function enableDebug() {
