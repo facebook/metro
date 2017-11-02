@@ -281,8 +281,7 @@ class TerminalReporter {
     let message =
       error.snippet == null && error.stack != null
         ? error.stack
-        : //$FlowFixMe T19379628
-          error.message;
+        : error.message;
     //$FlowFixMe T19379628
     if (error.filename && !message.includes(error.filename)) {
       //$FlowFixMe T19379628
