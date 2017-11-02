@@ -27,8 +27,16 @@ jest
   .mock('../../lib/GlobalTransformCache')
   .mock('../../DeltaBundler/Serializers');
 
+const DeltaBundler = require('../../DeltaBundler');
+
 describe('processRequest', () => {
-  let Bundler, Server, AssetServer, symbolicate, Serializers;
+  let Bundler;
+  let Server;
+  let AssetServer;
+  let symbolicate;
+  let Serializers;
+  const lastModified = new Date();
+
   beforeEach(() => {
     jest.useFakeTimers();
     jest.resetModules();
@@ -53,7 +61,7 @@ describe('processRequest', () => {
   const makeRequest = (reqHandler, requrl, reqOptions) =>
     new Promise(resolve =>
       reqHandler(
-        {url: requrl, headers: {}, ...reqOptions},
+        {url: requrl, headers: {host: 'localhost:8081'}, ...reqOptions},
         {
           statusCode: 200,
           headers: {},
@@ -79,6 +87,18 @@ describe('processRequest', () => {
   let requestHandler;
 
   beforeEach(() => {
+    Serializers.fullBundle.mockReturnValue(
+      Promise.resolve({
+        bundle: 'this is the source',
+        numModifiedFiles: 38,
+        lastModified,
+      }),
+    );
+
+    Serializers.fullSourceMap.mockReturnValue(
+      Promise.resolve('this is the source map'),
+    );
+
     Bundler.prototype.bundle = jest.fn(() =>
       Promise.resolve({
         getModules: () => [],
@@ -118,12 +138,12 @@ describe('processRequest', () => {
     ).then(response => expect(response.body).toEqual('this is the source'));
   });
 
-  it('returns ETag header on request of *.bundle', () => {
+  it('returns Last-Modified header on request of *.bundle', () => {
     return makeRequest(
       requestHandler,
       'mybundle.bundle?runModule=true',
     ).then(response => {
-      expect(response.getHeader('ETag')).toBeDefined();
+      expect(response.getHeader('Last-Modified')).toBeDefined();
     });
   });
 
@@ -132,7 +152,7 @@ describe('processRequest', () => {
       requestHandler,
       'mybundle.bundle?runModule=true',
     ).then(response => {
-      expect(response.getHeader('X-Metro-Files-Changed-Count')).toBeDefined();
+      expect(response.getHeader('X-Metro-Files-Changed-Count')).toEqual('38');
     });
   });
 
@@ -141,15 +161,15 @@ describe('processRequest', () => {
       requestHandler,
       'mybundle.bundle?runModule=true',
     ).then(response => {
-      expect(response.getHeader('Content-Length')).toBe(
-        Buffer.byteLength(response.body),
+      expect(response.getHeader('Content-Length')).toEqual(
+        '' + Buffer.byteLength(response.body),
       );
     });
   });
 
-  it('returns 304 on request of *.bundle when if-none-match equals the ETag', () => {
+  it('returns 304 on request of *.bundle when if-modified-since equals Last-Modified', () => {
     return makeRequest(requestHandler, 'mybundle.bundle?runModule=true', {
-      headers: {'if-none-match': 'this is an etag'},
+      headers: {'if-modified-since': lastModified.toUTCString()},
     }).then(response => {
       expect(response.statusCode).toEqual(304);
     });
@@ -168,8 +188,9 @@ describe('processRequest', () => {
       'index.ios.includeRequire.bundle',
     ).then(response => {
       expect(response.body).toEqual('this is the source');
-      expect(Bundler.prototype.bundle).toBeCalledWith({
+      expect(Serializers.fullBundle).toBeCalledWith(expect.any(DeltaBundler), {
         assetPlugins: [],
+        deltaBundleId: expect.any(String),
         dev: true,
         entryFile: 'index.ios.js',
         entryModuleOnly: false,
@@ -184,7 +205,7 @@ describe('processRequest', () => {
         resolutionResponse: null,
         runBeforeMainModule: ['InitializeCore'],
         runModule: true,
-        sourceMapUrl: 'index.ios.includeRequire.map',
+        sourceMapUrl: 'http://localhost:8081/index.ios.includeRequire.map',
         unbundle: false,
       });
     });
@@ -196,8 +217,9 @@ describe('processRequest', () => {
       'index.bundle?platform=ios',
     ).then(function(response) {
       expect(response.body).toEqual('this is the source');
-      expect(Bundler.prototype.bundle).toBeCalledWith({
+      expect(Serializers.fullBundle).toBeCalledWith(expect.any(DeltaBundler), {
         assetPlugins: [],
+        deltaBundleId: expect.any(String),
         dev: true,
         entryFile: 'index.js',
         entryModuleOnly: false,
@@ -212,7 +234,7 @@ describe('processRequest', () => {
         resolutionResponse: null,
         runBeforeMainModule: ['InitializeCore'],
         runModule: true,
-        sourceMapUrl: 'index.map?platform=ios',
+        sourceMapUrl: 'http://localhost:8081/index.map?platform=ios',
         unbundle: false,
       });
     });
@@ -224,8 +246,9 @@ describe('processRequest', () => {
       'index.bundle?assetPlugin=assetPlugin1&assetPlugin=assetPlugin2',
     ).then(function(response) {
       expect(response.body).toEqual('this is the source');
-      expect(Bundler.prototype.bundle).toBeCalledWith({
+      expect(Serializers.fullBundle).toBeCalledWith(expect.any(DeltaBundler), {
         assetPlugins: ['assetPlugin1', 'assetPlugin2'],
+        deltaBundleId: expect.any(String),
         dev: true,
         entryFile: 'index.js',
         entryModuleOnly: false,
@@ -241,130 +264,13 @@ describe('processRequest', () => {
         runBeforeMainModule: ['InitializeCore'],
         runModule: true,
         sourceMapUrl:
-          'index.map?assetPlugin=assetPlugin1&assetPlugin=assetPlugin2',
+          'http://localhost:8081/index.map?assetPlugin=assetPlugin1&assetPlugin=assetPlugin2',
         unbundle: false,
       });
     });
   });
 
-  describe('file changes', () => {
-    it('does not rebuild the bundles that contain a file when that file is changed', () => {
-      const bundleFunc = jest.fn();
-      bundleFunc
-        .mockReturnValueOnce(
-          Promise.resolve({
-            getModules: () => [],
-            getSource: () => 'this is the first source',
-            getSourceMap: () => {},
-            getSourceMapString: () => 'this is the source map',
-            getEtag: () => () => 'this is an etag',
-          }),
-        )
-        .mockReturnValue(
-          Promise.resolve({
-            getModules: () => [],
-            getSource: () => 'this is the rebuilt source',
-            getSourceMap: () => {},
-            getSourceMapString: () => 'this is the source map',
-            getEtag: () => () => 'this is an etag',
-          }),
-        );
-
-      Bundler.prototype.bundle = bundleFunc;
-
-      server = new Server(options);
-
-      requestHandler = server.processRequest.bind(server);
-
-      makeRequest(
-        requestHandler,
-        'mybundle.bundle?runModule=true',
-      ).done(response => {
-        expect(response.body).toEqual('this is the first source');
-        expect(bundleFunc.mock.calls.length).toBe(1);
-      });
-
-      jest.runAllTicks();
-
-      server.onFileChange('all', options.projectRoots[0] + 'path/file.js');
-      jest.runAllTimers();
-      jest.runAllTicks();
-
-      expect(bundleFunc.mock.calls.length).toBe(1);
-
-      makeRequest(
-        requestHandler,
-        'mybundle.bundle?runModule=true',
-      ).done(response =>
-        expect(response.body).toEqual('this is the rebuilt source'),
-      );
-      jest.runAllTicks();
-    });
-
-    it(
-      'does not rebuild the bundles that contain a file ' +
-        'when that file is changed, even when hot loading is enabled',
-      () => {
-        const bundleFunc = jest.fn();
-        bundleFunc
-          .mockReturnValueOnce(
-            Promise.resolve({
-              getModules: () => [],
-              getSource: () => 'this is the first source',
-              getSourceMap: () => {},
-              getSourceMapString: () => 'this is the source map',
-              getEtag: () => () => 'this is an etag',
-            }),
-          )
-          .mockReturnValue(
-            Promise.resolve({
-              getModules: () => [],
-              getSource: () => 'this is the rebuilt source',
-              getSourceMap: () => {},
-              getSourceMapString: () => 'this is the source map',
-              getEtag: () => () => 'this is an etag',
-            }),
-          );
-
-        Bundler.prototype.bundle = bundleFunc;
-
-        server = new Server(options);
-        server.setHMRFileChangeListener(() => {});
-
-        requestHandler = server.processRequest.bind(server);
-
-        makeRequest(
-          requestHandler,
-          'mybundle.bundle?runModule=true',
-        ).done(response => {
-          expect(response.body).toEqual('this is the first source');
-          expect(bundleFunc.mock.calls.length).toBe(1);
-        });
-
-        jest.runAllTicks();
-
-        server.onFileChange('all', options.projectRoots[0] + 'path/file.js');
-        jest.runAllTimers();
-        jest.runAllTicks();
-
-        expect(bundleFunc.mock.calls.length).toBe(1);
-        server.setHMRFileChangeListener(null);
-
-        makeRequest(
-          requestHandler,
-          'mybundle.bundle?runModule=true',
-        ).done(response => {
-          expect(response.body).toEqual('this is the rebuilt source');
-          expect(bundleFunc.mock.calls.length).toBe(2);
-        });
-        jest.runAllTicks();
-      },
-    );
-  });
-
   describe('Generate delta bundle endpoint', () => {
-    Serializers;
-
     it('should generate a new delta correctly', () => {
       Serializers.deltaBundle.mockImplementation(async (_, options) => {
         expect(options.deltaBundleId).toBe(undefined);

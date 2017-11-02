@@ -97,7 +97,7 @@ export type Options = {|
   +sourceExts: ?Array<string>,
   +transformCache: TransformCache,
   transformModulePath?: string,
-  useDeltaBundler: boolean,
+  useDeltaBundler?: boolean, // TODO: remove this, since it's no longer used
   watch?: boolean,
   workerPath: ?string,
 |};
@@ -142,6 +142,8 @@ const FILES_CHANGED_COUNT_REBUILD = -1;
 
 const bundleDeps = new WeakMap();
 const NODE_MODULES = `${path.sep}node_modules${path.sep}`;
+
+const USE_DELTA_BUNDLER = true;
 
 class Server {
   _opts: {
@@ -226,7 +228,6 @@ class Server {
       transformCache: options.transformCache,
       transformModulePath:
         options.transformModulePath || defaults.transformModulePath,
-      useDeltaBundler: options.useDeltaBundler,
       watch: options.watch || false,
       workerPath: options.workerPath,
     };
@@ -448,7 +449,7 @@ class Server {
     +minify: boolean,
     +generateSourceMaps: boolean,
   }): Promise<Array<string>> {
-    if (this._opts.useDeltaBundler) {
+    if (USE_DELTA_BUNDLER) {
       const bundleOptions = {
         ...Server.DEFAULT_BUNDLE_OPTIONS,
         ...options,
@@ -855,7 +856,7 @@ class Server {
       return;
     }
 
-    if (this._opts.useDeltaBundler) {
+    if (USE_DELTA_BUNDLER) {
       if (requestType === 'bundle') {
         await this._processBundleUsingDeltaBundler(req, res);
         return;
@@ -1214,7 +1215,7 @@ class Server {
   async _sourceMapForURL(reqUrl: string): Promise<SourceMap> {
     const options: DeltaBundlerOptions = this._getOptionsFromUrl(reqUrl);
 
-    if (this._opts.useDeltaBundler) {
+    if (USE_DELTA_BUNDLER) {
       return await Serializers.fullSourceMapObject(this._deltaBundler, {
         ...options,
         deltaBundleId: this.optionsHash(options),
