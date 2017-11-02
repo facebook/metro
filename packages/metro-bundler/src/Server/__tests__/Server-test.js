@@ -27,14 +27,13 @@ jest
   .mock('../../lib/GlobalTransformCache')
   .mock('../../DeltaBundler/Serializers');
 
-const DeltaBundler = require('../../DeltaBundler');
-
 describe('processRequest', () => {
   let Bundler;
   let Server;
   let AssetServer;
   let symbolicate;
   let Serializers;
+  let DeltaBundler;
   const lastModified = new Date();
 
   beforeEach(() => {
@@ -45,6 +44,7 @@ describe('processRequest', () => {
     AssetServer = require('../../AssetServer');
     symbolicate = require('../symbolicate');
     Serializers = require('../../DeltaBundler/Serializers');
+    DeltaBundler = require('../../DeltaBundler');
   });
 
   let server;
