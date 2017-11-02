@@ -13,15 +13,16 @@
 
 'use strict';
 
+const babylon = require('babylon');
 const collectDependencies = require('../collect-dependencies');
-const astFromCode = require('babylon').parse;
+
 const {codeFromAst, comparableCode} = require('../../test-helpers');
 
 const {any} = expect;
 
 const {InvalidRequireCallError} = collectDependencies;
 
-describe('dependency collection from ASTs:', () => {
+describe('dependency collection from ASTs', () => {
   it('collects dependency identifiers from the code', () => {
     const ast = astFromCode(`
       const a = require('b/lib/a');
@@ -42,13 +43,14 @@ describe('dependency collection from ASTs:', () => {
     const ast = astFromCode(`
       const a = require('b/lib/a');
       if (!something) {
-        require.async("some/async/module").then(foo => {});
+        import("some/async/module").then(foo => {});
       }
     `);
 
     expect(collectDependencies(ast).dependencies).toEqual([
       'b/lib/a',
       'some/async/module',
+      'BundleSegments',
     ]);
   });
 
@@ -107,7 +109,7 @@ describe('dependency collection from ASTs:', () => {
   });
 });
 
-describe('Dependency collection from optimized ASTs:', () => {
+describe('Dependency collection from optimized ASTs', () => {
   const dependencyMapName = 'arbitrary';
   const {forOptimization} = collectDependencies;
   let ast, names;
@@ -116,12 +118,11 @@ describe('Dependency collection from optimized ASTs:', () => {
     ast = astFromCode(`
       const a = require(${dependencyMapName}[0], 'b/lib/a');
       exports.do = () => require(${dependencyMapName}[1], "do");
-      require.async(${dependencyMapName}[2], 'some/async/module').then(foo => {});
       if (!something) {
-        require(${dependencyMapName}[3], "setup/something");
+        require(${dependencyMapName}[2], "setup/something");
       }
     `);
-    names = ['b/lib/a', 'do', 'some/async/module', 'setup/something'];
+    names = ['b/lib/a', 'do', 'setup/something'];
   });
 
   it('passes the `dependencyMapName` through', () => {
@@ -146,11 +147,14 @@ describe('Dependency collection from optimized ASTs:', () => {
       comparableCode(`
       const a = require(${dependencyMapName}[0]);
       exports.do = () => require(${dependencyMapName}[1]);
-      require.async(${dependencyMapName}[2]).then(foo => {});
       if (!something) {
-        require(${dependencyMapName}[3]);
+        require(${dependencyMapName}[2]);
       }
     `),
     );
   });
 });
+
+function astFromCode(code) {
+  return babylon.parse(code, {plugins: ['dynamicImport']});
+}

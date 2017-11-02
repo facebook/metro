@@ -36,13 +36,21 @@ export type TransformedCode = {
   map?: ?CompactRawMappings,
 };
 
-export type Transform<ExtraOptions: {}> = ({|
+export type TransformArgs<ExtraOptions: {}> = {|
   filename: string,
   localPath: string,
   options: ExtraOptions & TransformOptions,
   plugins?: BabelPlugins,
   src: string,
-|}) => {ast: ?Ast, code: string, map: ?MappingsMap | RawMappings};
+|};
+export type TransformResults = {
+  ast: ?Ast,
+  code: string,
+  map: ?MappingsMap | RawMappings,
+};
+export type Transform<ExtraOptions: {}> = (
+  TransformArgs<ExtraOptions>,
+) => TransformResults;
 
 export type Transformer<ExtraOptions: {} = {}> = {
   transform: Transform<ExtraOptions>,

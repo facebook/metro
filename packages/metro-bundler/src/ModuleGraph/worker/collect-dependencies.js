@@ -12,6 +12,7 @@
 
 'use strict';
 
+const babelTemplate = require('babel-template');
 const nullthrows = require('fbjs/lib/nullthrows');
 
 const {traverse, types} = require('babel-core');
@@ -22,6 +23,7 @@ type AST = Object;
 class Replacement {
   nameToIndex: Map<string, number>;
   nextIndex: number;
+  replaceImports = true;
 
   constructor() {
     this.nameToIndex = new Map();
@@ -74,6 +76,7 @@ function getInvalidProdRequireMessage(node) {
 class ProdReplacement {
   replacement: Replacement;
   names: Array<string>;
+  replaceImports = false;
 
   constructor(names) {
     this.replacement = new Replacement();
@@ -129,19 +132,15 @@ function createMapLookup(dependencyMapIdentifier, propertyIdentifier) {
   );
 }
 
+const makeAsyncRequire = babelTemplate(
+  `require(BUNDLE_SEGMENTS_PATH).loadForModule(MODULE_ID).then(
+    () => require(MODULE_PATH),
+  )`,
+);
+
 function collectDependencies(ast, replacement, dependencyMapIdentifier) {
   const visited = new WeakSet();
   const traversalState = {dependencyMapIdentifier};
-  function processRequireCall(node, state, isAsync) {
-    const arg = replacement.getRequireCallArg(node);
-    const index = replacement.getIndex(arg);
-    node.arguments = replacement.makeArgs(
-      types.numericLiteral(index),
-      arg,
-      state.dependencyMapIdentifier,
-    );
-    visited.add(node);
-  }
   traverse(
     ast,
     {
@@ -152,16 +151,27 @@ function collectDependencies(ast, replacement, dependencyMapIdentifier) {
           );
         }
       },
+
       CallExpression(path, state) {
         const node = path.node;
+        if (replacement.replaceImports && node.callee.type === 'Import') {
+          processImportCall(path, node, replacement, state);
+          return;
+        }
         if (visited.has(node)) {
           return;
         }
-        if (isRequireCall(node.callee)) {
-          processRequireCall(node, state, false);
-        } else if (isAsyncRequireCall(node.callee)) {
-          processRequireCall(node, state, true);
+        if (!isRequireCall(node.callee)) {
+          return;
         }
+        const arg = replacement.getRequireCallArg(node);
+        const index = replacement.getIndex(arg);
+        node.arguments = replacement.makeArgs(
+          types.numericLiteral(index),
+          arg,
+          state.dependencyMapIdentifier,
+        );
+        visited.add(node);
       },
     },
     null,
@@ -172,6 +182,31 @@ function collectDependencies(ast, replacement, dependencyMapIdentifier) {
     dependencies: replacement.getNames(),
     dependencyMapName: nullthrows(traversalState.dependencyMapIdentifier).name,
   };
+}
+
+function processImportCall(path, node, replacement, state) {
+  const args = node.arguments;
+  if (args.length !== 1 || !isLiteralString(args[0])) {
+    throw new InvalidRequireCallError(
+      'Calls to import() expect exactly 1 string literal argument, ' +
+        'but this was found: ' +
+        prettyPrint(node).code,
+    );
+  }
+  const modulePath = args[0];
+  const index = replacement.getIndex(modulePath);
+  const newImport = makeAsyncRequire({
+    MODULE_PATH: modulePath,
+    MODULE_ID: createMapLookup(
+      state.dependencyMapIdentifier,
+      types.numericLiteral(index),
+    ),
+    BUNDLE_SEGMENTS_PATH: {
+      type: 'StringLiteral',
+      value: 'BundleSegments',
+    },
+  });
+  path.replaceWith(newImport);
 }
 
 function isLiteralString(node) {
@@ -185,15 +220,6 @@ function isRequireCall(callee) {
   return callee.type === 'Identifier' && callee.name === 'require';
 }
 
-function isAsyncRequireCall(callee) {
-  return (
-    callee.type === 'MemberExpression' &&
-    !callee.computed &&
-    callee.property.name === 'async' &&
-    isRequireCall(callee.object)
-  );
-}
-
 class InvalidRequireCallError extends Error {
   constructor(message) {
     super(message);
@@ -201,7 +227,7 @@ class InvalidRequireCallError extends Error {
 }
 
 const xp = (module.exports = (ast: AST) =>
-  collectDependencies(ast, new Replacement()));
+  collectDependencies(ast, new Replacement(), undefined));
 
 xp.forOptimization = (
   ast: AST,
