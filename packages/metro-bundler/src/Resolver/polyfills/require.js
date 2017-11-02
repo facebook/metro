@@ -138,20 +138,12 @@ function guardedLoadModule(moduleId: ModuleID, module) {
 const ID_MASK_SHIFT = 16;
 const LOCAL_ID_MASK = ~0 >>> ID_MASK_SHIFT;
 
-function unpackModuleId(
-  moduleId: ModuleID,
-): {segmentId: number, localId: number} {
-  const segmentId = moduleId >>> ID_MASK_SHIFT;
-  const localId = moduleId & LOCAL_ID_MASK;
-  return {segmentId, localId};
-}
-require.unpackModuleId = unpackModuleId;
-
 function loadModuleImplementation(moduleId, module) {
   const nativeRequire = global.nativeRequire;
   if (!module && nativeRequire) {
-    const {segmentId, localId} = unpackModuleId(moduleId);
-    nativeRequire(localId, segmentId);
+    const bundleId = moduleId >>> ID_MASK_SHIFT;
+    const localId = moduleId & LOCAL_ID_MASK;
+    nativeRequire(localId, bundleId);
     module = modules[moduleId];
   }
 

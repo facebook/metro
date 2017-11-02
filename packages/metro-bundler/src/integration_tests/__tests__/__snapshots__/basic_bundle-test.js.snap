@@ -56,21 +56,12 @@ function guardedLoadModule(moduleId, module) {
 var ID_MASK_SHIFT = 16;
 var LOCAL_ID_MASK = ~0 >>> ID_MASK_SHIFT;
 
-function unpackModuleId(moduleId) {
-  var segmentId = moduleId >>> ID_MASK_SHIFT;
-  var localId = moduleId & LOCAL_ID_MASK;
-  return { segmentId: segmentId, localId: localId };
-}
-_require.unpackModuleId = unpackModuleId;
-
 function loadModuleImplementation(moduleId, module) {
   var nativeRequire = global.nativeRequire;
   if (!module && nativeRequire) {
-    var _unpackModuleId = unpackModuleId(moduleId),
-        segmentId = _unpackModuleId.segmentId,
-        localId = _unpackModuleId.localId;
-
-    nativeRequire(localId, segmentId);
+    var bundleId = moduleId >>> ID_MASK_SHIFT;
+    var localId = moduleId & LOCAL_ID_MASK;
+    nativeRequire(localId, bundleId);
     module = modules[moduleId];
   }
 
@@ -226,21 +217,12 @@ function guardedLoadModule(moduleId, module) {
 var ID_MASK_SHIFT = 16;
 var LOCAL_ID_MASK = ~0 >>> ID_MASK_SHIFT;
 
-function unpackModuleId(moduleId) {
-  var segmentId = moduleId >>> ID_MASK_SHIFT;
-  var localId = moduleId & LOCAL_ID_MASK;
-  return { segmentId: segmentId, localId: localId };
-}
-_require.unpackModuleId = unpackModuleId;
-
 function loadModuleImplementation(moduleId, module) {
   var nativeRequire = global.nativeRequire;
   if (!module && nativeRequire) {
-    var _unpackModuleId = unpackModuleId(moduleId),
-        segmentId = _unpackModuleId.segmentId,
-        localId = _unpackModuleId.localId;
-
-    nativeRequire(localId, segmentId);
+    var bundleId = moduleId >>> ID_MASK_SHIFT;
+    var localId = moduleId & LOCAL_ID_MASK;
+    nativeRequire(localId, bundleId);
     module = modules[moduleId];
   }
 
