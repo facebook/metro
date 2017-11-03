@@ -89,9 +89,9 @@ type __TransformOptions = {
 
 type _TransformOptions =
   __TransformOptions & {env?: {[key: string]: __TransformOptions}};
-declare class _Ast {}
+declare class Ast {}
 type TransformResult = {
-  ast: _Ast,
+  ast: Ast,
   code: ?string,
   ignored: boolean,
   map: ?_SourceMap,
@@ -101,14 +101,14 @@ type VisitFn = <State>(path: Object, state: State) => any;
 declare module 'babel-core' {
   declare type Plugins = _Plugins;
   declare type SourceMap = _SourceMap;
-  declare type Ast = _Ast;
+  declare type Ast = Ast;
   declare type TransformOptions = _TransformOptions;
   declare function transform(
     code: string,
     options?: _TransformOptions,
   ): TransformResult;
   declare function traverse<State>(
-    ast: _Ast,
+    ast: Ast,
     visitor: {[key: string]: VisitFn<State> |
                              {enter?: VisitFn<State>, exit?: VisitFn<State>}},
     scope?: ?Object,
@@ -117,7 +117,7 @@ declare module 'babel-core' {
   ): void;
   declare var types: {[key: string]: Function};
   declare function transformFromAst(
-    ast: _Ast,
+    ast: Ast,
     code?: ?string,
     babelOptions?: _TransformOptions,
   ): TransformResult;
@@ -133,7 +133,7 @@ type RawMapping = {
 declare module 'babel-generator' {
   declare type RawMapping = RawMapping;
   declare function exports(
-    ast: _Ast,
+    ast: Ast,
     options?: GeneratorOptions,
   ): TransformResult & {rawMappings: ?Array<RawMapping>};
 }

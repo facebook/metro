@@ -17,8 +17,6 @@ const nullthrows = require('fbjs/lib/nullthrows');
 const {traverse, types} = require('babel-core');
 const prettyPrint = require('babel-generator').default;
 
-type AST = Object;
-
 class Replacement {
   nameToIndex: Map<string, number>;
   nextIndex: number;
@@ -200,11 +198,11 @@ class InvalidRequireCallError extends Error {
   }
 }
 
-const xp = (module.exports = (ast: AST) =>
+const xp = (module.exports = (ast: Ast) =>
   collectDependencies(ast, new Replacement()));
 
 xp.forOptimization = (
-  ast: AST,
+  ast: Ast,
   names: Array<string>,
   dependencyMapName?: string,
 ) =>

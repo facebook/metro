@@ -16,8 +16,22 @@ const babel = require('babel-core');
 const babelGenerate = require('babel-generator').default;
 const babylon = require('babylon');
 
-import type {AssetDescriptor} from '.';
+import type {ExtendedAssetDescriptor} from '.';
 import type {ModuleTransportLike} from '../shared/types.flow';
+
+// Structure of the object: dir.name.scale = asset
+export type RemoteFileMap = {
+  [string]: {
+    [string]: {
+      [number]: string,
+    },
+  },
+};
+
+// Structure of the object: platform.dir.name.scale = asset
+export type PlatformRemoteFileMap = {
+  [string]: RemoteFileMap,
+};
 
 type SubTree<T: ModuleTransportLike> = (
   moduleTransport: T,
@@ -28,30 +42,41 @@ const assetPropertyBlacklist = new Set(['files', 'fileSystemLocation', 'path']);
 
 function generateAssetCodeFileAst(
   assetRegistryPath: string,
-  assetDescriptor: AssetDescriptor,
-): Object {
+  assetDescriptor: ExtendedAssetDescriptor,
+): Ast {
   const properDescriptor = filterObject(
     assetDescriptor,
     assetPropertyBlacklist,
   );
+
+  // {...}
   const descriptorAst = babylon.parseExpression(
     JSON.stringify(properDescriptor),
   );
   const t = babel.types;
+
+  // module.exports
   const moduleExports = t.memberExpression(
     t.identifier('module'),
     t.identifier('exports'),
   );
+
+  // require('AssetRegistry')
   const requireCall = t.callExpression(t.identifier('require'), [
     t.stringLiteral(assetRegistryPath),
   ]);
+
+  // require('AssetRegistry').registerAsset
   const registerAssetFunction = t.memberExpression(
     requireCall,
     t.identifier('registerAsset'),
   );
+
+  // require('AssetRegistry').registerAsset({...})
   const registerAssetCall = t.callExpression(registerAssetFunction, [
     descriptorAst,
   ]);
+
   return t.file(
     t.program([
       t.expressionStatement(
@@ -61,9 +86,81 @@ function generateAssetCodeFileAst(
   );
 }
 
+/**
+ * Generates the code involved in requiring an asset, but to be loaded remotely.
+ * If the asset cannot be found within the map, then it falls back to the
+ * standard asset.
+ */
+function generateRemoteAssetCodeFileAst(
+  assetSourceResolverPath: string,
+  assetDescriptor: ExtendedAssetDescriptor,
+  remoteServer: string,
+  remoteFileMap: RemoteFileMap,
+): ?Ast {
+  const t = babel.types;
+
+  const file = remoteFileMap[assetDescriptor.fileSystemLocation];
+  const descriptor = file && file[assetDescriptor.name];
+
+  if (!descriptor) {
+    return null;
+  }
+
+  // require('AssetSourceResolver')
+  const requireCall = t.callExpression(t.identifier('require'), [
+    t.stringLiteral(assetSourceResolverPath),
+  ]);
+
+  // require('AssetSourceResolver').pickScale
+  const pickScale = t.memberExpression(requireCall, t.identifier('pickScale'));
+
+  // require('AssetSourceResolver').pickScale([2, 3, ...])
+  const call = t.callExpression(pickScale, [
+    t.arrayExpression(
+      Object.keys(descriptor)
+        .map(Number)
+        .sort((a, b) => a - b)
+        .map(scale => t.numericLiteral(scale)),
+    ),
+  ]);
+
+  // {2: 'path/to/image@2x', 3: 'path/to/image@3x', ...}
+  const data = babylon.parseExpression(JSON.stringify(descriptor));
+
+  // ({2: '...', 3: '...'})[require(...).pickScale(...)]
+  const handler = t.memberExpression(data, call, true);
+
+  // 'https://remote.server.com/' + ({2: ...})[require(...).pickScale(...)]
+  const result = t.binaryExpression(
+    '+',
+    t.stringLiteral(remoteServer),
+    handler,
+  );
+
+  // module.exports
+  const moduleExports = t.memberExpression(
+    t.identifier('module'),
+    t.identifier('exports'),
+  );
+
+  return t.file(
+    t.program([
+      t.expressionStatement(
+        t.assignmentExpression(
+          '=',
+          moduleExports,
+          t.objectExpression([
+            t.objectProperty(t.stringLiteral('uri'), result),
+          ]),
+        ),
+      ),
+    ]),
+  );
+}
+
 function generateAssetTransformResult(
   assetRegistryPath: string,
-  assetDescriptor: AssetDescriptor,
+  assetDescriptor: ExtendedAssetDescriptor,
 ): {|
   code: string,
   dependencies: Array<string>,
@@ -177,5 +274,6 @@ module.exports = {
   createRamBundleGroups,
   generateAssetCodeFileAst,
   generateAssetTransformResult,
+  generateRemoteAssetCodeFileAst,
   isAssetTypeAnImage,
 };
