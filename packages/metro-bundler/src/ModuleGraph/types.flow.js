@@ -26,6 +26,7 @@ export type Callback<A = void, B = void> = (Error => void) &
 
 type Dependency = {|
   id: string,
+  +isAsync: boolean,
   path: string,
 |};
 
@@ -79,7 +80,7 @@ export type IdsForPathFn = ({path: string}) => ModuleIds;
 
 export type LoadResult = {
   file: File,
-  dependencies: Array<string>,
+  dependencies: $ReadOnlyArray<TransformResultDependency>,
 };
 
 export type LoadFn = (
@@ -141,9 +142,22 @@ export type TransformerResult = {|
   map: ?MappingsMap,
 |};
 
+export type TransformResultDependency = {|
+  /**
+   * The literal name provided to a require or import call. For example 'foo' in
+   * case of `require('foo')`.
+   */
+  +name: string,
+  /**
+   * If `true` this dependency is due to a dynamic `import()` call. If `false`,
+   * this dependency was pulled using a synchronous `require()` call.
+   */
+  +isAsync: boolean,
+|};
+
 export type TransformResult = {|
   code: string,
-  dependencies: Array<string>,
+  dependencies: $ReadOnlyArray<TransformResultDependency>,
   dependencyMapName?: string,
   map: ?MappingsMap,
 |};

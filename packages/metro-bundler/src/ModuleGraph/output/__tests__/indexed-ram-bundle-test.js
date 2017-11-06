@@ -259,6 +259,7 @@ function makeDependency(name) {
   const path = makeModulePath(name);
   return {
     id: name,
+    isAsync: false,
     path,
   };
 }

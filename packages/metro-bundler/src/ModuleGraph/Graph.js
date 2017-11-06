@@ -21,6 +21,7 @@ import type {
   LoadResult,
   Module,
   ResolveFn,
+  TransformResultDependency,
 } from './types.flow';
 
 const NO_OPTIONS = {};
@@ -40,7 +41,7 @@ exports.create = function create(resolve: ResolveFn, load: LoadFn): GraphFn {
 
     const queue: Queue<
       {
-        id: string,
+        dependency: TransformResultDependency,
         parent: ?string,
         parentDependencyIndex: number,
         skip: ?Set<string>,
@@ -48,9 +49,9 @@ exports.create = function create(resolve: ResolveFn, load: LoadFn): GraphFn {
       LoadResult,
       Map<?string, Module>,
     > = new Queue(
-      ({id, parent}) =>
+      ({dependency, parent}) =>
         memoizingLoad(
-          resolve(id, parent, platform, options || NO_OPTIONS),
+          resolve(dependency.name, parent, platform, options || NO_OPTIONS),
           loadOptions,
         ),
       onFileLoaded,
@@ -58,7 +59,7 @@ exports.create = function create(resolve: ResolveFn, load: LoadFn): GraphFn {
     );
 
     const tasks = Array.from(entryPoints, (id, i) => ({
-      id,
+      dependency: {name: id, isAsync: false},
       parent: null,
       parentDependencyIndex: i,
       skip,
@@ -153,19 +154,23 @@ function onFileLoaded(
   queue,
   modules,
   {file, dependencies},
-  {id, parent, parentDependencyIndex, skip},
+  {dependency, parent, parentDependencyIndex, skip},
 ) {
   const {path} = file;
   const parentModule = modules.get(parent);
 
   invariant(parentModule, 'Invalid parent module: ' + String(parent));
-  parentModule.dependencies[parentDependencyIndex] = {id, path};
+  parentModule.dependencies[parentDependencyIndex] = {
+    id: dependency.name,
+    isAsync: dependency.isAsync,
+    path,
+  };
 
   if ((!skip || !skip.has(path)) && !modules.has(path)) {
     modules.set(path, {file, dependencies: Array(dependencies.length)});
     queue.enqueue(
-      ...dependencies.map((id, i) => ({
-        id,
+      ...dependencies.map((dependency, i) => ({
+        dependency,
         parent: path,
         parentDependencyIndex: i,
         skip,

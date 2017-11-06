@@ -115,7 +115,7 @@ function createModule(path: string, deps: Array<string>) {
       path,
       type: 'module',
     },
-    dependencies: deps.map(d => ({id: d, path: d})),
+    dependencies: deps.map(d => ({id: d, path: d, isAsync: false})),
   };
 }
 

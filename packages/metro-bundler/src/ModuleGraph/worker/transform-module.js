@@ -188,7 +188,12 @@ function makeResult(ast: Ast, filename, sourceCode, isPolyfill = false) {
   }
 
   const gen = generate(file, filename, sourceCode, false);
-  return {code: gen.code, map: gen.map, dependencies, dependencyMapName};
+  return {
+    code: gen.code,
+    map: gen.map,
+    dependencies,
+    dependencyMapName,
+  };
 }
 
 module.exports = transformModule;

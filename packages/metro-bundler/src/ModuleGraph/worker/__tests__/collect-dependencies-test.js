@@ -32,10 +32,11 @@ describe('dependency collection from ASTs', () => {
       }
     `);
 
-    expect(collectDependencies(ast).dependencies).toEqual([
-      'b/lib/a',
-      'do',
-      'setup/something',
+    const result = collectDependencies(ast);
+    expect(result.dependencies).toEqual([
+      {name: 'b/lib/a', isAsync: false},
+      {name: 'do', isAsync: false},
+      {name: 'setup/something', isAsync: false},
     ]);
   });
 
@@ -47,17 +48,33 @@ describe('dependency collection from ASTs', () => {
       }
     `);
 
-    expect(collectDependencies(ast).dependencies).toEqual([
-      'b/lib/a',
-      'some/async/module',
-      'BundleSegments',
+    const result = collectDependencies(ast);
+    expect(result.dependencies).toEqual([
+      {name: 'b/lib/a', isAsync: false},
+      {name: 'some/async/module', isAsync: true},
+      {name: 'BundleSegments', isAsync: false},
+    ]);
+  });
+
+  it('collects mixed dependencies as being sync', () => {
+    const ast = astFromCode(`
+      const a = require('b/lib/a');
+      import('b/lib/a');
+    `);
+
+    const result = collectDependencies(ast);
+    expect(result.dependencies).toEqual([
+      {name: 'b/lib/a', isAsync: false},
+      {name: 'BundleSegments', isAsync: false},
     ]);
   });
 
   it('supports template literals as arguments', () => {
     const ast = astFromCode('require(`left-pad`)');
 
-    expect(collectDependencies(ast).dependencies).toEqual(['left-pad']);
+    expect(collectDependencies(ast).dependencies).toEqual([
+      {name: 'left-pad', isAsync: false},
+    ]);
   });
 
   it('throws on template literals with interpolations', () => {
@@ -114,7 +131,7 @@ describe('dependency collection from ASTs', () => {
 describe('Dependency collection from optimized ASTs', () => {
   const dependencyMapName = 'arbitrary';
   const {forOptimization} = collectDependencies;
-  let ast, names;
+  let ast, deps;
 
   beforeEach(() => {
     ast = astFromCode(`
@@ -124,27 +141,39 @@ describe('Dependency collection from optimized ASTs', () => {
         require(${dependencyMapName}[2], "setup/something");
       }
     `);
-    names = ['b/lib/a', 'do', 'setup/something'];
+    deps = [
+      {name: 'b/lib/a', isAsync: false},
+      {name: 'do', isAsync: false},
+      {name: 'setup/something', isAsync: true},
+    ];
   });
 
   it('passes the `dependencyMapName` through', () => {
-    const result = forOptimization(ast, names, dependencyMapName);
+    const result = forOptimization(ast, deps, dependencyMapName);
     expect(result.dependencyMapName).toEqual(dependencyMapName);
   });
 
   it('returns the list of passed in dependencies', () => {
-    const result = forOptimization(ast, names, dependencyMapName);
-    expect(result.dependencies).toEqual(names);
+    const result = forOptimization(ast, deps, dependencyMapName);
+    expect(result.dependencies).toEqual(deps);
   });
 
   it('only returns dependencies that are in the code', () => {
     ast = astFromCode(`require(${dependencyMapName}[1], 'do')`);
-    const result = forOptimization(ast, names, dependencyMapName);
-    expect(result.dependencies).toEqual(['do']);
+    const result = forOptimization(ast, deps, dependencyMapName);
+    expect(result.dependencies).toEqual([{name: 'do', isAsync: false}]);
+  });
+
+  it('only returns async dependencies that are in the code', () => {
+    ast = astFromCode(`require(${dependencyMapName}[2], "setup/something")`);
+    const result = forOptimization(ast, deps, dependencyMapName);
+    expect(result.dependencies).toEqual([
+      {name: 'setup/something', isAsync: true},
+    ]);
   });
 
   it('replaces all call signatures inserted by a prior call to `collectDependencies`', () => {
-    forOptimization(ast, names, dependencyMapName);
+    forOptimization(ast, deps, dependencyMapName);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`
       const a = require(${dependencyMapName}[0]);

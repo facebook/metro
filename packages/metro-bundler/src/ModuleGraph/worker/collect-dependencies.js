@@ -18,15 +18,12 @@ const nullthrows = require('fbjs/lib/nullthrows');
 const {traverse, types} = require('babel-core');
 const prettyPrint = require('babel-generator').default;
 
-class Replacement {
-  nameToIndex: Map<string, number>;
-  nextIndex: number;
-  replaceImports = true;
+import type {TransformResultDependency} from '../types.flow';
 
-  constructor() {
-    this.nameToIndex = new Map();
-    this.nextIndex = 0;
-  }
+class Replacement {
+  nameToIndex: Map<string, number> = new Map();
+  dependencies: Array<{|+name: string, isAsync: boolean|}> = [];
+  replaceImports = true;
 
   getRequireCallArg(node) {
     const args = node.arguments;
@@ -40,21 +37,25 @@ class Replacement {
     return args[0];
   }
 
-  getIndex(stringLiteralOrTemplateLiteral) {
+  getIndex(stringLiteralOrTemplateLiteral, isAsync: boolean) {
     const name = stringLiteralOrTemplateLiteral.quasis
       ? stringLiteralOrTemplateLiteral.quasis[0].value.cooked
       : stringLiteralOrTemplateLiteral.value;
     let index = this.nameToIndex.get(name);
     if (index !== undefined) {
+      if (!isAsync) {
+        this.dependencies[index].isAsync = false;
+      }
       return index;
     }
-    index = this.nextIndex++;
+
+    index = this.dependencies.push({name, isAsync}) - 1;
     this.nameToIndex.set(name, index);
     return index;
   }
 
-  getNames() {
-    return Array.from(this.nameToIndex.keys());
+  getDependencies(): $ReadOnlyArray<TransformResultDependency> {
+    return this.dependencies;
   }
 
   makeArgs(newId, oldId, dependencyMapIdentifier) {
@@ -73,12 +74,12 @@ function getInvalidProdRequireMessage(node) {
 
 class ProdReplacement {
   replacement: Replacement;
-  names: Array<string>;
+  dependencies: $ReadOnlyArray<TransformResultDependency>;
   replaceImports = false;
 
-  constructor(names) {
+  constructor(dependencies: $ReadOnlyArray<TransformResultDependency>) {
     this.replacement = new Replacement();
-    this.names = names;
+    this.dependencies = dependencies;
   }
 
   getRequireCallArg(node) {
@@ -99,21 +100,23 @@ class ProdReplacement {
     return args[0];
   }
 
-  getIndex(memberExpression) {
+  getIndex(memberExpression, _: boolean) {
     const id = memberExpression.property.value;
-    if (id in this.names) {
-      return this.replacement.getIndex({value: this.names[id]});
+    if (id in this.dependencies) {
+      const dependency = this.dependencies[id];
+      const xp = {value: dependency.name};
+      return this.replacement.getIndex(xp, dependency.isAsync);
     }
 
     throw new Error(
-      `${id} is not a known module ID. Existing mappings: ${this.names
-        .map((n, i) => `${i} => ${n}`)
+      `${id} is not a known module ID. Existing mappings: ${this.dependencies
+        .map((n, i) => `${i} => ${n.name}`)
         .join(', ')}`,
     );
   }
 
-  getNames() {
-    return this.replacement.getNames();
+  getDependencies(): $ReadOnlyArray<TransformResultDependency> {
+    return this.replacement.getDependencies();
   }
 
   makeArgs(newId, _, dependencyMapIdentifier) {
@@ -147,7 +150,8 @@ function collectDependencies(ast, replacement, dependencyMapIdentifier) {
       CallExpression(path, state) {
         const node = path.node;
         if (replacement.replaceImports && node.callee.type === 'Import') {
-          processImportCall(path, node, replacement, state);
+          const reqNode = processImportCall(path, node, replacement, state);
+          visited.add(reqNode);
           return;
         }
         if (visited.has(node)) {
@@ -157,7 +161,7 @@ function collectDependencies(ast, replacement, dependencyMapIdentifier) {
           return;
         }
         const arg = replacement.getRequireCallArg(node);
-        const index = replacement.getIndex(arg);
+        const index = replacement.getIndex(arg, false);
         node.arguments = replacement.makeArgs(
           types.numericLiteral(index),
           arg,
@@ -171,14 +175,14 @@ function collectDependencies(ast, replacement, dependencyMapIdentifier) {
   );
 
   return {
-    dependencies: replacement.getNames(),
+    dependencies: replacement.getDependencies(),
     dependencyMapName: nullthrows(traversalState.dependencyMapIdentifier).name,
   };
 }
 
 const makeAsyncRequire = babelTemplate(
   `require(BUNDLE_SEGMENTS_PATH).loadForModule(MODULE_ID).then(
-    function() { return require(MODULE_PATH); }
+    function() { return require(REQUIRE_ARGS); }
   )`,
 );
 
@@ -192,9 +196,13 @@ function processImportCall(path, node, replacement, state) {
     );
   }
   const modulePath = args[0];
-  const index = replacement.getIndex(modulePath);
+  const index = replacement.getIndex(modulePath, true);
   const newImport = makeAsyncRequire({
-    MODULE_PATH: modulePath,
+    REQUIRE_ARGS: replacement.makeArgs(
+      types.numericLiteral(index),
+      modulePath,
+      state.dependencyMapIdentifier,
+    ),
     MODULE_ID: createMapLookup(
       state.dependencyMapIdentifier,
       types.numericLiteral(index),
@@ -205,6 +213,9 @@ function processImportCall(path, node, replacement, state) {
     },
   });
   path.replaceWith(newImport);
+  // This is the inner require() call. We return it so it
+  // gets marked as already visited.
+  return newImport.expression.arguments[0].body.body[0].argument;
 }
 
 function isLiteralString(node) {
@@ -229,12 +240,12 @@ const xp = (module.exports = (ast: Ast) =>
 
 xp.forOptimization = (
   ast: Ast,
-  names: Array<string>,
+  dependencies: $ReadOnlyArray<TransformResultDependency>,
   dependencyMapName?: string,
 ) =>
   collectDependencies(
     ast,
-    new ProdReplacement(names),
+    new ProdReplacement(dependencies),
     dependencyMapName ? types.identifier(dependencyMapName) : undefined,
   );
 

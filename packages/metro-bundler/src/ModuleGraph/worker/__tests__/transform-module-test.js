@@ -166,7 +166,12 @@ describe('transforming JS modules:', () => {
     const result = transformModule(toBuffer(code), options());
     invariant(result.type === 'code', 'result must be code');
     expect(result.details.transformed.default).toEqual(
-      expect.objectContaining({dependencies: [dep1, dep2]}),
+      expect.objectContaining({
+        dependencies: [
+          {name: dep1, isAsync: false},
+          {name: dep2, isAsync: false},
+        ],
+      }),
     );
   });
 

@@ -78,7 +78,9 @@ describe('optimizing JS modules', () => {
     });
 
     it('extracts dependencies', () => {
-      expect(optimized.dependencies).toEqual(['arbitrary-android-prod']);
+      expect(optimized.dependencies).toEqual([
+        {name: 'arbitrary-android-prod', isAsync: false},
+      ]);
     });
 
     it('creates source maps', () => {
