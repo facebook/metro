@@ -83,23 +83,39 @@ function loadModuleImplementation(moduleId, module) {
   }
 
   module.isInitialized = true;
-  var exports = module.exports = {};
+  module.exports = {};
   var _module = module,
       factory = _module.factory,
       dependencyMap = _module.dependencyMap;
 
   try {
 
-    var _moduleObject = { exports: exports };
+      var _moduleObject = {
+      get id() {
+        return moduleId;
+      },
+      get hot() {
+        return module.hot;
+      },
+      set hot(value) {
+        module.hot = value;
+      },
+      get exports() {
+        return module.exports;
+      },
+      set exports(value) {
+        module.exports = value;
+      }
+    };
 
-    factory(global, _require, _moduleObject, exports, dependencyMap);
+    factory.call(module.exports, global, _require, _moduleObject, module.exports, dependencyMap);
 
     {
       module.factory = undefined;
       module.dependencyMap = undefined;
     }
 
-    return module.exports = _moduleObject.exports;
+    return module.exports;
   } catch (e) {
     module.hasError = true;
     module.error = e;
@@ -253,23 +269,39 @@ function loadModuleImplementation(moduleId, module) {
   }
 
   module.isInitialized = true;
-  var exports = module.exports = {};
+  module.exports = {};
   var _module = module,
       factory = _module.factory,
       dependencyMap = _module.dependencyMap;
 
   try {
 
-    var _moduleObject = { exports: exports };
+    var _moduleObject = {
+      get id() {
+        return moduleId;
+      },
+      get hot() {
+        return module.hot;
+      },
+      set hot(value) {
+        module.hot = value;
+      },
+      get exports() {
+        return module.exports;
+      },
+      set exports(value) {
+        module.exports = value;
+      }
+    };
 
-    factory(global, _require, _moduleObject, exports, dependencyMap);
+    factory.call(module.exports, global, _require, _moduleObject, module.exports, dependencyMap);
 
     {
       module.factory = undefined;
       module.dependencyMap = undefined;
     }
 
-    return module.exports = _moduleObject.exports;
+    return module.exports;
   } catch (e) {
     module.hasError = true;
     module.error = e;
