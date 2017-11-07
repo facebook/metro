@@ -23,7 +23,6 @@ const {
   AmbiguousModuleResolutionError,
 } = require('../node-haste/DependencyGraph/ResolutionRequest');
 
-import type Transformer from '../JSTransformer';
 import type {BundleOptions} from '../Server';
 import type Terminal from './Terminal';
 import type {ReportableEvent, GlobalCacheDisabledReason} from './reporting';
@@ -262,7 +261,7 @@ class TerminalReporter {
    * these are operational errors, not programming errors, and the stacktrace
    * is not actionable to end users.
    */
-  _logBundlingError(error: Error | Transformer.TransformError) {
+  _logBundlingError(error: Error) {
     if (error instanceof AmbiguousModuleResolutionError) {
       const he = error.hasteError;
       const message =

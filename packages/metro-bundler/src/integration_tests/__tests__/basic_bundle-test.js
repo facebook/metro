@@ -35,46 +35,36 @@ describe('basic_bundle', () => {
   const polyfill2 = path.join(INPUT_PATH, 'polyfill-2.js');
 
   beforeEach(() => {
-    // Don't waste time creating a worker-farm from jest-haste-map, use the
-    // function directly instead.
-    jest.mock('worker-farm', () => {
-      function workerFarm(opts, workerPath, methodNames) {
-        return require(workerPath);
-      }
-      workerFarm.end = () => {};
-      return workerFarm;
-    });
     // We replace the farm by a simple require, so that the worker sources are
     // transformed and managed by jest.
-    jest.mock('../../worker-farm', () => {
-      let ended = false;
-
-      function workerFarm(opts, workerPath, methodNames) {
+    jest.mock('jest-worker', () => {
+      function Worker(workerPath, opts) {
         const {Readable} = require('stream');
-        const methods = {};
         const worker = require(workerPath);
+        const api = {
+          getStdout: () => new Readable({read() {}}),
+          getStderr: () => new Readable({read() {}}),
+          end: () => (ended = true),
+        };
 
-        methodNames.forEach(name => {
-          methods[name] = function() {
+        let ended = false;
+
+        opts.exposedMethods.forEach(name => {
+          api[name] = function() {
             if (ended) {
               throw new Error('worker farm was ended');
             }
+
             return worker[name].apply(null, arguments);
           };
         });
 
-        return {
-          stdout: new Readable({read() {}}),
-          stderr: new Readable({read() {}}),
-          methods,
-        };
+        return api;
       }
 
-      workerFarm.end = () => {
-        ended = true;
+      return {
+        default: Worker,
       };
-
-      return workerFarm;
     });
   });
 

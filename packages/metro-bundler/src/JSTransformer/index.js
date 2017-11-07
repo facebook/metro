@@ -15,229 +15,161 @@
 const Logger = require('../Logger');
 
 const debug = require('debug')('Metro:JStransformer');
-const denodeify: Denodeify = require('denodeify');
-const invariant = require('fbjs/lib/invariant');
-const path = require('path');
-const util = require('util');
-const workerFarm = require('../worker-farm');
+const Worker = require('jest-worker').default;
 
-import type {
-  Data as TransformData,
-  Options as WorkerOptions,
-  TransformedCode,
-} from './worker';
+import type {Options, TransformedCode} from './worker';
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
-import type {MappingsMap} from '../lib/SourceMap';
+import type {RawMappings} from '../lib/SourceMap';
+import type {ResultWithMap} from './worker/minify';
+
 import typeof {
   minify as Minify,
   transformAndExtractDependencies as TransformAndExtractDependencies,
 } from './worker';
 
-type CB<T> = (?Error, ?T) => mixed;
-type Denodeify = (<A, B, C, T>(
-  (A, B, C, CB<T>) => void,
-) => (A, B, C) => Promise<T>) &
-  (<A, B, C, D, E, T>(
-    (A, B, C, D, E, CB<T>) => void,
-  ) => (A, B, C, D, E) => Promise<T>);
-
-// Avoid memory leaks caused in workers. This number seems to be a good enough number
-// to avoid any memory leak while not slowing down initial builds.
-// TODO(amasad): Once we get bundle splitting, we can drive this down a bit more.
-const MAX_CALLS_PER_WORKER = 600;
-
-// Worker will timeout if one of the callers timeout.
-const TRANSFORM_TIMEOUT_INTERVAL = 601000;
-
-// How may times can we tolerate failures from the worker.
-const MAX_RETRIES = 2;
-
-function makeFarm(worker, methods, timeout, maxConcurrentWorkers) {
-  return workerFarm(
-    {
-      autoStart: true,
-      /**
-       * We whitelist only what would work. For example `--inspect` doesn't
-       * work in the workers because it tries to open the same debugging port.
-       * Feel free to add more cases to the RegExp. A whitelist is preferred, to
-       * guarantee robustness when upgrading node, etc.
-       */
-      execArgv: process.execArgv.filter(
-        arg =>
-          /^--stack[_-]trace[_-]limit=[0-9]+$/.test(arg) ||
-          /^--heap[_-]growing[_-]percent=[0-9]+$/.test(arg) ||
-          /^--max[_-]old[_-]space[_-]size=[0-9]+$/.test(arg),
-      ),
-      maxConcurrentCallsPerWorker: 1,
-      maxConcurrentWorkers,
-      maxCallsPerWorker: MAX_CALLS_PER_WORKER,
-      maxCallTime: timeout,
-      maxRetries: MAX_RETRIES,
-    },
-    worker,
-    methods,
-  );
-}
+type WorkerInterface = Worker & {
+  minify: Minify,
+  transformAndExtractDependencies: TransformAndExtractDependencies,
+};
 
 type Reporters = {
   +stdoutChunk: (chunk: string) => mixed,
   +stderrChunk: (chunk: string) => mixed,
 };
 
-class Transformer {
-  _workers: {[name: string]: Function};
+module.exports = class Transformer {
+  _worker: WorkerInterface;
   _transformModulePath: string;
-  _transform: (
-    transform: string,
-    filename: string,
-    localPath: LocalPath,
-    sourceCode: string,
-    options: WorkerOptions,
-  ) => Promise<TransformData>;
-  _usesFarm: boolean;
-  minify: (
-    filename: string,
-    code: string,
-    sourceMap: ?MappingsMap,
-  ) => Promise<{code: string, map: ?MappingsMap}>;
 
   constructor(
     transformModulePath: string,
     maxWorkers: number,
     reporters: Reporters,
-    workerPath: ?string,
+    workerPath: string = require.resolve('./worker'),
   ) {
-    invariant(
-      path.isAbsolute(transformModulePath),
-      'transform module path should be absolute',
-    );
-    if (!workerPath) {
-      workerPath = require.resolve('./worker');
-    }
-
     this._transformModulePath = transformModulePath;
-    this._usesFarm = false;
+
     if (maxWorkers > 1) {
-      this._usesFarm = true;
-      const farm = makeFarm(
+      this._worker = this._makeFarm(
         workerPath,
         ['minify', 'transformAndExtractDependencies'],
-        TRANSFORM_TIMEOUT_INTERVAL,
         maxWorkers,
       );
-      farm.stdout.on('data', chunk => {
+
+      this._worker.getStdout().on('data', chunk => {
         reporters.stdoutChunk(chunk.toString('utf8'));
       });
-      farm.stderr.on('data', chunk => {
+
+      this._worker.getStderr().on('data', chunk => {
         reporters.stderrChunk(chunk.toString('utf8'));
       });
-
-      this._workers = farm.methods;
     } else {
-      // $FlowFixMe
-      this._workers = require(workerPath);
+      // $FlowFixMe: impossible to type a dynamic require.
+      this._worker = require(workerPath);
     }
-    this._transform = denodeify(
-      (this._workers
-        .transformAndExtractDependencies: TransformAndExtractDependencies),
-    );
-    this.minify = denodeify((this._workers.minify: Minify));
   }
 
   kill() {
-    if (this._usesFarm && this._workers) {
-      workerFarm.end(this._workers, () => {});
+    if (this._worker && typeof this._worker.end === 'function') {
+      this._worker.end();
     }
   }
 
-  transformFile(
-    fileName: string,
+  async minify(
+    filename: string,
+    code: string,
+    sourceMap: RawMappings,
+  ): Promise<ResultWithMap> {
+    return await this._worker.minify(filename, code, sourceMap);
+  }
+
+  async transformFile(
+    filename: string,
     localPath: LocalPath,
     code: string,
-    options: WorkerOptions,
+    options: Options,
   ): Promise<TransformedCode> {
-    if (!this._transform) {
-      return Promise.reject(new Error('No transform module'));
+    try {
+      debug('Started ransforming file', filename);
+
+      const data = await this._worker.transformAndExtractDependencies(
+        this._transformModulePath,
+        filename,
+        localPath,
+        code,
+        options,
+      );
+
+      debug('Done transforming file', filename);
+
+      Logger.log(data.transformFileStartLogEntry);
+      Logger.log(data.transformFileEndLogEntry);
+
+      return data.result;
+    } catch (err) {
+      debug('Failed transformFile file', filename);
+
+      if (err.loc) {
+        throw this._formatBabelError(err, filename);
+      } else {
+        throw this._formatGenericError(err, filename);
+      }
     }
-    debug('transforming file', fileName);
-
-    return this._transform(
-      this._transformModulePath,
-      fileName,
-      localPath,
-      code,
-      options,
-    )
-      .then(data => {
-        Logger.log(data.transformFileStartLogEntry);
-        Logger.log(data.transformFileEndLogEntry);
-        debug('done transforming file', fileName);
-        return data.result;
-      })
-      .catch(error => {
-        if (error.type === 'TimeoutError') {
-          const timeoutErr = new Error(
-            `TimeoutError: transforming ${fileName} took longer than ` +
-              `${TRANSFORM_TIMEOUT_INTERVAL / 1000} seconds.\n`,
-          );
-          /* $FlowFixMe: monkey-patch Error */
-          timeoutErr.type = 'TimeoutError';
-          throw timeoutErr;
-        } else if (error.type === 'ProcessTerminatedError') {
-          const uncaughtError = new Error(
-            'Uncaught error in the transformer worker: ' +
-              this._transformModulePath,
-          );
-          /* $FlowFixMe: monkey-patch Error */
-          uncaughtError.type = 'ProcessTerminatedError';
-          throw uncaughtError;
-        }
-
-        throw formatError(error, fileName);
-      });
   }
 
-  static TransformError;
-}
+  _makeFarm(workerPath, exposedMethods, maxWorkers) {
+    // We whitelist only what would work. For example `--inspect` doesn't work
+    // in the workers because it tries to open the same debugging port. Feel
+    // free to add more cases to the RegExp. A whitelist is preferred, to
+    // guarantee robustness when upgrading node, etc.
+    const execArgv = process.execArgv.filter(
+      arg =>
+        /^--stack[_-]trace[_-]limit=[0-9]+$/.test(arg) ||
+        /^--heap[_-]growing[_-]percent=[0-9]+$/.test(arg) ||
+        /^--max[_-]old[_-]space[_-]size=[0-9]+$/.test(arg),
+    );
 
-Transformer.TransformError = TransformError;
+    return new Worker(workerPath, {
+      exposedMethods,
+      forkOptions: {execArgv},
+      maxWorkers,
+    });
+  }
 
-function TransformError() {
-  Error.captureStackTrace && Error.captureStackTrace(this, TransformError);
-}
-util.inherits(TransformError, SyntaxError);
+  _formatGenericError(err, filename) {
+    const error = new TransformError(`${filename}: ${err.message}`);
 
-function formatError(err, filename) {
-  if (err.loc) {
-    return formatBabelError(err, filename);
-  } else {
-    return formatGenericError(err, filename);
+    // $FlowFixMe: extending an error.
+    return Object.assign(error, {
+      stack: (err.stack || '')
+        .split('\n')
+        .slice(0, -1)
+        .join('\n'),
+      lineNumber: 0,
+    });
+  }
+
+  _formatBabelError(err, filename) {
+    const error = new TransformError(
+      `${err.type || 'Error'} in ${filename}: ${err.message}`,
+    );
+
+    // $FlowFixMe: extending an error.
+    return Object.assign(error, {
+      stack: err.stack,
+      snippet: err.codeFrame,
+      lineNumber: err.loc.line,
+      column: err.loc.column,
+      filename,
+    });
+  }
+};
+
+class TransformError extends SyntaxError {
+  type: string = 'TransformError';
+
+  constructor(message: string) {
+    super(message);
+    Error.captureStackTrace && Error.captureStackTrace(this, TransformError);
   }
 }
-
-function formatGenericError(err, filename) {
-  var msg = 'TransformError: ' + filename + ': ' + err.message;
-  var error = new TransformError();
-  var stack = (err.stack || '').split('\n').slice(0, -1);
-  error.stack = stack.join('\n');
-  error.message = msg;
-  error.type = 'TransformError';
-  error.lineNumber = 0;
-  error.description = '';
-  return error;
-}
-
-function formatBabelError(err, filename) {
-  var error = new TransformError();
-  error.type = 'TransformError';
-  error.message = `${err.type || error.type} in ${filename}: ${err.message}`;
-  error.stack = err.stack;
-  error.snippet = err.codeFrame;
-  error.lineNumber = err.loc.line;
-  error.column = err.loc.column;
-  error.filename = filename;
-  error.description = err.message;
-  return error;
-}
-
-module.exports = Transformer;

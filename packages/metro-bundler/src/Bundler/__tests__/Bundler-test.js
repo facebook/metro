@@ -13,8 +13,7 @@
 'use strict';
 
 jest
-  .setMock('worker-farm', () => () => undefined)
-  .setMock('../../worker-farm', () => () => undefined)
+  .setMock('jest-worker', () => ({}))
   .setMock('../../JSTransformer/worker/minify')
   .mock('image-size')
   .mock('fs')

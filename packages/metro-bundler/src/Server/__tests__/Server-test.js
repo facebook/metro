@@ -13,8 +13,7 @@
 'use strict';
 
 jest
-  .mock('../../worker-farm', () => () => () => {})
-  .mock('worker-farm', () => () => () => {})
+  .mock('jest-worker', () => ({}))
   .mock('../../JSTransformer/worker/minify')
   .mock('crypto')
   .mock('../symbolicate', () => ({

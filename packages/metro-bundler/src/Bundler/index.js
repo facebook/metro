@@ -203,7 +203,7 @@ class Bundler {
         stderrChunk: chunk =>
           opts.reporter.update({type: 'worker_stderr_chunk', chunk}),
       },
-      opts.workerPath,
+      opts.workerPath || undefined,
     );
 
     const getTransformCacheKey = options => {

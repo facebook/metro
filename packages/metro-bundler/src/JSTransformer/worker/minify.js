@@ -26,7 +26,7 @@ import type {
   RawMappings,
 } from '../../lib/SourceMap';
 
-type ResultWithMap = {
+export type ResultWithMap = {
   code: string,
   map: MappingsMap,
 };

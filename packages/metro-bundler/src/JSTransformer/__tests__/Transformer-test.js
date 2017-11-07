@@ -14,16 +14,15 @@
 jest
   .mock('fs', () => ({writeFileSync: jest.fn()}))
   .mock('temp', () => ({path: () => '/arbitrary/path'}))
-  .mock('worker-farm', () => jest.fn())
-  .mock('../../worker-farm', () => jest.fn());
+  .mock('jest-worker', () => ({default: jest.fn()}));
 
-var Transformer = require('../');
+const Transformer = require('../');
 
 const {any} = jasmine;
 const {Readable} = require('stream');
 
 describe('Transformer', function() {
-  let workers, Cache;
+  let api, Cache;
   const fileName = '/an/arbitrary/file.js';
   const localPath = 'arbitrary/file.js';
   const transformModulePath = __filename;
@@ -33,70 +32,66 @@ describe('Transformer', function() {
     Cache.prototype.get = jest.fn((a, b, c) => c());
 
     const fs = require('fs');
-    const workerFarm = require('../../worker-farm');
+    const jestWorker = require('jest-worker');
+
     fs.writeFileSync.mockClear();
-    workerFarm.mockClear();
-    workerFarm.mockImplementation((opts, path, methods) => {
-      const api = (workers = {});
-      methods.forEach(method => {
+
+    jestWorker.default.mockClear();
+    jestWorker.default.mockImplementation((workerPath, opts) => {
+      api = {
+        end: jest.fn(),
+        getStdout: () => new Readable({read() {}}),
+        getStderr: () => new Readable({read() {}}),
+      };
+
+      opts.exposedMethods.forEach(method => {
         api[method] = jest.fn();
       });
-      return {
-        methods: api,
-        stdout: new Readable({read() {}}),
-        stderr: new Readable({read() {}}),
-      };
+
+      return api;
     });
   });
 
-  it(
-    'passes transform module path, file path, source code' +
-      ' to the worker farm when transforming',
-    () => {
-      const transformOptions = {arbitrary: 'options'};
-      const code = 'arbitrary(code)';
-      new Transformer(transformModulePath, 4).transformFile(
-        fileName,
-        localPath,
-        code,
-        transformOptions,
-      );
-      expect(workers.transformAndExtractDependencies).toBeCalledWith(
-        transformModulePath,
-        fileName,
-        localPath,
-        code,
-        transformOptions,
-        any(Function),
-      );
-    },
-  );
+  it('passes transform data to the worker farm when transforming', () => {
+    const transformOptions = {arbitrary: 'options'};
+    const code = 'arbitrary(code)';
 
-  it('should add file info to parse errors', function() {
-    const transformer = new Transformer(transformModulePath, 4);
-    var message = 'message';
-    var snippet = 'snippet';
-
-    workers.transformAndExtractDependencies.mockImplementation(function(
-      transformPath,
-      filename,
-      localPth,
+    new Transformer(transformModulePath, 4).transformFile(
+      fileName,
+      localPath,
       code,
-      opts,
-      callback,
-    ) {
-      var babelError = new SyntaxError(message);
-      babelError.type = 'SyntaxError';
-      babelError.description = message;
-      babelError.loc = {
-        line: 2,
-        column: 15,
-      };
-      babelError.codeFrame = snippet;
-      callback(babelError);
-    });
+      transformOptions,
+    );
 
-    expect.assertions(7);
+    expect(api.transformAndExtractDependencies).toBeCalledWith(
+      transformModulePath,
+      fileName,
+      localPath,
+      code,
+      transformOptions,
+    );
+  });
+
+  it('should add file info to parse errors', () => {
+    const transformer = new Transformer(transformModulePath, 4);
+    const message = 'message';
+    const snippet = 'snippet';
+
+    api.transformAndExtractDependencies.mockImplementation(
+      (transformPath, filename, localPth, code, opts) => {
+        const babelError = new SyntaxError(message);
+
+        babelError.type = 'SyntaxError';
+        babelError.description = message;
+        babelError.loc = {line: 2, column: 15};
+        babelError.codeFrame = snippet;
+
+        return Promise.reject(babelError);
+      },
+    );
+
+    expect.assertions(6);
+
     return transformer
       .transformFile(fileName, localPath, '', {})
       .catch(function(error) {
@@ -107,7 +102,6 @@ describe('Transformer', function() {
         expect(error.lineNumber).toBe(2);
         expect(error.column).toBe(15);
         expect(error.filename).toBe(fileName);
-        expect(error.description).toBe(message);
         expect(error.snippet).toBe(snippet);
       });
   });

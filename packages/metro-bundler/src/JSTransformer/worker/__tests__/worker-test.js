@@ -42,14 +42,10 @@ describe('code transformation worker:', () => {
     const localPath = `local/${filename}`;
     const sourceCode = 'arbitrary(code)';
     const transformOptions = {arbitrary: 'options'};
-    transformCode(
-      transformer,
-      filename,
-      localPath,
-      sourceCode,
-      {dev: true, transform: transformOptions},
-      () => {},
-    );
+    transformCode(transformer, filename, localPath, sourceCode, {
+      dev: true,
+      transform: transformOptions,
+    });
     expect(transformer.transform).toBeCalledWith({
       filename,
       localPath,
@@ -65,14 +61,7 @@ describe('code transformation worker:', () => {
     const sourceCode = 'arbitrary(code)';
     const options = {dev: false, transform: {arbitrary: 'options'}};
 
-    transformCode(
-      transformer,
-      filename,
-      localPath,
-      sourceCode,
-      options,
-      () => {},
-    );
+    transformCode(transformer, filename, localPath, sourceCode, options);
 
     const plugins = transformer.transform.mock.calls[0][0].plugins;
 
@@ -84,14 +73,8 @@ describe('code transformation worker:', () => {
     const filename = 'arbitrary/file.json';
     const localPath = `local/${filename}`;
     const sourceCode = '{"arbitrary":"property"}';
-    transformCode(
-      transformer,
-      filename,
-      localPath,
-      sourceCode,
-      {dev: true},
-      () => {},
-    );
+    transformCode(transformer, filename, localPath, sourceCode, {dev: true});
+
     expect(transformer.transform).toBeCalledWith({
       filename,
       localPath,
@@ -101,166 +84,137 @@ describe('code transformation worker:', () => {
     });
   });
 
-  it('calls back with the result of the transform in the cache', done => {
+  it('calls back with the result of the transform in the cache', async () => {
     const result = {
       code: 'some.other(code)',
       map: [],
     };
 
-    transformCode(
+    const data = await transformCode(
       transformer,
       'filename',
       'local/filename',
       result.code,
       {},
-      (error, data) => {
-        expect(error).toBeNull();
-        expect(data.result).toEqual(objectContaining(result));
-        done();
-      },
     );
+
+    expect(data.result).toEqual(objectContaining(result));
   });
 
-  it(
-    'removes the leading assignment to `module.exports` before passing ' +
-      'on the result if the file is a JSON file, even if minified',
-    done => {
-      const code = '{a:1,b:2}';
-      const filePath = 'arbitrary/file.json';
-      transformCode(
-        transformer,
-        filePath,
-        filePath,
-        code,
-        {},
-        (error, data) => {
-          expect(error).toBeNull();
-          expect(data.result.code).toEqual(code);
-          done();
-        },
-      );
-    },
-  );
+  it('removes the leading `module.exports` before returning if the file is a JSON file, even if minified', async () => {
+    const code = '{a:1,b:2}';
+    const filePath = 'arbitrary/file.json';
+    const data = await transformCode(transformer, filePath, filePath, code, {});
 
-  it('removes shebang when present', done => {
+    expect(data.result.code).toEqual(code);
+  });
+
+  it('removes shebang when present', async () => {
     const shebang = '#!/usr/bin/env node';
     const result = {
       code: `${shebang} \n arbitrary(code)`,
     };
     const filePath = 'arbitrary/file.js';
-    transformCode(
+
+    const data = await transformCode(
       transformer,
       filePath,
       filePath,
       result.code,
       {},
-      (error, data) => {
-        expect(error).toBeNull();
-        const {code} = data.result;
-        expect(code).not.toContain(shebang);
-        expect(code.split('\n').length).toEqual(result.code.split('\n').length);
-        done();
-      },
     );
+
+    const {code} = data.result;
+    expect(code).not.toContain(shebang);
+    expect(code.split('\n').length).toEqual(result.code.split('\n').length);
   });
 
-  it('calls back with any error yielded by the transform', done => {
+  it('calls back with any error yielded by the transform', async () => {
     const message = 'SyntaxError: this code is broken.';
+
     transformer.transform.mockImplementation(() => {
       throw new Error(message);
     });
 
-    transformCode(
-      transformer,
-      'filename',
-      'local/filename',
-      'code',
-      {},
-      error => {
-        expect(error.message).toBe(message);
-        done();
-      },
-    );
-  });
+    expect.assertions(1);
 
-  describe('dependency extraction', () => {
-    it('passes the transformed code the `extractDependencies`', done => {
-      const code = 'arbitrary(code)';
-
-      transformCode(
+    try {
+      await transformCode(
         transformer,
         'filename',
         'local/filename',
-        code,
+        'code',
         {},
-        error => {
-          expect(error).toBeNull();
-          expect(extractDependencies).toBeCalledWith(code, 'filename');
-          done();
-        },
       );
+    } catch (error) {
+      expect(error.message).toBe(message);
+    }
+  });
+
+  describe('dependency extraction', () => {
+    it('passes the transformed code the `extractDependencies`', async () => {
+      const code = 'arbitrary(code)';
+
+      await transformCode(transformer, 'filename', 'local/filename', code, {});
+
+      expect(extractDependencies).toBeCalledWith(code, 'filename');
     });
 
-    it(
-      'uses `dependencies` and `dependencyOffsets` ' +
-        'provided by `extractDependencies` for the result',
-      done => {
-        const dependencyData = {
-          dependencies: ['arbitrary', 'list', 'of', 'dependencies'],
-          dependencyOffsets: [12, 119, 185, 328, 471],
-        };
-        extractDependencies.mockReturnValue(dependencyData);
+    it('uses `dependencies` and `dependencyOffsets` provided by `extractDependencies` for the result', async () => {
+      const dependencyData = {
+        dependencies: ['arbitrary', 'list', 'of', 'dependencies'],
+        dependencyOffsets: [12, 119, 185, 328, 471],
+      };
 
-        transformCode(
-          transformer,
-          'filename',
-          'local/filename',
-          'code',
-          {},
-          (error, data) => {
-            expect(error).toBeNull();
-            expect(data.result).toEqual(objectContaining(dependencyData));
-            done();
-          },
-        );
-      },
-    );
+      extractDependencies.mockReturnValue(dependencyData);
 
-    it('does not extract requires of JSON files', done => {
+      const data = await transformCode(
+        transformer,
+        'filename',
+        'local/filename',
+        'code',
+        {},
+      );
+
+      expect(data.result).toEqual(objectContaining(dependencyData));
+    });
+
+    it('does not extract requires of JSON files', async () => {
       const jsonStr = '{"arbitrary":"json"}';
-      transformCode(
+
+      const data = await transformCode(
         transformer,
         'arbitrary.json',
         'local/arbitrary.json',
         jsonStr,
         {},
-        (error, data) => {
-          expect(error).toBeNull();
-          const {dependencies, dependencyOffsets} = data.result;
-          expect(extractDependencies).not.toBeCalled();
-          expect(dependencies).toEqual([]);
-          expect(dependencyOffsets).toEqual([]);
-          done();
-        },
       );
+
+      const {dependencies, dependencyOffsets} = data.result;
+
+      expect(extractDependencies).not.toBeCalled();
+      expect(dependencies).toEqual([]);
+      expect(dependencyOffsets).toEqual([]);
     });
 
-    it('calls back with every error thrown by `extractDependencies`', done => {
+    it('calls back with every error thrown by `extractDependencies`', async () => {
       const error = new Error('arbitrary');
+
       extractDependencies.mockImplementation(() => {
         throw error;
       });
-      transformCode(
-        transformer,
-        'arbitrary.js',
-        'local/arbitrary.js',
-        'code',
-        {},
-        (e, data) => {
-          expect(e).toBe(error);
-          done();
-        },
-      );
+
+      try {
+        await transformCode(
+          transformer,
+          'arbitrary.js',
+          'local/arbitrary.js',
+          'code',
+          {},
+        );
+      } catch (err) {
+        expect(err).toBe(error);
+      }
     });
   });
 });

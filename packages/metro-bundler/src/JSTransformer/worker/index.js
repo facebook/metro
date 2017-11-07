@@ -27,6 +27,7 @@ import type {
   RawMappings,
 } from '../../lib/SourceMap';
 import type {LocalPath} from '../../node-haste/lib/toLocalPath';
+import type {ResultWithMap} from './minify';
 import type {Ast, Plugins as BabelPlugins} from 'babel-core';
 
 export type TransformedCode = {
@@ -43,11 +44,13 @@ export type TransformArgs<ExtraOptions: {}> = {|
   plugins?: BabelPlugins,
   src: string,
 |};
+
 export type TransformResults = {
   ast: ?Ast,
   code: string,
   map: ?MappingsMap | RawMappings,
 };
+
 export type Transform<ExtraOptions: {}> = (
   TransformArgs<ExtraOptions>,
 ) => TransformResults;
@@ -90,132 +93,113 @@ export type Data = {
   transformFileEndLogEntry: LogEntry,
 };
 
-type Callback<T> = (error: ?Error, data: ?T) => mixed;
-type TransformCode = (
-  Transformer<*>,
-  string,
-  LocalPath,
-  string,
-  Options,
-  Callback<Data>,
-) => void;
+function transformCode(
+  transformer: Transformer<*>,
+  filename: string,
+  localPath: LocalPath,
+  sourceCode: string,
+  options: Options,
+): Data {
+  const isJson = filename.endsWith('.json');
 
-const transformCode: TransformCode = asyncify(
-  (
-    transformer: Transformer<*>,
-    filename: string,
-    localPath: LocalPath,
-    sourceCode: string,
-    options: Options,
-  ): Data => {
-    const isJson = filename.endsWith('.json');
-    if (isJson) {
-      sourceCode = 'module.exports=' + sourceCode;
+  if (isJson) {
+    sourceCode = 'module.exports=' + sourceCode;
+  }
+
+  const transformFileStartLogEntry = {
+    action_name: 'Transforming file',
+    action_phase: 'start',
+    file_name: filename,
+    log_entry_label: 'Transforming file',
+    start_timestamp: process.hrtime(),
+  };
+
+  const plugins = options.dev
+    ? []
+    : [[inline.plugin, options], [constantFolding.plugin, options]];
+
+  const transformed = transformer.transform({
+    filename,
+    localPath,
+    options: options.transform,
+    plugins,
+    src: sourceCode,
+  });
+
+  // If the transformer returns standard sourcemaps, we need to transform them
+  // to rawMappings so we can process them correctly.
+  const rawMappings =
+    transformed.map && !Array.isArray(transformed.map)
+      ? toRawMappings(transformed.map)
+      : transformed.map;
+
+  // Convert the sourcemaps to Compact Raw source maps.
+  const map = rawMappings ? rawMappings.map(compactMapping) : null;
+
+  let code = transformed.code;
+  if (isJson) {
+    code = code.replace(/^\w+\.exports=/, '');
+  } else {
+    // Remove shebang
+    code = code.replace(/^#!.*/, '');
+  }
+
+  const depsResult = isJson
+    ? {dependencies: [], dependencyOffsets: []}
+    : extractDependencies(code, filename);
+
+  const timeDelta = process.hrtime(transformFileStartLogEntry.start_timestamp);
+  const duration_ms = Math.round((timeDelta[0] * 1e9 + timeDelta[1]) / 1e6);
+  const transformFileEndLogEntry = {
+    action_name: 'Transforming file',
+    action_phase: 'end',
+    file_name: filename,
+    duration_ms,
+    log_entry_label: 'Transforming file',
+  };
+
+  return {
+    result: {...depsResult, code, map},
+    transformFileStartLogEntry,
+    transformFileEndLogEntry,
+  };
+}
+
+exports.minify = async function(
+  filename: string,
+  code: string,
+  sourceMap: RawMappings,
+): Promise<ResultWithMap> {
+  try {
+    return minify.withSourceMap(code, sourceMap, filename);
+  } catch (error) {
+    if (error.constructor.name === 'JS_Parse_Error') {
+      throw new Error(
+        `${error.message} in file ${filename} at ${error.line}:${error.col}`,
+      );
     }
 
-    const transformFileStartLogEntry = {
-      action_name: 'Transforming file',
-      action_phase: 'start',
-      file_name: filename,
-      log_entry_label: 'Transforming file',
-      start_timestamp: process.hrtime(),
-    };
+    throw error;
+  }
+};
 
-    const plugins = options.dev
-      ? []
-      : [[inline.plugin, options], [constantFolding.plugin, options]];
-
-    const transformed = transformer.transform({
-      filename,
-      localPath,
-      options: options.transform,
-      plugins,
-      src: sourceCode,
-    });
-
-    // If the transformer returns standard sourcemaps, we need to transform them
-    // to rawMappings so we can process them correctly.
-    const rawMappings =
-      transformed.map && !Array.isArray(transformed.map)
-        ? toRawMappings(transformed.map)
-        : transformed.map;
-
-    // Convert the sourcemaps to Compact Raw source maps.
-    const map = rawMappings ? rawMappings.map(compactMapping) : null;
-
-    let code = transformed.code;
-    if (isJson) {
-      code = code.replace(/^\w+\.exports=/, '');
-    } else {
-      // Remove shebang
-      code = code.replace(/^#!.*/, '');
-    }
-
-    const depsResult = isJson
-      ? {dependencies: [], dependencyOffsets: []}
-      : extractDependencies(code, filename);
-
-    const timeDelta = process.hrtime(
-      transformFileStartLogEntry.start_timestamp,
-    );
-    const duration_ms = Math.round((timeDelta[0] * 1e9 + timeDelta[1]) / 1e6);
-    const transformFileEndLogEntry = {
-      action_name: 'Transforming file',
-      action_phase: 'end',
-      file_name: filename,
-      duration_ms,
-      log_entry_label: 'Transforming file',
-    };
-
-    return {
-      result: {...depsResult, code, map},
-      transformFileStartLogEntry,
-      transformFileEndLogEntry,
-    };
-  },
-);
-
-exports.transformAndExtractDependencies = (
+exports.transformAndExtractDependencies = async function(
   transform: string,
   filename: string,
   localPath: LocalPath,
   sourceCode: string,
   options: Options,
-  callback: Callback<Data>,
-) => {
-  /* $FlowFixMe: impossible to type a dynamic require */
+): Promise<Data> {
+  // $FlowFixMe: impossible to type a dynamic require.
   const transformModule: Transformer<*> = require(transform);
-  transformCode(
+
+  return transformCode(
     transformModule,
     filename,
     localPath,
     sourceCode,
     options,
-    callback,
   );
 };
-
-exports.minify = asyncify(
-  (filename: string, code: string, sourceMap: RawMappings) => {
-    var result;
-    try {
-      result = minify.withSourceMap(code, sourceMap, filename);
-    } catch (error) {
-      if (error.constructor.name === 'JS_Parse_Error') {
-        throw new Error(
-          error.message +
-            ' in file "' +
-            filename +
-            '" at line ' +
-            error.line +
-            ':' +
-            error.col,
-        );
-      }
-      throw error;
-    }
-    return result;
-  },
-);
 
 exports.transformCode = transformCode; // for easier testing
