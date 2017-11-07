@@ -46,22 +46,19 @@ type ModuleDefinition = {|
   isInitialized: boolean,
   verboseName?: string,
 |};
-type ModuleMap = {[key: ModuleID]: ModuleDefinition};
+type ModuleMap = {[key: ModuleID]: ModuleDefinition, __proto__: null};
 type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
 type VerboseModuleNameForDev = string;
 
 global.require = require;
 global.__d = define;
 
-/* $FlowFixMe(>=0.56.0 site=react_native_fb) This comment suppresses an error
- * found when Flow v0.56 was deployed. To see the error delete this comment and
- * run Flow. */
 const modules: ModuleMap = Object.create(null);
 if (__DEV__) {
-  /* $FlowFixMe(>=0.56.0 site=react_native_fb) This comment suppresses an error
-   * found when Flow v0.56 was deployed. To see the error delete this comment
-   * and run Flow. */
-  var verboseNamesToModuleIds: {[key: string]: number} = Object.create(null);
+  var verboseNamesToModuleIds: {
+    [key: string]: number,
+    __proto__: null,
+  } = Object.create(null);
 }
 
 function define(

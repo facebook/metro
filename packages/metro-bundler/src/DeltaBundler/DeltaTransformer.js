@@ -50,7 +50,10 @@ export type DeltaTransformResponse = {|
   +pre: DeltaEntries,
   +post: DeltaEntries,
   +delta: DeltaEntries,
-  +inverseDependencies: {[key: string]: $ReadOnlyArray<string>},
+  +inverseDependencies: {
+    [key: string]: $ReadOnlyArray<string>,
+    __proto__: null,
+  },
   +reset: boolean,
 |};
 
@@ -317,7 +320,7 @@ class DeltaTransformer extends EventEmitter {
    */
   _getInverseDependencies(
     dependencyEdges: DependencyEdges,
-  ): {[key: string]: $ReadOnlyArray<string>} {
+  ): {[key: string]: $ReadOnlyArray<string>, __proto__: null} {
     const output = Object.create(null);
 
     for (const [path, {inverseDependencies}] of dependencyEdges.entries()) {
@@ -326,9 +329,6 @@ class DeltaTransformer extends EventEmitter {
       ).map(dep => this._getModuleId({path: dep}));
     }
 
-    /* $FlowFixMe(>=0.56.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.56 was deployed. To see the error delete this
-     * comment and run Flow. */
     return output;
   }
 

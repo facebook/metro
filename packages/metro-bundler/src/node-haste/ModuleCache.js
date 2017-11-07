@@ -33,9 +33,9 @@ class ModuleCache {
   _getClosestPackage: GetClosestPackageFn;
   _getTransformCacheKey: GetTransformCacheKey;
   _globalTransformCache: ?GlobalTransformCache;
-  _moduleCache: {[filePath: string]: Module};
+  _moduleCache: {[filePath: string]: Module, __proto__: null};
   _moduleOptions: ModuleOptions;
-  _packageCache: {[filePath: string]: Package};
+  _packageCache: {[filePath: string]: Package, __proto__: null};
   _packageModuleMap: WeakMap<Module, string>;
   _platforms: Set<string>;
   _transformCode: TransformCode;
@@ -72,14 +72,8 @@ class ModuleCache {
     this._getTransformCacheKey = getTransformCacheKey;
     this._globalTransformCache = globalTransformCache;
     this._depGraphHelpers = depGraphHelpers;
-    /* $FlowFixMe(>=0.56.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.56 was deployed. To see the error delete this
-     * comment and run Flow. */
     this._moduleCache = Object.create(null);
     this._moduleOptions = moduleOptions;
-    /* $FlowFixMe(>=0.56.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.56 was deployed. To see the error delete this
-     * comment and run Flow. */
     this._packageCache = Object.create(null);
     this._packageModuleMap = new WeakMap();
     this._platforms = platforms;
@@ -144,9 +138,8 @@ class ModuleCache {
   }
 
   getPackageForModule(module: Module): ?Package {
-    if (this._packageModuleMap.has(module)) {
-      const packagePath = this._packageModuleMap.get(module);
-      // $FlowFixMe(>=0.37.0)
+    let packagePath = this._packageModuleMap.get(module);
+    if (packagePath) {
       if (this._packageCache[packagePath]) {
         return this._packageCache[packagePath];
       } else {
@@ -154,7 +147,7 @@ class ModuleCache {
       }
     }
 
-    const packagePath = this._getClosestPackage(module.path);
+    packagePath = this._getClosestPackage(module.path);
     if (!packagePath) {
       return null;
     }

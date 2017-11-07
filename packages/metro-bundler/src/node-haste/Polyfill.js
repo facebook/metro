@@ -43,11 +43,8 @@ class Polyfill extends Module {
     return null;
   }
 
-  getDependencies() {
-    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.54 was deployed. To see the error delete this
-     * comment and run Flow. */
-    return Promise.resolve(this._dependencies);
+  async getDependencies() {
+    return this._dependencies;
   }
 
   isJSON() {

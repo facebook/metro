@@ -68,7 +68,7 @@ type Options<TModule, TPackage> = {|
 |};
 
 class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
-  _immediateResolutionCache: {[key: string]: TModule};
+  _immediateResolutionCache: {[key: string]: TModule, __proto__: null};
   _options: Options<TModule, TPackage>;
   static AmbiguousModuleResolutionError: Class<AmbiguousModuleResolutionError>;
 
@@ -146,7 +146,7 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
     transformOptions: TransformWorkerOptions,
     onProgress?: ?(finishedModules: number, totalModules: number) => mixed,
     recursive: boolean,
-  }) {
+  }): Promise<void> {
     const entry = this._options.moduleCache.getModule(this._options.entryPath);
 
     response.pushDependency(entry);
@@ -245,9 +245,6 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
       return promise.then(value => [key, value]);
     }
 
-    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.54 was deployed. To see the error delete this
-     * comment and run Flow. */
     return Promise.all([
       // kicks off recursive dependency discovery, but doesn't block until it's
       // done
@@ -363,13 +360,10 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
   }
 
   _resetResolutionCache() {
-    /* $FlowFixMe(>=0.56.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.56 was deployed. To see the error delete this
-     * comment and run Flow. */
     this._immediateResolutionCache = Object.create(null);
   }
 
-  getResolutionCache(): {[key: string]: TModule} {
+  getResolutionCache(): {[key: string]: TModule, __proto__: null} {
     return this._immediateResolutionCache;
   }
 }

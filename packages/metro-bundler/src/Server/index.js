@@ -24,6 +24,7 @@ const formatBundlingError = require('../lib/formatBundlingError');
 const getMaxWorkers = require('../lib/getMaxWorkers');
 const getOrderedDependencyPaths = require('../lib/getOrderedDependencyPaths');
 const mime = require('mime-types');
+const nullthrows = require('fbjs/lib/nullthrows');
 const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
 const path = require('path');
 const symbolicate = require('./symbolicate');
@@ -175,7 +176,7 @@ class Server {
     workerPath: ?string,
   };
   _projectRoots: $ReadOnlyArray<string>;
-  _bundles: {};
+  _bundles: {__proto__: null};
   _bundleBuildInfos: WeakMap<Bundle, BuildInfo>;
   _changeWatchers: Array<{
     req: IncomingMessage,
@@ -237,9 +238,6 @@ class Server {
 
     this._reporter = reporter;
     this._projectRoots = this._opts.projectRoots;
-    /* $FlowFixMe(>=0.56.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.56 was deployed. To see the error delete this
-     * comment and run Flow. */
     this._bundles = Object.create(null);
     this._bundleBuildInfos = new WeakMap();
     this._changeWatchers = [];
@@ -275,11 +273,9 @@ class Server {
         for (const key in this._bundles) {
           this._bundles[key]
             .then(bundle => {
-              const deps = bundleDeps.get(bundle);
+              const deps = nullthrows(bundleDeps.get(bundle));
               filePaths.forEach(filePath => {
-                // $FlowFixMe(>=0.37.0)
                 if (deps.files.has(filePath)) {
-                  // $FlowFixMe(>=0.37.0)
                   deps.outdated.add(filePath);
                 }
               });
@@ -506,9 +502,6 @@ class Server {
   }
 
   _clearBundles() {
-    /* $FlowFixMe(>=0.56.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.56 was deployed. To see the error delete this
-     * comment and run Flow. */
     this._bundles = Object.create(null);
   }
 
@@ -700,8 +693,7 @@ class Server {
 
     if (optionsJson in this._bundles) {
       return this._bundles[optionsJson].then(bundle => {
-        const deps = bundleDeps.get(bundle);
-        // $FlowFixMe(>=0.37.0)
+        const deps = nullthrows(bundleDeps.get(bundle));
         const {dependencyPairs, files, idToIndex, outdated} = deps;
         if (outdated.size) {
           const updatingExistingBundleLogEntry = log(
@@ -713,7 +705,6 @@ class Server {
 
           debug('Attempt to update existing bundle');
 
-          // $FlowFixMe(>=0.37.0)
           deps.outdated = new Set();
 
           const {platform, dev, minify, hot} = options;

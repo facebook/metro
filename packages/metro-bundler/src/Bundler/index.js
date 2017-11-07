@@ -251,12 +251,9 @@ class Bundler {
     return this._assetServer;
   }
 
-  end() {
+  async end() {
     this._transformer.kill();
-    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.54 was deployed. To see the error delete this
-     * comment and run Flow. */
-    return this._resolverPromise.then(resolver =>
+    await this._resolverPromise.then(resolver =>
       resolver
         .getDependencyGraph()
         .getWatcher()
@@ -353,7 +350,7 @@ class Bundler {
     });
   }
 
-  _bundle({
+  _bundle<T: Bundle | HMRBundle>({
     assetPlugins,
     bundle,
     dev,
@@ -372,7 +369,7 @@ class Bundler {
     unbundle,
   }: {
     assetPlugins?: Array<string>,
-    bundle: Bundle | HMRBundle,
+    bundle: T,
     dev: boolean,
     entryFile?: string,
     entryModuleOnly?: boolean,
@@ -387,7 +384,7 @@ class Bundler {
     runBeforeMainModule?: Array<string>,
     runModule?: boolean,
     unbundle?: boolean,
-  }) {
+  }): Promise<T> {
     const onResolutionResponse = (
       response: ResolutionResponse<Module, BundlingOptions>,
     ) => {
@@ -463,7 +460,7 @@ class Bundler {
     });
   }
 
-  _buildBundle({
+  _buildBundle<T: Bundle | HMRBundle>({
     entryFile,
     dev,
     minify,
@@ -479,7 +476,7 @@ class Bundler {
     onModuleTransformed = emptyFunction,
     finalizeBundle = emptyFunction,
     onProgress = emptyFunction,
-  }: *) {
+  }: *): Promise<T> {
     const transformingFilesLogEntry = log(
       createActionStartEntry({
         action_name: 'Transforming files',
@@ -505,9 +502,6 @@ class Bundler {
       });
     }
 
-    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.54 was deployed. To see the error delete this
-     * comment and run Flow. */
     return Promise.all([
       this._resolverPromise,
       resolutionResponse,
@@ -683,10 +677,7 @@ class Bundler {
     +platform: string,
     +minify: boolean,
     +generateSourceMaps: boolean,
-  }) {
-    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.54 was deployed. To see the error delete this
-     * comment and run Flow. */
+  }): Promise<Array<string>> {
     return this.getDependencies({
       entryFile,
       rootEntryFile: entryFile,
@@ -698,7 +689,8 @@ class Bundler {
     }).then(({dependencies}) => {
       const ret = [];
       const promises = [];
-      const placeHolder = {};
+      /* $FlowFixMe: these are always removed */
+      const placeHolder: string = {};
       dependencies.forEach(dep => {
         if (dep.isAsset()) {
           const localPath = toLocalPath(this._projectRoots, dep.path);

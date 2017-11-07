@@ -21,7 +21,11 @@ const path = require('path');
 const util = require('util');
 const workerFarm = require('../worker-farm');
 
-import type {Data as TransformData, Options as WorkerOptions} from './worker';
+import type {
+  Data as TransformData,
+  Options as WorkerOptions,
+  TransformedCode,
+} from './worker';
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
 import type {MappingsMap} from '../lib/SourceMap';
 import typeof {
@@ -142,10 +146,7 @@ class Transformer {
 
   kill() {
     if (this._usesFarm && this._workers) {
-      /* $FlowFixMe(>=0.56.0 site=react_native_fb) This comment suppresses an
-       * error found when Flow v0.56 was deployed. To see the error delete this
-       * comment and run Flow. */
-      workerFarm.end(this._workers);
+      workerFarm.end(this._workers, () => {});
     }
   }
 
@@ -154,17 +155,12 @@ class Transformer {
     localPath: LocalPath,
     code: string,
     options: WorkerOptions,
-  ) {
+  ): Promise<TransformedCode> {
     if (!this._transform) {
-      /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
-       * error found when Flow v0.54 was deployed. To see the error delete this
-       * comment and run Flow. */
       return Promise.reject(new Error('No transform module'));
     }
     debug('transforming file', fileName);
-    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.54 was deployed. To see the error delete this
-     * comment and run Flow. */
+
     return this._transform(
       this._transformModulePath,
       fileName,

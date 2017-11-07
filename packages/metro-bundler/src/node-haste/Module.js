@@ -144,18 +144,12 @@ class Module {
     return this._getHasteName() != null;
   }
 
-  getCode(transformOptions: WorkerOptions) {
-    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.54 was deployed. To see the error delete this
-     * comment and run Flow. */
-    return this.read(transformOptions).then(({code}) => code);
+  async getCode(transformOptions: WorkerOptions): Promise<string> {
+    return (await this.read(transformOptions)).code;
   }
 
-  getMap(transformOptions: WorkerOptions) {
-    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.54 was deployed. To see the error delete this
-     * comment and run Flow. */
-    return this.read(transformOptions).then(({map}) => map);
+  async getMap(transformOptions: WorkerOptions) {
+    return (await this.read(transformOptions)).map;
   }
 
   getName(): string {
@@ -186,11 +180,8 @@ class Module {
     return this._moduleCache.getPackageForModule(this);
   }
 
-  getDependencies(transformOptions: WorkerOptions) {
-    /* $FlowFixMe(>=0.54.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.54 was deployed. To see the error delete this
-     * comment and run Flow. */
-    return this.read(transformOptions).then(({dependencies}) => dependencies);
+  async getDependencies(transformOptions: WorkerOptions) {
+    return (await this.read(transformOptions)).dependencies;
   }
 
   /**
