@@ -599,7 +599,7 @@ class Server {
     return data;
   }
 
-  _processAssetsRequest(req: IncomingMessage, res: ServerResponse) {
+  _processSingleAssetRequest(req: IncomingMessage, res: ServerResponse) {
     const urlObj = url.parse(decodeURI(req.url), true);
     /* $FlowFixMe: could be empty if the url is invalid */
     const assetPath: string = urlObj.pathname.match(/^\/assets\/(.+)$/);
@@ -835,7 +835,7 @@ class Server {
       this._processOnChangeRequest(req, res);
       return;
     } else if (pathname.match(/^\/assets\//)) {
-      this._processAssetsRequest(req, res);
+      this._processSingleAssetRequest(req, res);
       return;
     } else if (pathname === '/symbolicate') {
       this._symbolicate(req, res);
@@ -855,6 +855,9 @@ class Server {
         return;
       } else if (requestType === 'map') {
         await this._processSourceMapUsingDeltaBundler(req, res);
+        return;
+      } else if (requestType === 'assets') {
+        await this._processAssetsRequest(req, res);
         return;
       }
     }
@@ -1144,6 +1147,50 @@ class Server {
     log(
       createActionEndEntry({
         ...requestingBundleLogEntry,
+        bundler: 'delta',
+      }),
+    );
+  }
+
+  async _processAssetsRequest(req: IncomingMessage, res: ServerResponse) {
+    const mres = MultipartResponse.wrap(req, res);
+    const {options, buildID} = this._prepareDeltaBundler(req, mres);
+
+    const requestingAssetsLogEntry = log(
+      createActionStartEntry({
+        action_name: 'Requesting assets',
+        bundle_url: req.url,
+        entry_point: options.entryFile,
+        bundler: 'delta',
+      }),
+    );
+
+    let assets;
+
+    try {
+      assets = await this.getAssets(options);
+    } catch (error) {
+      this._handleError(mres, this.optionsHash(options), error);
+
+      this._reporter.update({
+        buildID,
+        type: 'bundle_build_failed',
+      });
+
+      return;
+    }
+
+    mres.setHeader('Content-Type', 'application/json');
+    mres.end(JSON.stringify(assets));
+
+    this._reporter.update({
+      buildID,
+      type: 'bundle_build_done',
+    });
+
+    log(
+      createActionEndEntry({
+        ...requestingAssetsLogEntry,
         bundler: 'delta',
       }),
     );
