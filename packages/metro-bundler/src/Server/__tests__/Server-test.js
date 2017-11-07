@@ -55,7 +55,7 @@ describe('processRequest', () => {
     cacheVersion: null,
     polyfillModuleNames: null,
     reporter: require('../../lib/reporting').nullReporter,
-    runBeforeMainModule: ['InitializeCore'],
+    getModulesRunBeforeMainModule: () => ['InitializeCore'],
   };
 
   const makeRequest = (reqHandler, requrl, reqOptions) =>

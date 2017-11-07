@@ -135,7 +135,7 @@ export type ConfigT = {
    * An array of modules to be required before the entry point. It should
    * contain the absolute path of each module.
    */
-  runBeforeMainModule: Array<string>,
+  getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
 };
 
 const DEFAULT = ({
@@ -158,7 +158,7 @@ const DEFAULT = ({
   postProcessModules: modules => modules,
   postProcessModulesForBuck: modules => modules,
   postProcessBundleSourcemap: ({code, map, outFileName}) => ({code, map}),
-  runBeforeMainModule: [],
+  getModulesRunBeforeMainModule: () => [],
   transformVariants: () => ({default: {}}),
   getWorkerPath: () => null,
 }: ConfigT);

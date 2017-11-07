@@ -93,7 +93,7 @@ export type Options = {|
   providesModuleNodeModules?: Array<string>,
   reporter?: Reporter,
   resetCache?: boolean,
-  +runBeforeMainModule: Array<string>,
+  +getModulesRunBeforeMainModule: (entryPoint: string) => Array<string>,
   silent?: boolean,
   +sourceExts: ?Array<string>,
   +transformCache: TransformCache,
@@ -167,7 +167,7 @@ class Server {
     providesModuleNodeModules?: Array<string>,
     reporter: Reporter,
     resetCache: boolean,
-    +runBeforeMainModule: Array<string>,
+    +getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
     silent: boolean,
     +sourceExts: Array<string>,
     +transformCache: TransformCache,
@@ -207,6 +207,7 @@ class Server {
           ? options.enableBabelRCLookup
           : true,
       extraNodeModules: options.extraNodeModules || {},
+      getModulesRunBeforeMainModule: options.getModulesRunBeforeMainModule,
       getPolyfills: options.getPolyfills,
       getTransformOptions: options.getTransformOptions,
       globalTransformCache: options.globalTransformCache,
@@ -223,7 +224,6 @@ class Server {
       providesModuleNodeModules: options.providesModuleNodeModules,
       reporter,
       resetCache: options.resetCache || false,
-      runBeforeMainModule: options.runBeforeMainModule,
       silent: options.silent || false,
       sourceExts: options.sourceExts || defaults.sourceExts,
       transformCache: options.transformCache,
@@ -325,7 +325,9 @@ class Server {
   async buildBundle(options: BundleOptions): Promise<Bundle> {
     const bundle = await this._bundler.bundle({
       ...options,
-      runBeforeMainModule: this._opts.runBeforeMainModule,
+      runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
+        options.entryFile,
+      ),
     });
     const modules = bundle.getModules();
     const nonVirtual = modules.filter(m => !m.virtual);
@@ -1306,7 +1308,7 @@ class Server {
       minify,
       excludeSource,
       hot: true,
-      runBeforeMainModule: this._opts.runBeforeMainModule,
+      runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(entryFile),
       runModule: this._getBoolOptionFromQuery(urlObj.query, 'runModule', true),
       inlineSourceMap: this._getBoolOptionFromQuery(
         urlObj.query,
