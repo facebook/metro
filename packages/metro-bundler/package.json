@@ -1,5 +1,5 @@
 {
-  "version": "0.20.1",
+  "version": "0.20.2",
   "name": "metro-bundler",
   "description": "🚇 The JavaScript bundler for React Native.",
   "main": "src/index.js",
