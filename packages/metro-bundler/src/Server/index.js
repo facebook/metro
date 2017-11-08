@@ -98,7 +98,6 @@ export type Options = {|
   +sourceExts: ?Array<string>,
   +transformCache: TransformCache,
   transformModulePath?: string,
-  useDeltaBundler?: boolean, // TODO: remove this, since it's no longer used
   watch?: boolean,
   workerPath: ?string,
 |};
