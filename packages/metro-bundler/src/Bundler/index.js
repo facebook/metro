@@ -48,10 +48,14 @@ export type BundlingOptions = {|
   +transformer: JSTransformerOptions,
 |};
 
+type TransformOptions = {|
+  +inlineRequires: {+blacklist: {[string]: true}} | boolean,
+|};
+
 export type ExtraTransformOptions = {
   +preloadedModules?: {[path: string]: true} | false,
   +ramGroups?: Array<string>,
-  +transform?: {+inlineRequires?: {+blacklist: {[string]: true}} | boolean},
+  +transform?: TransformOptions,
 };
 
 export type GetTransformOptionsOpts = {|
@@ -594,14 +598,17 @@ class Bundler {
     transformerOptions?: JSTransformerOptions,
   }): Promise<Array<string>> {
     if (!transformerOptions) {
-      transformerOptions = (await this.getTransformOptions(rootEntryFile, {
-        dev,
-        generateSourceMaps,
-        hot,
-        minify,
-        platform,
-        prependPolyfills: false,
-      })).transformer;
+      transformerOptions = (await this._getLegacyTransformOptions_Do_Not_Use(
+        rootEntryFile,
+        {
+          dev,
+          generateSourceMaps,
+          hot,
+          minify,
+          platform,
+          prependPolyfills: false,
+        },
+      )).transformer;
     }
 
     const notNullOptions = transformerOptions;
@@ -642,7 +649,7 @@ class Bundler {
     +prependPolyfills: boolean,
     onProgress?: ?(finishedModules: number, totalModules: number) => mixed,
   }): Promise<ResolutionResponse<Module, BundlingOptions>> {
-    const bundlingOptions: BundlingOptions = await this.getTransformOptions(
+    const bundlingOptions: BundlingOptions = await this._getLegacyTransformOptions_Do_Not_Use(
       rootEntryFile,
       {
         dev,
@@ -845,7 +852,51 @@ class Bundler {
     });
   }
 
-  async getTransformOptions(
+  /**
+   * Returns the transform options related to a specific entry file, by calling
+   * the config parameter getTransformOptions().
+   */
+  async getTransformOptionsForEntryFile(
+    entryFile: string,
+    options: {dev: boolean, platform: ?string},
+    getDependencies: string => Promise<Array<string>>,
+  ): Promise<TransformOptions> {
+    if (!this._getTransformOptions) {
+      return {
+        inlineRequires: false,
+      };
+    }
+
+    const {transform} = await this._getTransformOptions(
+      [entryFile],
+      {dev: options.dev, hot: true, platform: options.platform},
+      getDependencies,
+    );
+
+    return transform || {inlineRequires: false};
+  }
+
+  /*
+   * Helper method to return the global transform options that are kept in the
+   * Bundler.
+   */
+  getGlobalTransformOptions(): {
+    enableBabelRCLookup: boolean,
+    projectRoot: string,
+  } {
+    return {
+      enableBabelRCLookup: this._opts.enableBabelRCLookup,
+      projectRoot: this._projectRoots[0],
+    };
+  }
+
+  /*
+   * Old logic to get the transform options, which automatically calculates
+   * the dependencies of the inlineRequires and preloadedModules params.
+   *
+   * TODO: Remove this.
+   */
+  async _getLegacyTransformOptions_Do_Not_Use(
     mainModuleName: string,
     options: {|
       dev: boolean,

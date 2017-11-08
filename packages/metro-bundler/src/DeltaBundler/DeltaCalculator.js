@@ -137,25 +137,63 @@ class DeltaCalculator extends EventEmitter {
   }
 
   /**
-   * Returns the options options object that is used by ResoltionRequest to
-   * read all the modules. This can be used by external objects to read again
+   * Returns the options object that is used by the transformer to parse
+   * all the modules. This can be used by external objects to read again
    * any module very fast (since the options object instance will be the same).
    */
   async getTransformerOptions(): Promise<JSTransformerOptions> {
     if (!this._transformerOptions) {
-      this._transformerOptions = (await this._bundler.getTransformOptions(
-        this._options.entryFile,
-        {
-          dev: this._options.dev,
-          generateSourceMaps: false,
-          hot: this._options.hot,
-          minify: this._options.minify,
-          platform: this._options.platform,
-          prependPolyfills: false,
-        },
-      )).transformer;
+      this._transformerOptions = await this._calcTransformerOptions();
     }
     return this._transformerOptions;
+  }
+
+  async _calcTransformerOptions(): Promise<JSTransformerOptions> {
+    const {
+      enableBabelRCLookup,
+      projectRoot,
+    } = this._bundler.getGlobalTransformOptions();
+
+    const transformOptionsForBlacklist = {
+      dev: this._options.dev,
+      minify: this._options.minify,
+      platform: this._options.platform,
+      transform: {
+        enableBabelRCLookup,
+        dev: this._options.dev,
+        generateSourceMaps: this._options.generateSourceMaps,
+        hot: this._options.hot,
+        inlineRequires: false,
+        platform: this._options.platform,
+        projectRoot,
+      },
+    };
+
+    const {
+      inlineRequires,
+    } = await this._bundler.getTransformOptionsForEntryFile(
+      this._options.entryFile,
+      {dev: this._options.dev, platform: this._options.platform},
+      async path => {
+        const {added} = await initialTraverseDependencies(
+          path,
+          this._dependencyGraph,
+          transformOptionsForBlacklist,
+          new Map(),
+        );
+
+        return [path, ...added];
+      },
+    );
+
+    // $FlowFixMe flow does not recognize well Object.assign() return types.
+    return {
+      ...transformOptionsForBlacklist,
+      transform: {
+        ...transformOptionsForBlacklist.transform,
+        inlineRequires: inlineRequires || false,
+      },
+    };
   }
 
   /**

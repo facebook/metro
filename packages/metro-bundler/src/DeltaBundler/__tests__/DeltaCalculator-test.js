@@ -102,11 +102,16 @@ describe('DeltaCalculator', () => {
       },
     );
 
-    Bundler.prototype.getTransformOptions.mockImplementation(async () => {
-      return {
-        transformer: {},
-      };
+    Bundler.prototype.getGlobalTransformOptions.mockReturnValue({
+      enableBabelRCLookup: false,
+      projectRoot: '/foo',
     });
+
+    Bundler.prototype.getTransformOptionsForEntryFile.mockReturnValue(
+      Promise.resolve({
+        inlineRequires: false,
+      }),
+    );
 
     deltaCalculator = new DeltaCalculator(
       bundlerMock,
@@ -290,5 +295,70 @@ describe('DeltaCalculator', () => {
     });
 
     expect(traverseDependencies.mock.calls[0][0]).toEqual(['/bundle']);
+  });
+
+  describe('getTransformerOptions()', () => {
+    it('should calculate the transform options correctly', async () => {
+      expect(await deltaCalculator.getTransformerOptions()).toEqual({
+        dev: true,
+        minify: false,
+        platform: 'ios',
+        transform: {
+          dev: true,
+          enableBabelRCLookup: false,
+          generateSourceMaps: false,
+          hot: true,
+          inlineRequires: false,
+          platform: 'ios',
+          projectRoot: '/foo',
+        },
+      });
+    });
+
+    it('should handle inlineRequires=true correctly', async () => {
+      Bundler.prototype.getTransformOptionsForEntryFile.mockReturnValue(
+        Promise.resolve({
+          inlineRequires: true,
+        }),
+      );
+
+      expect(await deltaCalculator.getTransformerOptions()).toEqual({
+        dev: true,
+        minify: false,
+        platform: 'ios',
+        transform: {
+          dev: true,
+          enableBabelRCLookup: false,
+          generateSourceMaps: false,
+          hot: true,
+          inlineRequires: true,
+          platform: 'ios',
+          projectRoot: '/foo',
+        },
+      });
+    });
+
+    it('should handle an inline requires blacklist correctly', async () => {
+      Bundler.prototype.getTransformOptionsForEntryFile.mockReturnValue(
+        Promise.resolve({
+          inlineRequires: {blacklist: {'/bar': true, '/baz': true}},
+        }),
+      );
+
+      expect(await deltaCalculator.getTransformerOptions()).toEqual({
+        dev: true,
+        minify: false,
+        platform: 'ios',
+        transform: {
+          dev: true,
+          enableBabelRCLookup: false,
+          generateSourceMaps: false,
+          hot: true,
+          inlineRequires: {blacklist: {'/bar': true, '/baz': true}},
+          platform: 'ios',
+          projectRoot: '/foo',
+        },
+      });
+    });
   });
 });
