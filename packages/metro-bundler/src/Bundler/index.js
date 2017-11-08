@@ -224,7 +224,7 @@ class Bundler {
       globalTransformCache: opts.globalTransformCache,
       hasteImpl: opts.hasteImpl,
       maxWorkers: opts.maxWorkers,
-      minifyCode: this._transformer.minify,
+      minifyCode: this._transformer.minify.bind(this._transformer),
       postMinifyProcess: this._opts.postMinifyProcess,
       platforms: new Set(opts.platforms),
       polyfillModuleNames: opts.polyfillModuleNames,

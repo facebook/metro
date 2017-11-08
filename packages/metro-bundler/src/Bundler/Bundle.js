@@ -88,7 +88,11 @@ class Bundle extends BundleBase {
      */
     resolver: {
       wrapModule: (options: any) => {code: any, map: any},
-      minifyModule: ({code: any, map: any, path: any}) => Promise<{
+      minifyModule: (
+        code: any,
+        map: any,
+        path: any,
+      ) => Promise<{
         code: any,
         map: any,
       }>,

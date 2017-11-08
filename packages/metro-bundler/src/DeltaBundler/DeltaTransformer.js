@@ -15,7 +15,6 @@
 const DeltaCalculator = require('./DeltaCalculator');
 
 const createModuleIdFactory = require('../lib/createModuleIdFactory');
-const minify = require('../JSTransformer/worker/minify');
 
 const {EventEmitter} = require('events');
 
@@ -448,7 +447,11 @@ class DeltaTransformer extends EventEmitter {
         };
 
     const {code, map} = transformOptions.minify
-      ? minify.withRawMappings(wrapped.code, wrapped.map, module.path)
+      ? await this._resolver.minifyModule(
+          module.path,
+          wrapped.code,
+          wrapped.map,
+        )
       : wrapped;
 
     const id = this._getModuleId(module);

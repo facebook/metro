@@ -15,6 +15,12 @@
 const DependencyGraph = require('../node-haste/DependencyGraph');
 
 const defaults = require('../defaults');
+
+const {
+  compactMapping,
+  fromRawMappings,
+  toRawMappings,
+} = require('../Bundler/source-map');
 const pathJoin = require('path').join;
 
 import type ResolutionResponse from '../node-haste/DependencyGraph/ResolutionResponse';
@@ -256,17 +262,23 @@ class Resolver {
     return {code, map};
   }
 
-  async minifyModule({
-    path,
-    code,
-    map,
-  }: {
+  async minifyModule(
     path: string,
     code: string,
-    map: ?MappingsMap,
-  }): Promise<{code: string, map: ?MappingsMap}> {
-    const minified = await this._minifyCode(path, code, map);
-    return await this._postMinifyProcess(minified);
+    map: CompactRawMappings,
+  ): Promise<{code: string, map: CompactRawMappings}> {
+    const sourceMap = fromRawMappings([{code, source: code, map, path}]).toMap(
+      undefined,
+      {},
+    );
+
+    const minified = await this._minifyCode(path, code, sourceMap);
+    const result = await this._postMinifyProcess(minified);
+
+    return {
+      code: result.code,
+      map: result.map ? toRawMappings(result.map).map(compactMapping) : [],
+    };
   }
 
   getDependencyGraph(): DependencyGraph {

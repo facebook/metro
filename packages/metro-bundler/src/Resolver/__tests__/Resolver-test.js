@@ -406,7 +406,7 @@ describe('Resolver', function() {
           dependencies: [module],
           mainModuleId: id,
         });
-        sourceMap = {version: 3, sources: ['input'], mappings: 'whatever'};
+        sourceMap = [];
         return Resolver.load({
           projectRoot: '/root',
           minifyCode,
@@ -419,19 +419,20 @@ describe('Resolver', function() {
       it('should use minified code', () => {
         expect.assertions(2);
         const minifiedCode = 'minified(code)';
-        const minifiedMap = {version: 3, file: ['minified']};
+        const minifiedMap = {
+          version: 3,
+          file: ['minified'],
+          sources: [],
+          mappings: '',
+        };
         minifyCode.mockReturnValue(
           Promise.resolve({code: minifiedCode, map: minifiedMap}),
         );
         return depResolver
-          .minifyModule({
-            path: module.path,
-            name: id,
-            code,
-          })
+          .minifyModule(module.path, code, sourceMap)
           .then(({code, map}) => {
             expect(code).toEqual(minifiedCode);
-            expect(map).toEqual(minifiedMap);
+            expect(map).toEqual([]);
           });
       });
     });
