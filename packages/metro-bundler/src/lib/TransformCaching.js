@@ -35,7 +35,7 @@ export type CachedResult = {
   code: string,
   dependencies: Array<string>,
   dependencyOffsets: Array<number>,
-  map?: ?CompactRawMappings,
+  map: CompactRawMappings,
 };
 
 export type TransformCacheResult = {|
@@ -336,7 +336,7 @@ function readMetadataFileSync(
   cachedSourceHash: string,
   dependencies: Array<string>,
   dependencyOffsets: Array<number>,
-  sourceMap: ?CompactRawMappings,
+  sourceMap: CompactRawMappings,
 } {
   const metadataStr = fs.readFileSync(metadataFilePath, 'utf8');
   const metadata = tryParseJSON(metadataStr);

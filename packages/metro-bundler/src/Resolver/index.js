@@ -35,11 +35,7 @@ import type {
 } from '../lib/TransformCaching';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 
-type MinifyCode = (
-  filePath: string,
-  code: string,
-  map: ?MappingsMap,
-) => Promise<{code: string, map: ?MappingsMap}>;
+import typeof {minify as MinifyCode} from '../JSTransformer/worker';
 
 type ContainsTransformerOptions = {+transformer: JSTransformerOptions};
 
@@ -273,7 +269,7 @@ class Resolver {
     );
 
     const minified = await this._minifyCode(path, code, sourceMap);
-    const result = await this._postMinifyProcess(minified);
+    const result = await this._postMinifyProcess({...minified});
 
     return {
       code: result.code,

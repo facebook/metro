@@ -27,7 +27,7 @@ import type {
   Options as WorkerOptions,
 } from '../JSTransformer/worker';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
-import type {MappingsMap} from '../lib/SourceMap';
+import type {CompactRawMappings} from '../lib/SourceMap';
 import type {
   TransformCache,
   GetTransformCacheKey,
@@ -42,7 +42,7 @@ export type ReadResult = {
   +code: string,
   +dependencies: Array<string>,
   +dependencyOffsets?: ?Array<number>,
-  +map?: ?(MappingsMap | Array<RawMapping>),
+  +map: CompactRawMappings,
   +source: string,
 };
 

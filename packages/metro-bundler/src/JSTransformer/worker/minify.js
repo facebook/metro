@@ -14,17 +14,7 @@
 
 const uglify = require('uglify-es');
 
-const {
-  compactMapping,
-  fromRawMappings,
-  toRawMappings,
-} = require('../../Bundler/source-map');
-
-import type {
-  CompactRawMappings,
-  MappingsMap,
-  RawMappings,
-} from '../../lib/SourceMap';
+import type {MappingsMap} from '../../lib/SourceMap';
 
 export type ResultWithMap = {
   code: string,
@@ -37,33 +27,14 @@ function noSourceMap(code: string): string {
 
 function withSourceMap(
   code: string,
-  sourceMap: ?MappingsMap | RawMappings,
+  sourceMap: ?MappingsMap,
   filename: string,
 ): ResultWithMap {
-  if (sourceMap && Array.isArray(sourceMap)) {
-    sourceMap = fromRawMappings([
-      {code, source: code, map: sourceMap, path: filename},
-    ]).toMap(undefined, {});
-  }
-
   const result = minify(code, sourceMap);
 
   const map: MappingsMap = JSON.parse(result.map);
   map.sources = [filename];
   return {code: result.code, map};
-}
-
-function withRawMappings(
-  code: string,
-  map: RawMappings,
-  filename: string,
-): {code: string, map: CompactRawMappings} {
-  const result = withSourceMap(code, map, filename);
-
-  return {
-    code: result.code,
-    map: toRawMappings(result.map).map(compactMapping),
-  };
 }
 
 function minify(inputCode: string, inputMap: ?MappingsMap) {
@@ -93,6 +64,5 @@ function minify(inputCode: string, inputMap: ?MappingsMap) {
 
 module.exports = {
   noSourceMap,
-  withRawMappings,
   withSourceMap,
 };

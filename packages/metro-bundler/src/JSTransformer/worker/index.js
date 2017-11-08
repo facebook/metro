@@ -12,7 +12,6 @@
 
 'use strict';
 
-const asyncify = require('async/asyncify');
 const constantFolding = require('./constant-folding');
 const extractDependencies = require('./extract-dependencies');
 const inline = require('./inline');
@@ -34,7 +33,7 @@ export type TransformedCode = {
   code: string,
   dependencies: Array<string>,
   dependencyOffsets: Array<number>,
-  map?: ?CompactRawMappings,
+  map: CompactRawMappings,
 };
 
 export type TransformArgs<ExtraOptions: {}> = {|
@@ -134,7 +133,7 @@ function transformCode(
       : transformed.map;
 
   // Convert the sourcemaps to Compact Raw source maps.
-  const map = rawMappings ? rawMappings.map(compactMapping) : null;
+  const map = rawMappings ? rawMappings.map(compactMapping) : [];
 
   let code = transformed.code;
   if (isJson) {
@@ -168,7 +167,7 @@ function transformCode(
 exports.minify = async function(
   filename: string,
   code: string,
-  sourceMap: RawMappings,
+  sourceMap: MappingsMap,
 ): Promise<ResultWithMap> {
   try {
     return minify.withSourceMap(code, sourceMap, filename);

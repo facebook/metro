@@ -19,7 +19,7 @@ const Worker = require('jest-worker').default;
 
 import type {Options, TransformedCode} from './worker';
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
-import type {RawMappings} from '../lib/SourceMap';
+import type {MappingsMap} from '../lib/SourceMap';
 import type {ResultWithMap} from './worker/minify';
 
 import typeof {
@@ -78,7 +78,7 @@ module.exports = class Transformer {
   async minify(
     filename: string,
     code: string,
-    sourceMap: RawMappings,
+    sourceMap: MappingsMap,
   ): Promise<ResultWithMap> {
     return await this._worker.minify(filename, code, sourceMap);
   }
