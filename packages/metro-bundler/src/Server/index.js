@@ -217,7 +217,6 @@ class Server {
 
     const bundlerOpts = Object.create(this._opts);
     bundlerOpts.assetServer = this._assetServer;
-    bundlerOpts.allowBundleUpdates = this._opts.watch;
     bundlerOpts.globalTransformCache = options.globalTransformCache;
     bundlerOpts.watch = this._opts.watch;
     bundlerOpts.reporter = reporter;

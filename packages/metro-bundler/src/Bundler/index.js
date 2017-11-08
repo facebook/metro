@@ -15,16 +15,12 @@
 const assert = require('assert');
 const crypto = require('crypto');
 const debug = require('debug')('Metro:Bundler');
-const emptyFunction = require('fbjs/lib/emptyFunction');
 const fs = require('fs');
 const Transformer = require('../JSTransformer');
 const Resolver = require('../Resolver');
-const Bundle = require('./Bundle');
-const HMRBundle = require('./HMRBundle');
 const ModuleTransport = require('../lib/ModuleTransport');
 const path = require('path');
 const defaults = require('../defaults');
-const toLocalPath = require('../node-haste/lib/toLocalPath');
 const createModuleIdFactory = require('../lib/createModuleIdFactory');
 
 const {generateAssetTransformResult} = require('./util');
@@ -35,7 +31,6 @@ const VERSION = require('../../package.json').version;
 
 import type AssetServer from '../AssetServer';
 import type Module, {HasteImpl} from '../node-haste/Module';
-import type ResolutionResponse from '../node-haste/DependencyGraph/ResolutionResponse';
 import type {MappingsMap, SourceMap} from '../lib/SourceMap';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type {Reporter} from '../lib/reporting';
@@ -85,12 +80,6 @@ export type ExtendedAssetDescriptor = AssetDescriptor & {
   +fileSystemLocation: string,
 };
 
-const {
-  createActionStartEntry,
-  createActionEndEntry,
-  log,
-} = require('../Logger');
-
 export type PostProcessModulesOptions = {|
   dev: boolean,
   minify: boolean,
@@ -115,7 +104,6 @@ export type PostProcessBundleSourcemap = ({
 }) => {code: Buffer | string, map: SourceMap | string};
 
 type Options = {|
-  +allowBundleUpdates: boolean,
   +assetExts: Array<string>,
   +assetRegistryPath: string,
   +assetServer: AssetServer,
@@ -143,8 +131,6 @@ type Options = {|
   +watch: boolean,
   +workerPath: ?string,
 |};
-
-const {hasOwnProperty} = Object;
 
 class Bundler {
   _opts: Options;
@@ -265,542 +251,34 @@ class Bundler {
     );
   }
 
-  bundle(options: {
-    dev: boolean,
-    minify: boolean,
-    unbundle: boolean,
-    sourceMapUrl: ?string,
-  }): Promise<Bundle> {
-    const {dev, minify, unbundle} = options;
-    const postProcessBundleSourcemap = this._opts.postProcessBundleSourcemap;
-    return this._resolverPromise
-      .then(resolver => resolver.getModuleSystemDependencies({dev, unbundle}))
-      .then(moduleSystemDeps =>
-        this._bundle({
-          ...options,
-          bundle: new Bundle({
-            dev,
-            minify,
-            sourceMapUrl: options.sourceMapUrl,
-            postProcessBundleSourcemap,
-          }),
-          moduleSystemDeps,
-        }),
-      );
-  }
-
-  _sourceHMRURL(platform: ?string, hmrpath: string) {
-    return this._hmrURL('', platform, 'bundle', hmrpath);
-  }
-
-  _sourceMappingHMRURL(platform: ?string, hmrpath: string) {
-    // Chrome expects `sourceURL` when eval'ing code
-    return this._hmrURL('//# sourceURL=', platform, 'map', hmrpath);
-  }
-
-  _hmrURL(
-    prefix: string,
-    platform: ?string,
-    extensionOverride: string,
-    filePath: string,
-  ) {
-    const matchingRoot = this._projectRoots.find(root =>
-      filePath.startsWith(root),
-    );
-
-    if (!matchingRoot) {
-      throw new Error('No matching project root for ' + filePath);
-    }
-
-    // Replaces '\' with '/' for Windows paths.
-    if (pathSeparator === '\\') {
-      filePath = filePath.replace(/\\/g, '/');
-    }
-
-    const extensionStart = filePath.lastIndexOf('.');
-    const resource = filePath.substring(
-      matchingRoot.length,
-      extensionStart !== -1 ? extensionStart : undefined,
-    );
-
-    return (
-      prefix +
-      resource +
-      '.' +
-      extensionOverride +
-      '?' +
-      'platform=' +
-      (platform || '') +
-      '&runModule=false&entryModuleOnly=true'
-    );
-  }
-
-  hmrBundle(
-    options: {platform: ?string},
-    host: string,
-    port: number,
-  ): Promise<HMRBundle> {
-    return this._bundle({
-      ...options,
-      bundle: new HMRBundle({
-        sourceURLFn: this._sourceHMRURL.bind(this, options.platform),
-        sourceMappingURLFn: this._sourceMappingHMRURL.bind(
-          this,
-          options.platform,
-        ),
-      }),
-      hot: true,
-      dev: true,
-    });
-  }
-
-  _bundle<T: Bundle | HMRBundle>({
-    assetPlugins,
-    bundle,
-    dev,
-    entryFile,
-    entryModuleOnly,
-    generateSourceMaps,
-    hot,
-    isolateModuleIDs,
-    minify,
-    moduleSystemDeps = [],
-    onProgress,
-    platform,
-    resolutionResponse,
-    runBeforeMainModule,
-    runModule,
-    unbundle,
-  }: {
-    assetPlugins?: Array<string>,
-    bundle: T,
-    dev: boolean,
-    entryFile?: string,
-    entryModuleOnly?: boolean,
-    generateSourceMaps?: boolean,
-    hot?: boolean,
-    isolateModuleIDs?: boolean,
-    minify?: boolean,
-    moduleSystemDeps?: Array<Module>,
-    onProgress?: () => void,
-    platform?: ?string,
-    resolutionResponse?: ResolutionResponse<Module, BundlingOptions>,
-    runBeforeMainModule?: Array<string>,
-    runModule?: boolean,
-    unbundle?: boolean,
-  }): Promise<T> {
-    const onResolutionResponse = (
-      response: ResolutionResponse<Module, BundlingOptions>,
-    ) => {
-      /* $FlowFixMe: looks like ResolutionResponse is monkey-patched
-       * with `getModuleId`. */
-      bundle.setMainModuleId(response.getModuleId(getMainModule(response)));
-      if (entryModuleOnly && entryFile) {
-        response.dependencies = response.dependencies.filter(module =>
-          module.path.endsWith(entryFile || ''),
-        );
-      } else {
-        response.dependencies = moduleSystemDeps.concat(response.dependencies);
-      }
-    };
-    const finalizeBundle = ({
-      bundle: finalBundle,
-      transformedModules,
-      response,
-      modulesByPath,
-    }: {
-      bundle: Bundle,
-      transformedModules: Array<{module: Module, transformed: ModuleTransport}>,
-      response: ResolutionResponse<Module, BundlingOptions>,
-      modulesByPath: {[path: string]: Module},
-    }) =>
-      this._resolverPromise
-        .then(resolver =>
-          Promise.all(
-            transformedModules.map(({module, transformed}) =>
-              finalBundle.addModule(resolver, response, module, transformed),
-            ),
-          ),
-        )
-        .then(() => {
-          return Promise.all(
-            runBeforeMainModule
-              ? runBeforeMainModule.map(path => this.getModuleForPath(path))
-              : [],
-          );
-        })
-        .then(runBeforeMainModules => {
-          runBeforeMainModules = runBeforeMainModules
-            .map(module => modulesByPath[module.path])
-            .filter(Boolean);
-
-          finalBundle.finalize({
-            runModule,
-            runBeforeMainModule: runBeforeMainModules.map(module =>
-              /* $FlowFixMe: looks like ResolutionResponse is monkey-patched
-               * with `getModuleId`. */
-              response.getModuleId(module),
-            ),
-            allowUpdates: this._opts.allowBundleUpdates,
-          });
-          return finalBundle;
-        });
-
-    return this._buildBundle({
-      entryFile,
-      dev,
-      minify,
-      platform,
-      bundle,
-      hot,
-      unbundle,
-      resolutionResponse,
-      onResolutionResponse,
-      finalizeBundle,
-      isolateModuleIDs,
-      generateSourceMaps,
-      assetPlugins,
-      onProgress,
-    });
-  }
-
-  _buildBundle<T: Bundle | HMRBundle>({
-    entryFile,
-    dev,
-    minify,
-    platform,
-    bundle,
-    hot,
-    unbundle,
-    resolutionResponse,
-    isolateModuleIDs,
-    generateSourceMaps,
-    assetPlugins,
-    onResolutionResponse = emptyFunction,
-    onModuleTransformed = emptyFunction,
-    finalizeBundle = emptyFunction,
-    onProgress = emptyFunction,
-  }: *): Promise<T> {
-    const transformingFilesLogEntry = log(
-      createActionStartEntry({
-        action_name: 'Transforming files',
-        entry_point: entryFile,
-        environment: dev ? 'dev' : 'prod',
-      }),
-    );
-
-    const modulesByPath = Object.create(null);
-
-    if (!resolutionResponse) {
-      resolutionResponse = this.getDependencies({
-        entryFile,
-        rootEntryFile: entryFile,
-        dev,
-        platform,
-        hot,
-        onProgress,
-        minify,
-        isolateModuleIDs,
-        generateSourceMaps: unbundle || minify || generateSourceMaps,
-        prependPolyfills: true,
-      });
-    }
-
-    return Promise.all([
-      this._resolverPromise,
-      resolutionResponse,
-    ]).then(([resolver, response]) => {
-      bundle.setRamGroups(response.options.ramGroups);
-
-      log(createActionEndEntry(transformingFilesLogEntry));
-      onResolutionResponse(response);
-
-      // get entry file complete path (`entryFile` is a local path, i.e. relative to roots)
-      let entryFilePath;
-      if (response.dependencies.length > 1) {
-        // skip HMR requests
-        const numModuleSystemDependencies = resolver.getModuleSystemDependencies(
-          {dev, unbundle},
-        ).length;
-
-        const dependencyIndex =
-          (response.numPrependedDependencies || 0) +
-          numModuleSystemDependencies;
-
-        if (dependencyIndex in response.dependencies) {
-          entryFilePath = response.dependencies[dependencyIndex].path;
-        }
-      }
-
-      const modulesByTransport: Map<ModuleTransport, Module> = new Map();
-      const toModuleTransport: Module => Promise<ModuleTransport> = module =>
-        this._toModuleTransport({
-          module,
-          bundle,
-          entryFilePath,
-          assetPlugins,
-          options: response.options,
-          /* $FlowFixMe: `getModuleId` is monkey-patched */
-          getModuleId: (response.getModuleId: () => number),
-          dependencyPairs: response.getResolvedDependencyPairs(module),
-        }).then(transformed => {
-          modulesByTransport.set(transformed, module);
-          modulesByPath[module.path] = module;
-          onModuleTransformed({
-            module,
-            response,
-            bundle,
-            transformed,
-          });
-          return transformed;
-        });
-
-      const p = this._opts.postProcessModules;
-      const postProcess = p
-        ? modules => p(modules, entryFile, {dev, minify, platform})
-        : null;
-
-      return Promise.all(response.dependencies.map(toModuleTransport))
-        .then(postProcess)
-        .then(moduleTransports => {
-          const transformedModules = moduleTransports.map(transformed => ({
-            module: modulesByTransport.get(transformed),
-            transformed,
-          }));
-          return finalizeBundle({
-            bundle,
-            transformedModules,
-            response,
-            modulesByPath,
-          });
-        })
-        .then(() => bundle);
-    });
-  }
-
-  async getShallowDependencies({
-    entryFile,
-    rootEntryFile,
-    platform,
-    dev = true,
-    minify = !dev,
-    hot = false,
-    generateSourceMaps = false,
-    transformerOptions,
-  }: {
-    entryFile: string,
-    +rootEntryFile: string,
-    platform: ?string,
-    dev?: boolean,
-    minify?: boolean,
-    hot?: boolean,
-    generateSourceMaps?: boolean,
-    transformerOptions?: JSTransformerOptions,
-  }): Promise<Array<string>> {
-    if (!transformerOptions) {
-      transformerOptions = (await this._getLegacyTransformOptions_Do_Not_Use(
-        rootEntryFile,
-        {
-          dev,
-          generateSourceMaps,
-          hot,
-          minify,
-          platform,
-          prependPolyfills: false,
-        },
-      )).transformer;
-    }
-
-    const notNullOptions = transformerOptions;
-
-    return this._resolverPromise.then(resolver =>
-      resolver.getShallowDependencies(entryFile, notNullOptions),
-    );
-  }
-
   getModuleForPath(entryFile: string): Promise<Module> {
     return this._resolverPromise.then(resolver =>
       resolver.getModuleForPath(entryFile),
     );
   }
 
-  async getDependencies({
-    entryFile,
-    platform,
-    dev = true,
-    minify = !dev,
-    hot = false,
-    recursive = true,
-    generateSourceMaps = false,
-    isolateModuleIDs = false,
-    rootEntryFile,
-    prependPolyfills,
-    onProgress,
-  }: {
-    entryFile: string,
-    platform: ?string,
-    dev?: boolean,
-    minify?: boolean,
-    hot?: boolean,
-    recursive?: boolean,
-    generateSourceMaps?: boolean,
-    isolateModuleIDs?: boolean,
-    +rootEntryFile: string,
-    +prependPolyfills: boolean,
-    onProgress?: ?(finishedModules: number, totalModules: number) => mixed,
-  }): Promise<ResolutionResponse<Module, BundlingOptions>> {
-    const bundlingOptions: BundlingOptions = await this._getLegacyTransformOptions_Do_Not_Use(
-      rootEntryFile,
-      {
-        dev,
-        platform,
-        hot,
-        generateSourceMaps,
-        minify,
-        prependPolyfills,
-      },
-    );
-
-    const resolver = await this._resolverPromise;
-    const response = await resolver.getDependencies(
-      entryFile,
-      {dev, platform, recursive, prependPolyfills},
-      bundlingOptions,
-      onProgress,
-      isolateModuleIDs ? createModuleIdFactory() : this._getModuleId,
-    );
-    return response;
-  }
-
-  getOrderedDependencyPaths({
-    entryFile,
-    dev,
-    platform,
-    minify,
-    generateSourceMaps,
-  }: {
-    +entryFile: string,
-    +dev: boolean,
-    +platform: string,
-    +minify: boolean,
-    +generateSourceMaps: boolean,
-  }): Promise<Array<string>> {
-    return this.getDependencies({
-      entryFile,
-      rootEntryFile: entryFile,
-      dev,
-      platform,
-      minify,
-      generateSourceMaps,
-      prependPolyfills: true,
-    }).then(({dependencies}) => {
-      const ret = [];
-      const promises = [];
-      /* $FlowFixMe: these are always removed */
-      const placeHolder: string = {};
-      dependencies.forEach(dep => {
-        if (dep.isAsset()) {
-          const localPath = toLocalPath(this._projectRoots, dep.path);
-          promises.push(this._assetServer.getAssetData(localPath, platform));
-          ret.push(placeHolder);
-        } else {
-          ret.push(dep.path);
-        }
-      });
-
-      return Promise.all(promises).then(assetsData => {
-        assetsData.forEach(({files}) => {
-          const index = ret.indexOf(placeHolder);
-          ret.splice(index, 1, ...files);
-        });
-        return ret;
-      });
-    });
-  }
-
-  _toModuleTransport({
-    module,
-    bundle,
-    entryFilePath,
-    options,
-    getModuleId,
-    dependencyPairs,
-    assetPlugins,
-  }: {
-    module: Module,
-    bundle: Bundle,
-    entryFilePath: string,
-    options: BundlingOptions,
-    getModuleId: (module: Module) => number,
-    dependencyPairs: Array<[string, Module]>,
-    assetPlugins: Array<string>,
-  }): Promise<ModuleTransport> {
-    let moduleTransport;
-    const moduleId = getModuleId(module);
-    const transformOptions = options.transformer;
-
-    if (module.isAsset()) {
-      moduleTransport = this._generateAssetModule(
-        bundle,
-        module,
-        moduleId,
-        assetPlugins,
-        transformOptions.platform,
-      );
-    }
-
-    if (moduleTransport) {
-      return Promise.resolve(moduleTransport);
-    }
-
-    return module
-      .read(transformOptions)
-      .then(({code, dependencies, dependencyOffsets, map, source}) => {
-        const name = module.getName();
-
-        const {preloadedModules} = options;
-        const isPolyfill = module.isPolyfill();
-        const preloaded =
-          module.path === entryFilePath ||
-          isPolyfill ||
-          (preloadedModules &&
-            hasOwnProperty.call(preloadedModules, module.path));
-
-        return new ModuleTransport({
-          name,
-          id: moduleId,
-          code,
-          map,
-          meta: {dependencies, dependencyOffsets, preloaded, dependencyPairs},
-          polyfill: isPolyfill,
-          sourceCode: source,
-          sourcePath: module.path,
-        });
-      });
-  }
-
-  generateAssetObjAndCode(
+  async generateAssetObjAndCode(
     module: Module,
     assetPlugins: Array<string>,
     platform: ?string = null,
   ) {
-    return this._assetServer
-      .getAssetData(module.path, platform)
-      .then(asset => {
-        return this._applyAssetPlugins(assetPlugins, asset);
-      })
-      .then(asset => {
-        const {
-          code,
-          dependencies,
-          dependencyOffsets,
-        } = generateAssetTransformResult(this._opts.assetRegistryPath, asset);
-        return {
-          asset,
-          code,
-          meta: {dependencies, dependencyOffsets, preloaded: null},
-        };
-      });
+    const assetData = await this._assetServer.getAssetData(
+      module.path,
+      platform,
+    );
+    const asset = await this._applyAssetPlugins(assetPlugins, assetData);
+
+    const {
+      code,
+      dependencies,
+      dependencyOffsets,
+    } = generateAssetTransformResult(this._opts.assetRegistryPath, asset);
+
+    return {
+      asset,
+      code,
+      meta: {dependencies, dependencyOffsets, preloaded: null},
+    };
   }
 
   _applyAssetPlugins(
@@ -825,31 +303,6 @@ class Bundler {
     } else {
       return this._applyAssetPlugins(remainingAssetPlugins, result);
     }
-  }
-
-  _generateAssetModule(
-    bundle: Bundle,
-    module: Module,
-    moduleId: number,
-    assetPlugins: Array<string> = [],
-    platform: ?string = null,
-  ) {
-    return this.generateAssetObjAndCode(
-      module,
-      assetPlugins,
-      platform,
-    ).then(({asset, code, meta}) => {
-      bundle.addAsset(asset);
-      return new ModuleTransport({
-        name: module.getName(),
-        id: moduleId,
-        code,
-        meta,
-        sourceCode: code,
-        sourcePath: module.path,
-        virtual: true,
-      });
-    });
   }
 
   /**
@@ -920,64 +373,6 @@ class Bundler {
     };
   }
 
-  /*
-   * Old logic to get the transform options, which automatically calculates
-   * the dependencies of the inlineRequires and preloadedModules params.
-   *
-   * TODO: Remove this.
-   */
-  async _getLegacyTransformOptions_Do_Not_Use(
-    mainModuleName: string,
-    options: {|
-      dev: boolean,
-      generateSourceMaps: boolean,
-      hot: boolean,
-      minify: boolean,
-      platform: ?string,
-      +prependPolyfills: boolean,
-    |},
-  ): Promise<BundlingOptions> {
-    const getDependencies = (entryFile: string) =>
-      this.getDependencies({
-        ...options,
-        enableBabelRCLookup: this._opts.enableBabelRCLookup,
-        entryFile,
-        projectRoots: this._projectRoots,
-        rootEntryFile: entryFile,
-        prependPolyfills: false,
-      }).then(r => r.dependencies.map(d => d.path));
-
-    const {dev, hot, platform} = options;
-    const extraOptions: ExtraTransformOptions = this._getTransformOptions
-      ? await this._getTransformOptions(
-          [mainModuleName],
-          {dev, hot, platform},
-          getDependencies,
-        )
-      : {};
-
-    const {transform = {}} = extraOptions;
-
-    return {
-      transformer: {
-        dev,
-        minify: options.minify,
-        platform,
-        transform: {
-          enableBabelRCLookup: this._opts.enableBabelRCLookup,
-          dev,
-          generateSourceMaps: options.generateSourceMaps,
-          hot,
-          inlineRequires: transform.inlineRequires || false,
-          platform,
-          projectRoot: this._projectRoots[0],
-        },
-      },
-      preloadedModules: extraOptions.preloadedModules,
-      ramGroups: extraOptions.ramGroups,
-    };
-  }
-
   getResolver(): Promise<Resolver> {
     return this._resolverPromise;
   }
@@ -986,10 +381,6 @@ class Bundler {
 function verifyRootExists(root) {
   // Verify that the root exists.
   assert(fs.statSync(root).isDirectory(), 'Root has to be a valid directory');
-}
-
-function getMainModule({dependencies, numPrependedDependencies = 0}) {
-  return dependencies[numPrependedDependencies];
 }
 
 module.exports = Bundler;
