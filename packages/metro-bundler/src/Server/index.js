@@ -19,7 +19,6 @@ const MultipartResponse = require('./MultipartResponse');
 const Serializers = require('../DeltaBundler/Serializers');
 const debug = require('debug')('Metro:Server');
 const defaults = require('../defaults');
-const emptyFunction = require('fbjs/lib/emptyFunction');
 const formatBundlingError = require('../lib/formatBundlingError');
 const getMaxWorkers = require('../lib/getMaxWorkers');
 const getOrderedDependencyPaths = require('../lib/getOrderedDependencyPaths');
@@ -31,12 +30,8 @@ const symbolicate = require('./symbolicate');
 const url = require('url');
 
 import type {CustomError} from '../lib/formatBundlingError';
-import type Module, {HasteImpl} from '../node-haste/Module';
+import type {HasteImpl} from '../node-haste/Module';
 import type {IncomingMessage, ServerResponse} from 'http';
-import type ResolutionResponse from '../node-haste/DependencyGraph/ResolutionResponse';
-import type {BundlingOptions} from '../Bundler';
-import type Bundle from '../Bundler/Bundle';
-import type HMRBundle from '../Bundler/HMRBundle';
 import type {Reporter} from '../lib/reporting';
 import type {Options as DeltaBundlerOptions} from '../DeltaBundler/Serializers';
 import type {
@@ -122,28 +117,7 @@ export type BundleOptions = {
   unbundle: boolean,
 };
 
-type DependencyOptions = {|
-  +dev: boolean,
-  +entryFile: string,
-  +hot: boolean,
-  +minify: boolean,
-  +platform: ?string,
-  +recursive: boolean,
-  +rootEntryFile: string,
-  +bundlingOptions?: BundlingOptions,
-|};
-
-type BuildInfo = {|
-  filesChangedCount: number,
-|};
-
 const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';
-const FILES_CHANGED_COUNT_REBUILD = -1;
-
-const bundleDeps = new WeakMap();
-const NODE_MODULES = `${path.sep}node_modules${path.sep}`;
-
-const USE_DELTA_BUNDLER = true;
 
 class Server {
   _opts: {
@@ -174,9 +148,6 @@ class Server {
     watch: boolean,
     workerPath: ?string,
   };
-  _projectRoots: $ReadOnlyArray<string>;
-  _bundles: {__proto__: null};
-  _bundleBuildInfos: WeakMap<Bundle, BuildInfo>;
   _changeWatchers: Array<{
     req: IncomingMessage,
     res: ServerResponse,
@@ -185,7 +156,6 @@ class Server {
   _assetServer: AssetServer;
   _bundler: Bundler;
   _debouncedFileChangeHandler: (filePath: string) => mixed;
-  _hmrFileChangeListener: ?(type: string, filePath: string) => mixed;
   _reporter: Reporter;
   _symbolicateInWorker: Symbolicate;
   _platforms: Set<string>;
@@ -236,9 +206,6 @@ class Server {
       this.onFileChange(type, filePath);
 
     this._reporter = reporter;
-    this._projectRoots = this._opts.projectRoots;
-    this._bundles = Object.create(null);
-    this._bundleBuildInfos = new WeakMap();
     this._changeWatchers = [];
     this._fileChangeListeners = [];
     this._platforms = new Set(this._opts.platforms);
@@ -267,27 +234,6 @@ class Server {
     });
 
     this._debouncedFileChangeHandler = debounceAndBatch(filePaths => {
-      // only clear bundles for non-JS changes
-      if (filePaths.every(RegExp.prototype.test, /\.js(?:on)?$/i)) {
-        for (const key in this._bundles) {
-          this._bundles[key]
-            .then(bundle => {
-              const deps = nullthrows(bundleDeps.get(bundle));
-              filePaths.forEach(filePath => {
-                if (deps.files.has(filePath)) {
-                  deps.outdated.add(filePath);
-                }
-              });
-            })
-            .catch(e => {
-              debug(`Could not update bundle: ${e}, evicting from cache`);
-              delete this._bundles[key];
-            });
-        }
-      } else {
-        debug('Clearing bundles due to non-JS change');
-        this._clearBundles();
-      }
       this._informChangeWatchers();
     }, 50);
 
@@ -305,12 +251,6 @@ class Server {
     this._bundler.end();
   }
 
-  setHMRFileChangeListener(
-    listener: ?(type: string, filePath: string) => mixed,
-  ) {
-    this._hmrFileChangeListener = listener;
-  }
-
   addFileChangeListener(listener: (filePath: string) => mixed) {
     if (this._fileChangeListeners.indexOf(listener) === -1) {
       this._fileChangeListeners.push(listener);
@@ -319,33 +259,6 @@ class Server {
 
   getDeltaBundler(): DeltaBundler {
     return this._deltaBundler;
-  }
-
-  async buildBundle(options: BundleOptions): Promise<Bundle> {
-    const bundle = await this._bundler.bundle({
-      ...options,
-      runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
-        options.entryFile,
-      ),
-    });
-    const modules = bundle.getModules();
-    const nonVirtual = modules.filter(m => !m.virtual);
-    bundleDeps.set(bundle, {
-      files: new Map(
-        nonVirtual.map(({sourcePath, meta}) => [
-          sourcePath,
-          meta != null ? meta.dependencies : [],
-        ]),
-      ),
-      idToIndex: new Map(modules.map(({id}, i) => [id, i])),
-      dependencyPairs: new Map(
-        nonVirtual
-          .filter(({meta}) => meta && meta.dependencyPairs)
-          .map(m => [m.sourcePath, m.meta.dependencyPairs]),
-      ),
-      outdated: new Set(),
-    });
-    return bundle;
   }
 
   async build(options: BundleOptions): Promise<{code: string, map: string}> {
@@ -373,72 +286,6 @@ class Server {
     });
   }
 
-  buildBundleFromUrl(reqUrl: string): Promise<Bundle> {
-    const options = this._getOptionsFromUrl(reqUrl);
-    return this.buildBundle(options);
-  }
-
-  buildBundleForHMR(
-    options: {platform: ?string},
-    host: string,
-    port: number,
-  ): Promise<HMRBundle> {
-    return this._bundler.hmrBundle(options, host, port);
-  }
-
-  getShallowDependencies(options: DependencyOptions): Promise<Array<string>> {
-    return Promise.resolve().then(() => {
-      const platform =
-        options.platform != null
-          ? options.platform
-          : parsePlatformFilePath(options.entryFile, this._platforms).platform;
-      const {
-        entryFile,
-        dev,
-        minify,
-        hot,
-        rootEntryFile,
-        bundlingOptions,
-      } = options;
-      return this._bundler.getShallowDependencies({
-        entryFile,
-        rootEntryFile,
-        platform,
-        dev,
-        minify,
-        hot,
-        generateSourceMaps: false,
-        transformOptions: bundlingOptions && bundlingOptions.transformer,
-      });
-    });
-  }
-
-  getModuleForPath(entryFile: string): Promise<Module> {
-    return this._bundler.getModuleForPath(entryFile);
-  }
-
-  getDependencies(
-    options: DependencyOptions,
-  ): Promise<ResolutionResponse<Module, *>> {
-    return Promise.resolve().then(() => {
-      const platform =
-        options.platform != null
-          ? options.platform
-          : parsePlatformFilePath(options.entryFile, this._platforms).platform;
-      const {entryFile, dev, minify, hot, rootEntryFile} = options;
-      return this._bundler.getDependencies({
-        entryFile,
-        platform,
-        dev,
-        minify,
-        hot,
-        generateSourceMaps: false,
-        rootEntryFile,
-        prependPolyfills: true,
-      });
-    });
-  }
-
   async getOrderedDependencyPaths(options: {
     +entryFile: string,
     +dev: boolean,
@@ -446,47 +293,28 @@ class Server {
     +minify: boolean,
     +generateSourceMaps: boolean,
   }): Promise<Array<string>> {
-    if (USE_DELTA_BUNDLER) {
-      const bundleOptions = {
-        ...Server.DEFAULT_BUNDLE_OPTIONS,
-        ...options,
-        deltaBundleId: null,
-      };
+    const bundleOptions = {
+      ...Server.DEFAULT_BUNDLE_OPTIONS,
+      ...options,
+      deltaBundleId: null,
+    };
 
-      if (!bundleOptions.platform) {
-        bundleOptions.platform = parsePlatformFilePath(
-          bundleOptions.entryFile,
-          this._platforms,
-        ).platform;
-      }
-
-      return await getOrderedDependencyPaths(
-        this._deltaBundler,
-        this._assetServer,
-        bundleOptions,
-      );
+    if (!bundleOptions.platform) {
+      bundleOptions.platform = parsePlatformFilePath(
+        bundleOptions.entryFile,
+        this._platforms,
+      ).platform;
     }
 
-    return this._bundler.getOrderedDependencyPaths(options);
+    return await getOrderedDependencyPaths(
+      this._deltaBundler,
+      this._assetServer,
+      bundleOptions,
+    );
   }
 
   onFileChange(type: string, filePath: string) {
     this._assetServer.onFileChange(type, filePath);
-
-    // If Hot Loading is enabled avoid rebuilding bundles and sending live
-    // updates. Instead, send the HMR updates right away and clear the bundles
-    // cache so that if the user reloads we send them a fresh bundle
-    const {_hmrFileChangeListener} = this;
-    if (_hmrFileChangeListener) {
-      // Clear cached bundles in case user reloads
-      this._clearBundles();
-      _hmrFileChangeListener(type, filePath);
-      return;
-    } else if (type !== 'change' && filePath.indexOf(NODE_MODULES) !== -1) {
-      // node module resolution can be affected by added or removed files
-      debug('Clearing bundles due to potential node_modules resolution change');
-      this._clearBundles();
-    }
 
     Promise.all(
       this._fileChangeListeners.map(listener => listener(filePath)),
@@ -502,10 +330,6 @@ class Server {
     this._debouncedFileChangeHandler(filePath);
   }
 
-  _clearBundles() {
-    this._bundles = Object.create(null);
-  }
-
   _informChangeWatchers() {
     const watchers = this._changeWatchers;
     const headers = {
@@ -518,39 +342,6 @@ class Server {
     });
 
     this._changeWatchers = [];
-  }
-
-  _processdebugRequest(reqUrl: string, res: ServerResponse) {
-    let ret = '<!doctype html>';
-    const pathname = url.parse(reqUrl).pathname;
-    /* $FlowFixMe: pathname would be null for an invalid URL */
-    const parts = pathname.split('/').filter(Boolean);
-    if (parts.length === 1) {
-      ret += '<div><a href="/debug/bundles">Cached Bundles</a></div>';
-      res.end(ret);
-    } else if (parts[1] === 'bundles') {
-      ret += '<h1> Cached Bundles </h1>';
-      Promise.all(
-        Object.keys(this._bundles).map(optionsJson =>
-          this._bundles[optionsJson].then(p => {
-            ret += '<div><h2>' + optionsJson + '</h2>';
-            ret += p.getDebugInfo();
-          }),
-        ),
-      ).then(
-        () => res.end(ret),
-        e => {
-          res.writeHead(500);
-          res.end('Internal Error');
-          // FIXME: $FlowFixMe: that's a hack, doesn't work with JSON-mode output
-          this._reporter.terminal && this._reporter.terminal.log(e.stack);
-        },
-      );
-    } else {
-      res.writeHead(404);
-      res.end('Invalid debug request');
-      return;
-    }
   }
 
   _processOnChangeRequest(req: IncomingMessage, res: ServerResponse) {
@@ -631,7 +422,7 @@ class Server {
     );
   }
 
-  optionsHash(options: {}) {
+  _optionsHash(options: {}) {
     // List of option parameters that won't affect the build result, so they
     // can be ignored to calculate the options hash.
     const ignoredParams = {
@@ -641,169 +432,6 @@ class Server {
     };
 
     return JSON.stringify(Object.assign({}, options, ignoredParams));
-  }
-
-  /**
-   * Ensure we properly report the promise of a build that's happening,
-   * including failed builds. We use that separately for when we update a bundle
-   * and for when we build for scratch.
-   */
-  _reportBundlePromise(
-    buildID: string,
-    options: BundleOptions,
-    bundlePromise: Promise<Bundle>,
-  ): Promise<Bundle> {
-    this._reporter.update({
-      buildID,
-      bundleOptions: options,
-      type: 'bundle_build_started',
-    });
-    return bundlePromise.then(
-      bundle => {
-        this._reporter.update({
-          buildID,
-          type: 'bundle_build_done',
-        });
-        return bundle;
-      },
-      error => {
-        this._reporter.update({
-          buildID,
-          type: 'bundle_build_failed',
-        });
-        return Promise.reject(error);
-      },
-    );
-  }
-
-  useCachedOrUpdateOrCreateBundle(
-    buildID: string,
-    options: BundleOptions,
-  ): Promise<Bundle> {
-    const optionsJson = this.optionsHash(options);
-    const bundleFromScratch = () => {
-      const building = this.buildBundle(options);
-      this._bundles[optionsJson] = building;
-      return building.then(bundle => {
-        this._bundleBuildInfos.set(bundle, {
-          filesChangedCount: FILES_CHANGED_COUNT_REBUILD,
-        });
-        return bundle;
-      });
-    };
-
-    if (optionsJson in this._bundles) {
-      return this._bundles[optionsJson].then(bundle => {
-        const deps = nullthrows(bundleDeps.get(bundle));
-        const {dependencyPairs, files, idToIndex, outdated} = deps;
-        if (outdated.size) {
-          const updatingExistingBundleLogEntry = log(
-            createActionStartEntry({
-              action_name: 'Updating existing bundle',
-              outdated_modules: outdated.size,
-            }),
-          );
-
-          debug('Attempt to update existing bundle');
-
-          deps.outdated = new Set();
-
-          const {platform, dev, minify, hot} = options;
-
-          // Need to create a resolution response to pass to the bundler
-          // to process requires after transform. By providing a
-          // specific response we can compute a non recursive one which
-          // is the least we need and improve performance.
-          const bundlePromise = (this._bundles[optionsJson] = Promise.all([
-            this.getDependencies({
-              platform,
-              dev,
-              hot,
-              minify,
-              entryFile: options.entryFile,
-              rootEntryFile: options.entryFile,
-              recursive: false,
-            }),
-            Promise.all(Array.from(outdated, this.getModuleForPath, this)),
-          ])
-            .then(([response, changedModules]: [$FlowFixMe, *]) => {
-              debug('Update bundle: rebuild shallow bundle');
-
-              changedModules.forEach(m => {
-                response.setResolvedDependencyPairs(
-                  m,
-                  dependencyPairs.get(m.path),
-                  {ignoreFinalized: true},
-                );
-              });
-
-              return this.buildBundle({
-                ...options,
-                resolutionResponse: response.copy({
-                  dependencies: changedModules,
-                }),
-              }).then(updateBundle => {
-                const oldModules = bundle.getModules();
-                const newModules = updateBundle.getModules();
-                for (let i = 0, n = newModules.length; i < n; i++) {
-                  const moduleTransport = newModules[i];
-                  const {meta, sourcePath} = moduleTransport;
-                  if (outdated.has(sourcePath)) {
-                    if (
-                      !contentsEqual(
-                        meta.dependencies,
-                        new Set(files.get(sourcePath)),
-                      )
-                    ) {
-                      // bail out if any dependencies changed
-                      return Promise.reject(
-                        Error(
-                          `Dependencies of ${sourcePath} changed from [${/* $FlowFixMe: `get` can return empty */
-                          files
-                            .get(sourcePath)
-                            .join(', ')}] to [${meta.dependencies.join(', ')}]`,
-                        ),
-                      );
-                    }
-
-                    oldModules[
-                      idToIndex.get(moduleTransport.id)
-                    ] = moduleTransport;
-                  }
-                }
-
-                bundle.invalidateSource();
-
-                log(createActionEndEntry(updatingExistingBundleLogEntry));
-
-                this._bundleBuildInfos.set(bundle, {
-                  filesChangedCount: outdated.size,
-                });
-
-                debug('Successfully updated existing bundle');
-                return bundle;
-              });
-            })
-            .catch(e => {
-              debug(
-                'Failed to update existing bundle, rebuilding...',
-                e.stack || e.message,
-              );
-              return bundleFromScratch();
-            }));
-          return this._reportBundlePromise(buildID, options, bundlePromise);
-        } else {
-          this._bundleBuildInfos.set(bundle, {
-            filesChangedCount: 0,
-          });
-
-          debug('Using cached bundle');
-          return bundle;
-        }
-      });
-    }
-
-    return this._reportBundlePromise(buildID, options, bundleFromScratch());
   }
 
   async processRequest(
@@ -817,133 +445,26 @@ class Server {
     /* $FlowFixMe: Could be empty if the URL is invalid. */
     const pathname: string = urlObj.pathname;
 
-    let requestType;
     if (pathname.match(/\.bundle$/)) {
-      requestType = 'bundle';
+      await this._processBundleRequest(req, res);
     } else if (pathname.match(/\.map$/)) {
-      requestType = 'map';
+      await this._processSourceMapRequest(req, res);
     } else if (pathname.match(/\.assets$/)) {
-      requestType = 'assets';
+      await this._processAssetsRequest(req, res);
     } else if (pathname.match(/\.delta$/)) {
-      this._processDeltaRequest(req, res);
-      return;
-    } else if (pathname.match(/^\/debug/)) {
-      this._processdebugRequest(req.url, res);
-      return;
+      await this._processDeltaRequest(req, res);
     } else if (pathname.match(/^\/onchange\/?$/)) {
       this._processOnChangeRequest(req, res);
-      return;
     } else if (pathname.match(/^\/assets\//)) {
-      this._processSingleAssetRequest(req, res);
-      return;
+      await this._processSingleAssetRequest(req, res);
     } else if (pathname === '/symbolicate') {
       this._symbolicate(req, res);
-      return;
     } else if (next) {
       next();
-      return;
     } else {
       res.writeHead(404);
       res.end();
-      return;
     }
-
-    if (USE_DELTA_BUNDLER) {
-      if (requestType === 'bundle') {
-        await this._processBundleUsingDeltaBundler(req, res);
-        return;
-      } else if (requestType === 'map') {
-        await this._processSourceMapUsingDeltaBundler(req, res);
-        return;
-      } else if (requestType === 'assets') {
-        await this._processAssetsRequest(req, res);
-        return;
-      }
-    }
-
-    const options = this._getOptionsFromUrl(req.url);
-    const requestingBundleLogEntry = log(
-      createActionStartEntry({
-        action_name: 'Requesting bundle',
-        bundle_url: req.url,
-        entry_point: options.entryFile,
-      }),
-    );
-
-    const buildID = this.getNewBuildID();
-    let reportProgress = emptyFunction;
-    if (!this._opts.silent) {
-      reportProgress = (transformedFileCount, totalFileCount) => {
-        this._reporter.update({
-          buildID,
-          type: 'bundle_transform_progressed',
-          transformedFileCount,
-          totalFileCount,
-        });
-      };
-    }
-
-    const mres = MultipartResponse.wrap(req, res);
-    options.onProgress = (done, total) => {
-      reportProgress(done, total);
-      mres.writeChunk(
-        {'Content-Type': 'application/json'},
-        JSON.stringify({done, total}),
-      );
-    };
-
-    debug('Getting bundle for request');
-    const building = this.useCachedOrUpdateOrCreateBundle(buildID, options);
-    building
-      .then(
-        p => {
-          if (requestType === 'bundle') {
-            debug('Generating source code');
-            const bundleSource = p.getSource({
-              inlineSourceMap: options.inlineSourceMap,
-              minify: options.minify,
-              dev: options.dev,
-            });
-            debug('Writing response headers');
-            const etag = p.getEtag();
-            mres.setHeader('Content-Type', 'application/javascript');
-            mres.setHeader('ETag', etag);
-
-            if (req.headers['if-none-match'] === etag) {
-              debug('Responding with 304');
-              mres.writeHead(304);
-              mres.end();
-            } else {
-              setBuildInfoHeaders(mres, this._bundleBuildInfos.get(p));
-              mres.setHeader('Content-Length', Buffer.byteLength(bundleSource));
-              mres.end(bundleSource);
-            }
-            debug('Finished response');
-            log(createActionEndEntry(requestingBundleLogEntry));
-          } else if (requestType === 'map') {
-            const sourceMap = p.getSourceMapString({
-              excludeSource: options.excludeSource,
-              minify: options.minify,
-              dev: options.dev,
-            });
-
-            mres.setHeader('Content-Type', 'application/json');
-            mres.end(sourceMap);
-            log(createActionEndEntry(requestingBundleLogEntry));
-          } else if (requestType === 'assets') {
-            const assetsList = JSON.stringify(p.getAssets());
-            mres.setHeader('Content-Type', 'application/json');
-            mres.end(assetsList);
-            log(createActionEndEntry(requestingBundleLogEntry));
-          }
-        },
-        error => this._handleError(mres, this.optionsHash(options), error),
-      )
-      .catch(error => {
-        process.nextTick(() => {
-          throw error;
-        });
-      });
   }
 
   _prepareDeltaBundler(
@@ -1005,7 +526,7 @@ class Server {
         deltaBundleId: options.deltaBundleId,
       });
     } catch (error) {
-      this._handleError(res, this.optionsHash(options), error);
+      this._handleError(res, this._optionsHash(options), error);
 
       this._reporter.update({
         buildID,
@@ -1031,10 +552,7 @@ class Server {
     });
   }
 
-  async _processBundleUsingDeltaBundler(
-    req: IncomingMessage,
-    res: ServerResponse,
-  ) {
+  async _processBundleRequest(req: IncomingMessage, res: ServerResponse) {
     const mres = MultipartResponse.wrap(req, res);
     const {options, buildID} = this._prepareDeltaBundler(req, mres);
 
@@ -1052,10 +570,10 @@ class Server {
     try {
       result = await Serializers.fullBundle(this._deltaBundler, {
         ...options,
-        deltaBundleId: this.optionsHash(options),
+        deltaBundleId: this._optionsHash(options),
       });
     } catch (error) {
-      this._handleError(mres, this.optionsHash(options), error);
+      this._handleError(mres, this._optionsHash(options), error);
 
       this._reporter.update({
         buildID,
@@ -1101,10 +619,7 @@ class Server {
     });
   }
 
-  async _processSourceMapUsingDeltaBundler(
-    req: IncomingMessage,
-    res: ServerResponse,
-  ) {
+  async _processSourceMapRequest(req: IncomingMessage, res: ServerResponse) {
     const mres = MultipartResponse.wrap(req, res);
     const {options, buildID} = this._prepareDeltaBundler(req, mres);
 
@@ -1122,10 +637,10 @@ class Server {
     try {
       sourceMap = await Serializers.fullSourceMap(this._deltaBundler, {
         ...options,
-        deltaBundleId: this.optionsHash(options),
+        deltaBundleId: this._optionsHash(options),
       });
     } catch (error) {
-      this._handleError(mres, this.optionsHash(options), error);
+      this._handleError(mres, this._optionsHash(options), error);
 
       this._reporter.update({
         buildID,
@@ -1169,7 +684,7 @@ class Server {
     try {
       assets = await this.getAssets(options);
     } catch (error) {
-      this._handleError(mres, this.optionsHash(options), error);
+      this._handleError(mres, this._optionsHash(options), error);
 
       this._reporter.update({
         buildID,
@@ -1254,41 +769,19 @@ class Server {
   async _sourceMapForURL(reqUrl: string): Promise<SourceMap> {
     const options: DeltaBundlerOptions = this._getOptionsFromUrl(reqUrl);
 
-    if (USE_DELTA_BUNDLER) {
-      return await Serializers.fullSourceMapObject(this._deltaBundler, {
-        ...options,
-        deltaBundleId: this.optionsHash(options),
-      });
-    }
-
-    // We're not properly reporting progress here. Reporting should be done
-    // from within that function.
-    const building = this.useCachedOrUpdateOrCreateBundle(
-      this.getNewBuildID(),
-      options,
-    );
-    return building.then(p =>
-      p.getSourceMap({
-        excludeSource: options.excludeSource,
-        minify: options.minify,
-        dev: options.dev,
-      }),
-    );
+    return await Serializers.fullSourceMapObject(this._deltaBundler, {
+      ...options,
+      deltaBundleId: this._optionsHash(options),
+    });
   }
 
   _handleError(res: ServerResponse, bundleID: string, error: CustomError) {
+    const formattedError = formatBundlingError(error);
+
     res.writeHead(error.status || 500, {
       'Content-Type': 'application/json; charset=UTF-8',
     });
-
-    const formattedError = formatBundlingError(error);
-
     res.end(JSON.stringify(formattedError));
-
-    if (error instanceof Error && error.type === 'NotFoundError') {
-      delete this._bundles[bundleID];
-    }
-
     this._reporter.update({error, type: 'bundling_error'});
   }
 
@@ -1414,10 +907,6 @@ Server.DEFAULT_BUNDLE_OPTIONS = {
   unbundle: false,
 };
 
-function contentsEqual<T>(array: Array<T>, set: Set<T>): boolean {
-  return array.length === set.size && array.every(set.has, set);
-}
-
 function* zip<X, Y>(xs: Iterable<X>, ys: Iterable<Y>): Iterable<[X, Y]> {
   //$FlowIssue #9324959
   const ysIter: Iterator<Y> = ys[Symbol.iterator]();
@@ -1427,15 +916,6 @@ function* zip<X, Y>(xs: Iterable<X>, ys: Iterable<Y>): Iterable<[X, Y]> {
       return;
     }
     yield [x, y.value];
-  }
-}
-
-function setBuildInfoHeaders(
-  resp: MultipartResponse,
-  buildInfo: ?BuildInfo,
-): void {
-  if (buildInfo) {
-    resp.setHeader(FILES_CHANGED_COUNT_HEADER, buildInfo.filesChangedCount);
   }
 }
 

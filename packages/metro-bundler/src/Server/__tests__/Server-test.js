@@ -420,122 +420,37 @@ describe('processRequest', () => {
     });
   });
 
-  describe('buildbundle(options)', () => {
-    it('Calls the bundler with the correct args', () => {
+  describe('build(options)', () => {
+    it('Calls the delta bundler with the correct args', () => {
       return server
-        .buildBundle({
+        .build({
           ...Server.DEFAULT_BUNDLE_OPTIONS,
           entryFile: 'foo file',
         })
         .then(() =>
-          expect(Bundler.prototype.bundle).toBeCalledWith({
-            assetPlugins: [],
-            dev: true,
-            entryFile: 'foo file',
-            entryModuleOnly: false,
-            excludeSource: false,
-            generateSourceMaps: false,
-            hot: false,
-            inlineSourceMap: false,
-            isolateModuleIDs: false,
-            minify: false,
-            onProgress: null,
-            platform: undefined,
-            resolutionResponse: null,
-            runBeforeMainModule: ['InitializeCore'],
-            runModule: true,
-            sourceMapUrl: null,
-            unbundle: false,
-          }),
-        );
-    });
-  });
-
-  describe('buildBundleFromUrl(options)', () => {
-    it('Calls the bundler with the correct args', () => {
-      return server
-        .buildBundleFromUrl(
-          '/path/to/foo.bundle?dev=false&runModule=false&excludeSource=true',
-        )
-        .then(() =>
-          expect(Bundler.prototype.bundle).toBeCalledWith({
-            assetPlugins: [],
-            dev: false,
-            entryFile: 'path/to/foo.js',
-            entryModuleOnly: false,
-            excludeSource: true,
-            generateSourceMaps: false,
-            hot: true,
-            inlineSourceMap: false,
-            isolateModuleIDs: false,
-            minify: false,
-            onProgress: null,
-            platform: null,
-            resolutionResponse: null,
-            runBeforeMainModule: ['InitializeCore'],
-            runModule: false,
-            sourceMapUrl:
-              '/path/to/foo.map?dev=false&runModule=false&excludeSource=true',
-            unbundle: false,
-          }),
-        );
-    });
-
-    it('Passes the full url as the sourcemap url', () => {
-      return server
-        .buildBundleFromUrl(
-          'http://localhost:8081/path/to/foo.bundle?dev=false&runModule=false&excludeSource=true',
-        )
-        .then(() =>
-          expect(Bundler.prototype.bundle).toBeCalledWith({
-            assetPlugins: [],
-            dev: false,
-            entryFile: 'path/to/foo.js',
-            entryModuleOnly: false,
-            excludeSource: true,
-            generateSourceMaps: false,
-            hot: true,
-            inlineSourceMap: false,
-            isolateModuleIDs: false,
-            minify: false,
-            onProgress: null,
-            platform: null,
-            resolutionResponse: null,
-            runBeforeMainModule: ['InitializeCore'],
-            runModule: false,
-            sourceMapUrl:
-              'http://localhost:8081/path/to/foo.map?dev=false&runModule=false&excludeSource=true',
-            unbundle: false,
-          }),
-        );
-    });
-
-    it('ignores the `hot` parameter (since it is not used anymore)', () => {
-      return server
-        .buildBundleFromUrl(
-          '/path/to/foo.bundle?dev=false&hot=false&runModule=false',
-        )
-        .then(() =>
-          expect(Bundler.prototype.bundle).toBeCalledWith({
-            assetPlugins: [],
-            dev: false,
-            entryFile: 'path/to/foo.js',
-            entryModuleOnly: false,
-            excludeSource: false,
-            generateSourceMaps: false,
-            hot: true,
-            inlineSourceMap: false,
-            isolateModuleIDs: false,
-            minify: false,
-            onProgress: null,
-            platform: null,
-            resolutionResponse: null,
-            runBeforeMainModule: ['InitializeCore'],
-            runModule: false,
-            sourceMapUrl:
-              '/path/to/foo.map?dev=false&hot=false&runModule=false',
-            unbundle: false,
-          }),
+          expect(Serializers.fullBundle).toBeCalledWith(
+            expect.any(DeltaBundler),
+            {
+              assetPlugins: [],
+              deltaBundleId: null,
+              dev: true,
+              entryFile: 'foo file',
+              entryModuleOnly: false,
+              excludeSource: false,
+              generateSourceMaps: false,
+              hot: false,
+              inlineSourceMap: false,
+              isolateModuleIDs: false,
+              minify: false,
+              onProgress: null,
+              platform: undefined,
+              resolutionResponse: null,
+              runBeforeMainModule: [],
+              runModule: true,
+              sourceMapUrl: null,
+              unbundle: false,
+            },
+          ),
         );
     });
   });
