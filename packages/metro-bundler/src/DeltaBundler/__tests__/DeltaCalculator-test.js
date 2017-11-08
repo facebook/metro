@@ -217,6 +217,8 @@ describe('DeltaCalculator', () => {
 
     const moduleQux = createModule({path: '/qux', name: 'qux'});
 
+    mockedDependencies.push(moduleQux);
+
     traverseDependencies.mockReturnValue(
       Promise.resolve({
         added: new Set([moduleQux.path]),

@@ -14,7 +14,7 @@
 jest
   .mock('fs', () => ({writeFileSync: jest.fn()}))
   .mock('temp', () => ({path: () => '/arbitrary/path'}))
-  .mock('jest-worker', () => ({default: jest.fn()}));
+  .mock('jest-worker', () => ({__esModule: true, default: jest.fn()}));
 
 const Transformer = require('../');
 

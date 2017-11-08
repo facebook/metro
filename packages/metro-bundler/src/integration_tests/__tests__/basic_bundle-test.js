@@ -63,6 +63,7 @@ describe('basic_bundle', () => {
       }
 
       return {
+        __esModule: true,
         default: Worker,
       };
     });

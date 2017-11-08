@@ -3,8 +3,8 @@
   "devDependencies": {
     "babel-core": "^6.23.1",
     "babel-eslint": "^7.1.1",
-    "babel-jest": "^19.0.0",
     "babel-generator": "^6.26.0",
+    "babel-jest": "^19.0.0",
     "babel-plugin-syntax-trailing-function-commas": "^6.20.0",
     "babel-plugin-transform-async-to-generator": "^6.24.1",
     "babel-plugin-transform-class-properties": "^6.18.0",
@@ -27,7 +27,7 @@
     "glob": "^7.1.1",
     "istanbul-api": "^1.1.0",
     "istanbul-lib-coverage": "^1.0.0",
-    "jest": "^21",
+    "jest": "21.3.0-beta.8",
     "lerna": "^2.0.0-rc.5",
     "micromatch": "^2.3.11",
     "mkdirp": "^0.5.1",
@@ -59,7 +59,6 @@
     "timers": "fake",
     "setupFiles": [
       "<rootDir>/scripts/setupJest.js"
-    ],
-    "testEnvironment": "node"
+    ]
   }
 }
