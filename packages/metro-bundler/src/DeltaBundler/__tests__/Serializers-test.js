@@ -19,6 +19,8 @@ const CURRENT_TIME = 1482363367000;
 describe('Serializers', () => {
   const OriginalDate = global.Date;
   const getDelta = jest.fn();
+  const getDependenciesFn = jest.fn();
+  const getRamOptions = jest.fn();
   let deltaBundler;
 
   const deltaResponse = {
@@ -38,6 +40,13 @@ describe('Serializers', () => {
 
   beforeEach(() => {
     getDelta.mockReturnValueOnce(Promise.resolve(deltaResponse));
+    getDependenciesFn.mockReturnValue(Promise.resolve(() => new Set()));
+    getRamOptions.mockReturnValue(
+      Promise.resolve({
+        preloadedModules: {},
+        ramGroups: [],
+      }),
+    );
 
     deltaBundler = {
       async getDeltaTransformer() {
@@ -45,6 +54,8 @@ describe('Serializers', () => {
           id: '1234',
           deltaTransformer: {
             getDelta,
+            getDependenciesFn,
+            getRamOptions,
           },
         };
       },
@@ -165,6 +176,49 @@ describe('Serializers', () => {
           [10, {type: 'comment', code: 'bananas;', id: 10, path: '/foo/10.js'}],
         ]),
         inverseDependencies: [],
+      }),
+    );
+
+    expect(
+      await Serializers.getRamBundleInfo(deltaBundler, {deltaBundleId: 10}),
+    ).toMatchSnapshot();
+  });
+
+  it('should use the preloadedModules and ramGroup configs to build a RAM bundle', async () => {
+    getDelta.mockReset();
+    getDependenciesFn.mockReset();
+
+    getDelta.mockReturnValue(
+      Promise.resolve({
+        delta: new Map([
+          [3, {type: 'module', code: 'code', id: 3, path: '/foo/3.js'}],
+          [4, {type: 'module', code: 'code', id: 4, path: '/foo/4.js'}],
+          [5, {type: 'module', code: 'code', id: 5, path: '/foo/5.js'}],
+          [6, {type: 'module', code: 'code', id: 6, path: '/foo/6.js'}],
+        ]),
+        pre: new Map([
+          [7, {type: 'script', code: 'more pre;', id: 7, path: '/foo/7.js'}],
+        ]),
+        post: new Map([
+          [8, {type: 'require', code: 'bananas;', id: 8, path: '/foo/8.js'}],
+        ]),
+        inverseDependencies: [],
+        reset: 1,
+      }),
+    );
+
+    getRamOptions.mockReturnValue(
+      Promise.resolve({
+        preloadedModules: {'/foo/3.js': true},
+        ramGroups: ['/foo/5.js'],
+      }),
+    );
+
+    getDependenciesFn.mockReturnValue(
+      Promise.resolve(path => {
+        expect(path).toBe('/foo/5.js');
+
+        return new Set(['/foo/6.js']);
       }),
     );
 

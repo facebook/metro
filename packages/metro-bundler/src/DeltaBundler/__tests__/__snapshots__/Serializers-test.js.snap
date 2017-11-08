@@ -371,3 +371,113 @@ Object {
   "numModifiedFiles": 2,
 }
 `;
+
+exports[`Serializers should use the preloadedModules and ramGroup configs to build a RAM bundle 1`] = `
+Object {
+  "groups": Map {
+    5 => Set {
+      6,
+    },
+  },
+  "lazyModules": Array [
+    Object {
+      "code": "code",
+      "id": 4,
+      "map": Object {
+        "file": "/foo/4.js",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/foo/4.js",
+      "type": "module",
+    },
+    Object {
+      "code": "code",
+      "id": 5,
+      "map": Object {
+        "file": "/foo/5.js",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/foo/5.js",
+      "type": "module",
+    },
+    Object {
+      "code": "code",
+      "id": 6,
+      "map": Object {
+        "file": "/foo/6.js",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/foo/6.js",
+      "type": "module",
+    },
+  ],
+  "startupModules": Array [
+    Object {
+      "code": "more pre;",
+      "id": 7,
+      "map": Object {
+        "file": "/foo/7.js",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/foo/7.js",
+      "type": "script",
+    },
+    Object {
+      "code": "code",
+      "id": 3,
+      "map": Object {
+        "file": "/foo/3.js",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/foo/3.js",
+      "type": "module",
+    },
+    Object {
+      "code": "bananas;",
+      "id": 8,
+      "map": Object {
+        "file": "/foo/8.js",
+        "mappings": "",
+        "names": Array [],
+        "sources": Array [],
+        "sourcesContent": Array [],
+        "version": 3,
+      },
+      "name": undefined,
+      "source": undefined,
+      "sourcePath": "/foo/8.js",
+      "type": "require",
+    },
+  ],
+}
+`;

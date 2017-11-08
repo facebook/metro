@@ -876,6 +876,36 @@ class Bundler {
     return transform || {inlineRequires: false};
   }
 
+  /**
+   * Returns the options needed to create a RAM bundle.
+   */
+  async getRamOptions(
+    entryFile: string,
+    options: {dev: boolean, platform: ?string},
+    getDependencies: string => Promise<Array<string>>,
+  ): Promise<{|
+    +preloadedModules: {[string]: true},
+    +ramGroups: Array<string>,
+  |}> {
+    if (!this._getTransformOptions) {
+      return {
+        preloadedModules: {},
+        ramGroups: [],
+      };
+    }
+
+    const {preloadedModules, ramGroups} = await this._getTransformOptions(
+      [entryFile],
+      {dev: options.dev, hot: true, platform: options.platform},
+      getDependencies,
+    );
+
+    return {
+      preloadedModules: preloadedModules || {},
+      ramGroups: ramGroups || [],
+    };
+  }
+
   /*
    * Helper method to return the global transform options that are kept in the
    * Bundler.

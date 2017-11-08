@@ -36,7 +36,7 @@ export type PlatformRemoteFileMap = {
 type SubTree<T: ModuleTransportLike> = (
   moduleTransport: T,
   moduleTransportsByPath: Map<string, T>,
-) => Generator<number, void, void>;
+) => Iterable<number>;
 
 const assetPropertyBlacklist = new Set(['files', 'fileSystemLocation', 'path']);
 

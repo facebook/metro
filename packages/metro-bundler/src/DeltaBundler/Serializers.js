@@ -15,13 +15,17 @@
 const DeltaPatcher = require('./DeltaPatcher');
 
 const {fromRawMappings} = require('../Bundler/source-map');
+const {createRamBundleGroups} = require('../Bundler/util');
 
 import type {AssetData} from '../AssetServer';
 import type {BundleOptions} from '../Server';
 import type {MappingsMap} from '../lib/SourceMap';
 import type {ModuleTransportLike} from '../shared/types.flow';
 import type DeltaBundler, {Options as BuildOptions} from './';
-import type {DeltaEntry, DeltaTransformResponse} from './DeltaTransformer';
+import type DeltaTransformer, {
+  DeltaEntry,
+  DeltaTransformResponse,
+} from './DeltaTransformer';
 
 export type Options = BundleOptions & {
   deltaBundleId: ?string,
@@ -30,8 +34,8 @@ export type Options = BundleOptions & {
 export type RamModule = ModuleTransportLike;
 
 export type RamBundleInfo = {
-  startupModules: $ReadOnlyArray<ModuleTransportLike>,
-  lazyModules: $ReadOnlyArray<ModuleTransportLike>,
+  startupModules: $ReadOnlyArray<RamModule>,
+  lazyModules: $ReadOnlyArray<RamModule>,
   groups: Map<number, Set<number>>,
 };
 
@@ -140,33 +144,82 @@ async function getRamBundleInfo(
   deltaBundler: DeltaBundler,
   options: Options,
 ): Promise<RamBundleInfo> {
-  let modules = await getAllModules(deltaBundler, options);
+  const {id, delta, deltaTransformer} = await _build(deltaBundler, {
+    ...options,
+    wrapModules: true,
+  });
 
-  modules = modules.map(module => {
-    const map = fromRawMappings([module]).toMap(module.path, {
-      excludeSource: options.excludeSource,
+  const modules = DeltaPatcher.get(id)
+    .applyDelta(delta)
+    .getAllModules()
+    .map(module => {
+      const map = fromRawMappings([module]).toMap(module.path, {
+        excludeSource: options.excludeSource,
+      });
+
+      return {
+        id: module.id,
+        code: module.code,
+        map,
+        name: module.name,
+        sourcePath: module.path,
+        source: module.source,
+        type: module.type,
+      };
     });
 
-    return {
-      id: module.id,
-      code: module.code,
-      map,
-      name: module.name,
-      sourcePath: module.path,
-      source: module.source,
-      type: module.type,
-    };
+  const {
+    preloadedModules,
+    ramGroups,
+  } = await deltaTransformer.getRamOptions(options.entryFile, {
+    dev: options.dev,
+    platform: options.platform,
   });
 
-  const startupModules = modules.filter(module => {
-    return module.type === 'script' || module.type === 'require';
-  });
-  const lazyModules = modules.filter(module => {
-    return module.type === 'asset' || module.type === 'module';
+  const startupModules = [];
+  const lazyModules = [];
+  modules.forEach(module => {
+    if (preloadedModules.hasOwnProperty(module.sourcePath)) {
+      startupModules.push(module);
+      return;
+    }
+
+    if (module.type === 'script' || module.type === 'require') {
+      startupModules.push(module);
+      return;
+    }
+
+    if (module.type === 'asset' || module.type === 'module') {
+      lazyModules.push(module);
+    }
   });
 
-  // TODO: Implement RAM groups functionality in Delta Bundler.
-  return {startupModules, lazyModules, groups: new Map()};
+  const getDependencies = await deltaTransformer.getDependenciesFn();
+
+  const groups = createRamBundleGroups(
+    ramGroups,
+    lazyModules,
+    (module: RamModule, dependenciesByPath: Map<string, RamModule>) => {
+      const deps = getDependencies(module.sourcePath);
+      const output = new Set();
+
+      for (const dependency of deps) {
+        const module = dependenciesByPath.get(dependency);
+
+        if (module) {
+          output.add(module.id);
+        }
+      }
+
+      return output;
+    },
+  );
+
+  return {
+    startupModules,
+    lazyModules,
+    groups,
+  };
 }
 
 async function getAssets(
@@ -192,7 +245,11 @@ async function getAssets(
 async function _build(
   deltaBundler: DeltaBundler,
   options: BuildOptions,
-): Promise<{id: string, delta: DeltaTransformResponse}> {
+): Promise<{
+  id: string,
+  delta: DeltaTransformResponse,
+  deltaTransformer: DeltaTransformer,
+}> {
   const {deltaTransformer, id} = await deltaBundler.getDeltaTransformer(
     options,
   );
@@ -200,6 +257,7 @@ async function _build(
   return {
     id,
     delta: await deltaTransformer.getDelta(),
+    deltaTransformer,
   };
 }
 

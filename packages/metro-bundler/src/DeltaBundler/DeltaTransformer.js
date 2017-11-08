@@ -154,6 +154,36 @@ class DeltaTransformer extends EventEmitter {
   }
 
   /**
+   * Returns a function that can be used to calculate synchronously the
+   * transitive dependencies of any given file within the dependency graph.
+   **/
+  async getDependenciesFn() {
+    if (!this._deltaCalculator.getDependencyEdges().size) {
+      // If by any means the dependency graph has not been initialized, call
+      // getDelta() to initialize it.
+      await this._getDelta();
+    }
+
+    return this._getDependencies;
+  }
+
+  async getRamOptions(
+    entryFile: string,
+    options: {dev: boolean, platform: ?string},
+  ): Promise<{|
+    +preloadedModules: {[string]: true},
+    +ramGroups: $ReadOnlyArray<string>,
+  |}> {
+    const getDependenciesFn = await this.getDependenciesFn();
+
+    return await this._bundler.getRamOptions(
+      entryFile,
+      options,
+      async (path: string) => Array.from(getDependenciesFn(path)),
+    );
+  }
+
+  /**
    * Main method to calculate the bundle delta. It returns a DeltaResult,
    * which contain the source code of the modified and added modules and the
    * list of removed modules.
@@ -224,6 +254,44 @@ class DeltaTransformer extends EventEmitter {
       inverseDependencies,
       reset,
     };
+  }
+
+  _getDependencies = (path: string): Set<string> => {
+    const dependencies = this._getDeps(
+      path,
+      this._deltaCalculator.getDependencyEdges(),
+      new Set(),
+    );
+
+    // Remove the main entry point, since this method only returns the
+    // dependencies.
+    dependencies.delete(path);
+
+    return dependencies;
+  };
+
+  _getDeps(
+    path: string,
+    edges: DependencyEdges,
+    deps: Set<string>,
+  ): Set<string> {
+    if (deps.has(path)) {
+      return deps;
+    }
+
+    const edge = edges.get(path);
+
+    if (!edge) {
+      return deps;
+    }
+
+    deps.add(path);
+
+    for (const [, dependencyPath] of edge.dependencies) {
+      this._getDeps(dependencyPath, edges, deps);
+    }
+
+    return deps;
   }
 
   async _getPrepend(
