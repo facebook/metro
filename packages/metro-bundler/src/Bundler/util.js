@@ -131,11 +131,11 @@ function generateRemoteAssetCodeFileAst(
   const handler = t.memberExpression(data, call, true);
 
   // 'https://remote.server.com/' + ({2: ...})[require(...).pickScale(...)]
-  const result = t.binaryExpression(
-    '+',
-    t.stringLiteral(remoteServer),
-    handler,
-  );
+  const uri = t.binaryExpression('+', t.stringLiteral(remoteServer), handler);
+
+  // Size numbers.
+  const width = t.numericLiteral(assetDescriptor.width);
+  const height = t.numericLiteral(assetDescriptor.height);
 
   // module.exports
   const moduleExports = t.memberExpression(
@@ -150,7 +150,9 @@ function generateRemoteAssetCodeFileAst(
           '=',
           moduleExports,
           t.objectExpression([
-            t.objectProperty(t.stringLiteral('uri'), result),
+            t.objectProperty(t.stringLiteral('width'), width),
+            t.objectProperty(t.stringLiteral('height'), height),
+            t.objectProperty(t.stringLiteral('uri'), uri),
           ]),
         ),
       ),

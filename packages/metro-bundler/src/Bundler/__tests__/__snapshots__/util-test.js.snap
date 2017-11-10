@@ -1,0 +1,27 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Util generates a local asset for a given descriptor 1`] = `
+"module.exports = require(\\"react-native-module/asset-resolver\\").registerAsset({
+  \\"__packager_asset\\": true,
+  \\"hash\\": \\"9ec9c5721fcd5cc401b4499a0cc8878bc1a18bb5\\",
+  \\"height\\": 24,
+  \\"name\\": \\"my-asset\\",
+  \\"scales\\": [1, 1.5, 2, 3, 4],
+  \\"type\\": \\"png\\",
+  \\"width\\": 240
+});"
+`;
+
+exports[`Util generates a remote asset for a given descriptor 1`] = `
+"module.exports = {
+  \\"width\\": 240,
+  \\"height\\": 24,
+  \\"uri\\": \\"https://example.com\\" + {
+    \\"1\\": \\"GCRaTwHwaI1plCgBAAAAAAC5oAcJbnsvAAAZ\\",
+    \\"2\\": \\"GMsbUgHQlgBGbPsCAAAAAAABXchsbnsvAAAZ\\",
+    \\"3\\": \\"GMEgUgG9llQL8EUBAAAAAAB2uXdrbnsvAAAZ\\",
+    \\"4\\": \\"GFleUAEiuVDxD5wGAAAAAAZWLd1dbnsvAAAZ\\",
+    \\"1.5\\": \\"GAdeUAEMbQH8hyQGAAAAAAC9H193bnsvAAAZ\\"
+  }[require(\\"react-native-module/asset-resolver\\").pickScale([1, 1.5, 2, 3, 4])]
+};"
+`;
