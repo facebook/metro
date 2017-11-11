@@ -885,26 +885,24 @@ class Server {
     return (this._nextBundleBuildID++).toString(36);
   }
 
-  static DEFAULT_BUNDLE_OPTIONS;
+  static DEFAULT_BUNDLE_OPTIONS = {
+    assetPlugins: [],
+    dev: true,
+    entryModuleOnly: false,
+    excludeSource: false,
+    generateSourceMaps: false,
+    hot: false,
+    inlineSourceMap: false,
+    isolateModuleIDs: false,
+    minify: false,
+    onProgress: null,
+    resolutionResponse: null,
+    runBeforeMainModule: [],
+    runModule: true,
+    sourceMapUrl: null,
+    unbundle: false,
+  };
 }
-
-Server.DEFAULT_BUNDLE_OPTIONS = {
-  assetPlugins: [],
-  dev: true,
-  entryModuleOnly: false,
-  excludeSource: false,
-  generateSourceMaps: false,
-  hot: false,
-  inlineSourceMap: false,
-  isolateModuleIDs: false,
-  minify: false,
-  onProgress: null,
-  resolutionResponse: null,
-  runBeforeMainModule: [],
-  runModule: true,
-  sourceMapUrl: null,
-  unbundle: false,
-};
 
 function* zip<X, Y>(xs: Iterable<X>, ys: Iterable<Y>): Iterable<[X, Y]> {
   //$FlowIssue #9324959
