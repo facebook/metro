@@ -12,6 +12,7 @@ dependencies:
       fi
     - nvm install 4
     - nvm install 6
+    - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
 
   cache_directories:
     - ~/.yarn
@@ -26,3 +27,8 @@ test:
     - yarn run test-ci
     - nvm alias default 8
     - yarn run test-ci
+deployment:
+  npm:
+    tag: /v[0-9]+(\.[0-9]+)*/
+      commands:
+        - npm publish
