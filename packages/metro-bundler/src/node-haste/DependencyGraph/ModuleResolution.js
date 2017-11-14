@@ -266,7 +266,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     const extraSearchQueue = [];
     if (this._options.extraNodeModules) {
       const {extraNodeModules} = this._options;
-      const bits = toModuleName.split(path.sep);
+      const bits = path.normalize(toModuleName).split(path.sep);
       const packageName = bits[0];
       if (extraNodeModules[packageName]) {
         bits[0] = extraNodeModules[packageName];
