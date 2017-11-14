@@ -91,11 +91,12 @@ const createModuleMap = ({files, helpers, moduleCache, sourceExts}) => {
         // 0 = Module, 1 = Package in jest-haste-map
         map[id][platform] = [filePath, module.type === 'Package' ? 1 : 0];
 
-        if (existingModule && existingModule.path !== filePath) {
+        if (existingModule && existingModule[0] !== filePath) {
           throw new Error(
             `@providesModule naming collision:\n` +
-              `  Duplicate module name: ${id}\n` +
-              `  Paths: ${filePath} collides with ${existingModule.path}\n\n` +
+              `  Duplicate module name: \`${id}\`\n` +
+              `  Paths: \`${filePath}\` collides with ` +
+              `\`${existingModule[0]}\`\n\n` +
               'This error is caused by a @providesModule declaration ' +
               'with the same name across two different files.',
           );
