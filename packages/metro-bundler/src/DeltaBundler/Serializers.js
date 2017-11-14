@@ -268,9 +268,11 @@ async function _build(
     options,
   );
 
+  const delta = await deltaTransformer.getDelta();
+
   return {
     id,
-    delta: await deltaTransformer.getDelta(),
+    delta,
     deltaTransformer,
   };
 }

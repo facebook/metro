@@ -266,9 +266,19 @@ class Server {
       deltaBundleId: null,
     };
 
+    const fullBundle = await Serializers.fullBundle(
+      this._deltaBundler,
+      options,
+    );
+
+    const fullMap = await Serializers.fullSourceMap(
+      this._deltaBundler,
+      options,
+    );
+
     return {
-      code: (await Serializers.fullBundle(this._deltaBundler, options)).bundle,
-      map: await Serializers.fullSourceMap(this._deltaBundler, options),
+      code: fullBundle.bundle,
+      map: fullMap,
     };
   }
 

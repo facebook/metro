@@ -52,7 +52,7 @@ function createCodeWithMap(
 function saveBundleAndMap(
   bundle: {code: string, map: string},
   options: OutputOptions,
-  log: (...args: Array<string>) => {},
+  log: (...args: Array<string>) => void,
 ): Promise<mixed> {
   const {
     bundleOutput,

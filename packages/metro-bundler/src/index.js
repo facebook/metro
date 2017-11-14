@@ -12,196 +12,220 @@
 
 'use strict';
 
-const Config = require('./Config');
-const Logger = require('./Logger');
+const Http = require('http');
+const Https = require('https');
+const MetroBundler = require('./shared/output/bundle');
+const MetroServer = require('./Server');
+const Terminal = require('./lib/Terminal');
+const TerminalReporter = require('./lib/TerminalReporter');
 const TransformCaching = require('./lib/TransformCaching');
 
-const blacklist = require('./blacklist');
-const debug = require('debug');
-const invariant = require('fbjs/lib/invariant');
+const connect = require('connect');
 
-const {fromRawMappings, compactMapping} = require('./Bundler/source-map');
+const {readFile} = require('fs-extra');
+const {resolve} = require('path');
 
-import type {ConfigT as MetroConfig} from './Config';
-import type Server, {Options as ServerOptions} from './Server';
-import type {TransformCache} from './lib/TransformCaching';
+const defaultAssetExts = require('./defaults').assetExts;
+const defaultSourceExts = require('./defaults').sourceExts;
+const defaultPlatforms = require('./defaults').platforms;
+const defaultProvidesModuleNodeModules = require('./defaults')
+  .providesModuleNodeModules;
 
-exports.createBlacklist = blacklist;
-exports.sourceMaps = {fromRawMappings, compactMapping};
-exports.createServer = createServer;
-exports.Config = Config;
-exports.Logger = Logger;
+const DEFAULT_CONFIG = require('./Config').DEFAULT;
+const normalizeConfig = require('./Config').normalize;
 
-export type ConfigT = MetroConfig;
-type Options = {|
-  ...ServerOptions,
-  // optional types to force flow errors in `toServerOptions`
-  nonPersistent?: ?boolean,
-  transformCache?: ?TransformCache,
-  verbose?: ?boolean,
+import type {IncomingMessage, ServerResponse} from 'http';
+
+import type {Server as HttpServer} from 'http';
+import type {Server as HttpsServer} from 'https';
+
+import type {ConfigT} from './Config';
+import type {Options as ServerOptions} from './Server';
+import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
+
+export type {ConfigT} from './Config';
+
+type PublicMetroOptions = {|
+  config?: ConfigT,
+  maxWorkers?: number,
+  projectRoots: Array<string>,
 |};
 
-type PublicBundleOptions = {
-  +dev?: boolean,
-  +entryFile: string,
-  +generateSourceMaps?: boolean,
-  +inlineSourceMap?: boolean,
-  +minify?: boolean,
-  +platform?: string,
-  +runModule?: boolean,
-  +sourceMapUrl?: string,
-};
+type PrivateMetroOptions = {|
+  ...PublicMetroOptions,
+  watch?: boolean,
+|};
 
-exports.TransformCaching = TransformCaching;
+function runMetro({
+  config,
+  maxWorkers = 1,
+  projectRoots,
+  watch = false,
+}: PrivateMetroOptions) {
+  const normalizedConfig = config ? normalizeConfig(config) : DEFAULT_CONFIG;
 
-/**
- * This is a public API, so we don't trust the value and purposefully downgrade
- * it as `mixed`. Because it understands `invariant`, Flow ensure that we
- * refine these values completely.
- */
-function assertPublicBundleOptions(bo: mixed): PublicBundleOptions {
-  invariant(
-    typeof bo === 'object' && bo != null,
-    'bundle options must be an object',
-  );
-  invariant(
-    bo.dev === undefined || typeof bo.dev === 'boolean',
-    'bundle options field `dev` must be a boolean',
-  );
-  const {entryFile} = bo;
-  invariant(
-    typeof entryFile === 'string',
-    'bundle options must contain a string field `entryFile`',
-  );
-  invariant(
-    bo.generateSourceMaps === undefined ||
-      typeof bo.generateSourceMaps === 'boolean',
-    'bundle options field `generateSourceMaps` must be a boolean',
-  );
-  invariant(
-    bo.inlineSourceMap === undefined || typeof bo.inlineSourceMap === 'boolean',
-    'bundle options field `inlineSourceMap` must be a boolean',
-  );
-  invariant(
-    bo.minify === undefined || typeof bo.minify === 'boolean',
-    'bundle options field `minify` must be a boolean',
-  );
-  invariant(
-    bo.platform === undefined || typeof bo.platform === 'string',
-    'bundle options field `platform` must be a string',
-  );
-  invariant(
-    bo.runModule === undefined || typeof bo.runModule === 'boolean',
-    'bundle options field `runModule` must be a boolean',
-  );
-  invariant(
-    bo.sourceMapUrl === undefined || typeof bo.sourceMapUrl === 'string',
-    'bundle options field `sourceMapUrl` must be a boolean',
-  );
-  return {entryFile, ...bo};
-}
+  const assetExts =
+    (normalizedConfig.getAssetExts && normalizedConfig.getAssetExts()) || [];
+  const sourceExts =
+    (normalizedConfig.getSourceExts && normalizedConfig.getSourceExts()) || [];
+  const platforms =
+    (normalizedConfig.getPlatforms && normalizedConfig.getPlatforms()) || [];
 
-exports.build = async function(
-  options: Options,
-  bundleOptions: PublicBundleOptions,
-): Promise<{code: string, map: string}> {
-  var server = createNonPersistentServer(options);
-  const ServerClass = require('./Server');
+  const transformModulePath = false
+    ? ``
+    : normalizedConfig.getTransformModulePath();
 
-  const result = await server.build({
-    ...ServerClass.DEFAULT_BUNDLE_OPTIONS,
-    ...assertPublicBundleOptions(bundleOptions),
-  });
-  server.end();
+  const providesModuleNodeModules =
+    typeof normalizedConfig.getProvidesModuleNodeModules === 'function'
+      ? normalizedConfig.getProvidesModuleNodeModules()
+      : defaultProvidesModuleNodeModules;
 
-  return result;
-};
-
-exports.getOrderedDependencyPaths = async function(
-  options: Options,
-  depOptions: {
-    +entryFile: string,
-    +dev: boolean,
-    +platform: string,
-    +minify: boolean,
-    +generateSourceMaps: boolean,
-  },
-): Promise<Array<string>> {
-  var server = createNonPersistentServer(options);
-
-  const paths = await server.getOrderedDependencyPaths(depOptions);
-  server.end();
-
-  return paths;
-};
-
-function enableDebug() {
-  // Metro Bundler logs debug messages using the 'debug' npm package, and uses
-  // the following prefix throughout.
-  // To enable debugging, we need to set our pattern or append it to any
-  // existing pre-configured pattern to avoid disabling logging for
-  // other packages
-  var debugPattern = 'Metro:*';
-  var existingPattern = debug.load();
-  if (existingPattern) {
-    debugPattern += ',' + existingPattern;
-  }
-  debug.enable(debugPattern);
-}
-
-function createServer(options: Options): Server {
-  // the debug module is configured globally, we need to enable debugging
-  // *before* requiring any packages that use `debug` for logging
-  if (options.verbose) {
-    enableDebug();
-  }
-
-  // Some callsites may not be Flowified yet.
-  invariant(
-    options.assetRegistryPath != null,
-    'createServer() requires assetRegistryPath',
-  );
-
-  const ServerClass = require('./Server');
-  return new ServerClass(toServerOptions(options));
-}
-
-function createNonPersistentServer(options: Options): Server {
-  return createServer(options);
-}
-
-function toServerOptions(options: Options): ServerOptions {
-  return {
-    assetExts: options.assetExts,
-    assetRegistryPath: options.assetRegistryPath,
-    blacklistRE: options.blacklistRE,
-    cacheVersion: options.cacheVersion,
-    enableBabelRCLookup: options.enableBabelRCLookup,
-    extraNodeModules: options.extraNodeModules,
-    getModulesRunBeforeMainModule: options.getModulesRunBeforeMainModule,
-    getPolyfills: options.getPolyfills,
-    getTransformOptions: options.getTransformOptions,
-    globalTransformCache: options.globalTransformCache,
-    hasteImpl: options.hasteImpl,
-    maxWorkers: options.maxWorkers,
-    moduleFormat: options.moduleFormat,
-    platforms: options.platforms,
-    polyfillModuleNames: options.polyfillModuleNames,
-    postProcessModules: options.postProcessModules,
-    postMinifyProcess: options.postMinifyProcess,
-    postProcessBundleSourcemap: options.postProcessBundleSourcemap,
-    projectRoots: options.projectRoots,
-    providesModuleNodeModules: options.providesModuleNodeModules,
-    reporter: options.reporter,
-    resetCache: options.resetCache,
-    silent: options.silent,
-    sourceExts: options.sourceExts,
-    transformCache: options.transformCache || TransformCaching.useTempDir(),
-    transformModulePath: options.transformModulePath,
-    watch:
-      typeof options.watch === 'boolean'
-        ? options.watch
-        : !!options.nonPersistent,
-    workerPath: options.workerPath,
+  const serverOptions: ServerOptions = {
+    assetExts: defaultAssetExts.concat(assetExts),
+    assetRegistryPath: `invalid`,
+    blacklistRE: normalizedConfig.getBlacklistRE(),
+    extraNodeModules: normalizedConfig.extraNodeModules,
+    getPolyfills: normalizedConfig.getPolyfills,
+    getModulesRunBeforeMainModule:
+      normalizedConfig.getModulesRunBeforeMainModule,
+    getTransformOptions: normalizedConfig.getTransformOptions,
+    globalTransformCache: null,
+    hasteImpl: normalizedConfig.hasteImpl,
+    maxWorkers,
+    platforms: defaultPlatforms.concat(platforms),
+    postMinifyProcess: normalizedConfig.postMinifyProcess,
+    postProcessModules: normalizedConfig.postProcessModules,
+    postProcessBundleSourcemap: normalizedConfig.postProcessBundleSourcemap,
+    providesModuleNodeModules,
+    resetCache: false,
+    reporter: new TerminalReporter(new Terminal(process.stdout)),
+    sourceExts: defaultSourceExts.concat(sourceExts),
+    transformCache: TransformCaching.useTempDir(),
+    transformModulePath,
+    watch,
+    workerPath:
+      normalizedConfig.getWorkerPath && normalizedConfig.getWorkerPath(),
+    projectRoots: normalizedConfig
+      .getProjectRoots()
+      .concat([...projectRoots.map(path => resolve(path))]),
   };
+
+  return new MetroServer(serverOptions);
 }
+
+type CreateConnectMiddlewareOptions = {|
+  ...PublicMetroOptions,
+|};
+
+exports.createConnectMiddleware = (options: CreateConnectMiddlewareOptions) => {
+  const metroServer = runMetro({
+    config: options.config,
+    maxWorkers: options.maxWorkers,
+    projectRoots: options.projectRoots,
+    watch: true,
+  });
+
+  return (req: IncomingMessage, res: ServerResponse) => {
+    return metroServer.processRequest(req, res);
+  };
+};
+
+type RunServerOptions = {|
+  ...PublicMetroOptions,
+  host?: string,
+  onReady?: (server: HttpServer | HttpsServer) => void,
+  port?: number,
+  secure?: boolean,
+  secureKey?: string,
+  secureCert?: string,
+|};
+
+exports.runServer = async (options: RunServerOptions) => {
+  const serverApp = connect();
+
+  const metroMiddleware = exports.createConnectMiddleware({
+    config: options.config,
+    maxWorkers: options.maxWorkers,
+    projectRoots: options.projectRoots,
+  });
+
+  serverApp.use(metroMiddleware);
+
+  let httpServer;
+
+  if (options.secure) {
+    httpServer = Https.createServer(
+      {
+        key: await readFile(options.secureKey),
+        cert: await readFile(options.secureCert),
+      },
+      serverApp,
+    );
+  } else {
+    httpServer = Http.createServer(serverApp);
+  }
+
+  // $FlowFixMe: The port parameter IS optional
+  httpServer.listen(options.port, options.host, () => {
+    options.onReady && options.onReady(httpServer);
+  });
+
+  // Disable any kind of automatic timeout behavior for incoming
+  // requests in case it takes the packager more than the default
+  // timeout of 120 seconds to respond to a request.
+  httpServer.timeout = 0;
+
+  return new Promise((resolve, reject) => {
+    httpServer.on('error', error => {
+      reject(error);
+    });
+
+    httpServer.on('close', () => {
+      resolve();
+    });
+  });
+};
+
+type RunBuildOptions = {|
+  ...PublicMetroOptions,
+  entry: string,
+  out: string,
+  dev?: boolean,
+  optimize?: boolean,
+  platform?: string,
+  sourceMap?: boolean,
+  sourceMapUrl?: string,
+|};
+
+exports.runBuild = async (options: RunBuildOptions) => {
+  const metroServer = await runMetro({
+    config: options.config,
+    maxWorkers: options.maxWorkers,
+    projectRoots: options.projectRoots,
+  });
+
+  const requestOptions: RequestOptions = {
+    dev: options.dev,
+    entryFile: options.entry,
+    generateSourceMaps: options.sourceMap || !!options.sourceMapUrl,
+    inlineSourceMap: options.sourceMap && !!options.sourceMapUrl,
+    minify: options.optimize || false,
+    platform: options.platform || `web`,
+    sourceMapUrl: options.sourceMapUrl,
+  };
+
+  const metroBundle = await MetroBundler.build(metroServer, requestOptions);
+
+  const outputOptions: OutputOptions = {
+    bundleOutput: options.out,
+    dev: options.dev,
+    platform: options.platform || `web`,
+  };
+
+  await MetroBundler.save(metroBundle, outputOptions, console.log);
+
+  return {metroServer, metroBundle};
+};
+
+// The symbols below belong to the legacy API and should not be relied upon
+Object.assign(exports, require('./legacy'));

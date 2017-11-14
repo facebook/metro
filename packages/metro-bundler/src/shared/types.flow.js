@@ -42,6 +42,8 @@ export type OutputOptions = {
 
 export type RequestOptions = {|
   entryFile: string,
+  generateSourceMaps?: boolean,
+  inlineSourceMap?: boolean,
   sourceMapUrl?: string,
   dev?: boolean,
   minify: boolean,

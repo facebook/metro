@@ -17,6 +17,8 @@ const throttle = require('lodash/throttle');
 const tty = require('tty');
 const util = require('util');
 
+type UnderlyingStream = net$Socket | stream$Writable;
+
 /**
  * Clear some text that was previously printed on an interactive stream,
  * without trailing newline character (so we have to move back to the
@@ -45,7 +47,7 @@ function chunkString(str: string, size: number): Array<string> {
 /**
  * Get the stream as a TTY if it effectively looks like a valid TTY.
  */
-function getTTYStream(stream: net$Socket): ?tty.WriteStream {
+function getTTYStream(stream: UnderlyingStream): ?tty.WriteStream {
   if (
     stream instanceof tty.WriteStream &&
     stream.isTTY &&
@@ -89,9 +91,9 @@ class Terminal {
   _nextStatusStr: string;
   _scheduleUpdate: () => void;
   _statusStr: string;
-  _stream: net$Socket;
+  _stream: UnderlyingStream;
 
-  constructor(stream: net$Socket) {
+  constructor(stream: UnderlyingStream) {
     this._logLines = [];
     this._nextStatusStr = '';
     this._scheduleUpdate = throttle(this._update, 33);

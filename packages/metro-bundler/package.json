@@ -3,6 +3,7 @@
   "name": "metro-bundler",
   "description": "🚇 The JavaScript bundler for React Native.",
   "main": "src/index.js",
+  "bin": "src/cli.js",
   "repository": {
     "type": "git",
     "url": "git@github.com:facebook/metro-bundler.git"
@@ -24,6 +25,7 @@
     "babylon": "^6.18.0",
     "chalk": "^1.1.1",
     "concat-stream": "^1.6.0",
+    "connect": "^2.8.3",
     "core-js": "^2.2.2",
     "debug": "^2.2.0",
     "denodeify": "^1.2.1",
@@ -48,6 +50,10 @@
     "uglify-es": "^3.1.0",
     "wordwrap": "^1.0.0",
     "write-file-atomic": "^1.2.0",
-    "xpipe": "^1.0.5"
+    "xpipe": "^1.0.5",
+    "yargs": "^9.0.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0"
   }
 }

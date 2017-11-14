@@ -108,11 +108,16 @@ async function traverseDependenciesForSingleFile(
     return {added: new Set(), deleted: new Set()};
   }
 
+  const shallow = await dependencyGraph.getShallowDependencies(
+    path,
+    transformOptions,
+  );
+
   // Get the absolute path of all sub-dependencies (some of them could have been
   // moved but maintain the same relative path).
   const currentDependencies = resolveDependencies(
     path,
-    await dependencyGraph.getShallowDependencies(path, transformOptions),
+    shallow,
     dependencyGraph,
     transformOptions,
   );

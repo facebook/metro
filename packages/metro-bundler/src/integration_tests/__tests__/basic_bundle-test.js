@@ -35,6 +35,8 @@ describe('basic_bundle', () => {
   const polyfill2 = path.join(INPUT_PATH, 'polyfill-2.js');
 
   beforeEach(() => {
+    jest.resetModules();
+
     // We replace the farm by a simple require, so that the worker sources are
     // transformed and managed by jest.
     jest.mock('jest-worker', () => {
@@ -70,7 +72,7 @@ describe('basic_bundle', () => {
   });
 
   afterEach(() => {
-    jest.resetModules();
+    jest.resetAllMocks();
   });
 
   /**
