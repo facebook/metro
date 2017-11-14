@@ -15,7 +15,6 @@
 const Generator = require('./Generator');
 const SourceMap = require('source-map');
 
-import type ModuleTransport from '../../lib/ModuleTransport';
 import type {MappingsMap, RawMappings} from '../../lib/SourceMap';
 import type {RawMapping as BabelRawMapping} from 'babel-generator';
 

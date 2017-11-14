@@ -10,7 +10,11 @@
  * @format
  */
 'use strict';
-import type {SourceMapOrMappings} from '../lib/ModuleTransport';
+
+import type {RawMapping} from '../Bundler/source-map';
+import type {SourceMap} from '../lib/SourceMap';
+
+type SourceMapOrMappings = SourceMap | Array<RawMapping>;
 
 export type ModuleGroups = {|
   groups: Map<number, Set<number>>,

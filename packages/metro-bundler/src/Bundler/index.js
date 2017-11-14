@@ -18,7 +18,6 @@ const debug = require('debug')('Metro:Bundler');
 const fs = require('fs');
 const Transformer = require('../JSTransformer');
 const Resolver = require('../Resolver');
-const ModuleTransport = require('../lib/ModuleTransport');
 const path = require('path');
 const defaults = require('../defaults');
 const createModuleIdFactory = require('../lib/createModuleIdFactory');
@@ -237,12 +236,6 @@ class Bundler {
         .getDependencyGraph()
         .getWatcher()
         .end(),
-    );
-  }
-
-  getModuleForPath(entryFile: string): Promise<Module> {
-    return this._resolverPromise.then(resolver =>
-      resolver.getModuleForPath(entryFile),
     );
   }
 

@@ -23,7 +23,6 @@ const {
 } = require('../Bundler/source-map');
 const pathJoin = require('path').join;
 
-import type ResolutionResponse from '../node-haste/DependencyGraph/ResolutionResponse';
 import type Module, {HasteImpl, TransformCode} from '../node-haste/Module';
 import type {MappingsMap, CompactRawMappings} from '../lib/SourceMap';
 import type {PostMinifyProcess} from '../Bundler';
@@ -107,52 +106,6 @@ class Resolver {
     return new Resolver(opts, depGraph);
   }
 
-  getShallowDependencies(
-    entryFile: string,
-    transformOptions: JSTransformerOptions,
-  ): Promise<Array<string>> {
-    return this._depGraph.getShallowDependencies(entryFile, transformOptions);
-  }
-
-  getModuleForPath(entryFile: string): Module {
-    return this._depGraph.getModuleForPath(entryFile);
-  }
-
-  async getDependencies<T: ContainsTransformerOptions>(
-    entryPath: string,
-    options: {
-      platform: ?string,
-      recursive?: boolean,
-      prependPolyfills: boolean,
-    },
-    bundlingOptions: T,
-    onProgress?: ?(finishedModules: number, totalModules: number) => mixed,
-    getModuleId: mixed,
-  ): Promise<ResolutionResponse<Module, T>> {
-    const {platform, recursive = true, prependPolyfills} = options;
-
-    const resolutionResponse: ResolutionResponse<
-      Module,
-      T,
-    > = await this._depGraph.getDependencies({
-      entryPath,
-      platform,
-      options: bundlingOptions,
-      recursive,
-      onProgress,
-    });
-
-    if (prependPolyfills) {
-      this._getPolyfillDependencies(platform)
-        .reverse()
-        .forEach(polyfill => resolutionResponse.prependDependency(polyfill));
-    }
-
-    /* $FlowFixMe: monkey patching */
-    resolutionResponse.getModuleId = getModuleId;
-    return resolutionResponse.finalize();
-  }
-
   getModuleSystemDependencies({dev = true}: {dev?: boolean}): Array<Module> {
     const prelude = dev
       ? pathJoin(__dirname, 'polyfills/prelude_dev.js')
@@ -165,20 +118,6 @@ class Resolver {
         file: moduleName,
         id: moduleName,
         dependencies: [],
-      }),
-    );
-  }
-
-  _getPolyfillDependencies(platform: ?string): Array<Module> {
-    const polyfillModuleNames = this._getPolyfills({platform}).concat(
-      this._polyfillModuleNames,
-    );
-
-    return polyfillModuleNames.map((polyfillModuleName, idx) =>
-      this._depGraph.createPolyfill({
-        file: polyfillModuleName,
-        id: polyfillModuleName,
-        dependencies: polyfillModuleNames.slice(0, idx),
       }),
     );
   }

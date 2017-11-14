@@ -19,7 +19,6 @@ const JestHasteMap = require('jest-haste-map');
 const Module = require('./Module');
 const ModuleCache = require('./ModuleCache');
 const ResolutionRequest = require('./DependencyGraph/ResolutionRequest');
-const ResolutionResponse = require('./DependencyGraph/ResolutionResponse');
 
 const fs = require('fs');
 const isAbsolutePath = require('absolute-path');
@@ -233,10 +232,6 @@ class DependencyGraph extends EventEmitter {
     return this._moduleCache.getModule(entryFile);
   }
 
-  getAllModules() {
-    return Promise.resolve(this._moduleCache.getAllModules());
-  }
-
   resolveDependency(
     fromModule: Module,
     toModuleName: string,
@@ -251,45 +246,6 @@ class DependencyGraph extends EventEmitter {
     });
 
     return req.resolveDependency(fromModule, toModuleName);
-  }
-
-  getDependencies<T: {+transformer: JSTransformerOptions}>({
-    entryPath,
-    options,
-    platform,
-    onProgress,
-    recursive = true,
-  }: {
-    entryPath: string,
-    options: T,
-    platform: ?string,
-    onProgress?: ?(finishedModules: number, totalModules: number) => mixed,
-    recursive: boolean,
-  }): Promise<ResolutionResponse<Module, T>> {
-    platform = this._getRequestPlatform(entryPath, platform);
-    const absPath = this.getAbsolutePath(entryPath);
-    const req = new ResolutionRequest({
-      moduleResolver: this._moduleResolver,
-      entryPath: absPath,
-      helpers: this._helpers,
-      platform: platform != null ? platform : null,
-      moduleCache: this._moduleCache,
-    });
-
-    const response = new ResolutionResponse(options);
-
-    return req
-      .getOrderedDependencies({
-        response,
-        transformOptions: options.transformer,
-        onProgress,
-        recursive,
-      })
-      .then(() => response);
-  }
-
-  matchFilesByPattern(pattern: RegExp) {
-    return Promise.resolve(this._hasteFS.matchFiles(pattern));
   }
 
   _doesFileExist = (filePath: string): boolean => {
