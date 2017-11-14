@@ -19,9 +19,9 @@ const {providesModuleNodeModules} = require('./defaults');
 import type {
   GetTransformOptions,
   PostMinifyProcess,
-  PostProcessModules,
   PostProcessBundleSourcemap,
 } from './Bundler';
+import type {PostProcessModules} from './DeltaBundler';
 import type {PostProcessModules as PostProcessModulesForBuck} from './ModuleGraph/types.flow.js';
 import type {TransformVariants} from './ModuleGraph/types.flow';
 import type {HasteImpl} from './node-haste/Module';

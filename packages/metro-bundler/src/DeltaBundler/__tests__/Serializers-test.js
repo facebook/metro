@@ -21,6 +21,7 @@ describe('Serializers', () => {
   const getDelta = jest.fn();
   const getDependenciesFn = jest.fn();
   const getRamOptions = jest.fn();
+  const postProcessModules = jest.fn();
   let deltaBundler;
 
   const deltaResponse = {
@@ -47,6 +48,7 @@ describe('Serializers', () => {
         ramGroups: [],
       }),
     );
+    postProcessModules.mockImplementation(modules => modules);
 
     deltaBundler = {
       async getDeltaTransformer() {
@@ -65,6 +67,9 @@ describe('Serializers', () => {
             return {path, platform, assetData: true};
           },
         };
+      },
+      getPostProcessModulesFn() {
+        return postProcessModules;
       },
     };
 
@@ -250,6 +255,20 @@ describe('Serializers', () => {
       await Serializers.getAssets(deltaBundler, {
         deltaBundleId: 10,
         platform: 'ios',
+      }),
+    ).toMatchSnapshot();
+  });
+
+  it('should post-process the modules', async () => {
+    postProcessModules.mockImplementation(modules => {
+      return modules.sort(
+        (a, b) => +(a.path < b.path) || +(a.path === b.path) - 1,
+      );
+    });
+
+    expect(
+      await Serializers.getAllModules(deltaBundler, {
+        deltaBundleId: 10,
       }),
     ).toMatchSnapshot();
   });

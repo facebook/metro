@@ -23,7 +23,7 @@ import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type Resolver from '../Resolver';
 import type {CompactRawMappings} from '../lib/SourceMap';
 import type Module from '../node-haste/Module';
-import type {Options as BundleOptions} from './';
+import type {Options as BundleOptions, MainOptions} from './';
 import type {DependencyEdges} from './traverseDependencies';
 
 export type DeltaEntryType =
@@ -54,11 +54,6 @@ export type DeltaTransformResponse = {|
     __proto__: null,
   },
   +reset: boolean,
-|};
-
-type Options = {|
-  +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
-  +polyfillModuleNames: $ReadOnlyArray<string>,
 |};
 
 const globalCreateModuleId = createModuleIdFactory();
@@ -94,7 +89,7 @@ class DeltaTransformer extends EventEmitter {
     bundler: Bundler,
     resolver: Resolver,
     deltaCalculator: DeltaCalculator,
-    options: Options,
+    options: MainOptions,
     bundleOptions: BundleOptions,
   ) {
     super();
@@ -122,7 +117,7 @@ class DeltaTransformer extends EventEmitter {
 
   static async create(
     bundler: Bundler,
-    options: Options,
+    options: MainOptions,
     bundleOptions: BundleOptions,
   ): Promise<DeltaTransformer> {
     const resolver = await bundler.getResolver();

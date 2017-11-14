@@ -28,6 +28,35 @@ exports[`Serializers should build the full Source Maps 1`] = `"{\\"version\\":3,
 
 exports[`Serializers should build the full Source Maps 2`] = `"{\\"version\\":3,\\"sources\\":[],\\"sourcesContent\\":[],\\"names\\":[],\\"mappings\\":\\"\\"}"`;
 
+exports[`Serializers should post-process the modules 1`] = `
+Array [
+  Object {
+    "code": "pre;",
+    "id": 1,
+    "path": "/pre.js",
+    "type": "script",
+  },
+  Object {
+    "code": "another;",
+    "id": 4,
+    "path": "/4.js",
+    "type": "module",
+  },
+  Object {
+    "code": "module3;",
+    "id": 3,
+    "path": "/3.js",
+    "type": "module",
+  },
+  Object {
+    "code": "post;",
+    "id": 2,
+    "path": "/p",
+    "type": "require",
+  },
+]
+`;
+
 exports[`Serializers should return all the bundle modules 1`] = `
 Array [
   Object {

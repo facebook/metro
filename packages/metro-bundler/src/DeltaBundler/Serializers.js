@@ -76,14 +76,12 @@ async function fullSourceMap(
   deltaBundler: DeltaBundler,
   options: Options,
 ): Promise<string> {
-  const {id, delta} = await _build(deltaBundler, {
+  const {modules} = await _getAllModules(deltaBundler, {
     ...options,
     wrapModules: true,
   });
 
-  const deltaPatcher = DeltaPatcher.get(id).applyDelta(delta);
-
-  return fromRawMappings(deltaPatcher.getAllModules()).toString(undefined, {
+  return fromRawMappings(modules).toString(undefined, {
     excludeSource: options.excludeSource,
   });
 }
@@ -92,14 +90,12 @@ async function fullSourceMapObject(
   deltaBundler: DeltaBundler,
   options: Options,
 ): Promise<MappingsMap> {
-  const {id, delta} = await _build(deltaBundler, {
+  const {modules} = await _getAllModules(deltaBundler, {
     ...options,
     wrapModules: true,
   });
 
-  const deltaPatcher = DeltaPatcher.get(id).applyDelta(delta);
-
-  return fromRawMappings(deltaPatcher.getAllModules()).toMap(undefined, {
+  return fromRawMappings(modules).toMap(undefined, {
     excludeSource: options.excludeSource,
   });
 }
@@ -111,18 +107,17 @@ async function fullBundle(
   deltaBundler: DeltaBundler,
   options: Options,
 ): Promise<{bundle: string, numModifiedFiles: number, lastModified: Date}> {
-  const {id, delta} = await _build(deltaBundler, {
-    ...options,
-    wrapModules: true,
-  });
+  const {modules, numModifiedFiles, lastModified} = await _getAllModules(
+    deltaBundler,
+    options,
+  );
 
-  const deltaPatcher = DeltaPatcher.get(id).applyDelta(delta);
-  const code = deltaPatcher.getAllModules().map(m => m.code);
+  const code = modules.map(m => m.code);
 
   return {
     bundle: code.join('\n'),
-    lastModified: deltaPatcher.getLastModifiedDate(),
-    numModifiedFiles: deltaPatcher.getLastNumModifiedFiles(),
+    lastModified,
+    numModifiedFiles,
   };
 }
 
@@ -130,43 +125,62 @@ async function getAllModules(
   deltaBundler: DeltaBundler,
   options: Options,
 ): Promise<$ReadOnlyArray<DeltaEntry>> {
-  const {id, delta} = await _build(deltaBundler, {
+  const {modules} = await _getAllModules(deltaBundler, {
     ...options,
     wrapModules: true,
   });
 
-  return DeltaPatcher.get(id)
+  return modules;
+}
+
+async function _getAllModules(
+  deltaBundler: DeltaBundler,
+  options: Options,
+): Promise<{
+  modules: $ReadOnlyArray<DeltaEntry>,
+  numModifiedFiles: number,
+  lastModified: Date,
+  deltaTransformer: DeltaTransformer,
+}> {
+  const {id, delta, deltaTransformer} = await _build(deltaBundler, {
+    ...options,
+    wrapModules: true,
+  });
+
+  const deltaPatcher = DeltaPatcher.get(id);
+
+  const modules = deltaPatcher
     .applyDelta(delta)
-    .getAllModules();
+    .getAllModules(deltaBundler.getPostProcessModulesFn(options.entryFile));
+
+  return {
+    deltaTransformer,
+    lastModified: deltaPatcher.getLastModifiedDate(),
+    modules,
+    numModifiedFiles: deltaPatcher.getLastNumModifiedFiles(),
+  };
 }
 
 async function getRamBundleInfo(
   deltaBundler: DeltaBundler,
   options: Options,
 ): Promise<RamBundleInfo> {
-  const {id, delta, deltaTransformer} = await _build(deltaBundler, {
+  const {modules, deltaTransformer} = await _getAllModules(deltaBundler, {
     ...options,
     wrapModules: true,
   });
 
-  const modules = DeltaPatcher.get(id)
-    .applyDelta(delta)
-    .getAllModules()
-    .map(module => {
-      const map = fromRawMappings([module]).toMap(module.path, {
-        excludeSource: options.excludeSource,
-      });
-
-      return {
-        id: module.id,
-        code: module.code,
-        map,
-        name: module.name,
-        sourcePath: module.path,
-        source: module.source,
-        type: module.type,
-      };
-    });
+  const ramModules = modules.map(module => ({
+    id: module.id,
+    code: module.code,
+    map: fromRawMappings([module]).toMap(module.path, {
+      excludeSource: options.excludeSource,
+    }),
+    name: module.name,
+    sourcePath: module.path,
+    source: module.source,
+    type: module.type,
+  }));
 
   const {
     preloadedModules,
@@ -178,7 +192,7 @@ async function getRamBundleInfo(
 
   const startupModules = [];
   const lazyModules = [];
-  modules.forEach(module => {
+  ramModules.forEach(module => {
     if (preloadedModules.hasOwnProperty(module.sourcePath)) {
       startupModules.push(module);
       return;
@@ -226,7 +240,7 @@ async function getAssets(
   deltaBundler: DeltaBundler,
   options: Options,
 ): Promise<$ReadOnlyArray<AssetData>> {
-  const modules = await getAllModules(deltaBundler, options);
+  const {modules} = await _getAllModules(deltaBundler, options);
 
   const assets = await Promise.all(
     modules.map(async module => {

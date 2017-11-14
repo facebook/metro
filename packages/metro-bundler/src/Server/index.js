@@ -36,7 +36,6 @@ import type {Reporter} from '../lib/reporting';
 import type {Options as DeltaBundlerOptions} from '../DeltaBundler/Serializers';
 import type {
   GetTransformOptions,
-  PostProcessModules,
   PostMinifyProcess,
   PostProcessBundleSourcemap,
 } from '../Bundler';
@@ -45,7 +44,7 @@ import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {SourceMap, Symbolicate} from './symbolicate';
 import type {AssetData} from '../AssetServer';
 import type {RamBundleInfo} from '../DeltaBundler/Serializers';
-
+import type {PostProcessModules} from '../DeltaBundler';
 const {
   createActionStartEntry,
   createActionEndEntry,
@@ -242,6 +241,7 @@ class Server {
     this._deltaBundler = new DeltaBundler(this._bundler, {
       getPolyfills: this._opts.getPolyfills,
       polyfillModuleNames: this._opts.polyfillModuleNames,
+      postProcessModules: this._opts.postProcessModules,
     });
   }
 

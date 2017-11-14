@@ -36,6 +36,7 @@ import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type {Reporter} from '../lib/reporting';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
+import type {PostProcessModules} from '../DeltaBundler';
 
 export type BundlingOptions = {|
   +preloadedModules: ?{[string]: true} | false,
@@ -79,18 +80,6 @@ export type AssetDescriptor = {
 export type ExtendedAssetDescriptor = AssetDescriptor & {
   +fileSystemLocation: string,
 };
-
-export type PostProcessModulesOptions = {|
-  dev: boolean,
-  minify: boolean,
-  platform: string,
-|};
-
-export type PostProcessModules = (
-  modules: Array<ModuleTransport>,
-  entryFile: string,
-  options: PostProcessModulesOptions,
-) => Array<ModuleTransport>;
 
 export type PostMinifyProcess = ({
   code: string,

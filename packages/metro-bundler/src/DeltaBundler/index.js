@@ -16,10 +16,17 @@ const DeltaTransformer = require('./DeltaTransformer');
 
 import type Bundler from '../Bundler';
 import type {BundleOptions} from '../Server';
+import type {DeltaEntry} from './DeltaTransformer';
 
-type MainOptions = {|
+export type PostProcessModules = (
+  modules: $ReadOnlyArray<DeltaEntry>,
+  entryFile: string,
+) => $ReadOnlyArray<DeltaEntry>;
+
+export type MainOptions = {|
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   polyfillModuleNames: $ReadOnlyArray<string>,
+  postProcessModules?: PostProcessModules,
 |};
 
 export type Options = BundleOptions & {
@@ -82,6 +89,18 @@ class DeltaBundler {
       deltaTransformer,
       id: bundleId,
     };
+  }
+
+  getPostProcessModulesFn(
+    entryPoint: string,
+  ): (modules: $ReadOnlyArray<DeltaEntry>) => $ReadOnlyArray<DeltaEntry> {
+    const postProcessFn = this._options.postProcessModules;
+
+    if (!postProcessFn) {
+      return modules => modules;
+    }
+
+    return entries => postProcessFn(entries, entryPoint);
   }
 }
 

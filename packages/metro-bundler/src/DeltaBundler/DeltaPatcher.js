@@ -95,10 +95,14 @@ class DeltaPatcher {
     return this._lastModifiedDate;
   }
 
-  getAllModules(): Array<DeltaEntry> {
+  getAllModules(
+    modifierFn: (
+      modules: $ReadOnlyArray<DeltaEntry>,
+    ) => $ReadOnlyArray<DeltaEntry> = modules => modules,
+  ): $ReadOnlyArray<DeltaEntry> {
     return [].concat(
       Array.from(this._lastBundle.pre.values()),
-      Array.from(this._lastBundle.modules.values()),
+      modifierFn(Array.from(this._lastBundle.modules.values())),
       Array.from(this._lastBundle.post.values()),
     );
   }
