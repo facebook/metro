@@ -10,16 +10,6 @@ aliases:
       - node_modules
     key: dependencies-{{ .Branch }}-{{ checksum "package.json" }}
 
-  - &yarn-install
-    run: |
-      sudo npm i -g yarn@^1.2.1
-      yarn --no-progress
-
-  - &yarn-install-no-sudo
-    run: |
-      npm i -g yarn@^1.2.1
-      yarn --no-progress
-
   - &deploy
     command: |
       npm run prepare-release
@@ -56,7 +46,8 @@ jobs:
     steps:
       - checkout
       - restore-cache: *restore-cache
-      - *yarn-install
+      - run: sudo npm i -g yarn@^1.2.1
+      - run: yarn --no-progress
       - save-cache: *save-cache
       - run: yarn run test-ci
 
