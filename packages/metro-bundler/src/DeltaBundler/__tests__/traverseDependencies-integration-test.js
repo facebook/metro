@@ -47,50 +47,55 @@ beforeEach(() => {
   jest.mock('path', () => require.requireActual('path'));
 });
 
-describe('DependencyGraph', function() {
+describe('traverseDependencies', function() {
   let Module;
-  let ResolutionRequest;
+  let traverseDependencies;
   let defaults;
   let emptyTransformOptions;
 
-  function getOrderedDependenciesAsJSON(
+  async function getOrderedDependenciesAsJSON(
     dgraphPromise,
     entryPath,
     platform,
     recursive = true,
   ) {
-    return Promise.resolve(dgraphPromise)
-      .then(dgraph =>
-        dgraph.getDependencies({
-          entryPath,
-          options: emptyTransformOptions,
-          platform,
-          recursive,
-        }),
-      )
-      .then(response => response.finalize())
-      .then(({dependencies}) =>
-        Promise.all(
-          dependencies.map(dep =>
-            dep.getDependencies().then(moduleDependencies => ({
-              path: dep.path,
-              isJSON: dep.isJSON(),
-              isAsset: dep.isAsset(),
-              isPolyfill: dep.isPolyfill(),
-              resolution: dep.resolution,
-              id: dep.getName(),
-              dependencies: moduleDependencies,
-            })),
-          ),
-        ),
-      );
+    const dgraph = await dgraphPromise;
+
+    const edges = new Map();
+    const {added} = await traverseDependencies.initialTraverseDependencies(
+      entryPath,
+      dgraph,
+      {...emptyTransformOptions, platform},
+      edges,
+    );
+
+    const dependencies = recursive
+      ? added
+      : edges.get(entryPath).dependencies.values();
+
+    return await Promise.all(
+      [entryPath, ...dependencies].map(async path => {
+        const dep = dgraph.getModuleForPath(path);
+        const moduleDependencies = await dep.getDependencies();
+
+        return {
+          path: dep.path,
+          isJSON: dep.isJSON(),
+          isAsset: dep.isAsset(),
+          isPolyfill: dep.isPolyfill(),
+          resolution: dep.resolution,
+          id: dep.getName(),
+          dependencies: moduleDependencies,
+        };
+      }),
+    );
   }
 
   beforeEach(function() {
     jest.resetModules();
 
-    Module = require('../Module');
-    ResolutionRequest = require('../DependencyGraph/ResolutionRequest');
+    Module = require('../../node-haste/Module');
+    traverseDependencies = require('../traverseDependencies');
 
     emptyTransformOptions = {transformer: {transform: {}}};
     defaults = {
@@ -132,7 +137,7 @@ describe('DependencyGraph', function() {
     const realPlatform = process.platform;
     beforeEach(function() {
       process.platform = 'linux';
-      DependencyGraph = require('../DependencyGraph');
+      DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
     });
 
@@ -194,31 +199,6 @@ describe('DependencyGraph', function() {
             isPolyfill: false,
             resolution: undefined,
             resolveDependency: undefined,
-          },
-        ]);
-      });
-    });
-
-    it('should resolve relative entry path', async () => {
-      var root = '/root';
-      setMockFileSystem({
-        root: {
-          'index.js': ['/**', ' * @providesModule index', ' */'].join('\n'),
-        },
-      });
-
-      const opts = {...defaults, roots: [root]};
-      await processDgraph(opts, async dgraph => {
-        const deps = await getOrderedDependenciesAsJSON(dgraph, 'index.js');
-        expect(deps).toEqual([
-          {
-            id: 'index',
-            path: '/root/index.js',
-            dependencies: [],
-            isAsset: false,
-            isJSON: false,
-            isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -1947,7 +1927,7 @@ describe('DependencyGraph', function() {
       it(
         'should support browser exclude of a package ("' + fieldName + '")',
         async () => {
-          require('../DependencyGraph/ModuleResolution').ModuleResolver.EMPTY_MODULE =
+          require('../../node-haste/DependencyGraph/ModuleResolution').ModuleResolver.EMPTY_MODULE =
             '/root/emptyModule.js';
           var root = '/root';
           setMockFileSystem({
@@ -2024,7 +2004,7 @@ describe('DependencyGraph', function() {
       it(
         'should support browser exclude of a file ("' + fieldName + '")',
         async () => {
-          require('../DependencyGraph/ModuleResolution').ModuleResolver.EMPTY_MODULE =
+          require('../../node-haste/DependencyGraph/ModuleResolution').ModuleResolver.EMPTY_MODULE =
             '/root/emptyModule.js';
 
           var root = '/root';
@@ -2531,7 +2511,7 @@ describe('DependencyGraph', function() {
       // reload path module
       jest.resetModules();
       jest.mock('path', () => require.requireActual('path').win32);
-      DependencyGraph = require('../DependencyGraph');
+      DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
     });
 
@@ -2714,7 +2694,7 @@ describe('DependencyGraph', function() {
 
     beforeEach(function() {
       process.platform = 'linux';
-      DependencyGraph = require('../DependencyGraph');
+      DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
     });
 
@@ -2842,6 +2822,7 @@ describe('DependencyGraph', function() {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.ios.js',
+          'ios',
         );
         expect(deps).toEqual([
           {
@@ -3438,6 +3419,7 @@ describe('DependencyGraph', function() {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.ios.js',
+          'ios',
         );
         expect(deps).toEqual([
           {
@@ -3544,6 +3526,7 @@ describe('DependencyGraph', function() {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.ios.js',
+          'ios',
         );
         expect(deps).toEqual([
           {
@@ -3697,7 +3680,7 @@ describe('DependencyGraph', function() {
       // reload path module
       jest.resetModules();
       jest.mock('path', () => require.requireActual('path').win32);
-      DependencyGraph = require('../DependencyGraph');
+      DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
     });
 
@@ -3825,6 +3808,7 @@ describe('DependencyGraph', function() {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           'C:\\root\\index.ios.js',
+          'ios',
         );
         expect(deps).toEqual([
           {
@@ -4420,6 +4404,7 @@ describe('DependencyGraph', function() {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           'C:\\root\\index.ios.js',
+          'ios',
         );
         expect(deps).toEqual([
           {
@@ -4522,6 +4507,7 @@ describe('DependencyGraph', function() {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           'C:\\root\\index.ios.js',
+          'ios',
         );
         expect(deps).toEqual([
           {
@@ -4630,7 +4616,7 @@ describe('DependencyGraph', function() {
 
     beforeEach(function() {
       process.platform = 'linux';
-      DependencyGraph = require('../DependencyGraph');
+      DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
     });
 
@@ -5296,7 +5282,7 @@ describe('DependencyGraph', function() {
         } catch (error) {
           const {
             AmbiguousModuleResolutionError,
-          } = require('../DependencyGraph/ResolutionRequest');
+          } = require('../../node-haste/DependencyGraph/ResolutionRequest');
           if (!(error instanceof AmbiguousModuleResolutionError)) {
             throw error;
           }
@@ -5319,7 +5305,7 @@ describe('DependencyGraph', function() {
 
     beforeEach(function() {
       process.platform = 'linux';
-      DependencyGraph = require('../DependencyGraph');
+      DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
     });
 
@@ -5344,8 +5330,6 @@ describe('DependencyGraph', function() {
 
       const opts = {...defaults, roots: [root], sourceExts: ['jsx', 'coffee']};
       await processDgraph(opts, async dgraph => {
-        const files = await dgraph.matchFilesByPattern('.*');
-        expect(files).toEqual(['/root/index.jsx', '/root/a.coffee']);
         const entryPath = '/root/index.jsx';
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toEqual([
@@ -5383,8 +5367,6 @@ describe('DependencyGraph', function() {
 
       const opts = {...defaults, roots: [root], sourceExts: ['jsx', 'coffee']};
       await processDgraph(opts, async dgraph => {
-        const files = await dgraph.matchFilesByPattern('.*');
-        expect(files).toEqual(['/root/index.jsx', '/root/a.coffee']);
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.jsx',
@@ -5424,8 +5406,6 @@ describe('DependencyGraph', function() {
 
       const opts = {...defaults, roots: [root]};
       await processDgraph(opts, async dgraph => {
-        const files = await dgraph.matchFilesByPattern('.*');
-        expect(files).toEqual(['/root/X.js']);
         try {
           await getOrderedDependenciesAsJSON(dgraph, '/root/index.jsx');
           throw Error('should be unreachable');
@@ -5450,11 +5430,13 @@ describe('DependencyGraph', function() {
     }
 
     function getDependencies() {
-      return dependencyGraph.getDependencies({
-        entryPath: '/root/index.js',
+      return traverseDependencies.initialTraverseDependencies(
+        '/root/index.js',
+        dependencyGraph,
+        emptyTransformOptions,
+        new Map(),
         onProgress,
-        options: emptyTransformOptions,
-      });
+      );
     }
 
     beforeEach(function() {
@@ -5471,7 +5453,7 @@ describe('DependencyGraph', function() {
           'g.js': makeModule('g'),
         },
       });
-      const DependencyGraph = require('../DependencyGraph');
+      const DependencyGraph = require('../../node-haste/DependencyGraph');
       return DependencyGraph.load({
         ...defaults,
         roots: ['/root'],
@@ -5484,24 +5466,18 @@ describe('DependencyGraph', function() {
       dependencyGraph.end();
     });
 
-    it('calls back for each finished module', () => {
-      return getDependencies().then(() =>
-        expect(onProgress.mock.calls.length).toBe(8),
-      );
+    it('calls back for each finished module', async () => {
+      await getDependencies();
+
+      // We get a progress change twice per dependency
+      // (when we discover it and when we process it).
+      expect(onProgress.mock.calls.length).toBe(8 * 2);
     });
 
-    it('increases the number of finished modules in steps of one', () => {
-      return getDependencies().then(() => {
-        const increments = onProgress.mock.calls.map(([finished]) => finished);
-        expect(increments).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
-      });
-    });
+    it('increases the number of discover/finished modules in steps of one', async () => {
+      await getDependencies();
 
-    it('adds the number of discovered modules to the number of total modules', () => {
-      return getDependencies().then(() => {
-        const increments = onProgress.mock.calls.map(([, total]) => total);
-        expect(increments).toEqual([3, 5, 6, 6, 7, 7, 8, 8]);
-      });
+      expect(onProgress.mock.calls).toMatchSnapshot();
     });
   });
 
@@ -5510,7 +5486,7 @@ describe('DependencyGraph', function() {
     let processDgraph;
 
     beforeEach(() => {
-      DependencyGraph = require('../DependencyGraph');
+      DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
     });
 
@@ -5548,7 +5524,7 @@ describe('DependencyGraph', function() {
 
     beforeEach(() => {
       moduleRead = Module.prototype.read;
-      DependencyGraph = require('../DependencyGraph');
+      DependencyGraph = require('../../node-haste/DependencyGraph');
       setMockFileSystem({
         root: {
           'index.js': `
@@ -5600,7 +5576,7 @@ describe('DependencyGraph', function() {
     it('produces a deterministic tree if the "a" module resolves first', () => {
       const dependenciesPromise = getOrderedDependenciesAsJSON(
         dependencyGraph,
-        'index.js',
+        '/root/index.js',
       );
 
       return Promise.all(callDeferreds.map(deferred => deferred.promise))
@@ -5631,7 +5607,7 @@ describe('DependencyGraph', function() {
     it('produces a deterministic tree if the "b" module resolves first', () => {
       const dependenciesPromise = getOrderedDependenciesAsJSON(
         dependencyGraph,
-        'index.js',
+        '/root/index.js',
       );
 
       return Promise.all(callDeferreds.map(deferred => deferred.promise))
@@ -5674,7 +5650,7 @@ describe('DependencyGraph', function() {
         },
       });
 
-      DependencyGraph = require('../DependencyGraph');
+      DependencyGraph = require('../../node-haste/DependencyGraph');
       dependencyGraph = await DependencyGraph.load({
         ...defaults,
         roots: ['/root'],

@@ -122,7 +122,8 @@ async function traverseDependenciesForSingleFile(
   const nonNullEdge = edge;
 
   let numProcessed = 0;
-  let total = currentDependencies.size;
+  let total = 1;
+  onProgress(numProcessed, total);
 
   const deleted = Array.from(edge.dependencies.entries())
     .map(([relativePath, absolutePath]) => {
@@ -162,6 +163,9 @@ async function traverseDependenciesForSingleFile(
       );
     }),
   );
+
+  numProcessed++;
+  onProgress(numProcessed, total);
 
   return {
     added: flatten(reorderDependencies(added, edges)),

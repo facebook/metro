@@ -1,0 +1,105 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`traverseDependencies Progress updates increases the number of discover/finished modules in steps of one 1`] = `
+Array [
+  Array [
+    0,
+    1,
+  ],
+  Array [
+    0,
+    2,
+  ],
+  Array [
+    0,
+    3,
+  ],
+  Array [
+    0,
+    4,
+  ],
+  Array [
+    0,
+    5,
+  ],
+  Array [
+    0,
+    6,
+  ],
+  Array [
+    0,
+    7,
+  ],
+  Array [
+    1,
+    7,
+  ],
+  Array [
+    2,
+    7,
+  ],
+  Array [
+    3,
+    7,
+  ],
+  Array [
+    3,
+    8,
+  ],
+  Array [
+    4,
+    8,
+  ],
+  Array [
+    5,
+    8,
+  ],
+  Array [
+    6,
+    8,
+  ],
+  Array [
+    7,
+    8,
+  ],
+  Array [
+    8,
+    8,
+  ],
+]
+`;
+
+exports[`traverseDependencies file watch updating should recover from multiple modules with the same name 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "a",
+      "b",
+    ],
+    "id": "index",
+    "isAsset": false,
+    "isJSON": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "a",
+    "isAsset": false,
+    "isJSON": false,
+    "isPolyfill": false,
+    "path": "/root/a.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "b",
+    "isAsset": false,
+    "isJSON": false,
+    "isPolyfill": false,
+    "path": "/root/b.js",
+    "resolution": undefined,
+  },
+]
+`;
