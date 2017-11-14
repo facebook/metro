@@ -1,9 +1,9 @@
 machine:
   environment:
-    YARN_VERSION: 0.24.3
+    YARN_VERSION: 1.0.2
     PATH: "${PATH}:${HOME}/.yarn/bin:${HOME}/${CIRCLE_PROJECT_REPONAME}/node_modules/.bin"
   node:
-    version: 8
+    version: 8.5
 dependencies:
   pre:
     - |
