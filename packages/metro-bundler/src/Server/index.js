@@ -535,7 +535,7 @@ class Server {
         deltaBundleId: options.deltaBundleId,
       });
     } catch (error) {
-      this._handleError(res, this._optionsHash(options), error);
+      this._handleError(mres, this._optionsHash(options), error);
 
       this._reporter.update({
         buildID,
@@ -545,9 +545,9 @@ class Server {
       return;
     }
 
-    res.setHeader('Content-Type', 'application/javascript');
-    res.setHeader('Content-Length', String(Buffer.byteLength(output.bundle)));
-    res.end(output.bundle);
+    mres.setHeader('Content-Type', 'application/javascript');
+    mres.setHeader('Content-Length', String(Buffer.byteLength(output.bundle)));
+    mres.end(output.bundle);
 
     this._reporter.update({
       buildID,
