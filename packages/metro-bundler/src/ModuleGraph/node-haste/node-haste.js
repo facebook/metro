@@ -68,40 +68,41 @@ const NULL_MODULE: Moduleish = {
 const createModuleMap = ({files, helpers, moduleCache, sourceExts}) => {
   const map = Object.create(null);
   files.forEach(filePath => {
-    if (!helpers.isNodeModulesDir(filePath)) {
-      let id;
-      let module;
-      if (filePath.endsWith(PACKAGE_JSON)) {
-        module = moduleCache.getPackage(filePath);
-        id = module.data.name;
-      } else if (sourceExts.indexOf(path.extname(filePath).substr(1)) !== -1) {
-        module = moduleCache.getModule(filePath);
-        id = module.name;
-      }
+    if (helpers.isNodeModulesDir(filePath)) {
+      return;
+    }
+    let id;
+    let module;
+    if (filePath.endsWith(PACKAGE_JSON)) {
+      module = moduleCache.getPackage(filePath);
+      id = module.data.name;
+    } else if (sourceExts.indexOf(path.extname(filePath).substr(1)) !== -1) {
+      module = moduleCache.getModule(filePath);
+      id = module.name;
+    }
 
-      if (id && module && module.isHaste()) {
-        if (!map[id]) {
-          map[id] = Object.create(null);
-        }
-        const platform =
-          parsePlatformFilePath(filePath, platforms).platform ||
-          GENERIC_PLATFORM;
+    if (!(id && module && module.isHaste())) {
+      return;
+    }
+    if (!map[id]) {
+      map[id] = Object.create(null);
+    }
+    const platform =
+      parsePlatformFilePath(filePath, platforms).platform || GENERIC_PLATFORM;
 
-        const existingModule = map[id][platform];
-        // 0 = Module, 1 = Package in jest-haste-map
-        map[id][platform] = [filePath, module.type === 'Package' ? 1 : 0];
+    const existingModule = map[id][platform];
+    // 0 = Module, 1 = Package in jest-haste-map
+    map[id][platform] = [filePath, module.type === 'Package' ? 1 : 0];
 
-        if (existingModule && existingModule[0] !== filePath) {
-          throw new Error(
-            `@providesModule naming collision:\n` +
-              `  Duplicate module name: \`${id}\`\n` +
-              `  Paths: \`${filePath}\` collides with ` +
-              `\`${existingModule[0]}\`\n\n` +
-              'This error is caused by a @providesModule declaration ' +
-              'with the same name across two different files.',
-          );
-        }
-      }
+    if (existingModule && existingModule[0] !== filePath) {
+      throw new Error(
+        `@providesModule naming collision:\n` +
+          `  Duplicate module name: \`${id}\`\n` +
+          `  Paths: \`${filePath}\` collides with ` +
+          `\`${existingModule[0]}\`\n\n` +
+          'This error is caused by a @providesModule declaration ' +
+          'with the same name across two different files.',
+      );
     }
   });
   return map;
