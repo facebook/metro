@@ -11,9 +11,11 @@ aliases:
     key: dependencies-{{ .Branch }}-{{ checksum "package.json" }}
 
   - &deploy
-    command: |
-      npm run prepare-release
-      npm deploy
+    working_directory: packages/metro-bundler
+    steps:
+      - run: npm run prepare-release
+      - run: npm publish
+      - run: npm run cleanup-release
 
 version: 2
 jobs:
