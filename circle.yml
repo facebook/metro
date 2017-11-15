@@ -60,9 +60,9 @@ jobs:
     steps:
       - checkout
       - restore-cache: *restore-cache
-      - run: |
-          cd packages/metro-bundler
-          yarn --no-progress
+      - run:
+          working_directory: packages/metro-bundler
+          command: yarn --no-progress
       - save-cache: *save-cache
       - deploy: *deploy
 
