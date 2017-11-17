@@ -108,12 +108,11 @@ exports.build = async function(
   var server = createNonPersistentServer(options);
   const ServerClass = require('./Server');
 
-  console.log('HELLO');
   const result = await server.build({
     ...ServerClass.DEFAULT_BUNDLE_OPTIONS,
     ...assertPublicBundleOptions(bundleOptions),
   });
-  console.log('WORLD');
+
   server.end();
 
   return result;
