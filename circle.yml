@@ -1,28 +1,82 @@
-machine:
-  environment:
-    YARN_VERSION: 0.24.3
-    PATH: "${PATH}:${HOME}/.yarn/bin:${HOME}/${CIRCLE_PROJECT_REPONAME}/node_modules/.bin"
-  node:
-    version: 8
-dependencies:
-  pre:
-    - |
-      if [[ ! -e ~/.yarn/bin/yarn || $(yarn --version) != "${YARN_VERSION}" ]]; then
-        curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version $YARN_VERSION
-      fi
-    - nvm install 4
-    - nvm install 6
+aliases:
+  - &restore-cache
+    keys:
+      - dependencies-{{ .Branch }}-{{ checksum "package.json" }}
+      # Fallback in case checksum fails
+      - dependencies-{{ .Branch }}-
 
-  cache_directories:
-    - ~/.yarn
-    - ~/.cache/yarn
-  override:
-    - yarn install --no-progress
-test:
-  override:
-    - nvm alias default 6
-    - yarn run test-ci
-    - nvm alias default 4
-    - yarn run test-ci
-    - nvm alias default 8
-    - yarn run test-ci
+  - &save-cache
+    paths:
+      - node_modules
+    key: dependencies-{{ .Branch }}-{{ checksum "package.json" }}
+
+  - &deploy
+    working_directory: packages/metro-bundler
+    steps:
+      - run: npm run prepare-release
+      - run: npm publish
+      - run: npm run cleanup-release
+
+version: 2
+jobs:
+  test-node-9:
+    working_directory: ~/metro-bundler/packager/metro-bundler
+    docker:
+      - image: circleci/node:9
+    steps:
+      - checkout
+      - restore-cache: *restore-cache
+      - run: yarn --no-progress
+      - save-cache: *save-cache
+      - run: yarn run test-ci
+
+  test-node-8:
+    working_directory: ~/metro-bundler/packager/metro-bundler
+    docker:
+      - image: circleci/node:8
+    steps:
+      - checkout
+      - restore-cache: *restore-cache
+      - run: yarn --no-progress
+      - save-cache: *save-cache
+      - run: yarn run test-ci
+
+  test-node-6:
+    working_directory: ~/metro-bundler/packager/metro-bundler
+    docker:
+      - image: circleci/node:6
+    steps:
+      - checkout
+      - restore-cache: *restore-cache
+      - run: sudo npm i -g yarn@^1.2.1
+      - run: yarn --no-progress
+      - save-cache: *save-cache
+      - run: yarn run test-ci
+
+  deploy:
+    working_directory: ~/metro-bundler/packager/metro-bundler
+    docker:
+      - image: circleci/node:8
+    steps:
+      - checkout
+      - restore-cache: *restore-cache
+      - run:
+          working_directory: packages/metro-bundler
+          command: yarn --no-progress
+      - save-cache: *save-cache
+      - deploy: *deploy
+
+# Workflows enables us to run multiple jobs in parallel
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - test-node-9
+      - test-node-8
+      - test-node-6
+      - deploy:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
