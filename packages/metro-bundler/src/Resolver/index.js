@@ -24,9 +24,8 @@ const {
 const pathJoin = require('path').join;
 
 import type Module, {HasteImpl, TransformCode} from '../node-haste/Module';
-import type {MappingsMap, CompactRawMappings} from '../lib/SourceMap';
+import type {CompactRawMappings} from '../lib/SourceMap';
 import type {PostMinifyProcess} from '../Bundler';
-import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type {Reporter} from '../lib/reporting';
 import type {
   TransformCache,
@@ -35,8 +34,6 @@ import type {
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 
 import typeof {minify as MinifyCode} from '../JSTransformer/worker';
-
-type ContainsTransformerOptions = {+transformer: JSTransformerOptions};
 
 type Options = {|
   +assetExts: Array<string>,

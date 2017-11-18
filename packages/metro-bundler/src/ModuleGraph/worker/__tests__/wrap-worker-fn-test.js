@@ -19,8 +19,6 @@ const wrapWorkerFn = require('../wrap-worker-fn');
 const {dirname} = require('path');
 const {fn} = require('../../test-helpers');
 
-const {any} = jasmine;
-
 describe('wrapWorkerFn:', () => {
   const infile = '/arbitrary/in/file';
   const outfile = '/arbitrary/in/file';

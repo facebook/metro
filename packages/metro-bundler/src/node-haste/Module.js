@@ -21,7 +21,6 @@ const jsonStableStringify = require('json-stable-stringify');
 
 const {join: joinPath, relative: relativePath, extname} = require('path');
 
-import type {RawMapping} from '../Bundler/source-map';
 import type {
   TransformedCode,
   Options as WorkerOptions,

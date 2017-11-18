@@ -23,7 +23,6 @@ const formatBundlingError = require('../lib/formatBundlingError');
 const getMaxWorkers = require('../lib/getMaxWorkers');
 const getOrderedDependencyPaths = require('../lib/getOrderedDependencyPaths');
 const mime = require('mime-types');
-const nullthrows = require('fbjs/lib/nullthrows');
 const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
 const path = require('path');
 const symbolicate = require('./symbolicate');

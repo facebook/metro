@@ -18,7 +18,6 @@ jest
 
 const Transformer = require('../');
 
-const {any} = jasmine;
 const {Readable} = require('stream');
 
 describe('Transformer', function() {
