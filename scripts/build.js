@@ -4,8 +4,6 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
- *
- * @format
  */
 
 /**
@@ -40,14 +38,14 @@ const IGNORE_PATTERN = '**/__tests__/**';
 const PACKAGES_DIR = path.resolve(__dirname, '../packages');
 
 const babelNodeOptions = JSON.parse(
-  fs.readFileSync(path.resolve(__dirname, '..', '.babelrc'), 'utf8'),
+  fs.readFileSync(path.resolve(__dirname, '..', '.babelrc'), 'utf8')
 );
 babelNodeOptions.babelrc = false;
 const babelEs5Options = Object.assign(
   {},
   babelNodeOptions,
   {presets: 'env'},
-  {plugins: [].concat(babelNodeOptions.plugins, 'transform-runtime')},
+  {plugins: [].concat(babelNodeOptions.plugins, 'transform-runtime')}
 );
 
 const fixedWidth = str => {
@@ -92,13 +90,13 @@ function buildFile(file, silent) {
   const pkgJsonPath = path.resolve(
     PACKAGES_DIR,
     getPackageName(file),
-    'package.json',
+    'package.json'
   );
   const browser = require(pkgJsonPath).browser;
   if (browser) {
     if (browser.indexOf(BUILD_ES5_DIR) !== 0) {
       throw new Error(
-        `browser field for ${pkgJsonPath} should start with "${BUILD_ES5_DIR}"`,
+        `browser field for ${pkgJsonPath} should start with "${BUILD_ES5_DIR}"`
       );
     }
     buildFileFor(file, silent, 'es5');
@@ -116,7 +114,7 @@ function buildFileFor(file, silent, env) {
       process.stdout.write(
         chalk.dim('  \u2022 ') +
           path.relative(PACKAGES_DIR, file) +
-          ' (ignore)\n',
+          ' (ignore)\n'
       );
   } else if (!micromatch.isMatch(file, JS_FILES_PATTERN)) {
     fs.createReadStream(file).pipe(fs.createWriteStream(destPath));
@@ -127,7 +125,7 @@ function buildFileFor(file, silent, env) {
           chalk.red(' \u21D2 ') +
           path.relative(PACKAGES_DIR, destPath) +
           ' (copy)' +
-          '\n',
+          '\n'
       );
   } else {
     const transformed = babel.transformFileSync(file, babelOptions).code;
@@ -141,7 +139,7 @@ function buildFileFor(file, silent, env) {
           path.relative(PACKAGES_DIR, file) +
           chalk.green(' \u21D2 ') +
           path.relative(PACKAGES_DIR, destPath) +
-          '\n',
+          '\n'
       );
   }
 }

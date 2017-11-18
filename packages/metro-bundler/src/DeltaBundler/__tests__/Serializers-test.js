@@ -12,8 +12,6 @@
 
 'use strict';
 
-const Serializers = require('../Serializers');
-
 const CURRENT_TIME = 1482363367000;
 
 describe('Serializers', () => {
@@ -23,6 +21,7 @@ describe('Serializers', () => {
   const getRamOptions = jest.fn();
   const postProcessModules = jest.fn();
   let deltaBundler;
+  let Serializers;
 
   const deltaResponse = {
     pre: new Map([[1, {type: 'script', code: 'pre;', id: 1, path: '/pre.js'}]]),
@@ -40,6 +39,8 @@ describe('Serializers', () => {
   }
 
   beforeEach(() => {
+    Serializers = require('../Serializers');
+
     getDelta.mockReturnValueOnce(Promise.resolve(deltaResponse));
     getDependenciesFn.mockReturnValue(Promise.resolve(() => new Set()));
     getRamOptions.mockReturnValue(
