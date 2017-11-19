@@ -122,15 +122,17 @@ class DependencyGraph extends EventEmitter {
   }
 
   static async load(opts: Options): Promise<DependencyGraph> {
+    const initializingMetroLogEntry = log(
+      createActionStartEntry('Initializing Metro'),
+    );
+
     opts.reporter.update({type: 'dep_graph_loading'});
     const haste = DependencyGraph._createHaste(opts);
     const {hasteFS, moduleMap} = await haste.build();
-    log(
-      createActionEndEntry(
-        log(createActionStartEntry('Initializing Metro Bundler')),
-      ),
-    );
+
+    log(createActionEndEntry(initializingMetroLogEntry));
     opts.reporter.update({type: 'dep_graph_loaded'});
+
     return new DependencyGraph({
       haste,
       initialHasteFS: hasteFS,
