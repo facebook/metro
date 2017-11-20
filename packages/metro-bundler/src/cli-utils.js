@@ -19,9 +19,9 @@ import type {ConfigT} from './Config';
 
 const METRO_CONFIG_FILENAME = 'metro.config.js';
 
-exports.findMetroConfig = async (
+exports.findMetroConfig = async function(
   filename: ?string,
-): Promise<$Shape<ConfigT>> => {
+): Promise<$Shape<ConfigT>> {
   if (filename) {
     // $FlowFixMe: We want this require to be dynamic
     return require(path.resolve(process.cwd(), filename));
@@ -43,4 +43,15 @@ exports.findMetroConfig = async (
 
     return {};
   }
+};
+
+// eslint-disable-next-line no-unclear-flowtypes
+exports.makeAsyncCommand = (command: (argv: any) => Promise<*>) => (
+  // eslint-disable-next-line no-unclear-flowtypes
+  argv: any,
+) => {
+  Promise.resolve(command(argv)).catch(error => {
+    console.error(error.stack);
+    process.exitCode = 1;
+  });
 };

@@ -13,9 +13,10 @@
 'use strict';
 
 const MetroApi = require('..');
-const findMetroConfig = require('../cli-utils').findMetroConfig;
 
 const os = require('os');
+
+const {findMetroConfig, makeAsyncCommand} = require('../cli-utils');
 
 import typeof Yargs from 'yargs';
 
@@ -46,7 +47,8 @@ exports.builder = (yargs: Yargs) => {
   yargs.option('config', {alias: 'c', type: 'string'});
 };
 
-exports.handler = async (argv: any) => {
+// eslint-disable-next-line no-unclear-flowtypes
+exports.handler = makeAsyncCommand(async (argv: any) => {
   argv.config = await findMetroConfig(argv.config);
 
   await MetroApi.runServer({
@@ -58,4 +60,4 @@ exports.handler = async (argv: any) => {
       );
     },
   });
-};
+});

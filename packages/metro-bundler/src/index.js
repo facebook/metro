@@ -22,8 +22,8 @@ const TransformCaching = require('./lib/TransformCaching');
 
 const connect = require('connect');
 
+const {realpath} = require('fs');
 const {readFile} = require('fs-extra');
-const {resolve} = require('path');
 
 const defaultAssetExts = require('./defaults').assetExts;
 const defaultSourceExts = require('./defaults').sourceExts;
@@ -56,7 +56,22 @@ type PrivateMetroOptions = {|
   watch?: boolean,
 |};
 
-function runMetro({
+// We'll be able to remove this to use the one provided by modern versions of
+// fs-extra once https://github.com/jprichardson/node-fs-extra/pull/520 will
+// have been merged (until then, they'll break on devservers/Sandcastle)
+async function asyncRealpath(path): Promise<string> {
+  return new Promise((resolve, reject) => {
+    realpath(path, (error, result) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(result);
+      }
+    });
+  });
+}
+
+async function runMetro({
   config,
   maxWorkers = 1,
   projectRoots,
@@ -105,9 +120,12 @@ function runMetro({
     watch,
     workerPath:
       normalizedConfig.getWorkerPath && normalizedConfig.getWorkerPath(),
-    projectRoots: normalizedConfig
-      .getProjectRoots()
-      .concat([...projectRoots.map(path => resolve(path))]),
+    projectRoots: await Promise.all(
+      normalizedConfig
+        .getProjectRoots()
+        .concat(projectRoots)
+        .map(path => asyncRealpath(path)),
+    ),
   };
 
   return new MetroServer(serverOptions);
@@ -117,8 +135,10 @@ type CreateConnectMiddlewareOptions = {|
   ...PublicMetroOptions,
 |};
 
-exports.createConnectMiddleware = (options: CreateConnectMiddlewareOptions) => {
-  const metroServer = runMetro({
+exports.createConnectMiddleware = async function(
+  options: CreateConnectMiddlewareOptions,
+) {
+  const metroServer = await runMetro({
     config: options.config,
     maxWorkers: options.maxWorkers,
     projectRoots: options.projectRoots,
