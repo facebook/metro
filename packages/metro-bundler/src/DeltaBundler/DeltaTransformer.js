@@ -49,10 +49,6 @@ export type DeltaTransformResponse = {|
   +pre: DeltaEntries,
   +post: DeltaEntries,
   +delta: DeltaEntries,
-  +inverseDependencies: {
-    [key: string]: $ReadOnlyArray<string>,
-    __proto__: null,
-  },
   +reset: boolean,
 |};
 
@@ -161,6 +157,32 @@ class DeltaTransformer extends EventEmitter {
     return this._getDependencies;
   }
 
+  /**
+   * Returns a function that can be used to calculate synchronously the
+   * transitive dependencies of any given file within the dependency graph.
+   **/
+  async getInverseDependencies(): Promise<{
+    [key: string]: $ReadOnlyArray<string>,
+    __proto__: null,
+  }> {
+    if (!this._deltaCalculator.getDependencyEdges().size) {
+      // If by any means the dependency graph has not been initialized, call
+      // getDelta() to initialize it.
+      await this._getDelta();
+    }
+
+    const dependencyEdges = this._deltaCalculator.getDependencyEdges();
+    const output = Object.create(null);
+
+    for (const [path, {inverseDependencies}] of dependencyEdges.entries()) {
+      output[this._getModuleId({path})] = Array.from(
+        inverseDependencies,
+      ).map(dep => this._getModuleId({path: dep}));
+    }
+
+    return output;
+  }
+
   async getRamOptions(
     entryFile: string,
     options: {dev: boolean, platform: ?string},
@@ -238,14 +260,10 @@ class DeltaTransformer extends EventEmitter {
       ? await this._getAppend(dependencyEdges)
       : new Map();
 
-    // Inverse dependencies are needed for HMR.
-    const inverseDependencies = this._getInverseDependencies(dependencyEdges);
-
     return {
       pre: prependSources,
       post: appendSources,
       delta: modifiedDelta,
-      inverseDependencies,
       reset,
     };
   }
@@ -377,23 +395,6 @@ class DeltaTransformer extends EventEmitter {
     }
 
     return append;
-  }
-
-  /**
-   * Converts the paths in the inverse dependendencies to module ids.
-   */
-  _getInverseDependencies(
-    dependencyEdges: DependencyEdges,
-  ): {[key: string]: $ReadOnlyArray<string>, __proto__: null} {
-    const output = Object.create(null);
-
-    for (const [path, {inverseDependencies}] of dependencyEdges.entries()) {
-      output[this._getModuleId({path})] = Array.from(
-        inverseDependencies,
-      ).map(dep => this._getModuleId({path: dep}));
-    }
-
-    return output;
   }
 
   async _transformModules(

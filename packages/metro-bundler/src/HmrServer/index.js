@@ -140,7 +140,7 @@ class HmrServer<TClient: Client> {
       type: 'update',
       body: {
         modules,
-        inverseDependencies: result.inverseDependencies,
+        inverseDependencies: await client.deltaTransformer.getInverseDependencies(),
         sourceURLs: {},
         sourceMappingURLs: {}, // TODO: handle Source Maps
       },
