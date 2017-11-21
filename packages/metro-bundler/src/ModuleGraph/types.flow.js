@@ -242,8 +242,35 @@ export type AssetContentsByPath = {
   +[moduleFilePath: string]: $ReadOnlyArray<AssetContents>,
 };
 
+export type ResolvedCodeFile = {|
+  +codeFile: TransformedCodeFile,
+  /**
+   * Imagine we have a source file that contains a `require('foo')`. The library
+   * will resolve the path of the module `foo` and store it in this field along
+   * all the other dependencies. For example, it could be
+   * `{'foo': 'bar/foo.js', 'bar': 'node_modules/bar/index.js'}`.
+   */
+  +filePathsByDependencyName: {|+[dependencyName: string]: string|},
+|};
+
+/**
+ * Describe a set of JavaScript files and the associated assets. It could be
+ * depending on modules from other libraries. To be able to resolve these
+ * dependencies, these libraries need to be provided by callsites (ex. Buck).
+ */
 export type Library = {|
   +files: Array<TransformedCodeFile>,
+  /* cannot be a Map because it's JSONified later on */
+  +assets: AssetContentsByPath,
+|};
+
+/**
+ * Just like a `Library`, but it also contains module resolutions. For example
+ * if there is a `require('foo')` in some JavaScript file, we keep track of the
+ * path it resolves to, ex. `beep/glo/foo.js`.
+ */
+export type ResolvedLibrary = {|
+  +files: $ReadOnlyArray<ResolvedCodeFile>,
   /* cannot be a Map because it's JSONified later on */
   +assets: AssetContentsByPath,
 |};
