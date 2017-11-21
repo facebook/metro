@@ -147,7 +147,7 @@ describe('Resolver', function() {
           .map(([importId, module]) => [
             importId,
             padRight(
-              resolutionResponse.getModuleId(module),
+              resolutionResponse.getModuleId(module.path),
               importId.length + 2,
             ),
           ]),
@@ -186,7 +186,7 @@ describe('Resolver', function() {
           "require( 'z' )",
           'require( "a")',
           'require("b" )',
-          `}, ${resolutionResponse.getModuleId(module)});`,
+          `}, ${resolutionResponse.getModuleId(module.path)});`,
         ].join('\n'),
       );
     });
@@ -213,7 +213,9 @@ describe('Resolver', function() {
         [
           '__d(/* test module */function(global, require, module, exports) {' +
             code,
-          `}, ${resolutionResponse.getModuleId(module)}, null, "test module");`,
+          `}, ${resolutionResponse.getModuleId(
+            module.path,
+          )}, null, "test module");`,
         ].join('\n'),
       );
     });
@@ -295,7 +297,7 @@ describe('Resolver', function() {
           [
             `__d(/* ${id} */function(global, require, module, exports) {`,
             `module.exports = ${code}\n}, ${resolutionResponse.getModuleId(
-              module,
+              module.path,
             )});`,
           ].join(''),
         );
@@ -359,7 +361,7 @@ describe('Resolver', function() {
       return id;
     }
 
-    return ({path}) => knownIds.get(path) || createId(path);
+    return path => knownIds.get(path) || createId(path);
   }
 
   function padRight(value, width) {

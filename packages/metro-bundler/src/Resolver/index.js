@@ -121,7 +121,7 @@ class Resolver {
 
   resolveRequires(
     module: Module,
-    getModuleId: ({path: string}) => number,
+    getModuleId: (path: string) => number,
     code: string,
     dependencyPairs: Map<string, string>,
     dependencyOffsets: Array<number> = [],
@@ -131,7 +131,7 @@ class Resolver {
     // here, we build a map of all require strings (relative and absolute)
     // to the canonical ID of the module they reference
     for (const [name, path] of dependencyPairs) {
-      resolvedDeps[name] = getModuleId({path});
+      resolvedDeps[name] = getModuleId(path);
     }
 
     // if we have a canonical ID for the module imported here,
@@ -164,7 +164,7 @@ class Resolver {
     dev = true,
   }: {
     module: Module,
-    getModuleId: ({path: string}) => number,
+    getModuleId: (path: string) => number,
     dependencyPairs: Map<string, string>,
     dependencyOffsets: Array<number>,
     name: string,
@@ -179,7 +179,7 @@ class Resolver {
     if (module.isPolyfill()) {
       code = definePolyfillCode(code);
     } else {
-      const moduleId = getModuleId(module);
+      const moduleId = getModuleId(module.path);
 
       code = this.resolveRequires(
         module,

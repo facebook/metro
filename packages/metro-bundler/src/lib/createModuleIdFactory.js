@@ -11,15 +11,15 @@
 
 'use strict';
 
-function createModuleIdFactory(): ({path: string}) => number {
+function createModuleIdFactory(): (path: string) => number {
   const fileToIdMap = new Map();
   let nextId = 0;
-  return ({path: modulePath}) => {
-    if (!fileToIdMap.has(modulePath)) {
-      fileToIdMap.set(modulePath, nextId);
+  return (path: string) => {
+    if (!fileToIdMap.has(path)) {
+      fileToIdMap.set(path, nextId);
       nextId += 1;
     }
-    return fileToIdMap.get(modulePath);
+    return fileToIdMap.get(path);
   };
 }
 

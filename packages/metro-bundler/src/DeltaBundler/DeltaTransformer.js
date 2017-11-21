@@ -76,7 +76,7 @@ class DeltaTransformer extends EventEmitter {
   _resolver: Resolver;
   _getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>;
   _polyfillModuleNames: $ReadOnlyArray<string>;
-  _getModuleId: ({path: string}) => number;
+  _getModuleId: (path: string) => number;
   _deltaCalculator: DeltaCalculator;
   _bundleOptions: BundleOptions;
   _currentBuildPromise: ?Promise<DeltaTransformResponse>;
@@ -175,9 +175,9 @@ class DeltaTransformer extends EventEmitter {
     const output = Object.create(null);
 
     for (const [path, {inverseDependencies}] of dependencyEdges.entries()) {
-      output[this._getModuleId({path})] = Array.from(
+      output[this._getModuleId(path)] = Array.from(
         inverseDependencies,
-      ).map(dep => this._getModuleId({path: dep}));
+      ).map(dep => this._getModuleId(dep));
     }
 
     return output;
@@ -241,7 +241,7 @@ class DeltaTransformer extends EventEmitter {
     // Precalculate all module ids sequentially. We do this to be sure that the
     // mapping between module -> moduleId is deterministic between runs.
     const modules = Array.from(modified.values());
-    modules.forEach(module => this._getModuleId(module));
+    modules.forEach(module => this._getModuleId(module.path));
 
     // Get the transformed source code of each modified/added module.
     const modifiedDelta = await this._transformModules(
@@ -251,7 +251,7 @@ class DeltaTransformer extends EventEmitter {
     );
 
     deleted.forEach(id => {
-      modifiedDelta.set(this._getModuleId({path: id}), null);
+      modifiedDelta.set(this._getModuleId(id), null);
     });
 
     // Return the source code that gets appended to all the modules. This
@@ -345,19 +345,17 @@ class DeltaTransformer extends EventEmitter {
     // Get the absolute path of the entry file, in order to be able to get the
     // actual correspondant module (and its moduleId) to be able to add the
     // correct require(); call at the very end of the bundle.
-    const absPath = dependencyGraph.getAbsolutePath(
+    const entryPointModulePath = dependencyGraph.getAbsolutePath(
       this._bundleOptions.entryFile,
     );
-    const entryPointModule = dependencyGraph.getModuleForPath(absPath);
 
     // First, get the modules correspondant to all the module names defined in
     // the `runBeforeMainModule` config variable. Then, append the entry point
     // module so the last thing that gets required is the entry point.
     const append = new Map(
       this._bundleOptions.runBeforeMainModule
-        .map(path => dependencyGraph.getModuleForPath(path))
-        .concat(entryPointModule)
-        .filter(module => dependencyEdges.has(module.path))
+        .concat(entryPointModulePath)
+        .filter(path => dependencyEdges.has(path))
         .map(this._getModuleId)
         .map(moduleId => {
           const code = `require(${JSON.stringify(moduleId)});`;
@@ -381,7 +379,7 @@ class DeltaTransformer extends EventEmitter {
 
     if (this._bundleOptions.sourceMapUrl) {
       const code = '//# sourceMappingURL=' + this._bundleOptions.sourceMapUrl;
-      const id = this._getModuleId({path: '/sourcemap.js'});
+      const id = this._getModuleId('/sourcemap.js');
 
       append.set(id, {
         code,
@@ -452,7 +450,7 @@ class DeltaTransformer extends EventEmitter {
         )
       : wrapped;
 
-    const id = this._getModuleId(module);
+    const id = this._getModuleId(module.path);
 
     return [
       id,
