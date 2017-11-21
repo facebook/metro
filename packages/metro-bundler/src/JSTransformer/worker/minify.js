@@ -50,6 +50,10 @@ function minify(inputCode: string, inputMap: ?MappingsMap) {
       includeSources: false,
     },
     toplevel: true,
+    compress: {
+      // reduce_funcs inlines single-use function, which cause perf regressions.
+      reduce_funcs: false,
+    },
   });
 
   if (result.error) {
