@@ -23,7 +23,7 @@ const {
   AmbiguousModuleResolutionError,
 } = require('../node-haste/DependencyGraph/ResolutionRequest');
 
-import type {BundleOptions} from '../Server';
+import type {BundleOptions} from '../shared/types.flow';
 import type Terminal from './Terminal';
 import type {ReportableEvent, GlobalCacheDisabledReason} from './reporting';
 

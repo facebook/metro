@@ -15,7 +15,7 @@
 const DeltaTransformer = require('./DeltaTransformer');
 
 import type Bundler from '../Bundler';
-import type {BundleOptions} from '../Server';
+import type {BundleOptions} from '../shared/types.flow';
 import type {DeltaEntry} from './DeltaTransformer';
 
 export type PostProcessModules = (

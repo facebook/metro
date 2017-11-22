@@ -33,13 +33,13 @@ import type {HasteImpl} from '../node-haste/Module';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from '../lib/reporting';
 import type {Options as DeltaBundlerOptions} from '../DeltaBundler/Serializers';
+import type {BundleOptions, Options} from '../shared/types.flow';
 import type {
   GetTransformOptions,
   PostMinifyProcess,
   PostProcessBundleSourcemap,
 } from '../Bundler';
 import type {TransformCache} from '../lib/TransformCaching';
-import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {SourceMap, Symbolicate} from './symbolicate';
 import type {AssetData} from '../AssetServer';
 import type {RamBundleInfo} from '../DeltaBundler/Serializers';
@@ -63,57 +63,6 @@ function debounceAndBatch(fn, delay) {
     }, delay);
   };
 }
-
-export type Options = {|
-  assetExts?: Array<string>,
-  +assetRegistryPath: string,
-  blacklistRE?: RegExp,
-  cacheVersion?: string,
-  enableBabelRCLookup?: boolean,
-  extraNodeModules?: {},
-  getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
-  getTransformOptions?: GetTransformOptions,
-  globalTransformCache: ?GlobalTransformCache,
-  hasteImpl?: HasteImpl,
-  maxWorkers?: number,
-  moduleFormat?: string,
-  platforms?: Array<string>,
-  polyfillModuleNames?: Array<string>,
-  postProcessModules?: PostProcessModules,
-  postMinifyProcess: PostMinifyProcess,
-  postProcessBundleSourcemap: PostProcessBundleSourcemap,
-  projectRoots: $ReadOnlyArray<string>,
-  providesModuleNodeModules?: Array<string>,
-  reporter?: Reporter,
-  resetCache?: boolean,
-  +getModulesRunBeforeMainModule: (entryPoint: string) => Array<string>,
-  silent?: boolean,
-  +sourceExts: ?Array<string>,
-  +transformCache: TransformCache,
-  transformModulePath?: string,
-  watch?: boolean,
-  workerPath: ?string,
-|};
-
-export type BundleOptions = {
-  +assetPlugins: Array<string>,
-  dev: boolean,
-  entryFile: string,
-  +entryModuleOnly: boolean,
-  +excludeSource: boolean,
-  +generateSourceMaps: boolean,
-  +hot: boolean,
-  +inlineSourceMap: boolean,
-  +isolateModuleIDs: boolean,
-  minify: boolean,
-  onProgress: ?(doneCont: number, totalCount: number) => mixed,
-  +platform: ?string,
-  +resolutionResponse: ?{},
-  +runBeforeMainModule: Array<string>,
-  +runModule: boolean,
-  sourceMapUrl: ?string,
-  unbundle: boolean,
-};
 
 const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';
 

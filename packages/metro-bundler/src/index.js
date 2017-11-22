@@ -40,7 +40,7 @@ import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
 
 import type {ConfigT} from './Config';
-import type {Options as ServerOptions} from './Server';
+import type {Options as ServerOptions} from './shared/types.flow';
 import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
 
 export type {ConfigT} from './Config';

@@ -12,9 +12,39 @@
 'use strict';
 
 import type {RawMapping} from '../Bundler/source-map';
+import type {
+  GetTransformOptions,
+  PostMinifyProcess,
+  PostProcessBundleSourcemap,
+} from '../Bundler';
+import type {PostProcessModules} from '../DeltaBundler';
+import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {SourceMap} from '../lib/SourceMap';
+import type {TransformCache} from '../lib/TransformCaching';
+import type {Reporter} from '../lib/reporting';
+import type {HasteImpl} from '../node-haste/Module';
 
 type SourceMapOrMappings = SourceMap | Array<RawMapping>;
+
+export type BundleOptions = {
+  +assetPlugins: Array<string>,
+  dev: boolean,
+  entryFile: string,
+  +entryModuleOnly: boolean,
+  +excludeSource: boolean,
+  +generateSourceMaps: boolean,
+  +hot: boolean,
+  +inlineSourceMap: boolean,
+  +isolateModuleIDs: boolean,
+  minify: boolean,
+  onProgress: ?(doneCont: number, totalCount: number) => mixed,
+  +platform: ?string,
+  +resolutionResponse: ?{},
+  +runBeforeMainModule: Array<string>,
+  +runModule: boolean,
+  sourceMapUrl: ?string,
+  unbundle: boolean,
+};
 
 export type ModuleGroups = {|
   groups: Map<number, Set<number>>,
@@ -29,6 +59,37 @@ export type ModuleTransportLike = {
   +name?: string,
   +sourcePath: string,
 };
+
+export type Options = {|
+  assetExts?: Array<string>,
+  +assetRegistryPath: string,
+  blacklistRE?: RegExp,
+  cacheVersion?: string,
+  enableBabelRCLookup?: boolean,
+  extraNodeModules?: {},
+  getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
+  getTransformOptions?: GetTransformOptions,
+  globalTransformCache: ?GlobalTransformCache,
+  hasteImpl?: HasteImpl,
+  maxWorkers?: number,
+  moduleFormat?: string,
+  platforms?: Array<string>,
+  polyfillModuleNames?: Array<string>,
+  postProcessModules?: PostProcessModules,
+  postMinifyProcess: PostMinifyProcess,
+  postProcessBundleSourcemap: PostProcessBundleSourcemap,
+  projectRoots: $ReadOnlyArray<string>,
+  providesModuleNodeModules?: Array<string>,
+  reporter?: Reporter,
+  resetCache?: boolean,
+  +getModulesRunBeforeMainModule: (entryPoint: string) => Array<string>,
+  silent?: boolean,
+  +sourceExts: ?Array<string>,
+  +transformCache: TransformCache,
+  transformModulePath?: string,
+  watch?: boolean,
+  workerPath: ?string,
+|};
 
 export type OutputOptions = {
   bundleOutput: string,

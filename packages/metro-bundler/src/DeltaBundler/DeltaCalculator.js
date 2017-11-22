@@ -20,9 +20,9 @@ const {EventEmitter} = require('events');
 
 import type Bundler from '../Bundler';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
-import type {BundleOptions} from '../Server';
 import type DependencyGraph from '../node-haste/DependencyGraph';
 import type Module from '../node-haste/Module';
+import type {BundleOptions} from '../shared/types.flow';
 
 export type DeltaResult = {|
   +modified: Map<string, Module>,

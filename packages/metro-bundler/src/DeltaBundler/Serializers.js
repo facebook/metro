@@ -18,8 +18,8 @@ const {fromRawMappings} = require('../Bundler/source-map');
 const {createRamBundleGroups} = require('../Bundler/util');
 
 import type {AssetData} from '../AssetServer';
-import type {BundleOptions} from '../Server';
 import type {MappingsMap} from '../lib/SourceMap';
+import type {BundleOptions} from '../shared/types.flow';
 import type {ModuleTransportLike} from '../shared/types.flow';
 import type DeltaBundler, {Options as BuildOptions} from './';
 import type DeltaTransformer, {
