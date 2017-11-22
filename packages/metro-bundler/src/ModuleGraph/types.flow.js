@@ -109,7 +109,7 @@ export type OutputFn<M: FBSourceMap | SourceMap = FBSourceMap | SourceMap> = ({|
   idsForPath: IdsForPathFn,
   modules: Iterable<Module>,
   requireCalls: Iterable<Module>,
-  sourceMapPath?: string,
+  sourceMapPath?: ?string,
 |}) => OutputResult<M>;
 
 type OutputResult<M: FBSourceMap | SourceMap> = {|
