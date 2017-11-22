@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @format
  */
 
 /**
@@ -38,13 +37,13 @@ const reporter = createReporter();
 const mapFileCoverage = fileCoverage => {
   fileCoverage.path = fileCoverage.path.replace(
     /(.*packages\/.*\/)(build)(\/.*)/,
-    '$1src$3',
+    '$1src$3'
   );
   return fileCoverage;
 };
 
 Object.keys(coverage).forEach(filename =>
-  map.addFileCoverage(mapFileCoverage(coverage[filename])),
+  map.addFileCoverage(mapFileCoverage(coverage[filename]))
 );
 
 reporter.addAll(['json', 'lcov', 'text']);
