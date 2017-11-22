@@ -161,10 +161,7 @@ class DeltaTransformer extends EventEmitter {
    * Returns a function that can be used to calculate synchronously the
    * transitive dependencies of any given file within the dependency graph.
    **/
-  async getInverseDependencies(): Promise<{
-    [key: string]: $ReadOnlyArray<string>,
-    __proto__: null,
-  }> {
+  async getInverseDependencies(): Promise<Map<number, $ReadOnlyArray<number>>> {
     if (!this._deltaCalculator.getDependencyEdges().size) {
       // If by any means the dependency graph has not been initialized, call
       // getDelta() to initialize it.
@@ -172,12 +169,13 @@ class DeltaTransformer extends EventEmitter {
     }
 
     const dependencyEdges = this._deltaCalculator.getDependencyEdges();
-    const output = Object.create(null);
+    const output = new Map();
 
     for (const [path, {inverseDependencies}] of dependencyEdges.entries()) {
-      output[this._getModuleId(path)] = Array.from(
-        inverseDependencies,
-      ).map(dep => this._getModuleId(dep));
+      output.set(
+        this._getModuleId(path),
+        Array.from(inverseDependencies).map(dep => this._getModuleId(dep)),
+      );
     }
 
     return output;
@@ -419,28 +417,16 @@ class DeltaTransformer extends EventEmitter {
     const edge = dependencyEdges.get(module.path);
     const dependencyPairs = edge ? edge.dependencies : new Map();
 
-    const wrapped = this._bundleOptions.wrapModules
-      ? this._resolver.wrapModule({
-          module,
-          getModuleId: this._getModuleId,
-          dependencyPairs,
-          dependencyOffsets: metadata.dependencyOffsets || [],
-          name,
-          code: metadata.code,
-          map: metadata.map,
-          minify: this._bundleOptions.minify,
-          dev: this._bundleOptions.dev,
-        })
-      : {
-          code: this._resolver.resolveRequires(
-            module,
-            this._getModuleId,
-            metadata.code,
-            dependencyPairs,
-            metadata.dependencyOffsets || [],
-          ),
-          map: metadata.map,
-        };
+    const wrapped = this._resolver.wrapModule({
+      module,
+      getModuleId: this._getModuleId,
+      dependencyPairs,
+      dependencyOffsets: metadata.dependencyOffsets || [],
+      name,
+      code: metadata.code,
+      map: metadata.map,
+      dev: this._bundleOptions.dev,
+    });
 
     const {code, map} = transformOptions.minify
       ? await this._resolver.minifyModule(

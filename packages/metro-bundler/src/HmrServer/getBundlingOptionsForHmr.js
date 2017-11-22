@@ -30,7 +30,6 @@ module.exports = function getBundlingOptionsForHmr(
     hot: true,
     minify: false,
     platform,
-    wrapModules: false,
   };
 
   return {

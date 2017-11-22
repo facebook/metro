@@ -12,6 +12,7 @@
 
 'use strict';
 
+const addParamsToDefineCall = require('../lib/addParamsToDefineCall');
 const formatBundlingError = require('../lib/formatBundlingError');
 const getBundlingOptionsForHmr = require('./getBundlingOptionsForHmr');
 const querystring = require('querystring');
@@ -125,6 +126,8 @@ class HmrServer<TClient: Client> {
     }
     const modules = [];
 
+    const inverseDependencies = await client.deltaTransformer.getInverseDependencies();
+
     for (const [id, module] of result.delta) {
       // The Delta Bundle can have null objects: these correspond to deleted
       // modules, which we don't need to send to the client.
@@ -132,7 +135,9 @@ class HmrServer<TClient: Client> {
         // When there are new modules added on the dependency tree, they are
         // appended on the Delta Bundle, but HMR needs to have them at the
         // beginning.
-        modules.unshift({id, code: module.code});
+        modules.unshift(
+          this._prepareModule(id, module.code, inverseDependencies),
+        );
       }
     }
 
@@ -140,11 +145,83 @@ class HmrServer<TClient: Client> {
       type: 'update',
       body: {
         modules,
-        inverseDependencies: await client.deltaTransformer.getInverseDependencies(),
         sourceURLs: {},
         sourceMappingURLs: {}, // TODO: handle Source Maps
       },
     };
+  }
+
+  /**
+   * We need to add the inverse dependencies of that specific module into
+   * the define() call, to make the HMR logic in the client able to propagate
+   * the changes to the module dependants, if needed.
+   *
+   * To do so, we need to append the inverse dependencies object as the last
+   * parameter to the __d() call from the code that we get from the bundler.
+   *
+   * So, we need to transform this:
+   *
+   *   __d(
+   *     function(global, ...) { (module transformed code) },
+   *     moduleId,
+   *     dependencyMap?,
+   *     moduleName?
+   *   );
+   *
+   * Into this:
+   *
+   *   __d(
+   *     function(global, ...) { (module transformed code) },
+   *     moduleId,
+   *     dependencyMap?,
+   *     moduleName?,
+   *     inverseDependencies,
+   *   );
+   */
+  _prepareModule(
+    id: number,
+    code: string,
+    inverseDependencies: Map<number, $ReadOnlyArray<number>>,
+  ): {id: number, code: string} {
+    const moduleInverseDependencies = Object.create(null);
+
+    this._addInverseDep(id, inverseDependencies, moduleInverseDependencies);
+
+    return {
+      id,
+      code: addParamsToDefineCall(code, moduleInverseDependencies),
+    };
+  }
+
+  /**
+   * Instead of adding the whole inverseDependncies object into each changed
+   * module (which can be really huge if the dependency graph is big), we only
+   * add the needed inverseDependencies for each changed module (we do this by
+   * traversing upwards the dependency graph).
+   */
+  _addInverseDep(
+    module: number,
+    inverseDependencies: Map<number, $ReadOnlyArray<number>>,
+    moduleInverseDependencies: {
+      [key: number]: Array<number>,
+      __proto__: null,
+    },
+  ) {
+    if (module in moduleInverseDependencies) {
+      return;
+    }
+
+    moduleInverseDependencies[module] = [];
+
+    for (const inverse of inverseDependencies.get(module) || []) {
+      moduleInverseDependencies[module].push(inverse);
+
+      this._addInverseDep(
+        inverse,
+        inverseDependencies,
+        moduleInverseDependencies,
+      );
+    }
   }
 }
 

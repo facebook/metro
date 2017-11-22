@@ -31,7 +31,6 @@ export type MainOptions = {|
 
 export type Options = BundleOptions & {
   +deltaBundleId: ?string,
-  +wrapModules: boolean,
 };
 
 /**

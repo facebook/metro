@@ -49,10 +49,7 @@ async function deltaBundle(
   deltaBundler: DeltaBundler,
   options: Options,
 ): Promise<{bundle: string, numModifiedFiles: number}> {
-  const {id, delta} = await _build(deltaBundler, {
-    ...options,
-    wrapModules: true,
-  });
+  const {id, delta} = await _build(deltaBundler, options);
 
   function stringifyModule([id, module]) {
     return [id, module ? module.code : undefined];
@@ -76,10 +73,7 @@ async function fullSourceMap(
   deltaBundler: DeltaBundler,
   options: Options,
 ): Promise<string> {
-  const {modules} = await _getAllModules(deltaBundler, {
-    ...options,
-    wrapModules: true,
-  });
+  const {modules} = await _getAllModules(deltaBundler, options);
 
   return fromRawMappings(modules).toString(undefined, {
     excludeSource: options.excludeSource,
@@ -90,10 +84,7 @@ async function fullSourceMapObject(
   deltaBundler: DeltaBundler,
   options: Options,
 ): Promise<MappingsMap> {
-  const {modules} = await _getAllModules(deltaBundler, {
-    ...options,
-    wrapModules: true,
-  });
+  const {modules} = await _getAllModules(deltaBundler, options);
 
   return fromRawMappings(modules).toMap(undefined, {
     excludeSource: options.excludeSource,
@@ -125,10 +116,7 @@ async function getAllModules(
   deltaBundler: DeltaBundler,
   options: Options,
 ): Promise<$ReadOnlyArray<DeltaEntry>> {
-  const {modules} = await _getAllModules(deltaBundler, {
-    ...options,
-    wrapModules: true,
-  });
+  const {modules} = await _getAllModules(deltaBundler, options);
 
   return modules;
 }
@@ -142,10 +130,7 @@ async function _getAllModules(
   lastModified: Date,
   deltaTransformer: DeltaTransformer,
 }> {
-  const {id, delta, deltaTransformer} = await _build(deltaBundler, {
-    ...options,
-    wrapModules: true,
-  });
+  const {id, delta, deltaTransformer} = await _build(deltaBundler, options);
 
   const deltaPatcher = DeltaPatcher.get(id);
 
@@ -165,10 +150,10 @@ async function getRamBundleInfo(
   deltaBundler: DeltaBundler,
   options: Options,
 ): Promise<RamBundleInfo> {
-  const {modules, deltaTransformer} = await _getAllModules(deltaBundler, {
-    ...options,
-    wrapModules: true,
-  });
+  const {modules, deltaTransformer} = await _getAllModules(
+    deltaBundler,
+    options,
+  );
 
   const ramModules = modules.map(module => ({
     id: module.id,

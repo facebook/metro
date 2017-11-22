@@ -67,6 +67,16 @@ function define(
   dependencyMap?: DependencyMap,
 ) {
   if (moduleId in modules) {
+    if (__DEV__) {
+      // (We take `inverseDependencies` from `arguments` to avoid an unused
+      // named parameter in `define` in production.
+      const inverseDependencies = arguments[4];
+
+      // If the module has already been defined and we're in dev mode,
+      // hot reload it.
+      global.__accept(moduleId, factory, dependencyMap, inverseDependencies);
+    }
+
     // prevent repeated calls to `global.nativeRequire` to overwrite modules
     // that are already loaded
     return;
@@ -256,7 +266,13 @@ if (__DEV__) {
     }
 
     const notAccepted = dependentModules.filter(
-      module => !accept(module, /*factory*/ undefined, inverseDependencies),
+      module =>
+        !accept(
+          module,
+          /*factory*/ undefined,
+          /*dependencyMap*/ undefined,
+          inverseDependencies,
+        ),
     );
 
     const parents = [];
@@ -275,14 +291,14 @@ if (__DEV__) {
   const accept = function(
     id: ModuleID,
     factory?: FactoryFn,
+    dependencyMap?: DependencyMap,
     inverseDependencies: {[key: ModuleID]: Array<ModuleID>},
   ) {
     const mod = modules[id];
 
     if (!mod && factory) {
-      // new modules need a factory
-      define(factory, id);
-      return true; // new modules don't need to be accepted
+      // New modules are going to be handled by the define() method.
+      return true;
     }
 
     const {hot} = mod;
@@ -297,6 +313,9 @@ if (__DEV__) {
     // replace and initialize factory
     if (factory) {
       mod.factory = factory;
+    }
+    if (dependencyMap) {
+      mod.dependencyMap = dependencyMap;
     }
     mod.hasError = false;
     mod.isInitialized = false;
