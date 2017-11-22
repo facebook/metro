@@ -14,6 +14,7 @@
 
 const constantFolding = require('./constant-folding');
 const extractDependencies = require('./extract-dependencies');
+const generate = require('babel-generator').default;
 const inline = require('./inline');
 const minify = require('./minify');
 
@@ -117,13 +118,30 @@ function transformCode(
     ? []
     : [[inline.plugin, options], [constantFolding.plugin, options]];
 
-  const transformed = transformer.transform({
+  const result = transformer.transform({
     filename,
     localPath,
     options: options.transform,
     plugins,
     src: sourceCode,
   });
+
+  // If we receive AST from the transformer, serialize it into code/map.
+  const transformed = result.ast
+    ? generate(
+        result.ast,
+        {
+          code: false,
+          comments: false,
+          compact: false,
+          filename: localPath,
+          retainLines: false,
+          sourceFileName: filename,
+          sourceMaps: true,
+        },
+        sourceCode,
+      )
+    : {code: result.code, map: result.map};
 
   // If the transformer returns standard sourcemaps, we need to transform them
   // to rawMappings so we can process them correctly.
