@@ -46,9 +46,7 @@ export type TransformArgs<ExtraOptions: {}> = {|
 |};
 
 export type TransformResults = {
-  ast: ?Ast,
-  code: string,
-  map: ?MappingsMap | RawMappings,
+  ast: Ast,
 };
 
 export type Transform<ExtraOptions: {}> = (
@@ -126,22 +124,20 @@ async function transformCode(
     src: sourceCode,
   });
 
-  // If we receive AST from the transformer, serialize it into code/map.
-  const transformed = result.ast
-    ? generate(
-        result.ast,
-        {
-          code: false,
-          comments: false,
-          compact: false,
-          filename: localPath,
-          retainLines: false,
-          sourceFileName: filename,
-          sourceMaps: true,
-        },
-        sourceCode,
-      )
-    : {code: result.code, map: result.map};
+  // Serialize the AST received from the transformer.
+  const transformed = generate(
+    result.ast,
+    {
+      code: false,
+      comments: false,
+      compact: false,
+      filename: localPath,
+      retainLines: false,
+      sourceFileName: filename,
+      sourceMaps: true,
+    },
+    sourceCode,
+  );
 
   // If the transformer returns standard sourcemaps, we need to transform them
   // to rawMappings so we can process them correctly.

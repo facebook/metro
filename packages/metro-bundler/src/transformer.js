@@ -17,7 +17,6 @@ const babel = require('babel-core');
 const crypto = require('crypto');
 const externalHelpersPlugin = require('babel-plugin-external-helpers');
 const fs = require('fs');
-const generate = require('babel-generator').default;
 const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
 const json5 = require('json5');
 const makeHMRConfig = require('babel-preset-react-native/configs/hmr');
@@ -132,36 +131,9 @@ function transform({filename, options, src, plugins}: Params) {
 
   try {
     const babelConfig = buildBabelConfig(filename, options, plugins);
-    const {ast, ignored} = babel.transform(src, babelConfig);
+    const {ast} = babel.transform(src, babelConfig);
 
-    if (ignored) {
-      return {
-        ast: null,
-        code: src,
-        filename,
-        map: null,
-      };
-    } else {
-      const result = generate(
-        ast,
-        {
-          comments: false,
-          compact: false,
-          filename,
-          retainLines: !!options.retainLines,
-          sourceFileName: filename,
-          sourceMaps: true,
-        },
-        src,
-      );
-
-      return {
-        ast,
-        code: result.code,
-        filename,
-        map: options.generateSourceMaps ? result.map : result.rawMappings,
-      };
-    }
+    return {ast};
   } finally {
     process.env.BABEL_ENV = OLD_BABEL_ENV;
   }

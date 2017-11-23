@@ -15,12 +15,14 @@ jest
   .mock('../constant-folding')
   .mock('../extract-dependencies')
   .mock('../inline')
-  .mock('../minify');
+  .mock('../minify')
+  .mock('babel-generator');
 
 const {objectContaining} = jasmine;
 
 describe('code transformation worker:', () => {
   let transformCode;
+  let babelGenerator;
 
   let extractDependencies, transformer;
   beforeEach(() => {
@@ -35,6 +37,13 @@ describe('code transformation worker:', () => {
         map: [],
       })),
     };
+
+    babelGenerator = require('babel-generator');
+
+    babelGenerator.default.mockReturnValue({
+      code: '',
+      map: [],
+    });
   });
 
   it('calls the transform with file name, source code, and transform options', function() {
@@ -90,6 +99,11 @@ describe('code transformation worker:', () => {
       map: [],
     };
 
+    babelGenerator.default.mockReturnValue({
+      code: 'some.other(code)',
+      map: [],
+    });
+
     const data = await transformCode(
       transformer,
       'filename',
@@ -104,6 +118,12 @@ describe('code transformation worker:', () => {
   it('removes the leading `module.exports` before returning if the file is a JSON file, even if minified', async () => {
     const code = '{a:1,b:2}';
     const filePath = 'arbitrary/file.json';
+
+    babelGenerator.default.mockReturnValue({
+      code: '{a:1,b:2}',
+      map: [],
+    });
+
     const data = await transformCode(transformer, filePath, filePath, code, {});
 
     expect(data.result.code).toEqual(code);
@@ -115,6 +135,11 @@ describe('code transformation worker:', () => {
       code: `${shebang} \n arbitrary(code)`,
     };
     const filePath = 'arbitrary/file.js';
+
+    babelGenerator.default.mockReturnValue({
+      code: `${shebang} \n arbitrary(code)`,
+      map: [],
+    });
 
     const data = await transformCode(
       transformer,
@@ -155,6 +180,11 @@ describe('code transformation worker:', () => {
     it('passes the transformed code the `extractDependencies`', async () => {
       const code = 'arbitrary(code)';
 
+      babelGenerator.default.mockReturnValue({
+        code: 'arbitrary(code)',
+        map: [],
+      });
+
       await transformCode(transformer, 'filename', 'local/filename', code, {});
 
       expect(extractDependencies).toBeCalledWith(code, 'filename');
@@ -181,6 +211,11 @@ describe('code transformation worker:', () => {
 
     it('does not extract requires of JSON files', async () => {
       const jsonStr = '{"arbitrary":"json"}';
+
+      babelGenerator.default.mockReturnValue({
+        code: '{"arbitrary":"json"}',
+        map: [],
+      });
 
       const data = await transformCode(
         transformer,
