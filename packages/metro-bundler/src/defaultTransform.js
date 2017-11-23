@@ -11,4 +11,10 @@
  */
 'use strict';
 
-module.exports.transform = (file: {src: string}) => ({code: file.src});
+const babylon = require('babylon');
+
+module.exports.transform = (file: {filename: string, src: string}) => {
+  const ast = babylon.parse(file.src, {sourceType: 'module'});
+
+  return {ast};
+};
