@@ -93,13 +93,13 @@ export type Data = {
   transformFileEndLogEntry: LogEntry,
 };
 
-function transformCode(
+async function transformCode(
   transformer: Transformer<*>,
   filename: string,
   localPath: LocalPath,
   sourceCode: string,
   options: Options,
-): Data {
+): Promise<Data> {
   const isJson = filename.endsWith('.json');
 
   if (isJson) {
@@ -118,7 +118,7 @@ function transformCode(
     ? []
     : [[inline.plugin, options], [constantFolding.plugin, options]];
 
-  const result = transformer.transform({
+  const result = await transformer.transform({
     filename,
     localPath,
     options: options.transform,
