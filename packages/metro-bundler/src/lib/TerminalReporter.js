@@ -17,7 +17,6 @@ const formatBanner = require('./formatBanner');
 const path = require('path');
 const reporting = require('./reporting');
 const throttle = require('lodash/throttle');
-const util = require('util');
 
 const {
   AmbiguousModuleResolutionError,
@@ -40,14 +39,7 @@ type BundleProgress = {
 
 const DARK_BLOCK_CHAR = '\u2593';
 const LIGHT_BLOCK_CHAR = '\u2591';
-
-function getProgressBar(ratio: number, length: number) {
-  const blockCount = Math.floor(ratio * length);
-  return (
-    DARK_BLOCK_CHAR.repeat(blockCount) +
-    LIGHT_BLOCK_CHAR.repeat(length - blockCount)
-  );
-}
+const MAX_PROGRESS_BAR_CHAR_WIDTH = 16;
 
 export type TerminalReportableEvent =
   | ReportableEvent
@@ -94,7 +86,7 @@ class TerminalReporter {
    * Construct a message that represents the progress of a
    * single bundle build, for example:
    *
-   *     Bunding `foo.js`  |####         | 34.2% (324/945)
+   *     Bunding `foo.js`  [ios, dev, minified]  |####         | 34.2% (324/945)
    */
   _getBundleStatusMessage(
     {
@@ -106,16 +98,33 @@ class TerminalReporter {
     phase: BuildPhase,
   ): string {
     const localPath = path.relative('.', bundleOptions.entryFile);
-    return util.format(
-      'Bundling `%s`  [%s, %s]  %s%s%% (%s/%s)%s',
-      localPath,
-      bundleOptions.dev ? 'development' : 'production',
-      bundleOptions.minify ? 'minified' : 'non-minified',
-      phase === 'in_progress' ? getProgressBar(ratio, 16) + '  ' : '',
-      (100 * ratio).toFixed(1),
-      transformedFileCount,
-      totalFileCount,
-      phase === 'done' ? ', done.' : phase === 'failed' ? ', failed.' : '',
+    const fileName = path.basename(localPath);
+    const dirName = path.dirname(localPath);
+
+    const platform = bundleOptions.platform
+      ? bundleOptions.platform + ', '
+      : '';
+    const devOrProd = bundleOptions.dev ? 'dev' : 'prod';
+    const min = bundleOptions.minify ? ', minified' : '';
+    const progress = (100 * ratio).toFixed(1);
+    const currentPhase =
+      phase === 'done' ? ', done.' : phase === 'failed' ? ', failed.' : '';
+
+    const filledBar = Math.floor(ratio * MAX_PROGRESS_BAR_CHAR_WIDTH);
+
+    return (
+      chalk.inverse.green.bold(' BUNDLE ') +
+      chalk.dim(`  [${platform}${devOrProd}${min}]  ${dirName}/`) +
+      chalk.bold(fileName) +
+      '  ' +
+      chalk.green.bgGreen(DARK_BLOCK_CHAR.repeat(filledBar)) +
+      chalk.bgWhite.white(
+        LIGHT_BLOCK_CHAR.repeat(MAX_PROGRESS_BAR_CHAR_WIDTH - filledBar),
+      ) +
+      chalk.bold(` ${progress}% `) +
+      chalk.dim(`(${transformedFileCount}/${totalFileCount})`) +
+      currentPhase +
+      '\n'
     );
   }
 
