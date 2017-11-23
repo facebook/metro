@@ -18,7 +18,7 @@ const NODE_MODULES = path.sep + 'node_modules' + path.sep;
 
 class DependencyGraphHelpers {
   _providesModuleNodeModules: Array<string>;
-  _assetExts: Array<string>;
+  _assetExts: Set<string>;
 
   constructor({
     providesModuleNodeModules,
@@ -28,7 +28,7 @@ class DependencyGraphHelpers {
     +assetExts: Array<string>,
   }) {
     this._providesModuleNodeModules = providesModuleNodeModules;
-    this._assetExts = assetExts;
+    this._assetExts = new Set(assetExts);
   }
 
   isNodeModulesDir(file: string) {
@@ -49,7 +49,7 @@ class DependencyGraphHelpers {
   }
 
   isAssetFile(file: string) {
-    return this._assetExts.indexOf(this.extname(file)) !== -1;
+    return this._assetExts.has(this.extname(file));
   }
 
   extname(name: string) {

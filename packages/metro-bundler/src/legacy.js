@@ -174,6 +174,7 @@ function createNonPersistentServer(options: Options): Server {
 
 function toServerOptions(options: Options): ServerOptions {
   return {
+    assetTransforms: options.assetTransforms,
     assetExts: options.assetExts,
     assetRegistryPath: options.assetRegistryPath,
     blacklistRE: options.blacklistRE,

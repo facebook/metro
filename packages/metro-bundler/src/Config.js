@@ -34,7 +34,8 @@ export type ConfigT = {
    * from here and use `require('./fonts/example.ttf')` inside your app.
    */
   getAssetExts: () => Array<string>,
-
+  // TODO: Remove this option below (T23793920)
+  assetTransforms?: boolean,
   /**
    * Returns a regular expression for modules that should be ignored by the
    * packager on a given platform.
@@ -140,6 +141,7 @@ export type ConfigT = {
 
 const DEFAULT = ({
   extraNodeModules: {},
+  assetTransforms: false,
   getAssetExts: () => [],
   getBlacklistRE: () => blacklist(),
   getEnableBabelRCLookup: () => false,

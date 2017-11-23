@@ -113,8 +113,11 @@ class Server {
     const reporter =
       options.reporter || require('../lib/reporting').nullReporter;
     const maxWorkers = getMaxWorkers(options.maxWorkers);
+    const assetExts = options.assetExts || defaults.assetExts;
+    const sourceExts = options.sourceExts || defaults.sourceExts;
+
     this._opts = {
-      assetExts: options.assetExts || defaults.assetExts,
+      assetExts: options.assetTransforms ? [] : assetExts,
       assetRegistryPath: options.assetRegistryPath,
       blacklistRE: options.blacklistRE,
       cacheVersion: options.cacheVersion || '1.0',
@@ -141,7 +144,9 @@ class Server {
       reporter,
       resetCache: options.resetCache || false,
       silent: options.silent || false,
-      sourceExts: options.sourceExts || defaults.sourceExts,
+      sourceExts: options.assetTransforms
+        ? sourceExts.concat(assetExts)
+        : sourceExts,
       transformCache: options.transformCache,
       transformModulePath:
         options.transformModulePath || defaults.transformModulePath,
