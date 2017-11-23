@@ -1,325 +1,337 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`basic_bundle bundles package with polyfills 1`] = `
-"(function(global) {
+"(function (global) {
+  global.__DEV__ = false;
+  global.__BUNDLE_START_TIME__ = global.nativePerformanceNow ? global.nativePerformanceNow() : Date.now();
+})(this);
+(function (global) {
+  'use strict';
 
-global.__DEV__ = false;
+  global.require = _require;
+  global.__d = define;
+  var modules = Object.create(null);
 
-global.__BUNDLE_START_TIME__ = global.nativePerformanceNow ? global.nativePerformanceNow() : Date.now();
-})(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this);
-(function(global) {
+  function define(factory, moduleId, dependencyMap) {
+    if (moduleId in modules) {
+      return;
+    }
 
-'use strict';
-
-global.require = _require;
-global.__d = define;
-
-var modules = Object.create(null);
-
-
-function define(factory, moduleId, dependencyMap) {
-  if (moduleId in modules) {
-    return;
+    modules[moduleId] = {
+      dependencyMap: dependencyMap,
+      exports: undefined,
+      factory: factory,
+      hasError: false,
+      isInitialized: false
+    };
   }
-  modules[moduleId] = {
-    dependencyMap: dependencyMap,
-    exports: undefined,
-    factory: factory,
-    hasError: false,
-    isInitialized: false
-  };
-}
 
-function _require(moduleId) {
-  var moduleIdReallyIsNumber = moduleId;
-  var module = modules[moduleIdReallyIsNumber];
-  return module && module.isInitialized ? module.exports : guardedLoadModule(moduleIdReallyIsNumber, module);
-}
+  function _require(moduleId) {
+    var moduleIdReallyIsNumber = moduleId;
+    var module = modules[moduleIdReallyIsNumber];
+    return module && module.isInitialized ? module.exports : guardedLoadModule(moduleIdReallyIsNumber, module);
+  }
 
-var inGuard = false;
-function guardedLoadModule(moduleId, module) {
-  if (!inGuard && global.ErrorUtils) {
-    inGuard = true;
-    var returnValue = void 0;
+  var inGuard = false;
+
+  function guardedLoadModule(moduleId, module) {
+    if (!inGuard && global.ErrorUtils) {
+      inGuard = true;
+      var returnValue = void 0;
+
+      try {
+        returnValue = loadModuleImplementation(moduleId, module);
+      } catch (e) {
+        global.ErrorUtils.reportFatalError(e);
+      }
+
+      inGuard = false;
+      return returnValue;
+    } else {
+      return loadModuleImplementation(moduleId, module);
+    }
+  }
+
+  var ID_MASK_SHIFT = 16;
+  var LOCAL_ID_MASK = ~0 >>> ID_MASK_SHIFT;
+
+  function unpackModuleId(moduleId) {
+    var segmentId = moduleId >>> ID_MASK_SHIFT;
+    var localId = moduleId & LOCAL_ID_MASK;
+    return {
+      segmentId: segmentId,
+      localId: localId
+    };
+  }
+
+  _require.unpackModuleId = unpackModuleId;
+
+  function loadModuleImplementation(moduleId, module) {
+    var nativeRequire = global.nativeRequire;
+
+    if (!module && nativeRequire) {
+      var _unpackModuleId = unpackModuleId(moduleId),
+          segmentId = _unpackModuleId.segmentId,
+          localId = _unpackModuleId.localId;
+
+      nativeRequire(localId, segmentId);
+      module = modules[moduleId];
+    }
+
+    if (!module) {
+      throw unknownModuleError(moduleId);
+    }
+
+    if (module.hasError) {
+      throw moduleThrewError(moduleId, module.error);
+    }
+
+    module.isInitialized = true;
+    var exports = module.exports = {};
+    var _module = module,
+        factory = _module.factory,
+        dependencyMap = _module.dependencyMap;
+
     try {
-      returnValue = loadModuleImplementation(moduleId, module);
+      var _moduleObject = {
+        exports: exports
+      };
+      factory(global, _require, _moduleObject, exports, dependencyMap);
+      {
+        module.factory = undefined;
+        module.dependencyMap = undefined;
+      }
+      return module.exports = _moduleObject.exports;
     } catch (e) {
-      global.ErrorUtils.reportFatalError(e);
+      module.hasError = true;
+      module.error = e;
+      module.isInitialized = false;
+      module.exports = undefined;
+      throw e;
     }
-    inGuard = false;
-    return returnValue;
-  } else {
-    return loadModuleImplementation(moduleId, module);
-  }
-}
-
-var ID_MASK_SHIFT = 16;
-var LOCAL_ID_MASK = ~0 >>> ID_MASK_SHIFT;
-
-function unpackModuleId(moduleId) {
-  var segmentId = moduleId >>> ID_MASK_SHIFT;
-  var localId = moduleId & LOCAL_ID_MASK;
-  return { segmentId: segmentId, localId: localId };
-}
-_require.unpackModuleId = unpackModuleId;
-
-function loadModuleImplementation(moduleId, module) {
-  var nativeRequire = global.nativeRequire;
-  if (!module && nativeRequire) {
-    var _unpackModuleId = unpackModuleId(moduleId),
-        segmentId = _unpackModuleId.segmentId,
-        localId = _unpackModuleId.localId;
-
-    nativeRequire(localId, segmentId);
-    module = modules[moduleId];
   }
 
-  if (!module) {
-    throw unknownModuleError(moduleId);
+  function unknownModuleError(id) {
+    var message = 'Requiring unknown module \\"' + id + '\\".';
+    return Error(message);
   }
 
-  if (module.hasError) {
-    throw moduleThrewError(moduleId, module.error);
+  function moduleThrewError(id, error) {
+    var displayName = id;
+    return Error('Requiring module \\"' + displayName + '\\", which threw an exception: ' + error);
   }
+})(this);
+(function (global) {
+  'use strict';
 
-  module.isInitialized = true;
-  var exports = module.exports = {};
-  var _module = module,
-      factory = _module.factory,
-      dependencyMap = _module.dependencyMap;
-
-  try {
-
-    var _moduleObject = { exports: exports };
-
-    factory(global, _require, _moduleObject, exports, dependencyMap);
-
-    {
-      module.factory = undefined;
-      module.dependencyMap = undefined;
-    }
-
-    return module.exports = _moduleObject.exports;
-  } catch (e) {
-    module.hasError = true;
-    module.error = e;
-    module.isInitialized = false;
-    module.exports = undefined;
-    throw e;
+  if (!Object.keys) {
+    Object.keys = function () {};
   }
-}
+})(this);
+(function (global) {
+  'use strict';
 
-function unknownModuleError(id) {
-  var message = 'Requiring unknown module \\"' + id + '\\".';
+  if (!String.prototype.repeat) {
+    String.prototype.repeat = function () {};
+  }
+})(this);
+__d(function (global, require, module, exports, _dependencyMap) {
+  'use strict';
 
-  return Error(message);
-}
+  var Bar = require(_dependencyMap[0]);
 
-function moduleThrewError(id, error) {
-  var displayName = id;
-  return Error('Requiring module \\"' + displayName + '\\", which threw an exception: ' + error);
-}
-})(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this);
-(function(global) {
+  var Foo = require(_dependencyMap[1]);
 
-'use strict';
+  module.exports = {
+    Foo: Foo,
+    Bar: Bar
+  };
+},4,[5,6]);
+__d(function (global, require, module, exports, _dependencyMap) {
+  'use strict';
 
-if (!Object.keys) {
-  Object.keys = function () {};
-}
-})(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this);
-(function(global) {
+  var Foo = require(_dependencyMap[0]);
 
-'use strict';
+  module.exports = {
+    type: 'bar',
+    foo: Foo.type
+  };
+},5,[6]);
+__d(function (global, require, module, exports, _dependencyMap) {
+  'use strict';
 
-if (!String.prototype.repeat) {
-  String.prototype.repeat = function () {};
-}
-})(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this);
-__d(/* /TestBundle.js */function(global, require, module, exports) {
+  var asset = require(_dependencyMap[0]);
 
-'use strict';
-
-var Bar = require(5); // 5 = ./Bar
-var Foo = require(6); // 6 = ./Foo
-
-module.exports = { Foo: Foo, Bar: Bar };
-}, 4);
-__d(/* /Bar.js */function(global, require, module, exports) {
-
-'use strict';
-
-var Foo = require(6); // 6 = ./Foo
-
-module.exports = { type: 'bar', foo: Foo.type };
-}, 5);
-__d(/* /Foo.js */function(global, require, module, exports) {
-
-'use strict';
-
-var asset = require(7); // 7 = ./test.png
-
-module.exports = { type: 'foo', asset: asset };
-}, 6);
+  module.exports = {
+    type: 'foo',
+    asset: asset
+  };
+},6,[7]);
 __d(/* /test.png */function(global, require, module, exports) {module.exports=require(8).registerAsset({\\"__packager_asset\\":true,\\"httpServerLocation\\":\\"/assets\\",\\"width\\":8,\\"height\\":8,\\"scales\\":[1],\\"hash\\":\\"77d45c1f7fa73c0f6c444a830dc42f67\\",\\"name\\":\\"test\\",\\"type\\":\\"png\\"}); // 8 = /AssetRegistry
 }, 7);
-__d(/* /AssetRegistry.js */function(global, require, module, exports) {
-
-'use strict';
-}, 8);
+__d(function (global, require, module, exports, _dependencyMap) {
+  'use strict';
+},8,[]);
 require(4);"
 `;
 
 exports[`basic_bundle bundles package without polyfills 1`] = `
-"(function(global) {
+"(function (global) {
+  global.__DEV__ = false;
+  global.__BUNDLE_START_TIME__ = global.nativePerformanceNow ? global.nativePerformanceNow() : Date.now();
+})(this);
+(function (global) {
+  'use strict';
 
-global.__DEV__ = false;
+  global.require = _require;
+  global.__d = define;
+  var modules = Object.create(null);
 
-global.__BUNDLE_START_TIME__ = global.nativePerformanceNow ? global.nativePerformanceNow() : Date.now();
-})(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this);
-(function(global) {
+  function define(factory, moduleId, dependencyMap) {
+    if (moduleId in modules) {
+      return;
+    }
 
-'use strict';
-
-global.require = _require;
-global.__d = define;
-
-var modules = Object.create(null);
-
-
-function define(factory, moduleId, dependencyMap) {
-  if (moduleId in modules) {
-    return;
+    modules[moduleId] = {
+      dependencyMap: dependencyMap,
+      exports: undefined,
+      factory: factory,
+      hasError: false,
+      isInitialized: false
+    };
   }
-  modules[moduleId] = {
-    dependencyMap: dependencyMap,
-    exports: undefined,
-    factory: factory,
-    hasError: false,
-    isInitialized: false
-  };
-}
 
-function _require(moduleId) {
-  var moduleIdReallyIsNumber = moduleId;
-  var module = modules[moduleIdReallyIsNumber];
-  return module && module.isInitialized ? module.exports : guardedLoadModule(moduleIdReallyIsNumber, module);
-}
+  function _require(moduleId) {
+    var moduleIdReallyIsNumber = moduleId;
+    var module = modules[moduleIdReallyIsNumber];
+    return module && module.isInitialized ? module.exports : guardedLoadModule(moduleIdReallyIsNumber, module);
+  }
 
-var inGuard = false;
-function guardedLoadModule(moduleId, module) {
-  if (!inGuard && global.ErrorUtils) {
-    inGuard = true;
-    var returnValue = void 0;
+  var inGuard = false;
+
+  function guardedLoadModule(moduleId, module) {
+    if (!inGuard && global.ErrorUtils) {
+      inGuard = true;
+      var returnValue = void 0;
+
+      try {
+        returnValue = loadModuleImplementation(moduleId, module);
+      } catch (e) {
+        global.ErrorUtils.reportFatalError(e);
+      }
+
+      inGuard = false;
+      return returnValue;
+    } else {
+      return loadModuleImplementation(moduleId, module);
+    }
+  }
+
+  var ID_MASK_SHIFT = 16;
+  var LOCAL_ID_MASK = ~0 >>> ID_MASK_SHIFT;
+
+  function unpackModuleId(moduleId) {
+    var segmentId = moduleId >>> ID_MASK_SHIFT;
+    var localId = moduleId & LOCAL_ID_MASK;
+    return {
+      segmentId: segmentId,
+      localId: localId
+    };
+  }
+
+  _require.unpackModuleId = unpackModuleId;
+
+  function loadModuleImplementation(moduleId, module) {
+    var nativeRequire = global.nativeRequire;
+
+    if (!module && nativeRequire) {
+      var _unpackModuleId = unpackModuleId(moduleId),
+          segmentId = _unpackModuleId.segmentId,
+          localId = _unpackModuleId.localId;
+
+      nativeRequire(localId, segmentId);
+      module = modules[moduleId];
+    }
+
+    if (!module) {
+      throw unknownModuleError(moduleId);
+    }
+
+    if (module.hasError) {
+      throw moduleThrewError(moduleId, module.error);
+    }
+
+    module.isInitialized = true;
+    var exports = module.exports = {};
+    var _module = module,
+        factory = _module.factory,
+        dependencyMap = _module.dependencyMap;
+
     try {
-      returnValue = loadModuleImplementation(moduleId, module);
+      var _moduleObject = {
+        exports: exports
+      };
+      factory(global, _require, _moduleObject, exports, dependencyMap);
+      {
+        module.factory = undefined;
+        module.dependencyMap = undefined;
+      }
+      return module.exports = _moduleObject.exports;
     } catch (e) {
-      global.ErrorUtils.reportFatalError(e);
+      module.hasError = true;
+      module.error = e;
+      module.isInitialized = false;
+      module.exports = undefined;
+      throw e;
     }
-    inGuard = false;
-    return returnValue;
-  } else {
-    return loadModuleImplementation(moduleId, module);
-  }
-}
-
-var ID_MASK_SHIFT = 16;
-var LOCAL_ID_MASK = ~0 >>> ID_MASK_SHIFT;
-
-function unpackModuleId(moduleId) {
-  var segmentId = moduleId >>> ID_MASK_SHIFT;
-  var localId = moduleId & LOCAL_ID_MASK;
-  return { segmentId: segmentId, localId: localId };
-}
-_require.unpackModuleId = unpackModuleId;
-
-function loadModuleImplementation(moduleId, module) {
-  var nativeRequire = global.nativeRequire;
-  if (!module && nativeRequire) {
-    var _unpackModuleId = unpackModuleId(moduleId),
-        segmentId = _unpackModuleId.segmentId,
-        localId = _unpackModuleId.localId;
-
-    nativeRequire(localId, segmentId);
-    module = modules[moduleId];
   }
 
-  if (!module) {
-    throw unknownModuleError(moduleId);
+  function unknownModuleError(id) {
+    var message = 'Requiring unknown module \\"' + id + '\\".';
+    return Error(message);
   }
 
-  if (module.hasError) {
-    throw moduleThrewError(moduleId, module.error);
+  function moduleThrewError(id, error) {
+    var displayName = id;
+    return Error('Requiring module \\"' + displayName + '\\", which threw an exception: ' + error);
   }
+})(this);
+__d(function (global, require, module, exports, _dependencyMap) {
+  'use strict';
 
-  module.isInitialized = true;
-  var exports = module.exports = {};
-  var _module = module,
-      factory = _module.factory,
-      dependencyMap = _module.dependencyMap;
+  var Bar = require(_dependencyMap[0]);
 
-  try {
+  var Foo = require(_dependencyMap[1]);
 
-    var _moduleObject = { exports: exports };
+  module.exports = {
+    Foo: Foo,
+    Bar: Bar
+  };
+},2,[3,4]);
+__d(function (global, require, module, exports, _dependencyMap) {
+  'use strict';
 
-    factory(global, _require, _moduleObject, exports, dependencyMap);
+  var Foo = require(_dependencyMap[0]);
 
-    {
-      module.factory = undefined;
-      module.dependencyMap = undefined;
-    }
+  module.exports = {
+    type: 'bar',
+    foo: Foo.type
+  };
+},3,[4]);
+__d(function (global, require, module, exports, _dependencyMap) {
+  'use strict';
 
-    return module.exports = _moduleObject.exports;
-  } catch (e) {
-    module.hasError = true;
-    module.error = e;
-    module.isInitialized = false;
-    module.exports = undefined;
-    throw e;
-  }
-}
+  var asset = require(_dependencyMap[0]);
 
-function unknownModuleError(id) {
-  var message = 'Requiring unknown module \\"' + id + '\\".';
-
-  return Error(message);
-}
-
-function moduleThrewError(id, error) {
-  var displayName = id;
-  return Error('Requiring module \\"' + displayName + '\\", which threw an exception: ' + error);
-}
-})(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this);
-__d(/* /TestBundle.js */function(global, require, module, exports) {
-
-'use strict';
-
-var Bar = require(3); // 3 = ./Bar
-var Foo = require(4); // 4 = ./Foo
-
-module.exports = { Foo: Foo, Bar: Bar };
-}, 2);
-__d(/* /Bar.js */function(global, require, module, exports) {
-
-'use strict';
-
-var Foo = require(4); // 4 = ./Foo
-
-module.exports = { type: 'bar', foo: Foo.type };
-}, 3);
-__d(/* /Foo.js */function(global, require, module, exports) {
-
-'use strict';
-
-var asset = require(5); // 5 = ./test.png
-
-module.exports = { type: 'foo', asset: asset };
-}, 4);
+  module.exports = {
+    type: 'foo',
+    asset: asset
+  };
+},4,[5]);
 __d(/* /test.png */function(global, require, module, exports) {module.exports=require(6).registerAsset({\\"__packager_asset\\":true,\\"httpServerLocation\\":\\"/assets\\",\\"width\\":8,\\"height\\":8,\\"scales\\":[1],\\"hash\\":\\"77d45c1f7fa73c0f6c444a830dc42f67\\",\\"name\\":\\"test\\",\\"type\\":\\"png\\"}); // 6 = /AssetRegistry
 }, 5);
-__d(/* /AssetRegistry.js */function(global, require, module, exports) {
-
-'use strict';
-}, 6);
+__d(function (global, require, module, exports, _dependencyMap) {
+  'use strict';
+},6,[]);
 require(2);"
 `;

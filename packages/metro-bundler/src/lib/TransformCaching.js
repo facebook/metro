@@ -33,8 +33,7 @@ const CACHE_SUB_DIR = 'cache';
 
 export type CachedResult = {
   code: string,
-  dependencies: Array<string>,
-  dependencyOffsets: Array<number>,
+  dependencies: $ReadOnlyArray<string>,
   map: CompactRawMappings,
 };
 
@@ -143,7 +142,6 @@ class FileBasedCache {
           .digest('hex'),
         hashSourceCode(props),
         result.dependencies,
-        result.dependencyOffsets,
         result.map,
       ]),
     );
@@ -214,7 +212,6 @@ class FileBasedCache {
       result: {
         code: transformedCode,
         dependencies: metadata.dependencies,
-        dependencyOffsets: metadata.dependencyOffsets,
         map: metadata.sourceMap,
       },
       outdatedDependencies: EMPTY_ARRAY,
@@ -335,7 +332,6 @@ function readMetadataFileSync(
   cachedResultHash: string,
   cachedSourceHash: string,
   dependencies: Array<string>,
-  dependencyOffsets: Array<number>,
   sourceMap: CompactRawMappings,
 } {
   const metadataStr = fs.readFileSync(metadataFilePath, 'utf8');
@@ -347,7 +343,6 @@ function readMetadataFileSync(
     cachedResultHash,
     cachedSourceHash,
     dependencies,
-    dependencyOffsets,
     sourceMap,
   ] = metadata;
   if (
@@ -357,10 +352,6 @@ function readMetadataFileSync(
       Array.isArray(dependencies) &&
       dependencies.every(dep => typeof dep === 'string')
     ) ||
-    !(
-      Array.isArray(dependencyOffsets) &&
-      dependencyOffsets.every(offset => typeof offset === 'number')
-    ) ||
     !(sourceMap == null || typeof sourceMap === 'object')
   ) {
     return null;
@@ -369,7 +360,6 @@ function readMetadataFileSync(
     cachedResultHash,
     cachedSourceHash,
     dependencies,
-    dependencyOffsets,
     sourceMap,
   };
 }

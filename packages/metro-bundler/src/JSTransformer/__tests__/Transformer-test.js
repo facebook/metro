@@ -59,6 +59,7 @@ describe('Transformer', function() {
       fileName,
       localPath,
       code,
+      false,
       transformOptions,
     );
 
@@ -67,6 +68,7 @@ describe('Transformer', function() {
       fileName,
       localPath,
       code,
+      false,
       transformOptions,
     );
   });
@@ -92,7 +94,7 @@ describe('Transformer', function() {
     expect.assertions(6);
 
     return transformer
-      .transformFile(fileName, localPath, '', {})
+      .transformFile(fileName, localPath, '', true, {})
       .catch(function(error) {
         expect(error.type).toEqual('TransformError');
         expect(error.message).toBe(

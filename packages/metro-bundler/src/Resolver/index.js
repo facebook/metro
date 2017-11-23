@@ -120,7 +120,6 @@ class Resolver {
   }
 
   resolveRequires(
-    module: Module,
     getModuleId: (path: string) => number,
     code: string,
     dependencyPairs: Map<string, string>,
@@ -154,44 +153,30 @@ class Resolver {
   }
 
   wrapModule({
-    module,
+    path,
     getModuleId,
     dependencyPairs,
     dependencyOffsets,
     name,
-    map,
     code,
     dev = true,
   }: {
-    module: Module,
+    path: string,
     getModuleId: (path: string) => number,
     dependencyPairs: Map<string, string>,
     dependencyOffsets: Array<number>,
     name: string,
-    map: CompactRawMappings,
     code: string,
     dev?: boolean,
-  }): {code: string, map: CompactRawMappings} {
-    if (module.isJSON()) {
-      code = `module.exports = ${code}`;
-    }
+  }): string {
+    code = this.resolveRequires(
+      getModuleId,
+      code,
+      dependencyPairs,
+      dependencyOffsets,
+    );
 
-    if (module.isPolyfill()) {
-      code = definePolyfillCode(code);
-    } else {
-      const moduleId = getModuleId(module.path);
-
-      code = this.resolveRequires(
-        module,
-        getModuleId,
-        code,
-        dependencyPairs,
-        dependencyOffsets,
-      );
-      code = defineModuleCode(moduleId, code, name, dev);
-    }
-
-    return {code, map};
+    return defineModuleCode(getModuleId(path), code, name, dev);
   }
 
   async minifyModule(

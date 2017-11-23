@@ -87,6 +87,7 @@ module.exports = class Transformer {
     filename: string,
     localPath: LocalPath,
     code: string,
+    isScript: boolean,
     options: Options,
   ): Promise<TransformedCode> {
     try {
@@ -97,6 +98,7 @@ module.exports = class Transformer {
         filename,
         localPath,
         code,
+        isScript,
         options,
       );
 

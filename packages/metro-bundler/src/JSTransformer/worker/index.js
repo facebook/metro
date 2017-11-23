@@ -12,28 +12,25 @@
 
 'use strict';
 
+const JsFileWrapping = require('../../ModuleGraph/worker/JsFileWrapping');
+
+const collectDependencies = require('../../ModuleGraph/worker/collect-dependencies');
 const constantFolding = require('./constant-folding');
-const extractDependencies = require('./extract-dependencies');
 const generate = require('babel-generator').default;
 const inline = require('./inline');
 const minify = require('./minify');
 
-const {compactMapping, toRawMappings} = require('../../Bundler/source-map');
+const {compactMapping} = require('../../Bundler/source-map');
 
 import type {LogEntry} from '../../Logger/Types';
-import type {
-  CompactRawMappings,
-  MappingsMap,
-  RawMappings,
-} from '../../lib/SourceMap';
+import type {CompactRawMappings, MappingsMap} from '../../lib/SourceMap';
 import type {LocalPath} from '../../node-haste/lib/toLocalPath';
 import type {ResultWithMap} from './minify';
 import type {Ast, Plugins as BabelPlugins} from 'babel-core';
 
 export type TransformedCode = {
   code: string,
-  dependencies: Array<string>,
-  dependencyOffsets: Array<number>,
+  dependencies: $ReadOnlyArray<string>,
   map: CompactRawMappings,
 };
 
@@ -96,6 +93,7 @@ async function transformCode(
   filename: string,
   localPath: LocalPath,
   sourceCode: string,
+  isScript: boolean,
   options: Options,
 ): Promise<Data> {
   const isJson = filename.endsWith('.json');
@@ -116,7 +114,7 @@ async function transformCode(
     ? []
     : [[inline.plugin, options], [constantFolding.plugin, options]];
 
-  const result = await transformer.transform({
+  const {ast} = await transformer.transform({
     filename,
     localPath,
     options: options.transform,
@@ -124,9 +122,45 @@ async function transformCode(
     src: sourceCode,
   });
 
-  // Serialize the AST received from the transformer.
-  const transformed = generate(
-    result.ast,
+  const timeDelta = process.hrtime(transformFileStartLogEntry.start_timestamp);
+  const duration_ms = Math.round((timeDelta[0] * 1e9 + timeDelta[1]) / 1e6);
+  const transformFileEndLogEntry = {
+    action_name: 'Transforming file',
+    action_phase: 'end',
+    file_name: filename,
+    duration_ms,
+    log_entry_label: 'Transforming file',
+  };
+
+  let dependencies, wrappedAst;
+
+  // If the module to transform is a script (meaning that is not part of the
+  // dependency graph and it code will just be prepended to the bundle modules),
+  // we need to wrap it differently than a commonJS module (also, scripts do
+  // not have dependencies).
+  if (isScript) {
+    dependencies = [];
+    wrappedAst = JsFileWrapping.wrapPolyfill(ast);
+  } else {
+    let dependencyData = collectDependencies(ast);
+
+    if (!options.dev) {
+      dependencyData = collectDependencies.forOptimization(
+        ast,
+        dependencyData.dependencies,
+        dependencyData.dependencyMapName,
+      );
+    }
+
+    dependencies = dependencyData.dependencies.map(dep => dep.name);
+    wrappedAst = JsFileWrapping.wrapModule(
+      ast,
+      dependencyData.dependencyMapName,
+    );
+  }
+
+  const result = generate(
+    wrappedAst,
     {
       code: false,
       comments: false,
@@ -139,40 +173,10 @@ async function transformCode(
     sourceCode,
   );
 
-  // If the transformer returns standard sourcemaps, we need to transform them
-  // to rawMappings so we can process them correctly.
-  const rawMappings =
-    transformed.map && !Array.isArray(transformed.map)
-      ? toRawMappings(transformed.map)
-      : transformed.map;
-
-  // Convert the sourcemaps to Compact Raw source maps.
-  const map = rawMappings ? rawMappings.map(compactMapping) : [];
-
-  let code = transformed.code;
-  if (isJson) {
-    code = code.replace(/^\w+\.exports=/, '');
-  } else {
-    // Remove shebang
-    code = code.replace(/^#!.*/, '');
-  }
-
-  const depsResult = isJson
-    ? {dependencies: [], dependencyOffsets: []}
-    : extractDependencies(code, filename);
-
-  const timeDelta = process.hrtime(transformFileStartLogEntry.start_timestamp);
-  const duration_ms = Math.round((timeDelta[0] * 1e9 + timeDelta[1]) / 1e6);
-  const transformFileEndLogEntry = {
-    action_name: 'Transforming file',
-    action_phase: 'end',
-    file_name: filename,
-    duration_ms,
-    log_entry_label: 'Transforming file',
-  };
+  const map = result.rawMappings ? result.rawMappings.map(compactMapping) : [];
 
   return {
-    result: {...depsResult, code, map},
+    result: {dependencies, code: result.code, map},
     transformFileStartLogEntry,
     transformFileEndLogEntry,
   };
@@ -201,6 +205,7 @@ exports.transformAndExtractDependencies = async function(
   filename: string,
   localPath: LocalPath,
   sourceCode: string,
+  isScript: boolean,
   options: Options,
 ): Promise<Data> {
   // $FlowFixMe: impossible to type a dynamic require.
@@ -211,6 +216,7 @@ exports.transformAndExtractDependencies = async function(
     filename,
     localPath,
     sourceCode,
+    isScript,
     options,
   );
 };

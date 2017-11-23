@@ -161,8 +161,8 @@ describe('Resolver', function() {
         dependencyPairs.set(relativePath, dependencyModule.path);
       }
 
-      const {code: processedCode} = depResolver.wrapModule({
-        module: module,
+      const processedCode = depResolver.wrapModule({
+        path: module.path,
         getModuleId: resolutionResponse.getModuleId,
         dependencyPairs,
         name: 'test module',
@@ -201,11 +201,11 @@ describe('Resolver', function() {
         mainModuleId: 'test module',
       });
 
-      const {code: processedCode} = depResolver.wrapModule({
+      const processedCode = depResolver.wrapModule({
         getModuleId: resolutionResponse.getModuleId,
         dependencyPairs: resolutionResponse.getResolvedDependencyPairs(module),
         code,
-        module,
+        path: module.path,
         name: 'test module',
         dev: true,
       });
@@ -218,90 +218,6 @@ describe('Resolver', function() {
           )}, null, "test module");`,
         ].join('\n'),
       );
-    });
-
-    it('should pass through passed-in source maps', () => {
-      expect.assertions(1);
-      const module = createModule('test module');
-      const resolutionResponse = new ResolutionResponseMock({
-        dependencies: [module],
-        mainModuleId: 'test module',
-      });
-      const inputMap = {version: 3, mappings: 'ARBITRARY'};
-
-      const {map} = depResolver.wrapModule({
-        getModuleId: resolutionResponse.getModuleId,
-        dependencyPairs: resolutionResponse.getResolvedDependencyPairs(module),
-        module,
-        name: 'test module',
-        code: 'arbitrary(code)',
-        map: inputMap,
-      });
-      expect(map).toBe(inputMap);
-    });
-
-    it('should resolve polyfills', async function() {
-      expect.assertions(1);
-      return Resolver.load({
-        projectRoot: '/root',
-      }).then(depResolver => {
-        const polyfill = createPolyfill('test polyfill', []);
-        const code = ['global.fetch = () => 1;'].join('');
-
-        const {code: processedCode} = depResolver.wrapModule({
-          module: polyfill,
-          code,
-        });
-
-        expect(processedCode).toEqual(
-          [
-            '(function(global) {',
-            'global.fetch = () => 1;',
-            '\n})' +
-              "(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this);",
-          ].join(''),
-        );
-      });
-    });
-
-    describe('JSON files:', () => {
-      const code = JSON.stringify({arbitrary: 'data'});
-      const id = 'arbitrary.json';
-      let depResolver, module, resolutionResponse;
-
-      beforeEach(() => {
-        return Resolver.load({projectRoot: '/root'}).then(r => {
-          depResolver = r;
-          module = createJsonModule(id);
-          resolutionResponse = new ResolutionResponseMock({
-            dependencies: [module],
-            mainModuleId: id,
-          });
-        });
-      });
-
-      it('should prefix JSON files with `module.exports=`', () => {
-        expect.assertions(1);
-        const {code: processedCode} = depResolver.wrapModule({
-          getModuleId: resolutionResponse.getModuleId,
-          dependencyPairs: resolutionResponse.getResolvedDependencyPairs(
-            module,
-          ),
-          module,
-          name: id,
-          code,
-          dev: false,
-        });
-
-        expect(processedCode).toEqual(
-          [
-            `__d(/* ${id} */function(global, require, module, exports) {`,
-            `module.exports = ${code}\n}, ${resolutionResponse.getModuleId(
-              module.path,
-            )});`,
-          ].join(''),
-        );
-      });
     });
 
     describe('minification:', () => {

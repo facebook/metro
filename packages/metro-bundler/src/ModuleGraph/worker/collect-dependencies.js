@@ -133,7 +133,14 @@ function createMapLookup(dependencyMapIdentifier, propertyIdentifier) {
   );
 }
 
-function collectDependencies(ast, replacement, dependencyMapIdentifier) {
+function collectDependencies(
+  ast,
+  replacement,
+  dependencyMapIdentifier,
+): {
+  dependencies: $ReadOnlyArray<TransformResultDependency>,
+  dependencyMapName: string,
+} {
   const visited = new WeakSet();
   const traversalState = {dependencyMapIdentifier};
   traverse(

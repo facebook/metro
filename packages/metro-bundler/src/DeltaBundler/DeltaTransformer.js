@@ -14,6 +14,7 @@
 
 const DeltaCalculator = require('./DeltaCalculator');
 
+const addParamsToDefineCall = require('../lib/addParamsToDefineCall');
 const createModuleIdFactory = require('../lib/createModuleIdFactory');
 
 const {EventEmitter} = require('events');
@@ -425,27 +426,37 @@ class DeltaTransformer extends EventEmitter {
   ): Promise<[number, ?DeltaEntry]> {
     const name = module.getName();
     const metadata = await this._getMetadata(module, transformOptions);
+
     const edge = dependencyEdges.get(module.path);
     const dependencyPairs = edge ? edge.dependencies : new Map();
 
-    const wrapped = this._resolver.wrapModule({
-      module,
-      getModuleId: this._getModuleId,
-      dependencyPairs,
-      dependencyOffsets: metadata.dependencyOffsets || [],
-      name,
-      code: metadata.code,
-      map: metadata.map,
-      dev: this._bundleOptions.dev,
-    });
+    let wrappedCode;
+
+    if (module.isAsset()) {
+      wrappedCode = await this._wrapAsset({
+        code: metadata.code,
+        dependencyPairs,
+        name,
+        path: module.path,
+      });
+    } else if (!module.isPolyfill()) {
+      wrappedCode = this._addDependencyMap({
+        code: metadata.code,
+        dependencyPairs,
+        name,
+        path: module.path,
+      });
+    } else {
+      wrappedCode = metadata.code;
+    }
 
     const {code, map} = transformOptions.minify
       ? await this._resolver.minifyModule(
           module.path,
-          wrapped.code,
-          wrapped.map,
+          wrappedCode,
+          metadata.map,
         )
-      : wrapped;
+      : {code: wrappedCode, map: metadata.map};
 
     const id = this._getModuleId(module.path);
 
@@ -461,6 +472,70 @@ class DeltaTransformer extends EventEmitter {
         type: this._getModuleType(module),
       },
     ];
+  }
+
+  /**
+   * Function to add the mapping object between local module ids and
+   * actual bundle module ids for dependencies. This way, we can do the path
+   * replacements on require() calls on transformers (since local ids do not
+   * change between bundles).
+   */
+  _addDependencyMap({
+    code,
+    dependencyPairs,
+    name,
+    path,
+  }: {
+    code: string,
+    dependencyPairs: Map<string, string>,
+    name: string,
+    path: string,
+  }): string {
+    const moduleId = this._getModuleId(path);
+    const params = [
+      moduleId,
+      Array.from(dependencyPairs.values()).map(this._getModuleId),
+    ];
+
+    // Add the module name as the last parameter (to make it easier to do
+    // requires by name when debugging).
+    if (this._bundleOptions.dev) {
+      params.push(name);
+    }
+
+    return addParamsToDefineCall(code, ...params);
+  }
+
+  /**
+   * Temporary function to wrap an asset. This logic will go away once we
+   * generate the needed JS code for assets in the transformer.
+   */
+  async _wrapAsset({
+    code,
+    dependencyPairs,
+    name,
+    path,
+  }: {
+    code: string,
+    dependencyPairs: Map<string, string>,
+    name: string,
+    path: string,
+  }): Promise<string> {
+    const asset = await this._bundler.generateAssetObjAndCode(
+      path,
+      this._bundleOptions.assetPlugins,
+      this._bundleOptions.platform,
+    );
+
+    return await this._resolver.wrapModule({
+      path,
+      getModuleId: this._getModuleId,
+      dependencyPairs,
+      dependencyOffsets: asset.meta.dependencyOffsets,
+      name,
+      code: asset.code,
+      dev: this._bundleOptions.dev,
+    });
   }
 
   _getModuleType(module: Module): DeltaEntryType {
@@ -480,25 +555,10 @@ class DeltaTransformer extends EventEmitter {
     transformOptions: JSTransformerOptions,
   ): Promise<{
     +code: string,
-    +dependencyOffsets: ?Array<number>,
+    +dependencies: Array<string>,
     +map: CompactRawMappings,
     +source: string,
   }> {
-    if (module.isAsset()) {
-      const asset = await this._bundler.generateAssetObjAndCode(
-        module,
-        this._bundleOptions.assetPlugins,
-        this._bundleOptions.platform,
-      );
-
-      return {
-        code: asset.code,
-        dependencyOffsets: asset.meta.dependencyOffsets,
-        map: [],
-        source: '',
-      };
-    }
-
     return await module.read(transformOptions);
   }
 

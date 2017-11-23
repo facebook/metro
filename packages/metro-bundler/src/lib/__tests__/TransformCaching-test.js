@@ -71,7 +71,6 @@ describe('TransformCaching.FileBasedCache', () => {
         result: {
           code: `/* result for ${key} */`,
           dependencies: ['foo', `dep of ${key}`],
-          dependencyOffsets: [12, 34],
           map: {desc: `source map for ${key}`},
         },
       };
@@ -104,7 +103,6 @@ describe('TransformCaching.FileBasedCache', () => {
         result: {
           code: `/* result for ${key} */`,
           dependencies: ['foo', 'bar'],
-          dependencyOffsets: [12, 34],
           map: {desc: `source map for ${key}`},
         },
       };

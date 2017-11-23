@@ -39,8 +39,7 @@ import type {LocalPath} from './lib/toLocalPath';
 
 export type ReadResult = {
   +code: string,
-  +dependencies: Array<string>,
-  +dependencyOffsets?: ?Array<number>,
+  +dependencies: $ReadOnlyArray<string>,
   +map: CompactRawMappings,
   +source: string,
 };

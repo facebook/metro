@@ -212,9 +212,7 @@ function validateCachedResult(cachedResult: mixed): ?CachedResult {
     typeof cachedResult === 'object' &&
     typeof cachedResult.code === 'string' &&
     Array.isArray(cachedResult.dependencies) &&
-    cachedResult.dependencies.every(dep => typeof dep === 'string') &&
-    Array.isArray(cachedResult.dependencyOffsets) &&
-    cachedResult.dependencyOffsets.every(offset => typeof offset === 'number')
+    cachedResult.dependencies.every(dep => typeof dep === 'string')
   ) {
     return (cachedResult: any);
   }

@@ -213,6 +213,7 @@ class Bundler {
           module.path,
           module.localPath,
           code,
+          module.isPolyfill(),
           transformCodeOptions,
         ),
       transformCache: opts.transformCache,
@@ -240,14 +241,11 @@ class Bundler {
   }
 
   async generateAssetObjAndCode(
-    module: Module,
+    path: string,
     assetPlugins: Array<string>,
     platform: ?string = null,
   ) {
-    const assetData = await this._assetServer.getAssetData(
-      module.path,
-      platform,
-    );
+    const assetData = await this._assetServer.getAssetData(path, platform);
     const asset = await this._applyAssetPlugins(assetPlugins, assetData);
 
     const {
