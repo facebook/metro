@@ -230,40 +230,51 @@ class DeltaTransformer extends EventEmitter {
     const transformerOptions = await this._deltaCalculator.getTransformerOptions();
     const dependencyEdges = this._deltaCalculator.getDependencyEdges();
 
-    // Return the source code that gets prepended to all the modules. This
-    // contains polyfills and startup code (like the require() implementation).
-    const prependSources = reset
-      ? await this._getPrepend(transformerOptions, dependencyEdges)
-      : new Map();
+    try {
+      // Return the source code that gets prepended to all the modules. This
+      // contains polyfills and startup code (like the require() implementation).
+      const prependSources = reset
+        ? await this._getPrepend(transformerOptions, dependencyEdges)
+        : new Map();
 
-    // Precalculate all module ids sequentially. We do this to be sure that the
-    // mapping between module -> moduleId is deterministic between runs.
-    const modules = Array.from(modified.values());
-    modules.forEach(module => this._getModuleId(module.path));
+      // Precalculate all module ids sequentially. We do this to be sure that the
+      // mapping between module -> moduleId is deterministic between runs.
+      const modules = Array.from(modified.values());
+      modules.forEach(module => this._getModuleId(module.path));
 
-    // Get the transformed source code of each modified/added module.
-    const modifiedDelta = await this._transformModules(
-      modules,
-      transformerOptions,
-      dependencyEdges,
-    );
+      // Get the transformed source code of each modified/added module.
+      const modifiedDelta = await this._transformModules(
+        modules,
+        transformerOptions,
+        dependencyEdges,
+      );
 
-    deleted.forEach(id => {
-      modifiedDelta.set(this._getModuleId(id), null);
-    });
+      deleted.forEach(id => {
+        modifiedDelta.set(this._getModuleId(id), null);
+      });
 
-    // Return the source code that gets appended to all the modules. This
-    // contains the require() calls to startup the execution of the modules.
-    const appendSources = reset
-      ? await this._getAppend(dependencyEdges)
-      : new Map();
+      // Return the source code that gets appended to all the modules. This
+      // contains the require() calls to startup the execution of the modules.
+      const appendSources = reset
+        ? await this._getAppend(dependencyEdges)
+        : new Map();
 
-    return {
-      pre: prependSources,
-      post: appendSources,
-      delta: modifiedDelta,
-      reset,
-    };
+      return {
+        pre: prependSources,
+        post: appendSources,
+        delta: modifiedDelta,
+        reset,
+      };
+    } catch (e) {
+      // If any unexpected error happens while creating the bundle, the client
+      // is going to lose that specific delta, while the DeltaCalulator has
+      // already processed the changes. This will make that change to be lost,
+      // which can cause the final bundle to be invalid. In order to avoid that,
+      // we just reset the delta calculator when this happens.
+      this._deltaCalculator.reset();
+
+      throw e;
+    }
   }
 
   _getDependencies = (path: string): Set<string> => {

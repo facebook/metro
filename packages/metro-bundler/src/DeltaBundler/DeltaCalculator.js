@@ -74,6 +74,10 @@ class DeltaCalculator extends EventEmitter {
       .getWatcher()
       .removeListener('change', this._handleMultipleFileChanges);
 
+    this.reset();
+  }
+
+  reset() {
     // Clean up all the cache data structures to deallocate memory.
     this._modifiedFiles = new Set();
     this._deletedFiles = new Set();
