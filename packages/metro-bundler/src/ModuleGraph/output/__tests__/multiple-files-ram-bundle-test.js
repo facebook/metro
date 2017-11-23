@@ -35,7 +35,7 @@ const idsForPath = ({path}) => {
 
 beforeAll(() => {
   modules = [
-    makeModule('a', [], 'script'),
+    makeModule('a', []),
     makeModule('b'),
     makeModule('c', ['f']),
     makeModule('d', ['e']),

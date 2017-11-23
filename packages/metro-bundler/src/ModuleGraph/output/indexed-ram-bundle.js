@@ -13,6 +13,7 @@
 'use strict';
 
 const buildSourceMapWithMetaData = require('../../shared/output/unbundle/build-unbundle-sourcemap-with-metadata.js');
+const invariant = require('invariant');
 
 const {createRamBundleGroups} = require('../../Bundler/util');
 const {
@@ -36,6 +37,12 @@ function asIndexedRamBundle({
   const [startup, deferred] = partition(modules, preloadedModules);
   const startupModules = Array.from(concat(startup, requireCalls));
   const deferredModules = deferred.map(m => toModuleTransport(m, idsForPath));
+  for (const m of deferredModules) {
+    invariant(
+      m.id >= 0,
+      'A script (non-module) cannot be part of the deferred modules of a RAM bundle',
+    );
+  }
   const ramGroups = createRamBundleGroups(
     ramGroupHeads || [],
     deferredModules,

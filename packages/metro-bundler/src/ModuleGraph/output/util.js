@@ -117,7 +117,8 @@ exports.toModuleTransport = (module: Module, idsForPath: IdsForPathFn) => {
   return {
     code: getModuleCode(module, x => idsForPath(x).moduleId),
     dependencies,
-    id: idsForPath(file).localId,
+    // ID is required but we provide an invalid one for "script"s.
+    id: file.type === 'module' ? idsForPath(file).localId : -1,
     map: file.map,
     name: file.path,
     sourcePath: file.path,
