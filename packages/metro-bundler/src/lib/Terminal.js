@@ -39,9 +39,15 @@ function clearStringBackwards(stream: tty.WriteStream, str: string): void {
  * Cut a string into an array of string of the specific maximum size. A newline
  * ends a chunk immediately (it's not included in the "." RexExp operator), and
  * is not included in the result.
+ * When counting we should ignore non-printable characters. In particular the
+ * ANSI escape sequences (regex: /\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?m/)
+ * (Not an exhaustive match, intended to match ANSI color escapes)
+ * https://en.wikipedia.org/wiki/ANSI_escape_code
  */
 function chunkString(str: string, size: number): Array<string> {
-  return str.match(new RegExp(`.{1,${size}}`, 'g')) || [];
+  const ANSI_COLOR = '\x1B\\[([0-9]{1,2}(;[0-9]{1,2})?)?m';
+  const SKIP_ANSI = `(?:${ANSI_COLOR})*`;
+  return str.match(new RegExp(`(?:${SKIP_ANSI}.){1,${size}}`, 'g')) || [];
 }
 
 /**
