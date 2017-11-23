@@ -58,11 +58,14 @@ jobs:
           command: yarn --no-progress
       - save-cache: *save-cache
       - run:
+          working_directory: ~/metro-bundler/
+          run: yarn build
+      - run:
           working_directory: packages/metro-bundler
           command: |
-            npm run prepare-release
-            npm publish
-            npm run cleanup-release
+            yarn prepare-release
+            yarn publish
+            yarn cleanup-release
 
 # Workflows enables us to run multiple jobs in parallel
 workflows:
