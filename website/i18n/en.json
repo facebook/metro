@@ -4,6 +4,7 @@
     "previous": "Previous",
     "tagline": "🚇 The JavaScript bundler for React Native",
     "api": "API",
+    "bundling": "Bundling",
     "cli": "Metro CLI Options",
     "configuration": "Configuring Metro",
     "getting-started": "Getting Started",

@@ -1,7 +1,8 @@
 {
   "docs": {
     "Introduction": [
-      "getting-started"
+      "getting-started",
+      "bundling"
     ],
     "API Reference": [
       "api",
