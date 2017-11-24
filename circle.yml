@@ -10,13 +10,6 @@ aliases:
       - node_modules
     key: dependencies-{{ .Branch }}-{{ checksum "package.json" }}
 
-  - &deploy
-    working_directory: packages/metro-bundler
-    steps:
-      - run: npm run prepare-release
-      - run: npm publish
-      - run: npm run cleanup-release
-
 version: 2
 jobs:
   test-node-9:
@@ -64,7 +57,15 @@ jobs:
           working_directory: packages/metro-bundler
           command: yarn --no-progress
       - save-cache: *save-cache
-      - deploy: *deploy
+      - run:
+          working_directory: ~/metro-bundler/
+          run: yarn build
+      - run:
+          working_directory: packages/metro-bundler
+          command: |
+            yarn prepare-release
+            npm publish
+            yarn cleanup-release
 
 # Workflows enables us to run multiple jobs in parallel
 workflows:
