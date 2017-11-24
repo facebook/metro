@@ -64,7 +64,7 @@ jobs:
           working_directory: packages/metro-bundler
           command: |
             yarn prepare-release
-            yarn publish
+            npm publish
             yarn cleanup-release
 
 # Workflows enables us to run multiple jobs in parallel
