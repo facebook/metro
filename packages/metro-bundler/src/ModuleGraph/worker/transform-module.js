@@ -52,6 +52,7 @@ const defaultTransformOptions = {
   generateSourceMaps: true,
   hot: false,
   inlineRequires: false,
+  minify: false,
   platform: '',
   projectRoot: '',
 };

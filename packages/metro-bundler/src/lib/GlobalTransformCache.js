@@ -147,8 +147,8 @@ export type TransformProfile = {
   +platform: ?string,
 };
 
-function profileKey({dev, minify, platform}: TransformProfile): string {
-  return jsonStableStringify({dev, minify, platform});
+function profileKey({dev, platform}: TransformProfile): string {
+  return jsonStableStringify({dev, platform});
 }
 
 /**
@@ -403,19 +403,8 @@ class OptionsHasher {
    */
   hashTransformWorkerOptions(
     hash: crypto$Hash,
-    options: TransformWorkerOptions,
+    transform: TransformWorkerOptions,
   ): crypto$Hash {
-    const {dev, minify, platform, transform, ...unknowns} = options;
-    const unknownKeys = Object.keys(unknowns);
-    if (unknownKeys.length > 0) {
-      const message = `these worker option fields are unknown: ${JSON.stringify(
-        unknownKeys,
-      )}`;
-      throw new CannotHashOptionsError(message);
-    }
-    // eslint-disable-next-line no-bitwise
-    hash.update(new Buffer([+dev | (+minify << 1)]));
-    hash.update(JSON.stringify(platform));
     return this.hashTransformOptions(hash, transform);
   }
 
@@ -437,6 +426,7 @@ class OptionsHasher {
       dev,
       hot,
       inlineRequires,
+      minify,
       platform,
       projectRoot,
       ...unknowns
@@ -449,20 +439,19 @@ class OptionsHasher {
       throw new CannotHashOptionsError(message);
     }
 
+    /* eslint-disable no-bitwise */
     hash.update(
       new Buffer([
-        // eslint-disable-next-line no-bitwise
         +dev |
-          // eslint-disable-next-line no-bitwise
           (+generateSourceMaps << 1) |
-          // eslint-disable-next-line no-bitwise
           (+hot << 2) |
-          // eslint-disable-next-line no-bitwise
           (+!!inlineRequires << 3) |
-          // eslint-disable-next-line no-bitwise
-          (+enableBabelRCLookup << 4),
+          (+enableBabelRCLookup << 4) |
+          (+minify << 5),
       ]),
     );
+    /* eslint-enable no-bitwise */
+
     hash.update(JSON.stringify(platform));
     let blacklistWithLocalPaths = [];
     if (typeof inlineRequires === 'object') {

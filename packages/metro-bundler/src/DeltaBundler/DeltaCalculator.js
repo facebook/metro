@@ -159,18 +159,14 @@ class DeltaCalculator extends EventEmitter {
     } = this._bundler.getGlobalTransformOptions();
 
     const transformOptionsForBlacklist = {
+      enableBabelRCLookup,
       dev: this._options.dev,
+      generateSourceMaps: this._options.generateSourceMaps,
+      hot: this._options.hot,
+      inlineRequires: false,
       minify: this._options.minify,
       platform: this._options.platform,
-      transform: {
-        enableBabelRCLookup,
-        dev: this._options.dev,
-        generateSourceMaps: this._options.generateSourceMaps,
-        hot: this._options.hot,
-        inlineRequires: false,
-        platform: this._options.platform,
-        projectRoot,
-      },
+      projectRoot,
     };
 
     const {
@@ -193,10 +189,7 @@ class DeltaCalculator extends EventEmitter {
     // $FlowFixMe flow does not recognize well Object.assign() return types.
     return {
       ...transformOptionsForBlacklist,
-      transform: {
-        ...transformOptionsForBlacklist.transform,
-        inlineRequires: inlineRequires || false,
-      },
+      inlineRequires: inlineRequires || false,
     };
   }
 

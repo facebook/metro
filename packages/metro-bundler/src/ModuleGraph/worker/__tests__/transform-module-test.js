@@ -90,6 +90,7 @@ describe('transforming JS modules:', () => {
     generateSourceMaps: true,
     hot: false,
     inlineRequires: false,
+    minify: false,
     platform: '',
     projectRoot: '',
   };

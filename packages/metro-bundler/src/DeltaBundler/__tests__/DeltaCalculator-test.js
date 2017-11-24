@@ -303,17 +303,13 @@ describe('DeltaCalculator', () => {
     it('should calculate the transform options correctly', async () => {
       expect(await deltaCalculator.getTransformerOptions()).toEqual({
         dev: true,
+        enableBabelRCLookup: false,
+        generateSourceMaps: false,
+        hot: true,
+        inlineRequires: false,
         minify: false,
         platform: 'ios',
-        transform: {
-          dev: true,
-          enableBabelRCLookup: false,
-          generateSourceMaps: false,
-          hot: true,
-          inlineRequires: false,
-          platform: 'ios',
-          projectRoot: '/foo',
-        },
+        projectRoot: '/foo',
       });
     });
 
@@ -326,17 +322,13 @@ describe('DeltaCalculator', () => {
 
       expect(await deltaCalculator.getTransformerOptions()).toEqual({
         dev: true,
+        enableBabelRCLookup: false,
+        generateSourceMaps: false,
+        hot: true,
+        inlineRequires: true,
         minify: false,
         platform: 'ios',
-        transform: {
-          dev: true,
-          enableBabelRCLookup: false,
-          generateSourceMaps: false,
-          hot: true,
-          inlineRequires: true,
-          platform: 'ios',
-          projectRoot: '/foo',
-        },
+        projectRoot: '/foo',
       });
     });
 
@@ -349,17 +341,13 @@ describe('DeltaCalculator', () => {
 
       expect(await deltaCalculator.getTransformerOptions()).toEqual({
         dev: true,
+        enableBabelRCLookup: false,
+        generateSourceMaps: false,
+        hot: true,
+        inlineRequires: {blacklist: {'/bar': true, '/baz': true}},
         minify: false,
         platform: 'ios',
-        transform: {
-          dev: true,
-          enableBabelRCLookup: false,
-          generateSourceMaps: false,
-          hot: true,
-          inlineRequires: {blacklist: {'/bar': true, '/baz': true}},
-          platform: 'ios',
-          projectRoot: '/foo',
-        },
+        projectRoot: '/foo',
       });
     });
   });

@@ -45,17 +45,13 @@ describe('GlobalTransformCache', () => {
       storeResults: null,
     });
     const transformOptions = {
-      dev: true,
+      generateSourceMaps: false,
+      dev: false,
+      hot: false,
+      inlineRequires: false,
       minify: false,
       platform: 'ios',
-      transform: {
-        generateSourceMaps: false,
-        dev: false,
-        hot: false,
-        inlineRequires: false,
-        platform: 'ios',
-        projectRoot: path.join(__dirname, 'root'),
-      },
+      projectRoot: path.join(__dirname, 'root'),
     };
     const result = await Promise.all([
       cache.fetch({

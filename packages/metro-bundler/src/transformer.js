@@ -124,7 +124,12 @@ type Params = {
 };
 
 function transform({filename, options, src, plugins}: Params) {
-  options = options || {platform: '', projectRoot: '', inlineRequires: false};
+  options = options || {
+    platform: '',
+    projectRoot: '',
+    inlineRequires: false,
+    minify: false,
+  };
 
   const OLD_BABEL_ENV = process.env.BABEL_ENV;
   process.env.BABEL_ENV = options.dev ? 'development' : 'production';

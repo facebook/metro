@@ -61,6 +61,7 @@ export type TransformOptionsStrict = {|
   +generateSourceMaps: boolean,
   +hot: boolean,
   +inlineRequires: {+blacklist: {[string]: true}} | boolean,
+  +minify: boolean,
   +platform: ?string,
   +projectRoot: string,
 |};
@@ -71,16 +72,12 @@ export type TransformOptions = {
   +generateSourceMaps?: boolean,
   +hot?: boolean,
   +inlineRequires?: {+blacklist: {[string]: true}} | boolean,
+  +minify: boolean,
   +platform: ?string,
   +projectRoot: string,
 };
 
-export type Options = {|
-  +dev: boolean,
-  +minify: boolean,
-  +platform: ?string,
-  +transform: TransformOptionsStrict,
-|};
+export type Options = TransformOptionsStrict;
 
 export type Data = {
   result: TransformedCode,
@@ -117,7 +114,7 @@ async function transformCode(
   const {ast} = await transformer.transform({
     filename,
     localPath,
-    options: options.transform,
+    options,
     plugins,
     src: sourceCode,
   });
