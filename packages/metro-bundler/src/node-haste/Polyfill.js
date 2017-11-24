@@ -47,10 +47,6 @@ class Polyfill extends Module {
     return this._dependencies;
   }
 
-  isJSON() {
-    return false;
-  }
-
   isPolyfill() {
     return true;
   }

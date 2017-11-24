@@ -61,10 +61,6 @@ class AssetModule extends Module {
     return `AssetModule : ${this.path}`;
   }
 
-  isJSON() {
-    return false;
-  }
-
   isAsset() {
     return true;
   }

@@ -65,9 +65,6 @@ describe('DeltaCalculator', () => {
       isAsset() {
         return !!isAsset;
       },
-      isJSON() {
-        return !!isAsset;
-      },
     };
   }
 

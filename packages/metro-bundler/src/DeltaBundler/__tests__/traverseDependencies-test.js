@@ -33,7 +33,7 @@ function deferred(value) {
   return {promise, resolve: () => resolve(value)};
 }
 
-function createModule({path, name, isAsset, isJSON}) {
+function createModule({path, name, isAsset}) {
   return {
     path,
     name,
@@ -41,9 +41,6 @@ function createModule({path, name, isAsset, isJSON}) {
       return name;
     },
     isAsset() {
-      return !!isAsset;
-    },
-    isJSON() {
       return !!isAsset;
     },
   };

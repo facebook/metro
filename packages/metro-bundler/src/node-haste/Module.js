@@ -407,10 +407,6 @@ class Module {
     return `Module : ${this.path}`;
   }
 
-  isJSON() {
-    return extname(this.path) === '.json';
-  }
-
   isAsset() {
     return false;
   }
