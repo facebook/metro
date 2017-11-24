@@ -86,7 +86,7 @@ class TerminalReporter {
    * Construct a message that represents the progress of a
    * single bundle build, for example:
    *
-   *     Bunding `foo.js`  [ios, dev, minified]  |####         | 34.2% (324/945)
+   *     BUNDLE [ios, dev, minified] foo.js  ▓▓▓▓▓░░░░░░░░░░░ 36.6% (4790/7922)
    */
   _getBundleStatusMessage(
     {
@@ -114,9 +114,9 @@ class TerminalReporter {
 
     return (
       chalk.inverse.green.bold(' BUNDLE ') +
-      chalk.dim(`  [${platform}${devOrProd}${min}]  ${dirName}/`) +
+      chalk.dim(` [${platform}${devOrProd}${min}] ${dirName}/`) +
       chalk.bold(fileName) +
-      '  ' +
+      ' ' +
       chalk.green.bgGreen(DARK_BLOCK_CHAR.repeat(filledBar)) +
       chalk.bgWhite.white(
         LIGHT_BLOCK_CHAR.repeat(MAX_PROGRESS_BAR_CHAR_WIDTH - filledBar),
