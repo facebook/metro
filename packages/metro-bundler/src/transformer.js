@@ -99,10 +99,7 @@ function buildBabelConfig(filename, options, plugins?: BabelPlugins = []) {
   // Add extra plugins
   const extraPlugins = [externalHelpersPlugin];
 
-  var inlineRequires = options.inlineRequires;
-  var blacklist =
-    typeof inlineRequires === 'object' ? inlineRequires.blacklist : null;
-  if (inlineRequires && !(blacklist && filename in blacklist)) {
+  if (options.inlineRequires) {
     extraPlugins.push(inlineRequiresPlugin);
   }
 

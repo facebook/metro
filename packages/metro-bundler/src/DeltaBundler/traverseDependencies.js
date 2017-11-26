@@ -12,6 +12,8 @@
 
 'use strict';
 
+const removeInlineRequiresBlacklistFromOptions = require('../lib/removeInlineRequiresBlacklistFromOptions');
+
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type DependencyGraph from '../node-haste/DependencyGraph';
 
@@ -217,7 +219,7 @@ async function addDependency(
 
   const shallowDeps = await dependencyGraph.getShallowDependencies(
     dependencyEdge.path,
-    transformOptions,
+    removeInlineRequiresBlacklistFromOptions(module.path, transformOptions),
   );
 
   const nonNullDependencyEdge = dependencyEdge;

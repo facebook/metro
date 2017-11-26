@@ -16,6 +16,7 @@ const DeltaCalculator = require('./DeltaCalculator');
 
 const addParamsToDefineCall = require('../lib/addParamsToDefineCall');
 const createModuleIdFactory = require('../lib/createModuleIdFactory');
+const removeInlineRequiresBlacklistFromOptions = require('../lib/removeInlineRequiresBlacklistFromOptions');
 
 const {EventEmitter} = require('events');
 
@@ -559,7 +560,9 @@ class DeltaTransformer extends EventEmitter {
     +map: CompactRawMappings,
     +source: string,
   }> {
-    return await module.read(transformOptions);
+    return await module.read(
+      removeInlineRequiresBlacklistFromOptions(module.path, transformOptions),
+    );
   }
 
   _onFileChange = () => {

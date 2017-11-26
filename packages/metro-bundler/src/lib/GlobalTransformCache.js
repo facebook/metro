@@ -445,7 +445,7 @@ class OptionsHasher {
         +dev |
           (+generateSourceMaps << 1) |
           (+hot << 2) |
-          (+!!inlineRequires << 3) |
+          (+inlineRequires << 3) |
           (+enableBabelRCLookup << 4) |
           (+minify << 5),
       ]),
@@ -453,15 +453,8 @@ class OptionsHasher {
     /* eslint-enable no-bitwise */
 
     hash.update(JSON.stringify(platform));
-    let blacklistWithLocalPaths = [];
-    if (typeof inlineRequires === 'object') {
-      blacklistWithLocalPaths = this.pathsToLocal(
-        Object.keys(inlineRequires.blacklist),
-      );
-    }
-    const localProjectRoot = this.toLocalPath(projectRoot);
-    const optionTuple = [blacklistWithLocalPaths, localProjectRoot];
-    hash.update(JSON.stringify(optionTuple));
+    hash.update(JSON.stringify(this.toLocalPath(projectRoot)));
+
     return hash;
   }
 
