@@ -74,7 +74,7 @@ async function asyncRealpath(path): Promise<string> {
 async function runMetro({
   config,
   maxWorkers = 1,
-  projectRoots,
+  projectRoots = [],
   watch = false,
 }: PrivateMetroOptions) {
   const normalizedConfig = config ? normalizeConfig(config) : DEFAULT_CONFIG;
@@ -97,7 +97,7 @@ async function runMetro({
 
   const serverOptions: ServerOptions = {
     assetExts: defaultAssetExts.concat(assetExts),
-    assetRegistryPath: `invalid`,
+    assetRegistryPath: normalizedConfig.assetRegistryPath,
     blacklistRE: normalizedConfig.getBlacklistRE(),
     extraNodeModules: normalizedConfig.extraNodeModules,
     getPolyfills: normalizedConfig.getPolyfills,
@@ -237,12 +237,13 @@ exports.runBuild = async (options: RunBuildOptions) => {
   const metroBundle = await MetroBundler.build(metroServer, requestOptions);
 
   const outputOptions: OutputOptions = {
-    bundleOutput: options.out,
+    bundleOutput: options.out.replace(/(\.js)?$/, '.js'),
     dev: options.dev,
     platform: options.platform || `web`,
   };
 
   await MetroBundler.save(metroBundle, outputOptions, console.log);
+  await metroServer.end();
 
   return {metroServer, metroBundle};
 };

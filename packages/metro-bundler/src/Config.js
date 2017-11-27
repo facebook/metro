@@ -27,6 +27,8 @@ import type {TransformVariants} from './ModuleGraph/types.flow';
 import type {HasteImpl} from './node-haste/Module';
 
 export type ConfigT = {
+  assetRegistryPath: string,
+
   extraNodeModules: {[id: string]: string},
   /**
    * Specify any additional asset file extensions to be used by the packager.
@@ -140,6 +142,7 @@ export type ConfigT = {
 };
 
 const DEFAULT = ({
+  assetRegistryPath: 'missing-asset-registry-path',
   extraNodeModules: {},
   assetTransforms: false,
   getAssetExts: () => [],
