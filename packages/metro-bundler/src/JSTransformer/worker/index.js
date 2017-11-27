@@ -85,40 +85,15 @@ export type Data = {
   transformFileEndLogEntry: LogEntry,
 };
 
-async function transformCode(
-  transformer: Transformer<*>,
+function postTransform(
   filename: string,
   localPath: LocalPath,
   sourceCode: string,
   isScript: boolean,
   options: Options,
-): Promise<Data> {
-  const isJson = filename.endsWith('.json');
-
-  if (isJson) {
-    sourceCode = 'module.exports=' + sourceCode;
-  }
-
-  const transformFileStartLogEntry = {
-    action_name: 'Transforming file',
-    action_phase: 'start',
-    file_name: filename,
-    log_entry_label: 'Transforming file',
-    start_timestamp: process.hrtime(),
-  };
-
-  const plugins = options.dev
-    ? []
-    : [[inline.plugin, options], [constantFolding.plugin, options]];
-
-  const {ast} = await transformer.transform({
-    filename,
-    localPath,
-    options,
-    plugins,
-    src: sourceCode,
-  });
-
+  transformFileStartLogEntry: LogEntry,
+  ast: Ast,
+) {
   const timeDelta = process.hrtime(transformFileStartLogEntry.start_timestamp);
   const duration_ms = Math.round((timeDelta[0] * 1e9 + timeDelta[1]) / 1e6);
   const transformFileEndLogEntry = {
@@ -179,6 +154,54 @@ async function transformCode(
   };
 }
 
+function transformCode(
+  transformer: Transformer<*>,
+  filename: string,
+  localPath: LocalPath,
+  sourceCode: string,
+  isScript: boolean,
+  options: Options,
+): Data | Promise<Data> {
+  const isJson = filename.endsWith('.json');
+
+  if (isJson) {
+    sourceCode = 'module.exports=' + sourceCode;
+  }
+
+  const transformFileStartLogEntry = {
+    action_name: 'Transforming file',
+    action_phase: 'start',
+    file_name: filename,
+    log_entry_label: 'Transforming file',
+    start_timestamp: process.hrtime(),
+  };
+
+  const plugins = options.dev
+    ? []
+    : [[inline.plugin, options], [constantFolding.plugin, options]];
+
+  const transformResult = transformer.transform({
+    filename,
+    localPath,
+    options,
+    plugins,
+    src: sourceCode,
+  });
+
+  const postTransformArgs = [
+    filename,
+    localPath,
+    sourceCode,
+    isScript,
+    options,
+    transformFileStartLogEntry,
+  ];
+
+  return typeof transformResult.then === 'function'
+    ? transformResult.then(({ast}) => postTransform(...postTransformArgs, ast))
+    : postTransform(...postTransformArgs, transformResult.ast);
+}
+
 exports.minify = async function(
   filename: string,
   code: string,
@@ -197,14 +220,14 @@ exports.minify = async function(
   }
 };
 
-exports.transformAndExtractDependencies = async function(
+exports.transformAndExtractDependencies = function(
   transform: string,
   filename: string,
   localPath: LocalPath,
   sourceCode: string,
   isScript: boolean,
   options: Options,
-): Promise<Data> {
+): Data | Promise<Data> {
   // $FlowFixMe: impossible to type a dynamic require.
   const transformModule: Transformer<*> = require(transform);
 
