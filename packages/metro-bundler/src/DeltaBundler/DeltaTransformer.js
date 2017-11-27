@@ -16,6 +16,7 @@ const DeltaCalculator = require('./DeltaCalculator');
 
 const addParamsToDefineCall = require('../lib/addParamsToDefineCall');
 const createModuleIdFactory = require('../lib/createModuleIdFactory');
+const nullthrows = require('fbjs/lib/nullthrows');
 const removeInlineRequiresBlacklistFromOptions = require('../lib/removeInlineRequiresBlacklistFromOptions');
 
 const {EventEmitter} = require('events');
@@ -433,6 +434,13 @@ class DeltaTransformer extends EventEmitter {
 
     let wrappedCode;
 
+    // Get the absolute path of each of the module dependencies from the
+    // dependency edges. The module dependencies ensure correct order, while
+    // the dependency edges do not ensure the same order between rebuilds.
+    const dependencies = metadata.dependencies.map(dependency =>
+      nullthrows(dependencyPairs.get(dependency)),
+    );
+
     if (module.isAsset()) {
       wrappedCode = await this._wrapAsset({
         code: metadata.code,
@@ -443,7 +451,7 @@ class DeltaTransformer extends EventEmitter {
     } else if (!module.isPolyfill()) {
       wrappedCode = this._addDependencyMap({
         code: metadata.code,
-        dependencyPairs,
+        dependencies,
         name,
         path: module.path,
       });
@@ -483,20 +491,17 @@ class DeltaTransformer extends EventEmitter {
    */
   _addDependencyMap({
     code,
-    dependencyPairs,
+    dependencies,
     name,
     path,
   }: {
     code: string,
-    dependencyPairs: Map<string, string>,
+    dependencies: $ReadOnlyArray<string>,
     name: string,
     path: string,
   }): string {
     const moduleId = this._getModuleId(path);
-    const params = [
-      moduleId,
-      Array.from(dependencyPairs.values()).map(this._getModuleId),
-    ];
+    const params = [moduleId, dependencies.map(this._getModuleId)];
 
     // Add the module name as the last parameter (to make it easier to do
     // requires by name when debugging).
