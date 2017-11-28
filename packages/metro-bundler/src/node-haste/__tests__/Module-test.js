@@ -76,7 +76,11 @@ describe('Module', () => {
     createModule({...options, file: '/root/package.json'});
 
   beforeEach(function() {
-    process.platform = 'linux';
+    Object.defineProperty(process, 'platform', {
+      configurable: true,
+      enumerable: true,
+      value: 'linux',
+    });
     cache = createCache();
     transformCacheKey = 'abcdef';
     transformCache.mock.reset();

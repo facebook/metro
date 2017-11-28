@@ -133,16 +133,19 @@ describe('traverseDependencies', function() {
     let DependencyGraph;
     let processDgraph;
     const consoleWarn = console.warn;
-    const realPlatform = process.platform;
     beforeEach(function() {
-      process.platform = 'linux';
+      Object.defineProperty(process, 'platform', {
+        configurable: true,
+        enumerable: true,
+        value: 'linux',
+      });
+
       DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
     });
 
     afterEach(function() {
       console.warn = consoleWarn;
-      process.platform = realPlatform;
     });
 
     it('should get dependencies', async () => {
@@ -2403,21 +2406,20 @@ describe('traverseDependencies', function() {
   });
 
   describe('get sync dependencies (win32)', () => {
-    const realPlatform = process.platform;
     let DependencyGraph;
     let processDgraph;
     beforeEach(function() {
-      process.platform = 'win32';
+      Object.defineProperty(process, 'platform', {
+        configurable: true,
+        enumerable: true,
+        value: 'win32',
+      });
 
       // reload path module
       jest.resetModules();
       jest.mock('path', () => require.requireActual('path').win32);
       DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
-    });
-
-    afterEach(function() {
-      process.platform = realPlatform;
     });
 
     it('should get dependencies', async () => {
@@ -2580,18 +2582,18 @@ describe('traverseDependencies', function() {
   });
 
   describe('node_modules (posix)', function() {
-    const realPlatform = process.platform;
     let DependencyGraph;
     let processDgraph;
 
     beforeEach(function() {
-      process.platform = 'linux';
+      Object.defineProperty(process, 'platform', {
+        configurable: true,
+        enumerable: true,
+        value: 'linux',
+      });
+
       DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
-    });
-
-    afterEach(function() {
-      process.platform = realPlatform;
     });
 
     it('should work with nested node_modules', async () => {
@@ -3524,20 +3526,20 @@ describe('traverseDependencies', function() {
   });
 
   describe('node_modules (win32)', function() {
-    const realPlatform = process.platform;
     let DependencyGraph;
     let processDgraph;
     beforeEach(() => {
-      process.platform = 'win32';
+      Object.defineProperty(process, 'platform', {
+        configurable: true,
+        enumerable: true,
+        value: 'win32',
+      });
+
       // reload path module
       jest.resetModules();
       jest.mock('path', () => require.requireActual('path').win32);
       DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
-    });
-
-    afterEach(() => {
-      process.platform = realPlatform;
     });
 
     it('should work with nested node_modules', async () => {
@@ -4424,18 +4426,18 @@ describe('traverseDependencies', function() {
   });
 
   describe('file watch updating', function() {
-    const realPlatform = process.platform;
     let DependencyGraph;
     let processDgraph;
 
     beforeEach(function() {
-      process.platform = 'linux';
+      Object.defineProperty(process, 'platform', {
+        configurable: true,
+        enumerable: true,
+        value: 'linux',
+      });
+
       DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
-    });
-
-    afterEach(function() {
-      process.platform = realPlatform;
     });
 
     it('updates module dependencies', async () => {
@@ -5092,18 +5094,18 @@ describe('traverseDependencies', function() {
   });
 
   describe('Extensions', () => {
-    const realPlatform = process.platform;
     let DependencyGraph;
     let processDgraph;
 
     beforeEach(function() {
-      process.platform = 'linux';
+      Object.defineProperty(process, 'platform', {
+        configurable: true,
+        enumerable: true,
+        value: 'linux',
+      });
+
       DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
-    });
-
-    afterEach(function() {
-      process.platform = realPlatform;
     });
 
     it('supports custom file extensions', async () => {
