@@ -49,6 +49,8 @@ type PublicMetroOptions = {|
   config?: ConfigT,
   maxWorkers?: number,
   projectRoots: Array<string>,
+  // deprecated
+  resetCache?: boolean,
 |};
 
 type PrivateMetroOptions = {|
@@ -73,6 +75,7 @@ async function asyncRealpath(path): Promise<string> {
 
 async function runMetro({
   config,
+  resetCache = false,
   maxWorkers = 1,
   projectRoots = [],
   watch = false,
@@ -114,7 +117,7 @@ async function runMetro({
     postProcessModules: normalizedConfig.postProcessModules,
     postProcessBundleSourcemap: normalizedConfig.postProcessBundleSourcemap,
     providesModuleNodeModules,
-    resetCache: false,
+    resetCache,
     reporter: new TerminalReporter(new Terminal(process.stdout)),
     sourceExts: normalizedConfig.assetTransforms
       ? sourceExts.concat(assetExts)
@@ -146,6 +149,7 @@ exports.createConnectMiddleware = async function(
     config: options.config,
     maxWorkers: options.maxWorkers,
     projectRoots: options.projectRoots,
+    resetCache: options.resetCache,
     watch: true,
   });
 
@@ -176,6 +180,7 @@ exports.runServer = async (options: RunServerOptions) => {
     config: options.config,
     maxWorkers: options.maxWorkers,
     projectRoots: options.projectRoots,
+    resetCache: options.resetCache,
   });
 
   serverApp.use(middleware);
@@ -230,6 +235,7 @@ exports.runBuild = async (options: RunBuildOptions) => {
     config: options.config,
     maxWorkers: options.maxWorkers,
     projectRoots: options.projectRoots,
+    resetCache: options.resetCache,
   });
 
   const requestOptions: RequestOptions = {

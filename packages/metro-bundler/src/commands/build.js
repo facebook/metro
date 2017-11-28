@@ -48,6 +48,9 @@ exports.builder = (yargs: Yargs) => {
   yargs.option('legacy-bundler', {type: 'boolean'});
 
   yargs.option('config', {alias: 'c', type: 'string'});
+
+  // Deprecated
+  yargs.option('reset-cache', {type: 'boolean', describe: null});
 };
 
 // eslint-disable-next-line no-unclear-flowtypes
