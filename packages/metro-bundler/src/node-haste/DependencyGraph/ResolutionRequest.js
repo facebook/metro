@@ -90,19 +90,21 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
     const platform = this._options.platform;
 
     if (
-      !this._options.helpers.isNodeModulesDir(fromModule.path) &&
-      !(isRelativeImport(toModuleName) || isAbsolutePath(toModuleName))
+      isAbsolutePath(toModuleName) ||
+      isRelativeImport(toModuleName) ||
+      this._options.helpers.isNodeModulesDir(fromModule.path)
     ) {
-      const result = ModuleResolution.tryResolveSync(
-        () => this._resolveHasteDependency(fromModule, toModuleName, platform),
-        () =>
-          resolver.resolveNodeDependency(fromModule, toModuleName, platform),
+      return cacheResult(
+        resolver.resolveNodeDependency(fromModule, toModuleName, platform),
       );
-      return cacheResult(result);
     }
 
     return cacheResult(
-      resolver.resolveNodeDependency(fromModule, toModuleName, platform),
+      ModuleResolution.tryResolveSync(
+        () => this._resolveHasteDependency(fromModule, toModuleName, platform),
+        () =>
+          resolver.resolveNodeDependency(fromModule, toModuleName, platform),
+      ),
     );
   }
 
