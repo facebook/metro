@@ -66,7 +66,7 @@ exports.handler = makeAsyncCommand(async (argv: any) => {
     }
 
     if (server) {
-      console.log('Configuration changed... restarting the server...');
+      console.log('Configuration changed. Restarting the server...');
       await promisify(server.close).call(server);
     }
 

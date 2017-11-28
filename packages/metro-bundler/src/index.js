@@ -79,10 +79,12 @@ async function runMetro({
 }: PrivateMetroOptions) {
   const normalizedConfig = config ? normalizeConfig(config) : DEFAULT_CONFIG;
 
-  const assetExts =
-    (normalizedConfig.getAssetExts && normalizedConfig.getAssetExts()) || [];
-  const sourceExts =
-    (normalizedConfig.getSourceExts && normalizedConfig.getSourceExts()) || [];
+  const assetExts = defaultAssetExts.concat(
+    (normalizedConfig.getAssetExts && normalizedConfig.getAssetExts()) || [],
+  );
+  const sourceExts = defaultSourceExts.concat(
+    (normalizedConfig.getSourceExts && normalizedConfig.getSourceExts()) || [],
+  );
   const platforms =
     (normalizedConfig.getPlatforms && normalizedConfig.getPlatforms()) || [];
 
@@ -96,7 +98,7 @@ async function runMetro({
       : defaultProvidesModuleNodeModules;
 
   const serverOptions: ServerOptions = {
-    assetExts: defaultAssetExts.concat(assetExts),
+    assetExts: normalizedConfig.assetTransforms ? [] : assetExts,
     assetRegistryPath: normalizedConfig.assetRegistryPath,
     blacklistRE: normalizedConfig.getBlacklistRE(),
     extraNodeModules: normalizedConfig.extraNodeModules,
@@ -114,7 +116,9 @@ async function runMetro({
     providesModuleNodeModules,
     resetCache: false,
     reporter: new TerminalReporter(new Terminal(process.stdout)),
-    sourceExts: defaultSourceExts.concat(sourceExts),
+    sourceExts: normalizedConfig.assetTransforms
+      ? sourceExts.concat(assetExts)
+      : sourceExts,
     transformCache: TransformCaching.useTempDir(),
     transformModulePath,
     watch,
