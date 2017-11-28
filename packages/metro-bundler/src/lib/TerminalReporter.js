@@ -113,7 +113,7 @@ class TerminalReporter {
     const filledBar = Math.floor(ratio * MAX_PROGRESS_BAR_CHAR_WIDTH);
 
     return (
-      chalk.inverse.green.bold(' BUNDLE ') +
+      chalk.inverse.green.bold(` ${bundleOptions.bundleType.toUpperCase()} `) +
       chalk.dim(` [${platform}${devOrProd}${min}] ${dirName}/`) +
       chalk.bold(fileName) +
       ' ' +

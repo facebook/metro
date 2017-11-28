@@ -112,6 +112,7 @@ exports.build = async function(
   const result = await server.build({
     ...ServerClass.DEFAULT_BUNDLE_OPTIONS,
     ...assertPublicBundleOptions(bundleOptions),
+    bundleType: 'todo',
   });
 
   server.end();

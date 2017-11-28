@@ -35,6 +35,7 @@ module.exports = function getBundlingOptionsForHmr(
   return {
     ...mainOptions,
     assetPlugins: [],
+    bundleType: 'hmr',
     dev: true,
     entryModuleOnly: false,
     excludeSource: false,

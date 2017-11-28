@@ -258,6 +258,7 @@ class Server {
     const bundleOptions = {
       ...Server.DEFAULT_BUNDLE_OPTIONS,
       ...options,
+      bundleType: 'delta',
       deltaBundleId: null,
     };
 
@@ -754,6 +755,8 @@ class Server {
     /* $FlowFixMe: `pathname` could be empty for an invalid URL */
     const pathname = decodeURIComponent(urlObj.pathname);
 
+    let isMap = false;
+
     // Backwards compatibility. Options used to be as added as '.' to the
     // entry module name. We can safely remove these options.
     const entryFile =
@@ -761,11 +764,14 @@ class Server {
         .replace(/^\//, '')
         .split('.')
         .filter(part => {
+          if (part === 'map') {
+            isMap = true;
+            return false;
+          }
           if (
             part === 'includeRequire' ||
             part === 'runModule' ||
             part === 'bundle' ||
-            part === 'map' ||
             part === 'delta' ||
             part === 'assets'
           ) {
@@ -797,12 +803,18 @@ class Server {
       'excludeSource',
       false,
     );
+    const includeSource = this._getBoolOptionFromQuery(
+      urlObj.query,
+      'inlineSourceMap',
+      false,
+    );
 
     return {
       sourceMapUrl: url.format({
         ...urlObj,
         pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
       }),
+      bundleType: isMap ? 'map' : deltaBundleId ? 'delta' : 'bundle',
       entryFile,
       deltaBundleId,
       dev,
@@ -811,11 +823,7 @@ class Server {
       hot: true,
       runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(entryFile),
       runModule: this._getBoolOptionFromQuery(urlObj.query, 'runModule', true),
-      inlineSourceMap: this._getBoolOptionFromQuery(
-        urlObj.query,
-        'inlineSourceMap',
-        false,
-      ),
+      inlineSourceMap: includeSource,
       isolateModuleIDs: false,
       platform,
       resolutionResponse: null,

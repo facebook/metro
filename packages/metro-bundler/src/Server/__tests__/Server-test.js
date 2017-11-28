@@ -189,6 +189,7 @@ describe('processRequest', () => {
       expect(response.body).toEqual('this is the source');
       expect(Serializers.fullBundle).toBeCalledWith(expect.any(DeltaBundler), {
         assetPlugins: [],
+        bundleType: 'bundle',
         deltaBundleId: expect.any(String),
         dev: true,
         entryFile: 'index.ios.js',
@@ -218,6 +219,7 @@ describe('processRequest', () => {
       expect(response.body).toEqual('this is the source');
       expect(Serializers.fullBundle).toBeCalledWith(expect.any(DeltaBundler), {
         assetPlugins: [],
+        bundleType: 'bundle',
         deltaBundleId: expect.any(String),
         dev: true,
         entryFile: 'index.js',
@@ -247,6 +249,7 @@ describe('processRequest', () => {
       expect(response.body).toEqual('this is the source');
       expect(Serializers.fullBundle).toBeCalledWith(expect.any(DeltaBundler), {
         assetPlugins: ['assetPlugin1', 'assetPlugin2'],
+        bundleType: 'bundle',
         deltaBundleId: expect.any(String),
         dev: true,
         entryFile: 'index.js',

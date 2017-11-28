@@ -24,10 +24,12 @@ import type {TransformCache} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
 import type {HasteImpl} from '../node-haste/Module';
 
+type BundleType = 'bundle' | 'delta' | 'map' | 'ram' | 'cli' | 'hmr' | 'todo';
 type SourceMapOrMappings = SourceMap | Array<RawMapping>;
 
 export type BundleOptions = {
   +assetPlugins: Array<string>,
+  bundleType: BundleType,
   dev: boolean,
   entryFile: string,
   +entryModuleOnly: boolean,

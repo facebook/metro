@@ -28,6 +28,7 @@ async function buildBundle(
   const options = {
     ...Server.DEFAULT_BUNDLE_OPTIONS,
     ...requestOptions,
+    bundleType: 'ram',
     isolateModuleIDs: true,
   };
   return await packagerClient.getRamBundleInfo(options);
