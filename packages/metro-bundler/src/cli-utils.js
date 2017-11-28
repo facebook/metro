@@ -19,12 +19,20 @@ import type {ConfigT} from './Config';
 
 const METRO_CONFIG_FILENAME = 'metro.config.js';
 
-exports.findMetroConfig = async function(
-  filename: ?string,
-): Promise<$Shape<ConfigT>> {
+exports.watchFile = async function(
+  filename: string,
+  callback: () => *,
+): Promise<void> {
+  fs.watchFile(filename, () => {
+    callback();
+  });
+
+  await callback();
+};
+
+exports.findMetroConfig = async function(filename: ?string): Promise<?string> {
   if (filename) {
-    // $FlowFixMe: We want this require to be dynamic
-    return require(path.resolve(process.cwd(), filename));
+    return path.resolve(process.cwd(), filename);
   } else {
     let previous;
     let current = process.cwd();
@@ -33,14 +41,25 @@ exports.findMetroConfig = async function(
       const filename = path.join(current, METRO_CONFIG_FILENAME);
 
       if (fs.existsSync(filename)) {
-        // $FlowFixMe: We want this require to be dynamic
-        return require(filename);
+        return filename;
       }
 
       previous = current;
       current = path.dirname(current);
     } while (previous !== current);
 
+    return null;
+  }
+};
+
+exports.fetchMetroConfig = async function(
+  filename: ?string,
+): Promise<$Shape<ConfigT>> {
+  const location = await exports.findMetroConfig(filename);
+  if (location) {
+    // $FlowFixMe: We want this require to be dynamic
+    return require(location);
+  } else {
     return {};
   }
 };

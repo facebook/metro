@@ -145,8 +145,13 @@ exports.createConnectMiddleware = async function(
     watch: true,
   });
 
-  return (req: IncomingMessage, res: ServerResponse) => {
-    return metroServer.processRequest(req, res);
+  return {
+    middleware(req: IncomingMessage, res: ServerResponse) {
+      return metroServer.processRequest(req, res);
+    },
+    end() {
+      metroServer.end();
+    },
   };
 };
 
@@ -163,13 +168,13 @@ type RunServerOptions = {|
 exports.runServer = async (options: RunServerOptions) => {
   const serverApp = connect();
 
-  const metroMiddleware = exports.createConnectMiddleware({
+  const {middleware, end} = await exports.createConnectMiddleware({
     config: options.config,
     maxWorkers: options.maxWorkers,
     projectRoots: options.projectRoots,
   });
 
-  serverApp.use(metroMiddleware);
+  serverApp.use(middleware);
 
   let httpServer;
 
@@ -185,7 +190,6 @@ exports.runServer = async (options: RunServerOptions) => {
     httpServer = Http.createServer(serverApp);
   }
 
-  // $FlowFixMe: The port parameter IS optional
   httpServer.listen(options.port, options.host, () => {
     options.onReady && options.onReady(httpServer);
   });
@@ -195,15 +199,15 @@ exports.runServer = async (options: RunServerOptions) => {
   // timeout of 120 seconds to respond to a request.
   httpServer.timeout = 0;
 
-  return new Promise((resolve, reject) => {
-    httpServer.on('error', error => {
-      reject(error);
-    });
-
-    httpServer.on('close', () => {
-      resolve();
-    });
+  httpServer.on('error', error => {
+    end();
   });
+
+  httpServer.on('close', () => {
+    end();
+  });
+
+  return httpServer;
 };
 
 type RunBuildOptions = {|

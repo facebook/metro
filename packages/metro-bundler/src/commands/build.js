@@ -16,7 +16,7 @@ const MetroApi = require('..');
 
 const os = require('os');
 
-const {findMetroConfig, makeAsyncCommand} = require('../cli-utils');
+const {fetchMetroConfig, makeAsyncCommand} = require('../cli-utils');
 
 import typeof Yargs from 'yargs';
 
@@ -52,6 +52,6 @@ exports.builder = (yargs: Yargs) => {
 
 // eslint-disable-next-line no-unclear-flowtypes
 exports.handler = makeAsyncCommand(async (argv: any) => {
-  argv.config = await findMetroConfig(argv.config);
-  await MetroApi.runBuild(argv);
+  const config = await fetchMetroConfig(argv.config);
+  await MetroApi.runBuild({...argv, config});
 });

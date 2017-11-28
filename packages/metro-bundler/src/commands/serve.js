@@ -16,7 +16,13 @@ const MetroApi = require('..');
 
 const os = require('os');
 
-const {findMetroConfig, makeAsyncCommand} = require('../cli-utils');
+const {
+  findMetroConfig,
+  fetchMetroConfig,
+  watchFile,
+  makeAsyncCommand,
+} = require('../cli-utils');
+const {promisify} = require('util');
 
 import typeof Yargs from 'yargs';
 
@@ -49,15 +55,44 @@ exports.builder = (yargs: Yargs) => {
 
 // eslint-disable-next-line no-unclear-flowtypes
 exports.handler = makeAsyncCommand(async (argv: any) => {
-  argv.config = await findMetroConfig(argv.config);
+  let server = null;
+  let restarting = false;
 
-  await MetroApi.runServer({
-    ...argv,
-    onReady(server) {
-      console.log(
-        `The HTTP server is ready to accept requests on ${server.address()
-          .address}:${server.address().port}`,
-      );
-    },
-  });
+  async function restart() {
+    if (restarting) {
+      return;
+    } else {
+      restarting = true;
+    }
+
+    if (server) {
+      console.log('Configuration changed... restarting the server...');
+      await promisify(server.close).call(server);
+    }
+
+    const config = await fetchMetroConfig(argv.config);
+
+    server = await MetroApi.runServer({
+      ...argv,
+      config,
+      onReady,
+    });
+
+    restarting = false;
+  }
+
+  function onReady(server) {
+    console.log(
+      `The HTTP server is ready to accept requests on ${server.address()
+        .address}:${server.address().port}`,
+    );
+  }
+
+  const metroConfigLocation = await findMetroConfig(argv.config);
+
+  if (metroConfigLocation) {
+    await watchFile(metroConfigLocation, restart);
+  } else {
+    await restart();
+  }
 });
