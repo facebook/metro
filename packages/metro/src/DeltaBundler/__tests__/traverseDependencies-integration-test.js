@@ -106,8 +106,8 @@ describe('traverseDependencies', function() {
       // This pattern is not expected to match anything.
       ignorePattern: /.^/,
       maxWorkers: 1,
-      moduleOptions: {transformCache: require('TransformCaching').mocked()},
       resetCache: true,
+      transformCache: require('TransformCaching').mocked(),
       transformCode: (module, sourceCode, transformOptions) => {
         return new Promise(resolve => {
           let deps = {dependencies: [], dependencyOffsets: []};

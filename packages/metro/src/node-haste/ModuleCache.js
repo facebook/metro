@@ -20,12 +20,29 @@ const Polyfill = require('./Polyfill');
 const toLocalPath = require('./lib/toLocalPath');
 
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
-import type {GetTransformCacheKey} from '../lib/TransformCaching';
+import type {
+  TransformCache,
+  GetTransformCacheKey,
+} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
 import type DependencyGraphHelpers from './DependencyGraph/DependencyGraphHelpers';
-import type {TransformCode, Options as ModuleOptions} from './Module';
+import type {TransformCode, HasteImpl} from './Module';
 
 type GetClosestPackageFn = (filePath: string) => ?string;
+
+type Options = {|
+  assetDependencies: Array<string>,
+  depGraphHelpers: DependencyGraphHelpers,
+  hasteImpl: ?HasteImpl,
+  getClosestPackage: GetClosestPackageFn,
+  getTransformCacheKey: GetTransformCacheKey,
+  globalTransformCache: ?GlobalTransformCache,
+  roots: $ReadOnlyArray<string>,
+  reporter: Reporter,
+  resetCache: boolean,
+  transformCache: TransformCache,
+  transformCode: TransformCode,
+|};
 
 class ModuleCache {
   _assetDependencies: Array<string>;
@@ -34,46 +51,32 @@ class ModuleCache {
   _getTransformCacheKey: GetTransformCacheKey;
   _globalTransformCache: ?GlobalTransformCache;
   _moduleCache: {[filePath: string]: Module, __proto__: null};
-  _moduleOptions: ModuleOptions;
   _packageCache: {[filePath: string]: Package, __proto__: null};
   _packageModuleMap: WeakMap<Module, string>;
   _platforms: Set<string>;
   _transformCode: TransformCode;
   _reporter: Reporter;
   _roots: $ReadOnlyArray<string>;
+  _opts: Options;
 
-  constructor(
-    {
+  constructor(options: Options, platforms: Set<string>) {
+    const {
       assetDependencies,
       depGraphHelpers,
-      extractRequires,
       getClosestPackage,
       getTransformCacheKey,
       globalTransformCache,
-      moduleOptions,
       roots,
       reporter,
       transformCode,
-    }: {|
-      assetDependencies: Array<string>,
-      depGraphHelpers: DependencyGraphHelpers,
-      getClosestPackage: GetClosestPackageFn,
-      getTransformCacheKey: GetTransformCacheKey,
-      globalTransformCache: ?GlobalTransformCache,
-      moduleOptions: ModuleOptions,
-      roots: $ReadOnlyArray<string>,
-      reporter: Reporter,
-      transformCode: TransformCode,
-    |},
-    platforms: Set<string>,
-  ) {
+    } = options;
+    this._opts = options;
     this._assetDependencies = assetDependencies;
     this._getClosestPackage = getClosestPackage;
     this._getTransformCacheKey = getTransformCacheKey;
     this._globalTransformCache = globalTransformCache;
     this._depGraphHelpers = depGraphHelpers;
     this._moduleCache = Object.create(null);
-    this._moduleOptions = moduleOptions;
     this._packageCache = Object.create(null);
     this._packageModuleMap = new WeakMap();
     this._platforms = platforms;
@@ -88,11 +91,9 @@ class ModuleCache {
         depGraphHelpers: this._depGraphHelpers,
         file: filePath,
         getTransformCacheKey: this._getTransformCacheKey,
-        globalTransformCache: this._globalTransformCache,
         localPath: toLocalPath(this._roots, filePath),
         moduleCache: this,
-        options: this._moduleOptions,
-        reporter: this._reporter,
+        options: this._getModuleOptions(),
         transformCode: this._transformCode,
       });
     }
@@ -111,16 +112,17 @@ class ModuleCache {
        */
       this._moduleCache[filePath] = new AssetModule(
         {
-          depGraphHelpers: this._depGraphHelpers,
           dependencies: this._assetDependencies,
+          depGraphHelpers: this._depGraphHelpers,
           file: filePath,
           getTransformCacheKey: this._getTransformCacheKey,
           globalTransformCache: null,
           localPath: toLocalPath(this._roots, filePath),
           moduleCache: this,
-          options: this._moduleOptions,
           reporter: this._reporter,
+          resetCache: this._opts.resetCache,
           transformCode: this._transformCode,
+          options: this._getModuleOptions(),
         },
         this._platforms,
       );
@@ -164,7 +166,7 @@ class ModuleCache {
       getTransformCacheKey: this._getTransformCacheKey,
       localPath: toLocalPath(this._roots, file),
       moduleCache: this,
-      options: this._moduleOptions,
+      options: this._getModuleOptions(),
       transformCode: this._transformCode,
     });
   }
@@ -178,6 +180,16 @@ class ModuleCache {
       this._packageCache[filePath].invalidate();
       delete this._packageCache[filePath];
     }
+  }
+
+  _getModuleOptions() {
+    return {
+      reporter: this._opts.reporter,
+      transformCache: this._opts.transformCache,
+      globalTransformCache: this._opts.globalTransformCache,
+      resetCache: this._opts.resetCache,
+      hasteImpl: this._opts.hasteImpl,
+    };
   }
 }
 

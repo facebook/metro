@@ -36,10 +36,13 @@ const {EventEmitter} = require('events');
 
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
-import type {GetTransformCacheKey} from '../lib/TransformCaching';
+import type {
+  GetTransformCacheKey,
+  TransformCache,
+} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
 import type {ModuleMap} from './DependencyGraph/ModuleResolution';
-import type {Options as ModuleOptions, TransformCode} from './Module';
+import type {TransformCode, HasteImpl} from './Module';
 import type Package from './Package';
 import type {HasteFS} from './types';
 
@@ -50,16 +53,18 @@ type Options = {|
   +forceNodeFilesystemAPI: boolean,
   +getTransformCacheKey: GetTransformCacheKey,
   +globalTransformCache: ?GlobalTransformCache,
+  +hasteImpl: ?HasteImpl,
   +ignorePattern: RegExp,
   +maxWorkers: number,
-  +moduleOptions: ModuleOptions,
   +platforms: Set<string>,
   +preferNativePlatform: boolean,
   +providesModuleNodeModules: Array<string>,
   +reporter: Reporter,
+  +resetCache: ?boolean,
   +resetCache: boolean,
   +roots: $ReadOnlyArray<string>,
   +sourceExts: Array<string>,
+  +transformCache: TransformCache,
   +transformCode: TransformCode,
   +useWatchman: boolean,
   +watch: boolean,
@@ -196,7 +201,9 @@ class DependencyGraph extends EventEmitter {
         getClosestPackage: this._getClosestPackage.bind(this),
         getTransformCacheKey: _opts.getTransformCacheKey,
         globalTransformCache: _opts.globalTransformCache,
-        moduleOptions: _opts.moduleOptions,
+        hasteImpl: _opts.hasteImpl,
+        resetCache: _opts.resetCache,
+        transformCache: _opts.transformCache,
         reporter: _opts.reporter,
         roots: _opts.roots,
         transformCode: _opts.transformCode,

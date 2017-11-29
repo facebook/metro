@@ -66,8 +66,10 @@ export type HasteImpl = {
 };
 
 export type Options = {
-  hasteImpl?: HasteImpl,
-  resetCache?: boolean,
+  globalTransformCache: ?GlobalTransformCache,
+  hasteImpl: ?HasteImpl,
+  reporter: Reporter,
+  resetCache: boolean,
   transformCache: TransformCache,
 };
 
@@ -75,11 +77,9 @@ export type ConstructorArgs = {
   depGraphHelpers: DependencyGraphHelpers,
   file: string,
   getTransformCacheKey: GetTransformCacheKey,
-  globalTransformCache: ?GlobalTransformCache,
   localPath: LocalPath,
   moduleCache: ModuleCache,
   options: Options,
-  reporter: Reporter,
   transformCode: ?TransformCode,
 };
 
@@ -95,8 +95,6 @@ class Module {
   _getTransformCacheKey: GetTransformCacheKey;
   _depGraphHelpers: DependencyGraphHelpers;
   _options: Options;
-  _reporter: Reporter;
-  _globalCache: ?GlobalTransformCache;
 
   _docBlock: ?DocBlock;
   _hasteNameCache: ?{+hasteName: ?string};
@@ -105,17 +103,13 @@ class Module {
 
   _readResultsByOptionsKey: Map<string, CachedReadResult>;
 
-  static _transformCache: TransformCache;
-
   constructor({
     depGraphHelpers,
     localPath,
     file,
     getTransformCacheKey,
-    globalTransformCache,
     moduleCache,
     options,
-    reporter,
     transformCode,
   }: ConstructorArgs) {
     if (!isAbsolutePath(file)) {
@@ -131,8 +125,6 @@ class Module {
     this._getTransformCacheKey = getTransformCacheKey;
     this._depGraphHelpers = depGraphHelpers;
     this._options = options || {};
-    this._reporter = reporter;
-    this._globalCache = globalTransformCache;
 
     this._readPromises = new Map();
     this._readResultsByOptionsKey = new Map();
@@ -280,15 +272,15 @@ class Module {
   async _getTransformedCode(
     cacheProps: ReadTransformProps,
   ): Promise<TransformedCode> {
-    const {_globalCache} = this;
-    if (_globalCache == null || !_globalCache.shouldFetch(cacheProps)) {
+    const globalCache = this._options.globalTransformCache;
+    if (globalCache == null || !globalCache.shouldFetch(cacheProps)) {
       return await this._transformCodeFor(cacheProps);
     }
-    const globalCachedResult = await _globalCache.fetch(cacheProps);
+    const globalCachedResult = await globalCache.fetch(cacheProps);
     if (globalCachedResult != null) {
       return globalCachedResult;
     }
-    return await this._transformAndStoreCodeGlobally(cacheProps, _globalCache);
+    return await this._transformAndStoreCodeGlobally(cacheProps, globalCache);
   }
 
   async _getAndCacheTransformedCode(
@@ -398,7 +390,7 @@ class Module {
       transformOptionsKey,
       cacheOptions: {
         resetCache: this._options.resetCache,
-        reporter: this._reporter,
+        reporter: this._options.reporter,
       },
     };
   }
