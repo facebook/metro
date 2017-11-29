@@ -10,6 +10,17 @@ aliases:
       - node_modules
     key: dependencies-{{ .Branch }}-{{ checksum "package.json" }}
 
+  - &deploy-website
+    command: |
+      # Deploy Metro website
+      git config --global user.email "metro-bot@users.noreply.github.com"
+      git config --global user.name "Website Deployment Script"
+      echo "machine github.com login metro-bot password $GITHUB_TOKEN" > ~/.netrc
+      # install Docusaurus and generate file of English strings
+      cd website && yarn && yarn run write-translations
+      # build and publish website
+      GIT_USER=metro-bot yarn run publish-gh-pages
+
 version: 2
 jobs:
   test-node-9:
@@ -66,15 +77,28 @@ jobs:
             yarn prepare-release
             npm publish
             yarn cleanup-release
+  test-and-deploy-website:
+    working_directory: ~/metro
+    docker:
+      - image: circleci/node:8
+    steps:
+      - checkout
+      - restore-cache: *restore-cache
+      - run: |
+          cd website
+          yarn --no-progress
+      - save-cache: *save-cache
+      - deploy: *deploy-website
 
 # Workflows enables us to run multiple jobs in parallel
 workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - test-node-9
-      - test-node-8
       - test-node-6
+      - test-node-8
+      - test-node-9
+      - test-and-deploy-website
       - deploy:
           filters:
             branches:
