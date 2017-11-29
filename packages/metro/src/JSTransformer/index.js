@@ -22,14 +22,11 @@ import type {LocalPath} from '../node-haste/lib/toLocalPath';
 import type {MappingsMap} from '../lib/SourceMap';
 import type {ResultWithMap} from './worker/minify';
 
-import typeof {
-  minify as Minify,
-  transformAndExtractDependencies as TransformAndExtractDependencies,
-} from './worker';
+import typeof {minify as Minify, transform as Transform} from './worker';
 
 type WorkerInterface = Worker & {
   minify: Minify,
-  transformAndExtractDependencies: TransformAndExtractDependencies,
+  transform: Transform,
 };
 
 type Reporters = {
@@ -52,7 +49,7 @@ module.exports = class Transformer {
     if (maxWorkers > 1) {
       this._worker = this._makeFarm(
         workerPath,
-        ['minify', 'transformAndExtractDependencies'],
+        ['minify', 'transform'],
         maxWorkers,
       );
 
@@ -93,7 +90,7 @@ module.exports = class Transformer {
     try {
       debug('Started ransforming file', filename);
 
-      const data = await this._worker.transformAndExtractDependencies(
+      const data = await this._worker.transform(
         this._transformModulePath,
         filename,
         localPath,
@@ -141,7 +138,6 @@ module.exports = class Transformer {
   _formatGenericError(err, filename) {
     const error = new TransformError(`${filename}: ${err.message}`);
 
-    // $FlowFixMe: extending an error.
     return Object.assign(error, {
       stack: (err.stack || '')
         .split('\n')

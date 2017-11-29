@@ -93,7 +93,7 @@ function postTransform(
   options: Options,
   transformFileStartLogEntry: LogEntry,
   ast: Ast,
-) {
+): Data {
   const timeDelta = process.hrtime(transformFileStartLogEntry.start_timestamp);
   const duration_ms = Math.round((timeDelta[0] * 1e9 + timeDelta[1]) / 1e6);
   const transformFileEndLogEntry = {
@@ -155,7 +155,7 @@ function postTransform(
 }
 
 function transformCode(
-  transformer: Transformer<*>,
+  transformerPath: string,
   filename: string,
   localPath: LocalPath,
   sourceCode: string,
@@ -180,6 +180,8 @@ function transformCode(
     ? []
     : [[inline.plugin, options], [constantFolding.plugin, options]];
 
+  // $FlowFixMe: impossible to type a dynamic require.
+  const transformer: Transformer<*> = require(transformerPath);
   const transformResult = transformer.transform({
     filename,
     localPath,
@@ -202,11 +204,11 @@ function transformCode(
     : postTransform(...postTransformArgs, transformResult.ast);
 }
 
-exports.minify = async function(
+function minifyCode(
   filename: string,
   code: string,
   sourceMap: MappingsMap,
-): Promise<ResultWithMap> {
+): ResultWithMap | Promise<ResultWithMap> {
   try {
     return minify.withSourceMap(code, sourceMap, filename);
   } catch (error) {
@@ -218,27 +220,9 @@ exports.minify = async function(
 
     throw error;
   }
+}
+
+module.exports = {
+  transform: transformCode,
+  minify: minifyCode,
 };
-
-exports.transformAndExtractDependencies = function(
-  transform: string,
-  filename: string,
-  localPath: LocalPath,
-  sourceCode: string,
-  isScript: boolean,
-  options: Options,
-): Data | Promise<Data> {
-  // $FlowFixMe: impossible to type a dynamic require.
-  const transformModule: Transformer<*> = require(transform);
-
-  return transformCode(
-    transformModule,
-    filename,
-    localPath,
-    sourceCode,
-    isScript,
-    options,
-  );
-};
-
-exports.transformCode = transformCode; // for easier testing

@@ -17,7 +17,7 @@ jest
   .mock('../minify');
 
 const path = require('path');
-const transformCode = require('..').transformAndExtractDependencies;
+const transformCode = require('..').transform;
 
 describe('code transformation worker:', () => {
   it('transforms a simple script', async () => {

@@ -63,7 +63,7 @@ describe('Transformer', function() {
       transformOptions,
     );
 
-    expect(api.transformAndExtractDependencies).toBeCalledWith(
+    expect(api.transform).toBeCalledWith(
       transformModulePath,
       fileName,
       localPath,
@@ -78,7 +78,7 @@ describe('Transformer', function() {
     const message = 'message';
     const snippet = 'snippet';
 
-    api.transformAndExtractDependencies.mockImplementation(
+    api.transform.mockImplementation(
       (transformPath, filename, localPth, code, opts) => {
         const babelError = new SyntaxError(message);
 
