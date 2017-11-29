@@ -49,6 +49,7 @@ export type AssetData = {|
 const stat = denodeify(fs.stat);
 const readDir = denodeify(fs.readdir);
 const readFile = denodeify(fs.readFile);
+const hashFiles = denodeify(hashFilesCb);
 
 class AssetServer {
   _roots: $ReadOnlyArray<string>;
@@ -77,7 +78,7 @@ class AssetServer {
     });
   }
 
-  _getAssetInfo(
+  async _getAssetInfo(
     assetPath: string,
     platform: ?string = null,
   ): Promise<AssetInfo> {
@@ -87,28 +88,23 @@ class AssetServer {
     );
     const {name, type} = nameData;
 
-    return this._getAssetRecord(assetPath, platform).then(record => {
-      const {scales, files} = record;
+    const {scales, files} = await this._getAssetRecord(assetPath, platform);
 
-      const hash = this._hashes.get(assetPath);
-      if (hash != null) {
-        return {files, hash, name, scales, type};
-      }
+    const hash = this._hashes.get(assetPath);
+    if (hash != null) {
+      return {files, hash, name, scales, type};
+    }
 
-      return new Promise((resolve, reject) => {
-        const hasher = crypto.createHash('md5');
-        hashFiles(files.slice(), hasher, error => {
-          if (error) {
-            reject(error);
-          } else {
-            const freshHash = hasher.digest('hex');
-            this._hashes.set(assetPath, freshHash);
-            files.forEach(f => this._files.set(f, assetPath));
-            resolve({files, hash: freshHash, name, scales, type});
-          }
-        });
-      });
-    });
+    const hasher = crypto.createHash('md5');
+
+    if (files.length > 0) {
+      await hashFiles(files.slice(), hasher);
+    }
+
+    const freshHash = hasher.digest('hex');
+    this._hashes.set(assetPath, freshHash);
+    files.forEach(f => this._files.set(f, assetPath));
+    return {files, hash: freshHash, name, scales, type};
   }
 
   async getAssetData(
@@ -157,7 +153,7 @@ class AssetServer {
    * 4. Then try to pick platform-specific asset records
    * 5. Then pick the closest resolution (rounding up) to the requested one
    */
-  _getAssetRecord(
+  async _getAssetRecord(
     assetPath: string,
     platform: ?string = null,
   ): Promise<{|
@@ -166,77 +162,77 @@ class AssetServer {
   |}> {
     const filename = path.basename(assetPath);
 
-    return this._findRoot(this._roots, path.dirname(assetPath), assetPath)
-      .then(dir => Promise.all([dir, readDir(dir)]))
-      .then(res => {
-        const dir = res[0];
-        const files = res[1];
-        const assetData = AssetPaths.parse(
-          filename,
-          new Set(platform != null ? [platform] : []),
-        );
+    const dir = await this._findRoot(
+      this._roots,
+      path.dirname(assetPath),
+      assetPath,
+    );
 
-        const map = this._buildAssetMap(dir, files, platform);
+    const files = await readDir(dir);
 
-        let record;
-        if (platform != null) {
-          record =
-            map.get(getAssetKey(assetData.assetName, platform)) ||
-            map.get(assetData.assetName);
-        } else {
-          record = map.get(assetData.assetName);
-        }
+    const assetData = AssetPaths.parse(
+      filename,
+      new Set(platform != null ? [platform] : []),
+    );
 
-        if (!record) {
-          throw new Error(
-            /* $FlowFixMe: platform can be null */
-            `Asset not found: ${assetPath} for platform: ${platform}`,
-          );
-        }
+    const map = this._buildAssetMap(dir, files, platform);
 
-        return record;
-      });
+    let record;
+    if (platform != null) {
+      record =
+        map.get(getAssetKey(assetData.assetName, platform)) ||
+        map.get(assetData.assetName);
+    } else {
+      record = map.get(assetData.assetName);
+    }
+
+    if (!record) {
+      throw new Error(
+        /* $FlowFixMe: platform can be null */
+        `Asset not found: ${assetPath} for platform: ${platform}`,
+      );
+    }
+
+    return record;
   }
 
-  _findRoot(
+  async _findRoot(
     roots: $ReadOnlyArray<string>,
     dir: string,
     debugInfoFile: string,
   ): Promise<string> {
-    return Promise.all(
-      roots.map(root => {
-        const absRoot = path.resolve(root);
+    const stats = await Promise.all(
+      roots.map(async root => {
         // important: we want to resolve root + dir
         // to ensure the requested path doesn't traverse beyond root
         const absPath = path.resolve(root, dir);
 
-        return stat(absPath).then(
-          fstat => {
-            // keep asset requests from traversing files
-            // up from the root (e.g. ../../../etc/hosts)
-            if (!absPath.startsWith(absRoot)) {
-              return {path: absPath, isValid: false};
-            }
-            return {path: absPath, isValid: fstat.isDirectory()};
-          },
-          _ => {
-            return {path: absPath, isValid: false};
-          },
-        );
-      }),
-    ).then(stats => {
-      for (let i = 0; i < stats.length; i++) {
-        if (stats[i].isValid) {
-          return stats[i].path;
-        }
-      }
+        try {
+          const fstat = await stat(absPath);
 
-      const rootsString = roots.map(s => `'${s}'`).join(', ');
-      throw new Error(
-        `'${debugInfoFile}' could not be found, because '${dir}' is not a ` +
-          `subdirectory of any of the roots  (${rootsString})`,
-      );
-    });
+          // keep asset requests from traversing files
+          // up from the root (e.g. ../../../etc/hosts)
+          if (!absPath.startsWith(path.resolve(root))) {
+            return {path: absPath, isValid: false};
+          }
+          return {path: absPath, isValid: fstat.isDirectory()};
+        } catch (_) {
+          return {path: absPath, isValid: false};
+        }
+      }),
+    );
+
+    for (let i = 0; i < stats.length; i++) {
+      if (stats[i].isValid) {
+        return stats[i].path;
+      }
+    }
+
+    const rootsString = roots.map(s => `'${s}'`).join(', ');
+    throw new Error(
+      `'${debugInfoFile}' could not be found, because '${dir}' is not a ` +
+        `subdirectory of any of the roots  (${rootsString})`,
+    );
   }
 
   _buildAssetMap(
@@ -296,7 +292,7 @@ function getAssetKey(assetName, platform) {
   }
 }
 
-function hashFiles(files, hash, callback) {
+function hashFilesCb(files, hash, callback) {
   if (!files.length) {
     callback(null);
     return;
