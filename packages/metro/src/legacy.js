@@ -12,7 +12,6 @@
 
 'use strict';
 
-const Config = require('./Config');
 const Logger = require('./Logger');
 const TransformCaching = require('./lib/TransformCaching');
 
@@ -30,7 +29,6 @@ import type {Options as ServerOptions} from './shared/types.flow';
 exports.createBlacklist = blacklist;
 exports.sourceMaps = {fromRawMappings, compactMapping};
 exports.createServer = createServer;
-exports.Config = Config;
 exports.Logger = Logger;
 
 export type ConfigT = MetroConfig;

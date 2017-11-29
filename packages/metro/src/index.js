@@ -12,6 +12,7 @@
 
 'use strict';
 
+const Config = require('./Config');
 const Http = require('http');
 const Https = require('https');
 const MetroBundler = require('./shared/output/bundle');
@@ -20,28 +21,17 @@ const Terminal = require('./lib/Terminal');
 const TerminalReporter = require('./lib/TerminalReporter');
 const TransformCaching = require('./lib/TransformCaching');
 
-const connect = require('connect');
+const defaults = require('./defaults');
 
 const {realpath} = require('fs');
 const {readFile} = require('fs-extra');
 
-const defaultAssetExts = require('./defaults').assetExts;
-const defaultSourceExts = require('./defaults').sourceExts;
-const defaultPlatforms = require('./defaults').platforms;
-const defaultProvidesModuleNodeModules = require('./defaults')
-  .providesModuleNodeModules;
-
-const DEFAULT_CONFIG = require('./Config').DEFAULT;
-const normalizeConfig = require('./Config').normalize;
-
+import type {ConfigT} from './Config';
+import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
+import type {Options as ServerOptions} from './shared/types.flow';
 import type {IncomingMessage, ServerResponse} from 'http';
-
 import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
-
-import type {ConfigT} from './Config';
-import type {Options as ServerOptions} from './shared/types.flow';
-import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
 
 export type {ConfigT} from './Config';
 
@@ -80,12 +70,12 @@ async function runMetro({
   projectRoots = [],
   watch = false,
 }: PrivateMetroOptions) {
-  const normalizedConfig = config ? normalizeConfig(config) : DEFAULT_CONFIG;
+  const normalizedConfig = config ? Config.normalize(config) : Config.DEFAULT;
 
-  const assetExts = defaultAssetExts.concat(
+  const assetExts = defaults.assetExts.concat(
     (normalizedConfig.getAssetExts && normalizedConfig.getAssetExts()) || [],
   );
-  const sourceExts = defaultSourceExts.concat(
+  const sourceExts = defaults.sourceExts.concat(
     (normalizedConfig.getSourceExts && normalizedConfig.getSourceExts()) || [],
   );
   const platforms =
@@ -98,7 +88,7 @@ async function runMetro({
   const providesModuleNodeModules =
     typeof normalizedConfig.getProvidesModuleNodeModules === 'function'
       ? normalizedConfig.getProvidesModuleNodeModules()
-      : defaultProvidesModuleNodeModules;
+      : defaults.providesModuleNodeModules;
 
   const serverOptions: ServerOptions = {
     assetExts: normalizedConfig.assetTransforms ? [] : assetExts,
@@ -112,7 +102,7 @@ async function runMetro({
     globalTransformCache: null,
     hasteImpl: normalizedConfig.hasteImpl,
     maxWorkers,
-    platforms: defaultPlatforms.concat(platforms),
+    platforms: defaults.platforms.concat(platforms),
     postMinifyProcess: normalizedConfig.postMinifyProcess,
     postProcessModules: normalizedConfig.postProcessModules,
     postProcessBundleSourcemap: normalizedConfig.postProcessBundleSourcemap,
@@ -174,6 +164,9 @@ type RunServerOptions = {|
 |};
 
 exports.runServer = async (options: RunServerOptions) => {
+  // Lazy require
+  const connect = require('connect');
+
   const serverApp = connect();
 
   const {middleware, end} = await exports.createConnectMiddleware({
@@ -261,6 +254,9 @@ exports.runBuild = async (options: RunBuildOptions) => {
 
   return {metroServer, metroBundle};
 };
+
+exports.Config = Config;
+exports.defaults = defaults;
 
 // The symbols below belong to the legacy API and should not be relied upon
 Object.assign(exports, require('./legacy'));
