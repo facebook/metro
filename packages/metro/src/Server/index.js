@@ -163,7 +163,6 @@ class Server {
     this._platforms = new Set(this._opts.platforms);
 
     this._assetServer = new AssetServer({
-      assetExts: this._opts.assetExts,
       projectRoots: this._opts.projectRoots,
     });
 

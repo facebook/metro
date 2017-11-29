@@ -31,7 +31,6 @@ describe('AssetServer', () => {
     it('should work for the simple case', () => {
       const server = new AssetServer({
         projectRoots: ['/root'],
-        assetExts: ['png'],
       });
 
       fs.__setMockFilesystem({
@@ -52,7 +51,6 @@ describe('AssetServer', () => {
     it('should work for the simple case with platform ext', () => {
       const server = new AssetServer({
         projectRoots: ['/root'],
-        assetExts: ['png'],
       });
 
       fs.__setMockFilesystem({
@@ -88,7 +86,6 @@ describe('AssetServer', () => {
     it('should work for the simple case with jpg', () => {
       const server = new AssetServer({
         projectRoots: ['/root'],
-        assetExts: ['png', 'jpg'],
       });
 
       fs.__setMockFilesystem({
@@ -109,7 +106,6 @@ describe('AssetServer', () => {
     it('should pick the bigger one', () => {
       const server = new AssetServer({
         projectRoots: ['/root'],
-        assetExts: ['png'],
       });
 
       fs.__setMockFilesystem({
@@ -131,7 +127,6 @@ describe('AssetServer', () => {
     it('should pick the bigger one with platform ext', () => {
       const server = new AssetServer({
         projectRoots: ['/root'],
-        assetExts: ['png'],
       });
 
       fs.__setMockFilesystem({
@@ -160,7 +155,6 @@ describe('AssetServer', () => {
     it('should support multiple project roots', () => {
       const server = new AssetServer({
         projectRoots: ['/root', '/root2'],
-        assetExts: ['png'],
       });
 
       fs.__setMockFilesystem({
@@ -188,7 +182,6 @@ describe('AssetServer', () => {
     it('should get assetData', () => {
       const server = new AssetServer({
         projectRoots: ['/root'],
-        assetExts: ['png'],
       });
 
       fs.__setMockFilesystem({
@@ -225,7 +218,6 @@ describe('AssetServer', () => {
     it('should get assetData for non-png images', () => {
       const server = new AssetServer({
         projectRoots: ['/root'],
-        assetExts: ['png', 'jpeg'],
       });
 
       fs.__setMockFilesystem({
@@ -264,7 +256,6 @@ describe('AssetServer', () => {
       beforeEach(() => {
         server = new AssetServer({
           projectRoots: ['/root'],
-          assetExts: ['jpg'],
         });
 
         mockFS = {

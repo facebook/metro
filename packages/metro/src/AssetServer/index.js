@@ -52,16 +52,11 @@ const readFile = denodeify(fs.readFile);
 
 class AssetServer {
   _roots: $ReadOnlyArray<string>;
-  _assetExts: $ReadOnlyArray<string>;
   _hashes: Map<?string, string>;
   _files: Map<string, string>;
 
-  constructor(options: {|
-    +assetExts: $ReadOnlyArray<string>,
-    +projectRoots: $ReadOnlyArray<string>,
-  |}) {
+  constructor(options: {|+projectRoots: $ReadOnlyArray<string>|}) {
     this._roots = options.projectRoots;
-    this._assetExts = options.assetExts;
     this._hashes = new Map();
     this._files = new Map();
   }
