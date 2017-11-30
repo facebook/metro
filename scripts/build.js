@@ -14,7 +14,7 @@
  *
  * Example:
  *  node ./scripts/build.js
- *  node ./scripts/build.js /user/c/metro-bundler/packages/metro-abc/src/abc.js
+ *  node ./scripts/build.js /user/c/metro/packages/metro-abc/src/abc.js
  */
 
 'use strict';

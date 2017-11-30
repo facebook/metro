@@ -34,7 +34,7 @@ module.exports = {
 
   _getRoots() {
     // match on either path separator
-    if (__dirname.match(/node_modules[\/\\]metro-bundler$/)) {
+    if (__dirname.match(/node_modules[\/\\]metro(-bundler)?$/)) {
       // Metro Bundler is running from node_modules of another project
       return [path.resolve(__dirname, '../../..')];
     } else if (__dirname.match(/Pods\/React\/packager$/)) {

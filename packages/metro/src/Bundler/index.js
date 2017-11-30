@@ -145,7 +145,7 @@ class Bundler {
     });
 
     const cacheKeyParts = [
-      'metro-bundler-cache',
+      'metro-cache',
       VERSION,
       opts.cacheVersion,
       stableProjectRoots

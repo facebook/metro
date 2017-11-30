@@ -430,7 +430,7 @@ function useTempDir(): TransformCache {
     hash.update(process.getuid().toString());
   }
   const tmpDir = tmpdir();
-  const cacheName = 'metro-bundler-cache';
+  const cacheName = 'metro-cache';
   const rootPath = path.join(tmpDir, cacheName + '-' + hash.digest('hex'));
   mkdirp.sync(rootPath);
   return new FileBasedCache(rootPath);

@@ -1,12 +1,12 @@
 {
   "version": "0.22.1",
-  "name": "metro-bundler",
+  "name": "metro",
   "description": "🚇 The JavaScript bundler for React Native.",
   "main": "src/index.js",
   "bin": "src/cli.js",
   "repository": {
     "type": "git",
-    "url": "git@github.com:facebook/metro-bundler.git"
+    "url": "git@github.com:facebook/metro.git"
   },
   "scripts": {
     "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",

@@ -6,21 +6,21 @@ title: Getting Started
 Install Metro using `npm`:
 
 ```
-npm install --save-dev metro-bundler
+npm install --save-dev metro
 ```
 
 Or via [`yarn`](https://yarnpkg.com/en/package/jest):
 
 ```
-yarn add --dev metro-bundler
+yarn add --dev metro
 ```
 
-## Running `metro-bundler`
+## Running `metro`
 
 Right now, Metro Bundler cannot run by itself. Instead, some functions are exposed so that the configuration can be passed into it. First, require the module by doing:
 
 ```js
-const metroBundler = require('metro-bundler');
+const metroBundler = require('metro');
 ```
 
 Within the object returned, two main methods are given:
@@ -34,9 +34,9 @@ Given a set of options (same ones as the `build` method), a `metro-server` will 
 'use strict';
 
 const http = require('http');
-const metroBundler = require('metro-bundler');
-const TerminalReporter = require('metro-bundler/src/lib/TerminalReporter');
-const Terminal = require('metro-bundler/src/lib/Terminal');
+const metroBundler = require('metro');
+const TerminalReporter = require('metro/src/lib/TerminalReporter');
+const Terminal = require('metro/src/lib/Terminal');
 
 const metroBundlerServer = metroBundler.createServer({
   assetRegistryPath: __dirname,

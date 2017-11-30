@@ -47,5 +47,5 @@ function config(onlyList) {
   };
 }
 
-module.exports = exports = registerOnly;
-exports.config = config;
+module.exports = registerOnly;
+module.exports.config = config;

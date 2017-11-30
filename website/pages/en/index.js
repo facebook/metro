@@ -22,12 +22,12 @@ const siteConfig = require(process.cwd() + '/siteConfig.js');
 const githubButton = (
   <a
     className="github-button"
-    href="https://github.com/facebook/metro-bundler"
+    href="https://github.com/facebook/metro"
     data-icon="octicon-star"
-    data-count-href="/facebook/metro-bundler/stargazers"
-    data-count-api="/repos/facebook/metro-bundler#stargazers_count"
+    data-count-href="/facebook/metro/stargazers"
+    data-count-api="/repos/facebook/metro#stargazers_count"
     data-count-aria-label="# stargazers on GitHub"
-    aria-label="Star facebook/metro-bundler on GitHub"
+    aria-label="Star facebook/metro on GitHub"
   >
     Star
   </a>
@@ -124,7 +124,7 @@ class Index extends React.Component {
                       Metro aims for sub-second reload cycles, fast startup and quick bundling speeds.
                     </translate>
                   ),
-                  image: '/metro-bundler/img/content/high-speed-train.png',
+                  image: '/metro/img/content/high-speed-train.png',
                   imageAlign: 'top',
                   title: <translate>Fast</translate>,
                 },
@@ -134,7 +134,7 @@ class Index extends React.Component {
                       Works with thousands of modules in a single application.
                     </translate>
                   ),
-                  image: '/metro-bundler/img/content/scales.png',
+                  image: '/metro/img/content/scales.png',
                   imageAlign: 'top',
                   title: <translate>Scalable</translate>,
                 },
@@ -144,7 +144,7 @@ class Index extends React.Component {
                       Supports every React Native project out of the box.
                     </translate>
                   ),
-                  image: '/metro-bundler/img/content/atom.png',
+                  image: '/metro/img/content/atom.png',
                   imageAlign: 'top',
                   title: <translate>Integrated</translate>,
                 },

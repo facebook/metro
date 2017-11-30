@@ -29,7 +29,7 @@ export type Symbolicate = (
   Iterable<[string, SourceMap]>,
 ) => Promise<Stack>;
 
-const affixes = {prefix: 'metro-bundler-symbolicate', suffix: '.sock'};
+const affixes = {prefix: 'metro-symbolicate', suffix: '.sock'};
 const childPath = require.resolve('./worker');
 
 exports.createWorker = (): Symbolicate => {

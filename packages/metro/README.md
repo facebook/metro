@@ -1,4 +1,4 @@
-# metro-bundler
+# Metro
 
 🚇 The JavaScript bundler for React Native.
 

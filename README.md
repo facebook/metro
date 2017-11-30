@@ -1,7 +1,7 @@
 # Metro Bundler
 
-[![CircleCI Build Status](https://circleci.com/gh/facebook/metro-bundler.svg?style=shield)](https://circleci.com/gh/facebook/metro-bundler)
-[![npm version](https://badge.fury.io/js/metro-bundler.svg)](http://badge.fury.io/js/metro-bundler)
+[![CircleCI Build Status](https://circleci.com/gh/facebook/metro.svg?style=shield)](https://circleci.com/gh/facebook/metro)
+[![npm version](https://badge.fury.io/js/metro.svg)](http://badge.fury.io/js/metro)
 
 🚇 The JavaScript bundler for React Native.
 
@@ -13,4 +13,4 @@ This project was previously part of the [react-native](https://github.com/facebo
 
 ## Installation & Documentation
 
-See [the Metro website](https://facebook.github.io/metro-bundler/) for documentation.
+See [the Metro website](https://facebook.github.io/metro/) for documentation.

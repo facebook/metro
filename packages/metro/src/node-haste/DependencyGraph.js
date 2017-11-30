@@ -110,7 +110,7 @@ class DependencyGraph extends EventEmitter {
       ignorePattern: opts.ignorePattern,
       maxWorkers: opts.maxWorkers,
       mocksPattern: '',
-      name: 'metro-bundler-' + JEST_HASTE_MAP_CACHE_BREAKER,
+      name: 'metro-' + JEST_HASTE_MAP_CACHE_BREAKER,
       platforms: Array.from(opts.platforms),
       providesModuleNodeModules: opts.providesModuleNodeModules,
       resetCache: opts.resetCache,

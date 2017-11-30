@@ -11,4 +11,4 @@
 'use strict';
 
 global.Promise = require('promise');
-require('../packages/metro-bundler/src/setupNodePolyfills');
+require('../packages/metro/src/setupNodePolyfills');

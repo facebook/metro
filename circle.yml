@@ -13,7 +13,7 @@ aliases:
 version: 2
 jobs:
   test-node-9:
-    working_directory: ~/metro-bundler/packager/metro-bundler
+    working_directory: ~/metro/packager/metro
     docker:
       - image: circleci/node:9
     steps:
@@ -24,7 +24,7 @@ jobs:
       - run: yarn run test-ci
 
   test-node-8:
-    working_directory: ~/metro-bundler/packager/metro-bundler
+    working_directory: ~/metro/packager/metro
     docker:
       - image: circleci/node:8
     steps:
@@ -35,7 +35,7 @@ jobs:
       - run: yarn run test-ci
 
   test-node-6:
-    working_directory: ~/metro-bundler/packager/metro-bundler
+    working_directory: ~/metro/packager/metro
     docker:
       - image: circleci/node:6
     steps:
@@ -47,21 +47,21 @@ jobs:
       - run: yarn run test-ci
 
   deploy:
-    working_directory: ~/metro-bundler/packager/metro-bundler
+    working_directory: ~/metro/packager/metro
     docker:
       - image: circleci/node:8
     steps:
       - checkout
       - restore-cache: *restore-cache
       - run:
-          working_directory: packages/metro-bundler
+          working_directory: packages/metro
           command: yarn --no-progress
       - save-cache: *save-cache
       - run:
-          working_directory: ~/metro-bundler/
+          working_directory: ~/metro/
           run: yarn build
       - run:
-          working_directory: packages/metro-bundler
+          working_directory: packages/metro
           command: |
             yarn prepare-release
             npm publish

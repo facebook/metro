@@ -151,7 +151,7 @@ const DEFAULT = ({
   getPlatforms: () => [],
   getPolyfillModuleNames: () => [],
   // We assume the default project path is two levels up from
-  // node_modules/metro-bundler/
+  // node_modules/metro/
   getProjectRoots: () => [path.resolve(__dirname, '../..')],
   getProvidesModuleNodeModules: () => providesModuleNodeModules.slice(),
   getSourceExts: () => [],

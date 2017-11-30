@@ -24,11 +24,11 @@ class Help extends React.Component {
           <translate>
             Find what you're looking for in our detailed documentation and
             guides.\n\n- Learn how to [get
-            started](/metro-bundler/docs/en/getting-started.html) with Metro.\n-
-            [Troubleshoot](/metro-bundler/docs/en/troubleshooting.html) problems with
+            started](/metro/docs/en/getting-started.html) with Metro.\n-
+            [Troubleshoot](/metro/docs/en/troubleshooting.html) problems with
             Metro.\n- Learn how to [configure
-            Metro](/metro-bundler/docs/en/configuration.html).\n- Look at the full [API
-            Reference](/metro-bundler/docs/en/api.html).
+            Metro](/metro/docs/en/configuration.html).\n- Look at the full [API
+            Reference](/metro/docs/en/api.html).
           </translate>
         ),
         title: <translate>Browse the docs</translate>,
@@ -54,7 +54,7 @@ class Help extends React.Component {
           <translate>
             Find out what's new with Metro.\n\n- Follow
             [Metro](https://twitter.com/MetroBundler) on Twitter.\n- Subscribe to the
-            [Metro blog](/metro-bundler/blog/).
+            [Metro blog](/metro/blog/).
           </translate>
         ),
         title: <translate>Stay up to date</translate>,

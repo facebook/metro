@@ -30,13 +30,13 @@ To deploy the website manually, run the following command as a Git user with
 write permissions:
 
 ```
-DEPLOY_USER=facebook GIT_USER=metro-bot CIRCLE_PROJECT_USERNAME=facebook CIRCLE_PROJECT_REPONAME=metro-bundler npm run gh-pages
+DEPLOY_USER=facebook GIT_USER=metro-bot CIRCLE_PROJECT_USERNAME=facebook CIRCLE_PROJECT_REPONAME=metro npm run gh-pages
 ```
 
 ## Staging
 
-Run the above command against your own fork of `facebook/metro-bundler`:
+Run the above command against your own fork of `facebook/metro`:
 
 ```
-DEPLOY_USER=YOUR_GITHUB_USERNAME GIT_USER=YOUR_GITHUB_USERNAME CIRCLE_PROJECT_USERNAME=YOUR_GITHUB_USERNAME CIRCLE_PROJECT_REPONAME=metro-bundler npm run gh-pages
+DEPLOY_USER=YOUR_GITHUB_USERNAME GIT_USER=YOUR_GITHUB_USERNAME CIRCLE_PROJECT_USERNAME=YOUR_GITHUB_USERNAME CIRCLE_PROJECT_REPONAME=metro npm run gh-pages
 ```

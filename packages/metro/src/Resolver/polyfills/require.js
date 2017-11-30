@@ -197,8 +197,8 @@ function loadModuleImplementation(moduleId, module) {
     }
 
     // keep args in sync with with defineModuleCode in
-    // metro-bundler/src/Resolver/index.js
-    // and metro-bundler/src/ModuleGraph/worker.js
+    // metro/src/Resolver/index.js
+    // and metro/src/ModuleGraph/worker.js
     factory(global, require, moduleObject, exports, dependencyMap);
 
     // avoid removing factory in DEV mode as it breaks HMR

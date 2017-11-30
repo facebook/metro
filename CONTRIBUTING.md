@@ -1,6 +1,6 @@
-# Contributing to metro-bundler
+# Contributing to Metro
 
-metro-bundler is one of Facebook's open source projects that is both under very active development and is also being used to ship code to everybody on [facebook.com](https://www.facebook.com). We're still working out the kinks to make contributing to this project as easy and transparent as possible, but we're not quite there yet. Hopefully this document makes the process for contributing clear and answers some questions that you may have.
+Metro is one of Facebook's open source projects that is both under very active development and is also being used to ship code to everybody on [facebook.com](https://www.facebook.com). We're still working out the kinks to make contributing to this project as easy and transparent as possible, but we're not quite there yet. Hopefully this document makes the process for contributing clear and answers some questions that you may have.
 
 ## [Code of Conduct](https://code.facebook.com/codeofconduct)
 
@@ -23,8 +23,8 @@ The core team will be monitoring for pull requests. When we get one, we'll run s
 1. Fork the repo and create your branch from `master`.
 
    ```sh
-   git clone https://github.com/facebook/metro-bundler
-   cd metro-bundler
+   git clone https://github.com/facebook/metro
+   cd metro
    git checkout -b my_branch
    ```
 
@@ -69,7 +69,7 @@ Facebook has a [bounty program](https://www.facebook.com/whitehat/) for the safe
 
 ## How to Get in Touch
 
-* Discord - [#metro-bundler](https://discordapp.com/channels/102860784329052160/103622435865104384) on [Reactiflux](http://www.reactiflux.com/)
+* Discord - [#metro](https://discordapp.com/channels/102860784329052160/103622435865104384) on [Reactiflux](http://www.reactiflux.com/)
 
 ### Code Conventions
 
@@ -85,4 +85,4 @@ Facebook has a [bounty program](https://www.facebook.com/whitehat/) for the safe
 
 ## License
 
-By contributing to metro-bundler, you agree that your contributions will be licensed under its BSD license.
+By contributing to Metro, you agree that your contributions will be licensed under its BSD license.
