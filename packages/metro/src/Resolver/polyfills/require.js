@@ -72,9 +72,15 @@ function define(
       // named parameter in `define` in production.
       const inverseDependencies = arguments[4];
 
-      // If the module has already been defined and we're in dev mode,
-      // hot reload it.
-      global.__accept(moduleId, factory, dependencyMap, inverseDependencies);
+      // If the module has already been defined and the define method has been
+      // called with inverseDependencies, we can hot reload it.
+      if (inverseDependencies) {
+        global.__accept(moduleId, factory, dependencyMap, inverseDependencies);
+      } else {
+        console.warn(
+          `Trying to define twice module ID ${moduleId} in the same bundle`,
+        );
+      }
     }
 
     // prevent repeated calls to `global.nativeRequire` to overwrite modules
