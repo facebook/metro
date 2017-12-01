@@ -97,6 +97,7 @@ type Options = {|
   +assetServer: AssetServer,
   +blacklistRE?: RegExp,
   +cacheVersion: string,
+  +createModuleIdFactory?: () => (path: string) => number,
   +enableBabelRCLookup: boolean,
   +extraNodeModules: {},
   +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
@@ -122,7 +123,7 @@ type Options = {|
 
 class Bundler {
   _opts: Options;
-  _getModuleId: ({path: string}) => number;
+  _getModuleId: (path: string) => number;
   _transformer: Transformer;
   _resolverPromise: Promise<Resolver>;
   _projectRoots: $ReadOnlyArray<string>;
@@ -155,7 +156,7 @@ class Bundler {
       transformModuleHash,
     ];
 
-    this._getModuleId = createModuleIdFactory();
+    this._getModuleId = (opts.createModuleIdFactory || createModuleIdFactory)();
 
     let getCacheKey = (options: mixed) => '';
     if (opts.transformModulePath) {

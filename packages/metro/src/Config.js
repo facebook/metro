@@ -139,6 +139,11 @@ export type ConfigT = {
    * contain the absolute path of each module.
    */
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
+
+  /**
+   * An optional custom module ID factory creator used by the bundler.
+   */
+  createModuleIdFactory?: () => (path: string) => number,
 };
 
 const DEFAULT = ({

@@ -71,6 +71,7 @@ class Server {
     assetExts: Array<string>,
     blacklistRE: void | RegExp,
     cacheVersion: string,
+    createModuleIdFactory?: () => (path: string) => number,
     enableBabelRCLookup: boolean,
     extraNodeModules: {},
     getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
@@ -121,6 +122,7 @@ class Server {
       assetRegistryPath: options.assetRegistryPath,
       blacklistRE: options.blacklistRE,
       cacheVersion: options.cacheVersion || '1.0',
+      createModuleIdFactory: options.createModuleIdFactory,
       enableBabelRCLookup:
         options.enableBabelRCLookup != null
           ? options.enableBabelRCLookup
