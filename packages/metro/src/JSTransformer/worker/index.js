@@ -14,6 +14,7 @@
 
 const JsFileWrapping = require('../../ModuleGraph/worker/JsFileWrapping');
 
+const babylon = require('babylon');
 const collectDependencies = require('../../ModuleGraph/worker/collect-dependencies');
 const constantFolding = require('./constant-folding');
 const generate = require('babel-generator').default;
@@ -43,7 +44,7 @@ export type TransformArgs<ExtraOptions: {}> = {|
 |};
 
 export type TransformResults = {
-  ast: Ast,
+  ast: ?Ast,
 };
 
 export type Transform<ExtraOptions: {}> = (
@@ -92,8 +93,12 @@ function postTransform(
   isScript: boolean,
   options: Options,
   transformFileStartLogEntry: LogEntry,
-  ast: Ast,
+  receivedAst: ?Ast,
 ): Data {
+  // Transformers can ouptut null ASTs (if they ignore the file). In that case
+  // we need to parse the module source code to get their AST.
+  const ast = receivedAst || babylon.parse(sourceCode, {sourceType: 'module'});
+
   const timeDelta = process.hrtime(transformFileStartLogEntry.start_timestamp);
   const duration_ms = Math.round((timeDelta[0] * 1e9 + timeDelta[1]) / 1e6);
   const transformFileEndLogEntry = {
