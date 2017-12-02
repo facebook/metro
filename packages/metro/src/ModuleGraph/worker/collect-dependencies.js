@@ -62,6 +62,8 @@ class Replacement {
     const mapLookup = createMapLookup(dependencyMapIdentifier, newId);
     return [mapLookup, oldId];
   }
+
+  processMemberExp(path, state, depMapIdent) {}
 }
 
 function getInvalidProdRequireMessage(node) {
@@ -101,6 +103,34 @@ class ProdReplacement {
   }
 
   getIndex(memberExpression, _: boolean) {
+    return memberExpression.property.value;
+  }
+
+  getDependencies(): $ReadOnlyArray<TransformResultDependency> {
+    return this.replacement.getDependencies();
+  }
+
+  makeArgs(newId, _, dependencyMapIdentifier) {
+    const mapLookup = createMapLookup(dependencyMapIdentifier, newId);
+    return [mapLookup];
+  }
+
+  processMemberExp(path, state, depMapIdent) {
+    const node = path.node;
+    if (
+      node.computed &&
+      node.object.type === 'Identifier' &&
+      node.object.name === depMapIdent &&
+      node.property.type === 'NumericLiteral'
+    ) {
+      const newIx = this._getTranslatedIndex(node);
+      if (newIx !== node.property.value) {
+        node.property.value = newIx;
+      }
+    }
+  }
+
+  _getTranslatedIndex(memberExpression) {
     const id = memberExpression.property.value;
     if (id in this.dependencies) {
       const dependency = this.dependencies[id];
@@ -113,15 +143,6 @@ class ProdReplacement {
         .map((n, i) => `${i} => ${n.name}`)
         .join(', ')}`,
     );
-  }
-
-  getDependencies(): $ReadOnlyArray<TransformResultDependency> {
-    return this.replacement.getDependencies();
-  }
-
-  makeArgs(newId, _, dependencyMapIdentifier) {
-    const mapLookup = createMapLookup(dependencyMapIdentifier, newId);
-    return [mapLookup];
   }
 }
 
@@ -168,6 +189,12 @@ function collectDependencies(
           return;
         }
         const arg = replacement.getRequireCallArg(node);
+        // FIXME: in prod mode, this is a no-op, the actual translation of the
+        // index if done by the MemberExpression instead, so that it also
+        // translates calls to ex. BundleSegments.loadForModule() (but it
+        // could be anything that refers to that particular ID.)
+        // We should just get rid of the generic logic and have a specific
+        // prod/optimize babel visitor instead.
         const index = replacement.getIndex(arg, false);
         node.arguments = replacement.makeArgs(
           types.numericLiteral(index),
@@ -175,6 +202,17 @@ function collectDependencies(
           state.dependencyMapIdentifier,
         );
         visited.add(node);
+      },
+
+      // FIXME: we should remove ID-translation completely from CallExpression
+      // handler for ProdReplacement, and just do everything here once.
+      // Refactor necessary.
+      MemberExpression(path, state) {
+        replacement.processMemberExp(
+          path,
+          state,
+          state.dependencyMapIdentifier.name,
+        );
       },
     },
     null,

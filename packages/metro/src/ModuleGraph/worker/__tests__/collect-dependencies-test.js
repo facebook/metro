@@ -137,14 +137,17 @@ describe('Dependency collection from optimized ASTs', () => {
     ast = astFromCode(`
       const a = require(${dependencyMapName}[0], 'b/lib/a');
       exports.do = () => require(${dependencyMapName}[1], "do");
+      require(${dependencyMapName}[2], "BundleSegments").loadForModule(${dependencyMapName}[3]).then(function () { return require(${dependencyMapName}[3], "some/async/module"); }).then(foo => {});
       if (!something) {
-        require(${dependencyMapName}[2], "setup/something");
+        require(${dependencyMapName}[4], "setup/something");
       }
     `);
     deps = [
       {name: 'b/lib/a', isAsync: false},
       {name: 'do', isAsync: false},
-      {name: 'setup/something', isAsync: true},
+      {name: 'BundleSegments', isAsync: false},
+      {name: 'some/async/module', isAsync: true},
+      {name: 'setup/something', isAsync: false},
     ];
   });
 
@@ -164,12 +167,20 @@ describe('Dependency collection from optimized ASTs', () => {
     expect(result.dependencies).toEqual([{name: 'do', isAsync: false}]);
   });
 
-  it('only returns async dependencies that are in the code', () => {
-    ast = astFromCode(`require(${dependencyMapName}[2], "setup/something")`);
+  it('only returns dependencies that are in the code, and properly translate async dependencies', () => {
+    ast = astFromCode(`
+      require(${dependencyMapName}[2], "BundleSegments").loadForModule(${dependencyMapName}[3]).then(function () { return require(${dependencyMapName}[3], "some/async/module"); }).then(foo => {});
+    `);
     const result = forOptimization(ast, deps, dependencyMapName);
     expect(result.dependencies).toEqual([
-      {name: 'setup/something', isAsync: true},
+      {name: 'BundleSegments', isAsync: false},
+      {name: 'some/async/module', isAsync: true},
     ]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        require(${dependencyMapName}[0]).loadForModule(${dependencyMapName}[1]).then(function () { return require(${dependencyMapName}[1]); }).then(foo => {});
+      `),
+    );
   });
 
   it('replaces all call signatures inserted by a prior call to `collectDependencies`', () => {
@@ -178,8 +189,9 @@ describe('Dependency collection from optimized ASTs', () => {
       comparableCode(`
       const a = require(${dependencyMapName}[0]);
       exports.do = () => require(${dependencyMapName}[1]);
+      require(${dependencyMapName}[2]).loadForModule(${dependencyMapName}[3]).then(function () { return require(${dependencyMapName}[3]); }).then(foo => {});
       if (!something) {
-        require(${dependencyMapName}[2]);
+        require(${dependencyMapName}[4]);
       }
     `),
     );
