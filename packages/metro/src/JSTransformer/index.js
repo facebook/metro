@@ -61,7 +61,6 @@ module.exports = class Transformer {
         reporters.stderrChunk(chunk.toString('utf8'));
       });
     } else {
-      // $FlowFixMe: impossible to type a dynamic require.
       this._worker = require(workerPath);
     }
   }
