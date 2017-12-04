@@ -25,18 +25,18 @@ jest
     platform: () => 'test',
   }));
 
-// This doesn't have state, and it's huge (Babel) so it's much faster to
-// require it only once. The variable name is prefixed with "mock" as an escape-hatch
-// for babel-plugin-jest-hoist.
-let mockExtractDependencies;
-jest.mock('../../JSTransformer/worker/extract-dependencies', () => {
-  if (!mockExtractDependencies) {
-    mockExtractDependencies = require.requireActual(
-      '../../JSTransformer/worker/extract-dependencies',
-    );
+// Super-simple mock for extracting dependencies
+const extractDependencies = function(sourceCode: string) {
+  const regexp = /require\s*\(\s*(['"])(.*?)\1\s*\)/g;
+  const deps = [];
+  let match;
+
+  while ((match = regexp.exec(sourceCode))) {
+    deps.push(match[2]);
   }
-  return mockExtractDependencies;
-});
+
+  return deps;
+};
 
 jest.mock('graceful-fs', () => require('fs'));
 
@@ -110,14 +110,9 @@ describe('traverseDependencies', function() {
       transformCache: require('TransformCaching').mocked(),
       transformCode: (module, sourceCode, transformOptions) => {
         return new Promise(resolve => {
-          let deps = {dependencies: [], dependencyOffsets: []};
+          const deps = {dependencies: []};
           if (!module.path.endsWith('.json')) {
-            if (!mockExtractDependencies) {
-              mockExtractDependencies = require.requireActual(
-                '../../JSTransformer/worker/extract-dependencies',
-              );
-            }
-            deps = mockExtractDependencies(sourceCode);
+            deps.dependencies = extractDependencies(sourceCode);
           }
           resolve({...deps, code: sourceCode});
         });
