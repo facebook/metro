@@ -498,6 +498,7 @@ class Server {
       return;
     }
 
+    mres.setHeader(FILES_CHANGED_COUNT_HEADER, String(output.numModifiedFiles));
     mres.setHeader('Content-Type', 'application/javascript');
     mres.setHeader('Content-Length', String(Buffer.byteLength(output.bundle)));
     mres.end(output.bundle);
