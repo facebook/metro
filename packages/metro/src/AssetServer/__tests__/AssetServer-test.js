@@ -288,7 +288,7 @@ describe('AssetServer', () => {
       it('changes the hash when the passed-in file watcher emits an `all` event', () => {
         return server.getAssetData('/root/imgs/b.jpg').then(initialData => {
           mockFS.root.imgs['b@4x.jpg'] = 'updated data';
-          server.onFileChange('all', '/root/imgs/b@4x.jpg');
+
           return server
             .getAssetData('/root/imgs/b.jpg')
             .then(data => expect(data.hash).not.toEqual(initialData.hash));

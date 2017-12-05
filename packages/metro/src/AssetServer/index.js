@@ -14,7 +14,6 @@
 
 const AssetPaths = require('../node-haste/lib/AssetPaths');
 
-const crypto = require('crypto');
 const denodeify = require('denodeify');
 const fs = require('fs');
 const imageSize = require('image-size');
@@ -22,15 +21,13 @@ const path = require('path');
 const toLocalPath = require('../node-haste/lib/toLocalPath');
 
 const {isAssetTypeAnImage} = require('../Bundler/util');
-const {findRoot, getAbsoluteAssetRecord, hashFiles} = require('./util');
+const {
+  findRoot,
+  getAbsoluteAssetInfo,
+  getAbsoluteAssetRecord,
+} = require('./util');
 
-type AssetInfo = {|
-  files: Array<string>,
-  hash: string,
-  name: string,
-  scales: Array<number>,
-  type: string,
-|};
+import type {AssetInfo} from './util';
 
 export type AssetData = {|
   __packager_asset: boolean,
@@ -49,13 +46,9 @@ const readFile = denodeify(fs.readFile);
 
 class AssetServer {
   _roots: $ReadOnlyArray<string>;
-  _hashes: Map<?string, string>;
-  _files: Map<string, string>;
 
   constructor(options: {|+projectRoots: $ReadOnlyArray<string>|}) {
     this._roots = options.projectRoots;
-    this._hashes = new Map();
-    this._files = new Map();
   }
 
   get(assetPath: string, platform: ?string = null): Promise<Buffer> {
@@ -78,29 +71,11 @@ class AssetServer {
     assetPath: string,
     platform: ?string = null,
   ): Promise<AssetInfo> {
-    const nameData = AssetPaths.parse(
-      assetPath,
-      new Set(platform != null ? [platform] : []),
-    );
-    const {name, type} = nameData;
+    const dir = await findRoot(this._roots, path.dirname(assetPath), assetPath);
 
-    const {scales, files} = await this._getAssetRecord(assetPath, platform);
+    const assetAbsolutePath = path.join(dir, path.basename(assetPath));
 
-    const hash = this._hashes.get(assetPath);
-    if (hash != null) {
-      return {files, hash, name, scales, type};
-    }
-
-    const hasher = crypto.createHash('md5');
-
-    if (files.length > 0) {
-      await hashFiles(files.slice(), hasher);
-    }
-
-    const freshHash = hasher.digest('hex');
-    this._hashes.set(assetPath, freshHash);
-    files.forEach(f => this._files.set(f, assetPath));
-    return {files, hash: freshHash, name, scales, type};
+    return await getAbsoluteAssetInfo(assetAbsolutePath, platform);
   }
 
   async getAssetData(
@@ -116,7 +91,7 @@ class AssetServer {
     }
 
     const isImage = isAssetTypeAnImage(path.extname(assetPath).slice(1));
-    const assetData = await this._getAssetInfo(localPath, platform);
+    const assetData = await getAbsoluteAssetInfo(assetPath, platform);
     const dimensions = isImage ? imageSize(assetData.files[0]) : null;
     const scale = assetData.scales[0];
 
@@ -132,10 +107,6 @@ class AssetServer {
       name: assetData.name,
       type: assetData.type,
     };
-  }
-
-  onFileChange(type: string, filePath: string) {
-    this._hashes.delete(this._files.get(filePath));
   }
 
   /**

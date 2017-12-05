@@ -14,6 +14,7 @@
 
 const AssetPaths = require('../node-haste/lib/AssetPaths');
 
+const crypto = require('crypto');
 const denodeify = require('denodeify');
 const fs = require('fs');
 const path = require('path');
@@ -22,6 +23,27 @@ const stat = denodeify(fs.stat);
 const readDir = denodeify(fs.readdir);
 
 import type {AssetPath} from '../node-haste/lib/AssetPaths';
+
+export type AssetInfo = {|
+  files: Array<string>,
+  hash: string,
+  name: string,
+  scales: Array<number>,
+  type: string,
+|};
+
+const hashFiles = denodeify(function hashFilesCb(files, hash, callback) {
+  if (!files.length) {
+    callback(null);
+    return;
+  }
+
+  fs
+    .createReadStream(files.shift())
+    .on('data', data => hash.update(data))
+    .once('end', () => hashFilesCb(files, hash, callback))
+    .once('error', error => callback(error));
+});
 
 function buildAssetMap(
   dir: string,
@@ -80,19 +102,6 @@ function getAssetKey(assetName, platform) {
   } else {
     return assetName;
   }
-}
-
-function hashFiles(files, hash, callback) {
-  if (!files.length) {
-    callback(null);
-    return;
-  }
-
-  fs
-    .createReadStream(files.shift())
-    .on('data', data => hash.update(data))
-    .once('end', () => hashFiles(files, hash, callback))
-    .once('error', error => callback(error));
 }
 
 async function getAbsoluteAssetRecord(
@@ -171,8 +180,28 @@ async function findRoot(
   );
 }
 
+async function getAbsoluteAssetInfo(
+  assetPath: string,
+  platform: ?string = null,
+): Promise<AssetInfo> {
+  const nameData = AssetPaths.parse(
+    assetPath,
+    new Set(platform != null ? [platform] : []),
+  );
+  const {name, type} = nameData;
+
+  const {scales, files} = await getAbsoluteAssetRecord(assetPath, platform);
+  const hasher = crypto.createHash('md5');
+
+  if (files.length > 0) {
+    await hashFiles(files.slice(), hasher);
+  }
+
+  return {files, hash: hasher.digest('hex'), name, scales, type};
+}
+
 module.exports = {
   findRoot,
+  getAbsoluteAssetInfo,
   getAbsoluteAssetRecord,
-  hashFiles: denodeify(hashFiles),
 };

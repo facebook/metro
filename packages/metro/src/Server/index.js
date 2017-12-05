@@ -276,8 +276,6 @@ class Server {
   }
 
   onFileChange(type: string, filePath: string) {
-    this._assetServer.onFileChange(type, filePath);
-
     Promise.all(
       this._fileChangeListeners.map(listener => listener(filePath)),
     ).then(
