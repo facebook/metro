@@ -789,7 +789,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: '/root/index.js',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['aPackage'],
             isAsset: false,
@@ -832,7 +832,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: '/root/index.js',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['aPackage'],
             isAsset: false,
@@ -876,7 +876,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: '/root/index.js',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['aPackage'],
             isAsset: false,
@@ -1910,7 +1910,7 @@ describe('traverseDependencies', function() {
               },
               {
                 dependencies: [],
-                id: '/root/emptyModule.js',
+                id: 'emptyModule.js',
                 isAsset: false,
                 isPolyfill: false,
                 path: '/root/emptyModule.js',
@@ -1980,7 +1980,7 @@ describe('traverseDependencies', function() {
               },
               {
                 dependencies: [],
-                id: '/root/emptyModule.js',
+                id: 'emptyModule.js',
                 isAsset: false,
                 isPolyfill: false,
                 path: '/root/emptyModule.js',
@@ -2097,7 +2097,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: '/root/index.js',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['/root/apple.js'],
             isAsset: false,
@@ -2105,7 +2105,7 @@ describe('traverseDependencies', function() {
             resolution: undefined,
           },
           {
-            id: '/root/apple.js',
+            id: 'apple.js',
             path: '/root/apple.js',
             dependencies: [],
             isAsset: false,
@@ -2284,7 +2284,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: '/root/index.js',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['./foo'],
             isAsset: false,
@@ -2292,7 +2292,7 @@ describe('traverseDependencies', function() {
             resolution: undefined,
           },
           {
-            id: '/root/foo/index.js',
+            id: 'foo/index.js',
             path: '/root/foo/index.js',
             dependencies: ['bar'],
             isAsset: false,
@@ -2335,7 +2335,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: '/root/index.js',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['bar'],
             isAsset: false,
@@ -2343,7 +2343,7 @@ describe('traverseDependencies', function() {
             resolution: undefined,
           },
           {
-            id: '/root/node_modules/bar.js',
+            id: 'node_modules/bar.js',
             path: '/root/node_modules/bar.js',
             dependencies: [],
             isAsset: false,
@@ -2380,7 +2380,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: '/root/index.js',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['bar/lib/foo'],
             isAsset: false,
@@ -2489,7 +2489,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'C:\\root\\index.js',
+            id: 'index.js',
             path: 'C:\\root\\index.js',
             dependencies: ['C:/root/apple.js'],
             isAsset: false,
@@ -2497,7 +2497,7 @@ describe('traverseDependencies', function() {
             resolution: undefined,
           },
           {
-            id: 'C:\\root\\apple.js',
+            id: 'apple.js',
             path: 'C:\\root\\apple.js',
             dependencies: [],
             isAsset: false,
@@ -3395,7 +3395,7 @@ describe('traverseDependencies', function() {
             resolution: undefined,
           },
           {
-            id: '/root/a.ios.js',
+            id: 'a.ios.js',
             path: '/root/a.ios.js',
             dependencies: [],
             isAsset: false,
@@ -3500,7 +3500,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: '/root/index.js',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['a/index.js'],
             isAsset: false,
@@ -4336,7 +4336,7 @@ describe('traverseDependencies', function() {
             resolution: undefined,
           },
           {
-            id: 'C:\\root\\a.ios.js',
+            id: 'a.ios.js',
             path: 'C:\\root\\a.ios.js',
             dependencies: [],
             isAsset: false,
@@ -5162,7 +5162,7 @@ describe('traverseDependencies', function() {
         expect(deps).toEqual([
           {
             dependencies: ['./a'],
-            id: '/root/index.jsx',
+            id: 'index.jsx',
             isAsset: false,
             isPolyfill: false,
             path: '/root/index.jsx',
@@ -5170,7 +5170,7 @@ describe('traverseDependencies', function() {
           },
           {
             dependencies: [],
-            id: '/root/a.coffee',
+            id: 'a.coffee',
             isAsset: false,
             isPolyfill: false,
             path: '/root/a.coffee',
@@ -5449,13 +5449,13 @@ describe('traverseDependencies', function() {
 
     it('returns correctly a JS module', async () => {
       const module = dependencyGraph.getModuleForPath('/root/index.js');
-      expect(module.getName()).toBe('/root/index.js');
+      expect(module.getName()).toBe('index.js');
       expect(module.isAsset()).toBe(false);
     });
 
     it('returns correctly an asset module', async () => {
       const module = dependencyGraph.getModuleForPath('/root/imgs/a.png');
-      expect(module.getName()).toBe('/root/imgs/a.png');
+      expect(module.getName()).toBe('imgs/a.png');
       expect(module.isAsset()).toBe(true);
     });
   });

@@ -151,8 +151,8 @@ class Module {
     const p = this.getPackage();
 
     if (!p) {
-      // Name is full path
-      return this.path;
+      // Name is local path
+      return this.localPath;
     }
 
     const packageName = p.getName();

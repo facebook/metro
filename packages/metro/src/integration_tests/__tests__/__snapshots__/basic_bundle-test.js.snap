@@ -167,7 +167,7 @@ __d(function (global, require, module, exports, _dependencyMap) {
     asset: asset
   };
 },6,[7]);
-__d(/* /test.png */function(global, require, module, exports) {module.exports=require(8).registerAsset({\\"__packager_asset\\":true,\\"httpServerLocation\\":\\"/assets\\",\\"width\\":8,\\"height\\":8,\\"scales\\":[1],\\"hash\\":\\"77d45c1f7fa73c0f6c444a830dc42f67\\",\\"name\\":\\"test\\",\\"type\\":\\"png\\"}); // 8 = /AssetRegistry
+__d(/* test.png */function(global, require, module, exports) {module.exports=require(8).registerAsset({\\"__packager_asset\\":true,\\"httpServerLocation\\":\\"/assets\\",\\"width\\":8,\\"height\\":8,\\"scales\\":[1],\\"hash\\":\\"77d45c1f7fa73c0f6c444a830dc42f67\\",\\"name\\":\\"test\\",\\"type\\":\\"png\\"}); // 8 = /AssetRegistry
 }, 7);
 __d(function (global, require, module, exports, _dependencyMap) {
   'use strict';
@@ -328,7 +328,7 @@ __d(function (global, require, module, exports, _dependencyMap) {
     asset: asset
   };
 },4,[5]);
-__d(/* /test.png */function(global, require, module, exports) {module.exports=require(6).registerAsset({\\"__packager_asset\\":true,\\"httpServerLocation\\":\\"/assets\\",\\"width\\":8,\\"height\\":8,\\"scales\\":[1],\\"hash\\":\\"77d45c1f7fa73c0f6c444a830dc42f67\\",\\"name\\":\\"test\\",\\"type\\":\\"png\\"}); // 6 = /AssetRegistry
+__d(/* test.png */function(global, require, module, exports) {module.exports=require(6).registerAsset({\\"__packager_asset\\":true,\\"httpServerLocation\\":\\"/assets\\",\\"width\\":8,\\"height\\":8,\\"scales\\":[1],\\"hash\\":\\"77d45c1f7fa73c0f6c444a830dc42f67\\",\\"name\\":\\"test\\",\\"type\\":\\"png\\"}); // 6 = /AssetRegistry
 }, 5);
 __d(function (global, require, module, exports, _dependencyMap) {
   'use strict';

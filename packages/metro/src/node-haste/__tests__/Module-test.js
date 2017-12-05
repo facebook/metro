@@ -68,6 +68,7 @@ describe('Module', () => {
       cache,
       file: (options && options.file) || fileName,
       depGraphHelpers: new DependencyGraphHelpers(),
+      localPath: (options && options.localPath) || fileName,
       moduleCache: new ModuleCache({cache}),
       getTransformCacheKey: () => transformCacheKey,
     });
