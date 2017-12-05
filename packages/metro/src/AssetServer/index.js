@@ -16,18 +16,10 @@ const AssetPaths = require('../node-haste/lib/AssetPaths');
 
 const denodeify = require('denodeify');
 const fs = require('fs');
-const imageSize = require('image-size');
 const path = require('path');
 const toLocalPath = require('../node-haste/lib/toLocalPath');
 
-const {isAssetTypeAnImage} = require('../Bundler/util');
-const {
-  findRoot,
-  getAbsoluteAssetInfo,
-  getAbsoluteAssetRecord,
-} = require('./util');
-
-import type {AssetInfo} from './util';
+const {findRoot, getAbsoluteAssetRecord, getAssetData} = require('./util');
 
 export type AssetData = {|
   __packager_asset: boolean,
@@ -67,46 +59,13 @@ class AssetServer {
     });
   }
 
-  async _getAssetInfo(
-    assetPath: string,
-    platform: ?string = null,
-  ): Promise<AssetInfo> {
-    const dir = await findRoot(this._roots, path.dirname(assetPath), assetPath);
-
-    const assetAbsolutePath = path.join(dir, path.basename(assetPath));
-
-    return await getAbsoluteAssetInfo(assetAbsolutePath, platform);
-  }
-
   async getAssetData(
     assetPath: string,
     platform: ?string = null,
   ): Promise<AssetData> {
     const localPath = toLocalPath(this._roots, assetPath);
-    var assetUrlPath = path.join('/assets', path.dirname(localPath));
 
-    // On Windows, change backslashes to slashes to get proper URL path from file path.
-    if (path.sep === '\\') {
-      assetUrlPath = assetUrlPath.replace(/\\/g, '/');
-    }
-
-    const isImage = isAssetTypeAnImage(path.extname(assetPath).slice(1));
-    const assetData = await getAbsoluteAssetInfo(assetPath, platform);
-    const dimensions = isImage ? imageSize(assetData.files[0]) : null;
-    const scale = assetData.scales[0];
-
-    return {
-      __packager_asset: true,
-      fileSystemLocation: path.dirname(assetPath),
-      httpServerLocation: assetUrlPath,
-      width: dimensions ? dimensions.width / scale : undefined,
-      height: dimensions ? dimensions.height / scale : undefined,
-      scales: assetData.scales,
-      files: assetData.files,
-      hash: assetData.hash,
-      name: assetData.name,
-      type: assetData.type,
-    };
+    return getAssetData(assetPath, localPath, platform);
   }
 
   /**

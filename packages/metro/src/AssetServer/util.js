@@ -17,12 +17,16 @@ const AssetPaths = require('../node-haste/lib/AssetPaths');
 const crypto = require('crypto');
 const denodeify = require('denodeify');
 const fs = require('fs');
+const imageSize = require('image-size');
 const path = require('path');
+
+const {isAssetTypeAnImage} = require('../Bundler/util');
 
 const stat = denodeify(fs.stat);
 const readDir = denodeify(fs.readdir);
 
 import type {AssetPath} from '../node-haste/lib/AssetPaths';
+import type {AssetData} from './';
 
 export type AssetInfo = {|
   files: Array<string>,
@@ -194,14 +198,46 @@ async function getAbsoluteAssetInfo(
   const hasher = crypto.createHash('md5');
 
   if (files.length > 0) {
-    await hashFiles(files.slice(), hasher);
+    await hashFiles(Array.from(files), hasher);
   }
 
   return {files, hash: hasher.digest('hex'), name, scales, type};
+}
+
+async function getAssetData(
+  assetPath: string,
+  localPath: string,
+  platform: ?string = null,
+): Promise<AssetData> {
+  let assetUrlPath = path.join('/assets', path.dirname(localPath));
+
+  // On Windows, change backslashes to slashes to get proper URL path from file path.
+  if (path.sep === '\\') {
+    assetUrlPath = assetUrlPath.replace(/\\/g, '/');
+  }
+
+  const isImage = isAssetTypeAnImage(path.extname(assetPath).slice(1));
+  const assetData = await getAbsoluteAssetInfo(assetPath, platform);
+  const dimensions = isImage ? imageSize(assetData.files[0]) : null;
+  const scale = assetData.scales[0];
+
+  return {
+    __packager_asset: true,
+    fileSystemLocation: path.dirname(assetPath),
+    httpServerLocation: assetUrlPath,
+    width: dimensions ? dimensions.width / scale : undefined,
+    height: dimensions ? dimensions.height / scale : undefined,
+    scales: assetData.scales,
+    files: assetData.files,
+    hash: assetData.hash,
+    name: assetData.name,
+    type: assetData.type,
+  };
 }
 
 module.exports = {
   findRoot,
   getAbsoluteAssetInfo,
   getAbsoluteAssetRecord,
+  getAssetData,
 };
