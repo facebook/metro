@@ -87,7 +87,7 @@ describe('TransformCaching.FileBasedCache', () => {
         ...args,
         cacheOptions: {reporter: {}, resetCache: false},
       });
-      expect(cachedResult.result).toEqual(result);
+      expect(cachedResult).toEqual(result);
     });
   });
 
@@ -119,7 +119,7 @@ describe('TransformCaching.FileBasedCache', () => {
         ...args,
         cacheOptions: {reporter: {}, resetCache: false},
       });
-      expect(cachedResult.result).toEqual(result);
+      expect(cachedResult).toEqual(result);
     });
     allCases.pop();
     allCases.forEach(entry => {
@@ -127,8 +127,7 @@ describe('TransformCaching.FileBasedCache', () => {
         ...argsFor(entry),
         cacheOptions: {reporter: {}, resetCache: false},
       });
-      expect(cachedResult.result).toBeNull();
-      expect(cachedResult.outdatedDependencies).toEqual(['foo', 'bar']);
+      expect(cachedResult).toBeNull();
     });
   });
 });

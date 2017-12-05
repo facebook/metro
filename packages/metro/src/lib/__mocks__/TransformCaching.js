@@ -49,10 +49,7 @@ class TransformCacheMock {
   }
 
   readSync(props) {
-    return {
-      result: transformCache.get(transformCacheKeyOf(props)),
-      outdatedDependencies: [],
-    };
+    return transformCache.get(transformCacheKeyOf(props));
   }
 }
 

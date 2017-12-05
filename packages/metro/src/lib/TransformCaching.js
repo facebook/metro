@@ -37,10 +37,7 @@ export type CachedResult = {
   map: CompactRawMappings,
 };
 
-export type TransformCacheResult = {|
-  +result: ?CachedResult,
-  +outdatedDependencies: $ReadOnlyArray<string>,
-|};
+export type TransformCacheResult = ?CachedResult;
 
 export type CacheOptions = {
   reporter: Reporter,
@@ -73,8 +70,6 @@ export type TransformCache = {
   writeSync(props: WriteTransformProps): void,
   readSync(props: ReadTransformProps): TransformCacheResult,
 };
-
-const EMPTY_ARRAY = [];
 
 /* 1 day */
 const GARBAGE_COLLECTION_PERIOD = 24 * 60 * 60 * 1000;
@@ -181,7 +176,7 @@ class FileBasedCache {
       return this._readFilesSync(props);
     } catch (error) {
       if (error.code === 'ENOENT') {
-        return {result: null, outdatedDependencies: EMPTY_ARRAY};
+        return null;
       }
       throw error;
     }
@@ -191,11 +186,11 @@ class FileBasedCache {
     const cacheFilePaths = this._getCacheFilePaths(props);
     const metadata = readMetadataFileSync(cacheFilePaths.metadata);
     if (metadata == null) {
-      return {result: null, outdatedDependencies: EMPTY_ARRAY};
+      return null;
     }
     const sourceHash = hashSourceCode(props);
     if (sourceHash !== metadata.cachedSourceHash) {
-      return {result: null, outdatedDependencies: metadata.dependencies};
+      return null;
     }
     const transformedCode = fs.readFileSync(
       cacheFilePaths.transformedCode,
@@ -206,15 +201,12 @@ class FileBasedCache {
       .update(transformedCode)
       .digest('hex');
     if (metadata.cachedResultHash !== codeHash) {
-      return {result: null, outdatedDependencies: metadata.dependencies};
+      return null;
     }
     return {
-      result: {
-        code: transformedCode,
-        dependencies: metadata.dependencies,
-        map: metadata.sourceMap,
-      },
-      outdatedDependencies: EMPTY_ARRAY,
+      code: transformedCode,
+      dependencies: metadata.dependencies,
+      map: metadata.sourceMap,
     };
   }
 
@@ -411,10 +403,7 @@ function unlinkIfExistsSync(filePath: string) {
 function none(): TransformCache {
   return {
     writeSync: () => {},
-    readSync: () => ({
-      result: null,
-      outdatedDependencies: [],
-    }),
+    readSync: () => null,
   };
 }
 

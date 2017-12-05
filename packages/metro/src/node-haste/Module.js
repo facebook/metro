@@ -19,7 +19,7 @@ const invariant = require('fbjs/lib/invariant');
 const isAbsolutePath = require('absolute-path');
 const jsonStableStringify = require('json-stable-stringify');
 
-const {join: joinPath, relative: relativePath, extname} = require('path');
+const {join: joinPath, relative: relativePath} = require('path');
 
 import type {
   TransformedCode,
@@ -44,10 +44,7 @@ export type ReadResult = {
   +source: string,
 };
 
-export type CachedReadResult = {|
-  +result: ?ReadResult,
-  +outdatedDependencies: $ReadOnlyArray<string>,
-|};
+export type CachedReadResult = ?ReadResult;
 
 export type TransformCode = (
   module: Module,
@@ -248,7 +245,7 @@ class Module {
    * To what we read from the cache or worker, we need to add id and source.
    */
   _finalizeReadResult(source: string, result: TransformedCode): ReadResult {
-    return {...result, id: this._getHasteName(), source};
+    return {...result, source};
   }
 
   async _transformCodeFor(
@@ -298,8 +295,9 @@ class Module {
   read(transformOptions: WorkerOptions): Promise<ReadResult> {
     return Promise.resolve().then(() => {
       const cached = this.readCached(transformOptions);
-      if (cached.result != null) {
-        return cached.result;
+
+      if (cached != null) {
+        return cached;
       }
       return this.readFresh(transformOptions);
     });
@@ -334,19 +332,11 @@ class Module {
       transformOptionsKey,
     );
     const cachedResult = this._options.transformCache.readSync(cacheProps);
-    if (cachedResult.result == null) {
-      return {
-        result: null,
-        outdatedDependencies: cachedResult.outdatedDependencies,
-      };
+
+    if (cachedResult == null) {
+      return null;
     }
-    return {
-      result: this._finalizeReadResult(
-        cacheProps.sourceCode,
-        cachedResult.result,
-      ),
-      outdatedDependencies: [],
-    };
+    return this._finalizeReadResult(cacheProps.sourceCode, cachedResult);
   }
 
   /**
@@ -368,10 +358,7 @@ class Module {
         cacheProps.sourceCode,
         freshResult,
       );
-      this._readResultsByOptionsKey.set(key, {
-        result: finalResult,
-        outdatedDependencies: [],
-      });
+      this._readResultsByOptionsKey.set(key, finalResult);
       return finalResult;
     })();
     this._readPromises.set(key, freshPromise);
