@@ -116,66 +116,6 @@ class Resolver {
     );
   }
 
-  resolveRequires(
-    getModuleId: (path: string) => number,
-    code: string,
-    dependencyPairs: Map<string, string>,
-    dependencyOffsets: Array<number> = [],
-  ): string {
-    const resolvedDeps = Object.create(null);
-
-    // here, we build a map of all require strings (relative and absolute)
-    // to the canonical ID of the module they reference
-    for (const [name, path] of dependencyPairs) {
-      resolvedDeps[name] = getModuleId(path);
-    }
-
-    // if we have a canonical ID for the module imported here,
-    // we use it, so that require() is always called with the same
-    // id for every module.
-    // Example:
-    // -- in a/b.js:
-    //    require('./c') => require(3);
-    // -- in b/index.js:
-    //    require('../a/c') => require(3);
-    return dependencyOffsets
-      .reduceRight(
-        ([unhandled, handled], offset) => [
-          unhandled.slice(0, offset),
-          replaceDependencyID(unhandled.slice(offset) + handled, resolvedDeps),
-        ],
-        [code, ''],
-      )
-      .join('');
-  }
-
-  wrapModule({
-    path,
-    getModuleId,
-    dependencyPairs,
-    dependencyOffsets,
-    name,
-    code,
-    dev = true,
-  }: {
-    path: string,
-    getModuleId: (path: string) => number,
-    dependencyPairs: Map<string, string>,
-    dependencyOffsets: Array<number>,
-    name: string,
-    code: string,
-    dev?: boolean,
-  }): string {
-    code = this.resolveRequires(
-      getModuleId,
-      code,
-      dependencyPairs,
-      dependencyOffsets,
-    );
-
-    return defineModuleCode(getModuleId(path), code, name, dev);
-  }
-
   async minifyModule(
     path: string,
     code: string,
@@ -198,50 +138,6 @@ class Resolver {
   getDependencyGraph(): DependencyGraph {
     return this._depGraph;
   }
-}
-
-function defineModuleCode(moduleName, code, verboseName = '', dev = true) {
-  return [
-    `__d(/* ${verboseName} */`,
-    'function(global, require, module, exports) {', // module factory
-    code,
-    '\n}, ',
-    `${JSON.stringify(moduleName)}`, // module id, null = id map. used in ModuleGraph
-    dev ? `, null, ${JSON.stringify(verboseName)}` : '',
-    ');',
-  ].join('');
-}
-
-function definePolyfillCode(code) {
-  return [
-    '(function(global) {',
-    code,
-    `\n})(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : this);`,
-  ].join('');
-}
-
-const reDepencencyString = /^(['"])([^'"']*)\1/;
-function replaceDependencyID(stringWithDependencyIDAtStart, resolvedDeps) {
-  const match = reDepencencyString.exec(stringWithDependencyIDAtStart);
-  const dependencyName = match && match[2];
-  if (match != null && dependencyName in resolvedDeps) {
-    const {length} = match[0];
-    const id = String(resolvedDeps[dependencyName]);
-    return (
-      padRight(id, length) +
-      stringWithDependencyIDAtStart
-        .slice(length)
-        .replace(/$/m, ` // ${id} = ${dependencyName}`)
-    );
-  } else {
-    return stringWithDependencyIDAtStart;
-  }
-}
-
-function padRight(string, length) {
-  return string.length < length
-    ? string + Array(length - string.length + 1).join(' ')
-    : string;
 }
 
 module.exports = Resolver;

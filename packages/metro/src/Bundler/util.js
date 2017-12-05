@@ -160,23 +160,6 @@ function generateRemoteAssetCodeFileAst(
   );
 }
 
-function generateAssetTransformResult(
-  assetRegistryPath: string,
-  assetDescriptor: ExtendedAssetDescriptor,
-): {|
-  code: string,
-  dependencies: Array<string>,
-  dependencyOffsets: Array<number>,
-|} {
-  const {code} = babelGenerate(
-    generateAssetCodeFileAst(assetRegistryPath, assetDescriptor),
-    {comments: false, compact: true},
-  );
-  const dependencies = [assetRegistryPath];
-  const dependencyOffsets = [code.indexOf(assetRegistryPath) - 1];
-  return {code, dependencies, dependencyOffsets};
-}
-
 // Test extension against all types supported by image-size module.
 // If it's not one of these, we won't treat it as an image.
 function isAssetTypeAnImage(type: string): boolean {
@@ -272,7 +255,6 @@ class ArrayMap<K, V> extends Map<K, Array<V>> {
 module.exports = {
   createRamBundleGroups,
   generateAssetCodeFileAst,
-  generateAssetTransformResult,
   generateRemoteAssetCodeFileAst,
   isAssetTypeAnImage,
 };

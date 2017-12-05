@@ -22,8 +22,6 @@ const path = require('path');
 const defaults = require('../defaults');
 const createModuleIdFactory = require('../lib/createModuleIdFactory');
 
-const {generateAssetTransformResult} = require('./util');
-
 const {sep: pathSeparator} = require('path');
 
 const VERSION = require('../../package.json').version;
@@ -240,51 +238,6 @@ class Bundler {
         .getWatcher()
         .end(),
     );
-  }
-
-  async generateAssetObjAndCode(
-    path: string,
-    assetPlugins: Array<string>,
-    platform: ?string = null,
-  ) {
-    const assetData = await this._assetServer.getAssetData(path, platform);
-    const asset = await this._applyAssetPlugins(assetPlugins, assetData);
-
-    const {
-      code,
-      dependencies,
-      dependencyOffsets,
-    } = generateAssetTransformResult(this._opts.assetRegistryPath, asset);
-
-    return {
-      asset,
-      code,
-      meta: {dependencies, dependencyOffsets, preloaded: null},
-    };
-  }
-
-  _applyAssetPlugins(
-    assetPlugins: Array<string>,
-    asset: ExtendedAssetDescriptor,
-  ) {
-    if (!assetPlugins.length) {
-      return asset;
-    }
-
-    const [currentAssetPlugin, ...remainingAssetPlugins] = assetPlugins;
-    /* $FlowFixMe: dynamic requires prevent static typing :'(  */
-    const assetPluginFunction = require(currentAssetPlugin);
-    const result = assetPluginFunction(asset);
-
-    // If the plugin was an async function, wait for it to fulfill before
-    // applying the remaining plugins
-    if (typeof result.then === 'function') {
-      return result.then(resultAsset =>
-        this._applyAssetPlugins(remainingAssetPlugins, resultAsset),
-      );
-    } else {
-      return this._applyAssetPlugins(remainingAssetPlugins, result);
-    }
   }
 
   /**

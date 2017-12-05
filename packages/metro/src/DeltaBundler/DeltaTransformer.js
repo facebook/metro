@@ -505,38 +505,6 @@ class DeltaTransformer extends EventEmitter {
     return addParamsToDefineCall(code, ...params);
   }
 
-  /**
-   * Temporary function to wrap an asset. This logic will go away once we
-   * generate the needed JS code for assets in the transformer.
-   */
-  async _wrapAsset({
-    code,
-    dependencyPairs,
-    name,
-    path,
-  }: {
-    code: string,
-    dependencyPairs: Map<string, string>,
-    name: string,
-    path: string,
-  }): Promise<string> {
-    const asset = await this._bundler.generateAssetObjAndCode(
-      path,
-      this._bundleOptions.assetPlugins,
-      this._bundleOptions.platform,
-    );
-
-    return await this._resolver.wrapModule({
-      path,
-      getModuleId: this._getModuleId,
-      dependencyPairs,
-      dependencyOffsets: asset.meta.dependencyOffsets,
-      name,
-      code: asset.code,
-      dev: this._bundleOptions.dev,
-    });
-  }
-
   _getModuleType(module: Module): DeltaEntryType {
     if (module.isAsset()) {
       return 'asset';
