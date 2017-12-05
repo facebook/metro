@@ -12,27 +12,20 @@
 
 'use strict';
 
-const AssetPaths = require('./lib/AssetPaths');
 const Module = require('./Module');
 
 import type {CachedReadResult, ConstructorArgs, ReadResult} from './Module';
 
 class AssetModule extends Module {
-  resolution: mixed;
-  _name: string;
-  _type: string;
   _dependencies: Array<string>;
 
-  constructor(
-    args: ConstructorArgs & {dependencies: Array<string>},
-    platforms: Set<string>,
-  ) {
+  constructor(args: ConstructorArgs & {dependencies: Array<string>}) {
     super(args);
-    const {resolution, name, type} = AssetPaths.parse(this.path, platforms);
-    this.resolution = resolution;
-    this._name = name;
-    this._type = type;
     this._dependencies = args.dependencies || [];
+  }
+
+  getPackage() {
+    return null;
   }
 
   isHaste() {
@@ -51,10 +44,6 @@ class AssetModule extends Module {
   /** $FlowFixMe: improper OOP design. */
   readFresh(): Promise<ReadResult> {
     return Promise.resolve({dependencies: this._dependencies});
-  }
-
-  getName() {
-    return super.getName().replace(/\/[^\/]+$/, `/${this._name}.${this._type}`);
   }
 
   hash() {

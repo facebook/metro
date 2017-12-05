@@ -173,7 +173,7 @@ describe('traverseDependencies', function() {
             dependencies: ['a'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
+
             resolveDependency: undefined,
           },
           {
@@ -182,7 +182,7 @@ describe('traverseDependencies', function() {
             dependencies: ['b'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
+
             resolveDependency: undefined,
           },
           {
@@ -191,7 +191,7 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
+
             resolveDependency: undefined,
           },
         ]);
@@ -230,7 +230,6 @@ describe('traverseDependencies', function() {
             dependencies: ['a'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'a',
@@ -238,7 +237,6 @@ describe('traverseDependencies', function() {
             dependencies: ['b'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -272,7 +270,6 @@ describe('traverseDependencies', function() {
             dependencies: ['a'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'a',
@@ -280,7 +277,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -318,7 +314,6 @@ describe('traverseDependencies', function() {
             dependencies: ['./a.json', './b'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'package/a.json',
@@ -326,7 +321,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'package/b.json',
@@ -334,7 +328,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -369,7 +362,6 @@ describe('traverseDependencies', function() {
             dependencies: ['./package.json'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'package/package.json',
@@ -377,7 +369,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -415,14 +406,12 @@ describe('traverseDependencies', function() {
             dependencies: ['./imgs/a.png'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
-            id: 'rootPackage/imgs/a.png',
+            id: 'imgs/a.png',
             path: '/root/imgs/a.png',
             dependencies: [],
             isAsset: true,
-            resolution: 1,
             isPolyfill: false,
           },
         ]);
@@ -466,28 +455,24 @@ describe('traverseDependencies', function() {
             dependencies: ['./imgs/a.png', './imgs/b.png', './imgs/c.png'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
-            id: 'rootPackage/imgs/a.png',
+            id: 'imgs/a@1.5x.png',
             path: '/root/imgs/a@1.5x.png',
-            resolution: 1.5,
             dependencies: [],
             isAsset: true,
             isPolyfill: false,
           },
           {
-            id: 'rootPackage/imgs/b.png',
+            id: 'imgs/b@.7x.png',
             path: '/root/imgs/b@.7x.png',
-            resolution: 0.7,
             dependencies: [],
             isAsset: true,
             isPolyfill: false,
           },
           {
-            id: 'rootPackage/imgs/c.png',
+            id: 'imgs/c.png',
             path: '/root/imgs/c.png',
-            resolution: 1,
             dependencies: [],
             isAsset: true,
             isPolyfill: false,
@@ -534,28 +519,24 @@ describe('traverseDependencies', function() {
             dependencies: ['./imgs/a.png', './imgs/b.png', './imgs/c.png'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
-            id: 'rootPackage/imgs/a.png',
+            id: 'imgs/a@1.5x.ios.png',
             path: '/root/imgs/a@1.5x.ios.png',
-            resolution: 1.5,
             dependencies: [],
             isAsset: true,
             isPolyfill: false,
           },
           {
-            id: 'rootPackage/imgs/b.png',
+            id: 'imgs/b@.7x.ios.png',
             path: '/root/imgs/b@.7x.ios.png',
-            resolution: 0.7,
             dependencies: [],
             isAsset: true,
             isPolyfill: false,
           },
           {
-            id: 'rootPackage/imgs/c.png',
+            id: 'imgs/c.ios.png',
             path: '/root/imgs/c.ios.png',
-            resolution: 1,
             dependencies: [],
             isAsset: true,
             isPolyfill: false,
@@ -596,7 +577,6 @@ describe('traverseDependencies', function() {
             dependencies: ['a'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'a',
@@ -604,7 +584,6 @@ describe('traverseDependencies', function() {
             dependencies: ['index'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -643,7 +622,6 @@ describe('traverseDependencies', function() {
             dependencies: ['aPackage'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'aPackage/main.js',
@@ -651,7 +629,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -690,7 +667,6 @@ describe('traverseDependencies', function() {
             dependencies: ['aPackage/'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'aPackage/main.js',
@@ -698,7 +674,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -745,7 +720,6 @@ describe('traverseDependencies', function() {
             dependencies: ['sha.js', 'x.y.z'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'sha.js/main.js',
@@ -753,7 +727,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'x.y.z/main.js',
@@ -761,7 +734,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -794,7 +766,6 @@ describe('traverseDependencies', function() {
             dependencies: ['aPackage'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'aPackage/index.js',
@@ -802,7 +773,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -837,7 +807,6 @@ describe('traverseDependencies', function() {
             dependencies: ['aPackage'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'EpicModule',
@@ -845,7 +814,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -881,7 +849,6 @@ describe('traverseDependencies', function() {
             dependencies: ['aPackage'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'aPackage/lib/index.js',
@@ -889,7 +856,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -922,7 +888,6 @@ describe('traverseDependencies', function() {
             dependencies: ['./lib/'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'test/lib/index.js',
@@ -930,7 +895,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -967,7 +931,6 @@ describe('traverseDependencies', function() {
             dependencies: ['./lib/'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: '/root/lib/main.js',
@@ -975,7 +938,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -1006,7 +968,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -1104,7 +1065,7 @@ describe('traverseDependencies', function() {
             dependencies: ['aPackage/subdir/lolynot'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
+
             resolveDependency: undefined,
           },
           {
@@ -1113,7 +1074,7 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
+
             resolveDependency: undefined,
           },
         ]);
@@ -1157,7 +1118,7 @@ describe('traverseDependencies', function() {
             dependencies: ['aPackage'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
+
             resolveDependency: undefined,
           },
           {
@@ -1166,7 +1127,7 @@ describe('traverseDependencies', function() {
             dependencies: ['./subdir/lolynot'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
+
             resolveDependency: undefined,
           },
           {
@@ -1175,7 +1136,7 @@ describe('traverseDependencies', function() {
             dependencies: ['../other'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
+
             resolveDependency: undefined,
           },
           {
@@ -1184,7 +1145,7 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
+
             resolveDependency: undefined,
           },
         ]);
@@ -1246,7 +1207,7 @@ describe('traverseDependencies', function() {
                 dependencies: ['aPackage'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
+
                 resolveDependency: undefined,
               },
               {
@@ -1255,7 +1216,7 @@ describe('traverseDependencies', function() {
                 dependencies: [],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
+
                 resolveDependency: undefined,
               },
             ]);
@@ -1307,7 +1268,6 @@ describe('traverseDependencies', function() {
                 dependencies: ['aPackage'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'aPackage/client.js',
@@ -1315,7 +1275,6 @@ describe('traverseDependencies', function() {
                 dependencies: [],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
             ]);
           });
@@ -1368,7 +1327,6 @@ describe('traverseDependencies', function() {
                 dependencies: ['aPackage'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'aPackage/client.js',
@@ -1376,7 +1334,7 @@ describe('traverseDependencies', function() {
                 dependencies: [],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
+
                 resolveDependency: undefined,
               },
             ]);
@@ -1426,7 +1384,6 @@ describe('traverseDependencies', function() {
               dependencies: ['aPackage'],
               isAsset: false,
               isPolyfill: false,
-              resolution: undefined,
             },
             {
               id: 'aPackage/client.js',
@@ -1434,7 +1391,7 @@ describe('traverseDependencies', function() {
               dependencies: [],
               isAsset: false,
               isPolyfill: false,
-              resolution: undefined,
+
               resolveDependency: undefined,
             },
           ]);
@@ -1487,7 +1444,7 @@ describe('traverseDependencies', function() {
                 dependencies: ['aPackage'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
+
                 resolveDependency: undefined,
               },
               {
@@ -1496,7 +1453,7 @@ describe('traverseDependencies', function() {
                 dependencies: [],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
+
                 resolveDependency: undefined,
               },
             ]);
@@ -1561,7 +1518,6 @@ describe('traverseDependencies', function() {
                 dependencies: ['aPackage'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'aPackage/client.js',
@@ -1569,7 +1525,6 @@ describe('traverseDependencies', function() {
                 dependencies: ['./node', './dir/server.js'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'aPackage/not-node.js',
@@ -1577,7 +1532,6 @@ describe('traverseDependencies', function() {
                 dependencies: ['./not-browser'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'aPackage/browser.js',
@@ -1585,7 +1539,6 @@ describe('traverseDependencies', function() {
                 dependencies: [],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'aPackage/dir/client.js',
@@ -1593,7 +1546,6 @@ describe('traverseDependencies', function() {
                 dependencies: ['../hello'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'aPackage/bye.js',
@@ -1601,7 +1553,6 @@ describe('traverseDependencies', function() {
                 dependencies: [],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
             ]);
           });
@@ -1662,7 +1613,6 @@ describe('traverseDependencies', function() {
                 dependencies: ['aPackage'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'aPackage/index.js',
@@ -1670,7 +1620,6 @@ describe('traverseDependencies', function() {
                 dependencies: ['node-package'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'browser-package/index.js',
@@ -1678,7 +1627,6 @@ describe('traverseDependencies', function() {
                 dependencies: [],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
             ]);
           });
@@ -1739,7 +1687,6 @@ describe('traverseDependencies', function() {
                 dependencies: ['aPackage'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'aPackage/index.js',
@@ -1747,7 +1694,6 @@ describe('traverseDependencies', function() {
                 dependencies: ['./dir/ooga'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'aPackage/dir/ooga.js',
@@ -1755,7 +1701,6 @@ describe('traverseDependencies', function() {
                 dependencies: ['node-package'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'aPackage/dir/browser.js',
@@ -1763,7 +1708,6 @@ describe('traverseDependencies', function() {
                 dependencies: [],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
             ]);
           });
@@ -1824,7 +1768,6 @@ describe('traverseDependencies', function() {
                 dependencies: ['aPackage'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'aPackage/index.js',
@@ -1832,7 +1775,6 @@ describe('traverseDependencies', function() {
                 dependencies: ['node-package'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'browser-package/index.js',
@@ -1840,7 +1782,6 @@ describe('traverseDependencies', function() {
                 dependencies: [],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
             ]);
           });
@@ -1898,7 +1839,6 @@ describe('traverseDependencies', function() {
                 dependencies: ['aPackage'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'aPackage/index.js',
@@ -1906,7 +1846,6 @@ describe('traverseDependencies', function() {
                 dependencies: ['booga'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 dependencies: [],
@@ -1914,7 +1853,6 @@ describe('traverseDependencies', function() {
                 isAsset: false,
                 isPolyfill: false,
                 path: '/root/emptyModule.js',
-                resolution: undefined,
               },
             ]);
           });
@@ -1968,7 +1906,6 @@ describe('traverseDependencies', function() {
                 dependencies: ['aPackage'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'aPackage/index.js',
@@ -1976,7 +1913,6 @@ describe('traverseDependencies', function() {
                 dependencies: ['./booga'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 dependencies: [],
@@ -1984,7 +1920,6 @@ describe('traverseDependencies', function() {
                 isAsset: false,
                 isPolyfill: false,
                 path: '/root/emptyModule.js',
-                resolution: undefined,
               },
             ]);
           });
@@ -2050,7 +1985,6 @@ describe('traverseDependencies', function() {
             dependencies: ['aPackage'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'aPackage/index.js',
@@ -2058,7 +1992,6 @@ describe('traverseDependencies', function() {
             dependencies: ['node-package'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'rn-package/index.js',
@@ -2066,7 +1999,6 @@ describe('traverseDependencies', function() {
             dependencies: ['nested-package'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'nested-browser-package/index.js',
@@ -2074,7 +2006,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -2102,7 +2033,6 @@ describe('traverseDependencies', function() {
             dependencies: ['/root/apple.js'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'apple.js',
@@ -2110,7 +2040,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -2211,7 +2140,6 @@ describe('traverseDependencies', function() {
             dependencies: ['aPackage'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'aPackage/index.js',
@@ -2223,7 +2151,6 @@ describe('traverseDependencies', function() {
             ],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'rn-package-a/index.js',
@@ -2231,7 +2158,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'rn-package-b/index.js',
@@ -2239,7 +2165,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'rn-package-d/index.js',
@@ -2247,7 +2172,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -2289,7 +2213,6 @@ describe('traverseDependencies', function() {
             dependencies: ['./foo'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'foo/index.js',
@@ -2297,7 +2220,6 @@ describe('traverseDependencies', function() {
             dependencies: ['bar'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: '/root/provides-bar/lib/bar.js',
@@ -2305,7 +2227,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -2340,7 +2261,6 @@ describe('traverseDependencies', function() {
             dependencies: ['bar'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'node_modules/bar.js',
@@ -2348,7 +2268,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -2385,7 +2304,6 @@ describe('traverseDependencies', function() {
             dependencies: ['bar/lib/foo'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: '/root/provides-bar/lib/foo.js',
@@ -2393,7 +2311,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -2447,7 +2364,7 @@ describe('traverseDependencies', function() {
             dependencies: ['a'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
+
             resolveDependency: undefined,
           },
           {
@@ -2456,7 +2373,7 @@ describe('traverseDependencies', function() {
             dependencies: ['b'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
+
             resolveDependency: undefined,
           },
           {
@@ -2465,7 +2382,7 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
+
             resolveDependency: undefined,
           },
         ]);
@@ -2494,7 +2411,6 @@ describe('traverseDependencies', function() {
             dependencies: ['C:/root/apple.js'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'apple.js',
@@ -2502,7 +2418,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -2545,28 +2460,24 @@ describe('traverseDependencies', function() {
             dependencies: ['./imgs/a.png', './imgs/b.png', './imgs/c.png'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
-            id: 'rootPackage/imgs/a.png',
+            id: 'imgs\\a@1.5x.png',
             path: 'C:\\root\\imgs\\a@1.5x.png',
-            resolution: 1.5,
             dependencies: [],
             isAsset: true,
             isPolyfill: false,
           },
           {
-            id: 'rootPackage/imgs/b.png',
+            id: 'imgs\\b@.7x.png',
             path: 'C:\\root\\imgs\\b@.7x.png',
-            resolution: 0.7,
             dependencies: [],
             isAsset: true,
             isPolyfill: false,
           },
           {
-            id: 'rootPackage/imgs/c.png',
+            id: 'imgs\\c.png',
             path: 'C:\\root\\imgs\\c.png',
-            resolution: 1,
             dependencies: [],
             isAsset: true,
             isPolyfill: false,
@@ -2643,7 +2554,6 @@ describe('traverseDependencies', function() {
             dependencies: ['foo', 'bar'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'foo/main.js',
@@ -2651,7 +2561,6 @@ describe('traverseDependencies', function() {
             dependencies: ['bar'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar/main.js',
@@ -2659,7 +2568,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar/main.js',
@@ -2667,7 +2575,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -2716,7 +2623,6 @@ describe('traverseDependencies', function() {
             dependencies: ['foo', 'bar'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'foo/index.ios.js',
@@ -2724,7 +2630,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar/main.ios.js',
@@ -2732,7 +2637,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -2791,7 +2695,6 @@ describe('traverseDependencies', function() {
             dependencies: ['foo', 'bar/'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'foo/main.js',
@@ -2799,7 +2702,6 @@ describe('traverseDependencies', function() {
             dependencies: ['bar/lol'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar/lol.js',
@@ -2807,7 +2709,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar/main.js',
@@ -2815,7 +2716,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -2878,7 +2778,6 @@ describe('traverseDependencies', function() {
             dependencies: ['foo', 'bar'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'foo/main.js',
@@ -2886,7 +2785,6 @@ describe('traverseDependencies', function() {
             dependencies: ['bar/lol'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar/lol.js',
@@ -2894,7 +2792,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar/main2.js',
@@ -2902,7 +2799,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -2954,7 +2850,6 @@ describe('traverseDependencies', function() {
             dependencies: ['bar'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar',
@@ -2962,7 +2857,6 @@ describe('traverseDependencies', function() {
             dependencies: ['foo'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'foo/main.js',
@@ -2970,7 +2864,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -3099,7 +2992,6 @@ describe('traverseDependencies', function() {
                 ],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'shouldWork',
@@ -3107,7 +2999,6 @@ describe('traverseDependencies', function() {
                 dependencies: ['submodule'],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'submodule/main.js',
@@ -3116,7 +3007,6 @@ describe('traverseDependencies', function() {
                 dependencies: [],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'ember/main.js',
@@ -3124,7 +3014,6 @@ describe('traverseDependencies', function() {
                 dependencies: [],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'internalVendoredPackage',
@@ -3132,7 +3021,6 @@ describe('traverseDependencies', function() {
                 dependencies: [],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
               {
                 id: 'anotherIndex',
@@ -3140,7 +3028,6 @@ describe('traverseDependencies', function() {
                 dependencies: [],
                 isAsset: false,
                 isPolyfill: false,
-                resolution: undefined,
               },
             ]);
           });
@@ -3184,7 +3071,6 @@ describe('traverseDependencies', function() {
             dependencies: ['shouldWork'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'shouldWork',
@@ -3192,7 +3078,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -3233,7 +3118,6 @@ describe('traverseDependencies', function() {
             dependencies: ['sha.js'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'sha.js/main.js',
@@ -3241,7 +3125,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -3289,7 +3172,6 @@ describe('traverseDependencies', function() {
             dependencies: ['a'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'a',
@@ -3297,7 +3179,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -3348,7 +3229,6 @@ describe('traverseDependencies', function() {
             dependencies: ['a'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'a',
@@ -3356,7 +3236,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -3392,7 +3271,6 @@ describe('traverseDependencies', function() {
             dependencies: ['./a'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'a.ios.js',
@@ -3400,7 +3278,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -3448,7 +3325,6 @@ describe('traverseDependencies', function() {
             dependencies: ['foo/package.json', 'bar'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'foo/package.json',
@@ -3456,7 +3332,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar/main.js',
@@ -3464,7 +3339,6 @@ describe('traverseDependencies', function() {
             dependencies: ['./package.json'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar/package.json',
@@ -3472,7 +3346,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -3505,7 +3378,6 @@ describe('traverseDependencies', function() {
             dependencies: ['a/index.js'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'a/index.js',
@@ -3513,7 +3385,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -3589,7 +3460,6 @@ describe('traverseDependencies', function() {
             dependencies: ['foo', 'bar'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'foo/main.js',
@@ -3597,7 +3467,6 @@ describe('traverseDependencies', function() {
             dependencies: ['bar'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar/main.js',
@@ -3605,7 +3474,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar/main.js',
@@ -3613,7 +3481,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -3662,7 +3529,6 @@ describe('traverseDependencies', function() {
             dependencies: ['foo', 'bar'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'foo/index.ios.js',
@@ -3670,7 +3536,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar/main.ios.js',
@@ -3678,7 +3543,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -3737,7 +3601,6 @@ describe('traverseDependencies', function() {
             dependencies: ['foo', 'bar/'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'foo/main.js',
@@ -3745,7 +3608,6 @@ describe('traverseDependencies', function() {
             dependencies: ['bar/lol'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar/lol.js',
@@ -3753,7 +3615,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar/main.js',
@@ -3761,7 +3622,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -3824,7 +3684,6 @@ describe('traverseDependencies', function() {
             dependencies: ['foo', 'bar'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'foo/main.js',
@@ -3832,7 +3691,6 @@ describe('traverseDependencies', function() {
             dependencies: ['bar/lol'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar/lol.js',
@@ -3840,7 +3698,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar/main2.js',
@@ -3848,7 +3705,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -3900,7 +3756,6 @@ describe('traverseDependencies', function() {
             dependencies: ['bar'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar',
@@ -3908,7 +3763,6 @@ describe('traverseDependencies', function() {
             dependencies: ['foo'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'foo/main.js',
@@ -3916,7 +3770,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -4045,7 +3898,6 @@ describe('traverseDependencies', function() {
             ],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'shouldWork',
@@ -4053,7 +3905,6 @@ describe('traverseDependencies', function() {
             dependencies: ['submodule'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'submodule/main.js',
@@ -4062,7 +3913,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'ember/main.js',
@@ -4070,7 +3920,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'internalVendoredPackage',
@@ -4078,7 +3927,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'anotherIndex',
@@ -4086,7 +3934,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -4129,7 +3976,6 @@ describe('traverseDependencies', function() {
             dependencies: ['shouldWork'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'shouldWork',
@@ -4137,7 +3983,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -4178,7 +4023,6 @@ describe('traverseDependencies', function() {
             dependencies: ['sha.js'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'sha.js/main.js',
@@ -4186,7 +4030,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -4234,7 +4077,6 @@ describe('traverseDependencies', function() {
             dependencies: ['a'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'a',
@@ -4242,7 +4084,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -4289,7 +4130,6 @@ describe('traverseDependencies', function() {
             dependencies: ['a'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'a',
@@ -4297,7 +4137,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -4333,7 +4172,6 @@ describe('traverseDependencies', function() {
             dependencies: ['./a'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'a.ios.js',
@@ -4341,7 +4179,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -4389,7 +4226,6 @@ describe('traverseDependencies', function() {
             dependencies: ['foo/package.json', 'bar'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'foo/package.json',
@@ -4397,7 +4233,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar/main.js',
@@ -4405,7 +4240,6 @@ describe('traverseDependencies', function() {
             dependencies: ['./package.json'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar/package.json',
@@ -4413,7 +4247,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -4479,7 +4312,6 @@ describe('traverseDependencies', function() {
             dependencies: ['aPackage'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'aPackage/main.js',
@@ -4487,7 +4319,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -4537,7 +4368,6 @@ describe('traverseDependencies', function() {
             dependencies: ['aPackage'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'aPackage/main.js',
@@ -4545,7 +4375,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
         ]);
       });
@@ -4647,7 +4476,6 @@ describe('traverseDependencies', function() {
             dependencies: ['aPackage', 'foo'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'aPackage/main.js',
@@ -4655,7 +4483,6 @@ describe('traverseDependencies', function() {
             dependencies: ['bar'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
           },
           {
             id: 'bar',
@@ -4663,7 +4490,6 @@ describe('traverseDependencies', function() {
             dependencies: ['foo'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
             resolveDependency: undefined,
           },
           {
@@ -4672,7 +4498,6 @@ describe('traverseDependencies', function() {
             dependencies: ['aPackage'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
             resolveDependency: undefined,
           },
         ]);
@@ -4714,15 +4539,13 @@ describe('traverseDependencies', function() {
             dependencies: ['./foo.png'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
             resolveDependency: undefined,
           },
           {
-            id: 'aPackage/foo.png',
+            id: 'foo.png',
             path: '/root/foo.png',
             dependencies: [],
             isAsset: true,
-            resolution: 1,
             isPolyfill: false,
             resolveDependency: undefined,
           },
@@ -4774,7 +4597,6 @@ describe('traverseDependencies', function() {
             dependencies: ['aPackage'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
             resolveDependency: undefined,
           },
           {
@@ -4783,7 +4605,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
             resolveDependency: undefined,
           },
         ]);
@@ -4838,7 +4659,6 @@ describe('traverseDependencies', function() {
             isAsset: false,
             isPolyfill: false,
             path: '/root/index.js',
-            resolution: undefined,
             resolveDependency: undefined,
           },
           {
@@ -4847,7 +4667,6 @@ describe('traverseDependencies', function() {
             isAsset: false,
             isPolyfill: false,
             path: '/root/aPackage/main.js',
-            resolution: undefined,
           },
         ]);
       });
@@ -4896,7 +4715,6 @@ describe('traverseDependencies', function() {
             dependencies: ['foo'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
             resolveDependency: undefined,
           },
           {
@@ -4905,7 +4723,6 @@ describe('traverseDependencies', function() {
             dependencies: ['bar'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
             resolveDependency: undefined,
           },
           {
@@ -4914,7 +4731,6 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
             resolveDependency: undefined,
           },
         ]);
@@ -4933,7 +4749,6 @@ describe('traverseDependencies', function() {
             dependencies: ['foo'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
             resolveDependency: undefined,
           },
           {
@@ -4942,7 +4757,7 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
+
             resolveDependency: undefined,
           },
         ]);
@@ -4995,7 +4810,6 @@ describe('traverseDependencies', function() {
             dependencies: ['foo'],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
             resolveDependency: undefined,
           },
           {
@@ -5004,7 +4818,7 @@ describe('traverseDependencies', function() {
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
-            resolution: undefined,
+
             resolveDependency: undefined,
           },
         ]);
@@ -5129,7 +4943,6 @@ describe('traverseDependencies', function() {
             isAsset: false,
             isPolyfill: false,
             path: '/root/index.jsx',
-            resolution: undefined,
           },
           {
             dependencies: [],
@@ -5137,7 +4950,6 @@ describe('traverseDependencies', function() {
             isAsset: false,
             isPolyfill: false,
             path: '/root/a.coffee',
-            resolution: undefined,
           },
         ]);
       });
@@ -5166,7 +4978,6 @@ describe('traverseDependencies', function() {
             isAsset: false,
             isPolyfill: false,
             path: '/root/index.jsx',
-            resolution: undefined,
           },
           {
             dependencies: [],
@@ -5174,7 +4985,6 @@ describe('traverseDependencies', function() {
             isAsset: false,
             isPolyfill: false,
             path: '/root/a.coffee',
-            resolution: undefined,
           },
         ]);
       });

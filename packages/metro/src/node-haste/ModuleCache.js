@@ -110,22 +110,18 @@ class ModuleCache {
        * this is an incorrect OOP design in the first place: AssetModule, being
        * simpler than a normal Module, should not inherit the Module class.
        */
-      this._moduleCache[filePath] = new AssetModule(
-        {
-          dependencies: this._assetDependencies,
-          depGraphHelpers: this._depGraphHelpers,
-          file: filePath,
-          getTransformCacheKey: this._getTransformCacheKey,
-          globalTransformCache: null,
-          localPath: toLocalPath(this._roots, filePath),
-          moduleCache: this,
-          reporter: this._reporter,
-          resetCache: this._opts.resetCache,
-          transformCode: this._transformCode,
-          options: this._getModuleOptions(),
-        },
-        this._platforms,
-      );
+      this._moduleCache[filePath] = new AssetModule({
+        depGraphHelpers: this._depGraphHelpers,
+        dependencies: this._assetDependencies,
+        file: filePath,
+        getTransformCacheKey: this._getTransformCacheKey,
+        globalTransformCache: this._globalTransformCache,
+        localPath: toLocalPath(this._roots, filePath),
+        moduleCache: this,
+        options: this._getModuleOptions(),
+        reporter: this._reporter,
+        transformCode: this._transformCode,
+      });
     }
     return this._moduleCache[filePath];
   }

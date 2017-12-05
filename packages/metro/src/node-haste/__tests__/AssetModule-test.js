@@ -17,16 +17,7 @@ const AssetModule = require('../AssetModule');
 describe('AssetModule:', () => {
   const defaults = {file: '/arbitrary.png'};
 
-  it('has no dependencies by default', () => {
-    return new AssetModule(defaults)
-      .getDependencies()
-      .then(deps => expect(deps).toEqual([]));
-  });
-
-  it('can be parametrized with dependencies', () => {
-    const dependencies = ['arbitrary', 'dependencies'];
-    return new AssetModule({...defaults, dependencies})
-      .getDependencies()
-      .then(deps => expect(deps).toEqual(dependencies));
+  it('is an asset', () => {
+    expect(new AssetModule(defaults).isAsset()).toBe(true);
   });
 });
