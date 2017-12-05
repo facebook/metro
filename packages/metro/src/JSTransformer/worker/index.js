@@ -14,12 +14,15 @@
 
 const JsFileWrapping = require('../../ModuleGraph/worker/JsFileWrapping');
 
+const assetTransformer = require('../../assetTransformer');
 const babylon = require('babylon');
 const collectDependencies = require('../../ModuleGraph/worker/collect-dependencies');
 const constantFolding = require('./constant-folding');
+
 const generate = require('babel-generator').default;
 const inline = require('./inline');
 const minify = require('./minify');
+const path = require('path');
 
 const {compactMapping} = require('../../Bundler/source-map');
 
@@ -166,6 +169,8 @@ function transformCode(
   sourceCode: string,
   isScript: boolean,
   options: Options,
+  assetExts: $ReadOnlyArray<string>,
+  assetRegistryPath: string,
 ): Data | Promise<Data> {
   const isJson = filename.endsWith('.json');
 
@@ -187,13 +192,18 @@ function transformCode(
 
   // $FlowFixMe: impossible to type a dynamic require.
   const transformer: Transformer<*> = require(transformerPath);
-  const transformResult = transformer.transform({
+
+  const transformerArgs = {
     filename,
     localPath,
     options,
     plugins,
     src: sourceCode,
-  });
+  };
+
+  const transformResult = isAsset(filename, assetExts)
+    ? assetTransformer.transform(transformerArgs, assetRegistryPath)
+    : transformer.transform(transformerArgs);
 
   const postTransformArgs = [
     filename,
@@ -204,7 +214,7 @@ function transformCode(
     transformFileStartLogEntry,
   ];
 
-  return typeof transformResult.then === 'function'
+  return transformResult instanceof Promise
     ? transformResult.then(({ast}) => postTransform(...postTransformArgs, ast))
     : postTransform(...postTransformArgs, transformResult.ast);
 }
@@ -225,6 +235,10 @@ function minifyCode(
 
     throw error;
   }
+}
+
+function isAsset(filePath: string, assetExts: $ReadOnlyArray<string>): boolean {
+  return assetExts.indexOf(path.extname(filePath).slice(1)) !== -1;
 }
 
 module.exports = {

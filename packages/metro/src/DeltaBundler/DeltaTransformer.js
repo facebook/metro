@@ -441,14 +441,7 @@ class DeltaTransformer extends EventEmitter {
       nullthrows(dependencyPairs.get(dependency)),
     );
 
-    if (module.isAsset()) {
-      wrappedCode = await this._wrapAsset({
-        code: metadata.code,
-        dependencyPairs,
-        name,
-        path: module.path,
-      });
-    } else if (!module.isPolyfill()) {
+    if (!module.isPolyfill()) {
       wrappedCode = this._addDependencyMap({
         code: metadata.code,
         dependencies,

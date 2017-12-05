@@ -85,6 +85,8 @@ module.exports = class Transformer {
     code: string,
     isScript: boolean,
     options: Options,
+    assetExts: $ReadOnlyArray<string>,
+    assetRegistryPath: string,
   ): Promise<TransformedCode> {
     try {
       debug('Started ransforming file', filename);
@@ -96,6 +98,8 @@ module.exports = class Transformer {
         code,
         isScript,
         options,
+        assetExts,
+        assetRegistryPath,
       );
 
       debug('Done transforming file', filename);

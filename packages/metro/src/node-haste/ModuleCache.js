@@ -112,7 +112,6 @@ class ModuleCache {
        */
       this._moduleCache[filePath] = new AssetModule({
         depGraphHelpers: this._depGraphHelpers,
-        dependencies: this._assetDependencies,
         file: filePath,
         getTransformCacheKey: this._getTransformCacheKey,
         globalTransformCache: this._globalTransformCache,

@@ -29,7 +29,7 @@ const {sep: pathSeparator} = require('path');
 const VERSION = require('../../package.json').version;
 
 import type AssetServer from '../AssetServer';
-import type Module, {HasteImpl} from '../node-haste/Module';
+import type {HasteImpl} from '../node-haste/Module';
 import type {MappingsMap, SourceMap} from '../lib/SourceMap';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type {Reporter} from '../lib/reporting';
@@ -215,6 +215,8 @@ class Bundler {
           code,
           module.isPolyfill(),
           transformCodeOptions,
+          this._opts.assetExts,
+          this._opts.assetRegistryPath,
         ),
       transformCache: opts.transformCache,
       watch: opts.watch,

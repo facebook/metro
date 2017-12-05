@@ -61,6 +61,8 @@ describe('Transformer', function() {
       code,
       false,
       transformOptions,
+      [],
+      '',
     );
 
     expect(api.transform).toBeCalledWith(
@@ -70,6 +72,8 @@ describe('Transformer', function() {
       code,
       false,
       transformOptions,
+      [],
+      '',
     );
   });
 

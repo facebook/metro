@@ -31,6 +31,8 @@ describe('code transformation worker:', () => {
         dev: true,
         transform: {},
       },
+      [],
+      '',
     );
 
     expect(result.code).toBe(
@@ -55,6 +57,8 @@ describe('code transformation worker:', () => {
         dev: true,
         transform: {},
       },
+      [],
+      '',
     );
 
     expect(result.code).toBe(
@@ -84,6 +88,8 @@ describe('code transformation worker:', () => {
         dev: true,
         transform: {},
       },
+      [],
+      '',
     );
 
     expect(result.code).toBe(
