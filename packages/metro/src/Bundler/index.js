@@ -120,7 +120,7 @@ type Options = {|
 
 class Bundler {
   _opts: Options;
-  _getModuleId: ({path: string}) => number;
+  _getModuleId: (path: string) => number;
   _transformer: Transformer;
   _resolverPromise: Promise<Resolver>;
   _projectRoots: $ReadOnlyArray<string>;
