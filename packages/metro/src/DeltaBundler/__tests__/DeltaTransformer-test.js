@@ -5,6 +5,7 @@ jest
   .mock('assert')
   .mock('progress')
   .mock('../DeltaCalculator')
+  .mock('../../JSTransformer')
   .mock('/root/to/something.js', () => ({}), {virtual: true})
   .mock('/path/to/transformer.js', () => ({}), {virtual: true});
 
