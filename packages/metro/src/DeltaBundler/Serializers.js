@@ -14,6 +14,9 @@
 
 const DeltaPatcher = require('./DeltaPatcher');
 
+const toLocalPath = require('../node-haste/lib/toLocalPath');
+
+const {getAssetData} = require('../AssetServer/util');
 const {fromRawMappings} = require('../Bundler/source-map');
 const {createRamBundleGroups} = require('../Bundler/util');
 
@@ -230,9 +233,12 @@ async function getAssets(
   const assets = await Promise.all(
     modules.map(async module => {
       if (module.type === 'asset') {
-        return await deltaBundler
-          .getAssetServer()
-          .getAssetData(module.path, options.platform);
+        const localPath = toLocalPath(
+          deltaBundler.getOptions().projectRoots,
+          module.path,
+        );
+
+        return getAssetData(module.path, localPath, options.platform);
       }
       return null;
     }),

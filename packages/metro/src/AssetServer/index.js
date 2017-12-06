@@ -17,9 +17,8 @@ const AssetPaths = require('../node-haste/lib/AssetPaths');
 const denodeify = require('denodeify');
 const fs = require('fs');
 const path = require('path');
-const toLocalPath = require('../node-haste/lib/toLocalPath');
 
-const {findRoot, getAbsoluteAssetRecord, getAssetData} = require('./util');
+const {findRoot, getAbsoluteAssetRecord} = require('./util');
 
 export type AssetData = {|
   __packager_asset: boolean,
@@ -57,15 +56,6 @@ class AssetServer {
 
       return readFile(record.files[record.files.length - 1]);
     });
-  }
-
-  async getAssetData(
-    assetPath: string,
-    platform: ?string = null,
-  ): Promise<AssetData> {
-    const localPath = toLocalPath(this._roots, assetPath);
-
-    return getAssetData(assetPath, localPath, platform);
   }
 
   /**

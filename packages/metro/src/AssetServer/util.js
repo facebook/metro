@@ -235,9 +235,18 @@ async function getAssetData(
   };
 }
 
+async function getAssetFiles(
+  assetPath: string,
+  platform: ?string = null,
+): Promise<Array<string>> {
+  const assetData = await getAbsoluteAssetInfo(assetPath, platform);
+
+  return assetData.files;
+}
+
 module.exports = {
   findRoot,
-  getAbsoluteAssetInfo,
   getAbsoluteAssetRecord,
   getAssetData,
+  getAssetFiles,
 };

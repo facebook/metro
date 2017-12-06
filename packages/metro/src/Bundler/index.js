@@ -89,7 +89,7 @@ export type PostProcessBundleSourcemap = ({
   outFileName: string,
 }) => {code: Buffer | string, map: SourceMap | string};
 
-type Options = {|
+export type Options = {|
   +assetExts: Array<string>,
   +assetRegistryPath: string,
   +assetServer: AssetServer,
@@ -226,8 +226,8 @@ class Bundler {
     this._getTransformOptions = opts.getTransformOptions;
   }
 
-  getAssetServer(): AssetServer {
-    return this._assetServer;
+  getOptions(): Options {
+    return this._opts;
   }
 
   async end() {

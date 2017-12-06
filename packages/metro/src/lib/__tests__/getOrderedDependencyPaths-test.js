@@ -13,20 +13,21 @@
 'use strict';
 
 jest.mock('../../DeltaBundler/Serializers');
+jest.mock('../../AssetServer/util');
 
 const getOrderedDependencyPaths = require('../getOrderedDependencyPaths');
 const Serializers = require('../../DeltaBundler/Serializers');
 
+const {getAssetFiles} = require('../../AssetServer/util');
+
 describe('getOrderedDependencyPaths', () => {
-  const assetsServer = {
-    getAssetData: jest.fn(),
-  };
   const deltaBundler = {};
 
   beforeEach(() => {
-    assetsServer.getAssetData.mockImplementation(async path => ({
-      files: [`${path}@2x`, `${path}@3x`],
-    }));
+    getAssetFiles.mockImplementation(async path => [
+      `${path}@2x`,
+      `${path}@3x`,
+    ]);
   });
 
   it('Should return all module dependencies correctly', async () => {
@@ -42,11 +43,13 @@ describe('getOrderedDependencyPaths', () => {
     );
 
     expect(
-      await getOrderedDependencyPaths(deltaBundler, assetsServer, ['/tmp'], {}),
+      await getOrderedDependencyPaths(deltaBundler, ['/tmp'], {}),
     ).toEqual(['/tmp/1.js', '/tmp/2.js', '/tmp/3.js', '/tmp/4.js']);
   });
 
   it('Should add assets data dependencies correctly', async () => {
+    deltaBundler.getOptions = () => ({projectRoots: ['/root']});
+
     Serializers.getAllModules.mockReturnValue(
       Promise.resolve(
         new Map([
@@ -60,7 +63,7 @@ describe('getOrderedDependencyPaths', () => {
     );
 
     expect(
-      await getOrderedDependencyPaths(deltaBundler, assetsServer, ['/tmp'], {}),
+      await getOrderedDependencyPaths(deltaBundler, ['/tmp'], {}),
     ).toEqual([
       '/tmp/1.js',
       '/tmp/2.png@2x',
@@ -69,6 +72,11 @@ describe('getOrderedDependencyPaths', () => {
       '/tmp/4.png@2x',
       '/tmp/4.png@3x',
       '/tmp/5.js',
+    ]);
+
+    expect(getAssetFiles.mock.calls).toEqual([
+      ['/tmp/2.png', undefined],
+      ['/tmp/4.png', undefined],
     ]);
   });
 });

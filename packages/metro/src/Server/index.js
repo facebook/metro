@@ -268,11 +268,7 @@ class Server {
       ).platform;
     }
 
-    return await getOrderedDependencyPaths(
-      this._deltaBundler,
-      this._assetServer,
-      bundleOptions,
-    );
+    return await getOrderedDependencyPaths(this._deltaBundler, bundleOptions);
   }
 
   onFileChange(type: string, filePath: string) {

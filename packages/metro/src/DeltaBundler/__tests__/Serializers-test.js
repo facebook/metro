@@ -12,6 +12,12 @@
 
 'use strict';
 
+jest.mock('../../node-haste/lib/toLocalPath');
+jest.mock('../../AssetServer/util');
+
+const {getAssetData} = require('../../AssetServer/util');
+const toLocalPath = require('../../node-haste/lib/toLocalPath');
+
 const CURRENT_TIME = 1482363367000;
 
 describe('Serializers', () => {
@@ -62,17 +68,23 @@ describe('Serializers', () => {
           },
         };
       },
-      getAssetServer() {
-        return {
-          async getAssetData(path, platform) {
-            return {path, platform, assetData: true};
-          },
-        };
-      },
       getPostProcessModulesFn() {
         return postProcessModules;
       },
+      getOptions() {
+        return {
+          projectRoots: ['/foo'],
+        };
+      },
     };
+
+    getAssetData.mockImplementation((path, localPath, platform) => ({
+      path,
+      platform,
+      assetData: true,
+    }));
+
+    toLocalPath.mockImplementation((roots, path) => path.replace(roots[0], ''));
 
     setCurrentTime(CURRENT_TIME);
   });

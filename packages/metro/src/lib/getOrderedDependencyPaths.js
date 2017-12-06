@@ -14,13 +14,13 @@
 
 const Serializers = require('../DeltaBundler/Serializers');
 
-import type AssetsServer from '../AssetServer';
+const {getAssetFiles} = require('../AssetServer/util');
+
 import type {Options} from '../DeltaBundler/Serializers';
 import type DeltaBundler from '../DeltaBundler';
 
 async function getOrderedDependencyPaths(
   deltaBundler: DeltaBundler,
-  assetsServer: AssetsServer,
   options: Options,
 ): Promise<Array<string>> {
   const modules = await Serializers.getAllModules(deltaBundler, options);
@@ -30,12 +30,7 @@ async function getOrderedDependencyPaths(
       if (module.type !== 'asset') {
         return [module.path];
       } else {
-        const assetData = await assetsServer.getAssetData(
-          module.path,
-          options.platform,
-        );
-
-        return assetData.files;
+        return await getAssetFiles(module.path, options.platform);
       }
     }),
   );

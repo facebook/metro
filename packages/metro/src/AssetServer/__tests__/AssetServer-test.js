@@ -16,15 +16,12 @@ jest.mock('fs');
 jest.mock('image-size');
 
 const AssetServer = require('../');
-const crypto = require('crypto');
 const fs = require('fs');
 
 require('image-size').mockReturnValue({
   width: 300,
   height: 200,
 });
-
-const {objectContaining} = jasmine;
 
 describe('AssetServer', () => {
   describe('assetServer.get', () => {
@@ -175,125 +172,6 @@ describe('AssetServer', () => {
       return server
         .get('newImages/imgs/b.png')
         .then(data => expect(data).toBe('b1 image'));
-    });
-  });
-
-  describe('assetServer.getAssetData', () => {
-    it('should get assetData', () => {
-      const server = new AssetServer({
-        projectRoots: ['/root'],
-      });
-
-      fs.__setMockFilesystem({
-        root: {
-          imgs: {
-            'b@1x.png': 'b1 image',
-            'b@2x.png': 'b2 image',
-            'b@4x.png': 'b4 image',
-            'b@4.5x.png': 'b4.5 image',
-          },
-        },
-      });
-
-      return server.getAssetData('/root/imgs/b.png').then(data => {
-        expect(data).toEqual(
-          objectContaining({
-            __packager_asset: true,
-            type: 'png',
-            name: 'b',
-            scales: [1, 2, 4, 4.5],
-            fileSystemLocation: '/root/imgs',
-            httpServerLocation: '/assets/imgs',
-            files: [
-              '/root/imgs/b@1x.png',
-              '/root/imgs/b@2x.png',
-              '/root/imgs/b@4x.png',
-              '/root/imgs/b@4.5x.png',
-            ],
-          }),
-        );
-      });
-    });
-
-    it('should get assetData for non-png images', () => {
-      const server = new AssetServer({
-        projectRoots: ['/root'],
-      });
-
-      fs.__setMockFilesystem({
-        root: {
-          imgs: {
-            'b@1x.jpg': 'b1 image',
-            'b@2x.jpg': 'b2 image',
-            'b@4x.jpg': 'b4 image',
-            'b@4.5x.jpg': 'b4.5 image',
-          },
-        },
-      });
-
-      return server.getAssetData('/root/imgs/b.jpg').then(data => {
-        expect(data).toEqual(
-          objectContaining({
-            __packager_asset: true,
-            type: 'jpg',
-            name: 'b',
-            scales: [1, 2, 4, 4.5],
-            fileSystemLocation: '/root/imgs',
-            httpServerLocation: '/assets/imgs',
-            files: [
-              '/root/imgs/b@1x.jpg',
-              '/root/imgs/b@2x.jpg',
-              '/root/imgs/b@4x.jpg',
-              '/root/imgs/b@4.5x.jpg',
-            ],
-          }),
-        );
-      });
-    });
-
-    describe('hash:', () => {
-      let server, mockFS;
-      beforeEach(() => {
-        server = new AssetServer({
-          projectRoots: ['/root'],
-        });
-
-        mockFS = {
-          root: {
-            imgs: {
-              'b@1x.jpg': 'b1 image',
-              'b@2x.jpg': 'b2 image',
-              'b@4x.jpg': 'b4 image',
-              'b@4.5x.jpg': 'b4.5 image',
-            },
-          },
-        };
-
-        fs.__setMockFilesystem(mockFS);
-      });
-
-      it('uses the file contents to build the hash', () => {
-        const hash = crypto.createHash('md5');
-        for (const name in mockFS.root.imgs) {
-          hash.update(mockFS.root.imgs[name]);
-        }
-
-        return server
-          .getAssetData('/root/imgs/b.jpg')
-          .then(data =>
-            expect(data).toEqual(objectContaining({hash: hash.digest('hex')})),
-          );
-      });
-
-      it('changes the hash when the passed-in file watcher emits an `all` event', () => {
-        return server.getAssetData('/root/imgs/b.jpg').then(initialData => {
-          mockFS.root.imgs['b@4x.jpg'] = 'updated data';
-
-          return server
-            .getAssetData('/root/imgs/b.jpg')
-            .then(data => expect(data.hash).not.toEqual(initialData.hash));
-        });
-      });
     });
   });
 });
