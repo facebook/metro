@@ -13,7 +13,6 @@
 'use strict';
 
 const babel = require('babel-core');
-const babelGenerate = require('babel-generator').default;
 const babylon = require('babylon');
 
 import type {ExtendedAssetDescriptor} from '.';
