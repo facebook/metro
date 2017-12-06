@@ -14,7 +14,7 @@
 
 const Serializers = require('../DeltaBundler/Serializers');
 
-const {getAssetFiles} = require('../AssetServer/util');
+const {getAssetFiles} = require('../Assets');
 
 import type {Options} from '../DeltaBundler/Serializers';
 import type DeltaBundler from '../DeltaBundler';

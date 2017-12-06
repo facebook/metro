@@ -13,12 +13,12 @@
 'use strict';
 
 jest.mock('../../DeltaBundler/Serializers');
-jest.mock('../../AssetServer/util');
+jest.mock('../../Assets');
 
 const getOrderedDependencyPaths = require('../getOrderedDependencyPaths');
 const Serializers = require('../../DeltaBundler/Serializers');
 
-const {getAssetFiles} = require('../../AssetServer/util');
+const {getAssetFiles} = require('../../Assets');
 
 describe('getOrderedDependencyPaths', () => {
   const deltaBundler = {};

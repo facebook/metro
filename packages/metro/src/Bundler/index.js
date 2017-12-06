@@ -26,7 +26,6 @@ const {sep: pathSeparator} = require('path');
 
 const VERSION = require('../../package.json').version;
 
-import type AssetServer from '../AssetServer';
 import type {HasteImpl} from '../node-haste/Module';
 import type {MappingsMap, SourceMap} from '../lib/SourceMap';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
@@ -92,7 +91,6 @@ export type PostProcessBundleSourcemap = ({
 export type Options = {|
   +assetExts: Array<string>,
   +assetRegistryPath: string,
-  +assetServer: AssetServer,
   +blacklistRE?: RegExp,
   +cacheVersion: string,
   +enableBabelRCLookup: boolean,
@@ -124,7 +122,6 @@ class Bundler {
   _transformer: Transformer;
   _resolverPromise: Promise<Resolver>;
   _projectRoots: $ReadOnlyArray<string>;
-  _assetServer: AssetServer;
   _getTransformOptions: void | GetTransformOptions;
 
   constructor(opts: Options) {
@@ -221,8 +218,6 @@ class Bundler {
     });
 
     this._projectRoots = opts.projectRoots;
-    this._assetServer = opts.assetServer;
-
     this._getTransformOptions = opts.getTransformOptions;
   }
 

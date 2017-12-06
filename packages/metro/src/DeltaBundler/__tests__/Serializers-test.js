@@ -13,9 +13,9 @@
 'use strict';
 
 jest.mock('../../node-haste/lib/toLocalPath');
-jest.mock('../../AssetServer/util');
+jest.mock('../../Assets');
 
-const {getAssetData} = require('../../AssetServer/util');
+const {getAssetData} = require('../../Assets');
 const toLocalPath = require('../../node-haste/lib/toLocalPath');
 
 const CURRENT_TIME = 1482363367000;

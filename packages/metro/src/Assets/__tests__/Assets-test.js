@@ -15,13 +15,136 @@
 jest.mock('fs');
 jest.mock('image-size');
 
-const {getAssetData} = require('../util');
+const {getAssetData, getAsset} = require('../');
 const crypto = require('crypto');
 const fs = require('fs');
 
 require('image-size').mockReturnValue({
   width: 300,
   height: 200,
+});
+
+describe('getAsset', () => {
+  it('should work for the simple case', () => {
+    fs.__setMockFilesystem({
+      root: {
+        imgs: {
+          'b.png': 'b image',
+          'b@2x.png': 'b2 image',
+        },
+      },
+    });
+
+    return Promise.all([
+      getAsset('imgs/b.png', ['/root']),
+      getAsset('imgs/b@1x.png', ['/root']),
+    ]).then(resp => resp.forEach(data => expect(data).toBe('b image')));
+  });
+
+  it('should work for the simple case with platform ext', async () => {
+    fs.__setMockFilesystem({
+      root: {
+        imgs: {
+          'b.ios.png': 'b ios image',
+          'b.android.png': 'b android image',
+          'c.png': 'c general image',
+          'c.android.png': 'c android image',
+        },
+      },
+    });
+
+    expect(
+      await Promise.all([
+        getAsset('imgs/b.png', ['/root'], 'ios'),
+        getAsset('imgs/b.png', ['/root'], 'android'),
+        getAsset('imgs/c.png', ['/root'], 'android'),
+        getAsset('imgs/c.png', ['/root'], 'ios'),
+        getAsset('imgs/c.png', ['/root']),
+      ]),
+    ).toEqual([
+      'b ios image',
+      'b android image',
+      'c android image',
+      'c general image',
+      'c general image',
+    ]);
+  });
+
+  it('should work for the simple case with jpg', () => {
+    fs.__setMockFilesystem({
+      root: {
+        imgs: {
+          'b.png': 'png image',
+          'b.jpg': 'jpeg image',
+        },
+      },
+    });
+
+    return Promise.all([
+      getAsset('imgs/b.jpg', ['/root']),
+      getAsset('imgs/b.png', ['/root']),
+    ]).then(data => expect(data).toEqual(['jpeg image', 'png image']));
+  });
+
+  it('should pick the bigger one', async () => {
+    fs.__setMockFilesystem({
+      root: {
+        imgs: {
+          'b@1x.png': 'b1 image',
+          'b@2x.png': 'b2 image',
+          'b@4x.png': 'b4 image',
+          'b@4.5x.png': 'b4.5 image',
+        },
+      },
+    });
+
+    expect(await getAsset('imgs/b@3x.png', ['/root'])).toBe('b4 image');
+  });
+
+  it('should pick the bigger one with platform ext', async () => {
+    fs.__setMockFilesystem({
+      root: {
+        imgs: {
+          'b@1x.png': 'b1 image',
+          'b@2x.png': 'b2 image',
+          'b@4x.png': 'b4 image',
+          'b@4.5x.png': 'b4.5 image',
+          'b@1x.ios.png': 'b1 ios image',
+          'b@2x.ios.png': 'b2 ios image',
+          'b@4x.ios.png': 'b4 ios image',
+          'b@4.5x.ios.png': 'b4.5 ios image',
+        },
+      },
+    });
+
+    expect(
+      await Promise.all([
+        getAsset('imgs/b@3x.png', ['/root']),
+        getAsset('imgs/b@3x.png', ['/root'], 'ios'),
+      ]),
+    ).toEqual(['b4 image', 'b4 ios image']);
+  });
+
+  it('should support multiple project roots', async () => {
+    fs.__setMockFilesystem({
+      root: {
+        imgs: {
+          'b.png': 'b image',
+        },
+      },
+      root2: {
+        newImages: {
+          imgs: {
+            'b@1x.png': 'b1 image',
+          },
+        },
+      },
+    });
+
+    expect(await getAsset('newImages/imgs/b.png', ['/root', '/root2'])).toBe(
+      'b1 image',
+    );
+  });
 });
 
 describe('getAssetData', () => {

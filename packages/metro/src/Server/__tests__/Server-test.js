@@ -20,7 +20,7 @@ jest
     createWorker: jest.fn().mockReturnValue(jest.fn()),
   }))
   .mock('../../Bundler')
-  .mock('../../AssetServer')
+  .mock('../../Assets')
   .mock('../../node-haste/DependencyGraph')
   .mock('../../Logger')
   .mock('../../lib/GlobalTransformCache')
@@ -29,7 +29,7 @@ jest
 describe('processRequest', () => {
   let Bundler;
   let Server;
-  let AssetServer;
+  let getAsset;
   let symbolicate;
   let Serializers;
   let DeltaBundler;
@@ -40,7 +40,7 @@ describe('processRequest', () => {
     jest.resetModules();
     Bundler = require('../../Bundler');
     Server = require('../');
-    AssetServer = require('../../AssetServer');
+    getAsset = require('../../Assets').getAsset;
     symbolicate = require('../symbolicate');
     Serializers = require('../../DeltaBundler/Serializers');
     DeltaBundler = require('../../DeltaBundler');
@@ -354,9 +354,7 @@ describe('processRequest', () => {
       const req = scaffoldReq({url: '/assets/imgs/a.png'});
       const res = {end: jest.fn(), setHeader: jest.fn()};
 
-      AssetServer.prototype.get.mockImplementation(() =>
-        Promise.resolve('i am image'),
-      );
+      getAsset.mockReturnValue(Promise.resolve('i am image'));
 
       server.processRequest(req, res);
       res.end.mockImplementation(value => {
@@ -369,13 +367,11 @@ describe('processRequest', () => {
       const req = scaffoldReq({url: '/assets/imgs/a.png?platform=ios'});
       const res = {end: jest.fn(), setHeader: jest.fn()};
 
-      AssetServer.prototype.get.mockImplementation(() =>
-        Promise.resolve('i am image'),
-      );
+      getAsset.mockReturnValue(Promise.resolve('i am image'));
 
       server.processRequest(req, res);
       res.end.mockImplementation(value => {
-        expect(AssetServer.prototype.get).toBeCalledWith('imgs/a.png', 'ios');
+        expect(getAsset).toBeCalledWith('imgs/a.png', ['root'], 'ios');
         expect(value).toBe('i am image');
         done();
       });
@@ -389,13 +385,11 @@ describe('processRequest', () => {
       const res = {end: jest.fn(), writeHead: jest.fn(), setHeader: jest.fn()};
       const mockData = 'i am image';
 
-      AssetServer.prototype.get.mockImplementation(() =>
-        Promise.resolve(mockData),
-      );
+      getAsset.mockReturnValue(Promise.resolve(mockData));
 
       server.processRequest(req, res);
       res.end.mockImplementation(value => {
-        expect(AssetServer.prototype.get).toBeCalledWith('imgs/a.png', 'ios');
+        expect(getAsset).toBeCalledWith('imgs/a.png', ['root'], 'ios');
         expect(value).toBe(mockData.slice(0, 4));
         done();
       });
@@ -407,14 +401,13 @@ describe('processRequest', () => {
       });
       const res = {end: jest.fn(), setHeader: jest.fn()};
 
-      AssetServer.prototype.get.mockImplementation(() =>
-        Promise.resolve('i am image'),
-      );
+      getAsset.mockReturnValue(Promise.resolve('i am image'));
 
       server.processRequest(req, res);
       res.end.mockImplementation(value => {
-        expect(AssetServer.prototype.get).toBeCalledWith(
+        expect(getAsset).toBeCalledWith(
           'imgs/\u{4E3B}\u{9875}/logo.png',
+          ['root'],
           undefined,
         );
         expect(value).toBe('i am image');

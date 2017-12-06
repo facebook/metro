@@ -11,7 +11,7 @@
  */
 'use strict';
 
-const {getAssetData} = require('./AssetServer/util');
+const {getAssetData} = require('./Assets');
 const {generateAssetCodeFileAst} = require('./Bundler/util');
 
 import type {TransformOptions} from './JSTransformer/worker';

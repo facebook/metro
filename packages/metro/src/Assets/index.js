@@ -24,9 +24,22 @@ const {isAssetTypeAnImage} = require('../Bundler/util');
 
 const stat = denodeify(fs.stat);
 const readDir = denodeify(fs.readdir);
+const readFile = denodeify(fs.readFile);
 
 import type {AssetPath} from '../node-haste/lib/AssetPaths';
-import type {AssetData} from './';
+
+export type AssetData = {|
+  __packager_asset: boolean,
+  fileSystemLocation: string,
+  httpServerLocation: string,
+  width: ?number,
+  height: ?number,
+  scales: Array<number>,
+  files: Array<string>,
+  hash: string,
+  name: string,
+  type: string,
+|};
 
 export type AssetInfo = {|
   files: Array<string>,
@@ -61,7 +74,7 @@ function buildAssetMap(
   |},
 > {
   const platforms = new Set(platform != null ? [platform] : []);
-  const assets = files.map(getAssetDataFromName.bind(this, platforms));
+  const assets = files.map(file => AssetPaths.tryParse(file, platforms));
   const map = new Map();
   assets.forEach(function(asset, i) {
     if (asset == null) {
@@ -91,13 +104,6 @@ function buildAssetMap(
   });
 
   return map;
-}
-
-function getAssetDataFromName(
-  platforms: Set<string>,
-  file: string,
-): ?AssetPath {
-  return AssetPaths.tryParse(file, platforms);
 }
 
 function getAssetKey(assetName, platform) {
@@ -184,6 +190,26 @@ async function findRoot(
   );
 }
 
+async function getAssetRecord(
+  relativePath: string,
+  projectRoots: $ReadOnlyArray<string>,
+  platform: ?string = null,
+): Promise<{|
+  files: Array<string>,
+  scales: Array<number>,
+|}> {
+  const dir = await findRoot(
+    projectRoots,
+    path.dirname(relativePath),
+    relativePath,
+  );
+
+  return await getAbsoluteAssetRecord(
+    path.join(dir, path.basename(relativePath)),
+    platform,
+  );
+}
+
 async function getAbsoluteAssetInfo(
   assetPath: string,
   platform: ?string = null,
@@ -235,6 +261,9 @@ async function getAssetData(
   };
 }
 
+/**
+ * Returns all the associated files (for different resolutions) of an asset.
+ **/
 async function getAssetFiles(
   assetPath: string,
   platform: ?string = null,
@@ -244,9 +273,41 @@ async function getAssetFiles(
   return assetData.files;
 }
 
+/**
+ * Return a buffer with the actual image given a request for an image by path.
+ * The relativePath can contain a resolution postfix, in this case we need to
+ * find that image (or the closest one to it's resolution) in one of the
+ * project roots:
+ *
+ * 1. We first parse the directory of the asset
+ * 2. We check to find a matching directory in one of the project roots
+ * 3. We then build a map of all assets and their scales in this directory
+ * 4. Then try to pick platform-specific asset records
+ * 5. Then pick the closest resolution (rounding up) to the requested one
+ */
+async function getAsset(
+  relativePath: string,
+  projectRoots: $ReadOnlyArray<string>,
+  platform: ?string = null,
+): Promise<Buffer> {
+  const assetData = AssetPaths.parse(
+    relativePath,
+    new Set(platform != null ? [platform] : []),
+  );
+
+  const record = await getAssetRecord(relativePath, projectRoots, platform);
+
+  for (let i = 0; i < record.scales.length; i++) {
+    if (record.scales[i] >= assetData.resolution) {
+      return readFile(record.files[i]);
+    }
+  }
+
+  return readFile(record.files[record.files.length - 1]);
+}
+
 module.exports = {
-  findRoot,
-  getAbsoluteAssetRecord,
+  getAsset,
   getAssetData,
   getAssetFiles,
 };

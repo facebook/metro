@@ -12,7 +12,6 @@
 
 'use strict';
 
-const AssetServer = require('../AssetServer');
 const Bundler = require('../Bundler');
 const DeltaBundler = require('../DeltaBundler');
 const MultipartResponse = require('./MultipartResponse');
@@ -28,6 +27,8 @@ const path = require('path');
 const symbolicate = require('./symbolicate');
 const url = require('url');
 
+const {getAsset} = require('../Assets');
+
 import type {CustomError} from '../lib/formatBundlingError';
 import type {HasteImpl} from '../node-haste/Module';
 import type {IncomingMessage, ServerResponse} from 'http';
@@ -41,7 +42,7 @@ import type {
 } from '../Bundler';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {SourceMap, Symbolicate} from './symbolicate';
-import type {AssetData} from '../AssetServer';
+import type {AssetData} from '../Assets';
 import type {RamBundleInfo} from '../DeltaBundler/Serializers';
 import type {PostProcessModules} from '../DeltaBundler';
 const {
@@ -100,7 +101,6 @@ class Server {
     res: ServerResponse,
   }>;
   _fileChangeListeners: Array<(filePath: string) => mixed>;
-  _assetServer: AssetServer;
   _bundler: Bundler;
   _debouncedFileChangeHandler: (filePath: string) => mixed;
   _reporter: Reporter;
@@ -162,12 +162,7 @@ class Server {
     this._fileChangeListeners = [];
     this._platforms = new Set(this._opts.platforms);
 
-    this._assetServer = new AssetServer({
-      projectRoots: this._opts.projectRoots,
-    });
-
     const bundlerOpts = Object.create(this._opts);
-    bundlerOpts.assetServer = this._assetServer;
     bundlerOpts.globalTransformCache = options.globalTransformCache;
     bundlerOpts.watch = this._opts.watch;
     bundlerOpts.reporter = reporter;
@@ -345,7 +340,7 @@ class Server {
     return data;
   }
 
-  _processSingleAssetRequest(req: IncomingMessage, res: ServerResponse) {
+  async _processSingleAssetRequest(req: IncomingMessage, res: ServerResponse) {
     const urlObj = url.parse(decodeURI(req.url), true);
     /* $FlowFixMe: could be empty if the url is invalid */
     const assetPath: string = urlObj.pathname.match(/^\/assets\/(.+)$/);
@@ -357,25 +352,27 @@ class Server {
       }),
     );
 
-    /* $FlowFixMe: query may be empty for invalid URLs */
-    this._assetServer.get(assetPath[1], urlObj.query.platform).then(
-      data => {
-        // Tell clients to cache this for 1 year.
-        // This is safe as the asset url contains a hash of the asset.
-        if (process.env.REACT_NATIVE_ENABLE_ASSET_CACHING === true) {
-          res.setHeader('Cache-Control', 'max-age=31536000');
-        }
-        res.end(this._rangeRequestMiddleware(req, res, data, assetPath));
-        process.nextTick(() => {
-          log(createActionEndEntry(processingAssetRequestLogEntry));
-        });
-      },
-      error => {
-        console.error(error.stack);
-        res.writeHead(404);
-        res.end('Asset not found');
-      },
-    );
+    try {
+      const data = await getAsset(
+        assetPath[1],
+        this._opts.projectRoots,
+        /* $FlowFixMe: query may be empty for invalid URLs */
+        urlObj.query.platform,
+      );
+      // Tell clients to cache this for 1 year.
+      // This is safe as the asset url contains a hash of the asset.
+      if (process.env.REACT_NATIVE_ENABLE_ASSET_CACHING === true) {
+        res.setHeader('Cache-Control', 'max-age=31536000');
+      }
+      res.end(this._rangeRequestMiddleware(req, res, data, assetPath));
+      process.nextTick(() => {
+        log(createActionEndEntry(processingAssetRequestLogEntry));
+      });
+    } catch (error) {
+      console.error(error.stack);
+      res.writeHead(404);
+      res.end('Asset not found');
+    }
   }
 
   _optionsHash(options: {}) {

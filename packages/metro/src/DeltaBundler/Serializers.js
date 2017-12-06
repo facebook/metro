@@ -16,11 +16,11 @@ const DeltaPatcher = require('./DeltaPatcher');
 
 const toLocalPath = require('../node-haste/lib/toLocalPath');
 
-const {getAssetData} = require('../AssetServer/util');
+const {getAssetData} = require('../Assets');
 const {fromRawMappings} = require('../Bundler/source-map');
 const {createRamBundleGroups} = require('../Bundler/util');
 
-import type {AssetData} from '../AssetServer';
+import type {AssetData} from '../Assets';
 import type {MappingsMap} from '../lib/SourceMap';
 import type {BundleOptions} from '../shared/types.flow';
 import type {ModuleTransportLike} from '../shared/types.flow';
