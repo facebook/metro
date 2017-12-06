@@ -13,12 +13,13 @@
 'use strict';
 
 const babel = require('babel-core');
-const collectDependencies = require('./collect-dependencies');
 const constantFolding = require('../../JSTransformer/worker/constant-folding')
   .plugin;
 const generate = require('./generate');
 const inline = require('../../JSTransformer/worker/inline').plugin;
+const invariant = require('fbjs/lib/invariant');
 const minify = require('../../JSTransformer/worker/minify');
+const optimizeDependencies = require('./optimizeDependencies');
 const sourceMap = require('source-map');
 
 import type {TransformedSourceFile, TransformResult} from '../types.flow';
@@ -69,11 +70,19 @@ function optimize(transformed: TransformResult, file, options) {
   if (options.isPolyfill) {
     dependencies = [];
   } else {
-    ({dependencies} = collectDependencies.forOptimization(
-      optimized.ast,
-      transformed.dependencies,
-      dependencyMapName,
-    ));
+    if (dependencyMapName == null) {
+      invariant(
+        transformed.dependencies.length === 0,
+        'there should be no dependency is the map name is missing',
+      );
+      dependencies = [];
+    } else {
+      dependencies = optimizeDependencies(
+        optimized.ast,
+        transformed.dependencies,
+        dependencyMapName,
+      );
+    }
   }
 
   const inputMap = transformed.map;

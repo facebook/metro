@@ -16,12 +16,12 @@ const JsFileWrapping = require('../../ModuleGraph/worker/JsFileWrapping');
 
 const assetTransformer = require('../../assetTransformer');
 const babylon = require('babylon');
-const collectDependencies = require('../../ModuleGraph/worker/collect-dependencies');
+const collectDependencies = require('../../ModuleGraph/worker/collectDependencies');
 const constantFolding = require('./constant-folding');
-
 const generate = require('babel-generator').default;
 const inline = require('./inline');
 const minify = require('./minify');
+const optimizeDependencies = require('../../ModuleGraph/worker/optimizeDependencies');
 const path = require('path');
 
 const {compactMapping} = require('../../Bundler/source-map');
@@ -122,21 +122,13 @@ function postTransform(
     dependencies = [];
     wrappedAst = JsFileWrapping.wrapPolyfill(ast);
   } else {
-    let dependencyData = collectDependencies(ast);
-
+    let dependencyMapName;
+    ({dependencies, dependencyMapName} = collectDependencies(ast));
     if (!options.dev) {
-      dependencyData = collectDependencies.forOptimization(
-        ast,
-        dependencyData.dependencies,
-        dependencyData.dependencyMapName,
-      );
+      dependencies = optimizeDependencies(ast, dependencies, dependencyMapName);
     }
-
-    dependencies = dependencyData.dependencies.map(dep => dep.name);
-    wrappedAst = JsFileWrapping.wrapModule(
-      ast,
-      dependencyData.dependencyMapName,
-    );
+    dependencies = dependencies.map(dep => dep.name);
+    wrappedAst = JsFileWrapping.wrapModule(ast, dependencyMapName);
   }
 
   const result = generate(

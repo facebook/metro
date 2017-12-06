@@ -16,7 +16,7 @@ const AssetPaths = require('../../node-haste/lib/AssetPaths');
 const JsFileWrapping = require('./JsFileWrapping');
 const Platforms = require('./Platforms');
 
-const collectDependencies = require('./collect-dependencies');
+const collectDependencies = require('./collectDependencies');
 const defaults = require('../../defaults');
 const docblock = require('jest-docblock');
 const generate = require('./generate');
