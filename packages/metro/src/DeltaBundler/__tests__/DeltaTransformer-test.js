@@ -1,3 +1,14 @@
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @emails oncall+js_foundation
+ * @format
+ */
 'use strict';
 
 jest
@@ -54,14 +65,19 @@ describe('DeltaTransformer', () => {
 
     bundler = new Bundler(bundlerOptions);
   });
-  
+
   it('should allow setting a custom module ID factory', async () => {
     const bundlerOptions = {
       isolateModuleIDs: true,
       createModuleIdFactory: createPlus10000ModuleIdFactory,
     };
 
-    const deltaTransformer = await DeltaTransformer.create(bundler, {}, bundlerOptions);
+    const deltaTransformer = await DeltaTransformer.create(
+      bundler,
+      {},
+      bundlerOptions,
+    );
+
     expect(deltaTransformer._getModuleId('test/path')).toBe(10000);
   });
 });
