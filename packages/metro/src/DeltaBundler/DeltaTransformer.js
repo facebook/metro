@@ -108,7 +108,7 @@ class DeltaTransformer extends EventEmitter {
     // different bundles to share the same ids (on HMR, where we need to patch
     // the correct module).
     this._getModuleId = this._bundleOptions.isolateModuleIDs
-      ? createModuleIdFactory()
+      ? (bundleOptions.createModuleIdFactory || createModuleIdFactory)()
       : globalCreateModuleId;
 
     this._deltaCalculator.on('change', this._onFileChange);
