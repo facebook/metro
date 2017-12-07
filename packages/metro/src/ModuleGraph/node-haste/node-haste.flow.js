@@ -66,6 +66,6 @@ type HasteMapOptions = {|
 
 declare class HasteMap {
   // node-haste/DependencyGraph/HasteMap.js
-  build(): Promise<Object>,
-  constructor(options: HasteMapOptions): void,
+  build(): Promise<Object>;
+  constructor(options: HasteMapOptions): void;
 }

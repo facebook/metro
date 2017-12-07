@@ -86,8 +86,9 @@ exports.handler = makeAsyncCommand(async (argv: any) => {
 
   function onReady(server) {
     console.log(
-      `The HTTP server is ready to accept requests on ${server.address()
-        .address}:${server.address().port}`,
+      `The HTTP server is ready to accept requests on ${
+        server.address().address
+      }:${server.address().port}`,
     );
   }
 

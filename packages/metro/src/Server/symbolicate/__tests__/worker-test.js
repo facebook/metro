@@ -40,9 +40,9 @@ it('symbolicates stack frames', () => {
   ];
 
   const stack = mappings.map(m => m.to);
-  const maps = Object.entries(
-    groupBy(mappings, m => m.from.file),
-  ).map(([file, ms]) => [file, sourceMap(file, ms)]);
+  const maps = Object.entries(groupBy(mappings, m => m.from.file)).map(
+    ([file, ms]) => [file, sourceMap(file, ms)],
+  );
 
   return symbolicate(connection, makeData(stack, maps)).then(() =>
     expect(connection.end).toBeCalledWith(

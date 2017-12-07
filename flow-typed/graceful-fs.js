@@ -12,39 +12,39 @@
 
 declare module 'graceful-fs' {
   declare class Stats {
-    dev: number,
-    ino: number,
-    mode: number,
-    nlink: number,
-    uid: number,
-    gid: number,
-    rdev: number,
-    size: number,
-    blksize: number,
-    blocks: number,
-    atime: Date,
-    mtime: Date,
-    ctime: Date,
+    dev: number;
+    ino: number;
+    mode: number;
+    nlink: number;
+    uid: number;
+    gid: number;
+    rdev: number;
+    size: number;
+    blksize: number;
+    blocks: number;
+    atime: Date;
+    mtime: Date;
+    ctime: Date;
 
-    isFile(): boolean,
-    isDirectory(): boolean,
-    isBlockDevice(): boolean,
-    isCharacterDevice(): boolean,
-    isSymbolicLink(): boolean,
-    isFIFO(): boolean,
-    isSocket(): boolean,
+    isFile(): boolean;
+    isDirectory(): boolean;
+    isBlockDevice(): boolean;
+    isCharacterDevice(): boolean;
+    isSymbolicLink(): boolean;
+    isFIFO(): boolean;
+    isSocket(): boolean;
   }
 
   declare class FSWatcher extends events$EventEmitter {
-    close(): void,
+    close(): void;
   }
 
   declare class ReadStream extends stream$Readable {
-    close(): void,
+    close(): void;
   }
 
   declare class WriteStream extends stream$Writable {
-    close(): void,
+    close(): void;
   }
 
   declare function gracefulify(fs: Object): void;

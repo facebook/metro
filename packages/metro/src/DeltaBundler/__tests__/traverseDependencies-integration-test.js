@@ -5086,31 +5086,28 @@ describe('traverseDependencies', function() {
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
     });
 
-    it.skip(
-      'allows setting dependencies for asset modules (broken)',
-      async () => {
-        const assetDependencies = ['/root/apple.png', '/root/banana.png'];
+    it.skip('allows setting dependencies for asset modules (broken)', async () => {
+      const assetDependencies = ['/root/apple.png', '/root/banana.png'];
 
-        setMockFileSystem({
-          root: {
-            'index.js': 'require("./a.png")',
-            'a.png': '',
-            'apple.png': '',
-            'banana.png': '',
-          },
-        });
+      setMockFileSystem({
+        root: {
+          'index.js': 'require("./a.png")',
+          'a.png': '',
+          'apple.png': '',
+          'banana.png': '',
+        },
+      });
 
-        const opts = {...defaults, assetDependencies, roots: ['/root']};
-        await processDgraph(opts, async dgraph => {
-          const {dependencies} = await dgraph.getDependencies({
-            entryPath: '/root/index.js',
-          });
-          const [, assetModule] = dependencies;
-          const deps = await assetModule.getDependencies();
-          expect(deps).toBe(assetDependencies);
+      const opts = {...defaults, assetDependencies, roots: ['/root']};
+      await processDgraph(opts, async dgraph => {
+        const {dependencies} = await dgraph.getDependencies({
+          entryPath: '/root/index.js',
         });
-      },
-    );
+        const [, assetModule] = dependencies;
+        const deps = await assetModule.getDependencies();
+        expect(deps).toBe(assetDependencies);
+      });
+    });
   });
 
   describe('Deterministic order of dependencies', () => {

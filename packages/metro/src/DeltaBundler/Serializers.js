@@ -170,13 +170,13 @@ async function getRamBundleInfo(
     type: module.type,
   }));
 
-  const {
-    preloadedModules,
-    ramGroups,
-  } = await deltaTransformer.getRamOptions(options.entryFile, {
-    dev: options.dev,
-    platform: options.platform,
-  });
+  const {preloadedModules, ramGroups} = await deltaTransformer.getRamOptions(
+    options.entryFile,
+    {
+      dev: options.dev,
+      platform: options.platform,
+    },
+  );
 
   const startupModules = [];
   const lazyModules = [];

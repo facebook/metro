@@ -106,7 +106,9 @@ class AssetResolutionCache {
         platform: assetData.platform,
       });
       if (assetData.platform) {
-        const assetNameWithPlatform = `${assetData.name}.${assetData.platform}.${assetData.type}`;
+        const assetNameWithPlatform = `${assetData.name}.${
+          assetData.platform
+        }.${assetData.type}`;
         getWithDefaultArray(results, assetNameWithPlatform).push({
           fileName,
           platform: null,

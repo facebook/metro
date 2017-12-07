@@ -146,29 +146,29 @@ async function traverseDependenciesForSingleFile(
   // added and removed dependency, to get all the modules that have to be added
   // and removed from the dependency graph.
   const added = await Promise.all(
-    Array.from(
-      currentDependencies,
-    ).map(async ([absolutePath, relativePath]) => {
-      if (previousDependencies.has(absolutePath)) {
-        return new Set();
-      }
+    Array.from(currentDependencies).map(
+      async ([absolutePath, relativePath]) => {
+        if (previousDependencies.has(absolutePath)) {
+          return new Set();
+        }
 
-      return await addDependency(
-        nonNullEdge,
-        relativePath,
-        dependencyGraph,
-        transformOptions,
-        edges,
-        () => {
-          total++;
-          onProgress(numProcessed, total);
-        },
-        () => {
-          numProcessed++;
-          onProgress(numProcessed, total);
-        },
-      );
-    }),
+        return await addDependency(
+          nonNullEdge,
+          relativePath,
+          dependencyGraph,
+          transformOptions,
+          edges,
+          () => {
+            total++;
+            onProgress(numProcessed, total);
+          },
+          () => {
+            numProcessed++;
+            onProgress(numProcessed, total);
+          },
+        );
+      },
+    ),
   );
 
   numProcessed++;

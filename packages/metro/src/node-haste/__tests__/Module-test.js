@@ -269,13 +269,12 @@ describe('Module', () => {
     it('exposes the transformed code rather than the raw file contents', () => {
       transformResult = {code: exampleCode};
       const module = createModule({transformCode});
-      return Promise.all([
-        module.read(),
-        module.getCode(),
-      ]).then(([data, code]) => {
-        expect(data.code).toBe(exampleCode);
-        expect(code).toBe(exampleCode);
-      });
+      return Promise.all([module.read(), module.getCode()]).then(
+        ([data, code]) => {
+          expect(data.code).toBe(exampleCode);
+          expect(code).toBe(exampleCode);
+        },
+      );
     });
 
     it('exposes the raw file contents as `source` property', () => {
@@ -287,13 +286,12 @@ describe('Module', () => {
       const map = {version: 3};
       transformResult = {map, code: exampleCode};
       const module = createModule({transformCode});
-      return Promise.all([
-        module.read(),
-        module.getMap(),
-      ]).then(([data, sourceMap]) => {
-        expect(data.map).toBe(map);
-        expect(sourceMap).toBe(map);
-      });
+      return Promise.all([module.read(), module.getMap()]).then(
+        ([data, sourceMap]) => {
+          expect(data.map).toBe(map);
+          expect(sourceMap).toBe(map);
+        },
+      );
     });
 
     it('caches the transform result for the same transform options', () => {

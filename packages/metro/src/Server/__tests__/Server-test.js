@@ -131,39 +131,35 @@ describe('processRequest', () => {
   });
 
   it('returns JS bundle source on request of *.bundle (compat)', () => {
-    return makeRequest(
-      requestHandler,
-      'mybundle.runModule.bundle',
-    ).then(response => expect(response.body).toEqual('this is the source'));
+    return makeRequest(requestHandler, 'mybundle.runModule.bundle').then(
+      response => expect(response.body).toEqual('this is the source'),
+    );
   });
 
   it('returns Last-Modified header on request of *.bundle', () => {
-    return makeRequest(
-      requestHandler,
-      'mybundle.bundle?runModule=true',
-    ).then(response => {
-      expect(response.getHeader('Last-Modified')).toBeDefined();
-    });
+    return makeRequest(requestHandler, 'mybundle.bundle?runModule=true').then(
+      response => {
+        expect(response.getHeader('Last-Modified')).toBeDefined();
+      },
+    );
   });
 
   it('returns build info headers on request of *.bundle', () => {
-    return makeRequest(
-      requestHandler,
-      'mybundle.bundle?runModule=true',
-    ).then(response => {
-      expect(response.getHeader('X-Metro-Files-Changed-Count')).toEqual('38');
-    });
+    return makeRequest(requestHandler, 'mybundle.bundle?runModule=true').then(
+      response => {
+        expect(response.getHeader('X-Metro-Files-Changed-Count')).toEqual('38');
+      },
+    );
   });
 
   it('returns Content-Length header on request of *.bundle', () => {
-    return makeRequest(
-      requestHandler,
-      'mybundle.bundle?runModule=true',
-    ).then(response => {
-      expect(response.getHeader('Content-Length')).toEqual(
-        '' + Buffer.byteLength(response.body),
-      );
-    });
+    return makeRequest(requestHandler, 'mybundle.bundle?runModule=true').then(
+      response => {
+        expect(response.getHeader('Content-Length')).toEqual(
+          '' + Buffer.byteLength(response.body),
+        );
+      },
+    );
   });
 
   it('returns 304 on request of *.bundle when if-modified-since equals Last-Modified', () => {
@@ -175,70 +171,73 @@ describe('processRequest', () => {
   });
 
   it('returns sourcemap on request of *.map', () => {
-    return makeRequest(
-      requestHandler,
-      'mybundle.map?runModule=true',
-    ).then(response => expect(response.body).toEqual('this is the source map'));
+    return makeRequest(requestHandler, 'mybundle.map?runModule=true').then(
+      response => expect(response.body).toEqual('this is the source map'),
+    );
   });
 
   it('works with .ios.js extension', () => {
-    return makeRequest(
-      requestHandler,
-      'index.ios.includeRequire.bundle',
-    ).then(response => {
-      expect(response.body).toEqual('this is the source');
-      expect(Serializers.fullBundle).toBeCalledWith(expect.any(DeltaBundler), {
-        assetPlugins: [],
-        bundleType: 'bundle',
-        deltaBundleId: expect.any(String),
-        dev: true,
-        entryFile: 'index.ios.js',
-        entryModuleOnly: false,
-        excludeSource: false,
-        generateSourceMaps: false,
-        hot: true,
-        inlineSourceMap: false,
-        isolateModuleIDs: false,
-        minify: false,
-        onProgress: jasmine.any(Function),
-        platform: null,
-        resolutionResponse: null,
-        runBeforeMainModule: ['InitializeCore'],
-        runModule: true,
-        sourceMapUrl: 'http://localhost:8081/index.ios.includeRequire.map',
-        unbundle: false,
-      });
-    });
+    return makeRequest(requestHandler, 'index.ios.includeRequire.bundle').then(
+      response => {
+        expect(response.body).toEqual('this is the source');
+        expect(Serializers.fullBundle).toBeCalledWith(
+          expect.any(DeltaBundler),
+          {
+            assetPlugins: [],
+            bundleType: 'bundle',
+            deltaBundleId: expect.any(String),
+            dev: true,
+            entryFile: 'index.ios.js',
+            entryModuleOnly: false,
+            excludeSource: false,
+            generateSourceMaps: false,
+            hot: true,
+            inlineSourceMap: false,
+            isolateModuleIDs: false,
+            minify: false,
+            onProgress: jasmine.any(Function),
+            platform: null,
+            resolutionResponse: null,
+            runBeforeMainModule: ['InitializeCore'],
+            runModule: true,
+            sourceMapUrl: 'http://localhost:8081/index.ios.includeRequire.map',
+            unbundle: false,
+          },
+        );
+      },
+    );
   });
 
   it('passes in the platform param', function() {
-    return makeRequest(
-      requestHandler,
-      'index.bundle?platform=ios',
-    ).then(function(response) {
-      expect(response.body).toEqual('this is the source');
-      expect(Serializers.fullBundle).toBeCalledWith(expect.any(DeltaBundler), {
-        assetPlugins: [],
-        bundleType: 'bundle',
-        deltaBundleId: expect.any(String),
-        dev: true,
-        entryFile: 'index.js',
-        entryModuleOnly: false,
-        excludeSource: false,
-        generateSourceMaps: false,
-        hot: true,
-        inlineSourceMap: false,
-        isolateModuleIDs: false,
-        minify: false,
-        onProgress: jasmine.any(Function),
-        platform: 'ios',
-        resolutionResponse: null,
-        runBeforeMainModule: ['InitializeCore'],
-        runModule: true,
-        sourceMapUrl: 'http://localhost:8081/index.map?platform=ios',
-        unbundle: false,
-      });
-    });
+    return makeRequest(requestHandler, 'index.bundle?platform=ios').then(
+      function(response) {
+        expect(response.body).toEqual('this is the source');
+        expect(Serializers.fullBundle).toBeCalledWith(
+          expect.any(DeltaBundler),
+          {
+            assetPlugins: [],
+            bundleType: 'bundle',
+            deltaBundleId: expect.any(String),
+            dev: true,
+            entryFile: 'index.js',
+            entryModuleOnly: false,
+            excludeSource: false,
+            generateSourceMaps: false,
+            hot: true,
+            inlineSourceMap: false,
+            isolateModuleIDs: false,
+            minify: false,
+            onProgress: jasmine.any(Function),
+            platform: 'ios',
+            resolutionResponse: null,
+            runBeforeMainModule: ['InitializeCore'],
+            runModule: true,
+            sourceMapUrl: 'http://localhost:8081/index.map?platform=ios',
+            unbundle: false,
+          },
+        );
+      },
+    );
   });
 
   it('passes in the assetPlugin param', function() {
@@ -283,12 +282,11 @@ describe('processRequest', () => {
         };
       });
 
-      return makeRequest(
-        requestHandler,
-        'index.delta?platform=ios',
-      ).then(function(response) {
-        expect(response.body).toEqual('{"delta": "bundle"}');
-      });
+      return makeRequest(requestHandler, 'index.delta?platform=ios').then(
+        function(response) {
+          expect(response.body).toEqual('{"delta": "bundle"}');
+        },
+      );
     });
 
     it('should send the correct deltaBundlerId to the bundler', () => {

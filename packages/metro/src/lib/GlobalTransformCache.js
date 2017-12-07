@@ -303,14 +303,14 @@ class URIBasedGlobalTransformCache {
    * waiting a little time before retring if experience shows it's useful.
    */
   static _fetchResultFromURIWithRetry(uri: string): Promise<CachedResult> {
-    return URIBasedGlobalTransformCache._fetchResultFromURI(
-      uri,
-    ).catch(error => {
-      if (!URIBasedGlobalTransformCache.shouldRetryAfterThatError(error)) {
-        throw error;
-      }
-      return this._fetchResultFromURI(uri);
-    });
+    return URIBasedGlobalTransformCache._fetchResultFromURI(uri).catch(
+      error => {
+        if (!URIBasedGlobalTransformCache.shouldRetryAfterThatError(error)) {
+          throw error;
+        }
+        return this._fetchResultFromURI(uri);
+      },
+    );
   }
 
   /**

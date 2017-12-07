@@ -22,20 +22,20 @@ declare class Promise<+R> {
       resolve: (result?: Promise<R> | R) => void,
       reject: (error?: any) => void,
     ) => mixed,
-  ): void,
+  ): void;
 
   then<U>(
     onFulfill?: ?(value: R) => Promise<U> | ?U,
     onReject?: ?(error: any) => Promise<U> | ?U,
-  ): Promise<U>,
+  ): Promise<U>;
 
-  catch<U>(onReject?: (error: any) => ?Promise<U> | U): Promise<U>,
+  catch<U>(onReject?: (error: any) => ?Promise<U> | U): Promise<U>;
 
-  static resolve<T>(object?: Promise<T> | T): Promise<T>,
-  static reject<T>(error?: mixed): Promise<T>,
+  static resolve<T>(object?: Promise<T> | T): Promise<T>;
+  static reject<T>(error?: mixed): Promise<T>;
 
   static all<T: Iterable<mixed>>(
     promises: T,
-  ): Promise<$TupleMap<T, typeof $await>>,
-  static race<T>(promises: Array<Promise<T>>): Promise<T>,
+  ): Promise<$TupleMap<T, typeof $await>>;
+  static race<T>(promises: Array<Promise<T>>): Promise<T>;
 }
