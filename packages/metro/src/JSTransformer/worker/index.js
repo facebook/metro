@@ -24,7 +24,7 @@ const minify = require('./minify');
 const optimizeDependencies = require('../../ModuleGraph/worker/optimizeDependencies');
 const path = require('path');
 
-const {compactMapping} = require('../../Bundler/source-map');
+const {compactMapping} = require('metro-source-map');
 
 import type {LogEntry} from '../../Logger/Types';
 import type {CompactRawMappings, MappingsMap} from '../../lib/SourceMap';

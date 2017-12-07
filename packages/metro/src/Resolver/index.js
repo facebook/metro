@@ -20,7 +20,7 @@ const {
   compactMapping,
   fromRawMappings,
   toRawMappings,
-} = require('../Bundler/source-map');
+} = require('metro-source-map');
 const pathJoin = require('path').join;
 
 import type Module, {HasteImpl, TransformCode} from '../node-haste/Module';

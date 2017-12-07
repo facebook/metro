@@ -15,9 +15,10 @@
 const Generator = require('./Generator');
 const SourceMap = require('source-map');
 
-import type {MappingsMap, RawMappings} from '../../lib/SourceMap';
+import type {SourceMap as MappingsMap} from 'babel-core';
 import type {RawMapping as BabelRawMapping} from 'babel-generator';
 
+type RawMappings = Array<BabelRawMapping>;
 type GeneratedCodeMapping = [number, number];
 type SourceMapping = [number, number, number, number];
 type SourceMappingWithName = [number, number, number, number, string];

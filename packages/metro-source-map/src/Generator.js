@@ -14,7 +14,7 @@
 
 const B64Builder = require('./B64Builder');
 
-import type {MappingsMap} from '../../lib/SourceMap';
+import type {SourceMap as MappingsMap} from 'babel-core';
 
 /**
  * Generates a source map from raw mappings.

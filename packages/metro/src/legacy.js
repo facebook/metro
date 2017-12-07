@@ -19,7 +19,7 @@ const blacklist = require('./blacklist');
 const debug = require('debug');
 const invariant = require('fbjs/lib/invariant');
 
-const {fromRawMappings, compactMapping} = require('./Bundler/source-map');
+const {fromRawMappings, compactMapping} = require('metro-source-map');
 
 import type {ConfigT as MetroConfig} from './Config';
 import type Server from './Server';

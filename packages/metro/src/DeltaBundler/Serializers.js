@@ -17,8 +17,8 @@ const DeltaPatcher = require('./DeltaPatcher');
 const toLocalPath = require('../node-haste/lib/toLocalPath');
 
 const {getAssetData} = require('../Assets');
-const {fromRawMappings} = require('../Bundler/source-map');
 const {createRamBundleGroups} = require('../Bundler/util');
+const {fromRawMappings} = require('metro-source-map');
 
 import type {AssetData} from '../Assets';
 import type {MappingsMap} from '../lib/SourceMap';
