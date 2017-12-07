@@ -26,8 +26,6 @@ const stat = denodeify(fs.stat);
 const readDir = denodeify(fs.readdir);
 const readFile = denodeify(fs.readFile);
 
-import type {AssetPath} from '../node-haste/lib/AssetPaths';
-
 export type AssetData = {|
   __packager_asset: boolean,
   fileSystemLocation: string,

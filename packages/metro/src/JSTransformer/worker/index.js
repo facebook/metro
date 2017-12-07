@@ -122,8 +122,10 @@ function postTransform(
     dependencies = [];
     wrappedAst = JsFileWrapping.wrapPolyfill(ast);
   } else {
-    let dependencyMapName;
-    ({dependencies, dependencyMapName} = collectDependencies(ast));
+    const collected = collectDependencies(ast);
+    ({dependencies} = collected);
+    const {dependencyMapName} = collected;
+
     if (!options.dev) {
       dependencies = optimizeDependencies(ast, dependencies, dependencyMapName);
     }
