@@ -54,8 +54,7 @@ function collectDependencies(ast: Ast): CollectedDependencies {
         return;
       }
       if (node.callee.type === 'Import') {
-        const reqNode = processImportCall(context, path, node, depMapIdent);
-        visited.add(reqNode);
+        processImportCall(context, path, node, depMapIdent);
         return;
       }
       if (isRequireCall(node.callee)) {
@@ -81,24 +80,17 @@ function processImportCall(context, path, node, depMapIdent) {
   const index = assignDependencyIndex(context, name, 'import');
   const mapLookup = createDepMapLookup(depMapIdent, index);
   const newImport = makeAsyncRequire({
-    REQUIRE_ARGS: createRequireArgs(mapLookup, nameLiteral),
     MODULE_ID: mapLookup,
-    BUNDLE_SEGMENTS_PATH: {
-      type: 'StringLiteral',
-      value: 'BundleSegments',
-    },
+    ASYNC_REQUIRE_PATH: {type: 'StringLiteral', value: 'asyncRequire'},
   });
   path.replaceWith(newImport);
-  // This is the inner require() call. We return it so it
-  // gets marked as already visited.
-  return newImport.expression.arguments[0].body.body[0].argument;
 }
 
 function processRequireCall(context, node, depMapIdent) {
   const [nameLiteral, name] = getModuleNameFromCallArgs(node);
   const index = assignDependencyIndex(context, name, 'require');
   const mapLookup = createDepMapLookup(depMapIdent, index);
-  node.arguments = createRequireArgs(mapLookup, nameLiteral);
+  node.arguments = [mapLookup, nameLiteral];
   return node;
 }
 
@@ -154,14 +146,8 @@ function createDepMapLookup(depMapIndent, index: number) {
 }
 
 const makeAsyncRequire = babelTemplate(
-  `require(BUNDLE_SEGMENTS_PATH).loadForModule(MODULE_ID).then(
-    function() { return require(REQUIRE_ARGS); }
-  )`,
+  `require(ASYNC_REQUIRE_PATH)(MODULE_ID)`,
 );
-
-function createRequireArgs(mapLookup, moduleNameLiteral) {
-  return [mapLookup, moduleNameLiteral];
-}
 
 function invalidRequireOf(type, node) {
   return new InvalidRequireCallError(

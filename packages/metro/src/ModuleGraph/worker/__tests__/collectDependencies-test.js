@@ -56,13 +56,11 @@ it('collects asynchronous dependencies', () => {
   const {dependencies, dependencyMapName} = collectDependencies(ast);
   expect(dependencies).toEqual([
     {name: 'some/async/module', isAsync: true},
-    {name: 'BundleSegments', isAsync: false},
+    {name: 'asyncRequire', isAsync: false},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
-      require(${dependencyMapName}[1], "BundleSegments").loadForModule(${dependencyMapName}[0]).then(function () {
-        return require(${dependencyMapName}[0], "some/async/module");
-      }).then(foo => {});
+      require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0]).then(foo => {});
     `),
   );
 });
@@ -75,14 +73,12 @@ it('collects mixed dependencies as being sync', () => {
   const {dependencies, dependencyMapName} = collectDependencies(ast);
   expect(dependencies).toEqual([
     {name: 'some/async/module', isAsync: false},
-    {name: 'BundleSegments', isAsync: false},
+    {name: 'asyncRequire', isAsync: false},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
       const a = require(${dependencyMapName}[0], "some/async/module");
-      require(${dependencyMapName}[1], "BundleSegments").loadForModule(${dependencyMapName}[0]).then(function () {
-        return require(${dependencyMapName}[0], "some/async/module");
-      }).then(foo => {});
+      require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0]).then(foo => {});
     `),
   );
 });
@@ -95,13 +91,11 @@ it('collects mixed dependencies as being sync; reverse order', () => {
   const {dependencies, dependencyMapName} = collectDependencies(ast);
   expect(dependencies).toEqual([
     {name: 'some/async/module', isAsync: false},
-    {name: 'BundleSegments', isAsync: false},
+    {name: 'asyncRequire', isAsync: false},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
-      require(${dependencyMapName}[1], "BundleSegments").loadForModule(${dependencyMapName}[0]).then(function () {
-        return require(${dependencyMapName}[0], "some/async/module");
-      }).then(foo => {});
+      require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0]).then(foo => {});
       const a = require(${dependencyMapName}[0], "some/async/module");
     `),
   );
