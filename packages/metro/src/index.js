@@ -94,6 +94,7 @@ async function runMetro({
     assetExts: normalizedConfig.assetTransforms ? [] : assetExts,
     assetRegistryPath: normalizedConfig.assetRegistryPath,
     blacklistRE: normalizedConfig.getBlacklistRE(),
+    createModuleIdFactory: normalizedConfig.createModuleIdFactory,
     extraNodeModules: normalizedConfig.extraNodeModules,
     getPolyfills: normalizedConfig.getPolyfills,
     getModulesRunBeforeMainModule:
@@ -239,6 +240,9 @@ exports.runBuild = async (options: RunBuildOptions) => {
     minify: options.optimize || false,
     platform: options.platform || `web`,
     sourceMapUrl: options.sourceMapUrl,
+    createModuleIdFactory: options.config
+      ? options.config.createModuleIdFactory
+      : undefined,
   };
 
   const metroBundle = await MetroBundler.build(metroServer, requestOptions);

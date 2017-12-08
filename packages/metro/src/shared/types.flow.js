@@ -46,6 +46,7 @@ export type BundleOptions = {
   +runModule: boolean,
   sourceMapUrl: ?string,
   unbundle: boolean,
+  createModuleIdFactory?: () => (path: string) => number,
 };
 
 export type ModuleGroups = {|
@@ -69,6 +70,7 @@ export type Options = {|
   +assetRegistryPath: string,
   blacklistRE?: RegExp,
   cacheVersion?: string,
+  createModuleIdFactory?: () => (path: string) => number,
   enableBabelRCLookup?: boolean,
   extraNodeModules?: {},
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
@@ -113,4 +115,5 @@ export type RequestOptions = {|
   dev?: boolean,
   minify: boolean,
   platform: string,
+  createModuleIdFactory?: () => (path: string) => number,
 |};
