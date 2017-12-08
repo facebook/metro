@@ -26,28 +26,29 @@ const stat = denodeify(fs.stat);
 const readDir = denodeify(fs.readdir);
 const readFile = denodeify(fs.readFile);
 
-import type {AssetPath} from '../node-haste/lib/AssetPaths';
-
-export type AssetData = {|
-  __packager_asset: boolean,
-  fileSystemLocation: string,
-  httpServerLocation: string,
-  width: ?number,
-  height: ?number,
-  scales: Array<number>,
-  files: Array<string>,
-  hash: string,
-  name: string,
-  type: string,
-|};
-
 export type AssetInfo = {|
-  files: Array<string>,
-  hash: string,
-  name: string,
-  scales: Array<number>,
-  type: string,
+  +files: Array<string>,
+  +hash: string,
+  +name: string,
+  +scales: Array<number>,
+  +type: string,
 |};
+
+export type AssetDataWithoutFiles = {
+  +__packager_asset: boolean,
+  +fileSystemLocation: string,
+  +hash: string,
+  +height: ?number,
+  +httpServerLocation: string,
+  +name: string,
+  +scales: Array<number>,
+  +type: string,
+  +width: ?number,
+};
+
+export type AssetData = AssetDataWithoutFiles & {
+  +files: Array<string>,
+};
 
 const hashFiles = denodeify(function hashFilesCb(files, hash, callback) {
   if (!files.length) {
@@ -268,7 +269,7 @@ async function getAssetFiles(
   assetPath: string,
   platform: ?string = null,
 ): Promise<Array<string>> {
-  const assetData = await getAbsoluteAssetInfo(assetPath, platform);
+  const assetData = await getAbsoluteAssetRecord(assetPath, platform);
 
   return assetData.files;
 }

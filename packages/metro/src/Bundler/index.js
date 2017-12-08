@@ -62,21 +62,6 @@ export type GetTransformOptions = (
   getDependenciesOf: (string) => Promise<Array<string>>,
 ) => Promise<ExtraTransformOptions>;
 
-export type AssetDescriptor = {
-  +__packager_asset: boolean,
-  +httpServerLocation: string,
-  +width: ?number,
-  +height: ?number,
-  +scales: Array<number>,
-  +hash: string,
-  +name: string,
-  +type: string,
-};
-
-export type ExtendedAssetDescriptor = AssetDescriptor & {
-  +fileSystemLocation: string,
-};
-
 export type PostMinifyProcess = ({
   code: string,
   map: ?MappingsMap,

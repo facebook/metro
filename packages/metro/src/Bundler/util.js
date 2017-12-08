@@ -13,10 +13,9 @@
 'use strict';
 
 const babel = require('babel-core');
-const babelGenerate = require('babel-generator').default;
 const babylon = require('babylon');
 
-import type {ExtendedAssetDescriptor} from '.';
+import type {AssetDataWithoutFiles} from '../Assets';
 import type {ModuleTransportLike} from '../shared/types.flow';
 
 // Structure of the object: dir.name.scale = asset
@@ -42,7 +41,7 @@ const assetPropertyBlacklist = new Set(['files', 'fileSystemLocation', 'path']);
 
 function generateAssetCodeFileAst(
   assetRegistryPath: string,
-  assetDescriptor: ExtendedAssetDescriptor,
+  assetDescriptor: AssetDataWithoutFiles,
 ): Ast {
   const properDescriptor = filterObject(
     assetDescriptor,
@@ -93,7 +92,7 @@ function generateAssetCodeFileAst(
  */
 function generateRemoteAssetCodeFileAst(
   assetSourceResolverPath: string,
-  assetDescriptor: ExtendedAssetDescriptor,
+  assetDescriptor: AssetDataWithoutFiles,
   remoteServer: string,
   remoteFileMap: RemoteFileMap,
 ): ?Ast {
