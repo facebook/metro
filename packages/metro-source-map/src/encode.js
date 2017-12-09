@@ -167,11 +167,11 @@ function encode(value: number, buffer: Buffer, position: number): number {
   let digit;
   do {
     digit = vlq & VLQ_BASE_MASK;
-    vlq >>>= VLQ_BASE_SHIFT;
+    vlq = vlq >>> VLQ_BASE_SHIFT;
     if (vlq > 0) {
       // There are still more digits in this value, so we must make sure the
       // continuation bit is marked.
-      digit |= VLQ_CONTINUATION_BIT;
+      digit = digit | VLQ_CONTINUATION_BIT;
     }
     buffer[position++] = CHAR_MAP[digit];
   } while (vlq > 0);

@@ -56,7 +56,7 @@ function fromRawMappings(
       );
     }
 
-    carryOver += countLines(code);
+    carryOver = carryOver + countLines(code);
   }
 
   return generator;
