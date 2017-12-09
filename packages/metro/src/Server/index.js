@@ -739,6 +739,13 @@ class Server {
     });
     res.end(JSON.stringify(formattedError));
     this._reporter.update({error, type: 'bundling_error'});
+
+    log({
+      action_name: 'bundling_error',
+      error_type: formattedError.type,
+      log_entry_label: 'bundling_error',
+      stack: formattedError.message,
+    });
   }
 
   _getOptionsFromUrl(reqUrl: string): BundleOptions & DeltaBundlerOptions {
