@@ -88,7 +88,7 @@ function transformModule(
   }
 
   let hasteID = null;
-  if (filename.indexOf(NODE_MODULES) === -1) {
+  if (filename.indexOf(NODE_MODULES) === -1 && !polyfill) {
     hasteID = docblock.parse(docblock.extract(code)).providesModule;
     if (options.hasteImpl) {
       if (options.hasteImpl.enforceHasteNameMatches) {
