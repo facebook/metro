@@ -276,4 +276,44 @@ describe('edge cases', () => {
     mockShallowDependencies('/bar', '/foo');
     await assertOrder();
   });
+
+  it('should simplify inlineRequires transform option', async () => {
+    jest.spyOn(dependencyGraph, 'getShallowDependencies');
+
+    const edges = new Map();
+    const transformOptions = {
+      inlineRequires: {
+        blacklist: {
+          '/baz': true,
+        },
+      },
+    };
+
+    await initialTraverseDependencies(
+      '/bundle',
+      dependencyGraph,
+      transformOptions,
+      edges,
+    );
+
+    expect(dependencyGraph.getShallowDependencies.mock.calls).toEqual([
+      ['/bundle', {inlineRequires: true}],
+      ['/foo', {inlineRequires: true}],
+      ['/bar', {inlineRequires: true}],
+      ['/baz', {inlineRequires: false}],
+    ]);
+
+    dependencyGraph.getShallowDependencies.mockClear();
+
+    await traverseDependencies(
+      ['/foo'],
+      dependencyGraph,
+      transformOptions,
+      edges,
+    );
+
+    expect(dependencyGraph.getShallowDependencies.mock.calls).toEqual([
+      ['/foo', {inlineRequires: true}],
+    ]);
+  });
 });
