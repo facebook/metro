@@ -25,9 +25,18 @@ import type {PostProcessModules} from './DeltaBundler';
 import type {PostProcessModules as PostProcessModulesForBuck} from './ModuleGraph/types.flow.js';
 import type {TransformVariants} from './ModuleGraph/types.flow';
 import type {HasteImpl} from './node-haste/Module';
+import type {IncomingMessage, ServerResponse} from 'http';
+
+type Middleware = (IncomingMessage, ServerResponse, ?(?Error) => void) => void;
 
 export type ConfigT = {
   assetRegistryPath: string,
+
+  /**
+   * Called with the Metro middleware in parameter; can be used to wrap this
+   * middleware inside another one
+   */
+  enhanceMiddleware: Middleware => Middleware,
 
   extraNodeModules: {[id: string]: string},
   /**
@@ -148,6 +157,7 @@ export type ConfigT = {
 
 const DEFAULT = ({
   assetRegistryPath: 'missing-asset-registry-path',
+  enhanceMiddleware: middleware => middleware,
   extraNodeModules: {},
   assetTransforms: false,
   getAssetExts: () => [],

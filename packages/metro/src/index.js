@@ -69,7 +69,7 @@ async function runMetro({
   maxWorkers = 1,
   projectRoots = [],
   watch = false,
-}: PrivateMetroOptions) {
+}: PrivateMetroOptions): Promise<MetroServer> {
   const normalizedConfig = config ? Config.normalize(config) : Config.DEFAULT;
 
   const assetExts = defaults.assetExts.concat(
@@ -136,6 +136,7 @@ type CreateConnectMiddlewareOptions = {|
 exports.createConnectMiddleware = async function(
   options: CreateConnectMiddlewareOptions,
 ) {
+  // $FlowFixMe I don't know why Flow thinks there's an error here... runMetro IS async
   const metroServer = await runMetro({
     config: options.config,
     maxWorkers: options.maxWorkers,
@@ -144,10 +145,15 @@ exports.createConnectMiddleware = async function(
     watch: true,
   });
 
+  const normalizedConfig = options.config
+    ? Config.normalize(options.config)
+    : Config.DEFAULT;
+
   return {
-    middleware(req: IncomingMessage, res: ServerResponse) {
-      return metroServer.processRequest(req, res);
-    },
+    middleware: normalizedConfig.enhanceMiddleware(
+      (req: IncomingMessage, res: ServerResponse, next: ?(?Error) => void) =>
+        metroServer.processRequest(req, res, next),
+    ),
     end() {
       metroServer.end();
     },
