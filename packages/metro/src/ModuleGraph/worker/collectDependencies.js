@@ -76,7 +76,7 @@ function isRequireCall(callee) {
 }
 
 function processImportCall(context, path, node, depMapIdent) {
-  const [nameLiteral, name] = getModuleNameFromCallArgs(node);
+  const [, name] = getModuleNameFromCallArgs(node);
   const index = assignDependencyIndex(context, name, 'import');
   const mapLookup = createDepMapLookup(depMapIdent, index);
   const newImport = makeAsyncRequire({

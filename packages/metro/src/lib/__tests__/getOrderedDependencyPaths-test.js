@@ -42,9 +42,9 @@ describe('getOrderedDependencyPaths', () => {
       ),
     );
 
-    expect(
-      await getOrderedDependencyPaths(deltaBundler, ['/tmp'], {}),
-    ).toEqual(['/tmp/1.js', '/tmp/2.js', '/tmp/3.js', '/tmp/4.js']);
+    expect(await getOrderedDependencyPaths(deltaBundler, ['/tmp'], {})).toEqual(
+      ['/tmp/1.js', '/tmp/2.js', '/tmp/3.js', '/tmp/4.js'],
+    );
   });
 
   it('Should add assets data dependencies correctly', async () => {
@@ -62,17 +62,17 @@ describe('getOrderedDependencyPaths', () => {
       ),
     );
 
-    expect(
-      await getOrderedDependencyPaths(deltaBundler, ['/tmp'], {}),
-    ).toEqual([
-      '/tmp/1.js',
-      '/tmp/2.png@2x',
-      '/tmp/2.png@3x',
-      '/tmp/3.js',
-      '/tmp/4.png@2x',
-      '/tmp/4.png@3x',
-      '/tmp/5.js',
-    ]);
+    expect(await getOrderedDependencyPaths(deltaBundler, ['/tmp'], {})).toEqual(
+      [
+        '/tmp/1.js',
+        '/tmp/2.png@2x',
+        '/tmp/2.png@3x',
+        '/tmp/3.js',
+        '/tmp/4.png@2x',
+        '/tmp/4.png@3x',
+        '/tmp/5.js',
+      ],
+    );
 
     expect(getAssetFiles.mock.calls).toEqual([
       ['/tmp/2.png', undefined],
