@@ -1,5 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`throws on tagged template literals 1`] = `"Calls to require() expect exactly 1 string literal argument, but this was found: require(tag\`left-pad\`)"`;
+exports[`throws on tagged template literals 1`] = `"Calls to require() expect exactly 1 string literal argument, but this was found: \`require(tag\`left-pad\`)\`."`;
 
-exports[`throws on template literals with interpolations 1`] = `"Calls to require() expect exactly 1 string literal argument, but this was found: require(\`left\${\\"-\\"}pad\`)"`;
+exports[`throws on template literals with interpolations 1`] = `"Calls to require() expect exactly 1 string literal argument, but this was found: \`require(\`left\${\\"-\\"}pad\`)\`."`;

@@ -152,8 +152,7 @@ const makeAsyncRequire = babelTemplate(
 function invalidRequireOf(type, node) {
   return new InvalidRequireCallError(
     `Calls to ${type}() expect exactly 1 string literal argument, ` +
-      'but this was found: ' +
-      prettyPrint(node).code,
+      `but this was found: \`${prettyPrint(node).code}\`.`,
   );
 }
 

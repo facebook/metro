@@ -123,7 +123,16 @@ function postTransform(
     wrappedAst = JsFileWrapping.wrapPolyfill(ast);
   } else {
     let dependencyMapName;
-    ({dependencies, dependencyMapName} = collectDependencies(ast));
+    try {
+      ({dependencies, dependencyMapName} = collectDependencies(ast));
+    } catch (error) {
+      if (error instanceof collectDependencies.InvalidRequireCallError) {
+        throw new collectDependencies.InvalidRequireCallError(
+          `\`${filename}\`: ${error.message}`,
+        );
+      }
+      throw error;
+    }
     if (!options.dev) {
       dependencies = optimizeDependencies(ast, dependencies, dependencyMapName);
     }

@@ -16,6 +16,9 @@ jest
   .mock('../inline')
   .mock('../minify');
 
+const {
+  InvalidRequireCallError,
+} = require('../../../ModuleGraph/worker/collectDependencies');
 const path = require('path');
 const transformCode = require('..').transform;
 
@@ -109,5 +112,31 @@ describe('code transformation worker:', () => {
     );
     expect(result.map).toHaveLength(13);
     expect(result.dependencies).toEqual(['./c', './a', 'b']);
+  });
+
+  it('reports filename when encountering unsupported dynamic dependency', async () => {
+    try {
+      await transformCode(
+        path.join(__dirname, '../../../transformer.js'),
+        'arbitrary/file.js',
+        `local/file.js`,
+        [
+          'require("./a");',
+          'let a = arbitrary(code);',
+          'const b = require(a);',
+        ].join('\n'),
+        false,
+        {
+          dev: true,
+          transform: {},
+        },
+        [],
+        '',
+      );
+      throw new Error('should not reach this');
+    } catch (error) {
+      expect(error).toBeInstanceOf(InvalidRequireCallError);
+      expect(error.message).toMatchSnapshot();
+    }
   });
 });
