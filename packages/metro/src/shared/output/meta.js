@@ -31,7 +31,6 @@ module.exports = function(
   const buffer: Buffer = asBuffer(code, encoding);
   const hash = crypto.createHash('sha1');
   hash.update(buffer);
-  // $FlowFixMe: Flow doesn't know that 'buffer' is a valid value
   const digest = hash.digest('buffer');
   const signature = Buffer.alloc
     ? Buffer.alloc(digest.length + 1)
