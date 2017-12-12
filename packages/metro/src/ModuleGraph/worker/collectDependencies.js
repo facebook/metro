@@ -76,7 +76,7 @@ function isRequireCall(callee) {
 }
 
 function processImportCall(context, path, node, depMapIdent) {
-  const [, name] = getModuleNameFromCallArgs(node);
+  const [, name] = getModuleNameFromCallArgs('import', node);
   const index = assignDependencyIndex(context, name, 'import');
   const mapLookup = createDepMapLookup(depMapIdent, index);
   const newImport = makeAsyncRequire({
@@ -87,7 +87,7 @@ function processImportCall(context, path, node, depMapIdent) {
 }
 
 function processRequireCall(context, node, depMapIdent) {
-  const [nameLiteral, name] = getModuleNameFromCallArgs(node);
+  const [nameLiteral, name] = getModuleNameFromCallArgs('require', node);
   const index = assignDependencyIndex(context, name, 'require');
   const mapLookup = createDepMapLookup(depMapIdent, index);
   node.arguments = [mapLookup, nameLiteral];
@@ -98,10 +98,10 @@ function processRequireCall(context, node, depMapIdent) {
  * Extract the module name from `require` arguments. We support template
  * literal, for example one could write `require(`foo`)`.
  */
-function getModuleNameFromCallArgs(node) {
+function getModuleNameFromCallArgs(type, node) {
   const args = node.arguments;
   if (args.length !== 1) {
-    throw invalidRequireOf('import', node);
+    throw invalidRequireOf(type, node);
   }
   const nameLiteral = args[0];
   if (nameLiteral.type === 'StringLiteral') {
@@ -109,11 +109,11 @@ function getModuleNameFromCallArgs(node) {
   }
   if (nameLiteral.type === 'TemplateLiteral') {
     if (nameLiteral.quasis.length !== 1) {
-      throw invalidRequireOf('import', node);
+      throw invalidRequireOf(type, node);
     }
     return [nameLiteral, nameLiteral.quasis[0].value.cooked];
   }
-  throw invalidRequireOf('import', node);
+  throw invalidRequireOf(type, node);
 }
 
 /**
