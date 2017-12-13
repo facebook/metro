@@ -12,6 +12,7 @@
 'use strict';
 
 const inline = require('../inline');
+
 const {transform, transformFromAst} = require('babel-core');
 
 const babelOptions = {
@@ -482,5 +483,78 @@ describe('inline constants', () => {
     }).code;
 
     expect(transformed).toEqual('__d(()=>{const a=true;});');
+  });
+});
+
+describe('inline PlatformOS.OS', () => {
+  it('replaces PlatformOS.OS in the code if PlatformOS is a top level import', () => {
+    const code = `
+      var PlatformOS = require('PlatformOS');
+      function a() {
+        if (PlatformOS.OS === 'android') a = function() {};
+        var b = a.PlatformOS.OS;
+      }`;
+    const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/PlatformOS\.OS/, '"ios"')),
+    );
+  });
+
+  it('replaces require("PlatformOS").OS in the code', () => {
+    const code = `function a() {
+      var a = require('PlatformOS').OS;
+      var b = a.require('PlatformOS').OS;
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {platform: 'android'});
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/require\('PlatformOS'\)\.OS/, '"android"')),
+    );
+  });
+
+  it(`doesn't replace PlatformOS.OS in the code if PlatformOS is the left hand side of an assignment expression`, () => {
+    const code = `function a() {
+      PlatformOS.OS = "test"
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
+
+    expect(toString(ast)).toEqual(normalize(code));
+  });
+
+  it('replaces PlatformOS.OS in the code if PlatformOS is the right hand side of an assignment expression', () => {
+    const code = `function a() {
+      var a;
+      a = PlatformOS.OS;
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {platform: 'ios'});
+
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/PlatformOS\.OS/, '"ios"')),
+    );
+  });
+});
+
+describe('inline PlatformOS.select', () => {
+  it('replaces PlatformOS.select in the code if PlatformOS is a top level import', () => {
+    const code = `
+      var PlatformOS = require('PlatformOS');
+      function a() {
+        PlatformOS.select({ios: 1, android: 2});
+        var b = a.PlatformOS.select({});
+      }`;
+    const {ast} = inline('arbitrary.js', {code}, {platform: 'android'});
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/PlatformOS\.select\([^;]+/, '2')),
+    );
+  });
+
+  it('replaces require("PlatformOS").select in the code', () => {
+    const code = `function a() {
+      var a = require('PlatformOS').select({ios: 1, android: 2});
+      var b = a.require('PlatformOS').select({});
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {platform: 'android'});
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/PlatformOS\.select\([^;]+/, '2')),
+    );
   });
 });

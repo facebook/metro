@@ -65,10 +65,7 @@ const inlinePlugin = {
       const opts = state.opts;
 
       if (!isLeftHandSideOfAssignmentExpression(node, path.parent)) {
-        if (
-          inlinePlatform.isPlatformOS(node, scope, opts.isWrapped) ||
-          inlinePlatform.isReactPlatformOS(node, scope, opts.isWrapped)
-        ) {
+        if (inlinePlatform.isPlatformNode(node, scope, opts.isWrapped)) {
           path.replaceWith(t.stringLiteral(opts.platform));
         } else if (isProcessEnvNodeEnv(node, scope)) {
           path.replaceWith(
@@ -83,10 +80,7 @@ const inlinePlugin = {
       const arg = node.arguments[0];
       const opts = state.opts;
 
-      if (
-        inlinePlatform.isPlatformSelect(node, scope, opts.isWrapped) ||
-        inlinePlatform.isReactPlatformSelect(node, scope, opts.isWrapped)
-      ) {
+      if (inlinePlatform.isPlatformSelectNode(node, scope, opts.isWrapped)) {
         const fallback = () =>
           findProperty(arg, 'default', () => t.identifier('undefined'));
         const replacement = t.isObjectExpression(arg)
@@ -94,6 +88,12 @@ const inlinePlugin = {
           : node;
 
         path.replaceWith(replacement);
+      } else if (
+        inlinePlatform.isPlatformOSSelect(node, scope, opts.isWrapped)
+      ) {
+        path.replaceWith(
+          inlinePlatform.getReplacementForPlatformOSSelect(node, opts.platform),
+        );
       }
     },
   },

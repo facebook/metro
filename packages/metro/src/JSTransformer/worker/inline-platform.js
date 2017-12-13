@@ -17,11 +17,28 @@ const babel = require('babel-core');
 const t = babel.types;
 const importMap = new Map([['ReactNative', 'react-native']]);
 
-const isPlatformOS = (node: any, scope: any, isWrappedModule: boolean) =>
+const isPlatformNode = (
+  node: Object,
+  scope: Object,
+  isWrappedModule: boolean,
+) =>
+  isPlatformOS(node, scope, isWrappedModule) ||
+  isReactPlatformOS(node, scope, isWrappedModule) ||
+  isPlatformOSOS(node, scope, isWrappedModule);
+
+const isPlatformSelectNode = (
+  node: Object,
+  scope: Object,
+  isWrappedModule: boolean,
+) =>
+  isPlatformSelect(node, scope, isWrappedModule) ||
+  isReactPlatformSelect(node, scope, isWrappedModule);
+
+const isPlatformOS = (node, scope, isWrappedModule) =>
   t.isIdentifier(node.property, {name: 'OS'}) &&
   isImportOrGlobal(node.object, scope, [{name: 'Platform'}], isWrappedModule);
 
-const isReactPlatformOS = (node: any, scope: any, isWrappedModule: boolean) =>
+const isReactPlatformOS = (node, scope, isWrappedModule) =>
   t.isIdentifier(node.property, {name: 'OS'}) &&
   t.isMemberExpression(node.object) &&
   t.isIdentifier(node.object.property, {name: 'Platform'}) &&
@@ -32,7 +49,11 @@ const isReactPlatformOS = (node: any, scope: any, isWrappedModule: boolean) =>
     isWrappedModule,
   );
 
-const isPlatformSelect = (node: any, scope: any, isWrappedModule: boolean) =>
+const isPlatformOSOS = (node, scope, isWrappedModule) =>
+  t.isIdentifier(node.property, {name: 'OS'}) &&
+  isImportOrGlobal(node.object, scope, [{name: 'PlatformOS'}], isWrappedModule);
+
+const isPlatformSelect = (node, scope, isWrappedModule) =>
   t.isMemberExpression(node.callee) &&
   t.isIdentifier(node.callee.object, {name: 'Platform'}) &&
   t.isIdentifier(node.callee.property, {name: 'select'}) &&
@@ -43,11 +64,7 @@ const isPlatformSelect = (node: any, scope: any, isWrappedModule: boolean) =>
     isWrappedModule,
   );
 
-const isReactPlatformSelect = (
-  node: any,
-  scope: any,
-  isWrappedModule: boolean,
-) =>
+const isReactPlatformSelect = (node, scope, isWrappedModule) =>
   t.isMemberExpression(node.callee) &&
   t.isIdentifier(node.callee.property, {name: 'select'}) &&
   t.isMemberExpression(node.callee.object) &&
@@ -58,6 +75,35 @@ const isReactPlatformSelect = (
     [{name: 'React'}, {name: 'ReactNative'}],
     isWrappedModule,
   );
+
+const isPlatformOSSelect = (
+  node: Object,
+  scope: Object,
+  isWrappedModule: boolean,
+) =>
+  t.isMemberExpression(node.callee) &&
+  t.isIdentifier(node.callee.object, {name: 'PlatformOS'}) &&
+  t.isIdentifier(node.callee.property, {name: 'select'}) &&
+  isImportOrGlobal(
+    node.callee.object,
+    scope,
+    [{name: 'PlatformOS'}],
+    isWrappedModule,
+  );
+
+const getReplacementForPlatformOSSelect = (node: Object, platform: string) => {
+  const matchingProperty = node.arguments[0].properties.find(
+    p => p.key.name === platform,
+  );
+
+  if (!matchingProperty) {
+    throw new Error(
+      'No matching property was found for PlatformOS.select:\n' +
+        JSON.stringify(node),
+    );
+  }
+  return matchingProperty.value;
+};
 
 const isGlobal = binding => !binding;
 
@@ -97,8 +143,8 @@ const isToplevelBinding = (binding, isWrappedModule) =>
   (isWrappedModule && !binding.scope.parent.parent);
 
 module.exports = {
-  isPlatformOS,
-  isReactPlatformOS,
-  isPlatformSelect,
-  isReactPlatformSelect,
+  isPlatformNode,
+  isPlatformSelectNode,
+  isPlatformOSSelect,
+  getReplacementForPlatformOSSelect,
 };
