@@ -439,7 +439,7 @@ describe('processRequest', () => {
               onProgress: null,
               platform: undefined,
               resolutionResponse: null,
-              runBeforeMainModule: [],
+              runBeforeMainModule: ['InitializeCore'],
               runModule: true,
               sourceMapUrl: null,
               unbundle: false,

@@ -213,6 +213,9 @@ class Server {
     options = {
       ...options,
       deltaBundleId: null,
+      runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
+        options.entryFile,
+      ),
     };
 
     const fullBundle = await Serializers.fullBundle(
