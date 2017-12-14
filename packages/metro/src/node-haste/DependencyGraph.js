@@ -284,6 +284,19 @@ class DependencyGraph extends EventEmitter {
       }
     }
 
+    // If we failed to find a file, maybe this is just a Haste name so try that
+    // TODO: We should prefer Haste name resolution first ideally since it is faster
+    // TODO: Ideally, we should not do any `path.parse().name` here and just use the
+    //       name, but in `metro/src/Server/index.js` we append `'.js'` to all names
+    //       so until that changes, we have to do this.
+    const potentialPath = this._moduleMap.getModule(
+      path.parse(filePath).name,
+      null,
+    );
+    if (potentialPath) {
+      return potentialPath;
+    }
+
     throw new NotFoundError(
       'Cannot find entry file %s in any of the roots: %j',
       filePath,
