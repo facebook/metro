@@ -160,6 +160,11 @@ function unpackModuleId(
 }
 require.unpackModuleId = unpackModuleId;
 
+function packModuleId(value: {segmentId: number, localId: number}): ModuleID {
+  return value.segmentId << (ID_MASK_SHIFT + value.localId);
+}
+require.packModuleId = packModuleId;
+
 function loadModuleImplementation(moduleId, module) {
   const nativeRequire = global.nativeRequire;
   if (!module && nativeRequire) {
