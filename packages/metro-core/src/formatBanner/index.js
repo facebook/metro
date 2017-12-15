@@ -12,11 +12,6 @@
 
 'use strict';
 
-const Terminal = require('./Terminal');
-
 const formatBanner = require('./formatBanner');
 
-module.exports = {
-  Terminal,
-  formatBanner,
-};
+module.exports = formatBanner;

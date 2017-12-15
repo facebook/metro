@@ -13,7 +13,6 @@
 'use strict';
 
 const chalk = require('chalk');
-const formatBanner = require('./formatBanner');
 const path = require('path');
 const reporting = require('./reporting');
 const throttle = require('lodash/throttle');
@@ -21,6 +20,7 @@ const throttle = require('lodash/throttle');
 const {
   AmbiguousModuleResolutionError,
 } = require('../node-haste/DependencyGraph/ResolutionRequest');
+const {formatBanner} = require('metro-core');
 
 import type {BundleOptions} from '../shared/types.flow';
 import type {ReportableEvent, GlobalCacheDisabledReason} from './reporting';

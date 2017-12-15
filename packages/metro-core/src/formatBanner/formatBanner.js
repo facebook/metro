@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * Note: This file runs BEFORE transforms so DO NOT ADD ES6 or Flow in code!
  * @format
  */
 
@@ -44,6 +45,9 @@ var BOTTOM_RIGHT = '\u2518';
  *   // Space between the right banner border and the text (default = 2)
  *   paddingRight: number;
  * };
+ *
+ * @PrettierFixMe can't use comment-style flow syntax because prettier strips it
+ *                https://github.com/prettier/prettier/issues/204
  */
 function formatBanner(message, options) {
   options = options || {};
