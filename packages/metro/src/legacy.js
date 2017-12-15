@@ -12,13 +12,13 @@
 
 'use strict';
 
-const Logger = require('./Logger');
 const TransformCaching = require('./lib/TransformCaching');
 
 const blacklist = require('./blacklist');
 const debug = require('debug');
 const invariant = require('fbjs/lib/invariant');
 
+const {Logger} = require('metro-core');
 const {fromRawMappings, compactMapping} = require('metro-source-map');
 
 import type {ConfigT as MetroConfig} from './Config';

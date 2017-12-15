@@ -46,10 +46,8 @@ import type {AssetData} from '../Assets';
 import type {RamBundleInfo} from '../DeltaBundler/Serializers';
 import type {PostProcessModules} from '../DeltaBundler';
 const {
-  createActionStartEntry,
-  createActionEndEntry,
-  log,
-} = require('../Logger');
+  Logger: {createActionStartEntry, createActionEndEntry, log},
+} = require('metro-core');
 
 function debounceAndBatch(fn, delay) {
   let args = [];

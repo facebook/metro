@@ -18,7 +18,26 @@ const {EventEmitter} = require('events');
 
 const VERSION = require('../../package.json').version;
 
-import type {ActionLogEntryData, ActionStartLogEntry, LogEntry} from './Types';
+type ActionLogEntryData = {
+  action_name: string,
+};
+
+type ActionStartLogEntry = {
+  action_name?: string,
+  action_phase?: string,
+  log_entry_label: string,
+  log_session?: string,
+  start_timestamp?: [number, number],
+};
+
+export type LogEntry = {
+  action_name?: string,
+  action_phase?: string,
+  duration_ms?: number,
+  log_entry_label: string,
+  log_session?: string,
+  start_timestamp?: [number, number],
+};
 
 const log_session = `${os.hostname()}-${Date.now()}`;
 const eventEmitter = new EventEmitter();

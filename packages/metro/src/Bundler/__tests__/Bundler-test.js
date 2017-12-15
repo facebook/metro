@@ -23,7 +23,7 @@ jest
   .mock('../../node-haste/DependencyGraph')
   .mock('../../JSTransformer')
   .mock('../../Resolver')
-  .mock('../../Logger')
+  .mock('metro-core')
   .mock('/path/to/transformer.js', () => ({}), {virtual: true});
 
 var Bundler = require('../');

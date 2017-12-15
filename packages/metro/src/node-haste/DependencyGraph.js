@@ -26,13 +26,11 @@ const parsePlatformFilePath = require('./lib/parsePlatformFilePath');
 const path = require('path');
 const util = require('util');
 
-const {
-  createActionEndEntry,
-  createActionStartEntry,
-  log,
-} = require('../Logger');
 const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
 const {EventEmitter} = require('events');
+const {
+  Logger: {createActionStartEntry, createActionEndEntry, log},
+} = require('metro-core');
 
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';

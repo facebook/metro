@@ -19,10 +19,8 @@ const querystring = require('querystring');
 const url = require('url');
 
 const {
-  createActionStartEntry,
-  createActionEndEntry,
-  log,
-} = require('../Logger');
+  Logger: {createActionStartEntry, createActionEndEntry, log},
+} = require('metro-core');
 
 import type DeltaTransformer from '../DeltaBundler/DeltaTransformer';
 import type PackagerServer from '../Server';

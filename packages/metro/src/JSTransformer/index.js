@@ -12,7 +12,7 @@
 
 'use strict';
 
-const Logger = require('../Logger');
+const {Logger} = require('metro-core');
 
 const debug = require('debug')('Metro:JStransformer');
 const Worker = require('jest-worker').default;

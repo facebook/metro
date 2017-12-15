@@ -13,12 +13,7 @@
 'use strict';
 
 const Logger = require('./Logger');
-const Terminal = require('./Terminal');
 
-const formatBanner = require('./formatBanner');
+export type {LogEntry} from './Logger';
 
-module.exports = {
-  Logger,
-  Terminal,
-  formatBanner,
-};
+module.exports = Logger;

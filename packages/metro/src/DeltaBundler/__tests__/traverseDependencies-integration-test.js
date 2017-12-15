@@ -16,7 +16,7 @@ jest.useRealTimers();
 jest
   .mock('fs')
   .mock('graceful-fs')
-  .mock('../../Logger')
+  .mock('metro-core')
   .mock('../../lib/TransformCaching')
   // It's noticeably faster to prevent running watchman from FileWatcher.
   .mock('child_process', () => ({}))

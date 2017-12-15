@@ -22,7 +22,7 @@ jest
   .mock('../../Bundler')
   .mock('../../Assets')
   .mock('../../node-haste/DependencyGraph')
-  .mock('../../Logger')
+  .mock('metro-core/src/Logger')
   .mock('../../lib/GlobalTransformCache')
   .mock('../../DeltaBundler/Serializers');
 
