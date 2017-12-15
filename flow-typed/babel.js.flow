@@ -132,8 +132,8 @@ type RawMapping = {
 
 declare module 'babel-generator' {
   declare type RawMapping = RawMapping;
-  declare function exports(
+  declare module.exports: (
     ast: Ast,
     options?: GeneratorOptions,
-  ): TransformResult & {rawMappings: ?Array<RawMapping>};
+  ) => TransformResult & {rawMappings: ?Array<RawMapping>};
 }
