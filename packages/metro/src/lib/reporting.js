@@ -17,9 +17,15 @@ const util = require('util');
 
 const {Terminal} = require('metro-core');
 
-import type {BundleOptions} from '../shared/types.flow';
-
 export type GlobalCacheDisabledReason = 'too_many_errors' | 'too_many_misses';
+
+export type BundleDetails = {
+  entryFile: string,
+  platform: string,
+  dev: boolean,
+  minify: boolean,
+  bundleType: string,
+};
 
 /**
  * A tagged union of all the actions that may happen and we may want to
@@ -49,7 +55,7 @@ export type ReportableEvent =
     }
   | {
       buildID: string,
-      bundleOptions: BundleOptions,
+      bundleDetails: BundleDetails,
       type: 'bundle_build_started',
     }
   | {

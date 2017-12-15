@@ -22,8 +22,11 @@ const {
 } = require('../node-haste/DependencyGraph/ResolutionRequest');
 const {formatBanner} = require('metro-core');
 
-import type {BundleOptions} from '../shared/types.flow';
-import type {ReportableEvent, GlobalCacheDisabledReason} from './reporting';
+import type {
+  BundleDetails,
+  ReportableEvent,
+  GlobalCacheDisabledReason,
+} from './reporting';
 import type {Terminal} from 'metro-core';
 
 const DEP_GRAPH_MESSAGE = 'Loading dependency graph';
@@ -31,7 +34,7 @@ const GLOBAL_CACHE_DISABLED_MESSAGE_FORMAT =
   'The global cache is now disabled because %s';
 
 type BundleProgress = {
-  bundleOptions: BundleOptions,
+  bundleDetails: BundleDetails,
   transformedFileCount: number,
   totalFileCount: number,
   ratio: number,
@@ -90,22 +93,20 @@ class TerminalReporter {
    */
   _getBundleStatusMessage(
     {
-      bundleOptions,
+      bundleDetails: {entryFile, platform, dev, minify, bundleType},
       transformedFileCount,
       totalFileCount,
       ratio,
     }: BundleProgress,
     phase: BuildPhase,
   ): string {
-    const localPath = path.relative('.', bundleOptions.entryFile);
+    const localPath = path.relative('.', entryFile);
     const fileName = path.basename(localPath);
     const dirName = path.dirname(localPath);
 
-    const platform = bundleOptions.platform
-      ? bundleOptions.platform + ', '
-      : '';
-    const devOrProd = bundleOptions.dev ? 'dev' : 'prod';
-    const min = bundleOptions.minify ? ', minified' : '';
+    platform = platform ? platform + ', ' : '';
+    const devOrProd = dev ? 'dev' : 'prod';
+    const min = minify ? ', minified' : '';
     const progress = (100 * ratio).toFixed(1);
     const currentPhase =
       phase === 'done' ? ', done.' : phase === 'failed' ? ', failed.' : '';
@@ -113,7 +114,7 @@ class TerminalReporter {
     const filledBar = Math.floor(ratio * MAX_PROGRESS_BAR_CHAR_WIDTH);
 
     return (
-      chalk.inverse.green.bold(` ${bundleOptions.bundleType.toUpperCase()} `) +
+      chalk.inverse.green.bold(` ${bundleType.toUpperCase()} `) +
       chalk.dim(` [${platform}${devOrProd}${min}] ${dirName}/`) +
       chalk.bold(fileName) +
       ' ' +
@@ -356,12 +357,13 @@ class TerminalReporter {
         this._activeBundles.delete(event.buildID);
         break;
       case 'bundle_build_started':
-        this._activeBundles.set(event.buildID, {
-          bundleOptions: event.bundleOptions,
+        const bundleProgress: BundleProgress = {
+          bundleDetails: event.bundleDetails,
           transformedFileCount: 0,
           totalFileCount: 1,
           ratio: 0,
-        });
+        };
+        this._activeBundles.set(event.buildID, bundleProgress);
         break;
       case 'bundle_transform_progressed':
         if (event.totalFileCount === event.transformedFileCount) {

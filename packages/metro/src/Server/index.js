@@ -457,7 +457,13 @@ class Server {
 
     this._reporter.update({
       buildID,
-      bundleOptions: options,
+      bundleDetails: {
+        entryFile: options.entryFile,
+        platform: options.platform,
+        dev: options.dev,
+        minify: options.minify,
+        bundleType: options.bundleType,
+      },
       type: 'bundle_build_started',
     });
 
