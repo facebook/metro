@@ -17,7 +17,6 @@ const Http = require('http');
 const Https = require('https');
 const MetroBundler = require('./shared/output/bundle');
 const MetroServer = require('./Server');
-const Terminal = require('./lib/Terminal');
 const TerminalReporter = require('./lib/TerminalReporter');
 const TransformCaching = require('./lib/TransformCaching');
 
@@ -25,6 +24,7 @@ const defaults = require('./defaults');
 
 const {realpath} = require('fs');
 const {readFile} = require('fs-extra');
+const {Terminal} = require('metro-core');
 
 import type {ConfigT} from './Config';
 import type {RequestOptions, OutputOptions} from './shared/types.flow.js';

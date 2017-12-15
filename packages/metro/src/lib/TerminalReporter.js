@@ -23,8 +23,8 @@ const {
 } = require('../node-haste/DependencyGraph/ResolutionRequest');
 
 import type {BundleOptions} from '../shared/types.flow';
-import type Terminal from './Terminal';
 import type {ReportableEvent, GlobalCacheDisabledReason} from './reporting';
+import type {Terminal} from 'metro-core';
 
 const DEP_GRAPH_MESSAGE = 'Loading dependency graph';
 const GLOBAL_CACHE_DISABLED_MESSAGE_FORMAT =

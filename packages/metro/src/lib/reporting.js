@@ -15,8 +15,9 @@
 const chalk = require('chalk');
 const util = require('util');
 
+const {Terminal} = require('metro-core');
+
 import type {BundleOptions} from '../shared/types.flow';
-import type Terminal from './Terminal';
 
 export type GlobalCacheDisabledReason = 'too_many_errors' | 'too_many_misses';
 
