@@ -101,35 +101,88 @@ it('collects mixed dependencies as being sync; reverse order', () => {
   );
 });
 
-it('supports template literals as arguments', () => {
-  const ast = astFromCode('require(`left-pad`)');
-  const {dependencies, dependencyMapName} = collectDependencies(ast);
-  expect(dependencies).toEqual([{name: 'left-pad', isAsync: false}]);
-  expect(codeFromAst(ast)).toEqual(
-    comparableCode(`require(${dependencyMapName}[0], \`left-pad\`);`),
-  );
-});
+describe('Evaluating static arguments', () => {
+  it('supports template literals as arguments', () => {
+    const ast = astFromCode('require(`left-pad`)');
+    const {dependencies, dependencyMapName} = collectDependencies(ast);
+    expect(dependencies).toEqual([{name: 'left-pad', isAsync: false}]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`require(${dependencyMapName}[0], \`left-pad\`);`),
+    );
+  });
 
-it('throws on template literals with interpolations', () => {
-  const ast = astFromCode('require(`left${"-"}pad`)');
-  try {
-    collectDependencies(ast);
-    throw new Error('should not reach');
-  } catch (error) {
-    expect(error).toBeInstanceOf(InvalidRequireCallError);
-    expect(error.message).toMatchSnapshot();
-  }
-});
+  it('supports template literals with static interpolations', () => {
+    const ast = astFromCode('require(`left${"-"}pad`)');
+    const {dependencies, dependencyMapName} = collectDependencies(ast);
+    expect(dependencies).toEqual([{name: 'left-pad', isAsync: false}]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`require(${dependencyMapName}[0], \`left\${"-"}pad\`);`),
+    );
+  });
 
-it('throws on tagged template literals', () => {
-  const ast = astFromCode('require(tag`left-pad`)');
-  try {
-    collectDependencies(ast);
-    throw new Error('should not reach');
-  } catch (error) {
-    expect(error).toBeInstanceOf(InvalidRequireCallError);
-    expect(error.message).toMatchSnapshot();
-  }
+  it('throws template literals with dyncamic interpolations', () => {
+    const ast = astFromCode('let foo;require(`left${foo}pad`)');
+    try {
+      collectDependencies(ast);
+      throw new Error('should not reach');
+    } catch (error) {
+      expect(error).toBeInstanceOf(InvalidRequireCallError);
+      expect(error.message).toMatchSnapshot();
+    }
+  });
+
+  it('throws on tagged template literals', () => {
+    const ast = astFromCode('require(tag`left-pad`)');
+    try {
+      collectDependencies(ast);
+      throw new Error('should not reach');
+    } catch (error) {
+      expect(error).toBeInstanceOf(InvalidRequireCallError);
+      expect(error.message).toMatchSnapshot();
+    }
+  });
+
+  it('supports multiple static strings concatenated', () => {
+    const ast = astFromCode('require("foo_" + "bar")');
+    const {dependencies, dependencyMapName} = collectDependencies(ast);
+    expect(dependencies).toEqual([{name: 'foo_bar', isAsync: false}]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`require(${dependencyMapName}[0], "foo_" + "bar");`),
+    );
+  });
+
+  it('supports concatenating strings and template literasl', () => {
+    const ast = astFromCode('require("foo_" + "bar" + `_baz`)');
+    const {dependencies, dependencyMapName} = collectDependencies(ast);
+    expect(dependencies).toEqual([{name: 'foo_bar_baz', isAsync: false}]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(
+        `require(${dependencyMapName}[0], "foo_" + "bar" + \`_baz\`);`,
+      ),
+    );
+  });
+
+  it('supports using static variables in require statements', () => {
+    const ast = astFromCode('const myVar="my";require("foo_" + myVar)');
+    const {dependencies, dependencyMapName} = collectDependencies(ast);
+    expect(dependencies).toEqual([{name: 'foo_my', isAsync: false}]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(
+        `const myVar = \"my\"; require(${dependencyMapName}[0], "foo_" + myVar);`,
+      ),
+    );
+  });
+
+  it('throws when requiring non-strings', () => {
+    const ast = astFromCode('require(1)');
+    try {
+      collectDependencies(ast);
+      throw new Error('should not reach');
+    } catch (error) {
+      expect(error).toBeInstanceOf(InvalidRequireCallError);
+      expect(error.message).toMatchSnapshot();
+    }
+  });
 });
 
 it('exposes a string as `dependencyMapName` even without collecting dependencies', () => {
