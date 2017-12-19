@@ -1,0 +1,30 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`exports the blacklist creator 1`] = `
+Object {
+  "data": Array [
+    56,
+    131,
+    13,
+    89,
+    254,
+    63,
+    108,
+    210,
+    213,
+    112,
+    53,
+    173,
+    11,
+    21,
+    31,
+    184,
+    133,
+    221,
+    114,
+    86,
+    1,
+  ],
+  "type": "Buffer",
+}
+`;
