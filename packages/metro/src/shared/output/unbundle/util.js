@@ -66,6 +66,7 @@ function combineSourceMaps(
 
 function combineSourceMapsAddingOffsets(
   modules: $ReadOnlyArray<ModuleTransportLike | RamModule>,
+  x_metro_module_paths: Array<string>,
   moduleGroups?: ?ModuleGroups,
   options?: ?CombineOptions,
 ): FBIndexMap {
@@ -76,7 +77,7 @@ function combineSourceMapsAddingOffsets(
     moduleGroups,
     options,
   );
-  return {sections, version: 3, x_facebook_offsets};
+  return {sections, version: 3, x_facebook_offsets, x_metro_module_paths};
 }
 
 function combineMaps(

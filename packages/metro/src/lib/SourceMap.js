@@ -23,7 +23,10 @@ export type IndexMapSection = {
 
 export type RawMappings = Array<RawMapping>;
 
-type FBExtensions = {x_facebook_offsets: Array<number>};
+type FBExtensions = {
+  x_facebook_offsets: Array<number>,
+  x_metro_module_paths: Array<string>,
+};
 
 export type {MappingsMap};
 export type IndexMap = {

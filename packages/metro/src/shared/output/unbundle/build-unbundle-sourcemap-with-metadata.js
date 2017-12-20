@@ -41,11 +41,22 @@ module.exports = ({
     sourcePath: '',
   };
 
+  // Add map of module id -> source to sourcemap
+  const module_paths = [];
+  startupModules.forEach(m => {
+    module_paths[m.id] = m.sourcePath;
+  });
+  lazyModules.forEach(m => {
+    module_paths[m.id] = m.sourcePath;
+  });
+
   const map = combineSourceMapsAddingOffsets(
     [startupModule].concat(lazyModules),
+    module_paths,
     moduleGroups,
     options,
   );
   delete map.x_facebook_offsets[Number.MIN_SAFE_INTEGER];
+
   return map;
 };
