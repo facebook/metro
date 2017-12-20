@@ -47,7 +47,7 @@ export type TransformArgs<ExtraOptions: {}> = {|
 |};
 
 export type TransformResults = {
-  ast: ?Ast,
+  ast: Ast,
 };
 
 export type Transform<ExtraOptions: {}> = (

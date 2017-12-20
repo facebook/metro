@@ -89,7 +89,9 @@ type __TransformOptions = {
 
 type _TransformOptions =
   __TransformOptions & {env?: {[key: string]: __TransformOptions}};
-declare class Ast {}
+
+type Ast = {};
+
 type TransformResult = {
   ast: Ast,
   code: ?string,
@@ -101,7 +103,7 @@ type VisitFn = <State>(path: Object, state: State) => any;
 declare module 'babel-core' {
   declare type Plugins = _Plugins;
   declare type SourceMap = _SourceMap;
-  declare type Ast = Ast;
+  declare type Ast = {};
   declare type TransformOptions = _TransformOptions;
   declare function transform(
     code: string,
