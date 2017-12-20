@@ -76,11 +76,11 @@ class AssetResolutionCache {
     dirPath: string,
     assetName: string,
     platform: string | null,
-  ): $ReadOnlyArray<string> {
+  ): ?$ReadOnlyArray<string> {
     const results = this._assetsByDirPath.get(dirPath);
     const assets = results.get(assetName);
     if (assets == null) {
-      return EMPTY_ARRAY;
+      return null;
     }
     return assets
       .filter(asset => asset.platform == null || asset.platform === platform)

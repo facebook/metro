@@ -70,7 +70,7 @@ type Options<TModule, TPackage> = {|
     dirPath: string,
     assetName: string,
     platform: string | null,
-  ) => $ReadOnlyArray<string>,
+  ) => ?$ReadOnlyArray<string>,
   +sourceExts: Array<string>,
 |};
 
@@ -98,9 +98,14 @@ type DirCandidates =
 
 type FileAndDirCandidates = {|+dir: DirCandidates, +file: FileCandidates|};
 
-type Resolution<TModule, TCandidates> =
-  | {|+type: 'resolved', +module: TModule|}
+type Result<TResolution, TCandidates> =
+  | {|+type: 'resolved', +resolution: TResolution|}
   | {|+type: 'failed', +candidates: TCandidates|};
+
+type AssetFileResolution = $ReadOnlyArray<string>;
+type FileResolution =
+  | {|+type: 'sourceFile', +filePath: string|}
+  | {|+type: 'assetFiles', +filePaths: AssetFileResolution|};
 
 /**
  * It may not be a great pattern to leverage exception just for "trying" things
@@ -279,7 +284,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       // Eventually we should aggregate the candidates so that we can
       // report them with more accuracy in the error below.
       if (result.type === 'resolved') {
-        return result.module;
+        return this._getFileResolvedModule(result.resolution);
       }
     }
 
@@ -320,7 +325,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   ): TModule {
     const result = this._loadAsFileOrDir(potentialModulePath, platform);
     if (result.type === 'resolved') {
-      return result.module;
+      return this._getFileResolvedModule(result.resolution);
     }
     // We ignore the `file` candidates as a temporary measure before this
     // function is gotten rid of, because it's historically been ignored anyway.
@@ -342,6 +347,24 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   }
 
   /**
+   * FIXME: get rid of this function and of the reliance on `TModule`
+   * altogether, return strongly typed resolutions at the top-level instead.
+   */
+  _getFileResolvedModule(resolution: FileResolution): TModule {
+    switch (resolution.type) {
+      case 'sourceFile':
+        return this._options.moduleCache.getModule(resolution.filePath);
+      case 'assetFiles':
+        // FIXME: we should forward ALL the paths/metadata,
+        // not just an arbitrary item!
+        const arbitrary = getArrayLowestItem(resolution.filePaths);
+        invariant(arbitrary != null, 'invalid asset resolution');
+        return this._options.moduleCache.getAssetModule(arbitrary);
+    }
+    throw new Error('switch is not exhaustive');
+  }
+
+  /**
    * In the NodeJS-style module resolution scheme we want to check potential
    * paths both as directories and as files. For example, `foo/bar` may resolve
    * to `foo/bar.js` (preferred), but it might also be `foo/bar/index.js`, or
@@ -350,7 +373,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   _loadAsFileOrDir(
     potentialModulePath: string,
     platform: string | null,
-  ): Resolution<TModule, FileAndDirCandidates> {
+  ): Result<FileResolution, FileAndDirCandidates> {
     const dirPath = path.dirname(potentialModulePath);
     const fileNameHint = path.basename(potentialModulePath);
     const fileResult = this._loadAsFile(dirPath, fileNameHint, platform);
@@ -372,17 +395,17 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     dirPath: string,
     fileNameHint: string,
     platform: string | null,
-  ): Resolution<TModule, FileCandidates> {
+  ): Result<FileResolution, FileCandidates> {
     if (this.isAssetFile(fileNameHint)) {
-      return this._loadAsAssetFile(dirPath, fileNameHint, platform);
+      const result = this._loadAsAssetFile(dirPath, fileNameHint, platform);
+      return mapResult(result, filePaths => ({type: 'assetFiles', filePaths}));
     }
     const candidateExts = [];
     const filePathPrefix = path.join(dirPath, fileNameHint);
     const context = {filePathPrefix, candidateExts};
     const filePath = this._tryToResolveSourceFile(context, platform);
     if (filePath != null) {
-      const module = this._options.moduleCache.getModule(filePath);
-      return resolvedAs(module);
+      return resolvedAs({type: 'sourceFile', filePath});
     }
     return failedFor({type: 'sourceFile', candidateExts});
   }
@@ -391,13 +414,15 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     dirPath: string,
     fileNameHint: string,
     platform: string | null,
-  ): Resolution<TModule, FileCandidates> {
+  ): Result<AssetFileResolution, FileCandidates> {
     const {resolveAsset} = this._options;
     const assetNames = resolveAsset(dirPath, fileNameHint, platform);
-    const assetName = getArrayLowestItem(assetNames);
-    if (assetName != null) {
-      const assetPath = path.join(dirPath, assetName);
-      return resolvedAs(this._options.moduleCache.getAssetModule(assetPath));
+    if (assetNames != null) {
+      return resolvedAs(
+        assetNames.map(assetName => {
+          return path.join(dirPath, assetName);
+        }),
+      );
     }
     return failedFor({type: 'asset', name: fileNameHint});
   }
@@ -513,7 +538,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   _loadAsDir(
     potentialDirPath: string,
     platform: string | null,
-  ): Resolution<TModule, DirCandidates> {
+  ): Result<FileResolution, DirCandidates> {
     const packageJsonPath = path.join(potentialDirPath, 'package.json');
     if (this._options.doesFileExist(packageJsonPath)) {
       return this._loadAsPackage(packageJsonPath, platform);
@@ -535,7 +560,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   _loadAsPackage(
     packageJsonPath: string,
     platform: string | null,
-  ): Resolution<TModule, DirCandidates> {
+  ): Result<FileResolution, DirCandidates> {
     const package_ = this._options.moduleCache.getPackage(packageJsonPath);
     const mainPrefixPath = package_.getMain();
     const dirPath = path.dirname(mainPrefixPath);
@@ -593,16 +618,26 @@ function getArrayLowestItem(a: $ReadOnlyArray<string>): string | void {
   return lowest;
 }
 
-function resolvedAs<TModule, TCandidates>(
-  module: TModule,
-): Resolution<TModule, TCandidates> {
-  return {type: 'resolved', module};
+function resolvedAs<TResolution, TCandidates>(
+  resolution: TResolution,
+): Result<TResolution, TCandidates> {
+  return {type: 'resolved', resolution};
 }
 
-function failedFor<TModule, TCandidates>(
+function failedFor<TResolution, TCandidates>(
   candidates: TCandidates,
-): Resolution<TModule, TCandidates> {
+): Result<TResolution, TCandidates> {
   return {type: 'failed', candidates};
+}
+
+function mapResult<TResolution, TNewResolution, TCandidates>(
+  result: Result<TResolution, TCandidates>,
+  mapper: TResolution => TNewResolution,
+): Result<TNewResolution, TCandidates> {
+  if (result.type === 'failed') {
+    return result;
+  }
+  return {type: 'resolved', resolution: mapper(result.resolution)};
 }
 
 class UnableToResolveError extends Error {
