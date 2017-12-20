@@ -112,7 +112,7 @@ function tryResolveSync<T>(action: () => T, secondaryAction: () => T): T {
   try {
     return action();
   } catch (error) {
-    if (error.type !== 'UnableToResolveError') {
+    if (!(error instanceof UnableToResolveError)) {
       throw error;
     }
     return secondaryAction();
@@ -189,7 +189,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     }
 
     throw new UnableToResolveError(
-      fromModule,
+      fromModule.path,
       toModuleName,
       'Unable to resolve dependency',
     );
@@ -290,7 +290,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
 
     const hint = displaySearchQueue.length ? ' or in these directories:' : '';
     throw new UnableToResolveError(
-      fromModule,
+      fromModule.path,
       toModuleName,
       `Module does not exist in the module map${hint}\n` +
         displaySearchQueue
@@ -328,7 +328,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     const {dir} = result.candidates;
     if (dir.type === 'package') {
       throw new UnableToResolveError(
-        fromModule,
+        fromModule.path,
         toModuleName,
         `could not resolve \`${potentialModulePath}' as a folder: it ` +
           'contained a package, but its "main" could not be resolved',
@@ -336,7 +336,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     }
     invariant(dir.type === 'index', 'invalid candidate type');
     throw new UnableToResolveError(
-      fromModule,
+      fromModule.path,
       toModuleName,
       `could not resolve \`${potentialModulePath}' as a file nor as a folder`,
     );
@@ -472,7 +472,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       return module;
     }
     throw new UnableToResolveError(
-      fromModule,
+      fromModule.path,
       toModuleName,
       "could not resolve `${ModuleResolver.EMPTY_MODULE}'",
     );
@@ -583,22 +583,31 @@ function failedFor<TModule, TCandidates>(
   return {type: 'failed', candidates};
 }
 
-class UnableToResolveError<TModule: Moduleish> extends Error {
-  type: string;
-  from: string;
-  to: string;
+class UnableToResolveError extends Error {
+  /**
+   * File path of the module that tried to require a module, ex. `/js/foo.js`.
+   */
+  originModulePath: string;
+  /**
+   * The name of the module that was required, no necessarily a path,
+   * ex. `./bar`, or `invariant`.
+   */
+  targetModuleName: string;
 
-  constructor(fromModule: TModule, toModule: string, message: string) {
+  constructor(
+    originModulePath: string,
+    targetModuleName: string,
+    message: string,
+  ) {
     super();
-    this.from = fromModule.path;
-    this.to = toModule;
+    this.originModulePath = originModulePath;
+    this.targetModuleName = targetModuleName;
     this.message = util.format(
       'Unable to resolve module `%s` from `%s`: %s',
-      toModule,
-      fromModule.path,
+      targetModuleName,
+      originModulePath,
       message,
     );
-    this.type = this.name = 'UnableToResolveError';
   }
 }
 

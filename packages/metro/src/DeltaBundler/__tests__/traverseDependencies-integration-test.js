@@ -52,6 +52,7 @@ describe('traverseDependencies', function() {
   let traverseDependencies;
   let defaults;
   let emptyTransformOptions;
+  let UnableToResolveError;
 
   async function getOrderedDependenciesAsJSON(
     dgraphPromise,
@@ -95,6 +96,9 @@ describe('traverseDependencies', function() {
 
     Module = require('../../node-haste/Module');
     traverseDependencies = require('../traverseDependencies');
+    ({
+      UnableToResolveError,
+    } = require('../../node-haste/DependencyGraph/ModuleResolution'));
 
     emptyTransformOptions = {transformer: {transform: {}}};
     defaults = {
@@ -1024,7 +1028,11 @@ describe('traverseDependencies', function() {
           await getOrderedDependenciesAsJSON(dgraph, '/root/index.js');
           throw new Error('should be unreachable');
         } catch (error) {
-          expect(error.type).toEqual('UnableToResolveError');
+          if (!(error instanceof UnableToResolveError)) {
+            throw error;
+          }
+          expect(error.originModulePath).toBe('/root/index.js');
+          expect(error.targetModuleName).toBe('lolomg');
         }
       });
     });
@@ -2972,7 +2980,11 @@ describe('traverseDependencies', function() {
           await getOrderedDependenciesAsJSON(dgraph, '/root/index.js');
           throw new Error('should be unreachable');
         } catch (error) {
-          expect(error.type).toEqual('UnableToResolveError');
+          if (!(error instanceof UnableToResolveError)) {
+            throw error;
+          }
+          expect(error.originModulePath).toBe('/root/index.js');
+          expect(error.targetModuleName).toBe('dontWork');
         }
         filesystem.root['index.js'] = filesystem.root['index.js']
           .replace('require("dontWork")', '')
@@ -3394,6 +3406,8 @@ describe('traverseDependencies', function() {
   describe('node_modules (win32)', function() {
     let DependencyGraph;
     let processDgraph;
+    let UnableToResolveError;
+
     beforeEach(() => {
       Object.defineProperty(process, 'platform', {
         configurable: true,
@@ -3406,6 +3420,9 @@ describe('traverseDependencies', function() {
       jest.mock('path', () => require.requireActual('path').win32);
       DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
+      ({
+        UnableToResolveError,
+      } = require('../../node-haste/DependencyGraph/ModuleResolution'));
     });
 
     it('should work with nested node_modules', async () => {
@@ -3879,7 +3896,11 @@ describe('traverseDependencies', function() {
           await getOrderedDependenciesAsJSON(dgraph, entryPath);
           throw new Error('should be unreachable');
         } catch (error) {
-          expect(error.type).toEqual('UnableToResolveError');
+          if (!(error instanceof UnableToResolveError)) {
+            throw error;
+          }
+          expect(error.originModulePath).toBe('C:\\root\\index.js');
+          expect(error.targetModuleName).toBe('dontWork');
         }
         filesystem.root['index.js'] = filesystem.root['index.js']
           .replace('require("dontWork")', '')
@@ -4381,7 +4402,6 @@ describe('traverseDependencies', function() {
     });
 
     it('updates module dependencies on file delete', async () => {
-      expect.assertions(1);
       var root = '/root';
       var filesystem = setMockFileSystem({
         root: {
@@ -4418,7 +4438,11 @@ describe('traverseDependencies', function() {
           await getOrderedDependenciesAsJSON(dgraph, '/root/index.js');
           throw new Error('should be unreachable');
         } catch (error) {
-          expect(error.type).toEqual('UnableToResolveError');
+          if (!(error instanceof UnableToResolveError)) {
+            throw error;
+          }
+          expect(error.originModulePath).toBe('/root/index.js');
+          expect(error.targetModuleName).toBe('foo');
         }
       });
     });
@@ -4527,7 +4551,11 @@ describe('traverseDependencies', function() {
           await getOrderedDependenciesAsJSON(dgraph, entryPath);
           throw new Error('should be unreachable');
         } catch (error) {
-          expect(error.type).toEqual('UnableToResolveError');
+          if (!(error instanceof UnableToResolveError)) {
+            throw error;
+          }
+          expect(error.originModulePath).toBe('/root/index.js');
+          expect(error.targetModuleName).toBe('./foo.png');
         }
         filesystem.root['foo.png'] = '';
         await triggerAndProcessWatchEvent(dgraph, 'change', root + '/foo.png');
@@ -5006,7 +5034,11 @@ describe('traverseDependencies', function() {
           await getOrderedDependenciesAsJSON(dgraph, '/root/index.jsx');
           throw Error('should be unreachable');
         } catch (error) {
-          expect(error.type).toEqual('UnableToResolveError');
+          if (!(error instanceof UnableToResolveError)) {
+            throw error;
+          }
+          expect(error.originModulePath).toBe('/root/index.jsx');
+          expect(error.targetModuleName).toBe('./a');
         }
       });
     });

@@ -13,6 +13,9 @@
 'use strict';
 
 const {
+  UnableToResolveError,
+} = require('../node-haste/DependencyGraph/ModuleResolution');
+const {
   AmbiguousModuleResolutionError,
 } = require('../node-haste/DependencyGraph/ResolutionRequest');
 
@@ -52,10 +55,9 @@ function formatBundlingError(
   }
 
   if (
-    error instanceof Error &&
-    (error.type === 'TransformError' ||
-      error.type === 'NotFoundError' ||
-      error.type === 'UnableToResolveError')
+    error instanceof UnableToResolveError ||
+    (error instanceof Error &&
+      (error.type === 'TransformError' || error.type === 'NotFoundError'))
   ) {
     error.errors = [
       {
