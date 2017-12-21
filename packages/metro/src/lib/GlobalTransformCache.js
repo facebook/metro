@@ -29,6 +29,10 @@ import type {
 } from '../JSTransformer/worker';
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
 import type {CachedResult, GetTransformCacheKey} from './TransformCaching';
+import type {Agent as HttpAgent} from 'http';
+import type {Agent as HttpsAgent} from 'https';
+
+type FetchOptions = {agent?: ?HttpAgent | HttpsAgent};
 
 /**
  * The API that a global transform cache must comply with. To implement a
@@ -279,8 +283,16 @@ class URIBasedGlobalTransformCache {
    * blob of transformed results. However the results are generally only a few
    * megabytes each.
    */
-  static async _fetchResultFromURI(uri: string): Promise<CachedResult> {
-    const response = await fetch(uri, {method: 'GET', timeout: 8000});
+  static async _fetchResultFromURI(
+    uri: string,
+    options: FetchOptions,
+  ): Promise<CachedResult> {
+    const response = await fetch(uri, {
+      agent: options.agent,
+      method: 'GET',
+      timeout: 8000,
+    });
+
     if (response.status !== 200) {
       throw new FetchFailedError({
         statusCode: response.status,
@@ -302,13 +314,16 @@ class URIBasedGlobalTransformCache {
    * a second time if we expect them to be transient. We might even consider
    * waiting a little time before retring if experience shows it's useful.
    */
-  static _fetchResultFromURIWithRetry(uri: string): Promise<CachedResult> {
-    return URIBasedGlobalTransformCache._fetchResultFromURI(uri).catch(
+  static _fetchResultFromURIWithRetry(
+    uri: string,
+    options?: FetchOptions = {},
+  ): Promise<CachedResult> {
+    return URIBasedGlobalTransformCache._fetchResultFromURI(uri, options).catch(
       error => {
         if (!URIBasedGlobalTransformCache.shouldRetryAfterThatError(error)) {
           throw error;
         }
-        return this._fetchResultFromURI(uri);
+        return URIBasedGlobalTransformCache._fetchResultFromURI(uri, options);
       },
     );
   }
@@ -317,7 +332,10 @@ class URIBasedGlobalTransformCache {
    * The exposed version uses throat() to limit concurrency, as making too many parallel requests
    * is more likely to trigger server-side throttling and cause timeouts.
    */
-  static fetchResultFromURI: (uri: string) => Promise<CachedResult>;
+  static fetchResultFromURI: (
+    uri: string,
+    options?: FetchOptions,
+  ) => Promise<CachedResult>;
 
   /**
    * We want to retry timeouts as they're likely temporary. We retry 503
