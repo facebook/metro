@@ -58,19 +58,34 @@ export type ModuleishCache<TModule, TPackage> = {
   getAssetModule(path: string): TModule,
 };
 
+/**
+ * Given a directory path and the base asset name, return a list of all the
+ * asset file names that match the given base name in that directory. Return
+ * null if there's no such named asset. `platform` is used to identify
+ * platform-specific assets, ex. `foo.ios.js` instead of a generic `foo.js`.
+ */
+type ResolveAsset = (
+  dirPath: string,
+  assetName: string,
+  platform: string | null,
+) => ?$ReadOnlyArray<string>;
+
+/**
+ * Check existence of a single file.
+ */
+type DoesFileExist = (filePath: string) => boolean;
+
+type IsAssetFile = (fileName: string) => boolean;
+
 type Options<TModule, TPackage> = {|
   +dirExists: DirExistsFn,
-  +doesFileExist: (filePath: string) => boolean,
+  +doesFileExist: DoesFileExist,
   +extraNodeModules: ?Object,
-  +helpers: DependencyGraphHelpers,
+  +isAssetFile: IsAssetFile,
   +moduleCache: ModuleishCache<TModule, TPackage>,
   +preferNativePlatform: boolean,
   +moduleMap: ModuleMap,
-  +resolveAsset: (
-    dirPath: string,
-    assetName: string,
-    platform: string | null,
-  ) => ?$ReadOnlyArray<string>,
+  +resolveAsset: ResolveAsset,
   +sourceExts: Array<string>,
 |};
 
@@ -376,7 +391,8 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   ): Result<FileResolution, FileAndDirCandidates> {
     const dirPath = path.dirname(potentialModulePath);
     const fileNameHint = path.basename(potentialModulePath);
-    const fileResult = this._loadAsFile(dirPath, fileNameHint, platform);
+    const {_options} = this;
+    const fileResult = resolveFile(_options, dirPath, fileNameHint, platform);
     if (fileResult.type === 'resolved') {
       return fileResult;
     }
@@ -385,131 +401,6 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       return dirResult;
     }
     return failedFor({file: fileResult.candidates, dir: dirResult.candidates});
-  }
-
-  isAssetFile(filename: string): boolean {
-    return this._options.helpers.isAssetFile(filename);
-  }
-
-  _loadAsFile(
-    dirPath: string,
-    fileNameHint: string,
-    platform: string | null,
-  ): Result<FileResolution, FileCandidates> {
-    if (this.isAssetFile(fileNameHint)) {
-      const result = this._loadAsAssetFile(dirPath, fileNameHint, platform);
-      return mapResult(result, filePaths => ({type: 'assetFiles', filePaths}));
-    }
-    const candidateExts = [];
-    const filePathPrefix = path.join(dirPath, fileNameHint);
-    const context = {filePathPrefix, candidateExts};
-    const filePath = this._tryToResolveSourceFile(context, platform);
-    if (filePath != null) {
-      return resolvedAs({type: 'sourceFile', filePath});
-    }
-    return failedFor({type: 'sourceFile', candidateExts});
-  }
-
-  _loadAsAssetFile(
-    dirPath: string,
-    fileNameHint: string,
-    platform: string | null,
-  ): Result<AssetFileResolution, FileCandidates> {
-    const {resolveAsset} = this._options;
-    const assetNames = resolveAsset(dirPath, fileNameHint, platform);
-    if (assetNames != null) {
-      return resolvedAs(
-        assetNames.map(assetName => {
-          return path.join(dirPath, assetName);
-        }),
-      );
-    }
-    return failedFor({type: 'asset', name: fileNameHint});
-  }
-
-  /**
-   * A particular 'base path' can resolve to a number of possibilities depending
-   * on the context. For example `foo/bar` could resolve to `foo/bar.ios.js`, or
-   * to `foo/bar.js`. If can also resolve to the bare path `foo/bar` itself, as
-   * supported by Node.js resolution. On the other hand it doesn't support
-   * `foo/bar.ios`, for historical reasons.
-   *
-   * Return the full path of the resolved module, `null` if no resolution could
-   * be found.
-   */
-  _tryToResolveSourceFile(
-    context: {|
-      +candidateExts: Array<string>,
-      +filePathPrefix: string,
-    |},
-    platform: ?string,
-  ): ?string {
-    let filePath = this._tryToResolveFileForExt(context, '');
-    if (filePath) {
-      return filePath;
-    }
-    const {sourceExts} = this._options;
-    for (let i = 0; i < sourceExts.length; i++) {
-      const ext = `.${sourceExts[i]}`;
-      filePath = this._tryToResolveFileForExts(context, ext, platform);
-      if (filePath != null) {
-        return filePath;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * For a particular extension, ex. `js`, we want to try a few possibilities,
-   * such as `foo.ios.js`, `foo.native.js`, and of course `foo.js`.
-   *
-   * Return the full path of the resolved module, `null` if no resolution could
-   * be found.
-   */
-  _tryToResolveFileForExts(
-    context: {|
-      +candidateExts: Array<string>,
-      +filePathPrefix: string,
-    |},
-    sourceExt: string,
-    platform: ?string,
-  ): ?string {
-    const {preferNativePlatform} = this._options;
-    if (platform != null) {
-      const platExt = `.${platform}${sourceExt}`;
-      const filePath = this._tryToResolveFileForExt(context, platExt);
-      if (filePath) {
-        return filePath;
-      }
-    }
-    if (preferNativePlatform) {
-      const nativeExt = `.native${sourceExt}`;
-      const filePath = this._tryToResolveFileForExt(context, nativeExt);
-      if (filePath) {
-        return filePath;
-      }
-    }
-    const filePath = this._tryToResolveFileForExt(context, sourceExt);
-    return filePath;
-  }
-
-  /**
-   * We try to resolve a single possible extension. If it doesn't exist, then
-   * we make sure to add the extension to a list of candidates for reporting.
-   */
-  _tryToResolveFileForExt(
-    context: {|
-      +candidateExts: Array<string>,
-      +filePathPrefix: string,
-    |},
-    extension: string,
-  ): ?string {
-    const filePath = `${context.filePathPrefix}${extension}`;
-    if (this._options.doesFileExist(filePath)) {
-      return filePath;
-    }
-    context.candidateExts.push(filePath);
-    return null;
   }
 
   _getEmptyModule(fromModule: TModule, toModuleName: string): TModule {
@@ -543,7 +434,8 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     if (this._options.doesFileExist(packageJsonPath)) {
       return this._loadAsPackage(packageJsonPath, platform);
     }
-    const result = this._loadAsFile(potentialDirPath, 'index', platform);
+    const opts = this._options;
+    const result = resolveFile(opts, potentialDirPath, 'index', platform);
     if (result.type === 'resolved') {
       return result;
     }
@@ -565,7 +457,8 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     const mainPrefixPath = package_.getMain();
     const dirPath = path.dirname(mainPrefixPath);
     const prefixName = path.basename(mainPrefixPath);
-    const fileResult = this._loadAsFile(dirPath, prefixName, platform);
+    const opts = this._options;
+    const fileResult = resolveFile(opts, dirPath, prefixName, platform);
     if (fileResult.type === 'resolved') {
       return fileResult;
     }
@@ -579,6 +472,153 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       file: fileResult.candidates,
     });
   }
+}
+
+type FileContext = {
+  +doesFileExist: DoesFileExist,
+  +isAssetFile: IsAssetFile,
+  +preferNativePlatform: boolean,
+  +resolveAsset: ResolveAsset,
+  +sourceExts: $ReadOnlyArray<string>,
+};
+
+/**
+ * Given a file name for a particular directory, return a resolution result
+ * depending on whether or not we found the corresponding module as a file. For
+ * example, we might ask for `foo.png`, that resolves to
+ * `['/js/beep/foo.ios.png']`. Or we may ask for `boop`, that resolves to
+ * `/js/boop.android.ts`. On the other hand this function does not resolve
+ * directory-based module names: for example `boop` will not resolve to
+ * `/js/boop/index.js` (see `_loadAsDir` for that).
+ */
+function resolveFile(
+  context: FileContext,
+  dirPath: string,
+  fileNameHint: string,
+  platform: string | null,
+): Result<FileResolution, FileCandidates> {
+  const {isAssetFile, resolveAsset} = context;
+  if (isAssetFile(fileNameHint)) {
+    const result = resolveAssetFiles(
+      resolveAsset,
+      dirPath,
+      fileNameHint,
+      platform,
+    );
+    return mapResult(result, filePaths => ({type: 'assetFiles', filePaths}));
+  }
+  const candidateExts = [];
+  const filePathPrefix = path.join(dirPath, fileNameHint);
+  const sfContext = {...context, candidateExts, filePathPrefix};
+  const filePath = resolveSourceFile(sfContext, platform);
+  if (filePath != null) {
+    return resolvedAs({type: 'sourceFile', filePath});
+  }
+  return failedFor({type: 'sourceFile', candidateExts});
+}
+
+type SourceFileContext = SourceFileForAllExtsContext & {
+  +sourceExts: $ReadOnlyArray<string>,
+};
+
+/**
+ * A particular 'base path' can resolve to a number of possibilities depending
+ * on the context. For example `foo/bar` could resolve to `foo/bar.ios.js`, or
+ * to `foo/bar.js`. If can also resolve to the bare path `foo/bar` itself, as
+ * supported by Node.js resolution. On the other hand it doesn't support
+ * `foo/bar.ios`, for historical reasons.
+ *
+ * Return the full path of the resolved module, `null` if no resolution could
+ * be found.
+ */
+function resolveSourceFile(
+  context: SourceFileContext,
+  platform: ?string,
+): ?string {
+  let filePath = resolveSourceFileForAllExts(context, '');
+  if (filePath) {
+    return filePath;
+  }
+  const {sourceExts} = context;
+  for (let i = 0; i < sourceExts.length; i++) {
+    const ext = `.${sourceExts[i]}`;
+    filePath = resolveSourceFileForAllExts(context, ext, platform);
+    if (filePath != null) {
+      return filePath;
+    }
+  }
+  return null;
+}
+
+type SourceFileForAllExtsContext = SourceFileForExtContext & {
+  +preferNativePlatform: boolean,
+};
+
+/**
+ * For a particular extension, ex. `js`, we want to try a few possibilities,
+ * such as `foo.ios.js`, `foo.native.js`, and of course `foo.js`. Return the
+ * full path of the resolved module, `null` if no resolution could be found.
+ */
+function resolveSourceFileForAllExts(
+  context: SourceFileForAllExtsContext,
+  sourceExt: string,
+  platform: ?string,
+): ?string {
+  if (platform != null) {
+    const ext = `.${platform}${sourceExt}`;
+    const filePath = resolveSourceFileForExt(context, ext);
+    if (filePath) {
+      return filePath;
+    }
+  }
+  if (context.preferNativePlatform) {
+    const filePath = resolveSourceFileForExt(context, `.native${sourceExt}`);
+    if (filePath) {
+      return filePath;
+    }
+  }
+  const filePath = resolveSourceFileForExt(context, sourceExt);
+  return filePath;
+}
+
+type SourceFileForExtContext = {
+  +candidateExts: Array<string>,
+  +doesFileExist: DoesFileExist,
+  +filePathPrefix: string,
+};
+
+/**
+ * We try to resolve a single possible extension. If it doesn't exist, then
+ * we make sure to add the extension to a list of candidates for reporting.
+ */
+function resolveSourceFileForExt(
+  context: SourceFileForExtContext,
+  extension: string,
+): ?string {
+  const filePath = `${context.filePathPrefix}${extension}`;
+  if (context.doesFileExist(filePath)) {
+    return filePath;
+  }
+  context.candidateExts.push(filePath);
+  return null;
+}
+
+/**
+ * Find all the asset files corresponding to the file base name, and return
+ * it wrapped as a resolution result.
+ */
+function resolveAssetFiles(
+  resolveAsset: ResolveAsset,
+  dirPath: string,
+  fileNameHint: string,
+  platform: string | null,
+): Result<AssetFileResolution, FileCandidates> {
+  const assetNames = resolveAsset(dirPath, fileNameHint, platform);
+  if (assetNames != null) {
+    const res = assetNames.map(assetName => path.join(dirPath, assetName));
+    return resolvedAs(res);
+  }
+  return failedFor({type: 'asset', name: fileNameHint});
 }
 
 // HasteFS stores paths with backslashes on Windows, this ensures the path is in

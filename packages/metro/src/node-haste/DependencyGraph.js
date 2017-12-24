@@ -180,7 +180,7 @@ class DependencyGraph extends EventEmitter {
       },
       doesFileExist: this._doesFileExist,
       extraNodeModules: this._opts.extraNodeModules,
-      helpers: this._helpers,
+      isAssetFile: filePath => this._helpers.isAssetFile(filePath),
       moduleCache: this._moduleCache,
       moduleMap: this._moduleMap,
       preferNativePlatform: this._opts.preferNativePlatform,
@@ -232,7 +232,7 @@ class DependencyGraph extends EventEmitter {
   }
 
   getModuleForPath(entryFile: string) {
-    if (this._moduleResolver.isAssetFile(entryFile)) {
+    if (this._helpers.isAssetFile(entryFile)) {
       return this._moduleCache.getAssetModule(entryFile);
     }
 

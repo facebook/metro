@@ -141,7 +141,7 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     dirExists: filePath => hasteFS.dirExists(filePath),
     doesFileExist: filePath => hasteFS.exists(filePath),
     extraNodeModules,
-    helpers,
+    isAssetFile: filePath => helpers.isAssetFile(filePath),
     moduleCache,
     moduleMap: new ModuleMap({
       duplicates: Object.create(null),
