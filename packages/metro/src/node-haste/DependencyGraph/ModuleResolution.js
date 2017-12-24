@@ -295,7 +295,11 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
 
     const fullSearchQueue = searchQueue.concat(extraSearchQueue);
     for (let i = 0; i < fullSearchQueue.length; ++i) {
-      const result = this._loadAsFileOrDir(fullSearchQueue[i], platform);
+      const context = {
+        ...this._options,
+        getPackageMainPath: this._getPackageMainPath,
+      };
+      const result = resolveFileOrDir(context, fullSearchQueue[i], platform);
       // Eventually we should aggregate the candidates so that we can
       // report them with more accuracy in the error below.
       if (result.type === 'resolved') {
@@ -325,6 +329,11 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     );
   }
 
+  _getPackageMainPath = (packageJsonPath: string): string => {
+    const package_ = this._options.moduleCache.getPackage(packageJsonPath);
+    return package_.getMain();
+  };
+
   /**
    * Eventually we'd like to remove all the exception being throw in the middle
    * of the resolution algorithm, instead keeping track of tentatives in a
@@ -338,7 +347,11 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     toModuleName: string,
     platform: string | null,
   ): TModule {
-    const result = this._loadAsFileOrDir(potentialModulePath, platform);
+    const context = {
+      ...this._options,
+      getPackageMainPath: this._getPackageMainPath,
+    };
+    const result = resolveFileOrDir(context, potentialModulePath, platform);
     if (result.type === 'resolved') {
       return this._getFileResolvedModule(result.resolution);
     }
@@ -379,30 +392,6 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     throw new Error('switch is not exhaustive');
   }
 
-  /**
-   * In the NodeJS-style module resolution scheme we want to check potential
-   * paths both as directories and as files. For example, `foo/bar` may resolve
-   * to `foo/bar.js` (preferred), but it might also be `foo/bar/index.js`, or
-   * even a package directory.
-   */
-  _loadAsFileOrDir(
-    potentialModulePath: string,
-    platform: string | null,
-  ): Result<FileResolution, FileAndDirCandidates> {
-    const dirPath = path.dirname(potentialModulePath);
-    const fileNameHint = path.basename(potentialModulePath);
-    const {_options} = this;
-    const fileResult = resolveFile(_options, dirPath, fileNameHint, platform);
-    if (fileResult.type === 'resolved') {
-      return fileResult;
-    }
-    const dirResult = this._loadAsDir(potentialModulePath, platform);
-    if (dirResult.type === 'resolved') {
-      return dirResult;
-    }
-    return failedFor({file: fileResult.candidates, dir: dirResult.candidates});
-  }
-
   _getEmptyModule(fromModule: TModule, toModuleName: string): TModule {
     const {moduleCache} = this._options;
     const module = moduleCache.getModule(ModuleResolver.EMPTY_MODULE);
@@ -415,63 +404,101 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       "could not resolve `${ModuleResolver.EMPTY_MODULE}'",
     );
   }
+}
 
+type FileOrDirContext = FileContext & {
   /**
-   * Try to resolve a potential path as if it was a directory-based module.
-   * Either this is a directory that contains a package, or that the directory
-   * contains an index file. If it fails to resolve these options, it returns
-   * `null` and fills the array of `candidates` that were tried.
+   * This should return the path of the "main" module of the specified
+   * `package.json` file, after post-processing: for example, applying the
+   * 'browser' field if necessary.
    *
-   * For example we could try to resolve `/foo/bar`, that would eventually
-   * resolve to `/foo/bar/lib/index.ios.js` if we're on platform iOS and that
-   * `bar` contains a package which entry point is `./lib/index` (or `./lib`).
+   * FIXME: move the post-processing here. Right now it is
+   * located in `node-haste/Package.js`, and fully duplicated in
+   * `ModuleGraph/node-haste/Package.js` (!)
    */
-  _loadAsDir(
-    potentialDirPath: string,
-    platform: string | null,
-  ): Result<FileResolution, DirCandidates> {
-    const packageJsonPath = path.join(potentialDirPath, 'package.json');
-    if (this._options.doesFileExist(packageJsonPath)) {
-      return this._loadAsPackage(packageJsonPath, platform);
-    }
-    const opts = this._options;
-    const result = resolveFile(opts, potentialDirPath, 'index', platform);
-    if (result.type === 'resolved') {
-      return result;
-    }
-    return failedFor({type: 'index', file: result.candidates});
-  }
+  +getPackageMainPath: (packageJsonPath: string) => string,
+};
 
-  /**
-   * Right now we just consider it a failure to resolve if we couldn't find the
-   * file corresponding to the `main` indicated by a package. Argument can be
-   * made this should be changed so that failing to find the `main` is not a
-   * resolution failure, but identified instead as a corrupted or invalid
-   * package (or that a package only supports a specific platform, etc.)
-   */
-  _loadAsPackage(
-    packageJsonPath: string,
-    platform: string | null,
-  ): Result<FileResolution, DirCandidates> {
-    const package_ = this._options.moduleCache.getPackage(packageJsonPath);
-    const mainPrefixPath = package_.getMain();
-    const dirPath = path.dirname(mainPrefixPath);
-    const prefixName = path.basename(mainPrefixPath);
-    const opts = this._options;
-    const fileResult = resolveFile(opts, dirPath, prefixName, platform);
-    if (fileResult.type === 'resolved') {
-      return fileResult;
-    }
-    const dirResult = this._loadAsDir(mainPrefixPath, platform);
-    if (dirResult.type === 'resolved') {
-      return dirResult;
-    }
-    return failedFor({
-      type: 'package',
-      dir: dirResult.candidates,
-      file: fileResult.candidates,
-    });
+/**
+ * In the NodeJS-style module resolution scheme we want to check potential
+ * paths both as directories and as files. For example, `/foo/bar` may resolve
+ * to `/foo/bar.js` (preferred), but it might also be `/foo/bar/index.js`, or
+ * even a package directory.
+ */
+function resolveFileOrDir(
+  context: FileOrDirContext,
+  potentialModulePath: string,
+  platform: string | null,
+): Result<FileResolution, FileAndDirCandidates> {
+  const dirPath = path.dirname(potentialModulePath);
+  const fileNameHint = path.basename(potentialModulePath);
+  const fileResult = resolveFile(context, dirPath, fileNameHint, platform);
+  if (fileResult.type === 'resolved') {
+    return fileResult;
   }
+  const dirResult = resolveDir(context, potentialModulePath, platform);
+  if (dirResult.type === 'resolved') {
+    return dirResult;
+  }
+  return failedFor({file: fileResult.candidates, dir: dirResult.candidates});
+}
+
+/**
+ * Try to resolve a potential path as if it was a directory-based module.
+ * Either this is a directory that contains a package, or that the directory
+ * contains an index file. If it fails to resolve these options, it returns
+ * `null` and fills the array of `candidates` that were tried.
+ *
+ * For example we could try to resolve `/foo/bar`, that would eventually
+ * resolve to `/foo/bar/lib/index.ios.js` if we're on platform iOS and that
+ * `bar` contains a package which entry point is `./lib/index` (or `./lib`).
+ */
+function resolveDir(
+  context: FileOrDirContext,
+  potentialDirPath: string,
+  platform: string | null,
+): Result<FileResolution, DirCandidates> {
+  const packageJsonPath = path.join(potentialDirPath, 'package.json');
+  if (context.doesFileExist(packageJsonPath)) {
+    return resolvePackage(context, packageJsonPath, platform);
+  }
+  const result = resolveFile(context, potentialDirPath, 'index', platform);
+  if (result.type === 'resolved') {
+    return result;
+  }
+  return failedFor({type: 'index', file: result.candidates});
+}
+
+/**
+ * Resolve the main module of a package.
+ *
+ * Right now we just consider it a failure to resolve if we couldn't find the
+ * file corresponding to the `main` indicated by a package. This is incorrect:
+ * failing to find the `main` is not a resolution failure, but instead means the
+ * package is corrupted or invalid (or that a package only supports a specific
+ * platform, etc.)
+ */
+function resolvePackage(
+  context: FileOrDirContext,
+  packageJsonPath: string,
+  platform: string | null,
+): Result<FileResolution, DirCandidates> {
+  const mainPrefixPath = context.getPackageMainPath(packageJsonPath);
+  const dirPath = path.dirname(mainPrefixPath);
+  const prefixName = path.basename(mainPrefixPath);
+  const fileResult = resolveFile(context, dirPath, prefixName, platform);
+  if (fileResult.type === 'resolved') {
+    return fileResult;
+  }
+  const dirResult = resolveDir(context, mainPrefixPath, platform);
+  if (dirResult.type === 'resolved') {
+    return dirResult;
+  }
+  return failedFor({
+    type: 'package',
+    dir: dirResult.candidates,
+    file: fileResult.candidates,
+  });
 }
 
 type FileContext = {
