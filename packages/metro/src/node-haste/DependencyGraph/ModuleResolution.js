@@ -107,7 +107,7 @@ type FileCandidates =
  * a module name as directory.
  */
 type DirCandidates =
-  | {|+type: 'package', +dir: DirCandidates, +file: FileCandidates|}
+  | {|+type: 'package', +index: FileCandidates, +file: FileCandidates|}
   | {|+type: 'index', +file: FileCandidates|};
 
 type FileAndDirCandidates = {|+dir: DirCandidates, +file: FileCandidates|};
@@ -477,13 +477,13 @@ function resolvePackage(
   if (fileResult.type === 'resolved') {
     return fileResult;
   }
-  const dirResult = resolveDir(context, mainPrefixPath, platform);
-  if (dirResult.type === 'resolved') {
-    return dirResult;
+  const indexResult = resolveFile(context, mainPrefixPath, 'index', platform);
+  if (indexResult.type === 'resolved') {
+    return indexResult;
   }
   return failedFor({
     type: 'package',
-    dir: dirResult.candidates,
+    index: indexResult.candidates,
     file: fileResult.candidates,
   });
 }
