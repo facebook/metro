@@ -100,7 +100,7 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
     }
 
     return cacheResult(
-      ModuleResolution.tryResolveSync(
+      tryResolveSync(
         () => this._resolveHasteDependency(fromModule, toModuleName, platform),
         () =>
           resolver.resolveNodeDependency(fromModule, toModuleName, platform),
@@ -135,6 +135,22 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
 
 function getResolutionCacheKey(modulePath, depName) {
   return `${path.resolve(modulePath)}:${depName}`;
+}
+
+/**
+ * It may not be a great pattern to leverage exception just for "trying" things
+ * out, notably for performance. We should consider replacing these functions
+ * to be nullable-returning, or being better stucture to the algorithm.
+ */
+function tryResolveSync<T>(action: () => T, secondaryAction: () => T): T {
+  try {
+    return action();
+  } catch (error) {
+    if (!(error instanceof ModuleResolution.UnableToResolveError)) {
+      throw error;
+    }
+    return secondaryAction();
+  }
 }
 
 class AmbiguousModuleResolutionError extends Error {

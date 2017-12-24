@@ -121,22 +121,6 @@ type FileResolution =
   | {|+type: 'sourceFile', +filePath: string|}
   | {|+type: 'assetFiles', +filePaths: AssetFileResolution|};
 
-/**
- * It may not be a great pattern to leverage exception just for "trying" things
- * out, notably for performance. We should consider replacing these functions
- * to be nullable-returning, or being better stucture to the algorithm.
- */
-function tryResolveSync<T>(action: () => T, secondaryAction: () => T): T {
-  try {
-    return action();
-  } catch (error) {
-    if (!(error instanceof UnableToResolveError)) {
-      throw error;
-    }
-    return secondaryAction();
-  }
-}
-
 class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   _options: Options<TModule, TPackage>;
 
@@ -742,5 +726,4 @@ module.exports = {
   UnableToResolveError,
   ModuleResolver,
   isRelativeImport,
-  tryResolveSync,
 };
