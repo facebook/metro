@@ -43,14 +43,18 @@ class Package {
    */
   getMain(): string {
     const json = this.read();
-    var replacements = getReplacements(json);
-    if (typeof replacements === 'string') {
-      return path.join(this.root, replacements);
+
+    let main;
+    if (typeof json['react-native'] === 'string') {
+      main = json['react-native'];
+    } else if (typeof json.browser === 'string') {
+      main = json.browser;
+    } else {
+      main = json.main || 'index';
     }
 
-    let main = json.main || 'index';
-
-    if (replacements && typeof replacements === 'object') {
+    const replacements = getReplacements(json);
+    if (replacements) {
       const variants = [main];
       if (main.slice(0, 2) === './') {
         variants.push(main.slice(2));
@@ -92,7 +96,7 @@ class Package {
     const json = this.read();
     const replacements = getReplacements(json);
 
-    if (!replacements || typeof replacements !== 'object') {
+    if (!replacements) {
       return name;
     }
 
@@ -144,29 +148,20 @@ class Package {
   }
 }
 
-function getReplacements(pkg: PackageContent): mixed {
+function getReplacements(pkg: PackageContent): ?{[string]: string | boolean} {
   let rn = pkg['react-native'];
   let browser = pkg.browser;
-  if (rn == null) {
-    return browser;
+  if (rn == null && browser == null) {
+    return null;
   }
-
-  if (browser == null) {
-    return rn;
+  // If the field is a string, that doesn't mean we want to redirect the `main`
+  // file itself to anything else. See the spec.
+  if (rn == null || typeof rn === 'string') {
+    rn = {};
   }
-
-  if (typeof rn === 'string') {
-    /* $FlowFixMe: It is likely unsafe to assume all packages would
-     * contain a "main" */
-    rn = {[pkg.main]: rn};
+  if (browser == null || typeof browser === 'string') {
+    browser = {};
   }
-
-  if (typeof browser === 'string') {
-    /* $FlowFixMe: It is likely unsafe to assume all packages would
-     * contain a "main" */
-    browser = {[pkg.main]: browser};
-  }
-
   // merge with "browser" as default,
   // "react-native" as override
   return {...browser, ...rn};
