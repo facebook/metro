@@ -40,7 +40,6 @@ export type ModuleMap = {
 export type Packageish = {
   redirectRequire(toModuleName: string): string | false,
   getMain(): string,
-  +root: string,
 };
 
 export type Moduleish = {
@@ -177,26 +176,30 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     }
 
     let packageName = realModuleName;
-    let packagePath;
+    let packageJsonPath;
     while (packageName && packageName !== '.') {
-      packagePath = this._options.moduleMap.getPackage(
+      packageJsonPath = this._options.moduleMap.getPackage(
         packageName,
         platform,
         /* supportsNativePlatform */ true,
       );
-      if (packagePath != null) {
+      if (packageJsonPath != null) {
         break;
       }
       packageName = path.dirname(packageName);
     }
 
-    if (packagePath != null) {
-      const package_ = this._options.moduleCache.getPackage(packagePath);
-      /* temporary until we strengthen the typing */
-      invariant(package_.type === 'Package', 'expected Package type');
-
+    if (packageJsonPath != null) {
+      // FIXME: `moduleCache.getModule` should return the directory path, not
+      // the `package.json` file path, because the directory is what's really
+      // representing the package.
+      const packageDirPath = path.dirname(packageJsonPath);
+      // FIXME: if we're trying to require the package main module (ie.
+      // packageName === realModuleName), don't do as if it could be a
+      // "FileOrDir", call directly the `resolvePackage` function! Otherwise we
+      // might actually be grabbing a completely unrelated file.
       const potentialModulePath = path.join(
-        package_.root,
+        packageDirPath,
         path.relative(packageName, realModuleName),
       );
       return this._loadAsFileOrDirOrThrow(
