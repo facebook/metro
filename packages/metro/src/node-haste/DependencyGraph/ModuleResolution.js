@@ -98,19 +98,14 @@ type FileCandidates =
   | {|+type: 'asset', +name: string|}
   // We attempted to resolve a name as being a source file (ex. JavaScript,
   // JSON...), in which case there can be several extensions we tried, for
-  // example `foo.ios.js`, `foo.js`, etc. (The array only contain extensions,
-  // ie. `['ios.js', 'js']`.)
-  | {|+type: 'sourceFile', +candidateExts: $ReadOnlyArray<string>|};
+  // example `/js/foo.ios.js`, `/js/foo.js`, etc. for a single prefix '/js/foo'.
+  | {|
+    +type: 'sourceFile',
+    +filePathPrefix: string,
+    +candidateExts: $ReadOnlyArray<string>,
+  |};
 
-/**
- * This is a way to describe what files we tried to look for when resolving
- * a module name as directory.
- */
-type DirCandidates =
-  | {|+type: 'package', +index: FileCandidates, +file: FileCandidates|}
-  | {|+type: 'index', +file: FileCandidates|};
-
-type FileAndDirCandidates = {|+dir: DirCandidates, +file: FileCandidates|};
+type FileAndDirCandidates = {|+dir: FileCandidates, +file: FileCandidates|};
 
 type Result<TResolution, TCandidates> =
   | {|+type: 'resolved', +resolution: TResolution|}
@@ -338,22 +333,22 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       ...this._options,
       getPackageMainPath: this._getPackageMainPath,
     };
-    const result = resolveFileOrDir(context, potentialModulePath, platform);
+    let result;
+    try {
+      result = resolveFileOrDir(context, potentialModulePath, platform);
+    } catch (error) {
+      if (error instanceof InvalidPackageError) {
+        throw new PackageResolutionError({
+          packageError: error,
+          originModulePath: fromModule.path,
+          targetModuleName: toModuleName,
+        });
+      }
+      throw error;
+    }
     if (result.type === 'resolved') {
       return this._getFileResolvedModule(result.resolution);
     }
-    // We ignore the `file` candidates as a temporary measure before this
-    // function is gotten rid of, because it's historically been ignored anyway.
-    const {dir} = result.candidates;
-    if (dir.type === 'package') {
-      throw new UnableToResolveError(
-        fromModule.path,
-        toModuleName,
-        `could not resolve \`${potentialModulePath}' as a folder: it ` +
-          'contained a package, but its "main" could not be resolved',
-      );
-    }
-    invariant(dir.type === 'index', 'invalid candidate type');
     throw new UnableToResolveError(
       fromModule.path,
       toModuleName,
@@ -444,48 +439,116 @@ function resolveDir(
   context: FileOrDirContext,
   potentialDirPath: string,
   platform: string | null,
-): Result<FileResolution, DirCandidates> {
+): Result<FileResolution, FileCandidates> {
   const packageJsonPath = path.join(potentialDirPath, 'package.json');
   if (context.doesFileExist(packageJsonPath)) {
-    return resolvePackage(context, packageJsonPath, platform);
+    const resolution = resolvePackage(context, packageJsonPath, platform);
+    return {resolution, type: 'resolved'};
   }
-  const result = resolveFile(context, potentialDirPath, 'index', platform);
-  if (result.type === 'resolved') {
-    return result;
-  }
-  return failedFor({type: 'index', file: result.candidates});
+  return resolveFile(context, potentialDirPath, 'index', platform);
 }
 
 /**
- * Resolve the main module of a package.
- *
- * Right now we just consider it a failure to resolve if we couldn't find the
- * file corresponding to the `main` indicated by a package. This is incorrect:
- * failing to find the `main` is not a resolution failure, but instead means the
- * package is corrupted or invalid (or that a package only supports a specific
- * platform, etc.)
+ * Resolve the main module of a package that we know exist. The resolution
+ * itself cannot fail because we already resolved the path to the package.
+ * If the `main` of the package is invalid, this is not a resolution failure,
+ * this means the package is invalid, and should purposefully stop the
+ * resolution process altogether.
  */
 function resolvePackage(
   context: FileOrDirContext,
   packageJsonPath: string,
   platform: string | null,
-): Result<FileResolution, DirCandidates> {
+): FileResolution {
   const mainPrefixPath = context.getPackageMainPath(packageJsonPath);
   const dirPath = path.dirname(mainPrefixPath);
   const prefixName = path.basename(mainPrefixPath);
   const fileResult = resolveFile(context, dirPath, prefixName, platform);
   if (fileResult.type === 'resolved') {
-    return fileResult;
+    return fileResult.resolution;
   }
   const indexResult = resolveFile(context, mainPrefixPath, 'index', platform);
   if (indexResult.type === 'resolved') {
-    return indexResult;
+    return indexResult.resolution;
   }
-  return failedFor({
-    type: 'package',
-    index: indexResult.candidates,
-    file: fileResult.candidates,
+  throw new InvalidPackageError({
+    packageJsonPath,
+    mainPrefixPath,
+    indexCandidates: indexResult.candidates,
+    fileCandidates: fileResult.candidates,
   });
+}
+
+class PackageResolutionError extends Error {
+  originModulePath: string;
+  packageError: InvalidPackageError;
+  targetModuleName: string;
+
+  constructor(opts: {|
+    +originModulePath: string,
+    +packageError: InvalidPackageError,
+    +targetModuleName: string,
+  |}) {
+    const perr = opts.packageError;
+    super(
+      `While trying to resolve module \`${opts.targetModuleName}\` from file ` +
+        `\`${opts.originModulePath}\`, the package ` +
+        `\`${perr.packageJsonPath}\` was successfully found. However, ` +
+        `this package itself specifies ` +
+        `a \`main\` module field that could not be resolved (` +
+        `\`${perr.mainPrefixPath}\`. Indeed, none of these files exist:\n\n` +
+        `  * \`${formatFileCandidates(perr.fileCandidates)}\`\n` +
+        `  * \`${formatFileCandidates(perr.indexCandidates)}\``,
+    );
+    Object.assign(this, opts);
+  }
+}
+
+function formatFileCandidates(candidates: FileCandidates): string {
+  if (candidates.type === 'asset') {
+    return candidates.name;
+  }
+  return `${candidates.filePathPrefix}(${candidates.candidateExts.join('|')})`;
+}
+
+class InvalidPackageError extends Error {
+  /**
+   * The file candidates we tried to find to resolve the `main` field of the
+   * package. Ex. `/js/foo/beep(.js|.json)?` if `main` is specifying `./beep`
+   * as the entry point.
+   */
+  fileCandidates: FileCandidates;
+  /**
+   * The 'index' file candidates we tried to find to resolve the `main` field of
+   * the package. Ex. `/js/foo/beep/index(.js|.json)?` if `main` is specifying
+   * `./beep` as the entry point.
+   */
+  indexCandidates: FileCandidates;
+  /**
+   * The module path prefix we where trying to resolve. For example './beep'.
+   */
+  mainPrefixPath: string;
+  /**
+   * Full path the package we were trying to resolve.
+   * Ex. `/js/foo/package.json`.
+   */
+  packageJsonPath: string;
+
+  constructor(opts: {|
+    +fileCandidates: FileCandidates,
+    +indexCandidates: FileCandidates,
+    +mainPrefixPath: string,
+    +packageJsonPath: string,
+  |}) {
+    super(
+      `The package \`${opts.packageJsonPath}\` is invalid because it ` +
+        `specifies a \`main\` module field that could not be resolved (` +
+        `\`${opts.mainPrefixPath}\`. Indeed, none of these files exist:\n\n` +
+        `  * \`${formatFileCandidates(opts.fileCandidates)}\`\n` +
+        `  * \`${formatFileCandidates(opts.indexCandidates)}\``,
+    );
+    Object.assign(this, opts);
+  }
 }
 
 type FileContext = {
@@ -528,7 +591,7 @@ function resolveFile(
   if (filePath != null) {
     return resolvedAs({type: 'sourceFile', filePath});
   }
-  return failedFor({type: 'sourceFile', candidateExts});
+  return failedFor({type: 'sourceFile', filePathPrefix, candidateExts});
 }
 
 type SourceFileContext = SourceFileForAllExtsContext & {
