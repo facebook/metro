@@ -153,15 +153,24 @@ const makeAsyncRequire = babelTemplate(
 );
 
 function invalidRequireOf(type, node) {
-  return new InvalidRequireCallError(
-    `Calls to ${type}() expect exactly 1 string literal argument, ` +
-      `but this was found: \`${prettyPrint(node).code}\`.`,
-  );
+  const str = prettyPrint(node).code;
+  return new InvalidRequireCallError(type, str, node.loc.start);
 }
 
 class InvalidRequireCallError extends Error {
-  constructor(message) {
-    super(message);
+  callType: string;
+  nodeString: string;
+  location: string;
+
+  constructor(callType, nodeString, loc) {
+    super(
+      `${loc.line}:${loc.column}: ` +
+        `calls to \`${callType}\` expect exactly 1 string literal ` +
+        `argument, but this was found: \`${nodeString}\`.`,
+    );
+    this.callType = callType;
+    this.nodeString = nodeString;
+    this.location = loc;
   }
 }
 collectDependencies.InvalidRequireCallError = InvalidRequireCallError;

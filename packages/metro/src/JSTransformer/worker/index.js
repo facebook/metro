@@ -127,9 +127,7 @@ function postTransform(
       ({dependencies, dependencyMapName} = collectDependencies(ast));
     } catch (error) {
       if (error instanceof collectDependencies.InvalidRequireCallError) {
-        throw new collectDependencies.InvalidRequireCallError(
-          `\`${filename}\`: ${error.message}`,
-        );
+        throw new InvalidRequireCallError(error, filename);
       }
       throw error;
     }
@@ -242,7 +240,22 @@ function isAsset(filePath: string, assetExts: $ReadOnlyArray<string>): boolean {
   return assetExts.indexOf(path.extname(filePath).slice(1)) !== -1;
 }
 
+class InvalidRequireCallError extends Error {
+  innerError: collectDependencies.InvalidRequireCallError;
+  filename: string;
+
+  constructor(
+    innerError: collectDependencies.InvalidRequireCallError,
+    filename: string,
+  ) {
+    super(`${filename}:${innerError.message}`);
+    this.innerError = innerError;
+    this.filename = filename;
+  }
+}
+
 module.exports = {
   transform: transformCode,
   minify: minifyCode,
+  InvalidRequireCallError,
 };

@@ -1,3 +1,3 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`code transformation worker: reports filename when encountering unsupported dynamic dependency 1`] = `"\`arbitrary/file.js\`: Calls to require() expect exactly 1 string literal argument, but this was found: \`require(a)\`."`;
+exports[`code transformation worker: reports filename when encountering unsupported dynamic dependency 1`] = `"arbitrary/file.js:3:10: calls to \`require\` expect exactly 1 string literal argument, but this was found: \`require(a)\`."`;

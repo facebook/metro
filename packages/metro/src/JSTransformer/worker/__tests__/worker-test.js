@@ -16,11 +16,9 @@ jest
   .mock('../inline')
   .mock('../minify');
 
-const {
-  InvalidRequireCallError,
-} = require('../../../ModuleGraph/worker/collectDependencies');
 const path = require('path');
 const transformCode = require('..').transform;
+const {InvalidRequireCallError} = require('..');
 
 describe('code transformation worker:', () => {
   it('transforms a simple script', async () => {
