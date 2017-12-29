@@ -24,7 +24,7 @@ import type {Options as TransformWorkerOptions} from '../../JSTransformer/worker
 import type {ReadResult, CachedReadResult} from '../Module';
 import type {ModuleResolver} from './ModuleResolution';
 
-const {isRelativeImport} = ModuleResolution;
+const {InvalidPackageError, formatFileCandidates} = ModuleResolution;
 
 export type Packageish = {
   isHaste(): boolean,
@@ -67,6 +67,7 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
   _immediateResolutionCache: {[key: string]: TModule, __proto__: null};
   _options: Options<TModule, TPackage>;
   static AmbiguousModuleResolutionError: Class<AmbiguousModuleResolutionError>;
+  static PackageResolutionError: Class<PackageResolutionError>;
 
   constructor(options: Options<TModule, TPackage>) {
     this._options = options;
@@ -104,6 +105,13 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
       if (error instanceof DuplicateHasteCandidatesError) {
         throw new AmbiguousModuleResolutionError(fromModule.path, error);
       }
+      if (error instanceof InvalidPackageError) {
+        throw new PackageResolutionError({
+          packageError: error,
+          originModulePath: fromModule.path,
+          targetModuleName: toModuleName,
+        });
+      }
       throw error;
     }
   }
@@ -138,6 +146,32 @@ class AmbiguousModuleResolutionError extends Error {
   }
 }
 
+class PackageResolutionError extends Error {
+  originModulePath: string;
+  packageError: InvalidPackageError;
+  targetModuleName: string;
+
+  constructor(opts: {|
+    +originModulePath: string,
+    +packageError: InvalidPackageError,
+    +targetModuleName: string,
+  |}) {
+    const perr = opts.packageError;
+    super(
+      `While trying to resolve module \`${opts.targetModuleName}\` from file ` +
+        `\`${opts.originModulePath}\`, the package ` +
+        `\`${perr.packageJsonPath}\` was successfully found. However, ` +
+        `this package itself specifies ` +
+        `a \`main\` module field that could not be resolved (` +
+        `\`${perr.mainPrefixPath}\`. Indeed, none of these files exist:\n\n` +
+        `  * \`${formatFileCandidates(perr.fileCandidates)}\`\n` +
+        `  * \`${formatFileCandidates(perr.indexCandidates)}\``,
+    );
+    Object.assign(this, opts);
+  }
+}
+
 ResolutionRequest.AmbiguousModuleResolutionError = AmbiguousModuleResolutionError;
+ResolutionRequest.PackageResolutionError = PackageResolutionError;
 
 module.exports = ResolutionRequest;

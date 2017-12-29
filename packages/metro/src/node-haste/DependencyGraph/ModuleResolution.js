@@ -338,19 +338,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       ...this._options,
       getPackageMainPath: this._getPackageMainPath,
     };
-    let result;
-    try {
-      result = resolveFileOrDir(context, potentialModulePath, platform);
-    } catch (error) {
-      if (error instanceof InvalidPackageError) {
-        throw new PackageResolutionError({
-          packageError: error,
-          originModulePath: fromModule.path,
-          targetModuleName: toModuleName,
-        });
-      }
-      throw error;
-    }
+    const result = resolveFileOrDir(context, potentialModulePath, platform);
     if (result.type === 'resolved') {
       return this._getFileResolvedModule(result.resolution);
     }
@@ -482,31 +470,6 @@ function resolvePackage(
     indexCandidates: indexResult.candidates,
     fileCandidates: fileResult.candidates,
   });
-}
-
-class PackageResolutionError extends Error {
-  originModulePath: string;
-  packageError: InvalidPackageError;
-  targetModuleName: string;
-
-  constructor(opts: {|
-    +originModulePath: string,
-    +packageError: InvalidPackageError,
-    +targetModuleName: string,
-  |}) {
-    const perr = opts.packageError;
-    super(
-      `While trying to resolve module \`${opts.targetModuleName}\` from file ` +
-        `\`${opts.originModulePath}\`, the package ` +
-        `\`${perr.packageJsonPath}\` was successfully found. However, ` +
-        `this package itself specifies ` +
-        `a \`main\` module field that could not be resolved (` +
-        `\`${perr.mainPrefixPath}\`. Indeed, none of these files exist:\n\n` +
-        `  * \`${formatFileCandidates(perr.fileCandidates)}\`\n` +
-        `  * \`${formatFileCandidates(perr.indexCandidates)}\``,
-    );
-    Object.assign(this, opts);
-  }
 }
 
 function formatFileCandidates(candidates: FileCandidates): string {
@@ -791,7 +754,9 @@ class UnableToResolveError extends Error {
 }
 
 module.exports = {
-  UnableToResolveError,
-  ModuleResolver,
+  formatFileCandidates,
+  InvalidPackageError,
   isRelativeImport,
+  ModuleResolver,
+  UnableToResolveError,
 };
