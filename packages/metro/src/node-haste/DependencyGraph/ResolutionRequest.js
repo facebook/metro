@@ -89,33 +89,17 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
     const resolver = this._options.moduleResolver;
     const platform = this._options.platform;
 
-    if (
-      isAbsolutePath(toModuleName) ||
-      isRelativeImport(toModuleName) ||
-      this._options.helpers.isNodeModulesDir(fromModule.path)
-    ) {
-      return cacheResult(
-        resolver.resolveNodeDependency(fromModule, toModuleName, platform),
-      );
-    }
+    const allowHaste = !this._options.helpers.isNodeModulesDir(fromModule.path);
 
-    return cacheResult(
-      tryResolveSync(
-        () => this._resolveHasteDependency(fromModule, toModuleName, platform),
-        () =>
-          resolver.resolveNodeDependency(fromModule, toModuleName, platform),
-      ),
-    );
-  }
-
-  _resolveHasteDependency(
-    fromModule: TModule,
-    toModuleName: string,
-    platform: string | null,
-  ): TModule {
-    const rs = this._options.moduleResolver;
     try {
-      return rs.resolveHasteDependency(fromModule, toModuleName, platform);
+      return cacheResult(
+        resolver.resolveDependency(
+          fromModule,
+          toModuleName,
+          allowHaste,
+          platform,
+        ),
+      );
     } catch (error) {
       if (error instanceof DuplicateHasteCandidatesError) {
         throw new AmbiguousModuleResolutionError(fromModule.path, error);
@@ -135,22 +119,6 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
 
 function getResolutionCacheKey(modulePath, depName) {
   return `${path.resolve(modulePath)}:${depName}`;
-}
-
-/**
- * It may not be a great pattern to leverage exception just for "trying" things
- * out, notably for performance. We should consider replacing these functions
- * to be nullable-returning, or being better stucture to the algorithm.
- */
-function tryResolveSync<T>(action: () => T, secondaryAction: () => T): T {
-  try {
-    return action();
-  } catch (error) {
-    if (!(error instanceof ModuleResolution.UnableToResolveError)) {
-      throw error;
-    }
-    return secondaryAction();
-  }
 }
 
 class AmbiguousModuleResolutionError extends Error {

@@ -125,25 +125,13 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     this._options = options;
   }
 
-  resolveHasteDependency(
+  _resolveHasteDependency(
     fromModule: TModule,
     toModuleName: string,
     platform: string | null,
   ): TModule {
-    toModuleName = normalizePath(toModuleName);
-
-    const pck = fromModule.getPackage();
-    let realModuleName;
-    if (pck) {
-      /* $FlowFixMe: redirectRequire can actually return `false` for
-         exclusions*/
-      realModuleName = (pck.redirectRequire(toModuleName): string);
-    } else {
-      realModuleName = toModuleName;
-    }
-
     const modulePath = this._options.moduleMap.getModule(
-      realModuleName,
+      toModuleName,
       platform,
       /* supportsNativePlatform */ true,
     );
@@ -154,7 +142,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       return module;
     }
 
-    let packageName = realModuleName;
+    let packageName = toModuleName;
     let packageJsonPath;
     while (packageName && packageName !== '.') {
       packageJsonPath = this._options.moduleMap.getPackage(
@@ -174,12 +162,12 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       // representing the package.
       const packageDirPath = path.dirname(packageJsonPath);
       // FIXME: if we're trying to require the package main module (ie.
-      // packageName === realModuleName), don't do as if it could be a
+      // packageName === toModuleName), don't do as if it could be a
       // "FileOrDir", call directly the `resolvePackage` function! Otherwise we
       // might actually be grabbing a completely unrelated file.
       const potentialModulePath = path.join(
         packageDirPath,
-        path.relative(packageName, realModuleName),
+        path.relative(packageName, toModuleName),
       );
       return this._loadAsFileOrDirOrThrow(
         potentialModulePath,
@@ -228,9 +216,10 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     );
   }
 
-  resolveNodeDependency(
+  resolveDependency(
     fromModule: TModule,
     toModuleName: string,
+    allowHaste: boolean,
     platform: string | null,
   ): TModule {
     if (isRelativeImport(toModuleName) || isAbsolutePath(toModuleName)) {
@@ -252,6 +241,22 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       );
       const absPath = path.join(fromModuleDir, realModuleName);
       return this._resolveFileOrDir(fromModule, absPath, platform);
+    }
+
+    // At that point we only have module names that
+    // aren't relative paths nor absolute paths.
+    if (allowHaste) {
+      try {
+        return this._resolveHasteDependency(
+          fromModule,
+          normalizePath(realModuleName),
+          platform,
+        );
+      } catch (error) {
+        if (!(error instanceof UnableToResolveError)) {
+          throw error;
+        }
+      }
     }
 
     const searchQueue = [];
