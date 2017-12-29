@@ -126,23 +126,22 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   }
 
   _resolveHasteDependency(
-    fromModule: TModule,
-    toModuleName: string,
+    moduleName: string,
     platform: string | null,
-  ): TModule {
+  ): Result<FileResolution, void> {
     const modulePath = this._options.moduleMap.getModule(
-      toModuleName,
+      moduleName,
       platform,
       /* supportsNativePlatform */ true,
     );
     if (modulePath != null) {
-      const module = this._options.moduleCache.getModule(modulePath);
-      /* temporary until we strengthen the typing */
-      invariant(module.type === 'Module', 'expected Module type');
-      return module;
+      return {
+        type: 'resolved',
+        resolution: {type: 'sourceFile', filePath: modulePath},
+      };
     }
 
-    let packageName = toModuleName;
+    let packageName = moduleName;
     let packageJsonPath;
     while (packageName && packageName !== '.') {
       packageJsonPath = this._options.moduleMap.getPackage(
@@ -156,32 +155,28 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       packageName = path.dirname(packageName);
     }
 
-    if (packageJsonPath != null) {
-      // FIXME: `moduleCache.getModule` should return the directory path, not
-      // the `package.json` file path, because the directory is what's really
-      // representing the package.
-      const packageDirPath = path.dirname(packageJsonPath);
-      // FIXME: if we're trying to require the package main module (ie.
-      // packageName === toModuleName), don't do as if it could be a
-      // "FileOrDir", call directly the `resolvePackage` function! Otherwise we
-      // might actually be grabbing a completely unrelated file.
-      const potentialModulePath = path.join(
-        packageDirPath,
-        path.relative(packageName, toModuleName),
-      );
-      return this._loadAsFileOrDirOrThrow(
-        potentialModulePath,
-        fromModule,
-        toModuleName,
-        platform,
-      );
+    if (packageJsonPath == null) {
+      return failedFor();
     }
+    // FIXME: `moduleCache.getModule` should return the directory path, not
+    // the `package.json` file path, because the directory is what's really
+    // representing the package.
+    const packageDirPath = path.dirname(packageJsonPath);
 
-    throw new UnableToResolveError(
-      fromModule.path,
-      toModuleName,
-      'Unable to resolve dependency',
-    );
+    const pathInModule = moduleName.substring(packageName.length + 1);
+    const potentialModulePath = path.join(packageDirPath, pathInModule);
+
+    const context = {
+      ...this._options,
+      getPackageMainPath: this._getPackageMainPath,
+    };
+    const result = resolveFileOrDir(context, potentialModulePath, platform);
+    if (result.type === 'resolved') {
+      return result;
+    }
+    const {candidates} = result;
+    const opts = {moduleName, packageName, pathInModule, candidates};
+    throw new MissingFileInHastePackageError(opts);
   }
 
   _redirectRequire(fromModule: TModule, modulePath: string): string | false {
@@ -246,16 +241,12 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     // At that point we only have module names that
     // aren't relative paths nor absolute paths.
     if (allowHaste) {
-      try {
-        return this._resolveHasteDependency(
-          fromModule,
-          normalizePath(realModuleName),
-          platform,
-        );
-      } catch (error) {
-        if (!(error instanceof UnableToResolveError)) {
-          throw error;
-        }
+      const result = this._resolveHasteDependency(
+        normalizePath(realModuleName),
+        platform,
+      );
+      if (result.type === 'resolved') {
+        return this._getFileResolvedModule(result.resolution);
       }
     }
 
@@ -378,6 +369,30 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       toModuleName,
       "could not resolve `${ModuleResolver.EMPTY_MODULE}'",
     );
+  }
+}
+
+class MissingFileInHastePackageError extends Error {
+  candidates: FileAndDirCandidates;
+  moduleName: string;
+  packageName: string;
+  pathInModule: string;
+
+  constructor(opts: {|
+    +candidates: FileAndDirCandidates,
+    +moduleName: string,
+    +packageName: string,
+    +pathInModule: string,
+  |}) {
+    super(
+      `While resolving module \`${opts.moduleName}\`, ` +
+        `the Haste package \`${opts.packageName}\` was found. However the ` +
+        `module \`${opts.pathInModule}\` could not be found within ` +
+        `the package. Indeed, none of these files exist:\n\n` +
+        `  * \`${formatFileCandidates(opts.candidates.file)}\`\n` +
+        `  * \`${formatFileCandidates(opts.candidates.dir)}\``,
+    );
+    Object.assign(this, opts);
   }
 }
 
@@ -644,7 +659,7 @@ function resolveSourceFileForExt(
   if (context.doesFileExist(filePath)) {
     return filePath;
   }
-  context.candidateExts.push(filePath);
+  context.candidateExts.push(extension);
   return null;
 }
 
