@@ -125,60 +125,6 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     this._options = options;
   }
 
-  _resolveHasteDependency(
-    moduleName: string,
-    platform: string | null,
-  ): Result<FileResolution, void> {
-    const modulePath = this._options.moduleMap.getModule(
-      moduleName,
-      platform,
-      /* supportsNativePlatform */ true,
-    );
-    if (modulePath != null) {
-      return {
-        type: 'resolved',
-        resolution: {type: 'sourceFile', filePath: modulePath},
-      };
-    }
-
-    let packageName = moduleName;
-    let packageJsonPath;
-    while (packageName && packageName !== '.') {
-      packageJsonPath = this._options.moduleMap.getPackage(
-        packageName,
-        platform,
-        /* supportsNativePlatform */ true,
-      );
-      if (packageJsonPath != null) {
-        break;
-      }
-      packageName = path.dirname(packageName);
-    }
-
-    if (packageJsonPath == null) {
-      return failedFor();
-    }
-    // FIXME: `moduleCache.getModule` should return the directory path, not
-    // the `package.json` file path, because the directory is what's really
-    // representing the package.
-    const packageDirPath = path.dirname(packageJsonPath);
-
-    const pathInModule = moduleName.substring(packageName.length + 1);
-    const potentialModulePath = path.join(packageDirPath, pathInModule);
-
-    const context = {
-      ...this._options,
-      getPackageMainPath: this._getPackageMainPath,
-    };
-    const result = resolveFileOrDir(context, potentialModulePath, platform);
-    if (result.type === 'resolved') {
-      return result;
-    }
-    const {candidates} = result;
-    const opts = {moduleName, packageName, pathInModule, candidates};
-    throw new MissingFileInHastePackageError(opts);
-  }
-
   _redirectRequire(fromModule: TModule, modulePath: string): string | false {
     const pck = fromModule.getPackage();
     if (pck) {
@@ -241,7 +187,23 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     // At that point we only have module names that
     // aren't relative paths nor absolute paths.
     if (allowHaste) {
-      const result = this._resolveHasteDependency(
+      const result = resolveHasteName(
+        {
+          ...this._options,
+          resolveHasteModule: name =>
+            this._options.moduleMap.getModule(
+              name,
+              platform,
+              /* supportsNativePlatform */ true,
+            ),
+          resolveHastePackage: name =>
+            this._options.moduleMap.getPackage(
+              name,
+              platform,
+              /* supportsNativePlatform */ true,
+            ),
+          getPackageMainPath: this._getPackageMainPath,
+        },
         normalizePath(realModuleName),
         platform,
       );
@@ -370,6 +332,55 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       "could not resolve `${ModuleResolver.EMPTY_MODULE}'",
     );
   }
+}
+
+type HasteContext = FileOrDirContext & {
+  /**
+   * Given a name, this should return the full path to the file that provides
+   * a Haste module of that name. Ex. for `Foo` it may return `/smth/Foo.js`.
+   */
+  +resolveHasteModule: (name: string) => ?string,
+  /**
+   * Given a name, this should return the full path to the package manifest that
+   * provides a Haste package of that name. Ex. for `Foo` it may return
+   * `/smth/Foo/package.json`.
+   */
+  +resolveHastePackage: (name: string) => ?string,
+};
+
+/**
+ * Resolve a module as a Haste module or package. For example we might try to
+ * resolve `Foo`, that is provided by file `/smth/Foo.js`. Or, in the case of
+ * a Haste package, it could be `/smth/Foo/index.js`.
+ */
+function resolveHasteName(
+  context: HasteContext,
+  moduleName: string,
+  platform: string | null,
+): Result<FileResolution, void> {
+  const modulePath = context.resolveHasteModule(moduleName);
+  if (modulePath != null) {
+    return resolvedAs({type: 'sourceFile', filePath: modulePath});
+  }
+  let packageName = moduleName;
+  let packageJsonPath = context.resolveHastePackage(packageName);
+  while (packageJsonPath == null && packageName && packageName !== '.') {
+    packageName = path.dirname(packageName);
+    packageJsonPath = context.resolveHastePackage(packageName);
+  }
+  if (packageJsonPath == null) {
+    return failedFor();
+  }
+  const packageDirPath = path.dirname(packageJsonPath);
+  const pathInModule = moduleName.substring(packageName.length + 1);
+  const potentialModulePath = path.join(packageDirPath, pathInModule);
+  const result = resolveFileOrDir(context, potentialModulePath, platform);
+  if (result.type === 'resolved') {
+    return result;
+  }
+  const {candidates} = result;
+  const opts = {moduleName, packageName, pathInModule, candidates};
+  throw new MissingFileInHastePackageError(opts);
 }
 
 class MissingFileInHastePackageError extends Error {
