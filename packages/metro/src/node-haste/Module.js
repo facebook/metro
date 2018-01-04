@@ -140,9 +140,11 @@ class Module {
   }
 
   getName(): string {
-    const name = this._getHasteName();
-    if (name != null) {
-      return name;
+    if (this.isHaste()) {
+      const name = this._getHasteName();
+      if (name != null) {
+        return name;
+      }
     }
 
     const p = this.getPackage();
