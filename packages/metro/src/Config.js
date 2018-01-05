@@ -27,7 +27,7 @@ import type {TransformVariants} from './ModuleGraph/types.flow';
 import type {HasteImpl} from './node-haste/Module';
 import type {IncomingMessage, ServerResponse} from 'http';
 
-type Middleware = (IncomingMessage, ServerResponse, ?(?Error) => void) => void;
+type Middleware = (IncomingMessage, ServerResponse, ?() => mixed) => mixed;
 
 export type ConfigT = {
   assetRegistryPath: string,

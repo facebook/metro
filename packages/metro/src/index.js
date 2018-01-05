@@ -136,7 +136,6 @@ type CreateConnectMiddlewareOptions = {|
 exports.createConnectMiddleware = async function(
   options: CreateConnectMiddlewareOptions,
 ) {
-  // $FlowFixMe I don't know why Flow thinks there's an error here... runMetro IS async
   const metroServer = await runMetro({
     config: options.config,
     maxWorkers: options.maxWorkers,
@@ -150,10 +149,7 @@ exports.createConnectMiddleware = async function(
     : Config.DEFAULT;
 
   return {
-    middleware: normalizedConfig.enhanceMiddleware(
-      (req: IncomingMessage, res: ServerResponse, next: ?(?Error) => void) =>
-        metroServer.processRequest(req, res, next),
-    ),
+    middleware: normalizedConfig.enhanceMiddleware(metroServer.processRequest),
     end() {
       metroServer.end();
     },

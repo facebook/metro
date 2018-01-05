@@ -390,11 +390,11 @@ class Server {
     return JSON.stringify(Object.assign({}, options, ignoredParams));
   }
 
-  async processRequest(
+  processRequest = async (
     req: IncomingMessage,
     res: ServerResponse,
-    next?: () => mixed,
-  ) {
+    next: ?() => mixed,
+  ) => {
     const urlObj = url.parse(req.url, true);
     const {host} = req.headers;
     debug(`Handling request: ${host ? 'http://' + host : ''}${req.url}`);
@@ -421,7 +421,7 @@ class Server {
       res.writeHead(404);
       res.end();
     }
-  }
+  };
 
   _prepareDeltaBundler(
     req: IncomingMessage,
