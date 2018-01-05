@@ -68,7 +68,15 @@ async function traverseDependencies(
       added.add(path);
     }
     for (const path of change.deleted) {
-      deleted.add(path);
+      // If a path has been marked both as added and deleted, it means that this
+      // path is a dependency of a renamed file (or that dependency has been
+      // removed from one path but added back in a different path). In this case
+      // the addition and deletion "get cancelled".
+      if (added.has(path)) {
+        added.delete(path);
+      } else {
+        deleted.add(path);
+      }
     }
   }
 

@@ -178,6 +178,30 @@ describe('edge cases', () => {
     });
   });
 
+  it('should not try to remove wrong dependencies when renaming files', async () => {
+    const edges = new Map();
+    await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
+
+    // Rename /foo to /foo-renamed, but keeping all its dependencies.
+    const moduleFooRenamed = createModule({
+      path: '/foo-renamed',
+      name: 'foo-renamed',
+    });
+    mockedDependencyTree.set(entryModule.path, [moduleFooRenamed]);
+    mockedDependencyTree.set(moduleFooRenamed.path, [moduleBar, moduleBaz]);
+    mockedDependencies.add(moduleFooRenamed);
+    mockedDependencies.delete(moduleFoo);
+
+    // Call traverseDependencies with /foo, /qux and /baz, simulating that the
+    // user has modified the 3 files.
+    expect(
+      await traverseDependencies(['/bundle'], dependencyGraph, {}, edges),
+    ).toEqual({
+      added: new Set(['/foo-renamed']),
+      deleted: new Set(['/foo']),
+    });
+  });
+
   it('modify a file and delete it afterwards', async () => {
     const edges = new Map();
     await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
