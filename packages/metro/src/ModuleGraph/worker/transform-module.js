@@ -49,7 +49,6 @@ export type TransformOptions<ExtraOptions> = {|
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
 const defaultTransformOptions = {
   dev: false,
-  generateSourceMaps: true,
   hot: false,
   inlineRequires: false,
   minify: false,

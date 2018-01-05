@@ -43,7 +43,6 @@ type Options = {|
 type PublicBundleOptions = {
   +dev?: boolean,
   +entryFile: string,
-  +generateSourceMaps?: boolean,
   +inlineSourceMap?: boolean,
   +minify?: boolean,
   +platform?: string,
@@ -71,11 +70,6 @@ function assertPublicBundleOptions(bo: mixed): PublicBundleOptions {
   invariant(
     typeof entryFile === 'string',
     'bundle options must contain a string field `entryFile`',
-  );
-  invariant(
-    bo.generateSourceMaps === undefined ||
-      typeof bo.generateSourceMaps === 'boolean',
-    'bundle options field `generateSourceMaps` must be a boolean',
   );
   invariant(
     bo.inlineSourceMap === undefined || typeof bo.inlineSourceMap === 'boolean',
@@ -125,7 +119,6 @@ exports.getOrderedDependencyPaths = async function(
     +dev: boolean,
     +platform: string,
     +minify: boolean,
-    +generateSourceMaps: boolean,
   },
 ): Promise<Array<string>> {
   var server = createNonPersistentServer(options);

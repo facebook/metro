@@ -43,7 +43,6 @@ describe('DeltaCalculator', () => {
     entryFile: 'bundle',
     entryModuleOnly: false,
     excludeSource: false,
-    generateSourceMaps: false,
     hot: true,
     inlineSourceMap: true,
     isolateModuleIDs: false,
@@ -301,7 +300,6 @@ describe('DeltaCalculator', () => {
       expect(await deltaCalculator.getTransformerOptions()).toEqual({
         dev: true,
         enableBabelRCLookup: false,
-        generateSourceMaps: false,
         hot: true,
         inlineRequires: false,
         minify: false,
@@ -320,7 +318,6 @@ describe('DeltaCalculator', () => {
       expect(await deltaCalculator.getTransformerOptions()).toEqual({
         dev: true,
         enableBabelRCLookup: false,
-        generateSourceMaps: false,
         hot: true,
         inlineRequires: true,
         minify: false,
@@ -339,7 +336,6 @@ describe('DeltaCalculator', () => {
       expect(await deltaCalculator.getTransformerOptions()).toEqual({
         dev: true,
         enableBabelRCLookup: false,
-        generateSourceMaps: false,
         hot: true,
         inlineRequires: {blacklist: {'/bar': true, '/baz': true}},
         minify: false,

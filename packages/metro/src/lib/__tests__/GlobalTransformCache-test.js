@@ -45,7 +45,6 @@ describe('GlobalTransformCache', () => {
       storeResults: null,
     });
     const transformOptions = {
-      generateSourceMaps: false,
       dev: false,
       hot: false,
       inlineRequires: false,

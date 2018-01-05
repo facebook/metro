@@ -34,7 +34,6 @@ export type BundleOptions = {
   entryFile: string,
   +entryModuleOnly: boolean,
   +excludeSource: boolean,
-  +generateSourceMaps: boolean,
   +hot: boolean,
   +inlineSourceMap: boolean,
   +isolateModuleIDs: boolean,
@@ -109,7 +108,6 @@ export type OutputOptions = {
 
 export type RequestOptions = {|
   entryFile: string,
-  generateSourceMaps?: boolean,
   inlineSourceMap?: boolean,
   sourceMapUrl?: string,
   dev?: boolean,

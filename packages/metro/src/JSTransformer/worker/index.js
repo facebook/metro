@@ -62,7 +62,6 @@ export type Transformer<ExtraOptions: {} = {}> = {
 export type TransformOptionsStrict = {|
   +enableBabelRCLookup: boolean,
   +dev: boolean,
-  +generateSourceMaps: boolean,
   +hot: boolean,
   +inlineRequires: boolean,
   +minify: boolean,
@@ -73,7 +72,6 @@ export type TransformOptionsStrict = {|
 export type TransformOptions = {
   +enableBabelRCLookup?: boolean,
   +dev?: boolean,
-  +generateSourceMaps?: boolean,
   +hot?: boolean,
   +inlineRequires: boolean,
   +minify: boolean,

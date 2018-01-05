@@ -87,7 +87,6 @@ describe('transforming JS modules:', () => {
 
   const defaults = {
     dev: false,
-    generateSourceMaps: true,
     hot: false,
     inlineRequires: false,
     minify: false,

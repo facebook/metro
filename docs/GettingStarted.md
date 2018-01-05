@@ -104,7 +104,6 @@ Given a set of options that you would typically pass to a server, plus a set of 
 
 * `dev (boolean)`: optional boolean indicating if the bundle has to be built in development mode. Implies things like setting `__DEV__` to `true`. Defaults to `false`.
 * `entryFile (string)`: entry point for bundling the file.
-* `generateSourceMaps (boolean)`: whether source Maps should be generated or not. Defaults to `false`.
 * `inlineSourceMap (boolean)`: indicates whether the source map is provided inlined with the bundle (as a bas64 encoded URL), or in a separate file. When provided as a separate file, the URL where it will be found can be customized with `sourceMapUrl`. Defaults to `false`.
 * `minify (boolean)`: whether code should be minified. Defaults to `false`.
 * `platform (string)`: if a list of platforms is provided, a particular platform can be passed.

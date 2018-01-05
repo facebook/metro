@@ -161,7 +161,6 @@ class DeltaCalculator extends EventEmitter {
     const transformOptionsForBlacklist = {
       enableBabelRCLookup,
       dev: this._options.dev,
-      generateSourceMaps: this._options.generateSourceMaps,
       hot: this._options.hot,
       inlineRequires: false,
       minify: this._options.minify,

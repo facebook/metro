@@ -250,7 +250,6 @@ class Server {
     +dev: boolean,
     +platform: string,
     +minify: boolean,
-    +generateSourceMaps: boolean,
   }): Promise<Array<string>> {
     const bundleOptions = {
       ...Server.DEFAULT_BUNDLE_OPTIONS,
@@ -839,7 +838,6 @@ class Server {
         'entryModuleOnly',
         false,
       ),
-      generateSourceMaps: false,
       assetPlugins,
       onProgress: null,
       unbundle: false,
@@ -868,7 +866,6 @@ class Server {
     dev: true,
     entryModuleOnly: false,
     excludeSource: false,
-    generateSourceMaps: false,
     hot: false,
     inlineSourceMap: false,
     isolateModuleIDs: false,

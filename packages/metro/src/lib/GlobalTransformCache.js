@@ -440,7 +440,6 @@ class OptionsHasher {
   ): crypto$Hash {
     const {
       enableBabelRCLookup,
-      generateSourceMaps,
       dev,
       hot,
       inlineRequires,
@@ -461,7 +460,6 @@ class OptionsHasher {
     hash.update(
       new Buffer([
         +dev |
-          (+generateSourceMaps << 1) |
           (+hot << 2) |
           (+inlineRequires << 3) |
           (+enableBabelRCLookup << 4) |

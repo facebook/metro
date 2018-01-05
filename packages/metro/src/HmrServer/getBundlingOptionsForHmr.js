@@ -39,7 +39,6 @@ module.exports = function getBundlingOptionsForHmr(
     dev: true,
     entryModuleOnly: false,
     excludeSource: false,
-    generateSourceMaps: false,
     inlineSourceMap: false,
     isolateModuleIDs: false,
     onProgress: null,
