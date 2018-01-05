@@ -9,4 +9,4 @@ Uh oh, something went wrong? Use this guide to resolve issues with Metro.
 
 ### Still unresolved?
 
-See [Help](/jest/help.html).
+See [Help](/metro/help.html).
