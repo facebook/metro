@@ -250,6 +250,7 @@ exports.runBuild = async (options: RunBuildOptions) => {
 
   const outputOptions: OutputOptions = {
     bundleOutput: options.out.replace(/(\.js)?$/, '.js'),
+    sourcemapOutput: options.out.replace(/(\.js)?$/, '.map'),
     dev: options.dev,
     platform: options.platform || `web`,
   };
