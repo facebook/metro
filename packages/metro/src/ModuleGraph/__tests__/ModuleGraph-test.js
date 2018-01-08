@@ -35,7 +35,8 @@ describe('build setup', () => {
       file: {
         code:
           'var __DEV__=true,__BUNDLE_START_TIME__=' +
-          'this.nativePerformanceNow?nativePerformanceNow():Date.now();',
+          'this.nativePerformanceNow?nativePerformanceNow():Date.now(),' +
+          "process={env:{NODE_ENV:'development'}};",
         map: null,
         path: '',
         type: 'script',
@@ -48,7 +49,8 @@ describe('build setup', () => {
     const [prelude] = result.modules;
     expect(prelude.file.code).toEqual(
       'var __DEV__=false,__BUNDLE_START_TIME__=' +
-        'this.nativePerformanceNow?nativePerformanceNow():Date.now();',
+        'this.nativePerformanceNow?nativePerformanceNow():Date.now(),' +
+        "process={env:{NODE_ENV:'production'}};",
     );
   });
 

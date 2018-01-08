@@ -66,6 +66,7 @@ exports.createBuildSetup = (
 function prelude(optimize) {
   return virtualModule(
     `var __DEV__=${String(!optimize)},` +
-      '__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now();',
+      '__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now(),' +
+      `process={env:{NODE_ENV:'${optimize ? 'production' : 'development'}'}};`,
   );
 }
