@@ -1,4 +1,4 @@
-# Metro Bundler
+# Metro
 
 [![CircleCI Build Status](https://circleci.com/gh/facebook/metro.svg?style=shield)](https://circleci.com/gh/facebook/metro)
 [![npm version](https://badge.fury.io/js/metro.svg)](http://badge.fury.io/js/metro)
