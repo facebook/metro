@@ -59,6 +59,9 @@
       "packages/.*/build"
     ],
     "testEnvironment": "node",
+    "testPathIgnorePatterns": [
+      "metro-buck"
+    ],
     "timers": "fake",
     "setupFiles": [
       "<rootDir>/scripts/setupJest.js"
