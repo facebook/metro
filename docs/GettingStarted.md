@@ -6,13 +6,13 @@ title: Getting Started
 Install Metro using `npm`:
 
 ```
-npm install --save-dev metro
+npm install --save-dev metro metro-core
 ```
 
 Or via [`yarn`](https://yarnpkg.com/en/package/jest):
 
 ```
-yarn add --dev metro
+yarn add --dev metro metro-core
 ```
 
 ## Running `metro`
@@ -36,7 +36,7 @@ Given a set of options (same ones as the `build` method), a `metro-server` will 
 const http = require('http');
 const metroBundler = require('metro');
 const TerminalReporter = require('metro/src/lib/TerminalReporter');
-const Terminal = require('metro/src/lib/Terminal');
+const Terminal = require('metro-core/src/Terminal');
 
 const metroBundlerServer = metroBundler.createServer({
   assetRegistryPath: __dirname,
