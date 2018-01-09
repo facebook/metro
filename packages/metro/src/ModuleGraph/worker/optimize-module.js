@@ -90,7 +90,7 @@ function optimize(transformed: TransformResult, file, options) {
 
   const min = minify.withSourceMap(
     gen.code,
-    inputMap && mergeSourceMaps(file, inputMap, gen.map),
+    inputMap && gen.map && mergeSourceMaps(file, inputMap, gen.map),
     file,
   );
   return {code: min.code, map: min.map, dependencies};

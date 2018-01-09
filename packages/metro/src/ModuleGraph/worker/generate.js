@@ -35,7 +35,9 @@ function generate(
     sourceCode,
   );
 
-  delete generated.map.sourcesContent;
+  if (generated.map) {
+    delete generated.map.sourcesContent;
+  }
   return generated;
 }
 

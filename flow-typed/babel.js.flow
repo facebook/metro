@@ -98,6 +98,12 @@ type TransformResult = {
   ignored: boolean,
   map: ?_SourceMap,
 };
+// https://github.com/babel/babel/blob/master/packages/babel-generator/src/buffer.js#L42
+type GeneratorResult = {
+  code: string,
+  map: ?_SourceMap,
+  rawMappings: ?Array<RawMapping>,
+};
 type VisitFn = <State>(path: Object, state: State) => any;
 
 declare module 'babel-core' {
@@ -132,10 +138,12 @@ type RawMapping = {
   source?: string,
 };
 
+// https://github.com/babel/babel/tree/master/packages/babel-generator
 declare module 'babel-generator' {
   declare type RawMapping = RawMapping;
-  declare module.exports: (
+  declare module.exports: {default: (
     ast: Ast,
     options?: GeneratorOptions,
-  ) => TransformResult & {rawMappings: ?Array<RawMapping>};
+    code?: string | {[string]: string},
+  ) => GeneratorResult};
 }
