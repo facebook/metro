@@ -1,0 +1,40 @@
+{
+  "localized-strings": {
+    "next": "Próximo",
+    "previous": "Anterior",
+    "tagline": "🚇 O pacote de JavaScript para React Native",
+    "api": "API",
+    "bundling": "Empacotamento",
+    "cli": "Opções da CLI do Metro",
+    "configuration": "Configurando Metro",
+    "getting-started": "Começando",
+    "troubleshooting": "Solução de problemas",
+    "Docs": "Docs",
+    "API": "API",
+    "Help": "Ajuda",
+    "Blog": "Blog",
+    "GitHub": "GitHub",
+    "Introduction": "Introdução",
+    "API Reference": "API Referência",
+    "Guides": "Guia"
+  },
+  "pages-strings": {
+    "Find what you're looking for in our detailed documentation and guides.\\n\\n- Learn how to [get started](/metro/docs/en/getting-started.html) with Metro.\\n- [Troubleshoot](/metro/docs/en/troubleshooting.html) problems with Metro.\\n- Learn how to [configure Metro](/metro/docs/en/configuration.html).\\n- Look at the full [API Reference](/metro/docs/en/api.html).|no description given": "Encontre o que procura na nossa documentação detalhada.\\n\\n- Saiba como [começar](/metro/docs/en/getting-started.html) com Metro.\\n- [Solucionar](/metro/docs/en/troubleshooting.html) problemas com Metro.\\n- Saiba como [configurar Metro](/metro/docs/en/configuration.html).\\n- veja a [API referência](/metro/docs/en/api.html) completa.",
+    "Browse the docs|no description given": "Navegue pelos documentos",
+    "Ask questions and find answers from other Metro users like you.\\n\\n- Join the [#metro](https://discordapp.com/channels/102860784329052160/103622435865104384) channel on [Reactiflux](http://www.reactiflux.com/), a Discord community.\\n- Many members of the community use Stack Overflow. Read through the [existing questions](https://stackoverflow.com/questions/tagged/metrojs) tagged with **metrojs** or [ask your own](https://stackoverflow.com/questions/ask)!|no description given": "Faça perguntas e encontre respostas de outros usuários do Metro como você.\\n\\n- Junte-se ao canal [#metro](https://discordapp.com/channels/102860784329052160/103622435865104384) na [Reactiflux](http://www.reactiflux.com/), uma comunidade Discord.\\n-muitos membros da comunidade usam Stack Overflow. Leia as [questões existentes](https://stackoverflow.com/questions/tagged/metrojs) etiquetadas com **metrojs** ou [pergunte o seu próprio](https://stackoverflow.com/questions/ask)!",
+    "Join the community|no description given": "Join the community",
+    "Find out what's new with Metro.\\n\\n- Follow [Metro](https://twitter.com/MetroBundler) on Twitter.\\n- Subscribe to the [Metro blog](/metro/blog/).|no description given": "Descubra o que há de novo com o Metro.\\n\\n- Siga [Metro](https://twitter.com/MetroBundler) no Twitter.\\n- Assine o [blog do Metro](/metro/blog/).",
+    "Stay up to date|no description given": "Mantenha-se atualizado",
+    "Need help?|no description given": "Precisa de Ajuda?",
+    "Metro Bundler is worked on full-time by Facebook's JavaScript Foundation team. Team members are often around and available for questions.|no description given": "Metro Bundler é trabalhado em tempo integral pela equipe Facebook's JavaScript Foundation. Os membros da equipe freqüentemente estão disponíveis para perguntas.",
+    "Get Started|no description given": "Começando",
+    "Learn More|no description given": "Saber Mais",
+    "Metro aims for sub-second reload cycles, fast startup and quick bundling speeds.|no description given": "O Metro visa ciclos de recarga de sub segundos, inicialização e agrupamento rápido.",
+    "Fast|no description given": "Rápido",
+    "Works with thousands of modules in a single application.|no description given": "Funciona com milhares de módulos em um único aplicativo.",
+    "Scalable|no description given": "Escalável",
+    "Supports every React Native project out of the box.|no description given": "Suporta todos os projetos React Native.",
+    "Integrated|no description given": "Integrado",
+    "Help Translate|recruit community translators for your project": "Ajudar Traduzir"
+  }
+}
