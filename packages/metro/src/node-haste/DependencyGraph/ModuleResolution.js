@@ -107,7 +107,7 @@ type FileCandidates =
 
 type FileAndDirCandidates = {|+dir: FileCandidates, +file: FileCandidates|};
 
-type Result<TResolution, TCandidates> =
+type Result<+TResolution, +TCandidates> =
   | {|+type: 'resolved', +resolution: TResolution|}
   | {|+type: 'failed', +candidates: TCandidates|};
 
@@ -115,6 +115,15 @@ type AssetFileResolution = $ReadOnlyArray<string>;
 type FileResolution =
   | {|+type: 'sourceFile', +filePath: string|}
   | {|+type: 'assetFiles', +filePaths: AssetFileResolution|};
+
+type Resolution = FileResolution | {|+type: 'empty'|};
+type Candidates =
+  | {|+type: 'modulePath', +which: FileAndDirCandidates|}
+  | {|
+      +type: 'moduleName',
+      +dirPaths: $ReadOnlyArray<string>,
+      +extraPaths: $ReadOnlyArray<string>,
+    |};
 
 class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   _options: Options<TModule, TPackage>;
@@ -133,28 +142,28 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     return modulePath;
   }
 
-  _resolveFileOrDir(
+  _resolveModulePath(
     fromModule: TModule,
     toModuleName: string,
     platform: string | null,
-  ): TModule {
-    const potentialModulePath = isAbsolutePath(toModuleName)
+  ): Result<Resolution, Candidates> {
+    const modulePath = isAbsolutePath(toModuleName)
       ? resolveWindowsPath(toModuleName)
       : path.join(path.dirname(fromModule.path), toModuleName);
 
-    const realModuleName = this._redirectRequire(
-      fromModule,
-      potentialModulePath,
-    );
-    if (realModuleName === false) {
-      return this._getEmptyModule(fromModule, toModuleName);
+    const redirectedPath = this._redirectRequire(fromModule, modulePath);
+    if (redirectedPath === false) {
+      return resolvedAs({type: 'empty'});
     }
-    return this._loadAsFileOrDirOrThrow(
-      realModuleName,
-      fromModule,
-      toModuleName,
-      platform,
-    );
+    const context = {
+      ...this._options,
+      getPackageMainPath: this._getPackageMainPath,
+    };
+    const result = resolveFileOrDir(context, redirectedPath, platform);
+    if (result.type === 'resolved') {
+      return result;
+    }
+    return failedFor({type: 'modulePath', which: result.candidates});
   }
 
   resolveDependency(
@@ -163,13 +172,64 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     allowHaste: boolean,
     platform: string | null,
   ): TModule {
+    const result = this._resolveDependency(
+      fromModule,
+      toModuleName,
+      allowHaste,
+      platform,
+    );
+    if (result.type === 'resolved') {
+      return this._getFileResolvedModule(result.resolution);
+    }
+    if (result.candidates.type === 'modulePath') {
+      const {which} = result.candidates;
+      throw new UnableToResolveError(
+        fromModule.path,
+        toModuleName,
+        `The module \`${toModuleName}\` could not be found ` +
+          `from \`${fromModule.path}\`. ` +
+          `Indeed, none of these files exist:\n\n` +
+          `  * \`${formatFileCandidates(which.file)}\`\n` +
+          `  * \`${formatFileCandidates(which.dir)}\``,
+      );
+    }
+
+    const {dirPaths, extraPaths} = result.candidates;
+    const displayDirPaths = dirPaths
+      .filter(dirPath => this._options.dirExists(dirPath))
+      .concat(extraPaths);
+
+    const hint = displayDirPaths.length ? ' or in these directories:' : '';
+    throw new UnableToResolveError(
+      fromModule.path,
+      toModuleName,
+      `Module does not exist in the module map${hint}\n` +
+        displayDirPaths
+          .map(dirPath => `  ${path.dirname(dirPath)}\n`)
+          .join(', ') +
+        '\n' +
+        `This might be related to https://github.com/facebook/react-native/issues/4968\n` +
+        `To resolve try the following:\n` +
+        `  1. Clear watchman watches: \`watchman watch-del-all\`.\n` +
+        `  2. Delete the \`node_modules\` folder: \`rm -rf node_modules && npm install\`.\n` +
+        '  3. Reset Metro Bundler cache: `rm -rf $TMPDIR/react-*` or `npm start -- --reset-cache`.' +
+        '  4. Remove haste cache: `rm -rf $TMPDIR/haste-map-react-native-packager-*`.',
+    );
+  }
+
+  _resolveDependency(
+    fromModule: TModule,
+    toModuleName: string,
+    allowHaste: boolean,
+    platform: string | null,
+  ): Result<Resolution, Candidates> {
     if (isRelativeImport(toModuleName) || isAbsolutePath(toModuleName)) {
-      return this._resolveFileOrDir(fromModule, toModuleName, platform);
+      return this._resolveModulePath(fromModule, toModuleName, platform);
     }
     const realModuleName = this._redirectRequire(fromModule, toModuleName);
     // exclude
     if (realModuleName === false) {
-      return this._getEmptyModule(fromModule, toModuleName);
+      return resolvedAs({type: 'empty'});
     }
 
     if (isRelativeImport(realModuleName) || isAbsolutePath(realModuleName)) {
@@ -181,7 +241,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         fromModule.path.indexOf(path.sep, fromModuleParentIdx),
       );
       const absPath = path.join(fromModuleDir, realModuleName);
-      return this._resolveFileOrDir(fromModule, absPath, platform);
+      return this._resolveModulePath(fromModule, absPath, platform);
     }
 
     // At that point we only have module names that
@@ -208,65 +268,43 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         platform,
       );
       if (result.type === 'resolved') {
-        return this._getFileResolvedModule(result.resolution);
+        return result;
       }
     }
 
-    const searchQueue = [];
+    const dirPaths = [];
     for (
       let currDir = path.dirname(fromModule.path);
       currDir !== '.' && currDir !== path.parse(fromModule.path).root;
       currDir = path.dirname(currDir)
     ) {
       const searchPath = path.join(currDir, 'node_modules');
-      searchQueue.push(path.join(searchPath, realModuleName));
+      dirPaths.push(path.join(searchPath, realModuleName));
     }
 
-    const extraSearchQueue = [];
+    const extraPaths = [];
     if (this._options.extraNodeModules) {
       const {extraNodeModules} = this._options;
       const bits = path.normalize(toModuleName).split(path.sep);
       const packageName = bits[0];
       if (extraNodeModules[packageName]) {
         bits[0] = extraNodeModules[packageName];
-        extraSearchQueue.push(path.join.apply(path, bits));
+        extraPaths.push(path.join.apply(path, bits));
       }
     }
 
-    const fullSearchQueue = searchQueue.concat(extraSearchQueue);
-    for (let i = 0; i < fullSearchQueue.length; ++i) {
+    const allDirPaths = dirPaths.concat(extraPaths);
+    for (let i = 0; i < allDirPaths.length; ++i) {
       const context = {
         ...this._options,
         getPackageMainPath: this._getPackageMainPath,
       };
-      const result = resolveFileOrDir(context, fullSearchQueue[i], platform);
-      // Eventually we should aggregate the candidates so that we can
-      // report them with more accuracy in the error below.
+      const result = resolveFileOrDir(context, allDirPaths[i], platform);
       if (result.type === 'resolved') {
-        return this._getFileResolvedModule(result.resolution);
+        return result;
       }
     }
-
-    const displaySearchQueue = searchQueue
-      .filter(dirPath => this._options.dirExists(dirPath))
-      .concat(extraSearchQueue);
-
-    const hint = displaySearchQueue.length ? ' or in these directories:' : '';
-    throw new UnableToResolveError(
-      fromModule.path,
-      toModuleName,
-      `Module does not exist in the module map${hint}\n` +
-        displaySearchQueue
-          .map(searchPath => `  ${path.dirname(searchPath)}\n`)
-          .join(', ') +
-        '\n' +
-        `This might be related to https://github.com/facebook/react-native/issues/4968\n` +
-        `To resolve try the following:\n` +
-        `  1. Clear watchman watches: \`watchman watch-del-all\`.\n` +
-        `  2. Delete the \`node_modules\` folder: \`rm -rf node_modules && npm install\`.\n` +
-        '  3. Reset Metro Bundler cache: `rm -rf $TMPDIR/react-*` or `npm start -- --reset-cache`.' +
-        '  4. Remove haste cache: `rm -rf $TMPDIR/haste-map-react-native-packager-*`.',
-    );
+    return failedFor({type: 'moduleName', dirPaths, extraPaths});
   }
 
   _getPackageMainPath = (packageJsonPath: string): string => {
@@ -275,38 +313,10 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   };
 
   /**
-   * Eventually we'd like to remove all the exception being throw in the middle
-   * of the resolution algorithm, instead keeping track of tentatives in a
-   * specific data structure, and building a proper error at the top-level.
-   * This function is meant to be a temporary proxy for _loadAsFile until
-   * the callsites switch to that tracking structure.
-   */
-  _loadAsFileOrDirOrThrow(
-    potentialModulePath: string,
-    fromModule: TModule,
-    toModuleName: string,
-    platform: string | null,
-  ): TModule {
-    const context = {
-      ...this._options,
-      getPackageMainPath: this._getPackageMainPath,
-    };
-    const result = resolveFileOrDir(context, potentialModulePath, platform);
-    if (result.type === 'resolved') {
-      return this._getFileResolvedModule(result.resolution);
-    }
-    throw new UnableToResolveError(
-      fromModule.path,
-      toModuleName,
-      `could not resolve \`${potentialModulePath}' as a file nor as a folder`,
-    );
-  }
-
-  /**
    * FIXME: get rid of this function and of the reliance on `TModule`
    * altogether, return strongly typed resolutions at the top-level instead.
    */
-  _getFileResolvedModule(resolution: FileResolution): TModule {
+  _getFileResolvedModule(resolution: Resolution): TModule {
     switch (resolution.type) {
       case 'sourceFile':
         return this._options.moduleCache.getModule(resolution.filePath);
@@ -316,21 +326,15 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         const arbitrary = getArrayLowestItem(resolution.filePaths);
         invariant(arbitrary != null, 'invalid asset resolution');
         return this._options.moduleCache.getAssetModule(arbitrary);
+      case 'empty':
+        const {moduleCache} = this._options;
+        const module = moduleCache.getModule(ModuleResolver.EMPTY_MODULE);
+        invariant(module != null, 'empty module is not available');
+        return module;
+      default:
+        (resolution.type: empty);
+        throw new Error('invalid type');
     }
-    throw new Error('switch is not exhaustive');
-  }
-
-  _getEmptyModule(fromModule: TModule, toModuleName: string): TModule {
-    const {moduleCache} = this._options;
-    const module = moduleCache.getModule(ModuleResolver.EMPTY_MODULE);
-    if (module != null) {
-      return module;
-    }
-    throw new UnableToResolveError(
-      fromModule.path,
-      toModuleName,
-      "could not resolve `${ModuleResolver.EMPTY_MODULE}'",
-    );
   }
 }
 
