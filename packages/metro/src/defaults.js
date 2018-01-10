@@ -45,7 +45,7 @@ exports.assetExts = [
 
 exports.sourceExts = ['js', 'json'];
 
-exports.moduleSystem = require.resolve('./Resolver/polyfills/require.js');
+exports.moduleSystem = require.resolve('./lib/polyfills/require.js');
 
 exports.platforms = ['ios', 'android', 'windows', 'web'];
 

@@ -23,7 +23,7 @@ const path = require('path');
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 30 * 1000;
 
 const INPUT_PATH = path.resolve(__dirname, '../basic_bundle');
-const POLYFILLS_PATH = path.resolve(__dirname, '../../Resolver/polyfills');
+const POLYFILLS_PATH = path.resolve(__dirname, '../../lib/polyfills');
 const ASSET_REGISTRY_PATH = path.resolve(
   __dirname,
   '../basic_bundle/AssetRegistry',

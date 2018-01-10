@@ -529,8 +529,8 @@ class DeltaTransformer extends EventEmitter {
 
   _getModuleSystemDependencies() {
     const prelude = this._bundleOptions.dev
-      ? path.resolve(__dirname, '../Resolver/polyfills/prelude_dev.js')
-      : path.resolve(__dirname, '../Resolver/polyfills/prelude.js');
+      ? path.resolve(__dirname, '../lib/polyfills/prelude_dev.js')
+      : path.resolve(__dirname, '../lib/polyfills/prelude.js');
 
     const moduleSystem = defaults.moduleSystem;
 
