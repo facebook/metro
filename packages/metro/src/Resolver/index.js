@@ -14,16 +14,7 @@
 
 const DependencyGraph = require('../node-haste/DependencyGraph');
 
-const {
-  compactMapping,
-  fromRawMappings,
-  toRawMappings,
-} = require('metro-source-map');
-
-import type {PostMinifyProcess} from '../Bundler';
-import typeof {minify as MinifyCode} from '../JSTransformer/worker';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
-import type {CompactRawMappings} from '../lib/SourceMap';
 import type {
   TransformCache,
   GetTransformCacheKey,
@@ -41,8 +32,6 @@ type Options = {|
   +globalTransformCache: ?GlobalTransformCache,
   +hasteImpl?: ?HasteImpl,
   +maxWorkers: number,
-  +minifyCode: MinifyCode,
-  +postMinifyProcess: PostMinifyProcess,
   +platforms: Set<string>,
   +polyfillModuleNames?: Array<string>,
   +projectRoots: $ReadOnlyArray<string>,
@@ -57,12 +46,8 @@ type Options = {|
 
 class Resolver {
   _depGraph: DependencyGraph;
-  _minifyCode: MinifyCode;
-  _postMinifyProcess: PostMinifyProcess;
 
   constructor(opts: Options, depGraph: DependencyGraph) {
-    this._minifyCode = opts.minifyCode;
-    this._postMinifyProcess = opts.postMinifyProcess;
     this._depGraph = depGraph;
   }
 
@@ -90,25 +75,6 @@ class Resolver {
       watch: opts.watch,
     });
     return new Resolver(opts, depGraph);
-  }
-
-  async minifyModule(
-    path: string,
-    code: string,
-    map: CompactRawMappings,
-  ): Promise<{code: string, map: CompactRawMappings}> {
-    const sourceMap = fromRawMappings([{code, source: code, map, path}]).toMap(
-      undefined,
-      {},
-    );
-
-    const minified = await this._minifyCode(path, code, sourceMap);
-    const result = await this._postMinifyProcess({...minified});
-
-    return {
-      code: result.code,
-      map: result.map ? toRawMappings(result.map).map(compactMapping) : [],
-    };
   }
 
   getDependencyGraph(): DependencyGraph {

@@ -20,9 +20,16 @@ const defaults = require('../defaults');
 const fs = require('fs');
 const getTransformCacheKeyFn = require('../lib/getTransformCacheKeyFn');
 
+const {
+  compactMapping,
+  fromRawMappings,
+  toRawMappings,
+} = require('metro-source-map');
+
 import type {PostProcessModules} from '../DeltaBundler';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
+import type {CompactRawMappings} from '../lib/SourceMap';
 import type {MappingsMap, SourceMap} from '../lib/SourceMap';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
@@ -133,8 +140,6 @@ class Bundler {
       globalTransformCache: opts.globalTransformCache,
       hasteImpl: opts.hasteImpl,
       maxWorkers: opts.maxWorkers,
-      minifyCode: this._transformer.minify.bind(this._transformer),
-      postMinifyProcess: this._opts.postMinifyProcess,
       platforms: new Set(opts.platforms),
       polyfillModuleNames: opts.polyfillModuleNames,
       projectRoots: opts.projectRoots,
@@ -245,6 +250,25 @@ class Bundler {
 
   getResolver(): Promise<Resolver> {
     return this._resolverPromise;
+  }
+
+  async minifyModule(
+    path: string,
+    code: string,
+    map: CompactRawMappings,
+  ): Promise<{code: string, map: CompactRawMappings}> {
+    const sourceMap = fromRawMappings([{code, source: code, map, path}]).toMap(
+      undefined,
+      {},
+    );
+
+    const minified = await this._transformer.minify(path, code, sourceMap);
+    const result = await this._opts.postMinifyProcess({...minified});
+
+    return {
+      code: result.code,
+      map: result.map ? toRawMappings(result.map).map(compactMapping) : [],
+    };
   }
 }
 

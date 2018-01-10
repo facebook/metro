@@ -451,11 +451,7 @@ class DeltaTransformer extends EventEmitter {
     }
 
     const {code, map} = transformOptions.minify
-      ? await this._resolver.minifyModule(
-          module.path,
-          wrappedCode,
-          metadata.map,
-        )
+      ? await this._bundler.minifyModule(module.path, wrappedCode, metadata.map)
       : {code: wrappedCode, map: metadata.map};
 
     const id = this._getModuleId(module.path);

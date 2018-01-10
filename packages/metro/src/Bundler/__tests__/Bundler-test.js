@@ -42,6 +42,7 @@ var commonOptions = {
   enableBabelRCLookup: true,
   extraNodeModules: {},
   platforms: defaults.platforms,
+  postMinifyProcess: e => e,
   resetCache: false,
   sourceExts: defaults.sourceExts,
   transformModulePath: '/path/to/transformer.js',
@@ -104,5 +105,27 @@ describe('Bundler', function() {
       platforms: ['android', 'vr'],
     });
     expect(b._opts.platforms).toEqual(['android', 'vr']);
+  });
+
+  it('should minify code using the Transformer', async () => {
+    const code = 'arbitrary(code)';
+    const id = 'arbitrary.js';
+
+    const minifiedCode = 'minified(code)';
+    const minifiedMap = {
+      version: 3,
+      file: ['minified'],
+      sources: [],
+      mappings: '',
+    };
+
+    bundler._transformer.minify = jest
+      .fn()
+      .mockReturnValue(Promise.resolve({code: minifiedCode, map: minifiedMap}));
+
+    const result = await bundler.minifyModule(id, code, []);
+
+    expect(result.code).toEqual(minifiedCode);
+    expect(result.map).toEqual([]);
   });
 });
