@@ -17,16 +17,41 @@ const SourceMap = require('source-map');
 
 import type {SourceMap as MappingsMap} from 'babel-core';
 import type {RawMapping as BabelRawMapping} from 'babel-generator';
+import type {RawMapping as CompactRawMapping} from 'source-map';
 
-type RawMappings = Array<BabelRawMapping>;
+export type {SourceMap as MappingsMap} from 'babel-core';
+export type CompactRawMappings = Array<CompactRawMapping>;
+export type RawMappings = Array<BabelRawMapping>;
+
 type GeneratedCodeMapping = [number, number];
 type SourceMapping = [number, number, number, number];
 type SourceMappingWithName = [number, number, number, number, string];
+
+type FBExtensions = {
+  x_facebook_offsets: Array<number>,
+  x_metro_module_paths: Array<string>,
+};
 
 export type RawMapping =
   | SourceMappingWithName
   | SourceMapping
   | GeneratedCodeMapping;
+
+export type IndexMapSection = {
+  map: MetroSourceMap,
+  offset: {line: number, column: number},
+};
+
+export type IndexMap = {
+  file?: string,
+  mappings?: void, // avoids SourceMap being a disjoint union
+  sections: Array<IndexMapSection>,
+  version: number,
+};
+
+export type FBIndexMap = IndexMap & FBExtensions;
+export type MetroSourceMap = IndexMap | MappingsMap;
+export type FBSourceMap = FBIndexMap | (MappingsMap & FBExtensions);
 
 /**
  * Creates a source map from modules with "raw mappings", i.e. an array of

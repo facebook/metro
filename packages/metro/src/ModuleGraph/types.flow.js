@@ -11,9 +11,14 @@
  */
 'use strict';
 
-import type {FBSourceMap, MappingsMap, SourceMap} from '../lib/SourceMap';
 import type {Ast} from 'babel-core';
 import type {Console} from 'console';
+import type {
+  FBSourceMap,
+  MappingsMap,
+  MetroSourceMap as SourceMap,
+} from 'metro-source-map';
+
 export type {Transformer} from '../JSTransformer/worker';
 
 export type BuildResult = {|

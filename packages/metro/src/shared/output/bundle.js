@@ -19,8 +19,8 @@ const meta = require('./meta');
 const relativizeSourceMap = require('../../lib/relativizeSourceMap');
 const writeFile = require('./writeFile');
 
-import type {SourceMap} from '../../lib/SourceMap';
 import type {OutputOptions, RequestOptions} from '../types.flow';
+import type {MetroSourceMap as SourceMap} from 'metro-source-map';
 
 function buildBundle(
   packagerClient: Server,

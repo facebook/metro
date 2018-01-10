@@ -14,15 +14,13 @@
 
 const path = require('path');
 
-const {isMappingsMap} = require('./SourceMap');
-
-import type {SourceMap} from './SourceMap';
+import type {MetroSourceMap as SourceMap} from 'metro-source-map';
 
 function relativizeSourceMapInternal(
   sourceMap: SourceMap,
   sourcesRoot: string,
 ) {
-  if (!isMappingsMap(sourceMap)) {
+  if (sourceMap.mappings === undefined) {
     for (let i = 0; i < sourceMap.sections.length; i++) {
       relativizeSourceMapInternal(sourceMap.sections[i].map, sourcesRoot);
     }

@@ -26,7 +26,6 @@ import type {
   Options as WorkerOptions,
 } from '../JSTransformer/worker';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
-import type {CompactRawMappings} from '../lib/SourceMap';
 import type {
   TransformCache,
   GetTransformCacheKey,
@@ -36,6 +35,7 @@ import type {Reporter} from '../lib/reporting';
 import type DependencyGraphHelpers from './DependencyGraph/DependencyGraphHelpers';
 import type ModuleCache from './ModuleCache';
 import type {LocalPath} from './lib/toLocalPath';
+import type {CompactRawMappings} from 'metro-source-map';
 
 export type ReadResult = {
   +code: string,

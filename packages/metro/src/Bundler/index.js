@@ -29,11 +29,14 @@ const {
 import type {PostProcessModules} from '../DeltaBundler';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
-import type {CompactRawMappings} from '../lib/SourceMap';
-import type {MappingsMap, SourceMap} from '../lib/SourceMap';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
 import type {HasteImpl} from '../node-haste/Module';
+import type {
+  CompactRawMappings,
+  MappingsMap,
+  MetroSourceMap as SourceMap,
+} from 'metro-source-map';
 
 export type BundlingOptions = {|
   +preloadedModules: ?{[string]: true} | false,

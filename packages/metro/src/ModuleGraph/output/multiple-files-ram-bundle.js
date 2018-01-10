@@ -21,7 +21,7 @@ const path = require('path');
 
 const {concat, getModuleCode, partition, toModuleTransport} = require('./util');
 
-import type {FBIndexMap} from '../../lib/SourceMap.js';
+import type {FBIndexMap} from 'metro-source-map';
 import type {OutputFn} from '../types.flow';
 
 function asMultipleFilesRamBundle({

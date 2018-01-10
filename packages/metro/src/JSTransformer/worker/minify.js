@@ -14,7 +14,7 @@
 
 const uglify = require('uglify-es');
 
-import type {MappingsMap} from '../../lib/SourceMap';
+import type {MappingsMap} from 'metro-source-map';
 
 export type ResultWithMap = {
   code: string,

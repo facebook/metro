@@ -19,7 +19,7 @@ const Worker = require('jest-worker').default;
 
 import type {Options, TransformedCode} from './worker';
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
-import type {MappingsMap} from '../lib/SourceMap';
+import type {MappingsMap} from 'metro-source-map';
 import type {ResultWithMap} from './worker/minify';
 
 import typeof {minify as Minify, transform as Transform} from './worker';

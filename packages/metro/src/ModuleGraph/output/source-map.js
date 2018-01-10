@@ -12,7 +12,7 @@
 
 'use strict';
 
-import type {FBSourceMap, IndexMapSection, IndexMap} from '../../lib/SourceMap';
+import type {FBSourceMap, IndexMap, IndexMapSection} from 'metro-source-map';
 
 export type {FBSourceMap};
 

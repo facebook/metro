@@ -27,7 +27,7 @@ const path = require('path');
 const {compactMapping} = require('metro-source-map');
 
 import type {LogEntry} from 'metro-core/src/Logger';
-import type {CompactRawMappings, MappingsMap} from '../../lib/SourceMap';
+import type {CompactRawMappings, MappingsMap} from 'metro-source-map';
 import type {LocalPath} from '../../node-haste/lib/toLocalPath';
 import type {ResultWithMap} from './minify';
 import type {Ast, Plugins as BabelPlugins} from 'babel-core';

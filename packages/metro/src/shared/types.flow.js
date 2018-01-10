@@ -18,11 +18,10 @@ import type {
 } from '../Bundler';
 import type {PostProcessModules} from '../DeltaBundler';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
-import type {SourceMap} from '../lib/SourceMap';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
 import type {HasteImpl} from '../node-haste/Module';
-import type {RawMapping} from 'metro-source-map';
+import type {MetroSourceMap as SourceMap, RawMapping} from 'metro-source-map';
 
 type BundleType = 'bundle' | 'delta' | 'map' | 'ram' | 'cli' | 'hmr' | 'todo';
 type SourceMapOrMappings = SourceMap | Array<RawMapping>;

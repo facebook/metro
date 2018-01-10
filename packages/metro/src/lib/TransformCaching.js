@@ -22,9 +22,9 @@ const rimraf = require('rimraf');
 const writeFileAtomicSync = require('write-file-atomic').sync;
 
 import type {Options as WorkerOptions} from '../JSTransformer/worker';
-import type {CompactRawMappings} from './SourceMap';
 import type {Reporter} from './reporting';
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
+import type {CompactRawMappings} from 'metro-source-map';
 
 type CacheFilePaths = {transformedCode: string, metadata: string};
 export type GetTransformCacheKey = (options: {}) => string;

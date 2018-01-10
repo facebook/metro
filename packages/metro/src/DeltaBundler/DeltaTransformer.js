@@ -25,11 +25,11 @@ const {EventEmitter} = require('events');
 
 import type Bundler from '../Bundler';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
-import type {CompactRawMappings} from '../lib/SourceMap';
 import type DependencyGraph from '../node-haste/DependencyGraph';
 import type Module from '../node-haste/Module';
 import type {Options as BundleOptions, MainOptions} from './';
 import type {DependencyEdges} from './traverseDependencies';
+import type {CompactRawMappings} from 'metro-source-map';
 
 export type DeltaEntryType =
   | 'asset'

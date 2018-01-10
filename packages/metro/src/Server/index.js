@@ -40,8 +40,9 @@ import type {
   PostMinifyProcess,
   PostProcessBundleSourcemap,
 } from '../Bundler';
+import type {MetroSourceMap as SourceMap} from 'metro-source-map';
 import type {TransformCache} from '../lib/TransformCaching';
-import type {SourceMap, Symbolicate} from './symbolicate';
+import type {Symbolicate} from './symbolicate';
 import type {AssetData} from '../Assets';
 import type {RamBundleInfo} from '../DeltaBundler/Serializers';
 import type {PostProcessModules} from '../DeltaBundler';

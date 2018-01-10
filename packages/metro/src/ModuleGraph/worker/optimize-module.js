@@ -23,7 +23,7 @@ const optimizeDependencies = require('./optimizeDependencies');
 const sourceMap = require('source-map');
 
 import type {TransformedSourceFile, TransformResult} from '../types.flow';
-import type {MappingsMap, SourceMap} from '../../lib/SourceMap';
+import type {MappingsMap, MetroSourceMap as SourceMap} from 'metro-source-map';
 import type {PostMinifyProcess} from '../../Bundler/index.js';
 
 export type OptimizationOptions = {|

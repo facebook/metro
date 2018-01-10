@@ -22,8 +22,8 @@ const {
 } = require('../../shared/output/unbundle/as-indexed-file');
 const {concat, getModuleCode, partition, toModuleTransport} = require('./util');
 
-import type {FBIndexMap} from '../../lib/SourceMap.js';
 import type {OutputFn} from '../types.flow';
+import type {FBIndexMap} from 'metro-source-map';
 
 function asIndexedRamBundle({
   filename,

@@ -21,7 +21,6 @@ const {createRamBundleGroups} = require('../Bundler/util');
 const {fromRawMappings} = require('metro-source-map');
 
 import type {AssetData} from '../Assets';
-import type {MappingsMap} from '../lib/SourceMap';
 import type {BundleOptions} from '../shared/types.flow';
 import type {ModuleTransportLike} from '../shared/types.flow';
 import type DeltaBundler, {Options as BuildOptions} from './';
@@ -29,6 +28,7 @@ import type DeltaTransformer, {
   DeltaEntry,
   DeltaTransformResponse,
 } from './DeltaTransformer';
+import type {MappingsMap} from 'metro-source-map';
 
 export type Options = BundleOptions & {
   deltaBundleId: ?string,

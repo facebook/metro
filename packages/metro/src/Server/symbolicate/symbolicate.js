@@ -20,8 +20,7 @@ const xpipe = require('xpipe');
 const {LazyPromise, LockingPromise} = require('./util');
 const {fork} = require('child_process');
 
-export type {SourceMap};
-import type {SourceMap} from '../../lib/SourceMap';
+import type {MetroSourceMap as SourceMap} from 'metro-source-map';
 
 export type Stack = Array<{file: string, lineNumber: number, column: number}>;
 export type Symbolicate = (
