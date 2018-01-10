@@ -16,7 +16,9 @@ const DeltaCalculator = require('./DeltaCalculator');
 
 const addParamsToDefineCall = require('../lib/addParamsToDefineCall');
 const createModuleIdFactory = require('../lib/createModuleIdFactory');
+const defaults = require('../defaults');
 const nullthrows = require('fbjs/lib/nullthrows');
+const path = require('path');
 const removeInlineRequiresBlacklistFromOptions = require('../lib/removeInlineRequiresBlacklistFromOptions');
 
 const {EventEmitter} = require('events');
@@ -328,21 +330,17 @@ class DeltaTransformer extends EventEmitter {
       platform: this._bundleOptions.platform,
     }).concat(this._polyfillModuleNames);
 
-    // The module system dependencies are scripts that need to be included at
-    // the very beginning of the bundle (before any polyfill).
-    const moduleSystemDeps = this._resolver.getModuleSystemDependencies({
-      dev: this._bundleOptions.dev,
-    });
-
-    const modules = moduleSystemDeps.concat(
-      polyfillModuleNames.map((polyfillModuleName, idx) =>
+    // Build the module system dependencies (scripts that need to
+    // be included at the very beginning of the bundle) + any polifyll.
+    const modules = this._getModuleSystemDependencies()
+      .concat(polyfillModuleNames)
+      .map(polyfillModuleName =>
         this._resolver.getDependencyGraph().createPolyfill({
           file: polyfillModuleName,
           id: polyfillModuleName,
           dependencies: [],
         }),
-      ),
-    );
+      );
 
     return await this._transformModules(
       modules,
@@ -534,6 +532,16 @@ class DeltaTransformer extends EventEmitter {
   _onFileChange = () => {
     this.emit('change');
   };
+
+  _getModuleSystemDependencies() {
+    const prelude = this._bundleOptions.dev
+      ? path.resolve(__dirname, '../Resolver/polyfills/prelude_dev.js')
+      : path.resolve(__dirname, '../Resolver/polyfills/prelude.js');
+
+    const moduleSystem = defaults.moduleSystem;
+
+    return [prelude, moduleSystem];
+  }
 }
 
 module.exports = DeltaTransformer;

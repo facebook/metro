@@ -14,26 +14,22 @@
 
 const DependencyGraph = require('../node-haste/DependencyGraph');
 
-const defaults = require('../defaults');
-
 const {
   compactMapping,
   fromRawMappings,
   toRawMappings,
 } = require('metro-source-map');
-const pathJoin = require('path').join;
 
-import type Module, {HasteImpl, TransformCode} from '../node-haste/Module';
-import type {CompactRawMappings} from '../lib/SourceMap';
 import type {PostMinifyProcess} from '../Bundler';
-import type {Reporter} from '../lib/reporting';
+import typeof {minify as MinifyCode} from '../JSTransformer/worker';
+import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
+import type {CompactRawMappings} from '../lib/SourceMap';
 import type {
   TransformCache,
   GetTransformCacheKey,
 } from '../lib/TransformCaching';
-import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
-
-import typeof {minify as MinifyCode} from '../JSTransformer/worker';
+import type {Reporter} from '../lib/reporting';
+import type {HasteImpl, TransformCode} from '../node-haste/Module';
 
 type Options = {|
   +assetExts: Array<string>,
@@ -61,16 +57,12 @@ type Options = {|
 
 class Resolver {
   _depGraph: DependencyGraph;
-  _getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>;
   _minifyCode: MinifyCode;
   _postMinifyProcess: PostMinifyProcess;
-  _polyfillModuleNames: Array<string>;
 
   constructor(opts: Options, depGraph: DependencyGraph) {
-    this._getPolyfills = opts.getPolyfills;
     this._minifyCode = opts.minifyCode;
     this._postMinifyProcess = opts.postMinifyProcess;
-    this._polyfillModuleNames = opts.polyfillModuleNames || [];
     this._depGraph = depGraph;
   }
 
@@ -98,22 +90,6 @@ class Resolver {
       watch: opts.watch,
     });
     return new Resolver(opts, depGraph);
-  }
-
-  getModuleSystemDependencies({dev = true}: {dev?: boolean}): Array<Module> {
-    const prelude = dev
-      ? pathJoin(__dirname, 'polyfills/prelude_dev.js')
-      : pathJoin(__dirname, 'polyfills/prelude.js');
-
-    const moduleSystem = defaults.moduleSystem;
-
-    return [prelude, moduleSystem].map(moduleName =>
-      this._depGraph.createPolyfill({
-        file: moduleName,
-        id: moduleName,
-        dependencies: [],
-      }),
-    );
   }
 
   async minifyModule(
