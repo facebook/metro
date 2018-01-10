@@ -12,27 +12,21 @@
 
 'use strict';
 
-const assert = require('assert');
-const crypto = require('crypto');
-const debug = require('debug')('Metro:Bundler');
-const fs = require('fs');
-const Transformer = require('../JSTransformer');
 const Resolver = require('../Resolver');
-const path = require('path');
+const Transformer = require('../JSTransformer');
+
+const assert = require('assert');
 const defaults = require('../defaults');
-const createModuleIdFactory = require('../lib/createModuleIdFactory');
+const fs = require('fs');
+const getTransformCacheKeyFn = require('../lib/getTransformCacheKeyFn');
 
-const {sep: pathSeparator} = require('path');
-
-const VERSION = require('../../package.json').version;
-
-import type {HasteImpl} from '../node-haste/Module';
-import type {MappingsMap, SourceMap} from '../lib/SourceMap';
-import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
-import type {Reporter} from '../lib/reporting';
-import type {TransformCache} from '../lib/TransformCaching';
-import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {PostProcessModules} from '../DeltaBundler';
+import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
+import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
+import type {MappingsMap, SourceMap} from '../lib/SourceMap';
+import type {TransformCache} from '../lib/TransformCaching';
+import type {Reporter} from '../lib/reporting';
+import type {HasteImpl} from '../node-haste/Module';
 
 export type BundlingOptions = {|
   +preloadedModules: ?{[string]: true} | false,
@@ -103,7 +97,6 @@ export type Options = {|
 
 class Bundler {
   _opts: Options;
-  _getModuleId: (path: string) => number;
   _transformer: Transformer;
   _resolverPromise: Promise<Resolver>;
   _projectRoots: $ReadOnlyArray<string>;
@@ -114,44 +107,6 @@ class Bundler {
 
     opts.projectRoots.forEach(verifyRootExists);
 
-    const transformModuleStr = fs.readFileSync(opts.transformModulePath);
-    const transformModuleHash = crypto
-      .createHash('sha1')
-      .update(transformModuleStr)
-      .digest('hex');
-
-    const stableProjectRoots = opts.projectRoots.map(p => {
-      return path.relative(path.join(__dirname, '../../../..'), p);
-    });
-
-    const cacheKeyParts = [
-      'metro-cache',
-      VERSION,
-      opts.cacheVersion,
-      stableProjectRoots
-        .join(',')
-        .split(pathSeparator)
-        .join('-'),
-      transformModuleHash,
-    ];
-
-    this._getModuleId = createModuleIdFactory();
-
-    let getCacheKey = (options: mixed) => '';
-    if (opts.transformModulePath) {
-      /* $FlowFixMe: dynamic requires prevent static typing :'(  */
-      const transformer = require(opts.transformModulePath);
-      if (typeof transformer.getCacheKey !== 'undefined') {
-        getCacheKey = transformer.getCacheKey;
-      }
-    }
-
-    const transformCacheKey = crypto
-      .createHash('sha1')
-      .update(cacheKeyParts.join('$'))
-      .digest('hex');
-
-    debug(`Using transform cache key "${transformCacheKey}"`);
     this._transformer = new Transformer(
       opts.transformModulePath,
       opts.maxWorkers,
@@ -164,17 +119,17 @@ class Bundler {
       opts.workerPath || undefined,
     );
 
-    const getTransformCacheKey = options => {
-      return transformCacheKey + getCacheKey(options);
-    };
-
     this._resolverPromise = Resolver.load({
       assetExts: opts.assetExts,
       assetRegistryPath: opts.assetRegistryPath,
       blacklistRE: opts.blacklistRE,
       extraNodeModules: opts.extraNodeModules,
       getPolyfills: opts.getPolyfills,
-      getTransformCacheKey,
+      getTransformCacheKey: getTransformCacheKeyFn({
+        cacheVersion: opts.cacheVersion,
+        projectRoots: opts.projectRoots,
+        transformModulePath: opts.transformModulePath,
+      }),
       globalTransformCache: opts.globalTransformCache,
       hasteImpl: opts.hasteImpl,
       maxWorkers: opts.maxWorkers,
