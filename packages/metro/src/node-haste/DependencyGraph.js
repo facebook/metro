@@ -45,26 +45,24 @@ import type Package from './Package';
 import type {HasteFS} from './types';
 
 type Options = {|
-  +assetDependencies: Array<string>,
   +assetExts: Array<string>,
+  +assetRegistryPath: string,
+  +blacklistRE?: RegExp,
   +extraNodeModules: ?{},
-  +forceNodeFilesystemAPI: boolean,
+  +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   +getTransformCacheKey: GetTransformCacheKey,
   +globalTransformCache: ?GlobalTransformCache,
-  +hasteImpl: ?HasteImpl,
-  +ignorePattern: RegExp,
+  +hasteImpl?: ?HasteImpl,
   +maxWorkers: number,
   +platforms: Set<string>,
-  +preferNativePlatform: boolean,
+  +polyfillModuleNames?: Array<string>,
+  +projectRoots: $ReadOnlyArray<string>,
   +providesModuleNodeModules: Array<string>,
   +reporter: Reporter,
-  +resetCache: ?boolean,
   +resetCache: boolean,
-  +roots: $ReadOnlyArray<string>,
   +sourceExts: Array<string>,
   +transformCache: TransformCache,
   +transformCode: TransformCode,
-  +useWatchman: boolean,
   +watch: boolean,
 |};
 
@@ -106,11 +104,14 @@ class DependencyGraph extends EventEmitter {
     this._createModuleResolver();
   }
 
-  static _createHaste(opts: Options): JestHasteMap {
+  static _createHaste(
+    opts: Options,
+    useWatchman?: boolean = true,
+  ): JestHasteMap {
     return new JestHasteMap({
       extensions: opts.sourceExts.concat(opts.assetExts),
-      forceNodeFilesystemAPI: opts.forceNodeFilesystemAPI,
-      ignorePattern: opts.ignorePattern,
+      forceNodeFilesystemAPI: !useWatchman,
+      ignorePattern: opts.blacklistRE || / ^/,
       maxWorkers: opts.maxWorkers,
       mocksPattern: '',
       name: 'metro-' + JEST_HASTE_MAP_CACHE_BREAKER,
@@ -118,19 +119,24 @@ class DependencyGraph extends EventEmitter {
       providesModuleNodeModules: opts.providesModuleNodeModules,
       resetCache: opts.resetCache,
       retainAllFiles: true,
-      roots: opts.roots,
-      useWatchman: opts.useWatchman,
+      roots: opts.projectRoots,
+      useWatchman,
       watch: opts.watch,
     });
   }
 
-  static async load(opts: Options): Promise<DependencyGraph> {
+  static _getJestHasteMapOptions(opts: Options) {}
+
+  static async load(
+    opts: Options,
+    useWatchman?: boolean = true,
+  ): Promise<DependencyGraph> {
     const initializingMetroLogEntry = log(
       createActionStartEntry('Initializing Metro'),
     );
 
     opts.reporter.update({type: 'dep_graph_loading'});
-    const haste = DependencyGraph._createHaste(opts);
+    const haste = DependencyGraph._createHaste(opts, useWatchman);
     const {hasteFS, moduleMap} = await haste.build();
 
     log(createActionEndEntry(initializingMetroLogEntry));
@@ -183,7 +189,7 @@ class DependencyGraph extends EventEmitter {
       isAssetFile: filePath => this._helpers.isAssetFile(filePath),
       moduleCache: this._moduleCache,
       moduleMap: this._moduleMap,
-      preferNativePlatform: this._opts.preferNativePlatform,
+      preferNativePlatform: true,
       resolveAsset: (dirPath, assetName, platform) =>
         this._assetResolutionCache.resolve(dirPath, assetName, platform),
       sourceExts: this._opts.sourceExts,
@@ -194,7 +200,7 @@ class DependencyGraph extends EventEmitter {
     const {_opts} = this;
     return new ModuleCache(
       {
-        assetDependencies: _opts.assetDependencies,
+        assetDependencies: [_opts.assetRegistryPath],
         depGraphHelpers: this._helpers,
         getClosestPackage: this._getClosestPackage.bind(this),
         getTransformCacheKey: _opts.getTransformCacheKey,
@@ -203,7 +209,7 @@ class DependencyGraph extends EventEmitter {
         resetCache: _opts.resetCache,
         transformCache: _opts.transformCache,
         reporter: _opts.reporter,
-        roots: _opts.roots,
+        roots: _opts.projectRoots,
         transformCode: _opts.transformCode,
       },
       _opts.platforms,
@@ -274,8 +280,8 @@ class DependencyGraph extends EventEmitter {
       return path.resolve(filePath);
     }
 
-    for (let i = 0; i < this._opts.roots.length; i++) {
-      const root = this._opts.roots[i];
+    for (let i = 0; i < this._opts.projectRoots.length; i++) {
+      const root = this._opts.projectRoots[i];
       const potentialAbsPath = path.join(root, filePath);
       if (this._hasteFS.exists(potentialAbsPath)) {
         return path.resolve(potentialAbsPath);
@@ -298,7 +304,7 @@ class DependencyGraph extends EventEmitter {
     throw new NotFoundError(
       'Cannot find entry file %s in any of the roots: %j',
       filePath,
-      this._opts.roots,
+      this._opts.projectRoots,
     );
   }
 

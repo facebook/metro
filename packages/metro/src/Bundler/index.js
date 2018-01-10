@@ -12,7 +12,7 @@
 
 'use strict';
 
-const Resolver = require('../Resolver');
+const DependencyGraph = require('../node-haste/DependencyGraph');
 const Transformer = require('../JSTransformer');
 
 const assert = require('assert');
@@ -105,7 +105,7 @@ export type Options = {|
 class Bundler {
   _opts: Options;
   _transformer: Transformer;
-  _resolverPromise: Promise<Resolver>;
+  _depGraphPromise: Promise<DependencyGraph>;
   _projectRoots: $ReadOnlyArray<string>;
   _getTransformOptions: void | GetTransformOptions;
 
@@ -126,7 +126,7 @@ class Bundler {
       opts.workerPath || undefined,
     );
 
-    this._resolverPromise = Resolver.load({
+    this._depGraphPromise = DependencyGraph.load({
       assetExts: opts.assetExts,
       assetRegistryPath: opts.assetRegistryPath,
       blacklistRE: opts.blacklistRE,
@@ -172,11 +172,8 @@ class Bundler {
 
   async end() {
     this._transformer.kill();
-    await this._resolverPromise.then(resolver =>
-      resolver
-        .getDependencyGraph()
-        .getWatcher()
-        .end(),
+    await this._depGraphPromise.then(dependencyGraph =>
+      dependencyGraph.getWatcher().end(),
     );
   }
 
@@ -248,8 +245,8 @@ class Bundler {
     };
   }
 
-  getResolver(): Promise<Resolver> {
-    return this._resolverPromise;
+  getDependencyGraph(): Promise<DependencyGraph> {
+    return this._depGraphPromise;
   }
 
   async minifyModule(

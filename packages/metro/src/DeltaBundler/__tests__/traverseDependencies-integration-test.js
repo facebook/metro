@@ -103,12 +103,10 @@ describe('traverseDependencies', function() {
     emptyTransformOptions = {transformer: {transform: {}}};
     defaults = {
       assetExts: ['png', 'jpg'],
-      forceNodeFilesystemAPI: true,
+      // This pattern is not expected to match anything.
+      blacklistRE: /.^/,
       providesModuleNodeModules: ['haste-fbjs', 'react-haste', 'react-native'],
       platforms: new Set(['ios', 'android']),
-      useWatchman: false,
-      // This pattern is not expected to match anything.
-      ignorePattern: /.^/,
       maxWorkers: 1,
       resetCache: true,
       transformCache: require('TransformCaching').mocked(),
@@ -164,7 +162,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -219,7 +217,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -261,7 +259,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -305,7 +303,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -353,7 +351,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -397,7 +395,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -446,7 +444,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -509,7 +507,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -568,7 +566,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -613,7 +611,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -658,7 +656,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -711,7 +709,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -757,7 +755,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -798,7 +796,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -840,7 +838,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -879,7 +877,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -922,7 +920,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -959,7 +957,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -987,7 +985,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
 
       // FIXME: This is broken, jest-haste-map does not fatal on modules with
       // the same name, because not fataling was required for supporting some
@@ -1022,7 +1020,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         try {
           await getOrderedDependenciesAsJSON(dgraph, '/root/index.js');
@@ -1060,7 +1058,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -1113,7 +1111,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -1202,7 +1200,7 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, roots: [root]};
+          const opts = {...defaults, projectRoots: [root]};
           await processDgraph(opts, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
@@ -1263,7 +1261,7 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, roots: [root]};
+          const opts = {...defaults, projectRoots: [root]};
           await processDgraph(opts, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
@@ -1322,7 +1320,11 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, assetExts: ['png', 'jpg'], roots: [root]};
+          const opts = {
+            ...defaults,
+            assetExts: ['png', 'jpg'],
+            projectRoots: [root],
+          };
           await processDgraph(opts, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
@@ -1379,7 +1381,11 @@ describe('traverseDependencies', function() {
           },
         });
 
-        const opts = {...defaults, assetExts: ['png', 'jpg'], roots: [root]};
+        const opts = {
+          ...defaults,
+          assetExts: ['png', 'jpg'],
+          projectRoots: [root],
+        };
         await processDgraph(opts, async dgraph => {
           const deps = await getOrderedDependenciesAsJSON(
             dgraph,
@@ -1439,7 +1445,11 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, assetExts: ['png', 'jpg'], roots: [root]};
+          const opts = {
+            ...defaults,
+            assetExts: ['png', 'jpg'],
+            projectRoots: [root],
+          };
           await processDgraph(opts, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
@@ -1513,7 +1523,7 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, roots: [root]};
+          const opts = {...defaults, projectRoots: [root]};
           await processDgraph(opts, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
@@ -1608,7 +1618,7 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, roots: [root]};
+          const opts = {...defaults, projectRoots: [root]};
           await processDgraph(opts, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
@@ -1682,7 +1692,7 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, roots: [root]};
+          const opts = {...defaults, projectRoots: [root]};
           await processDgraph(opts, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
@@ -1763,7 +1773,7 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, roots: [root]};
+          const opts = {...defaults, projectRoots: [root]};
           await processDgraph(opts, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
@@ -1834,7 +1844,7 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, roots: [root]};
+          const opts = {...defaults, projectRoots: [root]};
           await processDgraph(opts, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
@@ -1901,7 +1911,7 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, roots: [root]};
+          const opts = {...defaults, projectRoots: [root]};
           await processDgraph(opts, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
@@ -1980,7 +1990,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -2028,7 +2038,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -2135,7 +2145,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -2204,7 +2214,7 @@ describe('traverseDependencies', function() {
 
       const opts = {
         ...defaults,
-        roots: [root],
+        projectRoots: [root],
         extraNodeModules: {
           bar: root + '/provides-bar',
         },
@@ -2252,7 +2262,7 @@ describe('traverseDependencies', function() {
 
       const opts = {
         ...defaults,
-        roots: [root],
+        projectRoots: [root],
         extraNodeModules: {
           bar: root + '/provides-bar',
         },
@@ -2295,7 +2305,7 @@ describe('traverseDependencies', function() {
 
       const opts = {
         ...defaults,
-        roots: [root],
+        projectRoots: [root],
         extraNodeModules: {
           bar: root + '/provides-bar',
         },
@@ -2359,7 +2369,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -2406,7 +2416,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -2455,7 +2465,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -2549,7 +2559,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -2617,7 +2627,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -2690,7 +2700,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -2773,7 +2783,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -2845,7 +2855,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -2974,7 +2984,7 @@ describe('traverseDependencies', function() {
       };
       setMockFileSystem(filesystem);
 
-      const opts = {...defaults, roots: [root, otherRoot]};
+      const opts = {...defaults, projectRoots: [root, otherRoot]};
       await processDgraph(opts, async dgraph => {
         try {
           await getOrderedDependenciesAsJSON(dgraph, '/root/index.js');
@@ -3070,7 +3080,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -3117,7 +3127,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -3170,7 +3180,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -3227,7 +3237,7 @@ describe('traverseDependencies', function() {
       const opts = {
         ...defaults,
         platforms: new Set(['ios', 'android', 'web']),
-        roots: [root],
+        projectRoots: [root],
       };
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
@@ -3269,7 +3279,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -3324,7 +3334,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -3377,7 +3387,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -3464,7 +3474,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -3532,7 +3542,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -3605,7 +3615,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -3688,7 +3698,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -3760,7 +3770,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -3889,7 +3899,7 @@ describe('traverseDependencies', function() {
       };
       setMockFileSystem(filesystem);
 
-      const opts = {...defaults, roots: [root, otherRoot]};
+      const opts = {...defaults, projectRoots: [root, otherRoot]};
       const entryPath = 'C:\\root\\index.js';
       await processDgraph(opts, async dgraph => {
         try {
@@ -3984,7 +3994,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -4031,7 +4041,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -4084,7 +4094,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -4138,7 +4148,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -4179,7 +4189,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -4234,7 +4244,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -4316,7 +4326,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
@@ -4372,7 +4382,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
@@ -4428,7 +4438,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
@@ -4475,7 +4485,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
@@ -4544,7 +4554,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, assetExts: ['png'], roots: [root]};
+      const opts = {...defaults, assetExts: ['png'], projectRoots: [root]};
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         try {
@@ -4603,7 +4613,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
@@ -4660,7 +4670,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
@@ -4732,7 +4742,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
@@ -4816,7 +4826,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
@@ -4873,7 +4883,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
@@ -4900,7 +4910,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
@@ -4960,7 +4970,11 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root], sourceExts: ['jsx', 'coffee']};
+      const opts = {
+        ...defaults,
+        projectRoots: [root],
+        sourceExts: ['jsx', 'coffee'],
+      };
       await processDgraph(opts, async dgraph => {
         const entryPath = '/root/index.jsx';
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
@@ -4993,7 +5007,11 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root], sourceExts: ['jsx', 'coffee']};
+      const opts = {
+        ...defaults,
+        projectRoots: [root],
+        sourceExts: ['jsx', 'coffee'],
+      };
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
@@ -5028,7 +5046,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, roots: [root]};
+      const opts = {...defaults, projectRoots: [root]};
       await processDgraph(opts, async dgraph => {
         try {
           await getOrderedDependenciesAsJSON(dgraph, '/root/index.jsx');
@@ -5082,10 +5100,13 @@ describe('traverseDependencies', function() {
         },
       });
       const DependencyGraph = require('../../node-haste/DependencyGraph');
-      return DependencyGraph.load({
-        ...defaults,
-        roots: ['/root'],
-      }).then(dg => {
+      return DependencyGraph.load(
+        {
+          ...defaults,
+          projectRoots: ['/root'],
+        },
+        false /* since we're mocking the filesystem, we cannot use watchman */,
+      ).then(dg => {
         dependencyGraph = dg;
       });
     });
@@ -5130,7 +5151,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, assetDependencies, roots: ['/root']};
+      const opts = {...defaults, assetDependencies, projectRoots: ['/root']};
       await processDgraph(opts, async dgraph => {
         const {dependencies} = await dgraph.getDependencies({
           entryPath: '/root/index.js',
@@ -5170,10 +5191,13 @@ describe('traverseDependencies', function() {
           'f.js': 'require("./c");', // circular dependency
         },
       });
-      dependencyGraph = DependencyGraph.load({
-        ...defaults,
-        roots: ['/root'],
-      });
+      dependencyGraph = DependencyGraph.load(
+        {
+          ...defaults,
+          projectRoots: ['/root'],
+        },
+        false /* since we're mocking the filesystem, we cannot use watchman */,
+      );
       moduleReadDeferreds = {};
       callDeferreds = [defer(), defer()]; // [a.js, b.js]
 
@@ -5276,10 +5300,13 @@ describe('traverseDependencies', function() {
       });
 
       DependencyGraph = require('../../node-haste/DependencyGraph');
-      dependencyGraph = await DependencyGraph.load({
-        ...defaults,
-        roots: ['/root'],
-      });
+      dependencyGraph = await DependencyGraph.load(
+        {
+          ...defaults,
+          projectRoots: ['/root'],
+        },
+        false /* since we're mocking the filesystem, we cannot use watchman */,
+      );
     });
 
     afterEach(() => {
@@ -5305,7 +5332,10 @@ describe('traverseDependencies', function() {
    * (regardless if the test passes or fails).
    */
   async function processDgraphFor(DependencyGraph, options, processor) {
-    const dgraph = await DependencyGraph.load(options);
+    const dgraph = await DependencyGraph.load(
+      options,
+      false /* since we're mocking the filesystem, we cannot use watchman */,
+    );
     try {
       await processor(dgraph);
     } finally {

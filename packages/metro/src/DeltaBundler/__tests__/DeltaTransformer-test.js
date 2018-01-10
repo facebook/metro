@@ -16,6 +16,7 @@ jest
   .mock('assert')
   .mock('progress')
   .mock('../DeltaCalculator')
+  .mock('../../node-haste/DependencyGraph')
   .mock('../../JSTransformer')
   .mock('/root/to/something.js', () => ({}), {virtual: true})
   .mock('/path/to/transformer.js', () => ({}), {virtual: true});
@@ -23,8 +24,8 @@ jest
 const fs = require('fs');
 
 const Bundler = require('../../Bundler');
-const Resolver = require('../../Resolver');
 const DeltaTransformer = require('../DeltaTransformer');
+const DependencyGraph = require('../../node-haste/DependencyGraph');
 
 const defaults = require('../../defaults');
 
@@ -48,9 +49,9 @@ const bundlerOptions = {
 describe('DeltaTransformer', () => {
   let bundler;
   beforeEach(() => {
-    Resolver.load = jest
+    DependencyGraph.load = jest
       .fn()
-      .mockImplementation(opts => Promise.resolve(new Resolver(opts)));
+      .mockImplementation(opts => Promise.resolve(new DependencyGraph(opts)));
 
     fs.__setMockFilesystem({
       path: {to: {'transformer.js': ''}},

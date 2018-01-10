@@ -22,12 +22,10 @@ jest
   .mock('progress')
   .mock('../../node-haste/DependencyGraph')
   .mock('../../JSTransformer')
-  .mock('../../Resolver')
   .mock('metro-core')
   .mock('/path/to/transformer.js', () => ({}), {virtual: true});
 
 var Bundler = require('../');
-var Resolver = require('../../Resolver');
 var defaults = require('../../defaults');
 var sizeOf = require('image-size');
 var fs = require('fs');
@@ -61,10 +59,6 @@ describe('Bundler', function() {
     os.tmpDir.mockReturnValue(path.join(__dirname));
 
     projectRoots = ['/root'];
-
-    Resolver.load = jest
-      .fn()
-      .mockImplementation(opts => Promise.resolve(new Resolver(opts)));
 
     fs.__setMockFilesystem({
       path: {to: {'transformer.js': ''}},

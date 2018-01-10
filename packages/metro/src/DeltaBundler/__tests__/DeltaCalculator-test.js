@@ -13,7 +13,6 @@
 'use strict';
 
 jest.mock('../../Bundler');
-jest.mock('../../Resolver');
 jest.mock('../traverseDependencies');
 
 const Bundler = require('../../Bundler');

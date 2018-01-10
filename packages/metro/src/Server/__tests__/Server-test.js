@@ -109,12 +109,10 @@ describe('processRequest', () => {
     );
 
     Bundler.prototype.invalidateFile = invalidatorFunc;
-    Bundler.prototype.getResolver = jest.fn().mockReturnValue(
+    Bundler.prototype.getDependencyGraph = jest.fn().mockReturnValue(
       Promise.resolve({
-        getDependencyGraph: jest.fn().mockReturnValue({
-          getHasteMap: jest.fn().mockReturnValue({on: jest.fn()}),
-          load: jest.fn(() => Promise.resolve()),
-        }),
+        getHasteMap: jest.fn().mockReturnValue({on: jest.fn()}),
+        load: jest.fn(() => Promise.resolve()),
       }),
     );
 

@@ -169,9 +169,8 @@ class Server {
     this._bundler = new Bundler(bundlerOpts);
 
     // changes to the haste map can affect resolution of files in the bundle
-    this._bundler.getResolver().then(resolver => {
-      resolver
-        .getDependencyGraph()
+    this._bundler.getDependencyGraph().then(dependencyGraph => {
+      dependencyGraph
         .getWatcher()
         .on('change', ({eventsQueue}) =>
           eventsQueue.forEach(processFileChange),

@@ -25,8 +25,8 @@ const {EventEmitter} = require('events');
 
 import type Bundler from '../Bundler';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
-import type Resolver from '../Resolver';
 import type {CompactRawMappings} from '../lib/SourceMap';
+import type DependencyGraph from '../node-haste/DependencyGraph';
 import type Module from '../node-haste/Module';
 import type {Options as BundleOptions, MainOptions} from './';
 import type {DependencyEdges} from './traverseDependencies';
@@ -78,7 +78,7 @@ const globalCreateModuleId = createModuleIdFactory();
  */
 class DeltaTransformer extends EventEmitter {
   _bundler: Bundler;
-  _resolver: Resolver;
+  _dependencyGraph: DependencyGraph;
   _getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>;
   _polyfillModuleNames: $ReadOnlyArray<string>;
   _getModuleId: (path: string) => number;
@@ -88,7 +88,7 @@ class DeltaTransformer extends EventEmitter {
 
   constructor(
     bundler: Bundler,
-    resolver: Resolver,
+    dependencyGraph: DependencyGraph,
     deltaCalculator: DeltaCalculator,
     options: MainOptions,
     bundleOptions: BundleOptions,
@@ -96,7 +96,7 @@ class DeltaTransformer extends EventEmitter {
     super();
 
     this._bundler = bundler;
-    this._resolver = resolver;
+    this._dependencyGraph = dependencyGraph;
     this._deltaCalculator = deltaCalculator;
     this._getPolyfills = options.getPolyfills;
     this._polyfillModuleNames = options.polyfillModuleNames;
@@ -121,17 +121,17 @@ class DeltaTransformer extends EventEmitter {
     options: MainOptions,
     bundleOptions: BundleOptions,
   ): Promise<DeltaTransformer> {
-    const resolver = await bundler.getResolver();
+    const dependencyGraph = await bundler.getDependencyGraph();
 
     const deltaCalculator = new DeltaCalculator(
       bundler,
-      resolver.getDependencyGraph(),
+      dependencyGraph,
       bundleOptions,
     );
 
     return new DeltaTransformer(
       bundler,
-      resolver,
+      dependencyGraph,
       deltaCalculator,
       options,
       bundleOptions,
@@ -335,7 +335,7 @@ class DeltaTransformer extends EventEmitter {
     const modules = this._getModuleSystemDependencies()
       .concat(polyfillModuleNames)
       .map(polyfillModuleName =>
-        this._resolver.getDependencyGraph().createPolyfill({
+        this._dependencyGraph.createPolyfill({
           file: polyfillModuleName,
           id: polyfillModuleName,
           dependencies: [],
@@ -350,12 +350,10 @@ class DeltaTransformer extends EventEmitter {
   }
 
   async _getAppend(dependencyEdges: DependencyEdges): Promise<DeltaEntries> {
-    const dependencyGraph = this._resolver.getDependencyGraph();
-
     // Get the absolute path of the entry file, in order to be able to get the
     // actual correspondant module (and its moduleId) to be able to add the
     // correct require(); call at the very end of the bundle.
-    const entryPointModulePath = dependencyGraph.getAbsolutePath(
+    const entryPointModulePath = this._dependencyGraph.getAbsolutePath(
       this._bundleOptions.entryFile,
     );
 
