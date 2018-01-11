@@ -78,11 +78,13 @@ describe('Serializers', () => {
       },
     };
 
-    getAssetData.mockImplementation((path, localPath, platform) => ({
-      path,
-      platform,
-      assetData: true,
-    }));
+    getAssetData.mockImplementation(
+      (path, localPath, assetDataPlugins, platform) => ({
+        path,
+        platform,
+        assetData: true,
+      }),
+    );
 
     toLocalPath.mockImplementation((roots, path) => path.replace(roots[0], ''));
 

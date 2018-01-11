@@ -122,6 +122,7 @@ type Params = {
 
 function transform({filename, options, src, plugins}: Params) {
   options = options || {
+    assetDataPlugins: [],
     platform: '',
     projectRoot: '',
     inlineRequires: false,

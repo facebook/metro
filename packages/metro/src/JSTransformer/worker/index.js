@@ -61,6 +61,7 @@ export type Transformer<ExtraOptions: {} = {}> = {
 };
 
 export type TransformOptionsStrict = {|
+  +assetDataPlugins: $ReadOnlyArray<string>,
   +enableBabelRCLookup: boolean,
   +dev: boolean,
   +hot: boolean,
@@ -71,6 +72,7 @@ export type TransformOptionsStrict = {|
 |};
 
 export type TransformOptions = {
+  +assetDataPlugins: $ReadOnlyArray<string>,
   +enableBabelRCLookup?: boolean,
   +dev?: boolean,
   +hot?: boolean,
@@ -200,7 +202,11 @@ function transformCode(
   };
 
   const transformResult = isAsset(filename, assetExts)
-    ? assetTransformer.transform(transformerArgs, assetRegistryPath)
+    ? assetTransformer.transform(
+        transformerArgs,
+        assetRegistryPath,
+        options.assetDataPlugins,
+      )
     : transformer.transform(transformerArgs);
 
   const postTransformArgs = [

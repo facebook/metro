@@ -50,6 +50,10 @@ export type AssetData = AssetDataWithoutFiles & {
   +files: Array<string>,
 };
 
+export type AssetDataPlugin = (
+  assetData: AssetData,
+) => AssetData | Promise<AssetData>;
+
 const hashFiles = denodeify(function hashFilesCb(files, hash, callback) {
   if (!files.length) {
     callback(null);
@@ -234,6 +238,7 @@ async function getAbsoluteAssetInfo(
 async function getAssetData(
   assetPath: string,
   localPath: string,
+  assetDataPlugins: $ReadOnlyArray<string>,
   platform: ?string = null,
 ): Promise<AssetData> {
   let assetUrlPath = path.join('/assets', path.dirname(localPath));
@@ -244,22 +249,38 @@ async function getAssetData(
   }
 
   const isImage = isAssetTypeAnImage(path.extname(assetPath).slice(1));
-  const assetData = await getAbsoluteAssetInfo(assetPath, platform);
-  const dimensions = isImage ? imageSize(assetData.files[0]) : null;
-  const scale = assetData.scales[0];
+  const assetInfo = await getAbsoluteAssetInfo(assetPath, platform);
+  const dimensions = isImage ? imageSize(assetInfo.files[0]) : null;
+  const scale = assetInfo.scales[0];
 
-  return {
+  const assetData = {
     __packager_asset: true,
     fileSystemLocation: path.dirname(assetPath),
     httpServerLocation: assetUrlPath,
     width: dimensions ? dimensions.width / scale : undefined,
     height: dimensions ? dimensions.height / scale : undefined,
-    scales: assetData.scales,
-    files: assetData.files,
-    hash: assetData.hash,
-    name: assetData.name,
-    type: assetData.type,
+    scales: assetInfo.scales,
+    files: assetInfo.files,
+    hash: assetInfo.hash,
+    name: assetInfo.name,
+    type: assetInfo.type,
   };
+  return await applyAssetDataPlugins(assetDataPlugins, assetData);
+}
+
+async function applyAssetDataPlugins(
+  assetDataPlugins: $ReadOnlyArray<string>,
+  assetData: AssetData,
+): Promise<AssetData> {
+  if (!assetDataPlugins.length) {
+    return assetData;
+  }
+
+  const [currentAssetPlugin, ...remainingAssetPlugins] = assetDataPlugins;
+  // $FlowFixMe: impossible to type a dynamic require.
+  const assetPluginFunction: AssetDataPlugin = require(currentAssetPlugin);
+  const resultAssetData = await assetPluginFunction(assetData);
+  return await applyAssetDataPlugins(remainingAssetPlugins, resultAssetData);
 }
 
 /**
