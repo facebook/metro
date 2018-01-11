@@ -20,7 +20,6 @@ import type {RawMapping as BabelRawMapping} from 'babel-generator';
 import type {RawMapping as UnknownSourceMapMappingType} from 'source-map';
 
 export type UnknownSourceMapMappingTypes = Array<UnknownSourceMapMappingType>;
-export type RawMappings = Array<BabelRawMapping>;
 
 type GeneratedCodeMapping = [number, number];
 type SourceMapping = [number, number, number, number];
@@ -90,7 +89,7 @@ function fromRawMappings(
  * Transforms a standard source map object into a Raw Mappings object, to be
  * used across the bundler.
  */
-function toRawMappings(sourceMap: BabelSourceMap): RawMappings {
+function toRawMappings(sourceMap: BabelSourceMap): Array<BabelRawMapping> {
   const rawMappings = [];
 
   new SourceMap.SourceMapConsumer(sourceMap).eachMapping(map => {
