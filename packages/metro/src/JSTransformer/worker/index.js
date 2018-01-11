@@ -27,7 +27,8 @@ const path = require('path');
 const {compactMapping} = require('metro-source-map');
 
 import type {LogEntry} from 'metro-core/src/Logger';
-import type {CompactRawMappings, MappingsMap} from 'metro-source-map';
+import type {BabelSourceMap} from 'babel-core';
+import type {UnknownSourceMapMappingTypes} from 'metro-source-map';
 import type {LocalPath} from '../../node-haste/lib/toLocalPath';
 import type {ResultWithMap} from './minify';
 import type {Ast, Plugins as BabelPlugins} from 'babel-core';
@@ -35,7 +36,7 @@ import type {Ast, Plugins as BabelPlugins} from 'babel-core';
 export type TransformedCode = {
   code: string,
   dependencies: $ReadOnlyArray<string>,
-  map: CompactRawMappings,
+  map: UnknownSourceMapMappingTypes,
 };
 
 export type TransformArgs<ExtraOptions: {}> = {|
@@ -219,7 +220,7 @@ function transformCode(
 function minifyCode(
   filename: string,
   code: string,
-  sourceMap: MappingsMap,
+  sourceMap: BabelSourceMap,
 ): ResultWithMap | Promise<ResultWithMap> {
   try {
     return minify.withSourceMap(code, sourceMap, filename);

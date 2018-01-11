@@ -28,7 +28,7 @@ import type DeltaTransformer, {
   DeltaEntry,
   DeltaTransformResponse,
 } from './DeltaTransformer';
-import type {MappingsMap} from 'metro-source-map';
+import type {BabelSourceMap} from 'babel-core';
 
 export type Options = BundleOptions & {
   deltaBundleId: ?string,
@@ -86,7 +86,7 @@ async function fullSourceMap(
 async function fullSourceMapObject(
   deltaBundler: DeltaBundler,
   options: Options,
-): Promise<MappingsMap> {
+): Promise<BabelSourceMap> {
   const {modules} = await _getAllModules(deltaBundler, options);
 
   return fromRawMappings(modules).toMap(undefined, {

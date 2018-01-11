@@ -14,7 +14,7 @@
 
 const B64Builder = require('./B64Builder');
 
-import type {SourceMap as MappingsMap} from 'babel-core';
+import type {BabelSourceMap} from 'babel-core';
 
 /**
  * Generates a source map from raw mappings.
@@ -149,7 +149,7 @@ class Generator {
   /**
    * Return the source map as object.
    */
-  toMap(file?: string, options: {excludeSource?: boolean}): MappingsMap {
+  toMap(file?: string, options: {excludeSource?: boolean}): BabelSourceMap {
     let content;
 
     if (options && options.excludeSource) {

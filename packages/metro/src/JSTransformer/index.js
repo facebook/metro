@@ -17,9 +17,9 @@ const {Logger} = require('metro-core');
 const debug = require('debug')('Metro:JStransformer');
 const Worker = require('jest-worker').default;
 
+import type {BabelSourceMap} from 'babel-core';
 import type {Options, TransformedCode} from './worker';
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
-import type {MappingsMap} from 'metro-source-map';
 import type {ResultWithMap} from './worker/minify';
 
 import typeof {minify as Minify, transform as Transform} from './worker';
@@ -74,7 +74,7 @@ module.exports = class Transformer {
   async minify(
     filename: string,
     code: string,
-    sourceMap: MappingsMap,
+    sourceMap: BabelSourceMap,
   ): Promise<ResultWithMap> {
     return await this._worker.minify(filename, code, sourceMap);
   }

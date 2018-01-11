@@ -12,12 +12,9 @@
 'use strict';
 
 import type {Ast} from 'babel-core';
+import type {BabelSourceMap} from 'babel-core';
 import type {Console} from 'console';
-import type {
-  FBSourceMap,
-  MappingsMap,
-  MetroSourceMap as SourceMap,
-} from 'metro-source-map';
+import type {FBSourceMap, MetroSourceMap as SourceMap} from 'metro-source-map';
 
 export type {Transformer} from '../JSTransformer/worker';
 
@@ -37,7 +34,7 @@ type Dependency = {|
 
 export type File = {|
   code: string,
-  map: ?MappingsMap,
+  map: ?BabelSourceMap,
   path: string,
   type: CodeFileTypes,
 |};
@@ -144,7 +141,7 @@ type ResolveOptions = {
 export type TransformerResult = {|
   ast: ?Ast,
   code: string,
-  map: ?MappingsMap,
+  map: ?BabelSourceMap,
 |};
 
 export type TransformResultDependency = {|
@@ -164,7 +161,7 @@ export type TransformResult = {|
   code: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   dependencyMapName?: string,
-  map: ?MappingsMap,
+  map: ?BabelSourceMap,
 |};
 
 export type TransformResults = {[string]: TransformResult};

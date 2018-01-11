@@ -15,12 +15,11 @@
 const Generator = require('./Generator');
 const SourceMap = require('source-map');
 
-import type {SourceMap as MappingsMap} from 'babel-core';
+import type {BabelSourceMap} from 'babel-core';
 import type {RawMapping as BabelRawMapping} from 'babel-generator';
-import type {RawMapping as CompactRawMapping} from 'source-map';
+import type {RawMapping as UnknownSourceMapMappingType} from 'source-map';
 
-export type {SourceMap as MappingsMap} from 'babel-core';
-export type CompactRawMappings = Array<CompactRawMapping>;
+export type UnknownSourceMapMappingTypes = Array<UnknownSourceMapMappingType>;
 export type RawMappings = Array<BabelRawMapping>;
 
 type GeneratedCodeMapping = [number, number];
@@ -50,8 +49,8 @@ export type IndexMap = {
 };
 
 export type FBIndexMap = IndexMap & FBExtensions;
-export type MetroSourceMap = IndexMap | MappingsMap;
-export type FBSourceMap = FBIndexMap | (MappingsMap & FBExtensions);
+export type MetroSourceMap = IndexMap | BabelSourceMap;
+export type FBSourceMap = FBIndexMap | (BabelSourceMap & FBExtensions);
 
 /**
  * Creates a source map from modules with "raw mappings", i.e. an array of
@@ -91,7 +90,7 @@ function fromRawMappings(
  * Transforms a standard source map object into a Raw Mappings object, to be
  * used across the bundler.
  */
-function toRawMappings(sourceMap: MappingsMap): RawMappings {
+function toRawMappings(sourceMap: BabelSourceMap): RawMappings {
   const rawMappings = [];
 
   new SourceMap.SourceMapConsumer(sourceMap).eachMapping(map => {

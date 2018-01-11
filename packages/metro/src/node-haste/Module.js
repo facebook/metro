@@ -35,12 +35,12 @@ import type {Reporter} from '../lib/reporting';
 import type DependencyGraphHelpers from './DependencyGraph/DependencyGraphHelpers';
 import type ModuleCache from './ModuleCache';
 import type {LocalPath} from './lib/toLocalPath';
-import type {CompactRawMappings} from 'metro-source-map';
+import type {UnknownSourceMapMappingTypes} from 'metro-source-map';
 
 export type ReadResult = {
   +code: string,
   +dependencies: $ReadOnlyArray<string>,
-  +map: CompactRawMappings,
+  +map: UnknownSourceMapMappingTypes,
   +source: string,
 };
 

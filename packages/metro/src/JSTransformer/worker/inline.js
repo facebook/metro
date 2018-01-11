@@ -16,7 +16,8 @@ const babel = require('babel-core');
 const inlinePlatform = require('./inline-platform');
 const invariant = require('fbjs/lib/invariant');
 
-import type {Ast, SourceMap as MappingsMap} from 'babel-core';
+import type {Ast} from 'babel-core';
+import type {BabelSourceMap} from 'babel-core';
 const t = babel.types;
 
 const env = {name: 'env'};
@@ -104,12 +105,12 @@ const plugin = () => inlinePlugin;
 type AstResult = {
   ast: Ast,
   code: ?string,
-  map: ?MappingsMap,
+  map: ?BabelSourceMap,
 };
 
 function inline(
   filename: string,
-  transformResult: {ast?: ?Ast, code: string, map: ?MappingsMap},
+  transformResult: {ast?: ?Ast, code: string, map: ?BabelSourceMap},
   options: {+dev: boolean, +platform: ?string},
 ): AstResult {
   const code = transformResult.code;

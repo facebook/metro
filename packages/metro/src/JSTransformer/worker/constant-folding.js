@@ -14,7 +14,8 @@
 
 const babel = require('babel-core');
 
-import type {Ast, SourceMap as MappingsMap} from 'babel-core';
+import type {Ast, BabelSourceMap} from 'babel-core';
+
 const t = babel.types;
 
 const Conditional = {
@@ -76,7 +77,7 @@ function constantFolding(
   transformResult: {
     ast: Ast,
     code?: ?string,
-    map: ?MappingsMap,
+    map: ?BabelSourceMap,
   },
 ) {
   return babel.transformFromAst(transformResult.ast, transformResult.code, {

@@ -32,9 +32,9 @@ import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
 import type {HasteImpl} from '../node-haste/Module';
+import type {BabelSourceMap} from 'babel-core';
 import type {
-  CompactRawMappings,
-  MappingsMap,
+  UnknownSourceMapMappingTypes,
   MetroSourceMap as SourceMap,
 } from 'metro-source-map';
 
@@ -68,8 +68,8 @@ export type GetTransformOptions = (
 
 export type PostMinifyProcess = ({
   code: string,
-  map: ?MappingsMap,
-}) => {code: string, map: ?MappingsMap};
+  map: ?BabelSourceMap,
+}) => {code: string, map: ?BabelSourceMap};
 
 export type PostProcessBundleSourcemap = ({
   code: Buffer | string,
@@ -255,8 +255,8 @@ class Bundler {
   async minifyModule(
     path: string,
     code: string,
-    map: CompactRawMappings,
-  ): Promise<{code: string, map: CompactRawMappings}> {
+    map: UnknownSourceMapMappingTypes,
+  ): Promise<{code: string, map: UnknownSourceMapMappingTypes}> {
     const sourceMap = fromRawMappings([{code, source: code, map, path}]).toMap(
       undefined,
       {},

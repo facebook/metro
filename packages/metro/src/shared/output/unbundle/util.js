@@ -15,10 +15,10 @@ const invariant = require('fbjs/lib/invariant');
 
 import type {RamModule} from '../../../DeltaBundler/Serializers';
 import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
+import type {BabelSourceMap} from 'babel-core';
 import type {
   FBIndexMap,
   IndexMap,
-  MappingsMap,
   MetroSourceMap as SourceMap,
 } from 'metro-source-map';
 
@@ -29,7 +29,7 @@ const countLines = (string: string) => (string.match(newline) || []).length + 1;
 function lineToLineSourceMap(
   source: string,
   filename: string = '',
-): MappingsMap {
+): BabelSourceMap {
   // The first line mapping in our package is the base64vlq code for zeros (A).
   const firstLine = 'AAAA;';
 

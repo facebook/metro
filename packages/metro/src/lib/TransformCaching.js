@@ -24,7 +24,7 @@ const writeFileAtomicSync = require('write-file-atomic').sync;
 import type {Options as WorkerOptions} from '../JSTransformer/worker';
 import type {Reporter} from './reporting';
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
-import type {CompactRawMappings} from 'metro-source-map';
+import type {UnknownSourceMapMappingTypes} from 'metro-source-map';
 
 type CacheFilePaths = {transformedCode: string, metadata: string};
 export type GetTransformCacheKey = (options: {}) => string;
@@ -34,7 +34,7 @@ const CACHE_SUB_DIR = 'cache';
 export type CachedResult = {
   code: string,
   dependencies: $ReadOnlyArray<string>,
-  map: CompactRawMappings,
+  map: UnknownSourceMapMappingTypes,
 };
 
 export type TransformCacheResult = ?CachedResult;
@@ -324,7 +324,7 @@ function readMetadataFileSync(
   cachedResultHash: string,
   cachedSourceHash: string,
   dependencies: Array<string>,
-  sourceMap: CompactRawMappings,
+  sourceMap: UnknownSourceMapMappingTypes,
 } {
   const metadataStr = fs.readFileSync(metadataFilePath, 'utf8');
   const metadata = tryParseJSON(metadataStr);

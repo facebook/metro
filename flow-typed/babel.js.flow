@@ -10,7 +10,7 @@
  * @format
  */
 
-type _SourceMap = {
+type _BabelSourceMap = {
   file?: string,
   mappings: string,
   names: Array<string>,
@@ -108,19 +108,19 @@ type TransformResult = {
   ast: Ast,
   code: ?string,
   ignored: boolean,
-  map: ?_SourceMap,
+  map: ?_BabelSourceMap,
 };
 // https://github.com/babel/babel/blob/master/packages/babel-generator/src/buffer.js#L42
 type GeneratorResult = {
   code: string,
-  map: ?_SourceMap,
+  map: ?_BabelSourceMap,
   rawMappings: ?Array<_RawMapping>,
 };
 type VisitFn = <State>(path: Object, state: State) => any;
 
 declare module 'babel-core' {
   declare type Plugins = _Plugins;
-  declare type SourceMap = _SourceMap;
+  declare type BabelSourceMap = _BabelSourceMap;
   declare type Ast = {};
   declare type TransformOptions = _TransformOptions;
   declare function transform(

@@ -14,11 +14,11 @@
 
 const uglify = require('uglify-es');
 
-import type {MappingsMap} from 'metro-source-map';
+import type {BabelSourceMap} from 'babel-core';
 
 export type ResultWithMap = {
   code: string,
-  map: MappingsMap,
+  map: BabelSourceMap,
 };
 
 function noSourceMap(code: string): string {
@@ -27,17 +27,17 @@ function noSourceMap(code: string): string {
 
 function withSourceMap(
   code: string,
-  sourceMap: ?MappingsMap,
+  sourceMap: ?BabelSourceMap,
   filename: string,
 ): ResultWithMap {
   const result = minify(code, sourceMap);
 
-  const map: MappingsMap = JSON.parse(result.map);
+  const map: BabelSourceMap = JSON.parse(result.map);
   map.sources = [filename];
   return {code: result.code, map};
 }
 
-function minify(inputCode: string, inputMap: ?MappingsMap) {
+function minify(inputCode: string, inputMap: ?BabelSourceMap) {
   const result = uglify.minify(inputCode, {
     mangle: {toplevel: true},
     output: {
