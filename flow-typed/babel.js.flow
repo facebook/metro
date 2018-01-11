@@ -5,6 +5,9 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @flow
+ * @format
  */
 
 type _SourceMap = {
@@ -25,9 +28,17 @@ type BabylonOptions = {
   sourceType?: 'script' | 'module',
   sourceFilename?: 'string',
   plugins?: Array<
-    'jsx' | 'flow' | 'doExpressions' | 'objectRestSpread' | 'decorators' |
-    'classProperties' | 'exportExtensions' | 'asyncGenerators' |
-    'functionBind' | 'functionSent' | 'dynamicImport'
+    | 'jsx'
+    | 'flow'
+    | 'doExpressions'
+    | 'objectRestSpread'
+    | 'decorators'
+    | 'classProperties'
+    | 'exportExtensions'
+    | 'asyncGenerators'
+    | 'functionBind'
+    | 'functionSent'
+    | 'dynamicImport',
   >,
 };
 
@@ -50,7 +61,7 @@ type GeneratorOptions = {
   sourceFileName?: string,
 };
 
-type InlinePlugin = string | {} | () => {};
+type InlinePlugin = string | {} | (() => {});
 type _Plugins = Array<string | Object | [InlinePlugin] | [InlinePlugin, mixed]>;
 
 // based on https://babeljs.io/docs/usage/options/ -- 2016-11-11
@@ -87,8 +98,9 @@ type __TransformOptions = {
   extends?: string,
 };
 
-type _TransformOptions =
-  __TransformOptions & {env?: {[key: string]: __TransformOptions}};
+type _TransformOptions = __TransformOptions & {
+  env?: {[key: string]: __TransformOptions},
+};
 
 type Ast = {};
 
@@ -117,8 +129,11 @@ declare module 'babel-core' {
   ): TransformResult;
   declare function traverse<State>(
     ast: Ast,
-    visitor: {[key: string]: VisitFn<State> |
-                             {enter?: VisitFn<State>, exit?: VisitFn<State>}},
+    visitor: {
+      [key: string]:
+        | VisitFn<State>
+        | {enter?: VisitFn<State>, exit?: VisitFn<State>},
+    },
     scope?: ?Object,
     state?: State,
     parentPath?: ?Object,
@@ -145,5 +160,5 @@ declare module 'babel-generator' {
     ast: Ast,
     options?: GeneratorOptions,
     code?: string | {[string]: string},
-  ) => GeneratorResult;
+  ) => GeneratorResult
 }
