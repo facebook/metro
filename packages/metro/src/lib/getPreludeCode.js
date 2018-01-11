@@ -16,7 +16,8 @@ function getPreludeCode({isDev}: {|+isDev: boolean|}): string {
   return (
     `var __DEV__=${String(isDev)},` +
     '__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now(),' +
-    `process={env:{NODE_ENV:'${isDev ? 'development' : 'production'}'}};`
+    'process=this.process||{};process.env=process.env||{};' +
+    `process.env.NODE_ENV='${isDev ? 'development' : 'production'}';`
   );
 }
 

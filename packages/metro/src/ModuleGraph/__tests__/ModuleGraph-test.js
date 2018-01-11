@@ -30,28 +30,13 @@ describe('build setup', () => {
     const result = await buildSetup(noEntryPoints, noOptions);
 
     const [prelude] = result.modules;
-    expect(prelude).toEqual({
-      dependencies: [],
-      file: {
-        code:
-          'var __DEV__=true,__BUNDLE_START_TIME__=' +
-          'this.nativePerformanceNow?nativePerformanceNow():Date.now(),' +
-          "process={env:{NODE_ENV:'development'}};",
-        map: null,
-        path: '',
-        type: 'script',
-      },
-    });
+    expect(prelude).toMatchSnapshot();
   });
 
   it('sets `__DEV__` to false in the prelude if optimization is enabled', async () => {
     const result = await buildSetup(noEntryPoints, {optimize: true});
     const [prelude] = result.modules;
-    expect(prelude.file.code).toEqual(
-      'var __DEV__=false,__BUNDLE_START_TIME__=' +
-        'this.nativePerformanceNow?nativePerformanceNow():Date.now(),' +
-        "process={env:{NODE_ENV:'production'}};",
-    );
+    expect(prelude).toMatchSnapshot();
   });
 
   it('places the module system implementation directly after the prelude', async () => {
