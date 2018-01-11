@@ -17,6 +17,7 @@ const DeltaCalculator = require('./DeltaCalculator');
 const addParamsToDefineCall = require('../lib/addParamsToDefineCall');
 const createModuleIdFactory = require('../lib/createModuleIdFactory');
 const defaults = require('../defaults');
+const getPreludeCode = require('../lib/getPreludeCode');
 const nullthrows = require('fbjs/lib/nullthrows');
 const path = require('path');
 const removeInlineRequiresBlacklistFromOptions = require('../lib/removeInlineRequiresBlacklistFromOptions');
@@ -324,6 +325,8 @@ class DeltaTransformer extends EventEmitter {
     transformOptions: JSTransformerOptions,
     dependencyEdges: DependencyEdges,
   ): Promise<DeltaEntries> {
+    const preludeId = this._getModuleId('__prelude__');
+
     // Get all the polyfills from the relevant option params (the
     // `getPolyfills()` method and the `polyfillModuleNames` variable).
     const polyfillModuleNames = this._getPolyfills({
@@ -332,7 +335,7 @@ class DeltaTransformer extends EventEmitter {
 
     // Build the module system dependencies (scripts that need to
     // be included at the very beginning of the bundle) + any polifyll.
-    const modules = this._getModuleSystemDependencies()
+    const modules = [defaults.moduleSystem]
       .concat(polyfillModuleNames)
       .map(polyfillModuleName =>
         this._dependencyGraph.createPolyfill({
@@ -342,11 +345,23 @@ class DeltaTransformer extends EventEmitter {
         }),
       );
 
-    return await this._transformModules(
+    const transformedModules = await this._transformModules(
       modules,
       transformOptions,
       dependencyEdges,
     );
+    // The prelude needs to be the first thing in the file, and the insertion
+    // order of entries in the Map is significant.
+    return new Map([
+      [preludeId, this._getPrelude(preludeId)],
+      ...transformedModules,
+    ]);
+  }
+
+  _getPrelude(id: number): DeltaEntry {
+    const code = getPreludeCode({isDev: this._bundleOptions.dev});
+    const name = '__prelude__';
+    return {code, id, map: [], name, source: code, path: name, type: 'script'};
   }
 
   async _getAppend(dependencyEdges: DependencyEdges): Promise<DeltaEntries> {
@@ -526,16 +541,6 @@ class DeltaTransformer extends EventEmitter {
   _onFileChange = () => {
     this.emit('change');
   };
-
-  _getModuleSystemDependencies() {
-    const prelude = this._bundleOptions.dev
-      ? path.resolve(__dirname, '../lib/polyfills/prelude_dev.js')
-      : path.resolve(__dirname, '../lib/polyfills/prelude.js');
-
-    const moduleSystem = defaults.moduleSystem;
-
-    return [prelude, moduleSystem];
-  }
 }
 
 module.exports = DeltaTransformer;

@@ -13,6 +13,7 @@
 
 const defaults = require('../defaults');
 const virtualModule = require('./module').virtual;
+const getPreludeCode = require('../lib/getPreludeCode');
 
 import type {BuildResult, GraphFn, PostProcessModules} from './types.flow';
 
@@ -54,7 +55,7 @@ exports.createBuildSetup = (
   ]);
 
   const {entryModules} = graph;
-  const preludeScript = prelude(optimize);
+  const preludeScript = virtualModule(getPreludeCode({isDev: !optimize}));
   const prependedScripts = [preludeScript, ...moduleSystem, ...polyfills];
   return {
     entryModules,
@@ -62,11 +63,3 @@ exports.createBuildSetup = (
     prependedScripts,
   };
 };
-
-function prelude(optimize) {
-  return virtualModule(
-    `var __DEV__=${String(!optimize)},` +
-      '__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now(),' +
-      `process={env:{NODE_ENV:'${optimize ? 'production' : 'development'}'}};`,
-  );
-}

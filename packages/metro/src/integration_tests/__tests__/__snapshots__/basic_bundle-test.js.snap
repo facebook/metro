@@ -1,15 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`basic_bundle bundles package with polyfills 1`] = `
-"(function (global) {
-  global.__DEV__ = false;
-  global.__BUNDLE_START_TIME__ = global.nativePerformanceNow ? global.nativePerformanceNow() : Date.now();
-  global.process = {
-    env: {
-      NODE_ENV: 'production'
-    }
-  };
-})(this);
+"var __DEV__=false,__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now(),process={env:{NODE_ENV:'production'}};
 (function (global) {
   'use strict';
 
@@ -197,15 +189,7 @@ require(4);"
 `;
 
 exports[`basic_bundle bundles package without polyfills 1`] = `
-"(function (global) {
-  global.__DEV__ = false;
-  global.__BUNDLE_START_TIME__ = global.nativePerformanceNow ? global.nativePerformanceNow() : Date.now();
-  global.process = {
-    env: {
-      NODE_ENV: 'production'
-    }
-  };
-})(this);
+"var __DEV__=false,__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now(),process={env:{NODE_ENV:'production'}};
 (function (global) {
   'use strict';
 
