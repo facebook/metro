@@ -78,18 +78,9 @@ exports.handler = makeAsyncCommand(async (argv: any) => {
     server = await MetroApi.runServer({
       ...argv,
       config,
-      onReady,
     });
 
     restarting = false;
-  }
-
-  function onReady(server) {
-    console.log(
-      `The HTTP server is ready to accept requests on ${
-        server.address().address
-      }:${server.address().port}`,
-    );
   }
 
   const metroConfigLocation = await findMetroConfig(argv.config);

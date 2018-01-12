@@ -38,6 +38,7 @@ export type {ConfigT} from './Config';
 type PublicMetroOptions = {|
   config?: ConfigT,
   maxWorkers?: number,
+  port?: ?number,
   projectRoots: Array<string>,
   // deprecated
   resetCache?: boolean,
@@ -67,9 +68,13 @@ async function runMetro({
   config,
   resetCache = false,
   maxWorkers = 1,
+  // $FlowFixMe TODO t0 https://github.com/facebook/flow/issues/183
+  port = null,
   projectRoots = [],
   watch = false,
 }: PrivateMetroOptions): Promise<MetroServer> {
+  const reporter = new TerminalReporter(new Terminal(process.stdout));
+
   const normalizedConfig = config ? Config.normalize(config) : Config.DEFAULT;
 
   const assetExts = defaults.assetExts.concat(
@@ -90,6 +95,19 @@ async function runMetro({
       ? normalizedConfig.getProvidesModuleNodeModules()
       : defaults.providesModuleNodeModules;
 
+  const finalProjectRoots = await Promise.all(
+    normalizedConfig
+      .getProjectRoots()
+      .concat(projectRoots)
+      .map(path => asyncRealpath(path)),
+  );
+
+  reporter.update({
+    type: 'initialize_started',
+    port,
+    projectRoots: finalProjectRoots,
+  });
+
   const serverOptions: ServerOptions = {
     assetExts: normalizedConfig.assetTransforms ? [] : assetExts,
     assetRegistryPath: normalizedConfig.assetRegistryPath,
@@ -109,7 +127,7 @@ async function runMetro({
     postProcessBundleSourcemap: normalizedConfig.postProcessBundleSourcemap,
     providesModuleNodeModules,
     resetCache,
-    reporter: new TerminalReporter(new Terminal(process.stdout)),
+    reporter,
     sourceExts: normalizedConfig.assetTransforms
       ? sourceExts.concat(assetExts)
       : sourceExts,
@@ -118,12 +136,7 @@ async function runMetro({
     watch,
     workerPath:
       normalizedConfig.getWorkerPath && normalizedConfig.getWorkerPath(),
-    projectRoots: await Promise.all(
-      normalizedConfig
-        .getProjectRoots()
-        .concat(projectRoots)
-        .map(path => asyncRealpath(path)),
-    ),
+    projectRoots: finalProjectRoots,
   };
 
   return new MetroServer(serverOptions);
@@ -139,6 +152,7 @@ exports.createConnectMiddleware = async function(
   const metroServer = await runMetro({
     config: options.config,
     maxWorkers: options.maxWorkers,
+    port: options.port,
     projectRoots: options.projectRoots,
     resetCache: options.resetCache,
     watch: true,
@@ -167,6 +181,8 @@ type RunServerOptions = {|
 |};
 
 exports.runServer = async (options: RunServerOptions) => {
+  const port = options.port || 8080;
+
   // Lazy require
   const connect = require('connect');
 
@@ -175,6 +191,7 @@ exports.runServer = async (options: RunServerOptions) => {
   const {middleware, end} = await exports.createConnectMiddleware({
     config: options.config,
     maxWorkers: options.maxWorkers,
+    port,
     projectRoots: options.projectRoots,
     resetCache: options.resetCache,
   });
@@ -195,7 +212,7 @@ exports.runServer = async (options: RunServerOptions) => {
     httpServer = Http.createServer(serverApp);
   }
 
-  httpServer.listen(options.port, options.host, () => {
+  httpServer.listen(port, options.host, () => {
     options.onReady && options.onReady(httpServer);
   });
 

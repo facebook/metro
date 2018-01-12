@@ -172,23 +172,24 @@ class TerminalReporter {
     }
   }
 
-  _logInitializing(port: number, projectRoots: $ReadOnlyArray<string>) {
-    this.terminal.log(
-      formatBanner(
-        'Running Metro Bundler on port ' +
-          port +
-          '.\n\n' +
-          'Keep Metro Bundler running while developing on any JS projects. ' +
-          'Feel free to close this tab and run your own Metro Bundler ' +
-          ' instance if you prefer.\n\n' +
-          'https://github.com/facebook/react-native',
-        {
-          marginLeft: 1,
-          marginRight: 1,
-          paddingBottom: 1,
-        },
-      ),
-    );
+  _logInitializing(port: ?number, projectRoots: $ReadOnlyArray<string>) {
+    if (port) {
+      this.terminal.log(
+        formatBanner(
+          'Running Metro Bundler on port ' +
+            port +
+            '.\n\n' +
+            'Keep Metro running while developing on any JS projects. Feel ' +
+            'free to close this tab and run your own Metro instance ' +
+            'if you prefer.\n\n' +
+            'https://github.com/facebook/react-native',
+          {
+            paddingTop: 1,
+            paddingBottom: 1,
+          },
+        ) + '\n',
+      );
+    }
 
     this.terminal.log(
       'Looking for JS files in\n  ',
