@@ -16,10 +16,12 @@ const Config = require('./Config');
 const Http = require('http');
 const Https = require('https');
 const MetroBundler = require('./shared/output/bundle');
+const MetroHmrServer = require('./HmrServer');
 const MetroServer = require('./Server');
 const TerminalReporter = require('./lib/TerminalReporter');
 const TransformCaching = require('./lib/TransformCaching');
 
+const attachWebsocketServer = require('./lib/attachWebsocketServer');
 const defaults = require('./defaults');
 
 const {realpath} = require('fs');
@@ -27,6 +29,7 @@ const {readFile} = require('fs-extra');
 const {Terminal} = require('metro-core');
 
 import type {ConfigT} from './Config';
+import type {Reporter} from './lib/reporting';
 import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
 import type {Options as ServerOptions} from './shared/types.flow';
 import type {IncomingMessage, ServerResponse} from 'http';
@@ -40,6 +43,7 @@ type PublicMetroOptions = {|
   maxWorkers?: number,
   port?: ?number,
   projectRoots: Array<string>,
+  reporter?: Reporter,
   // deprecated
   resetCache?: boolean,
 |};
@@ -71,10 +75,9 @@ async function runMetro({
   // $FlowFixMe TODO t0 https://github.com/facebook/flow/issues/183
   port = null,
   projectRoots = [],
+  reporter = new TerminalReporter(new Terminal(process.stdout)),
   watch = false,
 }: PrivateMetroOptions): Promise<MetroServer> {
-  const reporter = new TerminalReporter(new Terminal(process.stdout));
-
   const normalizedConfig = config ? Config.normalize(config) : Config.DEFAULT;
 
   const assetExts = defaults.assetExts.concat(
@@ -163,6 +166,7 @@ exports.createConnectMiddleware = async function(
     : Config.DEFAULT;
 
   return {
+    metroServer,
     middleware: normalizedConfig.enhanceMiddleware(metroServer.processRequest),
     end() {
       metroServer.end();
@@ -178,21 +182,25 @@ type RunServerOptions = {|
   secure?: boolean,
   secureKey?: string,
   secureCert?: string,
+  hmrEnabled?: boolean,
 |};
 
 exports.runServer = async (options: RunServerOptions) => {
   const port = options.port || 8080;
+  const reporter =
+    options.reporter || new TerminalReporter(new Terminal(process.stdout));
 
   // Lazy require
   const connect = require('connect');
 
   const serverApp = connect();
 
-  const {middleware, end} = await exports.createConnectMiddleware({
+  const {metroServer, middleware, end} = await exports.createConnectMiddleware({
     config: options.config,
     maxWorkers: options.maxWorkers,
     port,
     projectRoots: options.projectRoots,
+    reporter,
     resetCache: options.resetCache,
   });
 
@@ -210,6 +218,14 @@ exports.runServer = async (options: RunServerOptions) => {
     );
   } else {
     httpServer = Http.createServer(serverApp);
+  }
+
+  if (options.hmrEnabled) {
+    attachWebsocketServer({
+      httpServer,
+      path: '/hot',
+      websocketServer: new MetroHmrServer(metroServer, reporter),
+    });
   }
 
   httpServer.listen(port, options.host, () => {

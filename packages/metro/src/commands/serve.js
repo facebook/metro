@@ -48,7 +48,7 @@ exports.builder = (yargs: Yargs) => {
   yargs.option('secure-key', {type: 'string'});
   yargs.option('secure-cert', {type: 'string'});
 
-  yargs.option('legacy-bundler', {type: 'boolean'});
+  yargs.option('hmr-enabled', {alias: 'hmr', type: 'boolean'});
 
   yargs.option('config', {alias: 'c', type: 'string'});
 
