@@ -14,8 +14,8 @@
 
 const meta = require('../../shared/output/meta');
 
-const {createIndexMap} = require('./source-map');
 const {getModuleCode, concat} = require('./util');
+const {createIndexMap} = require('metro-source-map');
 
 import type {OutputFn} from '../types.flow';
 
@@ -52,7 +52,7 @@ function asPlainBundle({
   return {
     code,
     extraFiles: [[`${filename}.meta`, meta(code)]],
-    map: createIndexMap({file: filename, sections}),
+    map: createIndexMap(filename, sections),
   };
 }
 

@@ -167,7 +167,19 @@ function countLines(string) {
   return string.split('\n').length;
 }
 
+function createIndexMap(
+  file: string,
+  sections: Array<IndexMapSection>,
+): IndexMap {
+  return {
+    version: 3,
+    file,
+    sections,
+  };
+}
+
 module.exports = {
+  createIndexMap,
   fromRawMappings,
   toBabelSegments,
   toSegmentTuple,
