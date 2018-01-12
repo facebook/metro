@@ -114,7 +114,7 @@ type TransformResult = {
 type GeneratorResult = {
   code: string,
   map: ?_BabelSourceMap,
-  rawMappings: ?Array<_RawMapping>,
+  rawMappings: ?Array<_BabelSourceMapSegment>,
 };
 type VisitFn = <State>(path: Object, state: State) => any;
 
@@ -146,7 +146,7 @@ declare module 'babel-core' {
   ): TransformResult;
 }
 
-type _RawMapping = {
+type _BabelSourceMapSegment = {
   generated: {column: number, line: number},
   name?: string,
   original?: {column: number, line: number},
@@ -155,7 +155,7 @@ type _RawMapping = {
 
 // https://github.com/babel/babel/tree/master/packages/babel-generator
 declare module 'babel-generator' {
-  declare export type RawMapping = _RawMapping;
+  declare export type BabelSourceMapSegment = _BabelSourceMapSegment;
   declare export default (
     ast: Ast,
     options?: GeneratorOptions,

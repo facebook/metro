@@ -16,7 +16,7 @@ const Generator = require('./Generator');
 const SourceMap = require('source-map');
 
 import type {BabelSourceMap} from 'babel-core';
-import type {RawMapping as BabelRawMapping} from 'babel-generator';
+import type {BabelSourceMapSegment} from 'babel-generator';
 import type {RawMapping as UnknownSourceMapMappingType} from 'source-map';
 
 export type UnknownSourceMapMappingTypes = Array<UnknownSourceMapMappingType>;
@@ -89,7 +89,9 @@ function fromRawMappings(
  * Transforms a standard source map object into a Raw Mappings object, to be
  * used across the bundler.
  */
-function toRawMappings(sourceMap: BabelSourceMap): Array<BabelRawMapping> {
+function toRawMappings(
+  sourceMap: BabelSourceMap,
+): Array<BabelSourceMapSegment> {
   const rawMappings = [];
 
   new SourceMap.SourceMapConsumer(sourceMap).eachMapping(map => {
@@ -110,7 +112,9 @@ function toRawMappings(sourceMap: BabelSourceMap): Array<BabelRawMapping> {
   return rawMappings;
 }
 
-function compactMapping(mapping: BabelRawMapping): MetroSourceMapSegmentTuple {
+function compactMapping(
+  mapping: BabelSourceMapSegment,
+): MetroSourceMapSegmentTuple {
   const {column, line} = mapping.generated;
   const {name, original} = mapping;
 
