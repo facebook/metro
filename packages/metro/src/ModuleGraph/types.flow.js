@@ -16,8 +16,6 @@ import type {BabelSourceMap} from 'babel-core';
 import type {Console} from 'console';
 import type {FBSourceMap, MetroSourceMap} from 'metro-source-map';
 
-export type {Transformer} from '../JSTransformer/worker';
-
 export type BuildResult = {|
   ...GraphResult,
   prependedScripts: $ReadOnlyArray<Module>,

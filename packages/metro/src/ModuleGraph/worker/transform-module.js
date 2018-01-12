@@ -27,12 +27,12 @@ const path = require('path');
 const {isAssetTypeAnImage} = require('../../Bundler/util');
 const {basename} = require('path');
 
+import type {Transformer} from '../../JSTransformer/worker';
 import type {HasteImpl} from '../../node-haste/Module';
 import type {
   ImageSize,
   TransformedCodeFile,
   TransformedSourceFile,
-  Transformer,
   TransformResult,
   TransformVariants,
 } from '../types.flow';
