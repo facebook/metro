@@ -26,6 +26,7 @@ const {objectContaining} = jasmine;
 
 describe('optimizing JS modules', () => {
   const filename = 'arbitrary/file.js';
+  const sourceExts = new Set(['js', 'json']);
   const optimizationOptions = {
     dev: false,
     platform: 'android',
@@ -42,7 +43,9 @@ describe('optimizing JS modules', () => {
 
   let transformResult;
   beforeAll(() => {
-    const result = transformModule(originalCode, {filename, transformer});
+    const trOpts = {filename, sourceExts, transformer};
+    const result = transformModule(originalCode, trOpts);
+    invariant(result.type === 'code', 'result must be code');
     transformResult = new Buffer(
       JSON.stringify({type: 'code', details: result.details}),
       'utf8',
@@ -53,7 +56,7 @@ describe('optimizing JS modules', () => {
     const result = optimizeModule(transformResult, optimizationOptions);
     const expected = JSON.parse(transformResult.toString('utf8')).details;
     delete expected.transformed;
-    expect(result.type).toBe('code');
+    invariant(result.type === 'code', 'result must be code');
     expect(result.details).toEqual(objectContaining(expected));
   });
 

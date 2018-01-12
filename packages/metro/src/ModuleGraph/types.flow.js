@@ -228,6 +228,9 @@ export type TransformedSourceFile =
   | {|
       +type: 'asset',
       +details: AssetFile,
+    |}
+  | {|
+      +type: 'unknown',
     |};
 
 export type LibraryOptions = {|

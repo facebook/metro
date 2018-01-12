@@ -31,7 +31,8 @@ jest.mock('image-size', () => buffer => {
 });
 
 describe('transforming JS modules:', () => {
-  const filename = 'arbitrary';
+  const filename = 'arbitrary.js';
+  const sourceExts = new Set(['js', 'json']);
 
   let transformer;
 
@@ -47,6 +48,7 @@ describe('transforming JS modules:', () => {
 
   const options = (variants?: TransformVariants) => ({
     filename,
+    sourceExts,
     transformer,
     variants,
   });
@@ -57,7 +59,7 @@ describe('transforming JS modules:', () => {
 
   it('passes through file name', () => {
     const result = transformModule(sourceCode, options());
-    expect(result.type).toBe('code');
+    invariant(result.type === 'code', 'result must be code');
     expect(result.details).toEqual(
       expect.objectContaining({
         file: filename,
@@ -69,19 +71,19 @@ describe('transforming JS modules:', () => {
     const hasteID = 'TheModule';
     const codeWithHasteID = toBuffer(`/** @providesModule ${hasteID} */`);
     const result = transformModule(codeWithHasteID, options());
-    expect(result.type).toBe('code');
+    invariant(result.type === 'code', 'result must be code');
     expect(result.details).toEqual(expect.objectContaining({hasteID}));
   });
 
   it('sets `type` to `"module"` by default', () => {
     const result = transformModule(sourceCode, options());
-    expect(result.type).toBe('code');
+    invariant(result.type === 'code', 'result must be code');
     expect(result.details).toEqual(expect.objectContaining({type: 'module'}));
   });
 
   it('sets `type` to `"script"` if the input is a polyfill', () => {
     const result = transformModule(sourceCode, {...options(), polyfill: true});
-    expect(result.type).toBe('code');
+    invariant(result.type === 'code', 'result must be code');
     expect(result.details).toEqual(expect.objectContaining({type: 'script'}));
   });
 
@@ -238,6 +240,14 @@ describe('transforming JS modules:', () => {
     });
     invariant(result.type === 'code', 'result must be code');
     expect(result.details.package).toEqual(pkg);
+  });
+
+  it('does not process non-source files', () => {
+    const result = transformModule(toBuffer('arbitrary'), {
+      ...options(),
+      filename: 'some.yy',
+    });
+    invariant(result.type === 'unknown', 'result must be code');
   });
 
   describe('assets', () => {

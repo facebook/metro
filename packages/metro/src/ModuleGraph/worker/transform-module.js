@@ -42,6 +42,7 @@ export type TransformOptions<ExtraOptions> = {|
   filename: string,
   hasteImpl?: HasteImpl,
   polyfill?: boolean,
+  +sourceExts: Set<string>,
   transformer: Transformer<ExtraOptions>,
   variants?: TransformVariants,
 |};
@@ -63,15 +64,18 @@ function transformModule(
   content: Buffer,
   options: TransformOptions<{+retainLines?: boolean}>,
 ): TransformedSourceFile {
-  if (ASSET_EXTENSIONS.has(path.extname(options.filename).substr(1))) {
+  const ext = path.extname(options.filename).substr(1);
+  if (ASSET_EXTENSIONS.has(ext)) {
     return transformAsset(content, options.filename);
+  }
+  if (ext === 'json') {
+    return transformJSON(content.toString('utf8'), options);
+  }
+  if (!options.sourceExts.has(ext)) {
+    return {type: 'unknown'};
   }
 
   const code = content.toString('utf8');
-  if (options.filename.endsWith('.json')) {
-    return transformJSON(code, options);
-  }
-
   const {filename, transformer, polyfill, variants = defaultVariants} = options;
   const transformed: {[key: string]: TransformResult} = {};
 
