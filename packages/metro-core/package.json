@@ -1,5 +1,5 @@
 {
-  "version": "0.24.3",
+  "version": "0.24.4",
   "name": "metro-core",
   "description": "🚇 Core files for Metro",
   "main": "src/index.js",
