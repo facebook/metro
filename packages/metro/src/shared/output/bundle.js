@@ -20,7 +20,7 @@ const relativizeSourceMap = require('../../lib/relativizeSourceMap');
 const writeFile = require('./writeFile');
 
 import type {OutputOptions, RequestOptions} from '../types.flow';
-import type {MetroSourceMap as SourceMap} from 'metro-source-map';
+import type {MetroSourceMap} from 'metro-source-map';
 
 function buildBundle(
   packagerClient: Server,
@@ -38,10 +38,10 @@ function createCodeWithMap(
   bundle: {code: string, map: string},
   dev: boolean,
   sourceMapSourcesRoot?: string,
-): {code: string, map: SourceMap} {
+): {code: string, map: MetroSourceMap} {
   const map = bundle.map;
   const sourceMap = relativizeSourceMap(
-    (JSON.parse(map): SourceMap),
+    (JSON.parse(map): MetroSourceMap),
     sourceMapSourcesRoot,
   );
   return {

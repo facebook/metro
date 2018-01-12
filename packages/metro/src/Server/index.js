@@ -40,7 +40,7 @@ import type {
   PostMinifyProcess,
   PostProcessBundleSourcemap,
 } from '../Bundler';
-import type {MetroSourceMap as SourceMap} from 'metro-source-map';
+import type {MetroSourceMap} from 'metro-source-map';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Symbolicate} from './symbolicate';
 import type {AssetData} from '../Assets';
@@ -731,7 +731,7 @@ class Server {
       );
   }
 
-  async _sourceMapForURL(reqUrl: string): Promise<SourceMap> {
+  async _sourceMapForURL(reqUrl: string): Promise<MetroSourceMap> {
     const options: DeltaBundlerOptions = this._getOptionsFromUrl(reqUrl);
 
     return await Serializers.fullSourceMapObject(this._deltaBundler, {

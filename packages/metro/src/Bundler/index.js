@@ -35,7 +35,7 @@ import type {HasteImpl} from '../node-haste/Module';
 import type {BabelSourceMap} from 'babel-core';
 import type {
   MetroSourceMapSegmentTuple,
-  MetroSourceMap as SourceMap,
+  MetroSourceMap,
 } from 'metro-source-map';
 
 export type BundlingOptions = {|
@@ -73,9 +73,9 @@ export type PostMinifyProcess = ({
 
 export type PostProcessBundleSourcemap = ({
   code: Buffer | string,
-  map: SourceMap,
+  map: MetroSourceMap,
   outFileName: string,
-}) => {code: Buffer | string, map: SourceMap | string};
+}) => {code: Buffer | string, map: MetroSourceMap | string};
 
 export type Options = {|
   +assetExts: Array<string>,

@@ -14,7 +14,7 @@
 import type {Ast} from 'babel-core';
 import type {BabelSourceMap} from 'babel-core';
 import type {Console} from 'console';
-import type {FBSourceMap, MetroSourceMap as SourceMap} from 'metro-source-map';
+import type {FBSourceMap, MetroSourceMap} from 'metro-source-map';
 
 export type {Transformer} from '../JSTransformer/worker';
 
@@ -106,7 +106,9 @@ export type PostProcessModules = (
   entryPoints: Array<string>,
 ) => Iterable<Module>;
 
-export type OutputFn<M: FBSourceMap | SourceMap = FBSourceMap | SourceMap> = ({|
+export type OutputFn<
+  M: FBSourceMap | MetroSourceMap = FBSourceMap | MetroSourceMap,
+> = ({|
   filename: string,
   idsForPath: IdsForPathFn,
   modules: Iterable<Module>,
@@ -114,7 +116,7 @@ export type OutputFn<M: FBSourceMap | SourceMap = FBSourceMap | SourceMap> = ({|
   sourceMapPath?: ?string,
 |}) => OutputResult<M>;
 
-type OutputResult<M: FBSourceMap | SourceMap> = {|
+type OutputResult<M: FBSourceMap | MetroSourceMap> = {|
   code: string | Buffer,
   extraFiles?: Iterable<[string, string | Buffer]>,
   map: M,

@@ -24,7 +24,7 @@ const sourceMap = require('source-map');
 
 import type {TransformedSourceFile, TransformResult} from '../types.flow';
 import type {BabelSourceMap} from 'babel-core';
-import type {MetroSourceMap as SourceMap} from 'metro-source-map';
+import type {MetroSourceMap} from 'metro-source-map';
 import type {PostMinifyProcess} from '../../Bundler/index.js';
 
 export type OptimizationOptions = {|
@@ -111,8 +111,8 @@ function optimizeCode(code, map, filename, inliningOptions) {
 
 function mergeSourceMaps(
   file: string,
-  originalMap: SourceMap,
-  secondMap: SourceMap,
+  originalMap: MetroSourceMap,
+  secondMap: MetroSourceMap,
 ): BabelSourceMap {
   const merged = new sourceMap.SourceMapGenerator();
   const inputMap = new sourceMap.SourceMapConsumer(originalMap);

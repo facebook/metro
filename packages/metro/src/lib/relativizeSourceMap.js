@@ -14,10 +14,10 @@
 
 const path = require('path');
 
-import type {MetroSourceMap as SourceMap} from 'metro-source-map';
+import type {MetroSourceMap} from 'metro-source-map';
 
 function relativizeSourceMapInternal(
-  sourceMap: SourceMap,
+  sourceMap: MetroSourceMap,
   sourcesRoot: string,
 ) {
   if (sourceMap.mappings === undefined) {
@@ -32,9 +32,9 @@ function relativizeSourceMapInternal(
 }
 
 function relativizeSourceMap(
-  sourceMap: SourceMap,
+  sourceMap: MetroSourceMap,
   sourcesRoot?: string,
-): SourceMap {
+): MetroSourceMap {
   if (!sourcesRoot) {
     return sourceMap;
   }

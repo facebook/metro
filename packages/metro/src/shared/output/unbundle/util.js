@@ -16,11 +16,7 @@ const invariant = require('fbjs/lib/invariant');
 import type {RamModule} from '../../../DeltaBundler/Serializers';
 import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
 import type {BabelSourceMap} from 'babel-core';
-import type {
-  FBIndexMap,
-  IndexMap,
-  MetroSourceMap as SourceMap,
-} from 'metro-source-map';
+import type {FBIndexMap, IndexMap, MetroSourceMap} from 'metro-source-map';
 
 const newline = /\r\n?|\n|\u2028|\u2029/g;
 // fastest implementation
@@ -48,7 +44,7 @@ function lineToLineSourceMap(
 
 const wrapperEnd = wrappedCode => wrappedCode.indexOf('{') + 1;
 
-const Section = (line: number, column: number, map: SourceMap) => ({
+const Section = (line: number, column: number, map: MetroSourceMap) => ({
   map,
   offset: {line, column},
 });
