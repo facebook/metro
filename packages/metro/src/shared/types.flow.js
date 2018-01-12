@@ -27,7 +27,9 @@ import type {
 } from 'metro-source-map';
 
 type BundleType = 'bundle' | 'delta' | 'map' | 'ram' | 'cli' | 'hmr' | 'todo';
-type SourceMapOrMappings = MetroSourceMap | Array<MetroSourceMapSegmentTuple>;
+type MetroSourceMapOrMappings =
+  | MetroSourceMap
+  | Array<MetroSourceMapSegmentTuple>;
 
 export type BundleOptions = {
   +assetPlugins: Array<string>,
@@ -59,7 +61,7 @@ export type ModuleGroups = {|
 export type ModuleTransportLike = {
   +code: string,
   +id: number,
-  +map: ?SourceMapOrMappings,
+  +map: ?MetroSourceMapOrMappings,
   +name?: string,
   +sourcePath: string,
 };
