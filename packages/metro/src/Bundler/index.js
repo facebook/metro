@@ -34,7 +34,7 @@ import type {Reporter} from '../lib/reporting';
 import type {HasteImpl} from '../node-haste/Module';
 import type {BabelSourceMap} from 'babel-core';
 import type {
-  UnknownSourceMapMappingTypes,
+  MetroSourceMapSegmentTuple,
   MetroSourceMap as SourceMap,
 } from 'metro-source-map';
 
@@ -255,8 +255,8 @@ class Bundler {
   async minifyModule(
     path: string,
     code: string,
-    map: UnknownSourceMapMappingTypes,
-  ): Promise<{code: string, map: UnknownSourceMapMappingTypes}> {
+    map: Array<MetroSourceMapSegmentTuple>,
+  ): Promise<{code: string, map: Array<MetroSourceMapSegmentTuple>}> {
     const sourceMap = fromRawMappings([{code, source: code, map, path}]).toMap(
       undefined,
       {},

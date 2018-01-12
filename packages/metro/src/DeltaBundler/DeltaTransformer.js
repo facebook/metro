@@ -30,7 +30,7 @@ import type DependencyGraph from '../node-haste/DependencyGraph';
 import type Module from '../node-haste/Module';
 import type {Options as BundleOptions, MainOptions} from './';
 import type {DependencyEdges} from './traverseDependencies';
-import type {UnknownSourceMapMappingTypes} from 'metro-source-map';
+import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
 export type DeltaEntryType =
   | 'asset'
@@ -42,7 +42,7 @@ export type DeltaEntryType =
 export type DeltaEntry = {|
   +code: string,
   +id: number,
-  +map: UnknownSourceMapMappingTypes,
+  +map: Array<MetroSourceMapSegmentTuple>,
   +name: string,
   +path: string,
   +source: string,
@@ -530,7 +530,7 @@ class DeltaTransformer extends EventEmitter {
   ): Promise<{
     +code: string,
     +dependencies: Array<string>,
-    +map: UnknownSourceMapMappingTypes,
+    +map: Array<MetroSourceMapSegmentTuple>,
     +source: string,
   }> {
     return await module.read(

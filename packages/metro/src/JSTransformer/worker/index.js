@@ -28,7 +28,7 @@ const {toSegmentTuple} = require('metro-source-map');
 
 import type {LogEntry} from 'metro-core/src/Logger';
 import type {BabelSourceMap} from 'babel-core';
-import type {UnknownSourceMapMappingTypes} from 'metro-source-map';
+import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 import type {LocalPath} from '../../node-haste/lib/toLocalPath';
 import type {ResultWithMap} from './minify';
 import type {Ast, Plugins as BabelPlugins} from 'babel-core';
@@ -36,7 +36,7 @@ import type {Ast, Plugins as BabelPlugins} from 'babel-core';
 export type TransformedCode = {
   code: string,
   dependencies: $ReadOnlyArray<string>,
-  map: UnknownSourceMapMappingTypes,
+  map: Array<MetroSourceMapSegmentTuple>,
 };
 
 export type TransformArgs<ExtraOptions: {}> = {|

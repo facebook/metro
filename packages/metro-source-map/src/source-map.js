@@ -17,9 +17,6 @@ const SourceMap = require('source-map');
 
 import type {BabelSourceMap} from 'babel-core';
 import type {BabelSourceMapSegment} from 'babel-generator';
-import type {RawMapping as UnknownSourceMapMappingType} from 'source-map';
-
-export type UnknownSourceMapMappingTypes = Array<UnknownSourceMapMappingType>;
 
 type GeneratedCodeMapping = [number, number];
 type SourceMapping = [number, number, number, number];
