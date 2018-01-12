@@ -11,10 +11,27 @@
  */
 'use strict';
 
-const babylon = require('babylon');
+const babel = require('babel-core');
 
-module.exports.transform = (file: {filename: string, src: string}) => {
-  const ast = babylon.parse(file.src, {sourceType: 'module'});
+import type {TransformOptions} from './JSTransformer/worker';
+import type {Plugins as BabelPlugins} from 'babel-core';
 
-  return {ast};
+type Params = {
+  filename: string,
+  options: TransformOptions,
+  plugins?: BabelPlugins,
+  src: string,
+};
+
+module.exports.transform = ({filename, options, plugins, src}: Params) => {
+  const OLD_BABEL_ENV = process.env.BABEL_ENV;
+  process.env.BABEL_ENV = options.dev ? 'development' : 'production';
+
+  try {
+    const {ast} = babel.transform(src, {filename, code: false, plugins});
+
+    return {ast};
+  } finally {
+    process.env.BABEL_ENV = OLD_BABEL_ENV;
+  }
 };
