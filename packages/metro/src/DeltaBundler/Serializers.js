@@ -238,7 +238,12 @@ async function getAssets(
           module.path,
         );
 
-        return getAssetData(module.path, localPath, options.platform);
+        return getAssetData(
+          module.path,
+          localPath,
+          options.assetPlugins,
+          options.platform,
+        );
       }
       return null;
     }),

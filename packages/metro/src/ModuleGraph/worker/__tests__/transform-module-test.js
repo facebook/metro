@@ -88,6 +88,7 @@ describe('transforming JS modules:', () => {
   });
 
   const defaults = {
+    assetDataPlugins: [],
     dev: false,
     hot: false,
     inlineRequires: false,

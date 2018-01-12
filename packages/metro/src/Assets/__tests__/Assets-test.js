@@ -19,9 +19,12 @@ const {getAssetData, getAsset} = require('../');
 const crypto = require('crypto');
 const fs = require('fs');
 
+const mockImageWidth = 300;
+const mockImageHeight = 200;
+
 require('image-size').mockReturnValue({
-  width: 300,
-  height: 200,
+  width: mockImageWidth,
+  height: mockImageHeight,
 });
 
 describe('getAsset', () => {
@@ -160,7 +163,7 @@ describe('getAssetData', () => {
       },
     });
 
-    return getAssetData('/root/imgs/b.png', 'imgs/b.png').then(data => {
+    return getAssetData('/root/imgs/b.png', 'imgs/b.png', []).then(data => {
       expect(data).toEqual(
         expect.objectContaining({
           __packager_asset: true,
@@ -192,7 +195,7 @@ describe('getAssetData', () => {
       },
     });
 
-    const data = await getAssetData('/root/imgs/b.jpg', 'imgs/b.jpg');
+    const data = await getAssetData('/root/imgs/b.jpg', 'imgs/b.jpg', []);
 
     expect(data).toEqual(
       expect.objectContaining({
@@ -210,6 +213,67 @@ describe('getAssetData', () => {
         ],
       }),
     );
+  });
+
+  it('loads and runs asset plugins', async () => {
+    jest.mock(
+      'mockPlugin1',
+      () => {
+        return asset => {
+          asset.extraReverseHash = asset.hash
+            .split('')
+            .reverse()
+            .join('');
+          return asset;
+        };
+      },
+      {virtual: true},
+    );
+
+    jest.mock(
+      'asyncMockPlugin2',
+      () => {
+        return async asset => {
+          expect(asset.extraReverseHash).toBeDefined();
+          asset.extraPixelCount = asset.width * asset.height;
+          return asset;
+        };
+      },
+      {virtual: true},
+    );
+
+    fs.__setMockFilesystem({
+      root: {
+        imgs: {
+          'b@1x.png': 'b1 image',
+          'b@2x.png': 'b2 image',
+          'b@3x.png': 'b3 image',
+        },
+      },
+    });
+
+    const data = await getAssetData('/root/imgs/b.png', 'imgs/b.png', [
+      'mockPlugin1',
+      'asyncMockPlugin2',
+    ]);
+
+    expect(data).toEqual(
+      expect.objectContaining({
+        __packager_asset: true,
+        type: 'png',
+        name: 'b',
+        scales: [1, 2, 3],
+        fileSystemLocation: '/root/imgs',
+        httpServerLocation: '/assets/imgs',
+        files: [
+          '/root/imgs/b@1x.png',
+          '/root/imgs/b@2x.png',
+          '/root/imgs/b@3x.png',
+        ],
+        extraPixelCount: mockImageWidth * mockImageHeight,
+      }),
+    );
+    expect(typeof data.extraReverseHash).toBe('string');
   });
 
   describe('hash:', () => {
@@ -237,17 +301,21 @@ describe('getAssetData', () => {
         hash.update(mockFS.root.imgs[name]);
       }
 
-      expect(await getAssetData('/root/imgs/b.jpg', 'imgs/b.jpg')).toEqual(
+      expect(await getAssetData('/root/imgs/b.jpg', 'imgs/b.jpg', [])).toEqual(
         expect.objectContaining({hash: hash.digest('hex')}),
       );
     });
 
     it('changes the hash when the passed-in file watcher emits an `all` event', async () => {
-      const initialData = await getAssetData('/root/imgs/b.jpg', 'imgs/b.jpg');
+      const initialData = await getAssetData(
+        '/root/imgs/b.jpg',
+        'imgs/b.jpg',
+        [],
+      );
 
       mockFS.root.imgs['b@4x.jpg'] = 'updated data';
 
-      const data = await getAssetData('/root/imgs/b.jpg', 'imgs/b.jpg');
+      const data = await getAssetData('/root/imgs/b.jpg', 'imgs/b.jpg', []);
       expect(data.hash).not.toEqual(initialData.hash);
     });
   });
