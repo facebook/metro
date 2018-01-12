@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @emails oncal+javascript_foundation
+ * @flow
  * @format
  */
 
@@ -14,11 +15,11 @@
 
 const Generator = require('../Generator');
 
-const {compactMapping, fromRawMappings, toRawMappings} = require('..');
+const {toSegmentTuple, fromRawMappings, toBabelSegments} = require('..');
 
 describe('flattening mappings / compacting', () => {
   it('flattens simple mappings', () => {
-    expect(compactMapping({generated: {line: 12, column: 34}})).toEqual([
+    expect(toSegmentTuple({generated: {line: 12, column: 34}})).toEqual([
       12,
       34,
     ]);
@@ -26,7 +27,7 @@ describe('flattening mappings / compacting', () => {
 
   it('flattens mappings with a source location', () => {
     expect(
-      compactMapping({
+      toSegmentTuple({
         generated: {column: 34, line: 12},
         original: {column: 78, line: 56},
       }),
@@ -35,7 +36,7 @@ describe('flattening mappings / compacting', () => {
 
   it('flattens mappings with a source location and a symbol name', () => {
     expect(
-      compactMapping({
+      toSegmentTuple({
         generated: {column: 34, line: 12},
         name: 'arbitrary',
         original: {column: 78, line: 56},
@@ -93,7 +94,7 @@ describe('build map from raw mappings', () => {
 
   describe('convert a sourcemap into raw mappings', () => {
     expect(
-      toRawMappings({
+      toBabelSegments({
         mappings:
           'E;;IAIMA;;;;QAII;;;;YAIIC;E;;ICEEC;;;;;;;;;;;Y;;cCAAA;;;;kBAI8F;;;;gHA8FID',
         names: ['apples', 'pears', 'bananas'],

@@ -19,7 +19,7 @@ const debug = require('debug');
 const invariant = require('fbjs/lib/invariant');
 
 const {Logger} = require('metro-core');
-const {fromRawMappings, compactMapping} = require('metro-source-map');
+const {fromRawMappings, toSegmentTuple} = require('metro-source-map');
 
 import type {ConfigT as MetroConfig} from './Config';
 import type Server from './Server';
@@ -27,7 +27,7 @@ import type {TransformCache} from './lib/TransformCaching';
 import type {Options as ServerOptions} from './shared/types.flow';
 
 exports.createBlacklist = blacklist;
-exports.sourceMaps = {fromRawMappings, compactMapping};
+exports.sourceMaps = {fromRawMappings, compactMapping: toSegmentTuple};
 exports.createServer = createServer;
 exports.Logger = Logger;
 

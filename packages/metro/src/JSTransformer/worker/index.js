@@ -24,7 +24,7 @@ const minify = require('./minify');
 const optimizeDependencies = require('../../ModuleGraph/worker/optimizeDependencies');
 const path = require('path');
 
-const {compactMapping} = require('metro-source-map');
+const {toSegmentTuple} = require('metro-source-map');
 
 import type {LogEntry} from 'metro-core/src/Logger';
 import type {BabelSourceMap} from 'babel-core';
@@ -151,7 +151,7 @@ function postTransform(
     sourceCode,
   );
 
-  const map = result.rawMappings ? result.rawMappings.map(compactMapping) : [];
+  const map = result.rawMappings ? result.rawMappings.map(toSegmentTuple) : [];
 
   return {
     result: {dependencies, code: result.code, map},

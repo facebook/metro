@@ -21,9 +21,9 @@ const fs = require('fs');
 const getTransformCacheKeyFn = require('../lib/getTransformCacheKeyFn');
 
 const {
-  compactMapping,
+  toSegmentTuple,
   fromRawMappings,
-  toRawMappings,
+  toBabelSegments,
 } = require('metro-source-map');
 
 import type {PostProcessModules} from '../DeltaBundler';
@@ -267,7 +267,7 @@ class Bundler {
 
     return {
       code: result.code,
-      map: result.map ? toRawMappings(result.map).map(compactMapping) : [],
+      map: result.map ? toBabelSegments(result.map).map(toSegmentTuple) : [],
     };
   }
 }

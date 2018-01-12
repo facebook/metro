@@ -149,7 +149,7 @@ class Generator {
   /**
    * Return the source map as object.
    */
-  toMap(file?: string, options: {excludeSource?: boolean}): BabelSourceMap {
+  toMap(file?: string, options?: {excludeSource?: boolean}): BabelSourceMap {
     let content;
 
     if (options && options.excludeSource) {

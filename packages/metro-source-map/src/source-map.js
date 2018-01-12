@@ -89,7 +89,7 @@ function fromRawMappings(
  * Transforms a standard source map object into a Raw Mappings object, to be
  * used across the bundler.
  */
-function toRawMappings(
+function toBabelSegments(
   sourceMap: BabelSourceMap,
 ): Array<BabelSourceMapSegment> {
   const rawMappings = [];
@@ -112,7 +112,7 @@ function toRawMappings(
   return rawMappings;
 }
 
-function compactMapping(
+function toSegmentTuple(
   mapping: BabelSourceMapSegment,
 ): MetroSourceMapSegmentTuple {
   const {column, line} = mapping.generated;
@@ -172,6 +172,6 @@ function countLines(string) {
 
 module.exports = {
   fromRawMappings,
-  toRawMappings,
-  compactMapping,
+  toBabelSegments,
+  toSegmentTuple,
 };
