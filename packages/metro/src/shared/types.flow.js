@@ -21,10 +21,13 @@ import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
 import type {HasteImpl} from '../node-haste/Module';
-import type {MetroSourceMap as SourceMap, RawMapping} from 'metro-source-map';
+import type {
+  MetroSourceMap as SourceMap,
+  MetroSourceMapSegmentTuple,
+} from 'metro-source-map';
 
 type BundleType = 'bundle' | 'delta' | 'map' | 'ram' | 'cli' | 'hmr' | 'todo';
-type SourceMapOrMappings = SourceMap | Array<RawMapping>;
+type SourceMapOrMappings = SourceMap | Array<MetroSourceMapSegmentTuple>;
 
 export type BundleOptions = {
   +assetPlugins: Array<string>,

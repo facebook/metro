@@ -25,15 +25,15 @@ type GeneratedCodeMapping = [number, number];
 type SourceMapping = [number, number, number, number];
 type SourceMappingWithName = [number, number, number, number, string];
 
+export type MetroSourceMapSegmentTuple =
+  | SourceMappingWithName
+  | SourceMapping
+  | GeneratedCodeMapping;
+
 type FBExtensions = {
   x_facebook_offsets: Array<number>,
   x_metro_module_paths: Array<string>,
 };
-
-export type RawMapping =
-  | SourceMappingWithName
-  | SourceMapping
-  | GeneratedCodeMapping;
 
 export type IndexMapSection = {
   map: MetroSourceMap,
@@ -58,7 +58,7 @@ export type FBSourceMap = FBIndexMap | (BabelSourceMap & FBExtensions);
  */
 function fromRawMappings(
   modules: $ReadOnlyArray<{
-    +map: ?Array<RawMapping>,
+    +map: ?Array<MetroSourceMapSegmentTuple>,
     +path: string,
     +source: string,
     +code: string,
@@ -110,7 +110,7 @@ function toRawMappings(sourceMap: BabelSourceMap): Array<BabelRawMapping> {
   return rawMappings;
 }
 
-function compactMapping(mapping: BabelRawMapping): RawMapping {
+function compactMapping(mapping: BabelRawMapping): MetroSourceMapSegmentTuple {
   const {column, line} = mapping.generated;
   const {name, original} = mapping;
 
