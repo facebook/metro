@@ -297,6 +297,7 @@ describe('DeltaCalculator', () => {
   describe('getTransformerOptions()', () => {
     it('should calculate the transform options correctly', async () => {
       expect(await deltaCalculator.getTransformerOptions()).toEqual({
+        assetDataPlugins: [],
         dev: true,
         enableBabelRCLookup: false,
         hot: true,
@@ -315,6 +316,7 @@ describe('DeltaCalculator', () => {
       );
 
       expect(await deltaCalculator.getTransformerOptions()).toEqual({
+        assetDataPlugins: [],
         dev: true,
         enableBabelRCLookup: false,
         hot: true,
@@ -333,6 +335,7 @@ describe('DeltaCalculator', () => {
       );
 
       expect(await deltaCalculator.getTransformerOptions()).toEqual({
+        assetDataPlugins: [],
         dev: true,
         enableBabelRCLookup: false,
         hot: true,

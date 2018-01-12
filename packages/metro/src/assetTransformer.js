@@ -27,6 +27,7 @@ type Params = {
 async function transform(
   {filename, localPath, options, src}: Params,
   assetRegistryPath: string,
+  assetDataPlugins: $ReadOnlyArray<string>,
 ): Promise<{ast: Ast}> {
   options = options || {
     platform: '',
@@ -35,7 +36,12 @@ async function transform(
     minify: false,
   };
 
-  const data = await getAssetData(filename, localPath, options.platform);
+  const data = await getAssetData(
+    filename,
+    localPath,
+    assetDataPlugins,
+    options.platform,
+  );
 
   return {
     ast: generateAssetCodeFileAst(assetRegistryPath, data),
