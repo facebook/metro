@@ -169,6 +169,13 @@ class Terminal {
     this.log(this._nextStatusStr);
     this._nextStatusStr = '';
   }
+
+  flush(): void {
+    // Useful if you're going to start calling console.log/console.error directly
+    // again; otherwise you could end up with mangled output when the queued
+    // update starts writing to stream after a delay.
+    this._scheduleUpdate.flush();
+  }
 }
 
 module.exports = Terminal;
