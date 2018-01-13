@@ -79,7 +79,7 @@ class HomeSplash extends React.Component {
                         siteConfig.baseUrl +
                         'docs/' +
                         this.props.language +
-                        '/api.html'
+                        '/getting-started.html'
                       }
                     >
                       <translate>Get Started</translate>
@@ -89,7 +89,7 @@ class HomeSplash extends React.Component {
                         siteConfig.baseUrl +
                         'docs/' +
                         this.props.language +
-                        '/snapshot-testing.html'
+                        '/api.html'
                       }
                     >
                       <translate>Learn More</translate>
