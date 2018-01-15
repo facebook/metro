@@ -153,7 +153,8 @@ const files = process.argv.slice(2);
 if (files.length) {
   files.forEach(buildFile);
 } else {
-  process.stdout.write(chalk.bold.inverse('Building packages\n'));
+  // $FlowFixMe TODO t25179342 Add version to the flow types for this module
+  process.stdout.write(chalk.bold.inverse('Building packages') + ' (using Babel v' + babel.version + ')\n');
   getPackages().forEach(buildPackage);
   process.stdout.write('\n');
 }
