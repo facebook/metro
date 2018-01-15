@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @format
+ * @flow
  */
 'use strict';
 
@@ -27,7 +28,7 @@ mockColor.bgRed = function() {
 };
 
 module.exports = {
-  dim: s => s,
+  dim: <T>(s: T) => s, // (elaborate way of saying "any", fine for this case)
   magenta: mockColor,
   white: mockColor,
   blue: mockColor,

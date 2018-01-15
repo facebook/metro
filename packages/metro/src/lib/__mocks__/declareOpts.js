@@ -7,12 +7,13 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @format
+ * @flow
  */
 
 'use strict';
 
-module.exports = function(declared) {
-  return function(opts) {
+module.exports = function(declared: Object) {
+  return function(opts: Object) {
     for (var p in declared) {
       if (opts[p] == null && declared[p].default != null) {
         opts[p] = declared[p].default;

@@ -20,6 +20,7 @@ const FILE_TYPE = 'module';
 
 describe('build setup', () => {
   const buildSetup = ModuleGraph.createBuildSetup(graph, mds => {
+    // TODO: the .sort() function returns -1 1 or 0 for sorting, not boolean
     return [...mds].sort((l, r) => l.file.path > r.file.path);
   });
   const polyfillOptions = {getPolyfills: () => ['polyfill-a', 'polyfill-b']};

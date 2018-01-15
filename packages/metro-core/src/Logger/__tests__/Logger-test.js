@@ -11,6 +11,7 @@
  *
  * @format
  * @emails oncall+js_foundation
+ * @flow
  */
 'use strict';
 
@@ -24,10 +25,12 @@ describe('Logger', () => {
   const originalConsoleLog = console.log;
 
   beforeEach(() => {
+    // $FlowFixMe don't worry, state restored below
     console.log = jest.fn();
   });
 
   afterEach(() => {
+    // $FlowFixMe
     console.log = originalConsoleLog;
   });
 

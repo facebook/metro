@@ -3,6 +3,7 @@
  * All rights reserved.
  *
  * @format
+ * @flow
  */
 
 'use strict';

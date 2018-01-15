@@ -8,6 +8,7 @@
  *
  * @format
  * @emails oncall+js_foundation
+ * @flow
  */
 
 'use strict';
@@ -22,7 +23,7 @@ beforeEach(() => {
 it('exposes a fluent interface', () => {
   expect(builder.markLines(0)).toBe(builder);
   expect(builder.markLines(3)).toBe(builder);
-  expect(builder.startSegment()).toBe(builder);
+  expect(builder.startSegment(0)).toBe(builder);
   expect(builder.append(4)).toBe(builder);
 });
 

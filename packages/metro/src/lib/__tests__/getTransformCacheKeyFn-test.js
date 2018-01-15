@@ -8,6 +8,7 @@
  *
  * @emails oncall+javascript_foundation
  * @format
+ * @flow
  */
 
 'use strict';

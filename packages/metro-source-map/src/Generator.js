@@ -173,7 +173,7 @@ class Generator {
    *
    * This is ~2.5x faster than calling `JSON.stringify(generator.toMap())`
    */
-  toString(file?: string, options: {excludeSource?: boolean}): string {
+  toString(file?: string, options?: {excludeSource?: boolean}): string {
     let content;
 
     if (options && options.excludeSource) {

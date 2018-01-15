@@ -8,6 +8,7 @@
  *
  * @emails oncall+javascript_foundation
  * @format
+ * @flow
  */
 'use strict';
 
@@ -25,6 +26,9 @@ const babelOptions = {
 };
 
 function normalize({code}) {
+  if (code === undefined || code === null) {
+    return 'FAIL';
+  }
   return babel.transform(code, babelOptions).code;
 }
 
