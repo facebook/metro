@@ -87,7 +87,6 @@ describe('Transformer', function() {
         const babelError = new SyntaxError(message);
 
         babelError.type = 'SyntaxError';
-        babelError.description = message;
         babelError.loc = {line: 2, column: 15};
         babelError.codeFrame = snippet;
 

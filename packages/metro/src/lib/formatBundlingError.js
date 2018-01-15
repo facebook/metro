@@ -24,7 +24,6 @@ const {
 export type CustomError = Error & {|
   status?: number,
   type?: string,
-  description?: string,
   filename?: string,
   lineNumber?: number,
   errors?: Array<{
@@ -63,7 +62,7 @@ function formatBundlingError(
   ) {
     error.errors = [
       {
-        description: error.description,
+        description: error.message,
         filename: error.filename,
         lineNumber: error.lineNumber,
       },

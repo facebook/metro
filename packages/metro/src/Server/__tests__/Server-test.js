@@ -320,6 +320,7 @@ describe('processRequest', () => {
             message: 'test syntax error',
           });
           expect(body.errors).toContainEqual({
+            description: 'test syntax error',
             filename: 'testFile.js',
             lineNumber: 123,
           });
