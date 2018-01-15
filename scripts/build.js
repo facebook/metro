@@ -4,6 +4,9 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @flow
+ * Note: cannot use prettier here because this file is ran as-is
  */
 
 /**
@@ -19,16 +22,14 @@
 
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
-const glob = require('glob');
-const mkdirp = require('mkdirp');
-
 const babel = require('babel-core');
 const chalk = require('chalk');
-const micromatch = require('micromatch');
-
+const fs = require('fs');
 const getPackages = require('./_getPackages');
+const glob = require('glob');
+const micromatch = require('micromatch');
+const mkdirp = require('mkdirp');
+const path = require('path');
 
 const SRC_DIR = 'src';
 const BUILD_DIR = 'build';
@@ -48,9 +49,9 @@ const babelEs5Options = Object.assign(
   {plugins: [].concat(babelNodeOptions.plugins, 'transform-runtime')}
 );
 
-const fixedWidth = str => {
+const fixedWidth = function(str/*: string*/) {
   const WIDTH = 80;
-  const strs = str.match(new RegExp(`(.{1,${WIDTH}})`, 'g'));
+  const strs = str.match(new RegExp(`(.{1,${WIDTH}})`, 'g')) || [str];
   let lastString = strs[strs.length - 1];
   if (lastString.length < WIDTH) {
     lastString += Array(WIDTH - lastString.length).join(chalk.dim('.'));
@@ -92,6 +93,7 @@ function buildFile(file, silent) {
     getPackageName(file),
     'package.json'
   );
+  // $FlowFixMe require-string; the require is generated above (status quo)
   const browser = require(pkgJsonPath).browser;
   if (browser) {
     if (browser.indexOf(BUILD_ES5_DIR) !== 0) {
@@ -128,9 +130,11 @@ function buildFileFor(file, silent, env) {
           '\n'
       );
   } else {
+    // $FlowFixMe TODO t25179342 need to update flow-types for babel-core
     const transformed = babel.transformFileSync(file, babelOptions).code;
     fs.writeFileSync(destPath, transformed);
-    if (/\@flow/.test(fs.readFileSync(file))) {
+    const source = fs.readFileSync(file).toString('utf-8');
+    if (/\@flow/.test(source)) {
       fs.createReadStream(file).pipe(fs.createWriteStream(destPath + '.flow'));
     }
     silent ||
