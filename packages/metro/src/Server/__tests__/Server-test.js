@@ -301,6 +301,31 @@ describe('processRequest', () => {
         expect(response.body).toEqual('{"delta": "bundle"}');
       });
     });
+
+    it('should include the error message for transform errors', () => {
+      Serializers.deltaBundle.mockImplementation(async () => {
+        const transformError = new SyntaxError('test syntax error');
+        transformError.type = 'TransformError';
+        transformError.filename = 'testFile.js';
+        transformError.lineNumber = 123;
+        throw transformError;
+      });
+
+      return makeRequest(requestHandler, 'index.delta?platform=ios').then(
+        function(response) {
+          expect(() => JSON.parse(response.body)).not.toThrow();
+          const body = JSON.parse(response.body);
+          expect(body).toMatchObject({
+            type: 'TransformError',
+            message: 'test syntax error',
+          });
+          expect(body.errors).toContainEqual({
+            filename: 'testFile.js',
+            lineNumber: 123,
+          });
+        },
+      );
+    });
   });
 
   describe('/onchange endpoint', () => {

@@ -12,6 +12,8 @@
 
 'use strict';
 
+const serializeError = require('serialize-error');
+
 const {
   UnableToResolveError,
 } = require('../node-haste/DependencyGraph/ModuleResolution');
@@ -67,7 +69,7 @@ function formatBundlingError(
       },
     ];
 
-    return error;
+    return serializeError(error);
   } else {
     return {
       type: 'InternalError',
