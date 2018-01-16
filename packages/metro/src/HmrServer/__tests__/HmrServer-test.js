@@ -42,7 +42,7 @@ describe('HmrServer', () => {
         return deltaBundlerMock;
       },
     };
-    getDeltaTransformerMock.reporterMock = {
+    reporterMock = {
       update: jest.fn(),
     };
 
@@ -120,6 +120,49 @@ describe('HmrServer', () => {
           sourceURLs: {},
           sourceMappingURLs: {},
         },
+      });
+      expect(JSON.parse(sendMessage.mock.calls[2][0])).toEqual({
+        type: 'update-done',
+      });
+      done();
+    }, 30);
+  });
+
+  it('should return error messages when there is a transform error', async done => {
+    jest.useRealTimers();
+    const sendMessage = jest.fn();
+
+    await hmrServer.onClientConnect(
+      '/hot?bundleEntry=EntryPoint.js&platform=ios',
+      sendMessage,
+    );
+
+    deltaTransformerMock.getDelta.mockImplementation(async () => {
+      const transformError = new SyntaxError('test syntax error');
+      transformError.type = 'TransformError';
+      transformError.filename = 'EntryPoint.js';
+      transformError.lineNumber = 123;
+      throw transformError;
+    });
+
+    deltaTransformerMock.emit('change');
+
+    setTimeout(function() {
+      expect(JSON.parse(sendMessage.mock.calls[0][0])).toEqual({
+        type: 'update-start',
+      });
+      const sentErrorMessage = JSON.parse(sendMessage.mock.calls[1][0]);
+      expect(sentErrorMessage).toMatchObject({type: 'error'});
+      expect(sentErrorMessage.body).toMatchObject({
+        type: 'TransformError',
+        message: 'test syntax error',
+        errors: [
+          {
+            description: 'test syntax error',
+            filename: 'EntryPoint.js',
+            lineNumber: 123,
+          },
+        ],
       });
       expect(JSON.parse(sendMessage.mock.calls[2][0])).toEqual({
         type: 'update-done',
