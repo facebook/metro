@@ -66,7 +66,7 @@ type Options = {|
   +watch: boolean,
 |};
 
-const JEST_HASTE_MAP_CACHE_BREAKER = 1;
+const JEST_HASTE_MAP_CACHE_BREAKER = 2;
 
 class DependencyGraph extends EventEmitter {
   _assetResolutionCache: AssetResolutionCache;
