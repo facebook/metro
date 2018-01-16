@@ -23,10 +23,10 @@ const {InvalidRequireCallError} = require('..');
 describe('code transformation worker:', () => {
   it('transforms a simple script', async () => {
     const {result} = await transformCode(
-      path.join(__dirname, '../../../transformer.js'),
       'arbitrary/file.js',
       `local/file.js`,
       'someReallyArbitrary(code)',
+      path.join(__dirname, '../../../transformer.js'),
       true,
       {
         dev: true,
@@ -49,10 +49,10 @@ describe('code transformation worker:', () => {
 
   it('transforms a simple module', async () => {
     const {result} = await transformCode(
-      path.join(__dirname, '../../../transformer.js'),
       'arbitrary/file.js',
       `local/file.js`,
       'arbitrary(code)',
+      path.join(__dirname, '../../../transformer.js'),
       false,
       {
         dev: true,
@@ -75,7 +75,6 @@ describe('code transformation worker:', () => {
 
   it('transforms a module with dependencies', async () => {
     const {result} = await transformCode(
-      path.join(__dirname, '../../../transformer.js'),
       'arbitrary/file.js',
       `local/file.js`,
       [
@@ -84,6 +83,7 @@ describe('code transformation worker:', () => {
         'const b = require("b");',
         'import c from "./c";',
       ].join('\n'),
+      path.join(__dirname, '../../../transformer.js'),
       false,
       {
         dev: true,
@@ -115,7 +115,6 @@ describe('code transformation worker:', () => {
   it('reports filename when encountering unsupported dynamic dependency', async () => {
     try {
       await transformCode(
-        path.join(__dirname, '../../../transformer.js'),
         'arbitrary/file.js',
         `local/file.js`,
         [
@@ -123,6 +122,7 @@ describe('code transformation worker:', () => {
           'let a = arbitrary(code);',
           'const b = require(a);',
         ].join('\n'),
+        path.join(__dirname, '../../../transformer.js'),
         false,
         {
           dev: true,

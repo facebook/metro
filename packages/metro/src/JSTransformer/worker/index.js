@@ -163,10 +163,10 @@ function postTransform(
 }
 
 function transformCode(
-  transformerPath: string,
   filename: string,
   localPath: LocalPath,
   sourceCode: string,
+  transformerPath: string,
   isScript: boolean,
   options: Options,
   assetExts: $ReadOnlyArray<string>,

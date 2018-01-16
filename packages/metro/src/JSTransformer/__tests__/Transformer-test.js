@@ -66,10 +66,10 @@ describe('Transformer', function() {
     );
 
     expect(api.transform).toBeCalledWith(
-      transformModulePath,
       fileName,
       localPath,
       code,
+      transformModulePath,
       false,
       transformOptions,
       [],
@@ -83,7 +83,7 @@ describe('Transformer', function() {
     const snippet = 'snippet';
 
     api.transform.mockImplementation(
-      (transformPath, filename, localPth, code, opts) => {
+      (filename, localPth, code, transformPath, opts) => {
         const babelError = new SyntaxError(message);
 
         babelError.type = 'SyntaxError';

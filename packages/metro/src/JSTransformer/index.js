@@ -49,6 +49,7 @@ module.exports = class Transformer {
     if (maxWorkers > 1) {
       this._worker = this._makeFarm(
         workerPath,
+        this._computeWorkerKey,
         ['minify', 'transform'],
         maxWorkers,
       );
@@ -92,10 +93,10 @@ module.exports = class Transformer {
       debug('Started ransforming file', filename);
 
       const data = await this._worker.transform(
-        this._transformModulePath,
         filename,
         localPath,
         code,
+        this._transformModulePath,
         isScript,
         options,
         assetExts,
@@ -119,7 +120,7 @@ module.exports = class Transformer {
     }
   }
 
-  _makeFarm(workerPath, exposedMethods, maxWorkers) {
+  _makeFarm(workerPath, computeWorkerKey, exposedMethods, maxWorkers) {
     // We whitelist only what would work. For example `--inspect` doesn't work
     // in the workers because it tries to open the same debugging port. Feel
     // free to add more cases to the RegExp. A whitelist is preferred, to
@@ -132,10 +133,22 @@ module.exports = class Transformer {
     );
 
     return new Worker(workerPath, {
+      computeWorkerKey,
       exposedMethods,
       forkOptions: {execArgv},
       maxWorkers,
     });
+  }
+
+  _computeWorkerKey(method: string, filename: string): ?string {
+    // Only when transforming a file we want to stick to the same worker; and
+    // we'll shard by file path. If not; we return null, which tells the worker
+    // to pick the first available one.
+    if (method === 'transform') {
+      return filename;
+    }
+
+    return null;
   }
 
   _formatGenericError(err, filename) {
