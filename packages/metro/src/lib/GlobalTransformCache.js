@@ -439,6 +439,7 @@ class OptionsHasher {
     options: TransformOptionsStrict,
   ): crypto$Hash {
     const {
+      assetDataPlugins,
       enableBabelRCLookup,
       dev,
       hot,
@@ -466,8 +467,9 @@ class OptionsHasher {
           (+minify << 5),
       ]),
     );
-    /* eslint-enable no-bitwise */
 
+    /* eslint-enable no-bitwise */
+    hash.update(JSON.stringify(assetDataPlugins));
     hash.update(JSON.stringify(platform));
     hash.update(JSON.stringify(this.toLocalPath(projectRoot)));
 

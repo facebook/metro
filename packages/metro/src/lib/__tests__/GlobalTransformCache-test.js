@@ -19,7 +19,8 @@ jest.mock('node-fetch', () => mockFetch);
 
 const {URIBasedGlobalTransformCache} = require('../GlobalTransformCache');
 const FetchError = require('node-fetch/lib/fetch-error');
-const path = require('path');
+
+const getTransformOptions = require('../../__fixtures__/getTransformOptions');
 
 async function fetchResultURIs(
   keys: Array<string>,
@@ -44,14 +45,8 @@ describe('GlobalTransformCache', () => {
       rootPath: __dirname,
       storeResults: null,
     });
-    const transformOptions = {
-      dev: false,
-      hot: false,
-      inlineRequires: false,
-      minify: false,
-      platform: 'ios',
-      projectRoot: path.join(__dirname, 'root'),
-    };
+    const transformOptions = await getTransformOptions();
+
     const result = await Promise.all([
       cache.fetch({
         localPath: 'some/where/foo.js',

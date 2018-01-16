@@ -24,6 +24,8 @@ const {
   traverseDependencies,
 } = require('../traverseDependencies');
 
+const getTransformOptions = require('../../__fixtures__/getTransformOptions');
+
 describe('DeltaCalculator', () => {
   const entryModule = createModule({path: '/bundle', name: 'bundle'});
   const moduleFoo = createModule({path: '/foo', name: 'foo'});
@@ -306,6 +308,14 @@ describe('DeltaCalculator', () => {
         platform: 'ios',
         projectRoot: '/foo',
       });
+    });
+
+    it('should return the same params as the standard options', async () => {
+      const options = await deltaCalculator.getTransformerOptions();
+
+      expect(Object.keys(options).sort()).toEqual(
+        Object.keys(await getTransformOptions()).sort(),
+      );
     });
 
     it('should handle inlineRequires=true correctly', async () => {
