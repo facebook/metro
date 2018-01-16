@@ -17,26 +17,25 @@ const getPreludeCode = require('../lib/getPreludeCode');
 
 import type {BuildResult, GraphFn, PostProcessModules} from './types.flow';
 
-export type BuildFn = (
-  entryPoints: Iterable<string>,
-  options: BuildOptions,
-) => Promise<BuildResult>;
-
 type BuildOptions = {|
-  getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
-  optimize: boolean,
-  platform: string,
+  +entryPointPaths: Iterable<string>,
+  +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
+  +graphFn: GraphFn,
+  +optimize: boolean,
+  +platform: string,
+  +postProcessModules: PostProcessModules,
+  +translateDefaultsPath: string => string,
 |};
 
-exports.createBuildSetup = (
-  graphFn: GraphFn,
-  postProcessModules: PostProcessModules,
-  translateDefaultsPath: string => string = x => x,
-): BuildFn => async (entryPoints, options) => {
+async function build(options: BuildOptions): Promise<BuildResult> {
   const {
-    getPolyfills = ({platform}) => [],
-    optimize = false,
-    platform = defaults.platforms[0],
+    entryPointPaths,
+    getPolyfills,
+    graphFn,
+    optimize,
+    platform,
+    postProcessModules,
+    translateDefaultsPath,
   } = options;
   const graphOptions = {optimize};
 
@@ -45,9 +44,9 @@ exports.createBuildSetup = (
 
   const [graph, moduleSystem, polyfills] = await Promise.all([
     (async () => {
-      const result = await graphWithOptions(entryPoints);
+      const result = await graphWithOptions(entryPointPaths);
       const {modules, entryModules} = result;
-      const prModules = postProcessModules(modules, [...entryPoints]);
+      const prModules = postProcessModules(modules, [...entryPointPaths]);
       return {modules: prModules, entryModules};
     })(),
     graphOnlyModules([translateDefaultsPath(defaults.moduleSystem)]),
@@ -62,4 +61,6 @@ exports.createBuildSetup = (
     modules: [...prependedScripts, ...graph.modules],
     prependedScripts,
   };
-};
+}
+
+module.exports = build;

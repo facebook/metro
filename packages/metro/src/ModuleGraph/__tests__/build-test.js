@@ -12,17 +12,26 @@
 
 'use strict';
 
-const ModuleGraph = require('../ModuleGraph');
-
+const build = require('../build');
 const defaults = require('../../defaults');
 
 const FILE_TYPE = 'module';
 
 describe('build setup', () => {
-  const buildSetup = ModuleGraph.createBuildSetup(graph, mds => {
-    // TODO: the .sort() function returns -1 1 or 0 for sorting, not boolean
-    return [...mds].sort((l, r) => l.file.path > r.file.path);
-  });
+  const buildSetup = (entryPointPaths, options) =>
+    build({
+      entryPointPaths,
+      getPolyfills: () => [],
+      graphFn,
+      optimize: false,
+      platform: 'ios',
+      postProcessModules: mds => {
+        // TODO: the .sort() function returns -1 1 or 0 for sorting, not boolean
+        return [...mds].sort((l, r) => l.file.path > r.file.path);
+      },
+      translateDefaultsPath: x => x,
+      ...options,
+    });
   const polyfillOptions = {getPolyfills: () => ['polyfill-a', 'polyfill-b']};
   const noOptions = {};
   const noEntryPoints = [];
@@ -80,7 +89,7 @@ function moduleFromPath(path) {
   };
 }
 
-async function graph(entryPoints, platform, options, callback) {
+async function graphFn(entryPoints, platform, options, callback) {
   const modules = Array.from(entryPoints, moduleFromPath);
   const depModules = Array.prototype.concat.apply(
     [],
