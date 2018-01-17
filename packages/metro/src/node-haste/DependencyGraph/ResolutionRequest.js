@@ -14,7 +14,6 @@
 
 const ModuleResolution = require('./ModuleResolution');
 
-const isAbsolutePath = require('absolute-path');
 const path = require('path');
 
 const {DuplicateHasteCandidatesError} = require('jest-haste-map').ModuleMap;

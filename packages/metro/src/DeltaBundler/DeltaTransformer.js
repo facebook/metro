@@ -19,7 +19,6 @@ const createModuleIdFactory = require('../lib/createModuleIdFactory');
 const defaults = require('../defaults');
 const getPreludeCode = require('../lib/getPreludeCode');
 const nullthrows = require('fbjs/lib/nullthrows');
-const path = require('path');
 const removeInlineRequiresBlacklistFromOptions = require('../lib/removeInlineRequiresBlacklistFromOptions');
 
 const {EventEmitter} = require('events');

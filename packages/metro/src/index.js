@@ -32,7 +32,6 @@ import type {ConfigT} from './Config';
 import type {Reporter} from './lib/reporting';
 import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
 import type {Options as ServerOptions} from './shared/types.flow';
-import type {IncomingMessage, ServerResponse} from 'http';
 import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
 

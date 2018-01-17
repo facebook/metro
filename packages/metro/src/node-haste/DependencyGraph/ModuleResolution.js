@@ -17,8 +17,6 @@ const isAbsolutePath = require('absolute-path');
 const path = require('path');
 const util = require('util');
 
-import type DependencyGraphHelpers from './DependencyGraphHelpers';
-
 export type DirExistsFn = (filePath: string) => boolean;
 
 /**

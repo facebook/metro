@@ -39,8 +39,6 @@ type Options = {|
 type AssetInfo = {|platform: ?string, fileName: string|};
 type InfoByAssetName = Map<string, Array<AssetInfo>>;
 
-const EMPTY_ARRAY = [];
-
 /**
  * Lazily build an index of assets for the directories in which we're looking
  * for specific assets. For example if we're looking for `foo.png` in a `bar`
