@@ -25,7 +25,7 @@
     "babylon": "^6.18.0",
     "chalk": "^1.1.1",
     "concat-stream": "^1.6.0",
-    "connect": "^2.8.3",
+    "connect": "^3.6.5",
     "core-js": "^2.2.2",
     "debug": "^2.2.0",
     "denodeify": "^1.2.1",
