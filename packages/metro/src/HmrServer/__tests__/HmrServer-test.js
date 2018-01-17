@@ -158,6 +158,7 @@ describe('HmrServer', () => {
         message: 'test syntax error',
         errors: [
           {
+            description: 'test syntax error',
             filename: 'EntryPoint.js',
             lineNumber: 123,
           },
