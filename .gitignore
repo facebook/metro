@@ -2,7 +2,6 @@
 /node_modules
 /packages/*/build/
 /packages/*/node_modules/
-/packages/*/yarn.lock
 /coverage
 lerna-debug.log
 npm-debug.log*
