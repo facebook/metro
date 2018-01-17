@@ -22,7 +22,10 @@ describe('getTransformCacheKeyFn', () => {
       getTransformCacheKeyFn({
         cacheVersion: '1.0',
         projectRoots: [__dirname],
-        transformModulePath: path.resolve(__dirname, '../../transformer.js'),
+        transformModulePath: path.resolve(
+          __dirname,
+          '../../defaultTransform.js',
+        ),
       })(),
     ).toMatchSnapshot();
   });
@@ -31,7 +34,7 @@ describe('getTransformCacheKeyFn', () => {
     const baseParams = {
       cacheVersion: '1.0',
       projectRoots: [__dirname],
-      transformModulePath: path.resolve(__dirname, '../../transformer.js'),
+      transformModulePath: path.resolve(__dirname, '../../defaultTransform.js'),
     };
 
     const changedParams = [
@@ -47,7 +50,7 @@ describe('getTransformCacheKeyFn', () => {
         ...baseParams,
         transformModulePath: path.resolve(
           __dirname,
-          '../../../src/defaultTransform.js',
+          '../../../src/transformer.js',
         ),
       },
     ];
