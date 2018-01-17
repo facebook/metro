@@ -6,13 +6,14 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * $FlowFixMe
  * Note: This file runs BEFORE transforms so DO NOT ADD ES6 or Flow in code!
- * @format
+ * @PrettierFixMe
+ * Note: Cannot safely use Prettier because of trailing call arg comma rule!
  */
 
 'use strict';
 
-var _ = require('lodash');
 var wordwrap = require('wordwrap');
 
 var HORIZONTAL_LINE = '\u2500';
@@ -21,6 +22,10 @@ var TOP_LEFT = '\u250c';
 var TOP_RIGHT = '\u2510';
 var BOTTOM_LEFT = '\u2514';
 var BOTTOM_RIGHT = '\u2518';
+
+function identity(x) {
+  return x;
+}
 
 /**
  * Prints a banner with a border around it containing the given message. The
@@ -51,16 +56,30 @@ var BOTTOM_RIGHT = '\u2518';
  */
 function formatBanner(message, options) {
   options = options || {};
-  _.defaults(options, {
-    chalkFunction: _.identity,
-    width: 80,
-    marginLeft: 0,
-    marginRight: 0,
-    paddingTop: 0,
-    paddingBottom: 0,
-    paddingLeft: 2,
-    paddingRight: 2,
-  });
+  if (options.chalkFunction === undefined) {
+    options.chalkFunction = identity;
+  }
+  if (options.width === undefined) {
+    options.width = 80;
+  }
+  if (options.marginLeft === undefined) {
+    options.marginLeft = 0;
+  }
+  if (options.marginRight === undefined) {
+    options.marginRight = 0;
+  }
+  if (options.paddingTop === undefined) {
+    options.paddingTop = 0;
+  }
+  if (options.paddingBottom === undefined) {
+    options.paddingBottom = 0;
+  }
+  if (options.paddingLeft === undefined) {
+    options.paddingLeft = 2;
+  }
+  if (options.paddingRight === undefined) {
+    options.paddingRight = 2;
+  }
 
   var width = options.width;
   var marginLeft = options.marginLeft;
@@ -78,18 +97,18 @@ function formatBanner(message, options) {
 
   var left = spaces(marginLeft) + VERTICAL_LINE + spaces(paddingLeft);
   var right = spaces(paddingRight) + VERTICAL_LINE + spaces(marginRight);
-  var bodyLines = _.flattenDeep([
+  var bodyLines = [].concat(
     arrayOf('', paddingTop),
     body.split('\n'),
-    arrayOf('', paddingBottom),
-  ]).map(function(line) {
+    arrayOf('', paddingBottom)
+  ).map(function(line) {
     var padding = spaces(Math.max(0, maxLineWidth - line.length));
     return left + options.chalkFunction(line) + padding + right;
   });
 
   var horizontalBorderLine = repeatString(
     HORIZONTAL_LINE,
-    width - marginLeft - marginRight - 2,
+    width - marginLeft - marginRight - 2
   );
   var top =
     spaces(marginLeft) +
@@ -103,7 +122,7 @@ function formatBanner(message, options) {
     horizontalBorderLine +
     BOTTOM_RIGHT +
     spaces(marginRight);
-  return _.flattenDeep([top, bodyLines, bottom]).join('\n');
+  return [].concat(top, bodyLines, bottom).join('\n');
 }
 
 function spaces(number) {
@@ -115,7 +134,7 @@ function repeatString(string, number) {
 }
 
 function arrayOf(value, number) {
-  return _.range(number).map(function() {
+  return Array.apply(null, Array(number)).map(function() {
     return value;
   });
 }
