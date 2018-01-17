@@ -23,10 +23,6 @@ var TOP_RIGHT = '\u2510';
 var BOTTOM_LEFT = '\u2514';
 var BOTTOM_RIGHT = '\u2518';
 
-function identity(x) {
-  return x;
-}
-
 /**
  * Prints a banner with a border around it containing the given message. The
  * following options are supported:
@@ -56,38 +52,14 @@ function identity(x) {
  */
 function formatBanner(message, options) {
   options = options || {};
-  if (options.chalkFunction === undefined) {
-    options.chalkFunction = identity;
-  }
-  if (options.width === undefined) {
-    options.width = 80;
-  }
-  if (options.marginLeft === undefined) {
-    options.marginLeft = 0;
-  }
-  if (options.marginRight === undefined) {
-    options.marginRight = 0;
-  }
-  if (options.paddingTop === undefined) {
-    options.paddingTop = 0;
-  }
-  if (options.paddingBottom === undefined) {
-    options.paddingBottom = 0;
-  }
-  if (options.paddingLeft === undefined) {
-    options.paddingLeft = 2;
-  }
-  if (options.paddingRight === undefined) {
-    options.paddingRight = 2;
-  }
 
-  var width = options.width;
-  var marginLeft = options.marginLeft;
-  var marginRight = options.marginRight;
-  var paddingTop = options.paddingTop;
-  var paddingBottom = options.paddingBottom;
-  var paddingLeft = options.paddingLeft;
-  var paddingRight = options.paddingRight;
+  var width = options.width === undefined ? 80 : options.width;
+  var marginLeft = options.marginLeft === undefined ? 0 : options.marginLeft;
+  var marginRight = options.marginRight === undefined ? 0 : options.marginRight;
+  var paddingTop = options.paddingTop === undefined ? 0 : options.paddingTop;
+  var paddingBottom = options.paddingBottom === undefined ? 0 : options.paddingBottom;
+  var paddingLeft = options.paddingLeft === undefined ? 2 : options.paddingLeft;
+  var paddingRight = options.paddingRight === undefined ? 2 : options.paddingRight;
 
   var horizSpacing = marginLeft + paddingLeft + paddingRight + marginRight;
   // 2 for the banner borders
@@ -103,7 +75,7 @@ function formatBanner(message, options) {
     arrayOf('', paddingBottom)
   ).map(function(line) {
     var padding = spaces(Math.max(0, maxLineWidth - line.length));
-    return left + options.chalkFunction(line) + padding + right;
+    return left + (options.chalkFunction ? options.chalkFunction(line) : line) + padding + right;
   });
 
   var horizontalBorderLine = repeatString(
