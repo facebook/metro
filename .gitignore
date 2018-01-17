@@ -1,6 +1,5 @@
 .eslintcache
 /node_modules
-/packages/*/build/
 /packages/*/node_modules/
 /coverage
 lerna-debug.log
