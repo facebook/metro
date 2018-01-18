@@ -21,6 +21,7 @@ import type {BabelSourceMap} from 'babel-core';
 import type {Options, TransformedCode} from './worker';
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
 import type {ResultWithMap} from './worker/minify';
+import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
 
 import typeof {minify as Minify, transform as Transform} from './worker';
 
@@ -37,31 +38,37 @@ type Reporters = {
 module.exports = class Transformer {
   _worker: WorkerInterface;
   _transformModulePath: string;
+  _dynamicDepsInPackages: DynamicRequiresBehavior;
 
-  constructor(
-    transformModulePath: string,
-    maxWorkers: number,
-    reporters: Reporters,
-    workerPath: string = require.resolve('./worker'),
-  ) {
-    this._transformModulePath = transformModulePath;
+  constructor(options: {|
+    +maxWorkers: number,
+    +reporters: Reporters,
+    +transformModulePath: string,
+    +dynamicDepsInPackages: DynamicRequiresBehavior,
+    +workerPath: ?string,
+  |}) {
+    this._transformModulePath = options.transformModulePath;
+    this._dynamicDepsInPackages = options.dynamicDepsInPackages;
+    const {workerPath = require.resolve('./worker')} = options;
 
-    if (maxWorkers > 1) {
+    if (options.maxWorkers > 1) {
       this._worker = this._makeFarm(
         workerPath,
         this._computeWorkerKey,
         ['minify', 'transform'],
-        maxWorkers,
+        options.maxWorkers,
       );
 
+      const {reporters} = options;
       this._worker.getStdout().on('data', chunk => {
         reporters.stdoutChunk(chunk.toString('utf8'));
       });
-
       this._worker.getStderr().on('data', chunk => {
         reporters.stderrChunk(chunk.toString('utf8'));
       });
     } else {
+      // eslint-disable-next-line flow-no-fixme
+      // $FlowFixMe: Flow doesn't support dynamic requires
       this._worker = require(workerPath);
     }
   }
@@ -101,6 +108,7 @@ module.exports = class Transformer {
         options,
         assetExts,
         assetRegistryPath,
+        this._dynamicDepsInPackages,
       );
 
       debug('Done transforming file', filename);

@@ -121,6 +121,7 @@ class Server {
       assetRegistryPath: options.assetRegistryPath,
       blacklistRE: options.blacklistRE,
       cacheVersion: options.cacheVersion || '1.0',
+      dynamicDepsInPackages: options.dynamicDepsInPackages,
       createModuleIdFactory: options.createModuleIdFactory,
       enableBabelRCLookup:
         options.enableBabelRCLookup != null

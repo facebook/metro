@@ -26,6 +26,14 @@ describe('Transformer', function() {
   const localPath = 'arbitrary/file.js';
   const transformModulePath = __filename;
 
+  const opts = {
+    maxWorkers: 4,
+    reporters: {},
+    transformModulePath,
+    dynamicDepsInPackages: 'reject',
+    workerPath: null,
+  };
+
   beforeEach(function() {
     Cache = jest.fn();
     Cache.prototype.get = jest.fn((a, b, c) => c());
@@ -55,7 +63,7 @@ describe('Transformer', function() {
     const transformOptions = {arbitrary: 'options'};
     const code = 'arbitrary(code)';
 
-    new Transformer(transformModulePath, 4).transformFile(
+    new Transformer(opts).transformFile(
       fileName,
       localPath,
       code,
@@ -74,11 +82,12 @@ describe('Transformer', function() {
       transformOptions,
       [],
       '',
+      'reject',
     );
   });
 
   it('should add file info to parse errors', () => {
-    const transformer = new Transformer(transformModulePath, 4);
+    const transformer = new Transformer(opts);
     const message = 'message';
     const snippet = 'snippet';
 

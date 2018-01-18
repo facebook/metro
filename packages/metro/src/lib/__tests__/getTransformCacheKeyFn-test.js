@@ -21,6 +21,7 @@ describe('getTransformCacheKeyFn', () => {
     expect(
       getTransformCacheKeyFn({
         cacheVersion: '1.0',
+        dynamicDepsInPackages: 'arbitrary',
         projectRoots: [__dirname],
         transformModulePath: path.resolve(
           __dirname,
@@ -33,6 +34,7 @@ describe('getTransformCacheKeyFn', () => {
   it('Should return a different key when the params change', async () => {
     const baseParams = {
       cacheVersion: '1.0',
+      dynamicDepsInPackages: 'arbitrary',
       projectRoots: [__dirname],
       transformModulePath: path.resolve(__dirname, '../../defaultTransform.js'),
     };

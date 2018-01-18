@@ -28,6 +28,7 @@ const {
 
 import type {PostProcessModules} from '../DeltaBundler';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
+import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
@@ -82,6 +83,7 @@ export type Options = {|
   +assetRegistryPath: string,
   +blacklistRE?: RegExp,
   +cacheVersion: string,
+  +dynamicDepsInPackages: DynamicRequiresBehavior,
   +enableBabelRCLookup: boolean,
   +extraNodeModules: {},
   +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
@@ -117,17 +119,18 @@ class Bundler {
 
     opts.projectRoots.forEach(verifyRootExists);
 
-    this._transformer = new Transformer(
-      opts.transformModulePath,
-      opts.maxWorkers,
-      {
+    this._transformer = new Transformer({
+      maxWorkers: opts.maxWorkers,
+      reporters: {
         stdoutChunk: chunk =>
           opts.reporter.update({type: 'worker_stdout_chunk', chunk}),
         stderrChunk: chunk =>
           opts.reporter.update({type: 'worker_stderr_chunk', chunk}),
       },
-      opts.workerPath || undefined,
-    );
+      transformModulePath: opts.transformModulePath,
+      dynamicDepsInPackages: opts.dynamicDepsInPackages,
+      workerPath: opts.workerPath || undefined,
+    });
 
     this._depGraphPromise = DependencyGraph.load({
       assetExts: opts.assetExts,
@@ -137,6 +140,7 @@ class Bundler {
       getPolyfills: opts.getPolyfills,
       getTransformCacheKey: getTransformCacheKeyFn({
         cacheVersion: opts.cacheVersion,
+        dynamicDepsInPackages: opts.dynamicDepsInPackages,
         projectRoots: opts.projectRoots,
         transformModulePath: opts.transformModulePath,
       }),

@@ -34,6 +34,7 @@ describe('code transformation worker:', () => {
       },
       [],
       '',
+      'reject',
     );
 
     expect(result.code).toBe(
@@ -60,6 +61,7 @@ describe('code transformation worker:', () => {
       },
       [],
       '',
+      'reject',
     );
 
     expect(result.code).toBe(
@@ -91,6 +93,7 @@ describe('code transformation worker:', () => {
       },
       [],
       '',
+      'reject',
     );
 
     expect(result.code).toBe(
@@ -130,11 +133,31 @@ describe('code transformation worker:', () => {
         },
         [],
         '',
+        'reject',
       );
       throw new Error('should not reach this');
     } catch (error) {
-      expect(error).toBeInstanceOf(InvalidRequireCallError);
+      if (!(error instanceof InvalidRequireCallError)) {
+        throw error;
+      }
       expect(error.message).toMatchSnapshot();
     }
+  });
+
+  it('supports dynamic dependencies from within `node_modules`', async () => {
+    await transformCode(
+      '/root/node_modules/bar/file.js',
+      `node_modules/bar/file.js`,
+      'require(global.something);\n',
+      path.join(__dirname, '../../../transformer.js'),
+      false,
+      {
+        dev: true,
+        transform: {},
+      },
+      [],
+      '',
+      'throwAtRuntime',
+    );
   });
 });

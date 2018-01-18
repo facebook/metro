@@ -115,6 +115,7 @@ async function runMetro({
     assetRegistryPath: normalizedConfig.assetRegistryPath,
     blacklistRE: normalizedConfig.getBlacklistRE(),
     createModuleIdFactory: normalizedConfig.createModuleIdFactory,
+    dynamicDepsInPackages: normalizedConfig.dynamicDepsInPackages,
     extraNodeModules: normalizedConfig.extraNodeModules,
     getPolyfills: normalizedConfig.getPolyfills,
     getModulesRunBeforeMainModule:

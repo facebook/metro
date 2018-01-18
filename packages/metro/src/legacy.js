@@ -171,6 +171,7 @@ function toServerOptions(options: Options): ServerOptions {
     assetRegistryPath: options.assetRegistryPath,
     blacklistRE: options.blacklistRE,
     cacheVersion: options.cacheVersion,
+    dynamicDepsInPackages: options.dynamicDepsInPackages,
     enableBabelRCLookup: options.enableBabelRCLookup,
     extraNodeModules: options.extraNodeModules,
     getModulesRunBeforeMainModule: options.getModulesRunBeforeMainModule,

@@ -188,7 +188,8 @@ function makeResult(ast: Ast, filename, sourceCode, isPolyfill = false) {
     dependencies = [];
     file = JsFileWrapping.wrapPolyfill(ast);
   } else {
-    ({dependencies, dependencyMapName} = collectDependencies(ast));
+    const opts = {dynamicRequires: 'reject'};
+    ({dependencies, dependencyMapName} = collectDependencies(ast, opts));
     file = JsFileWrapping.wrapModule(ast, dependencyMapName);
   }
 

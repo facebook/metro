@@ -24,6 +24,7 @@ import type {
 import type {PostProcessModules} from './DeltaBundler';
 import type {PostProcessModules as PostProcessModulesForBuck} from './ModuleGraph/types.flow.js';
 import type {TransformVariants} from './ModuleGraph/types.flow';
+import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
 import type {HasteImpl} from './node-haste/Module';
 import type {IncomingMessage, ServerResponse} from 'http';
 
@@ -39,6 +40,9 @@ export type ConfigT = {
   enhanceMiddleware: Middleware => Middleware,
 
   extraNodeModules: {[id: string]: string},
+
+  +dynamicDepsInPackages: DynamicRequiresBehavior,
+
   /**
    * Specify any additional asset file extensions to be used by the packager.
    * For example, if you want to include a .ttf file, you would return ['ttf']
@@ -160,6 +164,7 @@ const DEFAULT = ({
   enhanceMiddleware: middleware => middleware,
   extraNodeModules: {},
   assetTransforms: false,
+  dynamicDepsInPackages: 'throwAtRuntime',
   getAssetExts: () => [],
   getBlacklistRE: () => blacklist(),
   getEnableBabelRCLookup: () => false,

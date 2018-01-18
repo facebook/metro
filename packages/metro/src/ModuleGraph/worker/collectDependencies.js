@@ -20,9 +20,13 @@ const prettyPrint = require('babel-generator').default;
 
 import type {TransformResultDependency} from '../types.flow';
 
+export type DynamicRequiresBehavior = 'throwAtRuntime' | 'reject';
+type Options = {|+dynamicRequires: DynamicRequiresBehavior|};
+
 type Context = {
   nameToIndex: Map<string, number>,
   dependencies: Array<{|+name: string, isAsync: boolean|}>,
+  +dynamicRequires: DynamicRequiresBehavior,
 };
 
 type CollectedDependencies = {|
@@ -38,9 +42,13 @@ type CollectedDependencies = {|
  * know the actual module ID. The second argument is only provided for debugging
  * purposes.
  */
-function collectDependencies(ast: Ast): CollectedDependencies {
+function collectDependencies(
+  ast: Ast,
+  options: Options,
+): CollectedDependencies {
   const visited = new WeakSet();
-  const context = {nameToIndex: new Map(), dependencies: []};
+  const {dynamicRequires} = options;
+  const context = {nameToIndex: new Map(), dependencies: [], dynamicRequires};
   const visitor = {
     Program(path, state) {
       state.dependencyMapIdentifier = path.scope.generateUidIdentifier(
@@ -77,6 +85,9 @@ function isRequireCall(callee) {
 
 function processImportCall(context, path, node, depMapIdent) {
   const [, name] = getModuleNameFromCallArgs('import', node, path);
+  if (name == null) {
+    throw invalidRequireOf('import', node);
+  }
   const index = assignDependencyIndex(context, name, 'import');
   const mapLookup = createDepMapLookup(depMapIdent, index);
   const newImport = makeAsyncRequire({
@@ -87,16 +98,31 @@ function processImportCall(context, path, node, depMapIdent) {
 }
 
 function processRequireCall(context, path, node, depMapIdent) {
-  const [nameExpression, name] = getModuleNameFromCallArgs(
-    'require',
-    node,
-    path,
-  );
+  const [nameExpr, name] = getModuleNameFromCallArgs('require', node, path);
+  if (name == null) {
+    const {dynamicRequires} = context;
+    switch (dynamicRequires) {
+      case 'reject':
+        throw invalidRequireOf('require', node);
+      case 'throwAtRuntime':
+        const newNode = makeDynamicRequireReplacement({NAME_EXPR: nameExpr});
+        path.replaceWith(newNode);
+        return newNode;
+      default:
+        (dynamicRequires: empty);
+        throw new Error(`invalid dyn requires spec \`${dynamicRequires}\``);
+    }
+  }
   const index = assignDependencyIndex(context, name, 'require');
   const mapLookup = createDepMapLookup(depMapIdent, index);
-  node.arguments = [mapLookup, nameExpression];
+  node.arguments = [mapLookup, nameExpr];
   return node;
 }
+
+const makeDynamicRequireReplacement = babelTemplate(
+  "(function(name){throw new Error('Module `'+name+'` was required " +
+    "dynamically. This is not supported by Metro bundler.')})(NAME_EXPR)",
+);
 
 /**
  * Extract the module name from `require` arguments. We support template
@@ -115,8 +141,7 @@ function getModuleNameFromCallArgs(type, node, path) {
   if (result.confident && typeof result.value === 'string') {
     return [nameExpression, result.value];
   }
-
-  throw invalidRequireOf(type, node);
+  return [nameExpression, null];
 }
 
 /**

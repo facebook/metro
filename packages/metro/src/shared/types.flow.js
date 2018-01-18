@@ -17,6 +17,7 @@ import type {
   PostProcessBundleSourcemap,
 } from '../Bundler';
 import type {PostProcessModules} from '../DeltaBundler';
+import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
@@ -74,6 +75,7 @@ export type Options = {|
   blacklistRE?: RegExp,
   cacheVersion?: string,
   createModuleIdFactory?: () => (path: string) => number,
+  +dynamicDepsInPackages: DynamicRequiresBehavior,
   enableBabelRCLookup?: boolean,
   extraNodeModules?: {},
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,

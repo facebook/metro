@@ -32,6 +32,7 @@ import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 import type {LocalPath} from '../../node-haste/lib/toLocalPath';
 import type {ResultWithMap} from './minify';
 import type {Ast, Plugins as BabelPlugins} from 'babel-core';
+import type {DynamicRequiresBehavior} from '../../ModuleGraph/worker/collectDependencies';
 
 export type TransformedCode = {
   code: string,
@@ -97,6 +98,7 @@ function postTransform(
   isScript: boolean,
   options: Options,
   transformFileStartLogEntry: LogEntry,
+  dynamicDepsInPackages: DynamicRequiresBehavior,
   receivedAst: ?Ast,
 ): Data {
   // Transformers can ouptut null ASTs (if they ignore the file). In that case
@@ -125,7 +127,13 @@ function postTransform(
   } else {
     let dependencyMapName;
     try {
-      ({dependencies, dependencyMapName} = collectDependencies(ast));
+      const opts = {
+        dynamicRequires: getDynamicDepsBehavior(
+          dynamicDepsInPackages,
+          filename,
+        ),
+      };
+      ({dependencies, dependencyMapName} = collectDependencies(ast, opts));
     } catch (error) {
       if (error instanceof collectDependencies.InvalidRequireCallError) {
         throw new InvalidRequireCallError(error, filename);
@@ -162,6 +170,24 @@ function postTransform(
   };
 }
 
+function getDynamicDepsBehavior(
+  inPackages: DynamicRequiresBehavior,
+  filename: string,
+): DynamicRequiresBehavior {
+  switch (inPackages) {
+    case 'reject':
+      return 'reject';
+    case 'throwAtRuntime':
+      const isPackage = /(?:^|[/\\])node_modules[/\\]/.test(filename);
+      return isPackage ? inPackages : 'reject';
+    default:
+      (inPackages: empty);
+      throw new Error(
+        `invalid value for dynamic deps behavior: \`${inPackages}\``,
+      );
+  }
+}
+
 function transformCode(
   filename: string,
   localPath: LocalPath,
@@ -171,6 +197,7 @@ function transformCode(
   options: Options,
   assetExts: $ReadOnlyArray<string>,
   assetRegistryPath: string,
+  dynamicDepsInPackages: DynamicRequiresBehavior,
 ): Data | Promise<Data> {
   const isJson = filename.endsWith('.json');
 
@@ -216,6 +243,7 @@ function transformCode(
     isScript,
     options,
     transformFileStartLogEntry,
+    dynamicDepsInPackages,
   ];
 
   return transformResult instanceof Promise
