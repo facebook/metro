@@ -19,12 +19,12 @@ Object {
 exports[`GlobalTransformCache fetches results 1`] = `
 Array [
   Object {
-    "code": "/* code from http://globalcache.com/e4d11b53d671aa56b44f2fdda2cd77b31f3a5cad-foo.js */",
+    "code": "/* code from http://globalcache.com/a00af5f7803566564fc1e5bd209552899c7354e1-foo.js */",
     "dependencies": Array [],
     "dependencyOffsets": Array [],
   },
   Object {
-    "code": "/* code from http://globalcache.com/bf01163f2c3c2575e7da85343e20e9ff0013bbe8-bar.js */",
+    "code": "/* code from http://globalcache.com/50013dd319b49a40f1b3d325be62320a4c2a6c82-bar.js */",
     "dependencies": Array [],
     "dependencyOffsets": Array [],
   },

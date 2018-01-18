@@ -42,7 +42,7 @@ describe('GlobalTransformCache', () => {
       fetchResultFromURI,
       fetchResultURIs,
       profiles: [{dev: true, minify: false, platform: 'ios'}],
-      rootPath: __dirname,
+      rootPath: '/root',
       storeResults: null,
     });
     const transformOptions = await getTransformOptions();
