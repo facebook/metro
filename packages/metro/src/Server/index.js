@@ -865,6 +865,10 @@ class Server {
     return (this._nextBundleBuildID++).toString(36);
   }
 
+  getReporter(): Reporter {
+    return this._reporter;
+  }
+
   static DEFAULT_BUNDLE_OPTIONS = {
     assetPlugins: [],
     dev: true,

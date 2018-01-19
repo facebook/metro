@@ -44,9 +44,9 @@ class HmrServer<TClient: Client> {
   _packagerServer: PackagerServer;
   _reporter: Reporter;
 
-  constructor(packagerServer: PackagerServer, reporter: Reporter) {
+  constructor(packagerServer: PackagerServer) {
     this._packagerServer = packagerServer;
-    this._reporter = reporter;
+    this._reporter = packagerServer.getReporter();
   }
 
   async onClientConnect(

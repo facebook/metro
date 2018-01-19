@@ -17,7 +17,6 @@ const {EventEmitter} = require('events');
 
 describe('HmrServer', () => {
   let hmrServer;
-  let reporterMock;
   let serverMock;
   let deltaBundlerMock;
   let deltaTransformerMock;
@@ -41,12 +40,14 @@ describe('HmrServer', () => {
       getDeltaBundler() {
         return deltaBundlerMock;
       },
-    };
-    reporterMock = {
-      update: jest.fn(),
+      getReporter() {
+        return {
+          update: jest.fn(),
+        };
+      },
     };
 
-    hmrServer = new HmrServer(serverMock, reporterMock);
+    hmrServer = new HmrServer(serverMock);
   });
 
   it('should pass the correct options to the delta bundler', async () => {

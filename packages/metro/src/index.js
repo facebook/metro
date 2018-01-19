@@ -166,6 +166,13 @@ exports.createConnectMiddleware = async function(
     : Config.DEFAULT;
 
   return {
+    attachHmrServer(httpServer: HttpServer | HttpsServer) {
+      attachWebsocketServer({
+        httpServer,
+        path: '/hot',
+        websocketServer: new MetroHmrServer(metroServer),
+      });
+    },
     metroServer,
     middleware: normalizedConfig.enhanceMiddleware(metroServer.processRequest),
     end() {
@@ -195,7 +202,11 @@ exports.runServer = async (options: RunServerOptions) => {
 
   const serverApp = connect();
 
-  const {metroServer, middleware, end} = await exports.createConnectMiddleware({
+  const {
+    attachHmrServer,
+    middleware,
+    end,
+  } = await exports.createConnectMiddleware({
     config: options.config,
     maxWorkers: options.maxWorkers,
     port,
@@ -221,11 +232,7 @@ exports.runServer = async (options: RunServerOptions) => {
   }
 
   if (options.hmrEnabled) {
-    attachWebsocketServer({
-      httpServer,
-      path: '/hot',
-      websocketServer: new MetroHmrServer(metroServer, reporter),
-    });
+    attachHmrServer(httpServer);
   }
 
   httpServer.listen(port, options.host, () => {
