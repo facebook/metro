@@ -24,7 +24,7 @@ export type BuildResult = {|
 export type Callback<A = void, B = void> = (Error => void) &
   ((null | void, A, B) => void);
 
-type Dependency = {|
+export type Dependency = {|
   id: string,
   +isAsync: boolean,
   path: string,
