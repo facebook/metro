@@ -13,7 +13,7 @@
 'use strict';
 
 const readline = require('readline');
-const throttle = require('lodash/throttle');
+const throttle = require('lodash.throttle');
 const tty = require('tty');
 const util = require('util');
 

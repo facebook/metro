@@ -15,7 +15,7 @@
 const chalk = require('chalk');
 const path = require('path');
 const reporting = require('./reporting');
-const throttle = require('lodash/throttle');
+const throttle = require('lodash.throttle');
 
 const {
   AmbiguousModuleResolutionError,
