@@ -161,7 +161,7 @@ module.exports.transform = file => {
   return transform(file.src, {
     // Babel options...
   });
-});
+};
 ```
 
 ### Method `getCacheKey()`
