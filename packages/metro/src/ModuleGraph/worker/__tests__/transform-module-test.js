@@ -33,6 +33,7 @@ jest.mock('image-size', () => buffer => {
 describe('transforming JS modules:', () => {
   const filename = 'arbitrary.js';
   const sourceExts = new Set(['js', 'json']);
+  const asyncRequireModulePath = 'asyncRequire';
 
   let transformer;
 
@@ -47,6 +48,7 @@ describe('transforming JS modules:', () => {
   const {bodyAst, sourceCode, transformedCode} = createTestData();
 
   const options = (variants?: TransformVariants) => ({
+    asyncRequireModulePath,
     filename,
     sourceExts,
     transformer,

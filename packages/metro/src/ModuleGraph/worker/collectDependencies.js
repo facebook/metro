@@ -21,12 +21,16 @@ const prettyPrint = require('babel-generator').default;
 import type {TransformResultDependency} from '../types.flow';
 
 export type DynamicRequiresBehavior = 'throwAtRuntime' | 'reject';
-type Options = {|+dynamicRequires: DynamicRequiresBehavior|};
+type Options = {|
+  +dynamicRequires: DynamicRequiresBehavior,
+  +asyncRequireModulePath: string,
+|};
 
 type Context = {
-  nameToIndex: Map<string, number>,
-  dependencies: Array<{|+name: string, isAsync: boolean|}>,
+  +asyncRequireModulePath: string,
   +dynamicRequires: DynamicRequiresBehavior,
+  dependencies: Array<{|+name: string, isAsync: boolean|}>,
+  nameToIndex: Map<string, number>,
 };
 
 type CollectedDependencies = {|
@@ -47,8 +51,13 @@ function collectDependencies(
   options: Options,
 ): CollectedDependencies {
   const visited = new WeakSet();
-  const {dynamicRequires} = options;
-  const context = {nameToIndex: new Map(), dependencies: [], dynamicRequires};
+  const {asyncRequireModulePath, dynamicRequires} = options;
+  const context = {
+    asyncRequireModulePath,
+    dynamicRequires,
+    dependencies: [],
+    nameToIndex: new Map(),
+  };
   const visitor = {
     Program(path, state) {
       state.dependencyMapIdentifier = path.scope.generateUidIdentifier(
@@ -90,9 +99,10 @@ function processImportCall(context, path, node, depMapIdent) {
   }
   const index = assignDependencyIndex(context, name, 'import');
   const mapLookup = createDepMapLookup(depMapIdent, index);
+  const {asyncRequireModulePath} = context;
   const newImport = makeAsyncRequire({
     MODULE_ID: mapLookup,
-    ASYNC_REQUIRE_PATH: {type: 'StringLiteral', value: 'asyncRequire'},
+    ASYNC_REQUIRE_PATH: {type: 'StringLiteral', value: asyncRequireModulePath},
   });
   path.replaceWith(newImport);
 }

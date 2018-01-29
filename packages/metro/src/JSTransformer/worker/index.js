@@ -98,6 +98,7 @@ function postTransform(
   isScript: boolean,
   options: Options,
   transformFileStartLogEntry: LogEntry,
+  asyncRequireModulePath: string,
   dynamicDepsInPackages: DynamicRequiresBehavior,
   receivedAst: ?Ast,
 ): Data {
@@ -128,6 +129,7 @@ function postTransform(
     let dependencyMapName;
     try {
       const opts = {
+        asyncRequireModulePath,
         dynamicRequires: getDynamicDepsBehavior(
           dynamicDepsInPackages,
           filename,
@@ -197,6 +199,7 @@ function transformCode(
   options: Options,
   assetExts: $ReadOnlyArray<string>,
   assetRegistryPath: string,
+  asyncRequireModulePath: string,
   dynamicDepsInPackages: DynamicRequiresBehavior,
 ): Data | Promise<Data> {
   const isJson = filename.endsWith('.json');
@@ -243,6 +246,7 @@ function transformCode(
     isScript,
     options,
     transformFileStartLogEntry,
+    asyncRequireModulePath,
     dynamicDepsInPackages,
   ];
 

@@ -20,6 +20,7 @@ describe('getTransformCacheKeyFn', () => {
   it('Should return always the same key for the same params', async () => {
     expect(
       getTransformCacheKeyFn({
+        asyncRequireModulePath: 'beep',
         cacheVersion: '1.0',
         dynamicDepsInPackages: 'arbitrary',
         projectRoots: [__dirname],
@@ -33,6 +34,7 @@ describe('getTransformCacheKeyFn', () => {
 
   it('Should return a different key when the params change', async () => {
     const baseParams = {
+      asyncRequireModulePath: 'beep',
       cacheVersion: '1.0',
       dynamicDepsInPackages: 'arbitrary',
       projectRoots: [__dirname],

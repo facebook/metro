@@ -27,6 +27,7 @@ describe('Transformer', function() {
   const transformModulePath = __filename;
 
   const opts = {
+    asyncRequireModulePath: 'asyncRequire',
     maxWorkers: 4,
     reporters: {},
     transformModulePath,
@@ -82,6 +83,7 @@ describe('Transformer', function() {
       transformOptions,
       [],
       '',
+      'asyncRequire',
       'reject',
     );
   });

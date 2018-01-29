@@ -21,7 +21,10 @@ const {codeFromAst, comparableCode} = require('../../test-helpers');
 const {any} = expect;
 
 const {InvalidRequireCallError} = collectDependencies;
-const opts = {dynamicRequires: 'reject'};
+const opts = {
+  asyncRequireModulePath: 'asyncRequire',
+  dynamicRequires: 'reject',
+};
 
 it('collects unique dependency identifiers and transforms the AST', () => {
   const ast = astFromCode(`
@@ -193,7 +196,10 @@ describe('Evaluating static arguments', () => {
 
   it('throws at runtime when requiring non-strings with special option', () => {
     const ast = astFromCode('require(1)');
-    const opts = {dynamicRequires: 'throwAtRuntime'};
+    const opts = {
+      asyncRequireModulePath: 'asyncRequire',
+      dynamicRequires: 'throwAtRuntime',
+    };
     const {dependencies} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([]);
     expect(codeFromAst(ast)).toEqual(

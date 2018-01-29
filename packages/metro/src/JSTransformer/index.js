@@ -38,16 +38,19 @@ type Reporters = {
 module.exports = class Transformer {
   _worker: WorkerInterface;
   _transformModulePath: string;
+  _asyncRequireModulePath: string;
   _dynamicDepsInPackages: DynamicRequiresBehavior;
 
   constructor(options: {|
     +maxWorkers: number,
     +reporters: Reporters,
     +transformModulePath: string,
+    +asyncRequireModulePath: string,
     +dynamicDepsInPackages: DynamicRequiresBehavior,
     +workerPath: ?string,
   |}) {
     this._transformModulePath = options.transformModulePath;
+    this._asyncRequireModulePath = options.asyncRequireModulePath;
     this._dynamicDepsInPackages = options.dynamicDepsInPackages;
     const {workerPath = require.resolve('./worker')} = options;
 
@@ -108,6 +111,7 @@ module.exports = class Transformer {
         options,
         assetExts,
         assetRegistryPath,
+        this._asyncRequireModulePath,
         this._dynamicDepsInPackages,
       );
 

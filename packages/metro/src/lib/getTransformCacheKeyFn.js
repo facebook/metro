@@ -23,6 +23,7 @@ const VERSION = require('../../package.json').version;
  * passed transform options.
  */
 function getTransformCacheKeyFn(opts: {|
+  +asyncRequireModulePath: string,
   +cacheVersion: string,
   +dynamicDepsInPackages: string,
   +projectRoots: $ReadOnlyArray<string>,
@@ -46,6 +47,7 @@ function getTransformCacheKeyFn(opts: {|
       .split(path.sep)
       .join('-'),
     transformModuleHash,
+    opts.asyncRequireModulePath,
     opts.dynamicDepsInPackages,
   ];
 

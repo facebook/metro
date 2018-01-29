@@ -39,6 +39,7 @@ import type {
 import type {Ast} from 'babel-core';
 
 export type TransformOptions<ExtraOptions> = {|
+  +asyncRequireModulePath: string,
   filename: string,
   hasteImpl?: HasteImpl,
   polyfill?: boolean,
@@ -76,7 +77,7 @@ function transformModule(
     return {type: 'unknown'};
   }
 
-  const code = content.toString('utf8');
+  const sourceCode = content.toString('utf8');
   const {filename, transformer, polyfill, variants = defaultVariants} = options;
   const transformed: {[key: string]: TransformResult} = {};
 
@@ -85,15 +86,22 @@ function transformModule(
       filename,
       localPath: filename,
       options: {...defaultTransformOptions, ...variants[variantName]},
-      src: code,
+      src: sourceCode,
     });
     invariant(ast != null, 'ast required from the transform results');
-    transformed[variantName] = makeResult(ast, filename, code, polyfill);
+    const {asyncRequireModulePath} = options;
+    transformed[variantName] = makeResult({
+      ast,
+      asyncRequireModulePath,
+      filename,
+      isPolyfill: polyfill || false,
+      sourceCode,
+    });
   }
 
   let hasteID = null;
   if (filename.indexOf(NODE_MODULES) === -1 && !polyfill) {
-    hasteID = docblock.parse(docblock.extract(code)).providesModule;
+    hasteID = docblock.parse(docblock.extract(sourceCode)).providesModule;
     if (options.hasteImpl) {
       if (options.hasteImpl.enforceHasteNameMatches) {
         options.hasteImpl.enforceHasteNameMatches(filename, hasteID);
@@ -182,17 +190,25 @@ function getAssetSize(
   return {width, height};
 }
 
-function makeResult(ast: Ast, filename, sourceCode, isPolyfill = false) {
+function makeResult(options: {|
+  +ast: Ast,
+  +asyncRequireModulePath: string,
+  +filename: string,
+  +isPolyfill: boolean,
+  +sourceCode: string,
+|}) {
   let dependencies, dependencyMapName, file;
-  if (isPolyfill) {
+  const {ast} = options;
+  if (options.isPolyfill) {
     dependencies = [];
     file = JsFileWrapping.wrapPolyfill(ast);
   } else {
-    const opts = {dynamicRequires: 'reject'};
+    const {asyncRequireModulePath} = options;
+    const opts = {asyncRequireModulePath, dynamicRequires: 'reject'};
     ({dependencies, dependencyMapName} = collectDependencies(ast, opts));
     file = JsFileWrapping.wrapModule(ast, dependencyMapName);
   }
-
+  const {filename, sourceCode} = options;
   const gen = generate(file, filename, sourceCode, false);
   return {
     code: gen.code,

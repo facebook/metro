@@ -27,6 +27,7 @@ const {objectContaining} = jasmine;
 describe('optimizing JS modules', () => {
   const filename = 'arbitrary/file.js';
   const sourceExts = new Set(['js', 'json']);
+  const asyncRequireModulePath = 'asyncRequire';
   const optimizationOptions = {
     dev: false,
     platform: 'android',
@@ -43,7 +44,7 @@ describe('optimizing JS modules', () => {
 
   let transformResult;
   beforeAll(() => {
-    const trOpts = {filename, sourceExts, transformer};
+    const trOpts = {asyncRequireModulePath, filename, sourceExts, transformer};
     const result = transformModule(originalCode, trOpts);
     invariant(result.type === 'code', 'result must be code');
     transformResult = new Buffer(

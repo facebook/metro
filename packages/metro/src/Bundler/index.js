@@ -81,6 +81,7 @@ export type PostProcessBundleSourcemap = ({
 export type Options = {|
   +assetExts: Array<string>,
   +assetRegistryPath: string,
+  +asyncRequireModulePath: string,
   +blacklistRE?: RegExp,
   +cacheVersion: string,
   +dynamicDepsInPackages: DynamicRequiresBehavior,
@@ -120,6 +121,7 @@ class Bundler {
     opts.projectRoots.forEach(verifyRootExists);
 
     this._transformer = new Transformer({
+      asyncRequireModulePath: opts.asyncRequireModulePath,
       maxWorkers: opts.maxWorkers,
       reporters: {
         stdoutChunk: chunk =>
@@ -139,6 +141,7 @@ class Bundler {
       extraNodeModules: opts.extraNodeModules,
       getPolyfills: opts.getPolyfills,
       getTransformCacheKey: getTransformCacheKeyFn({
+        asyncRequireModulePath: opts.asyncRequireModulePath,
         cacheVersion: opts.cacheVersion,
         dynamicDepsInPackages: opts.dynamicDepsInPackages,
         projectRoots: opts.projectRoots,

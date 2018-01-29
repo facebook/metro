@@ -168,6 +168,9 @@ class Server {
     bundlerOpts.globalTransformCache = options.globalTransformCache;
     bundlerOpts.watch = this._opts.watch;
     bundlerOpts.reporter = reporter;
+    bundlerOpts.asyncRequireModulePath =
+      options.asyncRequireModulePath ||
+      'metro/src/lib/bundle-modules/asyncRequire';
     this._bundler = new Bundler(bundlerOpts);
 
     // changes to the haste map can affect resolution of files in the bundle

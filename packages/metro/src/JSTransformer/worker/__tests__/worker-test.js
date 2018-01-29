@@ -34,6 +34,7 @@ describe('code transformation worker:', () => {
       },
       [],
       '',
+      'asyncRequire',
       'reject',
     );
 
@@ -61,6 +62,7 @@ describe('code transformation worker:', () => {
       },
       [],
       '',
+      'asyncRequire',
       'reject',
     );
 
@@ -93,6 +95,7 @@ describe('code transformation worker:', () => {
       },
       [],
       '',
+      'asyncRequire',
       'reject',
     );
 
@@ -133,6 +136,7 @@ describe('code transformation worker:', () => {
         },
         [],
         '',
+        'asyncRequire',
         'reject',
       );
       throw new Error('should not reach this');
@@ -157,6 +161,7 @@ describe('code transformation worker:', () => {
       },
       [],
       '',
+      'asyncRequire',
       'throwAtRuntime',
     );
   });

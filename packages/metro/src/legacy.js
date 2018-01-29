@@ -169,6 +169,7 @@ function toServerOptions(options: Options): ServerOptions {
     assetTransforms: options.assetTransforms,
     assetExts: options.assetExts,
     assetRegistryPath: options.assetRegistryPath,
+    asyncRequireModulePath: options.asyncRequireModulePath,
     blacklistRE: options.blacklistRE,
     cacheVersion: options.cacheVersion,
     dynamicDepsInPackages: options.dynamicDepsInPackages,
