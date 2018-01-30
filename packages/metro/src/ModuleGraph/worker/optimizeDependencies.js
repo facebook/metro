@@ -16,6 +16,7 @@ const {traverse} = require('babel-core');
 const prettyPrint = require('babel-generator').default;
 
 import type {TransformResultDependency} from '../types.flow';
+import type {Ast} from 'babel-core';
 
 type Context = {
   oldToNewIndex: Map<number, number>,
