@@ -179,7 +179,7 @@ function toServerOptions(options: Options): ServerOptions {
     getPolyfills: options.getPolyfills,
     getTransformOptions: options.getTransformOptions,
     globalTransformCache: options.globalTransformCache,
-    hasteImpl: options.hasteImpl,
+    hasteImplModulePath: options.hasteImplModulePath,
     maxWorkers: options.maxWorkers,
     moduleFormat: options.moduleFormat,
     platforms: options.platforms,

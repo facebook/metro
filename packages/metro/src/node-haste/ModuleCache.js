@@ -26,14 +26,14 @@ import type {
 } from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
 import type DependencyGraphHelpers from './DependencyGraph/DependencyGraphHelpers';
-import type {TransformCode, HasteImpl} from './Module';
+import type {TransformCode} from './Module';
 
 type GetClosestPackageFn = (filePath: string) => ?string;
 
 type Options = {|
   assetDependencies: Array<string>,
   depGraphHelpers: DependencyGraphHelpers,
-  hasteImpl: ?HasteImpl,
+  hasteImplModulePath?: string,
   getClosestPackage: GetClosestPackageFn,
   getTransformCacheKey: GetTransformCacheKey,
   globalTransformCache: ?GlobalTransformCache,
@@ -183,7 +183,7 @@ class ModuleCache {
       transformCache: this._opts.transformCache,
       globalTransformCache: this._opts.globalTransformCache,
       resetCache: this._opts.resetCache,
-      hasteImpl: this._opts.hasteImpl,
+      hasteImplModulePath: this._opts.hasteImplModulePath,
     };
   }
 }

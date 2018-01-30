@@ -40,7 +40,7 @@ import type {
 } from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
 import type {ModuleMap} from './DependencyGraph/ModuleResolution';
-import type {TransformCode, HasteImpl} from './Module';
+import type {TransformCode} from './Module';
 import type Package from './Package';
 import type {HasteFS} from './types';
 
@@ -52,7 +52,7 @@ type Options = {|
   +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   +getTransformCacheKey: GetTransformCacheKey,
   +globalTransformCache: ?GlobalTransformCache,
-  +hasteImpl?: ?HasteImpl,
+  +hasteImplModulePath?: string,
   +maxWorkers: number,
   +platforms: Set<string>,
   +polyfillModuleNames?: Array<string>,
@@ -111,6 +111,7 @@ class DependencyGraph extends EventEmitter {
     return new JestHasteMap({
       extensions: opts.sourceExts.concat(opts.assetExts),
       forceNodeFilesystemAPI: !useWatchman,
+      hasteImplModulePath: opts.hasteImplModulePath,
       ignorePattern: opts.blacklistRE || / ^/,
       maxWorkers: opts.maxWorkers,
       mocksPattern: '',
@@ -205,7 +206,7 @@ class DependencyGraph extends EventEmitter {
         getClosestPackage: this._getClosestPackage.bind(this),
         getTransformCacheKey: _opts.getTransformCacheKey,
         globalTransformCache: _opts.globalTransformCache,
-        hasteImpl: _opts.hasteImpl,
+        hasteImplModulePath: _opts.hasteImplModulePath,
         resetCache: _opts.resetCache,
         transformCache: _opts.transformCache,
         reporter: _opts.reporter,

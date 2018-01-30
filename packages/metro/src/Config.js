@@ -25,7 +25,6 @@ import type {PostProcessModules} from './DeltaBundler';
 import type {PostProcessModules as PostProcessModulesForBuck} from './ModuleGraph/types.flow.js';
 import type {TransformVariants} from './ModuleGraph/types.flow';
 import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
-import type {HasteImpl} from './node-haste/Module';
 import type {IncomingMessage, ServerResponse} from 'http';
 
 type Middleware = (IncomingMessage, ServerResponse, ?() => mixed) => mixed;
@@ -139,11 +138,11 @@ export type ConfigT = {
   postProcessModulesForBuck: PostProcessModulesForBuck,
 
   /**
-   * A module that exports:
+   * Path to a require-able module that exports:
    * - a `getHasteName(filePath)` method that returns `hasteName` for module at
    *  `filePath`, or undefined if `filePath` is not a haste module.
    */
-  hasteImpl?: HasteImpl,
+  hasteImplModulePath?: string,
 
   transformVariants: () => TransformVariants,
 

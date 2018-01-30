@@ -30,7 +30,6 @@ const url = require('url');
 const {getAsset} = require('../Assets');
 
 import type {CustomError} from '../lib/formatBundlingError';
-import type {HasteImpl} from '../node-haste/Module';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from '../lib/reporting';
 import type {Options as DeltaBundlerOptions} from '../DeltaBundler/Serializers';
@@ -76,7 +75,7 @@ class Server {
     extraNodeModules: {},
     getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
     getTransformOptions?: GetTransformOptions,
-    hasteImpl?: HasteImpl,
+    hasteImplModulePath?: string,
     maxWorkers: number,
     moduleFormat: string,
     platforms: Array<string>,
@@ -132,7 +131,7 @@ class Server {
       getPolyfills: options.getPolyfills,
       getTransformOptions: options.getTransformOptions,
       globalTransformCache: options.globalTransformCache,
-      hasteImpl: options.hasteImpl,
+      hasteImplModulePath: options.hasteImplModulePath,
       maxWorkers,
       moduleFormat:
         options.moduleFormat != null ? options.moduleFormat : 'haste',

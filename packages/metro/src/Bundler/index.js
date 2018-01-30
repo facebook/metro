@@ -32,7 +32,6 @@ import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDepende
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
-import type {HasteImpl} from '../node-haste/Module';
 import type {BabelSourceMap} from 'babel-core';
 import type {
   MetroSourceMapSegmentTuple,
@@ -90,7 +89,7 @@ export type Options = {|
   +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   +getTransformOptions?: GetTransformOptions,
   +globalTransformCache: ?GlobalTransformCache,
-  +hasteImpl?: HasteImpl,
+  +hasteImplModulePath?: string,
   +maxWorkers: number,
   +platforms: Array<string>,
   +polyfillModuleNames: Array<string>,
@@ -148,7 +147,7 @@ class Bundler {
         transformModulePath: opts.transformModulePath,
       }),
       globalTransformCache: opts.globalTransformCache,
-      hasteImpl: opts.hasteImpl,
+      hasteImplModulePath: opts.hasteImplModulePath,
       maxWorkers: opts.maxWorkers,
       platforms: new Set(opts.platforms),
       polyfillModuleNames: opts.polyfillModuleNames,

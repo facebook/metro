@@ -64,7 +64,7 @@ export type HasteImpl = {
 
 export type Options = {
   globalTransformCache: ?GlobalTransformCache,
-  hasteImpl: ?HasteImpl,
+  hasteImplModulePath?: string,
   reporter: Reporter,
   resetCache: boolean,
   transformCache: TransformCache,
@@ -217,16 +217,17 @@ class Module {
    * the "@providesModule" name (ex. "foo").
    */
   _readHasteName(): ?string {
-    const hasteImpl = this._options.hasteImpl;
-    if (hasteImpl == null) {
+    const hasteImplModulePath = this._options.hasteImplModulePath;
+    if (hasteImplModulePath == null) {
       return this._readHasteNameFromDocBlock();
     }
-    const {enforceHasteNameMatches} = hasteImpl;
-    if (enforceHasteNameMatches != null) {
+    // eslint-disable-next-line no-useless-call
+    const HasteImpl = (require.call(null, hasteImplModulePath): HasteImpl);
+    if (HasteImpl.enforceHasteNameMatches != null) {
       const name = this._readHasteNameFromDocBlock();
-      enforceHasteNameMatches(this.path, name || undefined);
+      HasteImpl.enforceHasteNameMatches(this.path, name || undefined);
     }
-    return hasteImpl.getHasteName(this.path);
+    return HasteImpl.getHasteName(this.path);
   }
 
   /**

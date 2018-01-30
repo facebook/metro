@@ -41,7 +41,7 @@ import type {Ast} from 'babel-core';
 export type TransformOptions<ExtraOptions> = {|
   +asyncRequireModulePath: string,
   filename: string,
-  hasteImpl?: HasteImpl,
+  hasteImplModulePath?: string,
   polyfill?: boolean,
   +sourceExts: Set<string>,
   transformer: Transformer<ExtraOptions>,
@@ -102,11 +102,16 @@ function transformModule(
   let hasteID = null;
   if (filename.indexOf(NODE_MODULES) === -1 && !polyfill) {
     hasteID = docblock.parse(docblock.extract(sourceCode)).providesModule;
-    if (options.hasteImpl) {
-      if (options.hasteImpl.enforceHasteNameMatches) {
-        options.hasteImpl.enforceHasteNameMatches(filename, hasteID);
+    if (options.hasteImplModulePath != null) {
+      // eslint-disable-next-line no-useless-call
+      const HasteImpl = (require.call(
+        null,
+        options.hasteImplModulePath,
+      ): HasteImpl);
+      if (HasteImpl.enforceHasteNameMatches) {
+        HasteImpl.enforceHasteNameMatches(filename, hasteID);
       }
-      hasteID = options.hasteImpl.getHasteName(filename);
+      hasteID = HasteImpl.getHasteName(filename);
     }
   }
 

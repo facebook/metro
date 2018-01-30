@@ -122,7 +122,7 @@ async function runMetro({
       normalizedConfig.getModulesRunBeforeMainModule,
     getTransformOptions: normalizedConfig.getTransformOptions,
     globalTransformCache: null,
-    hasteImpl: normalizedConfig.hasteImpl,
+    hasteImplModulePath: normalizedConfig.hasteImplModulePath,
     maxWorkers,
     platforms: defaults.platforms.concat(platforms),
     postMinifyProcess: normalizedConfig.postMinifyProcess,

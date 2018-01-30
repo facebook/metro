@@ -21,7 +21,6 @@ import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDepende
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
-import type {HasteImpl} from '../node-haste/Module';
 import type {
   MetroSourceMap,
   MetroSourceMapSegmentTuple,
@@ -82,7 +81,7 @@ export type Options = {|
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   getTransformOptions?: GetTransformOptions,
   globalTransformCache: ?GlobalTransformCache,
-  hasteImpl?: HasteImpl,
+  hasteImplModulePath?: string,
   maxWorkers?: number,
   moduleFormat?: string,
   platforms?: Array<string>,
