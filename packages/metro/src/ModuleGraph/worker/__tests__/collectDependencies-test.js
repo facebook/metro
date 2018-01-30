@@ -13,9 +13,9 @@
 
 'use strict';
 
-const babylon = require('babylon');
 const collectDependencies = require('../collectDependencies');
 
+const {babylon} = require('../../../babel-bridge');
 const {codeFromAst, comparableCode} = require('../../test-helpers');
 
 const {any} = expect;

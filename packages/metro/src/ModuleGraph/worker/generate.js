@@ -14,7 +14,7 @@
 
 /* eslint-disable no-unclear-flowtypes */
 
-const babelGenerate = require('babel-generator').default;
+const {babelGenerate} = require('../../babel-bridge');
 
 function generate(
   ast: Object,

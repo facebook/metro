@@ -12,8 +12,8 @@
 
 'use strict';
 
-const {traverse} = require('babel-core');
-const prettyPrint = require('babel-generator').default;
+const {babelTraverse: traverse} = require('../../babel-bridge');
+const {babelGenerate} = require('../../babel-bridge');
 
 import type {TransformResultDependency} from '../types.flow';
 import type {Ast} from 'babel-core';
@@ -67,7 +67,7 @@ function processRequireCall(node) {
     throw new InvalidRequireCallError(
       'Post-transform calls to require() expect 2 arguments, the first ' +
         'of which has the shape `_dependencyMapName[123]`, ' +
-        `but this was found: \`${prettyPrint(node).code}\``,
+        `but this was found: \`${babelGenerate(node).code}\``,
     );
   }
   node.arguments = [node.arguments[0]];

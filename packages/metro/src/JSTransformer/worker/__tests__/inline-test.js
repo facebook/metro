@@ -13,7 +13,9 @@
 
 const inline = require('../inline');
 
-const {transform, transformFromAst} = require('babel-core');
+const {
+  babelCore: {transform, transformFromAst},
+} = require('../../../babel-bridge');
 
 const babelOptions = {
   babelrc: false,

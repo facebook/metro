@@ -10,8 +10,9 @@
  */
 'use strict';
 
-const generate = require('babel-generator').default;
 const stub = require('sinon/lib/sinon/stub');
+
+const {babelGenerate: generate} = require('../babel-bridge');
 
 exports.fn = () => {
   const s = stub();

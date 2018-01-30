@@ -15,16 +15,18 @@
 
 const invariant = require('fbjs/lib/invariant');
 const nullthrows = require('fbjs/lib/nullthrows');
-const t = require('babel-types');
 const transformModule = require('../transform-module');
 
+const {babelTypes: types} = require('../../../babel-bridge');
+const {babylon: {parse}} = require('../../../babel-bridge');
+const {babelGenerate: generate} = require('../../../babel-bridge');
+const {babelTraverse: traverse} = require('../../../babel-bridge');
 const {fn} = require('../../test-helpers');
-const {parse} = require('babylon');
 const {SourceMapConsumer} = require('source-map');
-const generate = require('babel-generator').default;
-const {traverse} = require('babel-core');
 
 import type {TransformVariants} from '../../types.flow';
+
+const t = types;
 
 jest.mock('image-size', () => buffer => {
   return JSON.parse(buffer.toString('utf8')).__size;

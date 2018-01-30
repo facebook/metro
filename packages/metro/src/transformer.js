@@ -13,18 +13,19 @@
  */
 'use strict';
 
-const babel = require('babel-core');
 const crypto = require('crypto');
-const externalHelpersPlugin = require('babel-plugin-external-helpers');
 const fs = require('fs');
-const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
 const json5 = require('json5');
-const makeHMRConfig = require('babel-preset-react-native/configs/hmr');
 const path = require('path');
-const resolvePlugins = require('babel-preset-react-native/lib/resolvePlugins');
 
-import type {Plugins as BabelPlugins} from 'babel-core';
+const {babelCore: babel} = require('./babel-bridge');
+const {externalHelpersPlugin} = require('./babel-bridge');
+const {inlineRequiresPlugin} = require('./babel-bridge');
+const {makeHMRConfig} = require('./babel-bridge');
+const {resolvePlugins} = require('./babel-bridge');
+
 import type {Transformer, TransformOptions} from './JSTransformer/worker';
+import type {Plugins as BabelPlugins} from 'babel-core';
 
 const cacheKeyParts = [
   fs.readFileSync(__filename),

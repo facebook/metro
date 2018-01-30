@@ -12,8 +12,9 @@
  */
 'use strict';
 
-const babel = require('babel-core');
 const constantFolding = require('../constant-folding');
+
+const {babelCore: babel} = require('../../../babel-bridge');
 
 function parse(code) {
   return babel.transform(code, {code: false, babelrc: false, compact: true});

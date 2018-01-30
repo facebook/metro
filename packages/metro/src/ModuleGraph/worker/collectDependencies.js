@@ -12,11 +12,12 @@
 
 'use strict';
 
-const babelTemplate = require('babel-template');
 const nullthrows = require('fbjs/lib/nullthrows');
 
-const {traverse, types} = require('babel-core');
-const prettyPrint = require('babel-generator').default;
+const {babelTemplate} = require('../../babel-bridge');
+const {babelTraverse: traverse} = require('../../babel-bridge');
+const {babelTypes: types} = require('../../babel-bridge');
+const {babelGenerate: generate} = require('../../babel-bridge');
 
 import type {TransformResultDependency} from '../types.flow';
 import type {Ast} from 'babel-core';
@@ -189,7 +190,7 @@ const makeAsyncRequire = babelTemplate(
 );
 
 function invalidRequireOf(type, node) {
-  const str = prettyPrint(node).code;
+  const str = generate(node).code;
   return new InvalidRequireCallError(type, str, node.loc.start);
 }
 

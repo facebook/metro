@@ -12,7 +12,7 @@
 
 'use strict';
 
-const babel = require('babel-core');
+const {babelCore: babel} = require('../../babel-bridge');
 const constantFolding = require('../../JSTransformer/worker/constant-folding')
   .plugin;
 const generate = require('./generate');

@@ -12,8 +12,8 @@
 
 'use strict';
 
-const babel = require('babel-core');
-const babylon = require('babylon');
+const {babelCore: babel} = require('../babel-bridge');
+const {babylon} = require('../babel-bridge');
 
 import type {AssetDataWithoutFiles} from '../Assets';
 import type {ModuleTransportLike} from '../shared/types.flow';

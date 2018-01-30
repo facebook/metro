@@ -14,7 +14,7 @@
 
 /* eslint-disable no-unclear-flowtypes */
 
-const babel = require('babel-core');
+const {babelCore: babel} = require('../../babel-bridge');
 
 const MODULE_FACTORY_PARAMETERS = ['global', 'require', 'module', 'exports'];
 const POLYFILL_FACTORY_PARAMETERS = ['global'];

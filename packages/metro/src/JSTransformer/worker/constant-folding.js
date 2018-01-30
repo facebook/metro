@@ -12,7 +12,7 @@
 
 'use strict';
 
-const babel = require('babel-core');
+const {babelCore: babel} = require('../../babel-bridge');
 
 import type {Ast, BabelSourceMap} from 'babel-core';
 

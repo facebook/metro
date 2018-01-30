@@ -14,7 +14,7 @@
 
 'use strict';
 
-const babel = require('babel-core');
+const {babelCore: babel} = require('../../../babel-bridge');
 const babelConfig = require('../../../babelRegisterOnly').config;
 const fs = require('fs');
 

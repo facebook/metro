@@ -12,7 +12,7 @@
 
 'use strict';
 
-const babelGenerate = require('babel-generator').default;
+const {babelGenerate} = require('../../babel-bridge');
 const {
   generateAssetCodeFileAst,
   generateRemoteAssetCodeFileAst,

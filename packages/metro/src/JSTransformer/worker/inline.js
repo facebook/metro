@@ -12,9 +12,10 @@
 
 'use strict';
 
-const babel = require('babel-core');
 const inlinePlatform = require('./inline-platform');
 const invariant = require('fbjs/lib/invariant');
+
+const {babelCore: babel} = require('../../babel-bridge');
 
 import type {Ast} from 'babel-core';
 import type {BabelSourceMap} from 'babel-core';

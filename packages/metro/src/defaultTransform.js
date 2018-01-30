@@ -11,7 +11,7 @@
  */
 'use strict';
 
-const babel = require('babel-core');
+const {babelCore: babel} = require('./babel-bridge');
 
 import type {TransformOptions} from './JSTransformer/worker';
 import type {Plugins as BabelPlugins} from 'babel-core';

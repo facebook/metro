@@ -15,24 +15,24 @@
 const JsFileWrapping = require('../../ModuleGraph/worker/JsFileWrapping');
 
 const assetTransformer = require('../../assetTransformer');
-const babylon = require('babylon');
 const collectDependencies = require('../../ModuleGraph/worker/collectDependencies');
 const constantFolding = require('./constant-folding');
-const generate = require('babel-generator').default;
 const inline = require('./inline');
 const minify = require('./minify');
 const optimizeDependencies = require('../../ModuleGraph/worker/optimizeDependencies');
 const path = require('path');
 
+const {babylon} = require('../../babel-bridge');
+const {babelGenerate: generate} = require('../../babel-bridge');
 const {toSegmentTuple} = require('metro-source-map');
 
-import type {LogEntry} from 'metro-core/src/Logger';
-import type {BabelSourceMap} from 'babel-core';
-import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
+import type {DynamicRequiresBehavior} from '../../ModuleGraph/worker/collectDependencies';
 import type {LocalPath} from '../../node-haste/lib/toLocalPath';
 import type {ResultWithMap} from './minify';
 import type {Ast, Plugins as BabelPlugins} from 'babel-core';
-import type {DynamicRequiresBehavior} from '../../ModuleGraph/worker/collectDependencies';
+import type {BabelSourceMap} from 'babel-core';
+import type {LogEntry} from 'metro-core/src/Logger';
+import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
 export type TransformedCode = {
   code: string,
