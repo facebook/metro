@@ -19,6 +19,7 @@ const {traverse, types} = require('babel-core');
 const prettyPrint = require('babel-generator').default;
 
 import type {TransformResultDependency} from '../types.flow';
+import type {Ast} from 'babel-core';
 
 export type DynamicRequiresBehavior = 'throwAtRuntime' | 'reject';
 type Options = {|
