@@ -12,9 +12,8 @@
 
 'use strict';
 
-const {babelCore: babel} = require('../../babel-bridge');
+const {babelTypes: t} = require('../../babel-bridge');
 
-const t = babel.types;
 const importMap = new Map([['ReactNative', 'react-native']]);
 
 const isPlatformNode = (

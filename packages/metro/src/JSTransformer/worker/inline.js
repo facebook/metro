@@ -15,11 +15,12 @@
 const inlinePlatform = require('./inline-platform');
 const invariant = require('fbjs/lib/invariant');
 
-const {babelCore: babel} = require('../../babel-bridge');
+const {transform} = require('../../babel-bridge');
+const {transformFromAst} = require('../../babel-bridge');
+const {babelTypes: t} = require('../../babel-bridge');
 
-import type {Ast} from 'babel-core';
-import type {BabelSourceMap} from 'babel-core';
-const t = babel.types;
+import type {Ast} from '@babel/core';
+import type {BabelSourceMap} from '@babel/core';
 
 const env = {name: 'env'};
 const nodeEnv = {name: 'NODE_ENV'};
@@ -127,8 +128,8 @@ function inline(
   };
 
   const result = transformResult.ast
-    ? babel.transformFromAst(transformResult.ast, code, babelOptions)
-    : babel.transform(code, babelOptions);
+    ? transformFromAst(transformResult.ast, code, babelOptions)
+    : transform(code, babelOptions);
   const {ast} = result;
   invariant(ast != null, 'Missing AST in babel transform results.');
   return {ast, code: result.code, map: result.map};

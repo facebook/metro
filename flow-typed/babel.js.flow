@@ -125,10 +125,10 @@ declare module 'babel-core' {
   declare type BabelSourceMap = _BabelSourceMap;
   declare type Ast = {};
   declare type TransformOptions = _TransformOptions;
-  declare function transform(
+  declare var transform: TransformSync /*(
     code: string,
     options?: _TransformOptions,
-  ): TransformResult;
+  ): TransformResult*/;
   declare function traverse<State>(
     ast: Ast,
     ast: BabelNode,
@@ -138,11 +138,12 @@ declare module 'babel-core' {
     parentPath?: ?Object,
   ): void;
   declare var types: BabelTypes;
-  declare function transformFromAst(
+  declare var transformFile: TransformFile;
+  declare var transformFromAst: TransformFromAst /*(
     ast: Ast,
     code?: ?string,
     babelOptions?: _TransformOptions,
-  ): TransformResult;
+  ): TransformResult*/;
 }
 
 type _BabelSourceMapSegment = {
@@ -199,7 +200,7 @@ type BabelCoreOptions = {|
   getModuleId?: ?(string) => string | boolean,
   highlightCode?: boolean,
   ignore?: ?(string | Array<string> | RegExp | Array<string | RegExp>),
-  inputSourceMap?: ?BabelSourceMap,
+  inputSourceMap?: ?_BabelSourceMap,
   minified?: boolean,
   moduleId?: ?string,
   moduleIds?: ?{[string]: string},
@@ -237,7 +238,7 @@ type TemplateFunc = (tpl: string, options: TemplateOptions) => Templatable;
 // https://github.com/babel/babel/blob/98969b8a7335e831c069164f5c56132111847224/packages/babel-core/src/transform-ast-sync.js#L15
 export type Transform7Result = {|
   code: string,
-  map?: BabelSourceMap,
+  map?: ?_BabelSourceMap,
   ast: BabelNode, // note: babel never allows falsy ast value here
 |};
 
@@ -291,7 +292,7 @@ declare module '@babel/core' {
     filename: string,
     options: BabelCoreOptions,
     callback: TransformCallback,
-  ): void;
+  ): Transform7Result;
   declare var transformFileSync: TransformFileSync;
   // Note: DO NOT USE WITHOUT CALLBACK. Use transformFromAstSync instead.
   declare function transformFromAst(
@@ -299,13 +300,16 @@ declare module '@babel/core' {
     code?: string,
     options?: BabelCoreOptions,
     callback: TransformCallback,
-  ): void;
+  ): Transform7Result;
   declare var transformFromAstSync: TransformFromAstSync;
 }
 
 // https://github.com/babel/babel/tree/master/packages/babylon
 declare module 'babylon7' {
-  declare function parse(code: string, options?: Babylon7Options): BabelNode;
+  declare function parse(
+    code: string,
+    options?: Babylon7Options,
+  ): BabelNode & {program: {body: BabelNode}};
   declare function parseExpression(
     code: string,
     options?: Babylon7Options,

@@ -20,7 +20,7 @@ const {babelTypes: types} = require('../../babel-bridge');
 const {babelGenerate: generate} = require('../../babel-bridge');
 
 import type {TransformResultDependency} from '../types.flow';
-import type {Ast} from 'babel-core';
+import type {Ast} from '@babel/core';
 
 export type DynamicRequiresBehavior = 'throwAtRuntime' | 'reject';
 type Options = {|

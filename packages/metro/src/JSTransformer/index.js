@@ -17,7 +17,7 @@ const {Logger} = require('metro-core');
 const debug = require('debug')('Metro:JStransformer');
 const Worker = require('jest-worker').default;
 
-import type {BabelSourceMap} from 'babel-core';
+import type {BabelSourceMap} from '@babel/core';
 import type {Options, TransformedCode} from './worker';
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
 import type {ResultWithMap} from './worker/minify';

@@ -12,8 +12,8 @@
 
 'use strict';
 
-const {babelCore: babel} = require('../babel-bridge');
 const {babylon} = require('../babel-bridge');
+const {babelTypes} = require('../babel-bridge');
 
 import type {AssetDataWithoutFiles} from '../Assets';
 import type {ModuleTransportLike} from '../shared/types.flow';
@@ -54,7 +54,7 @@ function generateAssetCodeFileAst(
   const descriptorAst = babylon.parseExpression(
     JSON.stringify(properDescriptor),
   );
-  const t = babel.types;
+  const t = babelTypes;
 
   // module.exports
   const moduleExports = t.memberExpression(
@@ -98,7 +98,7 @@ function generateRemoteAssetCodeFileAst(
   remoteServer: string,
   remoteFileMap: RemoteFileMap,
 ): ?Ast {
-  const t = babel.types;
+  const t = babelTypes;
 
   const file = remoteFileMap[assetDescriptor.fileSystemLocation];
   const descriptor = file && file[assetDescriptor.name];

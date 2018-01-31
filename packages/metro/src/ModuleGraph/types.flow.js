@@ -11,8 +11,8 @@
  */
 'use strict';
 
-import type {Ast} from 'babel-core';
-import type {BabelSourceMap} from 'babel-core';
+import type {Ast} from '@babel/core';
+import type {BabelSourceMap} from '@babel/core';
 import type {Console} from 'console';
 import type {FBSourceMap, MetroSourceMap} from 'metro-source-map';
 

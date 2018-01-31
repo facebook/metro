@@ -14,7 +14,7 @@
 
 const uglify = require('uglify-es');
 
-import type {BabelSourceMap} from 'babel-core';
+import type {BabelSourceMap} from '@babel/core';
 
 export type ResultWithMap = {
   code: string,

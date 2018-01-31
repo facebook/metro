@@ -29,8 +29,9 @@ const {toSegmentTuple} = require('metro-source-map');
 import type {DynamicRequiresBehavior} from '../../ModuleGraph/worker/collectDependencies';
 import type {LocalPath} from '../../node-haste/lib/toLocalPath';
 import type {ResultWithMap} from './minify';
-import type {Ast, Plugins as BabelPlugins} from 'babel-core';
-import type {BabelSourceMap} from 'babel-core';
+import type {Ast} from '@babel/core';
+import type {BabelSourceMap} from '@babel/core';
+import type {Plugins as BabelPlugins} from 'babel-core';
 import type {LogEntry} from 'metro-core/src/Logger';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 

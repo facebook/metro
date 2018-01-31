@@ -14,16 +14,19 @@
 
 'use strict';
 
-const {babelCore: babel} = require('../../../babel-bridge');
-const babelConfig = require('../../../babelRegisterOnly').config;
 const fs = require('fs');
+
+const {getBabelRegisterConfig} = require('../../../babel-bridge');
+const {transform} = require('../../../babel-bridge');
+
+const babelConfig = getBabelRegisterConfig();
 
 describe('require', () => {
   const moduleSystemCode = (() => {
     const {only, ...config} = babelConfig([]);
     only;
     const rawCode = fs.readFileSync(require.resolve('../require'), 'utf8');
-    return babel.transform(rawCode, config).code;
+    return transform(rawCode, config).code;
   })();
 
   // eslint-disable-next-line no-new-func

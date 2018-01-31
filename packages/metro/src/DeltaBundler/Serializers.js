@@ -28,7 +28,7 @@ import type DeltaTransformer, {
   DeltaEntry,
   DeltaTransformResponse,
 } from './DeltaTransformer';
-import type {BabelSourceMap} from 'babel-core';
+import type {BabelSourceMap} from '@babel/core';
 
 export type Options = BundleOptions & {
   deltaBundleId: ?string,

@@ -12,7 +12,6 @@
 
 'use strict';
 
-const {babelCore: babel} = require('../../babel-bridge');
 const constantFolding = require('../../JSTransformer/worker/constant-folding')
   .plugin;
 const generate = require('./generate');
@@ -22,8 +21,10 @@ const minify = require('../../JSTransformer/worker/minify');
 const optimizeDependencies = require('./optimizeDependencies');
 const sourceMap = require('source-map');
 
+const {transform} = require('../../babel-bridge');
+
 import type {TransformedSourceFile, TransformResult} from '../types.flow';
-import type {BabelSourceMap} from 'babel-core';
+import type {BabelSourceMap} from '@babel/core';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {PostMinifyProcess} from '../../Bundler/index.js';
 
@@ -98,7 +99,7 @@ function optimize(transformed: TransformResult, file, options) {
 }
 
 function optimizeCode(code, map, filename, inliningOptions) {
-  return babel.transform(code, {
+  return transform(code, {
     plugins: [
       [constantFolding],
       [inline, {...inliningOptions, isWrapped: true}],

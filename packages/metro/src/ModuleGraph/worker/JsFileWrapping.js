@@ -14,13 +14,13 @@
 
 /* eslint-disable no-unclear-flowtypes */
 
-const {babelCore: babel} = require('../../babel-bridge');
+const {babelTypes} = require('../../babel-bridge');
 
 const MODULE_FACTORY_PARAMETERS = ['global', 'require', 'module', 'exports'];
 const POLYFILL_FACTORY_PARAMETERS = ['global'];
 
 function wrapModule(fileAst: Object, dependencyMapName: string): Object {
-  const t = babel.types;
+  const t = babelTypes;
   const params = MODULE_FACTORY_PARAMETERS.concat(dependencyMapName);
   const factory = functionFromProgram(fileAst.program, params);
   const def = t.callExpression(t.identifier('__d'), [factory]);
@@ -28,7 +28,7 @@ function wrapModule(fileAst: Object, dependencyMapName: string): Object {
 }
 
 function wrapPolyfill(fileAst: Object): Object {
-  const t = babel.types;
+  const t = babelTypes;
   const factory = functionFromProgram(
     fileAst.program,
     POLYFILL_FACTORY_PARAMETERS,
@@ -41,7 +41,7 @@ function functionFromProgram(
   program: Object,
   parameters: Array<string>,
 ): Object {
-  const t = babel.types;
+  const t = babelTypes;
   return t.functionExpression(
     t.identifier(''),
     parameters.map(makeIdentifier),
@@ -50,7 +50,7 @@ function functionFromProgram(
 }
 
 function makeIdentifier(name: string): Object {
-  return babel.types.identifier(name);
+  return babelTypes.identifier(name);
 }
 
 module.exports = {

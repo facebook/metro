@@ -32,7 +32,7 @@ import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDepende
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
-import type {BabelSourceMap} from 'babel-core';
+import type {BabelSourceMap} from '@babel/core';
 import type {
   MetroSourceMapSegmentTuple,
   MetroSourceMap,

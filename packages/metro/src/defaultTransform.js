@@ -11,7 +11,7 @@
  */
 'use strict';
 
-const {babelCore: babel} = require('./babel-bridge');
+const {transform} = require('./babel-bridge');
 
 import type {TransformOptions} from './JSTransformer/worker';
 import type {Plugins as BabelPlugins} from 'babel-core';
@@ -28,7 +28,7 @@ module.exports.transform = ({filename, options, plugins, src}: Params) => {
   process.env.BABEL_ENV = options.dev ? 'development' : 'production';
 
   try {
-    const {ast} = babel.transform(src, {filename, code: false, plugins});
+    const {ast} = transform(src, {filename, code: false, plugins});
 
     return {ast};
   } finally {

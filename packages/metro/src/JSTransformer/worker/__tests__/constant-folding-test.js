@@ -14,10 +14,10 @@
 
 const constantFolding = require('../constant-folding');
 
-const {babelCore: babel} = require('../../../babel-bridge');
+const {transform} = require('../../../babel-bridge');
 
 function parse(code) {
-  return babel.transform(code, {code: false, babelrc: false, compact: true});
+  return transform(code, {code: false, babelrc: false, compact: true});
 }
 
 const babelOptions = {
@@ -30,7 +30,7 @@ function normalize({code}) {
   if (code === undefined || code === null) {
     return 'FAIL';
   }
-  return babel.transform(code, babelOptions).code;
+  return transform(code, babelOptions).code;
 }
 
 describe('constant expressions', () => {

@@ -18,11 +18,12 @@ const fs = require('fs');
 const json5 = require('json5');
 const path = require('path');
 
-const {babelCore: babel} = require('./babel-bridge');
 const {externalHelpersPlugin} = require('./babel-bridge');
+const {getPreset} = require('./babel-bridge');
 const {inlineRequiresPlugin} = require('./babel-bridge');
 const {makeHMRConfig} = require('./babel-bridge');
 const {resolvePlugins} = require('./babel-bridge');
+const {transform: babelTransform} = require('./babel-bridge');
 
 import type {Transformer, TransformOptions} from './JSTransformer/worker';
 import type {Plugins as BabelPlugins} from 'babel-core';
@@ -65,10 +66,7 @@ const getBabelRC = (function() {
       );
 
       // Require the babel-preset's listed in the default babel config
-      babelRC.presets = babelRC.presets.map(preset =>
-        // $FlowFixMe: dynamic require can't be avoided
-        require('babel-preset-' + preset),
-      );
+      babelRC.presets = babelRC.presets.map(getPreset);
       babelRC.plugins = resolvePlugins(babelRC.plugins);
     } else {
       // if we find a .babelrc file we tell babel to use it
@@ -135,7 +133,7 @@ function transform({filename, options, src, plugins}: Params) {
 
   try {
     const babelConfig = buildBabelConfig(filename, options, plugins);
-    const {ast} = babel.transform(src, babelConfig);
+    const {ast} = babelTransform(src, babelConfig);
 
     return {ast};
   } finally {

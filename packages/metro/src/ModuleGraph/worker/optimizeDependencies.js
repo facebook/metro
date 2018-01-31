@@ -16,7 +16,7 @@ const {babelTraverse: traverse} = require('../../babel-bridge');
 const {babelGenerate} = require('../../babel-bridge');
 
 import type {TransformResultDependency} from '../types.flow';
-import type {Ast} from 'babel-core';
+import type {Ast} from '@babel/core';
 
 type Context = {
   oldToNewIndex: Map<number, number>,

@@ -143,7 +143,7 @@ The JavaScript transformer (`transformModulePath`) is the place where JS code wi
 Mandatory method that will transform code. The object received has information about the module being transformed (e.g its path, code...) and the returned object has to contain an `ast` key that is the AST representation of the transformed code. The default shipped transformer does the bare minimum amount of work by just parsing the code to AST:
 
 ```js
-const babylon = require('babylon');
+const babylon = require('babylon7');
 
 module.exports.transform = (file: {filename: string, src: string}) => {
   const ast = babylon.parse(code, {sourceType: 'module'});
@@ -155,7 +155,7 @@ module.exports.transform = (file: {filename: string, src: string}) => {
 If you would like to plug-in babel, you can simply do that by passing the code to it:
 
 ```js
-const {transform} = require('babel-core');
+const {transform} = require('@babel/core');
 
 module.exports.transform = file => {
   return transform(file.src, {

@@ -12,11 +12,10 @@
 
 'use strict';
 
-const {babelCore: babel} = require('../../babel-bridge');
+const {babelTypes: t} = require('../../babel-bridge');
+const {transformFromAst} = require('../../babel-bridge');
 
-import type {Ast, BabelSourceMap} from 'babel-core';
-
-const t = babel.types;
+import type {Ast, BabelSourceMap} from '@babel/core';
 
 const Conditional = {
   exit(path) {
@@ -76,14 +75,14 @@ function constantFolding(
   filename: string,
   transformResult: {
     ast: Ast,
-    code?: ?string,
+    code: string,
     map: ?BabelSourceMap,
   },
 ) {
-  return babel.transformFromAst(transformResult.ast, transformResult.code, {
+  return transformFromAst(transformResult.ast, transformResult.code, {
     filename,
     plugins: [plugin],
-    inputSourceMap: transformResult.map,
+    inputSourceMap: transformResult.map || undefined, // may not be null
     sourceMaps: true,
     sourceFileName: filename,
     babelrc: false,

@@ -19,6 +19,7 @@ jest
 const path = require('path');
 const transformCode = require('..').transform;
 const {InvalidRequireCallError} = require('..');
+const {version: BABEL_VERSION} = require('../../../babel-bridge');
 
 describe('code transformation worker:', () => {
   it('transforms a simple script', async () => {
@@ -77,46 +78,92 @@ describe('code transformation worker:', () => {
     expect(result.dependencies).toEqual([]);
   });
 
-  it('transforms a module with dependencies', async () => {
-    const {result} = await transformCode(
-      'arbitrary/file.js',
-      `local/file.js`,
-      [
-        'require("./a");',
-        'arbitrary(code);',
-        'const b = require("b");',
-        'import c from "./c";',
-      ].join('\n'),
-      path.join(__dirname, '../../../transformer.js'),
-      false,
-      {
-        dev: true,
-        transform: {},
-      },
-      [],
-      '',
-      'asyncRequire',
-      'reject',
-    );
+  if (BABEL_VERSION === 7) {
+    it(`transforms a module with dependencies (v${BABEL_VERSION})`, async () => {
+      const {result} = await transformCode(
+        'arbitrary/file.js',
+        `local/file.js`,
+        [
+          "'use strict';",
+          'require("./a");',
+          'arbitrary(code);',
+          'const b = require("b");',
+          'import c from "./c";',
+        ].join('\n'),
+        path.join(__dirname, '../../../transformer.js'),
+        false,
+        {
+          dev: true,
+          transform: {},
+        },
+        [],
+        '',
+        'asyncRequire',
+        'reject',
+      );
 
-    expect(result.code).toBe(
-      [
-        '__d(function (global, require, module, exports, _dependencyMap) {',
-        '  var _c = require(_dependencyMap[0], "./c");',
+      expect(BABEL_VERSION).toBe(7);
+      expect(result.code).toBe(
+        [
+          '__d(function (global, require, module, exports, _dependencyMap) {',
+          "  'use strict';",
+          '',
+          '  var _c = babelHelpers.interopRequireDefault(require(_dependencyMap[0], "./c"));',
+          '',
+          '  require(_dependencyMap[1], "./a");',
+          '',
+          '  arbitrary(code);',
+          '',
+          '  var b = require(_dependencyMap[2], "b");',
+          '});',
+        ].join('\n'),
+      );
+      expect(result.map).toHaveLength(14);
+      expect(result.dependencies).toEqual(['./c', './a', 'b']);
+    });
+  } else {
+    it(`transforms a module with dependencies (v${BABEL_VERSION})`, async () => {
+      const {result} = await transformCode(
+        'arbitrary/file.js',
+        `local/file.js`,
+        [
+          'require("./a");',
+          'arbitrary(code);',
+          'const b = require("b");',
+          'import c from "./c";',
+        ].join('\n'),
+        path.join(__dirname, '../../../transformer.js'),
+        false,
+        {
+          dev: true,
+          transform: {},
+        },
+        [],
         '',
-        '  var _c2 = babelHelpers.interopRequireDefault(_c);',
-        '',
-        '  require(_dependencyMap[1], "./a");',
-        '',
-        '  arbitrary(code);',
-        '',
-        '  var b = require(_dependencyMap[2], "b");',
-        '});',
-      ].join('\n'),
-    );
-    expect(result.map).toHaveLength(13);
-    expect(result.dependencies).toEqual(['./c', './a', 'b']);
-  });
+        'asyncRequire',
+        'reject',
+      );
+
+      expect(BABEL_VERSION).toBe(6);
+      expect(result.code).toBe(
+        [
+          '__d(function (global, require, module, exports, _dependencyMap) {',
+          '  var _c = require(_dependencyMap[0], "./c");',
+          '',
+          '  var _c2 = babelHelpers.interopRequireDefault(_c);',
+          '',
+          '  require(_dependencyMap[1], "./a");',
+          '',
+          '  arbitrary(code);',
+          '',
+          '  var b = require(_dependencyMap[2], "b");',
+          '});',
+        ].join('\n'),
+      );
+      expect(result.map).toHaveLength(13);
+      expect(result.dependencies).toEqual(['./c', './a', 'b']);
+    });
+  }
 
   it('reports filename when encountering unsupported dynamic dependency', async () => {
     try {
@@ -158,6 +205,7 @@ describe('code transformation worker:', () => {
       {
         dev: true,
         transform: {},
+        enableBabelRCLookup: false,
       },
       [],
       '',

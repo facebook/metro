@@ -36,7 +36,7 @@ import type {
   TransformResult,
   TransformVariants,
 } from '../types.flow';
-import type {Ast} from 'babel-core';
+import type {Ast} from '@babel/core';
 
 export type TransformOptions<ExtraOptions> = {|
   +asyncRequireModulePath: string,

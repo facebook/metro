@@ -38,6 +38,7 @@ type Options = {|
   nonPersistent?: ?boolean,
   transformCache?: ?TransformCache,
   verbose?: ?boolean,
+  targetBabelVersion?: number,
 |};
 
 type PublicBundleOptions = {
@@ -98,6 +99,9 @@ exports.build = async function(
   options: Options,
   bundleOptions: PublicBundleOptions,
 ): Promise<{code: string, map: string}> {
+  if (options.targetBabelVersion !== undefined) {
+    process.env.BABEL_VERSION = String(options.targetBabelVersion);
+  }
   var server = createNonPersistentServer(options);
   const ServerClass = require('./Server');
 
