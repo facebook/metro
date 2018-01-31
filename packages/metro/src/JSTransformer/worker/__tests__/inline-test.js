@@ -13,24 +13,26 @@
 
 const inline = require('../inline');
 
-const {transform} = require('../../../babel-bridge');
-const {transformFromAst} = require('../../../babel-bridge');
+const {transformSync} = require('../../../babel-bridge');
+const {transformFromAstSync} = require('../../../babel-bridge');
+
+import type {TransformResult} from '@babel/core';
 
 const babelOptions = {
   babelrc: false,
   compact: true,
 };
 
-function toString(ast) {
-  return normalize(transformFromAst(ast, babelOptions).code);
+function toString(ast): string {
+  return normalize(transformFromAstSync(ast, babelOptions).code);
 }
 
-function normalize(code) {
-  return transform(code, babelOptions).code;
+function normalize(code: string): string {
+  return transformSync(code, babelOptions).code;
 }
 
-function toAst(code) {
-  return transform(code, {...babelOptions, code: false}).ast;
+function toAst(code: string): TransformResult {
+  return transformSync(code, {...babelOptions, code: false}).ast;
 }
 
 describe('inline constants', () => {
@@ -463,7 +465,7 @@ describe('inline constants', () => {
     const code = `declare var __DEV__;
       const a: boolean = __DEV__;`;
 
-    const transformed = transform(code, {
+    const transformed = transformSync(code, {
       ...babelOptions,
       plugins: [stripFlow, [inline.plugin, {dev: false}]],
     }).code;
@@ -478,7 +480,7 @@ describe('inline constants', () => {
       const a: boolean = __DEV__;
     });`;
 
-    const transformed = transform(code, {
+    const transformed = transformSync(code, {
       ...babelOptions,
       plugins: [stripFlow, [inline.plugin, {dev: true}]],
     }).code;

@@ -15,8 +15,8 @@
 const inlinePlatform = require('./inline-platform');
 const invariant = require('fbjs/lib/invariant');
 
-const {transform} = require('../../babel-bridge');
-const {transformFromAst} = require('../../babel-bridge');
+const {transformSync} = require('../../babel-bridge');
+const {transformFromAstSync} = require('../../babel-bridge');
 const {babelTypes: t} = require('../../babel-bridge');
 
 import type {Ast} from '@babel/core';
@@ -128,8 +128,8 @@ function inline(
   };
 
   const result = transformResult.ast
-    ? transformFromAst(transformResult.ast, code, babelOptions)
-    : transform(code, babelOptions);
+    ? transformFromAstSync(transformResult.ast, code, babelOptions)
+    : transformSync(code, babelOptions);
   const {ast} = result;
   invariant(ast != null, 'Missing AST in babel transform results.');
   return {ast, code: result.code, map: result.map};

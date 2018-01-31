@@ -23,7 +23,7 @@ const {getPreset} = require('./babel-bridge');
 const {inlineRequiresPlugin} = require('./babel-bridge');
 const {makeHMRConfig} = require('./babel-bridge');
 const {resolvePlugins} = require('./babel-bridge');
-const {transform: babelTransform} = require('./babel-bridge');
+const {transformSync} = require('./babel-bridge');
 
 import type {Transformer, TransformOptions} from './JSTransformer/worker';
 import type {Plugins as BabelPlugins} from 'babel-core';
@@ -133,7 +133,7 @@ function transform({filename, options, src, plugins}: Params) {
 
   try {
     const babelConfig = buildBabelConfig(filename, options, plugins);
-    const {ast} = babelTransform(src, babelConfig);
+    const {ast} = transformSync(src, babelConfig);
 
     return {ast};
   } finally {

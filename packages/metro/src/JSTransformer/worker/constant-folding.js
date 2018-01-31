@@ -13,9 +13,9 @@
 'use strict';
 
 const {babelTypes: t} = require('../../babel-bridge');
-const {transformFromAst} = require('../../babel-bridge');
+const {transformFromAstSync} = require('../../babel-bridge');
 
-import type {Ast, BabelSourceMap} from '@babel/core';
+import type {TransformResult} from '@babel/core';
 
 const Conditional = {
   exit(path) {
@@ -71,15 +71,8 @@ const plugin = {
   },
 };
 
-function constantFolding(
-  filename: string,
-  transformResult: {
-    ast: Ast,
-    code: string,
-    map: ?BabelSourceMap,
-  },
-) {
-  return transformFromAst(transformResult.ast, transformResult.code, {
+function constantFolding(filename: string, transformResult: TransformResult) {
+  return transformFromAstSync(transformResult.ast, transformResult.code, {
     filename,
     plugins: [plugin],
     inputSourceMap: transformResult.map || undefined, // may not be null

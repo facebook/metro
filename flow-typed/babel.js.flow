@@ -238,7 +238,7 @@ type TemplateFunc = (tpl: string, options: TemplateOptions) => Templatable;
 // https://github.com/babel/babel/blob/98969b8a7335e831c069164f5c56132111847224/packages/babel-core/src/transform-ast-sync.js#L15
 export type Transform7Result = {|
   code: string,
-  map?: ?_BabelSourceMap,
+  map?: _BabelSourceMap,
   ast: BabelNode, // note: babel never allows falsy ast value here
 |};
 
@@ -269,6 +269,9 @@ export type TransformFromAstSync = (
   options?: BabelCoreOptions,
 ) => Transform7Result;
 
+// Use the sync versions if you expect a result
+type void_DO_NOT_USE_SYNC = void;
+
 // https://github.com/babel/babel/tree/master/packages/babel-core
 declare module '@babel/core' {
   declare type Ast = BabelNode;
@@ -285,14 +288,14 @@ declare module '@babel/core' {
     code: string,
     options: BabelCoreOptions,
     callback: TransformCallback,
-  ): void;
+  ): void_DO_NOT_USE_SYNC;
   declare var transformSync: TransformSync;
   // Note: DO NOT USE WITHOUT CALLBACK. Use transformFileSync instead.
   declare function transformFile(
     filename: string,
     options: BabelCoreOptions,
     callback: TransformCallback,
-  ): Transform7Result;
+  ): void_DO_NOT_USE_SYNC;
   declare var transformFileSync: TransformFileSync;
   // Note: DO NOT USE WITHOUT CALLBACK. Use transformFromAstSync instead.
   declare function transformFromAst(
@@ -300,7 +303,7 @@ declare module '@babel/core' {
     code?: string,
     options?: BabelCoreOptions,
     callback: TransformCallback,
-  ): Transform7Result;
+  ): void_DO_NOT_USE_SYNC;
   declare var transformFromAstSync: TransformFromAstSync;
 }
 

@@ -12,12 +12,12 @@
 
 'use strict';
 
-/* eslint-disable no-unclear-flowtypes */
-
 const {babelGenerate} = require('../../babel-bridge');
 
+import type {Ast} from '@babel/core';
+
 function generate(
-  ast: Object,
+  ast: Ast,
   filename: string,
   sourceCode: string,
   compact: boolean,

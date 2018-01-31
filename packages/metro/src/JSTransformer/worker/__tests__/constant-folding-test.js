@@ -14,10 +14,17 @@
 
 const constantFolding = require('../constant-folding');
 
-const {transform} = require('../../../babel-bridge');
+const {transformSync} = require('../../../babel-bridge');
 
-function parse(code) {
-  return transform(code, {code: false, babelrc: false, compact: true});
+import type {TransformResult} from '@babel/core';
+
+function parse(code: string): TransformResult {
+  return transformSync(code, {
+    code: false,
+    babelrc: false,
+    compact: true,
+    sourceMaps: true,
+  });
 }
 
 const babelOptions = {
@@ -30,7 +37,7 @@ function normalize({code}) {
   if (code === undefined || code === null) {
     return 'FAIL';
   }
-  return transform(code, babelOptions).code;
+  return transformSync(code, babelOptions).code;
 }
 
 describe('constant expressions', () => {

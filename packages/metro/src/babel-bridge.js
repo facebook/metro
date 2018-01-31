@@ -79,11 +79,11 @@ module.exports = {
   version: IS_BABEL7 ? 7 : 6,
 
   // need to abstract the transform* funcs here since their name changed
-  transform: IS_BABEL7 ? babelCore7.transformSync : babelCore6.transform,
-  transformFile: IS_BABEL7
+  transformSync: IS_BABEL7 ? babelCore7.transformSync : babelCore6.transform,
+  transformFileSync: IS_BABEL7
     ? babelCore7.transformFileSync
     : babelCore6.transformFile,
-  transformFromAst: IS_BABEL7
+  transformFromAstSync: IS_BABEL7
     ? babelCore7.transformFromAstSync
     : babelCore6.transformFromAst,
 

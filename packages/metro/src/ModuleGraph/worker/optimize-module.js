@@ -21,7 +21,7 @@ const minify = require('../../JSTransformer/worker/minify');
 const optimizeDependencies = require('./optimizeDependencies');
 const sourceMap = require('source-map');
 
-const {transform} = require('../../babel-bridge');
+const {transformSync} = require('../../babel-bridge');
 
 import type {TransformedSourceFile, TransformResult} from '../types.flow';
 import type {BabelSourceMap} from '@babel/core';
@@ -99,7 +99,7 @@ function optimize(transformed: TransformResult, file, options) {
 }
 
 function optimizeCode(code, map, filename, inliningOptions) {
-  return transform(code, {
+  return transformSync(code, {
     plugins: [
       [constantFolding],
       [inline, {...inliningOptions, isWrapped: true}],

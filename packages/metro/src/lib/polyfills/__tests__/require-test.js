@@ -17,7 +17,7 @@
 const fs = require('fs');
 
 const {getBabelRegisterConfig} = require('../../../babel-bridge');
-const {transform} = require('../../../babel-bridge');
+const {transformSync} = require('../../../babel-bridge');
 
 const babelConfig = getBabelRegisterConfig();
 
@@ -26,7 +26,7 @@ describe('require', () => {
     const {only, ...config} = babelConfig([]);
     only;
     const rawCode = fs.readFileSync(require.resolve('../require'), 'utf8');
-    return transform(rawCode, config).code;
+    return transformSync(rawCode, config).code;
   })();
 
   // eslint-disable-next-line no-new-func
