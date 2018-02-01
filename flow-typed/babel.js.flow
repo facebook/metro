@@ -102,10 +102,10 @@ type _TransformOptions = __TransformOptions & {
   env?: {[key: string]: __TransformOptions},
 };
 
-type Ast = {};
+type BabelNode = {};
 
 type TransformResult = {
-  ast: Ast,
+  ast: BabelNode,
   code: ?string,
   ignored: boolean,
   map: ?_BabelSourceMap,
@@ -123,14 +123,13 @@ type BabelTypes = {[key: string]: Function};
 declare module 'babel-core' {
   declare type Plugins = _Plugins;
   declare type BabelSourceMap = _BabelSourceMap;
-  declare type Ast = {};
+  declare type Ast = BabelNode;
   declare type TransformOptions = _TransformOptions;
   declare var transform: TransformSync /*(
     code: string,
     options?: _TransformOptions,
   ): TransformResult*/;
   declare function traverse<State>(
-    ast: Ast,
     ast: BabelNode,
     visitor: BabelVisitor,
     scope?: ?Object,
@@ -140,7 +139,7 @@ declare module 'babel-core' {
   declare var types: BabelTypes;
   declare var transformFile: TransformFile;
   declare var transformFromAst: TransformFromAst /*(
-    ast: Ast,
+    ast: BabelNode,
     code?: ?string,
     babelOptions?: _TransformOptions,
   ): TransformResult*/;
@@ -157,7 +156,7 @@ type _BabelSourceMapSegment = {
 declare module 'babel-generator' {
   declare export type BabelSourceMapSegment = _BabelSourceMapSegment;
   declare export default (
-    ast: Ast,
+    ast: BabelNode,
     options?: GeneratorOptions,
     code?: string | {[string]: string},
   ) => GeneratorResult

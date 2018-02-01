@@ -17,6 +17,7 @@ const {babelTypes} = require('../babel-bridge');
 
 import type {AssetDataWithoutFiles} from '../Assets';
 import type {ModuleTransportLike} from '../shared/types.flow';
+import type {Ast} from '@babel/core';
 
 // Structure of the object: dir.name.scale = asset
 export type RemoteFileMap = {
