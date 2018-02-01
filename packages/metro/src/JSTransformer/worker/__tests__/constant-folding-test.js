@@ -33,11 +33,16 @@ const babelOptions = {
   retainLines: false,
 };
 
-function normalize({code}) {
+function normalize({code}): string {
   if (code === undefined || code === null) {
     return 'FAIL';
   }
   return transformSync(code, babelOptions).code;
+}
+
+function fold(filename, code): string {
+  const p = parse(code);
+  return normalize(constantFolding(filename, p));
 }
 
 describe('constant expressions', () => {
@@ -53,7 +58,7 @@ describe('constant expressions', () => {
         'foo'==='bar' ? b : c,
         f() ? g() : h()
       );`;
-    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual(
+    expect(fold('arbitrary.js', code)).toEqual(
       'a(true,true,2,true,{},{a:1},c,f()?g():h());',
     );
   });
@@ -63,9 +68,7 @@ describe('constant expressions', () => {
        var b = 'android' == 'android'
          ? ('production' != 'production' ? 'a' : 'A')
          : 'i';`;
-    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual(
-      "var a=1;var b='A';",
-    );
+    expect(fold('arbitrary.js', code)).toEqual("var a=1;var b='A';");
   });
 
   it('can optimize logical operator expressions with constant conditions', () => {
@@ -73,9 +76,7 @@ describe('constant expressions', () => {
       var a = true || 1;
       var b = 'android' == 'android' &&
         'production' != 'production' || null || "A";`;
-    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual(
-      'var a=true;var b="A";',
-    );
+    expect(fold('arbitrary.js', code)).toEqual('var a=true;var b="A";');
   });
 
   it('can optimize logical operators with partly constant operands', () => {
@@ -86,7 +87,7 @@ describe('constant expressions', () => {
       var d = null || z();
       var e = !1 && z();
     `;
-    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual(
+    expect(fold('arbitrary.js', code)).toEqual(
       'var a="truthy";var b=z();var c=null;var d=z();var e=false;',
     );
   });
@@ -97,7 +98,7 @@ describe('constant expressions', () => {
         var a = 1;
       }
     `;
-    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual('');
+    expect(fold('arbitrary.js', code)).toEqual('');
   });
 
   it('can optimize if-else-branches with constant conditions', () => {
@@ -112,9 +113,7 @@ describe('constant expressions', () => {
         var a = 'b';
       }
     `;
-    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual(
-      '{var a=3;var b=a+4;}',
-    );
+    expect(fold('arbitrary.js', code)).toEqual('{var a=3;var b=a+4;}');
   });
 
   it('can optimize nested if-else constructs', () => {
@@ -133,8 +132,6 @@ describe('constant expressions', () => {
         }
       }
     `;
-    expect(normalize(constantFolding('arbitrary.js', parse(code)))).toEqual(
-      "{{require('c');}}",
-    );
+    expect(fold('arbitrary.js', code)).toEqual("{{require('c');}}");
   });
 });
