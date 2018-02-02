@@ -13,8 +13,6 @@
 'use strict';
 
 const Config = require('./Config');
-const Http = require('http');
-const Https = require('https');
 const MetroBundler = require('./shared/output/bundle');
 const MetroHmrServer = require('./HmrServer');
 const MetroServer = require('./Server');
@@ -23,6 +21,10 @@ const TransformCaching = require('./lib/TransformCaching');
 
 const attachWebsocketServer = require('./lib/attachWebsocketServer');
 const defaults = require('./defaults');
+const fs = require('fs');
+const http = require('http');
+const https = require('https');
+const path = require('path');
 
 const {realpath} = require('fs');
 const {readFile} = require('fs-extra');
@@ -32,12 +34,10 @@ import type {ConfigT} from './Config';
 import type {Reporter} from './lib/reporting';
 import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
 import type {Options as ServerOptions} from './shared/types.flow';
-import type {Server as HttpServer, IncomingMessage, ServerResponse} from 'http';
+import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
 
 export type {ConfigT} from './Config';
-
-type Middleware = (IncomingMessage, ServerResponse, ?() => mixed) => mixed;
 
 type PublicMetroOptions = {|
   config?: ConfigT,
@@ -52,6 +52,13 @@ type PrivateMetroOptions = {|
   ...PublicMetroOptions,
   watch?: boolean,
 |};
+
+type MetroConfigSearchOptions = {|
+  cwd?: string,
+  basename?: string,
+|};
+
+const METRO_CONFIG_FILENAME = 'metro.config.js';
 
 // We'll be able to remove this to use the one provided by modern versions of
 // fs-extra once https://github.com/jprichardson/node-fs-extra/pull/520 will
@@ -223,7 +230,7 @@ exports.runServer = async (options: RunServerOptions) => {
   let httpServer;
 
   if (options.secure) {
-    httpServer = Https.createServer(
+    httpServer = https.createServer(
       {
         key: await readFile(options.secureKey),
         cert: await readFile(options.secureCert),
@@ -231,7 +238,7 @@ exports.runServer = async (options: RunServerOptions) => {
       serverApp,
     );
   } else {
-    httpServer = Http.createServer(serverApp);
+    httpServer = http.createServer(serverApp);
   }
 
   if (options.hmrEnabled) {
@@ -301,6 +308,47 @@ exports.runBuild = async (options: RunBuildOptions) => {
   await metroServer.end();
 
   return {metroServer, metroBundle};
+};
+
+exports.findMetroConfig = function(
+  filename: ?string,
+  {
+    cwd = process.cwd(),
+    basename = METRO_CONFIG_FILENAME,
+  }: MetroConfigSearchOptions = {},
+): ?string {
+  if (filename) {
+    return path.resolve(cwd, filename);
+  } else {
+    let previous;
+    let current = cwd;
+
+    do {
+      const filename = path.join(current, basename);
+
+      if (fs.existsSync(filename)) {
+        return filename;
+      }
+
+      previous = current;
+      current = path.dirname(current);
+    } while (previous !== current);
+
+    return null;
+  }
+};
+
+exports.loadMetroConfig = function(
+  filename: ?string,
+  // $FlowFixMe: This is a known Flow issue where it doesn't detect that an empty object is a valid value for a strict shape where all the members are optionals
+  searchOptions: MetroConfigSearchOptions = {},
+): ConfigT {
+  const location = exports.findMetroConfig(filename, searchOptions);
+
+  // $FlowFixMe: We want this require to be dynamic
+  const config = location ? require(location) : null;
+
+  return config ? Config.normalize(config) : Config.DEFAULT;
 };
 
 exports.Config = Config;

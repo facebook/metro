@@ -16,12 +16,7 @@ const MetroApi = require('..');
 
 const os = require('os');
 
-const {
-  findMetroConfig,
-  fetchMetroConfig,
-  watchFile,
-  makeAsyncCommand,
-} = require('../cli-utils');
+const {watchFile, makeAsyncCommand} = require('../cli-utils');
 const {promisify} = require('util');
 
 import typeof Yargs from 'yargs';
@@ -74,7 +69,7 @@ exports.handler = makeAsyncCommand(async (argv: any) => {
     }
 
     // $FlowFixMe: Flow + Promises don't work consistently https://fb.facebook.com/groups/flow/permalink/1772334656148475/
-    const config = await fetchMetroConfig(argv.config);
+    const config = await MetroApi.loadMetroConfig(argv.config);
 
     if (argv.projectRoots) {
       config.getProjectRoots = () => argv.projectRoots;
@@ -88,7 +83,7 @@ exports.handler = makeAsyncCommand(async (argv: any) => {
     restarting = false;
   }
 
-  const metroConfigLocation = await findMetroConfig(argv.config);
+  const metroConfigLocation = await MetroApi.findMetroConfig(argv.config);
 
   if (metroConfigLocation) {
     await watchFile(metroConfigLocation, restart);

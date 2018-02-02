@@ -16,7 +16,7 @@ const MetroApi = require('..');
 
 const os = require('os');
 
-const {fetchMetroConfig, makeAsyncCommand} = require('../cli-utils');
+const {makeAsyncCommand} = require('../cli-utils');
 
 import typeof Yargs from 'yargs';
 
@@ -56,7 +56,7 @@ exports.builder = (yargs: Yargs) => {
 // eslint-disable-next-line no-unclear-flowtypes
 exports.handler = makeAsyncCommand(async (argv: any) => {
   // $FlowFixMe: Flow + Promises don't work consistently https://fb.facebook.com/groups/flow/permalink/1772334656148475/
-  const config = await fetchMetroConfig(argv.config);
+  const config = await MetroApi.loadMetroConfig(argv.config);
 
   if (argv.projectRoots) {
     config.getProjectRoots = () => argv.projectRoots;
