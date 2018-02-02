@@ -32,16 +32,18 @@ import type {ConfigT} from './Config';
 import type {Reporter} from './lib/reporting';
 import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
 import type {Options as ServerOptions} from './shared/types.flow';
-import type {Server as HttpServer} from 'http';
+import type {Server as HttpServer, IncomingMessage, ServerResponse} from 'http';
 import type {Server as HttpsServer} from 'https';
 
 export type {ConfigT} from './Config';
+
+type Middleware = (IncomingMessage, ServerResponse, ?() => mixed) => mixed;
 
 type PublicMetroOptions = {|
   config?: ConfigT,
   maxWorkers?: number,
   port?: ?number,
-  projectRoots: Array<string>,
+  projectRoots?: Array<string>,
   reporter?: Reporter,
   // deprecated
   resetCache?: boolean,
@@ -147,6 +149,7 @@ async function runMetro({
 
 type CreateConnectMiddlewareOptions = {|
   ...PublicMetroOptions,
+  enhanceMiddleware?: Middleware => Middleware,
 |};
 
 exports.createConnectMiddleware = async function(
@@ -157,6 +160,7 @@ exports.createConnectMiddleware = async function(
     maxWorkers: options.maxWorkers,
     port: options.port,
     projectRoots: options.projectRoots,
+    reporter: options.reporter,
     resetCache: options.resetCache,
     watch: true,
   });
@@ -164,6 +168,18 @@ exports.createConnectMiddleware = async function(
   const normalizedConfig = options.config
     ? Config.normalize(options.config)
     : Config.DEFAULT;
+
+  let enhancedMiddleware = metroServer.processRequest;
+
+  // Enhance the middleware using the parameter option
+  if (options.enhanceMiddleware) {
+    enhancedMiddleware = options.enhanceMiddleware(enhancedMiddleware);
+  }
+
+  // Enhance the resulting middleware using the config options
+  if (normalizedConfig.enhanceMiddleware) {
+    enhancedMiddleware = normalizedConfig.enhanceMiddleware(enhancedMiddleware);
+  }
 
   return {
     attachHmrServer(httpServer: HttpServer | HttpsServer) {
@@ -174,7 +190,7 @@ exports.createConnectMiddleware = async function(
       });
     },
     metroServer,
-    middleware: normalizedConfig.enhanceMiddleware(metroServer.processRequest),
+    middleware: enhancedMiddleware,
     end() {
       metroServer.end();
     },
@@ -190,6 +206,7 @@ type RunServerOptions = {|
   secureKey?: string,
   secureCert?: string,
   hmrEnabled?: boolean,
+  enhanceMiddleware?: Middleware => Middleware,
 |};
 
 exports.runServer = async (options: RunServerOptions) => {
@@ -213,6 +230,7 @@ exports.runServer = async (options: RunServerOptions) => {
     projectRoots: options.projectRoots,
     reporter,
     resetCache: options.resetCache,
+    enhanceMiddleware: options.enhanceMiddleware,
   });
 
   serverApp.use(middleware);
