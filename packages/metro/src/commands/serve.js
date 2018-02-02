@@ -73,7 +73,12 @@ exports.handler = makeAsyncCommand(async (argv: any) => {
       await promisify(server.close).call(server);
     }
 
+    // $FlowFixMe: Flow + Promises don't work consistently https://fb.facebook.com/groups/flow/permalink/1772334656148475/
     const config = await fetchMetroConfig(argv.config);
+
+    if (argv.projectRoots) {
+      config.getProjectRoots = () => argv.projectRoots;
+    }
 
     server = await MetroApi.runServer({
       ...argv,

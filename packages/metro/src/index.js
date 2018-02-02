@@ -43,7 +43,6 @@ type PublicMetroOptions = {|
   config?: ConfigT,
   maxWorkers?: number,
   port?: ?number,
-  projectRoots?: Array<string>,
   reporter?: Reporter,
   // deprecated
   resetCache?: boolean,
@@ -75,7 +74,6 @@ async function runMetro({
   maxWorkers = 1,
   // $FlowFixMe TODO t0 https://github.com/facebook/flow/issues/183
   port = null,
-  projectRoots = [],
   reporter = new TerminalReporter(new Terminal(process.stdout)),
   watch = false,
 }: PrivateMetroOptions): Promise<MetroServer> {
@@ -100,10 +98,7 @@ async function runMetro({
       : defaults.providesModuleNodeModules;
 
   const finalProjectRoots = await Promise.all(
-    normalizedConfig
-      .getProjectRoots()
-      .concat(projectRoots)
-      .map(path => asyncRealpath(path)),
+    normalizedConfig.getProjectRoots().map(path => asyncRealpath(path)),
   );
 
   reporter.update({
@@ -149,7 +144,6 @@ async function runMetro({
 
 type CreateConnectMiddlewareOptions = {|
   ...PublicMetroOptions,
-  enhanceMiddleware?: Middleware => Middleware,
 |};
 
 exports.createConnectMiddleware = async function(
@@ -159,7 +153,6 @@ exports.createConnectMiddleware = async function(
     config: options.config,
     maxWorkers: options.maxWorkers,
     port: options.port,
-    projectRoots: options.projectRoots,
     reporter: options.reporter,
     resetCache: options.resetCache,
     watch: true,
@@ -170,11 +163,6 @@ exports.createConnectMiddleware = async function(
     : Config.DEFAULT;
 
   let enhancedMiddleware = metroServer.processRequest;
-
-  // Enhance the middleware using the parameter option
-  if (options.enhanceMiddleware) {
-    enhancedMiddleware = options.enhanceMiddleware(enhancedMiddleware);
-  }
 
   // Enhance the resulting middleware using the config options
   if (normalizedConfig.enhanceMiddleware) {
@@ -206,7 +194,6 @@ type RunServerOptions = {|
   secureKey?: string,
   secureCert?: string,
   hmrEnabled?: boolean,
-  enhanceMiddleware?: Middleware => Middleware,
 |};
 
 exports.runServer = async (options: RunServerOptions) => {
@@ -227,10 +214,8 @@ exports.runServer = async (options: RunServerOptions) => {
     config: options.config,
     maxWorkers: options.maxWorkers,
     port,
-    projectRoots: options.projectRoots,
     reporter,
     resetCache: options.resetCache,
-    enhanceMiddleware: options.enhanceMiddleware,
   });
 
   serverApp.use(middleware);
@@ -288,7 +273,6 @@ exports.runBuild = async (options: RunBuildOptions) => {
   const metroServer = await runMetro({
     config: options.config,
     maxWorkers: options.maxWorkers,
-    projectRoots: options.projectRoots,
     resetCache: options.resetCache,
   });
 
