@@ -143,11 +143,21 @@ function postTransform(
       }
       throw error;
     }
+
+    const wrapped = JsFileWrapping.wrapModule(ast, dependencyMapName);
+
+    wrappedAst = wrapped.ast;
+
     if (!options.dev) {
-      dependencies = optimizeDependencies(ast, dependencies, dependencyMapName);
+      dependencies = optimizeDependencies(
+        wrappedAst,
+        dependencies,
+        dependencyMapName,
+        wrapped.requireName,
+      );
     }
+
     dependencies = dependencies.map(dep => dep.name);
-    wrappedAst = JsFileWrapping.wrapModule(ast, dependencyMapName);
   }
 
   const result = generate(

@@ -137,6 +137,7 @@ function transformJSON(json, options): TransformedSourceFile {
     code,
     map: null, // no source map for JSON files!
     dependencies: [],
+    requireName: '_require', // not relevant for JSON files
   };
   const transformed = {};
 
@@ -202,24 +203,27 @@ function makeResult(options: {|
   +isPolyfill: boolean,
   +sourceCode: string,
 |}) {
-  let dependencies, dependencyMapName, file;
-  const {ast} = options;
+  let dependencies, dependencyMapName;
+  let requireName = 'require';
+  let {ast} = options;
+
   if (options.isPolyfill) {
     dependencies = [];
-    file = JsFileWrapping.wrapPolyfill(ast);
+    ast = JsFileWrapping.wrapPolyfill(ast);
   } else {
     const {asyncRequireModulePath} = options;
     const opts = {asyncRequireModulePath, dynamicRequires: 'reject'};
     ({dependencies, dependencyMapName} = collectDependencies(ast, opts));
-    file = JsFileWrapping.wrapModule(ast, dependencyMapName);
+    ({ast, requireName} = JsFileWrapping.wrapModule(ast, dependencyMapName));
   }
   const {filename, sourceCode} = options;
-  const gen = generate(file, filename, sourceCode, false);
+  const gen = generate(ast, filename, sourceCode, false);
   return {
     code: gen.code,
     map: gen.map,
     dependencies,
     dependencyMapName,
+    requireName,
   };
 }
 

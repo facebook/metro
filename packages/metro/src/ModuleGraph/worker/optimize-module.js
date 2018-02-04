@@ -64,7 +64,11 @@ function optimizeModule(
   return {type: 'code', details: result};
 }
 
-function optimize(transformed: TransformResult, file, options) {
+function optimize(
+  transformed: TransformResult,
+  file,
+  options,
+): TransformResult {
   const {code, dependencyMapName, map} = transformed;
   const optimized = optimizeCode(code, map, file, options);
 
@@ -83,6 +87,7 @@ function optimize(transformed: TransformResult, file, options) {
         optimized.ast,
         transformed.dependencies,
         dependencyMapName,
+        transformed.requireName,
       );
     }
   }
@@ -95,7 +100,12 @@ function optimize(transformed: TransformResult, file, options) {
     inputMap && gen.map && mergeSourceMaps(file, inputMap, gen.map),
     file,
   );
-  return {code: min.code, map: min.map, dependencies};
+  return {
+    code: min.code,
+    map: min.map,
+    dependencies,
+    requireName: transformed.requireName,
+  };
 }
 
 function optimizeCode(code, map, filename, inliningOptions) {

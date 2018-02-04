@@ -138,40 +138,40 @@ exports[`basic_bundle bundles package with polyfills (babel v6) 1`] = `
     String.prototype.repeat = function () {};
   }
 })(this);
-__d(function (global, require, module, exports, _dependencyMap) {
+__d(function (global, _require, module, exports, _dependencyMap) {
   'use strict';
 
-  var Bar = require(_dependencyMap[0]);
+  var Bar = _require(_dependencyMap[0]);
 
-  var Foo = require(_dependencyMap[1]);
+  var Foo = _require(_dependencyMap[1]);
 
   module.exports = {
     Foo: Foo,
     Bar: Bar
   };
 },4,[5,6]);
-__d(function (global, require, module, exports, _dependencyMap) {
+__d(function (global, _require, module, exports, _dependencyMap) {
   'use strict';
 
-  var Foo = require(_dependencyMap[0]);
+  var Foo = _require(_dependencyMap[0]);
 
   module.exports = {
     type: 'bar',
     foo: Foo.type
   };
 },5,[6]);
-__d(function (global, require, module, exports, _dependencyMap) {
+__d(function (global, _require, module, exports, _dependencyMap) {
   'use strict';
 
-  var asset = require(_dependencyMap[0]);
+  var asset = _require(_dependencyMap[0]);
 
   module.exports = {
     type: 'foo',
     asset: asset
   };
 },6,[7]);
-__d(function (global, require, module, exports, _dependencyMap) {
-  module.exports = require(_dependencyMap[0]).registerAsset({
+__d(function (global, _require, module, exports, _dependencyMap) {
+  module.exports = _require(_dependencyMap[0]).registerAsset({
     \\"__packager_asset\\": true,
     \\"httpServerLocation\\": \\"/assets\\",
     \\"width\\": 8,
@@ -182,7 +182,7 @@ __d(function (global, require, module, exports, _dependencyMap) {
     \\"type\\": \\"png\\"
   });
 },7,[8]);
-__d(function (global, require, module, exports, _dependencyMap) {
+__d(function (global, _require, module, exports, _dependencyMap) {
   'use strict';
 },8,[]);
 require(4);"
@@ -326,40 +326,40 @@ exports[`basic_bundle bundles package with polyfills (babel v7) 1`] = `
     String.prototype.repeat = function () {};
   }
 })(this);
-__d(function (global, require, module, exports, _dependencyMap) {
+__d(function (global, _require, module, exports, _dependencyMap) {
   'use strict';
 
-  var Bar = require(_dependencyMap[0]);
+  var Bar = _require(_dependencyMap[0]);
 
-  var Foo = require(_dependencyMap[1]);
+  var Foo = _require(_dependencyMap[1]);
 
   module.exports = {
     Foo: Foo,
     Bar: Bar
   };
 },4,[5,6]);
-__d(function (global, require, module, exports, _dependencyMap) {
+__d(function (global, _require, module, exports, _dependencyMap) {
   'use strict';
 
-  var Foo = require(_dependencyMap[0]);
+  var Foo = _require(_dependencyMap[0]);
 
   module.exports = {
     type: 'bar',
     foo: Foo.type
   };
 },5,[6]);
-__d(function (global, require, module, exports, _dependencyMap) {
+__d(function (global, _require, module, exports, _dependencyMap) {
   'use strict';
 
-  var asset = require(_dependencyMap[0]);
+  var asset = _require(_dependencyMap[0]);
 
   module.exports = {
     type: 'foo',
     asset: asset
   };
 },6,[7]);
-__d(function (global, require, module, exports, _dependencyMap) {
-  module.exports = require(_dependencyMap[0]).registerAsset({
+__d(function (global, _require, module, exports, _dependencyMap) {
+  module.exports = _require(_dependencyMap[0]).registerAsset({
     \\"__packager_asset\\": true,
     \\"httpServerLocation\\": \\"/assets\\",
     \\"width\\": 8,
@@ -370,7 +370,7 @@ __d(function (global, require, module, exports, _dependencyMap) {
     \\"type\\": \\"png\\"
   });
 },7,[8]);
-__d(function (global, require, module, exports, _dependencyMap) {
+__d(function (global, _require, module, exports, _dependencyMap) {
   'use strict';
 },8,[]);
 require(4);"
@@ -500,40 +500,40 @@ exports[`basic_bundle bundles package without polyfills 1`] = `
     return Error('Requiring module \\"' + displayName + '\\", which threw an exception: ' + error);
   }
 })(this);
-__d(function (global, require, module, exports, _dependencyMap) {
+__d(function (global, _require, module, exports, _dependencyMap) {
   'use strict';
 
-  var Bar = require(_dependencyMap[0]);
+  var Bar = _require(_dependencyMap[0]);
 
-  var Foo = require(_dependencyMap[1]);
+  var Foo = _require(_dependencyMap[1]);
 
   module.exports = {
     Foo: Foo,
     Bar: Bar
   };
 },2,[3,4]);
-__d(function (global, require, module, exports, _dependencyMap) {
+__d(function (global, _require, module, exports, _dependencyMap) {
   'use strict';
 
-  var Foo = require(_dependencyMap[0]);
+  var Foo = _require(_dependencyMap[0]);
 
   module.exports = {
     type: 'bar',
     foo: Foo.type
   };
 },3,[4]);
-__d(function (global, require, module, exports, _dependencyMap) {
+__d(function (global, _require, module, exports, _dependencyMap) {
   'use strict';
 
-  var asset = require(_dependencyMap[0]);
+  var asset = _require(_dependencyMap[0]);
 
   module.exports = {
     type: 'foo',
     asset: asset
   };
 },4,[5]);
-__d(function (global, require, module, exports, _dependencyMap) {
-  module.exports = require(_dependencyMap[0]).registerAsset({
+__d(function (global, _require, module, exports, _dependencyMap) {
+  module.exports = _require(_dependencyMap[0]).registerAsset({
     \\"__packager_asset\\": true,
     \\"httpServerLocation\\": \\"/assets\\",
     \\"width\\": 8,
@@ -544,7 +544,7 @@ __d(function (global, require, module, exports, _dependencyMap) {
     \\"type\\": \\"png\\"
   });
 },5,[6]);
-__d(function (global, require, module, exports, _dependencyMap) {
+__d(function (global, _require, module, exports, _dependencyMap) {
   'use strict';
 },6,[]);
 require(2);"

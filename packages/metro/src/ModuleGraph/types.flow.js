@@ -162,6 +162,7 @@ export type TransformResult = {|
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   dependencyMapName?: string,
   map: ?BabelSourceMap,
+  requireName: string,
 |};
 
 export type TransformResults = {[string]: TransformResult};
