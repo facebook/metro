@@ -13,6 +13,7 @@
 'use strict';
 
 import type {Options as BundleOptions} from '../DeltaBundler';
+import type {CustomTransformOptions} from '../JSTransformer/worker';
 
 /**
  * Module to easily create the needed configuration parameters needed for the
@@ -21,6 +22,7 @@ import type {Options as BundleOptions} from '../DeltaBundler';
 module.exports = function getBundlingOptionsForHmr(
   entryFile: string,
   platform: string,
+  customTransformOptions: CustomTransformOptions,
 ): BundleOptions {
   // These are the really meaningful bundling options. The others below are
   // not relevant for HMR.
@@ -36,6 +38,7 @@ module.exports = function getBundlingOptionsForHmr(
     ...mainOptions,
     assetPlugins: [],
     bundleType: 'hmr',
+    customTransformOptions,
     dev: true,
     entryModuleOnly: false,
     excludeSource: false,

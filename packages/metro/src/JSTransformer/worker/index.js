@@ -62,8 +62,11 @@ export type Transformer<ExtraOptions: {} = {}> = {
   getCacheKey: () => string,
 };
 
+export type CustomTransformOptions = {[string]: mixed, __proto__: null};
+
 export type TransformOptionsStrict = {|
   +assetDataPlugins: $ReadOnlyArray<string>,
+  +customTransformOptions?: CustomTransformOptions,
   +enableBabelRCLookup: boolean,
   +dev: boolean,
   +hot: boolean,
@@ -75,6 +78,7 @@ export type TransformOptionsStrict = {|
 
 export type TransformOptions = {
   +assetDataPlugins: $ReadOnlyArray<string>,
+  +customTransformOptions?: CustomTransformOptions,
   +enableBabelRCLookup?: boolean,
   +dev?: boolean,
   +hot?: boolean,

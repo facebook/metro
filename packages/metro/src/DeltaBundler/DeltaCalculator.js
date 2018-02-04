@@ -160,6 +160,7 @@ class DeltaCalculator extends EventEmitter {
 
     const transformOptionsForBlacklist = {
       assetDataPlugins: this._options.assetPlugins,
+      customTransformOptions: this._options.customTransformOptions,
       enableBabelRCLookup,
       dev: this._options.dev,
       hot: this._options.hot,

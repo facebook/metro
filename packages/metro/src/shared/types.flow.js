@@ -17,6 +17,7 @@ import type {
   PostProcessBundleSourcemap,
 } from '../Bundler';
 import type {PostProcessModules} from '../DeltaBundler';
+import type {CustomTransformOptions} from '../JSTransformer/worker';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {TransformCache} from '../lib/TransformCaching';
@@ -34,6 +35,7 @@ type MetroSourceMapOrMappings =
 export type BundleOptions = {
   +assetPlugins: Array<string>,
   bundleType: BundleType,
+  customTransformOptions: CustomTransformOptions,
   dev: boolean,
   entryFile: string,
   +entryModuleOnly: boolean,

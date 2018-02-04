@@ -24,6 +24,7 @@ const path = require('path');
 const throat = require('throat');
 
 import type {
+  CustomTransformOptions,
   Options as TransformWorkerOptions,
   TransformOptionsStrict,
 } from '../JSTransformer/worker';
@@ -440,6 +441,7 @@ class OptionsHasher {
   ): crypto$Hash {
     const {
       assetDataPlugins,
+      customTransformOptions,
       enableBabelRCLookup,
       dev,
       hot,
@@ -472,6 +474,9 @@ class OptionsHasher {
     hash.update(JSON.stringify(assetDataPlugins));
     hash.update(JSON.stringify(platform));
     hash.update(JSON.stringify(this.toLocalPath(projectRoot)));
+    hash.update(
+      JSON.stringify(this.sortTransformOptions(customTransformOptions || {})),
+    );
 
     return hash;
   }
@@ -482,6 +487,14 @@ class OptionsHasher {
 
   toLocalPath(filePath: string): string {
     return path.relative(this._rootPath, filePath);
+  }
+
+  sortTransformOptions(
+    options: CustomTransformOptions,
+  ): Array<[string, mixed]> {
+    return Object.keys(options)
+      .sort()
+      .map(key => [key, options[key]]);
   }
 }
 

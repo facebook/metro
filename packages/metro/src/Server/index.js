@@ -22,6 +22,8 @@ const formatBundlingError = require('../lib/formatBundlingError');
 const getMaxWorkers = require('../lib/getMaxWorkers');
 const getOrderedDependencyPaths = require('../lib/getOrderedDependencyPaths');
 const mime = require('mime-types');
+const nullthrows = require('fbjs/lib/nullthrows');
+const parseCustomTransformOptions = require('../lib/parseCustomTransformOptions');
 const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
 const path = require('path');
 const symbolicate = require('./symbolicate');
@@ -762,10 +764,10 @@ class Server {
 
   _getOptionsFromUrl(reqUrl: string): BundleOptions & DeltaBundlerOptions {
     // `true` to parse the query param as an object.
-    const urlObj = url.parse(reqUrl, true);
+    const urlObj = nullthrows(url.parse(reqUrl, true));
+    const urlQuery = nullthrows(urlObj.query);
 
-    /* $FlowFixMe: `pathname` could be empty for an invalid URL */
-    const pathname = decodeURIComponent(urlObj.pathname);
+    const pathname = urlObj.pathname ? decodeURIComponent(urlObj.pathname) : '';
 
     let isMap = false;
 
@@ -795,31 +797,30 @@ class Server {
 
     // try to get the platform from the url
     const platform =
-      /* $FlowFixMe: `query` could be empty for an invalid URL */
-      urlObj.query.platform ||
+      urlQuery.platform ||
       parsePlatformFilePath(pathname, this._platforms).platform;
 
-    /* $FlowFixMe: `query` could be empty for an invalid URL */
-    const deltaBundleId = urlObj.query.deltaBundleId;
+    const deltaBundleId = urlQuery.deltaBundleId;
 
-    /* $FlowFixMe: `query` could be empty for an invalid URL */
-    const assetPlugin = urlObj.query.assetPlugin;
+    const assetPlugin = urlQuery.assetPlugin;
     const assetPlugins = Array.isArray(assetPlugin)
       ? assetPlugin
       : typeof assetPlugin === 'string' ? [assetPlugin] : [];
 
-    const dev = this._getBoolOptionFromQuery(urlObj.query, 'dev', true);
-    const minify = this._getBoolOptionFromQuery(urlObj.query, 'minify', false);
+    const dev = this._getBoolOptionFromQuery(urlQuery, 'dev', true);
+    const minify = this._getBoolOptionFromQuery(urlQuery, 'minify', false);
     const excludeSource = this._getBoolOptionFromQuery(
-      urlObj.query,
+      urlQuery,
       'excludeSource',
       false,
     );
     const includeSource = this._getBoolOptionFromQuery(
-      urlObj.query,
+      urlQuery,
       'inlineSourceMap',
       false,
     );
+
+    const customTransformOptions = parseCustomTransformOptions(urlObj);
 
     return {
       sourceMapUrl: url.format({
@@ -827,6 +828,7 @@ class Server {
         pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
       }),
       bundleType: isMap ? 'map' : deltaBundleId ? 'delta' : 'bundle',
+      customTransformOptions,
       entryFile,
       deltaBundleId,
       dev,
@@ -873,6 +875,7 @@ class Server {
 
   static DEFAULT_BUNDLE_OPTIONS = {
     assetPlugins: [],
+    customTransformOptions: Object.create(null),
     dev: true,
     entryModuleOnly: false,
     excludeSource: false,

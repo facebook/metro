@@ -183,6 +183,7 @@ describe('processRequest', () => {
           {
             assetPlugins: [],
             bundleType: 'bundle',
+            customTransformOptions: {},
             deltaBundleId: expect.any(String),
             dev: true,
             entryFile: 'index.ios.js',
@@ -214,6 +215,7 @@ describe('processRequest', () => {
           {
             assetPlugins: [],
             bundleType: 'bundle',
+            customTransformOptions: {},
             deltaBundleId: expect.any(String),
             dev: true,
             entryFile: 'index.js',
@@ -245,6 +247,7 @@ describe('processRequest', () => {
       expect(Serializers.fullBundle).toBeCalledWith(expect.any(DeltaBundler), {
         assetPlugins: ['assetPlugin1', 'assetPlugin2'],
         bundleType: 'bundle',
+        customTransformOptions: {},
         deltaBundleId: expect.any(String),
         dev: true,
         entryFile: 'index.js',
@@ -447,6 +450,7 @@ describe('processRequest', () => {
             expect.any(DeltaBundler),
             {
               assetPlugins: [],
+              customTransformOptions: {},
               deltaBundleId: null,
               dev: true,
               entryFile: 'foo file',

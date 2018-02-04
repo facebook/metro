@@ -15,6 +15,8 @@
 const addParamsToDefineCall = require('../lib/addParamsToDefineCall');
 const formatBundlingError = require('../lib/formatBundlingError');
 const getBundlingOptionsForHmr = require('./getBundlingOptionsForHmr');
+const nullthrows = require('fbjs/lib/nullthrows');
+const parseCustomTransformOptions = require('../lib/parseCustomTransformOptions');
 const querystring = require('querystring');
 const url = require('url');
 
@@ -53,10 +55,10 @@ class HmrServer<TClient: Client> {
     clientUrl: string,
     sendFn: (data: string) => mixed,
   ): Promise<Client> {
-    const {bundleEntry, platform} = querystring.parse(
-      /* $FlowFixMe: url might be null */
-      url.parse(clientUrl).query,
-    );
+    const urlObj = nullthrows(url.parse(clientUrl, true));
+
+    const {bundleEntry, platform} = nullthrows(urlObj.query);
+    const customTransformOptions = parseCustomTransformOptions(urlObj);
 
     // Create a new DeltaTransformer for each client. Once the clients are
     // modified to support Delta Bundles, they'll be able to pass the
@@ -64,7 +66,7 @@ class HmrServer<TClient: Client> {
     // the same DeltaTransformer between the WS connection and the HTTP one.
     const deltaBundler = this._packagerServer.getDeltaBundler();
     const {deltaTransformer} = await deltaBundler.getDeltaTransformer(
-      getBundlingOptionsForHmr(bundleEntry, platform),
+      getBundlingOptionsForHmr(bundleEntry, platform, customTransformOptions),
     );
 
     // Trigger an initial build to start up the DeltaTransformer.
