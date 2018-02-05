@@ -34,19 +34,15 @@ function buildBundle(
 }
 
 function createCodeWithMap(
-  bundle: {code: string, map: string},
+  map: string,
   dev: boolean,
-  sourceMapSourcesRoot?: string,
-): {code: string, map: MetroSourceMap} {
-  const map = bundle.map;
+  sourceMapSourcesRoot: string,
+): string {
   const sourceMap = relativizeSourceMap(
     (JSON.parse(map): MetroSourceMap),
     sourceMapSourcesRoot,
   );
-  return {
-    code: bundle.code,
-    map: sourceMap,
-  };
+  return JSON.stringify(sourceMap);
 }
 
 function saveBundleAndMap(
@@ -62,13 +58,16 @@ function saveBundleAndMap(
     sourcemapSourcesRoot,
   } = options;
 
-  log('start');
-  const codeWithMap = createCodeWithMap(bundle, !!dev, sourcemapSourcesRoot);
-  log('finish');
+  let {map} = bundle;
+  if (sourcemapSourcesRoot !== undefined) {
+    log('start');
+    map = createCodeWithMap(map, !!dev, sourcemapSourcesRoot);
+    log('finish');
+  }
 
   log('Writing bundle output to:', bundleOutput);
 
-  const {code} = codeWithMap;
+  const {code} = bundle;
   const writeBundle = writeFile(bundleOutput, code, encoding);
   const writeMetadata = writeFile(
     bundleOutput + '.meta',
@@ -81,10 +80,6 @@ function saveBundleAndMap(
 
   if (sourcemapOutput) {
     log('Writing sourcemap output to:', sourcemapOutput);
-    const map =
-      typeof codeWithMap.map !== 'string'
-        ? JSON.stringify(codeWithMap.map)
-        : codeWithMap.map;
     const writeMap = writeFile(sourcemapOutput, map, null);
     writeMap.then(() => log('Done writing sourcemap output'));
     return Promise.all([writeBundle, writeMetadata, writeMap]);
