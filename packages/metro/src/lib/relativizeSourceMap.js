@@ -16,13 +16,13 @@ const path = require('path');
 
 import type {MetroSourceMap} from 'metro-source-map';
 
-function relativizeSourceMapInternal(
+function relativizeSourceMapInline(
   sourceMap: MetroSourceMap,
   sourcesRoot: string,
 ) {
   if (sourceMap.mappings === undefined) {
     for (let i = 0; i < sourceMap.sections.length; i++) {
-      relativizeSourceMapInternal(sourceMap.sections[i].map, sourcesRoot);
+      relativizeSourceMapInline(sourceMap.sections[i].map, sourcesRoot);
     }
   } else {
     for (let i = 0; i < sourceMap.sources.length; i++) {
@@ -31,15 +31,4 @@ function relativizeSourceMapInternal(
   }
 }
 
-function relativizeSourceMap(
-  sourceMap: MetroSourceMap,
-  sourcesRoot?: string,
-): MetroSourceMap {
-  if (!sourcesRoot) {
-    return sourceMap;
-  }
-  relativizeSourceMapInternal(sourceMap, sourcesRoot);
-  return sourceMap;
-}
-
-module.exports = relativizeSourceMap;
+module.exports = relativizeSourceMapInline;

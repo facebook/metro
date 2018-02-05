@@ -15,7 +15,7 @@ const MAGIC_UNBUNDLE_FILE_HEADER = require('./magic-number');
 
 const buildSourceMapWithMetaData = require('./build-unbundle-sourcemap-with-metadata');
 const fs = require('fs');
-const relativizeSourceMap = require('../../../lib/relativizeSourceMap');
+const relativizeSourceMapInline = require('../../../lib/relativizeSourceMap');
 const writeSourceMap = require('./write-sourcemap');
 
 const {joinModules} = require('./util');
@@ -62,15 +62,15 @@ function saveAsIndexedFile(
   ).then(() => log('Done writing unbundle output'));
 
   if (sourcemapOutput) {
-    const sourceMap = relativizeSourceMap(
-      buildSourceMapWithMetaData({
-        startupModules: startupModules.concat(),
-        lazyModules: lazyModules.concat(),
-        moduleGroups,
-        fixWrapperOffset: true,
-      }),
-      sourcemapSourcesRoot,
-    );
+    const sourceMap = buildSourceMapWithMetaData({
+      startupModules: startupModules.concat(),
+      lazyModules: lazyModules.concat(),
+      moduleGroups,
+      fixWrapperOffset: true,
+    });
+    if (sourcemapSourcesRoot !== undefined) {
+      relativizeSourceMapInline(sourceMap, sourcemapSourcesRoot);
+    }
 
     const wroteSourceMap = writeSourceMap(
       sourcemapOutput,

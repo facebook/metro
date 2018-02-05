@@ -15,7 +15,7 @@
 const Server = require('../../Server');
 
 const meta = require('./meta');
-const relativizeSourceMap = require('../../lib/relativizeSourceMap');
+const relativizeSourceMapInline = require('../../lib/relativizeSourceMap');
 const writeFile = require('./writeFile');
 
 import type {OutputOptions, RequestOptions} from '../types.flow';
@@ -33,11 +33,12 @@ function buildBundle(
   });
 }
 
-function createCodeWithMap(map: string, sourceMapSourcesRoot: string): string {
-  const sourceMap = relativizeSourceMap(
-    (JSON.parse(map): MetroSourceMap),
-    sourceMapSourcesRoot,
-  );
+function relativateSerializedMap(
+  map: string,
+  sourceMapSourcesRoot: string,
+): string {
+  const sourceMap = (JSON.parse(map): MetroSourceMap);
+  relativizeSourceMapInline(sourceMap, sourceMapSourcesRoot);
   return JSON.stringify(sourceMap);
 }
 
@@ -70,7 +71,7 @@ function saveBundleAndMap(
     let {map} = bundle;
     if (sourcemapSourcesRoot !== undefined) {
       log('start relativating source map');
-      map = createCodeWithMap(map, sourcemapSourcesRoot);
+      map = relativateSerializedMap(map, sourcemapSourcesRoot);
       log('finished relativating');
     }
 
