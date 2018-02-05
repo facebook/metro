@@ -66,21 +66,26 @@ function saveAsAssets(
   );
   writeUnbundle.then(() => log('Done writing unbundle output'));
 
-  const sourceMap = buildSourceMapWithMetaData({
-    fixWrapperOffset: true,
-    lazyModules: lazyModules.concat(),
-    moduleGroups: null,
-    startupModules: startupModules.concat(),
-  });
-  if (sourcemapSourcesRoot !== undefined) {
-    relativizeSourceMapInline(sourceMap, sourcemapSourcesRoot);
-  }
+  if (sourcemapOutput) {
+    const sourceMap = buildSourceMapWithMetaData({
+      fixWrapperOffset: true,
+      lazyModules: lazyModules.concat(),
+      moduleGroups: null,
+      startupModules: startupModules.concat(),
+    });
+    if (sourcemapSourcesRoot !== undefined) {
+      relativizeSourceMapInline(sourceMap, sourcemapSourcesRoot);
+    }
+    const wroteSourceMap = writeSourceMap(
+      sourcemapOutput,
+      JSON.stringify(sourceMap),
+      log,
+    );
 
-  return Promise.all([
-    writeUnbundle,
-    sourcemapOutput &&
-      writeSourceMap(sourcemapOutput, JSON.stringify(sourceMap), log),
-  ]);
+    return Promise.all([writeUnbundle, wroteSourceMap]);
+  } else {
+    return writeUnbundle;
+  }
 }
 
 function createDir(dirName) {
