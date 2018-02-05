@@ -289,7 +289,8 @@ exports.runBuild = async (options: RunBuildOptions) => {
     inlineSourceMap: options.sourceMap && !!options.sourceMapUrl,
     minify: options.optimize || false,
     platform: options.platform || `web`,
-    sourceMapUrl: options.sourceMapUrl,
+    sourceMapUrl:
+      options.sourceMap === false ? undefined : options.sourceMapUrl,
     createModuleIdFactory: options.config
       ? options.config.createModuleIdFactory
       : undefined,
@@ -299,7 +300,10 @@ exports.runBuild = async (options: RunBuildOptions) => {
 
   const outputOptions: OutputOptions = {
     bundleOutput: options.out.replace(/(\.js)?$/, '.js'),
-    sourcemapOutput: options.out.replace(/(\.js)?$/, '.map'),
+    sourcemapOutput:
+      options.sourceMap === false
+        ? undefined
+        : options.out.replace(/(\.js)?$/, '.map'),
     dev: options.dev,
     platform: options.platform || `web`,
   };
