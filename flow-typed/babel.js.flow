@@ -102,7 +102,7 @@ type _TransformOptions = __TransformOptions & {
   env?: {[key: string]: __TransformOptions},
 };
 
-type BabelNode = {};
+type BabelNode = $FlowFixMe;
 
 type TransformResult = {
   ast: BabelNode,
