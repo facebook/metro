@@ -33,11 +33,7 @@ function buildBundle(
   });
 }
 
-function createCodeWithMap(
-  map: string,
-  dev: boolean,
-  sourceMapSourcesRoot: string,
-): string {
+function createCodeWithMap(map: string, sourceMapSourcesRoot: string): string {
   const sourceMap = relativizeSourceMap(
     (JSON.parse(map): MetroSourceMap),
     sourceMapSourcesRoot,
@@ -53,7 +49,6 @@ function saveBundleAndMap(
   const {
     bundleOutput,
     bundleEncoding: encoding,
-    dev,
     sourcemapOutput,
     sourcemapSourcesRoot,
   } = options;
@@ -61,7 +56,7 @@ function saveBundleAndMap(
   let {map} = bundle;
   if (sourcemapSourcesRoot !== undefined) {
     log('start');
-    map = createCodeWithMap(map, !!dev, sourcemapSourcesRoot);
+    map = createCodeWithMap(map, sourcemapSourcesRoot);
     log('finish');
   }
 
