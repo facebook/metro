@@ -61,21 +61,27 @@ function saveAsIndexedFile(
     buildTableAndContents(startupCode, lazyModules, moduleGroups, encoding),
   ).then(() => log('Done writing unbundle output'));
 
-  const sourceMap = relativizeSourceMap(
-    buildSourceMapWithMetaData({
-      startupModules: startupModules.concat(),
-      lazyModules: lazyModules.concat(),
-      moduleGroups,
-      fixWrapperOffset: true,
-    }),
-    sourcemapSourcesRoot,
-  );
+  if (sourcemapOutput) {
+    const sourceMap = relativizeSourceMap(
+      buildSourceMapWithMetaData({
+        startupModules: startupModules.concat(),
+        lazyModules: lazyModules.concat(),
+        moduleGroups,
+        fixWrapperOffset: true,
+      }),
+      sourcemapSourcesRoot,
+    );
 
-  return Promise.all([
-    writeUnbundle,
-    sourcemapOutput &&
-      writeSourceMap(sourcemapOutput, JSON.stringify(sourceMap), log),
-  ]);
+    const wroteSourceMap = writeSourceMap(
+      sourcemapOutput,
+      JSON.stringify(sourceMap),
+      log,
+    );
+
+    return Promise.all([writeUnbundle, wroteSourceMap]);
+  } else {
+    return writeUnbundle;
+  }
 }
 
 /* global Buffer: true */
