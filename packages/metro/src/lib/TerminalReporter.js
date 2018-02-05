@@ -161,6 +161,7 @@ class TerminalReporter {
         'done',
       );
       this.terminal.log(msg);
+      this._activeBundles.delete(buildID);
     }
   }
 

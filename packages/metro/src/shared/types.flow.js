@@ -122,4 +122,5 @@ export type RequestOptions = {|
   minify: boolean,
   platform: string,
   createModuleIdFactory?: () => (path: string) => number,
+  onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
 |};

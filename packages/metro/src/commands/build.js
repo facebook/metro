@@ -13,10 +13,12 @@
 'use strict';
 
 const MetroApi = require('..');
+const TerminalReporter = require('../lib/TerminalReporter');
 
 const os = require('os');
 
 const {makeAsyncCommand} = require('../cli-utils');
+const {Terminal} = require('metro-core');
 
 import typeof Yargs from 'yargs';
 
@@ -53,6 +55,9 @@ exports.builder = (yargs: Yargs) => {
   yargs.option('reset-cache', {type: 'boolean', describe: null});
 };
 
+const term = new Terminal(process.stdout);
+const updateReporter = new TerminalReporter(term);
+
 // eslint-disable-next-line no-unclear-flowtypes
 exports.handler = makeAsyncCommand(async (argv: any) => {
   // $FlowFixMe: Flow + Promises don't work consistently https://fb.facebook.com/groups/flow/permalink/1772334656148475/
@@ -62,5 +67,36 @@ exports.handler = makeAsyncCommand(async (argv: any) => {
     config.getProjectRoots = () => argv.projectRoots;
   }
 
-  await MetroApi.runBuild({...argv, config});
+  await MetroApi.runBuild({
+    ...argv,
+    config,
+    onBegin: () => {
+      updateReporter.update({
+        buildID: '$',
+        type: 'bundle_build_started',
+        bundleDetails: {
+          entryFile: argv.O,
+          platform: argv.platform,
+          dev: !!argv.dev,
+          minify: !!argv.optimize,
+          bundleType: 'Bundle',
+        },
+      });
+    },
+    onProgress: (transformedFileCount, totalFileCount) => {
+      updateReporter.update({
+        buildID: '$',
+        type: 'bundle_transform_progressed_throttled',
+        transformedFileCount,
+        totalFileCount,
+      });
+    },
+    onComplete: () => {
+      term.log('onComplete called');
+      updateReporter.update({
+        buildID: '$',
+        type: 'bundle_build_done',
+      });
+    },
+  });
 });

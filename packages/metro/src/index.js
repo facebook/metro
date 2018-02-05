@@ -270,6 +270,9 @@ type RunBuildOptions = {|
   entry: string,
   out: string,
   dev?: boolean,
+  onBegin?: () => void,
+  onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
+  onComplete?: () => void,
   optimize?: boolean,
   platform?: string,
   sourceMap?: boolean,
@@ -294,9 +297,18 @@ exports.runBuild = async (options: RunBuildOptions) => {
     createModuleIdFactory: options.config
       ? options.config.createModuleIdFactory
       : undefined,
+    onProgress: options.onProgress,
   };
 
+  if (options.onBegin) {
+    options.onBegin();
+  }
+
   const metroBundle = await MetroBundler.build(metroServer, requestOptions);
+
+  if (options.onComplete) {
+    options.onComplete();
+  }
 
   const outputOptions: OutputOptions = {
     bundleOutput: options.out.replace(/(\.js)?$/, '.js'),
