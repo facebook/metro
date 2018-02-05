@@ -53,13 +53,6 @@ function saveBundleAndMap(
     sourcemapSourcesRoot,
   } = options;
 
-  let {map} = bundle;
-  if (sourcemapSourcesRoot !== undefined) {
-    log('start');
-    map = createCodeWithMap(map, sourcemapSourcesRoot);
-    log('finish');
-  }
-
   log('Writing bundle output to:', bundleOutput);
 
   const {code} = bundle;
@@ -74,6 +67,13 @@ function saveBundleAndMap(
   );
 
   if (sourcemapOutput) {
+    let {map} = bundle;
+    if (sourcemapSourcesRoot !== undefined) {
+      log('start relativating source map');
+      map = createCodeWithMap(map, sourcemapSourcesRoot);
+      log('finished relativating');
+    }
+
     log('Writing sourcemap output to:', sourcemapOutput);
     const writeMap = writeFile(sourcemapOutput, map, null);
     writeMap.then(() => log('Done writing sourcemap output'));
