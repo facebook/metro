@@ -32,6 +32,7 @@ const {readFile} = require('fs-extra');
 const {Terminal} = require('metro-core');
 
 import type {ConfigT} from './Config';
+import type {GlobalTransformCache} from './lib/GlobalTransformCache';
 import type {Reporter} from './lib/reporting';
 import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
 import type {Options as ServerOptions} from './shared/types.flow';
@@ -42,6 +43,7 @@ export type {ConfigT} from './Config';
 
 type PublicMetroOptions = {|
   config?: ConfigT,
+  globalTransformCache?: ?GlobalTransformCache,
   maxWorkers?: number,
   port?: ?number,
   reporter?: Reporter,
@@ -78,6 +80,7 @@ async function asyncRealpath(path): Promise<string> {
 
 async function runMetro({
   config,
+  globalTransformCache,
   resetCache = false,
   maxWorkers = getMaxWorkers(),
   // $FlowFixMe TODO t0 https://github.com/facebook/flow/issues/183
@@ -126,7 +129,7 @@ async function runMetro({
     getModulesRunBeforeMainModule:
       normalizedConfig.getModulesRunBeforeMainModule,
     getTransformOptions: normalizedConfig.getTransformOptions,
-    globalTransformCache: null,
+    globalTransformCache,
     hasteImplModulePath: normalizedConfig.hasteImplModulePath,
     maxWorkers,
     platforms: defaults.platforms.concat(platforms),
