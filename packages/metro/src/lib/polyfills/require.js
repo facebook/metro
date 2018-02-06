@@ -47,6 +47,7 @@ type ModuleDefinition = {|
   verboseName?: string,
 |};
 type ModuleMap = {[key: ModuleID]: ModuleDefinition, __proto__: null};
+type PatchedModules = {[ModuleID]: boolean};
 type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
 type VerboseModuleNameForDev = string;
 
@@ -271,7 +272,11 @@ if (__DEV__) {
     return hot;
   };
 
-  const acceptAll = function(dependentModules, inverseDependencies) {
+  const acceptAll = function(
+    dependentModules,
+    inverseDependencies,
+    patchedModules,
+  ) {
     if (!dependentModules || dependentModules.length === 0) {
       return true;
     }
@@ -283,6 +288,7 @@ if (__DEV__) {
           /*factory*/ undefined,
           /*dependencyMap*/ undefined,
           inverseDependencies,
+          patchedModules,
         ),
     );
 
@@ -304,7 +310,14 @@ if (__DEV__) {
     factory?: FactoryFn,
     dependencyMap?: DependencyMap,
     inverseDependencies: {[key: ModuleID]: Array<ModuleID>},
+    patchedModules: PatchedModules = {},
   ) {
+    if (id in patchedModules) {
+      // Do not patch the same module more that once during an update.
+      return true;
+    }
+    patchedModules[id] = true;
+
     const mod = modules[id];
 
     if (!mod && factory) {
@@ -342,7 +355,11 @@ if (__DEV__) {
       }
 
       // accept parent modules recursively up until all siblings are accepted
-      return acceptAll(inverseDependencies[id], inverseDependencies);
+      return acceptAll(
+        inverseDependencies[id],
+        inverseDependencies,
+        patchedModules,
+      );
     }
   };
 
