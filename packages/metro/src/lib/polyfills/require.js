@@ -296,7 +296,7 @@ if (__DEV__) {
       parents.push(...inverseDependencies[notAccepted[i]]);
     }
 
-    return acceptAll(parents, inverseDependencies);
+    return parents.length == 0;
   };
 
   const accept = function(
