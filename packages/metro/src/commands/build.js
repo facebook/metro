@@ -15,8 +15,6 @@
 const MetroApi = require('..');
 const TerminalReporter = require('../lib/TerminalReporter');
 
-const os = require('os');
-
 const {makeAsyncCommand} = require('../cli-utils');
 const {Terminal} = require('metro-core');
 
@@ -35,11 +33,7 @@ exports.builder = (yargs: Yargs) => {
   yargs.option('platform', {alias: 'p', type: 'string'});
   yargs.option('output-type', {alias: 't', type: 'string'});
 
-  yargs.option('max-workers', {
-    alias: 'j',
-    type: 'number',
-    default: Math.max(1, Math.floor(os.cpus().length)),
-  });
+  yargs.option('max-workers', {alias: 'j', type: 'number'});
 
   yargs.option('optimize', {alias: 'z', type: 'boolean'});
   yargs.option('dev', {alias: 'g', type: 'boolean'});

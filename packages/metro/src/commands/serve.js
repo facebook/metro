@@ -14,8 +14,6 @@
 
 const MetroApi = require('..');
 
-const os = require('os');
-
 const {watchFile, makeAsyncCommand} = require('../cli-utils');
 const {promisify} = require('util');
 
@@ -33,11 +31,7 @@ exports.builder = (yargs: Yargs) => {
   yargs.option('host', {alias: 'h', type: 'string', default: 'localhost'});
   yargs.option('port', {alias: 'p', type: 'number', default: 8080});
 
-  yargs.option('max-workers', {
-    alias: 'j',
-    type: 'number',
-    default: Math.max(1, Math.floor(os.cpus().length)),
-  });
+  yargs.option('max-workers', {alias: 'j', type: 'number'});
 
   yargs.option('secure', {type: 'boolean'});
   yargs.option('secure-key', {type: 'string'});

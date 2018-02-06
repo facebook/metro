@@ -22,6 +22,7 @@ const TransformCaching = require('./lib/TransformCaching');
 const attachWebsocketServer = require('./lib/attachWebsocketServer');
 const defaults = require('./defaults');
 const fs = require('fs');
+const getMaxWorkers = require('./lib/getMaxWorkers');
 const http = require('http');
 const https = require('https');
 const path = require('path');
@@ -78,7 +79,7 @@ async function asyncRealpath(path): Promise<string> {
 async function runMetro({
   config,
   resetCache = false,
-  maxWorkers = 1,
+  maxWorkers = getMaxWorkers(),
   // $FlowFixMe TODO t0 https://github.com/facebook/flow/issues/183
   port = null,
   reporter = new TerminalReporter(new Terminal(process.stdout)),
