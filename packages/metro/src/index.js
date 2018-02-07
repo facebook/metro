@@ -13,7 +13,6 @@
 'use strict';
 
 const Config = require('./Config');
-const MetroBundler = require('./shared/output/bundle');
 const MetroHmrServer = require('./HmrServer');
 const MetroServer = require('./Server');
 const TerminalReporter = require('./lib/TerminalReporter');
@@ -25,6 +24,7 @@ const fs = require('fs');
 const getMaxWorkers = require('./lib/getMaxWorkers');
 const http = require('http');
 const https = require('https');
+const outputBundle = require('./shared/output/bundle');
 const path = require('path');
 
 const {realpath} = require('fs');
@@ -278,6 +278,17 @@ type RunBuildOptions = {|
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
   onComplete?: () => void,
   optimize?: boolean,
+  output?: {
+    build: (
+      MetroServer,
+      RequestOptions,
+    ) => Promise<{code: string, map: string}>,
+    save: (
+      {code: string, map: string},
+      OutputOptions,
+      (...args: Array<string>) => void,
+    ) => Promise<mixed>,
+  },
   platform?: string,
   sourceMap?: boolean,
   sourceMapUrl?: string,
@@ -290,6 +301,7 @@ exports.runBuild = async (options: RunBuildOptions) => {
     resetCache: options.resetCache,
   });
 
+  const output = options.output || outputBundle;
   const requestOptions: RequestOptions = {
     dev: options.dev,
     entryFile: options.entry,
@@ -308,7 +320,7 @@ exports.runBuild = async (options: RunBuildOptions) => {
     options.onBegin();
   }
 
-  const metroBundle = await MetroBundler.build(metroServer, requestOptions);
+  const metroBundle = await output.build(metroServer, requestOptions);
 
   if (options.onComplete) {
     options.onComplete();
@@ -324,7 +336,7 @@ exports.runBuild = async (options: RunBuildOptions) => {
     platform: options.platform || `web`,
   };
 
-  await MetroBundler.save(metroBundle, outputOptions, console.log);
+  await output.save(metroBundle, outputOptions, console.log);
   await metroServer.end();
 
   return {metroServer, metroBundle};
