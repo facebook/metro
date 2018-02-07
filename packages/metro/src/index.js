@@ -320,7 +320,13 @@ exports.runBuild = async (options: RunBuildOptions) => {
     options.onBegin();
   }
 
-  const metroBundle = await output.build(metroServer, requestOptions);
+  let metroBundle;
+
+  try {
+    metroBundle = await output.build(metroServer, requestOptions);
+  } finally {
+    await metroServer.end();
+  }
 
   if (options.onComplete) {
     options.onComplete();
@@ -337,7 +343,6 @@ exports.runBuild = async (options: RunBuildOptions) => {
   };
 
   await output.save(metroBundle, outputOptions, console.log);
-  await metroServer.end();
 
   return {metroServer, metroBundle};
 };
