@@ -148,7 +148,7 @@ module.exports = class Transformer {
       computeWorkerKey,
       exposedMethods,
       forkOptions: {execArgv},
-      maxWorkers,
+      numWorkers: maxWorkers,
     });
   }
 
