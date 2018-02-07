@@ -1,3 +1,3 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`getTransformCacheKeyFn Should return always the same key for the same params 1`] = `"3ea5b389181b02848f86b414129f4ec1f063caae"`;
+exports[`getTransformCacheKeyFn Should return always the same key for the same params 1`] = `"e07df918a44b347b193f529534684b5b322cfe26"`;
