@@ -15,5 +15,5 @@
 // eslint-disable-next-line flow-no-fixme
 const dynamicRequire = (require: $FlowFixMe);
 module.exports = function(moduleID: mixed): Promise<mixed> {
-  return Promise.resolve(dynamicRequire(moduleID));
+  return Promise.resolve().then(() => ({default: dynamicRequire(moduleID)}));
 };
