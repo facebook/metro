@@ -17,6 +17,7 @@ const JsFileWrapping = require('./JsFileWrapping');
 const Platforms = require('./Platforms');
 
 const collectDependencies = require('./collectDependencies');
+const crypto = require('crypto');
 const defaults = require('../../defaults');
 const docblock = require('jest-docblock');
 const generate = require('./generate');
@@ -173,6 +174,10 @@ function transformAsset(
     assetPath: assetData.assetName,
     contentBase64: content.toString('base64'),
     contentType,
+    hash: crypto
+      .createHash('sha1')
+      .update(content)
+      .digest('base64'),
     filePath,
     physicalSize: getAssetSize(contentType, content, filePath),
     platform: assetData.platform,

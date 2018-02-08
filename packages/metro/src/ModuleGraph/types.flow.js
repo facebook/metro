@@ -197,6 +197,10 @@ export type AssetFile = {|
    */
   +contentType: string,
   /**
+   * Hash of the asset file content.
+   */
+  +hash: string,
+  /**
    * The path of the original file for this asset. For example
    * `foo/bar@3x.ios.png`. This is most useful for reporting purposes, such as
    * error messages.
