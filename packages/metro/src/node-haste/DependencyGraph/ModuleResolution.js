@@ -140,30 +140,6 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     return modulePath;
   }
 
-  _resolveModulePath(
-    fromModule: TModule,
-    toModuleName: string,
-    platform: string | null,
-  ): Result<Resolution, Candidates> {
-    const modulePath = isAbsolutePath(toModuleName)
-      ? resolveWindowsPath(toModuleName)
-      : path.join(path.dirname(fromModule.path), toModuleName);
-
-    const redirectedPath = this._redirectRequire(fromModule, modulePath);
-    if (redirectedPath === false) {
-      return resolvedAs({type: 'empty'});
-    }
-    const context = {
-      ...this._options,
-      getPackageMainPath: this._getPackageMainPath,
-    };
-    const result = resolveFileOrDir(context, redirectedPath, platform);
-    if (result.type === 'resolved') {
-      return result;
-    }
-    return failedFor({type: 'modulePath', which: result.candidates});
-  }
-
   resolveDependency(
     fromModule: TModule,
     toModuleName: string,
@@ -221,8 +197,20 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     allowHaste: boolean,
     platform: string | null,
   ): Result<Resolution, Candidates> {
+    const context = {
+      ...this._options,
+      getPackageMainPath: this._getPackageMainPath,
+      originModulePath: fromModule.path,
+      redirectModulePath: modulePath =>
+        this._redirectRequire(fromModule, modulePath),
+      resolveHasteModule: name =>
+        this._options.moduleMap.getModule(name, platform, true),
+      resolveHastePackage: name =>
+        this._options.moduleMap.getPackage(name, platform, true),
+    };
+
     if (isRelativeImport(toModuleName) || isAbsolutePath(toModuleName)) {
-      return this._resolveModulePath(fromModule, toModuleName, platform);
+      return resolveModulePath(context, toModuleName, platform);
     }
     const realModuleName = this._redirectRequire(fromModule, toModuleName);
     // exclude
@@ -239,29 +227,14 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         fromModule.path.indexOf(path.sep, fromModuleParentIdx),
       );
       const absPath = path.join(fromModuleDir, realModuleName);
-      return this._resolveModulePath(fromModule, absPath, platform);
+      return resolveModulePath(context, absPath, platform);
     }
 
     // At that point we only have module names that
     // aren't relative paths nor absolute paths.
     if (allowHaste) {
       const result = resolveHasteName(
-        {
-          ...this._options,
-          resolveHasteModule: name =>
-            this._options.moduleMap.getModule(
-              name,
-              platform,
-              /* supportsNativePlatform */ true,
-            ),
-          resolveHastePackage: name =>
-            this._options.moduleMap.getPackage(
-              name,
-              platform,
-              /* supportsNativePlatform */ true,
-            ),
-          getPackageMainPath: this._getPackageMainPath,
-        },
+        context,
         normalizePath(realModuleName),
         platform,
       );
@@ -334,6 +307,42 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         throw new Error('invalid type');
     }
   }
+}
+
+type ModulePathContext = FileOrDirContext & {
+  /**
+   * Full path of the module that is requiring or importing the module to be
+   * resolved.
+   */
+  +originModulePath: string,
+  /**
+   * Lookup the module's closest `package.json` and process the redirects
+   * metadata. Return an absolute path to the resolved path.
+   */
+  +redirectModulePath: (modulePath: string) => string | false,
+};
+
+/**
+ * Resolve any kind of module path, whether it's a file, a directory,
+ * a package name.
+ */
+function resolveModulePath(
+  context: ModulePathContext,
+  toModuleName: string,
+  platform: string | null,
+): Result<Resolution, Candidates> {
+  const modulePath = isAbsolutePath(toModuleName)
+    ? resolveWindowsPath(toModuleName)
+    : path.join(path.dirname(context.originModulePath), toModuleName);
+  const redirectedPath = context.redirectModulePath(modulePath);
+  if (redirectedPath === false) {
+    return resolvedAs({type: 'empty'});
+  }
+  const result = resolveFileOrDir(context, redirectedPath, platform);
+  if (result.type === 'resolved') {
+    return result;
+  }
+  return failedFor({type: 'modulePath', which: result.candidates});
 }
 
 type HasteContext = FileOrDirContext & {
