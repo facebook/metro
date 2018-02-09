@@ -86,7 +86,6 @@ exports.handler = makeAsyncCommand(async (argv: any) => {
       });
     },
     onComplete: () => {
-      term.log('onComplete called');
       updateReporter.update({
         buildID: '$',
         type: 'bundle_build_done',
