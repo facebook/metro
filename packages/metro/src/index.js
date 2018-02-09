@@ -33,22 +33,27 @@ const {Terminal} = require('metro-core');
 
 import type {ConfigT} from './Config';
 import type {GlobalTransformCache} from './lib/GlobalTransformCache';
+import type {Options as ServerOptions} from './shared/types.flow';
 import type {Reporter} from './lib/reporting';
 import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
-import type {Options as ServerOptions} from './shared/types.flow';
+import type {TransformCache} from './lib/TransformCaching';
 import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
 
 export type {ConfigT} from './Config';
 
+type DeprecatedMetroOptions = {|
+  resetCache?: boolean,
+|};
+
 type PublicMetroOptions = {|
+  ...DeprecatedMetroOptions,
   config?: ConfigT,
   globalTransformCache?: ?GlobalTransformCache,
   maxWorkers?: number,
   port?: ?number,
   reporter?: Reporter,
-  // deprecated
-  resetCache?: boolean,
+  transformCache?: TransformCache,
 |};
 
 type PrivateMetroOptions = {|
@@ -86,6 +91,7 @@ async function runMetro({
   // $FlowFixMe TODO t0 https://github.com/facebook/flow/issues/183
   port = null,
   reporter = new TerminalReporter(new Terminal(process.stdout)),
+  transformCache = TransformCaching.useTempDir(),
   watch = false,
 }: PrivateMetroOptions): Promise<MetroServer> {
   const normalizedConfig = config ? Config.normalize(config) : Config.DEFAULT;
@@ -98,10 +104,6 @@ async function runMetro({
   );
   const platforms =
     (normalizedConfig.getPlatforms && normalizedConfig.getPlatforms()) || [];
-
-  const transformModulePath = false
-    ? ``
-    : normalizedConfig.getTransformModulePath();
 
   const providesModuleNodeModules =
     typeof normalizedConfig.getProvidesModuleNodeModules === 'function'
@@ -117,7 +119,6 @@ async function runMetro({
     port,
     projectRoots: finalProjectRoots,
   });
-
   const serverOptions: ServerOptions = {
     assetExts: normalizedConfig.assetTransforms ? [] : assetExts,
     assetRegistryPath: normalizedConfig.assetRegistryPath,
@@ -142,8 +143,8 @@ async function runMetro({
     sourceExts: normalizedConfig.assetTransforms
       ? sourceExts.concat(assetExts)
       : sourceExts,
-    transformCache: TransformCaching.useTempDir(),
-    transformModulePath,
+    transformCache,
+    transformModulePath: normalizedConfig.getTransformModulePath(),
     watch,
     workerPath:
       normalizedConfig.getWorkerPath && normalizedConfig.getWorkerPath(),
@@ -157,21 +158,18 @@ type CreateConnectMiddlewareOptions = {|
   ...PublicMetroOptions,
 |};
 
-exports.createConnectMiddleware = async function(
-  options: CreateConnectMiddlewareOptions,
-) {
+exports.createConnectMiddleware = async function({
+  config,
+  ...rest
+}: CreateConnectMiddlewareOptions) {
+  // $FlowFixMe Flow doesn't support object spread enough for the following line
   const metroServer = await runMetro({
-    config: options.config,
-    maxWorkers: options.maxWorkers,
-    port: options.port,
-    reporter: options.reporter,
-    resetCache: options.resetCache,
+    ...rest,
+    config,
     watch: true,
   });
 
-  const normalizedConfig = options.config
-    ? Config.normalize(options.config)
-    : Config.DEFAULT;
+  const normalizedConfig = config ? Config.normalize(config) : Config.DEFAULT;
 
   let enhancedMiddleware = metroServer.processRequest;
 
@@ -207,11 +205,18 @@ type RunServerOptions = {|
   hmrEnabled?: boolean,
 |};
 
-exports.runServer = async (options: RunServerOptions) => {
-  const port = options.port || 8080;
-  const reporter =
-    options.reporter || new TerminalReporter(new Terminal(process.stdout));
-
+exports.runServer = async ({
+  host,
+  onReady,
+  // $FlowFixMe Flow messes up when using "destructuring"+"default value"+"spread typing"+"stricter field typing" together
+  port = 8080,
+  reporter = new TerminalReporter(new Terminal(process.stdout)),
+  secure = false,
+  secureKey,
+  secureCert,
+  hmrEnabled = false,
+  ...rest
+}: RunServerOptions) => {
   // Lazy require
   const connect = require('connect');
 
@@ -221,23 +226,22 @@ exports.runServer = async (options: RunServerOptions) => {
     attachHmrServer,
     middleware,
     end,
+    // $FlowFixMe Flow doesn't support object spread enough for the following line
   } = await exports.createConnectMiddleware({
-    config: options.config,
-    maxWorkers: options.maxWorkers,
+    ...rest,
     port,
     reporter,
-    resetCache: options.resetCache,
   });
 
   serverApp.use(middleware);
 
   let httpServer;
 
-  if (options.secure) {
+  if (secure) {
     httpServer = https.createServer(
       {
-        key: await readFile(options.secureKey),
-        cert: await readFile(options.secureCert),
+        key: await readFile(secureKey),
+        cert: await readFile(secureCert),
       },
       serverApp,
     );
@@ -245,12 +249,12 @@ exports.runServer = async (options: RunServerOptions) => {
     httpServer = http.createServer(serverApp);
   }
 
-  if (options.hmrEnabled) {
+  if (hmrEnabled) {
     attachHmrServer(httpServer);
   }
 
-  httpServer.listen(port, options.host, () => {
-    options.onReady && options.onReady(httpServer);
+  httpServer.listen(port, host, () => {
+    onReady && onReady(httpServer);
   });
 
   // Disable any kind of automatic timeout behavior for incoming
@@ -294,30 +298,40 @@ type RunBuildOptions = {|
   sourceMapUrl?: string,
 |};
 
-exports.runBuild = async (options: RunBuildOptions) => {
+exports.runBuild = async ({
+  config,
+  dev = false,
+  entry,
+  onBegin,
+  onComplete,
+  onProgress,
+  optimize = false,
+  output = outputBundle,
+  out,
+  platform = `web`,
+  sourceMap = false,
+  sourceMapUrl,
+  ...rest
+}: RunBuildOptions) => {
+  // $FlowFixMe Flow doesn't support object spread enough for the following line
   const metroServer = await runMetro({
-    config: options.config,
-    maxWorkers: options.maxWorkers,
-    resetCache: options.resetCache,
+    ...rest,
+    config,
   });
 
-  const output = options.output || outputBundle;
   const requestOptions: RequestOptions = {
-    dev: options.dev,
-    entryFile: options.entry,
-    inlineSourceMap: options.sourceMap && !!options.sourceMapUrl,
-    minify: options.optimize || false,
-    platform: options.platform || `web`,
-    sourceMapUrl:
-      options.sourceMap === false ? undefined : options.sourceMapUrl,
-    createModuleIdFactory: options.config
-      ? options.config.createModuleIdFactory
-      : undefined,
-    onProgress: options.onProgress,
+    dev,
+    entryFile: entry,
+    inlineSourceMap: sourceMap && !!sourceMapUrl,
+    minify: optimize,
+    platform,
+    sourceMapUrl: sourceMap === false ? undefined : sourceMapUrl,
+    createModuleIdFactory: config ? config.createModuleIdFactory : undefined,
+    onProgress,
   };
 
-  if (options.onBegin) {
-    options.onBegin();
+  if (onBegin) {
+    onBegin();
   }
 
   let metroBundle;
@@ -328,18 +342,19 @@ exports.runBuild = async (options: RunBuildOptions) => {
     await metroServer.end();
   }
 
-  if (options.onComplete) {
-    options.onComplete();
+  if (onComplete) {
+    onComplete();
   }
 
+  const bundleOutput = out.replace(/(\.js)?$/, '.js');
+  const sourcemapOutput =
+    sourceMap === false ? undefined : out.replace(/(\.js)?$/, '.map');
+
   const outputOptions: OutputOptions = {
-    bundleOutput: options.out.replace(/(\.js)?$/, '.js'),
-    sourcemapOutput:
-      options.sourceMap === false
-        ? undefined
-        : options.out.replace(/(\.js)?$/, '.map'),
-    dev: options.dev,
-    platform: options.platform || `web`,
+    bundleOutput,
+    sourcemapOutput,
+    dev,
+    platform,
   };
 
   await output.save(metroBundle, outputOptions, console.log);
