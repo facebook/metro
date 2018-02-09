@@ -13,7 +13,7 @@ module.exports = {
   plugins: ['babel', 'flowtype', 'prettier'],
   parser: 'babel-eslint',
   rules: {
-    'extra-arrow-initializer': 'off',
+    'lint/extra-arrow-initializer': 'off',
     'max-len': 'off',
     'no-alert': 'off',
     'no-console-disallow': 'off',

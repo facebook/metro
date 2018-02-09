@@ -45,7 +45,7 @@ exports.builder = (yargs: Yargs) => {
   yargs.option('reset-cache', {type: 'boolean', describe: null});
 };
 
-// eslint-disable-next-line no-unclear-flowtypes
+// eslint-disable-next-line lint/no-unclear-flowtypes
 exports.handler = makeAsyncCommand(async (argv: any) => {
   let server = null;
   let restarting = false;

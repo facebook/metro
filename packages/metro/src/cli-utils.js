@@ -26,7 +26,7 @@ exports.watchFile = async function(
 };
 
 exports.makeAsyncCommand = (command: (argv: any) => Promise<*>) => (
-  // eslint-disable-next-line no-unclear-flowtypes
+  // eslint-disable-next-line lint/no-unclear-flowtypes
   argv: any,
 ) => {
   Promise.resolve(command(argv)).catch(error => {

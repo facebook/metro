@@ -70,7 +70,7 @@ module.exports = class Transformer {
         reporters.stderrChunk(chunk.toString('utf8'));
       });
     } else {
-      // eslint-disable-next-line flow-no-fixme
+      // eslint-disable-next-line lint/flow-no-fixme
       // $FlowFixMe: Flow doesn't support dynamic requires
       this._worker = require(workerPath);
     }

@@ -7,7 +7,7 @@
  * @format
  */
 
-/* eslint-disable no-unclear-flowtypes */
+/* eslint-disable lint/no-unclear-flowtypes */
 
 'use strict';
 

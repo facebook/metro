@@ -229,7 +229,7 @@ function memoizeLoad(load: LoadFn): LoadFn {
   };
 }
 
-// eslint-disable-next-line no-unclear-flowtypes, no-redeclare
+// eslint-disable-next-line lint/no-unclear-flowtypes, no-redeclare
 function isPromise(x: {then?: ?Function}) {
   return x != null && typeof x.then === 'function';
 }
