@@ -37,6 +37,7 @@ export type Options = BundleOptions & {
 export type RamModule = ModuleTransportLike;
 
 export type RamBundleInfo = {
+  getDependencies: string => Set<string>,
   startupModules: $ReadOnlyArray<RamModule>,
   lazyModules: $ReadOnlyArray<RamModule>,
   groups: Map<number, Set<number>>,
@@ -218,9 +219,10 @@ async function getRamBundleInfo(
   );
 
   return {
-    startupModules,
-    lazyModules,
+    getDependencies,
     groups,
+    lazyModules,
+    startupModules,
   };
 }
 

@@ -117,6 +117,7 @@ Array [
 
 exports[`Serializers should return the RAM bundle info 1`] = `
 Object {
+  "getDependencies": [Function],
   "groups": Map {},
   "lazyModules": Array [
     Object {
@@ -191,6 +192,7 @@ Object {
 
 exports[`Serializers should return the RAM bundle info 2`] = `
 Object {
+  "getDependencies": [Function],
   "groups": Map {},
   "lazyModules": Array [
     Object {
@@ -403,6 +405,7 @@ Object {
 
 exports[`Serializers should use the preloadedModules and ramGroup configs to build a RAM bundle 1`] = `
 Object {
+  "getDependencies": [Function],
   "groups": Map {
     5 => Set {
       6,

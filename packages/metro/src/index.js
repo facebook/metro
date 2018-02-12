@@ -338,8 +338,9 @@ exports.runBuild = async ({
 
   try {
     metroBundle = await output.build(metroServer, requestOptions);
-  } finally {
+  } catch (error) {
     await metroServer.end();
+    throw error;
   }
 
   if (onComplete) {
@@ -358,6 +359,7 @@ exports.runBuild = async ({
   };
 
   await output.save(metroBundle, outputOptions, console.log);
+  await metroServer.end();
 
   return {metroServer, metroBundle};
 };
