@@ -58,6 +58,7 @@ exports.handler = makeAsyncCommand(async (argv: any) => {
     }
 
     if (server) {
+      // eslint-disable-next-line no-console
       console.log('Configuration changed. Restarting the server...');
       await promisify(server.close).call(server);
     }

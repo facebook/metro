@@ -89,7 +89,7 @@ describe('basic_bundle', () => {
     ).toMatchSnapshot();
   }
 
-  it('bundles package with polyfills (babel v6)', async () => {
+  it('bundles package with polyfills', async () => {
     const bundleWithPolyfills = await Metro.build(
       {
         assetRegistryPath: ASSET_REGISTRY_PATH,
@@ -101,30 +101,6 @@ describe('basic_bundle', () => {
         transformModulePath: require.resolve('../../transformer'),
         nonPersistent: true,
         enableBabelRCLookup: false, // dont use metro's own babelrc!
-        targetBabelVersion: 6,
-      },
-      {
-        dev: false,
-        entryFile: path.join(INPUT_PATH, 'TestBundle.js'),
-        platform: 'ios',
-      },
-    );
-    verifyResultCode(bundleWithPolyfills.code);
-  });
-
-  it('bundles package with polyfills (babel v7)', async () => {
-    const bundleWithPolyfills = await Metro.build(
-      {
-        assetRegistryPath: ASSET_REGISTRY_PATH,
-        dynamicDepsInPackages: 'reject',
-        getModulesRunBeforeMainModule: () => ['InitializeCore'],
-        getPolyfills: () => [polyfill1, polyfill2],
-        projectRoots: [INPUT_PATH, POLYFILLS_PATH],
-        transformCache: Metro.TransformCaching.none(),
-        transformModulePath: require.resolve('../../transformer'),
-        nonPersistent: true,
-        enableBabelRCLookup: false, // dont use metro's own babelrc!
-        targetBabelVersion: 7,
       },
       {
         dev: false,

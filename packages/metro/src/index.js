@@ -358,6 +358,7 @@ exports.runBuild = async ({
     platform,
   };
 
+  // eslint-disable-next-line no-console
   await output.save(metroBundle, outputOptions, console.log);
   await metroServer.end();
 

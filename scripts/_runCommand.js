@@ -18,6 +18,8 @@ module.exports = function runCommand(cmd, args, cwd) {
 
   const displayArgs =
     args.length > 25 ? args.slice(0, 25) + '...' : args.join(' ');
+
+  // eslint-disable-next-line no-console
   console.log(chalk.dim('$ cd ' + cwd + `\n$ ${cmd} ${displayArgs}\n`));
   const result = spawn(cmd, args, {
     cwd,

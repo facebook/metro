@@ -17,7 +17,6 @@ const formatBundlingError = require('../lib/formatBundlingError');
 const getBundlingOptionsForHmr = require('./getBundlingOptionsForHmr');
 const nullthrows = require('fbjs/lib/nullthrows');
 const parseCustomTransformOptions = require('../lib/parseCustomTransformOptions');
-const querystring = require('querystring');
 const url = require('url');
 
 const {
