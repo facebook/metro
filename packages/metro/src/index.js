@@ -125,6 +125,7 @@ async function runMetro({
     blacklistRE: normalizedConfig.getBlacklistRE(),
     createModuleIdFactory: normalizedConfig.createModuleIdFactory,
     dynamicDepsInPackages: normalizedConfig.dynamicDepsInPackages,
+    enableBabelRCLookup: normalizedConfig.getEnableBabelRCLookup(),
     extraNodeModules: normalizedConfig.extraNodeModules,
     getPolyfills: normalizedConfig.getPolyfills,
     getModulesRunBeforeMainModule:

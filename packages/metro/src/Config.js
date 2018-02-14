@@ -166,7 +166,7 @@ const DEFAULT = ({
   dynamicDepsInPackages: 'throwAtRuntime',
   getAssetExts: () => [],
   getBlacklistRE: () => blacklist(),
-  getEnableBabelRCLookup: () => false,
+  getEnableBabelRCLookup: () => true,
   getPlatforms: () => [],
   getPolyfillModuleNames: () => [],
   // We assume the default project path is two levels up from

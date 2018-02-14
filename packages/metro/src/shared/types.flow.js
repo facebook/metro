@@ -78,7 +78,7 @@ export type Options = {|
   cacheVersion?: string,
   createModuleIdFactory?: () => (path: string) => number,
   +dynamicDepsInPackages: DynamicRequiresBehavior,
-  enableBabelRCLookup?: boolean,
+  enableBabelRCLookup: boolean,
   extraNodeModules?: {},
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   getTransformOptions?: GetTransformOptions,
