@@ -123,6 +123,7 @@ async function runMetro({
     assetExts: normalizedConfig.assetTransforms ? [] : assetExts,
     assetRegistryPath: normalizedConfig.assetRegistryPath,
     blacklistRE: normalizedConfig.getBlacklistRE(),
+    cacheVersion: normalizedConfig.cacheVersion,
     createModuleIdFactory: normalizedConfig.createModuleIdFactory,
     dynamicDepsInPackages: normalizedConfig.dynamicDepsInPackages,
     enableBabelRCLookup: normalizedConfig.getEnableBabelRCLookup(),

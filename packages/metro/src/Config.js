@@ -33,6 +33,12 @@ export type ConfigT = {
   assetRegistryPath: string,
 
   /**
+   * Can be used to generate a key that will invalidate the whole metro cache
+   * (for example a global dependency version used by the transformer).
+   */
+  cacheVersion: string,
+
+  /**
    * Called with the Metro middleware in parameter; can be used to wrap this
    * middleware inside another one
    */
@@ -163,6 +169,7 @@ const DEFAULT = ({
   enhanceMiddleware: middleware => middleware,
   extraNodeModules: {},
   assetTransforms: false,
+  cacheVersion: '1.0',
   dynamicDepsInPackages: 'throwAtRuntime',
   getAssetExts: () => [],
   getBlacklistRE: () => blacklist(),

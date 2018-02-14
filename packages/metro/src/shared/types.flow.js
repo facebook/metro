@@ -75,7 +75,7 @@ export type Options = {|
   +asyncRequireModulePath?: string,
   +assetRegistryPath: string,
   blacklistRE?: RegExp,
-  cacheVersion?: string,
+  cacheVersion: string,
   createModuleIdFactory?: () => (path: string) => number,
   +dynamicDepsInPackages: DynamicRequiresBehavior,
   enableBabelRCLookup: boolean,

@@ -121,7 +121,7 @@ class Server {
       assetExts: options.assetTransforms ? [] : assetExts,
       assetRegistryPath: options.assetRegistryPath,
       blacklistRE: options.blacklistRE,
-      cacheVersion: options.cacheVersion || '1.0',
+      cacheVersion: options.cacheVersion,
       dynamicDepsInPackages: options.dynamicDepsInPackages || 'throwAtRuntime',
       createModuleIdFactory: options.createModuleIdFactory,
       enableBabelRCLookup:
