@@ -23,4 +23,21 @@ module.exports = {
     'prettier/prettier': ['error', 'fb', '@format'],
     'sort-keys': 'off',
   },
+  overrides: [
+    {
+      files: ['packages/metro-source-map/**/*.js'],
+      rules: {
+        'operator-assignment': ['error', 'never'],
+      },
+      env: {
+        node: true,
+      },
+    },
+    {
+      files: ['scripts/**/*.js'],
+      rules: {
+        'babel/func-params-comma-dangle': 'off',
+      },
+    },
+  ],
 };
