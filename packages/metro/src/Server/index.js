@@ -52,16 +52,10 @@ const {
 } = require('metro-core');
 
 function debounceAndBatch(fn, delay) {
-  let args = [];
   let timeout;
-  return value => {
-    args.push(value);
+  return () => {
     clearTimeout(timeout);
-    timeout = setTimeout(() => {
-      const a = args;
-      args = [];
-      fn(a);
-    }, delay);
+    timeout = setTimeout(fn, delay);
   };
 }
 
@@ -183,9 +177,10 @@ class Server {
         );
     });
 
-    this._debouncedFileChangeHandler = debounceAndBatch(filePaths => {
-      this._informChangeWatchers();
-    }, 50);
+    this._debouncedFileChangeHandler = debounceAndBatch(
+      () => this._informChangeWatchers(),
+      50,
+    );
 
     this._symbolicateInWorker = symbolicate.createWorker();
     this._nextBundleBuildID = 1;
