@@ -20,13 +20,14 @@ const Worker = require('jest-worker').default;
 import type {BabelSourceMap} from '@babel/core';
 import type {Options, TransformedCode} from './worker';
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
-import type {ResultWithMap} from './worker/minify';
+import type {MetroMinifier} from 'metro-minify-uglify';
+import type {ResultWithMap} from 'metro-minify-uglify';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
 
-import typeof {minify as Minify, transform as Transform} from './worker';
+import typeof {transform as Transform} from './worker';
 
 type WorkerInterface = Worker & {
-  minify: Minify,
+  minify: MetroMinifier,
   transform: Transform,
 };
 

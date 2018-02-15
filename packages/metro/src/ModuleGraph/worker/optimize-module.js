@@ -17,7 +17,7 @@ const constantFolding = require('../../JSTransformer/worker/constant-folding')
 const generate = require('./generate');
 const inline = require('../../JSTransformer/worker/inline').plugin;
 const invariant = require('fbjs/lib/invariant');
-const minify = require('../../JSTransformer/worker/minify');
+const minify = require('metro-minify-uglify');
 const optimizeDependencies = require('./optimizeDependencies');
 const sourceMap = require('source-map');
 

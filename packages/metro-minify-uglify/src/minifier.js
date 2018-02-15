@@ -14,12 +14,9 @@
 
 const uglify = require('uglify-es');
 
+import type {MetroMinifier} from './types.js.flow';
+import type {ResultWithMap} from './types.js.flow';
 import type {BabelSourceMap} from '@babel/core';
-
-export type ResultWithMap = {
-  code: string,
-  map: BabelSourceMap,
-};
 
 function noSourceMap(code: string): string {
   return minify(code).code;
@@ -66,7 +63,9 @@ function minify(inputCode: string, inputMap: ?BabelSourceMap) {
   };
 }
 
-module.exports = {
+const metroMinifier: MetroMinifier = {
   noSourceMap,
   withSourceMap,
 };
+
+module.exports = metroMinifier;

@@ -14,7 +14,7 @@
 
 jest
   .mock('jest-worker', () => ({}))
-  .mock('../../JSTransformer/worker/minify')
+  .mock('metro-minify-uglify')
   .mock('crypto')
   .mock('../symbolicate', () => ({
     createWorker: jest.fn().mockReturnValue(jest.fn()),

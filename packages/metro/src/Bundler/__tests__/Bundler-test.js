@@ -14,7 +14,7 @@
 
 jest
   .setMock('jest-worker', () => ({}))
-  .setMock('../../JSTransformer/worker/minify')
+  .setMock('metro-minify-uglify')
   .mock('image-size')
   .mock('fs')
   .mock('os')

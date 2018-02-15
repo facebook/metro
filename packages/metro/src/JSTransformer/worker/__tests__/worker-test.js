@@ -14,7 +14,7 @@
 jest
   .mock('../constant-folding')
   .mock('../inline')
-  .mock('../minify');
+  .mock('metro-minify-uglify');
 
 const path = require('path');
 const transformCode = require('..').transform;

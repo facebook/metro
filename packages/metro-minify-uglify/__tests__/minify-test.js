@@ -6,10 +6,13 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @flow
  * @format
  * @emails oncall+js_foundation
  */
 'use strict';
+
+import type {BabelSourceMap} from '@babel/core';
 
 jest.mock('uglify-es', () => ({
   minify: jest.fn(code => {
@@ -20,20 +23,29 @@ jest.mock('uglify-es', () => ({
   }),
 }));
 
-const minify = require('../minify');
+const minify = require('..');
 const {objectContaining} = jasmine;
+
+function getFakeMap(): BabelSourceMap {
+  return {
+    version: 3,
+    sources: ['?'],
+    mappings: '',
+    names: [],
+  };
+}
 
 describe('Minification:', () => {
   const filename = '/arbitrary/file.js';
   const code = 'arbitrary(code)';
-  let map;
+  let map: BabelSourceMap;
   let uglify;
 
   beforeEach(() => {
     uglify = require('uglify-es');
     uglify.minify.mockClear();
     uglify.minify.mockReturnValue({code: '', map: '{}'});
-    map = {version: 3, sources: ['?'], mappings: ''};
+    map = getFakeMap();
   });
 
   it('passes file name, code, and source map to `uglify`', () => {
@@ -64,14 +76,14 @@ describe('Minification:', () => {
 
   it('returns the code provided by uglify', () => {
     uglify.minify.mockReturnValue({code, map: '{}'});
-    const result = minify.withSourceMap('', {}, '');
+    const result = minify.withSourceMap('', getFakeMap(), '');
     expect(result.code).toBe(code);
     expect(minify.noSourceMap('')).toBe(code);
   });
 
   it('parses the source map object provided by uglify and sets the sources property', () => {
     uglify.minify.mockReturnValue({map: JSON.stringify(map), code: ''});
-    const result = minify.withSourceMap('', {}, filename);
+    const result = minify.withSourceMap('', getFakeMap(), filename);
     expect(result.map).toEqual({...map, sources: [filename]});
   });
 });

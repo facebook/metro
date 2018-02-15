@@ -18,7 +18,7 @@ const assetTransformer = require('../../assetTransformer');
 const collectDependencies = require('../../ModuleGraph/worker/collectDependencies');
 const constantFolding = require('./constant-folding');
 const inline = require('./inline');
-const minify = require('./minify');
+const minify = require('metro-minify-uglify');
 const optimizeDependencies = require('../../ModuleGraph/worker/optimizeDependencies');
 const path = require('path');
 
@@ -28,11 +28,11 @@ const {toSegmentTuple} = require('metro-source-map');
 
 import type {DynamicRequiresBehavior} from '../../ModuleGraph/worker/collectDependencies';
 import type {LocalPath} from '../../node-haste/lib/toLocalPath';
-import type {ResultWithMap} from './minify';
 import type {Ast} from '@babel/core';
 import type {BabelSourceMap} from '@babel/core';
 import type {Plugins as BabelPlugins} from 'babel-core';
 import type {LogEntry} from 'metro-core/src/Logger';
+import type {ResultWithMap} from 'metro-minify-uglify';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
 export type TransformedCode = {

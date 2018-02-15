@@ -1,0 +1,35 @@
+/**
+ * Copyright (c) 2016-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @flow
+ * @format
+ */
+
+'use strict';
+
+import type {BabelSourceMap} from '@babel/core';
+
+export type ResultWithMap = {
+  code: string,
+  map: BabelSourceMap,
+};
+
+export type ResultWithoutMap = string;
+
+type MinifierWithSourceMap = (
+  code: string,
+  inputMap?: ?BabelSourceMap,
+  filename: string,
+) => ResultWithMap;
+
+type MinifierWithoutSourceMap = (code: string) => ResultWithoutMap;
+
+export type MetroMinifier = {
+  noSourceMap: MinifierWithoutSourceMap,
+  withSourceMap: MinifierWithSourceMap,
+};
