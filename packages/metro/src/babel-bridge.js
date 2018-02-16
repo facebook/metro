@@ -109,9 +109,9 @@ module.exports = {
 
 // Plugin not functional in Babel 7, is deprecated, and no replacement exists.
 function makeMakeHMRConfig7() {
-  return function() {
+  return function(options: mixed, filename?: string) {
     return {};
-  }
+  };
 }
 
 function getPreset7() {
