@@ -142,14 +142,25 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
 
   resolveDependency(
     fromModule: TModule,
-    toModuleName: string,
+    moduleName: string,
     allowHaste: boolean,
     platform: string | null,
   ): TModule {
-    const result = this._resolveDependency(
-      fromModule,
-      toModuleName,
-      allowHaste,
+    const result = resolveDependency(
+      {
+        ...this._options,
+        originModulePath: fromModule.path,
+        redirectModulePath: modulePath =>
+          this._redirectRequire(fromModule, modulePath),
+        allowHaste,
+        platform,
+        resolveHasteModule: name =>
+          this._options.moduleMap.getModule(name, platform, true),
+        resolveHastePackage: name =>
+          this._options.moduleMap.getPackage(name, platform, true),
+        getPackageMainPath: this._getPackageMainPath,
+      },
+      moduleName,
       platform,
     );
     if (result.type === 'resolved') {
@@ -159,8 +170,8 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       const {which} = result.candidates;
       throw new UnableToResolveError(
         fromModule.path,
-        toModuleName,
-        `The module \`${toModuleName}\` could not be found ` +
+        moduleName,
+        `The module \`${moduleName}\` could not be found ` +
           `from \`${fromModule.path}\`. ` +
           `Indeed, none of these files exist:\n\n` +
           `  * \`${formatFileCandidates(which.file)}\`\n` +
@@ -176,7 +187,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     const hint = displayDirPaths.length ? ' or in these directories:' : '';
     throw new UnableToResolveError(
       fromModule.path,
-      toModuleName,
+      moduleName,
       `Module does not exist in the module map${hint}\n` +
         displayDirPaths
           .map(dirPath => `  ${path.dirname(dirPath)}\n`)
@@ -189,93 +200,6 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         '  3. Reset Metro Bundler cache: `rm -rf /tmp/metro-bundler-cache-*` or `npm start -- --reset-cache`.' +
         '  4. Remove haste cache: `rm -rf /tmp/haste-map-react-native-packager-*`.',
     );
-  }
-
-  _resolveDependency(
-    fromModule: TModule,
-    toModuleName: string,
-    allowHaste: boolean,
-    platform: string | null,
-  ): Result<Resolution, Candidates> {
-    const context = {
-      ...this._options,
-      getPackageMainPath: this._getPackageMainPath,
-      originModulePath: fromModule.path,
-      redirectModulePath: modulePath =>
-        this._redirectRequire(fromModule, modulePath),
-      resolveHasteModule: name =>
-        this._options.moduleMap.getModule(name, platform, true),
-      resolveHastePackage: name =>
-        this._options.moduleMap.getPackage(name, platform, true),
-    };
-
-    if (isRelativeImport(toModuleName) || isAbsolutePath(toModuleName)) {
-      return resolveModulePath(context, toModuleName, platform);
-    }
-    const realModuleName = this._redirectRequire(fromModule, toModuleName);
-    // exclude
-    if (realModuleName === false) {
-      return resolvedAs({type: 'empty'});
-    }
-
-    if (isRelativeImport(realModuleName) || isAbsolutePath(realModuleName)) {
-      // derive absolute path /.../node_modules/fromModuleDir/realModuleName
-      const fromModuleParentIdx =
-        fromModule.path.lastIndexOf('node_modules' + path.sep) + 13;
-      const fromModuleDir = fromModule.path.slice(
-        0,
-        fromModule.path.indexOf(path.sep, fromModuleParentIdx),
-      );
-      const absPath = path.join(fromModuleDir, realModuleName);
-      return resolveModulePath(context, absPath, platform);
-    }
-
-    // At that point we only have module names that
-    // aren't relative paths nor absolute paths.
-    if (allowHaste) {
-      const result = resolveHasteName(
-        context,
-        normalizePath(realModuleName),
-        platform,
-      );
-      if (result.type === 'resolved') {
-        return result;
-      }
-    }
-
-    const dirPaths = [];
-    for (
-      let currDir = path.dirname(fromModule.path);
-      currDir !== '.' && currDir !== path.parse(fromModule.path).root;
-      currDir = path.dirname(currDir)
-    ) {
-      const searchPath = path.join(currDir, 'node_modules');
-      dirPaths.push(path.join(searchPath, realModuleName));
-    }
-
-    const extraPaths = [];
-    if (this._options.extraNodeModules) {
-      const {extraNodeModules} = this._options;
-      const bits = path.normalize(toModuleName).split(path.sep);
-      const packageName = bits[0];
-      if (extraNodeModules[packageName]) {
-        bits[0] = extraNodeModules[packageName];
-        extraPaths.push(path.join.apply(path, bits));
-      }
-    }
-
-    const allDirPaths = dirPaths.concat(extraPaths);
-    for (let i = 0; i < allDirPaths.length; ++i) {
-      const context = {
-        ...this._options,
-        getPackageMainPath: this._getPackageMainPath,
-      };
-      const result = resolveFileOrDir(context, allDirPaths[i], platform);
-      if (result.type === 'resolved') {
-        return result;
-      }
-    }
-    return failedFor({type: 'moduleName', dirPaths, extraPaths});
   }
 
   _getPackageMainPath = (packageJsonPath: string): string => {
@@ -309,6 +233,81 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   }
 }
 
+type ResolutionContext = ModulePathContext &
+  HasteContext & {
+    originModulePath: string,
+    allowHaste: boolean,
+    extraNodeModules: ?Object,
+  };
+
+function resolveDependency(
+  context: ResolutionContext,
+  moduleName: string,
+  platform: string | null,
+): Result<Resolution, Candidates> {
+  if (isRelativeImport(moduleName) || isAbsolutePath(moduleName)) {
+    return resolveModulePath(context, moduleName, platform);
+  }
+  const realModuleName = context.redirectModulePath(moduleName);
+  // exclude
+  if (realModuleName === false) {
+    return resolvedAs({type: 'empty'});
+  }
+
+  const {originModulePath} = context;
+  if (isRelativeImport(realModuleName) || isAbsolutePath(realModuleName)) {
+    // derive absolute path /.../node_modules/originModuleDir/realModuleName
+    const fromModuleParentIdx =
+      originModulePath.lastIndexOf('node_modules' + path.sep) + 13;
+    const originModuleDir = originModulePath.slice(
+      0,
+      originModulePath.indexOf(path.sep, fromModuleParentIdx),
+    );
+    const absPath = path.join(originModuleDir, realModuleName);
+    return resolveModulePath(context, absPath, platform);
+  }
+
+  // At that point we only have module names that
+  // aren't relative paths nor absolute paths.
+  if (context.allowHaste) {
+    const normalizedName = normalizePath(realModuleName);
+    const result = resolveHasteName(context, normalizedName, platform);
+    if (result.type === 'resolved') {
+      return result;
+    }
+  }
+
+  const dirPaths = [];
+  for (
+    let currDir = path.dirname(originModulePath);
+    currDir !== '.' && currDir !== path.parse(originModulePath).root;
+    currDir = path.dirname(currDir)
+  ) {
+    const searchPath = path.join(currDir, 'node_modules');
+    dirPaths.push(path.join(searchPath, realModuleName));
+  }
+
+  const extraPaths = [];
+  const {extraNodeModules} = context;
+  if (extraNodeModules) {
+    const bits = path.normalize(moduleName).split(path.sep);
+    const packageName = bits[0];
+    if (extraNodeModules[packageName]) {
+      bits[0] = extraNodeModules[packageName];
+      extraPaths.push(path.join.apply(path, bits));
+    }
+  }
+
+  const allDirPaths = dirPaths.concat(extraPaths);
+  for (let i = 0; i < allDirPaths.length; ++i) {
+    const result = resolveFileOrDir(context, allDirPaths[i], platform);
+    if (result.type === 'resolved') {
+      return result;
+    }
+  }
+  return failedFor({type: 'moduleName', dirPaths, extraPaths});
+}
+
 type ModulePathContext = FileOrDirContext & {
   /**
    * Full path of the module that is requiring or importing the module to be
@@ -323,8 +322,11 @@ type ModulePathContext = FileOrDirContext & {
 };
 
 /**
- * Resolve any kind of module path, whether it's a file, a directory,
- * a package name.
+ * Resolve any kind of module path, whether it's a file or a directory.
+ * For example we may want to resolve './foobar'. The closest
+ * `package.json` may define a redirection for this path, for example
+ * `/smth/lib/foobar`, that may be further resolved to
+ * `/smth/lib/foobar/index.ios.js`.
  */
 function resolveModulePath(
   context: ModulePathContext,
