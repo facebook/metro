@@ -107,51 +107,11 @@ module.exports = {
   getPreset: IS_BABEL7 ? getPreset7 : getPreset6,
 };
 
+// Plugin not functional in Babel 7, is deprecated, and no replacement exists.
 function makeMakeHMRConfig7() {
-  // from: babel-preset-react-native/configs/hmr
-  /**
-   * Copyright (c) 2015-present, Facebook, Inc.
-   * All rights reserved.
-   *
-   * This source code is licensed under the BSD-style license found in the
-   * LICENSE file in the root directory of this source tree. An additional grant
-   * of patent rights can be found in the PATENTS file in the same directory.
-   */
-  'use strict';
-
-  var path = require('path');
-  var hmrTransform = 'react-transform-hmr/lib/index.js';
-  var transformPath = require.resolve(hmrTransform);
-
-  return function(options: mixed, filename?: string) {
-    return {}; // Plugin not functional in Babel 7, is deprecated, and no replacement exists.
-
-    var transform = filename
-      ? './' + path.relative(path.dirname(filename), transformPath) // packager can't handle absolute paths
-      : hmrTransform;
-
-    // Fix the module path to use '/' on Windows.
-    if (path.sep === '\\') {
-      transform = transform.replace(/\\/g, '/');
-    }
-
-    return {
-      plugins: resolvePlugins7([
-        [
-          'react-transform',
-          {
-            transforms: [
-              {
-                transform,
-                imports: ['react'],
-                locals: ['module'],
-              },
-            ],
-          },
-        ],
-      ]),
-    };
-  };
+  return function() {
+    return {};
+  }
 }
 
 function getPreset7() {
