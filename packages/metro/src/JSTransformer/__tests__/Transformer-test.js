@@ -64,7 +64,7 @@ describe('Transformer', function() {
     const transformOptions = {arbitrary: 'options'};
     const code = 'arbitrary(code)';
 
-    new Transformer(opts).transformFile(
+    new Transformer(opts).transform(
       fileName,
       localPath,
       code,
@@ -108,7 +108,7 @@ describe('Transformer', function() {
     expect.assertions(6);
 
     return transformer
-      .transformFile(fileName, localPath, '', true, {})
+      .transform(fileName, localPath, '', true, {})
       .catch(function(error) {
         expect(error.type).toEqual('TransformError');
         expect(error.message).toBe(

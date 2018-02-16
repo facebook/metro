@@ -158,7 +158,7 @@ class Bundler {
       resetCache: opts.resetCache,
       sourceExts: opts.sourceExts,
       transformCode: (module, code, transformCodeOptions) =>
-        this._transformer.transformFile(
+        this._transformer.transform(
           module.path,
           module.localPath,
           code,

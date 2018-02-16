@@ -91,7 +91,7 @@ module.exports = class Transformer {
     return await this._worker.minify(filename, code, sourceMap);
   }
 
-  async transformFile(
+  async transform(
     filename: string,
     localPath: LocalPath,
     code: string,
@@ -123,7 +123,7 @@ module.exports = class Transformer {
 
       return data.result;
     } catch (err) {
-      debug('Failed transformFile file', filename);
+      debug('Failed transform file', filename);
 
       if (err.loc) {
         throw this._formatBabelError(err, filename);
