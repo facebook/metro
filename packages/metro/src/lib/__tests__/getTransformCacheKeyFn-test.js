@@ -13,6 +13,10 @@
 
 'use strict';
 
+jest.mock('../../../package.json', () => ({
+  version: '1.0.0',
+}));
+
 const getTransformCacheKeyFn = require('../getTransformCacheKeyFn');
 const path = require('path');
 
