@@ -22,8 +22,6 @@ import type {
   PostProcessBundleSourcemap,
 } from './Bundler';
 import type {PostProcessModules} from './DeltaBundler';
-import type {PostProcessModules as PostProcessModulesForBuck} from './ModuleGraph/types.flow.js';
-import type {TransformVariants} from './ModuleGraph/types.flow';
 import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
 import type {IncomingMessage, ServerResponse} from 'http';
 
@@ -138,19 +136,11 @@ export type ConfigT = {
   postProcessBundleSourcemap: PostProcessBundleSourcemap,
 
   /**
-   * Same as `postProcessModules` but for the Buck worker. Eventually we do want
-   * to unify both variants.
-   */
-  postProcessModulesForBuck: PostProcessModulesForBuck,
-
-  /**
    * Path to a require-able module that exports:
    * - a `getHasteName(filePath)` method that returns `hasteName` for module at
    *  `filePath`, or undefined if `filePath` is not a haste module.
    */
   hasteImplModulePath?: string,
-
-  transformVariants: () => TransformVariants,
 
   /**
    * An array of modules to be required before the entry point. It should
@@ -187,10 +177,8 @@ const DEFAULT = ({
   getUseGlobalHotkey: () => true,
   postMinifyProcess: x => x,
   postProcessModules: modules => modules,
-  postProcessModulesForBuck: modules => modules,
   postProcessBundleSourcemap: ({code, map, outFileName}) => ({code, map}),
   getModulesRunBeforeMainModule: () => [],
-  transformVariants: () => ({default: {}}),
   getWorkerPath: () => null,
 }: ConfigT);
 
