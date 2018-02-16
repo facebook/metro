@@ -46,7 +46,7 @@ const babelTraverse7 = require('@babel/traverse').default;
 const babelTypes7 = require('@babel/types');
 const babylon7 = require('babylon7');
 
-const externalHelpersPlugin7 = require('babel-plugin-external-helpers');
+const externalHelpersPlugin7 = require('@babel/plugin-external-helpers');
 const inlineRequiresPlugin7 = require('babel-preset-fbjs/plugins/inline-requires');
 const makeHMRConfig7 = makeMakeHMRConfig7();
 function resolvePlugins7(plugins: Array<any>) {
@@ -124,6 +124,8 @@ function makeMakeHMRConfig7() {
   var transformPath = require.resolve(hmrTransform);
 
   return function(options: mixed, filename?: string) {
+    return {}; // Plugin not functional in Babel 7, is deprecated, and no replacement exists.
+
     var transform = filename
       ? './' + path.relative(path.dirname(filename), transformPath) // packager can't handle absolute paths
       : hmrTransform;
