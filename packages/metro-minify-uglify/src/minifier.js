@@ -36,7 +36,12 @@ function withSourceMap(
 
 function minify(inputCode: string, inputMap: ?BabelSourceMap) {
   const result = uglify.minify(inputCode, {
-    mangle: {toplevel: true},
+    mangle: {
+      toplevel: true,
+      // JSC has issues with block-scoped variables.
+      // https://github.com/mishoo/UglifyJS2/issues/1753#issuecomment-324814782
+      safari10: true,
+    },
     output: {
       ascii_only: true,
       quote_style: 3,
