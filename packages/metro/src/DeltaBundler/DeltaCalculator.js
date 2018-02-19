@@ -220,6 +220,7 @@ class DeltaCalculator extends EventEmitter {
       this._deletedFiles.add(filePath);
       this._modifiedFiles.delete(filePath);
     } else {
+      this._deletedFiles.delete(filePath);
       this._modifiedFiles.add(filePath);
     }
 

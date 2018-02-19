@@ -313,6 +313,30 @@ describe('DeltaCalculator', () => {
     expect(traverseDependencies.mock.calls[0][0]).toEqual(['/bundle']);
   });
 
+  it('should not do unnecessary work when adding a file after deleting it', async () => {
+    await deltaCalculator.getDelta();
+
+    // First delete a file
+    fileWatcher.emit('change', {
+      eventsQueue: [{type: 'delete', filePath: '/foo'}],
+    });
+
+    // Then add it again
+    fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
+
+    traverseDependencies.mockReturnValue(
+      Promise.resolve({
+        added: new Map([['/foo', edgeModule]]),
+        deleted: new Set(),
+      }),
+    );
+
+    await deltaCalculator.getDelta();
+
+    expect(traverseDependencies).toHaveBeenCalledTimes(1);
+    expect(traverseDependencies.mock.calls[0][0]).toEqual(['/foo']);
+  });
+
   describe('getTransformerOptions()', () => {
     it('should calculate the transform options correctly', async () => {
       expect(await deltaCalculator.getTransformerOptions()).toEqual({

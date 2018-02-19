@@ -221,28 +221,6 @@ describe('edge cases', () => {
     });
   });
 
-  it('modify a file and delete it afterwards', async () => {
-    const edges = new Map();
-    await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
-
-    mockedDependencyTree.set(moduleFoo.path, [moduleBar]);
-
-    // Modify /baz, rename it to /qux and modify it again.
-    expect(
-      getPaths(
-        await traverseDependencies(
-          ['/baz', '/foo'],
-          dependencyGraph,
-          {},
-          edges,
-        ),
-      ),
-    ).toEqual({
-      added: new Set(['/foo']),
-      deleted: new Set(['/baz']),
-    });
-  });
-
   it('move a file to a different folder', async () => {
     const edges = new Map();
     await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
