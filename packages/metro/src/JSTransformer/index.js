@@ -99,7 +99,7 @@ module.exports = class Transformer {
     assetRegistryPath: string,
   ): Promise<TransformedCode> {
     try {
-      debug('Started ransforming file', filename);
+      debug('Started transforming file', filename);
 
       const data = await this._worker.transform(
         filename,

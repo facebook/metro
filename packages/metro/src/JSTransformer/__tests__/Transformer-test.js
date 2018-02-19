@@ -34,6 +34,8 @@ describe('Transformer', function() {
   };
 
   beforeEach(function() {
+    jest.resetModules();
+
     Cache = jest.fn();
     Cache.prototype.get = jest.fn((a, b, c) => c());
 
@@ -54,15 +56,23 @@ describe('Transformer', function() {
         api[method] = jest.fn();
       });
 
+      api.transform.mockImplementation(() => {
+        return {
+          result: 'transformed(code)',
+          transformFileStartLogEntry: {},
+          transformFileEndLogEntry: {},
+        };
+      });
+
       return api;
     });
   });
 
-  it('passes transform data to the worker farm when transforming', () => {
+  it('passes transform data to the worker farm when transforming', async () => {
     const transformOptions = {arbitrary: 'options'};
     const code = 'arbitrary(code)';
 
-    new Transformer(opts).transform(
+    await new Transformer(opts).transform(
       fileName,
       localPath,
       code,
