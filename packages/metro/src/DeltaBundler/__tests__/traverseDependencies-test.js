@@ -83,7 +83,9 @@ beforeEach(async () => {
       const dependency = deps.filter(dep => dep.name === relativePath)[0];
 
       if (!mockedDependencies.has(dependency)) {
-        throw new Error('Dependency not found');
+        throw new Error(
+          `Dependency not found: ${module.path}->${relativePath}`,
+        );
       }
       return dependency;
     },
@@ -103,6 +105,8 @@ it('should do the initial traversal correctly', async () => {
     added: new Set(['/bundle', '/foo', '/bar', '/baz']),
     deleted: new Set(),
   });
+
+  expect(edges).toMatchSnapshot();
 });
 
 it('should return an empty result when there are no changes', async () => {
@@ -239,6 +243,30 @@ describe('edge cases', () => {
       added: new Set(['/foo', '/baz-moved']),
       deleted: new Set(['/baz']),
     });
+  });
+
+  it('maintain the order of module dependencies consistent', async () => {
+    const edges = new Map();
+    await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
+
+    const moduleQux = createModule({path: '/qux', name: 'qux'});
+    mockedDependencyTree.set(moduleFoo.path, [moduleQux, moduleBar, moduleBaz]);
+    mockedDependencies.add(moduleQux);
+
+    expect(
+      getPaths(
+        await traverseDependencies(['/foo'], dependencyGraph, {}, edges),
+      ),
+    ).toEqual({
+      added: new Set(['/foo', '/qux']),
+      deleted: new Set(),
+    });
+
+    expect([...edges.get(moduleFoo.path).dependencies]).toEqual([
+      ['qux', moduleQux.path],
+      ['bar', moduleBar.path],
+      ['baz', moduleBaz.path],
+    ]);
   });
 
   it('should traverse the dependency tree in a deterministic order', async () => {

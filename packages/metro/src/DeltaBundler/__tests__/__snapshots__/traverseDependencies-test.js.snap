@@ -1,0 +1,61 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should do the initial traversal correctly 1`] = `
+Map {
+  "/bundle" => Object {
+    "dependencies": Map {
+      "foo" => "/foo",
+    },
+    "inverseDependencies": Set {},
+    "output": Object {
+      "code": "// code",
+      "map": Array [],
+      "source": "// source",
+      "type": "module",
+    },
+    "path": "/bundle",
+  },
+  "/foo" => Object {
+    "dependencies": Map {
+      "bar" => "/bar",
+      "baz" => "/baz",
+    },
+    "inverseDependencies": Set {
+      "/bundle",
+    },
+    "output": Object {
+      "code": "// code",
+      "map": Array [],
+      "source": "// source",
+      "type": "module",
+    },
+    "path": "/foo",
+  },
+  "/bar" => Object {
+    "dependencies": Map {},
+    "inverseDependencies": Set {
+      "/foo",
+    },
+    "output": Object {
+      "code": "// code",
+      "map": Array [],
+      "source": "// source",
+      "type": "module",
+    },
+    "path": "/bar",
+  },
+  "/baz" => Object {
+    "dependencies": Map {},
+    "inverseDependencies": Set {
+      "/foo",
+    },
+    "output": Object {
+      "code": "// code",
+      "map": Array [],
+      "source": "// source",
+      "type": "module",
+    },
+    "path": "/baz",
+  },
+}
+`;
