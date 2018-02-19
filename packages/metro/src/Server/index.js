@@ -157,14 +157,23 @@ class Server {
     this._fileChangeListeners = [];
     this._platforms = new Set(this._opts.platforms);
 
-    const bundlerOpts = Object.create(this._opts);
-    bundlerOpts.globalTransformCache = options.globalTransformCache;
-    bundlerOpts.watch = this._opts.watch;
-    bundlerOpts.reporter = reporter;
-    bundlerOpts.asyncRequireModulePath =
-      options.asyncRequireModulePath ||
-      'metro/src/lib/bundle-modules/asyncRequire';
-    this._bundler = new Bundler(bundlerOpts);
+    // This slices out options that are not part of the strict BundlerOptions
+    /* eslint-disable no-unused-vars */
+    const {
+      createModuleIdFactory,
+      getModulesRunBeforeMainModule,
+      moduleFormat,
+      silent,
+      ...bundlerOptionsFromServerOptions
+    } = this._opts;
+    /* eslint-enable no-unused-vars */
+
+    this._bundler = new Bundler({
+      ...bundlerOptionsFromServerOptions,
+      asyncRequireModulePath:
+        options.asyncRequireModulePath ||
+        'metro/src/lib/bundle-modules/asyncRequire',
+    });
 
     // changes to the haste map can affect resolution of files in the bundle
     this._bundler.getDependencyGraph().then(dependencyGraph => {
