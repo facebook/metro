@@ -22,6 +22,7 @@ const fs = require('fs');
 const isAbsolutePath = require('absolute-path');
 const parsePlatformFilePath = require('./lib/parsePlatformFilePath');
 const path = require('path');
+const toLocalPath = require('../node-haste/lib/toLocalPath');
 const util = require('util');
 
 const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
@@ -272,6 +273,16 @@ class DependencyGraph extends EventEmitter {
       throw new Error('Unrecognized platform: ' + platform);
     }
     return platform;
+  }
+
+  getHasteName(filePath: string): string {
+    const hasteName = this._hasteFS.getModuleName(filePath);
+
+    if (hasteName) {
+      return hasteName;
+    }
+
+    return toLocalPath(this._opts.projectRoots, filePath);
   }
 
   getAbsolutePath(filePath: string) {

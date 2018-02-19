@@ -19,16 +19,15 @@ const {EventEmitter} = require('events');
 import type Bundler from '../Bundler';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type DependencyGraph from '../node-haste/DependencyGraph';
-import type Module from '../node-haste/Module';
 import type {BundleOptions} from '../shared/types.flow';
 
 export type DeltaResult = {|
-  +modified: Map<string, Module>,
+  +modified: Map<string, DependencyEdge>,
   +deleted: Set<string>,
   +reset: boolean,
 |};
 
-import type {DependencyEdges} from './traverseDependencies';
+import type {DependencyEdge, DependencyEdges} from './traverseDependencies';
 
 /**
  * This class is in charge of calculating the delta of changed modules that
@@ -181,7 +180,7 @@ class DeltaCalculator extends EventEmitter {
           new Map(),
         );
 
-        return [path, ...added];
+        return Array.from(added.keys());
       },
     );
 
@@ -240,10 +239,6 @@ class DeltaCalculator extends EventEmitter {
         this._options.entryFile,
       );
 
-      const modified = new Map([
-        [path, this._dependencyGraph.getModuleForPath(path)],
-      ]);
-
       const {added} = await initialTraverseDependencies(
         path,
         this._dependencyGraph,
@@ -252,12 +247,8 @@ class DeltaCalculator extends EventEmitter {
         this._options.onProgress || undefined,
       );
 
-      for (const path of added) {
-        modified.set(path, this._dependencyGraph.getModuleForPath(path));
-      }
-
       return {
-        modified,
+        modified: added,
         deleted: new Set(),
         reset: true,
       };
@@ -291,18 +282,8 @@ class DeltaCalculator extends EventEmitter {
       this._options.onProgress || undefined,
     );
 
-    const modified = new Map();
-
-    for (const path of modifiedDependencies) {
-      modified.set(path, this._dependencyGraph.getModuleForPath(path));
-    }
-
-    for (const path of added) {
-      modified.set(path, this._dependencyGraph.getModuleForPath(path));
-    }
-
     return {
-      modified,
+      modified: added,
       deleted,
       reset: false,
     };

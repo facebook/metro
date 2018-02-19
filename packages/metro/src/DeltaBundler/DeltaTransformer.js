@@ -17,7 +17,6 @@ const createModuleIdFactory = require('../lib/createModuleIdFactory');
 const defaults = require('../defaults');
 const getPreludeCode = require('../lib/getPreludeCode');
 const nullthrows = require('fbjs/lib/nullthrows');
-const removeInlineRequiresBlacklistFromOptions = require('../lib/removeInlineRequiresBlacklistFromOptions');
 
 const {EventEmitter} = require('events');
 
@@ -26,7 +25,7 @@ import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type DependencyGraph from '../node-haste/DependencyGraph';
 import type Module from '../node-haste/Module';
 import type {Options as BundleOptions, MainOptions} from './';
-import type {DependencyEdges} from './traverseDependencies';
+import type {DependencyEdge, DependencyEdges} from './traverseDependencies';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
 export type DeltaEntryType =
@@ -342,8 +341,14 @@ class DeltaTransformer extends EventEmitter {
         }),
       );
 
+    const edges = await Promise.all(
+      modules.map(module =>
+        this._createEdgeFromScript(module, transformOptions),
+      ),
+    );
+
     const transformedModules = await this._transformModules(
-      modules,
+      edges,
       transformOptions,
       dependencyEdges,
     );
@@ -416,7 +421,7 @@ class DeltaTransformer extends EventEmitter {
   }
 
   async _transformModules(
-    modules: Array<Module>,
+    modules: Array<DependencyEdge>,
     transformOptions: JSTransformerOptions,
     dependencyEdges: DependencyEdges,
   ): Promise<DeltaEntries> {
@@ -429,15 +434,34 @@ class DeltaTransformer extends EventEmitter {
     );
   }
 
-  async _transformModule(
+  async _createEdgeFromScript(
     module: Module,
+    transformOptions: JSTransformerOptions,
+  ): Promise<DependencyEdge> {
+    const result = await module.read(transformOptions);
+
+    const edge = {
+      dependencies: new Map(),
+      inverseDependencies: new Set(),
+      path: module.path,
+      output: {
+        code: result.code,
+        map: result.map,
+        source: result.source,
+        type: 'script',
+      },
+    };
+
+    return edge;
+  }
+
+  async _transformModule(
+    edge: DependencyEdge,
     transformOptions: JSTransformerOptions,
     dependencyEdges: DependencyEdges,
   ): Promise<[number, ?DeltaEntry]> {
-    const name = module.getName();
-    const metadata = await this._getMetadata(module, transformOptions);
+    const name = this._dependencyGraph.getHasteName(edge.path);
 
-    const edge = dependencyEdges.get(module.path);
     const dependencyPairs = edge ? edge.dependencies : new Map();
 
     let wrappedCode;
@@ -445,26 +469,30 @@ class DeltaTransformer extends EventEmitter {
     // Get the absolute path of each of the module dependencies from the
     // dependency edges. The module dependencies ensure correct order, while
     // the dependency edges do not ensure the same order between rebuilds.
-    const dependencies = metadata.dependencies.map(dependency =>
+    const dependencies = Array.from(edge.dependencies.keys()).map(dependency =>
       nullthrows(dependencyPairs.get(dependency)),
     );
 
-    if (!module.isPolyfill()) {
+    if (edge.output.type !== 'script') {
       wrappedCode = this._addDependencyMap({
-        code: metadata.code,
+        code: edge.output.code,
         dependencies,
         name,
-        path: module.path,
+        path: edge.path,
       });
     } else {
-      wrappedCode = metadata.code;
+      wrappedCode = edge.output.code;
     }
 
     const {code, map} = transformOptions.minify
-      ? await this._bundler.minifyModule(module.path, wrappedCode, metadata.map)
-      : {code: wrappedCode, map: metadata.map};
+      ? await this._bundler.minifyModule(
+          edge.path,
+          wrappedCode,
+          edge.output.map,
+        )
+      : {code: wrappedCode, map: edge.output.map};
 
-    const id = this._getModuleId(module.path);
+    const id = this._getModuleId(edge.path);
 
     return [
       id,
@@ -473,9 +501,9 @@ class DeltaTransformer extends EventEmitter {
         id,
         map,
         name,
-        source: metadata.source,
-        path: module.path,
-        type: this._getModuleType(module),
+        source: edge.output.source,
+        path: edge.path,
+        type: edge.output.type,
       },
     ];
   }
@@ -507,32 +535,6 @@ class DeltaTransformer extends EventEmitter {
     }
 
     return addParamsToDefineCall(code, ...params);
-  }
-
-  _getModuleType(module: Module): DeltaEntryType {
-    if (module.isAsset()) {
-      return 'asset';
-    }
-
-    if (module.isPolyfill()) {
-      return 'script';
-    }
-
-    return 'module';
-  }
-
-  async _getMetadata(
-    module: Module,
-    transformOptions: JSTransformerOptions,
-  ): Promise<{
-    +code: string,
-    +dependencies: Array<string>,
-    +map: Array<MetroSourceMapSegmentTuple>,
-    +source: string,
-  }> {
-    return await module.read(
-      removeInlineRequiresBlacklistFromOptions(module.path, transformOptions),
-    );
   }
 
   _onFileChange = () => {

@@ -31,16 +31,36 @@ function deferred(value) {
   return {promise, resolve: () => resolve(value)};
 }
 
-function createModule({path, name, isAsset}) {
+function createModule({path, name, isAsset, isPolyfill}) {
   return {
     path,
     name,
-    async getName() {
-      return name;
-    },
     isAsset() {
       return !!isAsset;
     },
+    isPolyfill() {
+      return !!isPolyfill;
+    },
+    async read() {
+      const deps = mockedDependencyTree.get(path);
+      const dependencies = deps ? deps.map(dep => dep.name) : [];
+
+      return {
+        code: '// code',
+        map: [],
+        source: '// source',
+        dependencies,
+      };
+    },
+  };
+}
+
+function getPaths({added, deleted}) {
+  const addedPaths = [...added.values()].map(edge => edge.path);
+
+  return {
+    added: new Set(addedPaths),
+    deleted,
   };
 }
 
@@ -57,10 +77,6 @@ beforeEach(async () => {
     },
     getModuleForPath(path) {
       return Array.from(mockedDependencies).find(dep => dep.path === path);
-    },
-    async getShallowDependencies(path) {
-      const deps = mockedDependencyTree.get(path);
-      return deps ? await Promise.all(deps.map(dep => dep.getName())) : [];
     },
     resolveDependency(module, relativePath) {
       const deps = mockedDependencyTree.get(module.path);
@@ -83,8 +99,8 @@ it('should do the initial traversal correctly', async () => {
     edges,
   );
 
-  expect(result).toEqual({
-    added: new Set(['/foo', '/bar', '/baz']),
+  expect(getPaths(result)).toEqual({
+    added: new Set(['/bundle', '/foo', '/bar', '/baz']),
     deleted: new Set(),
   });
 });
@@ -94,9 +110,11 @@ it('should return an empty result when there are no changes', async () => {
   await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
 
   expect(
-    await traverseDependencies(['/bundle'], dependencyGraph, {}, edges),
+    getPaths(
+      await traverseDependencies(['/bundle'], dependencyGraph, {}, edges),
+    ),
   ).toEqual({
-    added: new Set(),
+    added: new Set(['/bundle']),
     deleted: new Set(),
   });
 });
@@ -109,9 +127,9 @@ it('should return a removed dependency', async () => {
   mockedDependencyTree.set(moduleFoo.path, [moduleBaz]);
 
   expect(
-    await traverseDependencies(['/foo'], dependencyGraph, {}, edges),
+    getPaths(await traverseDependencies(['/foo'], dependencyGraph, {}, edges)),
   ).toEqual({
-    added: new Set(),
+    added: new Set(['/foo']),
     deleted: new Set(['/bar']),
   });
 });
@@ -126,9 +144,9 @@ it('should return added/removed dependencies', async () => {
   mockedDependencies.add(moduleQux);
 
   expect(
-    await traverseDependencies(['/foo'], dependencyGraph, {}, edges),
+    getPaths(await traverseDependencies(['/foo'], dependencyGraph, {}, edges)),
   ).toEqual({
-    added: new Set(['/qux']),
+    added: new Set(['/foo', '/qux']),
     deleted: new Set(['/bar', '/baz']),
   });
 });
@@ -159,19 +177,20 @@ describe('edge cases', () => {
     const moduleQux = createModule({path: '/qux', name: 'qux'});
     mockedDependencyTree.set(moduleFoo.path, [moduleQux, moduleBar]);
     mockedDependencies.add(moduleQux);
-    mockedDependencies.delete(moduleBaz);
 
     // Call traverseDependencies with /foo, /qux and /baz, simulating that the
     // user has modified the 3 files.
     expect(
-      await traverseDependencies(
-        ['/foo', '/qux', '/baz'],
-        dependencyGraph,
-        {},
-        edges,
+      getPaths(
+        await traverseDependencies(
+          ['/foo', '/qux', '/baz'],
+          dependencyGraph,
+          {},
+          edges,
+        ),
       ),
     ).toEqual({
-      added: new Set(['/qux']),
+      added: new Set(['/foo', '/qux']),
       deleted: new Set(['/baz']),
     });
   });
@@ -193,9 +212,11 @@ describe('edge cases', () => {
     // Call traverseDependencies with /foo, /qux and /baz, simulating that the
     // user has modified the 3 files.
     expect(
-      await traverseDependencies(['/bundle'], dependencyGraph, {}, edges),
+      getPaths(
+        await traverseDependencies(['/bundle'], dependencyGraph, {}, edges),
+      ),
     ).toEqual({
-      added: new Set(['/foo-renamed']),
+      added: new Set(['/bundle', '/foo-renamed']),
       deleted: new Set(['/foo']),
     });
   });
@@ -205,13 +226,19 @@ describe('edge cases', () => {
     await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
 
     mockedDependencyTree.set(moduleFoo.path, [moduleBar]);
-    mockedDependencies.delete(moduleBaz);
 
     // Modify /baz, rename it to /qux and modify it again.
     expect(
-      await traverseDependencies(['/baz', '/foo'], dependencyGraph, {}, edges),
+      getPaths(
+        await traverseDependencies(
+          ['/baz', '/foo'],
+          dependencyGraph,
+          {},
+          edges,
+        ),
+      ),
     ).toEqual({
-      added: new Set(),
+      added: new Set(['/foo']),
       deleted: new Set(['/baz']),
     });
   });
@@ -227,9 +254,11 @@ describe('edge cases', () => {
 
     // Modify /baz, rename it to /qux and modify it again.
     expect(
-      await traverseDependencies(['/foo'], dependencyGraph, {}, edges),
+      getPaths(
+        await traverseDependencies(['/foo'], dependencyGraph, {}, edges),
+      ),
     ).toEqual({
-      added: new Set(['/baz-moved']),
+      added: new Set(['/foo', '/baz-moved']),
       deleted: new Set(['/baz']),
     });
   });
@@ -273,14 +302,16 @@ describe('edge cases', () => {
     async function assertOrder() {
       expect(
         Array.from(
-          (await initialTraverseDependencies(
-            '/bundle',
-            dependencyGraph,
-            {},
-            new Map(),
-          )).added,
+          getPaths(
+            await initialTraverseDependencies(
+              '/bundle',
+              dependencyGraph,
+              {},
+              new Map(),
+            ),
+          ).added,
         ),
-      ).toEqual(['/foo', '/baz', '/bar']);
+      ).toEqual(['/bundle', '/foo', '/baz', '/bar']);
     }
 
     // Create a dependency tree where moduleBaz has two inverse dependencies.
@@ -300,7 +331,10 @@ describe('edge cases', () => {
   });
 
   it('should simplify inlineRequires transform option', async () => {
-    jest.spyOn(dependencyGraph, 'getShallowDependencies');
+    jest.spyOn(entryModule, 'read');
+    jest.spyOn(moduleFoo, 'read');
+    jest.spyOn(moduleBar, 'read');
+    jest.spyOn(moduleBaz, 'read');
 
     const edges = new Map();
     const transformOptions = {
@@ -318,14 +352,12 @@ describe('edge cases', () => {
       edges,
     );
 
-    expect(dependencyGraph.getShallowDependencies.mock.calls).toEqual([
-      ['/bundle', {inlineRequires: true}],
-      ['/foo', {inlineRequires: true}],
-      ['/bar', {inlineRequires: true}],
-      ['/baz', {inlineRequires: false}],
-    ]);
+    expect(entryModule.read).toHaveBeenCalledWith({inlineRequires: true});
+    expect(moduleFoo.read).toHaveBeenCalledWith({inlineRequires: true});
+    expect(moduleBar.read).toHaveBeenCalledWith({inlineRequires: true});
+    expect(moduleBaz.read).toHaveBeenCalledWith({inlineRequires: false});
 
-    dependencyGraph.getShallowDependencies.mockClear();
+    moduleFoo.read.mockClear();
 
     await traverseDependencies(
       ['/foo'],
@@ -334,8 +366,6 @@ describe('edge cases', () => {
       edges,
     );
 
-    expect(dependencyGraph.getShallowDependencies.mock.calls).toEqual([
-      ['/foo', {inlineRequires: true}],
-    ]);
+    expect(moduleFoo.read).toHaveBeenCalledWith({inlineRequires: true});
   });
 });

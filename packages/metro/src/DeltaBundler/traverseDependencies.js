@@ -14,16 +14,26 @@ const removeInlineRequiresBlacklistFromOptions = require('../lib/removeInlineReq
 
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type DependencyGraph from '../node-haste/DependencyGraph';
+import type Module from '../node-haste/Module';
+import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
+
+export type DependencyType = 'module' | 'script' | 'asset';
 
 export type DependencyEdge = {|
   dependencies: Map<string, string>,
   inverseDependencies: Set<string>,
   path: string,
+  output: {
+    code: string,
+    map: Array<MetroSourceMapSegmentTuple>,
+    source: string,
+    type: DependencyType,
+  },
 |};
 
 export type DependencyEdges = Map<string, DependencyEdge>;
 
-type Result = {added: Set<string>, deleted: Set<string>};
+type Result = {added: Map<string, DependencyEdge>, deleted: Set<string>};
 
 /**
  * Dependency Traversal logic for the Delta Bundler. This method calculates
@@ -58,12 +68,12 @@ async function traverseDependencies(
     ),
   );
 
-  const added = new Set();
+  const added = new Map();
   const deleted = new Set();
 
   for (const change of changes) {
-    for (const path of change.added) {
-      added.add(path);
+    for (const [path, edge] of change.added) {
+      added.set(path, edge);
     }
     for (const path of change.deleted) {
       // If a path has been marked both as added and deleted, it means that this
@@ -90,8 +100,8 @@ async function initialTraverseDependencies(
   transformOptions: JSTransformerOptions,
   edges: DependencyEdges,
   onProgress?: (numProcessed: number, total: number) => mixed = () => {},
-) {
-  createEdge(path, edges);
+): Promise<Result> {
+  createEdge(dependencyGraph.getModuleForPath(path), edges);
 
   return await traverseDependenciesForSingleFile(
     path,
@@ -113,13 +123,18 @@ async function traverseDependenciesForSingleFile(
 
   // If the passed edge does not exist does not exist in the graph, ignore it.
   if (!edge) {
-    return {added: new Set(), deleted: new Set()};
+    return {added: new Map(), deleted: new Set()};
   }
 
-  const shallow = await dependencyGraph.getShallowDependencies(
-    path,
-    removeInlineRequiresBlacklistFromOptions(path, transformOptions),
-  );
+  const result = await dependencyGraph
+    .getModuleForPath(path)
+    .read(removeInlineRequiresBlacklistFromOptions(path, transformOptions));
+
+  edge.output.code = result.code;
+  edge.output.map = result.map;
+  edge.output.source = result.source;
+
+  const shallow = result.dependencies;
 
   // Get the absolute path of all sub-dependencies (some of them could have been
   // moved but maintain the same relative path).
@@ -132,8 +147,6 @@ async function traverseDependenciesForSingleFile(
 
   const previousDependencies = new Set(edge.dependencies.values());
 
-  const nonNullEdge = edge;
-
   let numProcessed = 0;
   let total = 1;
   onProgress(numProcessed, total);
@@ -141,7 +154,7 @@ async function traverseDependenciesForSingleFile(
   const deleted = Array.from(edge.dependencies.entries())
     .map(([relativePath, absolutePath]) => {
       if (!currentDependencies.has(absolutePath)) {
-        return removeDependency(nonNullEdge, relativePath, edges);
+        return removeDependency(edge, relativePath, edges);
       } else {
         return undefined;
       }
@@ -151,15 +164,15 @@ async function traverseDependenciesForSingleFile(
   // Check all the module dependencies and start traversing the tree from each
   // added and removed dependency, to get all the modules that have to be added
   // and removed from the dependency graph.
-  const added = await Promise.all(
+  const addedDependencies = await Promise.all(
     Array.from(currentDependencies).map(
       async ([absolutePath, relativePath]) => {
         if (previousDependencies.has(absolutePath)) {
-          return new Set();
+          return new Map();
         }
 
         return await addDependency(
-          nonNullEdge,
+          edge,
           relativePath,
           dependencyGraph,
           transformOptions,
@@ -177,11 +190,13 @@ async function traverseDependenciesForSingleFile(
     ),
   );
 
+  const added = [new Map([[edge.path, edge]])].concat(addedDependencies);
+
   numProcessed++;
   onProgress(numProcessed, total);
 
   return {
-    added: flatten(reorderDependencies(added, edges)),
+    added: flattenMap(reorderDependencies(added, edges)),
     deleted: flatten(deleted),
   };
 }
@@ -194,7 +209,7 @@ async function addDependency(
   edges: DependencyEdges,
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
-): Promise<Set<string>> {
+): Promise<Map<string, DependencyEdge>> {
   const parentModule = dependencyGraph.getModuleForPath(parentEdge.path);
   const module = dependencyGraph.resolveDependency(
     parentModule,
@@ -205,35 +220,36 @@ async function addDependency(
   // Update the parent edge to keep track of the new dependency.
   parentEdge.dependencies.set(relativePath, module.path);
 
-  let dependencyEdge = edges.get(module.path);
+  const existingEdge = edges.get(module.path);
 
   // The new dependency was already in the graph, we don't need to do anything.
-  if (dependencyEdge) {
-    dependencyEdge.inverseDependencies.add(parentEdge.path);
+  if (existingEdge) {
+    existingEdge.inverseDependencies.add(parentEdge.path);
 
-    return new Set();
+    return new Map();
   }
 
   onDependencyAdd();
 
   // Create the new edge and traverse all its subdependencies, looking for new
   // subdependencies recursively.
-  dependencyEdge = createEdge(module.path, edges);
-  dependencyEdge.inverseDependencies.add(parentEdge.path);
+  const edge = createEdge(module, edges);
+  edge.inverseDependencies.add(parentEdge.path);
 
-  const addedDependencies = new Set([dependencyEdge.path]);
+  const addedDependencies = new Map([[edge.path, edge]]);
 
-  const shallowDeps = await dependencyGraph.getShallowDependencies(
-    dependencyEdge.path,
-    removeInlineRequiresBlacklistFromOptions(module.path, transformOptions),
+  const result = await module.read(
+    removeInlineRequiresBlacklistFromOptions(edge.path, transformOptions),
   );
 
-  const nonNullDependencyEdge = dependencyEdge;
+  edge.output.code = result.code;
+  edge.output.map = result.map;
+  edge.output.source = result.source;
 
   const added = await Promise.all(
-    shallowDeps.map(dep =>
+    result.dependencies.map(dep =>
       addDependency(
-        nonNullDependencyEdge,
+        edge,
         dep,
         dependencyGraph,
         transformOptions,
@@ -244,8 +260,8 @@ async function addDependency(
     ),
   );
 
-  for (const newDependency of flatten(added)) {
-    addedDependencies.add(newDependency);
+  for (const [newDepPath, newDepEdge] of flattenMap(added)) {
+    addedDependencies.set(newDepPath, newDepEdge);
   }
 
   onDependencyAdded();
@@ -294,15 +310,33 @@ function removeDependency(
   return removedDependencies;
 }
 
-function createEdge(path: string, edges: DependencyEdges): DependencyEdge {
+function createEdge(module: Module, edges: DependencyEdges): DependencyEdge {
   const edge = {
     dependencies: new Map(),
     inverseDependencies: new Set(),
-    path,
+    path: module.path,
+    output: {
+      code: '',
+      map: [],
+      source: '',
+      type: getType(module),
+    },
   };
-  edges.set(path, edge);
+  edges.set(module.path, edge);
 
   return edge;
+}
+
+function getType(module: Module): DependencyType {
+  if (module.isAsset()) {
+    return 'asset';
+  }
+
+  if (module.isPolyfill()) {
+    return 'script';
+  }
+
+  return 'module';
 }
 
 function destroyEdge(edge: DependencyEdge, edges: DependencyEdges) {
@@ -347,29 +381,36 @@ function resolveDependencies(
  * guarantee the same order between runs.
  */
 function reorderDependencies(
-  dependencies: Array<Set<string>>,
+  dependencies: Array<Map<string, DependencyEdge>>,
   edges: DependencyEdges,
-): Array<Set<string>> {
-  const flatDependencies = flatten(dependencies);
+): Array<Map<string, DependencyEdge>> {
+  const flatDependencies = flattenMap(dependencies);
 
-  return dependencies.map(dependencies =>
-    reorderDependency(Array.from(dependencies)[0], flatDependencies, edges),
-  );
+  return dependencies.map(dependencies => {
+    if (dependencies.size === 0) {
+      return new Map();
+    }
+    return reorderDependency(
+      Array.from(dependencies)[0][0],
+      flatDependencies,
+      edges,
+    );
+  });
 }
 
 function reorderDependency(
   path: string,
-  dependencies: Set<string>,
+  dependencies: Map<string, DependencyEdge>,
   edges: DependencyEdges,
-  orderedDependencies?: Set<string> = new Set(),
-): Set<string> {
+  orderedDependencies?: Map<string, DependencyEdge> = new Map(),
+): Map<string, DependencyEdge> {
   const edge = edges.get(path);
 
   if (!edge || !dependencies.has(path) || orderedDependencies.has(path)) {
     return orderedDependencies;
   }
 
-  orderedDependencies.add(path);
+  orderedDependencies.set(path, edge);
 
   edge.dependencies.forEach(path =>
     reorderDependency(path, dependencies, edges, orderedDependencies),
@@ -384,6 +425,18 @@ function flatten<T>(input: Iterable<Iterable<T>>): Set<T> {
   for (const items of input) {
     for (const item of items) {
       output.add(item);
+    }
+  }
+
+  return output;
+}
+
+function flattenMap<K, V>(input: Iterable<Map<K, V>>): Map<K, V> {
+  const output = new Map();
+
+  for (const items of input) {
+    for (const [key, value] of items.entries()) {
+      output.set(key, value);
     }
   }
 

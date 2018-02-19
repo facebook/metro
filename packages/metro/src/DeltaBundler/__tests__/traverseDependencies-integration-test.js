@@ -69,11 +69,11 @@ describe('traverseDependencies', function() {
     );
 
     const dependencies = recursive
-      ? added
+      ? [...added.values()].map(edge => edge.path)
       : edges.get(entryPath).dependencies.values();
 
     return await Promise.all(
-      [entryPath, ...dependencies].map(async path => {
+      [...dependencies].map(async path => {
         const dep = dgraph.getModuleForPath(path);
         const moduleDependencies = await dep.getDependencies();
 
@@ -224,13 +224,6 @@ describe('traverseDependencies', function() {
           false,
         );
         expect(deps).toEqual([
-          {
-            id: 'index',
-            path: '/root/index.js',
-            dependencies: ['a'],
-            isAsset: false,
-            isPolyfill: false,
-          },
           {
             id: 'a',
             path: '/root/a.js',
