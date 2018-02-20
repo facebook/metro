@@ -183,6 +183,7 @@ function toServerOptions(options: Options): ServerOptions {
     globalTransformCache: options.globalTransformCache,
     hasteImplModulePath: options.hasteImplModulePath,
     maxWorkers: options.maxWorkers,
+    minifierPath: options.minifierPath,
     moduleFormat: options.moduleFormat,
     platforms: options.platforms,
     polyfillModuleNames: options.polyfillModuleNames,

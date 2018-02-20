@@ -28,6 +28,7 @@ const symbolicate = require('./symbolicate');
 const url = require('url');
 
 const {getAsset} = require('../Assets');
+const resolveSync: ResolveSync = require('resolve').sync;
 
 import type {CustomError} from '../lib/formatBundlingError';
 import type {IncomingMessage, ServerResponse} from 'http';
@@ -48,6 +49,8 @@ import type {PostProcessModules} from '../DeltaBundler';
 const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
+
+type ResolveSync = (path: string, opts: ?{baseDir?: string}) => string;
 
 function debounceAndBatch(fn, delay) {
   let timeout;
@@ -71,6 +74,7 @@ class Server {
     getTransformOptions?: GetTransformOptions,
     hasteImplModulePath?: string,
     maxWorkers: number,
+    minifierPath: string,
     moduleFormat: string,
     platforms: Array<string>,
     polyfillModuleNames: Array<string>,
@@ -127,6 +131,10 @@ class Server {
       globalTransformCache: options.globalTransformCache,
       hasteImplModulePath: options.hasteImplModulePath,
       maxWorkers,
+      minifierPath:
+        options.minifierPath == null
+          ? defaults.DEFAULT_METRO_MINIFIER_PATH
+          : resolveSync(options.minifierPath, {basedir: process.cwd()}),
       moduleFormat:
         options.moduleFormat != null ? options.moduleFormat : 'haste',
       platforms: options.platforms || defaults.platforms,

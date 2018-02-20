@@ -49,6 +49,7 @@ type PublicMetroOptions = {|
   config?: ConfigT,
   globalTransformCache?: ?GlobalTransformCache,
   maxWorkers?: number,
+  minifierPath?: string,
   port?: ?number,
   reporter?: Reporter,
   transformCache?: TransformCache,
@@ -86,6 +87,7 @@ async function runMetro({
   globalTransformCache,
   resetCache = false,
   maxWorkers = getMaxWorkers(),
+  minifierPath,
   // $FlowFixMe TODO t0 https://github.com/facebook/flow/issues/183
   port = null,
   reporter = new TerminalReporter(new Terminal(process.stdout)),
@@ -133,6 +135,7 @@ async function runMetro({
     globalTransformCache,
     hasteImplModulePath: normalizedConfig.hasteImplModulePath,
     maxWorkers,
+    minifierPath,
     platforms: defaults.platforms.concat(platforms),
     postMinifyProcess: normalizedConfig.postMinifyProcess,
     postProcessModules: normalizedConfig.postProcessModules,
@@ -208,6 +211,7 @@ type RunServerOptions = {|
 exports.runServer = async ({
   host,
   onReady,
+  minifierPath,
   // $FlowFixMe Flow messes up when using "destructuring"+"default value"+"spread typing"+"stricter field typing" together
   port = 8080,
   reporter = new TerminalReporter(new Terminal(process.stdout)),
@@ -231,6 +235,7 @@ exports.runServer = async ({
     ...rest,
     port,
     reporter,
+    minifierPath,
   });
 
   serverApp.use(middleware);

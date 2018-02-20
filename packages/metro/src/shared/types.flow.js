@@ -83,6 +83,7 @@ export type Options = {|
   globalTransformCache: ?GlobalTransformCache,
   hasteImplModulePath?: string,
   maxWorkers?: number,
+  minifierPath?: string,
   moduleFormat?: string,
   platforms?: Array<string>,
   polyfillModuleNames?: Array<string>,

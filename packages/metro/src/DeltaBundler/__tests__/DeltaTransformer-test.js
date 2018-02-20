@@ -33,6 +33,7 @@ const bundlerOptions = {
   cacheVersion: 'smth',
   enableBabelRCLookup: true,
   extraNodeModules: {},
+  minifierPath: defaults.DEFAULT_METRO_MINIFIER_PATH,
   platforms: defaults.platforms,
   resetCache: false,
   sourceExts: defaults.sourceExts,
