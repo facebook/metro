@@ -13,9 +13,9 @@
 const constantFolding = require('../../JSTransformer/worker/constant-folding')
   .plugin;
 const generate = require('./generate');
+const getMinifier = require('../../lib/getMinifier');
 const inline = require('../../JSTransformer/worker/inline').plugin;
 const invariant = require('fbjs/lib/invariant');
-const minify = require('metro-minify-uglify');
 const optimizeDependencies = require('./optimizeDependencies');
 const sourceMap = require('source-map');
 
@@ -25,10 +25,12 @@ import type {TransformedSourceFile, TransformResult} from '../types.flow';
 import type {BabelSourceMap} from '@babel/core';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {PostMinifyProcess} from '../../Bundler/index.js';
+import type {TransformResult as BabelTransformResult} from '@babel/core';
 
 export type OptimizationOptions = {|
   dev: boolean,
   isPolyfill?: boolean,
+  minifierPath: string,
   platform: string,
   postMinifyProcess: PostMinifyProcess,
 |};
@@ -93,6 +95,7 @@ function optimize(
   const inputMap = transformed.map;
   const gen = generate(optimized.ast, file, '', true);
 
+  const minify = getMinifier(options.minifierPath);
   const min = minify.withSourceMap(
     gen.code,
     inputMap && gen.map && mergeSourceMaps(file, inputMap, gen.map),
@@ -106,7 +109,12 @@ function optimize(
   };
 }
 
-function optimizeCode(code, map, filename, inliningOptions) {
+function optimizeCode(
+  code,
+  map,
+  filename,
+  inliningOptions,
+): BabelTransformResult {
   return transformSync(code, {
     plugins: [
       [constantFolding],

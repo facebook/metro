@@ -22,12 +22,15 @@ const {SourceMapConsumer} = require('source-map');
 
 const {objectContaining} = jasmine;
 
+const METRO_MINIFIER = 'metro-minify-uglify';
+
 describe('optimizing JS modules', () => {
   const filename = 'arbitrary/file.js';
   const sourceExts = new Set(['js', 'json']);
   const asyncRequireModulePath = 'asyncRequire';
   const optimizationOptions = {
     dev: false,
+    minifierPath: METRO_MINIFIER,
     platform: 'android',
     postMinifyProcess: x => x,
   };
@@ -144,6 +147,7 @@ describe('optimizing JS modules', () => {
       optimizeModule(new Buffer(JSON.stringify(data), 'utf8'), {
         dev: true,
         platform: '',
+        minifierPath: METRO_MINIFIER,
         postMinifyProcess: ({code, map}) => ({code, map}),
       }),
     ).toEqual(data);
