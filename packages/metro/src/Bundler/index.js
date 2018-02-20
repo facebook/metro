@@ -120,6 +120,8 @@ class Bundler {
     this._transformer = new Transformer({
       asyncRequireModulePath: opts.asyncRequireModulePath,
       maxWorkers: opts.maxWorkers,
+      // TODO t26063242 make this an option
+      minifierPath: defaults.DEFAULT_METRO_MINIFIER_PATH,
       reporters: {
         stdoutChunk: chunk =>
           opts.reporter.update({type: 'worker_stdout_chunk', chunk}),

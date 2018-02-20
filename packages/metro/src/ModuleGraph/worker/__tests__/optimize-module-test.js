@@ -11,6 +11,7 @@
 
 'use strict';
 
+const defaults = require('../../../defaults');
 const invariant = require('fbjs/lib/invariant');
 const nullthrows = require('fbjs/lib/nullthrows');
 const optimizeModule = require('../optimize-module');
@@ -22,15 +23,13 @@ const {SourceMapConsumer} = require('source-map');
 
 const {objectContaining} = jasmine;
 
-const METRO_MINIFIER = 'metro-minify-uglify';
-
 describe('optimizing JS modules', () => {
   const filename = 'arbitrary/file.js';
   const sourceExts = new Set(['js', 'json']);
   const asyncRequireModulePath = 'asyncRequire';
   const optimizationOptions = {
     dev: false,
-    minifierPath: METRO_MINIFIER,
+    minifierPath: defaults.DEFAULT_METRO_MINIFIER_PATH,
     platform: 'android',
     postMinifyProcess: x => x,
   };
@@ -147,7 +146,7 @@ describe('optimizing JS modules', () => {
       optimizeModule(new Buffer(JSON.stringify(data), 'utf8'), {
         dev: true,
         platform: '',
-        minifierPath: METRO_MINIFIER,
+        minifierPath: defaults.DEFAULT_METRO_MINIFIER_PATH,
         postMinifyProcess: ({code, map}) => ({code, map}),
       }),
     ).toEqual(data);

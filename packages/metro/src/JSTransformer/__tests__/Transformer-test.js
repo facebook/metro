@@ -15,6 +15,7 @@ jest
   .mock('jest-worker', () => ({__esModule: true, default: jest.fn()}));
 
 const Transformer = require('../');
+const defaults = require('../../defaults');
 
 const {Readable} = require('stream');
 
@@ -27,6 +28,7 @@ describe('Transformer', function() {
   const opts = {
     asyncRequireModulePath: 'asyncRequire',
     maxWorkers: 4,
+    minifierPath: defaults.DEFAULT_METRO_MINIFIER_PATH,
     reporters: {},
     transformModulePath,
     dynamicDepsInPackages: 'reject',

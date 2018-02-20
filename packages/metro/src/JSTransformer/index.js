@@ -39,9 +39,11 @@ module.exports = class Transformer {
   _transformModulePath: string;
   _asyncRequireModulePath: string;
   _dynamicDepsInPackages: DynamicRequiresBehavior;
+  _minifierPath: string;
 
   constructor(options: {|
     +maxWorkers: number,
+    +minifierPath: string,
     +reporters: Reporters,
     +transformModulePath: string,
     +asyncRequireModulePath: string,
@@ -51,6 +53,7 @@ module.exports = class Transformer {
     this._transformModulePath = options.transformModulePath;
     this._asyncRequireModulePath = options.asyncRequireModulePath;
     this._dynamicDepsInPackages = options.dynamicDepsInPackages;
+    this._minifierPath = options.minifierPath;
     const {workerPath = require.resolve('./worker')} = options;
 
     if (options.maxWorkers > 1) {
@@ -86,7 +89,12 @@ module.exports = class Transformer {
     code: string,
     sourceMap: BabelSourceMap,
   ): Promise<ResultWithMap> {
-    return await this._worker.minify(filename, code, sourceMap);
+    return await this._worker.minify(
+      filename,
+      code,
+      sourceMap,
+      this._minifierPath,
+    );
   }
 
   async transform(

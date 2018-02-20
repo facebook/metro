@@ -15,8 +15,8 @@ const JsFileWrapping = require('../../ModuleGraph/worker/JsFileWrapping');
 const assetTransformer = require('../../assetTransformer');
 const collectDependencies = require('../../ModuleGraph/worker/collectDependencies');
 const constantFolding = require('./constant-folding');
+const getMinifier = require('../../lib/getMinifier');
 const inline = require('./inline');
-const minify = require('metro-minify-uglify');
 const optimizeDependencies = require('../../ModuleGraph/worker/optimizeDependencies');
 const path = require('path');
 
@@ -272,7 +272,9 @@ function minifyCode(
   filename: string,
   code: string,
   sourceMap: BabelSourceMap,
+  minifierPath: string,
 ): ResultWithMap | Promise<ResultWithMap> {
+  const minify = getMinifier(minifierPath);
   try {
     return minify.withSourceMap(code, sourceMap, filename);
   } catch (error) {
