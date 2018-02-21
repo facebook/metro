@@ -10,8 +10,6 @@
 
 'use strict';
 
-const ModuleResolution = require('./ModuleResolution');
-
 const path = require('path');
 
 const {DuplicateHasteCandidatesError} = require('jest-haste-map').ModuleMap;
@@ -21,7 +19,7 @@ import type {Options as TransformWorkerOptions} from '../../JSTransformer/worker
 import type {ReadResult, CachedReadResult} from '../Module';
 import type {ModuleResolver} from './ModuleResolution';
 
-const {InvalidPackageError, formatFileCandidates} = ModuleResolution;
+const {InvalidPackageError, formatFileCandidates} = require('metro-resolver');
 
 export type Packageish = {
   isHaste(): boolean,
