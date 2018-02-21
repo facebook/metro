@@ -9,11 +9,6 @@
  */
 'use strict';
 
-jest
-  .mock('fs', () => ({writeFileSync: jest.fn()}))
-  .mock('temp', () => ({path: () => '/arbitrary/path'}))
-  .mock('jest-worker', () => ({__esModule: true, default: jest.fn()}));
-
 const Transformer = require('../');
 const defaults = require('../../defaults');
 
@@ -36,7 +31,11 @@ describe('Transformer', function() {
   };
 
   beforeEach(function() {
-    jest.resetModules();
+    jest
+      .resetModules()
+      .mock('fs', () => ({writeFileSync: jest.fn()}))
+      .mock('temp', () => ({path: () => '/arbitrary/path'}))
+      .mock('jest-worker', () => ({__esModule: true, default: jest.fn()}));
 
     Cache = jest.fn();
     Cache.prototype.get = jest.fn((a, b, c) => c());
