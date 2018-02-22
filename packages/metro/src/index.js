@@ -22,6 +22,8 @@ const fs = require('fs');
 const getMaxWorkers = require('./lib/getMaxWorkers');
 const http = require('http');
 const https = require('https');
+const makeBuildCommand = require('./commands/build');
+const makeServeCommand = require('./commands/serve');
 const outputBundle = require('./shared/output/bundle');
 const path = require('path');
 
@@ -31,12 +33,13 @@ const {Terminal} = require('metro-core');
 
 import type {ConfigT} from './Config';
 import type {GlobalTransformCache} from './lib/GlobalTransformCache';
-import type {Options as ServerOptions} from './shared/types.flow';
+import type {TransformCache} from './lib/TransformCaching';
 import type {Reporter} from './lib/reporting';
 import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
-import type {TransformCache} from './lib/TransformCaching';
+import type {Options as ServerOptions} from './shared/types.flow';
 import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
+import typeof Yargs from 'yargs';
 
 export type {ConfigT} from './Config';
 
@@ -400,7 +403,7 @@ exports.findMetroConfig = function(
 
 exports.loadMetroConfig = function(
   filename: ?string,
-  // $FlowFixMe: This is a known Flow issue where it doesn't detect that an empty object is a valid value for a strict shape where all the members are optionals
+  // $FlowFixMe TODO T26072405
   searchOptions: MetroConfigSearchOptions = {},
 ): ConfigT {
   const location = exports.findMetroConfig(filename, searchOptions);
@@ -409,6 +412,32 @@ exports.loadMetroConfig = function(
   const config = location ? require(location) : null;
 
   return config ? Config.normalize(config) : Config.DEFAULT;
+};
+
+type BuildCommandOptions = {||} | null;
+type ServeCommandOptions = {||} | null;
+
+exports.attachMetroCli = function(
+  yargs: Yargs,
+  {
+    // $FlowFixMe TODO T26072405
+    build = {},
+    // $FlowFixMe TODO T26072405
+    serve = {},
+  }: {
+    build: BuildCommandOptions,
+    serve: ServeCommandOptions,
+  } = {},
+) {
+  if (build) {
+    const {command, description, builder, handler} = makeBuildCommand();
+    yargs.command(command, description, builder, handler);
+  }
+  if (serve) {
+    const {command, description, builder, handler} = makeServeCommand();
+    yargs.command(command, description, builder, handler);
+  }
+  return yargs;
 };
 
 exports.Config = Config;

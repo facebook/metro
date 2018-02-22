@@ -14,4 +14,6 @@
 
 const yargs = require('yargs');
 
-yargs.demandCommand(1).commandDir(`${__dirname}/commands`).argv;
+const {attachMetroCli} = require('./index');
+
+attachMetroCli(yargs.demandCommand(1)).argv;
