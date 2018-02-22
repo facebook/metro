@@ -63,13 +63,6 @@ type PrivateMetroOptions = {|
   watch?: boolean,
 |};
 
-type MetroConfigSearchOptions = {|
-  cwd?: string,
-  basename?: string,
-|};
-
-const METRO_CONFIG_FILENAME = 'metro.config.js';
-
 // We'll be able to remove this to use the one provided by modern versions of
 // fs-extra once https://github.com/jprichardson/node-fs-extra/pull/520 will
 // have been merged (until then, they'll break on devservers/Sandcastle)
@@ -373,11 +366,20 @@ exports.runBuild = async ({
   return {metroServer, metroBundle};
 };
 
+type MetroConfigSearchOptions = {|
+  cwd?: string,
+  basename?: string,
+  strict?: boolean,
+|};
+
+const METRO_CONFIG_FILENAME = 'metro.config.js';
+
 exports.findMetroConfig = function(
   filename: ?string,
   {
     cwd = process.cwd(),
     basename = METRO_CONFIG_FILENAME,
+    strict = false,
   }: MetroConfigSearchOptions = {},
 ): ?string {
   if (filename) {
@@ -397,7 +399,11 @@ exports.findMetroConfig = function(
       current = path.dirname(current);
     } while (previous !== current);
 
-    return null;
+    if (strict) {
+      throw new Error(`Expected to find a Metro config file, found none`);
+    } else {
+      return null;
+    }
   }
 };
 

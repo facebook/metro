@@ -10,7 +10,7 @@
 
 'use strict';
 
-const MetroApi = require('..');
+const MetroApi = require('../index');
 const TerminalReporter = require('../lib/TerminalReporter');
 
 const {makeAsyncCommand} = require('../cli-utils');

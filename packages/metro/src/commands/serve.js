@@ -10,7 +10,7 @@
 
 'use strict';
 
-const MetroApi = require('..');
+const MetroApi = require('../index');
 
 const {watchFile, makeAsyncCommand} = require('../cli-utils');
 const {promisify} = require('util');
