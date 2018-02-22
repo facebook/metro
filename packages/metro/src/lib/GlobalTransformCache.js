@@ -39,6 +39,8 @@ type FetchOptions = {agent?: ?HttpAgent | HttpsAgent};
  * application's top-level `Server` class.
  */
 export type GlobalTransformCache = {
+  keyOf(props: FetchProps): string,
+
   /**
    * Synchronously determine if it is worth trying to fetch a result from the
    * cache. This can be used, for instance, to exclude sets of options we know
@@ -50,7 +52,7 @@ export type GlobalTransformCache = {
    * Try to fetch a result. It doesn't actually need to fetch from a server,
    * the global cache could be instantiated locally for example.
    */
-  fetch(props: FetchProps): Promise<?CachedResult>,
+  fetch(key: string): Promise<?CachedResult>,
 
   /**
    * Try to store a result. Callsites won't necessarily wait for the success or
@@ -60,7 +62,7 @@ export type GlobalTransformCache = {
    * no-op in production, and only do the storage operation from a script
    * running on a Continuous Integration platform.
    */
-  store(props: FetchProps, result: CachedResult): Promise<void>,
+  store(key: string, result: CachedResult): Promise<void>,
 };
 
 type FetchResultURIs = (keys: Array<string>) => Promise<Map<string, string>>;
@@ -361,17 +363,17 @@ class URIBasedGlobalTransformCache {
    * This may return `null` if either the cache doesn't have a value for that
    * key yet, or an error happened, processed separately.
    */
-  async fetch(props: FetchProps): Promise<?CachedResult> {
-    const uri = await this._fetcher.fetch(this.keyOf(props));
+  async fetch(key: string): Promise<?CachedResult> {
+    const uri = await this._fetcher.fetch(key);
     if (uri == null) {
       return null;
     }
     return await this._fetchResultFromURI(uri);
   }
 
-  async store(props: FetchProps, result: CachedResult): Promise<void> {
+  async store(key: string, result: CachedResult): Promise<void> {
     if (this._store != null) {
-      await this._store.store(this.keyOf(props), result);
+      await this._store.store(key, result);
     }
   }
 }

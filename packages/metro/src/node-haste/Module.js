@@ -263,7 +263,7 @@ class Module {
     globalCache: GlobalTransformCache,
   ): Promise<TransformedCode> {
     const result = await this._transformCodeFor(cacheProps);
-    globalCache.store(cacheProps, result);
+    globalCache.store(globalCache.keyOf(cacheProps), result);
     return result;
   }
 
@@ -274,7 +274,9 @@ class Module {
     if (globalCache == null || !globalCache.shouldFetch(cacheProps)) {
       return await this._transformCodeFor(cacheProps);
     }
-    const globalCachedResult = await globalCache.fetch(cacheProps);
+    const globalCachedResult = await globalCache.fetch(
+      globalCache.keyOf(cacheProps),
+    );
     if (globalCachedResult != null) {
       return globalCachedResult;
     }

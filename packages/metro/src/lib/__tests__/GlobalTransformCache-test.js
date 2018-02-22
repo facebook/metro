@@ -46,18 +46,22 @@ describe('GlobalTransformCache', () => {
     const transformOptions = await getTransformOptions();
 
     const result = await Promise.all([
-      cache.fetch({
-        localPath: 'some/where/foo.js',
-        sourceCode: '/* beep */',
-        getTransformCacheKey: () => 'abcd',
-        transformOptions,
-      }),
-      cache.fetch({
-        localPath: 'some/where/else/bar.js',
-        sourceCode: '/* boop */',
-        getTransformCacheKey: () => 'abcd',
-        transformOptions,
-      }),
+      cache.fetch(
+        cache.keyOf({
+          localPath: 'some/where/foo.js',
+          sourceCode: '/* beep */',
+          getTransformCacheKey: () => 'abcd',
+          transformOptions,
+        }),
+      ),
+      cache.fetch(
+        cache.keyOf({
+          localPath: 'some/where/else/bar.js',
+          sourceCode: '/* boop */',
+          getTransformCacheKey: () => 'abcd',
+          transformOptions,
+        }),
+      ),
     ]);
     expect(result).toMatchSnapshot();
   });
