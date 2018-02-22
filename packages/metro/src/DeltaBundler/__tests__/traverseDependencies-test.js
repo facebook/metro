@@ -225,6 +225,28 @@ describe('edge cases', () => {
     });
   });
 
+  it('modify a file and delete it afterwards', async () => {
+    const edges = new Map();
+    await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
+
+    mockedDependencyTree.set(moduleFoo.path, [moduleBar]);
+
+    // Modify /foo and /baz, and then remove the dependency from /foo to /baz
+    expect(
+      getPaths(
+        await traverseDependencies(
+          ['/baz', '/foo'],
+          dependencyGraph,
+          {},
+          edges,
+        ),
+      ),
+    ).toEqual({
+      added: new Set(['/foo']),
+      deleted: new Set(['/baz']),
+    });
+  });
+
   it('move a file to a different folder', async () => {
     const edges = new Map();
     await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);

@@ -36,6 +36,18 @@ export type DependencyEdges = Map<string, DependencyEdge>;
 type Result = {added: Map<string, DependencyEdge>, deleted: Set<string>};
 
 /**
+ * Internal data structure that the traversal logic uses to know which of the
+ * files have been modified. This helps us know which files to mark as deleted
+ * (a file should not be deleted if it has been added, but it should if it
+ * just has been modified).
+ **/
+type ResultWithModifiedFiles = {
+  added: Map<string, DependencyEdge>,
+  modified: Map<string, DependencyEdge>,
+  deleted: Set<string>,
+};
+
+/**
  * Dependency Traversal logic for the Delta Bundler. This method calculates
  * the modules that should be included in the bundle by traversing the
  * dependency graph.
@@ -80,20 +92,29 @@ async function traverseDependencies(
 
   const added = new Map();
   const deleted = new Set();
+  const modified = new Map();
 
   for (const change of changes) {
     for (const [path, edge] of change.added) {
       added.set(path, edge);
     }
 
+    for (const [path, edge] of change.modified) {
+      modified.set(path, edge);
+    }
+  }
+
+  for (const change of changes) {
     for (const path of change.deleted) {
-      // If a path has been marked both as added and deleted, it means that this
-      // path is a dependency of a renamed file (or that dependency has been
-      // removed from one path but added back in a different path). In this case
-      // the addition and deletion "get cancelled".
-      if (added.has(path)) {
-        added.delete(path);
-      } else {
+      // If a dependency has been marked as added, it should never be included
+      // in as added.
+      // At the same time, if a dependency has been marked both as added and
+      // deleted, it means that this is a renamed file (or that dependency
+      // has been removed from one path but added back in a different path).
+      // In this case the addition and deletion "get cancelled".
+      const markedAsAdded = added.delete(path);
+
+      if (!markedAsAdded || modified.has(path)) {
         deleted.add(path);
       }
     }
@@ -129,7 +150,7 @@ async function traverseDependenciesForSingleFile(
   transformOptions: JSTransformerOptions,
   edges: DependencyEdges,
   onProgress?: (numProcessed: number, total: number) => mixed = () => {},
-): Promise<Result> {
+): Promise<ResultWithModifiedFiles> {
   let numProcessed = 0;
   let total = 1;
   onProgress(numProcessed, total);
@@ -152,9 +173,12 @@ async function traverseDependenciesForSingleFile(
   numProcessed++;
   onProgress(numProcessed, total);
 
+  const modified = new Map([[edge.path, edge]]);
+
   return {
-    added: reorderDependencies(edge.path, result.added, edges),
+    added: reorderDependencies(edge, result.added),
     deleted: result.deleted,
+    modified,
   };
 }
 
@@ -367,21 +391,26 @@ function resolveDependencies(
  * guarantee the same order between runs.
  */
 function reorderDependencies(
-  path: string,
+  edge: ?DependencyEdge,
   dependencies: Map<string, DependencyEdge>,
-  edges: DependencyEdges,
   orderedDependencies?: Map<string, DependencyEdge> = new Map(),
 ): Map<string, DependencyEdge> {
-  const edge = edges.get(path);
-
-  if (!edge || !dependencies.has(path) || orderedDependencies.has(path)) {
+  if (
+    !edge ||
+    !dependencies.has(edge.path) ||
+    orderedDependencies.has(edge.path)
+  ) {
     return orderedDependencies;
   }
 
-  orderedDependencies.set(path, edge);
+  orderedDependencies.set(edge.path, edge);
 
   edge.dependencies.forEach(path =>
-    reorderDependencies(path, dependencies, edges, orderedDependencies),
+    reorderDependencies(
+      dependencies.get(path),
+      dependencies,
+      orderedDependencies,
+    ),
   );
 
   return orderedDependencies;
@@ -393,18 +422,6 @@ function flatten<T>(input: Iterable<Iterable<T>>): Set<T> {
   for (const items of input) {
     for (const item of items) {
       output.add(item);
-    }
-  }
-
-  return output;
-}
-
-function flattenMap<K, V>(input: Iterable<Map<K, V>>): Map<K, V> {
-  const output = new Map();
-
-  for (const items of input) {
-    for (const [key, value] of items.entries()) {
-      output.set(key, value);
     }
   }
 
