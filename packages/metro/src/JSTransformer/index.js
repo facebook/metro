@@ -139,7 +139,7 @@ module.exports = class Transformer {
     }
   }
 
-  _makeFarm(workerPath, computeWorkerKey, exposedMethods, maxWorkers) {
+  _makeFarm(workerPath, computeWorkerKey, exposedMethods, numWorkers) {
     // We whitelist only what would work. For example `--inspect` doesn't work
     // in the workers because it tries to open the same debugging port. Feel
     // free to add more cases to the RegExp. A whitelist is preferred, to
@@ -155,7 +155,7 @@ module.exports = class Transformer {
       computeWorkerKey,
       exposedMethods,
       forkOptions: {execArgv},
-      maxWorkers,
+      numWorkers,
     });
   }
 
