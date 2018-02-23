@@ -22,11 +22,20 @@ import type {
 import type {PostProcessModules} from './DeltaBundler';
 import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
 import type {IncomingMessage, ServerResponse} from 'http';
+import type {CacheStore} from 'metro-cache';
 
 type Middleware = (IncomingMessage, ServerResponse, ?() => mixed) => mixed;
 
 export type ConfigT = {
+  // TODO: Remove this option below (T23793920)
+  assetTransforms?: boolean,
+
   assetRegistryPath: string,
+
+  /**
+   * List of all store caches.
+   */
+  cacheStores: Array<CacheStore>,
 
   /**
    * Can be used to generate a key that will invalidate the whole metro cache
@@ -50,8 +59,7 @@ export type ConfigT = {
    * from here and use `require('./fonts/example.ttf')` inside your app.
    */
   getAssetExts: () => Array<string>,
-  // TODO: Remove this option below (T23793920)
-  assetTransforms?: boolean,
+
   /**
    * Returns a regular expression for modules that should be ignored by the
    * packager on a given platform.
@@ -157,6 +165,7 @@ const DEFAULT = ({
   enhanceMiddleware: middleware => middleware,
   extraNodeModules: {},
   assetTransforms: false,
+  cacheStores: [],
   cacheVersion: '1.0',
   dynamicDepsInPackages: 'throwAtRuntime',
   getAssetExts: () => [],

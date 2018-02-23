@@ -15,7 +15,7 @@ const defaults = require('../../defaults');
 const {Readable} = require('stream');
 
 describe('Transformer', function() {
-  let api, Cache;
+  let api;
   const fileName = '/an/arbitrary/file.js';
   const localPath = 'arbitrary/file.js';
   const transformModulePath = __filename;
@@ -36,9 +36,6 @@ describe('Transformer', function() {
       .mock('fs', () => ({writeFileSync: jest.fn()}))
       .mock('temp', () => ({path: () => '/arbitrary/path'}))
       .mock('jest-worker', () => ({__esModule: true, default: jest.fn()}));
-
-    Cache = jest.fn();
-    Cache.prototype.get = jest.fn((a, b, c) => c());
 
     const fs = require('fs');
     const jestWorker = require('jest-worker');
