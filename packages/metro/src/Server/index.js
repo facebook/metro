@@ -40,12 +40,14 @@ import type {
   PostMinifyProcess,
   PostProcessBundleSourcemap,
 } from '../Bundler';
+import type {CacheStore} from 'metro-cache';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Symbolicate} from './symbolicate';
 import type {AssetData} from '../Assets';
 import type {RamBundleInfo} from '../DeltaBundler/Serializers';
 import type {PostProcessModules} from '../DeltaBundler';
+import type {TransformedCode} from '../JSTransformer/worker';
 const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
@@ -66,6 +68,7 @@ class Server {
   _opts: {
     assetExts: Array<string>,
     blacklistRE: void | RegExp,
+    cacheStores: $ReadOnlyArray<CacheStore<TransformedCode>>,
     cacheVersion: string,
     createModuleIdFactory?: () => (path: string) => number,
     enableBabelRCLookup: boolean,
@@ -117,6 +120,7 @@ class Server {
       assetExts: options.assetTransforms ? [] : assetExts,
       assetRegistryPath: options.assetRegistryPath,
       blacklistRE: options.blacklistRE,
+      cacheStores: options.cacheStores || [],
       cacheVersion: options.cacheVersion,
       dynamicDepsInPackages: options.dynamicDepsInPackages || 'throwAtRuntime',
       createModuleIdFactory: options.createModuleIdFactory,

@@ -12,14 +12,14 @@
 
 import type {CacheStore} from 'metro-cache';
 
-class Cache {
-  _stores: $ReadOnlyArray<CacheStore>;
+class Cache<T> {
+  _stores: $ReadOnlyArray<CacheStore<T>>;
 
-  constructor(stores: $ReadOnlyArray<CacheStore>) {
+  constructor(stores: $ReadOnlyArray<CacheStore<T>>) {
     this._stores = stores;
   }
 
-  async get(key: Buffer): Promise<mixed> {
+  async get(key: Buffer): Promise<?T> {
     const stores = this._stores;
     const length = stores.length;
 
@@ -38,7 +38,7 @@ class Cache {
     return null;
   }
 
-  set(key: Buffer, value: mixed): void {
+  set(key: Buffer, value: T): void {
     Promise.all(this._stores.map(store => store.set(key, value))).catch(err => {
       process.nextTick(() => {
         throw err;

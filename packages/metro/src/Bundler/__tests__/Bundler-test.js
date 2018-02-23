@@ -34,6 +34,7 @@ var commonOptions = {
   allowBundleUpdates: false,
   assetExts: defaults.assetExts,
   assetRegistryPath: '/AssetRegistry.js',
+  cacheStores: [],
   cacheVersion: 'smth',
   enableBabelRCLookup: true,
   extraNodeModules: {},

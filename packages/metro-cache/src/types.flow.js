@@ -10,7 +10,7 @@
 
 'use strict';
 
-export type CacheStore = {
-  get(key: Buffer): ?mixed | Promise<?mixed>,
-  set(key: Buffer, value: mixed): void | Promise<void>,
+export type CacheStore<T> = {
+  get(key: Buffer): ?T | Promise<?T>,
+  set(key: Buffer, value: T): void | Promise<void>,
 };

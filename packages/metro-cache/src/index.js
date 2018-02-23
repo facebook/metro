@@ -12,6 +12,9 @@
 
 const Cache = require('./Cache');
 
+const stableHash = require('./stableHash');
+
 export type {CacheStore} from './types.flow';
 
 module.exports.Cache = Cache;
+module.exports.stableHash = stableHash;

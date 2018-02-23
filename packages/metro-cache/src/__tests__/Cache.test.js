@@ -52,6 +52,8 @@ describe('Cache', () => {
   });
 
   it('awaits for promises on stores, even if they return undefined', async () => {
+    jest.useFakeTimers();
+
     let resolve;
 
     const store1 = createStore();
@@ -67,7 +69,9 @@ describe('Cache', () => {
     expect(store2.get).not.toHaveBeenCalled();
 
     resolve(undefined);
+
     await promise;
+    jest.runAllTimers();
 
     expect(store1.get).toHaveBeenCalledTimes(1);
     expect(store2.get).toHaveBeenCalledTimes(1);

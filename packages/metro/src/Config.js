@@ -20,6 +20,7 @@ import type {
   PostProcessBundleSourcemap,
 } from './Bundler';
 import type {PostProcessModules} from './DeltaBundler';
+import type {TransformedCode} from './JSTransformer/worker';
 import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
@@ -35,7 +36,7 @@ export type ConfigT = {
   /**
    * List of all store caches.
    */
-  cacheStores: Array<CacheStore>,
+  cacheStores: Array<CacheStore<TransformedCode>>,
 
   /**
    * Can be used to generate a key that will invalidate the whole metro cache

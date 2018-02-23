@@ -18,6 +18,7 @@ const defaults = require('../defaults');
 const fs = require('fs');
 const getTransformCacheKeyFn = require('../lib/getTransformCacheKeyFn');
 
+const {Cache, stableHash} = require('metro-cache');
 const {
   toSegmentTuple,
   fromRawMappings,
@@ -25,12 +26,16 @@ const {
 } = require('metro-source-map');
 
 import type {PostProcessModules} from '../DeltaBundler';
-import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
+import type {
+  Options as JSTransformerOptions,
+  TransformedCode,
+} from '../JSTransformer/worker';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
 import type {BabelSourceMap} from '@babel/core';
+import type {CacheStore} from 'metro-cache';
 import type {
   MetroSourceMapSegmentTuple,
   MetroSourceMap,
@@ -80,6 +85,7 @@ export type Options = {|
   +assetRegistryPath: string,
   +asyncRequireModulePath: string,
   +blacklistRE?: RegExp,
+  +cacheStores: $ReadOnlyArray<CacheStore<TransformedCode>>,
   +cacheVersion: string,
   +dynamicDepsInPackages: DynamicRequiresBehavior,
   +enableBabelRCLookup: boolean,
@@ -108,15 +114,17 @@ export type Options = {|
 
 class Bundler {
   _opts: Options;
+  _cache: ?Cache<TransformedCode>;
   _transformer: Transformer;
   _depGraphPromise: Promise<DependencyGraph>;
   _projectRoots: $ReadOnlyArray<string>;
   _getTransformOptions: void | GetTransformOptions;
 
   constructor(opts: Options) {
-    this._opts = opts;
-
     opts.projectRoots.forEach(verifyRootExists);
+
+    this._opts = opts;
+    this._cache = opts.cacheStores.length ? new Cache(opts.cacheStores) : null;
 
     this._transformer = new Transformer({
       asyncRequireModulePath: opts.asyncRequireModulePath,
@@ -157,16 +165,7 @@ class Bundler {
       reporter: opts.reporter,
       resetCache: opts.resetCache,
       sourceExts: opts.sourceExts,
-      transformCode: (module, code, transformCodeOptions) =>
-        this._transformer.transform(
-          module.path,
-          module.localPath,
-          code,
-          module.isPolyfill(),
-          transformCodeOptions,
-          this._opts.assetExts,
-          this._opts.assetRegistryPath,
-        ),
+      transformCode: this._cachedTransformCode.bind(this),
       transformCache: opts.transformCache,
       watch: opts.watch,
     });
@@ -275,6 +274,50 @@ class Bundler {
       code: result.code,
       map: result.map ? toBabelSegments(result.map).map(toSegmentTuple) : [],
     };
+  }
+
+  async _cachedTransformCode(
+    module,
+    code,
+    transformCodeOptions,
+  ): Promise<TransformedCode> {
+    const cache = this._cache;
+    let result;
+    let key;
+
+    // First, try getting the result from the cache if enabled.
+    if (cache) {
+      key = stableHash([
+        module.localPath,
+        code,
+        transformCodeOptions,
+        this._opts.assetExts,
+        this._opts.assetRegistryPath,
+        this._opts.cacheVersion,
+      ]);
+
+      result = await cache.get(key);
+    }
+
+    // Second, if there was no result, compute it ourselves.
+    if (!result) {
+      result = await this._transformer.transform(
+        module.path,
+        module.localPath,
+        code,
+        module.isPolyfill(),
+        transformCodeOptions,
+        this._opts.assetExts,
+        this._opts.assetRegistryPath,
+      );
+    }
+
+    // Third, propagate the result to all cache layers.
+    if (key && cache) {
+      cache.set(key, result);
+    }
+
+    return result;
   }
 }
 

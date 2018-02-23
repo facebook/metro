@@ -30,6 +30,7 @@ const defaults = require('../../defaults');
 const bundlerOptions = {
   allowBundleUpdates: false,
   assetExts: defaults.assetExts,
+  cacheStores: [],
   cacheVersion: 'smth',
   enableBabelRCLookup: true,
   extraNodeModules: {},
