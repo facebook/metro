@@ -1,5 +1,5 @@
 {
-  "version": "0.25.1",
+  "version": "0.27.0",
   "name": "metro-cache",
   "description": "🚇 Cache layers for Metro",
   "main": "src/index.js",
