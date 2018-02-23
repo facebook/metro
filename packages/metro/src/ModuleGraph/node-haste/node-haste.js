@@ -16,7 +16,6 @@ const FilesByDirNameIndex = require('../../node-haste/FilesByDirNameIndex');
 const HasteFS = require('./HasteFS');
 const Module = require('./Module');
 const ModuleCache = require('./ModuleCache');
-const ResolutionRequest = require('../../node-haste/DependencyGraph/ResolutionRequest');
 
 const defaults = require('../../defaults');
 const parsePlatformFilePath = require('../../node-haste/lib/parsePlatformFilePath');
@@ -128,7 +127,6 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     getTransformedFile,
   );
 
-  const resolutionRequests = {};
   const filesByDirNameIndex = new FilesByDirNameIndex(files);
   const assetResolutionCache = new AssetResolutionCache({
     assetExtensions: new Set(assetExts),
@@ -153,21 +151,12 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
   });
 
   return (id, sourcePath, platform, _, callback) => {
-    let resolutionRequest = resolutionRequests[platform];
-    if (!resolutionRequest) {
-      resolutionRequest = resolutionRequests[platform] = new ResolutionRequest({
-        moduleResolver,
-        entryPath: '',
-        helpers,
-        platform,
-        moduleCache,
-      });
-    }
-
     const from =
       sourcePath != null
         ? new Module(sourcePath, moduleCache, getTransformedFile(sourcePath))
         : NULL_MODULE;
-    return resolutionRequest.resolveDependency(from, id).path;
+    const allowHaste = !helpers.isNodeModulesDir(from.path);
+    return moduleResolver.resolveDependency(from, id, allowHaste, platform)
+      .path;
   };
 };
