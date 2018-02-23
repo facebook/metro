@@ -16,8 +16,7 @@ const fs = require('fs');
 const invariant = require('fbjs/lib/invariant');
 const isAbsolutePath = require('absolute-path');
 const jsonStableStringify = require('json-stable-stringify');
-
-const {join: joinPath, relative: relativePath} = require('path');
+const path = require('path');
 
 import type {
   TransformedCode,
@@ -70,12 +69,13 @@ export type Options = {
 
 export type ConstructorArgs = {
   depGraphHelpers: DependencyGraphHelpers,
+  experimentalCaches: boolean,
   file: string,
   getTransformCacheKey: GetTransformCacheKey,
   localPath: LocalPath,
   moduleCache: ModuleCache,
   options: Options,
-  transformCode: ?TransformCode,
+  transformCode: TransformCode,
 };
 
 type DocBlock = {+[key: string]: string};
@@ -85,8 +85,10 @@ class Module {
   path: string;
   type: string;
 
+  _experimentalCaches: boolean;
+
   _moduleCache: ModuleCache;
-  _transformCode: ?TransformCode;
+  _transformCode: TransformCode;
   _getTransformCacheKey: GetTransformCacheKey;
   _depGraphHelpers: DependencyGraphHelpers;
   _options: Options;
@@ -100,9 +102,10 @@ class Module {
 
   constructor({
     depGraphHelpers,
-    localPath,
+    experimentalCaches,
     file,
     getTransformCacheKey,
+    localPath,
     moduleCache,
     options,
     transformCode,
@@ -114,6 +117,8 @@ class Module {
     this.localPath = localPath;
     this.path = file;
     this.type = 'Module';
+
+    this._experimentalCaches = experimentalCaches;
 
     this._moduleCache = moduleCache;
     this._transformCode = transformCode;
@@ -138,6 +143,12 @@ class Module {
   }
 
   getName(): string {
+    // TODO: T26134860 Used for debugging purposes only; disabled with the new
+    // caches.
+    if (this._experimentalCaches) {
+      return path.basename(this.path);
+    }
+
     if (this.isHaste()) {
       const name = this._getHasteName();
       if (name != null) {
@@ -157,10 +168,9 @@ class Module {
       return this.path;
     }
 
-    return joinPath(packageName, relativePath(p.root, this.path)).replace(
-      /\\/g,
-      '/',
-    );
+    return path
+      .join(packageName, path.relative(p.root, this.path))
+      .replace(/\\/g, '/');
   }
 
   getPackage() {
@@ -177,9 +187,16 @@ class Module {
    * code.
    */
   invalidate() {
+    this._sourceCode = null;
+
+    // TODO: T26134860 Caches present in Module are not used with experimental
+    // caches, except for the one related to source code.
+    if (this._experimentalCaches) {
+      return;
+    }
+
     this._readPromises.clear();
     this._readResultsByOptionsKey.clear();
-    this._sourceCode = null;
     this._docBlock = null;
     this._hasteNameCache = null;
   }
@@ -295,15 +312,24 @@ class Module {
    * Shorthand for reading both from cache or from fresh for all call sites that
    * are asynchronous by default.
    */
-  read(transformOptions: WorkerOptions): Promise<ReadResult> {
-    return Promise.resolve().then(() => {
-      const cached = this.readCached(transformOptions);
+  async read(transformOptions: WorkerOptions): Promise<ReadResult> {
+    // TODO: T26134860 Cache layer lives inside the transformer now; just call
+    // the transform method.
+    if (this._experimentalCaches) {
+      const sourceCode = this._readSourceCode();
 
-      if (cached != null) {
-        return cached;
-      }
-      return this.readFresh(transformOptions);
-    });
+      return {
+        ...(await this._transformCode(this, sourceCode, transformOptions)),
+        sourceCode,
+      };
+    }
+
+    const cached = this.readCached(transformOptions);
+
+    if (cached != null) {
+      return cached;
+    }
+    return this.readFresh(transformOptions);
   }
 
   /**

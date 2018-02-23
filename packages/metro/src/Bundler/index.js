@@ -145,6 +145,8 @@ class Bundler {
       assetExts: opts.assetExts,
       assetRegistryPath: opts.assetRegistryPath,
       blacklistRE: opts.blacklistRE,
+      // TODO: T26134860 Only use experimental caches if stores are provided.
+      experimentalCaches: !!opts.cacheStores.length,
       extraNodeModules: opts.extraNodeModules,
       getPolyfills: opts.getPolyfills,
       getTransformCacheKey: getTransformCacheKeyFn({

@@ -85,6 +85,46 @@ describe('Module', () => {
     transformCache.mock.reset();
   });
 
+  describe('Experimental caches', () => {
+    it('Calls into the transformer directly when having experimental caches on', async () => {
+      const transformCode = jest.fn().mockReturnValue({
+        code: 'code',
+        dependencies: ['dep1', 'dep2'],
+        map: [],
+      });
+
+      const module = new Module({
+        cache,
+        experimentalCaches: true,
+        depGraphHelpers: new DependencyGraphHelpers(),
+        file: fileName,
+        getTransformCacheKey: () => transformCacheKey,
+        localPath: fileName,
+        moduleCache: new ModuleCache({cache}),
+        options: {transformCache},
+        transformCode,
+      });
+
+      mockIndexFile('originalCode');
+      jest.spyOn(fs, 'readFileSync');
+
+      // Read the first time, transform code is called.
+      const res1 = await module.read({foo: 3});
+      expect(res1.code).toBe('code');
+      expect(res1.dependencies).toEqual(['dep1', 'dep2']);
+      expect(transformCode).toHaveBeenCalledTimes(1);
+
+      // Read a second time, transformCode is called again!
+      const res2 = await module.read({foo: 3});
+      expect(res2.code).toBe('code');
+      expect(res2.dependencies).toEqual(['dep1', 'dep2']);
+      expect(transformCode).toHaveBeenCalledTimes(2);
+
+      // Code was only read once, though.
+      expect(fs.readFileSync).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('Module ID', () => {
     const moduleId = 'arbitraryModule';
     const source = `/**

@@ -47,6 +47,7 @@ type Options = {|
   +assetExts: Array<string>,
   +assetRegistryPath: string,
   +blacklistRE?: RegExp,
+  +experimentalCaches: boolean,
   +extraNodeModules: ?{},
   +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   +getTransformCacheKey: GetTransformCacheKey,
@@ -202,6 +203,7 @@ class DependencyGraph extends EventEmitter {
       {
         assetDependencies: [_opts.assetRegistryPath],
         depGraphHelpers: this._helpers,
+        experimentalCaches: _opts.experimentalCaches,
         getClosestPackage: this._getClosestPackage.bind(this),
         getTransformCacheKey: _opts.getTransformCacheKey,
         globalTransformCache: _opts.globalTransformCache,

@@ -31,6 +31,7 @@ type GetClosestPackageFn = (filePath: string) => ?string;
 type Options = {|
   assetDependencies: Array<string>,
   depGraphHelpers: DependencyGraphHelpers,
+  experimentalCaches: boolean,
   hasteImplModulePath?: string,
   getClosestPackage: GetClosestPackageFn,
   getTransformCacheKey: GetTransformCacheKey,
@@ -45,6 +46,7 @@ type Options = {|
 class ModuleCache {
   _assetDependencies: Array<string>;
   _depGraphHelpers: DependencyGraphHelpers;
+  _experimentalCaches: boolean;
   _getClosestPackage: GetClosestPackageFn;
   _getTransformCacheKey: GetTransformCacheKey;
   _globalTransformCache: ?GlobalTransformCache;
@@ -61,6 +63,7 @@ class ModuleCache {
     const {
       assetDependencies,
       depGraphHelpers,
+      experimentalCaches,
       getClosestPackage,
       getTransformCacheKey,
       globalTransformCache,
@@ -70,6 +73,7 @@ class ModuleCache {
     } = options;
     this._opts = options;
     this._assetDependencies = assetDependencies;
+    this._experimentalCaches = experimentalCaches;
     this._getClosestPackage = getClosestPackage;
     this._getTransformCacheKey = getTransformCacheKey;
     this._globalTransformCache = globalTransformCache;
@@ -87,6 +91,7 @@ class ModuleCache {
     if (!this._moduleCache[filePath]) {
       this._moduleCache[filePath] = new Module({
         depGraphHelpers: this._depGraphHelpers,
+        experimentalCaches: this._experimentalCaches,
         file: filePath,
         getTransformCacheKey: this._getTransformCacheKey,
         localPath: toLocalPath(this._roots, filePath),
@@ -110,6 +115,7 @@ class ModuleCache {
        */
       this._moduleCache[filePath] = new AssetModule({
         depGraphHelpers: this._depGraphHelpers,
+        experimentalCaches: this._experimentalCaches,
         file: filePath,
         getTransformCacheKey: this._getTransformCacheKey,
         globalTransformCache: this._globalTransformCache,
