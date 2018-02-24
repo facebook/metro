@@ -27,6 +27,7 @@ class DeltaPatcher {
     pre: new Map(),
     post: new Map(),
     modules: new Map(),
+    id: undefined,
   };
   _initialized = false;
   _lastNumModifiedFiles = 0;
@@ -62,6 +63,7 @@ class DeltaPatcher {
         pre: new Map(),
         post: new Map(),
         modules: new Map(),
+        id: undefined,
       };
     }
 
@@ -76,7 +78,13 @@ class DeltaPatcher {
     this._patchMap(this._lastBundle.post, deltaBundle.post);
     this._patchMap(this._lastBundle.modules, deltaBundle.delta);
 
+    this._lastBundle.id = deltaBundle.id;
+
     return this;
+  }
+
+  getLastBundleId(): ?string {
+    return this._lastBundle.id;
   }
 
   /**

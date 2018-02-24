@@ -12,6 +12,7 @@
 
 const {
   initialTraverseDependencies,
+  reorderDependencies,
   traverseDependencies,
 } = require('./traverseDependencies');
 const {EventEmitter} = require('events');
@@ -85,7 +86,7 @@ class DeltaCalculator extends EventEmitter {
    * Main method to calculate the delta of modules. It returns a DeltaResult,
    * which contain the modified/added modules and the removed modules.
    */
-  async getDelta(): Promise<DeltaResult> {
+  async getDelta({reset}: {reset: boolean}): Promise<DeltaResult> {
     // If there is already a build in progress, wait until it finish to start
     // processing a new one (delta server doesn't support concurrent builds).
     if (this._currentBuildPromise) {
@@ -132,6 +133,20 @@ class DeltaCalculator extends EventEmitter {
       throw error;
     } finally {
       this._currentBuildPromise = null;
+    }
+
+    // Return all the modules if the client requested a reset delta.
+    if (reset) {
+      return {
+        modified: reorderDependencies(
+          this._dependencyEdges.get(
+            this._dependencyGraph.getAbsolutePath(this._options.entryFile),
+          ),
+          this._dependencyEdges,
+        ),
+        deleted: new Set(),
+        reset: true,
+      };
     }
 
     return result;

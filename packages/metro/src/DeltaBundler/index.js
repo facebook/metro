@@ -27,16 +27,11 @@ export type MainOptions = {|
   postProcessModules?: PostProcessModules,
 |};
 
-export type Options = BundleOptions & {
-  +deltaBundleId: ?string,
-};
-
 /**
  * `DeltaBundler` uses the `DeltaTransformer` to build bundle deltas. This
  * module handles all the transformer instances so it can support multiple
  * concurrent clients requesting their own deltas. This is done through the
- * `deltaBundleId` options param (which maps a client to a specific delta
- * transformer).
+ * `clientId` param (which maps a client to a specific delta transformer).
  */
 class DeltaBundler {
   _bundler: Bundler;
@@ -59,18 +54,10 @@ class DeltaBundler {
   }
 
   async getDeltaTransformer(
-    options: Options,
-  ): Promise<{deltaTransformer: DeltaTransformer, id: string}> {
-    let bundleId = options.deltaBundleId;
-
-    // If no bundle id is passed, generate a new one (which is going to be
-    // returned as part of the bundle, so the client can later ask for an actual
-    // delta).
-    if (!bundleId) {
-      bundleId = String(this._currentId++);
-    }
-
-    let deltaTransformer = this._deltaTransformers.get(bundleId);
+    clientId: string,
+    options: BundleOptions,
+  ): Promise<DeltaTransformer> {
+    let deltaTransformer = this._deltaTransformers.get(clientId);
 
     if (!deltaTransformer) {
       deltaTransformer = await DeltaTransformer.create(
@@ -79,13 +66,10 @@ class DeltaBundler {
         options,
       );
 
-      this._deltaTransformers.set(bundleId, deltaTransformer);
+      this._deltaTransformers.set(clientId, deltaTransformer);
     }
 
-    return {
-      deltaTransformer,
-      id: bundleId,
-    };
+    return deltaTransformer;
   }
 
   getPostProcessModulesFn(

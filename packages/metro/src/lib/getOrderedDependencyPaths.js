@@ -14,12 +14,12 @@ const Serializers = require('../DeltaBundler/Serializers');
 
 const {getAssetFiles} = require('../Assets');
 
-import type {Options} from '../DeltaBundler/Serializers';
 import type DeltaBundler from '../DeltaBundler';
+import type {BundleOptions} from '../shared/types.flow';
 
 async function getOrderedDependencyPaths(
   deltaBundler: DeltaBundler,
-  options: Options,
+  options: BundleOptions,
 ): Promise<Array<string>> {
   const modules = await Serializers.getAllModules(deltaBundler, options);
 

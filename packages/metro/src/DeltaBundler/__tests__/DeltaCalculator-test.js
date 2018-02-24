@@ -13,15 +13,16 @@
 jest.mock('../../Bundler');
 jest.mock('../traverseDependencies');
 
+const {
+  initialTraverseDependencies,
+  reorderDependencies,
+  traverseDependencies,
+} = require('../traverseDependencies');
+
 const Bundler = require('../../Bundler');
 const {EventEmitter} = require('events');
 
 const DeltaCalculator = require('../DeltaCalculator');
-const {
-  initialTraverseDependencies,
-  traverseDependencies,
-} = require('../traverseDependencies');
-
 const getTransformOptions = require('../../__fixtures__/getTransformOptions');
 
 describe('DeltaCalculator', () => {
@@ -38,8 +39,7 @@ describe('DeltaCalculator', () => {
   let deltaCalculator;
   let fileWatcher;
   let mockedDependencies;
-
-  const bundlerMock = new Bundler();
+  let bundlerMock;
 
   const options = {
     assetPlugins: [],
@@ -72,6 +72,8 @@ describe('DeltaCalculator', () => {
   }
 
   beforeEach(async () => {
+    bundlerMock = new Bundler();
+
     mockedDependencies = [entryModule, moduleFoo, moduleBar, moduleBaz];
 
     fileWatcher = new EventEmitter();
@@ -90,10 +92,29 @@ describe('DeltaCalculator', () => {
 
     initialTraverseDependencies.mockImplementationOnce(
       async (path, dg, opt, edges) => {
-        edgeModule = {...entryModule};
-        edgeFoo = {...moduleFoo, inverseDependencies: ['/bundle']};
-        edgeBar = {...moduleBar, inverseDependencies: ['/bundle']};
-        edgeBaz = {...moduleBaz, inverseDependencies: ['/bundle']};
+        edgeModule = {
+          ...entryModule,
+          dependencies: new Map([
+            ['foo', '/foo'],
+            ['bar', '/bar'],
+            ['baz', '/baz'],
+          ]),
+        };
+        edgeFoo = {
+          ...moduleFoo,
+          dependencies: new Map(),
+          inverseDependencies: ['/bundle'],
+        };
+        edgeBar = {
+          ...moduleBar,
+          dependencies: new Map(),
+          inverseDependencies: ['/bundle'],
+        };
+        edgeBaz = {
+          ...moduleBaz,
+          dependencies: new Map(),
+          inverseDependencies: ['/bundle'],
+        };
 
         edges.set('/bundle', edgeModule);
         edges.set('/foo', edgeFoo);
@@ -131,8 +152,10 @@ describe('DeltaCalculator', () => {
   });
 
   afterEach(() => {
-    initialTraverseDependencies.mockReset();
+    deltaCalculator.end();
+
     traverseDependencies.mockReset();
+    initialTraverseDependencies.mockReset();
   });
 
   it('should start listening for file changes after being initialized', async () => {
@@ -146,11 +169,44 @@ describe('DeltaCalculator', () => {
   });
 
   it('should include the entry file when calculating the initial bundle', async () => {
-    const result = await deltaCalculator.getDelta();
+    const result = await deltaCalculator.getDelta({reset: false});
 
     expect(result).toEqual({
       modified: new Map([
-        ['/bundle', entryModule],
+        ['/bundle', edgeModule],
+        ['/foo', edgeFoo],
+        ['/bar', edgeBar],
+        ['/baz', edgeBaz],
+      ]),
+      deleted: new Set(),
+      reset: true,
+    });
+
+    jest.runAllTicks();
+  });
+
+  it('should return an empty delta when there are no changes', async () => {
+    await deltaCalculator.getDelta({reset: false});
+
+    expect(await deltaCalculator.getDelta({reset: false})).toEqual({
+      modified: new Map(),
+      deleted: new Set(),
+      reset: false,
+    });
+
+    expect(traverseDependencies.mock.calls.length).toBe(0);
+  });
+
+  it('should return a full delta when passing reset=true', async () => {
+    reorderDependencies.mockImplementation((_, edges) => edges);
+
+    await deltaCalculator.getDelta({reset: false});
+
+    const result = await deltaCalculator.getDelta({reset: true});
+
+    expect(result).toEqual({
+      modified: new Map([
+        ['/bundle', edgeModule],
         ['/foo', edgeFoo],
         ['/bar', edgeBar],
         ['/baz', edgeBaz],
@@ -160,20 +216,8 @@ describe('DeltaCalculator', () => {
     });
   });
 
-  it('should return an empty delta when there are no changes', async () => {
-    await deltaCalculator.getDelta();
-
-    expect(await deltaCalculator.getDelta()).toEqual({
-      modified: new Map(),
-      deleted: new Set(),
-      reset: false,
-    });
-
-    expect(traverseDependencies.mock.calls.length).toBe(0);
-  });
-
   it('should calculate a delta after a simple modification', async () => {
-    await deltaCalculator.getDelta();
+    await deltaCalculator.getDelta({reset: false});
 
     fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
 
@@ -184,7 +228,7 @@ describe('DeltaCalculator', () => {
       }),
     );
 
-    const result = await deltaCalculator.getDelta();
+    const result = await deltaCalculator.getDelta({reset: false});
 
     expect(result).toEqual({
       modified: new Map([['/foo', edgeFoo]]),
@@ -197,7 +241,7 @@ describe('DeltaCalculator', () => {
 
   it('should calculate a delta after removing a dependency', async () => {
     // Get initial delta
-    await deltaCalculator.getDelta();
+    await deltaCalculator.getDelta({reset: false});
 
     fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
 
@@ -208,7 +252,7 @@ describe('DeltaCalculator', () => {
       }),
     );
 
-    const result = await deltaCalculator.getDelta();
+    const result = await deltaCalculator.getDelta({reset: false});
 
     expect(result).toEqual({
       modified: new Map([['/foo', edgeFoo]]),
@@ -221,7 +265,7 @@ describe('DeltaCalculator', () => {
 
   it('should calculate a delta after adding/removing dependencies', async () => {
     // Get initial delta
-    await deltaCalculator.getDelta();
+    await deltaCalculator.getDelta({reset: false});
 
     fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
 
@@ -239,7 +283,7 @@ describe('DeltaCalculator', () => {
       };
     });
 
-    const result = await deltaCalculator.getDelta();
+    const result = await deltaCalculator.getDelta({reset: false});
     expect(result).toEqual({
       modified: new Map([['/foo', edgeFoo], ['/qux', edgeQux]]),
       deleted: new Set(['/bar', '/baz']),
@@ -248,7 +292,7 @@ describe('DeltaCalculator', () => {
   });
 
   it('should emit an event when there is a relevant file change', async done => {
-    await deltaCalculator.getDelta();
+    await deltaCalculator.getDelta({reset: false});
 
     deltaCalculator.on('change', () => done());
 
@@ -259,7 +303,7 @@ describe('DeltaCalculator', () => {
     jest.useFakeTimers();
 
     const onChangeFile = jest.fn();
-    await deltaCalculator.getDelta();
+    await deltaCalculator.getDelta({reset: false});
 
     deltaCalculator.on('delete', onChangeFile);
 
@@ -273,20 +317,24 @@ describe('DeltaCalculator', () => {
   });
 
   it('should retry to build the last delta after getting an error', async () => {
-    await deltaCalculator.getDelta();
+    await deltaCalculator.getDelta({reset: false});
 
     fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
 
     traverseDependencies.mockReturnValue(Promise.reject(new Error()));
 
-    await expect(deltaCalculator.getDelta()).rejects.toBeInstanceOf(Error);
+    await expect(
+      deltaCalculator.getDelta({reset: false}),
+    ).rejects.toBeInstanceOf(Error);
 
     // This second time it should still throw an error.
-    await expect(deltaCalculator.getDelta()).rejects.toBeInstanceOf(Error);
+    await expect(
+      deltaCalculator.getDelta({reset: false}),
+    ).rejects.toBeInstanceOf(Error);
   });
 
   it('should never try to traverse a file after deleting it', async () => {
-    await deltaCalculator.getDelta();
+    await deltaCalculator.getDelta({reset: false});
 
     // First modify the file
     fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
@@ -303,7 +351,7 @@ describe('DeltaCalculator', () => {
       }),
     );
 
-    expect(await deltaCalculator.getDelta()).toEqual({
+    expect(await deltaCalculator.getDelta({reset: false})).toEqual({
       modified: new Map([['/bundle', edgeModule]]),
       deleted: new Set(['/foo']),
       reset: false,
@@ -314,7 +362,7 @@ describe('DeltaCalculator', () => {
   });
 
   it('should not do unnecessary work when adding a file after deleting it', async () => {
-    await deltaCalculator.getDelta();
+    await deltaCalculator.getDelta({reset: false});
 
     // First delete a file
     fileWatcher.emit('change', {
@@ -331,7 +379,7 @@ describe('DeltaCalculator', () => {
       }),
     );
 
-    await deltaCalculator.getDelta();
+    await deltaCalculator.getDelta({reset: false});
 
     expect(traverseDependencies).toHaveBeenCalledTimes(1);
     expect(traverseDependencies.mock.calls[0][0]).toEqual(['/foo']);

@@ -43,27 +43,27 @@ describe('DeltaBundler', () => {
   });
 
   it('should create a new transformer the first time it gets called', async () => {
-    await deltaBundler.getDeltaTransformer({deltaBundleId: 10});
+    await deltaBundler.getDeltaTransformer('foo', {deltaBundleId: 10});
 
     expect(DeltaTransformer.create.mock.calls.length).toBe(1);
   });
 
   it('should reuse the same transformer after a second call', async () => {
-    await deltaBundler.getDeltaTransformer({deltaBundleId: 10});
-    await deltaBundler.getDeltaTransformer({deltaBundleId: 10});
+    await deltaBundler.getDeltaTransformer('foo', {deltaBundleId: 10});
+    await deltaBundler.getDeltaTransformer('foo', {deltaBundleId: 20});
 
     expect(DeltaTransformer.create.mock.calls.length).toBe(1);
   });
 
-  it('should create different transformers when there is no delta bundle id', async () => {
-    await deltaBundler.getDeltaTransformer({});
-    await deltaBundler.getDeltaTransformer({});
+  it('should create different transformers for different clients', async () => {
+    await deltaBundler.getDeltaTransformer('foo', {});
+    await deltaBundler.getDeltaTransformer('bar', {});
 
     expect(DeltaTransformer.create.mock.calls.length).toBe(2);
   });
 
   it('should reset everything after calling end()', async () => {
-    await deltaBundler.getDeltaTransformer({deltaBundleId: 10});
+    await deltaBundler.getDeltaTransformer('foo', {deltaBundleId: 10});
 
     deltaBundler.end();
 

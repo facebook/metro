@@ -42,6 +42,7 @@ type Client = {|
 class HmrServer<TClient: Client> {
   _packagerServer: PackagerServer;
   _reporter: Reporter;
+  _lastSequenceId: ?string;
 
   constructor(packagerServer: PackagerServer) {
     this._packagerServer = packagerServer;
@@ -62,12 +63,15 @@ class HmrServer<TClient: Client> {
     // DeltaBundleId param through the WS connection and we'll be able to share
     // the same DeltaTransformer between the WS connection and the HTTP one.
     const deltaBundler = this._packagerServer.getDeltaBundler();
-    const {deltaTransformer} = await deltaBundler.getDeltaTransformer(
+    const deltaTransformer = await deltaBundler.getDeltaTransformer(
+      clientUrl,
       getBundlingOptionsForHmr(bundleEntry, platform, customTransformOptions),
     );
 
     // Trigger an initial build to start up the DeltaTransformer.
-    await deltaTransformer.getDelta();
+    const {id} = await deltaTransformer.getDelta();
+
+    this._lastSequenceId = id;
 
     // Listen to file changes.
     const client = {sendFn, deltaTransformer};
@@ -113,7 +117,7 @@ class HmrServer<TClient: Client> {
     let result;
 
     try {
-      result = await client.deltaTransformer.getDelta();
+      result = await client.deltaTransformer.getDelta(this._lastSequenceId);
     } catch (error) {
       const formattedError = formatBundlingError(error);
 
@@ -137,6 +141,8 @@ class HmrServer<TClient: Client> {
         );
       }
     }
+
+    this._lastSequenceId = result.id;
 
     return {
       type: 'update',

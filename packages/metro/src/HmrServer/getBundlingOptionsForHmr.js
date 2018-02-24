@@ -10,8 +10,8 @@
 
 'use strict';
 
-import type {Options as BundleOptions} from '../DeltaBundler';
 import type {CustomTransformOptions} from '../JSTransformer/worker';
+import type {BundleOptions} from '../shared/types.flow';
 
 /**
  * Module to easily create the needed configuration parameters needed for the

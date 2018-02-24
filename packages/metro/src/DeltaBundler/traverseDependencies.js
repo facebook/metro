@@ -431,4 +431,5 @@ function flatten<T>(input: Iterable<Iterable<T>>): Set<T> {
 module.exports = {
   initialTraverseDependencies,
   traverseDependencies,
+  reorderDependencies,
 };

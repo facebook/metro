@@ -12,6 +12,7 @@
 
 const DeltaPatcher = require('./DeltaPatcher');
 
+const stableHash = require('metro-cache/src/stableHash');
 const toLocalPath = require('../node-haste/lib/toLocalPath');
 
 const {getAssetData} = require('../Assets');
@@ -19,16 +20,15 @@ const {createRamBundleGroups} = require('../Bundler/util');
 const {fromRawMappings} = require('metro-source-map');
 
 import type {AssetData} from '../Assets';
-import type {BundleOptions} from '../shared/types.flow';
-import type {ModuleTransportLike} from '../shared/types.flow';
-import type DeltaBundler, {Options as BuildOptions} from './';
+import type {BundleOptions, ModuleTransportLike} from '../shared/types.flow';
+import type DeltaBundler from './';
 import type DeltaTransformer, {
   DeltaEntry,
   DeltaTransformResponse,
 } from './DeltaTransformer';
 import type {BabelSourceMap} from '@babel/core';
 
-export type Options = BundleOptions & {
+export type DeltaOptions = BundleOptions & {
   deltaBundleId: ?string,
 };
 
@@ -49,16 +49,17 @@ export type RamBundleInfo = {
 
 async function deltaBundle(
   deltaBundler: DeltaBundler,
-  options: Options,
+  clientId: string,
+  options: DeltaOptions,
 ): Promise<{bundle: string, numModifiedFiles: number}> {
-  const {id, delta} = await _build(deltaBundler, options);
+  const {delta} = await _build(deltaBundler, clientId, options);
 
   function stringifyModule([id, module]) {
     return [id, module ? module.code : undefined];
   }
 
   const bundle = JSON.stringify({
-    id,
+    id: delta.id,
     pre: Array.from(delta.pre).map(stringifyModule),
     post: Array.from(delta.post).map(stringifyModule),
     delta: Array.from(delta.delta).map(stringifyModule),
@@ -73,7 +74,7 @@ async function deltaBundle(
 
 async function fullSourceMap(
   deltaBundler: DeltaBundler,
-  options: Options,
+  options: BundleOptions,
 ): Promise<string> {
   const {modules} = await _getAllModules(deltaBundler, options);
 
@@ -84,7 +85,7 @@ async function fullSourceMap(
 
 async function fullSourceMapObject(
   deltaBundler: DeltaBundler,
-  options: Options,
+  options: BundleOptions,
 ): Promise<BabelSourceMap> {
   const {modules} = await _getAllModules(deltaBundler, options);
 
@@ -98,7 +99,7 @@ async function fullSourceMapObject(
  */
 async function fullBundle(
   deltaBundler: DeltaBundler,
-  options: Options,
+  options: BundleOptions,
 ): Promise<{bundle: string, numModifiedFiles: number, lastModified: Date}> {
   const {modules, numModifiedFiles, lastModified} = await _getAllModules(
     deltaBundler,
@@ -116,7 +117,7 @@ async function fullBundle(
 
 async function getAllModules(
   deltaBundler: DeltaBundler,
-  options: Options,
+  options: BundleOptions,
 ): Promise<$ReadOnlyArray<DeltaEntry>> {
   const {modules} = await _getAllModules(deltaBundler, options);
 
@@ -125,16 +126,30 @@ async function getAllModules(
 
 async function _getAllModules(
   deltaBundler: DeltaBundler,
-  options: Options,
+  options: BundleOptions,
 ): Promise<{
   modules: $ReadOnlyArray<DeltaEntry>,
   numModifiedFiles: number,
   lastModified: Date,
   deltaTransformer: DeltaTransformer,
 }> {
-  const {id, delta, deltaTransformer} = await _build(deltaBundler, options);
+  const hashedOptions = options;
+  delete hashedOptions.sourceMapUrl;
 
-  const deltaPatcher = DeltaPatcher.get(id);
+  const clientId = '__SERVER__' + stableHash(hashedOptions).toString('hex');
+
+  const deltaPatcher = DeltaPatcher.get(clientId);
+
+  options = {
+    ...options,
+    deltaBundleId: deltaPatcher.getLastBundleId(),
+  };
+
+  const {delta, deltaTransformer} = await _build(
+    deltaBundler,
+    clientId,
+    options,
+  );
 
   const modules = deltaPatcher
     .applyDelta(delta)
@@ -150,7 +165,7 @@ async function _getAllModules(
 
 async function getRamBundleInfo(
   deltaBundler: DeltaBundler,
-  options: Options,
+  options: BundleOptions,
 ): Promise<RamBundleInfo> {
   const {modules, deltaTransformer} = await _getAllModules(
     deltaBundler,
@@ -226,7 +241,7 @@ async function getRamBundleInfo(
 
 async function getAssets(
   deltaBundler: DeltaBundler,
-  options: Options,
+  options: BundleOptions,
 ): Promise<$ReadOnlyArray<AssetData>> {
   const {modules} = await _getAllModules(deltaBundler, options);
 
@@ -254,20 +269,20 @@ async function getAssets(
 
 async function _build(
   deltaBundler: DeltaBundler,
-  options: BuildOptions,
+  clientId: string,
+  options: DeltaOptions,
 ): Promise<{
-  id: string,
   delta: DeltaTransformResponse,
   deltaTransformer: DeltaTransformer,
 }> {
-  const {deltaTransformer, id} = await deltaBundler.getDeltaTransformer(
+  const deltaTransformer = await deltaBundler.getDeltaTransformer(
+    clientId,
     options,
   );
 
-  const delta = await deltaTransformer.getDelta();
+  const delta = await deltaTransformer.getDelta(options.deltaBundleId);
 
   return {
-    id,
     delta,
     deltaTransformer,
   };

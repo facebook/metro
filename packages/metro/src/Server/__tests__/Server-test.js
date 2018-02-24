@@ -182,7 +182,6 @@ describe('processRequest', () => {
             assetPlugins: [],
             bundleType: 'bundle',
             customTransformOptions: {},
-            deltaBundleId: expect.any(String),
             dev: true,
             entryFile: 'index.ios.js',
             entryModuleOnly: false,
@@ -214,7 +213,6 @@ describe('processRequest', () => {
             assetPlugins: [],
             bundleType: 'bundle',
             customTransformOptions: {},
-            deltaBundleId: expect.any(String),
             dev: true,
             entryFile: 'index.js',
             entryModuleOnly: false,
@@ -246,7 +244,6 @@ describe('processRequest', () => {
         assetPlugins: ['assetPlugin1', 'assetPlugin2'],
         bundleType: 'bundle',
         customTransformOptions: {},
-        deltaBundleId: expect.any(String),
         dev: true,
         entryFile: 'index.js',
         entryModuleOnly: false,
@@ -286,14 +283,17 @@ describe('processRequest', () => {
     });
 
     it('should send the correct deltaBundlerId to the bundler', () => {
-      Serializers.deltaBundle.mockImplementation(async (_, options) => {
-        expect(options.deltaBundleId).toBe('1234');
+      Serializers.deltaBundle.mockImplementation(
+        async (_, clientId, options) => {
+          expect(clientId).toMatchSnapshot();
+          expect(options.deltaBundleId).toBe('1234');
 
-        return {
-          bundle: '{"delta": "bundle"}',
-          numModifiedFiles: 3,
-        };
-      });
+          return {
+            bundle: '{"delta": "bundle"}',
+            numModifiedFiles: 3,
+          };
+        },
+      );
 
       return makeRequest(
         requestHandler,
@@ -449,7 +449,6 @@ describe('processRequest', () => {
             {
               assetPlugins: [],
               customTransformOptions: {},
-              deltaBundleId: null,
               dev: true,
               entryFile: 'foo file',
               entryModuleOnly: false,

@@ -33,7 +33,7 @@ const resolveSync: ResolveSync = require('resolve').sync;
 import type {CustomError} from '../lib/formatBundlingError';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from '../lib/reporting';
-import type {Options as DeltaBundlerOptions} from '../DeltaBundler/Serializers';
+import type {DeltaOptions} from '../DeltaBundler/Serializers';
 import type {BundleOptions, Options} from '../shared/types.flow';
 import type {
   GetTransformOptions,
@@ -229,7 +229,6 @@ class Server {
   async build(options: BundleOptions): Promise<{code: string, map: string}> {
     options = {
       ...options,
-      deltaBundleId: null,
       runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
         options.entryFile,
       ),
@@ -252,16 +251,11 @@ class Server {
   }
 
   async getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo> {
-    options = {...options, deltaBundleId: null};
-
     return await Serializers.getRamBundleInfo(this._deltaBundler, options);
   }
 
   async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {
-    return await Serializers.getAssets(this._deltaBundler, {
-      ...options,
-      deltaBundleId: null,
-    });
+    return await Serializers.getAssets(this._deltaBundler, options);
   }
 
   async getOrderedDependencyPaths(options: {
@@ -274,7 +268,6 @@ class Server {
       ...Server.DEFAULT_BUNDLE_OPTIONS,
       ...options,
       bundleType: 'delta',
-      deltaBundleId: null,
     };
 
     if (!bundleOptions.platform) {
@@ -401,6 +394,7 @@ class Server {
     // can be ignored to calculate the options hash.
     const ignoredParams = {
       onProgress: null,
+      deltaBundleId: null,
       excludeSource: null,
       sourceMapUrl: null,
     };
@@ -444,7 +438,7 @@ class Server {
   _prepareDeltaBundler(
     req: IncomingMessage,
     mres: MultipartResponse,
-  ): {options: DeltaBundlerOptions, buildID: string} {
+  ): {options: DeltaOptions, buildID: string} {
     const options = this._getOptionsFromUrl(
       url.format({
         ...url.parse(req.url),
@@ -503,11 +497,14 @@ class Server {
 
     let output;
 
+    const clientId = this._optionsHash(options);
+
     try {
-      output = await Serializers.deltaBundle(this._deltaBundler, {
-        ...options,
-        deltaBundleId: options.deltaBundleId,
-      });
+      output = await Serializers.deltaBundle(
+        this._deltaBundler,
+        clientId,
+        options,
+      );
     } catch (error) {
       this._handleError(mres, this._optionsHash(options), error);
 
@@ -552,10 +549,7 @@ class Server {
     let result;
 
     try {
-      result = await Serializers.fullBundle(this._deltaBundler, {
-        ...options,
-        deltaBundleId: this._optionsHash(options),
-      });
+      result = await Serializers.fullBundle(this._deltaBundler, options);
     } catch (error) {
       this._handleError(mres, this._optionsHash(options), error);
 
@@ -619,10 +613,7 @@ class Server {
     let sourceMap;
 
     try {
-      sourceMap = await Serializers.fullSourceMap(this._deltaBundler, {
-        ...options,
-        deltaBundleId: this._optionsHash(options),
-      });
+      sourceMap = await Serializers.fullSourceMap(this._deltaBundler, options);
     } catch (error) {
       this._handleError(mres, this._optionsHash(options), error);
 
@@ -751,12 +742,9 @@ class Server {
   }
 
   async _sourceMapForURL(reqUrl: string): Promise<MetroSourceMap> {
-    const options: DeltaBundlerOptions = this._getOptionsFromUrl(reqUrl);
+    const options: DeltaOptions = this._getOptionsFromUrl(reqUrl);
 
-    return await Serializers.fullSourceMapObject(this._deltaBundler, {
-      ...options,
-      deltaBundleId: this._optionsHash(options),
-    });
+    return await Serializers.fullSourceMapObject(this._deltaBundler, options);
   }
 
   _handleError(res: ServerResponse, bundleID: string, error: CustomError) {
@@ -776,7 +764,7 @@ class Server {
     });
   }
 
-  _getOptionsFromUrl(reqUrl: string): BundleOptions & DeltaBundlerOptions {
+  _getOptionsFromUrl(reqUrl: string): BundleOptions & DeltaOptions {
     // `true` to parse the query param as an object.
     const urlObj = nullthrows(url.parse(reqUrl, true));
     const urlQuery = nullthrows(urlObj.query);

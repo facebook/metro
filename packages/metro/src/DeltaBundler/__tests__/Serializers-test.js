@@ -28,6 +28,7 @@ describe('Serializers', () => {
   let Serializers;
 
   const deltaResponse = {
+    id: '1234',
     pre: new Map([[1, {type: 'script', code: 'pre;', id: 1, path: '/pre.js'}]]),
     post: new Map([[2, {type: 'require', code: 'post;', id: 2, path: '/p'}]]),
     delta: new Map([
@@ -58,12 +59,9 @@ describe('Serializers', () => {
     deltaBundler = {
       async getDeltaTransformer() {
         return {
-          id: '1234',
-          deltaTransformer: {
-            getDelta,
-            getDependenciesFn,
-            getRamOptions,
-          },
+          getDelta,
+          getDependenciesFn,
+          getRamOptions,
         };
       },
       getPostProcessModulesFn() {
@@ -91,12 +89,13 @@ describe('Serializers', () => {
 
   it('should return the stringified delta bundle', async () => {
     expect(
-      await Serializers.deltaBundle(deltaBundler, {deltaBundleId: 10}),
+      await Serializers.deltaBundle(deltaBundler, 'foo', {deltaBundleId: 10}),
     ).toMatchSnapshot();
 
     // Simulate a delta with some changes now
     getDelta.mockReturnValueOnce(
       Promise.resolve({
+        id: '1234',
         delta: new Map([[3, {code: 'modified module;'}], [4, null]]),
         pre: new Map(),
         post: new Map(),
@@ -105,17 +104,16 @@ describe('Serializers', () => {
     );
 
     expect(
-      await Serializers.deltaBundle(deltaBundler, {deltaBundleId: 10}),
+      await Serializers.deltaBundle(deltaBundler, 'foo', {deltaBundleId: 10}),
     ).toMatchSnapshot();
   });
 
   it('should build the full JS bundle', async () => {
-    expect(
-      await Serializers.fullBundle(deltaBundler, {deltaBundleId: 10}),
-    ).toMatchSnapshot();
+    expect(await Serializers.fullBundle(deltaBundler, {})).toMatchSnapshot();
 
     getDelta.mockReturnValueOnce(
       Promise.resolve({
+        id: '1234',
         delta: new Map([[3, {code: 'modified module;'}], [4, null]]),
         pre: new Map([[5, {code: 'more pre;'}]]),
         post: new Map([[6, {code: 'bananas;'}], [7, {code: 'apples;'}]]),
@@ -126,7 +124,6 @@ describe('Serializers', () => {
 
     expect(
       await Serializers.fullBundle(deltaBundler, {
-        deltaBundleId: 10,
         sourceMapUrl: 'http://localhost:8081/myBundle.js',
       }),
     ).toMatchSnapshot();
@@ -135,12 +132,11 @@ describe('Serializers', () => {
   // This test actually does not test the sourcemaps generation logic, which
   // is already tested in the source-map file.
   it('should build the full Source Maps', async () => {
-    expect(
-      await Serializers.fullSourceMap(deltaBundler, {deltaBundleId: 10}),
-    ).toMatchSnapshot();
+    expect(await Serializers.fullSourceMap(deltaBundler, {})).toMatchSnapshot();
 
     getDelta.mockReturnValueOnce(
       Promise.resolve({
+        id: '1234',
         delta: new Map([[3, {code: 'modified module;'}], [4, null]]),
         pre: new Map([[5, {code: 'more pre;'}]]),
         post: new Map([[6, {code: 'bananas;'}], [7, {code: 'apples;'}]]),
@@ -149,15 +145,11 @@ describe('Serializers', () => {
     );
     setCurrentTime(CURRENT_TIME + 5000);
 
-    expect(
-      await Serializers.fullSourceMap(deltaBundler, {deltaBundleId: 10}),
-    ).toMatchSnapshot();
+    expect(await Serializers.fullSourceMap(deltaBundler, {})).toMatchSnapshot();
   });
 
   it('should return all the bundle modules', async () => {
-    expect(
-      await Serializers.getAllModules(deltaBundler, {deltaBundleId: 10}),
-    ).toMatchSnapshot();
+    expect(await Serializers.getAllModules(deltaBundler, {})).toMatchSnapshot();
 
     getDelta.mockReturnValueOnce(
       Promise.resolve({
@@ -168,14 +160,12 @@ describe('Serializers', () => {
       }),
     );
 
-    expect(
-      await Serializers.getAllModules(deltaBundler, {deltaBundleId: 10}),
-    ).toMatchSnapshot();
+    expect(await Serializers.getAllModules(deltaBundler, {})).toMatchSnapshot();
   });
 
   it('should return the RAM bundle info', async () => {
     expect(
-      await Serializers.getRamBundleInfo(deltaBundler, {deltaBundleId: 10}),
+      await Serializers.getRamBundleInfo(deltaBundler, {}),
     ).toMatchSnapshot();
 
     getDelta.mockReturnValueOnce(
@@ -198,7 +188,7 @@ describe('Serializers', () => {
     );
 
     expect(
-      await Serializers.getRamBundleInfo(deltaBundler, {deltaBundleId: 10}),
+      await Serializers.getRamBundleInfo(deltaBundler, {}),
     ).toMatchSnapshot();
   });
 
@@ -241,14 +231,12 @@ describe('Serializers', () => {
     );
 
     expect(
-      await Serializers.getRamBundleInfo(deltaBundler, {deltaBundleId: 10}),
+      await Serializers.getRamBundleInfo(deltaBundler, {}),
     ).toMatchSnapshot();
   });
 
   it('should return the bundle assets', async () => {
-    expect(
-      await Serializers.getAllModules(deltaBundler, {deltaBundleId: 10}),
-    ).toMatchSnapshot();
+    expect(await Serializers.getAllModules(deltaBundler, {})).toMatchSnapshot();
 
     getDelta.mockReturnValueOnce(
       Promise.resolve({
@@ -261,12 +249,12 @@ describe('Serializers', () => {
         pre: new Map([[5, {code: 'more pre;'}]]),
         post: new Map([[6, {code: 'bananas;'}]]),
         inverseDependencies: [],
+        reset: true,
       }),
     );
 
     expect(
       await Serializers.getAssets(deltaBundler, {
-        deltaBundleId: 10,
         platform: 'ios',
       }),
     ).toMatchSnapshot();
@@ -279,10 +267,6 @@ describe('Serializers', () => {
       );
     });
 
-    expect(
-      await Serializers.getAllModules(deltaBundler, {
-        deltaBundleId: 10,
-      }),
-    ).toMatchSnapshot();
+    expect(await Serializers.getAllModules(deltaBundler, {})).toMatchSnapshot();
   });
 });

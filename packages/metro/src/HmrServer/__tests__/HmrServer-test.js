@@ -22,14 +22,12 @@ describe('HmrServer', () => {
 
   beforeEach(() => {
     deltaTransformerMock = new EventEmitter();
-    deltaTransformerMock.getDelta = jest.fn();
+    deltaTransformerMock.getDelta = jest.fn().mockReturnValue({id: '1234'});
     deltaTransformerMock.getInverseDependencies = jest.fn();
 
     getDeltaTransformerMock = jest
       .fn()
-      .mockReturnValue(
-        Promise.resolve({deltaTransformer: deltaTransformerMock}),
-      );
+      .mockReturnValue(Promise.resolve(deltaTransformerMock));
 
     deltaBundlerMock = {
       getDeltaTransformer: getDeltaTransformerMock,
@@ -55,6 +53,7 @@ describe('HmrServer', () => {
     );
 
     expect(getDeltaTransformerMock).toBeCalledWith(
+      '/hot?bundleEntry=EntryPoint.js&platform=ios',
       expect.objectContaining({
         deltaBundleId: null,
         dev: true,
