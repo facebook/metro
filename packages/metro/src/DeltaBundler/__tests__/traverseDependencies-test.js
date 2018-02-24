@@ -15,14 +15,81 @@ const {
   traverseDependencies,
 } = require('../traverseDependencies');
 
-const entryModule = createModule({path: '/bundle', name: 'bundle'});
-const moduleFoo = createModule({path: '/foo', name: 'foo'});
-const moduleBar = createModule({path: '/bar', name: 'bar'});
-const moduleBaz = createModule({path: '/baz', name: 'baz'});
-
 let dependencyGraph;
 let mockedDependencies;
 let mockedDependencyTree;
+let files = new Set();
+
+let entryModule;
+let moduleFoo;
+let moduleBar;
+let moduleBaz;
+
+const Actions = {
+  modifyFile(path) {
+    if (mockedDependencyTree.get(path)) {
+      files.add(path);
+    }
+  },
+
+  moveFile(from, to) {
+    const module = Actions.createFile(to);
+    Actions.deleteFile(from);
+
+    return module;
+  },
+
+  deleteFile(path) {
+    const dependency = dependencyGraph.getModuleForPath(path);
+
+    if (dependency) {
+      mockedDependencies.delete(dependency);
+    }
+  },
+
+  createFile(path) {
+    const module = createModule({
+      path,
+      name: path.replace('/', ''),
+    });
+    mockedDependencies.add(module);
+    mockedDependencyTree.set(path, []);
+
+    return module;
+  },
+
+  addDependency(path, dependencyPath, position) {
+    let dependency = dependencyGraph.getModuleForPath(dependencyPath);
+    if (!dependency) {
+      dependency = Actions.createFile(dependencyPath);
+    }
+
+    const deps = mockedDependencyTree.get(path);
+
+    if (position == null) {
+      deps.push(dependency);
+    } else {
+      deps.splice(position, 0, dependency);
+    }
+
+    mockedDependencyTree.set(path, deps);
+    mockedDependencies.add(dependency);
+
+    files.add(path);
+  },
+
+  removeDependency(path, dependencyPath) {
+    const dependency = dependencyGraph.getModuleForPath(dependencyPath);
+    const deps = mockedDependencyTree.get(path);
+
+    if (deps.indexOf(dependency) !== -1) {
+      deps.splice(deps.indexOf(dependency), 1);
+      mockedDependencyTree.set(path, deps);
+    }
+
+    files.add(path);
+  },
+};
 
 function deferred(value) {
   let resolve;
@@ -31,15 +98,15 @@ function deferred(value) {
   return {promise, resolve: () => resolve(value)};
 }
 
-function createModule({path, name, isAsset, isPolyfill}) {
+function createModule({path, name}) {
   return {
     path,
     name,
     isAsset() {
-      return !!isAsset;
+      return false;
     },
     isPolyfill() {
-      return !!isPolyfill;
+      return false;
     },
     async read() {
       const deps = mockedDependencyTree.get(path);
@@ -65,11 +132,8 @@ function getPaths({added, deleted}) {
 }
 
 beforeEach(async () => {
-  mockedDependencies = new Set([entryModule, moduleFoo, moduleBar, moduleBaz]);
-  mockedDependencyTree = new Map([
-    [entryModule.path, [moduleFoo]],
-    [moduleFoo.path, [moduleBar, moduleBaz]],
-  ]);
+  mockedDependencies = new Set();
+  mockedDependencyTree = new Map();
 
   dependencyGraph = {
     getAbsolutePath(path) {
@@ -90,6 +154,18 @@ beforeEach(async () => {
       return dependency;
     },
   };
+
+  // Generate the initial dependency graph.
+  entryModule = Actions.createFile('/bundle');
+  moduleFoo = Actions.createFile('/foo');
+  moduleBar = Actions.createFile('/bar');
+  moduleBaz = Actions.createFile('/baz');
+
+  Actions.addDependency('/bundle', '/foo');
+  Actions.addDependency('/foo', '/bar');
+  Actions.addDependency('/foo', '/baz');
+
+  files = new Set();
 });
 
 it('should do the initial traversal correctly', async () => {
@@ -127,11 +203,12 @@ it('should return a removed dependency', async () => {
   const edges = new Map();
   await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
 
-  // Remove moduleBar
-  mockedDependencyTree.set(moduleFoo.path, [moduleBaz]);
+  Actions.removeDependency('/foo', '/bar');
 
   expect(
-    getPaths(await traverseDependencies(['/foo'], dependencyGraph, {}, edges)),
+    getPaths(
+      await traverseDependencies([...files], dependencyGraph, {}, edges),
+    ),
   ).toEqual({
     added: new Set(['/foo']),
     deleted: new Set(['/bar']),
@@ -142,13 +219,14 @@ it('should return added/removed dependencies', async () => {
   const edges = new Map();
   await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
 
-  // Add moduleQux
-  const moduleQux = createModule({path: '/qux', name: 'qux'});
-  mockedDependencyTree.set(moduleFoo.path, [moduleQux]);
-  mockedDependencies.add(moduleQux);
+  Actions.addDependency('/foo', '/qux');
+  Actions.removeDependency('/foo', '/bar');
+  Actions.removeDependency('/foo', '/baz');
 
   expect(
-    getPaths(await traverseDependencies(['/foo'], dependencyGraph, {}, edges)),
+    getPaths(
+      await traverseDependencies([...files], dependencyGraph, {}, edges),
+    ),
   ).toEqual({
     added: new Set(['/foo', '/qux']),
     deleted: new Set(['/bar', '/baz']),
@@ -159,7 +237,7 @@ it('should retry to traverse the dependencies as it was after getting an error',
   const edges = new Map();
   await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
 
-  mockedDependencies.delete(moduleBar);
+  Actions.deleteFile(moduleBar.path);
 
   await expect(
     traverseDependencies(['/foo'], dependencyGraph, {}, edges),
@@ -177,21 +255,13 @@ describe('edge cases', () => {
     const edges = new Map();
     await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
 
-    // Change the dependencies of /path, removing /baz and adding /qux.
-    const moduleQux = createModule({path: '/qux', name: 'qux'});
-    mockedDependencyTree.set(moduleFoo.path, [moduleQux, moduleBar]);
-    mockedDependencies.add(moduleQux);
+    Actions.removeDependency('/foo', '/baz');
+    Actions.moveFile('/baz', '/qux');
+    Actions.addDependency('/foo', '/qux');
 
-    // Call traverseDependencies with /foo, /qux and /baz, simulating that the
-    // user has modified the 3 files.
     expect(
       getPaths(
-        await traverseDependencies(
-          ['/foo', '/qux', '/baz'],
-          dependencyGraph,
-          {},
-          edges,
-        ),
+        await traverseDependencies([...files], dependencyGraph, {}, edges),
       ),
     ).toEqual({
       added: new Set(['/foo', '/qux']),
@@ -204,20 +274,16 @@ describe('edge cases', () => {
     await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
 
     // Rename /foo to /foo-renamed, but keeping all its dependencies.
-    const moduleFooRenamed = createModule({
-      path: '/foo-renamed',
-      name: 'foo-renamed',
-    });
-    mockedDependencyTree.set(entryModule.path, [moduleFooRenamed]);
-    mockedDependencyTree.set(moduleFooRenamed.path, [moduleBar, moduleBaz]);
-    mockedDependencies.add(moduleFooRenamed);
-    mockedDependencies.delete(moduleFoo);
+    Actions.addDependency('/bundle', '/foo-renamed');
+    Actions.removeDependency('/bundle', '/foo');
 
-    // Call traverseDependencies with /foo, /qux and /baz, simulating that the
-    // user has modified the 3 files.
+    Actions.moveFile('/foo', '/foo-renamed');
+    Actions.addDependency('/foo-renamed', '/bar');
+    Actions.addDependency('/foo-renamed', '/baz');
+
     expect(
       getPaths(
-        await traverseDependencies(['/bundle'], dependencyGraph, {}, edges),
+        await traverseDependencies([...files], dependencyGraph, {}, edges),
       ),
     ).toEqual({
       added: new Set(['/bundle', '/foo-renamed']),
@@ -231,15 +297,12 @@ describe('edge cases', () => {
 
     mockedDependencyTree.set(moduleFoo.path, [moduleBar]);
 
-    // Modify /foo and /baz, and then remove the dependency from /foo to /baz
+    Actions.modifyFile('/baz');
+    Actions.removeDependency('/foo', '/baz');
+
     expect(
       getPaths(
-        await traverseDependencies(
-          ['/baz', '/foo'],
-          dependencyGraph,
-          {},
-          edges,
-        ),
+        await traverseDependencies([...files], dependencyGraph, {}, edges),
       ),
     ).toEqual({
       added: new Set(['/foo']),
@@ -251,12 +314,9 @@ describe('edge cases', () => {
     const edges = new Map();
     await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
 
-    const moduleBazMoved = createModule({path: '/baz-moved', name: 'baz'});
-    mockedDependencyTree.set(moduleFoo.path, [moduleBar, moduleBazMoved]);
-    mockedDependencies.add(moduleBazMoved);
-    mockedDependencies.delete(moduleBaz);
+    Actions.addDependency('/foo', '/baz-moved');
+    Actions.removeDependency('/foo', '/baz');
 
-    // Modify /baz, rename it to /qux and modify it again.
     expect(
       getPaths(
         await traverseDependencies(['/foo'], dependencyGraph, {}, edges),
@@ -271,9 +331,7 @@ describe('edge cases', () => {
     const edges = new Map();
     await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
 
-    const moduleQux = createModule({path: '/qux', name: 'qux'});
-    mockedDependencyTree.set(moduleFoo.path, [moduleQux, moduleBar, moduleBaz]);
-    mockedDependencies.add(moduleQux);
+    Actions.addDependency('/foo', '/qux', 0);
 
     expect(
       getPaths(
@@ -285,9 +343,9 @@ describe('edge cases', () => {
     });
 
     expect([...edges.get(moduleFoo.path).dependencies]).toEqual([
-      ['qux', moduleQux.path],
-      ['bar', moduleBar.path],
-      ['baz', moduleBaz.path],
+      ['qux', '/qux'],
+      ['bar', '/bar'],
+      ['baz', '/baz'],
     ]);
   });
 
