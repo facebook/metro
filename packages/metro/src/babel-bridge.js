@@ -42,7 +42,7 @@ const babelGenerate7 = require('@babel/generator').default;
 const babelTemplate7 = require('@babel/template').default;
 const babelTraverse7 = require('@babel/traverse').default;
 const babelTypes7 = require('@babel/types');
-const babylon7 = require('babylon7');
+const babylon7 = require('metro-babylon7');
 
 const externalHelpersPlugin7 = require('babel-plugin-external-helpers');
 const inlineRequiresPlugin7 = require('babel-preset-fbjs/plugins/inline-requires');
