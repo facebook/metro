@@ -1,0 +1,18 @@
+{
+  "version": "0.27.0",
+  "name": "metro-babylon7",
+  "description": "🚇 Metro babylon v7 wrapper",
+  "main": "src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:facebook/metro.git"
+  },
+  "scripts": {
+    "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",
+    "cleanup-release": "test ! -e build && mv src build && mv src.real src"
+  },
+  "dependencies": {
+    "babylon": "^7.0.0-beta"
+  }
+}
+  
