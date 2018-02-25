@@ -11,10 +11,12 @@
 'use strict';
 
 const Cache = require('./Cache');
+const FileStore = require('./FileStore');
 
 const stableHash = require('./stableHash');
 
 export type {CacheStore} from './types.flow';
 
 module.exports.Cache = Cache;
+module.exports.FileStore = FileStore;
 module.exports.stableHash = stableHash;

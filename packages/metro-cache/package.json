@@ -10,5 +10,9 @@
   "scripts": {
     "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"
+  },
+  "dependencies": {
+    "jest-serializer": "^22.4.0",
+    "mkdirp": "^0.5.1"
   }
 }
