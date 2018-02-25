@@ -186,6 +186,16 @@ describe('inline constants', () => {
     );
   });
 
+  it('inlines Platform.select in the code when using string keys', () => {
+    const code = `function a() {
+      var a = Platform.select({'ios': 1, 'android': 2});
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {platform: 'android'});
+    expect(toString(ast)).toEqual(
+      normalize(code.replace(/Platform\.select[^;]+/, '2')),
+    );
+  });
+
   it('replaces Platform.select in the code if Platform is a top level import', () => {
     const code = `
       var Platform = require('Platform');

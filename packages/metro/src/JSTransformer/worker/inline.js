@@ -49,7 +49,17 @@ const isDev = (node, parent, scope) =>
   !t.isMemberExpression(parent);
 
 function findProperty(objectExpression, key, fallback) {
-  const property = objectExpression.properties.find(p => p.key.name === key);
+  const property = objectExpression.properties.find(p => {
+    if (t.isIdentifier(p.key) && p.key.name === key) {
+      return true;
+    }
+
+    if (t.isStringLiteral(p.key) && p.key.value === key) {
+      return true;
+    }
+
+    return false;
+  });
   return property ? property.value : fallback();
 }
 
