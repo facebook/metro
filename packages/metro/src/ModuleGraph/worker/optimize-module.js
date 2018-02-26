@@ -14,18 +14,18 @@ const constantFolding = require('../../JSTransformer/worker/constant-folding')
   .plugin;
 const generate = require('./generate');
 const getMinifier = require('../../lib/getMinifier');
-const inline = require('../../JSTransformer/worker/inline').plugin;
+const inlinePlugin = require('../../JSTransformer/worker/inline-plugin');
 const invariant = require('fbjs/lib/invariant');
 const optimizeDependencies = require('./optimizeDependencies');
 const sourceMap = require('source-map');
 
 const {transformSync} = require('../../babel-bridge');
 
+import type {PostMinifyProcess} from '../../Bundler/index.js';
 import type {TransformedSourceFile, TransformResult} from '../types.flow';
 import type {BabelSourceMap} from '@babel/core';
-import type {MetroSourceMap} from 'metro-source-map';
-import type {PostMinifyProcess} from '../../Bundler/index.js';
 import type {TransformResult as BabelTransformResult} from '@babel/core';
+import type {MetroSourceMap} from 'metro-source-map';
 
 export type OptimizationOptions = {|
   dev: boolean,
@@ -118,7 +118,7 @@ function optimizeCode(
   return transformSync(code, {
     plugins: [
       [constantFolding],
-      [inline, {...inliningOptions, isWrapped: true}],
+      [inlinePlugin, {...inliningOptions, isWrapped: true}],
     ],
     babelrc: false,
     code: false,

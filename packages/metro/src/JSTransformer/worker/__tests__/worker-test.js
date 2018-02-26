@@ -11,7 +11,7 @@
 
 jest
   .mock('../constant-folding')
-  .mock('../inline')
+  .mock('../inline-plugin')
   .mock('metro-minify-uglify');
 
 const path = require('path');

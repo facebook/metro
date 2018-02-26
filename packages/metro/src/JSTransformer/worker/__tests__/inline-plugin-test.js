@@ -9,17 +9,51 @@
  */
 'use strict';
 
-const inline = require('../inline');
+const inlinePlugin = require('../inline-plugin');
+const invariant = require('fbjs/lib/invariant');
 
 const {transformSync} = require('../../../babel-bridge');
 const {transformFromAstSync} = require('../../../babel-bridge');
 
 import type {TransformResult} from '@babel/core';
+import type {Ast} from 'babel-core';
+import type {BabelSourceMap} from 'babel-core';
 
 const babelOptions = {
   babelrc: false,
   compact: true,
 };
+
+type AstResult = {
+  ast: Ast,
+  code: ?string,
+  map: ?BabelSourceMap,
+};
+
+function inline(
+  filename: string,
+  transformResult: {ast?: ?Ast, code: string, map: ?BabelSourceMap},
+  options: {+dev: boolean, +platform: ?string},
+): AstResult {
+  const code = transformResult.code;
+  const babelOptions = {
+    filename,
+    plugins: [[inlinePlugin, options]],
+    inputSourceMap: transformResult.map,
+    sourceMaps: true,
+    sourceFileName: filename,
+    code: false,
+    babelrc: false,
+    compact: true,
+  };
+
+  const result = transformResult.ast
+    ? transformFromAstSync(transformResult.ast, code, babelOptions)
+    : transformSync(code, babelOptions);
+  const {ast} = result;
+  invariant(ast != null, 'Missing AST in babel transform results.');
+  return {ast, code: result.code, map: result.map};
+}
 
 function toString(ast): string {
   return normalize(transformFromAstSync(ast, babelOptions).code);
@@ -475,7 +509,7 @@ describe('inline constants', () => {
 
     const transformed = transformSync(code, {
       ...babelOptions,
-      plugins: [stripFlow, [inline.plugin, {dev: false}]],
+      plugins: [stripFlow, [inlinePlugin, {dev: false}]],
     }).code;
 
     expect(transformed).toEqual('const a=false;');
@@ -490,7 +524,7 @@ describe('inline constants', () => {
 
     const transformed = transformSync(code, {
       ...babelOptions,
-      plugins: [stripFlow, [inline.plugin, {dev: true}]],
+      plugins: [stripFlow, [inlinePlugin, {dev: true}]],
     }).code;
 
     expect(transformed).toEqual('__d(()=>{const a=true;});');

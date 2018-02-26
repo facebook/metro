@@ -16,7 +16,7 @@ const assetTransformer = require('../../assetTransformer');
 const collectDependencies = require('../../ModuleGraph/worker/collectDependencies');
 const constantFolding = require('./constant-folding');
 const getMinifier = require('../../lib/getMinifier');
-const inline = require('./inline');
+const inlinePlugin = require('./inline-plugin');
 const optimizeDependencies = require('../../ModuleGraph/worker/optimizeDependencies');
 const path = require('path');
 
@@ -231,9 +231,9 @@ function transformCode(
 
   const plugins = options.dev
     ? []
-    : [[inline.plugin, options], [constantFolding.plugin, options]];
+    : [[inlinePlugin, options], [constantFolding.plugin, options]];
 
-  // $FlowFixMe: impossible to type a dynamic require.
+  // $FlowFixMe TODO t26372934 Plugin system
   const transformer: Transformer<*> = require(transformerPath);
 
   const transformerArgs = {
