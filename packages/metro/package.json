@@ -75,6 +75,7 @@
     "metro-babylon7": "0.27.0",
     "metro-cache": "0.27.0",
     "metro-core": "0.27.0",
+    "metro-minify-uglify": "0.27.0",
     "metro-resolver": "0.27.0",
     "metro-source-map": "0.27.0",
     "mime-types": "2.1.11",
