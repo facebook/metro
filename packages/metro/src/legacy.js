@@ -173,6 +173,7 @@ function toServerOptions(options: Options): ServerOptions {
     assetRegistryPath: options.assetRegistryPath,
     asyncRequireModulePath: options.asyncRequireModulePath,
     blacklistRE: options.blacklistRE,
+    cacheStores: options.cacheStores,
     cacheVersion: options.cacheVersion,
     dynamicDepsInPackages: options.dynamicDepsInPackages,
     enableBabelRCLookup: options.enableBabelRCLookup,
