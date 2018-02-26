@@ -4,8 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
  * @emails oncall+js_foundation
+ * @flow
+ * @format
  */
 'use strict';
 
@@ -32,8 +33,8 @@ type AstResult = {
 
 function inline(
   filename: string,
-  transformResult: {ast?: ?Ast, code: string, map: ?BabelSourceMap},
-  options: {+dev: boolean, +platform: ?string},
+  transformResult: {ast?: ?Ast, code: string, map?: ?BabelSourceMap},
+  options: {+dev?: boolean, +platform?: ?string},
 ): AstResult {
   const code = transformResult.code;
   const babelOptions = {
@@ -56,7 +57,7 @@ function inline(
 }
 
 function toString(ast): string {
-  return normalize(transformFromAstSync(ast, babelOptions).code);
+  return normalize(transformFromAstSync(ast, '(unused)', babelOptions).code);
 }
 
 function normalize(code: string): string {
@@ -465,7 +466,11 @@ describe('inline constants', () => {
 
   it('accepts an AST as input', function() {
     const code = 'function ifDev(a,b){return __DEV__?a:b;}';
-    const {ast} = inline('arbitrary.hs', {ast: toAst(code)}, {dev: false});
+    const {ast} = inline(
+      'arbitrary.hs',
+      {ast: toAst(code), code},
+      {dev: false},
+    );
     expect(toString(ast)).toEqual(code.replace(/__DEV__/, 'false'));
   });
 
@@ -483,7 +488,7 @@ describe('inline constants', () => {
       normalize(
         code
           .replace(/Platform\.OS/, '"android"')
-          .replace(/Platform\.select[^)]+\)/, 1),
+          .replace(/Platform\.select[^)]+\)/, '1'),
       ),
     );
   });
