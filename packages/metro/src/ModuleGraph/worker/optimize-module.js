@@ -10,8 +10,7 @@
 
 'use strict';
 
-const constantFolding = require('../../JSTransformer/worker/constant-folding')
-  .plugin;
+const constantFoldingPlugin = require('../../JSTransformer/worker/constant-folding-plugin');
 const generate = require('./generate');
 const getMinifier = require('../../lib/getMinifier');
 const inlinePlugin = require('../../JSTransformer/worker/inline-plugin');
@@ -117,7 +116,7 @@ function optimizeCode(
 ): BabelTransformResult {
   return transformSync(code, {
     plugins: [
-      [constantFolding],
+      [constantFoldingPlugin],
       [inlinePlugin, {...inliningOptions, isWrapped: true}],
     ],
     babelrc: false,

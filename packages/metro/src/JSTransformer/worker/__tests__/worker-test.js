@@ -10,7 +10,7 @@
 'use strict';
 
 jest
-  .mock('../constant-folding')
+  .mock('../constant-folding-plugin')
   .mock('../inline-plugin')
   .mock('metro-minify-uglify');
 

@@ -14,7 +14,7 @@ const JsFileWrapping = require('../../ModuleGraph/worker/JsFileWrapping');
 
 const assetTransformer = require('../../assetTransformer');
 const collectDependencies = require('../../ModuleGraph/worker/collectDependencies');
-const constantFolding = require('./constant-folding');
+const constantFoldingPlugin = require('./constant-folding-plugin');
 const getMinifier = require('../../lib/getMinifier');
 const inlinePlugin = require('./inline-plugin');
 const optimizeDependencies = require('../../ModuleGraph/worker/optimizeDependencies');
@@ -231,7 +231,7 @@ function transformCode(
 
   const plugins = options.dev
     ? []
-    : [[inlinePlugin, options], [constantFolding.plugin, options]];
+    : [[inlinePlugin, options], [constantFoldingPlugin, options]];
 
   // $FlowFixMe TODO t26372934 Plugin system
   const transformer: Transformer<*> = require(transformerPath);

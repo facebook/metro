@@ -10,11 +10,28 @@
  */
 'use strict';
 
-const constantFolding = require('../constant-folding');
+const constantFoldingPlugin = require('../constant-folding-plugin');
 
 const {transformSync} = require('../../../babel-bridge');
+const {transformFromAstSync} = require('../../../babel-bridge');
 
 import type {TransformResult} from '@babel/core';
+
+function constantFolding(
+  filename: string,
+  transformResult: TransformResult,
+): TransformResult {
+  return transformFromAstSync(transformResult.ast, transformResult.code, {
+    filename,
+    plugins: [constantFoldingPlugin],
+    inputSourceMap: transformResult.map || undefined, // may not be null
+    sourceMaps: true,
+    sourceFileName: filename,
+    babelrc: false,
+    compact: true,
+    retainLines: true,
+  });
+}
 
 function parse(code: string): TransformResult {
   return transformSync(code, {
