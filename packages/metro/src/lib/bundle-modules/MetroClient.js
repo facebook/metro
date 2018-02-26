@@ -35,6 +35,9 @@ class MetroClient extends EventEmitter {
     this._ws.onerror = error => {
       this.emit('connection-error', error);
     };
+    this._ws.onclose = () => {
+      this.emit('close');
+    };
     this._ws.onmessage = message => {
       const data = JSON.parse(message.data);
       switch (data.type) {

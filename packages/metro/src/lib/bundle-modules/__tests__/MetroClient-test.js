@@ -17,7 +17,12 @@ global.WebSocket = jest.fn(() => {
   mockSocket = {
     onerror: jest.fn(),
     onmessage: jest.fn(),
-    close: jest.fn(),
+    onclose: jest.fn(),
+    close: jest.fn(() => {
+      if (mockSocket) {
+        mockSocket.onclose();
+      }
+    }),
     mockEmit: (type, data) => {
       if (mockSocket) {
         if (type === 'error') {
@@ -41,10 +46,12 @@ test('connects to a WebSocket and listens to messages', () => {
   };
   const mockErrorCallback = jest.fn(data => expect(data).toEqual(mockError));
   const mockUpdateStartCallback = jest.fn();
+  const mockCloseCallback = jest.fn();
 
   expect(mockSocket).toBeNull();
   client.on('connection-error', mockErrorCallback);
   client.on('update-start', mockUpdateStartCallback);
+  client.on('close', mockCloseCallback);
   client.enable();
   if (!mockSocket) {
     throw new Error('mockSocket was not set when opening the connection.');
@@ -64,4 +71,5 @@ test('connects to a WebSocket and listens to messages', () => {
   expect(mockSocket.close).not.toBeCalled();
   client.disable();
   expect(mockSocket.close).toBeCalled();
+  expect(mockCloseCallback).toBeCalled();
 });
