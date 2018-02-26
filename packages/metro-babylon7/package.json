@@ -1,5 +1,5 @@
 {
-  "version": "0.27.0",
+  "version": "0.28.0",
   "name": "metro-babylon7",
   "description": "🚇 Metro babylon v7 wrapper",
   "main": "src/index.js",
@@ -15,4 +15,3 @@
     "babylon": "^7.0.0-beta"
   }
 }
-  
