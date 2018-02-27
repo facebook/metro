@@ -50,12 +50,12 @@ describe('Serializers', () => {
     postProcessModules.mockImplementation(modules => modules);
 
     deltaBundler = {
-      async getDeltaTransformer() {
-        return {
+      getDeltaTransformer: jest.fn().mockReturnValue(
+        Promise.resolve({
           getDelta,
           getDependenciesFn,
-        };
-      },
+        }),
+      ),
       getPostProcessModulesFn() {
         return postProcessModules;
       },
@@ -101,7 +101,11 @@ describe('Serializers', () => {
   });
 
   it('should build the full JS bundle', async () => {
-    expect(await Serializers.fullBundle(deltaBundler, {})).toMatchSnapshot();
+    expect(
+      await Serializers.fullBundle(deltaBundler, {
+        sourceMapUrl: 'http://localhost:8081/myBundle.js',
+      }),
+    ).toMatchSnapshot();
 
     getDelta.mockReturnValueOnce(
       Promise.resolve({
@@ -119,6 +123,17 @@ describe('Serializers', () => {
         sourceMapUrl: 'http://localhost:8081/myBundle.js',
       }),
     ).toMatchSnapshot();
+  });
+
+  it('should pass the sourcemapURL param to the transformer', async () => {
+    await Serializers.fullBundle(deltaBundler, {
+      sourceMapUrl: 'http://localhost:8081/myBundle.js',
+    });
+
+    expect(deltaBundler.getDeltaTransformer.mock.calls[0][1]).toEqual({
+      deltaBundleId: '1234',
+      sourceMapUrl: 'http://localhost:8081/myBundle.js',
+    });
   });
 
   // This test actually does not test the sourcemaps generation logic, which

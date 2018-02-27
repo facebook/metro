@@ -135,10 +135,7 @@ async function _getAllModules(
   lastModified: Date,
   deltaTransformer: DeltaTransformer,
 }> {
-  const hashedOptions = options;
-  delete hashedOptions.sourceMapUrl;
-
-  const clientId = '__SERVER__' + stableHash(hashedOptions).toString('hex');
+  const clientId = '__SERVER__' + stableHash(options).toString('hex');
 
   const deltaPatcher = DeltaPatcher.get(clientId);
 
