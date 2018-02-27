@@ -1,0 +1,25 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`throws when finding a symlink loop 1`] = `"ELOOP: \`/foo.txt\`: too many levels of symbolic links"`;
+
+exports[`throws when trying to create symlink over existing file 1`] = `"EEXIST: \`/foo.txt\`: directory or file already exists"`;
+
+exports[`throws when trying to open too many files 1`] = `"EMFILE: \`/foo.txt\`: too many open files"`;
+
+exports[`throws when trying to read a directory entry 1`] = `"EISDIR: \`/glo\`: cannot read/write to a directory"`;
+
+exports[`throws when trying to read directory as file 1`] = `"EISDIR: \`/glo\`: cannot read/write to a directory"`;
+
+exports[`throws when trying to read file via inexistent directory 1`] = `"ENOENT: \`/glo/../foo.txt\`: no such file or directory"`;
+
+exports[`throws when trying to read file with trailing slash 1`] = `"ENOTDIR: \`/foo.txt/\`: not a directory"`;
+
+exports[`throws when trying to read inexistent file (async) 1`] = `"ENOENT: \`/foo.txt\`: no such file or directory"`;
+
+exports[`throws when trying to read inexistent file 1`] = `"ENOENT: \`/foo.txt\`: no such file or directory"`;
+
+exports[`throws when trying to write a directory entry 1`] = `"EISDIR: \`/glo\`: cannot read/write to a directory"`;
+
+exports[`throws when trying to write to a read-only file descriptor 1`] = `"EBADF: file descriptor cannot be written to"`;
+
+exports[`throws when trying to write to an inexistent file descriptor 1`] = `"EBADF: file descriptor is not open"`;
