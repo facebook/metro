@@ -153,7 +153,7 @@ class DeltaTransformer extends EventEmitter {
    * Returns a function that can be used to calculate synchronously the
    * transitive dependencies of any given file within the dependency graph.
    **/
-  async getDependenciesFn() {
+  async getDependenciesFn(): Promise<(string) => Set<string>> {
     if (!this._deltaCalculator.getDependencyEdges().size) {
       // If by any means the dependency graph has not been initialized, call
       // getDelta() to initialize it.
@@ -185,22 +185,6 @@ class DeltaTransformer extends EventEmitter {
     }
 
     return output;
-  }
-
-  async getRamOptions(
-    entryFile: string,
-    options: {dev: boolean, platform: ?string},
-  ): Promise<{|
-    +preloadedModules: {[string]: true},
-    +ramGroups: $ReadOnlyArray<string>,
-  |}> {
-    const getDependenciesFn = await this.getDependenciesFn();
-
-    return await this._bundler.getRamOptions(
-      entryFile,
-      options,
-      async (path: string) => Array.from(getDependenciesFn(path)),
-    );
   }
 
   /**

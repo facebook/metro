@@ -10,22 +10,24 @@
 
 'use strict';
 
-const DeltaPatcher = require('./DeltaPatcher');
+const DeltaPatcher = require('../DeltaPatcher');
+const RamBundle = require('./RamBundle');
 
 const stableHash = require('metro-cache/src/stableHash');
-const toLocalPath = require('../node-haste/lib/toLocalPath');
+const toLocalPath = require('../../node-haste/lib/toLocalPath');
 
-const {getAssetData} = require('../Assets');
-const {createRamBundleGroups} = require('../Bundler/util');
+const {getAssetData} = require('../../Assets');
+const {createRamBundleGroups} = require('../../Bundler/util');
 const {fromRawMappings} = require('metro-source-map');
 
-import type {AssetData} from '../Assets';
-import type {BundleOptions, ModuleTransportLike} from '../shared/types.flow';
-import type DeltaBundler from './';
+import type {AssetData} from '../../Assets';
+import type {GetTransformOptions} from '../../Bundler';
+import type {BundleOptions, ModuleTransportLike} from '../../shared/types.flow';
+import type DeltaBundler from '../';
 import type DeltaTransformer, {
   DeltaEntry,
   DeltaTransformResponse,
-} from './DeltaTransformer';
+} from '../DeltaTransformer';
 import type {BabelSourceMap} from '@babel/core';
 
 export type DeltaOptions = BundleOptions & {
@@ -166,6 +168,7 @@ async function _getAllModules(
 async function getRamBundleInfo(
   deltaBundler: DeltaBundler,
   options: BundleOptions,
+  getTransformOptions: ?GetTransformOptions,
 ): Promise<RamBundleInfo> {
   const {modules, deltaTransformer} = await _getAllModules(
     deltaBundler,
@@ -184,12 +187,14 @@ async function getRamBundleInfo(
     type: module.type,
   }));
 
-  const {preloadedModules, ramGroups} = await deltaTransformer.getRamOptions(
+  const {preloadedModules, ramGroups} = await RamBundle.getRamOptions(
     options.entryFile,
     {
       dev: options.dev,
       platform: options.platform,
     },
+    await deltaTransformer.getDependenciesFn(),
+    getTransformOptions,
   );
 
   const startupModules = [];

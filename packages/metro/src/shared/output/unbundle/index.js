@@ -16,7 +16,7 @@ const asAssets = require('./as-assets');
 const asIndexedFile = require('./as-indexed-file').save;
 
 import type {OutputOptions, RequestOptions} from '../../types.flow';
-import type {RamBundleInfo} from '../../../DeltaBundler/Serializers';
+import type {RamBundleInfo} from '../../../DeltaBundler/Serializers/Serializers';
 
 async function buildBundle(
   packagerClient: Server,

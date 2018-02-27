@@ -18,7 +18,7 @@ const writeSourceMap = require('./write-sourcemap');
 
 const {joinModules} = require('./util');
 
-import type {RamBundleInfo} from '../../../DeltaBundler/Serializers';
+import type {RamBundleInfo} from '../../../DeltaBundler/Serializers/Serializers';
 import type {
   ModuleGroups,
   ModuleTransportLike,

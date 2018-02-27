@@ -13,7 +13,7 @@
 const Bundler = require('../Bundler');
 const DeltaBundler = require('../DeltaBundler');
 const MultipartResponse = require('./MultipartResponse');
-const Serializers = require('../DeltaBundler/Serializers');
+const Serializers = require('../DeltaBundler/Serializers/Serializers');
 const debug = require('debug')('Metro:Server');
 const defaults = require('../defaults');
 const formatBundlingError = require('../lib/formatBundlingError');
@@ -33,7 +33,10 @@ const resolveSync: ResolveSync = require('resolve').sync;
 import type {CustomError} from '../lib/formatBundlingError';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from '../lib/reporting';
-import type {DeltaOptions} from '../DeltaBundler/Serializers';
+import type {
+  DeltaOptions,
+  RamBundleInfo,
+} from '../DeltaBundler/Serializers/Serializers';
 import type {BundleOptions, Options} from '../shared/types.flow';
 import type {
   GetTransformOptions,
@@ -45,7 +48,6 @@ import type {MetroSourceMap} from 'metro-source-map';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Symbolicate} from './symbolicate';
 import type {AssetData} from '../Assets';
-import type {RamBundleInfo} from '../DeltaBundler/Serializers';
 import type {PostProcessModules} from '../DeltaBundler';
 import type {TransformedCode} from '../JSTransformer/worker';
 const {
@@ -251,7 +253,11 @@ class Server {
   }
 
   async getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo> {
-    return await Serializers.getRamBundleInfo(this._deltaBundler, options);
+    return await Serializers.getRamBundleInfo(
+      this._deltaBundler,
+      options,
+      this._opts.getTransformOptions,
+    );
   }
 
   async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {

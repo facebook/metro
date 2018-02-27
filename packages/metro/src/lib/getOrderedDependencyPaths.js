@@ -10,7 +10,7 @@
 
 'use strict';
 
-const Serializers = require('../DeltaBundler/Serializers');
+const Serializers = require('../DeltaBundler/Serializers/Serializers');
 
 const {getAssetFiles} = require('../Assets');
 

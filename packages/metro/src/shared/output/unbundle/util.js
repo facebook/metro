@@ -11,7 +11,7 @@
 
 const invariant = require('fbjs/lib/invariant');
 
-import type {RamModule} from '../../../DeltaBundler/Serializers';
+import type {RamModule} from '../../../DeltaBundler/Serializers/Serializers';
 import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
 import type {BabelSourceMap} from '@babel/core';
 import type {FBIndexMap, IndexMap, MetroSourceMap} from 'metro-source-map';

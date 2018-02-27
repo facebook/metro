@@ -15,7 +15,7 @@ const {
   joinModules,
 } = require('./util');
 
-import type {RamModule} from '../../../DeltaBundler/Serializers';
+import type {RamModule} from '../../../DeltaBundler/Serializers/Serializers';
 import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
 
 type Params = {|

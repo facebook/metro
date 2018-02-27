@@ -22,7 +22,7 @@ jest
   .mock('../../node-haste/DependencyGraph')
   .mock('metro-core/src/Logger')
   .mock('../../lib/GlobalTransformCache')
-  .mock('../../DeltaBundler/Serializers');
+  .mock('../../DeltaBundler/Serializers/Serializers');
 
 describe('processRequest', () => {
   let Bundler;
@@ -40,7 +40,7 @@ describe('processRequest', () => {
     Server = require('../');
     getAsset = require('../../Assets').getAsset;
     symbolicate = require('../symbolicate');
-    Serializers = require('../../DeltaBundler/Serializers');
+    Serializers = require('../../DeltaBundler/Serializers/Serializers');
     DeltaBundler = require('../../DeltaBundler');
   });
 
