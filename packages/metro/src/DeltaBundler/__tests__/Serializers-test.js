@@ -12,7 +12,6 @@
 
 jest.mock('../../node-haste/lib/toLocalPath');
 jest.mock('../../Assets');
-jest.mock('../Serializers/RamBundle');
 
 const {getAssetData} = require('../../Assets');
 const toLocalPath = require('../../node-haste/lib/toLocalPath');
@@ -26,7 +25,6 @@ describe('Serializers', () => {
   const postProcessModules = jest.fn();
   let deltaBundler;
   let Serializers;
-  let RamBundle;
 
   const deltaResponse = {
     id: '1234',
@@ -46,16 +44,9 @@ describe('Serializers', () => {
 
   beforeEach(() => {
     Serializers = require('../Serializers/Serializers');
-    RamBundle = require('../Serializers/RamBundle');
 
     getDelta.mockReturnValueOnce(Promise.resolve(deltaResponse));
     getDependenciesFn.mockReturnValue(Promise.resolve(() => new Set()));
-    RamBundle.getRamOptions.mockReturnValue(
-      Promise.resolve({
-        preloadedModules: {},
-        ramGroups: [],
-      }),
-    );
     postProcessModules.mockImplementation(modules => modules);
 
     deltaBundler = {
@@ -216,13 +207,6 @@ describe('Serializers', () => {
       }),
     );
 
-    RamBundle.getRamOptions.mockReturnValue(
-      Promise.resolve({
-        preloadedModules: {'/foo/3.js': true},
-        ramGroups: ['/foo/5.js'],
-      }),
-    );
-
     getDependenciesFn.mockReturnValue(
       Promise.resolve(path => {
         expect(path).toBe('/foo/5.js');
@@ -231,8 +215,13 @@ describe('Serializers', () => {
       }),
     );
 
+    const getTransformOptions = async () => ({
+      preloadedModules: {'/foo/3.js': true},
+      ramGroups: ['/foo/5.js'],
+    });
+
     expect(
-      await Serializers.getRamBundleInfo(deltaBundler, {}),
+      await Serializers.getRamBundleInfo(deltaBundler, {}, getTransformOptions),
     ).toMatchSnapshot();
   });
 
