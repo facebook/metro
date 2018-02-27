@@ -26,10 +26,7 @@ const {
 } = require('metro-source-map');
 
 import type {PostProcessModules} from '../DeltaBundler';
-import type {
-  Options as JSTransformerOptions,
-  TransformedCode,
-} from '../JSTransformer/worker';
+import type {TransformedCode} from '../JSTransformer/worker';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {TransformCache} from '../lib/TransformCaching';
