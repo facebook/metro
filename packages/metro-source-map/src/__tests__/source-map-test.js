@@ -13,7 +13,11 @@
 
 const Generator = require('../Generator');
 
-const {toSegmentTuple, fromRawMappings, toBabelSegments} = require('..');
+const {
+  toSegmentTuple,
+  fromRawMappings,
+  toBabelSegments,
+} = require('../source-map');
 
 describe('flattening mappings / compacting', () => {
   it('flattens simple mappings', () => {

@@ -24,7 +24,7 @@ const nullthrows = require('fbjs/lib/nullthrows');
 const parseCustomTransformOptions = require('../lib/parseCustomTransformOptions');
 const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
 const path = require('path');
-const symbolicate = require('./symbolicate');
+const symbolicate = require('./symbolicate/symbolicate');
 const url = require('url');
 
 const {getAsset} = require('../Assets');
@@ -46,7 +46,7 @@ import type {
 import type {CacheStore} from 'metro-cache';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {TransformCache} from '../lib/TransformCaching';
-import type {Symbolicate} from './symbolicate';
+import type {Symbolicate} from './symbolicate/symbolicate';
 import type {AssetData} from '../Assets';
 import type {PostProcessModules} from '../DeltaBundler';
 import type {TransformedCode} from '../JSTransformer/worker';

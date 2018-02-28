@@ -14,7 +14,7 @@ jest
   .mock('jest-worker', () => ({}))
   .mock('metro-minify-uglify')
   .mock('crypto')
-  .mock('../symbolicate', () => ({
+  .mock('../symbolicate/symbolicate', () => ({
     createWorker: jest.fn().mockReturnValue(jest.fn()),
   }))
   .mock('../../Bundler')
@@ -39,7 +39,7 @@ describe('processRequest', () => {
     Bundler = require('../../Bundler');
     Server = require('../');
     getAsset = require('../../Assets').getAsset;
-    symbolicate = require('../symbolicate');
+    symbolicate = require('../symbolicate/symbolicate');
     Serializers = require('../../DeltaBundler/Serializers/Serializers');
     DeltaBundler = require('../../DeltaBundler');
   });

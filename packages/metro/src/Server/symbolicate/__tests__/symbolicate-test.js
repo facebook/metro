@@ -13,7 +13,7 @@ jest.mock('child_process').mock('net');
 
 const EventEmitter = require('events');
 const {Readable} = require('stream');
-const {createWorker} = require('../');
+const {createWorker} = require('../symbolicate');
 
 let childProcess, socketResponse, socket, worker;
 
