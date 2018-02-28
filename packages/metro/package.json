@@ -98,6 +98,7 @@
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
+    "metro-memory-fs": "0.28.0",
     "sinon": "^2.2.0"
   }
 }
