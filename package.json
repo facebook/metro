@@ -21,6 +21,7 @@
     "eslint-config-fb-strict": "22.1.0",
     "eslint-plugin-babel": "4.1.2",
     "eslint-plugin-flowtype": "2.43.0",
+    "eslint-plugin-import": "^2.9.0",
     "eslint-plugin-jest": "21.8.0",
     "eslint-plugin-jsx-a11y": "6.0.3",
     "eslint-plugin-prettier": "2.6.0",
@@ -36,7 +37,7 @@
     "mkdirp": "^0.5.1",
     "prettier": "1.9.1",
     "promise": "^7.1.1",
-    "sinon": "^2.3.1",
+    "sinon": "^2.2.0",
     "temp": "^0.8.3"
   },
   "scripts": {

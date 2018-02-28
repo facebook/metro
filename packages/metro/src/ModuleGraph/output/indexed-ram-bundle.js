@@ -11,7 +11,7 @@
 'use strict';
 
 const buildSourceMapWithMetaData = require('../../shared/output/unbundle/build-unbundle-sourcemap-with-metadata.js');
-const invariant = require('invariant');
+const invariant = require('fbjs/lib/invariant');
 
 const {createRamBundleGroups} = require('../../Bundler/util');
 const {
