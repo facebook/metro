@@ -59,11 +59,6 @@ describe('Serializers', () => {
       getPostProcessModulesFn() {
         return postProcessModules;
       },
-      getOptions() {
-        return {
-          projectRoots: ['/foo'],
-        };
-      },
     };
 
     getAssetData.mockImplementation(
@@ -259,9 +254,13 @@ describe('Serializers', () => {
     );
 
     expect(
-      await Serializers.getAssets(deltaBundler, {
-        platform: 'ios',
-      }),
+      await Serializers.getAssets(
+        deltaBundler,
+        {
+          platform: 'ios',
+        },
+        ['/foo'],
+      ),
     ).toMatchSnapshot();
   });
 

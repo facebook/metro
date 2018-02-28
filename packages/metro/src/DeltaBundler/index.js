@@ -12,7 +12,7 @@
 
 const DeltaTransformer = require('./DeltaTransformer');
 
-import type Bundler, {Options as ServerOptions} from '../Bundler';
+import type Bundler from '../Bundler';
 import type {BundleOptions} from '../shared/types.flow';
 import type {DeltaEntry} from './DeltaTransformer';
 
@@ -47,10 +47,6 @@ class DeltaBundler {
   end() {
     this._deltaTransformers.forEach(DeltaTransformer => DeltaTransformer.end());
     this._deltaTransformers = new Map();
-  }
-
-  getOptions(): ServerOptions {
-    return this._bundler.getOptions();
   }
 
   async getDeltaTransformer(

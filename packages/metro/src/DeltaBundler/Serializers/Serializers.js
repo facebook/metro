@@ -244,16 +244,14 @@ async function getRamBundleInfo(
 async function getAssets(
   deltaBundler: DeltaBundler,
   options: BundleOptions,
+  projectRoots: $ReadOnlyArray<string>,
 ): Promise<$ReadOnlyArray<AssetData>> {
   const {modules} = await _getAllModules(deltaBundler, options);
 
   const assets = await Promise.all(
     modules.map(async module => {
       if (module.type === 'asset') {
-        const localPath = toLocalPath(
-          deltaBundler.getOptions().projectRoots,
-          module.path,
-        );
+        const localPath = toLocalPath(projectRoots, module.path);
 
         return getAssetData(
           module.path,

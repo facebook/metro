@@ -261,7 +261,11 @@ class Server {
   }
 
   async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {
-    return await Serializers.getAssets(this._deltaBundler, options);
+    return await Serializers.getAssets(
+      this._deltaBundler,
+      options,
+      this._opts.projectRoots,
+    );
   }
 
   async getOrderedDependencyPaths(options: {
