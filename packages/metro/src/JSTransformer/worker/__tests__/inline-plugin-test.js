@@ -231,6 +231,32 @@ describe('inline constants', () => {
     );
   });
 
+  it('does not inline Platform.select in the code when some of the properties are dynamic', () => {
+    const code = `function a() {
+      const COMPUTED_IOS = 'ios';
+      const COMPUTED_ANDROID = 'android';
+      var a = Platform.select({[COMPUTED_ANDROID]: 1, [COMPUTED_IOS]: 2, default: 3});
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {platform: 'android'});
+    expect(toString(ast)).toEqual(normalize(code));
+  });
+
+  it('does not inline Platform.select when all properties are dynamic', () => {
+    const code = `function a() {
+      var a = Platform.select({[COMPUTED_ANDROID]: 1, [COMPUTED_IOS]: 2});
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {platform: 'android'});
+    expect(toString(ast)).toEqual(normalize(code));
+  });
+
+  it('does not inline Platform.select if it receives a non-object', () => {
+    const code = `function a() {
+      var a = Platform.select(foo);
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {platform: 'android'});
+    expect(toString(ast)).toEqual(normalize(code));
+  });
+
   it('replaces Platform.select in the code if Platform is a top level import', () => {
     const code = `
       var Platform = require('Platform');

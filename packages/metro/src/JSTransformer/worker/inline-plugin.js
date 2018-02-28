@@ -70,6 +70,20 @@ function inlinePlugin(context: Context) {
     return property ? property.value : fallback();
   }
 
+  function hasStaticProperties(objectExpression) {
+    if (!t.isObjectExpression(objectExpression)) {
+      return false;
+    }
+
+    return objectExpression.properties.every(p => {
+      if (p.computed) {
+        return false;
+      }
+
+      return t.isIdentifier(p.key) || t.isStringLiteral(p.key);
+    });
+  }
+
   return {
     visitor: {
       Identifier(path: Object, state: Object) {
@@ -99,13 +113,12 @@ function inlinePlugin(context: Context) {
         const opts = state.opts;
 
         if (isPlatformSelectNode(node, scope, opts.isWrapped)) {
-          const fallback = () =>
-            findProperty(arg, 'default', () => t.identifier('undefined'));
-          const replacement = t.isObjectExpression(arg)
-            ? findProperty(arg, opts.platform, fallback)
-            : node;
+          if (hasStaticProperties(arg)) {
+            const fallback = () =>
+              findProperty(arg, 'default', () => t.identifier('undefined'));
 
-          path.replaceWith(replacement);
+            path.replaceWith(findProperty(arg, opts.platform, fallback));
+          }
         } else if (isPlatformOSSelect(node, scope, opts.isWrapped)) {
           path.replaceWith(
             getReplacementForPlatformOSSelect(node, opts.platform),
