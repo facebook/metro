@@ -10,7 +10,7 @@
 'use strict';
 
 jest
-  .mock('fs')
+  .mock('fs', () => new (require('metro-memory-fs'))())
   .mock('assert')
   .mock('progress')
   .mock('../DeltaCalculator')
@@ -20,6 +20,7 @@ jest
   .mock('/path/to/transformer.js', () => ({}), {virtual: true});
 
 const fs = require('fs');
+const mkdirp = require('mkdirp');
 
 const Bundler = require('../../Bundler');
 const DeltaTransformer = require('../DeltaTransformer');
@@ -53,16 +54,10 @@ describe('DeltaTransformer', () => {
       .fn()
       .mockImplementation(opts => Promise.resolve(new DependencyGraph(opts)));
 
-    fs.__setMockFilesystem({
-      path: {to: {'transformer.js': ''}},
-      root: {to: {'something.js': ''}},
-    });
-
-    fs.statSync.mockImplementation(function() {
-      return {
-        isDirectory: () => true,
-      };
-    });
+    mkdirp.sync('/path/to');
+    fs.writeFileSync('/path/to/transformer.js', '');
+    mkdirp.sync('/root/to');
+    fs.writeFileSync('/root/to/something.js', '');
 
     bundler = new Bundler(bundlerOptions);
   });
