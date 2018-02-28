@@ -96,60 +96,63 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     allowHaste: boolean,
     platform: string | null,
   ): TModule {
-    const result = Resolver.resolve(
-      {
-        ...this._options,
-        originModulePath: fromModule.path,
-        redirectModulePath: modulePath =>
-          this._redirectRequire(fromModule, modulePath),
-        allowHaste,
-        platform,
-        resolveHasteModule: name =>
-          this._options.moduleMap.getModule(name, platform, true),
-        resolveHastePackage: name =>
-          this._options.moduleMap.getPackage(name, platform, true),
-        getPackageMainPath: this._getPackageMainPath,
-      },
-      moduleName,
-      platform,
-    );
-    if (result.type === 'resolved') {
-      return this._getFileResolvedModule(result.resolution);
-    }
-    if (result.candidates.type === 'modulePath') {
-      const {which} = result.candidates;
-      throw new UnableToResolveError(
-        fromModule.path,
+    try {
+      const result = Resolver.resolve(
+        {
+          ...this._options,
+          originModulePath: fromModule.path,
+          redirectModulePath: modulePath =>
+            this._redirectRequire(fromModule, modulePath),
+          allowHaste,
+          platform,
+          resolveHasteModule: name =>
+            this._options.moduleMap.getModule(name, platform, true),
+          resolveHastePackage: name =>
+            this._options.moduleMap.getPackage(name, platform, true),
+          getPackageMainPath: this._getPackageMainPath,
+        },
         moduleName,
-        `The module \`${moduleName}\` could not be found ` +
-          `from \`${fromModule.path}\`. ` +
-          `Indeed, none of these files exist:\n\n` +
-          `  * \`${Resolver.formatFileCandidates(which.file)}\`\n` +
-          `  * \`${Resolver.formatFileCandidates(which.dir)}\``,
+        platform,
       );
+      return this._getFileResolvedModule(result);
+    } catch (error) {
+      if (error instanceof Resolver.FailedToResolvePathError) {
+        const {candidates} = error;
+        throw new UnableToResolveError(
+          fromModule.path,
+          moduleName,
+          `The module \`${moduleName}\` could not be found ` +
+            `from \`${fromModule.path}\`. ` +
+            `Indeed, none of these files exist:\n\n` +
+            `  * \`${Resolver.formatFileCandidates(candidates.file)}\`\n` +
+            `  * \`${Resolver.formatFileCandidates(candidates.dir)}\``,
+        );
+      }
+      if (error instanceof Resolver.FailedToResolveNameError) {
+        const {dirPaths, extraPaths} = error;
+        const displayDirPaths = dirPaths
+          .filter(dirPath => this._options.dirExists(dirPath))
+          .concat(extraPaths);
+
+        const hint = displayDirPaths.length ? ' or in these directories:' : '';
+        throw new UnableToResolveError(
+          fromModule.path,
+          moduleName,
+          `Module \`${moduleName}\` does not exist in the Haste module map${hint}\n` +
+            displayDirPaths
+              .map(dirPath => `  ${path.dirname(dirPath)}\n`)
+              .join(', ') +
+            '\n' +
+            `This might be related to https://github.com/facebook/react-native/issues/4968\n` +
+            `To resolve try the following:\n` +
+            `  1. Clear watchman watches: \`watchman watch-del-all\`.\n` +
+            `  2. Delete the \`node_modules\` folder: \`rm -rf node_modules && npm install\`.\n` +
+            '  3. Reset Metro Bundler cache: `rm -rf /tmp/metro-bundler-cache-*` or `npm start -- --reset-cache`.' +
+            '  4. Remove haste cache: `rm -rf /tmp/haste-map-react-native-packager-*`.',
+        );
+      }
+      throw error;
     }
-
-    const {dirPaths, extraPaths} = result.candidates;
-    const displayDirPaths = dirPaths
-      .filter(dirPath => this._options.dirExists(dirPath))
-      .concat(extraPaths);
-
-    const hint = displayDirPaths.length ? ' or in these directories:' : '';
-    throw new UnableToResolveError(
-      fromModule.path,
-      moduleName,
-      `Module does not exist in the module map${hint}\n` +
-        displayDirPaths
-          .map(dirPath => `  ${path.dirname(dirPath)}\n`)
-          .join(', ') +
-        '\n' +
-        `This might be related to https://github.com/facebook/react-native/issues/4968\n` +
-        `To resolve try the following:\n` +
-        `  1. Clear watchman watches: \`watchman watch-del-all\`.\n` +
-        `  2. Delete the \`node_modules\` folder: \`rm -rf node_modules && npm install\`.\n` +
-        '  3. Reset Metro Bundler cache: `rm -rf /tmp/metro-bundler-cache-*` or `npm start -- --reset-cache`.' +
-        '  4. Remove haste cache: `rm -rf /tmp/haste-map-react-native-packager-*`.',
-    );
   }
 
   _getPackageMainPath = (packageJsonPath: string): string => {

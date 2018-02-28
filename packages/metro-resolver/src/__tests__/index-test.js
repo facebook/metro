@@ -11,6 +11,7 @@
 
 'use strict';
 
+const FailedToResolvePathError = require('../FailedToResolvePathError');
 const Resolver = require('../index');
 
 const path = require('path');
@@ -69,47 +70,46 @@ const CONTEXT: ResolutionContext = (() => {
 
 it('resolves relative path', () => {
   expect(Resolver.resolve(CONTEXT, './bar', null)).toEqual({
-    type: 'resolved',
-    resolution: {type: 'sourceFile', filePath: '/root/project/bar.js'},
+    type: 'sourceFile',
+    filePath: '/root/project/bar.js',
   });
 });
 
 it('resolves relative path in another folder', () => {
   expect(Resolver.resolve(CONTEXT, '../smth/beep', null)).toEqual({
-    type: 'resolved',
-    resolution: {type: 'sourceFile', filePath: '/root/smth/beep.js'},
+    type: 'sourceFile',
+    filePath: '/root/smth/beep.js',
   });
 });
 
 it('resolves a simple node_modules', () => {
   expect(Resolver.resolve(CONTEXT, 'tadam', null)).toEqual({
-    type: 'resolved',
-    resolution: {
-      type: 'sourceFile',
-      filePath: '/root/node_modules/tadam/main.js',
-    },
+    type: 'sourceFile',
+    filePath: '/root/node_modules/tadam/main.js',
   });
 });
 
 it('fails to resolve relative path', () => {
-  expect(Resolver.resolve(CONTEXT, './tadam', null)).toEqual({
-    type: 'failed',
-    candidates: {
-      type: 'modulePath',
-      which: {
-        dir: {
-          candidateExts: ['', '.js'],
-          filePathPrefix: '/root/project/tadam/index',
-          type: 'sourceFile',
-        },
-        file: {
-          candidateExts: ['', '.js'],
-          filePathPrefix: '/root/project/tadam',
-          type: 'sourceFile',
-        },
+  try {
+    Resolver.resolve(CONTEXT, './tadam', null);
+    throw new Error('should not reach');
+  } catch (error) {
+    if (!(error instanceof FailedToResolvePathError)) {
+      throw error;
+    }
+    expect(error.candidates).toEqual({
+      dir: {
+        candidateExts: ['', '.js'],
+        filePathPrefix: '/root/project/tadam/index',
+        type: 'sourceFile',
       },
-    },
-  });
+      file: {
+        candidateExts: ['', '.js'],
+        filePathPrefix: '/root/project/tadam',
+        type: 'sourceFile',
+      },
+    });
+  }
 });
 
 it('throws on invalid node package', () => {

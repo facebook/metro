@@ -10,6 +10,8 @@
 
 'use strict';
 
+const FailedToResolveNameError = require('./FailedToResolveNameError');
+const FailedToResolvePathError = require('./FailedToResolvePathError');
 const InvalidPackageError = require('./InvalidPackageError');
 
 const formatFileCandidates = require('./formatFileCandidates');
@@ -18,7 +20,6 @@ const path = require('path');
 
 import type {
   AssetFileResolution,
-  Candidates,
   FileAndDirCandidates,
   FileCandidates,
   FileResolution,
@@ -37,14 +38,14 @@ function resolve(
   context: ResolutionContext,
   moduleName: string,
   platform: string | null,
-): Result<Resolution, Candidates> {
+): Resolution {
   if (isRelativeImport(moduleName) || isAbsolutePath(moduleName)) {
     return resolveModulePath(context, moduleName, platform);
   }
   const realModuleName = context.redirectModulePath(moduleName);
   // exclude
   if (realModuleName === false) {
-    return resolvedAs({type: 'empty'});
+    return {type: 'empty'};
   }
 
   const {originModulePath} = context;
@@ -66,7 +67,7 @@ function resolve(
     const normalizedName = normalizePath(realModuleName);
     const result = resolveHasteName(context, normalizedName, platform);
     if (result.type === 'resolved') {
-      return result;
+      return result.resolution;
     }
   }
 
@@ -95,10 +96,10 @@ function resolve(
   for (let i = 0; i < allDirPaths.length; ++i) {
     const result = resolveFileOrDir(context, allDirPaths[i], platform);
     if (result.type === 'resolved') {
-      return result;
+      return result.resolution;
     }
   }
-  return failedFor({type: 'moduleName', dirPaths, extraPaths});
+  throw new FailedToResolveNameError(dirPaths, extraPaths);
 }
 
 type ModulePathContext = FileOrDirContext & {
@@ -125,19 +126,19 @@ function resolveModulePath(
   context: ModulePathContext,
   toModuleName: string,
   platform: string | null,
-): Result<Resolution, Candidates> {
+): Resolution {
   const modulePath = isAbsolutePath(toModuleName)
     ? resolveWindowsPath(toModuleName)
     : path.join(path.dirname(context.originModulePath), toModuleName);
   const redirectedPath = context.redirectModulePath(modulePath);
   if (redirectedPath === false) {
-    return resolvedAs({type: 'empty'});
+    return {type: 'empty'};
   }
   const result = resolveFileOrDir(context, redirectedPath, platform);
   if (result.type === 'resolved') {
-    return result;
+    return result.resolution;
   }
-  return failedFor({type: 'modulePath', which: result.candidates});
+  throw new FailedToResolvePathError(result.candidates);
 }
 
 type HasteContext = FileOrDirContext & {

@@ -18,7 +18,6 @@ export type {
 } from './resolve';
 export type {
   AssetFileResolution,
-  Candidates,
   FileAndDirCandidates,
   FileCandidates,
   FileResolution,
@@ -27,9 +26,11 @@ export type {
 } from './types';
 
 const Resolver = {
-  resolve: require('./resolve'),
-  InvalidPackageError: require('./InvalidPackageError'),
+  FailedToResolveNameError: require('./FailedToResolveNameError'),
+  FailedToResolvePathError: require('./FailedToResolvePathError'),
   formatFileCandidates: require('./formatFileCandidates'),
+  InvalidPackageError: require('./InvalidPackageError'),
+  resolve: require('./resolve'),
 };
 
 module.exports = Resolver;

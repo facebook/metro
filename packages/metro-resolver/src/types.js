@@ -15,13 +15,6 @@ export type Result<+TResolution, +TCandidates> =
   | {|+type: 'failed', +candidates: TCandidates|};
 
 export type Resolution = FileResolution | {|+type: 'empty'|};
-export type Candidates =
-  | {|+type: 'modulePath', +which: FileAndDirCandidates|}
-  | {|
-      +type: 'moduleName',
-      +dirPaths: $ReadOnlyArray<string>,
-      +extraPaths: $ReadOnlyArray<string>,
-    |};
 
 export type AssetFileResolution = $ReadOnlyArray<string>;
 export type FileResolution =
