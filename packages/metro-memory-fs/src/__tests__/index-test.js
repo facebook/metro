@@ -38,11 +38,13 @@ it('works without binding functions', () => {
 it('can write then read a file (async)', done => {
   fs.writeFile('/foo.txt', 'test', wrError => {
     if (wrError) {
-      return done(wrError);
+      done(wrError);
+      return;
     }
     fs.readFile('/foo.txt', 'utf8', (rdError, str) => {
       if (rdError) {
-        return done(rdError);
+        done(rdError);
+        return;
       }
       expect(str).toEqual('test');
       done();
@@ -57,8 +59,9 @@ it('can write then read a file as buffer', () => {
 
 it('can write a file with a stream', done => {
   const st = fs.createWriteStream('/foo.txt');
-  let opened = false,
-    closed = false;
+  let opened = false;
+  let closed = false;
+
   st.on('open', () => (opened = true));
   st.on('close', () => (closed = true));
   st.write('test');
@@ -73,8 +76,9 @@ it('can write a file with a stream', done => {
 
 it('can write a file with a stream, as buffer', done => {
   const st = fs.createWriteStream('/foo.txt');
-  let opened = false,
-    closed = false;
+  let opened = false;
+  let closed = false;
+
   st.on('open', () => (opened = true));
   st.on('close', () => (closed = true));
   st.write(Buffer.from('test'));
@@ -90,8 +94,9 @@ it('can write a file with a stream, as buffer', done => {
 it('can write a file with a stream, with a starting position', done => {
   fs.writeFileSync('/foo.txt', 'test bar');
   const st = fs.createWriteStream('/foo.txt', {start: 5, flags: 'r+'});
-  let opened = false,
-    closed = false;
+  let opened = false;
+  let closed = false;
+
   st.on('open', () => (opened = true));
   st.on('close', () => (closed = true));
   st.write('beep');
@@ -217,7 +222,8 @@ it('throws when trying to read a directory entry', () => {
 it('throws when trying to read inexistent file (async)', done => {
   fs.readFile('/foo.txt', error => {
     if (error.code !== 'ENOENT') {
-      return done(error);
+      done(error);
+      return;
     }
     expect(error.message).toMatchSnapshot();
     done();

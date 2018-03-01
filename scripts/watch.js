@@ -39,6 +39,7 @@ getPackages().forEach(p => {
       const filePath = path.resolve(srcDir, filename);
 
       if ((event === 'change' || event === 'rename') && exists(filePath)) {
+        // eslint-disable-next-line no-console
         console.log(chalk.green('->'), `${event}: ${filename}`);
         rebuild(filePath);
       } else {
@@ -69,4 +70,5 @@ setInterval(() => {
   }
 }, 100);
 
+// eslint-disable-next-line no-console
 console.log(chalk.red('->'), chalk.cyan('Watching for changes...'));
