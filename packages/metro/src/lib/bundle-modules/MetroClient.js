@@ -69,10 +69,7 @@ class MetroClient extends EventEmitter {
           break;
 
         case 'error':
-          this.emit('error', {
-            type: data.body.type,
-            message: data.body.message,
-          });
+          this.emit('error', data.body);
           break;
 
         default:

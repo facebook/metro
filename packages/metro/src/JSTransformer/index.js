@@ -190,7 +190,9 @@ module.exports = class Transformer {
 
   _formatBabelError(err, filename) {
     const error = new TransformError(
-      `${err.type || 'Error'} in ${filename}: ${err.message}`,
+      `${err.type || 'Error'}${
+        err.message.includes(filename) ? '' : ' in ' + filename
+      }: ${err.message}`,
     );
 
     // $FlowFixMe: extending an error.
