@@ -42,14 +42,8 @@ class FileStore {
     }
   }
 
-  set(key: Buffer, value: TransformedCode): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const data = serializer.serialize(value);
-
-      fs.writeFile(this._getFilePath(key), data, err => {
-        err ? reject(err) : resolve();
-      });
-    });
+  set(key: Buffer, value: TransformedCode): void {
+    fs.writeFileSync(this._getFilePath(key), serializer.serialize(value));
   }
 
   _getFilePath(key: Buffer): string {
