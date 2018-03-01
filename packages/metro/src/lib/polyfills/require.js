@@ -24,10 +24,12 @@ type FactoryFn = (
   exports: {},
   dependencyMap: ?DependencyMap,
 ) => void;
-type HotModuleReloadingAcceptFn = Function;
+type HotModuleReloadingCallback = () => void;
 type HotModuleReloadingData = {|
-  acceptCallback: ?HotModuleReloadingAcceptFn,
-  accept: (callback: HotModuleReloadingAcceptFn) => void,
+  acceptCallback: ?HotModuleReloadingCallback,
+  accept: (callback: HotModuleReloadingCallback) => void,
+  disposeCallback: ?HotModuleReloadingCallback,
+  dispose: (callback: HotModuleReloadingCallback) => void,
 |};
 type Module = {
   exports: Exports,
@@ -266,6 +268,10 @@ if (__DEV__) {
       accept: callback => {
         hot.acceptCallback = callback;
       },
+      disposeCallback: null,
+      dispose: callback => {
+        hot.disposeCallback = callback;
+      },
     };
     return hot;
   };
@@ -332,6 +338,17 @@ if (__DEV__) {
       return false;
     }
 
+    if (hot.disposeCallback) {
+      try {
+        hot.disposeCallback();
+      } catch (error) {
+        console.error(
+          `Error while calling dispose handler for module ${id}: `,
+          error,
+        );
+      }
+    }
+
     // replace and initialize factory
     if (factory) {
       mod.factory = factory;
@@ -344,21 +361,28 @@ if (__DEV__) {
     require(id);
 
     if (hot.acceptCallback) {
-      hot.acceptCallback();
-      return true;
-    } else {
-      // need to have inverseDependencies to bubble up accept
-      if (!inverseDependencies) {
-        throw new Error('Undefined `inverseDependencies`');
+      try {
+        hot.acceptCallback();
+        return true;
+      } catch (error) {
+        console.error(
+          `Error while calling accept handler for module ${id}: `,
+          error,
+        );
       }
-
-      // accept parent modules recursively up until all siblings are accepted
-      return acceptAll(
-        inverseDependencies[id],
-        inverseDependencies,
-        patchedModules,
-      );
     }
+
+    // need to have inverseDependencies to bubble up accept
+    if (!inverseDependencies) {
+      throw new Error('Undefined `inverseDependencies`');
+    }
+
+    // accept parent modules recursively up until all siblings are accepted
+    return acceptAll(
+      inverseDependencies[id],
+      inverseDependencies,
+      patchedModules,
+    );
   };
 
   global.__accept = accept;
