@@ -319,7 +319,7 @@ describe('edge cases', () => {
 
     expect(
       getPaths(
-        await traverseDependencies(['/foo'], dependencyGraph, {}, edges),
+        await traverseDependencies([...files], dependencyGraph, {}, edges),
       ),
     ).toEqual({
       added: new Set(['/foo', '/baz-moved']),
@@ -335,7 +335,7 @@ describe('edge cases', () => {
 
     expect(
       getPaths(
-        await traverseDependencies(['/foo'], dependencyGraph, {}, edges),
+        await traverseDependencies([...files], dependencyGraph, {}, edges),
       ),
     ).toEqual({
       added: new Set(['/foo', '/qux']),
