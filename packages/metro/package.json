@@ -40,6 +40,7 @@
     "@babel/plugin-transform-shorthand-properties": "^7.0.0-beta",
     "@babel/plugin-transform-spread": "^7.0.0-beta",
     "@babel/plugin-transform-template-literals": "^7.0.0-beta",
+    "@babel/register": "^7.0.0-beta",
     "@babel/template": "^7.0.0-beta",
     "@babel/traverse": "^7.0.0-beta",
     "@babel/types": "^7.0.0-beta",
