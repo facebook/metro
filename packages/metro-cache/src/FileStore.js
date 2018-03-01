@@ -15,6 +15,8 @@ const mkdirp = require('mkdirp');
 const path = require('path');
 const serializer = require('jest-serializer');
 
+import type {TransformedCode} from 'metro/src/JSTransformer/worker';
+
 export type Options = {|
   root: string,
 |};
@@ -32,7 +34,7 @@ class FileStore {
     this._root = root;
   }
 
-  get(key: Buffer): mixed {
+  get(key: Buffer): ?TransformedCode {
     try {
       return serializer.readFileSync(this._getFilePath(key));
     } catch (err) {
@@ -40,7 +42,7 @@ class FileStore {
     }
   }
 
-  set(key: Buffer, value: mixed): Promise<void> {
+  set(key: Buffer, value: TransformedCode): Promise<void> {
     return new Promise((resolve, reject) => {
       const data = serializer.serialize(value);
 

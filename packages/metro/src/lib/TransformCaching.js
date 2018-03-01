@@ -405,6 +405,17 @@ function none(): TransformCache {
   };
 }
 
+function getTempDir(): string {
+  const hash = crypto.createHash('sha1').update(__dirname);
+  if (process.getuid != null) {
+    hash.update(process.getuid().toString());
+  }
+  const tmpDir = tmpdir();
+  const cacheName = 'metro-cache';
+
+  return path.join(tmpDir, cacheName + '-' + hash.digest('hex'));
+}
+
 /**
  * If Metro Bundler is running for two different directories, we don't want the
  * caches to conflict with each other. `__dirname` carries that because
@@ -412,13 +423,7 @@ function none(): TransformCache {
  * folder for different projects.
  */
 function useTempDir(): TransformCache {
-  const hash = crypto.createHash('sha1').update(__dirname);
-  if (process.getuid != null) {
-    hash.update(process.getuid().toString());
-  }
-  const tmpDir = tmpdir();
-  const cacheName = 'metro-cache';
-  const rootPath = path.join(tmpDir, cacheName + '-' + hash.digest('hex'));
+  const rootPath = getTempDir();
   mkdirp.sync(rootPath);
   return new FileBasedCache(rootPath);
 }
@@ -443,4 +448,4 @@ function tryReadFileSync(filePath): ?string {
   }
 }
 
-module.exports = {FileBasedCache, none, useTempDir};
+module.exports = {FileBasedCache, getTempDir, none, useTempDir};
