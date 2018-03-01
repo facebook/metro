@@ -10,7 +10,7 @@
 
 'use strict';
 
-import {Writable} from 'stream';
+const {Writable} = require('stream');
 
 class JsonReporter<TEvent: {}> {
   _stream: Writable;
