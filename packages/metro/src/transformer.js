@@ -89,6 +89,7 @@ function buildBabelConfig(filename, options, plugins?: BabelPlugins = []) {
         : true,
     code: false,
     filename,
+    highlightCode: true,
   };
 
   let config = Object.assign({}, babelRC, extraConfig);

@@ -26,7 +26,12 @@ module.exports.transform = ({filename, options, plugins, src}: Params) => {
   process.env.BABEL_ENV = options.dev ? 'development' : 'production';
 
   try {
-    const {ast} = transformSync(src, {filename, code: false, plugins});
+    const {ast} = transformSync(src, {
+      filename,
+      code: false,
+      highlightCode: true,
+      plugins,
+    });
 
     return {ast};
   } finally {

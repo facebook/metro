@@ -10,8 +10,9 @@
 
 'use strict';
 
-const {Logger} = require('metro-core');
+const chalk = require('chalk');
 
+const {Logger} = require('metro-core');
 const debug = require('debug')('Metro:JStransformer');
 const Worker = require('jest-worker').default;
 
@@ -150,11 +151,16 @@ module.exports = class Transformer {
         /^--heap[_-]growing[_-]percent=[0-9]+$/.test(arg) ||
         /^--max[_-]old[_-]space[_-]size=[0-9]+$/.test(arg),
     );
+    const env = {
+      ...process.env,
+      // Force color to print syntax highlighted code frames.
+      FORCE_COLOR: chalk.supportsColor ? 1 : 0,
+    };
 
     return new Worker(workerPath, {
       computeWorkerKey,
       exposedMethods,
-      forkOptions: {execArgv},
+      forkOptions: {env, execArgv},
       numWorkers,
     });
   }
