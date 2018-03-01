@@ -91,6 +91,8 @@ describe('basic_bundle', () => {
     const bundleWithPolyfills = await Metro.build(
       {
         assetRegistryPath: ASSET_REGISTRY_PATH,
+        cacheStores: [],
+        cacheVersion: '1.0',
         dynamicDepsInPackages: 'reject',
         getModulesRunBeforeMainModule: () => ['InitializeCore'],
         getPolyfills: () => [polyfill1, polyfill2],
@@ -113,6 +115,8 @@ describe('basic_bundle', () => {
     const bundleWithoutPolyfills = await Metro.build(
       {
         assetRegistryPath: ASSET_REGISTRY_PATH,
+        cacheStores: [],
+        cacheVersion: '1.0',
         dynamicDepsInPackages: 'reject',
         getModulesRunBeforeMainModule: () => ['InitializeCore'],
         getPolyfills: () => [],

@@ -122,7 +122,7 @@ class Server {
       assetExts: options.assetTransforms ? [] : assetExts,
       assetRegistryPath: options.assetRegistryPath,
       blacklistRE: options.blacklistRE,
-      cacheStores: options.cacheStores || [],
+      cacheStores: options.cacheStores,
       cacheVersion: options.cacheVersion,
       dynamicDepsInPackages: options.dynamicDepsInPackages || 'throwAtRuntime',
       createModuleIdFactory: options.createModuleIdFactory,
