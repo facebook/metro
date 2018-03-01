@@ -38,7 +38,11 @@ class FileStore {
     try {
       return serializer.readFileSync(this._getFilePath(key));
     } catch (err) {
-      return null;
+      if (err.code === 'ENOENT') {
+        return null;
+      }
+
+      throw err;
     }
   }
 
