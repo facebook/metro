@@ -15,7 +15,10 @@ import type {CacheStore} from 'metro-cache';
 class Cache<T> {
   _stores: $ReadOnlyArray<CacheStore<T>>;
 
+  _hits: WeakMap<Buffer, CacheStore<T>>;
+
   constructor(stores: $ReadOnlyArray<CacheStore<T>>) {
+    this._hits = new WeakMap();
     this._stores = stores;
   }
 
@@ -31,6 +34,8 @@ class Cache<T> {
       }
 
       if (value != null) {
+        this._hits.set(key, stores[i]);
+
         return value;
       }
     }
@@ -39,7 +44,16 @@ class Cache<T> {
   }
 
   set(key: Buffer, value: T): void {
-    Promise.all(this._stores.map(store => store.set(key, value))).catch(err => {
+    const stores = this._stores;
+    const stop = this._hits.get(key);
+    const length = stores.length;
+    const promises = [];
+
+    for (let i = 0; i < length && stores[i] !== stop; i++) {
+      promises.push(stores[i].set(key, value));
+    }
+
+    Promise.all(promises).catch(err => {
       process.nextTick(() => {
         throw err;
       });

@@ -1,5 +1,8 @@
 /**
- * Copyright 2004-present Facebook. All Rights Reserved.
+ * Copyright (c) 2004-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * Modified from https://raw.githubusercontent.com/flowtype/flow-typed/e3b0f3034929e0f0fb85c790450a201b380ac2fd/definitions/npm/jest_v17.x.x/flow_v0.33.x-/jest_v17.x.x.js
  * Duplicated from www/flow/shared/jest.js
@@ -123,7 +126,6 @@ declare function spyOn(value: mixed, method: string): Object;
 type Jest = {
   autoMockOff(): Jest,
   autoMockOn(): Jest,
-  resetAllMocks(): Jest,
   clearAllTimers(): void,
   currentTestPath(): void,
   disableAutomock(): Jest,
@@ -134,8 +136,10 @@ type Jest = {
   isMockFunction(fn: Function): boolean,
   genMockFromModule(moduleName: string): any,
   mock(moduleName: string, moduleFactory?: any): Jest,
+  resetAllMocks(): Jest,
   resetModuleRegistry(): Jest, // undocumented alias for resetModuleRegistry
   resetModules(): Jest,
+  restoreAllMocks(): Jest,
   runAllTicks(): Jest,
   runAllTimers(): Jest,
   runTimersToTime(msToRun: number): Jest,
