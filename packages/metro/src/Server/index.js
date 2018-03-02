@@ -497,6 +497,12 @@ class Server {
     const mres = MultipartResponse.wrap(req, res);
     const {options, buildID} = this._prepareDeltaBundler(req, mres);
 
+    // Make sure that the bundleType is 'delta' (on the first delta request,
+    // since the request does not have a bundleID param it gets detected as
+    // a 'bundle' type).
+    // TODO (T23416372): Improve the parsing of URL params.
+    options.bundleType = 'delta';
+
     const requestingBundleLogEntry = log(
       createActionStartEntry({
         action_name: 'Requesting delta',
