@@ -14,7 +14,7 @@ jest
   .setMock('jest-worker', () => ({}))
   .setMock('metro-minify-uglify')
   .mock('image-size')
-  .mock('fs')
+  .mock('fs', () => new (require('metro-memory-fs'))())
   .mock('os')
   .mock('assert')
   .mock('progress')
@@ -29,6 +29,7 @@ var sizeOf = require('image-size');
 var fs = require('fs');
 const os = require('os');
 const path = require('path');
+const mkdirp = require('mkdirp');
 
 var commonOptions = {
   allowBundleUpdates: false,
@@ -60,15 +61,9 @@ describe('Bundler', function() {
 
     projectRoots = ['/root'];
 
-    fs.__setMockFilesystem({
-      path: {to: {'transformer.js': ''}},
-    });
-
-    fs.statSync.mockImplementation(function() {
-      return {
-        isDirectory: () => true,
-      };
-    });
+    mkdirp.sync('/path/to');
+    mkdirp.sync('/root');
+    fs.writeFileSync('/path/to/transformer.js', '');
 
     assetServer = {
       getAssetData: jest.fn(),
