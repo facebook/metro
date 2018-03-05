@@ -253,10 +253,20 @@ class Bundler {
       key = stableHash([
         module.localPath,
         code,
-        transformCodeOptions,
         this._opts.assetExts,
         this._opts.assetRegistryPath,
         this._opts.cacheVersion,
+
+        // We cannot include transformCodeOptions itself because of "rootPath".
+        // This is also faster than using a destructuring.
+        transformCodeOptions.assetDataPlugins,
+        transformCodeOptions.customTransformOptions,
+        transformCodeOptions.enableBabelRCLookup,
+        transformCodeOptions.dev,
+        transformCodeOptions.hot,
+        transformCodeOptions.inlineRequires,
+        transformCodeOptions.minify,
+        transformCodeOptions.platform,
       ]);
 
       result = await cache.get(key);
