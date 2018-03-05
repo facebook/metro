@@ -416,6 +416,49 @@ class MemoryFs {
     return new Stats(node);
   };
 
+  createReadStream = (
+    filePath: string | Buffer,
+    options?:
+      | {
+          autoClose?: ?boolean,
+          encoding?: ?Encoding,
+          end?: ?number,
+          fd?: ?number,
+          flags?: ?string,
+          highWaterMark?: ?number,
+          mode?: ?number,
+          start?: ?number,
+        }
+      | Encoding,
+  ) => {
+    let autoClose, encoding, fd, flags, mode, start, end, highWaterMark;
+    if (typeof options === 'string') {
+      encoding = options;
+    } else if (options != null) {
+      ({autoClose, encoding, fd, flags, mode, start} = options);
+      ({end, highWaterMark} = options);
+    }
+    let st = null;
+    if (fd == null) {
+      fd = this._open(pathStr(filePath), flags || 'r', mode);
+      process.nextTick(() => (st: any).emit('open', fd));
+    }
+    const ffd = fd;
+    const {readSync} = this;
+    const ropt = {filePath, encoding, fd, highWaterMark, start, end, readSync};
+    const rst = new ReadFileSteam(ropt);
+    st = rst;
+    if (autoClose !== false) {
+      const doClose = () => {
+        this.closeSync(ffd);
+        rst.emit('close');
+      };
+      rst.on('end', doClose);
+      rst.on('error', doClose);
+    }
+    return rst;
+  };
+
   createWriteStream = (
     filePath: string | Buffer,
     options?:
@@ -433,14 +476,16 @@ class MemoryFs {
     if (typeof options !== 'string' && options != null) {
       ({autoClose, fd, flags, mode, start} = options);
     }
+    let st = null;
     if (fd == null) {
       fd = this._open(pathStr(filePath), flags || 'w', mode);
+      process.nextTick(() => (st: any).emit('open', fd));
     }
     if (start != null) {
       this._write(fd, new Buffer(0), 0, 0, start);
     }
     const ffd = fd;
-    const st = new stream.Writable({
+    const rst = new stream.Writable({
       write: (buffer, encoding, callback) => {
         try {
           this._write(ffd, buffer, 0, buffer.length);
@@ -455,7 +500,7 @@ class MemoryFs {
         try {
           if (autoClose !== false) {
             this.closeSync(ffd);
-            st.emit('close');
+            rst.emit('close');
           }
         } catch (error) {
           callback(error);
@@ -464,9 +509,9 @@ class MemoryFs {
         callback();
       },
     });
+    st = rst;
     (st: any).path = filePath;
     (st: any).bytesWritten = 0;
-    process.nextTick(() => st.emit('open', ffd));
     return st;
   };
 
@@ -699,6 +744,73 @@ class Stats {
   }
   isSocket(): boolean {
     return false;
+  }
+}
+
+type ReadSync = (
+  fd: number,
+  buffer: Buffer,
+  offset: number,
+  length: number,
+  position: ?number,
+) => number;
+
+class ReadFileSteam extends stream.Readable {
+  _buffer: Buffer;
+  _fd: number;
+  _positions: ?{current: number, last: number};
+  _readSync: ReadSync;
+  bytesRead: number;
+  path: string | Buffer;
+
+  constructor(options: {
+    filePath: string | Buffer,
+    encoding: ?Encoding,
+    end: ?number,
+    fd: number,
+    highWaterMark: ?number,
+    readSync: ReadSync,
+    start: ?number,
+  }) {
+    const {highWaterMark, fd} = options;
+    // eslint-disable-next-line lint/flow-no-fixme
+    // $FlowFixMe: Readable does accept null of undefined for that value.
+    super({highWaterMark});
+    this.bytesRead = 0;
+    this.path = options.filePath;
+    this._readSync = options.readSync;
+    this._fd = fd;
+    this._buffer = new Buffer(1024);
+    const {start, end} = options;
+    if (start != null) {
+      this._readSync(fd, new Buffer(0), 0, 0, start);
+    }
+    if (end != null) {
+      this._positions = {current: start || 0, last: end + 1};
+    }
+  }
+
+  _read(size) {
+    let bytesRead;
+    const {_buffer} = this;
+    do {
+      const length = this._getLengthToRead();
+      const position = this._positions && this._positions.current;
+      bytesRead = this._readSync(this._fd, _buffer, 0, length, position);
+      if (this._positions != null) {
+        this._positions.current += bytesRead;
+      }
+      this.bytesRead += bytesRead;
+    } while (this.push(bytesRead > 0 ? _buffer.slice(0, bytesRead) : null));
+  }
+
+  _getLengthToRead() {
+    const {_positions, _buffer} = this;
+    if (_positions == null) {
+      return _buffer.length;
+    }
+    const leftToRead = Math.max(0, _positions.last - _positions.current);
+    return Math.min(_buffer.length, leftToRead);
   }
 }
 

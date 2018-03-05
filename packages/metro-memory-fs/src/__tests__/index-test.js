@@ -57,54 +57,177 @@ it('can write then read a file as buffer', () => {
   expect(fs.readFileSync('/foo.txt')).toEqual(new Buffer([1, 2, 3, 4]));
 });
 
-it('can write a file with a stream', done => {
-  const st = fs.createWriteStream('/foo.txt');
-  let opened = false;
-  let closed = false;
+describe('createWriteStream', () => {
+  it('can write a file', done => {
+    const st = fs.createWriteStream('/foo.txt');
+    let opened = false;
+    let closed = false;
+    st.on('open', () => (opened = true));
+    st.on('close', () => (closed = true));
+    st.write('test');
+    st.write(' foo');
+    st.end(() => {
+      expect(opened).toBe(true);
+      expect(closed).toBe(true);
+      expect(fs.readFileSync('/foo.txt', 'utf8')).toEqual('test foo');
+      done();
+    });
+  });
 
-  st.on('open', () => (opened = true));
-  st.on('close', () => (closed = true));
-  st.write('test');
-  st.write(' foo');
-  st.end(() => {
-    expect(opened).toBe(true);
-    expect(closed).toBe(true);
-    expect(fs.readFileSync('/foo.txt', 'utf8')).toEqual('test foo');
-    done();
+  it('can write a file, as buffer', done => {
+    const st = fs.createWriteStream('/foo.txt');
+    let opened = false;
+    let closed = false;
+    st.on('open', () => (opened = true));
+    st.on('close', () => (closed = true));
+    st.write(Buffer.from('test'));
+    st.write(Buffer.from(' foo'));
+    st.end(() => {
+      expect(opened).toBe(true);
+      expect(closed).toBe(true);
+      expect(fs.readFileSync('/foo.txt', 'utf8')).toEqual('test foo');
+      done();
+    });
+  });
+
+  it('can write a file, with a starting position', done => {
+    fs.writeFileSync('/foo.txt', 'test bar');
+    const st = fs.createWriteStream('/foo.txt', {start: 5, flags: 'r+'});
+    let opened = false;
+    let closed = false;
+    st.on('open', () => (opened = true));
+    st.on('close', () => (closed = true));
+    st.write('beep');
+    st.end(() => {
+      expect(opened).toBe(true);
+      expect(closed).toBe(true);
+      expect(fs.readFileSync('/foo.txt', 'utf8')).toEqual('test beep');
+      done();
+    });
   });
 });
 
-it('can write a file with a stream, as buffer', done => {
-  const st = fs.createWriteStream('/foo.txt');
-  let opened = false;
-  let closed = false;
+describe('createReadStream', () => {
+  const REF_STR = 'foo bar baz glo beep boop';
 
-  st.on('open', () => (opened = true));
-  st.on('close', () => (closed = true));
-  st.write(Buffer.from('test'));
-  st.write(Buffer.from(' foo'));
-  st.end(() => {
-    expect(opened).toBe(true);
-    expect(closed).toBe(true);
-    expect(fs.readFileSync('/foo.txt', 'utf8')).toEqual('test foo');
-    done();
+  beforeEach(() => {
+    fs.writeFileSync('/foo.txt', REF_STR);
   });
-});
 
-it('can write a file with a stream, with a starting position', done => {
-  fs.writeFileSync('/foo.txt', 'test bar');
-  const st = fs.createWriteStream('/foo.txt', {start: 5, flags: 'r+'});
-  let opened = false;
-  let closed = false;
+  it('reads a file', async () => {
+    const str = await readWithReadStream(null);
+    expect(str).toBe(REF_STR);
+  });
 
-  st.on('open', () => (opened = true));
-  st.on('close', () => (closed = true));
-  st.write('beep');
-  st.end(() => {
-    expect(opened).toBe(true);
-    expect(closed).toBe(true);
-    expect(fs.readFileSync('/foo.txt', 'utf8')).toEqual('test beep');
-    done();
+  it('reads a file, with a starting position', async () => {
+    const str = await readWithReadStream({start: 4});
+    expect(str).toBe(REF_STR.substring(4));
+  });
+
+  it('reads a file, with an ending position', async () => {
+    const str = await readWithReadStream({end: 14});
+    // The `end` option is inclusive, but it's exclusive for `substring`,
+    // hence the difference between 14 and 15.
+    expect(str).toBe(REF_STR.substring(0, 15));
+  });
+
+  it('reads a file, with starting and ending positions', async () => {
+    const str = await readWithReadStream({start: 8, end: 14});
+    // The `end` option is inclusive, but it's exclusive for `substring`,
+    // hence the difference between 14 and 15.
+    expect(str).toBe(REF_STR.substring(8, 15));
+  });
+
+  it('reads a file, with custom flags and mode', async () => {
+    const str = await readWithReadStream(
+      {flags: 'wx+', mode: 0o600},
+      '/glo.txt',
+    );
+    expect(str).toBe('');
+    // Does not work yet, statSync needs to be fixed to support `mode`.
+    // expect(fs.statSync('/glo.txt').mode).toBe(0o600);
+  });
+
+  function readWithReadStream(options, filePath = '/foo.txt') {
+    return new Promise(resolve => {
+      const st = fs.createReadStream(
+        filePath,
+        options != null ? {...options, encoding: 'utf8'} : 'utf8',
+      );
+      let opened = false;
+      let closed = false;
+      st.on('open', () => (opened = true));
+      st.on('close', () => (closed = true));
+      expect((st: any).path).toBe(filePath);
+      let str = '';
+      st.on('data', chunk => {
+        expect(opened).toBe(true);
+        str += chunk;
+      });
+      st.on('end', () => {
+        expect(closed).toBe(true);
+        resolve(str);
+      });
+    });
+  }
+
+  it('reads a file as buffer', done => {
+    const st = fs.createReadStream('/foo.txt');
+    let buffer = new Buffer(0);
+    st.on('data', chunk => {
+      buffer = Buffer.concat([buffer, chunk]);
+    });
+    st.on('end', () => {
+      expect(buffer.toString('utf8')).toBe(REF_STR);
+      done();
+    });
+  });
+
+  it('reads a file with a custom fd', done => {
+    fs.writeFileSync('/bar.txt', 'tadam');
+    const fd = fs.openSync('/bar.txt', 'r');
+    const st = fs.createReadStream('/foo.txt', {fd, encoding: 'utf8'});
+    let opened = false;
+    let closed = false;
+    st.on('open', () => (opened = true));
+    st.on('close', () => (closed = true));
+    expect((st: any).path).toBe('/foo.txt');
+    let str = '';
+    st.on('data', chunk => {
+      str += chunk;
+    });
+    st.on('end', () => {
+      expect(opened).toBe(false);
+      expect(closed).toBe(true);
+      expect(str).toBe('tadam');
+      done();
+    });
+  });
+
+  it('reads a file with a custom fd, no auto-close', done => {
+    fs.writeFileSync('/bar.txt', 'tadam');
+    const fd = fs.openSync('/bar.txt', 'r');
+    const st = fs.createReadStream('/foo.txt', {
+      fd,
+      encoding: 'utf8',
+      autoClose: false,
+    });
+    let opened = false;
+    let closed = false;
+    st.on('open', () => (opened = true));
+    st.on('close', () => (closed = true));
+    expect((st: any).path).toBe('/foo.txt');
+    let str = '';
+    st.on('data', chunk => {
+      str += chunk;
+    });
+    st.on('end', () => {
+      expect(opened).toBe(false);
+      expect(closed).toBe(false);
+      expect(str).toBe('tadam');
+      fs.closeSync(fd);
+      done();
+    });
   });
 });
 
