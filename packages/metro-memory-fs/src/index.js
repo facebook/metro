@@ -88,6 +88,7 @@ const ASYNC_FUNC_NAMES = [
   'readdir',
   'readFile',
   'realpath',
+  'stat',
   'write',
   'writeFile',
 ];
