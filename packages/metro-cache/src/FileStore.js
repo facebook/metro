@@ -13,7 +13,6 @@
 const fs = require('fs');
 const mkdirp = require('mkdirp');
 const path = require('path');
-const serializer = require('jest-serializer');
 
 import type {TransformedCode} from 'metro/src/JSTransformer/worker';
 
@@ -36,7 +35,7 @@ class FileStore {
 
   get(key: Buffer): ?TransformedCode {
     try {
-      return serializer.readFileSync(this._getFilePath(key));
+      return JSON.parse(fs.readFileSync(this._getFilePath(key), 'utf-8'));
     } catch (err) {
       if (err.code === 'ENOENT') {
         return null;
@@ -47,7 +46,7 @@ class FileStore {
   }
 
   set(key: Buffer, value: TransformedCode): void {
-    fs.writeFileSync(this._getFilePath(key), serializer.serialize(value));
+    fs.writeFileSync(this._getFilePath(key), JSON.stringify(value));
   }
 
   _getFilePath(key: Buffer): string {

@@ -161,6 +161,7 @@ class ModuleCache {
     /* $FlowFixMe: there are missing arguments. */
     return new Polyfill({
       depGraphHelpers: this._depGraphHelpers,
+      experimentalCaches: this._experimentalCaches,
       file,
       getTransformCacheKey: this._getTransformCacheKey,
       localPath: toLocalPath(this._roots, file),
