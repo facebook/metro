@@ -103,6 +103,8 @@ export type Options = {|
   +workerPath: ?string,
 |};
 
+const {hasOwnProperty} = Object.prototype;
+
 class Bundler {
   _opts: Options;
   _cache: ?Cache<TransformedCode>;
@@ -250,6 +252,27 @@ class Bundler {
 
     // First, try getting the result from the cache if enabled.
     if (cache) {
+      const {
+        assetDataPlugins,
+        customTransformOptions,
+        enableBabelRCLookup,
+        dev,
+        hot,
+        inlineRequires,
+        minify,
+        platform,
+        projectRoot: _projectRoot, // Blacklisted property.
+        ...extra
+      } = transformCodeOptions;
+
+      for (const key in extra) {
+        if (hasOwnProperty.call(extra, key)) {
+          throw new Error(
+            'Extra keys detected: ' + Object.keys(extra).join(', '),
+          );
+        }
+      }
+
       key = stableHash([
         module.localPath,
         code,
@@ -257,16 +280,15 @@ class Bundler {
         this._opts.assetRegistryPath,
         this._opts.cacheVersion,
 
-        // We cannot include transformCodeOptions itself because of "rootPath".
-        // This is also faster than using a destructuring.
-        transformCodeOptions.assetDataPlugins,
-        transformCodeOptions.customTransformOptions,
-        transformCodeOptions.enableBabelRCLookup,
-        transformCodeOptions.dev,
-        transformCodeOptions.hot,
-        transformCodeOptions.inlineRequires,
-        transformCodeOptions.minify,
-        transformCodeOptions.platform,
+        // We cannot include "transformCodeOptions" because of "projectRoot".
+        assetDataPlugins,
+        customTransformOptions,
+        enableBabelRCLookup,
+        dev,
+        hot,
+        inlineRequires,
+        minify,
+        platform,
       ]);
 
       result = await cache.get(key);
