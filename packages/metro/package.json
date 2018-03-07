@@ -1,5 +1,5 @@
 {
-  "version": "0.28.0",
+  "version": "0.29.0",
   "name": "metro",
   "description": "🚇 The JavaScript bundler for React Native.",
   "main": "src/index.js",
@@ -75,12 +75,12 @@
     "left-pad": "^1.1.3",
     "lodash.throttle": "^4.1.1",
     "merge-stream": "^1.0.1",
-    "metro-babylon7": "0.28.0",
-    "metro-cache": "0.28.0",
-    "metro-core": "0.28.0",
-    "metro-minify-uglify": "0.28.0",
-    "metro-resolver": "0.28.0",
-    "metro-source-map": "0.28.0",
+    "metro-babylon7": "0.29.0",
+    "metro-cache": "0.29.0",
+    "metro-core": "0.29.0",
+    "metro-minify-uglify": "0.29.0",
+    "metro-resolver": "0.29.0",
+    "metro-source-map": "0.29.0",
     "mime-types": "2.1.11",
     "mkdirp": "^0.5.1",
     "node-fetch": "^1.3.3",
@@ -99,7 +99,7 @@
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
-    "metro-memory-fs": "0.28.0",
+    "metro-memory-fs": "0.29.0",
     "sinon": "^2.2.0"
   }
 }
