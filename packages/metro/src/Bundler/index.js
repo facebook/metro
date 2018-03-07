@@ -26,11 +26,15 @@ const {
 } = require('metro-source-map');
 
 import type {PostProcessModules} from '../DeltaBundler';
-import type {TransformedCode} from '../JSTransformer/worker';
+import type {
+  TransformedCode,
+  Options as WorkerOptions,
+} from '../JSTransformer/worker';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
 import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
+import type Module from '../node-haste/Module';
 import type {BabelSourceMap} from '@babel/core';
 import type {CacheStore} from 'metro-cache';
 import type {
@@ -242,9 +246,9 @@ class Bundler {
   }
 
   async _cachedTransformCode(
-    module,
-    code,
-    transformCodeOptions,
+    module: Module,
+    code: string,
+    transformCodeOptions: WorkerOptions,
   ): Promise<TransformedCode> {
     const cache = this._cache;
     let result;
