@@ -220,15 +220,20 @@ type BabelCoreOptions = {|
   ) => void,
 |};
 
+// https://github.com/babel/babel/tree/master/packages/babel-template
 type TemplateOptions = Babylon7Options & {|
+  // note: template defaults for these options;
+  // allowReturnOutsideFunction = true
+  // allowSuperOutsideMethod = true
+  // sourceType = module
   placeholderWhitelist?: Set<string>,
   placeholderPattern?: RegExp | false,
   preserveComments?: boolean,
 |};
 
-type Templatable = ({|[tokenName: string]: string|}) => BabelNode;
+type Templatable = ({[tokenName: string]: string}) => BabelNode;
 
-type TemplateFunc = (tpl: string, options: TemplateOptions) => Templatable;
+type TemplateFunc = (tpl: string, options?: TemplateOptions) => Templatable;
 
 // note: ast is not optional, babel will throw if it would be empty:
 // https://github.com/babel/babel/blob/98969b8a7335e831c069164f5c56132111847224/packages/babel-core/src/transform-ast.js#L52
