@@ -134,14 +134,6 @@ class Module {
     return this._getHasteName() != null;
   }
 
-  async getCode(transformOptions: WorkerOptions): Promise<string> {
-    return (await this.read(transformOptions)).code;
-  }
-
-  async getMap(transformOptions: WorkerOptions) {
-    return (await this.read(transformOptions)).map;
-  }
-
   getName(): string {
     // TODO: T26134860 Used for debugging purposes only; disabled with the new
     // caches.
@@ -175,10 +167,6 @@ class Module {
 
   getPackage() {
     return this._moduleCache.getPackageForModule(this);
-  }
-
-  async getDependencies(transformOptions: WorkerOptions) {
-    return (await this.read(transformOptions)).dependencies;
   }
 
   /**

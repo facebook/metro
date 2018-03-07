@@ -222,13 +222,14 @@ class DependencyGraph extends EventEmitter {
    * Returns a promise with the direct dependencies the module associated to
    * the given entryPath has.
    */
-  getShallowDependencies(
+  async getShallowDependencies(
     entryPath: string,
     transformOptions: JSTransformerOptions,
-  ): Promise<Array<string>> {
-    return this._moduleCache
-      .getModule(entryPath)
-      .getDependencies(transformOptions);
+  ): Promise<$ReadOnlyArray<string>> {
+    const module = this._moduleCache.getModule(entryPath);
+    const result = await module.read(transformOptions);
+
+    return result.dependencies;
   }
 
   getWatcher() {

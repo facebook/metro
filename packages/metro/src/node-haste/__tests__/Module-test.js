@@ -209,11 +209,6 @@ describe('Module', () => {
       createModule()
         .read()
         .then(({code}) => expect(code).toBe(fileContents)));
-
-    it('exposes file contents via the `getCode()` method', () =>
-      createModule()
-        .getCode()
-        .then(code => expect(code).toBe(fileContents)));
   });
 
   describe('Custom Code Transform', () => {
@@ -276,17 +271,16 @@ describe('Module', () => {
       });
     });
 
-    it('uses dependencies that `transformCode` resolves to, instead of extracting them', () => {
+    it('uses dependencies that `transformCode` resolves to, instead of extracting them', async () => {
       const mockedDependencies = ['foo', 'bar'];
       transformResult = {
         code: exampleCode,
         dependencies: mockedDependencies,
       };
       const module = createModule({transformCode});
+      const data = await module.read();
 
-      return module.getDependencies().then(dependencies => {
-        expect(dependencies).toEqual(mockedDependencies);
-      });
+      expect(data.dependencies).toEqual(mockedDependencies);
     });
 
     it('forwards all additional properties of the result provided by `transformCode`', () => {
@@ -304,15 +298,12 @@ describe('Module', () => {
       });
     });
 
-    it('exposes the transformed code rather than the raw file contents', () => {
+    it('exposes the transformed code rather than the raw file contents', async () => {
       transformResult = {code: exampleCode};
       const module = createModule({transformCode});
-      return Promise.all([module.read(), module.getCode()]).then(
-        ([data, code]) => {
-          expect(data.code).toBe(exampleCode);
-          expect(code).toBe(exampleCode);
-        },
-      );
+      const data = await module.read();
+
+      expect(data.code).toBe(exampleCode);
     });
 
     it('exposes the raw file contents as `source` property', () => {
@@ -320,16 +311,13 @@ describe('Module', () => {
       return module.read().then(data => expect(data.source).toBe(fileContents));
     });
 
-    it('exposes a source map returned by the transform', () => {
+    it('exposes a source map returned by the transform', async () => {
       const map = {version: 3};
       transformResult = {map, code: exampleCode};
       const module = createModule({transformCode});
-      return Promise.all([module.read(), module.getMap()]).then(
-        ([data, sourceMap]) => {
-          expect(data.map).toBe(map);
-          expect(sourceMap).toBe(map);
-        },
-      );
+      const data = await module.read();
+
+      expect(data.map).toBe(map);
     });
 
     it('caches the transform result for the same transform options', () => {

@@ -75,7 +75,7 @@ describe('traverseDependencies', function() {
     return await Promise.all(
       [...dependencies].map(async path => {
         const dep = dgraph.getModuleForPath(path);
-        const moduleDependencies = await dep.getDependencies();
+        const moduleDependencies = (await dep.read()).dependencies;
 
         return {
           path: dep.path,
