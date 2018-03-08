@@ -13,13 +13,12 @@
 const path = require('path');
 
 const {DuplicateHasteCandidatesError} = require('jest-haste-map').ModuleMap;
+const {formatFileCandidates, InvalidPackageError} = require('metro-resolver');
 
 import type DependencyGraphHelpers from './DependencyGraphHelpers';
 import type {Options as TransformWorkerOptions} from '../../JSTransformer/worker';
 import type {ReadResult, CachedReadResult} from '../Module';
 import type {ModuleResolver} from './ModuleResolution';
-
-const {InvalidPackageError, formatFileCandidates} = require('metro-resolver');
 
 export type Packageish = {
   isHaste(): boolean,
