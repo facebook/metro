@@ -30,7 +30,7 @@ function canonicalize(key: string, value: mixed): mixed {
 
 function stableHash(value: mixed) {
   return crypto
-    .createHash('md5')
+    .createHash('md4')
     .update(JSON.stringify(value, canonicalize))
     .digest();
 }
