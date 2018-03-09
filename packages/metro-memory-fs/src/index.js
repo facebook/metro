@@ -497,20 +497,16 @@ class MemoryFs {
         }
         callback();
       },
-      final: callback => {
-        try {
-          if (autoClose !== false) {
-            this.closeSync(ffd);
-            rst.emit('close');
-          }
-        } catch (error) {
-          callback(error);
-          return;
-        }
-        callback();
-      },
     });
     st = rst;
+    if (autoClose !== false) {
+      const doClose = () => {
+        this.closeSync(ffd);
+        rst.emit('close');
+      };
+      rst.on('finish', doClose);
+      rst.on('error', doClose);
+    }
     (st: any).path = filePath;
     (st: any).bytesWritten = 0;
     return st;
