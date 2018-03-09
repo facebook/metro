@@ -99,17 +99,15 @@ function transformModule(
 
   let hasteID = null;
   if (filename.indexOf(NODE_MODULES) === -1 && !polyfill) {
-    hasteID = docblock.parse(docblock.extract(sourceCode)).providesModule;
     if (options.hasteImplModulePath != null) {
       // eslint-disable-next-line no-useless-call
       const HasteImpl = (require.call(
         null,
         options.hasteImplModulePath,
       ): HasteImpl);
-      if (HasteImpl.enforceHasteNameMatches) {
-        HasteImpl.enforceHasteNameMatches(filename, hasteID);
-      }
-      hasteID = HasteImpl.getHasteName(filename);
+      hasteID = HasteImpl.getHasteName(filename, sourceCode);
+    } else {
+      hasteID = docblock.parse(docblock.extract(sourceCode)).providesModule;
     }
   }
 
