@@ -4,3 +4,4 @@
 /coverage
 lerna-debug.log
 npm-debug.log*
+packages/*/build/
