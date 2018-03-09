@@ -11,6 +11,8 @@
 
 'use strict';
 
+jest.useRealTimers();
+
 const MemoryFs = require('../index');
 
 let fs;
