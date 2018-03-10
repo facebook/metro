@@ -233,6 +233,23 @@ it('should return added/removed dependencies', async () => {
   });
 });
 
+it('should return added modules before the modified ones', async () => {
+  const edges = new Map();
+  await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
+
+  Actions.addDependency('/foo', '/qux');
+  Actions.modifyFile('/bar');
+  Actions.modifyFile('/baz');
+
+  // extect.toEqual() does not check order of Sets/Maps, so we need to convert
+  // it to an array.
+  expect([
+    ...getPaths(
+      await traverseDependencies([...files], dependencyGraph, {}, edges),
+    ).added,
+  ]).toEqual(['/qux', '/foo', '/bar', '/baz']);
+});
+
 it('should retry to traverse the dependencies as it was after getting an error', async () => {
   const edges = new Map();
   await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
