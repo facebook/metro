@@ -89,9 +89,9 @@ class HmrServer<TClient: Client> {
   }
 
   onClientDisconnect(client: TClient) {
-    // We can safely remove all listeners from the delta transformer since the
+    // We can safely stop the delta transformer since the
     // transformer is not shared between clients.
-    client.deltaTransformer.removeAllListeners('change');
+    client.deltaTransformer.end();
   }
 
   async _handleFileChange(client: Client) {

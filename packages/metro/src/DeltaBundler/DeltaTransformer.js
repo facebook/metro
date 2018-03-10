@@ -144,7 +144,7 @@ class DeltaTransformer extends EventEmitter {
    * clean up memory and resources once this instance is not used anymore.
    */
   end() {
-    this._deltaCalculator.removeListener('change', this._onFileChange);
+    this.removeAllListeners();
 
     return this._deltaCalculator.end();
   }
