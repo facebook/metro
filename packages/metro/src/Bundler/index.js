@@ -112,6 +112,7 @@ const {hasOwnProperty} = Object.prototype;
 class Bundler {
   _opts: Options;
   _cache: ?Cache<TransformedCode>;
+  _baseHash: string;
   _transformer: Transformer;
   _depGraphPromise: Promise<DependencyGraph>;
   _projectRoots: $ReadOnlyArray<string>;
@@ -168,6 +169,16 @@ class Bundler {
       transformCache: opts.transformCache,
       watch: opts.watch,
     });
+
+    this._baseHash = stableHash([
+      opts.assetExts,
+      opts.assetRegistryPath,
+      opts.asyncRequireModulePath,
+      opts.cacheVersion,
+      opts.dynamicDepsInPackages,
+      opts.projectRoots,
+      opts.transformModulePath,
+    ]).toString('binary');
 
     this._projectRoots = opts.projectRoots;
     this._getTransformOptions = opts.getTransformOptions;
@@ -278,11 +289,12 @@ class Bundler {
       }
 
       key = stableHash([
+        // This is the hash related to the global Bundler config.
+        this._baseHash,
+
+        // Path and code.
         module.localPath,
         code,
-        this._opts.assetExts,
-        this._opts.assetRegistryPath,
-        this._opts.cacheVersion,
 
         // We cannot include "transformCodeOptions" because of "projectRoot".
         assetDataPlugins,
