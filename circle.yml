@@ -80,13 +80,7 @@ jobs:
       - save-cache: *save-cache
       - run:
           working_directory: ~/metro
-          run: yarn build
-      - run:
-          working_directory: packages/metro
-          command: |
-            yarn prepare-release
-            npm publish
-            yarn cleanup-release
+          command: yarn run publish
   test-and-deploy-website:
     working_directory: ~/metro
     docker:

@@ -48,7 +48,7 @@
     "lint": "eslint . --cache",
     "lint-fix": "eslint . --fix --cache",
     "postinstall": "node ./scripts/build.js",
-    "publish": "yarn run build-clean && yarn run build && lerna run prepare-release && lerna publish",
+    "publish": "yarn run build-clean && yarn run build && lerna run prepare-release && lerna exec -- npm publish",
     "postpublish": "lerna run cleanup-release",
     "test-ci": "yarn run typecheck && yarn run lint && yarn run build && yarn run jest-coverage -i && node scripts/mapCoverage.js && codecov",
     "test": "yarn run typecheck && yarn run lint && yarn run build && yarn run jest",
