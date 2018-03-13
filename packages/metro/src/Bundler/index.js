@@ -122,7 +122,7 @@ class Bundler {
     opts.projectRoots.forEach(verifyRootExists);
 
     this._opts = opts;
-    this._cache = (!!opts.cacheStores && opts.cacheStores.length) ? new Cache(opts.cacheStores) : null;
+    this._cache = !!opts.cacheStores && opts.cacheStores.length ? new Cache(opts.cacheStores) : null;
 
     this._transformer = new Transformer({
       asyncRequireModulePath: opts.asyncRequireModulePath,
@@ -144,7 +144,7 @@ class Bundler {
       assetRegistryPath: opts.assetRegistryPath,
       blacklistRE: opts.blacklistRE,
       // TODO: T26134860 Only use experimental caches if stores are provided.
-      experimentalCaches: (!!opts.cacheStores && !!opts.cacheStores.length),
+      experimentalCaches: !!opts.cacheStores && !!opts.cacheStores.length,
       extraNodeModules: opts.extraNodeModules,
       getPolyfills: opts.getPolyfills,
       getTransformCacheKey: getTransformCacheKeyFn({
