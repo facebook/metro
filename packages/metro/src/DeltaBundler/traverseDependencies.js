@@ -199,7 +199,7 @@ async function processEdge(
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
 ): Promise<void> {
-  const previousDependencies = new Set(edge.dependencies.values());
+  const previousDependencies = edge.dependencies;
 
   const result = await dependencyGraph
     .getModuleForPath(edge.path)
@@ -222,12 +222,12 @@ async function processEdge(
   edge.output.source = result.source;
   edge.dependencies = new Map();
 
-  currentDependencies.forEach((relativePath, absolutePath) => {
+  currentDependencies.forEach((absolutePath, relativePath) => {
     edge.dependencies.set(relativePath, absolutePath);
   });
 
-  for (const absolutePath of previousDependencies.values()) {
-    if (!currentDependencies.has(absolutePath)) {
+  for (const [relativePath, absolutePath] of previousDependencies) {
+    if (!currentDependencies.has(relativePath)) {
       removeDependency(edge, absolutePath, edges, delta);
     }
   }
@@ -236,22 +236,24 @@ async function processEdge(
   // added and removed dependency, to get all the modules that have to be added
   // and removed from the dependency graph.
   await Promise.all(
-    Array.from(currentDependencies.keys()).map(async absolutePath => {
-      if (previousDependencies.has(absolutePath)) {
-        return;
-      }
+    Array.from(currentDependencies.entries()).map(
+      async ([relativePath, absolutePath]) => {
+        if (previousDependencies.has(relativePath)) {
+          return;
+        }
 
-      await addDependency(
-        edge,
-        absolutePath,
-        dependencyGraph,
-        transformOptions,
-        edges,
-        delta,
-        onDependencyAdd,
-        onDependencyAdded,
-      );
-    }),
+        await addDependency(
+          edge,
+          absolutePath,
+          dependencyGraph,
+          transformOptions,
+          edges,
+          delta,
+          onDependencyAdd,
+          onDependencyAdded,
+        );
+      },
+    ),
   );
 }
 
@@ -370,12 +372,12 @@ function resolveDependencies(
 
   return new Map(
     dependencies.map(relativePath => [
+      relativePath,
       dependencyGraph.resolveDependency(
         parentModule,
         relativePath,
         transformOptions.platform,
       ).path,
-      relativePath,
     ]),
   );
 }

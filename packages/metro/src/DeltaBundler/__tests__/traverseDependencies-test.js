@@ -366,6 +366,28 @@ describe('edge cases', () => {
     ]);
   });
 
+  it('should create two entries when requiring the same file in different forms', async () => {
+    const edges = new Map();
+    await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
+
+    // We're adding a new reference from bundle to foo.
+    Actions.addDependency('/bundle', '/foo', 0, 'foo.js');
+
+    expect(
+      getPaths(
+        await traverseDependencies([...files], dependencyGraph, {}, edges),
+      ),
+    ).toEqual({
+      added: new Set(['/bundle']),
+      deleted: new Set(),
+    });
+
+    expect([...edges.get(entryModule.path).dependencies]).toEqual([
+      ['foo.js', '/foo'],
+      ['foo', '/foo'],
+    ]);
+  });
+
   it('should traverse the dependency tree in a deterministic order', async () => {
     // Mocks the shallow dependency call, always resolving the module in
     // `slowPath` after the module in `fastPath`.
