@@ -60,7 +60,7 @@ it('can write then read a file as buffer', () => {
 });
 
 describe('createWriteStream', () => {
-  it('can write a file', done => {
+  it('writes a file', done => {
     const st = fs.createWriteStream('/foo.txt');
     let opened = false;
     let closed = false;
@@ -76,7 +76,7 @@ describe('createWriteStream', () => {
     });
   });
 
-  it('can write a file, as buffer', done => {
+  it('writes a file, as buffer', done => {
     const st = fs.createWriteStream('/foo.txt');
     let opened = false;
     let closed = false;
@@ -92,7 +92,7 @@ describe('createWriteStream', () => {
     });
   });
 
-  it('can write a file, with a starting position', done => {
+  it('writes a file, with a starting position', done => {
     fs.writeFileSync('/foo.txt', 'test bar');
     const st = fs.createWriteStream('/foo.txt', {start: 5, flags: 'r+'});
     let opened = false;
@@ -104,6 +104,22 @@ describe('createWriteStream', () => {
       expect(opened).toBe(true);
       expect(closed).toBe(true);
       expect(fs.readFileSync('/foo.txt', 'utf8')).toEqual('test beep');
+      done();
+    });
+  });
+
+  it('writes a file with a custom fd', done => {
+    const fd = fs.openSync('/bar.txt', 'w');
+    const st = fs.createWriteStream('/foo.txt', {fd});
+    let opened = false;
+    let closed = false;
+    st.on('open', () => (opened = true));
+    st.on('close', () => (closed = true));
+    st.write('beep boop');
+    st.end(() => {
+      expect(opened).toBe(false);
+      expect(closed).toBe(true);
+      expect(fs.readFileSync('/bar.txt', 'utf8')).toEqual('beep boop');
       done();
     });
   });

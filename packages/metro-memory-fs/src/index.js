@@ -482,22 +482,9 @@ class MemoryFs {
       fd = this._open(pathStr(filePath), flags || 'w', mode);
       process.nextTick(() => (st: any).emit('open', fd));
     }
-    if (start != null) {
-      this._write(fd, new Buffer(0), 0, 0, start);
-    }
     const ffd = fd;
-    const rst = new stream.Writable({
-      write: (buffer, encoding, callback) => {
-        try {
-          this._write(ffd, buffer, 0, buffer.length);
-          (st: any).bytesWritten += buffer.length;
-        } catch (error) {
-          callback(error);
-          return;
-        }
-        callback();
-      },
-    });
+    const ropt = {fd, writeSync: this._write.bind(this), filePath, start};
+    const rst = new WriteFileStream(ropt);
     st = rst;
     if (autoClose !== false) {
       const doClose = () => {
@@ -507,8 +494,6 @@ class MemoryFs {
       rst.on('finish', doClose);
       rst.on('error', doClose);
     }
-    (st: any).path = filePath;
-    (st: any).bytesWritten = 0;
     return st;
   };
 
@@ -808,6 +793,48 @@ class ReadFileSteam extends stream.Readable {
     }
     const leftToRead = Math.max(0, _positions.last - _positions.current);
     return Math.min(_buffer.length, leftToRead);
+  }
+}
+
+type WriteSync = (
+  fd: number,
+  buffer: Buffer,
+  offset: number,
+  length: number,
+  position?: number,
+) => number;
+
+class WriteFileStream extends stream.Writable {
+  bytesWritten: number;
+  path: string | Buffer;
+  _fd: number;
+  _writeSync: WriteSync;
+
+  constructor(opts: {
+    fd: number,
+    filePath: string | Buffer,
+    writeSync: WriteSync,
+    start: ?number,
+  }) {
+    super();
+    this.path = opts.filePath;
+    this.bytesWritten = 0;
+    this._fd = opts.fd;
+    this._writeSync = opts.writeSync;
+    if (opts.start != null) {
+      this._writeSync(opts.fd, new Buffer(0), 0, 0, opts.start);
+    }
+  }
+
+  _write(buffer, encoding, callback) {
+    try {
+      const bytesWritten = this._writeSync(this._fd, buffer, 0, buffer.length);
+      this.bytesWritten += bytesWritten;
+    } catch (error) {
+      callback(error);
+      return;
+    }
+    callback();
   }
 }
 
