@@ -58,18 +58,19 @@ const Actions = {
     return module;
   },
 
-  addDependency(path, dependencyPath, position) {
+  addDependency(path, dependencyPath, position, name = null) {
     let dependency = dependencyGraph.getModuleForPath(dependencyPath);
     if (!dependency) {
       dependency = Actions.createFile(dependencyPath);
     }
 
     const deps = mockedDependencyTree.get(path);
+    name = name || dependency.name;
 
     if (position == null) {
-      deps.push(dependency);
+      deps.push({name, dependency});
     } else {
-      deps.splice(position, 0, dependency);
+      deps.splice(position, 0, {name, dependency});
     }
 
     mockedDependencyTree.set(path, deps);
@@ -79,11 +80,12 @@ const Actions = {
   },
 
   removeDependency(path, dependencyPath) {
-    const dependency = dependencyGraph.getModuleForPath(dependencyPath);
+    const dep = dependencyGraph.getModuleForPath(dependencyPath);
     const deps = mockedDependencyTree.get(path);
 
-    if (deps.indexOf(dependency) !== -1) {
-      deps.splice(deps.indexOf(dependency), 1);
+    const index = deps.findIndex(({dependency}) => dep === dependency);
+    if (index !== -1) {
+      deps.splice(index, 1);
       mockedDependencyTree.set(path, deps);
     }
 
@@ -144,7 +146,7 @@ beforeEach(async () => {
     },
     resolveDependency(module, relativePath) {
       const deps = mockedDependencyTree.get(module.path);
-      const dependency = deps.filter(dep => dep.name === relativePath)[0];
+      const {dependency} = deps.filter(dep => dep.name === relativePath)[0];
 
       if (!mockedDependencies.has(dependency)) {
         throw new Error(
@@ -312,8 +314,6 @@ describe('edge cases', () => {
     const edges = new Map();
     await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
 
-    mockedDependencyTree.set(moduleFoo.path, [moduleBar]);
-
     Actions.modifyFile('/baz');
     Actions.removeDependency('/foo', '/baz');
 
@@ -419,9 +419,15 @@ describe('edge cases', () => {
 
     // Create a dependency tree where moduleBaz has two inverse dependencies.
     mockedDependencyTree = new Map([
-      [entryModule.path, [moduleFoo, moduleBar]],
-      [moduleFoo.path, [moduleBaz]],
-      [moduleBar.path, [moduleBaz]],
+      [
+        entryModule.path,
+        [
+          {name: 'foo', dependency: moduleFoo},
+          {name: 'bar', dependency: moduleBar},
+        ],
+      ],
+      [moduleFoo.path, [{name: 'baz', dependency: moduleBaz}]],
+      [moduleBar.path, [{name: 'baz', dependency: moduleBaz}]],
     ]);
 
     // Test that even when having different modules taking longer, the order
