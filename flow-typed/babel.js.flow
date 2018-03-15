@@ -310,7 +310,7 @@ declare module '@babel/core' {
 }
 
 // https://github.com/babel/babel/tree/master/packages/babylon
-declare module 'babylon7' {
+declare module 'metro-babylon7' {
   declare function parse(
     code: string,
     options?: Babylon7Options,
