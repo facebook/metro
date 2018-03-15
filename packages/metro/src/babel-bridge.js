@@ -32,7 +32,7 @@ const resolvePlugins6 = require('babel-preset-react-native/lib/resolvePlugins');
 const getBabelRegisterConfig6 = () => require('./babelRegisterOnly').config;
 // load given preset as a babel6 preset
 const getPreset6 = (preset: string) =>
-  // $FlowFixMe: dynamic require can't be avoided
+  // $FlowFixMe TODO t26372934 plugin require
   require('babel-preset-' + preset);
 
 // ## Babel 7 stuff
@@ -63,7 +63,7 @@ function resolvePlugins7(plugins: Array<any>) {
     plugin = Array.isArray(plugin) ? plugin : [plugin];
     // Only resolve the plugin if it's a string reference.
     if (typeof plugin[0] === 'string') {
-      // $FlowFixMe these plugins need to be included here
+      // $FlowFixMe TODO t26372934 plugin require
       const required: ModuleES6 | {} = require('@babel/plugin-' + plugin[0]);
       // es6 import default?
       // $FlowFixMe should properly type this plugin structure
@@ -130,9 +130,9 @@ function makeMakeHMRConfig7() {
     }
 
     return {
-      plugins: resolvePlugins7([
+      plugins: [
         [
-          'react-transform',
+          require('babel-plugin-react-transform').default,
           {
             transforms: [
               {
@@ -143,7 +143,7 @@ function makeMakeHMRConfig7() {
             ],
           },
         ],
-      ]),
+      ],
     };
   };
 }
@@ -383,7 +383,7 @@ function getBabelRegisterConfig7() {
     return {
       presets: [],
       plugins: PLUGINS.map(pluginName =>
-        // $FlowFixMe must require with dynamic string
+        // $FlowFixMe TODO t26372934 plugin require
         require(`@babel/plugin-${pluginName}`),
       ),
       only: _only,
