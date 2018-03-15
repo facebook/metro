@@ -26,6 +26,7 @@ import type PackagerServer from '../Server';
 import type {Reporter} from '../lib/reporting';
 
 type Client = {|
+  clientId: string,
   deltaTransformer: DeltaTransformer,
   sendFn: (data: string) => mixed,
 |};
@@ -74,7 +75,7 @@ class HmrServer<TClient: Client> {
     this._lastSequenceId = id;
 
     // Listen to file changes.
-    const client = {sendFn, deltaTransformer};
+    const client = {clientId: clientUrl, deltaTransformer, sendFn};
     deltaTransformer.on('change', this._handleFileChange.bind(this, client));
 
     return client;
@@ -91,7 +92,7 @@ class HmrServer<TClient: Client> {
   onClientDisconnect(client: TClient) {
     // We can safely stop the delta transformer since the
     // transformer is not shared between clients.
-    client.deltaTransformer.end();
+    this._packagerServer.getDeltaBundler().endTransformer(client.clientId);
   }
 
   async _handleFileChange(client: Client) {

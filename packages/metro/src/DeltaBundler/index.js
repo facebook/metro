@@ -49,6 +49,16 @@ class DeltaBundler {
     this._deltaTransformers = new Map();
   }
 
+  endTransformer(clientId: string) {
+    const deltaTransformer = this._deltaTransformers.get(clientId);
+
+    if (deltaTransformer) {
+      deltaTransformer.end();
+
+      this._deltaTransformers.delete(clientId);
+    }
+  }
+
   async getDeltaTransformer(
     clientId: string,
     options: BundleOptions,
