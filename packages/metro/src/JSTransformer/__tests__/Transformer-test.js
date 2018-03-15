@@ -9,13 +9,13 @@
  */
 'use strict';
 
-const Transformer = require('../');
 const defaults = require('../../defaults');
 
 const {Readable} = require('stream');
 
 describe('Transformer', function() {
   let api;
+  let Transformer;
   const fileName = '/an/arbitrary/file.js';
   const localPath = 'arbitrary/file.js';
   const transformModulePath = __filename;
@@ -39,11 +39,9 @@ describe('Transformer', function() {
 
     const fs = require('fs');
     const jestWorker = require('jest-worker');
-
     fs.writeFileSync.mockClear();
-
     jestWorker.default.mockClear();
-    jestWorker.default.mockImplementation((workerPath, opts) => {
+    jestWorker.default.mockImplementation(function(workerPath, opts) {
       api = {
         end: jest.fn(),
         getStdout: () => new Readable({read() {}}),
@@ -64,6 +62,8 @@ describe('Transformer', function() {
 
       return api;
     });
+
+    Transformer = require('../');
   });
 
   it('passes transform data to the worker farm when transforming', async () => {
