@@ -83,6 +83,8 @@ const FLAGS_SPECS: {
 
 const ASYNC_FUNC_NAMES = [
   'close',
+  'fstat',
+  'lstat',
   'open',
   'read',
   'readdir',
@@ -204,10 +206,7 @@ class MemoryFs {
     length: number,
     position: ?number,
   ): number => {
-    const desc = this._fds.get(fd);
-    if (desc == null) {
-      throw makeError('EBADF', null, 'file descriptor is not open');
-    }
+    const desc = this._getDesc(fd);
     if (!desc.readable) {
       throw makeError('EBADF', null, 'file descriptor cannot be written to');
     }
@@ -417,6 +416,22 @@ class MemoryFs {
     return new Stats(node);
   };
 
+  lstatSync = (filePath: string | Buffer) => {
+    filePath = pathStr(filePath);
+    const {node} = this._resolve(filePath, {
+      keepFinalSymlink: true,
+    });
+    if (node == null) {
+      throw makeError('ENOENT', filePath, 'no such file or directory');
+    }
+    return new Stats(node);
+  };
+
+  fstatSync = (fd: number) => {
+    const desc = this._getDesc(fd);
+    return new Stats(desc.node);
+  };
+
   createReadStream = (
     filePath: string | Buffer,
     options?:
@@ -540,7 +555,14 @@ class MemoryFs {
    * Implemented according with
    * http://man7.org/linux/man-pages/man7/path_resolution.7.html
    */
-  _resolve(originalFilePath: string): Resolution {
+  _resolve(
+    originalFilePath: string,
+    options?: {keepFinalSymlink: boolean},
+  ): Resolution {
+    let keepFinalSymlink = false;
+    if (options != null) {
+      ({keepFinalSymlink} = options);
+    }
     let filePath = originalFilePath;
     let drive = '';
     if (path === path.win32 && filePath.match(/^[a-zA-Z]:\\/)) {
@@ -562,6 +584,7 @@ class MemoryFs {
       nodePath: [['', this._root]],
       entNames,
       symlinkCount: 0,
+      keepFinalSymlink,
     };
     while (context.entNames.length > 0) {
       const entName = context.entNames.shift();
@@ -597,7 +620,11 @@ class MemoryFs {
       return;
     }
     const childNode = entries.get(entName);
-    if (childNode == null || childNode.type !== 'symbolicLink') {
+    if (
+      childNode == null ||
+      childNode.type !== 'symbolicLink' ||
+      (context.keepFinalSymlink && context.entNames.length === 0)
+    ) {
       context.node = childNode;
       context.nodePath.push([entName, childNode]);
       return;
@@ -623,10 +650,7 @@ class MemoryFs {
     length: number,
     position: ?number,
   ): number {
-    const desc = this._fds.get(fd);
-    if (desc == null) {
-      throw makeError('EBADF', null, 'file descriptor is not open');
-    }
+    const desc = this._getDesc(fd);
     if (!desc.writable) {
       throw makeError('EBADF', null, 'file descriptor cannot be written to');
     }
@@ -654,6 +678,14 @@ class MemoryFs {
     }
     this._fds.set(fd, desc);
     return fd;
+  }
+
+  _getDesc(fd: number): Descriptor {
+    const desc = this._fds.get(fd);
+    if (desc == null) {
+      throw makeError('EBADF', null, 'file descriptor is not open');
+    }
+    return desc;
   }
 }
 

@@ -317,13 +317,46 @@ it('gives the real path via a symlinked directory', () => {
   expect(fs.realpathSync('/baz/foo.txt')).toEqual('/glo/foo.txt');
 });
 
-it('gives stat about a regular file', () => {
-  fs.writeFileSync('/foo.txt', 'test');
-  const st = fs.statSync('/foo.txt');
-  expect(st.isFile()).toBe(true);
-  expect(st.isDirectory()).toBe(false);
-  expect(st.isSymbolicLink()).toBe(false);
-  expect(st.size).toBe(4);
+describe('stat', () => {
+  it('works for a regular file', () => {
+    fs.writeFileSync('/foo.txt', 'test');
+    const st = fs.statSync('/foo.txt');
+    expect(st.isFile()).toBe(true);
+    expect(st.isDirectory()).toBe(false);
+    expect(st.isSymbolicLink()).toBe(false);
+    expect(st.size).toBe(4);
+  });
+
+  it('works for a symlinked file', () => {
+    fs.writeFileSync('/foo.txt', 'test');
+    fs.symlinkSync('foo.txt', '/bar.txt');
+    const st = fs.statSync('/bar.txt');
+    expect(st.isFile()).toBe(true);
+    expect(st.isDirectory()).toBe(false);
+    expect(st.isSymbolicLink()).toBe(false);
+    expect(st.size).toBe(4);
+  });
+});
+
+describe('lstat', () => {
+  it('works for a regular file', () => {
+    fs.writeFileSync('/foo.txt', 'test');
+    const st = fs.lstatSync('/foo.txt');
+    expect(st.isFile()).toBe(true);
+    expect(st.isDirectory()).toBe(false);
+    expect(st.isSymbolicLink()).toBe(false);
+    expect(st.size).toBe(4);
+  });
+
+  it('works for a symlink', () => {
+    const linkStr = 'foo/bar/baz.txt';
+    fs.symlinkSync(linkStr, '/bar.txt');
+    const st = fs.lstatSync('/bar.txt');
+    expect(st.isFile()).toBe(false);
+    expect(st.isDirectory()).toBe(false);
+    expect(st.isSymbolicLink()).toBe(true);
+    expect(st.size).toBe(linkStr.length);
+  });
 });
 
 it('able to list files of a directory', () => {
