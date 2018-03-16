@@ -41,6 +41,14 @@ function wrapPolyfill(fileAst: Object): Object {
   return t.file(t.program([t.expressionStatement(iife)]));
 }
 
+function wrapJson(source: string): string {
+  return [
+    `__d(function(${MODULE_FACTORY_PARAMETERS.join(', ')}) {`,
+    `  module.exports = ${source};`,
+    `});`,
+  ].join('\n');
+}
+
 function functionFromProgram(
   program: Object,
   parameters: Array<string>,
@@ -73,8 +81,7 @@ function renameRequires(ast: Object) {
 }
 
 module.exports = {
-  MODULE_FACTORY_PARAMETERS,
-  POLYFILL_FACTORY_PARAMETERS,
+  wrapJson,
   wrapModule,
   wrapPolyfill,
 };

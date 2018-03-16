@@ -21,4 +21,4 @@ exports.fn = () => {
 
 const generateOptions = {concise: true};
 exports.codeFromAst = ast => generate(ast, generateOptions).code;
-exports.comparableCode = code => code.trim().replace(/\s\s+/g, ' ');
+exports.comparableCode = code => code.trim().replace(/\s+/g, ' ');

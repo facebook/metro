@@ -214,7 +214,7 @@ describe('transforming JS modules:', () => {
     const {code} = result.details.transformed.default;
     expect(code.replace(/\s+/g, '')).toEqual(
       '__d(function(global,require,module,exports){' +
-        `module.exports=${json}});`,
+        `module.exports=${json};});`,
     );
   });
 

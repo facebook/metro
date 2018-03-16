@@ -100,6 +100,41 @@ it('wraps a polyfill correctly', () => {
   );
 });
 
+it('wraps a JSON file correctly', () => {
+  const source = JSON.stringify(
+    {
+      foo: 'foo',
+      bar: 'bar',
+      baz: true,
+      qux: null,
+      arr: [1, 2, 3, 4],
+    },
+    null,
+    2,
+  );
+
+  const wrappedJson = JsFileWrapping.wrapJson(source);
+
+  expect(comparableCode(wrappedJson)).toEqual(
+    comparableCode(
+      `__d(function(global, require, module, exports) {
+      module.exports = {
+        "foo": "foo",
+        "bar": "bar",
+        "baz": true,
+        "qux": null,
+        "arr": [
+          1,
+          2,
+          3,
+          4
+        ]
+      };
+    });`,
+    ),
+  );
+});
+
 function astFromCode(code) {
   return babylon.parse(code, {plugins: ['dynamicImport']});
 }

@@ -94,30 +94,91 @@ export type Data = {
   transformFileEndLogEntry: LogEntry,
 };
 
-function postTransform(
+function getDynamicDepsBehavior(
+  inPackages: DynamicRequiresBehavior,
+  filename: string,
+): DynamicRequiresBehavior {
+  switch (inPackages) {
+    case 'reject':
+      return 'reject';
+    case 'throwAtRuntime':
+      const isPackage = /(?:^|[/\\])node_modules[/\\]/.test(filename);
+      return isPackage ? inPackages : 'reject';
+    default:
+      (inPackages: empty);
+      throw new Error(
+        `invalid value for dynamic deps behavior: \`${inPackages}\``,
+      );
+  }
+}
+
+async function transformCode(
   filename: string,
   localPath: LocalPath,
   sourceCode: string,
+  transformerPath: string,
   isScript: boolean,
   options: Options,
-  transformFileStartLogEntry: LogEntry,
+  assetExts: $ReadOnlyArray<string>,
+  assetRegistryPath: string,
   asyncRequireModulePath: string,
   dynamicDepsInPackages: DynamicRequiresBehavior,
-  receivedAst: ?Ast,
-): Data {
+): Promise<Data> {
+  const transformFileStartLogEntry = {
+    action_name: 'Transforming file',
+    action_phase: 'start',
+    file_name: filename,
+    log_entry_label: 'Transforming file',
+    start_timestamp: process.hrtime(),
+  };
+
+  if (filename.endsWith('.json')) {
+    const code = JsFileWrapping.wrapJson(sourceCode);
+
+    const transformFileEndLogEntry = getEndLogEntry(
+      transformFileStartLogEntry,
+      filename,
+    );
+
+    return {
+      result: {dependencies: [], code, map: []},
+      transformFileStartLogEntry,
+      transformFileEndLogEntry,
+    };
+  }
+
+  const plugins = options.dev
+    ? []
+    : [[inlinePlugin, options], [constantFoldingPlugin, options]];
+
+  // $FlowFixMe TODO t26372934 Plugin system
+  const transformer: Transformer<*> = require(transformerPath);
+
+  const transformerArgs = {
+    filename,
+    localPath,
+    options,
+    plugins,
+    src: sourceCode,
+  };
+
+  const transformResult = isAsset(filename, assetExts)
+    ? await assetTransformer.transform(
+        transformerArgs,
+        assetRegistryPath,
+        options.assetDataPlugins,
+      )
+    : await transformer.transform(transformerArgs);
+
   // Transformers can ouptut null ASTs (if they ignore the file). In that case
   // we need to parse the module source code to get their AST.
-  const ast = receivedAst || babylon.parse(sourceCode, {sourceType: 'module'});
+  const ast =
+    transformResult.ast || babylon.parse(sourceCode, {sourceType: 'module'});
 
-  const timeDelta = process.hrtime(transformFileStartLogEntry.start_timestamp);
-  const duration_ms = Math.round((timeDelta[0] * 1e9 + timeDelta[1]) / 1e6);
-  const transformFileEndLogEntry = {
-    action_name: 'Transforming file',
-    action_phase: 'end',
-    file_name: filename,
-    duration_ms,
-    log_entry_label: 'Transforming file',
-  };
+  const transformFileEndLogEntry = getEndLogEntry(
+    transformFileStartLogEntry,
+    filename,
+  );
 
   let dependencies, wrappedAst;
 
@@ -185,89 +246,6 @@ function postTransform(
   };
 }
 
-function getDynamicDepsBehavior(
-  inPackages: DynamicRequiresBehavior,
-  filename: string,
-): DynamicRequiresBehavior {
-  switch (inPackages) {
-    case 'reject':
-      return 'reject';
-    case 'throwAtRuntime':
-      const isPackage = /(?:^|[/\\])node_modules[/\\]/.test(filename);
-      return isPackage ? inPackages : 'reject';
-    default:
-      (inPackages: empty);
-      throw new Error(
-        `invalid value for dynamic deps behavior: \`${inPackages}\``,
-      );
-  }
-}
-
-function transformCode(
-  filename: string,
-  localPath: LocalPath,
-  sourceCode: string,
-  transformerPath: string,
-  isScript: boolean,
-  options: Options,
-  assetExts: $ReadOnlyArray<string>,
-  assetRegistryPath: string,
-  asyncRequireModulePath: string,
-  dynamicDepsInPackages: DynamicRequiresBehavior,
-): Data | Promise<Data> {
-  const isJson = filename.endsWith('.json');
-
-  if (isJson) {
-    sourceCode = 'module.exports=' + sourceCode;
-  }
-
-  const transformFileStartLogEntry = {
-    action_name: 'Transforming file',
-    action_phase: 'start',
-    file_name: filename,
-    log_entry_label: 'Transforming file',
-    start_timestamp: process.hrtime(),
-  };
-
-  const plugins = options.dev
-    ? []
-    : [[inlinePlugin, options], [constantFoldingPlugin, options]];
-
-  // $FlowFixMe TODO t26372934 Plugin system
-  const transformer: Transformer<*> = require(transformerPath);
-
-  const transformerArgs = {
-    filename,
-    localPath,
-    options,
-    plugins,
-    src: sourceCode,
-  };
-
-  const transformResult = isAsset(filename, assetExts)
-    ? assetTransformer.transform(
-        transformerArgs,
-        assetRegistryPath,
-        options.assetDataPlugins,
-      )
-    : transformer.transform(transformerArgs);
-
-  const postTransformArgs = [
-    filename,
-    localPath,
-    sourceCode,
-    isScript,
-    options,
-    transformFileStartLogEntry,
-    asyncRequireModulePath,
-    dynamicDepsInPackages,
-  ];
-
-  return transformResult instanceof Promise
-    ? transformResult.then(({ast}) => postTransform(...postTransformArgs, ast))
-    : postTransform(...postTransformArgs, transformResult.ast);
-}
-
 function minifyCode(
   filename: string,
   code: string,
@@ -290,6 +268,19 @@ function minifyCode(
 
 function isAsset(filePath: string, assetExts: $ReadOnlyArray<string>): boolean {
   return assetExts.indexOf(path.extname(filePath).slice(1)) !== -1;
+}
+
+function getEndLogEntry(startLogEntry: LogEntry, filename: string): LogEntry {
+  const timeDelta = process.hrtime(startLogEntry.start_timestamp);
+  const duration_ms = Math.round((timeDelta[0] * 1e9 + timeDelta[1]) / 1e6);
+
+  return {
+    action_name: 'Transforming file',
+    action_phase: 'end',
+    file_name: filename,
+    duration_ms,
+    log_entry_label: 'Transforming file',
+  };
 }
 
 class InvalidRequireCallError extends Error {
