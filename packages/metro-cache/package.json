@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "jest-serializer": "^22.4.0",
+    "metro-core": "^0.30.1",
     "mkdirp": "^0.5.1"
   }
 }

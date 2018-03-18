@@ -10,8 +10,17 @@
 
 'use strict';
 
+const {Logger} = require('metro-core');
+
 import type {CacheStore} from 'metro-cache';
 
+/**
+ * Main cache class. Receives an array of cache instances, and sequentially
+ * traverses them to return a previously stored value. It also ensures setting
+ * the value in all instances.
+ *
+ * All get/set operations are logged via Metro's logger.
+ */
 class Cache<T> {
   _stores: $ReadOnlyArray<CacheStore<T>>;
 
@@ -27,16 +36,40 @@ class Cache<T> {
     const length = stores.length;
 
     for (let i = 0; i < length; i++) {
-      let value = stores[i].get(key);
+      const store = stores[i];
+      const name = store.constructor.name + '::' + key.toString('hex');
+      let value = null;
 
-      if (value instanceof Promise) {
-        value = await value;
-      }
+      const logStart = Logger.log(
+        Logger.createActionStartEntry({
+          action_name: 'Cache get',
+          log_entry_label: name,
+        }),
+      );
 
-      if (value != null) {
-        this._hits.set(key, stores[i]);
+      try {
+        const valueOrPromise = store.get(key);
 
-        return value;
+        if (valueOrPromise && typeof valueOrPromise.then === 'function') {
+          value = await valueOrPromise;
+        } else {
+          value = valueOrPromise;
+        }
+      } finally {
+        Logger.log(Logger.createActionEndEntry(logStart));
+
+        Logger.log(
+          Logger.createEntry({
+            action_name: 'Cache ' + (value == null ? 'miss' : 'hit'),
+            log_entry_label: name,
+          }),
+        );
+
+        if (value != null) {
+          this._hits.set(key, store);
+
+          return value;
+        }
       }
     }
 
@@ -50,6 +83,16 @@ class Cache<T> {
     const promises = [];
 
     for (let i = 0; i < length && stores[i] !== stop; i++) {
+      const store = stores[i];
+      const name = store.constructor.name + '::' + key.toString('hex');
+
+      Logger.log(
+        Logger.createEntry({
+          action_name: 'Cache set',
+          log_entry_label: name,
+        }),
+      );
+
       promises.push(stores[i].set(key, value));
     }
 

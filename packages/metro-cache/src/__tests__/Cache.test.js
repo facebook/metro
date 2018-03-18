@@ -11,18 +11,38 @@
 
 'use strict';
 
-const Cache = require('../Cache');
-
 describe('Cache', () => {
-  function createStore(i) {
-    return {
+  let Cache;
+  let Logger;
+  let log;
+
+  function createStore(name = '') {
+    // eslint-disable-next-line no-eval
+    const TempClass = eval(`(class ${name} {})`);
+
+    return Object.assign(new TempClass(), {
       get: jest.fn().mockImplementation(() => null),
       set: jest.fn(),
-    };
+    });
   }
 
+  beforeEach(() => {
+    Logger = require('metro-core').Logger;
+    Cache = require('../Cache');
+
+    Logger.on('log', item => {
+      log.push({
+        a: item.action_name,
+        l: item.log_entry_label,
+        p: item.action_phase,
+      });
+    });
+
+    log = [];
+  });
+
   afterEach(() => {
-    jest.restoreAllMocks();
+    jest.resetModules().restoreAllMocks();
   });
 
   it('returns null when no result is found', async () => {
@@ -39,9 +59,9 @@ describe('Cache', () => {
   });
 
   it('sequentially searches up until it finds a valid result', async () => {
-    const store1 = createStore(1);
-    const store2 = createStore(2);
-    const store3 = createStore(3);
+    const store1 = createStore();
+    const store2 = createStore();
+    const store3 = createStore();
     const cache = new Cache([store1, store2, store3]);
 
     // Only cache 2 can return results.
@@ -136,5 +156,62 @@ describe('Cache', () => {
     }
 
     expect(error).toBeInstanceOf(TypeError);
+  });
+
+  it('logs the right messages when getting without errors', async () => {
+    const store1 = createStore('Local');
+    const store2 = createStore('Network');
+    const cache = new Cache([store1, store2]);
+
+    store1.get.mockImplementation(() => null);
+    store2.get.mockImplementation(() => 'le potato');
+
+    await cache.get(Buffer.from('foo'));
+
+    expect(log).toEqual([
+      {a: 'Cache get', l: 'Cache get', p: 'start'},
+      {a: 'Cache get', l: 'Cache get', p: 'end'},
+      {a: 'Cache miss', l: 'Local::666f6f', p: undefined},
+      {a: 'Cache get', l: 'Cache get', p: 'start'},
+      {a: 'Cache get', l: 'Cache get', p: 'end'},
+      {a: 'Cache hit', l: 'Network::666f6f', p: undefined},
+    ]);
+  });
+
+  it('logs the right messages when getting with errors', async () => {
+    const store1 = createStore('Local');
+    const store2 = createStore('Network');
+    const cache = new Cache([store1, store2]);
+
+    store1.get.mockImplementation(() => null);
+    store2.get.mockImplementation(() => Promise.reject(new TypeError('bar')));
+
+    try {
+      await cache.get(Buffer.from('foo'));
+    } catch (err) {
+      // Do nothing, we care about the logs.
+    }
+
+    expect(log).toEqual([
+      {a: 'Cache get', l: 'Cache get', p: 'start'},
+      {a: 'Cache get', l: 'Cache get', p: 'end'},
+      {a: 'Cache miss', l: 'Local::666f6f', p: undefined},
+      {a: 'Cache get', l: 'Cache get', p: 'start'},
+      {a: 'Cache get', l: 'Cache get', p: 'end'},
+      {a: 'Cache miss', l: 'Network::666f6f', p: undefined},
+    ]);
+  });
+
+  it('logs the right messages when setting', async () => {
+    const store1 = createStore('Local');
+    const store2 = createStore('Network');
+    const cache = new Cache([store1, store2]);
+
+    await cache.set(Buffer.from('foo'));
+
+    expect(log).toEqual([
+      {a: 'Cache set', l: 'Local::666f6f', p: undefined},
+      {a: 'Cache set', l: 'Network::666f6f', p: undefined},
+    ]);
   });
 });

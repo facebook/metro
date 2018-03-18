@@ -18,6 +18,7 @@ const VERSION = require('../../package.json').version;
 
 type ActionLogEntryData = {
   action_name: string,
+  log_entry_label?: string,
 };
 
 type ActionStartLogEntry = {
