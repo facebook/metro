@@ -154,7 +154,7 @@ class DeltaTransformer extends EventEmitter {
    * transitive dependencies of any given file within the dependency graph.
    **/
   async getDependenciesFn(): Promise<(string) => Set<string>> {
-    if (!this._deltaCalculator.getDependencyEdges().size) {
+    if (!this._deltaCalculator.getGraph().dependencies.size) {
       // If by any means the dependency graph has not been initialized, call
       // getDelta() to initialize it.
       await this._getDelta({reset: false});
@@ -168,16 +168,17 @@ class DeltaTransformer extends EventEmitter {
    * transitive dependencies of any given file within the dependency graph.
    **/
   async getInverseDependencies(): Promise<Map<number, $ReadOnlyArray<number>>> {
-    if (!this._deltaCalculator.getDependencyEdges().size) {
+    const graph = this._deltaCalculator.getGraph();
+
+    if (!graph.dependencies.size) {
       // If by any means the dependency graph has not been initialized, call
       // getDelta() to initialize it.
       await this._getDelta({reset: false});
     }
 
-    const dependencyEdges = this._deltaCalculator.getDependencyEdges();
     const output = new Map();
 
-    for (const [path, {inverseDependencies}] of dependencyEdges.entries()) {
+    for (const [path, {inverseDependencies}] of graph.dependencies.entries()) {
       output.set(
         this._getModuleId(path),
         Array.from(inverseDependencies).map(dep => this._getModuleId(dep)),
@@ -226,14 +227,14 @@ class DeltaTransformer extends EventEmitter {
     const {modified, deleted, reset} = await this._deltaCalculator.getDelta({
       reset: resetDelta,
     });
+    const graph = this._deltaCalculator.getGraph();
 
     const transformerOptions = await this._deltaCalculator.getTransformerOptions();
-    const dependencyEdges = this._deltaCalculator.getDependencyEdges();
 
     // Return the source code that gets prepended to all the modules. This
     // contains polyfills and startup code (like the require() implementation).
     const prependSources = reset
-      ? await this._getPrepend(transformerOptions, dependencyEdges)
+      ? await this._getPrepend(transformerOptions, graph.dependencies)
       : new Map();
 
     // Precalculate all module ids sequentially. We do this to be sure that the
@@ -245,7 +246,7 @@ class DeltaTransformer extends EventEmitter {
     const modifiedDelta = await this._transformModules(
       modules,
       transformerOptions,
-      dependencyEdges,
+      graph.dependencies,
     );
 
     deleted.forEach(id => {
@@ -255,7 +256,7 @@ class DeltaTransformer extends EventEmitter {
     // Return the source code that gets appended to all the modules. This
     // contains the require() calls to startup the execution of the modules.
     const appendSources = reset
-      ? await this._getAppend(dependencyEdges)
+      ? await this._getAppend(graph.dependencies)
       : new Map();
 
     // generate a random
@@ -271,11 +272,9 @@ class DeltaTransformer extends EventEmitter {
   }
 
   _getDependencies = (path: string): Set<string> => {
-    const dependencies = this._getDeps(
-      path,
-      this._deltaCalculator.getDependencyEdges(),
-      new Set(),
-    );
+    const graph = this._deltaCalculator.getGraph();
+
+    const dependencies = this._getDeps(path, graph.dependencies, new Set());
 
     // Remove the main entry point, since this method only returns the
     // dependencies.

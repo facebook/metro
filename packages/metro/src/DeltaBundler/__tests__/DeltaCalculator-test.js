@@ -385,6 +385,17 @@ describe('DeltaCalculator', () => {
     expect(traverseDependencies.mock.calls[0][0]).toEqual(['/foo']);
   });
 
+  it('should not mutate an existing graph when calling end()', async () => {
+    await deltaCalculator.getDelta({reset: false});
+    const graph = deltaCalculator.getGraph();
+
+    const numDependencies = graph.dependencies.size;
+
+    deltaCalculator.end();
+
+    expect(graph.dependencies.size).toEqual(numDependencies);
+  });
+
   describe('getTransformerOptions()', () => {
     it('should calculate the transform options correctly', async () => {
       expect(await deltaCalculator.getTransformerOptions()).toEqual({

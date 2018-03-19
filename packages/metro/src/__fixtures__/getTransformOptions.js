@@ -32,6 +32,9 @@ async function getTransformOptions(): Promise<JSTransformerOptions> {
     getWatcher() {
       return {on() {}};
     },
+    getAbsolutePath(path) {
+      return '/' + path;
+    },
   };
   const options = {
     assetPlugins: [],

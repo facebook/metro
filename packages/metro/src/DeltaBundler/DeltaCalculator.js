@@ -21,6 +21,7 @@ import type Bundler from '../Bundler';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type DependencyGraph from '../node-haste/DependencyGraph';
 import type {BundleOptions} from '../shared/types.flow';
+import type {DependencyEdge, DependencyEdges} from './traverseDependencies';
 
 export type DeltaResult = {|
   +modified: Map<string, DependencyEdge>,
@@ -28,7 +29,10 @@ export type DeltaResult = {|
   +reset: boolean,
 |};
 
-import type {DependencyEdge, DependencyEdges} from './traverseDependencies';
+export type Graph = {|
+  dependencies: DependencyEdges,
+  entryFile: string,
+|};
 
 /**
  * This class is in charge of calculating the delta of changed modules that
@@ -46,7 +50,7 @@ class DeltaCalculator extends EventEmitter {
   _deletedFiles: Set<string> = new Set();
   _modifiedFiles: Set<string> = new Set();
 
-  _dependencyEdges: DependencyEdges = new Map();
+  _graph: Graph;
 
   constructor(
     bundler: Bundler,
@@ -58,6 +62,15 @@ class DeltaCalculator extends EventEmitter {
     this._bundler = bundler;
     this._options = options;
     this._dependencyGraph = dependencyGraph;
+
+    const entryFilePath = this._dependencyGraph.getAbsolutePath(
+      this._options.entryFile,
+    );
+
+    this._graph = {
+      dependencies: new Map(),
+      entryFile: entryFilePath,
+    };
 
     this._dependencyGraph
       .getWatcher()
@@ -72,14 +85,15 @@ class DeltaCalculator extends EventEmitter {
       .getWatcher()
       .removeListener('change', this._handleMultipleFileChanges);
 
-    this.reset();
-  }
+    this.removeAllListeners();
 
-  reset() {
     // Clean up all the cache data structures to deallocate memory.
+    this._graph = {
+      dependencies: new Map(),
+      entryFile: this._options.entryFile,
+    };
     this._modifiedFiles = new Set();
     this._deletedFiles = new Set();
-    this._dependencyEdges = new Map();
   }
 
   /**
@@ -111,7 +125,7 @@ class DeltaCalculator extends EventEmitter {
 
     let result;
 
-    const numDependencies = this._dependencyEdges.size;
+    const numDependencies = this._graph.dependencies.size;
 
     try {
       result = await this._currentBuildPromise;
@@ -126,8 +140,8 @@ class DeltaCalculator extends EventEmitter {
       // If after an error the number of edges has changed, we could be in
       // a weird state. As a safe net we clean the dependency edges to force
       // a clean traversal of the graph next time.
-      if (this._dependencyEdges.size !== numDependencies) {
-        this._dependencyEdges = new Map();
+      if (this._graph.dependencies.size !== numDependencies) {
+        this._graph.dependencies = new Map();
       }
 
       throw error;
@@ -137,13 +151,13 @@ class DeltaCalculator extends EventEmitter {
 
     // Return all the modules if the client requested a reset delta.
     if (reset) {
+      this._graph.dependencies = reorderDependencies(
+        this._graph.dependencies.get(this._graph.entryFile),
+        this._graph.dependencies,
+      );
+
       return {
-        modified: reorderDependencies(
-          this._dependencyEdges.get(
-            this._dependencyGraph.getAbsolutePath(this._options.entryFile),
-          ),
-          this._dependencyEdges,
-        ),
+        modified: this._graph.dependencies,
         deleted: new Set(),
         reset: true,
       };
@@ -207,12 +221,12 @@ class DeltaCalculator extends EventEmitter {
   }
 
   /**
-   * Returns all the dependency edges from the graph. Each edge contains the
+   * Returns the graph with all the dependency edges. Each edge contains the
    * needed information to do the traversing (dependencies, inverseDependencies)
    * plus some metadata.
    */
-  getDependencyEdges(): DependencyEdges {
-    return this._dependencyEdges;
+  getGraph(): Graph {
+    return this._graph;
   }
 
   _handleMultipleFileChanges = ({eventsQueue}) => {
@@ -250,16 +264,12 @@ class DeltaCalculator extends EventEmitter {
   ): Promise<DeltaResult> {
     const transformerOptions = await this.getTransformerOptions();
 
-    if (!this._dependencyEdges.size) {
-      const path = this._dependencyGraph.getAbsolutePath(
-        this._options.entryFile,
-      );
-
+    if (!this._graph.dependencies.size) {
       const {added} = await initialTraverseDependencies(
-        path,
+        this._graph.entryFile,
         this._dependencyGraph,
         transformerOptions,
-        this._dependencyEdges,
+        this._graph.dependencies,
         this._options.onProgress || undefined,
       );
 
@@ -273,7 +283,7 @@ class DeltaCalculator extends EventEmitter {
     // If a file has been deleted, we want to invalidate any other file that
     // depends on it, so we can process it and correctly return an error.
     deletedFiles.forEach(filePath => {
-      const edge = this._dependencyEdges.get(filePath);
+      const edge = this._graph.dependencies.get(filePath);
 
       if (edge) {
         edge.inverseDependencies.forEach(path => modifiedFiles.add(path));
@@ -282,7 +292,7 @@ class DeltaCalculator extends EventEmitter {
 
     // We only want to process files that are in the bundle.
     const modifiedDependencies = Array.from(modifiedFiles).filter(filePath =>
-      this._dependencyEdges.has(filePath),
+      this._graph.dependencies.has(filePath),
     );
 
     // No changes happened. Return empty delta.
@@ -294,7 +304,7 @@ class DeltaCalculator extends EventEmitter {
       modifiedDependencies,
       this._dependencyGraph,
       transformerOptions,
-      this._dependencyEdges,
+      this._graph.dependencies,
       this._options.onProgress || undefined,
     );
 
