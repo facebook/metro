@@ -121,6 +121,14 @@ class Bundler {
   constructor(opts: Options) {
     opts.projectRoots.forEach(verifyRootExists);
 
+    const getTransformCacheKey = getTransformCacheKeyFn({
+      asyncRequireModulePath: opts.asyncRequireModulePath,
+      cacheVersion: opts.cacheVersion,
+      dynamicDepsInPackages: opts.dynamicDepsInPackages,
+      projectRoots: opts.projectRoots,
+      transformModulePath: opts.transformModulePath,
+    });
+
     this._opts = opts;
     this._cache = opts.cacheStores.length ? new Cache(opts.cacheStores) : null;
 
@@ -147,13 +155,7 @@ class Bundler {
       experimentalCaches: !!opts.cacheStores.length,
       extraNodeModules: opts.extraNodeModules,
       getPolyfills: opts.getPolyfills,
-      getTransformCacheKey: getTransformCacheKeyFn({
-        asyncRequireModulePath: opts.asyncRequireModulePath,
-        cacheVersion: opts.cacheVersion,
-        dynamicDepsInPackages: opts.dynamicDepsInPackages,
-        projectRoots: opts.projectRoots,
-        transformModulePath: opts.transformModulePath,
-      }),
+      getTransformCacheKey,
       globalTransformCache: opts.globalTransformCache,
       hasteImplModulePath: opts.hasteImplModulePath,
       maxWorkers: opts.maxWorkers,
@@ -173,11 +175,7 @@ class Bundler {
     this._baseHash = stableHash([
       opts.assetExts,
       opts.assetRegistryPath,
-      opts.asyncRequireModulePath,
-      opts.cacheVersion,
-      opts.dynamicDepsInPackages,
-      opts.projectRoots,
-      opts.transformModulePath,
+      getTransformCacheKey,
     ]).toString('binary');
 
     this._projectRoots = opts.projectRoots;
