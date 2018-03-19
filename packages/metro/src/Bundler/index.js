@@ -194,11 +194,11 @@ class Bundler {
   }
 
   /**
-   * Returns the transform options related to a specific entry file, by calling
+   * Returns the transform options related to several entry files, by calling
    * the config parameter getTransformOptions().
    */
-  async getTransformOptionsForEntryFile(
-    entryFile: string,
+  async getTransformOptionsForEntryFiles(
+    entryFiles: $ReadOnlyArray<string>,
     options: {dev: boolean, platform: ?string},
     getDependencies: string => Promise<Array<string>>,
   ): Promise<TransformOptions> {
@@ -209,7 +209,7 @@ class Bundler {
     }
 
     const {transform} = await this._getTransformOptions(
-      [entryFile],
+      entryFiles,
       {dev: options.dev, hot: true, platform: options.platform},
       getDependencies,
     );

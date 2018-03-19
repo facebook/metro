@@ -43,7 +43,7 @@ describe('DeltaCalculator', () => {
   const options = {
     assetPlugins: [],
     dev: true,
-    entryFile: 'bundle',
+    entryPoints: ['bundle'],
     entryModuleOnly: false,
     excludeSource: false,
     hot: true,
@@ -137,7 +137,7 @@ describe('DeltaCalculator', () => {
       projectRoot: '/foo',
     });
 
-    Bundler.prototype.getTransformOptionsForEntryFile.mockReturnValue(
+    Bundler.prototype.getTransformOptionsForEntryFiles.mockReturnValue(
       Promise.resolve({
         inlineRequires: false,
       }),
@@ -416,7 +416,7 @@ describe('DeltaCalculator', () => {
     });
 
     it('should handle inlineRequires=true correctly', async () => {
-      Bundler.prototype.getTransformOptionsForEntryFile.mockReturnValue(
+      Bundler.prototype.getTransformOptionsForEntryFiles.mockReturnValue(
         Promise.resolve({
           inlineRequires: true,
         }),
@@ -435,7 +435,7 @@ describe('DeltaCalculator', () => {
     });
 
     it('should handle an inline requires blacklist correctly', async () => {
-      Bundler.prototype.getTransformOptionsForEntryFile.mockReturnValue(
+      Bundler.prototype.getTransformOptionsForEntryFiles.mockReturnValue(
         Promise.resolve({
           inlineRequires: {blacklist: {'/bar': true, '/baz': true}},
         }),

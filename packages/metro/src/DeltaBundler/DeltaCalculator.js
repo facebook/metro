@@ -18,9 +18,11 @@ const {
 const {EventEmitter} = require('events');
 
 import type Bundler from '../Bundler';
-import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
+import type {
+  Options as JSTransformerOptions,
+  CustomTransformOptions,
+} from '../JSTransformer/worker';
 import type DependencyGraph from '../node-haste/DependencyGraph';
-import type {BundleOptions} from '../shared/types.flow';
 import type {DependencyEdge, Graph} from './traverseDependencies';
 
 export type DeltaResult = {|
@@ -31,6 +33,17 @@ export type DeltaResult = {|
 
 export type {Graph} from './traverseDependencies';
 
+export type Options = {
+  +assetPlugins: Array<string>,
+  +customTransformOptions: CustomTransformOptions,
+  +dev: boolean,
+  +entryPoints: $ReadOnlyArray<string>,
+  +hot: boolean,
+  +minify: boolean,
+  +onProgress: ?(doneCont: number, totalCount: number) => mixed,
+  +platform: ?string,
+};
+
 /**
  * This class is in charge of calculating the delta of changed modules that
  * happen between calls. To do so, it subscribes to file changes, so it can
@@ -40,7 +53,7 @@ export type {Graph} from './traverseDependencies';
 class DeltaCalculator extends EventEmitter {
   _bundler: Bundler;
   _dependencyGraph: DependencyGraph;
-  _options: BundleOptions;
+  _options: Options;
   _transformerOptions: ?JSTransformerOptions;
 
   _currentBuildPromise: ?Promise<DeltaResult>;
@@ -52,7 +65,7 @@ class DeltaCalculator extends EventEmitter {
   constructor(
     bundler: Bundler,
     dependencyGraph: DependencyGraph,
-    options: BundleOptions,
+    options: Options,
   ) {
     super();
 
@@ -60,11 +73,9 @@ class DeltaCalculator extends EventEmitter {
     this._options = options;
     this._dependencyGraph = dependencyGraph;
 
-    // The traverse dependencies logic supports multiple entry points, but
-    // currently metro only supports to pass a single entry point when bundling.
-    const entryPoints = [
-      this._dependencyGraph.getAbsolutePath(this._options.entryFile),
-    ];
+    const entryPoints = this._options.entryPoints.map(entryPoint =>
+      this._dependencyGraph.getAbsolutePath(entryPoint),
+    );
 
     this._graph = {
       dependencies: new Map(),
@@ -89,7 +100,7 @@ class DeltaCalculator extends EventEmitter {
     // Clean up all the cache data structures to deallocate memory.
     this._graph = {
       dependencies: new Map(),
-      entryPoints: [this._options.entryFile],
+      entryPoints: this._options.entryPoints,
     };
     this._modifiedFiles = new Set();
     this._deletedFiles = new Set();
@@ -194,8 +205,8 @@ class DeltaCalculator extends EventEmitter {
 
     const {
       inlineRequires,
-    } = await this._bundler.getTransformOptionsForEntryFile(
-      this._options.entryFile,
+    } = await this._bundler.getTransformOptionsForEntryFiles(
+      this._options.entryPoints,
       {dev: this._options.dev, platform: this._options.platform},
       async path => {
         const {added} = await initialTraverseDependencies(

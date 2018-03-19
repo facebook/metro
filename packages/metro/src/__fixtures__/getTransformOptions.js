@@ -22,7 +22,7 @@ async function getTransformOptions(): Promise<JSTransformerOptions> {
         projectRoot: '/root',
       };
     },
-    async getTransformOptionsForEntryFile() {
+    async getTransformOptionsForEntryFiles() {
       return {
         inlineRequires: true,
       };
@@ -39,6 +39,7 @@ async function getTransformOptions(): Promise<JSTransformerOptions> {
   const options = {
     assetPlugins: [],
     dev: true,
+    entryPoints: [],
     hot: true,
     minify: false,
     platform: 'ios',

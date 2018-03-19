@@ -124,11 +124,10 @@ class DeltaTransformer extends EventEmitter {
   ): Promise<DeltaTransformer> {
     const dependencyGraph = await bundler.getDependencyGraph();
 
-    const deltaCalculator = new DeltaCalculator(
-      bundler,
-      dependencyGraph,
-      bundleOptions,
-    );
+    const deltaCalculator = new DeltaCalculator(bundler, dependencyGraph, {
+      ...bundleOptions,
+      entryPoints: [bundleOptions.entryFile],
+    });
 
     return new DeltaTransformer(
       bundler,
