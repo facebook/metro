@@ -11,6 +11,8 @@
 'use strict';
 
 const os = require('os');
+const path = require('path');
+const process = require('process');
 
 const {EventEmitter} = require('events');
 
@@ -33,6 +35,7 @@ export type LogEntry = {
   action_name?: string,
   action_phase?: string,
   duration_ms?: number,
+  entry_point?: string,
   log_entry_label: string,
   log_session?: string,
   start_timestamp?: [number, number],
@@ -46,7 +49,13 @@ function on(event: string, handler: (logEntry: LogEntry) => void): void {
 }
 
 function createEntry(data: LogEntry | string): LogEntry {
-  const logEntry = typeof data === 'string' ? {log_entry_label: data} : data;
+  const logEntry: LogEntry =
+    typeof data === 'string' ? {log_entry_label: data} : data;
+
+  const entryPoint = logEntry.entry_point;
+  if (entryPoint) {
+    logEntry.entry_point = path.relative(process.cwd(), entryPoint);
+  }
 
   return {
     ...logEntry,

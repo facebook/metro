@@ -19,11 +19,9 @@ const ModuleCache = require('./ModuleCache');
 const ResolutionRequest = require('./DependencyGraph/ResolutionRequest');
 
 const fs = require('fs');
-const isAbsolutePath = require('absolute-path');
 const parsePlatformFilePath = require('./lib/parsePlatformFilePath');
 const path = require('path');
 const toLocalPath = require('../node-haste/lib/toLocalPath');
-const util = require('util');
 
 const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
 const {EventEmitter} = require('events');
@@ -288,52 +286,9 @@ class DependencyGraph extends EventEmitter {
     return toLocalPath(this._opts.projectRoots, filePath);
   }
 
-  getAbsolutePath(filePath: string) {
-    if (isAbsolutePath(filePath)) {
-      return path.resolve(filePath);
-    }
-
-    for (let i = 0; i < this._opts.projectRoots.length; i++) {
-      const root = this._opts.projectRoots[i];
-      const potentialAbsPath = path.join(root, filePath);
-      if (this._hasteFS.exists(potentialAbsPath)) {
-        return path.resolve(potentialAbsPath);
-      }
-    }
-
-    // If we failed to find a file, maybe this is just a Haste name so try that
-    // TODO: We should prefer Haste name resolution first ideally since it is faster
-    // TODO: Ideally, we should not do any `path.parse().name` here and just use the
-    //       name, but in `metro/src/Server/index.js` we append `'.js'` to all names
-    //       so until that changes, we have to do this.
-    const potentialPath = this._moduleMap.getModule(
-      path.parse(filePath).name,
-      null,
-    );
-    if (potentialPath) {
-      return potentialPath;
-    }
-
-    throw new NotFoundError(
-      'Cannot find entry file %s in any of the roots: %j',
-      filePath,
-      this._opts.projectRoots,
-    );
-  }
-
   createPolyfill(options: {file: string}) {
     return this._moduleCache.createPolyfill(options);
   }
 }
-
-function NotFoundError(...args) {
-  Error.call(this);
-  Error.captureStackTrace(this, this.constructor);
-  var msg = util.format.apply(util, args);
-  this.message = msg;
-  this.type = this.name = 'NotFoundError';
-  this.status = 404;
-}
-util.inherits(NotFoundError, Error);
 
 module.exports = DependencyGraph;

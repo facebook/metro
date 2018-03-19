@@ -17,6 +17,7 @@ const Serializers = require('../DeltaBundler/Serializers/Serializers');
 const debug = require('debug')('Metro:Server');
 const defaults = require('../defaults');
 const formatBundlingError = require('../lib/formatBundlingError');
+const getAbsolutePath = require('../lib/getAbsolutePath');
 const getMaxWorkers = require('../lib/getMaxWorkers');
 const getOrderedDependencyPaths = require('../lib/getOrderedDependencyPaths');
 const mime = require('mime-types');
@@ -234,6 +235,7 @@ class Server {
       runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
         options.entryFile,
       ),
+      entryFile: getAbsolutePath(options.entryFile, this._opts.projectRoots),
     };
 
     const fullBundle = await Serializers.fullBundle(
@@ -255,7 +257,10 @@ class Server {
   async getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo> {
     return await Serializers.getRamBundleInfo(
       this._deltaBundler,
-      options,
+      {
+        ...options,
+        entryFile: getAbsolutePath(options.entryFile, this._opts.projectRoots),
+      },
       this._opts.getTransformOptions,
     );
   }
@@ -263,7 +268,10 @@ class Server {
   async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {
     return await Serializers.getAssets(
       this._deltaBundler,
-      options,
+      {
+        ...options,
+        entryFile: getAbsolutePath(options.entryFile, this._opts.projectRoots),
+      },
       this._opts.projectRoots,
     );
   }
@@ -277,6 +285,7 @@ class Server {
     const bundleOptions = {
       ...Server.DEFAULT_BUNDLE_OPTIONS,
       ...options,
+      entryFile: getAbsolutePath(options.entryFile, this._opts.projectRoots),
       bundleType: 'delta',
     };
 
@@ -813,6 +822,11 @@ class Server {
         })
         .join('.') + '.js';
 
+    const absoluteEntryFile = getAbsolutePath(
+      entryFile,
+      this._opts.projectRoots,
+    );
+
     // try to get the platform from the url
     const platform =
       urlQuery.platform ||
@@ -847,7 +861,7 @@ class Server {
       }),
       bundleType: isMap ? 'map' : deltaBundleId ? 'delta' : 'bundle',
       customTransformOptions,
-      entryFile,
+      entryFile: absoluteEntryFile,
       deltaBundleId,
       dev,
       minify,
@@ -889,6 +903,10 @@ class Server {
 
   getReporter(): Reporter {
     return this._reporter;
+  }
+
+  getProjectRoots(): $ReadOnlyArray<string> {
+    return this._opts.projectRoots;
   }
 
   static DEFAULT_BUNDLE_OPTIONS = {

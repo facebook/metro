@@ -356,19 +356,12 @@ class DeltaTransformer extends EventEmitter {
   }
 
   async _getAppend(dependencyEdges: DependencyEdges): Promise<DeltaEntries> {
-    // Get the absolute path of the entry file, in order to be able to get the
-    // actual correspondant module (and its moduleId) to be able to add the
-    // correct require(); call at the very end of the bundle.
-    const entryPointModulePath = this._dependencyGraph.getAbsolutePath(
-      this._bundleOptions.entryFile,
-    );
-
     // First, get the modules correspondant to all the module names defined in
     // the `runBeforeMainModule` config variable. Then, append the entry point
     // module so the last thing that gets required is the entry point.
     const append = new Map(
       this._bundleOptions.runBeforeMainModule
-        .concat(entryPointModulePath)
+        .concat(this._bundleOptions.entryFile)
         .filter(path => dependencyEdges.has(path))
         .map(this._getModuleId)
         .map(moduleId => {

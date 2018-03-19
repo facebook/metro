@@ -21,6 +21,7 @@ jest
   .mock('../../Assets')
   .mock('../../node-haste/DependencyGraph')
   .mock('metro-core/src/Logger')
+  .mock('../../lib/getAbsolutePath')
   .mock('../../lib/GlobalTransformCache')
   .mock('../../DeltaBundler/Serializers/Serializers');
 
@@ -47,7 +48,7 @@ describe('processRequest', () => {
   let server;
 
   const options = {
-    projectRoots: ['root'],
+    projectRoots: ['/root'],
     blacklistRE: null,
     cacheVersion: null,
     polyfillModuleNames: null,
@@ -183,7 +184,7 @@ describe('processRequest', () => {
             bundleType: 'bundle',
             customTransformOptions: {},
             dev: true,
-            entryFile: 'index.ios.js',
+            entryFile: '/root/index.ios.js',
             entryModuleOnly: false,
             excludeSource: false,
             hot: true,
@@ -214,7 +215,7 @@ describe('processRequest', () => {
             bundleType: 'bundle',
             customTransformOptions: {},
             dev: true,
-            entryFile: 'index.js',
+            entryFile: '/root/index.js',
             entryModuleOnly: false,
             excludeSource: false,
             hot: true,
@@ -245,7 +246,7 @@ describe('processRequest', () => {
         bundleType: 'bundle',
         customTransformOptions: {},
         dev: true,
-        entryFile: 'index.js',
+        entryFile: '/root/index.js',
         entryModuleOnly: false,
         excludeSource: false,
         hot: true,
@@ -391,7 +392,7 @@ describe('processRequest', () => {
 
       server.processRequest(req, res);
       res.end.mockImplementation(value => {
-        expect(getAsset).toBeCalledWith('imgs/a.png', ['root'], 'ios');
+        expect(getAsset).toBeCalledWith('imgs/a.png', ['/root'], 'ios');
         expect(value).toBe('i am image');
         done();
       });
@@ -409,7 +410,7 @@ describe('processRequest', () => {
 
       server.processRequest(req, res);
       res.end.mockImplementation(value => {
-        expect(getAsset).toBeCalledWith('imgs/a.png', ['root'], 'ios');
+        expect(getAsset).toBeCalledWith('imgs/a.png', ['/root'], 'ios');
         expect(value).toBe(mockData.slice(0, 4));
         done();
       });
@@ -427,7 +428,7 @@ describe('processRequest', () => {
       res.end.mockImplementation(value => {
         expect(getAsset).toBeCalledWith(
           'imgs/\u{4E3B}\u{9875}/logo.png',
-          ['root'],
+          ['/root'],
           undefined,
         );
         expect(value).toBe('i am image');
@@ -450,7 +451,7 @@ describe('processRequest', () => {
               assetPlugins: [],
               customTransformOptions: {},
               dev: true,
-              entryFile: 'foo file',
+              entryFile: '/root/foo file',
               entryModuleOnly: false,
               excludeSource: false,
               hot: false,

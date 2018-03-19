@@ -9,6 +9,8 @@
  */
 'use strict';
 
+jest.mock('../../lib/getAbsolutePath');
+
 const HmrServer = require('..');
 
 const {EventEmitter} = require('events');
@@ -41,6 +43,9 @@ describe('HmrServer', () => {
           update: jest.fn(),
         };
       },
+      getProjectRoots() {
+        return ['/root'];
+      },
     };
 
     hmrServer = new HmrServer(serverMock);
@@ -57,7 +62,7 @@ describe('HmrServer', () => {
       expect.objectContaining({
         deltaBundleId: null,
         dev: true,
-        entryFile: 'EntryPoint.js',
+        entryFile: '/root/EntryPoint.js',
         minify: false,
         platform: 'ios',
       }),

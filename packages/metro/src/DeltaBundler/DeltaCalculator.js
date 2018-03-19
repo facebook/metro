@@ -73,13 +73,9 @@ class DeltaCalculator extends EventEmitter {
     this._options = options;
     this._dependencyGraph = dependencyGraph;
 
-    const entryPoints = this._options.entryPoints.map(entryPoint =>
-      this._dependencyGraph.getAbsolutePath(entryPoint),
-    );
-
     this._graph = {
       dependencies: new Map(),
-      entryPoints,
+      entryPoints: this._options.entryPoints,
     };
 
     this._dependencyGraph

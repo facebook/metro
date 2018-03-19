@@ -12,6 +12,7 @@
 
 const addParamsToDefineCall = require('../lib/addParamsToDefineCall');
 const formatBundlingError = require('../lib/formatBundlingError');
+const getAbsolutePath = require('../lib/getAbsolutePath');
 const getBundlingOptionsForHmr = require('./getBundlingOptionsForHmr');
 const nullthrows = require('fbjs/lib/nullthrows');
 const parseCustomTransformOptions = require('../lib/parseCustomTransformOptions');
@@ -66,7 +67,11 @@ class HmrServer<TClient: Client> {
     const deltaBundler = this._packagerServer.getDeltaBundler();
     const deltaTransformer = await deltaBundler.getDeltaTransformer(
       clientUrl,
-      getBundlingOptionsForHmr(bundleEntry, platform, customTransformOptions),
+      getBundlingOptionsForHmr(
+        getAbsolutePath(bundleEntry, this._packagerServer.getProjectRoots()),
+        platform,
+        customTransformOptions,
+      ),
     );
 
     // Trigger an initial build to start up the DeltaTransformer.
