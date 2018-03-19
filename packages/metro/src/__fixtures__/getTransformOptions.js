@@ -43,6 +43,7 @@ async function getTransformOptions(): Promise<JSTransformerOptions> {
     hot: true,
     minify: false,
     platform: 'ios',
+    type: 'module',
   };
 
   const deltaCalculator = new DeltaCalculator(

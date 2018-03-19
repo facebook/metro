@@ -87,7 +87,7 @@ class ModuleCache {
     this._roots = roots;
   }
 
-  getModule(filePath: string): Module {
+  getModule(filePath: string) {
     if (!this._moduleCache[filePath]) {
       this._moduleCache[filePath] = new Module({
         depGraphHelpers: this._depGraphHelpers,
@@ -126,6 +126,14 @@ class ModuleCache {
         transformCode: this._transformCode,
       });
     }
+    return this._moduleCache[filePath];
+  }
+
+  getPolyfillModule(filePath: string) {
+    if (!this._moduleCache[filePath]) {
+      this._moduleCache[filePath] = this.createPolyfill({file: filePath});
+    }
+
     return this._moduleCache[filePath];
   }
 

@@ -245,7 +245,7 @@ class Server {
       this._opts.projectRoots,
     );
 
-    let graph = await this._deltaBundler.buildGraph({
+    const crawlingOptions = {
       assetPlugins: options.assetPlugins,
       customTransformOptions: options.customTransformOptions,
       dev: options.dev,
@@ -254,11 +254,14 @@ class Server {
       minify: options.minify,
       onProgress: options.onProgress,
       platform: options.platform,
-    });
+      type: 'module',
+    };
+
+    let graph = await this._deltaBundler.buildGraph(crawlingOptions);
     let prependScripts = await getPrependedScripts(
       this._opts,
-      options,
-      this._bundler,
+      crawlingOptions,
+      this._deltaBundler,
     );
 
     if (options.minify) {
@@ -973,6 +976,7 @@ class Server {
     runBeforeMainModule: [],
     runModule: true,
     sourceMapUrl: null,
+    type: 'script',
     unbundle: false,
   };
 }

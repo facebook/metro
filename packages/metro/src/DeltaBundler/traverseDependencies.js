@@ -52,6 +52,11 @@ type Delta = {
   deleted: Set<string>,
 };
 
+export type TransformOptions = {|
+  ...JSTransformerOptions,
+  type: 'module' | 'script',
+|};
+
 /**
  * Dependency Traversal logic for the Delta Bundler. This method calculates
  * the modules that should be included in the bundle by traversing the
@@ -69,7 +74,7 @@ type Delta = {
 async function traverseDependencies(
   paths: $ReadOnlyArray<string>,
   dependencyGraph: DependencyGraph,
-  transformOptions: JSTransformerOptions,
+  transformOptions: TransformOptions,
   graph: Graph,
   onProgress?: (numProcessed: number, total: number) => mixed = () => {},
 ): Promise<Result> {
@@ -136,11 +141,17 @@ async function traverseDependencies(
 async function initialTraverseDependencies(
   graph: Graph,
   dependencyGraph: DependencyGraph,
-  transformOptions: JSTransformerOptions,
+  transformOptions: TransformOptions,
   onProgress?: (numProcessed: number, total: number) => mixed = () => {},
 ): Promise<Result> {
   graph.entryPoints.forEach(entryPoint =>
-    createEdge(dependencyGraph.getModuleForPath(entryPoint), graph),
+    createEdge(
+      dependencyGraph.getModuleForPath(
+        entryPoint,
+        transformOptions.type === 'script',
+      ),
+      graph,
+    ),
   );
 
   await traverseDependencies(
@@ -162,7 +173,7 @@ async function initialTraverseDependencies(
 async function traverseDependenciesForSingleFile(
   edge: DependencyEdge,
   dependencyGraph: DependencyGraph,
-  transformOptions: JSTransformerOptions,
+  transformOptions: TransformOptions,
   graph: Graph,
   delta: Delta,
   onProgress?: (numProcessed: number, total: number) => mixed = () => {},
@@ -194,7 +205,7 @@ async function traverseDependenciesForSingleFile(
 async function processEdge(
   edge: DependencyEdge,
   dependencyGraph: DependencyGraph,
-  transformOptions: JSTransformerOptions,
+  transformOptions: TransformOptions,
   graph: Graph,
   delta: Delta,
   onDependencyAdd: () => mixed,
@@ -202,11 +213,12 @@ async function processEdge(
 ): Promise<void> {
   const previousDependencies = edge.dependencies;
 
-  const result = await dependencyGraph
-    .getModuleForPath(edge.path)
-    .read(
-      removeInlineRequiresBlacklistFromOptions(edge.path, transformOptions),
-    );
+  const {type, ...workerTransformOptions} = transformOptions;
+
+  const module = dependencyGraph.getModuleForPath(edge.path, type === 'script');
+  const result = await module.read(
+    removeInlineRequiresBlacklistFromOptions(edge.path, workerTransformOptions),
+  );
 
   // Get the absolute path of all sub-dependencies (some of them could have been
   // moved but maintain the same relative path).
@@ -262,7 +274,7 @@ async function addDependency(
   parentEdge: DependencyEdge,
   path: string,
   dependencyGraph: DependencyGraph,
-  transformOptions: JSTransformerOptions,
+  transformOptions: TransformOptions,
   graph: Graph,
   delta: Delta,
   onDependencyAdd: () => mixed,
@@ -277,7 +289,10 @@ async function addDependency(
     return;
   }
 
-  const edge = createEdge(dependencyGraph.getModuleForPath(path), graph);
+  const edge = createEdge(
+    dependencyGraph.getModuleForPath(path, transformOptions.type === 'script'),
+    graph,
+  );
 
   edge.inverseDependencies.add(parentEdge.path);
   delta.added.set(edge.path, edge);
@@ -365,11 +380,14 @@ function destroyEdge(edge: DependencyEdge, graph: Graph) {
 
 function resolveDependencies(
   parentPath,
-  dependencies: Array<string>,
+  dependencies: $ReadOnlyArray<string>,
   dependencyGraph: DependencyGraph,
-  transformOptions: JSTransformerOptions,
+  transformOptions: TransformOptions,
 ): Map<string, string> {
-  const parentModule = dependencyGraph.getModuleForPath(parentPath);
+  const parentModule = dependencyGraph.getModuleForPath(
+    parentPath,
+    transformOptions.type === 'string',
+  );
 
   return new Map(
     dependencies.map(relativePath => [

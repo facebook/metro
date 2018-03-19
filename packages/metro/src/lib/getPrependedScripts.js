@@ -13,27 +13,27 @@
 const defaults = require('../defaults');
 const getPreludeCode = require('./getPreludeCode');
 
-import type Bundler from '../Bundler';
 import type {DependencyEdge} from '../DeltaBundler/traverseDependencies';
-import type Module from '../node-haste/Module';
+import type DeltaBundler from '../DeltaBundler';
+import type {CustomTransformOptions} from '../JSTransformer/worker';
 
 type Options = {
-  enableBabelRCLookup: boolean,
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   polyfillModuleNames: Array<string>,
-  projectRoots: $ReadOnlyArray<string>,
 };
 
 type BundleOptions = {
+  customTransformOptions: CustomTransformOptions,
   +dev: boolean,
   +hot: boolean,
+  +minify: boolean,
   +platform: ?string,
 };
 
 async function getPrependedScripts(
   options: Options,
   bundleOptions: BundleOptions,
-  bundler: Bundler,
+  deltaBundler: DeltaBundler,
 ): Promise<Array<DependencyEdge>> {
   // Get all the polyfills from the relevant option params (the
   // `getPolyfills()` method and the `polyfillModuleNames` variable).
@@ -43,32 +43,22 @@ async function getPrependedScripts(
     })
     .concat(options.polyfillModuleNames);
 
-  const dependencyGraph = await bundler.getDependencyGraph();
-
-  // Build the module system dependencies (scripts that need to
-  // be included at the very beginning of the bundle) + any polifyll.
-  const modules = [defaults.moduleSystem]
-    .concat(polyfillModuleNames)
-    .map(polyfillModuleName =>
-      dependencyGraph.createPolyfill({
-        file: polyfillModuleName,
-      }),
-    );
-
-  const transformOptions = {
+  const graph = await deltaBundler.buildGraph({
+    assetPlugins: [],
+    customTransformOptions: bundleOptions.customTransformOptions,
     dev: bundleOptions.dev,
-    enableBabelRCLookup: options.enableBabelRCLookup,
+    entryPoints: [defaults.moduleSystem, ...polyfillModuleNames],
     hot: bundleOptions.hot,
-    projectRoot: options.projectRoots[0],
-  };
+    minify: bundleOptions.minify,
+    onProgress: null,
+    platform: bundleOptions.platform,
+    type: 'script',
+  });
 
-  const out = await Promise.all(
-    modules.map(module => _createEdgeFromScript(module, transformOptions)),
-  );
-
-  out.unshift(_getPrelude({dev: bundleOptions.dev}));
-
-  return out;
+  return [
+    _getPrelude({dev: bundleOptions.dev}),
+    ...graph.dependencies.values(),
+  ];
 }
 
 function _getPrelude({dev}: {dev: boolean}): DependencyEdge {
@@ -83,40 +73,6 @@ function _getPrelude({dev}: {dev: boolean}): DependencyEdge {
       code,
       map: [],
       source: code,
-      type: 'script',
-    },
-  };
-}
-
-async function _createEdgeFromScript(
-  module: Module,
-  options: {
-    dev: boolean,
-    enableBabelRCLookup: boolean,
-    hot: boolean,
-    projectRoot: string,
-  },
-): Promise<DependencyEdge> {
-  const result = await module.read({
-    assetDataPlugins: [],
-    customTransformOptions: {},
-    dev: options.dev,
-    enableBabelRCLookup: options.enableBabelRCLookup,
-    hot: options.hot,
-    inlineRequires: false,
-    minify: false,
-    platform: undefined,
-    projectRoot: options.projectRoot,
-  });
-
-  return {
-    dependencies: new Map(),
-    inverseDependencies: new Set(),
-    path: module.path,
-    output: {
-      code: result.code,
-      map: result.map,
-      source: result.source,
       type: 'script',
     },
   };

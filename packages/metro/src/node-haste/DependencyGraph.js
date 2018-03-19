@@ -238,7 +238,11 @@ class DependencyGraph extends EventEmitter {
     this._haste.end();
   }
 
-  getModuleForPath(entryFile: string) {
+  getModuleForPath(entryFile: string, isPolyfill: boolean): Module {
+    if (isPolyfill) {
+      return this._moduleCache.getPolyfillModule(entryFile);
+    }
+
     if (this._helpers.isAssetFile(entryFile)) {
       return this._moduleCache.getAssetModule(entryFile);
     }

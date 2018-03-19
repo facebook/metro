@@ -466,6 +466,7 @@ describe('processRequest', () => {
             minify: false,
             onProgress: null,
             platform: undefined,
+            type: 'module',
           }),
         );
     });

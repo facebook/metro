@@ -126,6 +126,7 @@ class DeltaTransformer extends EventEmitter {
     const deltaCalculator = new DeltaCalculator(bundler, dependencyGraph, {
       ...bundleOptions,
       entryPoints: [bundleOptions.entryFile],
+      type: 'module',
     });
 
     return new DeltaTransformer(

@@ -42,6 +42,7 @@ export type Options = {
   +minify: boolean,
   +onProgress: ?(doneCont: number, totalCount: number) => mixed,
   +platform: ?string,
+  +type: 'module' | 'script',
 };
 
 /**
@@ -199,6 +200,17 @@ class DeltaCalculator extends EventEmitter {
       projectRoot,
     };
 
+    // When we're processing scripts, we don't need to calculate any
+    // inlineRequires information, since scripts by definition don't have
+    // requires().
+    if (this._options.type === 'script') {
+      // $FlowIssue #23854098 - Object.assign() loses the strictness of an object in flow
+      return {
+        ...transformOptionsForBlacklist,
+        inlineRequires: false,
+      };
+    }
+
     const {
       inlineRequires,
     } = await this._bundler.getTransformOptionsForEntryFiles(
@@ -211,14 +223,14 @@ class DeltaCalculator extends EventEmitter {
             entryPoints: [path],
           },
           this._dependencyGraph,
-          transformOptionsForBlacklist,
+          {...transformOptionsForBlacklist, type: this._options.type},
         );
 
         return Array.from(added.keys());
       },
     );
 
-    // $FlowFixMe flow does not recognize well Object.assign() return types.
+    // $FlowIssue #23854098 - Object.assign() loses the strictness of an object in flow
     return {
       ...transformOptionsForBlacklist,
       inlineRequires: inlineRequires || false,
@@ -267,7 +279,10 @@ class DeltaCalculator extends EventEmitter {
     modifiedFiles: Set<string>,
     deletedFiles: Set<string>,
   ): Promise<DeltaResult> {
-    const transformerOptions = await this.getTransformerOptions();
+    const transformerOptions = {
+      ...(await this.getTransformerOptions()),
+      type: this._options.type,
+    };
 
     if (!this._graph.dependencies.size) {
       const {added} = await initialTraverseDependencies(
