@@ -59,6 +59,8 @@ Object {
       "path": "/baz",
     },
   },
-  "entryFile": "/bundle",
+  "entryPoints": Array [
+    "/bundle",
+  ],
 }
 `;

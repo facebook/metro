@@ -62,7 +62,7 @@ describe('traverseDependencies', function() {
 
     const graph = {
       dependencies: new Map(),
-      entryFile: entryPath,
+      entryPoints: [entryPath],
     };
 
     const {added} = await traverseDependencies.initialTraverseDependencies(
@@ -5073,7 +5073,7 @@ describe('traverseDependencies', function() {
       return traverseDependencies.initialTraverseDependencies(
         {
           dependencies: new Map(),
-          entryFile: '/root/index.js',
+          entryPoints: ['/root/index.js'],
         },
         dependencyGraph,
         emptyTransformOptions,

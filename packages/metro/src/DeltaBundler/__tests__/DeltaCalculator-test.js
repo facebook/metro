@@ -15,7 +15,6 @@ jest.mock('../traverseDependencies');
 
 const {
   initialTraverseDependencies,
-  reorderDependencies,
   traverseDependencies,
 } = require('../traverseDependencies');
 
@@ -198,8 +197,6 @@ describe('DeltaCalculator', () => {
   });
 
   it('should return a full delta when passing reset=true', async () => {
-    reorderDependencies.mockImplementation((_, edges) => edges);
-
     await deltaCalculator.getDelta({reset: false});
 
     const result = await deltaCalculator.getDelta({reset: true});

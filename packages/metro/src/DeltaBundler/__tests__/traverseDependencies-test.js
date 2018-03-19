@@ -12,6 +12,7 @@
 
 const {
   initialTraverseDependencies,
+  reorderGraph,
   traverseDependencies,
 } = require('../traverseDependencies');
 
@@ -172,7 +173,7 @@ beforeEach(async () => {
 
   graph = {
     dependencies: new Map(),
-    entryFile: '/bundle',
+    entryPoints: ['/bundle'],
   };
 });
 
@@ -377,6 +378,33 @@ describe('edge cases', () => {
     ]);
   });
 
+  it('should traverse a graph from multiple entry points', async () => {
+    entryModule = Actions.createFile('/bundle-2');
+
+    Actions.addDependency('/bundle-2', '/bundle-2-foo');
+    Actions.addDependency('/bundle-2', '/bundle-2-bar');
+    Actions.addDependency('/bundle-2', '/bar');
+
+    files = new Set();
+
+    graph = {
+      dependencies: new Map(),
+      entryPoints: ['/bundle', '/bundle-2'],
+    };
+
+    await initialTraverseDependencies(graph, dependencyGraph, {});
+
+    expect([...graph.dependencies.keys()]).toEqual([
+      '/bundle',
+      '/foo',
+      '/bar',
+      '/baz',
+      '/bundle-2',
+      '/bundle-2-foo',
+      '/bundle-2-bar',
+    ]);
+  });
+
   it('should traverse the dependency tree in a deterministic order', async () => {
     // Mocks the shallow dependency call, always resolving the module in
     // `slowPath` after the module in `fastPath`.
@@ -416,7 +444,7 @@ describe('edge cases', () => {
     async function assertOrder() {
       graph = {
         dependencies: new Map(),
-        entryFile: '/bundle',
+        entryPoints: ['/bundle'],
       };
 
       expect(
@@ -481,5 +509,35 @@ describe('edge cases', () => {
     );
 
     expect(moduleFoo.read).toHaveBeenCalledWith({inlineRequires: true});
+  });
+});
+
+describe('reorderGraph', () => {
+  it('should reorder any unordered graph in DFS order', async () => {
+    const graph = {
+      dependencies: new Map([
+        ['/2', {dependencies: new Map(), path: '/2'}],
+        [
+          '/0',
+          {path: '/0', dependencies: new Map([['/1', '/1'], ['/2', '/2']])},
+        ],
+        ['/1', {dependencies: new Map([['/2', '/2']]), path: '/1'}],
+        ['/3', {dependencies: new Map(), path: '/3'}],
+        ['/b', {dependencies: new Map([['/3', '/3']]), path: '/b'}],
+        ['/a', {dependencies: new Map([['/0', '/0']]), path: '/a'}],
+      ]),
+      entryPoints: ['/a', '/b'],
+    };
+
+    reorderGraph(graph);
+
+    expect([...graph.dependencies.keys()]).toEqual([
+      '/a',
+      '/0',
+      '/1',
+      '/2',
+      '/b',
+      '/3',
+    ]);
   });
 });

@@ -12,7 +12,7 @@
 
 const {
   initialTraverseDependencies,
-  reorderDependencies,
+  reorderGraph,
   traverseDependencies,
 } = require('./traverseDependencies');
 const {EventEmitter} = require('events');
@@ -60,13 +60,15 @@ class DeltaCalculator extends EventEmitter {
     this._options = options;
     this._dependencyGraph = dependencyGraph;
 
-    const entryFilePath = this._dependencyGraph.getAbsolutePath(
-      this._options.entryFile,
-    );
+    // The traverse dependencies logic supports multiple entry points, but
+    // currently metro only supports to pass a single entry point when bundling.
+    const entryPoints = [
+      this._dependencyGraph.getAbsolutePath(this._options.entryFile),
+    ];
 
     this._graph = {
       dependencies: new Map(),
-      entryFile: entryFilePath,
+      entryPoints,
     };
 
     this._dependencyGraph
@@ -87,7 +89,7 @@ class DeltaCalculator extends EventEmitter {
     // Clean up all the cache data structures to deallocate memory.
     this._graph = {
       dependencies: new Map(),
-      entryFile: this._options.entryFile,
+      entryPoints: [this._options.entryFile],
     };
     this._modifiedFiles = new Set();
     this._deletedFiles = new Set();
@@ -148,10 +150,7 @@ class DeltaCalculator extends EventEmitter {
 
     // Return all the modules if the client requested a reset delta.
     if (reset) {
-      this._graph.dependencies = reorderDependencies(
-        this._graph.dependencies.get(this._graph.entryFile),
-        this._graph.dependencies,
-      );
+      reorderGraph(this._graph);
 
       return {
         modified: this._graph.dependencies,
@@ -202,7 +201,7 @@ class DeltaCalculator extends EventEmitter {
         const {added} = await initialTraverseDependencies(
           {
             dependencies: new Map(),
-            entryFile: path,
+            entryPoints: [path],
           },
           this._dependencyGraph,
           transformOptionsForBlacklist,

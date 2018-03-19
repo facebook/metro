@@ -35,7 +35,7 @@ export type DependencyEdges = Map<string, DependencyEdge>;
 
 export type Graph = {|
   dependencies: DependencyEdges,
-  entryFile: string,
+  entryPoints: $ReadOnlyArray<string>,
 |};
 
 type Result = {added: Map<string, DependencyEdge>, deleted: Set<string>};
@@ -67,7 +67,7 @@ type Delta = {
  * since the last traversal.
  */
 async function traverseDependencies(
-  paths: Array<string>,
+  paths: $ReadOnlyArray<string>,
   dependencyGraph: DependencyGraph,
   transformOptions: JSTransformerOptions,
   graph: Graph,
@@ -139,29 +139,23 @@ async function initialTraverseDependencies(
   transformOptions: JSTransformerOptions,
   onProgress?: (numProcessed: number, total: number) => mixed = () => {},
 ): Promise<Result> {
-  const edge = createEdge(
-    dependencyGraph.getModuleForPath(graph.entryFile),
-    graph,
+  graph.entryPoints.forEach(entryPoint =>
+    createEdge(dependencyGraph.getModuleForPath(entryPoint), graph),
   );
 
-  const delta = {
-    added: new Map([[edge.path, edge]]),
-    modified: new Map(),
-    deleted: new Set(),
-  };
-
-  await traverseDependenciesForSingleFile(
-    edge,
+  await traverseDependencies(
+    graph.entryPoints,
     dependencyGraph,
     transformOptions,
     graph,
-    delta,
     onProgress,
   );
 
+  reorderGraph(graph);
+
   return {
-    added: reorderDependencies(edge, delta.added),
-    deleted: delta.deleted,
+    added: graph.dependencies,
+    deleted: new Set(),
   };
 }
 
@@ -391,30 +385,37 @@ function resolveDependencies(
 
 /**
  * Retraverse the dependency graph in DFS order to reorder the modules and
- * guarantee the same order between runs.
+ * guarantee the same order between runs. This method mutates the passed graph.
  */
+function reorderGraph(graph: Graph) {
+  const parent = {
+    dependencies: new Map(graph.entryPoints.map(e => [e, e])),
+  };
+
+  const dependencies = reorderDependencies(parent, graph.dependencies);
+
+  graph.dependencies = dependencies;
+}
+
 function reorderDependencies(
-  edge: ?DependencyEdge,
+  edge: {|dependencies: Map<string, string>|} | DependencyEdge,
   dependencies: Map<string, DependencyEdge>,
   orderedDependencies?: Map<string, DependencyEdge> = new Map(),
 ): Map<string, DependencyEdge> {
-  if (
-    !edge ||
-    !dependencies.has(edge.path) ||
-    orderedDependencies.has(edge.path)
-  ) {
-    return orderedDependencies;
+  if (edge.path) {
+    if (orderedDependencies.has(edge.path)) {
+      return orderedDependencies;
+    }
+
+    orderedDependencies.set(edge.path, edge);
   }
 
-  orderedDependencies.set(edge.path, edge);
-
-  edge.dependencies.forEach(path =>
-    reorderDependencies(
-      dependencies.get(path),
-      dependencies,
-      orderedDependencies,
-    ),
-  );
+  edge.dependencies.forEach(path => {
+    const dep = dependencies.get(path);
+    if (dep) {
+      reorderDependencies(dep, dependencies, orderedDependencies);
+    }
+  });
 
   return orderedDependencies;
 }
@@ -422,5 +423,5 @@ function reorderDependencies(
 module.exports = {
   initialTraverseDependencies,
   traverseDependencies,
-  reorderDependencies,
+  reorderGraph,
 };
