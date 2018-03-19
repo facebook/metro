@@ -21,7 +21,7 @@ import type Bundler from '../Bundler';
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type DependencyGraph from '../node-haste/DependencyGraph';
 import type {BundleOptions} from '../shared/types.flow';
-import type {DependencyEdge, DependencyEdges} from './traverseDependencies';
+import type {DependencyEdge, Graph} from './traverseDependencies';
 
 export type DeltaResult = {|
   +modified: Map<string, DependencyEdge>,
@@ -29,10 +29,7 @@ export type DeltaResult = {|
   +reset: boolean,
 |};
 
-export type Graph = {|
-  dependencies: DependencyEdges,
-  entryFile: string,
-|};
+export type {Graph} from './traverseDependencies';
 
 /**
  * This class is in charge of calculating the delta of changed modules that
@@ -203,10 +200,12 @@ class DeltaCalculator extends EventEmitter {
       {dev: this._options.dev, platform: this._options.platform},
       async path => {
         const {added} = await initialTraverseDependencies(
-          path,
+          {
+            dependencies: new Map(),
+            entryFile: path,
+          },
           this._dependencyGraph,
           transformOptionsForBlacklist,
-          new Map(),
         );
 
         return Array.from(added.keys());
@@ -266,10 +265,9 @@ class DeltaCalculator extends EventEmitter {
 
     if (!this._graph.dependencies.size) {
       const {added} = await initialTraverseDependencies(
-        this._graph.entryFile,
+        this._graph,
         this._dependencyGraph,
         transformerOptions,
-        this._graph.dependencies,
         this._options.onProgress || undefined,
       );
 
@@ -304,7 +302,7 @@ class DeltaCalculator extends EventEmitter {
       modifiedDependencies,
       this._dependencyGraph,
       transformerOptions,
-      this._graph.dependencies,
+      this._graph,
       this._options.onProgress || undefined,
     );
 

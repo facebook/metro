@@ -91,7 +91,7 @@ describe('DeltaCalculator', () => {
     };
 
     initialTraverseDependencies.mockImplementationOnce(
-      async (path, dg, opt, edges) => {
+      async (graph, dg, opt) => {
         edgeModule = {
           ...entryModule,
           dependencies: new Map([
@@ -116,10 +116,10 @@ describe('DeltaCalculator', () => {
           inverseDependencies: ['/bundle'],
         };
 
-        edges.set('/bundle', edgeModule);
-        edges.set('/foo', edgeFoo);
-        edges.set('/bar', edgeBar);
-        edges.set('/baz', edgeBaz);
+        graph.dependencies.set('/bundle', edgeModule);
+        graph.dependencies.set('/foo', edgeFoo);
+        graph.dependencies.set('/bar', edgeBar);
+        graph.dependencies.set('/baz', edgeBaz);
 
         return {
           added: new Map([
@@ -274,8 +274,8 @@ describe('DeltaCalculator', () => {
 
     mockedDependencies.push(moduleQux);
 
-    traverseDependencies.mockImplementation(async (path, dg, opt, edges) => {
-      edges.set('/qux', edgeQux);
+    traverseDependencies.mockImplementation(async (path, dg, opt, graph) => {
+      graph.dependencies.set('/qux', edgeQux);
 
       return {
         added: new Map([['/foo', edgeFoo], ['/qux', edgeQux]]),

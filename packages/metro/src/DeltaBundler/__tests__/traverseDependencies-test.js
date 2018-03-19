@@ -19,6 +19,7 @@ let dependencyGraph;
 let mockedDependencies;
 let mockedDependencyTree;
 let files = new Set();
+let graph;
 
 let entryModule;
 let moduleFoo;
@@ -168,32 +169,30 @@ beforeEach(async () => {
   Actions.addDependency('/foo', '/baz');
 
   files = new Set();
+
+  graph = {
+    dependencies: new Map(),
+    entryFile: '/bundle',
+  };
 });
 
 it('should do the initial traversal correctly', async () => {
-  const edges = new Map();
-  const result = await initialTraverseDependencies(
-    '/bundle',
-    dependencyGraph,
-    {},
-    edges,
-  );
+  const result = await initialTraverseDependencies(graph, dependencyGraph, {});
 
   expect(getPaths(result)).toEqual({
     added: new Set(['/bundle', '/foo', '/bar', '/baz']),
     deleted: new Set(),
   });
 
-  expect(edges).toMatchSnapshot();
+  expect(graph).toMatchSnapshot();
 });
 
 it('should return an empty result when there are no changes', async () => {
-  const edges = new Map();
-  await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
+  await initialTraverseDependencies(graph, dependencyGraph, {});
 
   expect(
     getPaths(
-      await traverseDependencies(['/bundle'], dependencyGraph, {}, edges),
+      await traverseDependencies(['/bundle'], dependencyGraph, {}, graph),
     ),
   ).toEqual({
     added: new Set(['/bundle']),
@@ -202,14 +201,13 @@ it('should return an empty result when there are no changes', async () => {
 });
 
 it('should return a removed dependency', async () => {
-  const edges = new Map();
-  await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
+  await initialTraverseDependencies(graph, dependencyGraph, {});
 
   Actions.removeDependency('/foo', '/bar');
 
   expect(
     getPaths(
-      await traverseDependencies([...files], dependencyGraph, {}, edges),
+      await traverseDependencies([...files], dependencyGraph, {}, graph),
     ),
   ).toEqual({
     added: new Set(['/foo']),
@@ -218,8 +216,7 @@ it('should return a removed dependency', async () => {
 });
 
 it('should return added/removed dependencies', async () => {
-  const edges = new Map();
-  await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
+  await initialTraverseDependencies(graph, dependencyGraph, {});
 
   Actions.addDependency('/foo', '/qux');
   Actions.removeDependency('/foo', '/bar');
@@ -227,7 +224,7 @@ it('should return added/removed dependencies', async () => {
 
   expect(
     getPaths(
-      await traverseDependencies([...files], dependencyGraph, {}, edges),
+      await traverseDependencies([...files], dependencyGraph, {}, graph),
     ),
   ).toEqual({
     added: new Set(['/foo', '/qux']),
@@ -236,8 +233,7 @@ it('should return added/removed dependencies', async () => {
 });
 
 it('should return added modules before the modified ones', async () => {
-  const edges = new Map();
-  await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
+  await initialTraverseDependencies(graph, dependencyGraph, {});
 
   Actions.addDependency('/foo', '/qux');
   Actions.modifyFile('/bar');
@@ -247,32 +243,30 @@ it('should return added modules before the modified ones', async () => {
   // it to an array.
   expect([
     ...getPaths(
-      await traverseDependencies([...files], dependencyGraph, {}, edges),
+      await traverseDependencies([...files], dependencyGraph, {}, graph),
     ).added,
   ]).toEqual(['/qux', '/foo', '/bar', '/baz']);
 });
 
 it('should retry to traverse the dependencies as it was after getting an error', async () => {
-  const edges = new Map();
-  await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
+  await initialTraverseDependencies(graph, dependencyGraph, {});
 
   Actions.deleteFile(moduleBar.path);
 
   await expect(
-    traverseDependencies(['/foo'], dependencyGraph, {}, edges),
+    traverseDependencies(['/foo'], dependencyGraph, {}, graph),
   ).rejects.toBeInstanceOf(Error);
 
   // Second time that the traversal of dependencies we still have to throw an
   // error (no matter if no file has been changed).
   await expect(
-    traverseDependencies(['/foo'], dependencyGraph, {}, edges),
+    traverseDependencies(['/foo'], dependencyGraph, {}, graph),
   ).rejects.toBeInstanceOf(Error);
 });
 
 describe('edge cases', () => {
   it('should handle renames correctly', async () => {
-    const edges = new Map();
-    await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
+    await initialTraverseDependencies(graph, dependencyGraph, {});
 
     Actions.removeDependency('/foo', '/baz');
     Actions.moveFile('/baz', '/qux');
@@ -280,7 +274,7 @@ describe('edge cases', () => {
 
     expect(
       getPaths(
-        await traverseDependencies([...files], dependencyGraph, {}, edges),
+        await traverseDependencies([...files], dependencyGraph, {}, graph),
       ),
     ).toEqual({
       added: new Set(['/foo', '/qux']),
@@ -289,8 +283,7 @@ describe('edge cases', () => {
   });
 
   it('should not try to remove wrong dependencies when renaming files', async () => {
-    const edges = new Map();
-    await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
+    await initialTraverseDependencies(graph, dependencyGraph, {});
 
     // Rename /foo to /foo-renamed, but keeping all its dependencies.
     Actions.addDependency('/bundle', '/foo-renamed');
@@ -302,7 +295,7 @@ describe('edge cases', () => {
 
     expect(
       getPaths(
-        await traverseDependencies([...files], dependencyGraph, {}, edges),
+        await traverseDependencies([...files], dependencyGraph, {}, graph),
       ),
     ).toEqual({
       added: new Set(['/bundle', '/foo-renamed']),
@@ -311,15 +304,14 @@ describe('edge cases', () => {
   });
 
   it('modify a file and delete it afterwards', async () => {
-    const edges = new Map();
-    await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
+    await initialTraverseDependencies(graph, dependencyGraph, {});
 
     Actions.modifyFile('/baz');
     Actions.removeDependency('/foo', '/baz');
 
     expect(
       getPaths(
-        await traverseDependencies([...files], dependencyGraph, {}, edges),
+        await traverseDependencies([...files], dependencyGraph, {}, graph),
       ),
     ).toEqual({
       added: new Set(['/foo']),
@@ -328,15 +320,14 @@ describe('edge cases', () => {
   });
 
   it('move a file to a different folder', async () => {
-    const edges = new Map();
-    await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
+    await initialTraverseDependencies(graph, dependencyGraph, {});
 
     Actions.addDependency('/foo', '/baz-moved');
     Actions.removeDependency('/foo', '/baz');
 
     expect(
       getPaths(
-        await traverseDependencies([...files], dependencyGraph, {}, edges),
+        await traverseDependencies([...files], dependencyGraph, {}, graph),
       ),
     ).toEqual({
       added: new Set(['/foo', '/baz-moved']),
@@ -345,21 +336,20 @@ describe('edge cases', () => {
   });
 
   it('maintain the order of module dependencies consistent', async () => {
-    const edges = new Map();
-    await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
+    await initialTraverseDependencies(graph, dependencyGraph, {});
 
     Actions.addDependency('/foo', '/qux', 0);
 
     expect(
       getPaths(
-        await traverseDependencies([...files], dependencyGraph, {}, edges),
+        await traverseDependencies([...files], dependencyGraph, {}, graph),
       ),
     ).toEqual({
       added: new Set(['/foo', '/qux']),
       deleted: new Set(),
     });
 
-    expect([...edges.get(moduleFoo.path).dependencies]).toEqual([
+    expect([...graph.dependencies.get(moduleFoo.path).dependencies]).toEqual([
       ['qux', '/qux'],
       ['bar', '/bar'],
       ['baz', '/baz'],
@@ -367,22 +357,21 @@ describe('edge cases', () => {
   });
 
   it('should create two entries when requiring the same file in different forms', async () => {
-    const edges = new Map();
-    await initialTraverseDependencies('/bundle', dependencyGraph, {}, edges);
+    await initialTraverseDependencies(graph, dependencyGraph, {});
 
     // We're adding a new reference from bundle to foo.
     Actions.addDependency('/bundle', '/foo', 0, 'foo.js');
 
     expect(
       getPaths(
-        await traverseDependencies([...files], dependencyGraph, {}, edges),
+        await traverseDependencies([...files], dependencyGraph, {}, graph),
       ),
     ).toEqual({
       added: new Set(['/bundle']),
       deleted: new Set(),
     });
 
-    expect([...edges.get(entryModule.path).dependencies]).toEqual([
+    expect([...graph.dependencies.get(entryModule.path).dependencies]).toEqual([
       ['foo.js', '/foo'],
       ['foo', '/foo'],
     ]);
@@ -425,15 +414,15 @@ describe('edge cases', () => {
     }
 
     async function assertOrder() {
+      graph = {
+        dependencies: new Map(),
+        entryFile: '/bundle',
+      };
+
       expect(
         Array.from(
           getPaths(
-            await initialTraverseDependencies(
-              '/bundle',
-              dependencyGraph,
-              {},
-              new Map(),
-            ),
+            await initialTraverseDependencies(graph, dependencyGraph, {}),
           ).added,
         ),
       ).toEqual(['/bundle', '/foo', '/baz', '/bar']);
@@ -467,7 +456,6 @@ describe('edge cases', () => {
     jest.spyOn(moduleBar, 'read');
     jest.spyOn(moduleBaz, 'read');
 
-    const edges = new Map();
     const transformOptions = {
       inlineRequires: {
         blacklist: {
@@ -476,12 +464,7 @@ describe('edge cases', () => {
       },
     };
 
-    await initialTraverseDependencies(
-      '/bundle',
-      dependencyGraph,
-      transformOptions,
-      edges,
-    );
+    await initialTraverseDependencies(graph, dependencyGraph, transformOptions);
 
     expect(entryModule.read).toHaveBeenCalledWith({inlineRequires: true});
     expect(moduleFoo.read).toHaveBeenCalledWith({inlineRequires: true});
@@ -494,7 +477,7 @@ describe('edge cases', () => {
       ['/foo'],
       dependencyGraph,
       transformOptions,
-      edges,
+      graph,
     );
 
     expect(moduleFoo.read).toHaveBeenCalledWith({inlineRequires: true});

@@ -60,17 +60,20 @@ describe('traverseDependencies', function() {
   ) {
     const dgraph = await dgraphPromise;
 
-    const edges = new Map();
+    const graph = {
+      dependencies: new Map(),
+      entryFile: entryPath,
+    };
+
     const {added} = await traverseDependencies.initialTraverseDependencies(
-      entryPath,
+      graph,
       dgraph,
       {...emptyTransformOptions, platform},
-      edges,
     );
 
     const dependencies = recursive
       ? [...added.values()].map(edge => edge.path)
-      : edges.get(entryPath).dependencies.values();
+      : graph.dependencies.get(entryPath).dependencies.values();
 
     return await Promise.all(
       [...dependencies].map(async path => {
@@ -5068,10 +5071,12 @@ describe('traverseDependencies', function() {
 
     function getDependencies() {
       return traverseDependencies.initialTraverseDependencies(
-        '/root/index.js',
+        {
+          dependencies: new Map(),
+          entryFile: '/root/index.js',
+        },
         dependencyGraph,
         emptyTransformOptions,
-        new Map(),
         onProgress,
       );
     }

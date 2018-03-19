@@ -33,6 +33,11 @@ export type DependencyEdge = {|
 
 export type DependencyEdges = Map<string, DependencyEdge>;
 
+export type Graph = {|
+  dependencies: DependencyEdges,
+  entryFile: string,
+|};
+
 type Result = {added: Map<string, DependencyEdge>, deleted: Set<string>};
 
 /**
@@ -65,7 +70,7 @@ async function traverseDependencies(
   paths: Array<string>,
   dependencyGraph: DependencyGraph,
   transformOptions: JSTransformerOptions,
-  edges: DependencyEdges,
+  graph: Graph,
   onProgress?: (numProcessed: number, total: number) => mixed = () => {},
 ): Promise<Result> {
   const delta = {
@@ -76,7 +81,7 @@ async function traverseDependencies(
 
   await Promise.all(
     paths.map(async path => {
-      const edge = edges.get(path);
+      const edge = graph.dependencies.get(path);
 
       if (!edge) {
         return;
@@ -88,7 +93,7 @@ async function traverseDependencies(
         edge,
         dependencyGraph,
         transformOptions,
-        edges,
+        graph,
         delta,
         onProgress,
       );
@@ -129,13 +134,15 @@ async function traverseDependencies(
 }
 
 async function initialTraverseDependencies(
-  path: string,
+  graph: Graph,
   dependencyGraph: DependencyGraph,
   transformOptions: JSTransformerOptions,
-  edges: DependencyEdges,
   onProgress?: (numProcessed: number, total: number) => mixed = () => {},
 ): Promise<Result> {
-  const edge = createEdge(dependencyGraph.getModuleForPath(path), edges);
+  const edge = createEdge(
+    dependencyGraph.getModuleForPath(graph.entryFile),
+    graph,
+  );
 
   const delta = {
     added: new Map([[edge.path, edge]]),
@@ -147,7 +154,7 @@ async function initialTraverseDependencies(
     edge,
     dependencyGraph,
     transformOptions,
-    edges,
+    graph,
     delta,
     onProgress,
   );
@@ -162,7 +169,7 @@ async function traverseDependenciesForSingleFile(
   edge: DependencyEdge,
   dependencyGraph: DependencyGraph,
   transformOptions: JSTransformerOptions,
-  edges: DependencyEdges,
+  graph: Graph,
   delta: Delta,
   onProgress?: (numProcessed: number, total: number) => mixed = () => {},
 ): Promise<void> {
@@ -174,7 +181,7 @@ async function traverseDependenciesForSingleFile(
     edge,
     dependencyGraph,
     transformOptions,
-    edges,
+    graph,
     delta,
     () => {
       total++;
@@ -194,7 +201,7 @@ async function processEdge(
   edge: DependencyEdge,
   dependencyGraph: DependencyGraph,
   transformOptions: JSTransformerOptions,
-  edges: DependencyEdges,
+  graph: Graph,
   delta: Delta,
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
@@ -228,7 +235,7 @@ async function processEdge(
 
   for (const [relativePath, absolutePath] of previousDependencies) {
     if (!currentDependencies.has(relativePath)) {
-      removeDependency(edge, absolutePath, edges, delta);
+      removeDependency(edge, absolutePath, graph, delta);
     }
   }
 
@@ -247,7 +254,7 @@ async function processEdge(
           absolutePath,
           dependencyGraph,
           transformOptions,
-          edges,
+          graph,
           delta,
           onDependencyAdd,
           onDependencyAdded,
@@ -262,12 +269,12 @@ async function addDependency(
   path: string,
   dependencyGraph: DependencyGraph,
   transformOptions: JSTransformerOptions,
-  edges: DependencyEdges,
+  graph: Graph,
   delta: Delta,
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
 ): Promise<void> {
-  const existingEdge = edges.get(path);
+  const existingEdge = graph.dependencies.get(path);
 
   // The new dependency was already in the graph, we don't need to do anything.
   if (existingEdge) {
@@ -276,7 +283,7 @@ async function addDependency(
     return;
   }
 
-  const edge = createEdge(dependencyGraph.getModuleForPath(path), edges);
+  const edge = createEdge(dependencyGraph.getModuleForPath(path), graph);
 
   edge.inverseDependencies.add(parentEdge.path);
   delta.added.set(edge.path, edge);
@@ -287,7 +294,7 @@ async function addDependency(
     edge,
     dependencyGraph,
     transformOptions,
-    edges,
+    graph,
     delta,
     onDependencyAdd,
     onDependencyAdded,
@@ -299,10 +306,10 @@ async function addDependency(
 function removeDependency(
   parentEdge: DependencyEdge,
   absolutePath: string,
-  edges: DependencyEdges,
+  graph: Graph,
   delta: Delta,
 ): void {
-  const edge = edges.get(absolutePath);
+  const edge = graph.dependencies.get(absolutePath);
 
   if (!edge) {
     return;
@@ -322,14 +329,14 @@ function removeDependency(
   // clean up everything (we cannot read the module because it may have
   // been deleted).
   for (const depAbsolutePath of edge.dependencies.values()) {
-    removeDependency(edge, depAbsolutePath, edges, delta);
+    removeDependency(edge, depAbsolutePath, graph, delta);
   }
 
   // This module is not used anywhere else!! we can clear it from the bundle
-  destroyEdge(edge, edges);
+  destroyEdge(edge, graph);
 }
 
-function createEdge(module: Module, edges: DependencyEdges): DependencyEdge {
+function createEdge(module: Module, graph: Graph): DependencyEdge {
   const edge = {
     dependencies: new Map(),
     inverseDependencies: new Set(),
@@ -341,7 +348,7 @@ function createEdge(module: Module, edges: DependencyEdges): DependencyEdge {
       type: getType(module),
     },
   };
-  edges.set(module.path, edge);
+  graph.dependencies.set(module.path, edge);
 
   return edge;
 }
@@ -358,8 +365,8 @@ function getType(module: Module): DependencyType {
   return 'module';
 }
 
-function destroyEdge(edge: DependencyEdge, edges: DependencyEdges) {
-  edges.delete(edge.path);
+function destroyEdge(edge: DependencyEdge, graph: Graph) {
+  graph.dependencies.delete(edge.path);
 }
 
 function resolveDependencies(
