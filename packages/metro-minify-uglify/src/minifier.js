@@ -34,7 +34,7 @@ function withSourceMap(
 
 function minify(inputCode: string, inputMap: ?BabelSourceMap) {
   const result = uglify.minify(inputCode, {
-    mangle: {toplevel: true},
+    mangle: {toplevel: false},
     output: {
       ascii_only: true,
       quote_style: 3,
@@ -44,7 +44,7 @@ function minify(inputCode: string, inputMap: ?BabelSourceMap) {
       content: inputMap,
       includeSources: false,
     },
-    toplevel: true,
+    toplevel: false,
     compress: {
       // reduce_funcs inlines single-use function, which cause perf regressions.
       reduce_funcs: false,

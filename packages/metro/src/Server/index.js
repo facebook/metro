@@ -14,13 +14,19 @@ const Bundler = require('../Bundler');
 const DeltaBundler = require('../DeltaBundler');
 const MultipartResponse = require('./MultipartResponse');
 const Serializers = require('../DeltaBundler/Serializers/Serializers');
+
+const defaultCreateModuleIdFactory = require('../lib/createModuleIdFactory');
+const plainJSBundle = require('../DeltaBundler/Serializers/plainJSBundle');
+const sourceMapString = require('../DeltaBundler/Serializers/sourceMapString');
 const debug = require('debug')('Metro:Server');
 const defaults = require('../defaults');
 const formatBundlingError = require('../lib/formatBundlingError');
 const getAbsolutePath = require('../lib/getAbsolutePath');
 const getMaxWorkers = require('../lib/getMaxWorkers');
 const getOrderedDependencyPaths = require('../lib/getOrderedDependencyPaths');
+const getPrependedScripts = require('../lib/getPrependedScripts');
 const mime = require('mime-types');
+const mapGraph = require('../lib/mapGraph');
 const nullthrows = require('fbjs/lib/nullthrows');
 const parseCustomTransformOptions = require('../lib/parseCustomTransformOptions');
 const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
@@ -32,6 +38,7 @@ const {getAsset} = require('../Assets');
 const resolveSync: ResolveSync = require('resolve').sync;
 
 import type {CustomError} from '../lib/formatBundlingError';
+import type {DependencyEdge} from '../DeltaBundler/traverseDependencies';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from '../lib/reporting';
 import type {
@@ -73,7 +80,7 @@ class Server {
     blacklistRE: void | RegExp,
     cacheStores: $ReadOnlyArray<CacheStore<TransformedCode>>,
     cacheVersion: string,
-    createModuleIdFactory?: () => (path: string) => number,
+    createModuleId: (path: string) => number,
     enableBabelRCLookup: boolean,
     extraNodeModules: {},
     getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
@@ -119,6 +126,9 @@ class Server {
     const assetExts = options.assetExts || defaults.assetExts;
     const sourceExts = options.sourceExts || defaults.sourceExts;
 
+    const _createModuleId =
+      options.createModuleId || defaultCreateModuleIdFactory();
+
     this._opts = {
       assetExts: options.assetTransforms ? [] : assetExts,
       assetRegistryPath: options.assetRegistryPath,
@@ -126,7 +136,7 @@ class Server {
       cacheStores: options.cacheStores,
       cacheVersion: options.cacheVersion,
       dynamicDepsInPackages: options.dynamicDepsInPackages || 'throwAtRuntime',
-      createModuleIdFactory: options.createModuleIdFactory,
+      createModuleId: _createModuleId,
       enableBabelRCLookup:
         options.enableBabelRCLookup != null
           ? options.enableBabelRCLookup
@@ -175,7 +185,7 @@ class Server {
     // This slices out options that are not part of the strict BundlerOptions
     /* eslint-disable no-unused-vars */
     const {
-      createModuleIdFactory,
+      createModuleId,
       getModulesRunBeforeMainModule,
       moduleFormat,
       silent,
@@ -230,27 +240,48 @@ class Server {
   }
 
   async build(options: BundleOptions): Promise<{code: string, map: string}> {
-    options = {
-      ...options,
-      runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
-        options.entryFile,
-      ),
-      entryFile: getAbsolutePath(options.entryFile, this._opts.projectRoots),
-    };
-
-    const fullBundle = await Serializers.fullBundle(
-      this._deltaBundler,
-      options,
+    const entryPoint = getAbsolutePath(
+      options.entryFile,
+      this._opts.projectRoots,
     );
 
-    const fullMap = await Serializers.fullSourceMap(
-      this._deltaBundler,
+    let graph = await this._deltaBundler.buildGraph({
+      assetPlugins: options.assetPlugins,
+      customTransformOptions: options.customTransformOptions,
+      dev: options.dev,
+      entryPoints: [entryPoint],
+      hot: options.hot,
+      minify: options.minify,
+      onProgress: options.onProgress,
+      platform: options.platform,
+    });
+    let prependScripts = await getPrependedScripts(
+      this._opts,
       options,
+      this._bundler,
     );
+
+    if (options.minify) {
+      prependScripts = await Promise.all(
+        prependScripts.map(script => this._minifyModule(script)),
+      );
+
+      graph = await mapGraph(graph, module => this._minifyModule(module));
+    }
 
     return {
-      code: fullBundle.bundle,
-      map: fullMap,
+      code: plainJSBundle(entryPoint, prependScripts, graph, {
+        createModuleId: this._opts.createModuleId,
+        dev: options.dev,
+        runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
+          options.entryFile,
+        ),
+        runModule: options.runModule,
+        sourceMapUrl: options.sourceMapUrl,
+      }),
+      map: sourceMapString(prependScripts, graph, {
+        excludeSource: options.excludeSource,
+      }),
     };
   }
 
@@ -297,6 +328,24 @@ class Server {
     }
 
     return await getOrderedDependencyPaths(this._deltaBundler, bundleOptions);
+  }
+
+  async _minifyModule(module: DependencyEdge): Promise<DependencyEdge> {
+    const {code, map} = await this._bundler.minifyModule(
+      module.path,
+      module.output.code,
+      module.output.map,
+    );
+
+    // $FlowIssue #16581373 spread of an exact object should be exact
+    return {
+      ...module,
+      output: {
+        ...module.output,
+        code,
+        map,
+      },
+    };
   }
 
   onFileChange(type: string, filePath: string) {

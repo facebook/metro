@@ -42,7 +42,7 @@ it('should serialize a very simple bundle', () => {
         entryPoints: ['foo'],
       },
       {
-        createModuleIdFn: path => path,
+        createModuleId: path => path,
         dev: true,
         runBeforeMainModule: [],
         runModule: true,
@@ -70,7 +70,7 @@ it('should add runBeforeMainModule statements if found in the graph', () => {
         entryPoints: ['foo'],
       },
       {
-        createModuleIdFn: path => path,
+        createModuleId: path => path,
         dev: true,
         runBeforeMainModule: ['bar', 'non-existant'],
         runModule: true,
@@ -99,7 +99,7 @@ it('should handle numeric module ids', () => {
         entryPoints: ['foo'],
       },
       {
-        createModuleIdFn: createModuleIdFactory(),
+        createModuleId: createModuleIdFactory(),
         dev: true,
         runBeforeMainModule: ['bar', 'non-existant'],
         runModule: true,

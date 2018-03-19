@@ -444,7 +444,7 @@ class DeltaTransformer extends EventEmitter {
     const name = this._dependencyGraph.getHasteName(edge.path);
 
     const wrappedCode = wrapModule(edge, {
-      createModuleIdFn: this._getModuleId,
+      createModuleId: this._getModuleId,
       dev: transformOptions.dev,
     });
 

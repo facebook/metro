@@ -16,7 +16,7 @@ const path = require('path');
 import type {DependencyEdge} from '../../traverseDependencies';
 
 export type Options = {
-  +createModuleIdFn: string => number | string,
+  +createModuleId: string => number | string,
   +dev: boolean,
 };
 
@@ -25,10 +25,10 @@ function wrapModule(module: DependencyEdge, options: Options) {
     return module.output.code;
   }
 
-  const moduleId = options.createModuleIdFn(module.path);
+  const moduleId = options.createModuleId(module.path);
   const params = [
     moduleId,
-    Array.from(module.dependencies.values()).map(options.createModuleIdFn),
+    Array.from(module.dependencies.values()).map(options.createModuleId),
   ];
 
   // Add the module name as the last parameter (to make it easier to do

@@ -19,6 +19,7 @@ jest
   }))
   .mock('../../Bundler')
   .mock('../../Assets')
+  .mock('../../lib/getPrependedScripts')
   .mock('../../node-haste/DependencyGraph')
   .mock('metro-core/src/Logger')
   .mock('../../lib/getAbsolutePath')
@@ -29,6 +30,7 @@ describe('processRequest', () => {
   let Bundler;
   let Server;
   let getAsset;
+  let getPrependedScripts;
   let symbolicate;
   let Serializers;
   let DeltaBundler;
@@ -40,6 +42,7 @@ describe('processRequest', () => {
     Bundler = require('../../Bundler');
     Server = require('../');
     getAsset = require('../../Assets').getAsset;
+    getPrependedScripts = require('../../lib/getPrependedScripts');
     symbolicate = require('../symbolicate/symbolicate');
     Serializers = require('../../DeltaBundler/Serializers/Serializers');
     DeltaBundler = require('../../DeltaBundler');
@@ -85,6 +88,15 @@ describe('processRequest', () => {
   let requestHandler;
 
   beforeEach(() => {
+    DeltaBundler.prototype.buildGraph = jest.fn().mockReturnValue(
+      Promise.resolve({
+        entryPoints: [''],
+        dependencies: new Map(),
+      }),
+    );
+
+    getPrependedScripts.mockReturnValue(Promise.resolve([]));
+
     Serializers.fullBundle.mockReturnValue(
       Promise.resolve({
         bundle: 'this is the source',
@@ -445,28 +457,16 @@ describe('processRequest', () => {
           entryFile: 'foo file',
         })
         .then(() =>
-          expect(Serializers.fullBundle).toBeCalledWith(
-            expect.any(DeltaBundler),
-            {
-              assetPlugins: [],
-              customTransformOptions: {},
-              dev: true,
-              entryFile: '/root/foo file',
-              entryModuleOnly: false,
-              excludeSource: false,
-              hot: false,
-              inlineSourceMap: false,
-              isolateModuleIDs: false,
-              minify: false,
-              onProgress: null,
-              platform: undefined,
-              resolutionResponse: null,
-              runBeforeMainModule: ['InitializeCore'],
-              runModule: true,
-              sourceMapUrl: null,
-              unbundle: false,
-            },
-          ),
+          expect(DeltaBundler.prototype.buildGraph).toBeCalledWith({
+            assetPlugins: [],
+            customTransformOptions: {},
+            dev: true,
+            entryPoints: ['/root/foo file'],
+            hot: false,
+            minify: false,
+            onProgress: null,
+            platform: undefined,
+          }),
         );
     });
   });

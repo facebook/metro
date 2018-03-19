@@ -10,13 +10,15 @@
 
 'use strict';
 
+const getAppendScripts = require('../../lib/getAppendScripts');
+
 const {wrapModule} = require('./helpers/js');
 
 import type {Graph} from '../DeltaCalculator';
 import type {DependencyEdge} from '../traverseDependencies';
 
 type Options = {|
-  createModuleIdFn: string => number | string,
+  createModuleId: string => number | string,
   +dev: boolean,
   +runBeforeMainModule: $ReadOnlyArray<string>,
   +runModule: boolean,
@@ -29,35 +31,17 @@ function plainJSBundle(
   graph: Graph,
   options: Options,
 ): string {
-  const output = [];
-
-  for (const module of pre) {
-    output.push(wrapModule(module, options));
-  }
-
   for (const module of graph.dependencies.values()) {
-    output.push(wrapModule(module, options));
+    options.createModuleId(module.path);
   }
 
-  for (const path of options.runBeforeMainModule) {
-    if (graph.dependencies.has(path)) {
-      output.push(
-        `require(${JSON.stringify(options.createModuleIdFn(path))});`,
-      );
-    }
-  }
-
-  if (options.runModule && graph.dependencies.has(entryPoint)) {
-    output.push(
-      `require(${JSON.stringify(options.createModuleIdFn(entryPoint))});`,
-    );
-  }
-
-  if (options.sourceMapUrl) {
-    output.push(`//# sourceMappingURL=${options.sourceMapUrl}`);
-  }
-
-  return output.join('\n');
+  return [
+    ...pre,
+    ...graph.dependencies.values(),
+    ...getAppendScripts(entryPoint, graph, options),
+  ]
+    .map(module => wrapModule(module, options))
+    .join('\n');
 }
 
 module.exports = plainJSBundle;

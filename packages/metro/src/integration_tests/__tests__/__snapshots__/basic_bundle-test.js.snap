@@ -149,7 +149,7 @@ __d(function (global, _require, module, exports, _dependencyMap) {
     Foo: Foo,
     Bar: Bar
   };
-},4,[5,6]);
+},0,[1,2]);
 __d(function (global, _require, module, exports, _dependencyMap) {
   'use strict';
 
@@ -159,7 +159,7 @@ __d(function (global, _require, module, exports, _dependencyMap) {
     type: 'bar',
     foo: Foo.type
   };
-},5,[6]);
+},1,[2]);
 __d(function (global, _require, module, exports, _dependencyMap) {
   'use strict';
 
@@ -169,7 +169,7 @@ __d(function (global, _require, module, exports, _dependencyMap) {
     type: 'foo',
     asset: asset
   };
-},6,[7]);
+},2,[3]);
 __d(function (global, _require, module, exports, _dependencyMap) {
   module.exports = _require(_dependencyMap[0]).registerAsset({
     \\"__packager_asset\\": true,
@@ -181,11 +181,11 @@ __d(function (global, _require, module, exports, _dependencyMap) {
     \\"name\\": \\"test\\",
     \\"type\\": \\"png\\"
   });
-},7,[8]);
+},3,[4]);
 __d(function (global, _require, module, exports, _dependencyMap) {
   'use strict';
-},8,[]);
-require(4);"
+},4,[]);
+require(0);"
 `;
 
 exports[`basic_bundle bundles package without polyfills 1`] = `
@@ -323,7 +323,7 @@ __d(function (global, _require, module, exports, _dependencyMap) {
     Foo: Foo,
     Bar: Bar
   };
-},2,[3,4]);
+},0,[1,2]);
 __d(function (global, _require, module, exports, _dependencyMap) {
   'use strict';
 
@@ -333,7 +333,7 @@ __d(function (global, _require, module, exports, _dependencyMap) {
     type: 'bar',
     foo: Foo.type
   };
-},3,[4]);
+},1,[2]);
 __d(function (global, _require, module, exports, _dependencyMap) {
   'use strict';
 
@@ -343,7 +343,7 @@ __d(function (global, _require, module, exports, _dependencyMap) {
     type: 'foo',
     asset: asset
   };
-},4,[5]);
+},2,[3]);
 __d(function (global, _require, module, exports, _dependencyMap) {
   module.exports = _require(_dependencyMap[0]).registerAsset({
     \\"__packager_asset\\": true,
@@ -355,9 +355,9 @@ __d(function (global, _require, module, exports, _dependencyMap) {
     \\"name\\": \\"test\\",
     \\"type\\": \\"png\\"
   });
-},5,[6]);
+},3,[4]);
 __d(function (global, _require, module, exports, _dependencyMap) {
   'use strict';
-},6,[]);
-require(2);"
+},4,[]);
+require(0);"
 `;

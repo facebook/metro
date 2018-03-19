@@ -35,7 +35,7 @@ describe('wrapModule()', () => {
   it('Should wrap a module in nondev mode', () => {
     expect(
       wrapModule(myModule, {
-        createModuleIdFn: createModuleIdFactory(),
+        createModuleId: createModuleIdFactory(),
         dev: false,
       }),
     ).toEqual('__d(function() { console.log("foo") },0,[1,2]);');
@@ -44,7 +44,7 @@ describe('wrapModule()', () => {
   it('Should wrap a module in dev mode', () => {
     expect(
       wrapModule(myModule, {
-        createModuleIdFn: createModuleIdFactory(),
+        createModuleId: createModuleIdFactory(),
         dev: true,
       }),
     ).toEqual('__d(function() { console.log("foo") },0,[1,2],"foo.js");');
@@ -55,17 +55,17 @@ describe('wrapModule()', () => {
 
     expect(
       wrapModule(myModule, {
-        createModuleIdFn: createModuleIdFactory(),
+        createModuleId: createModuleIdFactory(),
         dev: true,
       }),
     ).toEqual(myModule.output.code);
   });
 
-  it('should use custom createModuleIdFn param', () => {
-    // Just use a createModuleIdFn that returns the same path.
+  it('should use custom createModuleId param', () => {
+    // Just use a createModuleId that returns the same path.
     expect(
       wrapModule(myModule, {
-        createModuleIdFn: path => path,
+        createModuleId: path => path,
         dev: false,
       }),
     ).toEqual(
