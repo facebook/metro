@@ -10,11 +10,11 @@
 
 'use strict';
 
-jest.mock('../../node-haste/lib/toLocalPath');
-jest.mock('../../Assets');
+jest.mock('../../../node-haste/lib/toLocalPath');
+jest.mock('../../../Assets');
 
-const {getAssetData} = require('../../Assets');
-const toLocalPath = require('../../node-haste/lib/toLocalPath');
+const {getAssetData} = require('../../../Assets');
+const toLocalPath = require('../../../node-haste/lib/toLocalPath');
 
 const CURRENT_TIME = 1482363367000;
 
@@ -43,7 +43,7 @@ describe('Serializers', () => {
   }
 
   beforeEach(() => {
-    Serializers = require('../Serializers/Serializers');
+    Serializers = require('../Serializers');
 
     getDelta.mockReturnValueOnce(Promise.resolve(deltaResponse));
     getDependenciesFn.mockReturnValue(Promise.resolve(() => new Set()));
