@@ -12,13 +12,12 @@
 
 const DeltaCalculator = require('./DeltaCalculator');
 
-const addParamsToDefineCall = require('../lib/addParamsToDefineCall');
 const createModuleIdFactory = require('../lib/createModuleIdFactory');
 const crypto = require('crypto');
 const defaults = require('../defaults');
 const getPreludeCode = require('../lib/getPreludeCode');
-const nullthrows = require('fbjs/lib/nullthrows');
 
+const {wrapModule} = require('./Serializers/helpers/js');
 const {EventEmitter} = require('events');
 
 import type Bundler from '../Bundler';
@@ -444,27 +443,10 @@ class DeltaTransformer extends EventEmitter {
   ): Promise<[number, ?DeltaEntry]> {
     const name = this._dependencyGraph.getHasteName(edge.path);
 
-    const dependencyPairs = edge ? edge.dependencies : new Map();
-
-    let wrappedCode;
-
-    // Get the absolute path of each of the module dependencies from the
-    // dependency edges. The module dependencies ensure correct order, while
-    // the dependency edges do not ensure the same order between rebuilds.
-    const dependencies = Array.from(edge.dependencies.keys()).map(dependency =>
-      nullthrows(dependencyPairs.get(dependency)),
-    );
-
-    if (edge.output.type !== 'script') {
-      wrappedCode = this._addDependencyMap({
-        code: edge.output.code,
-        dependencies,
-        name,
-        path: edge.path,
-      });
-    } else {
-      wrappedCode = edge.output.code;
-    }
+    const wrappedCode = wrapModule(edge, {
+      createModuleIdFn: this._getModuleId,
+      dev: transformOptions.dev,
+    });
 
     const {code, map} = transformOptions.minify
       ? await this._bundler.minifyModule(
@@ -488,35 +470,6 @@ class DeltaTransformer extends EventEmitter {
         type: edge.output.type,
       },
     ];
-  }
-
-  /**
-   * Function to add the mapping object between local module ids and
-   * actual bundle module ids for dependencies. This way, we can do the path
-   * replacements on require() calls on transformers (since local ids do not
-   * change between bundles).
-   */
-  _addDependencyMap({
-    code,
-    dependencies,
-    name,
-    path,
-  }: {
-    code: string,
-    dependencies: $ReadOnlyArray<string>,
-    name: string,
-    path: string,
-  }): string {
-    const moduleId = this._getModuleId(path);
-    const params = [moduleId, dependencies.map(this._getModuleId)];
-
-    // Add the module name as the last parameter (to make it easier to do
-    // requires by name when debugging).
-    if (this._bundleOptions.dev) {
-      params.push(name);
-    }
-
-    return addParamsToDefineCall(code, ...params);
   }
 
   _onFileChange = () => {
