@@ -26,8 +26,6 @@
 
 const find = require('lodash/find');
 
-const {addDefault} = require('@babel/helper-module-imports');
-
 module.exports = {
   default: function({types: t, template}) {
     function matchesPatterns(path, patterns) {
@@ -248,7 +246,7 @@ module.exports = {
         };
       }
 
-      build(path) {
+      build() {
         const componentsDeclarationId = this.file.scope.generateUidIdentifier(
           'components',
         );
@@ -267,7 +265,6 @@ module.exports = {
           components,
         );
         const configuredTransforms = this.initTransformers(
-          path,
           componentsDeclarationId,
         );
         const wrapperFunction = this.initWrapperFunction(wrapperFunctionId);
@@ -362,19 +359,21 @@ module.exports = {
        *   imports: []
        * });
        */
-      initTransformers(path, componentsDeclarationId) {
+      initTransformers(componentsDeclarationId) {
         return this.options.transforms.map(transform => {
           const transformName = transform.transform;
-          const transformImportId = addDefault(path, transformName, {
-            nameHint: transformName,
-          });
+          const transformImportId = this.file.addImport(
+            transformName,
+            'default',
+            transformName,
+          );
 
           const transformLocals = transform.locals.map(local => {
             return t.identifier(local);
           });
 
           const transformImports = transform.imports.map(importName => {
-            return addDefault(path, importName, {hint: importName});
+            return this.file.addImport(importName, 'default', importName);
           });
 
           const configuredTransformId = this.file.scope.generateUidIdentifier(
@@ -385,9 +384,7 @@ module.exports = {
               configuredTransformId,
               t.callExpression(transformImportId, [
                 toObjectExpression({
-                  filename: t.stringLiteral(
-                    this.file.opts.filename || 'unknown',
-                  ),
+                  filename: t.stringLiteral(this.file.opts.filename),
                   components: componentsDeclarationId,
                   locals: t.arrayExpression(transformLocals),
                   imports: t.arrayExpression(transformImports),
@@ -433,7 +430,7 @@ module.exports = {
         Program(path, {file, opts}) {
           ReactTransformBuilder.assertValidOptions(opts);
           const builder = new ReactTransformBuilder(file, opts);
-          builder.build(path);
+          builder.build();
         },
       },
     };
