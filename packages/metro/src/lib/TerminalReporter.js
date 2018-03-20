@@ -198,6 +198,9 @@ class TerminalReporter {
   }
 
   _logInitializingFailed(port: number, error: Error) {
+    /* $FlowFixMe(>=0.68.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.68 was deployed. To see the error delete this
+     * comment and run Flow. */
     if (error.code === 'EADDRINUSE') {
       this.terminal.log(
         chalk.bgRed.bold(' ERROR '),
@@ -288,6 +291,9 @@ class TerminalReporter {
     }
 
     let message =
+      /* $FlowFixMe(>=0.68.0 site=react_native_fb) This comment suppresses an
+       * error found when Flow v0.68 was deployed. To see the error delete this
+       * comment and run Flow. */
       error.snippet == null && error.stack != null
         ? error.stack
         : error.message;
@@ -297,6 +303,9 @@ class TerminalReporter {
       message += ` [${error.filename}]`;
     }
 
+    /* $FlowFixMe(>=0.68.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.68 was deployed. To see the error delete this
+     * comment and run Flow. */
     if (error.snippet != null) {
       //$FlowFixMe T19379628
       message += '\n' + error.snippet;

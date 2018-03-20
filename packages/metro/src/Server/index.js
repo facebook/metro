@@ -127,6 +127,9 @@ class Server {
     const sourceExts = options.sourceExts || defaults.sourceExts;
 
     const _createModuleId =
+      /* $FlowFixMe(>=0.68.0 site=react_native_fb) This comment suppresses an
+       * error found when Flow v0.68 was deployed. To see the error delete this
+       * comment and run Flow. */
       options.createModuleId || defaultCreateModuleIdFactory();
 
     this._opts = {
