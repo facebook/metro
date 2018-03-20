@@ -232,10 +232,7 @@ class Server {
     this._symbolicateInWorker = symbolicate.createWorker();
     this._nextBundleBuildID = 1;
 
-    this._deltaBundler = new DeltaBundler(this._bundler, {
-      getPolyfills: this._opts.getPolyfills,
-      polyfillModuleNames: this._opts.polyfillModuleNames,
-    });
+    this._deltaBundler = new DeltaBundler(this._bundler);
   }
 
   end() {

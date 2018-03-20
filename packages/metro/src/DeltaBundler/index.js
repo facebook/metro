@@ -11,20 +11,13 @@
 'use strict';
 
 const DeltaCalculator = require('./DeltaCalculator');
-const DeltaTransformer = require('./DeltaTransformer');
 
 import type Bundler from '../Bundler';
-import type {BundleOptions} from '../shared/types.flow';
 import type {
   DeltaResult,
   Graph as CalculatorGraph,
   Options,
 } from './DeltaCalculator';
-
-export type MainOptions = {|
-  getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
-  polyfillModuleNames: $ReadOnlyArray<string>,
-|};
 
 export type Delta = DeltaResult;
 export type Graph = CalculatorGraph;
@@ -37,51 +30,15 @@ export type Graph = CalculatorGraph;
  */
 class DeltaBundler {
   _bundler: Bundler;
-  _options: MainOptions;
-  _deltaTransformers: Map<string, DeltaTransformer> = new Map();
-  _currentId: number = 0;
   _deltaCalculators: Map<Graph, DeltaCalculator> = new Map();
 
-  constructor(bundler: Bundler, options: MainOptions) {
+  constructor(bundler: Bundler) {
     this._bundler = bundler;
-    this._options = options;
   }
 
   end() {
-    this._deltaTransformers.forEach(DeltaTransformer => DeltaTransformer.end());
-    this._deltaTransformers = new Map();
-
     this._deltaCalculators.forEach(deltaCalculator => deltaCalculator.end());
     this._deltaCalculators = new Map();
-  }
-
-  endTransformer(clientId: string) {
-    const deltaTransformer = this._deltaTransformers.get(clientId);
-
-    if (deltaTransformer) {
-      deltaTransformer.end();
-
-      this._deltaTransformers.delete(clientId);
-    }
-  }
-
-  async getDeltaTransformer(
-    clientId: string,
-    options: BundleOptions,
-  ): Promise<DeltaTransformer> {
-    let deltaTransformer = this._deltaTransformers.get(clientId);
-
-    if (!deltaTransformer) {
-      deltaTransformer = await DeltaTransformer.create(
-        this._bundler,
-        this._options,
-        options,
-      );
-
-      this._deltaTransformers.set(clientId, deltaTransformer);
-    }
-
-    return deltaTransformer;
   }
 
   async buildGraph(options: Options): Promise<Graph> {

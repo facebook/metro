@@ -10,65 +10,84 @@
 
 'use strict';
 
-jest.mock('../DeltaTransformer');
 jest.mock('../../Bundler');
+jest.mock('../DeltaCalculator');
 
 const Bundler = require('../../Bundler');
-const DeltaTransformer = require('../DeltaTransformer');
+const DeltaCalculator = require('../DeltaCalculator');
 
 const DeltaBundler = require('../');
 
 describe('DeltaBundler', () => {
   let deltaBundler;
   let bundler;
-  const initialTransformerResponse = {
-    pre: new Map([[1, {code: 'pre'}]]),
-    post: new Map([[2, {code: 'post'}]]),
-    delta: new Map([[3, {code: 'module3'}], [4, {code: 'another'}]]),
-    inverseDependencies: [],
-    reset: true,
+
+  const graph = {
+    dependencides: new Map([
+      ['/entry', {code: 'entry'}],
+      ['/foo', {code: 'foo'}],
+    ]),
+    entryPoints: ['/entry'],
   };
 
   beforeEach(() => {
-    DeltaTransformer.prototype.getDelta = jest
-      .fn()
-      .mockReturnValueOnce(Promise.resolve(initialTransformerResponse));
-
-    DeltaTransformer.create = jest
-      .fn()
-      .mockReturnValue(Promise.resolve(new DeltaTransformer()));
-
     bundler = new Bundler();
     deltaBundler = new DeltaBundler(bundler, {});
+
+    DeltaCalculator.prototype.getDelta.mockImplementation(async ({reset}) =>
+      Promise.resolve({
+        modified: reset ? graph.dependencies : new Map(),
+        deleted: new Set(),
+        reset,
+      }),
+    );
+
+    DeltaCalculator.prototype.getGraph.mockReturnValue(graph);
   });
 
-  it('should create a new transformer the first time it gets called', async () => {
-    await deltaBundler.getDeltaTransformer('foo', {deltaBundleId: 10});
+  it('should create a new graph when buildGraph gets called', async () => {
+    expect(await deltaBundler.buildGraph({})).toEqual(graph);
 
-    expect(DeltaTransformer.create.mock.calls.length).toBe(1);
+    expect(DeltaCalculator.prototype.getDelta.mock.calls[0][0]).toEqual({
+      reset: true,
+    });
   });
 
-  it('should reuse the same transformer after a second call', async () => {
-    await deltaBundler.getDeltaTransformer('foo', {deltaBundleId: 10});
-    await deltaBundler.getDeltaTransformer('foo', {deltaBundleId: 20});
+  it('should get a delta when getDelta gets called', async () => {
+    const graph = await deltaBundler.buildGraph({});
 
-    expect(DeltaTransformer.create.mock.calls.length).toBe(1);
+    expect(await deltaBundler.getDelta(graph, {reset: false})).toEqual({
+      modified: new Map(),
+      deleted: new Set(),
+      reset: false,
+    });
   });
 
-  it('should create different transformers for different clients', async () => {
-    await deltaBundler.getDeltaTransformer('foo', {});
-    await deltaBundler.getDeltaTransformer('bar', {});
+  it('should get a reset delta when calling getDelta({reset: true})', async () => {
+    const graph = await deltaBundler.buildGraph({});
 
-    expect(DeltaTransformer.create.mock.calls.length).toBe(2);
+    expect(await deltaBundler.getDelta(graph, {reset: true})).toEqual({
+      modified: graph.dependencies,
+      deleted: new Set(),
+      reset: true,
+    });
   });
 
-  it('should reset everything after calling end()', async () => {
-    await deltaBundler.getDeltaTransformer('foo', {deltaBundleId: 10});
+  it('should throw an error when trying to get the delta of a graph that does not exist', async () => {
+    const graph = await deltaBundler.buildGraph({});
 
-    deltaBundler.end();
+    deltaBundler.endGraph(graph);
 
-    await deltaBundler.getDeltaTransformer({deltaBundleId: 10});
+    await expect(
+      deltaBundler.getDelta(graph, {reset: false}),
+    ).rejects.toBeInstanceOf(Error);
+  });
 
-    expect(DeltaTransformer.create.mock.calls.length).toBe(2);
+  it('should throw an error when trying to end a graph twice', async () => {
+    const graph = await deltaBundler.buildGraph({});
+
+    deltaBundler.endGraph(graph);
+
+    expect(() => deltaBundler.endGraph(graph)).toThrow();
   });
 });
