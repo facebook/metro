@@ -345,50 +345,6 @@ Object {
 }
 `;
 
-exports[`Serializers should return the bundle assets 1`] = `
-Array [
-  Object {
-    "code": "pre;",
-    "id": 1,
-    "path": "/pre.js",
-    "type": "script",
-  },
-  Object {
-    "code": "module3;",
-    "id": 3,
-    "path": "/3.js",
-    "type": "module",
-  },
-  Object {
-    "code": "another;",
-    "id": 4,
-    "path": "/4.js",
-    "type": "module",
-  },
-  Object {
-    "code": "post;",
-    "id": 2,
-    "path": "/p",
-    "type": "require",
-  },
-]
-`;
-
-exports[`Serializers should return the bundle assets 2`] = `
-Array [
-  Object {
-    "assetData": true,
-    "path": "/foo/path.png",
-    "platform": "ios",
-  },
-  Object {
-    "assetData": true,
-    "path": "/foo/path3.png",
-    "platform": "ios",
-  },
-]
-`;
-
 exports[`Serializers should return the stringified delta bundle 1`] = `
 Object {
   "bundle": "{\\"id\\":\\"1234\\",\\"pre\\":[[1,\\"pre;\\"]],\\"post\\":[[2,\\"post;\\"]],\\"delta\\":[[3,\\"module3;\\"],[4,\\"another;\\"]],\\"reset\\":true}",

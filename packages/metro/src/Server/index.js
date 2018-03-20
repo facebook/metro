@@ -16,6 +16,7 @@ const MultipartResponse = require('./MultipartResponse');
 const Serializers = require('../DeltaBundler/Serializers/Serializers');
 
 const defaultCreateModuleIdFactory = require('../lib/createModuleIdFactory');
+const getAssets = require('../DeltaBundler/Serializers/getAssets');
 const plainJSBundle = require('../DeltaBundler/Serializers/plainJSBundle');
 const sourceMapString = require('../DeltaBundler/Serializers/sourceMapString');
 const debug = require('debug')('Metro:Server');
@@ -52,6 +53,7 @@ import type {
   PostProcessBundleSourcemap,
 } from '../Bundler';
 import type {CacheStore} from 'metro-cache';
+import type {Graph} from '../DeltaBundler';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Symbolicate} from './symbolicate/symbolicate';
@@ -63,6 +65,11 @@ const {
 } = require('metro-core');
 
 type ResolveSync = (path: string, opts: ?{baseDir?: string}) => string;
+
+type GraphInfo = {|
+  graph: Graph,
+  prepend: $ReadOnlyArray<DependencyEdge>,
+|};
 
 function debounceAndBatch(fn, delay) {
   let timeout;
@@ -243,49 +250,22 @@ class Server {
   }
 
   async build(options: BundleOptions): Promise<{code: string, map: string}> {
+    const {prepend, graph} = await this._buildGraph(options);
+
     const entryPoint = getAbsolutePath(
       options.entryFile,
       this._opts.projectRoots,
     );
 
-    const crawlingOptions = {
-      assetPlugins: options.assetPlugins,
-      customTransformOptions: options.customTransformOptions,
-      dev: options.dev,
-      entryPoints: [entryPoint],
-      hot: options.hot,
-      minify: options.minify,
-      onProgress: options.onProgress,
-      platform: options.platform,
-      type: 'module',
-    };
-
-    let graph = await this._deltaBundler.buildGraph(crawlingOptions);
-    let prependScripts = await getPrependedScripts(
-      this._opts,
-      crawlingOptions,
-      this._deltaBundler,
-    );
-
-    if (options.minify) {
-      prependScripts = await Promise.all(
-        prependScripts.map(script => this._minifyModule(script)),
-      );
-
-      graph = await mapGraph(graph, module => this._minifyModule(module));
-    }
-
     return {
-      code: plainJSBundle(entryPoint, prependScripts, graph, {
+      code: plainJSBundle(entryPoint, prepend, graph, {
         createModuleId: this._opts.createModuleId,
         dev: options.dev,
-        runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
-          options.entryFile,
-        ),
+        runBeforeMainModule: options.runBeforeMainModule,
         runModule: options.runModule,
         sourceMapUrl: options.sourceMapUrl,
       }),
-      map: sourceMapString(prependScripts, graph, {
+      map: sourceMapString(prepend, graph, {
         excludeSource: options.excludeSource,
       }),
     };
@@ -303,14 +283,16 @@ class Server {
   }
 
   async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {
-    return await Serializers.getAssets(
-      this._deltaBundler,
-      {
-        ...options,
-        entryFile: getAbsolutePath(options.entryFile, this._opts.projectRoots),
-      },
-      this._opts.projectRoots,
-    );
+    const {graph} = await this._buildGraph({
+      ...options,
+      minify: false, // minification does not affect the assets.
+    });
+
+    return await getAssets(graph, {
+      assetPlugins: options.assetPlugins,
+      platform: options.platform,
+      projectRoots: this._opts.projectRoots,
+    });
   }
 
   async getOrderedDependencyPaths(options: {
@@ -334,6 +316,45 @@ class Server {
     }
 
     return await getOrderedDependencyPaths(this._deltaBundler, bundleOptions);
+  }
+
+  async _buildGraph(options: BundleOptions): Promise<GraphInfo> {
+    const entryPoint = getAbsolutePath(
+      options.entryFile,
+      this._opts.projectRoots,
+    );
+
+    const crawlingOptions = {
+      assetPlugins: options.assetPlugins,
+      customTransformOptions: options.customTransformOptions,
+      dev: options.dev,
+      entryPoints: [entryPoint],
+      hot: options.hot,
+      minify: options.minify,
+      onProgress: options.onProgress,
+      platform: options.platform,
+      type: 'module',
+    };
+
+    let graph = await this._deltaBundler.buildGraph(crawlingOptions);
+    let prepend = await getPrependedScripts(
+      this._opts,
+      crawlingOptions,
+      this._deltaBundler,
+    );
+
+    if (options.minify) {
+      prepend = await Promise.all(
+        prepend.map(script => this._minifyModule(script)),
+      );
+
+      graph = await mapGraph(graph, module => this._minifyModule(module));
+    }
+
+    return {
+      prepend,
+      graph,
+    };
   }
 
   async _minifyModule(module: DependencyEdge): Promise<DependencyEdge> {

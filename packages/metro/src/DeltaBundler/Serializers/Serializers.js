@@ -14,13 +14,10 @@ const DeltaPatcher = require('../DeltaPatcher');
 const RamBundle = require('./RamBundle');
 
 const stableHash = require('metro-cache/src/stableHash');
-const toLocalPath = require('../../node-haste/lib/toLocalPath');
 
-const {getAssetData} = require('../../Assets');
 const {createRamBundleGroups} = require('../../Bundler/util');
 const {fromRawMappings} = require('metro-source-map');
 
-import type {AssetData} from '../../Assets';
 import type {GetTransformOptions} from '../../Bundler';
 import type {BundleOptions, ModuleTransportLike} from '../../shared/types.flow';
 import type DeltaBundler from '../';
@@ -241,32 +238,6 @@ async function getRamBundleInfo(
   };
 }
 
-async function getAssets(
-  deltaBundler: DeltaBundler,
-  options: BundleOptions,
-  projectRoots: $ReadOnlyArray<string>,
-): Promise<$ReadOnlyArray<AssetData>> {
-  const {modules} = await _getAllModules(deltaBundler, options);
-
-  const assets = await Promise.all(
-    modules.map(async module => {
-      if (module.type === 'asset') {
-        const localPath = toLocalPath(projectRoots, module.path);
-
-        return getAssetData(
-          module.path,
-          localPath,
-          options.assetPlugins,
-          options.platform,
-        );
-      }
-      return null;
-    }),
-  );
-
-  return assets.filter(Boolean);
-}
-
 async function _build(
   deltaBundler: DeltaBundler,
   clientId: string,
@@ -294,6 +265,5 @@ module.exports = {
   fullSourceMap,
   fullSourceMapObject,
   getAllModules,
-  getAssets,
   getRamBundleInfo,
 };

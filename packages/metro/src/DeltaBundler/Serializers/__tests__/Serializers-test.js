@@ -13,7 +13,6 @@
 jest.mock('../../../node-haste/lib/toLocalPath');
 jest.mock('../../../Assets');
 
-const {getAssetData} = require('../../../Assets');
 const toLocalPath = require('../../../node-haste/lib/toLocalPath');
 
 const CURRENT_TIME = 1482363367000;
@@ -60,14 +59,6 @@ describe('Serializers', () => {
         return postProcessModules;
       },
     };
-
-    getAssetData.mockImplementation(
-      (path, localPath, assetDataPlugins, platform) => ({
-        path,
-        platform,
-        assetData: true,
-      }),
-    );
 
     toLocalPath.mockImplementation((roots, path) => path.replace(roots[0], ''));
 
@@ -232,35 +223,6 @@ describe('Serializers', () => {
 
     expect(
       await Serializers.getRamBundleInfo(deltaBundler, {}, getTransformOptions),
-    ).toMatchSnapshot();
-  });
-
-  it('should return the bundle assets', async () => {
-    expect(await Serializers.getAllModules(deltaBundler, {})).toMatchSnapshot();
-
-    getDelta.mockReturnValueOnce(
-      Promise.resolve({
-        delta: new Map([
-          [3, {code: 'modified module;'}],
-          [7, {code: 'code', type: 'asset', path: '/foo/path.png'}],
-          [8, {code: 'code', type: 'module', path: '/foo/path2.png'}],
-          [9, {code: 'code', type: 'asset', path: '/foo/path3.png'}],
-        ]),
-        pre: new Map([[5, {code: 'more pre;'}]]),
-        post: new Map([[6, {code: 'bananas;'}]]),
-        inverseDependencies: [],
-        reset: true,
-      }),
-    );
-
-    expect(
-      await Serializers.getAssets(
-        deltaBundler,
-        {
-          platform: 'ios',
-        },
-        ['/foo'],
-      ),
     ).toMatchSnapshot();
   });
 
