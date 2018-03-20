@@ -1,3 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`processRequest Generate delta bundle endpoint should send the correct deltaBundlerId to the bundler 1`] = `"{\\"sourceMapUrl\\":null,\\"bundleType\\":null,\\"customTransformOptions\\":{},\\"entryFile\\":\\"/root/index.js\\",\\"deltaBundleId\\":null,\\"dev\\":true,\\"minify\\":false,\\"excludeSource\\":null,\\"hot\\":true,\\"runBeforeMainModule\\":[\\"InitializeCore\\"],\\"runModule\\":true,\\"inlineSourceMap\\":false,\\"isolateModuleIDs\\":false,\\"platform\\":\\"ios\\",\\"resolutionResponse\\":null,\\"entryModuleOnly\\":false,\\"assetPlugins\\":[],\\"onProgress\\":null,\\"unbundle\\":false}"`;

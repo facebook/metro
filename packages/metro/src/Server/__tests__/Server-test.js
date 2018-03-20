@@ -20,22 +20,21 @@ jest
   .mock('../../Bundler')
   .mock('../../DeltaBundler')
   .mock('../../Assets')
-  .mock('../../lib/getPrependedScripts')
   .mock('../../node-haste/DependencyGraph')
   .mock('metro-core/src/Logger')
   .mock('../../lib/getAbsolutePath')
-  .mock('../../lib/GlobalTransformCache')
-  .mock('../../DeltaBundler/Serializers/Serializers');
+  .mock('../../lib/getPrependedScripts')
+  .mock('../../lib/GlobalTransformCache');
 
 const NativeDate = global.Date;
 
 describe('processRequest', () => {
   let Bundler;
   let Server;
+  let crypto;
   let getAsset;
   let getPrependedScripts;
   let symbolicate;
-  let Serializers;
   let DeltaBundler;
 
   beforeEach(() => {
@@ -46,10 +45,10 @@ describe('processRequest', () => {
 
     Bundler = require('../../Bundler');
     Server = require('../');
+    crypto = require('crypto');
     getAsset = require('../../Assets').getAsset;
     getPrependedScripts = require('../../lib/getPrependedScripts');
     symbolicate = require('../symbolicate/symbolicate');
-    Serializers = require('../../DeltaBundler/Serializers/Serializers');
     DeltaBundler = require('../../DeltaBundler');
   });
 
@@ -148,6 +147,9 @@ describe('processRequest', () => {
 
     server = new Server(options);
     requestHandler = server.processRequest.bind(server);
+
+    let i = 0;
+    crypto.randomBytes.mockImplementation(() => `XXXXX-${i++}`);
   });
 
   it('returns JS bundle source on request of *.bundle', async () => {
@@ -381,46 +383,109 @@ describe('processRequest', () => {
   });
 
   describe('Generate delta bundle endpoint', () => {
-    it('should generate a new delta correctly', () => {
-      Serializers.deltaBundle.mockImplementation(async (_, options) => {
-        expect(options.deltaBundleId).toBe(undefined);
-
-        return {
-          bundle: '{"delta": "bundle"}',
-          numModifiedFiles: 3,
-        };
-      });
-
-      return makeRequest(requestHandler, 'index.delta?platform=ios').then(
-        function(response) {
-          expect(response.body).toEqual('{"delta": "bundle"}');
-        },
+    it('should generate the initial delta correctly', async () => {
+      const response = await makeRequest(
+        requestHandler,
+        'index.delta?platform=ios',
       );
+
+      expect(JSON.parse(response.body)).toEqual({
+        id: 'XXXXX-0',
+        pre: [[-1, 'function () {require();}']],
+        delta: [
+          [0, '__d(function() {entry();},0,[1],"mybundle.js");'],
+          [1, '__d(function() {foo();},1,[],"foo.js");'],
+        ],
+        post: [
+          [
+            2,
+            '//# sourceMappingURL=http://localhost:8081/index.map?platform=ios',
+          ],
+        ],
+        reset: true,
+      });
     });
 
-    it('should send the correct deltaBundlerId to the bundler', () => {
-      Serializers.deltaBundle.mockImplementation(
-        async (_, clientId, options) => {
-          expect(clientId).toMatchSnapshot();
-          expect(options.deltaBundleId).toBe('1234');
-
-          return {
-            bundle: '{"delta": "bundle"}',
-            numModifiedFiles: 3,
-          };
-        },
+    it('should generate an incremental delta correctly', async () => {
+      DeltaBundler.prototype.getDelta.mockReturnValue(
+        Promise.resolve({
+          modified: new Map([
+            [
+              '/root/foo.js',
+              {
+                path: '/root/foo.js',
+                output: {code: '__d(function() {modified();});'},
+                dependencies: new Map(),
+              },
+            ],
+          ]),
+          deleted: new Set(),
+          reset: false,
+        }),
       );
 
-      return makeRequest(
+      // initial request.
+      await makeRequest(requestHandler, 'index.delta?platform=ios');
+
+      const response = await makeRequest(
         requestHandler,
-        'index.delta?platform=ios&deltaBundleId=1234',
-      ).then(function(response) {
-        expect(response.body).toEqual('{"delta": "bundle"}');
+        'index.delta?platform=ios&deltaBundleId=XXXXX-0',
+      );
+
+      expect(JSON.parse(response.body)).toEqual({
+        id: 'XXXXX-1',
+        pre: [],
+        post: [],
+        delta: [[1, '__d(function() {modified();},1,[],"foo.js");']],
+        reset: false,
+      });
+
+      expect(DeltaBundler.prototype.getDelta.mock.calls[0][1]).toEqual({
+        reset: false,
+      });
+    });
+
+    it('should return a reset delta if the sequenceId does not match', async () => {
+      DeltaBundler.prototype.getDelta.mockReturnValue(
+        Promise.resolve({
+          modified: new Map([
+            [
+              '/root/foo.js',
+              {
+                path: '/root/foo.js',
+                output: {code: '__d(function() {modified();});'},
+                dependencies: new Map(),
+              },
+            ],
+          ]),
+          deleted: new Set(),
+          reset: false,
+        }),
+      );
+
+      // Do an initial request.
+      await makeRequest(requestHandler, 'index.delta?platform=ios');
+      // First delta request has a matching id.
+      await makeRequest(
+        requestHandler,
+        'index.delta?platform=ios&deltaBundleId=XXXXX-0',
+      );
+      // Second delta request does not have a matching id.
+      await makeRequest(
+        requestHandler,
+        'index.delta?platform=ios&deltaBundleId=XXXXX-0',
+      );
+
+      expect(DeltaBundler.prototype.getDelta.mock.calls[0][1]).toEqual({
+        reset: false,
+      });
+      expect(DeltaBundler.prototype.getDelta.mock.calls[1][1]).toEqual({
+        reset: true,
       });
     });
 
     it('should include the error message for transform errors', () => {
-      Serializers.deltaBundle.mockImplementation(async () => {
+      DeltaBundler.prototype.buildGraph.mockImplementation(async () => {
         const transformError = new SyntaxError('test syntax error');
         transformError.type = 'TransformError';
         transformError.filename = 'testFile.js';

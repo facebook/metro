@@ -13,9 +13,10 @@
 const Bundler = require('../Bundler');
 const DeltaBundler = require('../DeltaBundler');
 const MultipartResponse = require('./MultipartResponse');
-const Serializers = require('../DeltaBundler/Serializers/Serializers');
 
+const crypto = require('crypto');
 const defaultCreateModuleIdFactory = require('../lib/createModuleIdFactory');
+const deltaJSBundle = require('../DeltaBundler/Serializers/deltaJSBundle');
 const getAllFiles = require('../DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('../DeltaBundler/Serializers/getAssets');
 const getRamBundleInfo = require('../DeltaBundler/Serializers/getRamBundleInfo');
@@ -44,7 +45,6 @@ import type {CustomError} from '../lib/formatBundlingError';
 import type {DependencyEdge} from '../DeltaBundler/traverseDependencies';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from '../lib/reporting';
-import type {DeltaOptions} from '../DeltaBundler/Serializers/Serializers';
 import type {RamBundleInfo} from '../DeltaBundler/Serializers/getRamBundleInfo';
 import type {BundleOptions, Options} from '../shared/types.flow';
 import type {
@@ -53,7 +53,7 @@ import type {
   PostProcessBundleSourcemap,
 } from '../Bundler';
 import type {CacheStore} from 'metro-cache';
-import type {Graph} from '../DeltaBundler';
+import type {Delta, Graph} from '../DeltaBundler';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Symbolicate} from './symbolicate/symbolicate';
@@ -70,7 +70,12 @@ type GraphInfo = {|
   graph: Graph,
   prepend: $ReadOnlyArray<DependencyEdge>,
   lastModified: Date,
+  +sequenceId: string,
 |};
+
+type DeltaOptions = BundleOptions & {
+  deltaBundleId: ?string,
+};
 
 function debounceAndBatch(fn, delay) {
   let timeout;
@@ -127,6 +132,7 @@ class Server {
   _nextBundleBuildID: number;
   _deltaBundler: DeltaBundler;
   _graphs: Map<string, GraphInfo> = new Map();
+  _deltaGraphs: Map<string, GraphInfo> = new Map();
 
   constructor(options: Options) {
     const reporter =
@@ -365,6 +371,7 @@ class Server {
       prepend,
       graph,
       lastModified: new Date(),
+      sequenceId: crypto.randomBytes(8).toString('hex'),
     };
   }
 
@@ -393,6 +400,43 @@ class Server {
     }
 
     return {...graphInfo, numModifiedFiles};
+  }
+
+  async _getDeltaInfo(
+    options: DeltaOptions,
+  ): Promise<{...GraphInfo, delta: Delta}> {
+    const id = this._optionsHash(options);
+    let graphInfo = this._deltaGraphs.get(id);
+
+    let delta;
+
+    if (!graphInfo) {
+      graphInfo = await this._buildGraph(options);
+
+      delta = {
+        modified: graphInfo.graph.dependencies,
+        deleted: new Set(),
+        reset: true,
+      };
+    } else {
+      delta = await this._deltaBundler.getDelta(graphInfo.graph, {
+        reset: graphInfo.sequenceId !== options.deltaBundleId,
+      });
+
+      // Generate a new sequenceId, to be used to verify the next delta request.
+      // $FlowIssue #16581373 spread of an exact object should be exact
+      graphInfo = {
+        ...graphInfo,
+        sequenceId: crypto.randomBytes(8).toString('hex'),
+      };
+    }
+
+    this._deltaGraphs.set(id, graphInfo);
+
+    return {
+      ...graphInfo,
+      delta,
+    };
   }
 
   async _minifyModule(module: DependencyEdge): Promise<DependencyEdge> {
@@ -637,14 +681,28 @@ class Server {
 
     let output;
 
-    const clientId = this._optionsHash(options);
-
     try {
-      output = await Serializers.deltaBundle(
-        this._deltaBundler,
-        clientId,
+      const {delta, graph, prepend, sequenceId} = await this._getDeltaInfo(
         options,
       );
+
+      output = {
+        bundle: deltaJSBundle(
+          options.entryFile,
+          prepend,
+          delta,
+          sequenceId,
+          graph,
+          {
+            createModuleId: this._opts.createModuleId,
+            dev: options.dev,
+            runBeforeMainModule: options.runBeforeMainModule,
+            runModule: options.runModule,
+            sourceMapUrl: options.sourceMapUrl,
+          },
+        ),
+        numModifiedFiles: delta.modified.size + delta.deleted.size,
+      };
     } catch (error) {
       this._handleError(mres, this._optionsHash(options), error);
 
