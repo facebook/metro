@@ -114,15 +114,6 @@ async function fullBundle(
   };
 }
 
-async function getAllModules(
-  deltaBundler: DeltaBundler,
-  options: BundleOptions,
-): Promise<$ReadOnlyArray<DeltaEntry>> {
-  const {modules} = await _getAllModules(deltaBundler, options);
-
-  return modules;
-}
-
 async function _getAllModules(
   deltaBundler: DeltaBundler,
   options: BundleOptions,
@@ -264,6 +255,5 @@ module.exports = {
   fullBundle,
   fullSourceMap,
   fullSourceMapObject,
-  getAllModules,
   getRamBundleInfo,
 };

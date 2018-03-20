@@ -16,6 +16,7 @@ const MultipartResponse = require('./MultipartResponse');
 const Serializers = require('../DeltaBundler/Serializers/Serializers');
 
 const defaultCreateModuleIdFactory = require('../lib/createModuleIdFactory');
+const getAllFiles = require('../DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('../DeltaBundler/Serializers/getAssets');
 const plainJSBundle = require('../DeltaBundler/Serializers/plainJSBundle');
 const sourceMapString = require('../DeltaBundler/Serializers/sourceMapString');
@@ -24,7 +25,6 @@ const defaults = require('../defaults');
 const formatBundlingError = require('../lib/formatBundlingError');
 const getAbsolutePath = require('../lib/getAbsolutePath');
 const getMaxWorkers = require('../lib/getMaxWorkers');
-const getOrderedDependencyPaths = require('../lib/getOrderedDependencyPaths');
 const getPrependedScripts = require('../lib/getPrependedScripts');
 const mime = require('mime-types');
 const mapGraph = require('../lib/mapGraph');
@@ -301,21 +301,20 @@ class Server {
     +platform: string,
     +minify: boolean,
   }): Promise<Array<string>> {
-    const bundleOptions = {
+    options = {
       ...Server.DEFAULT_BUNDLE_OPTIONS,
       ...options,
-      entryFile: getAbsolutePath(options.entryFile, this._opts.projectRoots),
-      bundleType: 'delta',
+      minify: false, // minification does not affect the dependencies.
+      bundleType: 'bundle',
     };
 
-    if (!bundleOptions.platform) {
-      bundleOptions.platform = parsePlatformFilePath(
-        bundleOptions.entryFile,
-        this._platforms,
-      ).platform;
-    }
+    const {prepend, graph} = await this._buildGraph(options);
 
-    return await getOrderedDependencyPaths(this._deltaBundler, bundleOptions);
+    const platform =
+      options.platform ||
+      parsePlatformFilePath(options.entryFile, this._platforms).platform;
+
+    return await getAllFiles(prepend, graph, {platform});
   }
 
   async _buildGraph(options: BundleOptions): Promise<GraphInfo> {

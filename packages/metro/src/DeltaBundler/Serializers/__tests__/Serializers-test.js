@@ -141,21 +141,6 @@ describe('Serializers', () => {
     expect(await Serializers.fullSourceMap(deltaBundler, {})).toMatchSnapshot();
   });
 
-  it('should return all the bundle modules', async () => {
-    expect(await Serializers.getAllModules(deltaBundler, {})).toMatchSnapshot();
-
-    getDelta.mockReturnValueOnce(
-      Promise.resolve({
-        delta: new Map([[3, {code: 'modified module;'}], [4, null]]),
-        pre: new Map([[5, {code: 'more pre;'}]]),
-        post: new Map([[6, {code: 'bananas;'}], [7, {code: 'apples;'}]]),
-        inverseDependencies: [],
-      }),
-    );
-
-    expect(await Serializers.getAllModules(deltaBundler, {})).toMatchSnapshot();
-  });
-
   it('should return the RAM bundle info', async () => {
     expect(
       await Serializers.getRamBundleInfo(deltaBundler, {}),
@@ -224,15 +209,5 @@ describe('Serializers', () => {
     expect(
       await Serializers.getRamBundleInfo(deltaBundler, {}, getTransformOptions),
     ).toMatchSnapshot();
-  });
-
-  it('should post-process the modules', async () => {
-    postProcessModules.mockImplementation(modules => {
-      return modules.sort(
-        (a, b) => +(a.path < b.path) || +(a.path === b.path) - 1,
-      );
-    });
-
-    expect(await Serializers.getAllModules(deltaBundler, {})).toMatchSnapshot();
   });
 });
