@@ -1,8 +1,0 @@
-{
-  "version": "0.30.2",
-  "name": "metro-babel7-plugin-react-transform",
-  "main": "lib/index.js",
-  "dependencies": {
-    "lodash": "^4.17.5"
-  }
-}
