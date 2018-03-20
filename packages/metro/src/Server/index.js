@@ -121,7 +121,6 @@ class Server {
     req: IncomingMessage,
     res: ServerResponse,
   }>;
-  _fileChangeListeners: Array<(filePath: string) => mixed>;
   _bundler: Bundler;
   _debouncedFileChangeHandler: (filePath: string) => mixed;
   _reporter: Reporter;
@@ -194,7 +193,6 @@ class Server {
 
     this._reporter = reporter;
     this._changeWatchers = [];
-    this._fileChangeListeners = [];
     this._platforms = new Set(this._opts.platforms);
 
     // This slices out options that are not part of the strict BundlerOptions
@@ -238,12 +236,6 @@ class Server {
   end() {
     this._deltaBundler.end();
     this._bundler.end();
-  }
-
-  addFileChangeListener(listener: (filePath: string) => mixed) {
-    if (this._fileChangeListeners.indexOf(listener) === -1) {
-      this._fileChangeListeners.push(listener);
-    }
   }
 
   getDeltaBundler(): DeltaBundler {
@@ -482,15 +474,6 @@ class Server {
   }
 
   onFileChange(type: string, filePath: string) {
-    Promise.all(
-      this._fileChangeListeners.map(listener => listener(filePath)),
-    ).then(
-      () => this._onFileChangeComplete(filePath),
-      () => this._onFileChangeComplete(filePath),
-    );
-  }
-
-  _onFileChangeComplete(filePath: string) {
     // Make sure the file watcher event runs through the system before
     // we rebuild the bundles.
     this._debouncedFileChangeHandler(filePath);
