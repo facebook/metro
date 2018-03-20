@@ -18,6 +18,7 @@ const Serializers = require('../DeltaBundler/Serializers/Serializers');
 const defaultCreateModuleIdFactory = require('../lib/createModuleIdFactory');
 const getAllFiles = require('../DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('../DeltaBundler/Serializers/getAssets');
+const getRamBundleInfo = require('../DeltaBundler/Serializers/getRamBundleInfo');
 const plainJSBundle = require('../DeltaBundler/Serializers/plainJSBundle');
 const sourceMapObject = require('../DeltaBundler/Serializers/sourceMapObject');
 const sourceMapString = require('../DeltaBundler/Serializers/sourceMapString');
@@ -43,10 +44,8 @@ import type {CustomError} from '../lib/formatBundlingError';
 import type {DependencyEdge} from '../DeltaBundler/traverseDependencies';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from '../lib/reporting';
-import type {
-  DeltaOptions,
-  RamBundleInfo,
-} from '../DeltaBundler/Serializers/Serializers';
+import type {DeltaOptions} from '../DeltaBundler/Serializers/Serializers';
+import type {RamBundleInfo} from '../DeltaBundler/Serializers/getRamBundleInfo';
 import type {BundleOptions, Options} from '../shared/types.flow';
 import type {
   GetTransformOptions,
@@ -275,14 +274,23 @@ class Server {
   }
 
   async getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo> {
-    return await Serializers.getRamBundleInfo(
-      this._deltaBundler,
-      {
-        ...options,
-        entryFile: getAbsolutePath(options.entryFile, this._opts.projectRoots),
-      },
-      this._opts.getTransformOptions,
+    const {prepend, graph} = await this._buildGraph(options);
+
+    const entryPoint = getAbsolutePath(
+      options.entryFile,
+      this._opts.projectRoots,
     );
+
+    return await getRamBundleInfo(entryPoint, prepend, graph, {
+      createModuleId: this._opts.createModuleId,
+      dev: options.dev,
+      excludeSource: options.excludeSource,
+      getTransformOptions: this._opts.getTransformOptions,
+      platform: options.platform,
+      runBeforeMainModule: options.runBeforeMainModule,
+      runModule: options.runModule,
+      sourceMapUrl: options.sourceMapUrl,
+    });
   }
 
   async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {

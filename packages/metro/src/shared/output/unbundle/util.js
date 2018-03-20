@@ -11,7 +11,6 @@
 
 const invariant = require('fbjs/lib/invariant');
 
-import type {RamModule} from '../../../DeltaBundler/Serializers/Serializers';
 import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
 import type {BabelSourceMap} from '@babel/core';
 import type {FBIndexMap, IndexMap, MetroSourceMap} from 'metro-source-map';
@@ -50,7 +49,7 @@ const Section = (line: number, column: number, map: MetroSourceMap) => ({
 type CombineOptions = {fixWrapperOffset: boolean};
 
 function combineSourceMaps(
-  modules: $ReadOnlyArray<ModuleTransportLike | RamModule>,
+  modules: $ReadOnlyArray<ModuleTransportLike>,
   moduleGroups?: ModuleGroups,
   options?: ?CombineOptions,
 ): IndexMap {
@@ -59,7 +58,7 @@ function combineSourceMaps(
 }
 
 function combineSourceMapsAddingOffsets(
-  modules: $ReadOnlyArray<ModuleTransportLike | RamModule>,
+  modules: $ReadOnlyArray<ModuleTransportLike>,
   x_metro_module_paths: Array<string>,
   moduleGroups?: ?ModuleGroups,
   options?: ?CombineOptions,
@@ -75,7 +74,7 @@ function combineSourceMapsAddingOffsets(
 }
 
 function combineMaps(
-  modules: $ReadOnlyArray<ModuleTransportLike | RamModule>,
+  modules: $ReadOnlyArray<ModuleTransportLike>,
   offsets: ?Array<number>,
   moduleGroups,
   options,

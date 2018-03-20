@@ -15,14 +15,13 @@ const {
   joinModules,
 } = require('./util');
 
-import type {RamModule} from '../../../DeltaBundler/Serializers/Serializers';
 import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
 
 type Params = {|
   fixWrapperOffset: boolean,
-  lazyModules: $ReadOnlyArray<ModuleTransportLike | RamModule>,
+  lazyModules: $ReadOnlyArray<ModuleTransportLike>,
   moduleGroups: ?ModuleGroups,
-  startupModules: $ReadOnlyArray<ModuleTransportLike | RamModule>,
+  startupModules: $ReadOnlyArray<ModuleTransportLike>,
 |};
 
 module.exports = ({

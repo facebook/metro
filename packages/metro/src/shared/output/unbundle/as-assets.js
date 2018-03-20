@@ -20,7 +20,7 @@ const writeSourceMap = require('./write-sourcemap');
 
 const {joinModules} = require('./util');
 
-import type {RamBundleInfo} from '../../../DeltaBundler/Serializers/Serializers';
+import type {RamBundleInfo} from '../../../DeltaBundler/Serializers/getRamBundleInfo';
 import type {OutputOptions} from '../../types.flow';
 
 // must not start with a dot, as that won't go into the apk

@@ -27,6 +27,8 @@ jest
   .mock('../../lib/GlobalTransformCache')
   .mock('../../DeltaBundler/Serializers/Serializers');
 
+const NativeDate = global.Date;
+
 describe('processRequest', () => {
   let Bundler;
   let Server;
@@ -36,11 +38,12 @@ describe('processRequest', () => {
   let Serializers;
   let DeltaBundler;
 
-  const NativeDate = global.Date;
-
   beforeEach(() => {
     jest.useFakeTimers();
     jest.resetModules();
+
+    global.Date = NativeDate;
+
     Bundler = require('../../Bundler');
     Server = require('../');
     getAsset = require('../../Assets').getAsset;
@@ -89,8 +92,6 @@ describe('processRequest', () => {
   let requestHandler;
 
   beforeEach(() => {
-    global.Date = NativeDate;
-
     DeltaBundler.prototype.buildGraph.mockReturnValue(
       Promise.resolve({
         entryPoints: ['/root/mybundle.js'],
