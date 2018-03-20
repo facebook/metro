@@ -10,10 +10,9 @@
 
 'use strict';
 
-const addParamsToDefineCall = require('../lib/addParamsToDefineCall');
 const formatBundlingError = require('../lib/formatBundlingError');
 const getAbsolutePath = require('../lib/getAbsolutePath');
-const getBundlingOptionsForHmr = require('./getBundlingOptionsForHmr');
+const hmrJSBundle = require('../DeltaBundler/Serializers/hmrJSBundle');
 const nullthrows = require('fbjs/lib/nullthrows');
 const parseCustomTransformOptions = require('../lib/parseCustomTransformOptions');
 const url = require('url');
@@ -22,13 +21,12 @@ const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
 
-import type DeltaTransformer from '../DeltaBundler/DeltaTransformer';
+import type {Graph} from '../DeltaBundler/DeltaCalculator';
 import type PackagerServer from '../Server';
 import type {Reporter} from '../lib/reporting';
 
 type Client = {|
-  clientId: string,
-  deltaTransformer: DeltaTransformer,
+  graph: Graph,
   sendFn: (data: string) => mixed,
 |};
 
@@ -44,7 +42,6 @@ type Client = {|
 class HmrServer<TClient: Client> {
   _packagerServer: PackagerServer;
   _reporter: Reporter;
-  _lastSequenceId: ?string;
 
   constructor(packagerServer: PackagerServer) {
     this._packagerServer = packagerServer;
@@ -65,23 +62,24 @@ class HmrServer<TClient: Client> {
     // DeltaBundleId param through the WS connection and we'll be able to share
     // the same DeltaTransformer between the WS connection and the HTTP one.
     const deltaBundler = this._packagerServer.getDeltaBundler();
-    const deltaTransformer = await deltaBundler.getDeltaTransformer(
-      clientUrl,
-      getBundlingOptionsForHmr(
+    const graph = await deltaBundler.buildGraph({
+      assetPlugins: [],
+      customTransformOptions,
+      dev: true,
+      entryPoints: [
         getAbsolutePath(bundleEntry, this._packagerServer.getProjectRoots()),
-        platform,
-        customTransformOptions,
-      ),
-    );
-
-    // Trigger an initial build to start up the DeltaTransformer.
-    const {id} = await deltaTransformer.getDelta();
-
-    this._lastSequenceId = id;
+      ],
+      hot: true,
+      minify: false,
+      onProgress: null,
+      platform,
+      type: 'module',
+    });
 
     // Listen to file changes.
-    const client = {clientId: clientUrl, deltaTransformer, sendFn};
-    deltaTransformer.on('change', this._handleFileChange.bind(this, client));
+    const client = {sendFn, graph};
+
+    deltaBundler.listen(graph, this._handleFileChange.bind(this, client));
 
     return client;
   }
@@ -97,7 +95,7 @@ class HmrServer<TClient: Client> {
   onClientDisconnect(client: TClient) {
     // We can safely stop the delta transformer since the
     // transformer is not shared between clients.
-    this._packagerServer.getDeltaBundler().endTransformer(client.clientId);
+    this._packagerServer.getDeltaBundler().endGraph(client.graph);
   }
 
   async _handleFileChange(client: Client) {
@@ -122,115 +120,23 @@ class HmrServer<TClient: Client> {
     });
   }
 
-  async _prepareResponse(client: Client): Promise<{type: string, body: {}}> {
-    let result;
+  async _prepareResponse(
+    client: Client,
+  ): Promise<{type: string, body: Object}> {
+    const deltaBundler = this._packagerServer.getDeltaBundler();
 
     try {
-      result = await client.deltaTransformer.getDelta(this._lastSequenceId);
+      const delta = await deltaBundler.getDelta(client.graph, {reset: false});
+
+      return hmrJSBundle(delta, client.graph, {
+        createModuleId: this._packagerServer._opts.createModuleId,
+      });
     } catch (error) {
       const formattedError = formatBundlingError(error);
 
       this._reporter.update({type: 'bundling_error', error});
 
       return {type: 'error', body: formattedError};
-    }
-    const modules = [];
-
-    const inverseDependencies = await client.deltaTransformer.getInverseDependencies();
-
-    for (const [id, module] of result.delta) {
-      // The Delta Bundle can have null objects: these correspond to deleted
-      // modules, which we don't need to send to the client.
-      if (module != null) {
-        // When there are new modules added on the dependency graph, the delta
-        // bundler returns them first, so the HMR logic does not need to worry
-        // about sorting modules when passing them to the client.
-        modules.push(this._prepareModule(id, module.code, inverseDependencies));
-      }
-    }
-
-    this._lastSequenceId = result.id;
-
-    return {
-      type: 'update',
-      body: {
-        modules,
-        sourceURLs: {},
-        sourceMappingURLs: {}, // TODO: handle Source Maps
-      },
-    };
-  }
-
-  /**
-   * We need to add the inverse dependencies of that specific module into
-   * the define() call, to make the HMR logic in the client able to propagate
-   * the changes to the module dependants, if needed.
-   *
-   * To do so, we need to append the inverse dependencies object as the last
-   * parameter to the __d() call from the code that we get from the bundler.
-   *
-   * So, we need to transform this:
-   *
-   *   __d(
-   *     function(global, ...) { (module transformed code) },
-   *     moduleId,
-   *     dependencyMap?,
-   *     moduleName?
-   *   );
-   *
-   * Into this:
-   *
-   *   __d(
-   *     function(global, ...) { (module transformed code) },
-   *     moduleId,
-   *     dependencyMap?,
-   *     moduleName?,
-   *     inverseDependencies,
-   *   );
-   */
-  _prepareModule(
-    id: number,
-    code: string,
-    inverseDependencies: Map<number, $ReadOnlyArray<number>>,
-  ): {id: number, code: string} {
-    const moduleInverseDependencies = Object.create(null);
-
-    this._addInverseDep(id, inverseDependencies, moduleInverseDependencies);
-
-    return {
-      id,
-      code: addParamsToDefineCall(code, moduleInverseDependencies),
-    };
-  }
-
-  /**
-   * Instead of adding the whole inverseDependncies object into each changed
-   * module (which can be really huge if the dependency graph is big), we only
-   * add the needed inverseDependencies for each changed module (we do this by
-   * traversing upwards the dependency graph).
-   */
-  _addInverseDep(
-    module: number,
-    inverseDependencies: Map<number, $ReadOnlyArray<number>>,
-    moduleInverseDependencies: {
-      [key: number]: Array<number>,
-      __proto__: null,
-    },
-  ) {
-    if (module in moduleInverseDependencies) {
-      return;
-    }
-
-    moduleInverseDependencies[module] = [];
-
-    for (const inverse of inverseDependencies.get(module) || []) {
-      moduleInverseDependencies[module].push(inverse);
-
-      this._addInverseDep(
-        inverse,
-        inverseDependencies,
-        moduleInverseDependencies,
-      );
     }
   }
 }
