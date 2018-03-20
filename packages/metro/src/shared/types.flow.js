@@ -29,7 +29,15 @@ import type {
   MetroSourceMapSegmentTuple,
 } from 'metro-source-map';
 
-type BundleType = 'bundle' | 'delta' | 'map' | 'ram' | 'cli' | 'hmr' | 'todo';
+type BundleType =
+  | 'bundle'
+  | 'delta'
+  | 'map'
+  | 'ram'
+  | 'cli'
+  | 'hmr'
+  | 'todo'
+  | 'graph';
 type MetroSourceMapOrMappings =
   | MetroSourceMap
   | Array<MetroSourceMapSegmentTuple>;

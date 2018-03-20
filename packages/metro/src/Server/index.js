@@ -279,6 +279,25 @@ class Server {
     };
   }
 
+  async buildGraph(options: BundleOptions): Promise<Graph> {
+    const entryPoint = getAbsolutePath(
+      options.entryFile,
+      this._opts.projectRoots,
+    );
+
+    return await this._deltaBundler.buildGraph({
+      assetPlugins: options.assetPlugins,
+      customTransformOptions: options.customTransformOptions,
+      dev: options.dev,
+      entryPoints: [entryPoint],
+      hot: options.hot,
+      minify: options.minify,
+      onProgress: options.onProgress,
+      platform: options.platform,
+      type: 'module',
+    });
+  }
+
   async getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo> {
     const {prepend, graph} = await this._buildGraph(options);
 

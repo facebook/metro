@@ -32,6 +32,7 @@ const {readFile} = require('fs-extra');
 const {Terminal} = require('metro-core');
 
 import type {ConfigT} from './Config';
+import type {Graph} from './DeltaBundler';
 import type {GlobalTransformCache} from './lib/GlobalTransformCache';
 import type {TransformCache} from './lib/TransformCaching';
 import type {Reporter} from './lib/reporting';
@@ -275,13 +276,19 @@ exports.runServer = async ({
   return httpServer;
 };
 
-type RunBuildOptions = {|
+type BuildGraphOptions = {|
   ...PublicMetroOptions,
   entry: string,
-  out: string,
   dev?: boolean,
-  onBegin?: () => void,
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
+  platform?: string,
+|};
+
+type RunBuildOptions = {|
+  ...PublicMetroOptions,
+  ...BuildGraphOptions,
+  out: string,
+  onBegin?: () => void,
   onComplete?: () => void,
   optimize?: boolean,
   output?: {
@@ -295,7 +302,6 @@ type RunBuildOptions = {|
       (...args: Array<string>) => void,
     ) => Promise<mixed>,
   },
-  platform?: string,
   sourceMap?: boolean,
   sourceMapUrl?: string,
 |};
@@ -315,7 +321,7 @@ exports.runBuild = async ({
   sourceMapUrl,
   ...rest
 }: RunBuildOptions) => {
-  // $FlowFixMe Flow doesn't support object spread enough for the following line
+  // $FlowIssue #16581373 spread of an exact object should be exact
   const metroServer = await runMetro({
     ...rest,
     config,
@@ -365,6 +371,34 @@ exports.runBuild = async ({
   await metroServer.end();
 
   return {metroServer, metroBundle};
+};
+
+exports.buildGraph = async function({
+  config,
+  dev = false,
+  entry,
+  onProgress,
+  platform = `web`,
+  ...rest
+}: BuildGraphOptions): Promise<Graph> {
+  // $FlowIssue #16581373 spread of an exact object should be exact
+  const metroServer = await runMetro({
+    ...rest,
+    config,
+  });
+
+  try {
+    return await metroServer.buildGraph({
+      ...MetroServer.DEFAULT_BUNDLE_OPTIONS,
+      bundleType: 'graph',
+      dev,
+      entryFile: entry,
+      onProgress,
+      platform,
+    });
+  } finally {
+    await metroServer.end();
+  }
 };
 
 type MetroConfigSearchOptions = {|
