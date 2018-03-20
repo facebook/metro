@@ -33,7 +33,7 @@ export type DeltaResult = {|
 
 export type {Graph} from './traverseDependencies';
 
-export type Options = {
+export type Options = {|
   +assetPlugins: Array<string>,
   +customTransformOptions: CustomTransformOptions,
   +dev: boolean,
@@ -43,7 +43,7 @@ export type Options = {
   +onProgress: ?(doneCont: number, totalCount: number) => mixed,
   +platform: ?string,
   +type: 'module' | 'script',
-};
+|};
 
 /**
  * This class is in charge of calculating the delta of changed modules that
