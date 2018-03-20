@@ -25,7 +25,6 @@ import type DeltaTransformer, {
   DeltaEntry,
   DeltaTransformResponse,
 } from '../DeltaTransformer';
-import type {BabelSourceMap} from '@babel/core';
 
 export type DeltaOptions = BundleOptions & {
   deltaBundleId: ?string,
@@ -69,17 +68,6 @@ async function deltaBundle(
     bundle,
     numModifiedFiles: delta.pre.size + delta.post.size + delta.delta.size,
   };
-}
-
-async function fullSourceMapObject(
-  deltaBundler: DeltaBundler,
-  options: BundleOptions,
-): Promise<BabelSourceMap> {
-  const {modules} = await _getAllModules(deltaBundler, options);
-
-  return fromRawMappings(modules).toMap(undefined, {
-    excludeSource: options.excludeSource,
-  });
 }
 
 async function _getAllModules(
@@ -220,6 +208,5 @@ async function _build(
 
 module.exports = {
   deltaBundle,
-  fullSourceMapObject,
   getRamBundleInfo,
 };

@@ -19,6 +19,7 @@ const defaultCreateModuleIdFactory = require('../lib/createModuleIdFactory');
 const getAllFiles = require('../DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('../DeltaBundler/Serializers/getAssets');
 const plainJSBundle = require('../DeltaBundler/Serializers/plainJSBundle');
+const sourceMapObject = require('../DeltaBundler/Serializers/sourceMapObject');
 const sourceMapString = require('../DeltaBundler/Serializers/sourceMapString');
 const debug = require('debug')('Metro:Server');
 const defaults = require('../defaults');
@@ -898,7 +899,13 @@ class Server {
   async _sourceMapForURL(reqUrl: string): Promise<MetroSourceMap> {
     const options: DeltaOptions = this._getOptionsFromUrl(reqUrl);
 
-    return await Serializers.fullSourceMapObject(this._deltaBundler, options);
+    const {graph, prepend} = await this._getGraphInfo(options, {
+      rebuild: false,
+    });
+
+    return sourceMapObject(prepend, graph, {
+      excludeSource: options.excludeSource,
+    });
   }
 
   _handleError(res: ServerResponse, bundleID: string, error: CustomError) {
