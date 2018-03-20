@@ -25,7 +25,6 @@ const {
   toBabelSegments,
 } = require('metro-source-map');
 
-import type {PostProcessModules} from '../DeltaBundler';
 import type {
   TransformedCode,
   Options as WorkerOptions,
@@ -95,7 +94,6 @@ export type Options = {|
   +polyfillModuleNames: Array<string>,
   +postMinifyProcess: PostMinifyProcess,
   +postProcessBundleSourcemap: PostProcessBundleSourcemap,
-  +postProcessModules?: PostProcessModules,
   +projectRoots: $ReadOnlyArray<string>,
   +providesModuleNodeModules?: Array<string>,
   +reporter: Reporter,

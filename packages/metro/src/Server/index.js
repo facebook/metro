@@ -58,7 +58,6 @@ import type {MetroSourceMap} from 'metro-source-map';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Symbolicate} from './symbolicate/symbolicate';
 import type {AssetData} from '../Assets';
-import type {PostProcessModules} from '../DeltaBundler';
 import type {TransformedCode} from '../JSTransformer/worker';
 const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
@@ -104,7 +103,6 @@ class Server {
     moduleFormat: string,
     platforms: Array<string>,
     polyfillModuleNames: Array<string>,
-    postProcessModules?: PostProcessModules,
     postMinifyProcess: PostMinifyProcess,
     postProcessBundleSourcemap: PostProcessBundleSourcemap,
     projectRoots: $ReadOnlyArray<string>,
@@ -174,7 +172,6 @@ class Server {
         options.moduleFormat != null ? options.moduleFormat : 'haste',
       platforms: options.platforms || defaults.platforms,
       polyfillModuleNames: options.polyfillModuleNames || [],
-      postProcessModules: options.postProcessModules,
       postMinifyProcess: options.postMinifyProcess,
       postProcessBundleSourcemap: options.postProcessBundleSourcemap,
       projectRoots: options.projectRoots,
@@ -238,7 +235,6 @@ class Server {
     this._deltaBundler = new DeltaBundler(this._bundler, {
       getPolyfills: this._opts.getPolyfills,
       polyfillModuleNames: this._opts.polyfillModuleNames,
-      postProcessModules: this._opts.postProcessModules,
     });
   }
 

@@ -136,7 +136,6 @@ async function runMetro({
     minifierPath,
     platforms: defaults.platforms.concat(platforms),
     postMinifyProcess: normalizedConfig.postMinifyProcess,
-    postProcessModules: normalizedConfig.postProcessModules,
     postProcessBundleSourcemap: normalizedConfig.postProcessBundleSourcemap,
     providesModuleNodeModules,
     resetCache,

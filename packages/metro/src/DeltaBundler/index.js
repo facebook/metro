@@ -20,17 +20,10 @@ import type {
   Graph as CalculatorGraph,
   Options,
 } from './DeltaCalculator';
-import type {DeltaEntry} from './DeltaTransformer';
-
-export type PostProcessModules = (
-  modules: $ReadOnlyArray<DeltaEntry>,
-  entryFile: string,
-) => $ReadOnlyArray<DeltaEntry>;
 
 export type MainOptions = {|
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   polyfillModuleNames: $ReadOnlyArray<string>,
-  postProcessModules?: PostProcessModules,
 |};
 
 export type Delta = DeltaResult;
@@ -138,18 +131,6 @@ class DeltaBundler {
     deltaCalculator.end();
 
     this._deltaCalculators.delete(graph);
-  }
-
-  getPostProcessModulesFn(
-    entryPoint: string,
-  ): (modules: $ReadOnlyArray<DeltaEntry>) => $ReadOnlyArray<DeltaEntry> {
-    const postProcessFn = this._options.postProcessModules;
-
-    if (!postProcessFn) {
-      return modules => modules;
-    }
-
-    return entries => postProcessFn(entries, entryPoint);
   }
 }
 

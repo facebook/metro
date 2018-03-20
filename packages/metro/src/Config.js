@@ -19,7 +19,6 @@ import type {
   PostMinifyProcess,
   PostProcessBundleSourcemap,
 } from './Bundler';
-import type {PostProcessModules} from './DeltaBundler';
 import type {TransformedCode} from './JSTransformer/worker';
 import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
 import type {IncomingMessage, ServerResponse} from 'http';
@@ -130,12 +129,6 @@ export type ConfigT = {
   postMinifyProcess: PostMinifyProcess,
 
   /**
-   * An optional function that can modify the module array before the bundle is
-   * finalized.
-   */
-  postProcessModules: PostProcessModules,
-
-  /**
    * An optional function that can modify the code and source map of the bundle
    * before it is written. Applied once for the entire bundle, only works if
    * output is a plainBundle.
@@ -184,7 +177,6 @@ const DEFAULT = ({
   getPolyfills: () => [],
   getUseGlobalHotkey: () => true,
   postMinifyProcess: x => x,
-  postProcessModules: modules => modules,
   postProcessBundleSourcemap: ({code, map, outFileName}) => ({code, map}),
   getModulesRunBeforeMainModule: () => [],
   getWorkerPath: () => null,

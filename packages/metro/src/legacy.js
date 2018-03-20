@@ -188,7 +188,6 @@ function toServerOptions(options: Options): ServerOptions {
     moduleFormat: options.moduleFormat,
     platforms: options.platforms,
     polyfillModuleNames: options.polyfillModuleNames,
-    postProcessModules: options.postProcessModules,
     postMinifyProcess: options.postMinifyProcess,
     postProcessBundleSourcemap: options.postProcessBundleSourcemap,
     projectRoots: options.projectRoots,

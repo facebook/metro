@@ -14,7 +14,6 @@ import type {
   PostMinifyProcess,
   PostProcessBundleSourcemap,
 } from '../Bundler';
-import type {PostProcessModules} from '../DeltaBundler';
 import type {
   CustomTransformOptions,
   TransformedCode,
@@ -100,7 +99,6 @@ export type Options = {|
   moduleFormat?: string,
   platforms?: Array<string>,
   polyfillModuleNames?: Array<string>,
-  postProcessModules?: PostProcessModules,
   postMinifyProcess: PostMinifyProcess,
   postProcessBundleSourcemap: PostProcessBundleSourcemap,
   projectRoots: $ReadOnlyArray<string>,

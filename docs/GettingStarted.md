@@ -92,7 +92,6 @@ Given a set of options that you would typically pass to a server, plus a set of 
 * `getUseGlobalHotkey (() => boolean)`: Method that returns whether the global hotkey should be used or not. Useful especially on Linux servers.
 * `maxWorkers (number)`: Maximum amount of workers to use when transforming and bundling. By default it uses an amount computed using the available cores of the processor (approximately 50% of them).
 * `platforms (Array<string>)`: Array of platforms supported. Currently you can pass `'ios'` and `'android'` there. This information will be used for bundle generation (both the code included and the format to be served).
-* `postProcessModules ((modules, entryPoints) => Array<Module>)`: Allows to post process the list of modules, either by adding, removing or modifying the existing ones.
 * `projectRoots (Array<string>)`: List of all directories to look for source files. When asking for a particular bundle, each of the roots will be examined to see if the requested file exists in one of these.
 * `reporter (Reporter)`: a reporter instance that will be used to report progress. Various reporters are provided with Metro Bundler,
 * `resetCache (boolean)`: Metro bundler holds an internal, persisted cache where all the transformed modules (using the provided transformer in `transformModulePath`) is stored. If the file does not change, the transformed file will be served. When passing `true` to `resetCache`, all of the cache will be thrown away.
