@@ -69,6 +69,7 @@ type ResolveSync = (path: string, opts: ?{baseDir?: string}) => string;
 type GraphInfo = {|
   graph: Graph,
   prepend: $ReadOnlyArray<DependencyEdge>,
+  lastModified: Date,
 |};
 
 function debounceAndBatch(fn, delay) {
@@ -125,6 +126,7 @@ class Server {
   _platforms: Set<string>;
   _nextBundleBuildID: number;
   _deltaBundler: DeltaBundler;
+  _graphs: Map<string, GraphInfo> = new Map();
 
   constructor(options: Options) {
     const reporter =
@@ -353,7 +355,35 @@ class Server {
     return {
       prepend,
       graph,
+      lastModified: new Date(),
     };
+  }
+
+  async _getGraphInfo(
+    options: BundleOptions,
+    {rebuild}: {rebuild: boolean},
+  ): Promise<{...GraphInfo, numModifiedFiles: number}> {
+    const id = this._optionsHash(options);
+    let graphInfo = this._graphs.get(id);
+    let numModifiedFiles = 0;
+
+    if (!graphInfo) {
+      graphInfo = await this._buildGraph(options);
+      this._graphs.set(id, graphInfo);
+      numModifiedFiles =
+        graphInfo.prepend.length + graphInfo.graph.dependencies.size;
+    } else if (rebuild) {
+      const delta = await this._deltaBundler.getDelta(graphInfo.graph, {
+        reset: false,
+      });
+      numModifiedFiles = delta.modified.size;
+
+      if (numModifiedFiles > 0) {
+        graphInfo.lastModified = new Date();
+      }
+    }
+
+    return {...graphInfo, numModifiedFiles};
   }
 
   async _minifyModule(module: DependencyEdge): Promise<DependencyEdge> {
@@ -487,6 +517,7 @@ class Server {
     // List of option parameters that won't affect the build result, so they
     // can be ignored to calculate the options hash.
     const ignoredParams = {
+      bundleType: null,
       onProgress: null,
       deltaBundleId: null,
       excludeSource: null,
@@ -649,7 +680,24 @@ class Server {
     let result;
 
     try {
-      result = await Serializers.fullBundle(this._deltaBundler, options);
+      const {
+        graph,
+        prepend,
+        lastModified,
+        numModifiedFiles,
+      } = await this._getGraphInfo(options, {rebuild: true});
+
+      result = {
+        bundle: plainJSBundle(options.entryFile, prepend, graph, {
+          createModuleId: this._opts.createModuleId,
+          dev: options.dev,
+          runBeforeMainModule: options.runBeforeMainModule,
+          runModule: options.runModule,
+          sourceMapUrl: options.sourceMapUrl,
+        }),
+        numModifiedFiles,
+        lastModified,
+      };
     } catch (error) {
       this._handleError(mres, this._optionsHash(options), error);
 
@@ -713,7 +761,13 @@ class Server {
     let sourceMap;
 
     try {
-      sourceMap = await Serializers.fullSourceMap(this._deltaBundler, options);
+      const {graph, prepend} = await this._getGraphInfo(options, {
+        rebuild: false,
+      });
+
+      sourceMap = sourceMapString(prepend, graph, {
+        excludeSource: options.excludeSource,
+      });
     } catch (error) {
       this._handleError(mres, this._optionsHash(options), error);
 

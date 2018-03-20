@@ -18,6 +18,7 @@ jest
     createWorker: jest.fn().mockReturnValue(jest.fn()),
   }))
   .mock('../../Bundler')
+  .mock('../../DeltaBundler')
   .mock('../../Assets')
   .mock('../../lib/getPrependedScripts')
   .mock('../../node-haste/DependencyGraph')
@@ -34,7 +35,8 @@ describe('processRequest', () => {
   let symbolicate;
   let Serializers;
   let DeltaBundler;
-  const lastModified = new Date();
+
+  const NativeDate = global.Date;
 
   beforeEach(() => {
     jest.useFakeTimers();
@@ -84,42 +86,58 @@ describe('processRequest', () => {
       ),
     );
 
-  const invalidatorFunc = jest.fn();
   let requestHandler;
 
   beforeEach(() => {
-    DeltaBundler.prototype.buildGraph = jest.fn().mockReturnValue(
+    global.Date = NativeDate;
+
+    DeltaBundler.prototype.buildGraph.mockReturnValue(
       Promise.resolve({
-        entryPoints: [''],
-        dependencies: new Map(),
+        entryPoints: ['/root/mybundle.js'],
+        dependencies: new Map([
+          [
+            '/root/mybundle.js',
+            {
+              path: '/root/mybundle.js',
+              dependencies: new Map([['foo', '/root/foo.js']]),
+              output: {
+                code: '__d(function() {entry();});',
+                map: [],
+                source: 'code-mybundle',
+              },
+            },
+          ],
+          [
+            '/root/foo.js',
+            {
+              path: '/root/foo.js',
+              dependencies: new Map(),
+              output: {
+                code: '__d(function() {foo();});',
+                map: [],
+                source: 'code-foo',
+              },
+            },
+          ],
+        ]),
       }),
     );
 
-    getPrependedScripts.mockReturnValue(Promise.resolve([]));
-
-    Serializers.fullBundle.mockReturnValue(
-      Promise.resolve({
-        bundle: 'this is the source',
-        numModifiedFiles: 38,
-        lastModified,
-      }),
+    getPrependedScripts.mockReturnValue(
+      Promise.resolve([
+        {
+          path: 'require-js',
+          dependencies: new Map(),
+          output: {
+            code: 'function () {require();}',
+            map: [],
+            type: 'script',
+            source: 'code-require',
+          },
+        },
+      ]),
     );
 
-    Serializers.fullSourceMap.mockReturnValue(
-      Promise.resolve('this is the source map'),
-    );
-
-    Bundler.prototype.bundle = jest.fn(() =>
-      Promise.resolve({
-        getModules: () => [],
-        getSource: () => 'this is the source',
-        getSourceMap: () => ({version: 3}),
-        getSourceMapString: () => 'this is the source map',
-        getEtag: () => 'this is an etag',
-      }),
-    );
-
-    Bundler.prototype.invalidateFile = invalidatorFunc;
     Bundler.prototype.getDependencyGraph = jest.fn().mockReturnValue(
       Promise.resolve({
         getHasteMap: jest.fn().mockReturnValue({on: jest.fn()}),
@@ -131,17 +149,38 @@ describe('processRequest', () => {
     requestHandler = server.processRequest.bind(server);
   });
 
-  it('returns JS bundle source on request of *.bundle', () => {
-    return makeRequest(
+  it('returns JS bundle source on request of *.bundle', async () => {
+    const response = await makeRequest(
       requestHandler,
       'mybundle.bundle?runModule=true',
       null,
-    ).then(response => expect(response.body).toEqual('this is the source'));
+    );
+
+    expect(response.body).toEqual(
+      [
+        'function () {require();}',
+        '__d(function() {entry();},0,[1],"mybundle.js");',
+        '__d(function() {foo();},1,[],"foo.js");',
+        'require(0);',
+        '//# sourceMappingURL=http://localhost:8081/mybundle.map?runModule=true',
+      ].join('\n'),
+    );
   });
 
-  it('returns JS bundle source on request of *.bundle (compat)', () => {
-    return makeRequest(requestHandler, 'mybundle.runModule.bundle').then(
-      response => expect(response.body).toEqual('this is the source'),
+  it('returns JS bundle without the initial require() call', async () => {
+    const response = await makeRequest(
+      requestHandler,
+      'mybundle.bundle?runModule=false',
+      null,
+    );
+
+    expect(response.body).toEqual(
+      [
+        'function () {require();}',
+        '__d(function() {entry();},0,[1],"mybundle.js");',
+        '__d(function() {foo();},1,[],"foo.js");',
+        '//# sourceMappingURL=http://localhost:8081/mybundle.map?runModule=false',
+      ].join('\n'),
     );
   });
 
@@ -153,12 +192,13 @@ describe('processRequest', () => {
     );
   });
 
-  it('returns build info headers on request of *.bundle', () => {
-    return makeRequest(requestHandler, 'mybundle.bundle?runModule=true').then(
-      response => {
-        expect(response.getHeader('X-Metro-Files-Changed-Count')).toEqual('38');
-      },
+  it('returns build info headers on request of *.bundle', async () => {
+    const response = await makeRequest(
+      requestHandler,
+      'mybundle.bundle?runModule=true',
     );
+
+    expect(response.getHeader('X-Metro-Files-Changed-Count')).toEqual('3');
   });
 
   it('returns Content-Length header on request of *.bundle', () => {
@@ -171,47 +211,133 @@ describe('processRequest', () => {
     );
   });
 
-  it('returns 304 on request of *.bundle when if-modified-since equals Last-Modified', () => {
+  it('returns 304 on request of *.bundle when if-modified-since equals Last-Modified', async () => {
+    const response = await makeRequest(
+      requestHandler,
+      'mybundle.bundle?runModule=true',
+    );
+    const lastModified = response.headers['Last-Modified'];
+
+    DeltaBundler.prototype.getDelta.mockReturnValue(
+      Promise.resolve({
+        modified: new Map(),
+        deleted: new Set(),
+        reset: false,
+      }),
+    );
+
+    global.Date = class {
+      constructor() {
+        return new NativeDate('2017-07-07T00:10:20.000Z');
+      }
+      now() {
+        return NativeDate.now();
+      }
+    };
+
     return makeRequest(requestHandler, 'mybundle.bundle?runModule=true', {
-      headers: {'if-modified-since': lastModified.toUTCString()},
+      headers: {'if-modified-since': lastModified},
     }).then(response => {
       expect(response.statusCode).toEqual(304);
     });
   });
 
-  it('returns sourcemap on request of *.map', () => {
-    return makeRequest(requestHandler, 'mybundle.map?runModule=true').then(
-      response => expect(response.body).toEqual('this is the source map'),
+  it('returns 200 on request of *.bundle when something changes (ignoring if-modified-since headers)', async () => {
+    const response = await makeRequest(
+      requestHandler,
+      'mybundle.bundle?runModule=true',
     );
+    const lastModified = response.headers['Last-Modified'];
+
+    DeltaBundler.prototype.getDelta.mockReturnValue(
+      Promise.resolve({
+        modified: new Map([
+          [0, '__d(function() {entry();},0,[1],"mybundle.js");'],
+        ]),
+        deleted: new Set(),
+        reset: false,
+      }),
+    );
+
+    global.Date = class {
+      constructor() {
+        return new NativeDate('2017-07-07T00:10:20.000Z');
+      }
+      now() {
+        return NativeDate.now();
+      }
+    };
+
+    return makeRequest(requestHandler, 'mybundle.bundle?runModule=true', {
+      headers: {'if-modified-since': lastModified},
+    }).then(response => {
+      expect(response.statusCode).toEqual(200);
+      expect(response.getHeader('X-Metro-Files-Changed-Count')).toEqual('1');
+    });
+  });
+
+  it('returns sourcemap on request of *.map', async () => {
+    const response = await makeRequest(requestHandler, 'mybundle.map');
+
+    expect(JSON.parse(response.body)).toEqual({
+      version: 3,
+      sources: ['require-js', '/root/mybundle.js', '/root/foo.js'],
+      sourcesContent: ['code-require', 'code-mybundle', 'code-foo'],
+      names: [],
+      mappings: '',
+    });
+  });
+
+  it('does not rebuild the graph when requesting the sourcemaps after having requested the same bundle', async () => {
+    expect(
+      (await makeRequest(requestHandler, 'mybundle.bundle?platform=ios'))
+        .statusCode,
+    ).toBe(200);
+
+    DeltaBundler.prototype.buildGraph.mockClear();
+    DeltaBundler.prototype.getDelta.mockClear();
+
+    expect(
+      (await makeRequest(requestHandler, 'mybundle.map?platform=ios'))
+        .statusCode,
+    ).toBe(200);
+
+    expect(DeltaBundler.prototype.buildGraph.mock.calls.length).toBe(0);
+    expect(DeltaBundler.prototype.getDelta.mock.calls.length).toBe(0);
+  });
+
+  it('does rebuild the graph when requesting the sourcemaps if the bundle has not been built yet', async () => {
+    expect(
+      (await makeRequest(requestHandler, 'mybundle.bundle?platform=ios'))
+        .statusCode,
+    ).toBe(200);
+
+    DeltaBundler.prototype.buildGraph.mockClear();
+    DeltaBundler.prototype.getDelta.mockClear();
+
+    // request the map of a different bundle
+    expect(
+      (await makeRequest(requestHandler, 'mybundle.map?platform=android'))
+        .statusCode,
+    ).toBe(200);
+
+    expect(DeltaBundler.prototype.buildGraph.mock.calls.length).toBe(1);
   });
 
   it('works with .ios.js extension', () => {
     return makeRequest(requestHandler, 'index.ios.includeRequire.bundle').then(
       response => {
-        expect(response.body).toEqual('this is the source');
-        expect(Serializers.fullBundle).toBeCalledWith(
-          expect.any(DeltaBundler),
-          {
-            assetPlugins: [],
-            bundleType: 'bundle',
-            customTransformOptions: {},
-            dev: true,
-            entryFile: '/root/index.ios.js',
-            entryModuleOnly: false,
-            excludeSource: false,
-            hot: true,
-            inlineSourceMap: false,
-            isolateModuleIDs: false,
-            minify: false,
-            onProgress: jasmine.any(Function),
-            platform: null,
-            resolutionResponse: null,
-            runBeforeMainModule: ['InitializeCore'],
-            runModule: true,
-            sourceMapUrl: 'http://localhost:8081/index.ios.includeRequire.map',
-            unbundle: false,
-          },
-        );
+        expect(DeltaBundler.prototype.buildGraph).toBeCalledWith({
+          assetPlugins: [],
+          customTransformOptions: {},
+          dev: true,
+          entryPoints: ['/root/index.ios.js'],
+          hot: true,
+          minify: false,
+          onProgress: jasmine.any(Function),
+          platform: null,
+          type: 'module',
+        });
       },
     );
   });
@@ -219,30 +345,17 @@ describe('processRequest', () => {
   it('passes in the platform param', function() {
     return makeRequest(requestHandler, 'index.bundle?platform=ios').then(
       function(response) {
-        expect(response.body).toEqual('this is the source');
-        expect(Serializers.fullBundle).toBeCalledWith(
-          expect.any(DeltaBundler),
-          {
-            assetPlugins: [],
-            bundleType: 'bundle',
-            customTransformOptions: {},
-            dev: true,
-            entryFile: '/root/index.js',
-            entryModuleOnly: false,
-            excludeSource: false,
-            hot: true,
-            inlineSourceMap: false,
-            isolateModuleIDs: false,
-            minify: false,
-            onProgress: jasmine.any(Function),
-            platform: 'ios',
-            resolutionResponse: null,
-            runBeforeMainModule: ['InitializeCore'],
-            runModule: true,
-            sourceMapUrl: 'http://localhost:8081/index.map?platform=ios',
-            unbundle: false,
-          },
-        );
+        expect(DeltaBundler.prototype.buildGraph).toBeCalledWith({
+          assetPlugins: [],
+          customTransformOptions: {},
+          dev: true,
+          entryPoints: ['/root/index.js'],
+          hot: true,
+          minify: false,
+          onProgress: jasmine.any(Function),
+          platform: 'ios',
+          type: 'module',
+        });
       },
     );
   });
@@ -252,27 +365,16 @@ describe('processRequest', () => {
       requestHandler,
       'index.bundle?assetPlugin=assetPlugin1&assetPlugin=assetPlugin2',
     ).then(function(response) {
-      expect(response.body).toEqual('this is the source');
-      expect(Serializers.fullBundle).toBeCalledWith(expect.any(DeltaBundler), {
+      expect(DeltaBundler.prototype.buildGraph).toBeCalledWith({
         assetPlugins: ['assetPlugin1', 'assetPlugin2'],
-        bundleType: 'bundle',
         customTransformOptions: {},
         dev: true,
-        entryFile: '/root/index.js',
-        entryModuleOnly: false,
-        excludeSource: false,
+        entryPoints: ['/root/index.js'],
         hot: true,
-        inlineSourceMap: false,
-        isolateModuleIDs: false,
         minify: false,
         onProgress: jasmine.any(Function),
         platform: null,
-        resolutionResponse: null,
-        runBeforeMainModule: ['InitializeCore'],
-        runModule: true,
-        sourceMapUrl:
-          'http://localhost:8081/index.map?assetPlugin=assetPlugin1&assetPlugin=assetPlugin2',
-        unbundle: false,
+        type: 'module',
       });
     });
   });

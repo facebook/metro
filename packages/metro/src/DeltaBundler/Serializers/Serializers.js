@@ -71,17 +71,6 @@ async function deltaBundle(
   };
 }
 
-async function fullSourceMap(
-  deltaBundler: DeltaBundler,
-  options: BundleOptions,
-): Promise<string> {
-  const {modules} = await _getAllModules(deltaBundler, options);
-
-  return fromRawMappings(modules).toString(undefined, {
-    excludeSource: options.excludeSource,
-  });
-}
-
 async function fullSourceMapObject(
   deltaBundler: DeltaBundler,
   options: BundleOptions,
@@ -91,27 +80,6 @@ async function fullSourceMapObject(
   return fromRawMappings(modules).toMap(undefined, {
     excludeSource: options.excludeSource,
   });
-}
-
-/**
- * Returns the full JS bundle, which can be directly parsed by a JS interpreter
- */
-async function fullBundle(
-  deltaBundler: DeltaBundler,
-  options: BundleOptions,
-): Promise<{bundle: string, numModifiedFiles: number, lastModified: Date}> {
-  const {modules, numModifiedFiles, lastModified} = await _getAllModules(
-    deltaBundler,
-    options,
-  );
-
-  const code = modules.map(m => m.code);
-
-  return {
-    bundle: code.join('\n'),
-    lastModified,
-    numModifiedFiles,
-  };
 }
 
 async function _getAllModules(
@@ -252,8 +220,6 @@ async function _build(
 
 module.exports = {
   deltaBundle,
-  fullBundle,
-  fullSourceMap,
   fullSourceMapObject,
   getRamBundleInfo,
 };

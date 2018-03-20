@@ -20,16 +20,14 @@ function fullSourceMap(
   graph: Graph,
   options: {|+excludeSource: boolean|},
 ): string {
-  const modules = pre.concat(...graph.dependencies.values());
-
-  const modulesWithMaps = modules.map(module => {
+  const modules = [...pre, ...graph.dependencies.values()].map(module => {
     return {
       ...module.output,
       path: module.path,
     };
   });
 
-  return fromRawMappings(modulesWithMaps).toString(undefined, {
+  return fromRawMappings(modules).toString(undefined, {
     excludeSource: options.excludeSource,
   });
 }

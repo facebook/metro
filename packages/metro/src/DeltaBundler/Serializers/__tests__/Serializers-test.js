@@ -86,61 +86,6 @@ describe('Serializers', () => {
     ).toMatchSnapshot();
   });
 
-  it('should build the full JS bundle', async () => {
-    expect(
-      await Serializers.fullBundle(deltaBundler, {
-        sourceMapUrl: 'http://localhost:8081/myBundle.js',
-      }),
-    ).toMatchSnapshot();
-
-    getDelta.mockReturnValueOnce(
-      Promise.resolve({
-        id: '1234',
-        delta: new Map([[3, {code: 'modified module;'}], [4, null]]),
-        pre: new Map([[5, {code: 'more pre;'}]]),
-        post: new Map([[6, {code: 'bananas;'}], [7, {code: 'apples;'}]]),
-        inverseDependencies: [],
-      }),
-    );
-    setCurrentTime(CURRENT_TIME + 5000);
-
-    expect(
-      await Serializers.fullBundle(deltaBundler, {
-        sourceMapUrl: 'http://localhost:8081/myBundle.js',
-      }),
-    ).toMatchSnapshot();
-  });
-
-  it('should pass the sourcemapURL param to the transformer', async () => {
-    await Serializers.fullBundle(deltaBundler, {
-      sourceMapUrl: 'http://localhost:8081/myBundle.js',
-    });
-
-    expect(deltaBundler.getDeltaTransformer.mock.calls[0][1]).toEqual({
-      deltaBundleId: '1234',
-      sourceMapUrl: 'http://localhost:8081/myBundle.js',
-    });
-  });
-
-  // This test actually does not test the sourcemaps generation logic, which
-  // is already tested in the source-map file.
-  it('should build the full Source Maps', async () => {
-    expect(await Serializers.fullSourceMap(deltaBundler, {})).toMatchSnapshot();
-
-    getDelta.mockReturnValueOnce(
-      Promise.resolve({
-        id: '1234',
-        delta: new Map([[3, {code: 'modified module;'}], [4, null]]),
-        pre: new Map([[5, {code: 'more pre;'}]]),
-        post: new Map([[6, {code: 'bananas;'}], [7, {code: 'apples;'}]]),
-        inverseDependencies: [],
-      }),
-    );
-    setCurrentTime(CURRENT_TIME + 5000);
-
-    expect(await Serializers.fullSourceMap(deltaBundler, {})).toMatchSnapshot();
-  });
-
   it('should return the RAM bundle info', async () => {
     expect(
       await Serializers.getRamBundleInfo(deltaBundler, {}),
