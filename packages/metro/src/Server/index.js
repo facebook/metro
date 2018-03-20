@@ -131,8 +131,8 @@ class Server {
   _platforms: Set<string>;
   _nextBundleBuildID: number;
   _deltaBundler: DeltaBundler;
-  _graphs: Map<string, GraphInfo> = new Map();
-  _deltaGraphs: Map<string, GraphInfo> = new Map();
+  _graphs: Map<string, Promise<GraphInfo>> = new Map();
+  _deltaGraphs: Map<string, Promise<GraphInfo>> = new Map();
 
   constructor(options: Options) {
     const reporter =
@@ -380,19 +380,26 @@ class Server {
     {rebuild}: {rebuild: boolean},
   ): Promise<{...GraphInfo, numModifiedFiles: number}> {
     const id = this._optionsHash(options);
-    let graphInfo = this._graphs.get(id);
+    let graphPromise = this._graphs.get(id);
+    let graphInfo: GraphInfo;
     let numModifiedFiles = 0;
 
-    if (!graphInfo) {
-      graphInfo = await this._buildGraph(options);
-      this._graphs.set(id, graphInfo);
+    if (!graphPromise) {
+      graphPromise = this._buildGraph(options);
+      this._graphs.set(id, graphPromise);
+
+      graphInfo = await graphPromise;
       numModifiedFiles =
         graphInfo.prepend.length + graphInfo.graph.dependencies.size;
-    } else if (rebuild) {
-      const delta = await this._deltaBundler.getDelta(graphInfo.graph, {
-        reset: false,
-      });
-      numModifiedFiles = delta.modified.size;
+    } else {
+      graphInfo = await graphPromise;
+
+      if (rebuild) {
+        const delta = await this._deltaBundler.getDelta(graphInfo.graph, {
+          reset: false,
+        });
+        numModifiedFiles = delta.modified.size;
+      }
 
       if (numModifiedFiles > 0) {
         graphInfo.lastModified = new Date();
@@ -406,12 +413,15 @@ class Server {
     options: DeltaOptions,
   ): Promise<{...GraphInfo, delta: Delta}> {
     const id = this._optionsHash(options);
-    let graphInfo = this._deltaGraphs.get(id);
+    let graphPromise = this._deltaGraphs.get(id);
+    let graphInfo;
 
     let delta;
 
-    if (!graphInfo) {
-      graphInfo = await this._buildGraph(options);
+    if (!graphPromise) {
+      graphPromise = this._buildGraph(options);
+      this._deltaGraphs.set(id, graphPromise);
+      graphInfo = await graphPromise;
 
       delta = {
         modified: graphInfo.graph.dependencies,
@@ -419,6 +429,8 @@ class Server {
         reset: true,
       };
     } else {
+      graphInfo = await graphPromise;
+
       delta = await this._deltaBundler.getDelta(graphInfo.graph, {
         reset: graphInfo.sequenceId !== options.deltaBundleId,
       });
@@ -429,9 +441,9 @@ class Server {
         ...graphInfo,
         sequenceId: crypto.randomBytes(8).toString('hex'),
       };
-    }
 
-    this._deltaGraphs.set(id, graphInfo);
+      this._deltaGraphs.set(id, graphInfo);
+    }
 
     return {
       ...graphInfo,

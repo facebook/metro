@@ -32,6 +32,7 @@ describe('processRequest', () => {
   let Bundler;
   let Server;
   let crypto;
+  let dependencies;
   let getAsset;
   let getPrependedScripts;
   let symbolicate;
@@ -91,35 +92,37 @@ describe('processRequest', () => {
   let requestHandler;
 
   beforeEach(() => {
+    dependencies = new Map([
+      [
+        '/root/mybundle.js',
+        {
+          path: '/root/mybundle.js',
+          dependencies: new Map([['foo', '/root/foo.js']]),
+          output: {
+            code: '__d(function() {entry();});',
+            map: [],
+            source: 'code-mybundle',
+          },
+        },
+      ],
+      [
+        '/root/foo.js',
+        {
+          path: '/root/foo.js',
+          dependencies: new Map(),
+          output: {
+            code: '__d(function() {foo();});',
+            map: [],
+            source: 'code-foo',
+          },
+        },
+      ],
+    ]);
+
     DeltaBundler.prototype.buildGraph.mockReturnValue(
       Promise.resolve({
         entryPoints: ['/root/mybundle.js'],
-        dependencies: new Map([
-          [
-            '/root/mybundle.js',
-            {
-              path: '/root/mybundle.js',
-              dependencies: new Map([['foo', '/root/foo.js']]),
-              output: {
-                code: '__d(function() {entry();});',
-                map: [],
-                source: 'code-mybundle',
-              },
-            },
-          ],
-          [
-            '/root/foo.js',
-            {
-              path: '/root/foo.js',
-              dependencies: new Map(),
-              output: {
-                code: '__d(function() {foo();});',
-                map: [],
-                source: 'code-foo',
-              },
-            },
-          ],
-        ]),
+        dependencies,
       }),
     );
 
@@ -136,6 +139,14 @@ describe('processRequest', () => {
           },
         },
       ]),
+    );
+
+    DeltaBundler.prototype.getDelta.mockImplementation((options, {reset}) =>
+      Promise.resolve({
+        modified: reset ? dependencies : new Map(),
+        deleted: new Set(),
+        reset,
+      }),
     );
 
     Bundler.prototype.getDependencyGraph = jest.fn().mockReturnValue(
@@ -220,14 +231,6 @@ describe('processRequest', () => {
       'mybundle.bundle?runModule=true',
     );
     const lastModified = response.headers['Last-Modified'];
-
-    DeltaBundler.prototype.getDelta.mockReturnValue(
-      Promise.resolve({
-        modified: new Map(),
-        deleted: new Set(),
-        reset: false,
-      }),
-    );
 
     global.Date = class {
       constructor() {
@@ -382,6 +385,31 @@ describe('processRequest', () => {
     });
   });
 
+  it('does not rebuild the bundle when making concurrent requests', async () => {
+    let resolveBuildGraph;
+
+    // force the buildGraph
+    DeltaBundler.prototype.buildGraph.mockImplementation(async () => {
+      return new Promise(res => (resolveBuildGraph = res));
+    });
+
+    const promise1 = makeRequest(requestHandler, 'index.bundle');
+    const promise2 = makeRequest(requestHandler, 'index.bundle');
+
+    resolveBuildGraph({
+      entryPoints: ['/root/mybundle.js'],
+      dependencies,
+    });
+
+    const [result1, result2] = await Promise.all([promise1, promise2]);
+    expect(result1.body).toEqual(result2.body);
+    expect(result1.getHeader('X-Metro-Files-Changed-Count')).toEqual('3');
+    expect(result2.getHeader('X-Metro-Files-Changed-Count')).toEqual('0');
+
+    expect(DeltaBundler.prototype.buildGraph.mock.calls.length).toBe(1);
+    expect(DeltaBundler.prototype.getDelta.mock.calls.length).toBe(1);
+  });
+
   describe('Generate delta bundle endpoint', () => {
     it('should generate the initial delta correctly', async () => {
       const response = await makeRequest(
@@ -508,6 +536,36 @@ describe('processRequest', () => {
           });
         },
       );
+    });
+
+    it('does return the same initial delta when making concurrent requests', async () => {
+      let resolveBuildGraph;
+
+      // force the buildGraph
+      DeltaBundler.prototype.buildGraph.mockImplementation(async () => {
+        return new Promise(res => (resolveBuildGraph = res));
+      });
+
+      const promise1 = makeRequest(requestHandler, 'index.delta');
+      const promise2 = makeRequest(requestHandler, 'index.delta');
+
+      resolveBuildGraph({
+        entryPoints: ['/root/mybundle.js'],
+        dependencies,
+      });
+
+      const [result1, result2] = await Promise.all([promise1, promise2]);
+      const {id: id1, ...delta1} = JSON.parse(result1.body);
+      const {id: id2, ...delta2} = JSON.parse(result2.body);
+      expect(delta1).toEqual(delta2);
+      expect(id1).toEqual('XXXXX-0');
+      expect(id2).toEqual('XXXXX-1');
+
+      expect(DeltaBundler.prototype.buildGraph.mock.calls.length).toBe(1);
+      expect(DeltaBundler.prototype.getDelta.mock.calls.length).toBe(1);
+      expect(DeltaBundler.prototype.getDelta.mock.calls[0][1]).toEqual({
+        reset: true,
+      });
     });
   });
 
