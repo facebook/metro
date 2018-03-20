@@ -27,6 +27,9 @@ const ASSET_REGISTRY_PATH = path.resolve(
   '../basic_bundle/AssetRegistry',
 );
 
+const getRunModuleStatement = moduleId =>
+  `require(${JSON.stringify(moduleId)});`;
+
 describe('basic_bundle', () => {
   const absPathRe = new RegExp(INPUT_PATH, 'g');
   const polyfill1 = path.join(INPUT_PATH, 'polyfill-1.js');
@@ -96,6 +99,7 @@ describe('basic_bundle', () => {
         dynamicDepsInPackages: 'reject',
         getModulesRunBeforeMainModule: () => ['InitializeCore'],
         getPolyfills: () => [polyfill1, polyfill2],
+        getRunModuleStatement,
         projectRoots: [INPUT_PATH, POLYFILLS_PATH],
         transformCache: Metro.TransformCaching.none(),
         transformModulePath: require.resolve('../../transformer'),
@@ -120,6 +124,7 @@ describe('basic_bundle', () => {
         dynamicDepsInPackages: 'reject',
         getModulesRunBeforeMainModule: () => ['InitializeCore'],
         getPolyfills: () => [],
+        getRunModuleStatement,
         projectRoots: [INPUT_PATH, POLYFILLS_PATH],
         transformCache: Metro.TransformCaching.none(),
         transformModulePath: require.resolve('../../transformer'),

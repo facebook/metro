@@ -180,6 +180,7 @@ function toServerOptions(options: Options): ServerOptions {
     extraNodeModules: options.extraNodeModules,
     getModulesRunBeforeMainModule: options.getModulesRunBeforeMainModule,
     getPolyfills: options.getPolyfills,
+    getRunModuleStatement: options.getRunModuleStatement,
     getTransformOptions: options.getTransformOptions,
     globalTransformCache: options.globalTransformCache,
     hasteImplModulePath: options.hasteImplModulePath,

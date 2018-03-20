@@ -32,6 +32,9 @@ const barModule = {
   output: {code: '__d(function() {/* code for bar */});'},
 };
 
+const getRunModuleStatement = moduleId =>
+  `require(${JSON.stringify(moduleId)});`;
+
 it('should serialize a very simple bundle', () => {
   expect(
     plainJSBundle(
@@ -44,6 +47,7 @@ it('should serialize a very simple bundle', () => {
       {
         createModuleId: path => path,
         dev: true,
+        getRunModuleStatement,
         runBeforeMainModule: [],
         runModule: true,
         sourceMapUrl: 'http://localhost/bundle.map',
@@ -72,6 +76,7 @@ it('should add runBeforeMainModule statements if found in the graph', () => {
       {
         createModuleId: path => path,
         dev: true,
+        getRunModuleStatement,
         runBeforeMainModule: ['bar', 'non-existant'],
         runModule: true,
         sourceMapUrl: 'http://localhost/bundle.map',
@@ -101,6 +106,7 @@ it('should handle numeric module ids', () => {
       {
         createModuleId: createModuleIdFactory(),
         dev: true,
+        getRunModuleStatement,
         runBeforeMainModule: ['bar', 'non-existant'],
         runModule: true,
         sourceMapUrl: 'http://localhost/bundle.map',
@@ -114,6 +120,35 @@ it('should handle numeric module ids', () => {
       'require(1);',
       'require(0);',
       '//# sourceMappingURL=http://localhost/bundle.map',
+    ].join('\n'),
+  );
+});
+
+it('outputs custom runModule statements', () => {
+  expect(
+    plainJSBundle(
+      'foo',
+      [polyfill],
+      {
+        dependencies: new Map([['foo', fooModule], ['bar', barModule]]),
+        entryPoints: ['foo'],
+      },
+      {
+        createModuleId: path => path,
+        dev: true,
+        getRunModuleStatement: moduleId =>
+          `export default require(${JSON.stringify(moduleId)}).default;`,
+        runBeforeMainModule: ['bar'],
+        runModule: true,
+      },
+    ),
+  ).toEqual(
+    [
+      '__d(function() {/* code for polyfill */});',
+      '__d(function() {/* code for foo */},"foo",["bar"],"foo");',
+      '__d(function() {/* code for bar */},"bar",[],"bar");',
+      'export default require("bar").default;',
+      'export default require("foo").default;',
     ].join('\n'),
   );
 });

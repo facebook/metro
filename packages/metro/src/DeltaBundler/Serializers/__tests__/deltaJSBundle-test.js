@@ -38,6 +38,7 @@ const graph = {
 const options = {
   createModuleId: createModuleIdFactory(),
   dev: true,
+  getRunModuleStatement: moduleId => `require(${JSON.stringify(moduleId)});`,
   runBeforeMainModule: [],
   runModule: true,
   sourceMapUrl: 'http://localhost/bundle.map',

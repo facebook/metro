@@ -18,8 +18,9 @@ import type {Delta, Graph} from '../';
 import type {DependencyEdge} from '../traverseDependencies';
 
 type Options = {|
-  createModuleId: string => number | string,
+  +createModuleId: string => number | string,
   +dev: boolean,
+  +getRunModuleStatement: (number | string) => string,
   +runBeforeMainModule: $ReadOnlyArray<string>,
   +runModule: boolean,
   +sourceMapUrl: ?string,

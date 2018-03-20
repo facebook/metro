@@ -95,6 +95,12 @@ export type ConfigT = {
   getProvidesModuleNodeModules?: () => Array<string>,
 
   /**
+   * Specify the format of the initial require statements that are appended
+   * at the end of the bundle. By default is `require(${moduleId});`
+   */
+  getRunModuleStatement: (number | string) => string,
+
+  /**
    * Specify any additional source file extensions to be used by the packager.
    * For example, if you want to include a .ts file, you would return ['ts']
    * from here and use `require('./module/example')` to require the file with
@@ -171,6 +177,8 @@ const DEFAULT = ({
   // node_modules/metro/
   getProjectRoots: () => [path.resolve(__dirname, '../..')],
   getProvidesModuleNodeModules: () => providesModuleNodeModules.slice(),
+  getRunModuleStatement: (moduleId: number | string) =>
+    `require(${JSON.stringify(moduleId)});`,
   getSourceExts: () => [],
   getTransformModulePath: () => require.resolve('./transformer.js'),
   getTransformOptions: async () => ({}),

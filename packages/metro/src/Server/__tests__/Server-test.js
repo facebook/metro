@@ -59,6 +59,7 @@ describe('processRequest', () => {
     projectRoots: ['/root'],
     blacklistRE: null,
     cacheVersion: null,
+    getRunModuleStatement: moduleId => `require(${JSON.stringify(moduleId)});`,
     polyfillModuleNames: null,
     reporter: require('../../lib/reporting').nullReporter,
     getModulesRunBeforeMainModule: () => ['InitializeCore'],

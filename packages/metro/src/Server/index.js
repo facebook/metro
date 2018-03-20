@@ -109,6 +109,7 @@ class Server {
     reporter: Reporter,
     resetCache: boolean,
     +getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
+    +getRunModuleStatement: (number | string) => string,
     silent: boolean,
     +sourceExts: Array<string>,
     +transformCache: TransformCache,
@@ -158,6 +159,7 @@ class Server {
       extraNodeModules: options.extraNodeModules || {},
       getModulesRunBeforeMainModule: options.getModulesRunBeforeMainModule,
       getPolyfills: options.getPolyfills,
+      getRunModuleStatement: options.getRunModuleStatement,
       getTransformOptions: options.getTransformOptions,
       globalTransformCache: options.globalTransformCache,
       hasteImplModulePath: options.hasteImplModulePath,
@@ -197,6 +199,7 @@ class Server {
     const {
       createModuleId,
       getModulesRunBeforeMainModule,
+      getRunModuleStatement,
       silent,
       ...bundlerOptionsFromServerOptions
     } = this._opts;
@@ -249,6 +252,7 @@ class Server {
     return {
       code: plainJSBundle(entryPoint, prepend, graph, {
         createModuleId: this._opts.createModuleId,
+        getRunModuleStatement: this._opts.getRunModuleStatement,
         dev: options.dev,
         runBeforeMainModule: options.runBeforeMainModule,
         runModule: options.runModule,
@@ -291,6 +295,7 @@ class Server {
       createModuleId: this._opts.createModuleId,
       dev: options.dev,
       excludeSource: options.excludeSource,
+      getRunModuleStatement: this._opts.getRunModuleStatement,
       getTransformOptions: this._opts.getTransformOptions,
       platform: options.platform,
       runBeforeMainModule: options.runBeforeMainModule,
@@ -699,6 +704,7 @@ class Server {
           {
             createModuleId: this._opts.createModuleId,
             dev: options.dev,
+            getRunModuleStatement: this._opts.getRunModuleStatement,
             runBeforeMainModule: options.runBeforeMainModule,
             runModule: options.runModule,
             sourceMapUrl: options.sourceMapUrl,
@@ -760,6 +766,7 @@ class Server {
       result = {
         bundle: plainJSBundle(options.entryFile, prepend, graph, {
           createModuleId: this._opts.createModuleId,
+          getRunModuleStatement: this._opts.getRunModuleStatement,
           dev: options.dev,
           runBeforeMainModule: options.runBeforeMainModule,
           runModule: options.runModule,

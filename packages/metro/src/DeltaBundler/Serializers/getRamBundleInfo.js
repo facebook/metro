@@ -24,10 +24,11 @@ import type {Graph} from '../DeltaCalculator';
 import type {DependencyEdge} from '../traverseDependencies';
 
 type Options = {|
-  createModuleId: string => number,
+  +createModuleId: string => number,
   +dev: boolean,
   +excludeSource: boolean,
-  getTransformOptions: ?GetTransformOptions,
+  +getRunModuleStatement: number => string,
+  +getTransformOptions: ?GetTransformOptions,
   +platform: ?string,
   +runBeforeMainModule: $ReadOnlyArray<string>,
   +runModule: boolean,

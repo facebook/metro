@@ -13,17 +13,18 @@
 import type {Graph} from '../DeltaBundler/DeltaCalculator';
 import type {DependencyEdge} from '../DeltaBundler/traverseDependencies';
 
-type Options = {
-  +createModuleId: string => number | string,
+type Options<T: number | string> = {
+  +createModuleId: string => T,
+  +getRunModuleStatement: T => string,
   +runBeforeMainModule: $ReadOnlyArray<string>,
   +runModule: boolean,
   +sourceMapUrl: ?string,
 };
 
-function getAppendScripts(
+function getAppendScripts<T: number | string>(
   entryPoint: string,
   graph: Graph,
-  options: Options,
+  options: Options<T>,
 ): $ReadOnlyArray<DependencyEdge> {
   const output = [];
 
@@ -37,7 +38,7 @@ function getAppendScripts(
           dependencies: new Map(),
           inverseDependencies: new Set(),
           output: {
-            code: `require(${JSON.stringify(options.createModuleId(path))});`,
+            code: options.getRunModuleStatement(options.createModuleId(path)),
             source: '',
             map: [],
             type: 'script',

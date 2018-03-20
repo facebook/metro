@@ -129,6 +129,7 @@ async function runMetro({
     getPolyfills: normalizedConfig.getPolyfills,
     getModulesRunBeforeMainModule:
       normalizedConfig.getModulesRunBeforeMainModule,
+    getRunModuleStatement: normalizedConfig.getRunModuleStatement,
     getTransformOptions: normalizedConfig.getTransformOptions,
     globalTransformCache,
     hasteImplModulePath: normalizedConfig.hasteImplModulePath,
