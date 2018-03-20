@@ -125,6 +125,29 @@ module.exports = {
 
         // Can't wrap ClassDeclarations
         const isStatement = t.isStatement(path.node);
+        const isExport = t.isExportDefaultDeclaration(path.parent);
+
+        if (isStatement && !isExport) {
+          // class decl
+          // need to work around Babel 7 detecting duplicate decls here
+
+          path.insertAfter(
+            t.expressionStatement(
+              t.assignmentExpression(
+                '=',
+                t.identifier(componentId),
+                wrapComponent(
+                  t.identifier(componentId),
+                  componentId,
+                  this.wrapperFunctionId,
+                ),
+              ),
+            ),
+          );
+
+          return;
+        }
+
         const expression = t.toExpression(path.node);
 
         // wrapperFunction("componentId")(node)
@@ -143,7 +166,7 @@ module.exports = {
           ]);
         }
 
-        if (t.isExportDefaultDeclaration(path.parent)) {
+        if (isExport) {
           path.parentPath.insertBefore(wrapped);
           path.parent.declaration = constId;
         } else {
