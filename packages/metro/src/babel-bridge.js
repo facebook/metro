@@ -132,7 +132,7 @@ function makeMakeHMRConfig7() {
     return {
       plugins: [
         [
-          require('metro-babel7-plugin-react-transform').default,
+          require('babel-plugin-react-transform').default,
           {
             transforms: [
               {
