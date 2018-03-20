@@ -51,15 +51,12 @@ export type BundleOptions = {
   +excludeSource: boolean,
   +hot: boolean,
   +inlineSourceMap: boolean,
-  +isolateModuleIDs: boolean,
   minify: boolean,
   onProgress: ?(doneCont: number, totalCount: number) => mixed,
   +platform: ?string,
-  +resolutionResponse: ?{},
   +runBeforeMainModule: Array<string>,
   +runModule: boolean,
   sourceMapUrl: ?string,
-  unbundle: boolean,
   createModuleIdFactory?: () => (path: string) => number,
 };
 
@@ -96,7 +93,6 @@ export type Options = {|
   hasteImplModulePath?: string,
   maxWorkers?: number,
   minifierPath?: string,
-  moduleFormat?: string,
   platforms?: Array<string>,
   polyfillModuleNames?: Array<string>,
   postMinifyProcess: PostMinifyProcess,

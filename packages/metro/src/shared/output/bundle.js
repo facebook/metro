@@ -27,7 +27,6 @@ function buildBundle(
     ...Server.DEFAULT_BUNDLE_OPTIONS,
     ...requestOptions,
     bundleType: 'bundle',
-    isolateModuleIDs: true,
   });
 }
 

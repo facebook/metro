@@ -100,7 +100,6 @@ class Server {
     hasteImplModulePath?: string,
     maxWorkers: number,
     minifierPath: string,
-    moduleFormat: string,
     platforms: Array<string>,
     polyfillModuleNames: Array<string>,
     postMinifyProcess: PostMinifyProcess,
@@ -167,8 +166,6 @@ class Server {
         options.minifierPath == null
           ? defaults.DEFAULT_METRO_MINIFIER_PATH
           : resolveSync(options.minifierPath, {basedir: process.cwd()}),
-      moduleFormat:
-        options.moduleFormat != null ? options.moduleFormat : 'haste',
       platforms: options.platforms || defaults.platforms,
       polyfillModuleNames: options.polyfillModuleNames || [],
       postMinifyProcess: options.postMinifyProcess,
@@ -200,7 +197,6 @@ class Server {
     const {
       createModuleId,
       getModulesRunBeforeMainModule,
-      moduleFormat,
       silent,
       ...bundlerOptionsFromServerOptions
     } = this._opts;
@@ -998,7 +994,7 @@ class Server {
     });
   }
 
-  _getOptionsFromUrl(reqUrl: string): BundleOptions & DeltaOptions {
+  _getOptionsFromUrl(reqUrl: string): DeltaOptions {
     // `true` to parse the query param as an object.
     const urlObj = nullthrows(url.parse(reqUrl, true));
     const urlQuery = nullthrows(urlObj.query);
@@ -1079,9 +1075,7 @@ class Server {
       runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(entryFile),
       runModule: this._getBoolOptionFromQuery(urlObj.query, 'runModule', true),
       inlineSourceMap: includeSource,
-      isolateModuleIDs: false,
       platform,
-      resolutionResponse: null,
       entryModuleOnly: this._getBoolOptionFromQuery(
         urlObj.query,
         'entryModuleOnly',
@@ -1089,7 +1083,6 @@ class Server {
       ),
       assetPlugins,
       onProgress: null,
-      unbundle: false,
     };
   }
 
@@ -1126,15 +1119,12 @@ class Server {
     excludeSource: false,
     hot: false,
     inlineSourceMap: false,
-    isolateModuleIDs: false,
     minify: false,
     onProgress: null,
-    resolutionResponse: null,
     runBeforeMainModule: [],
     runModule: true,
     sourceMapUrl: null,
     type: 'script',
-    unbundle: false,
   };
 }
 

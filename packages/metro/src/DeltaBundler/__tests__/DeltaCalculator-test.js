@@ -48,13 +48,11 @@ describe('DeltaCalculator', () => {
     excludeSource: false,
     hot: true,
     inlineSourceMap: true,
-    isolateModuleIDs: false,
     minify: false,
     platform: 'ios',
     runBeforeMainModule: ['core'],
     runModule: true,
     sourceMapUrl: undefined,
-    unbundle: false,
   };
 
   function createModule({path, name, isAsset, isJSON}) {
