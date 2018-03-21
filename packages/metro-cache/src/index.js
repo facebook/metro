@@ -11,7 +11,8 @@
 'use strict';
 
 const Cache = require('./Cache');
-const FileStore = require('./FileStore');
+const FileStore = require('./stores/FileStore');
+const PersistedMapStore = require('./stores/PersistedMapStore');
 
 const stableHash = require('./stableHash');
 
@@ -19,4 +20,6 @@ export type {CacheStore} from './types.flow';
 
 module.exports.Cache = Cache;
 module.exports.FileStore = FileStore;
+module.exports.PersistedMapStore = PersistedMapStore;
+
 module.exports.stableHash = stableHash;
