@@ -1,5 +1,40 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`finds React components should babel7 regression 1`] = `
+"import _react from \\"react\\";
+import _reactTransformHmrLibIndexJs from \\"react-transform-hmr/lib/index.js\\";
+const _components = {
+  Bar: {
+    displayName: \\"Bar\\",
+    isInFunction: true
+  }
+};
+
+const _reactTransformHmrLibIndexJs2 = _reactTransformHmrLibIndexJs({
+  filename: \\"unknown\\",
+  components: _components,
+  locals: [module],
+  imports: [_react]
+});
+
+function _wrapComponent(id) {
+  return function (Component) {
+    return _reactTransformHmrLibIndexJs2(Component, id);
+  };
+}
+
+class Foo {
+  f() {
+    class Bar extends React.Component {
+      render() {}
+    }
+
+    Bar = _wrapComponent(\\"Bar\\")(Bar);
+    foo(Bar);
+  }
+}"
+`;
+
 exports[`finds React components should code call expression with render method 1`] = `
 "factory({
   render() {}
@@ -71,10 +106,10 @@ function _wrapComponent(id) {
 }
 
 import React, { Component } from 'react';
-
-const Foo = _wrapComponent('Foo')(class Foo extends Component {
+class Foo extends Component {
   render() {}
-});"
+}
+Foo = _wrapComponent('Foo')(Foo);"
 `;
 
 exports[`finds React components should code class extends purecomponent with render method 1`] = `
@@ -99,10 +134,10 @@ function _wrapComponent(id) {
 }
 
 import React, { PureComponent } from 'react';
-
-const Foo = _wrapComponent('Foo')(class Foo extends PureComponent {
+class Foo extends PureComponent {
   render() {}
-});"
+}
+Foo = _wrapComponent('Foo')(Foo);"
 `;
 
 exports[`finds React components should code class extends react component 1`] = `"class Foo extends React.Component {}"`;
@@ -128,9 +163,10 @@ function _wrapComponent(id) {
   };
 }
 
-const Foo = _wrapComponent(\\"Foo\\")(class Foo extends React.Component {
+class Foo extends React.Component {
   render() {}
-});"
+}
+Foo = _wrapComponent(\\"Foo\\")(Foo);"
 `;
 
 exports[`finds React components should code class with render method 1`] = `
@@ -393,13 +429,14 @@ function _wrapComponent(id) {
   };
 }
 
-const Foo = _wrapComponent(\\"Foo\\")(class Foo extends BooComponent {
+class Foo extends BooComponent {
   render() {}
-});
-
-const Bar = _wrapComponent(\\"Bar\\")(class Bar extends CustomComponent {
+}
+Foo = _wrapComponent(\\"Foo\\")(Foo);
+class Bar extends CustomComponent {
   render() {}
-});"
+}
+Bar = _wrapComponent(\\"Bar\\")(Bar);"
 `;
 
 exports[`finds React components should options multiple transforms 1`] = `"class Foo extends React.Component {}"`;
@@ -433,9 +470,10 @@ function _wrapComponent(id) {
   };
 }
 
-const Foo = _wrapComponent(\\"Foo\\")(class Foo extends React.Component {
+class Foo extends React.Component {
   render() {}
-});"
+}
+Foo = _wrapComponent(\\"Foo\\")(Foo);"
 `;
 
 exports[`finds React components should options with imports 1`] = `"class Foo extends React.Component {}"`;
@@ -463,9 +501,10 @@ function _wrapComponent(id) {
   };
 }
 
-const Foo = _wrapComponent(\\"Foo\\")(class Foo extends React.Component {
+class Foo extends React.Component {
   render() {}
-});"
+}
+Foo = _wrapComponent(\\"Foo\\")(Foo);"
 `;
 
 exports[`finds React components should options with locals 1`] = `"class Foo extends React.Component {}"`;
@@ -491,7 +530,8 @@ function _wrapComponent(id) {
   };
 }
 
-const Foo = _wrapComponent(\\"Foo\\")(class Foo extends React.Component {
+class Foo extends React.Component {
   render() {}
-});"
+}
+Foo = _wrapComponent(\\"Foo\\")(Foo);"
 `;

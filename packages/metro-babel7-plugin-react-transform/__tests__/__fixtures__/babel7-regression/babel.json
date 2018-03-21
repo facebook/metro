@@ -1,0 +1,7 @@
+{
+  "transforms": [{
+    "transform": "react-transform-hmr/lib/index.js",
+    "imports": ["react"],
+    "locals": ["module"]
+  }]
+}
