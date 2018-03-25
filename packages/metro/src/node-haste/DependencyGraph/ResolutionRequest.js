@@ -14,7 +14,8 @@ const path = require('path');
 
 const {AmbiguousModuleResolutionError} = require('metro-core');
 const {DuplicateHasteCandidatesError} = require('jest-haste-map').ModuleMap;
-const {formatFileCandidates, InvalidPackageError} = require('metro-resolver');
+const {InvalidPackageError} = require('metro-resolver');
+const {PackageResolutionError} = require('metro-core');
 
 import type DependencyGraphHelpers from './DependencyGraphHelpers';
 import type {Options as TransformWorkerOptions} from '../../JSTransformer/worker';
@@ -61,7 +62,6 @@ type Options<TModule, TPackage> = {|
 class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
   _immediateResolutionCache: {[key: string]: TModule, __proto__: null};
   _options: Options<TModule, TPackage>;
-  static PackageResolutionError: Class<PackageResolutionError>;
 
   constructor(options: Options<TModule, TPackage>) {
     this._options = options;
@@ -122,32 +122,5 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
 function getResolutionCacheKey(modulePath, depName) {
   return `${path.resolve(modulePath)}:${depName}`;
 }
-
-class PackageResolutionError extends Error {
-  originModulePath: string;
-  packageError: InvalidPackageError;
-  targetModuleName: string;
-
-  constructor(opts: {|
-    +originModulePath: string,
-    +packageError: InvalidPackageError,
-    +targetModuleName: string,
-  |}) {
-    const perr = opts.packageError;
-    super(
-      `While trying to resolve module \`${opts.targetModuleName}\` from file ` +
-        `\`${opts.originModulePath}\`, the package ` +
-        `\`${perr.packageJsonPath}\` was successfully found. However, ` +
-        `this package itself specifies ` +
-        `a \`main\` module field that could not be resolved (` +
-        `\`${perr.mainPrefixPath}\`. Indeed, none of these files exist:\n\n` +
-        `  * \`${formatFileCandidates(perr.fileCandidates)}\`\n` +
-        `  * \`${formatFileCandidates(perr.indexCandidates)}\``,
-    );
-    Object.assign(this, opts);
-  }
-}
-
-ResolutionRequest.PackageResolutionError = PackageResolutionError;
 
 module.exports = ResolutionRequest;

@@ -11,7 +11,9 @@
 'use strict';
 
 const AmbiguousModuleResolutionError = require('./AmbiguousModuleResolutionError');
+const PackageResolutionError = require('./PackageResolutionError');
 
 module.exports = {
   AmbiguousModuleResolutionError,
+  PackageResolutionError,
 };
