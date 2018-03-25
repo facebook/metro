@@ -15,9 +15,7 @@ const path = require('path');
 const reporting = require('./reporting');
 const throttle = require('lodash.throttle');
 
-const {
-  AmbiguousModuleResolutionError,
-} = require('../node-haste/DependencyGraph/ResolutionRequest');
+const {AmbiguousModuleResolutionError} = require('metro-core');
 const {formatBanner} = require('metro-core');
 
 import type {

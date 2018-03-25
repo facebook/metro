@@ -12,6 +12,7 @@
 
 const path = require('path');
 
+const {AmbiguousModuleResolutionError} = require('metro-core');
 const {DuplicateHasteCandidatesError} = require('jest-haste-map').ModuleMap;
 const {formatFileCandidates, InvalidPackageError} = require('metro-resolver');
 
@@ -60,7 +61,6 @@ type Options<TModule, TPackage> = {|
 class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
   _immediateResolutionCache: {[key: string]: TModule, __proto__: null};
   _options: Options<TModule, TPackage>;
-  static AmbiguousModuleResolutionError: Class<AmbiguousModuleResolutionError>;
   static PackageResolutionError: Class<PackageResolutionError>;
 
   constructor(options: Options<TModule, TPackage>) {
@@ -123,23 +123,6 @@ function getResolutionCacheKey(modulePath, depName) {
   return `${path.resolve(modulePath)}:${depName}`;
 }
 
-class AmbiguousModuleResolutionError extends Error {
-  fromModulePath: string;
-  hasteError: DuplicateHasteCandidatesError;
-
-  constructor(
-    fromModulePath: string,
-    hasteError: DuplicateHasteCandidatesError,
-  ) {
-    super(
-      `Ambiguous module resolution from \`${fromModulePath}\`: ` +
-        hasteError.message,
-    );
-    this.fromModulePath = fromModulePath;
-    this.hasteError = hasteError;
-  }
-}
-
 class PackageResolutionError extends Error {
   originModulePath: string;
   packageError: InvalidPackageError;
@@ -165,7 +148,6 @@ class PackageResolutionError extends Error {
   }
 }
 
-ResolutionRequest.AmbiguousModuleResolutionError = AmbiguousModuleResolutionError;
 ResolutionRequest.PackageResolutionError = PackageResolutionError;
 
 module.exports = ResolutionRequest;

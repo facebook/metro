@@ -10,4 +10,8 @@
 
 'use strict';
 
-module.exports = {};
+const AmbiguousModuleResolutionError = require('./AmbiguousModuleResolutionError');
+
+module.exports = {
+  AmbiguousModuleResolutionError,
+};

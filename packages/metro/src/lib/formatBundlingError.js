@@ -15,9 +15,7 @@ const serializeError = require('serialize-error');
 const {
   UnableToResolveError,
 } = require('../node-haste/DependencyGraph/ModuleResolution');
-const {
-  AmbiguousModuleResolutionError,
-} = require('../node-haste/DependencyGraph/ResolutionRequest');
+const {AmbiguousModuleResolutionError} = require('metro-core');
 
 export type CustomError = Error & {|
   status?: number,

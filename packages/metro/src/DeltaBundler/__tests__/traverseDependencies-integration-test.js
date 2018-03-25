@@ -4916,9 +4916,7 @@ describe('traverseDependencies', function() {
           await getOrderedDependenciesAsJSON(dgraph, root + '/index.js');
           throw new Error('expected `getOrderedDependenciesAsJSON` to fail');
         } catch (error) {
-          const {
-            AmbiguousModuleResolutionError,
-          } = require('../../node-haste/DependencyGraph/ResolutionRequest');
+          const {AmbiguousModuleResolutionError} = require('metro-core');
           if (!(error instanceof AmbiguousModuleResolutionError)) {
             throw error;
           }

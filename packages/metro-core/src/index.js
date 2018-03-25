@@ -10,12 +10,14 @@
 
 'use strict';
 
+const AmbiguousModuleResolutionError = require('./errors/AmbiguousModuleResolutionError');
 const Logger = require('./Logger');
 const Terminal = require('./Terminal');
 
 const formatBanner = require('./formatBanner');
 
 module.exports = {
+  AmbiguousModuleResolutionError,
   Logger,
   Terminal,
   formatBanner,
