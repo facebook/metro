@@ -51,7 +51,7 @@ type PatchedModules = {[ModuleID]: boolean};
 type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
 type VerboseModuleNameForDev = string;
 
-global.require = require;
+global.require = metroRequire;
 global.__d = define;
 
 const modules: ModuleMap = Object.create(null);
@@ -110,7 +110,7 @@ function define(
   }
 }
 
-function require(moduleId: ModuleID | VerboseModuleNameForDev) {
+function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev) {
   if (__DEV__ && typeof moduleId === 'string') {
     const verboseName = moduleId;
     moduleId = verboseNamesToModuleIds[verboseName];
@@ -159,12 +159,12 @@ function unpackModuleId(
   const localId = moduleId & LOCAL_ID_MASK;
   return {segmentId, localId};
 }
-require.unpackModuleId = unpackModuleId;
+metroRequire.unpackModuleId = unpackModuleId;
 
 function packModuleId(value: {segmentId: number, localId: number}): ModuleID {
   return value.segmentId << (ID_MASK_SHIFT + value.localId);
 }
-require.packModuleId = packModuleId;
+metroRequire.packModuleId = packModuleId;
 
 function loadModuleImplementation(moduleId, module) {
   const nativeRequire = global.nativeRequire;
@@ -182,13 +182,13 @@ function loadModuleImplementation(moduleId, module) {
     throw moduleThrewError(moduleId, module.error);
   }
 
-  // `require` calls int  the require polyfill itself are not analyzed and
+  // `metroRequire` calls into the require polyfill itself are not analyzed and
   // replaced so that they use numeric module IDs.
-  // The systrace module will expose itself on the require function so that
+  // The systrace module will expose itself on the metroRequire function so that
   // it can be used here.
   // TODO(davidaurelio) Scan polyfills for dependencies, too (t9759686)
   if (__DEV__) {
-    var {Systrace} = require;
+    var {Systrace} = metroRequire;
   }
 
   // We must optimistically mark module as initialized before running the
@@ -211,7 +211,7 @@ function loadModuleImplementation(moduleId, module) {
     // keep args in sync with with defineModuleCode in
     // metro/src/Resolver/index.js
     // and metro/src/ModuleGraph/worker.js
-    factory(global, require, moduleObject, exports, dependencyMap);
+    factory(global, metroRequire, moduleObject, exports, dependencyMap);
 
     // avoid removing factory in DEV mode as it breaks HMR
     if (!__DEV__) {
@@ -255,9 +255,9 @@ function moduleThrewError(id, error: any) {
 }
 
 if (__DEV__) {
-  require.Systrace = {beginEvent: () => {}, endEvent: () => {}};
+  metroRequire.Systrace = {beginEvent: () => {}, endEvent: () => {}};
 
-  require.getModules = () => {
+  metroRequire.getModules = () => {
     return modules;
   };
 
@@ -358,7 +358,7 @@ if (__DEV__) {
     }
     mod.hasError = false;
     mod.isInitialized = false;
-    require(id);
+    metroRequire(id);
 
     if (hot.acceptCallback) {
       try {

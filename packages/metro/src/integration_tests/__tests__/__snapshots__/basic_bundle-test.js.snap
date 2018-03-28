@@ -5,7 +5,7 @@ exports[`basic_bundle bundles package with polyfills 1`] = `
 (function (global) {
   'use strict';
 
-  global.require = _require;
+  global.require = metroRequire;
   global.__d = define;
   var modules = Object.create(null);
 
@@ -23,7 +23,7 @@ exports[`basic_bundle bundles package with polyfills 1`] = `
     };
   }
 
-  function _require(moduleId) {
+  function metroRequire(moduleId) {
     var moduleIdReallyIsNumber = moduleId;
     var module = modules[moduleIdReallyIsNumber];
     return module && module.isInitialized ? module.exports : guardedLoadModule(moduleIdReallyIsNumber, module);
@@ -61,13 +61,13 @@ exports[`basic_bundle bundles package with polyfills 1`] = `
     };
   }
 
-  _require.unpackModuleId = unpackModuleId;
+  metroRequire.unpackModuleId = unpackModuleId;
 
   function packModuleId(value) {
     return value.segmentId << ID_MASK_SHIFT + value.localId;
   }
 
-  _require.packModuleId = packModuleId;
+  metroRequire.packModuleId = packModuleId;
 
   function loadModuleImplementation(moduleId, module) {
     var nativeRequire = global.nativeRequire;
@@ -99,7 +99,7 @@ exports[`basic_bundle bundles package with polyfills 1`] = `
       var _moduleObject = {
         exports: exports
       };
-      factory(global, _require, _moduleObject, exports, dependencyMap);
+      factory(global, metroRequire, _moduleObject, exports, dependencyMap);
       {
         module.factory = undefined;
         module.dependencyMap = undefined;
@@ -193,7 +193,7 @@ exports[`basic_bundle bundles package without polyfills 1`] = `
 (function (global) {
   'use strict';
 
-  global.require = _require;
+  global.require = metroRequire;
   global.__d = define;
   var modules = Object.create(null);
 
@@ -211,7 +211,7 @@ exports[`basic_bundle bundles package without polyfills 1`] = `
     };
   }
 
-  function _require(moduleId) {
+  function metroRequire(moduleId) {
     var moduleIdReallyIsNumber = moduleId;
     var module = modules[moduleIdReallyIsNumber];
     return module && module.isInitialized ? module.exports : guardedLoadModule(moduleIdReallyIsNumber, module);
@@ -249,13 +249,13 @@ exports[`basic_bundle bundles package without polyfills 1`] = `
     };
   }
 
-  _require.unpackModuleId = unpackModuleId;
+  metroRequire.unpackModuleId = unpackModuleId;
 
   function packModuleId(value) {
     return value.segmentId << ID_MASK_SHIFT + value.localId;
   }
 
-  _require.packModuleId = packModuleId;
+  metroRequire.packModuleId = packModuleId;
 
   function loadModuleImplementation(moduleId, module) {
     var nativeRequire = global.nativeRequire;
@@ -287,7 +287,7 @@ exports[`basic_bundle bundles package without polyfills 1`] = `
       var _moduleObject = {
         exports: exports
       };
-      factory(global, _require, _moduleObject, exports, dependencyMap);
+      factory(global, metroRequire, _moduleObject, exports, dependencyMap);
       {
         module.factory = undefined;
         module.dependencyMap = undefined;
