@@ -433,6 +433,8 @@ describe('processRequest', () => {
         ],
         reset: true,
       });
+
+      expect(response.headers['X-Metro-Delta-ID']).toEqual('XXXXX-0');
     });
 
     it('should generate an incremental delta correctly', async () => {
@@ -468,6 +470,8 @@ describe('processRequest', () => {
         delta: [[1, '__d(function() {modified();},1,[],"foo.js");']],
         reset: false,
       });
+
+      expect(response.headers['X-Metro-Delta-ID']).toEqual('XXXXX-1');
 
       expect(DeltaBundler.prototype.getDelta.mock.calls[0][1]).toEqual({
         reset: false,

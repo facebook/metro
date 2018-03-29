@@ -84,6 +84,7 @@ function debounceAndBatch(fn, delay) {
   };
 }
 
+const DELTA_ID_HEADER = 'X-Metro-Delta-ID';
 const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';
 
 class Server {
@@ -687,12 +688,11 @@ class Server {
       }),
     );
 
-    let output;
+    let output, sequenceId;
 
     try {
-      const {delta, graph, prepend, sequenceId} = await this._getDeltaInfo(
-        options,
-      );
+      let delta, graph, prepend;
+      ({delta, graph, prepend, sequenceId} = await this._getDeltaInfo(options));
 
       output = {
         bundle: deltaJSBundle(
@@ -724,7 +724,8 @@ class Server {
     }
 
     mres.setHeader(FILES_CHANGED_COUNT_HEADER, String(output.numModifiedFiles));
-    mres.setHeader('Content-Type', 'application/javascript');
+    mres.setHeader(DELTA_ID_HEADER, String(sequenceId));
+    mres.setHeader('Content-Type', 'application/json');
     mres.setHeader('Content-Length', String(Buffer.byteLength(output.bundle)));
     mres.end(output.bundle);
 
