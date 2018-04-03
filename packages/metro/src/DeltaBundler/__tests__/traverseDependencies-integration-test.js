@@ -969,7 +969,7 @@ describe('traverseDependencies', function() {
       });
     });
 
-    it('should fatal on multiple modules with the same name (actually broken)', async () => {
+    it('should fatal on multiple modules with the same name', async () => {
       const root = '/root';
       console.warn = jest.fn();
       setMockFileSystem({
@@ -981,24 +981,18 @@ describe('traverseDependencies', function() {
 
       const opts = {...defaults, projectRoots: [root]};
 
-      // FIXME: This is broken, jest-haste-map does not fatal on modules with
-      // the same name, because not fataling was required for supporting some
-      // OSS projects. We'd like to enable it someday.
-
-      //try {
-      await processDgraph(opts, async dgraph => {});
-      //   throw new Error('should be unreachable');
-      // } catch (error) {
-      //   expect(error.message).toEqual(
-      //     `Failed to build DependencyGraph: @providesModule naming collision:\n` +
-      //       `  Duplicate module name: index\n` +
-      //       `  Paths: /root/b.js collides with /root/index.js\n\n` +
-      //       'This error is caused by a @providesModule declaration ' +
-      //       'with the same name across two different files.',
-      //   );
-      //   expect(error.type).toEqual('DependencyGraphError');
-      //   expect(console.warn).toBeCalled();
-      // }
+      try {
+        await processDgraph(opts, async dgraph => {});
+        throw new Error('should be unreachable');
+      } catch (error) {
+        expect(error.message).toEqual(
+          `jest-haste-map: @providesModule naming collision:\n` +
+            `  Duplicate module name: index\n` +
+            `  Paths: /root/b.js collides with /root/index.js\n\n` +
+            'This error is caused by a @providesModule declaration ' +
+            'with the same name across two different files.',
+        );
+      }
     });
 
     it('throws when a module is missing', async () => {
