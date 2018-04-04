@@ -15,8 +15,11 @@ const constants = require('constants');
 const path = require('path');
 const stream = require('stream');
 
+const {EventEmitter} = require('events');
+
 type NodeBase = {|
   id: number,
+  watchers: Array<NodeWatcher>,
 |};
 
 type DirectoryNode = {|
@@ -39,6 +42,11 @@ type SymbolicLinkNode = {|
 
 type EntityNode = DirectoryNode | FileNode | SymbolicLinkNode;
 
+type NodeWatcher = {
+  recursive: boolean,
+  listener: (eventType: 'change' | 'rename', filePath: string) => void,
+};
+
 type Encoding =
   | 'ascii'
   | 'base64'
@@ -52,11 +60,13 @@ type Encoding =
 type Resolution = {|
   +basename: string,
   +dirNode: DirectoryNode,
+  +dirPath: Array<[string, EntityNode]>,
   +node: ?EntityNode,
   +realpath: string,
 |};
 
 type Descriptor = {|
+  +nodePath: Array<[string, EntityNode]>,
   +node: FileNode,
   +readable: boolean,
   +writable: boolean,
@@ -185,6 +195,8 @@ class MemoryFs {
   }
 
   closeSync = (fd: number): void => {
+    const desc = this._getDesc(fd);
+    this._emitFileChange(desc.nodePath.slice(), {eventType: 'change'});
     this._fds.delete(fd);
   };
 
@@ -389,9 +401,10 @@ class MemoryFs {
       throw makeError('EEXIST', filePath, 'directory or file already exists');
     }
     dirNode.entries.set(basename, {
-      type: 'symbolicLink',
       id: this._getId(),
       target: pathStr(target),
+      type: 'symbolicLink',
+      watchers: [],
     });
   };
 
@@ -512,8 +525,49 @@ class MemoryFs {
     return st;
   };
 
+  watch = (
+    filePath: string | Buffer,
+    options?:
+      | {
+          encoding?: Encoding,
+          recursive?: boolean,
+          persistent?: boolean,
+        }
+      | Encoding,
+    listener?: (
+      eventType: 'rename' | 'change',
+      filePath: ?string | Buffer,
+    ) => mixed,
+  ) => {
+    filePath = pathStr(filePath);
+    const {node} = this._resolve(filePath);
+    if (node == null) {
+      throw makeError('ENOENT', filePath, 'no such file or directory');
+    }
+    let encoding, recursive, persistent;
+    if (typeof options === 'string') {
+      encoding = options;
+    } else if (options != null) {
+      ({encoding, recursive, persistent} = options);
+    }
+    const watcher = new FSWatcher(node, {
+      encoding: encoding != null ? encoding : 'utf8',
+      recursive: recursive != null ? recursive : false,
+      persistent: persistent != null ? persistent : false,
+    });
+    if (listener != null) {
+      watcher.on('change', listener);
+    }
+    return watcher;
+  };
+
   _makeDir() {
-    return {type: 'directory', id: this._getId(), entries: new Map()};
+    return {
+      entries: new Map(),
+      id: this._getId(),
+      type: 'directory',
+      watchers: [],
+    };
   }
 
   _getId() {
@@ -530,13 +584,21 @@ class MemoryFs {
     }
     const {writable = false, readable = false} = spec;
     const {exclusive, mustExist, truncate} = spec;
-    let {dirNode, node, basename} = this._resolve(filePath);
+    let {dirNode, node, basename, dirPath} = this._resolve(filePath);
+    let nodePath;
     if (node == null) {
       if (mustExist) {
         throw makeError('ENOENT', filePath, 'no such file or directory');
       }
-      node = {type: 'file', id: this._getId(), content: new Buffer(0)};
+      node = {
+        content: new Buffer(0),
+        id: this._getId(),
+        type: 'file',
+        watchers: [],
+      };
       dirNode.entries.set(basename, node);
+      nodePath = dirPath.concat([[basename, node]]);
+      this._emitFileChange(nodePath.slice(), {eventType: 'rename'});
     } else {
       if (exclusive) {
         throw makeError('EEXIST', filePath, 'directory or file already exists');
@@ -547,8 +609,15 @@ class MemoryFs {
       if (truncate) {
         node.content = new Buffer(0);
       }
+      nodePath = dirPath.concat([[basename, node]]);
     }
-    return this._getFd(filePath, {node, position: 0, writable, readable});
+    return this._getFd(filePath, {
+      nodePath,
+      node,
+      position: 0,
+      readable,
+      writable,
+    });
   }
 
   /**
@@ -593,9 +662,21 @@ class MemoryFs {
     const {nodePath} = context;
     return {
       realpath: drive + nodePath.map(x => x[0]).join(path.sep),
-      dirNode: (nodePath[nodePath.length - 2][1]: $FlowFixMe),
+      dirNode: (() => {
+        const dirNode =
+          nodePath.length >= 2
+            ? nodePath[nodePath.length - 2][1]
+            : context.node;
+        if (dirNode == null || dirNode.type !== 'directory') {
+          throw new Error('failed to resolve');
+        }
+        return dirNode;
+      })(),
       node: context.node,
-      basename: (nodePath[nodePath.length - 1][0]: $FlowFixMe),
+      basename: nullthrows(nodePath[nodePath.length - 1][0]),
+      dirPath: nodePath
+        .slice(0, -1)
+        .map(nodePair => [nodePair[0], nullthrows(nodePair[1])]),
     };
   }
 
@@ -686,6 +767,26 @@ class MemoryFs {
       throw makeError('EBADF', null, 'file descriptor is not open');
     }
     return desc;
+  }
+
+  _emitFileChange(
+    nodePath: Array<[string, EntityNode]>,
+    options: {eventType: 'rename' | 'change'},
+  ): void {
+    const node = nodePath.pop();
+    let filePath = node[0];
+    let recursive = false;
+    while (nodePath.length > 0) {
+      const dirNode = nodePath.pop();
+      for (const watcher of dirNode[1].watchers) {
+        if (recursive && !watcher.recursive) {
+          continue;
+        }
+        watcher.listener(options.eventType, filePath);
+      }
+      filePath = path.join(dirNode[0], filePath);
+      recursive = true;
+    }
   }
 }
 
@@ -870,6 +971,41 @@ class WriteFileStream extends stream.Writable {
   }
 }
 
+class FSWatcher extends EventEmitter {
+  _encoding: Encoding;
+  _node: EntityNode;
+  _nodeWatcher: NodeWatcher;
+
+  constructor(
+    node: EntityNode,
+    options: {encoding: Encoding, recursive: boolean, persistent: boolean},
+  ) {
+    super();
+    this._encoding = options.encoding;
+    this._nodeWatcher = {
+      recursive: options.recursive,
+      listener: this._listener,
+    };
+    node.watchers.push(this._nodeWatcher);
+    this._node = node;
+  }
+
+  close() {
+    this._node.watchers.splice(this._node.watchers.indexOf(this._nodeWatcher));
+  }
+
+  _listener = (eventType, filePath: string) => {
+    const encFilePath =
+      this._encoding === 'buffer' ? Buffer.from(filePath, 'utf8') : filePath;
+    try {
+      this.emit('change', eventType, encFilePath);
+    } catch (error) {
+      this.close();
+      this.emit('error', error);
+    }
+  };
+}
+
 function checkPathLength(entNames, filePath) {
   if (entNames.length > 32) {
     throw makeError(
@@ -888,7 +1024,7 @@ function pathStr(filePath: string | Buffer): string {
   return filePath.toString('utf8');
 }
 
-function makeError(code, filePath, message) {
+function makeError(code: string, filePath: ?string, message: string) {
   const err: $FlowFixMe = new Error(
     filePath != null
       ? `${code}: \`${filePath}\`: ${message}`
@@ -898,6 +1034,13 @@ function makeError(code, filePath, message) {
   err.errno = constants[code];
   err.path = filePath;
   return err;
+}
+
+function nullthrows<T>(x: ?T): T {
+  if (x == null) {
+    throw new Error('item was null or undefined');
+  }
+  return x;
 }
 
 module.exports = MemoryFs;

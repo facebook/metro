@@ -367,6 +367,57 @@ it('able to list files of a directory', () => {
   expect(fs.readdirSync('/baz')).toEqual(['foo.txt', 'bar.txt', 'glo.txt']);
 });
 
+describe('watch', () => {
+  it('reports changed files', () => {
+    const changedPaths = [];
+    fs.writeFileSync('/foo.txt', '');
+    fs.writeFileSync('/bar.txt', '');
+    const watcher = collectWatchEvents('/', {}, changedPaths);
+    fs.writeFileSync('/foo.txt', 'test');
+    fs.writeFileSync('/bar.txt', 'tadam');
+    expect(changedPaths).toEqual([
+      ['change', 'foo.txt'],
+      ['change', 'bar.txt'],
+    ]);
+    watcher.close();
+  });
+
+  it('does not report nested changed files if non-recursive', () => {
+    const changedPaths = [];
+    fs.mkdirSync('/foo');
+    fs.writeFileSync('/foo/bar.txt', '');
+    const watcher = collectWatchEvents('/', {}, changedPaths);
+    fs.writeFileSync('/foo/bar.txt', 'test');
+    expect(changedPaths).toEqual([]);
+    watcher.close();
+  });
+
+  it('does report nested changed files if recursive', () => {
+    const changedPaths = [];
+    fs.mkdirSync('/foo');
+    fs.writeFileSync('/foo/bar.txt', '');
+    const watcher = collectWatchEvents('/', {recursive: true}, changedPaths);
+    fs.writeFileSync('/foo/bar.txt', 'test');
+    expect(changedPaths).toEqual([['change', 'foo/bar.txt']]);
+    watcher.close();
+  });
+
+  it('reports created files', () => {
+    const changedPaths = [];
+    const watcher = collectWatchEvents('/', {}, changedPaths);
+    const fd = fs.openSync('/foo.txt', 'w');
+    expect(changedPaths).toEqual([['rename', 'foo.txt']]);
+    fs.closeSync(fd);
+    watcher.close();
+  });
+
+  function collectWatchEvents(entPath, options, events) {
+    return fs.watch(entPath, options, (eventName, filePath) => {
+      events.push([eventName, filePath]);
+    });
+  }
+});
+
 it('throws when trying to read inexistent file', () => {
   expectFsError('ENOENT', () => fs.readFileSync('/foo.txt'));
 });
