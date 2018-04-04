@@ -101,6 +101,7 @@ const ASYNC_FUNC_NAMES = [
   'readFile',
   'realpath',
   'stat',
+  'unlink',
   'write',
   'writeFile',
 ];
@@ -486,6 +487,23 @@ class MemoryFs {
       rst.on('error', doClose);
     }
     return rst;
+  };
+
+  unlinkSync = (filePath: string | Buffer) => {
+    filePath = pathStr(filePath);
+    const {basename, dirNode, dirPath, node} = this._resolve(filePath, {
+      keepFinalSymlink: true,
+    });
+    if (node == null) {
+      throw makeError('ENOENT', filePath, 'no such file or directory');
+    }
+    if (node.type !== 'file' && node.type !== 'symbolicLink') {
+      throw makeError('EISDIR', filePath, 'cannot unlink a directory');
+    }
+    dirNode.entries.delete(basename);
+    this._emitFileChange(dirPath.concat([[basename, node]]), {
+      eventType: 'rename',
+    });
   };
 
   createWriteStream = (

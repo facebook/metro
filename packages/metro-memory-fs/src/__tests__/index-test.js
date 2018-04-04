@@ -411,11 +411,68 @@ describe('watch', () => {
     watcher.close();
   });
 
+  it('reports unlinked files', () => {
+    const changedPaths = [];
+    fs.writeFileSync('/bar.txt', 'text');
+    const watcher = collectWatchEvents('/', {}, changedPaths);
+    fs.unlinkSync('/bar.txt');
+    expect(changedPaths).toEqual([['rename', 'bar.txt']]);
+    watcher.close();
+  });
+
   function collectWatchEvents(entPath, options, events) {
     return fs.watch(entPath, options, (eventName, filePath) => {
       events.push([eventName, filePath]);
     });
   }
+});
+
+describe('unlink', () => {
+  it('removes a file', () => {
+    fs.writeFileSync('/foo.txt', 'test');
+    expect(fs.readdirSync('/')).toEqual(['foo.txt']);
+    fs.unlinkSync('/foo.txt');
+    expect(fs.readdirSync('/')).toEqual([]);
+    try {
+      fs.readFileSync('/foo.txt', 'utf8');
+      throw new Error('should not reach here');
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error;
+      }
+    }
+  });
+
+  it('removes a symlink (not the linked file)', () => {
+    fs.writeFileSync('/foo.txt', 'test');
+    fs.symlinkSync('foo.txt', '/bar.txt');
+    expect(fs.readdirSync('/')).toEqual(['foo.txt', 'bar.txt']);
+    fs.unlinkSync('/bar.txt');
+    expect(fs.readdirSync('/')).toEqual(['foo.txt']);
+  });
+
+  it('throws for non existent files', () => {
+    try {
+      fs.unlinkSync('/nonexistent.txt');
+      throw new Error('should not reach here');
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error;
+      }
+    }
+  });
+
+  it('throws for directories', () => {
+    fs.mkdirSync('/foo');
+    try {
+      fs.unlinkSync('/foo');
+      throw new Error('should not reach here');
+    } catch (error) {
+      if (error.code !== 'EISDIR') {
+        throw error;
+      }
+    }
+  });
 });
 
 it('throws when trying to read inexistent file', () => {
