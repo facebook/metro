@@ -276,7 +276,7 @@ if (__DEV__) {
     return hot;
   };
 
-  const acceptAll = function(
+  const metroAcceptAll = function(
     dependentModules,
     inverseDependencies,
     patchedModules,
@@ -287,7 +287,7 @@ if (__DEV__) {
 
     const notAccepted = dependentModules.filter(
       module =>
-        !accept(
+        !metroAccept(
           module,
           /*factory*/ undefined,
           /*dependencyMap*/ undefined,
@@ -309,7 +309,7 @@ if (__DEV__) {
     return parents.length == 0;
   };
 
-  const accept = function(
+  const metroAccept = function(
     id: ModuleID,
     factory?: FactoryFn,
     dependencyMap?: DependencyMap,
@@ -378,12 +378,12 @@ if (__DEV__) {
     }
 
     // accept parent modules recursively up until all siblings are accepted
-    return acceptAll(
+    return metroAcceptAll(
       inverseDependencies[id],
       inverseDependencies,
       patchedModules,
     );
   };
 
-  global.__accept = accept;
+  global.__accept = metroAccept;
 }
