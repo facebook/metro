@@ -23,6 +23,7 @@ import type {TransformedCode} from './JSTransformer/worker';
 import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
+import type {CustomResolver} from 'metro-resolver';
 
 type Middleware = (IncomingMessage, ServerResponse, ?() => mixed) => mixed;
 
@@ -142,6 +143,12 @@ export type ConfigT = {
   postProcessBundleSourcemap: PostProcessBundleSourcemap,
 
   /**
+   * An optional function used to resolve requests. Ignored when the request can
+   * be resolved through Haste.
+   */
+  resolveRequest: ?CustomResolver,
+
+  /**
    * Path to a require-able module that exports:
    * - a `getHasteName(filePath)` method that returns `hasteName` for module at
    *  `filePath`, or undefined if `filePath` is not a haste module.
@@ -186,6 +193,7 @@ const DEFAULT = ({
   getUseGlobalHotkey: () => true,
   postMinifyProcess: x => x,
   postProcessBundleSourcemap: ({code, map, outFileName}) => ({code, map}),
+  resolveRequest: null,
   getModulesRunBeforeMainModule: () => [],
   getWorkerPath: () => null,
 }: ConfigT);

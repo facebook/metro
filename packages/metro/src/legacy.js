@@ -196,6 +196,7 @@ function toServerOptions(options: Options): ServerOptions {
     providesModuleNodeModules: options.providesModuleNodeModules,
     reporter: options.reporter,
     resetCache: options.resetCache,
+    resolveRequest: options.resolveRequest,
     silent: options.silent,
     sourceExts: options.sourceExts,
     transformCache: options.transformCache || TransformCaching.useTempDir(),

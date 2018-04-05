@@ -141,6 +141,7 @@ async function runMetro({
     providesModuleNodeModules,
     resetCache,
     reporter,
+    resolveRequest: normalizedConfig.resolveRequest,
     sourceExts: normalizedConfig.assetTransforms
       ? sourceExts.concat(assetExts)
       : sourceExts,

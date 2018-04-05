@@ -23,6 +23,7 @@ import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
 import type {CacheStore} from 'metro-cache';
+import type {CustomResolver} from 'metro-resolver';
 import type {
   MetroSourceMap,
   MetroSourceMapSegmentTuple,
@@ -102,6 +103,7 @@ export type Options = {|
   providesModuleNodeModules?: Array<string>,
   reporter?: Reporter,
   resetCache?: boolean,
+  resolveRequest: ?CustomResolver,
   +getModulesRunBeforeMainModule: (entryPoint: string) => Array<string>,
   silent?: boolean,
   +sourceExts: ?Array<string>,

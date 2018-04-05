@@ -40,6 +40,7 @@ import type {ModuleMap} from './DependencyGraph/ModuleResolution';
 import type {TransformCode} from './Module';
 import type Package from './Package';
 import type {HasteFS} from './types';
+import type {CustomResolver} from 'metro-resolver';
 
 type Options = {|
   +assetExts: Array<string>,
@@ -58,6 +59,7 @@ type Options = {|
   +providesModuleNodeModules: Array<string>,
   +reporter: Reporter,
   +resetCache: boolean,
+  +resolveRequest: ?CustomResolver,
   +sourceExts: Array<string>,
   +transformCache: TransformCache,
   +transformCode: TransformCode,
@@ -192,6 +194,7 @@ class DependencyGraph extends EventEmitter {
       preferNativePlatform: true,
       resolveAsset: (dirPath, assetName, platform) =>
         this._assetResolutionCache.resolve(dirPath, assetName, platform),
+      resolveRequest: this._opts.resolveRequest,
       sourceExts: this._opts.sourceExts,
     });
   }

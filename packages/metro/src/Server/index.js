@@ -54,6 +54,7 @@ import type {
 } from '../Bundler';
 import type {CacheStore} from 'metro-cache';
 import type {Delta, Graph} from '../DeltaBundler';
+import type {CustomResolver} from 'metro-resolver';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Symbolicate} from './symbolicate/symbolicate';
@@ -102,6 +103,7 @@ class Server {
     maxWorkers: number,
     minifierPath: string,
     platforms: Array<string>,
+    resolveRequest: ?CustomResolver,
     polyfillModuleNames: Array<string>,
     postMinifyProcess: PostMinifyProcess,
     postProcessBundleSourcemap: PostProcessBundleSourcemap,
@@ -109,6 +111,7 @@ class Server {
     providesModuleNodeModules?: Array<string>,
     reporter: Reporter,
     resetCache: boolean,
+    resolveRequest: ?CustomResolver,
     +getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
     +getRunModuleStatement: (number | string) => string,
     silent: boolean,
@@ -177,6 +180,7 @@ class Server {
       providesModuleNodeModules: options.providesModuleNodeModules,
       reporter,
       resetCache: options.resetCache || false,
+      resolveRequest: options.resolveRequest,
       silent: options.silent || false,
       sourceExts: options.assetTransforms
         ? sourceExts.concat(assetExts)

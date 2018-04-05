@@ -18,6 +18,7 @@ export type {
 } from './resolve';
 export type {
   AssetFileResolution,
+  CustomResolver,
   FileAndDirCandidates,
   FileCandidates,
   FileResolution,

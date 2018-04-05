@@ -17,6 +17,7 @@ const path = require('path');
 const util = require('util');
 
 import type {
+  CustomResolver,
   DoesFileExist,
   IsAssetFile,
   ResolveAsset,
@@ -70,6 +71,7 @@ type Options<TModule, TPackage> = {|
   +preferNativePlatform: boolean,
   +moduleMap: ModuleMap,
   +resolveAsset: ResolveAsset,
+  +resolveRequest: ?CustomResolver,
   +sourceExts: Array<string>,
 |};
 

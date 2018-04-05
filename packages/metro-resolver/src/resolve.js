@@ -20,6 +20,7 @@ const path = require('path');
 
 import type {
   AssetFileResolution,
+  CustomResolver,
   FileAndDirCandidates,
   FileCandidates,
   FileResolution,
@@ -29,9 +30,10 @@ import type {
 
 export type ResolutionContext = ModulePathContext &
   HasteContext & {
-    originModulePath: string,
     allowHaste: boolean,
     extraNodeModules: ?{[string]: string},
+    originModulePath: string,
+    resolveRequest?: ?CustomResolver,
   };
 
 function resolve(
@@ -39,9 +41,13 @@ function resolve(
   moduleName: string,
   platform: string | null,
 ): Resolution {
-  if (isRelativeImport(moduleName) || isAbsolutePath(moduleName)) {
+  if (
+    !context.resolveRequest &&
+    (isRelativeImport(moduleName) || isAbsolutePath(moduleName))
+  ) {
     return resolveModulePath(context, moduleName, platform);
   }
+
   const realModuleName = context.redirectModulePath(moduleName);
   // exclude
   if (realModuleName === false) {
@@ -49,7 +55,10 @@ function resolve(
   }
 
   const {originModulePath} = context;
-  if (isRelativeImport(realModuleName) || isAbsolutePath(realModuleName)) {
+  if (
+    !context.resolveRequest &&
+    (isRelativeImport(realModuleName) || isAbsolutePath(realModuleName))
+  ) {
     // derive absolute path /.../node_modules/originModuleDir/realModuleName
     const fromModuleParentIdx =
       originModulePath.lastIndexOf('node_modules' + path.sep) + 13;
@@ -61,8 +70,18 @@ function resolve(
     return resolveModulePath(context, absPath, platform);
   }
 
-  // At that point we only have module names that
-  // aren't relative paths nor absolute paths.
+  if (context.resolveRequest) {
+    try {
+      const resolution = context.resolveRequest(
+        moduleName,
+        context.originModulePath,
+      );
+      if (resolution) {
+        return {type: 'sourceFile', filePath: resolution};
+      }
+    } catch (error) {}
+  }
+
   if (context.allowHaste) {
     const normalizedName = normalizePath(realModuleName);
     const result = resolveHasteName(context, normalizedName, platform);

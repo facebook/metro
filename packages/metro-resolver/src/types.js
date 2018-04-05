@@ -42,3 +42,5 @@ export type FileCandidates =
     +filePathPrefix: string,
     +candidateExts: $ReadOnlyArray<string>,
   |};
+
+export type CustomResolver = (string, string) => string;

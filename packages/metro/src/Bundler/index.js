@@ -36,6 +36,7 @@ import type {Reporter} from '../lib/reporting';
 import type Module from '../node-haste/Module';
 import type {BabelSourceMap} from '@babel/core';
 import type {CacheStore} from 'metro-cache';
+import type {CustomResolver} from 'metro-resolver';
 import type {
   MetroSourceMapSegmentTuple,
   MetroSourceMap,
@@ -98,6 +99,7 @@ export type Options = {|
   +providesModuleNodeModules?: Array<string>,
   +reporter: Reporter,
   +resetCache: boolean,
+  +resolveRequest: ?CustomResolver,
   +sourceExts: Array<string>,
   +transformCache: TransformCache,
   +transformModulePath: string,
@@ -163,6 +165,7 @@ class Bundler {
       providesModuleNodeModules:
         opts.providesModuleNodeModules || defaults.providesModuleNodeModules,
       reporter: opts.reporter,
+      resolveRequest: opts.resolveRequest,
       resetCache: opts.resetCache,
       sourceExts: opts.sourceExts,
       transformCode: this._cachedTransformCode.bind(this),
