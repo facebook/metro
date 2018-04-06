@@ -79,6 +79,15 @@ describe('inline constants', () => {
     expect(toString(ast)).toEqual(normalize(code.replace(/__DEV__/, 'true')));
   });
 
+  it("doesn't replace a local __DEV__ variable", () => {
+    const code = `function a() {
+      var __DEV__ = false;
+      var a = __DEV__ ? 1 : 2;
+    }`;
+    const {ast} = inline('arbitrary.js', {code}, {dev: true});
+    expect(toString(ast)).toEqual(normalize(code));
+  });
+
   it('replaces Platform.OS in the code if Platform is a global', () => {
     const code = `function a() {
       var a = Platform.OS;
