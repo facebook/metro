@@ -109,6 +109,7 @@ class DependencyGraph extends EventEmitter {
     useWatchman?: boolean = true,
   ): JestHasteMap {
     return new JestHasteMap({
+      computeSha1: true,
       extensions: opts.sourceExts.concat(opts.assetExts),
       forceNodeFilesystemAPI: !useWatchman,
       hasteImplModulePath: opts.hasteImplModulePath,
@@ -232,6 +233,17 @@ class DependencyGraph extends EventEmitter {
     const result = await module.read(transformOptions);
 
     return result.dependencies;
+  }
+
+  getSha1(filename: string): string {
+    // $FlowFixMe: TODO T27501330: Use getSha1 from HasteFS.
+    const sha1 = this._hasteFS._files[filename][4];
+
+    if (!sha1) {
+      throw new ReferenceError(`SHA-1 for file ${filename} is not computed`);
+    }
+
+    return sha1;
   }
 
   getWatcher() {

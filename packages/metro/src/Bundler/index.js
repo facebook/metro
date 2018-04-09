@@ -291,9 +291,9 @@ class Bundler {
         // This is the hash related to the global Bundler config.
         this._baseHash,
 
-        // Path and code.
+        // Path and code hash.
         module.localPath,
-        code,
+        (await this.getDependencyGraph()).getSha1(module.path),
 
         // We cannot include "transformCodeOptions" because of "projectRoot".
         assetDataPlugins,
