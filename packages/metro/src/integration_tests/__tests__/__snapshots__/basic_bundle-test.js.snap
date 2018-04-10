@@ -5,6 +5,7 @@ exports[`basic_bundle bundles package with polyfills 1`] = `
 (function (global) {
   'use strict';
 
+  var PRINT_REQUIRE_PATHS = false;
   global.require = metroRequire;
   global.__d = define;
   var modules = Object.create(null);
@@ -21,6 +22,16 @@ exports[`basic_bundle bundles package with polyfills 1`] = `
       hasError: false,
       isInitialized: false
     };
+
+    if (PRINT_REQUIRE_PATHS) {
+      var _path = arguments[4];
+
+      if (_path) {
+        modules[moduleId].path = _path;
+      } else {
+        throw new Error(\\"path not set on module with PRINT_REQUIRE_PATHS true. Make sure PASS_MODULE_PATHS_TO_DEFINE is true and restart Metro or rebuild bundle\\");
+      }
+    }
   }
 
   function metroRequire(moduleId) {
@@ -96,6 +107,10 @@ exports[`basic_bundle bundles package with polyfills 1`] = `
         dependencyMap = _module.dependencyMap;
 
     try {
+      if (PRINT_REQUIRE_PATHS) {
+        console.log(\\"require file path \\" + (module.path || 'unknown'));
+      }
+
       var _moduleObject = {
         exports: exports
       };
@@ -193,6 +208,7 @@ exports[`basic_bundle bundles package without polyfills 1`] = `
 (function (global) {
   'use strict';
 
+  var PRINT_REQUIRE_PATHS = false;
   global.require = metroRequire;
   global.__d = define;
   var modules = Object.create(null);
@@ -209,6 +225,16 @@ exports[`basic_bundle bundles package without polyfills 1`] = `
       hasError: false,
       isInitialized: false
     };
+
+    if (PRINT_REQUIRE_PATHS) {
+      var _path = arguments[4];
+
+      if (_path) {
+        modules[moduleId].path = _path;
+      } else {
+        throw new Error(\\"path not set on module with PRINT_REQUIRE_PATHS true. Make sure PASS_MODULE_PATHS_TO_DEFINE is true and restart Metro or rebuild bundle\\");
+      }
+    }
   }
 
   function metroRequire(moduleId) {
@@ -284,6 +310,10 @@ exports[`basic_bundle bundles package without polyfills 1`] = `
         dependencyMap = _module.dependencyMap;
 
     try {
+      if (PRINT_REQUIRE_PATHS) {
+        console.log(\\"require file path \\" + (module.path || 'unknown'));
+      }
+
       var _moduleObject = {
         exports: exports
       };

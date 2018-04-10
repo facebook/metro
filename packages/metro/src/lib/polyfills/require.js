@@ -45,11 +45,17 @@ type ModuleDefinition = {|
   hot?: HotModuleReloadingData,
   isInitialized: boolean,
   verboseName?: string,
+  path?: string,
 |};
 type ModuleMap = {[key: ModuleID]: ModuleDefinition, __proto__: null};
 type PatchedModules = {[ModuleID]: boolean};
 type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
 type VerboseModuleNameForDev = string;
+
+// Used to include paths in production bundles for traces of performance tuned runs
+// e.g. to update fbandroid/apps/fb4a/compiled_react_native_modules.txt
+// Make sure to set PASS_MODULE_PATHS_TO_DEFINE = true too, and restart Metro.
+const PRINT_REQUIRE_PATHS = false;
 
 global.require = metroRequire;
 global.__d = define;
@@ -95,6 +101,17 @@ function define(
     hasError: false,
     isInitialized: false,
   };
+  if (PRINT_REQUIRE_PATHS) {
+    const path: string | void = arguments[4];
+    if (path) {
+      modules[moduleId].path = path;
+    } else {
+      throw new Error(
+        'path not set on module with PRINT_REQUIRE_PATHS true. Make sure ' +
+          'PASS_MODULE_PATHS_TO_DEFINE is true and restart Metro or rebuild bundle',
+      );
+    }
+  }
   if (__DEV__) {
     // HMR
     modules[moduleId].hot = createHotReloadingObject();
@@ -198,6 +215,9 @@ function loadModuleImplementation(moduleId, module) {
   const exports = (module.exports = {});
   const {factory, dependencyMap} = module;
   try {
+    if (PRINT_REQUIRE_PATHS) {
+      console.log(`require file path ${module.path || 'unknown'}`); // eslint-disable-line no-console
+    }
     if (__DEV__) {
       // $FlowFixMe: we know that __DEV__ is const and `Systrace` exists
       Systrace.beginEvent('JS_require_' + (module.verboseName || moduleId));

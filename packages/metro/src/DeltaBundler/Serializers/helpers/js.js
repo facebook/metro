@@ -20,6 +20,11 @@ export type Options = {
   +dev: boolean,
 };
 
+// Used to include paths in production bundles for traces of performance tuned runs,
+// e.g. to update fbandroid/apps/fb4a/compiled_react_native_modules.txt
+// Make sure to set PRINT_REQUIRE_PATHS = true too, and restart Metro
+const PASS_MODULE_PATHS_TO_DEFINE = false;
+
 function wrapModule(module: DependencyEdge, options: Options) {
   if (module.output.type === 'script') {
     return module.output.code;
@@ -35,8 +40,11 @@ function wrapModule(module: DependencyEdge, options: Options) {
   // requires by name when debugging).
   // TODO (t26853986): Switch this to use the relative file path (once we have
   // as single project root).
-  if (options.dev) {
+  if (PASS_MODULE_PATHS_TO_DEFINE || options.dev) {
     params.push(path.basename(module.path));
+    if (PASS_MODULE_PATHS_TO_DEFINE) {
+      params.push(module.path);
+    }
   }
 
   return addParamsToDefineCall(module.output.code, ...params);
