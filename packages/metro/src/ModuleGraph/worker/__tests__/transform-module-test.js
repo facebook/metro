@@ -135,7 +135,7 @@ describe('transforming JS modules:', () => {
     const {code, dependencyMapName} = result.details.transformed.default;
     invariant(dependencyMapName != null, 'dependencyMapName cannot be null');
     expect(code.replace(/\s+/g, '')).toEqual(
-      `__d(function(global,_require,module,exports,${dependencyMapName}){${transformedCode}});`,
+      `__d(function(global,_$$_REQUIRE,module,exports,${dependencyMapName}){${transformedCode}});`,
     );
   });
 
@@ -192,12 +192,12 @@ describe('transforming JS modules:', () => {
     invariant(result.type === 'code', 'result must be code');
     const {dev, prod} = result.details.transformed;
     expect(dev.code.replace(/\s+/g, '')).toEqual(
-      `__d(function(global,_require,module,exports,${nullthrows(
+      `__d(function(global,_$$_REQUIRE,module,exports,${nullthrows(
         dev.dependencyMapName,
       )}){arbitrary(code);});`,
     );
     expect(prod.code.replace(/\s+/g, '')).toEqual(
-      `__d(function(global,_require,module,exports,${nullthrows(
+      `__d(function(global,_$$_REQUIRE,module,exports,${nullthrows(
         prod.dependencyMapName,
       )}){arbitrary(code);});`,
     );

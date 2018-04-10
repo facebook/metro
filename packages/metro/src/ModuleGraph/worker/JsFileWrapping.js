@@ -15,6 +15,7 @@ const {babelTypes, babelTraverse: traverse} = require('../../babel-bridge');
 
 const MODULE_FACTORY_PARAMETERS = ['global', 'require', 'module', 'exports'];
 const POLYFILL_FACTORY_PARAMETERS = ['global'];
+const WRAP_NAME = '$$_REQUIRE'; // note: babel will prefix this with _
 
 function wrapModule(
   fileAst: Object,
@@ -66,21 +67,23 @@ function makeIdentifier(name: string): Object {
 }
 
 function renameRequires(ast: Object) {
-  let requireName = 'require';
+  let newRequireName = WRAP_NAME;
 
   traverse(ast, {
     Program(path) {
       const body = path.get('body.0.expression.arguments.0.body');
 
-      requireName = body.scope.generateUid('_require');
-      body.scope.rename('require', requireName);
+      newRequireName = body.scope.generateUid(WRAP_NAME);
+      body.scope.rename('require', newRequireName);
     },
   });
 
-  return requireName;
+  return newRequireName;
 }
 
 module.exports = {
+  WRAP_NAME,
+
   wrapJson,
   wrapModule,
   wrapPolyfill,

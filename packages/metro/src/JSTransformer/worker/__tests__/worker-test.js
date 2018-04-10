@@ -67,7 +67,7 @@ describe('code transformation worker:', () => {
 
     expect(result.code).toBe(
       [
-        '__d(function (global, _require, module, exports, _dependencyMap) {',
+        '__d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {',
         '  arbitrary(code);',
         '});',
       ].join('\n'),
@@ -103,16 +103,16 @@ describe('code transformation worker:', () => {
       expect(BABEL_VERSION).toBe(7);
       expect(result.code).toBe(
         [
-          '__d(function (global, _require, module, exports, _dependencyMap) {',
+          '__d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {',
           "  'use strict';",
           '',
-          '  var _c = babelHelpers.interopRequireDefault(_require(_dependencyMap[0], "./c"));',
+          '  var _c = babelHelpers.interopRequireDefault(_$$_REQUIRE(_dependencyMap[0], "./c"));',
           '',
-          '  _require(_dependencyMap[1], "./a");',
+          '  _$$_REQUIRE(_dependencyMap[1], "./a");',
           '',
           '  arbitrary(code);',
           '',
-          '  var b = _require(_dependencyMap[2], "b");',
+          '  var b = _$$_REQUIRE(_dependencyMap[2], "b");',
           '});',
         ].join('\n'),
       );
@@ -145,16 +145,16 @@ describe('code transformation worker:', () => {
       expect(BABEL_VERSION).toBe(6);
       expect(result.code).toBe(
         [
-          '__d(function (global, _require, module, exports, _dependencyMap) {',
-          '  var _c = _require(_dependencyMap[0], "./c");',
+          '__d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {',
+          '  var _c = _$$_REQUIRE(_dependencyMap[0], "./c");',
           '',
           '  var _c2 = babelHelpers.interopRequireDefault(_c);',
           '',
-          '  _require(_dependencyMap[1], "./a");',
+          '  _$$_REQUIRE(_dependencyMap[1], "./a");',
           '',
           '  arbitrary(code);',
           '',
-          '  var b = _require(_dependencyMap[2], "b");',
+          '  var b = _$$_REQUIRE(_dependencyMap[2], "b");',
           '});',
         ].join('\n'),
       );

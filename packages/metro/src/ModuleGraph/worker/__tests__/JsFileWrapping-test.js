@@ -16,6 +16,12 @@ const JsFileWrapping = require('../JsFileWrapping');
 const {babylon} = require('../../../babel-bridge');
 const {codeFromAst, comparableCode} = require('../../test-helpers');
 
+const {WRAP_NAME} = JsFileWrapping;
+// Note; it's not important HOW Babel changes the name. Only THAT it does.
+// At the time of writing, it will prefix an underscore for our first rename
+const BABEL_RENAMED = '_' + WRAP_NAME;
+const BABEL_RENAMED2 = '_' + WRAP_NAME + '2';
+
 it('wraps a module correctly', () => {
   const dependencyMapName = '_dependencyMapName';
 
@@ -33,53 +39,130 @@ it('wraps a module correctly', () => {
     dependencyMapName,
   );
 
-  expect(requireName).toBe('_require');
+  expect(requireName).toBe(BABEL_RENAMED);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
-      __d(function (global, _require, module, exports, _dependencyMapName) {
-        const dynamicRequire = _require;
-        const a = _require('b/lib/a');
-        exports.do = () => _require("do");
+      __d(function (global, ${BABEL_RENAMED}, module, exports, _dependencyMapName) {
+        const dynamicRequire = ${BABEL_RENAMED};
+        const a = ${BABEL_RENAMED}('b/lib/a');
+        exports.do = () => ${BABEL_RENAMED}("do");
         if (!something) {
-          _require("setup/something");
+          ${BABEL_RENAMED}("setup/something");
         }
-        _require.blah('do');
+        ${BABEL_RENAMED}.blah('do');
       });`),
   );
 });
 
-it('replaces the require variable by a unique one', () => {
-  const dependencyMapName = '_dependencyMapName';
+describe('safe renaming of require', () => {
+  ['let', 'const', 'var'].forEach(declKeyword => {
+    describe('decl type = ' + declKeyword, () => {
+      it(`original name will always be renamed so local decl should be fine`, () => {
+        const dependencyMapName = '_dependencyMapName';
 
-  const originalAst = astFromCode(`
-    const dynamicRequire = require;
-    const a = require('b/lib/a');
-    let _require = 'foo';
-    exports.do = () => require("do");
-    if (!something) {
-      require("setup/something");
-    }
-    require.blah('do');
-  `);
-  const {ast, requireName} = JsFileWrapping.wrapModule(
-    originalAst,
-    dependencyMapName,
-  );
+        const originalAst = astFromCode(`
+          const dynamicRequire = require;
+          const a = require('b/lib/a');
+          ${declKeyword} ${WRAP_NAME} = 'foo';
+          exports.do = () => require("do");
+          if (!something) {
+            require("setup/something");
+          }
+          require.blah('do');
+        `);
+        const {ast, requireName} = JsFileWrapping.wrapModule(
+          originalAst,
+          dependencyMapName,
+        );
 
-  expect(requireName).toBe('_require2');
-  expect(codeFromAst(ast)).toEqual(
-    comparableCode(`
-      __d(function (global, _require2, module, exports, _dependencyMapName) {
-        const dynamicRequire = _require2;
-        const a = _require2('b/lib/a');
-        let _require = 'foo';
-        exports.do = () => _require2("do");
-        if (!something) {
-          _require2("setup/something");
-        }
-        _require2.blah('do');
-      });`),
-  );
+        expect(requireName).toBe(BABEL_RENAMED);
+        expect(codeFromAst(ast)).toEqual(
+          comparableCode(`
+            __d(function (global, ${BABEL_RENAMED}, module, exports, _dependencyMapName) {
+              const dynamicRequire = ${BABEL_RENAMED};
+              const a = ${BABEL_RENAMED}('b/lib/a');
+              ${declKeyword} ${WRAP_NAME} = 'foo';
+              exports.do = () => ${BABEL_RENAMED}("do");
+              if (!something) {
+                ${BABEL_RENAMED}("setup/something");
+              }
+              ${BABEL_RENAMED}.blah('do');
+            });`),
+        );
+      });
+
+      it(`when the scope has the new name defined too`, () => {
+        const dependencyMapName = '_dependencyMapName';
+
+        const originalAst = astFromCode(`
+          const dynamicRequire = require;
+          const a = require('b/lib/a');
+          ${declKeyword} ${BABEL_RENAMED} = 'foo';
+          exports.do = () => require("do");
+          if (!something) {
+            require("setup/something");
+          }
+          require.blah('do');
+        `);
+        const {ast, requireName} = JsFileWrapping.wrapModule(
+          originalAst,
+          dependencyMapName,
+        );
+
+        expect(requireName).toBe(BABEL_RENAMED2);
+        expect(codeFromAst(ast)).toEqual(
+          comparableCode(`
+            __d(function (global, ${BABEL_RENAMED2}, module, exports, _dependencyMapName) {
+              const dynamicRequire = ${BABEL_RENAMED2};
+              const a = ${BABEL_RENAMED2}('b/lib/a');
+              ${declKeyword} ${BABEL_RENAMED} = 'foo';
+              exports.do = () => ${BABEL_RENAMED2}("do");
+              if (!something) {
+                ${BABEL_RENAMED2}("setup/something");
+              }
+              ${BABEL_RENAMED2}.blah('do');
+            });`),
+        );
+      });
+
+      it(`when an inner scope already has the new name defined too`, () => {
+        const dependencyMapName = '_dependencyMapName';
+
+        // Note; it's not important HOW Babel changes the name. Only THAT it does.
+        const BABEL_RENAMED = '_' + WRAP_NAME;
+
+        const originalAst = astFromCode(`
+          const dynamicRequire = require;
+          const a = require('b/lib/a');
+          if (a) {
+            (function () {
+              ${declKeyword} ${BABEL_RENAMED} = require('dingus');
+              a(${BABEL_RENAMED}(dynamicRequire));
+            })
+          }
+        `);
+        const {ast, requireName} = JsFileWrapping.wrapModule(
+          originalAst,
+          dependencyMapName,
+        );
+
+        expect(requireName).toBe(BABEL_RENAMED2);
+        expect(codeFromAst(ast)).toEqual(
+          comparableCode(`
+            __d(function (global, ${BABEL_RENAMED2}, module, exports, _dependencyMapName) {
+              const dynamicRequire = ${BABEL_RENAMED2};
+              const a = ${BABEL_RENAMED2}('b/lib/a');
+              if (a) {
+                (function () {
+                  ${declKeyword} ${BABEL_RENAMED} = ${BABEL_RENAMED2}('dingus');
+                  a(${BABEL_RENAMED}(dynamicRequire));
+                });
+              }
+            });`),
+        );
+      });
+    });
+  });
 });
 
 it('wraps a polyfill correctly', () => {
