@@ -12,7 +12,6 @@
 
 const Server = require('../../Server');
 
-const meta = require('./meta');
 const relativizeSourceMapInline = require('../../lib/relativizeSourceMap');
 const writeFile = require('./writeFile');
 
@@ -39,7 +38,7 @@ function relativateSerializedMap(
   return JSON.stringify(sourceMap);
 }
 
-function saveBundleAndMap(
+async function saveBundleAndMap(
   bundle: {code: string, map: string},
   options: OutputOptions,
   log: (...args: Array<string>) => void,
@@ -51,18 +50,13 @@ function saveBundleAndMap(
     sourcemapSourcesRoot,
   } = options;
 
-  log('Writing bundle output to:', bundleOutput);
+  const writeFns = [];
 
-  const {code} = bundle;
-  const writeBundle = writeFile(bundleOutput, code, encoding);
-  const writeMetadata = writeFile(
-    bundleOutput + '.meta',
-    meta(code, encoding),
-    'binary',
-  );
-  Promise.all([writeBundle, writeMetadata]).then(() =>
-    log('Done writing bundle output'),
-  );
+  writeFns.push(async () => {
+    log('Writing bundle output to:', bundleOutput);
+    await writeFile(bundleOutput, bundle.code, encoding);
+    log('Done writing bundle output');
+  });
 
   if (sourcemapOutput) {
     let {map} = bundle;
@@ -72,13 +66,15 @@ function saveBundleAndMap(
       log('finished relativating');
     }
 
-    log('Writing sourcemap output to:', sourcemapOutput);
-    const writeMap = writeFile(sourcemapOutput, map, null);
-    writeMap.then(() => log('Done writing sourcemap output'));
-    return Promise.all([writeBundle, writeMetadata, writeMap]);
-  } else {
-    return writeBundle;
+    writeFns.push(async () => {
+      log('Writing sourcemap output to:', sourcemapOutput);
+      await writeFile(sourcemapOutput, map, null);
+      log('Done writing sourcemap output');
+    });
   }
+
+  // Wait until everything is written to disk.
+  await Promise.all(writeFns.map(cb => cb()));
 }
 
 exports.build = buildBundle;
