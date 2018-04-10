@@ -136,8 +136,8 @@ declare module 'babel-core' {
     parentPath?: ?Object,
   ): void;
   declare var types: BabelTypes;
-  declare var transformFile: TransformFile;
-  declare var transformFromAst: TransformFromAst /*(
+  declare var transformFile: TransformFileSync;
+  declare var transformFromAst: TransformFromAstSync /*(
     ast: BabelNode,
     code?: ?string,
     babelOptions?: _TransformOptions,
