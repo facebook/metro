@@ -197,7 +197,9 @@ class MemoryFs {
 
   closeSync = (fd: number): void => {
     const desc = this._getDesc(fd);
-    this._emitFileChange(desc.nodePath.slice(), {eventType: 'change'});
+    if (desc.writable) {
+      this._emitFileChange(desc.nodePath.slice(), {eventType: 'change'});
+    }
     this._fds.delete(fd);
   };
 

@@ -429,6 +429,15 @@ describe('watch', () => {
     watcher.close();
   });
 
+  it('does not report changes when just reading a file', () => {
+    const changedPaths = [];
+    fs.writeFileSync('/foo.txt', '');
+    const watcher = collectWatchEvents('/', {}, changedPaths);
+    fs.readFileSync('/foo.txt');
+    expect(changedPaths).toEqual([]);
+    watcher.close();
+  });
+
   function collectWatchEvents(entPath, options, events) {
     return fs.watch(entPath, options, (eventName, filePath) => {
       events.push([eventName, filePath]);
