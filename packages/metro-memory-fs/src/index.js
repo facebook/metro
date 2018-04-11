@@ -791,9 +791,14 @@ class MemoryFs {
     nodePath: Array<[string, EntityNode]>,
     options: {eventType: 'rename' | 'change'},
   ): void {
-    const node = nodePath.pop();
-    let filePath = node[0];
+    const fileNode = nodePath.pop();
+    let filePath = fileNode[0];
     let recursive = false;
+
+    for (const watcher of fileNode[1].watchers) {
+      watcher.listener(options.eventType, filePath);
+    }
+
     while (nodePath.length > 0) {
       const dirNode = nodePath.pop();
       for (const watcher of dirNode[1].watchers) {

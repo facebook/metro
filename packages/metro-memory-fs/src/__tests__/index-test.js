@@ -420,6 +420,15 @@ describe('watch', () => {
     watcher.close();
   });
 
+  it('reports changed files when watching a file directly', () => {
+    const changedPaths = [];
+    fs.writeFileSync('/foo.txt', '');
+    const watcher = collectWatchEvents('/foo.txt', {}, changedPaths);
+    fs.writeFileSync('/foo.txt', 'test');
+    expect(changedPaths).toEqual([['change', 'foo.txt']]);
+    watcher.close();
+  });
+
   function collectWatchEvents(entPath, options, events) {
     return fs.watch(entPath, options, (eventName, filePath) => {
       events.push([eventName, filePath]);
