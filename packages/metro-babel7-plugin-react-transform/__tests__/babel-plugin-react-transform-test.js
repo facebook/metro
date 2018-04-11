@@ -17,7 +17,7 @@ const fs = require('fs');
 const path = require('path');
 
 /*eslint-disable import/no-extraneous-dependencies*/
-const {transform: transformSync} = require('babel-core');
+const {transformSync} = require('@babel/core');
 const reactPlugin = require('../lib/index.js').default;
 
 describe('finds React components', () => {
