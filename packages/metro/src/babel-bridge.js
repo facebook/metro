@@ -219,7 +219,7 @@ function getPreset7() {
       ['transform-modules-commonjs', {strict: false, allowTopLevelThis: true}],
     );
 
-    if (src !== null && src !== undefined) {
+    if (src != null) {
       addPluginsWhenSourceNeedsIt(src, plugins);
     }
 

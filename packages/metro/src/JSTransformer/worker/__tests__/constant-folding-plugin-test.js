@@ -49,7 +49,7 @@ const babelOptions = {
 };
 
 function normalize({code}): string {
-  if (code === undefined || code === null) {
+  if (code == null) {
     return 'FAIL';
   }
   return transformSync(code, babelOptions).code;
