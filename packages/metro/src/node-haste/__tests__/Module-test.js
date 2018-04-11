@@ -120,8 +120,9 @@ describe('Module', () => {
       expect(res2.dependencies).toEqual(['dep1', 'dep2']);
       expect(transformCode).toHaveBeenCalledTimes(2);
 
-      // Code was only read once, though.
-      expect(fs.readFileSync).toHaveBeenCalledTimes(1);
+      // Code was never read, though, because experimental caches read on the
+      // worker, to speed up local cache!
+      expect(fs.readFileSync).not.toHaveBeenCalled();
     });
   });
 

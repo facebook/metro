@@ -30,6 +30,7 @@ var fs = require('fs');
 const os = require('os');
 const path = require('path');
 const mkdirp = require('mkdirp');
+const Module = require('../../node-haste/Module');
 
 var commonOptions = {
   allowBundleUpdates: false,
@@ -116,5 +117,60 @@ describe('Bundler', function() {
 
     expect(result.code).toEqual(minifiedCode);
     expect(result.map).toEqual([]);
+  });
+
+  it('uses new cache layers when transforming if requested to do so', async () => {
+    const get = jest.fn();
+    const set = jest.fn();
+
+    const bundlerInstance = new Bundler({
+      ...commonOptions,
+      cacheStores: [{get, set}],
+      projectRoots,
+    });
+
+    const depGraph = {
+      getSha1: jest.fn(() => '0123456789012345678901234567890123456789'),
+    };
+
+    jest.spyOn(bundlerInstance, 'getDependencyGraph').mockImplementation(() => {
+      return new Promise(resolve => {
+        resolve(depGraph);
+      });
+    });
+
+    const module = new Module({
+      file: '/root/foo.js',
+      localPath: 'foo.js',
+      experimentalCaches: true,
+    });
+
+    require('../../JSTransformer').prototype.transform.mockReturnValue({
+      sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
+      result: {},
+    });
+
+    await bundlerInstance._cachedTransformCode(module, null, {});
+
+    // We got the SHA-1 of the file from the dependency graph.
+    expect(depGraph.getSha1).toBeCalledWith('/root/foo.js');
+
+    // Only one get, with the original SHA-1.
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(get.mock.calls[0][0].toString('hex')).toMatch(
+      '0123456789012345678901234567890123456789',
+    );
+
+    // Only one set, with the *modified* SHA-1. This happens when the file gets
+    // modified between querying the caches and saving.
+    expect(set).toHaveBeenCalledTimes(1);
+    expect(set.mock.calls[0][0].toString('hex')).toMatch(
+      'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
+    );
+
+    // But, the common part of the key remains the same.
+    expect(get.mock.calls[0][0].toString('hex').substr(0, 32)).toBe(
+      set.mock.calls[0][0].toString('hex').substr(0, 32),
+    );
   });
 });

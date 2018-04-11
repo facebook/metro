@@ -55,6 +55,7 @@ describe('Transformer', function() {
       api.transform.mockImplementation(() => {
         return {
           result: 'transformed(code)',
+          sha1: '4ea962697c876e2674d107f0fec6798414f5bf45',
           transformFileStartLogEntry: {},
           transformFileEndLogEntry: {},
         };

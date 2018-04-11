@@ -257,12 +257,14 @@ class Bundler {
 
   async _cachedTransformCode(
     module: Module,
-    code: string,
+    code: ?string,
     transformCodeOptions: WorkerOptions,
   ): Promise<TransformedCode> {
     const cache = this._cache;
-    let result;
-    let key;
+    let data = null;
+    let partialKey;
+    let fullKey;
+    let sha1;
 
     // First, try getting the result from the cache if enabled.
     if (cache) {
@@ -287,13 +289,12 @@ class Bundler {
         }
       }
 
-      key = stableHash([
+      partialKey = stableHash([
         // This is the hash related to the global Bundler config.
         this._baseHash,
 
         // Path and code hash.
         module.localPath,
-        (await this.getDependencyGraph()).getSha1(module.path),
 
         // We cannot include "transformCodeOptions" because of "projectRoot".
         assetDataPlugins,
@@ -306,12 +307,25 @@ class Bundler {
         platform,
       ]);
 
-      result = await cache.get(key);
+      sha1 = (await this.getDependencyGraph()).getSha1(module.path);
+      fullKey = Buffer.concat([partialKey, Buffer.from(sha1, 'hex')]);
+
+      const result = await cache.get(fullKey);
+
+      if (result) {
+        data = {result, sha1};
+      }
+    }
+
+    if (!cache && code == null) {
+      throw new Error(
+        'When not using experimental caches, code should always be provided',
+      );
     }
 
     // Second, if there was no result, compute it ourselves.
-    if (!result) {
-      result = await this._transformer.transform(
+    if (!data) {
+      data = await this._transformer.transform(
         module.path,
         module.localPath,
         code,
@@ -323,11 +337,17 @@ class Bundler {
     }
 
     // Third, propagate the result to all cache layers.
-    if (key && cache) {
-      cache.set(key, result);
+    if (fullKey && partialKey && sha1 && cache) {
+      // It could be that the SHA-1 we had back when we sent to the transformer
+      // was outdated; if so, recompute it.
+      if (sha1 !== data.sha1) {
+        fullKey = Buffer.concat([partialKey, Buffer.from(data.sha1, 'hex')]);
+      }
+
+      cache.set(fullKey, data.result);
     }
 
-    return result;
+    return data.result;
   }
 }
 

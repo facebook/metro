@@ -15,6 +15,8 @@ const JsFileWrapping = require('../../ModuleGraph/worker/JsFileWrapping');
 const assetTransformer = require('../../assetTransformer');
 const collectDependencies = require('../../ModuleGraph/worker/collectDependencies');
 const constantFoldingPlugin = require('./constant-folding-plugin');
+const crypto = require('crypto');
+const fs = require('fs');
 const getMinifier = require('../../lib/getMinifier');
 const inlinePlugin = require('./inline-plugin');
 const optimizeDependencies = require('../../ModuleGraph/worker/optimizeDependencies');
@@ -90,6 +92,7 @@ export type Options = TransformOptionsStrict;
 
 export type Data = {
   result: TransformedCode,
+  sha1: string,
   transformFileStartLogEntry: LogEntry,
   transformFileEndLogEntry: LogEntry,
 };
@@ -115,7 +118,7 @@ function getDynamicDepsBehavior(
 async function transformCode(
   filename: string,
   localPath: LocalPath,
-  sourceCode: string,
+  sourceCode: ?string,
   transformerPath: string,
   isScript: boolean,
   options: Options,
@@ -124,6 +127,10 @@ async function transformCode(
   asyncRequireModulePath: string,
   dynamicDepsInPackages: DynamicRequiresBehavior,
 ): Promise<Data> {
+  if (sourceCode == null) {
+    sourceCode = fs.readFileSync(filename, 'utf8');
+  }
+
   const transformFileStartLogEntry = {
     action_name: 'Transforming file',
     action_phase: 'start',
@@ -131,6 +138,11 @@ async function transformCode(
     log_entry_label: 'Transforming file',
     start_timestamp: process.hrtime(),
   };
+
+  const sha1 = crypto
+    .createHash('sha1')
+    .update(sourceCode)
+    .digest('hex');
 
   if (filename.endsWith('.json')) {
     const code = JsFileWrapping.wrapJson(sourceCode);
@@ -142,6 +154,7 @@ async function transformCode(
 
     return {
       result: {dependencies: [], code, map: []},
+      sha1,
       transformFileStartLogEntry,
       transformFileEndLogEntry,
     };
@@ -241,6 +254,7 @@ async function transformCode(
 
   return {
     result: {dependencies, code: result.code, map},
+    sha1,
     transformFileStartLogEntry,
     transformFileEndLogEntry,
   };

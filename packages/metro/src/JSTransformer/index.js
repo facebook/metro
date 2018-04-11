@@ -35,6 +35,11 @@ type Reporters = {
   +stderrChunk: (chunk: string) => mixed,
 };
 
+type TransformerResult = {
+  result: TransformedCode,
+  sha1: string,
+};
+
 module.exports = class Transformer {
   _worker: WorkerInterface;
   _transformModulePath: string;
@@ -101,12 +106,12 @@ module.exports = class Transformer {
   async transform(
     filename: string,
     localPath: LocalPath,
-    code: string,
+    code: ?string,
     isScript: boolean,
     options: Options,
     assetExts: $ReadOnlyArray<string>,
     assetRegistryPath: string,
-  ): Promise<TransformedCode> {
+  ): Promise<TransformerResult> {
     try {
       debug('Started transforming file', filename);
 
@@ -128,7 +133,10 @@ module.exports = class Transformer {
       Logger.log(data.transformFileStartLogEntry);
       Logger.log(data.transformFileEndLogEntry);
 
-      return data.result;
+      return {
+        result: data.result,
+        sha1: Buffer.from(data.sha1, 'hex'),
+      };
     } catch (err) {
       debug('Failed transform file', filename);
 
