@@ -154,7 +154,7 @@ module.exports.transform = (file: {filename: string, src: string}) => {
 If you would like to plug-in babel, you can simply do that by passing the code to it:
 
 ```js
-const {transformSync} = require('@babel/core');
+const {transform} = require('@babel/core');
 
 module.exports.transform = file => {
   return transform(file.src, {
