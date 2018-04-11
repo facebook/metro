@@ -279,7 +279,7 @@ exports.runServer = async ({
 
 type BuildGraphOptions = {|
   ...PublicMetroOptions,
-  entry: string,
+  entries: $ReadOnlyArray<string>,
   dev?: boolean,
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
   platform?: string,
@@ -287,10 +287,12 @@ type BuildGraphOptions = {|
 
 type RunBuildOptions = {|
   ...PublicMetroOptions,
-  ...BuildGraphOptions,
+  entry: string,
+  dev?: boolean,
   out: string,
   onBegin?: () => void,
   onComplete?: () => void,
+  onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
   optimize?: boolean,
   output?: {
     build: (
@@ -303,6 +305,7 @@ type RunBuildOptions = {|
       (...args: Array<string>) => void,
     ) => Promise<mixed>,
   },
+  platform?: string,
   sourceMap?: boolean,
   sourceMapUrl?: string,
 |};
@@ -377,7 +380,7 @@ exports.runBuild = async ({
 exports.buildGraph = async function({
   config,
   dev = false,
-  entry,
+  entries,
   onProgress,
   platform = `web`,
   ...rest
@@ -390,10 +393,9 @@ exports.buildGraph = async function({
 
   try {
     return await metroServer.buildGraph({
-      ...MetroServer.DEFAULT_BUNDLE_OPTIONS,
-      bundleType: 'graph',
+      ...MetroServer.DEFAULT_GRAPH_OPTIONS,
       dev,
-      entryFile: entry,
+      entryFiles: entries,
       onProgress,
       platform,
     });

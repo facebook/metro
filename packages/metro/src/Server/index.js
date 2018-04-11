@@ -59,7 +59,10 @@ import type {MetroSourceMap} from 'metro-source-map';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Symbolicate} from './symbolicate/symbolicate';
 import type {AssetData} from '../Assets';
-import type {TransformedCode} from '../JSTransformer/worker';
+import type {
+  CustomTransformOptions,
+  TransformedCode,
+} from '../JSTransformer/worker';
 const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
@@ -71,6 +74,18 @@ type GraphInfo = {|
   prepend: $ReadOnlyArray<DependencyEdge>,
   lastModified: Date,
   +sequenceId: string,
+|};
+
+type BuildGraphOptions = {|
+  +assetPlugins: Array<string>,
+  +customTransformOptions: CustomTransformOptions,
+  +dev: boolean,
+  +entryFiles: $ReadOnlyArray<string>,
+  +hot: boolean,
+  +minify: boolean,
+  +onProgress: ?(doneCont: number, totalCount: number) => mixed,
+  +platform: ?string,
+  +type: 'module' | 'script',
 |};
 
 type DeltaOptions = BundleOptions & {
@@ -269,22 +284,19 @@ class Server {
     };
   }
 
-  async buildGraph(options: BundleOptions): Promise<Graph> {
-    const entryPoint = getAbsolutePath(
-      options.entryFile,
-      this._opts.projectRoots,
-    );
-
+  async buildGraph(options: BuildGraphOptions): Promise<Graph> {
     return await this._deltaBundler.buildGraph({
       assetPlugins: options.assetPlugins,
       customTransformOptions: options.customTransformOptions,
       dev: options.dev,
-      entryPoints: [entryPoint],
+      entryPoints: options.entryFiles.map(entryFile =>
+        getAbsolutePath(entryFile, this._opts.projectRoots),
+      ),
       hot: options.hot,
       minify: options.minify,
       onProgress: options.onProgress,
       platform: options.platform,
-      type: 'module',
+      type: options.type,
     });
   }
 
@@ -1123,20 +1135,24 @@ class Server {
     return this._opts.projectRoots;
   }
 
-  static DEFAULT_BUNDLE_OPTIONS = {
+  static DEFAULT_GRAPH_OPTIONS = {
     assetPlugins: [],
     customTransformOptions: Object.create(null),
     dev: true,
-    entryModuleOnly: false,
-    excludeSource: false,
     hot: false,
-    inlineSourceMap: false,
     minify: false,
     onProgress: null,
+    type: 'module',
+  };
+
+  static DEFAULT_BUNDLE_OPTIONS = {
+    ...Server.DEFAULT_GRAPH_OPTIONS,
+    entryModuleOnly: false,
+    excludeSource: false,
+    inlineSourceMap: false,
     runBeforeMainModule: [],
     runModule: true,
     sourceMapUrl: null,
-    type: 'script',
   };
 }
 
