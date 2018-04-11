@@ -304,18 +304,22 @@ class Module {
     // TODO: T26134860 Cache layer lives inside the transformer now; just call
     // the transform method.
     if (this._experimentalCaches) {
-      // Source code is read on the worker.
-      const data = {
-        ...(await this._transformCode(this, null, transformOptions)),
+      const result: TransformedCode = await this._transformCode(
+        this,
+        null, // Source code is read on the worker
+        transformOptions,
+      );
+
+      const module = this;
+
+      return {
+        code: result.code,
+        dependencies: result.dependencies,
+        map: result.map,
+        get source() {
+          return module._readSourceCode();
+        },
       };
-
-      // eslint-disable-next-line lint/flow-no-fixme
-      // $FlowFixMe: Flow wants "value" here, where the get is for AVOIDING it.
-      Object.defineProperty(data, 'sourceCode', {
-        get: () => this._readSourceCode.bind(this),
-      });
-
-      return data;
     }
 
     const cached = this.readCached(transformOptions);
