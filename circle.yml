@@ -79,6 +79,8 @@ jobs:
           command: yarn --no-progress
       - save-cache: *save-cache
       - run:
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+      - run:
           working_directory: ~/metro
           command: npm run publish
   test-and-deploy-website:
