@@ -13,7 +13,7 @@
 
 // This is a temporary migration bridge to switch between babel 6 and 7
 
-const IS_BABEL7 = process.env.BABEL_VERSION === '7';
+const IS_BABEL7 = true; // process.env.BABEL_VERSION === '7';
 
 // ## Babel 6 stuff
 

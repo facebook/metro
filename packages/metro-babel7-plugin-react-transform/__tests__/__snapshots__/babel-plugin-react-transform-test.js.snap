@@ -31,23 +31,24 @@ class Foo {
   f() {
     class Bar extends React.Component {
       render() {}
+
     }
 
     Bar = _wrapComponent(\\"Bar\\")(Bar);
     foo(Bar);
   }
+
 }"
 `;
 
 exports[`finds React components should code call expression with render method 1`] = `
 "factory({
   render() {}
-});
 
+});
 factory({
   render: function () {}
 });
-
 factory({
   'render': function () {}
 });"
@@ -85,22 +86,24 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 foo(_wrapComponent(\\"Foo\\")(class Foo extends React.Component {
   render() {}
+
 }));
 foo(_wrapComponent(\\"_component\\")(class extends React.Component {
   render() {}
+
 }));"
 `;
 
 exports[`finds React components should code class extends component with render method 1`] = `
-"import _transformLib from 'transform-lib';
+"import _transformLib from \\"transform-lib\\";
 const _components = {
   Foo: {
-    displayName: 'Foo'
+    displayName: \\"Foo\\"
   }
 };
 
 const _transformLib2 = _transformLib({
-  filename: 'unknown',
+  filename: \\"unknown\\",
   components: _components,
   locals: [],
   imports: []
@@ -113,22 +116,25 @@ function _wrapComponent(id) {
 }
 
 import React, { Component } from 'react';
+
 class Foo extends Component {
   render() {}
+
 }
-Foo = _wrapComponent('Foo')(Foo);"
+
+Foo = _wrapComponent(\\"Foo\\")(Foo);"
 `;
 
 exports[`finds React components should code class extends purecomponent with render method 1`] = `
-"import _transformLib from 'transform-lib';
+"import _transformLib from \\"transform-lib\\";
 const _components = {
   Foo: {
-    displayName: 'Foo'
+    displayName: \\"Foo\\"
   }
 };
 
 const _transformLib2 = _transformLib({
-  filename: 'unknown',
+  filename: \\"unknown\\",
   components: _components,
   locals: [],
   imports: []
@@ -141,10 +147,13 @@ function _wrapComponent(id) {
 }
 
 import React, { PureComponent } from 'react';
+
 class Foo extends PureComponent {
   render() {}
+
 }
-Foo = _wrapComponent('Foo')(Foo);"
+
+Foo = _wrapComponent(\\"Foo\\")(Foo);"
 `;
 
 exports[`finds React components should code class extends react component 1`] = `"class Foo extends React.Component {}"`;
@@ -175,13 +184,16 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 class Foo extends React.Component {
   render() {}
+
 }
+
 Foo = _wrapComponent(\\"Foo\\")(Foo);"
 `;
 
 exports[`finds React components should code class with render method 1`] = `
 "class Foo {
   render() {}
+
 }"
 `;
 
@@ -219,6 +231,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function factory() {
   return _wrapComponent(\\"Foo\\")(class Foo extends React.Component {
     render() {}
+
   });
 }"
 `;
@@ -249,6 +262,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 const Foo = _wrapComponent(\\"_component\\")(class extends React.Component {
   render() {}
+
 });"
 `;
 
@@ -259,15 +273,16 @@ export class Bar extends React.Component {}
 export const bar = React.createClass({});
 export class Baz {
   render() {}
+
 }
 export class Boo {
   render() {}
+
 }"
 `;
 
 exports[`finds React components should code ignore 1`] = `
 "import React from 'react';
-
 const First = React.createNotClass({
   displayName: 'First'
 });
@@ -281,7 +296,6 @@ const myCreateClass = spec => {
 const spec = {
   render: function () {}
 };
-
 React.createClass(spec);"
 `;
 
@@ -289,7 +303,6 @@ exports[`finds React components should code react create class 1`] = `
 "const Foo = React.createClass({
   displayName: 'Foo'
 });
-
 React.createClass({});"
 `;
 
@@ -300,18 +313,18 @@ exports[`finds React components should code react create class with dynamic disp
 `;
 
 exports[`finds React components should code react create class with render method 1`] = `
-"var _transformLib = _interopRequireDefault(require('transform-lib')).default;
+"var _transformLib = _interopRequireDefault(require(\\"transform-lib\\")).default;
 
 const _components = {
   Foo: {
-    displayName: 'Foo'
+    displayName: \\"Foo\\"
   },
   _component: {},
   _component2: {}
 };
 
 const _transformLib2 = _transformLib({
-  filename: 'unknown',
+  filename: \\"unknown\\",
   components: _components,
   locals: [],
   imports: []
@@ -325,16 +338,16 @@ function _wrapComponent(id) {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const Foo = _wrapComponent('Foo')(React.createClass({
+const Foo = _wrapComponent(\\"Foo\\")(React.createClass({
   displayName: 'Foo',
   render: function () {}
 }));
 
-_wrapComponent('_component')(React.createClass({
+_wrapComponent(\\"_component\\")(React.createClass({
   render: function () {}
 }));
 
-const Bar = _wrapComponent('_component2')(React.createClass({
+const Bar = _wrapComponent(\\"_component2\\")(React.createClass({
   render: function () {}
 }));"
 `;
@@ -346,16 +359,16 @@ exports[`finds React components should code react create class with string liter
 `;
 
 exports[`finds React components should code react create class with string literal display name with render method 1`] = `
-"var _transformLib = _interopRequireDefault(require('transform-lib')).default;
+"var _transformLib = _interopRequireDefault(require(\\"transform-lib\\")).default;
 
 const _components = {
-  'my-component': {
-    displayName: 'my-component'
+  \\"my-component\\": {
+    displayName: \\"my-component\\"
   }
 };
 
 const _transformLib2 = _transformLib({
-  filename: 'unknown',
+  filename: \\"unknown\\",
   components: _components,
   locals: [],
   imports: []
@@ -369,7 +382,7 @@ function _wrapComponent(id) {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const MyComponent = _wrapComponent('my-component')(React.createClass({
+const MyComponent = _wrapComponent(\\"my-component\\")(React.createClass({
   displayName: 'my-component',
   render: function () {}
 }));"
@@ -381,26 +394,25 @@ exports[`finds React components should options custom factories 1`] = `
 "const Foo = createClass({
   displayName: 'Foo'
 });
-
 const Bar = factory({
   displayName: 'Bar'
 });"
 `;
 
 exports[`finds React components should options custom factories with render method 1`] = `
-"var _transformLib = _interopRequireDefault(require('transform-lib')).default;
+"var _transformLib = _interopRequireDefault(require(\\"transform-lib\\")).default;
 
 const _components = {
   Foo: {
-    displayName: 'Foo'
+    displayName: \\"Foo\\"
   },
   Bar: {
-    displayName: 'Bar'
+    displayName: \\"Bar\\"
   }
 };
 
 const _transformLib2 = _transformLib({
-  filename: 'unknown',
+  filename: \\"unknown\\",
   components: _components,
   locals: [],
   imports: []
@@ -414,12 +426,12 @@ function _wrapComponent(id) {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const Foo = _wrapComponent('Foo')(createClass({
+const Foo = _wrapComponent(\\"Foo\\")(createClass({
   displayName: 'Foo',
   render: function () {}
 }));
 
-const Bar = _wrapComponent('Bar')(factory({
+const Bar = _wrapComponent(\\"Bar\\")(factory({
   displayName: 'Bar',
   render: function () {}
 }));"
@@ -427,6 +439,7 @@ const Bar = _wrapComponent('Bar')(factory({
 
 exports[`finds React components should options custom super classes 1`] = `
 "class Foo extends BooComponent {}
+
 class Bar extends CustomComponent {}"
 `;
 
@@ -459,11 +472,16 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 class Foo extends BooComponent {
   render() {}
+
 }
+
 Foo = _wrapComponent(\\"Foo\\")(Foo);
+
 class Bar extends CustomComponent {
   render() {}
+
 }
+
 Bar = _wrapComponent(\\"Bar\\")(Bar);"
 `;
 
@@ -504,7 +522,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 class Foo extends React.Component {
   render() {}
+
 }
+
 Foo = _wrapComponent(\\"Foo\\")(Foo);"
 `;
 
@@ -540,7 +560,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 class Foo extends React.Component {
   render() {}
+
 }
+
 Foo = _wrapComponent(\\"Foo\\")(Foo);"
 `;
 
@@ -572,6 +594,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 class Foo extends React.Component {
   render() {}
+
 }
+
 Foo = _wrapComponent(\\"Foo\\")(Foo);"
 `;
