@@ -1,5 +1,5 @@
 {
-  "version": "0.30.2",
+  "version": "0.32.0",
   "name": "metro-babel7-plugin-react-transform",
   "main": "lib/index.js",
   "dependencies": {
