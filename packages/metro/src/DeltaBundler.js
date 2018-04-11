@@ -10,14 +10,14 @@
 
 'use strict';
 
-const DeltaCalculator = require('./DeltaCalculator');
+const DeltaCalculator = require('./DeltaBundler/DeltaCalculator');
 
-import type Bundler from '../Bundler';
+import type Bundler from './Bundler';
 import type {
   DeltaResult,
   Graph as CalculatorGraph,
   Options,
-} from './DeltaCalculator';
+} from './DeltaBundler/DeltaCalculator';
 
 export type Delta = DeltaResult;
 export type Graph = CalculatorGraph;

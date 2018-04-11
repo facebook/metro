@@ -10,24 +10,24 @@
 
 'use strict';
 
-const JsFileWrapping = require('../../ModuleGraph/worker/JsFileWrapping');
+const JsFileWrapping = require('../ModuleGraph/worker/JsFileWrapping');
 
-const assetTransformer = require('../../assetTransformer');
-const collectDependencies = require('../../ModuleGraph/worker/collectDependencies');
-const constantFoldingPlugin = require('./constant-folding-plugin');
+const assetTransformer = require('../assetTransformer');
+const collectDependencies = require('../ModuleGraph/worker/collectDependencies');
+const constantFoldingPlugin = require('./worker/constant-folding-plugin');
 const crypto = require('crypto');
 const fs = require('fs');
-const getMinifier = require('../../lib/getMinifier');
-const inlinePlugin = require('./inline-plugin');
-const optimizeDependencies = require('../../ModuleGraph/worker/optimizeDependencies');
+const getMinifier = require('../lib/getMinifier');
+const inlinePlugin = require('./worker/inline-plugin');
+const optimizeDependencies = require('../ModuleGraph/worker/optimizeDependencies');
 const path = require('path');
 
-const {babylon} = require('../../babel-bridge');
-const {babelGenerate: generate} = require('../../babel-bridge');
+const {babylon} = require('../babel-bridge');
+const {babelGenerate: generate} = require('../babel-bridge');
 const {toSegmentTuple} = require('metro-source-map');
 
-import type {DynamicRequiresBehavior} from '../../ModuleGraph/worker/collectDependencies';
-import type {LocalPath} from '../../node-haste/lib/toLocalPath';
+import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
+import type {LocalPath} from '../node-haste/lib/toLocalPath';
 import type {Ast} from '@babel/core';
 import type {BabelSourceMap} from '@babel/core';
 import type {Plugins as BabelPlugins} from 'babel-core';

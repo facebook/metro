@@ -20,7 +20,7 @@ const sourceMap = require('source-map');
 
 const {transformSync} = require('../../babel-bridge');
 
-import type {PostMinifyProcess} from '../../Bundler/index.js';
+import type {PostMinifyProcess} from '../../Bundler';
 import type {TransformedSourceFile, TransformResult} from '../types.flow';
 import type {BabelSourceMap} from '@babel/core';
 import type {TransformResult as BabelTransformResult} from '@babel/core';

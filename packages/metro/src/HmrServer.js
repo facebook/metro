@@ -10,20 +10,20 @@
 
 'use strict';
 
-const formatBundlingError = require('../lib/formatBundlingError');
-const getAbsolutePath = require('../lib/getAbsolutePath');
-const hmrJSBundle = require('../DeltaBundler/Serializers/hmrJSBundle');
+const formatBundlingError = require('./lib/formatBundlingError');
+const getAbsolutePath = require('./lib/getAbsolutePath');
+const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
 const nullthrows = require('fbjs/lib/nullthrows');
-const parseCustomTransformOptions = require('../lib/parseCustomTransformOptions');
+const parseCustomTransformOptions = require('./lib/parseCustomTransformOptions');
 const url = require('url');
 
 const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
 
-import type {Graph} from '../DeltaBundler/DeltaCalculator';
-import type PackagerServer from '../Server';
-import type {Reporter} from '../lib/reporting';
+import type {Graph} from './DeltaBundler/DeltaCalculator';
+import type PackagerServer from './Server';
+import type {Reporter} from './lib/reporting';
 
 type Client = {|
   graph: Graph,

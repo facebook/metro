@@ -10,13 +10,13 @@
 
 'use strict';
 
-const DependencyGraph = require('../node-haste/DependencyGraph');
-const Transformer = require('../JSTransformer');
+const DependencyGraph = require('./node-haste/DependencyGraph');
+const Transformer = require('./JSTransformer');
 
 const assert = require('assert');
-const defaults = require('../defaults');
+const defaults = require('./defaults');
 const fs = require('fs');
-const getTransformCacheKeyFn = require('../lib/getTransformCacheKeyFn');
+const getTransformCacheKeyFn = require('./lib/getTransformCacheKeyFn');
 
 const {Cache, stableHash} = require('metro-cache');
 const {
@@ -28,12 +28,12 @@ const {
 import type {
   TransformedCode,
   Options as WorkerOptions,
-} from '../JSTransformer/worker';
-import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
-import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
-import type {TransformCache} from '../lib/TransformCaching';
-import type {Reporter} from '../lib/reporting';
-import type Module from '../node-haste/Module';
+} from './JSTransformer/worker';
+import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
+import type {GlobalTransformCache} from './lib/GlobalTransformCache';
+import type {TransformCache} from './lib/TransformCaching';
+import type {Reporter} from './lib/reporting';
+import type Module from './node-haste/Module';
 import type {BabelSourceMap} from '@babel/core';
 import type {CacheStore} from 'metro-cache';
 import type {CustomResolver} from 'metro-resolver';

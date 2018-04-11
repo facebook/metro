@@ -14,7 +14,7 @@ const addParamsToDefineCall = require('../../lib/addParamsToDefineCall');
 
 const {wrapModule} = require('./helpers/js');
 
-import type {Delta, Graph} from '../';
+import type {Delta, Graph} from '../../DeltaBundler';
 import type {DependencyEdge} from '../traverseDependencies';
 
 type Options = {

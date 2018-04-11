@@ -16,7 +16,7 @@ const process = require('process');
 
 const {EventEmitter} = require('events');
 
-const VERSION = require('../../package.json').version;
+const VERSION = require('../package.json').version;
 
 type ActionLogEntryData = {
   action_name: string,

@@ -14,7 +14,7 @@ const {
   createEntry,
   createActionStartEntry,
   createActionEndEntry,
-} = require('../');
+} = require('../Logger');
 
 /* eslint-disable no-console */
 describe('Logger', () => {

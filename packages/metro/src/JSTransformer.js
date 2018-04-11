@@ -17,13 +17,13 @@ const debug = require('debug')('Metro:JStransformer');
 const Worker = require('jest-worker').default;
 
 import type {BabelSourceMap} from '@babel/core';
-import type {Options, TransformedCode} from './worker';
-import type {LocalPath} from '../node-haste/lib/toLocalPath';
+import type {Options, TransformedCode} from './JSTransformer/worker';
+import type {LocalPath} from './node-haste/lib/toLocalPath';
 import type {MetroMinifier} from 'metro-minify-uglify';
 import type {ResultWithMap} from 'metro-minify-uglify';
-import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
+import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
 
-import typeof {transform as Transform} from './worker';
+import typeof {transform as Transform} from './JSTransformer/worker';
 
 type WorkerInterface = Worker & {
   minify: MetroMinifier,
@@ -60,7 +60,7 @@ module.exports = class Transformer {
     this._asyncRequireModulePath = options.asyncRequireModulePath;
     this._dynamicDepsInPackages = options.dynamicDepsInPackages;
     this._minifierPath = options.minifierPath;
-    const {workerPath = require.resolve('./worker')} = options;
+    const {workerPath = require.resolve('./JSTransformer/worker')} = options;
 
     if (options.maxWorkers > 1) {
       this._worker = this._makeFarm(

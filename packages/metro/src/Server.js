@@ -10,59 +10,60 @@
 
 'use strict';
 
-const Bundler = require('../Bundler');
-const DeltaBundler = require('../DeltaBundler');
-const MultipartResponse = require('./MultipartResponse');
+const Bundler = require('./Bundler');
+const DeltaBundler = require('./DeltaBundler');
+const MultipartResponse = require('./Server/MultipartResponse');
 
 const crypto = require('crypto');
-const defaultCreateModuleIdFactory = require('../lib/createModuleIdFactory');
-const deltaJSBundle = require('../DeltaBundler/Serializers/deltaJSBundle');
-const getAllFiles = require('../DeltaBundler/Serializers/getAllFiles');
-const getAssets = require('../DeltaBundler/Serializers/getAssets');
-const getRamBundleInfo = require('../DeltaBundler/Serializers/getRamBundleInfo');
-const plainJSBundle = require('../DeltaBundler/Serializers/plainJSBundle');
-const sourceMapObject = require('../DeltaBundler/Serializers/sourceMapObject');
-const sourceMapString = require('../DeltaBundler/Serializers/sourceMapString');
+const defaultCreateModuleIdFactory = require('./lib/createModuleIdFactory');
+const deltaJSBundle = require('./DeltaBundler/Serializers/deltaJSBundle');
+const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
+const getAssets = require('./DeltaBundler/Serializers/getAssets');
+const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
+const plainJSBundle = require('./DeltaBundler/Serializers/plainJSBundle');
+const sourceMapObject = require('./DeltaBundler/Serializers/sourceMapObject');
+const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
 const debug = require('debug')('Metro:Server');
-const defaults = require('../defaults');
-const formatBundlingError = require('../lib/formatBundlingError');
-const getAbsolutePath = require('../lib/getAbsolutePath');
-const getMaxWorkers = require('../lib/getMaxWorkers');
-const getPrependedScripts = require('../lib/getPrependedScripts');
+const defaults = require('./defaults');
+const formatBundlingError = require('./lib/formatBundlingError');
+const getAbsolutePath = require('./lib/getAbsolutePath');
+const getMaxWorkers = require('./lib/getMaxWorkers');
+const getPrependedScripts = require('./lib/getPrependedScripts');
 const mime = require('mime-types');
-const mapGraph = require('../lib/mapGraph');
+const mapGraph = require('./lib/mapGraph');
 const nullthrows = require('fbjs/lib/nullthrows');
-const parseCustomTransformOptions = require('../lib/parseCustomTransformOptions');
-const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
+const parseCustomTransformOptions = require('./lib/parseCustomTransformOptions');
+const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
 const path = require('path');
-const symbolicate = require('./symbolicate/symbolicate');
+const symbolicate = require('./Server/symbolicate/symbolicate');
 const url = require('url');
 
-const {getAsset} = require('../Assets');
+const {getAsset} = require('./Assets');
 const resolveSync: ResolveSync = require('resolve').sync;
 
-import type {CustomError} from '../lib/formatBundlingError';
-import type {DependencyEdge} from '../DeltaBundler/traverseDependencies';
+import type {CustomError} from './lib/formatBundlingError';
+import type {DependencyEdge} from './DeltaBundler/traverseDependencies';
 import type {IncomingMessage, ServerResponse} from 'http';
-import type {Reporter} from '../lib/reporting';
-import type {RamBundleInfo} from '../DeltaBundler/Serializers/getRamBundleInfo';
-import type {BundleOptions, Options} from '../shared/types.flow';
+import type {Reporter} from './lib/reporting';
+import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
+import type {BundleOptions, Options} from './shared/types.flow';
 import type {
   GetTransformOptions,
   PostMinifyProcess,
   PostProcessBundleSourcemap,
-} from '../Bundler';
+} from './Bundler';
 import type {CacheStore} from 'metro-cache';
-import type {Delta, Graph} from '../DeltaBundler';
+import type {Delta, Graph} from './DeltaBundler';
 import type {CustomResolver} from 'metro-resolver';
 import type {MetroSourceMap} from 'metro-source-map';
-import type {TransformCache} from '../lib/TransformCaching';
-import type {Symbolicate} from './symbolicate/symbolicate';
-import type {AssetData} from '../Assets';
+import type {TransformCache} from './lib/TransformCaching';
+import type {Symbolicate} from './Server/symbolicate/symbolicate';
+import type {AssetData} from './Assets';
 import type {
   CustomTransformOptions,
   TransformedCode,
-} from '../JSTransformer/worker';
+} from './JSTransformer/worker';
+
 const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
@@ -152,7 +153,7 @@ class Server {
 
   constructor(options: Options) {
     const reporter =
-      options.reporter || require('../lib/reporting').nullReporter;
+      options.reporter || require('./lib/reporting').nullReporter;
     const maxWorkers = getMaxWorkers(options.maxWorkers);
     const assetExts = options.assetExts || defaults.assetExts;
     const sourceExts = options.sourceExts || defaults.sourceExts;
