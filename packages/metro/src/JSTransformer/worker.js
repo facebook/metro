@@ -127,10 +127,6 @@ async function transformCode(
   asyncRequireModulePath: string,
   dynamicDepsInPackages: DynamicRequiresBehavior,
 ): Promise<Data> {
-  if (sourceCode == null) {
-    sourceCode = fs.readFileSync(filename, 'utf8');
-  }
-
   const transformFileStartLogEntry = {
     action_name: 'Transforming file',
     action_phase: 'start',
@@ -139,9 +135,16 @@ async function transformCode(
     start_timestamp: process.hrtime(),
   };
 
+  let data;
+
+  if (sourceCode == null) {
+    data = fs.readFileSync(filename);
+    sourceCode = data.toString('utf8');
+  }
+
   const sha1 = crypto
     .createHash('sha1')
-    .update(sourceCode)
+    .update(data || sourceCode)
     .digest('hex');
 
   if (filename.endsWith('.json')) {

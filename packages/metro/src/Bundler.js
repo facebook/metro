@@ -177,6 +177,7 @@ class Bundler {
       opts.assetExts,
       opts.assetRegistryPath,
       getTransformCacheKey,
+      'experimental',
     ]).toString('binary');
 
     this._projectRoots = opts.projectRoots;
