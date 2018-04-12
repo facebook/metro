@@ -12,7 +12,6 @@
 
 // $FlowFixMe: not defined by Flow
 const constants = require('constants');
-const path = require('path');
 const stream = require('stream');
 
 const {EventEmitter} = require('events');
@@ -61,6 +60,7 @@ type Resolution = {|
   +basename: string,
   +dirNode: DirectoryNode,
   +dirPath: Array<[string, EntityNode]>,
+  +drive: string,
   +node: ?EntityNode,
   +realpath: string,
 |};
@@ -113,9 +113,11 @@ const ASYNC_FUNC_NAMES = [
  * closely the behavior of file path resolution and file accesses.
  */
 class MemoryFs {
-  _root: DirectoryNode;
+  _roots: Map<string, DirectoryNode>;
   _fds: Map<number, Descriptor>;
   _nextId: number;
+  _platform: 'win32' | 'posix';
+  _pathSep: string;
 
   close: (fd: number, callback: (error: ?Error) => mixed) => void;
   open: (
@@ -169,7 +171,9 @@ class MemoryFs {
     callback?: (?Error) => mixed,
   ) => void;
 
-  constructor() {
+  constructor(platform: 'win32' | 'posix' = 'posix') {
+    this._platform = platform;
+    this._pathSep = platform === 'win32' ? '\\' : '/';
     this.reset();
     ASYNC_FUNC_NAMES.forEach(funcName => {
       const func = (this: $FlowFixMe)[`${funcName}Sync`];
@@ -191,7 +195,12 @@ class MemoryFs {
 
   reset() {
     this._nextId = 1;
-    this._root = this._makeDir();
+    this._roots = new Map();
+    if (this._platform === 'posix') {
+      this._roots.set('', this._makeDir());
+    } else if (this._platform === 'win32') {
+      this._roots.set('C:', this._makeDir());
+    }
     this._fds = new Map();
   }
 
@@ -640,48 +649,78 @@ class MemoryFs {
     });
   }
 
+  _parsePath(
+    filePath: string,
+  ): {|
+    +drive: ?string,
+    +entNames: Array<string>,
+  |} {
+    let drive;
+    const sep = this._platform === 'win32' ? /[\\/]/ : /\//;
+    if (this._platform === 'win32' && filePath.match(/^[a-zA-Z]:[\\/]/)) {
+      drive = filePath.substring(0, 2);
+      filePath = filePath.substring(3);
+    }
+    if (sep.test(filePath[0])) {
+      if (this._platform === 'posix') {
+        drive = '';
+        filePath = filePath.substring(1);
+      } else {
+        throw makeError(
+          'EINVAL',
+          filePath,
+          'path is invalid because it cannot start with a separator',
+        );
+      }
+    }
+    return {entNames: filePath.split(sep), drive};
+  }
+
   /**
    * Implemented according with
    * http://man7.org/linux/man-pages/man7/path_resolution.7.html
    */
   _resolve(
-    originalFilePath: string,
+    filePath: string,
     options?: {keepFinalSymlink: boolean},
   ): Resolution {
     let keepFinalSymlink = false;
     if (options != null) {
       ({keepFinalSymlink} = options);
     }
-    let filePath = originalFilePath;
-    let drive = '';
-    if (path === path.win32 && filePath.match(/^[a-zA-Z]:\\/)) {
-      drive = filePath.substring(0, 2);
-      filePath = filePath.substring(2);
-    }
     if (filePath === '') {
-      throw makeError('ENOENT', originalFilePath, 'no such file or directory');
+      throw makeError('ENOENT', filePath, 'no such file or directory');
     }
-    if (filePath[0] === '/') {
-      filePath = filePath.substring(1);
-    } else {
-      filePath = path.join(process.cwd().substring(1), filePath);
+    let {drive, entNames} = this._parsePath(filePath);
+    if (drive == null) {
+      const cwPath = this._parsePath(process.cwd());
+      drive = cwPath.drive;
+      if (drive == null) {
+        throw new Error(
+          'On a win32 FS, `process.cwd()` must return a valid win32 absolute ' +
+            `path. This happened while trying to resolve: \`${filePath}\``,
+        );
+      }
+      entNames = cwPath.entNames.concat(entNames);
     }
-    const entNames = filePath.split(path.sep);
-    checkPathLength(entNames, originalFilePath);
+    checkPathLength(entNames, filePath);
+    const root = this._getRoot(drive, filePath);
     const context = {
-      node: this._root,
-      nodePath: [['', this._root]],
+      drive,
+      node: root,
+      nodePath: [['', root]],
       entNames,
       symlinkCount: 0,
       keepFinalSymlink,
     };
     while (context.entNames.length > 0) {
       const entName = context.entNames.shift();
-      this._resolveEnt(context, originalFilePath, entName);
+      this._resolveEnt(context, filePath, entName);
     }
     const {nodePath} = context;
     return {
-      realpath: drive + nodePath.map(x => x[0]).join(path.sep),
+      drive: context.drive,
+      realpath: context.drive + nodePath.map(x => x[0]).join(this._pathSep),
       dirNode: (() => {
         const dirNode =
           nodePath.length >= 2
@@ -733,15 +772,23 @@ class MemoryFs {
     if (context.symlinkCount >= 10) {
       throw makeError('ELOOP', filePath, 'too many levels of symbolic links');
     }
-    let {target} = childNode;
-    if (target[0] === '/') {
-      target = target.substring(1);
-      context.node = this._root;
+    const {entNames, drive} = this._parsePath(childNode.target);
+    if (drive != null) {
+      context.drive = drive;
+      context.node = this._getRoot(drive, filePath);
       context.nodePath = [['', context.node]];
     }
-    context.entNames = target.split(path.sep).concat(context.entNames);
+    context.entNames = entNames.concat(context.entNames);
     checkPathLength(context.entNames, filePath);
     ++context.symlinkCount;
+  }
+
+  _getRoot(drive: string, filePath: string): DirectoryNode {
+    const root = this._roots.get(drive.toUpperCase());
+    if (root == null) {
+      throw makeError('ENOENT', filePath, `no such drive: \`${drive}\``);
+    }
+    return root;
   }
 
   _write(
@@ -809,7 +856,7 @@ class MemoryFs {
         }
         watcher.listener(options.eventType, filePath);
       }
-      filePath = path.join(dirNode[0], filePath);
+      filePath = dirNode[0] + this._pathSep + filePath;
       recursive = true;
     }
   }
