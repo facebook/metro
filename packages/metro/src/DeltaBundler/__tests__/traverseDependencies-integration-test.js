@@ -12,16 +12,16 @@
 
 jest.useRealTimers();
 jest
-  .mock('fs')
-  .mock('graceful-fs')
-  .mock('metro-core')
   .mock('../../lib/TransformCaching')
   // It's noticeably faster to prevent running watchman from FileWatcher.
   .mock('child_process', () => ({}))
   .mock('os', () => ({
-    ...require.requireActual('os'),
     platform: () => 'test',
-  }));
+    tmpdir: () => (process.platform === 'win32' ? 'C:\\tmp' : '/tmp'),
+    hostname: () => 'testhost',
+    endianness: () => 'LE',
+  }))
+  .mock('graceful-fs', () => require('fs'));
 
 // Super-simple mock for extracting dependencies
 const extractDependencies = function(sourceCode: string) {
@@ -35,8 +35,6 @@ const extractDependencies = function(sourceCode: string) {
 
   return deps;
 };
-
-jest.mock('graceful-fs', () => require('fs'));
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
 
@@ -94,6 +92,7 @@ describe('traverseDependencies', function() {
 
   beforeEach(function() {
     jest.resetModules();
+    jest.mock('fs', () => new (require('metro-memory-fs'))());
 
     Module = require('../../node-haste/Module');
     traverseDependencies = require('../traverseDependencies');
@@ -2336,6 +2335,8 @@ describe('traverseDependencies', function() {
       // reload path module
       jest.resetModules();
       jest.mock('path', () => require.requireActual('path').win32);
+      jest.mock('fs', () => new (require('metro-memory-fs'))('win32'));
+      require('os').tmpdir = () => 'c:\\tmp';
       DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
     });
@@ -2984,10 +2985,16 @@ describe('traverseDependencies', function() {
           expect(error.originModulePath).toBe('/root/index.js');
           expect(error.targetModuleName).toBe('dontWork');
         }
-        filesystem.root['index.js'] = filesystem.root['index.js']
-          .replace('require("dontWork")', '')
-          .replace('require("wontWork")', '');
-        return triggerAndProcessWatchEvent(dgraph, 'change', root + '/index.js')
+        return triggerAndProcessWatchEvent(dgraph, () => {
+          const fs = require('fs');
+          const code = fs.readFileSync(root + '/index.js', 'utf8');
+          fs.writeFileSync(
+            root + '/index.js',
+            code
+              .replace('require("dontWork")', '')
+              .replace('require("wontWork")', ''),
+          );
+        })
           .then(() => getOrderedDependenciesAsJSON(dgraph, '/root/index.js'))
           .then(deps => {
             expect(deps).toEqual([
@@ -3416,6 +3423,8 @@ describe('traverseDependencies', function() {
       // reload path module
       jest.resetModules();
       jest.mock('path', () => require.requireActual('path').win32);
+      jest.mock('fs', () => new (require('metro-memory-fs'))('win32'));
+      require('os').tmpdir = () => 'c:\\tmp';
       DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
       ({
@@ -3900,10 +3909,16 @@ describe('traverseDependencies', function() {
           expect(error.originModulePath).toBe('C:\\root\\index.js');
           expect(error.targetModuleName).toBe('dontWork');
         }
-        filesystem.root['index.js'] = filesystem.root['index.js']
-          .replace('require("dontWork")', '')
-          .replace('require("wontWork")', '');
-        await triggerAndProcessWatchEvent(dgraph, 'change', entryPath);
+        await triggerAndProcessWatchEvent(dgraph, () => {
+          const fs = require('fs');
+          fs.writeFileSync(
+            entryPath,
+            fs
+              .readFileSync(entryPath, 'utf8')
+              .replace('require("dontWork")', '')
+              .replace('require("wontWork")', ''),
+          );
+        });
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toEqual([
           {
@@ -4275,6 +4290,7 @@ describe('traverseDependencies', function() {
   describe('file watch updating', function() {
     let DependencyGraph;
     let processDgraph;
+    let fs;
 
     beforeEach(function() {
       Object.defineProperty(process, 'platform', {
@@ -4285,11 +4301,12 @@ describe('traverseDependencies', function() {
 
       DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
+      fs = require('fs');
     });
 
     it('updates module dependencies', async () => {
       var root = '/root';
-      var filesystem = setMockFileSystem({
+      setMockFileSystem({
         root: {
           'index.js': [
             '/**',
@@ -4318,11 +4335,12 @@ describe('traverseDependencies', function() {
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        filesystem.root['index.js'] = filesystem.root['index.js'].replace(
-          'require("foo")',
-          '',
-        );
-        await triggerAndProcessWatchEvent(dgraph, 'change', entryPath);
+        await triggerAndProcessWatchEvent(dgraph, () => {
+          fs.writeFileSync(
+            entryPath,
+            fs.readFileSync(entryPath, 'utf8').replace('require("foo")', ''),
+          );
+        });
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toEqual([
           {
@@ -4345,7 +4363,7 @@ describe('traverseDependencies', function() {
 
     it('updates module dependencies on file change', async () => {
       var root = '/root';
-      var filesystem = setMockFileSystem({
+      setMockFileSystem({
         root: {
           'index.js': [
             '/**',
@@ -4374,11 +4392,12 @@ describe('traverseDependencies', function() {
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        filesystem.root['index.js'] = filesystem.root['index.js'].replace(
-          'require("foo")',
-          '',
-        );
-        await triggerAndProcessWatchEvent(dgraph, 'change', root + '/index.js');
+        await triggerAndProcessWatchEvent(dgraph, () => {
+          fs.writeFileSync(
+            entryPath,
+            fs.readFileSync(entryPath, 'utf8').replace('require("foo")', ''),
+          );
+        });
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toEqual([
           {
@@ -4401,7 +4420,7 @@ describe('traverseDependencies', function() {
 
     it('updates module dependencies on file delete', async () => {
       var root = '/root';
-      var filesystem = setMockFileSystem({
+      setMockFileSystem({
         root: {
           'index.js': [
             '/**',
@@ -4430,8 +4449,9 @@ describe('traverseDependencies', function() {
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        delete filesystem.root['foo.js'];
-        await triggerAndProcessWatchEvent(dgraph, 'change', root + '/foo.js');
+        await triggerAndProcessWatchEvent(dgraph, () => {
+          fs.unlinkSync(root + '/foo.js');
+        });
         try {
           await getOrderedDependenciesAsJSON(dgraph, '/root/index.js');
           throw new Error('should be unreachable');
@@ -4448,7 +4468,7 @@ describe('traverseDependencies', function() {
     it('updates module dependencies on file add', async () => {
       expect.assertions(1);
       var root = '/root';
-      var filesystem = setMockFileSystem({
+      setMockFileSystem({
         root: {
           'index.js': [
             '/**',
@@ -4477,19 +4497,15 @@ describe('traverseDependencies', function() {
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        filesystem.root['bar.js'] = [
-          '/**',
-          ' * @providesModule bar',
-          ' */',
-          'require("foo")',
-        ].join('\n');
-        await triggerAndProcessWatchEvent(dgraph, 'change', root + '/bar.js');
-        filesystem.root.aPackage['main.js'] = 'require("bar")';
-        await triggerAndProcessWatchEvent(
-          dgraph,
-          'change',
-          root + '/aPackage/main.js',
-        );
+        await triggerAndProcessWatchEvent(dgraph, () => {
+          fs.writeFileSync(
+            root + '/bar.js',
+            ['/**', ' * @providesModule bar', ' */', 'require("foo")'].join(
+              '\n',
+            ),
+          );
+          fs.writeFileSync(root + '/aPackage/main.js', 'require("bar")');
+        });
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toEqual([
           {
@@ -4528,7 +4544,7 @@ describe('traverseDependencies', function() {
 
     it('updates module dependencies on relative asset add', async () => {
       var root = '/root';
-      var filesystem = setMockFileSystem({
+      setMockFileSystem({
         root: {
           'index.js': [
             '/**',
@@ -4555,8 +4571,9 @@ describe('traverseDependencies', function() {
           expect(error.originModulePath).toBe('/root/index.js');
           expect(error.targetModuleName).toBe('./foo.png');
         }
-        filesystem.root['foo.png'] = '';
-        await triggerAndProcessWatchEvent(dgraph, 'change', root + '/foo.png');
+        await triggerAndProcessWatchEvent(dgraph, () => {
+          fs.writeFileSync(root + '/foo.png', '');
+        });
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toEqual([
           {
@@ -4582,7 +4599,7 @@ describe('traverseDependencies', function() {
     it('changes to browser field', async () => {
       expect.assertions(1);
       var root = '/root';
-      var filesystem = setMockFileSystem({
+      setMockFileSystem({
         root: {
           'index.js': [
             '/**',
@@ -4605,16 +4622,16 @@ describe('traverseDependencies', function() {
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        filesystem.root.aPackage['package.json'] = JSON.stringify({
-          name: 'aPackage',
-          main: 'main.js',
-          browser: 'browser.js',
+        await triggerAndProcessWatchEvent(dgraph, () => {
+          fs.writeFileSync(
+            root + '/aPackage/package.json',
+            JSON.stringify({
+              name: 'aPackage',
+              main: 'main.js',
+              browser: 'browser.js',
+            }),
+          );
         });
-        await triggerAndProcessWatchEvent(
-          dgraph,
-          'change',
-          root + '/aPackage/package.json',
-        );
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toEqual([
           {
@@ -4639,7 +4656,7 @@ describe('traverseDependencies', function() {
 
     it('removes old package from cache', async () => {
       var root = '/root';
-      var filesystem = setMockFileSystem({
+      setMockFileSystem({
         root: {
           'index.js': [
             '/**',
@@ -4662,20 +4679,23 @@ describe('traverseDependencies', function() {
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        filesystem.root['index.js'] = [
-          '/**',
-          ' * @providesModule index',
-          ' */',
-          'require("bPackage")',
-        ].join('\n');
-        filesystem.root.aPackage['package.json'] = JSON.stringify({
-          name: 'bPackage',
-          main: 'main.js',
-        });
-        await new Promise(resolve => {
-          dgraph.once('change', () => resolve());
-          triggerWatchEvent('change', root + '/index.js');
-          triggerWatchEvent('change', root + '/aPackage/package.json');
+        await triggerAndProcessWatchEvent(dgraph, () => {
+          fs.writeFileSync(
+            root + '/index.js',
+            [
+              '/**',
+              ' * @providesModule index',
+              ' */',
+              'require("bPackage")',
+            ].join('\n'),
+          );
+          fs.writeFileSync(
+            root + '/aPackage/package.json',
+            JSON.stringify({
+              name: 'bPackage',
+              main: 'main.js',
+            }),
+          );
         });
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toEqual([
@@ -4701,7 +4721,7 @@ describe('traverseDependencies', function() {
     it('should update node package changes', async () => {
       expect.assertions(2);
       var root = '/root';
-      var filesystem = setMockFileSystem({
+      setMockFileSystem({
         root: {
           'index.js': [
             '/**',
@@ -4761,12 +4781,9 @@ describe('traverseDependencies', function() {
           },
         ]);
 
-        filesystem.root.node_modules.foo['main.js'] = 'lol';
-        await triggerAndProcessWatchEvent(
-          dgraph,
-          'change',
-          root + '/node_modules/foo/main.js',
-        );
+        await triggerAndProcessWatchEvent(dgraph, () => {
+          fs.writeFileSync(root + '/node_modules/foo/main.js', 'lol');
+        });
         const deps2 = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps2).toEqual([
           {
@@ -4793,7 +4810,7 @@ describe('traverseDependencies', function() {
     it('should update node package main changes', async () => {
       expect.assertions(1);
       var root = '/root';
-      var filesystem = setMockFileSystem({
+      setMockFileSystem({
         root: {
           'index.js': [
             '/**',
@@ -4818,16 +4835,16 @@ describe('traverseDependencies', function() {
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        filesystem.root.node_modules.foo['package.json'] = JSON.stringify({
-          name: 'foo',
-          main: 'main.js',
-          browser: 'browser.js',
+        await triggerAndProcessWatchEvent(dgraph, () => {
+          fs.writeFileSync(
+            root + '/node_modules/foo/package.json',
+            JSON.stringify({
+              name: 'foo',
+              main: 'main.js',
+              browser: 'browser.js',
+            }),
+          );
         });
-        await triggerAndProcessWatchEvent(
-          dgraph,
-          'change',
-          root + '/node_modules/foo/package.json',
-        );
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toEqual([
           {
@@ -4851,40 +4868,10 @@ describe('traverseDependencies', function() {
       });
     });
 
-    it('should not error when the watcher reports a known file as added', async () => {
-      expect.assertions(1);
-      var root = '/root';
-      setMockFileSystem({
-        root: {
-          'index.js': [
-            '/**',
-            ' * @providesModule index',
-            ' */',
-            'var b = require("b");',
-          ].join('\n'),
-          'b.js': [
-            '/**',
-            ' * @providesModule b',
-            ' */',
-            'module.exports = function() {};',
-          ].join('\n'),
-        },
-      });
-
-      const opts = {...defaults, projectRoots: [root]};
-      const entryPath = '/root/index.js';
-      await processDgraph(opts, async dgraph => {
-        await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        await triggerAndProcessWatchEvent(dgraph, 'change', root + '/index.js');
-        const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        expect(deps).toBeDefined();
-      });
-    });
-
     it('should recover from multiple modules with the same name', async () => {
       const root = '/root';
       console.warn = jest.fn();
-      const filesystem = setMockFileSystem({
+      setMockFileSystem({
         root: {
           'index.js': [
             '/**',
@@ -4902,12 +4889,14 @@ describe('traverseDependencies', function() {
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        filesystem.root['b.js'] = ['/**', ' * @providesModule a', ' */'].join(
-          '\n',
-        );
-        await triggerAndProcessWatchEvent(dgraph, 'change', root + '/b.js');
+        await triggerAndProcessWatchEvent(dgraph, () => {
+          fs.writeFileSync(
+            root + '/b.js',
+            ['/**', ' * @providesModule a', ' */'].join('\n'),
+          );
+        });
         try {
-          await getOrderedDependenciesAsJSON(dgraph, root + '/index.js');
+          await getOrderedDependenciesAsJSON(dgraph, entryPath);
           throw new Error('expected `getOrderedDependenciesAsJSON` to fail');
         } catch (error) {
           const {AmbiguousModuleResolutionError} = require('metro-core');
@@ -4915,11 +4904,13 @@ describe('traverseDependencies', function() {
             throw error;
           }
           expect(console.warn).toBeCalled();
-          filesystem.root['b.js'] = ['/**', ' * @providesModule b', ' */'].join(
-            '\n',
-          );
-          await triggerAndProcessWatchEvent(dgraph, 'change', root + '/b.js');
         }
+        await triggerAndProcessWatchEvent(dgraph, () => {
+          fs.writeFileSync(
+            root + '/b.js',
+            ['/**', ' * @providesModule b', ' */'].join('\n'),
+          );
+        });
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toMatchSnapshot();
       });
@@ -5340,20 +5331,37 @@ describe('traverseDependencies', function() {
   }
 
   function setMockFileSystem(object) {
-    return require('fs').__setMockFilesystem(object);
+    const fs = require('fs');
+    const root = process.platform === 'win32' ? 'c:\\' : '/';
+    mockDir(fs, root, {...object, tmp: {}});
   }
 
-  function triggerAndProcessWatchEvent(dgraphPromise, eventType, filename) {
+  function mockDir(fs, dirPath, desc) {
+    for (const entName in desc) {
+      const ent = desc[entName];
+      const entPath = require('path').join(dirPath, entName);
+      if (typeof ent === 'string') {
+        fs.writeFileSync(entPath, ent);
+        continue;
+      }
+      if (typeof ent !== 'object') {
+        throw new Error(require('util').format('invalid entity:', ent));
+      }
+      fs.mkdirSync(entPath);
+      mockDir(fs, entPath, ent);
+    }
+  }
+
+  function triggerAndProcessWatchEvent(dgraphPromise, fsOperation) {
     return Promise.resolve(dgraphPromise).then(
       dgraph =>
         new Promise(resolve => {
-          dgraph.once('change', () => resolve());
-          triggerWatchEvent(eventType, filename);
+          // FIXME: Timeout is needed to wait for thing to settle down a bit.
+          // This adds flakiness to this test, and normally should not be
+          // needed.
+          dgraph.once('change', () => setTimeout(resolve, 100));
+          fsOperation();
         }),
     );
-  }
-
-  function triggerWatchEvent(eventType, filename) {
-    return require('fs').__triggerWatchEvent(eventType, filename);
   }
 });
