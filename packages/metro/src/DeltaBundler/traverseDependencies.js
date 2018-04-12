@@ -232,7 +232,15 @@ async function processEdge(
   // Update the edge information.
   edge.output.code = result.code;
   edge.output.map = result.map;
-  edge.output.source = result.source;
+  // TODO(T28259615): Remove as soon as possible to avoid leaking.
+  // Lazily access source code; if not needed, don't read the file.
+  // eslint-disable-next-line lint/flow-no-fixme
+  // $FlowFixMe: "defineProperty" with a getter is buggy in flow.
+  Object.defineProperty(edge.output, 'source', {
+    configurable: true,
+    enumerable: true,
+    get: () => result.source,
+  });
   edge.dependencies = new Map();
 
   currentDependencies.forEach((absolutePath, relativePath) => {
