@@ -153,7 +153,7 @@
   dependencies:
     "@babel/types" "7.0.0-beta.40"
 
-"@babel/helper-remap-async-to-generator@^7.0.0-beta":
+"@babel/helper-remap-async-to-generator@7.0.0-beta.40", "@babel/helper-remap-async-to-generator@^7.0.0-beta":
   version "7.0.0-beta.40"
   resolved "https://registry.yarnpkg.com/@babel/helper-remap-async-to-generator/-/helper-remap-async-to-generator-7.0.0-beta.40.tgz#33414d1cc160ebf0991ebc60afebe36b08feae05"
   dependencies:
@@ -245,6 +245,13 @@
 "@babel/plugin-transform-arrow-functions@^7.0.0-beta":
   version "7.0.0-beta.40"
   resolved "https://registry.yarnpkg.com/@babel/plugin-transform-arrow-functions/-/plugin-transform-arrow-functions-7.0.0-beta.40.tgz#0842045b16835d6da0c334d0b09d575852f27962"
+
+"@babel/plugin-transform-async-to-generator@7.0.0-beta.40":
+  version "7.0.0-beta.40"
+  resolved "https://registry.yarnpkg.com/@babel/plugin-transform-async-to-generator/-/plugin-transform-async-to-generator-7.0.0-beta.40.tgz#9195e2473a435b9a9aabc0b64572e9d1ec1c57cb"
+  dependencies:
+    "@babel/helper-module-imports" "7.0.0-beta.40"
+    "@babel/helper-remap-async-to-generator" "7.0.0-beta.40"
 
 "@babel/plugin-transform-block-scoping@^7.0.0-beta":
   version "7.0.0-beta.40"
