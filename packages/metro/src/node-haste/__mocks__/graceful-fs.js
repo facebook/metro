@@ -10,4 +10,4 @@
 
 'use strict';
 
-module.exports = require('./fs');
+module.exports = require('fs');

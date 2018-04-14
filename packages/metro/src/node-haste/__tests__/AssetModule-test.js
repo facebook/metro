@@ -10,7 +10,9 @@
 
 'use strict';
 
-jest.mock('fs').mock('../../lib/TransformCaching');
+jest
+  .mock('fs', () => new (require('metro-memory-fs'))())
+  .mock('../../lib/TransformCaching');
 
 const AssetModule = require('../AssetModule');
 const DependencyGraphHelpers = require('../DependencyGraph/DependencyGraphHelpers');
@@ -22,7 +24,9 @@ describe('AssetModule:', () => {
   const defaults = {file: '/arbitrary.png'};
 
   beforeEach(() => {
-    fs.__setMockFilesystem({root: {'image.png': 'png data'}});
+    fs.reset();
+    fs.mkdirSync('/root');
+    fs.writeFileSync('/root/image.png', 'png data');
   });
 
   it('is an asset', () => {

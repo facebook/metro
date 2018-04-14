@@ -11,7 +11,7 @@
 'use strict';
 
 jest
-  .mock('fs')
+  .mock('fs', () => new (require('metro-memory-fs'))())
   .mock('graceful-fs')
   .mock('../ModuleCache')
   .mock('../DependencyGraph/DependencyGraphHelpers')
@@ -29,16 +29,16 @@ const packageJson = JSON.stringify({
   description: "A require('foo') story",
 });
 
-function mockFS(rootChildren) {
-  fs.__setMockFilesystem({root: rootChildren});
-}
-
 function mockPackageFile() {
-  mockFS({'package.json': packageJson});
+  fs.reset();
+  fs.mkdirSync('/root');
+  fs.writeFileSync('/root/package.json', packageJson);
 }
 
 function mockIndexFile(indexJs) {
-  mockFS({'index.js': indexJs});
+  fs.reset();
+  fs.mkdirSync('/root');
+  fs.writeFileSync('/root/index.js', indexJs);
 }
 
 describe('Module', () => {
