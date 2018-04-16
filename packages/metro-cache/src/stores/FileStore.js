@@ -13,6 +13,7 @@
 const fs = require('fs');
 const mkdirp = require('mkdirp');
 const path = require('path');
+const rimraf = require('rimraf');
 
 import type {TransformedCode} from 'metro/src/JSTransformer/worker';
 
@@ -27,13 +28,8 @@ class FileStore {
   _root: string;
 
   constructor(options: Options) {
-    const root = options.root;
-
-    for (let i = 0; i < 256; i++) {
-      mkdirp.sync(path.join(root, ('0' + i.toString(16)).slice(-2)));
-    }
-
-    this._root = root;
+    this._root = options.root;
+    this._createDirs();
   }
 
   get(key: Buffer): ?TransformedCode {
@@ -65,12 +61,29 @@ class FileStore {
     fs.writeFileSync(this._getFilePath(key), data);
   }
 
+  clear() {
+    this._removeDirs();
+    this._createDirs();
+  }
+
   _getFilePath(key: Buffer): string {
     return path.join(
       this._root,
       key.slice(0, 1).toString('hex'),
       key.slice(1).toString('hex'),
     );
+  }
+
+  _createDirs() {
+    for (let i = 0; i < 256; i++) {
+      mkdirp.sync(path.join(this._root, ('0' + i.toString(16)).slice(-2)));
+    }
+  }
+
+  _removeDirs() {
+    for (let i = 0; i < 256; i++) {
+      rimraf.sync(path.join(this._root, ('0' + i.toString(16)).slice(-2)));
+    }
   }
 }
 

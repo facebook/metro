@@ -149,6 +149,10 @@ class HttpStore {
       gzip.end(JSON.stringify(value) || 'null');
     });
   }
+
+  clear() {
+    // Not implemented.
+  }
 }
 
 module.exports = HttpStore;
