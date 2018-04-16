@@ -77,11 +77,16 @@ class HttpStore {
       const req = this._module.request(options, res => {
         let data = '';
 
-        if (res.statusCode === 404) {
-          resolve(null);
-          return;
-        } else if (res.statusCode !== 200) {
-          reject(new Error('HTTP error: ' + res.statusCode));
+        if (res.statusCode !== 200) {
+          // Consume all the data from the response without processing it.
+          res.resume();
+
+          if (res.statusCode === 404) {
+            resolve(null);
+          } else {
+            reject(new Error('HTTP error: ' + res.statusCode));
+          }
+
           return;
         }
 
@@ -135,6 +140,9 @@ class HttpStore {
         res.on('end', () => {
           resolve();
         });
+
+        // Consume all the data from the response without processing it.
+        res.resume();
       });
 
       gzip.pipe(req);
