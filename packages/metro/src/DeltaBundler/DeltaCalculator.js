@@ -204,7 +204,6 @@ class DeltaCalculator extends EventEmitter {
     // inlineRequires information, since scripts by definition don't have
     // requires().
     if (this._options.type === 'script') {
-      // $FlowIssue #23854098 - Object.assign() loses the strictness of an object in flow
       return {
         ...transformOptionsForBlacklist,
         inlineRequires: false,

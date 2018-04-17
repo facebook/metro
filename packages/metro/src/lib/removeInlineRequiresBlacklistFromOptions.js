@@ -17,7 +17,6 @@ function removeInlineRequiresBlacklistFromOptions(
   transformOptions: JSTransformerOptions,
 ): JSTransformerOptions {
   if (typeof transformOptions.inlineRequires === 'object') {
-    // $FlowIssue #23854098 - Object.assign() loses the strictness of an object in flow
     return {
       ...transformOptions,
       inlineRequires: !(path in transformOptions.inlineRequires.blacklist),

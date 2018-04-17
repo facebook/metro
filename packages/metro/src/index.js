@@ -164,7 +164,6 @@ exports.createConnectMiddleware = async function({
   config,
   ...rest
 }: CreateConnectMiddlewareOptions) {
-  // $FlowFixMe Flow doesn't support object spread enough for the following line
   const metroServer = await runMetro({
     ...rest,
     config,
@@ -229,7 +228,6 @@ exports.runServer = async ({
     attachHmrServer,
     middleware,
     end,
-    // $FlowFixMe Flow doesn't support object spread enough for the following line
   } = await exports.createConnectMiddleware({
     ...rest,
     port,
@@ -325,7 +323,6 @@ exports.runBuild = async ({
   sourceMapUrl,
   ...rest
 }: RunBuildOptions) => {
-  // $FlowIssue #16581373 spread of an exact object should be exact
   const metroServer = await runMetro({
     ...rest,
     config,
@@ -385,7 +382,6 @@ exports.buildGraph = async function({
   platform = `web`,
   ...rest
 }: BuildGraphOptions): Promise<Graph> {
-  // $FlowIssue #16581373 spread of an exact object should be exact
   const metroServer = await runMetro({
     ...rest,
     config,

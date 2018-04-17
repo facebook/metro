@@ -58,6 +58,9 @@ function resolvePlugins7(plugins: Array<any>) {
    * installed in the react-native package.
    */
   type ModuleES6 = {__esModule?: boolean, default?: {}};
+  /* $FlowFixMe(>=0.70.0 site=react_native_fb) This comment suppresses an
+   * error found when Flow v0.70 was deployed. To see the error delete this
+   * comment and run Flow. */
   return plugins.map(plugin => {
     // Normalise plugin to an array.
     plugin = Array.isArray(plugin) ? plugin : [plugin];
@@ -379,9 +382,15 @@ function getBabelRegisterConfig7() {
   ];
 
   function config(onlyList: Array<string>) {
+    /* $FlowFixMe(>=0.70.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.70 was deployed. To see the error delete this
+     * comment and run Flow. */
     _only = _only.concat(onlyList);
     return {
       presets: [],
+      /* $FlowFixMe(>=0.70.0 site=react_native_fb) This comment suppresses an
+       * error found when Flow v0.70 was deployed. To see the error delete
+       * this comment and run Flow. */
       plugins: PLUGINS.map(pluginName =>
         // $FlowFixMe TODO t26372934 plugin require
         require(`@babel/plugin-${pluginName}`),

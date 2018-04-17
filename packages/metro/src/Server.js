@@ -481,7 +481,6 @@ class Server {
       module.output.map,
     );
 
-    // $FlowIssue #16581373 spread of an exact object should be exact
     return {
       ...module,
       output: {
