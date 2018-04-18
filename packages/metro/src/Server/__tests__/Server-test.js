@@ -120,11 +120,28 @@ describe('processRequest', () => {
       ],
     ]);
 
-    DeltaBundler.prototype.buildGraph.mockReturnValue(
-      Promise.resolve({
+    const currentGraphs = new Set();
+    DeltaBundler.prototype.buildGraph.mockImplementation(async () => {
+      const graph = {
         entryPoints: ['/root/mybundle.js'],
         dependencies,
-      }),
+      };
+      currentGraphs.add(graph);
+
+      return graph;
+    });
+    DeltaBundler.prototype.getDelta.mockImplementation(
+      async (graph, {reset}) => {
+        if (!currentGraphs.has(graph)) {
+          throw new Error('Graph not found');
+        }
+
+        return {
+          modified: reset ? dependencies : new Map(),
+          deleted: new Set(),
+          reset,
+        };
+      },
     );
 
     getPrependedScripts.mockReturnValue(
@@ -142,18 +159,17 @@ describe('processRequest', () => {
       ]),
     );
 
-    DeltaBundler.prototype.getDelta.mockImplementation((options, {reset}) =>
-      Promise.resolve({
-        modified: reset ? dependencies : new Map(),
-        deleted: new Set(),
-        reset,
-      }),
-    );
-
     Bundler.prototype.getDependencyGraph = jest.fn().mockReturnValue(
       Promise.resolve({
         getHasteMap: jest.fn().mockReturnValue({on: jest.fn()}),
         load: jest.fn(() => Promise.resolve()),
+      }),
+    );
+
+    Bundler.prototype.minifyModule = jest.fn().mockReturnValue(
+      Promise.resolve({
+        code: '__d(function(){minified();});',
+        map: [],
       }),
     );
 
@@ -283,6 +299,28 @@ describe('processRequest', () => {
     });
   });
 
+  it('calculates an incremental minified bundle', async () => {
+    await makeRequest(
+      requestHandler,
+      'mybundle.bundle?runModule=true&minify=true',
+    );
+
+    const response = await makeRequest(
+      requestHandler,
+      'mybundle.bundle?runModule=true&minify=true',
+    );
+    expect(response.statusCode).toEqual(200);
+    expect(response.body).toEqual(
+      [
+        '__d(function(){minified();});',
+        '__d(function(){minified();},0,[1],"mybundle.js");',
+        '__d(function(){minified();},1,[],"foo.js");',
+        'require(0);',
+        '//# sourceMappingURL=http://localhost:8081/mybundle.map?runModule=true&minify=true',
+      ].join('\n'),
+    );
+  });
+
   it('returns sourcemap on request of *.map', async () => {
     const response = await makeRequest(requestHandler, 'mybundle.map');
 
@@ -389,9 +427,14 @@ describe('processRequest', () => {
   it('does not rebuild the bundle when making concurrent requests', async () => {
     let resolveBuildGraph;
 
-    // force the buildGraph
+    // Delay the response of the buildGraph method.
     DeltaBundler.prototype.buildGraph.mockImplementation(async () => {
       return new Promise(res => (resolveBuildGraph = res));
+    });
+    DeltaBundler.prototype.getDelta.mockReturnValue({
+      modified: new Map(),
+      deleted: new Set(),
+      reset: false,
     });
 
     const promise1 = makeRequest(requestHandler, 'index.bundle');
@@ -550,6 +593,13 @@ describe('processRequest', () => {
       DeltaBundler.prototype.buildGraph.mockImplementation(async () => {
         return new Promise(res => (resolveBuildGraph = res));
       });
+      DeltaBundler.prototype.getDelta.mockImplementation(
+        async (graph, {reset}) => ({
+          modified: reset ? dependencies : new Map(),
+          deleted: new Set(),
+          reset,
+        }),
+      );
 
       const promise1 = makeRequest(requestHandler, 'index.delta');
       const promise2 = makeRequest(requestHandler, 'index.delta');
@@ -569,6 +619,29 @@ describe('processRequest', () => {
       expect(DeltaBundler.prototype.buildGraph.mock.calls.length).toBe(1);
       expect(DeltaBundler.prototype.getDelta.mock.calls.length).toBe(1);
       expect(DeltaBundler.prototype.getDelta.mock.calls[0][1]).toEqual({
+        reset: true,
+      });
+    });
+
+    it('should generate a minified delta correctly', async () => {
+      const response = await makeRequest(
+        requestHandler,
+        'index.delta?platform=ios&minify=true',
+      );
+
+      expect(JSON.parse(response.body)).toEqual({
+        id: 'XXXXX-0',
+        pre: [[-1, 'function () {require();}']],
+        delta: [
+          [0, '__d(function(){minified();},0,[1],"mybundle.js");'],
+          [1, '__d(function(){minified();},1,[],"foo.js");'],
+        ],
+        post: [
+          [
+            2,
+            '//# sourceMappingURL=http://localhost:8081/index.map?platform=ios&minify=true',
+          ],
+        ],
         reset: true,
       });
     });

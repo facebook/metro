@@ -263,7 +263,11 @@ class Server {
   }
 
   async build(options: BundleOptions): Promise<{code: string, map: string}> {
-    const {prepend, graph} = await this._buildGraph(options);
+    let graphInfo = await this._buildGraph(options);
+
+    if (options.minify) {
+      graphInfo = await this._minifyGraph(graphInfo);
+    }
 
     const entryPoint = getAbsolutePath(
       options.entryFile,
@@ -271,7 +275,7 @@ class Server {
     );
 
     return {
-      code: plainJSBundle(entryPoint, prepend, graph, {
+      code: plainJSBundle(entryPoint, graphInfo.prepend, graphInfo.graph, {
         createModuleId: this._opts.createModuleId,
         getRunModuleStatement: this._opts.getRunModuleStatement,
         dev: options.dev,
@@ -279,7 +283,7 @@ class Server {
         runModule: options.runModule,
         sourceMapUrl: options.sourceMapUrl,
       }),
-      map: sourceMapString(prepend, graph, {
+      map: sourceMapString(graphInfo.prepend, graphInfo.graph, {
         excludeSource: options.excludeSource,
       }),
     };
@@ -302,31 +306,37 @@ class Server {
   }
 
   async getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo> {
-    const {prepend, graph} = await this._buildGraph(options);
+    let graphInfo = await this._buildGraph(options);
+
+    if (options.minify) {
+      graphInfo = await this._minifyGraph(graphInfo);
+    }
 
     const entryPoint = getAbsolutePath(
       options.entryFile,
       this._opts.projectRoots,
     );
 
-    return await getRamBundleInfo(entryPoint, prepend, graph, {
-      createModuleId: this._opts.createModuleId,
-      dev: options.dev,
-      excludeSource: options.excludeSource,
-      getRunModuleStatement: this._opts.getRunModuleStatement,
-      getTransformOptions: this._opts.getTransformOptions,
-      platform: options.platform,
-      runBeforeMainModule: options.runBeforeMainModule,
-      runModule: options.runModule,
-      sourceMapUrl: options.sourceMapUrl,
-    });
+    return await getRamBundleInfo(
+      entryPoint,
+      graphInfo.prepend,
+      graphInfo.graph,
+      {
+        createModuleId: this._opts.createModuleId,
+        dev: options.dev,
+        excludeSource: options.excludeSource,
+        getRunModuleStatement: this._opts.getRunModuleStatement,
+        getTransformOptions: this._opts.getTransformOptions,
+        platform: options.platform,
+        runBeforeMainModule: options.runBeforeMainModule,
+        runModule: options.runModule,
+        sourceMapUrl: options.sourceMapUrl,
+      },
+    );
   }
 
   async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {
-    const {graph} = await this._buildGraph({
-      ...options,
-      minify: false, // minification does not affect the assets.
-    });
+    const {graph} = await this._buildGraph(options);
 
     return await getAssets(graph, {
       assetPlugins: options.assetPlugins,
@@ -344,7 +354,6 @@ class Server {
     options = {
       ...Server.DEFAULT_BUNDLE_OPTIONS,
       ...options,
-      minify: false, // minification does not affect the dependencies.
       bundleType: 'bundle',
     };
 
@@ -375,20 +384,12 @@ class Server {
       type: 'module',
     };
 
-    let graph = await this._deltaBundler.buildGraph(crawlingOptions);
-    let prepend = await getPrependedScripts(
+    const graph = await this._deltaBundler.buildGraph(crawlingOptions);
+    const prepend = await getPrependedScripts(
       this._opts,
       crawlingOptions,
       this._deltaBundler,
     );
-
-    if (options.minify) {
-      prepend = await Promise.all(
-        prepend.map(script => this._minifyModule(script)),
-      );
-
-      graph = await mapGraph(graph, module => this._minifyModule(module));
-    }
 
     return {
       prepend,
@@ -427,6 +428,10 @@ class Server {
       if (numModifiedFiles > 0) {
         graphInfo.lastModified = new Date();
       }
+    }
+
+    if (options.minify) {
+      graphInfo = await this._minifyGraph(graphInfo);
     }
 
     return {...graphInfo, numModifiedFiles};
@@ -468,10 +473,37 @@ class Server {
       this._deltaGraphs.set(id, graphInfo);
     }
 
+    if (options.minify) {
+      // $FlowIssue #16581373 spread of an exact object should be exact
+      delta = {
+        ...delta,
+        modified: new Map(
+          await Promise.all(
+            Array.from(delta.modified).map(async ([path, module]) => [
+              path,
+              await this._minifyModule(module),
+            ]),
+          ),
+        ),
+      };
+    }
+
     return {
       ...graphInfo,
       delta,
     };
+  }
+
+  async _minifyGraph(graphInfo: GraphInfo): Promise<GraphInfo> {
+    const prepend = await Promise.all(
+      graphInfo.prepend.map(script => this._minifyModule(script)),
+    );
+    const graph = await mapGraph(graphInfo.graph, module =>
+      this._minifyModule(module),
+    );
+
+    // $FlowIssue #16581373 spread of an exact object should be exact
+    return {...graphInfo, prepend, graph};
   }
 
   async _minifyModule(module: DependencyEdge): Promise<DependencyEdge> {
