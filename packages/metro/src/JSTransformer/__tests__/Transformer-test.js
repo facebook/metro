@@ -23,7 +23,6 @@ describe('Transformer', function() {
   const opts = {
     asyncRequireModulePath: 'asyncRequire',
     maxWorkers: 4,
-    minifierPath: defaults.DEFAULT_METRO_MINIFIER_PATH,
     reporters: {},
     transformModulePath,
     dynamicDepsInPackages: 'reject',
@@ -79,6 +78,7 @@ describe('Transformer', function() {
       transformOptions,
       [],
       '',
+      defaults.DEFAULT_METRO_MINIFIER_PATH,
     );
 
     expect(api.transform).toBeCalledWith(
@@ -90,6 +90,7 @@ describe('Transformer', function() {
       transformOptions,
       [],
       '',
+      defaults.DEFAULT_METRO_MINIFIER_PATH,
       'asyncRequire',
       'reject',
     );

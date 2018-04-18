@@ -12,7 +12,6 @@
 
 jest
   .setMock('jest-worker', () => ({}))
-  .setMock('metro-minify-uglify')
   .mock('image-size')
   .mock('fs', () => new (require('metro-memory-fs'))())
   .mock('os')
@@ -95,28 +94,6 @@ describe('Bundler', function() {
       platforms: ['android', 'vr'],
     });
     expect(b._opts.platforms).toEqual(['android', 'vr']);
-  });
-
-  it('should minify code using the Transformer', async () => {
-    const code = 'arbitrary(code)';
-    const id = 'arbitrary.js';
-
-    const minifiedCode = 'minified(code)';
-    const minifiedMap = {
-      version: 3,
-      file: ['minified'],
-      sources: [],
-      mappings: '',
-    };
-
-    bundler._transformer.minify = jest
-      .fn()
-      .mockReturnValue(Promise.resolve({code: minifiedCode, map: minifiedMap}));
-
-    const result = await bundler.minifyModule(id, code, []);
-
-    expect(result.code).toEqual(minifiedCode);
-    expect(result.map).toEqual([]);
   });
 
   it('uses new cache layers when transforming if requested to do so', async () => {

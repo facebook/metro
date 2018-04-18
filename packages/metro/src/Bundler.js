@@ -19,11 +19,6 @@ const fs = require('fs');
 const getTransformCacheKeyFn = require('./lib/getTransformCacheKeyFn');
 
 const {Cache, stableHash} = require('metro-cache');
-const {
-  toSegmentTuple,
-  fromRawMappings,
-  toBabelSegments,
-} = require('metro-source-map');
 
 import type {
   TransformedCode,
@@ -37,10 +32,7 @@ import type Module from './node-haste/Module';
 import type {BabelSourceMap} from '@babel/core';
 import type {CacheStore} from 'metro-cache';
 import type {CustomResolver} from 'metro-resolver';
-import type {
-  MetroSourceMapSegmentTuple,
-  MetroSourceMap,
-} from 'metro-source-map';
+import type {MetroSourceMap} from 'metro-source-map';
 
 type TransformOptions = {|
   +inlineRequires: {+blacklist: {[string]: true}} | boolean,
@@ -135,7 +127,6 @@ class Bundler {
     this._transformer = new Transformer({
       asyncRequireModulePath: opts.asyncRequireModulePath,
       maxWorkers: opts.maxWorkers,
-      minifierPath: opts.minifierPath,
       reporters: {
         stdoutChunk: chunk =>
           opts.reporter.update({type: 'worker_stdout_chunk', chunk}),
@@ -177,6 +168,7 @@ class Bundler {
       opts.assetExts,
       opts.assetRegistryPath,
       getTransformCacheKey,
+      opts.minifierPath,
       'experimental',
     ]).toString('binary');
 
@@ -235,25 +227,6 @@ class Bundler {
 
   getDependencyGraph(): Promise<DependencyGraph> {
     return this._depGraphPromise;
-  }
-
-  async minifyModule(
-    path: string,
-    code: string,
-    map: Array<MetroSourceMapSegmentTuple>,
-  ): Promise<{code: string, map: Array<MetroSourceMapSegmentTuple>}> {
-    const sourceMap = fromRawMappings([{code, source: code, map, path}]).toMap(
-      undefined,
-      {},
-    );
-
-    const minified = await this._transformer.minify(path, code, sourceMap);
-    const result = await this._opts.postMinifyProcess({...minified});
-
-    return {
-      code: result.code,
-      map: result.map ? toBabelSegments(result.map).map(toSegmentTuple) : [],
-    };
   }
 
   async _cachedTransformCode(
@@ -334,6 +307,7 @@ class Bundler {
         transformCodeOptions,
         this._opts.assetExts,
         this._opts.assetRegistryPath,
+        this._opts.minifierPath,
       );
     }
 

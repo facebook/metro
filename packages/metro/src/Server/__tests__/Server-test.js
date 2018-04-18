@@ -12,7 +12,6 @@
 
 jest
   .mock('jest-worker', () => ({}))
-  .mock('metro-minify-uglify')
   .mock('crypto')
   .mock('../symbolicate/symbolicate', () => ({
     createWorker: jest.fn().mockReturnValue(jest.fn()),
@@ -169,13 +168,6 @@ describe('processRequest', () => {
       }),
     );
 
-    Bundler.prototype.minifyModule = jest.fn().mockReturnValue(
-      Promise.resolve({
-        code: '__d(function(){minified();});',
-        map: [],
-      }),
-    );
-
     server = new Server(options);
     requestHandler = server.processRequest.bind(server);
 
@@ -305,28 +297,6 @@ describe('processRequest', () => {
       expect(response.statusCode).toEqual(200);
       expect(response.getHeader('X-Metro-Files-Changed-Count')).toEqual('1');
     });
-  });
-
-  it('calculates an incremental minified bundle', async () => {
-    await makeRequest(
-      requestHandler,
-      'mybundle.bundle?runModule=true&minify=true',
-    );
-
-    const response = await makeRequest(
-      requestHandler,
-      'mybundle.bundle?runModule=true&minify=true',
-    );
-    expect(response.statusCode).toEqual(200);
-    expect(response.body).toEqual(
-      [
-        '__d(function(){minified();});',
-        '__d(function(){minified();},0,[1],"mybundle.js");',
-        '__d(function(){minified();},1,[],"foo.js");',
-        'require(0);',
-        '//# sourceMappingURL=http://localhost:8081/mybundle.map?runModule=true&minify=true',
-      ].join('\n'),
-    );
   });
 
   it('returns sourcemap on request of *.map', async () => {
@@ -605,29 +575,6 @@ describe('processRequest', () => {
       expect(DeltaBundler.prototype.buildGraph.mock.calls.length).toBe(1);
       expect(DeltaBundler.prototype.getDelta.mock.calls.length).toBe(1);
       expect(DeltaBundler.prototype.getDelta.mock.calls[0][1]).toEqual({
-        reset: true,
-      });
-    });
-
-    it('should generate a minified delta correctly', async () => {
-      const response = await makeRequest(
-        requestHandler,
-        'index.delta?platform=ios&minify=true',
-      );
-
-      expect(JSON.parse(response.body)).toEqual({
-        id: 'XXXXX-0',
-        pre: [[-1, 'function () {require();}']],
-        delta: [
-          [0, '__d(function(){minified();},0,[1],"mybundle.js");'],
-          [1, '__d(function(){minified();},1,[],"foo.js");'],
-        ],
-        post: [
-          [
-            2,
-            '//# sourceMappingURL=http://localhost:8081/index.map?platform=ios&minify=true',
-          ],
-        ],
         reset: true,
       });
     });

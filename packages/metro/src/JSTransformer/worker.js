@@ -24,7 +24,11 @@ const path = require('path');
 
 const {babylon} = require('../babel-bridge');
 const {babelGenerate: generate} = require('../babel-bridge');
-const {toSegmentTuple} = require('metro-source-map');
+const {
+  fromRawMappings,
+  toBabelSegments,
+  toSegmentTuple,
+} = require('metro-source-map');
 
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
@@ -124,6 +128,7 @@ async function transformCode(
   options: Options,
   assetExts: $ReadOnlyArray<string>,
   assetRegistryPath: string,
+  minifierPath: string,
   asyncRequireModulePath: string,
   dynamicDepsInPackages: DynamicRequiresBehavior,
 ): Promise<Data> {
@@ -253,10 +258,27 @@ async function transformCode(
     sourceCode,
   );
 
-  const map = result.rawMappings ? result.rawMappings.map(toSegmentTuple) : [];
+  let map = result.rawMappings ? result.rawMappings.map(toSegmentTuple) : [];
+  let code = result.code;
+
+  if (options.minify) {
+    const sourceMap = fromRawMappings([
+      {code, source: sourceCode, map, path: filename},
+    ]).toMap(undefined, {});
+
+    const minified = await minifyCode(
+      filename,
+      result.code,
+      sourceMap,
+      minifierPath,
+    );
+
+    code = minified.code;
+    map = minified.map ? toBabelSegments(minified.map).map(toSegmentTuple) : [];
+  }
 
   return {
-    result: {dependencies, code: result.code, map},
+    result: {dependencies, code, map},
     sha1,
     transformFileStartLogEntry,
     transformFileEndLogEntry,
@@ -316,6 +338,5 @@ class InvalidRequireCallError extends Error {
 
 module.exports = {
   transform: transformCode,
-  minify: minifyCode,
   InvalidRequireCallError,
 };

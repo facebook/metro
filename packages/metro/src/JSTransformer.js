@@ -16,17 +16,13 @@ const {Logger} = require('metro-core');
 const debug = require('debug')('Metro:JStransformer');
 const Worker = require('jest-worker').default;
 
-import type {BabelSourceMap} from '@babel/core';
 import type {Options, TransformedCode} from './JSTransformer/worker';
 import type {LocalPath} from './node-haste/lib/toLocalPath';
-import type {MetroMinifier} from 'metro-minify-uglify';
-import type {ResultWithMap} from 'metro-minify-uglify';
 import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
 
 import typeof {transform as Transform} from './JSTransformer/worker';
 
 type WorkerInterface = Worker & {
-  minify: MetroMinifier,
   transform: Transform,
 };
 
@@ -45,11 +41,9 @@ module.exports = class Transformer {
   _transformModulePath: string;
   _asyncRequireModulePath: string;
   _dynamicDepsInPackages: DynamicRequiresBehavior;
-  _minifierPath: string;
 
   constructor(options: {|
     +maxWorkers: number,
-    +minifierPath: string,
     +reporters: Reporters,
     +transformModulePath: string,
     +asyncRequireModulePath: string,
@@ -59,7 +53,6 @@ module.exports = class Transformer {
     this._transformModulePath = options.transformModulePath;
     this._asyncRequireModulePath = options.asyncRequireModulePath;
     this._dynamicDepsInPackages = options.dynamicDepsInPackages;
-    this._minifierPath = options.minifierPath;
     const {workerPath = require.resolve('./JSTransformer/worker')} = options;
 
     if (options.maxWorkers > 1) {
@@ -90,19 +83,6 @@ module.exports = class Transformer {
     }
   }
 
-  async minify(
-    filename: string,
-    code: string,
-    sourceMap: BabelSourceMap,
-  ): Promise<ResultWithMap> {
-    return await this._worker.minify(
-      filename,
-      code,
-      sourceMap,
-      this._minifierPath,
-    );
-  }
-
   async transform(
     filename: string,
     localPath: LocalPath,
@@ -111,6 +91,7 @@ module.exports = class Transformer {
     options: Options,
     assetExts: $ReadOnlyArray<string>,
     assetRegistryPath: string,
+    minifierPath: string,
   ): Promise<TransformerResult> {
     try {
       debug('Started transforming file', filename);
@@ -124,6 +105,7 @@ module.exports = class Transformer {
         options,
         assetExts,
         assetRegistryPath,
+        minifierPath,
         this._asyncRequireModulePath,
         this._dynamicDepsInPackages,
       );

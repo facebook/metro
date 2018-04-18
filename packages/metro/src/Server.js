@@ -30,7 +30,6 @@ const getAbsolutePath = require('./lib/getAbsolutePath');
 const getMaxWorkers = require('./lib/getMaxWorkers');
 const getPrependedScripts = require('./lib/getPrependedScripts');
 const mime = require('mime-types');
-const mapGraph = require('./lib/mapGraph');
 const nullthrows = require('fbjs/lib/nullthrows');
 const parseCustomTransformOptions = require('./lib/parseCustomTransformOptions');
 const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
@@ -263,11 +262,7 @@ class Server {
   }
 
   async build(options: BundleOptions): Promise<{code: string, map: string}> {
-    let graphInfo = await this._buildGraph(options);
-
-    if (options.minify) {
-      graphInfo = await this._minifyGraph(graphInfo);
-    }
+    const graphInfo = await this._buildGraph(options);
 
     const entryPoint = getAbsolutePath(
       options.entryFile,
@@ -313,11 +308,7 @@ class Server {
   }
 
   async getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo> {
-    let graphInfo = await this._buildGraph(options);
-
-    if (options.minify) {
-      graphInfo = await this._minifyGraph(graphInfo);
-    }
+    const graphInfo = await this._buildGraph(options);
 
     const entryPoint = getAbsolutePath(
       options.entryFile,
@@ -450,10 +441,6 @@ class Server {
       }
     }
 
-    if (options.minify) {
-      graphInfo = await this._minifyGraph(graphInfo);
-    }
-
     return {...graphInfo, numModifiedFiles};
   }
 
@@ -493,53 +480,9 @@ class Server {
       this._deltaGraphs.set(id, graphInfo);
     }
 
-    if (options.minify) {
-      // $FlowIssue #16581373 spread of an exact object should be exact
-      delta = {
-        ...delta,
-        modified: new Map(
-          await Promise.all(
-            Array.from(delta.modified).map(async ([path, module]) => [
-              path,
-              await this._minifyModule(module),
-            ]),
-          ),
-        ),
-      };
-    }
-
     return {
       ...graphInfo,
       delta,
-    };
-  }
-
-  async _minifyGraph(graphInfo: GraphInfo): Promise<GraphInfo> {
-    const prepend = await Promise.all(
-      graphInfo.prepend.map(script => this._minifyModule(script)),
-    );
-    const graph = await mapGraph(graphInfo.graph, module =>
-      this._minifyModule(module),
-    );
-
-    // $FlowIssue #16581373 spread of an exact object should be exact
-    return {...graphInfo, prepend, graph};
-  }
-
-  async _minifyModule(module: Module): Promise<Module> {
-    const {code, map} = await this._bundler.minifyModule(
-      module.path,
-      module.output.code,
-      module.output.map,
-    );
-
-    return {
-      ...module,
-      output: {
-        ...module.output,
-        code,
-        map,
-      },
     };
   }
 

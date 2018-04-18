@@ -12,6 +12,12 @@
 jest
   .mock('../constant-folding-plugin')
   .mock('../inline-plugin')
+  .mock('../../../lib/getMinifier', () => () => ({
+    withSourceMap: (code, map) => ({
+      code: code.replace('arbitrary(code)', 'minified(code)'),
+      map,
+    }),
+  }))
   .mock('metro-minify-uglify');
 
 const path = require('path');
@@ -33,6 +39,7 @@ describe('code transformation worker:', () => {
       },
       [],
       '',
+      'minifyModulePath',
       'asyncRequire',
       'reject',
     );
@@ -61,6 +68,7 @@ describe('code transformation worker:', () => {
       },
       [],
       '',
+      'minifyModulePath',
       'asyncRequire',
       'reject',
     );
@@ -96,6 +104,7 @@ describe('code transformation worker:', () => {
         },
         [],
         '',
+        'minifyModulePath',
         'asyncRequire',
         'reject',
       );
@@ -138,6 +147,7 @@ describe('code transformation worker:', () => {
         },
         [],
         '',
+        'minifyModulePath',
         'asyncRequire',
         'reject',
       );
@@ -181,6 +191,7 @@ describe('code transformation worker:', () => {
         },
         [],
         '',
+        'minifyModulePath',
         'asyncRequire',
         'reject',
       );
@@ -207,8 +218,38 @@ describe('code transformation worker:', () => {
       },
       [],
       '',
+      'minifyModulePath',
       'asyncRequire',
       'throwAtRuntime',
+    );
+  });
+
+  it('minifies the code correctly', async () => {
+    expect(
+      (await transformCode(
+        '/root/node_modules/bar/file.js',
+        `node_modules/bar/file.js`,
+        'arbitrary(code);',
+        path.join(__dirname, '../../../transformer.js'),
+        false,
+        {
+          dev: true,
+          minify: true,
+          transform: {},
+          enableBabelRCLookup: false,
+        },
+        [],
+        '',
+        'minifyModulePath',
+        'asyncRequire',
+        'throwAtRuntime',
+      )).result.code,
+    ).toBe(
+      [
+        '__d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {',
+        '  minified(code);',
+        '});',
+      ].join('\n'),
     );
   });
 });
