@@ -57,29 +57,30 @@ class HmrServer<TClient: Client> {
     const {bundleEntry, platform} = nullthrows(urlObj.query);
     const customTransformOptions = parseCustomTransformOptions(urlObj);
 
-    // Create a new DeltaTransformer for each client. Once the clients are
+    // Create a new graph for each client. Once the clients are
     // modified to support Delta Bundles, they'll be able to pass the
     // DeltaBundleId param through the WS connection and we'll be able to share
-    // the same DeltaTransformer between the WS connection and the HTTP one.
-    const deltaBundler = this._packagerServer.getDeltaBundler();
-    const graph = await deltaBundler.buildGraph({
-      assetPlugins: [],
-      customTransformOptions,
-      dev: true,
-      entryPoints: [
-        getAbsolutePath(bundleEntry, this._packagerServer.getProjectRoots()),
-      ],
-      hot: true,
-      minify: false,
-      onProgress: null,
-      platform,
-      type: 'module',
-    });
+    // the same graph between the WS connection and the HTTP one.
+    const graph = await this._packagerServer.buildGraph(
+      [getAbsolutePath(bundleEntry, this._packagerServer.getProjectRoots())],
+      {
+        assetPlugins: [],
+        customTransformOptions,
+        dev: true,
+        hot: true,
+        minify: false,
+        onProgress: null,
+        platform,
+        type: 'module',
+      },
+    );
 
     // Listen to file changes.
     const client = {sendFn, graph};
 
-    deltaBundler.listen(graph, this._handleFileChange.bind(this, client));
+    this._packagerServer
+      .getDeltaBundler()
+      .listen(graph, this._handleFileChange.bind(this, client));
 
     return client;
   }

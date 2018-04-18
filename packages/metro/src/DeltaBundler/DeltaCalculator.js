@@ -17,13 +17,8 @@ const {
 } = require('./traverseDependencies');
 const {EventEmitter} = require('events');
 
-import type Bundler from '../Bundler';
-import type {
-  Options as JSTransformerOptions,
-  CustomTransformOptions,
-} from '../JSTransformer/worker';
 import type DependencyGraph from '../node-haste/DependencyGraph';
-import type {DependencyEdge, Graph} from './traverseDependencies';
+import type {DependencyEdge, Graph, Options} from './traverseDependencies';
 
 export type DeltaResult = {|
   +modified: Map<string, DependencyEdge>,
@@ -31,19 +26,7 @@ export type DeltaResult = {|
   +reset: boolean,
 |};
 
-export type {Graph} from './traverseDependencies';
-
-export type Options = {|
-  +assetPlugins: Array<string>,
-  +customTransformOptions: CustomTransformOptions,
-  +dev: boolean,
-  +entryPoints: $ReadOnlyArray<string>,
-  +hot: boolean,
-  +minify: boolean,
-  +onProgress: ?(doneCont: number, totalCount: number) => mixed,
-  +platform: ?string,
-  +type: 'module' | 'script',
-|};
+export type {Graph, Options} from './traverseDependencies';
 
 /**
  * This class is in charge of calculating the delta of changed modules that
@@ -52,10 +35,8 @@ export type Options = {|
  * traverse the whole dependency tree for trivial small changes.
  */
 class DeltaCalculator extends EventEmitter {
-  _bundler: Bundler;
   _dependencyGraph: DependencyGraph;
   _options: Options;
-  _transformerOptions: ?JSTransformerOptions;
 
   _currentBuildPromise: ?Promise<DeltaResult>;
   _deletedFiles: Set<string> = new Set();
@@ -64,19 +45,18 @@ class DeltaCalculator extends EventEmitter {
   _graph: Graph;
 
   constructor(
-    bundler: Bundler,
+    entryPoints: $ReadOnlyArray<string>,
     dependencyGraph: DependencyGraph,
     options: Options,
   ) {
     super();
 
-    this._bundler = bundler;
     this._options = options;
     this._dependencyGraph = dependencyGraph;
 
     this._graph = {
       dependencies: new Map(),
-      entryPoints: this._options.entryPoints,
+      entryPoints,
     };
 
     this._dependencyGraph
@@ -97,7 +77,7 @@ class DeltaCalculator extends EventEmitter {
     // Clean up all the cache data structures to deallocate memory.
     this._graph = {
       dependencies: new Map(),
-      entryPoints: this._options.entryPoints,
+      entryPoints: this._graph.entryPoints,
     };
     this._modifiedFiles = new Set();
     this._deletedFiles = new Set();
@@ -171,72 +151,6 @@ class DeltaCalculator extends EventEmitter {
   }
 
   /**
-   * Returns the options object that is used by the transformer to parse
-   * all the modules. This can be used by external objects to read again
-   * any module very fast (since the options object instance will be the same).
-   */
-  async getTransformerOptions(): Promise<JSTransformerOptions> {
-    if (!this._transformerOptions) {
-      this._transformerOptions = await this._calcTransformerOptions();
-    }
-    return this._transformerOptions;
-  }
-
-  async _calcTransformerOptions(): Promise<JSTransformerOptions> {
-    const {
-      enableBabelRCLookup,
-      projectRoot,
-    } = this._bundler.getGlobalTransformOptions();
-
-    const transformOptionsForBlacklist = {
-      assetDataPlugins: this._options.assetPlugins,
-      customTransformOptions: this._options.customTransformOptions,
-      enableBabelRCLookup,
-      dev: this._options.dev,
-      hot: this._options.hot,
-      inlineRequires: false,
-      minify: this._options.minify,
-      platform: this._options.platform,
-      projectRoot,
-    };
-
-    // When we're processing scripts, we don't need to calculate any
-    // inlineRequires information, since scripts by definition don't have
-    // requires().
-    if (this._options.type === 'script') {
-      return {
-        ...transformOptionsForBlacklist,
-        inlineRequires: false,
-      };
-    }
-
-    const {
-      inlineRequires,
-    } = await this._bundler.getTransformOptionsForEntryFiles(
-      this._options.entryPoints,
-      {dev: this._options.dev, platform: this._options.platform},
-      async path => {
-        const {added} = await initialTraverseDependencies(
-          {
-            dependencies: new Map(),
-            entryPoints: [path],
-          },
-          this._dependencyGraph,
-          {...transformOptionsForBlacklist, type: this._options.type},
-        );
-
-        return Array.from(added.keys());
-      },
-    );
-
-    // $FlowIssue #23854098 - Object.assign() loses the strictness of an object in flow
-    return {
-      ...transformOptionsForBlacklist,
-      inlineRequires: inlineRequires || false,
-    };
-  }
-
-  /**
    * Returns the graph with all the dependency edges. Each edge contains the
    * needed information to do the traversing (dependencies, inverseDependencies)
    * plus some metadata.
@@ -278,17 +192,10 @@ class DeltaCalculator extends EventEmitter {
     modifiedFiles: Set<string>,
     deletedFiles: Set<string>,
   ): Promise<DeltaResult> {
-    const transformerOptions = {
-      ...(await this.getTransformerOptions()),
-      type: this._options.type,
-    };
-
     if (!this._graph.dependencies.size) {
       const {added} = await initialTraverseDependencies(
         this._graph,
-        this._dependencyGraph,
-        transformerOptions,
-        this._options.onProgress || undefined,
+        this._options,
       );
 
       return {
@@ -320,10 +227,8 @@ class DeltaCalculator extends EventEmitter {
 
     const {added, deleted} = await traverseDependencies(
       modifiedDependencies,
-      this._dependencyGraph,
-      transformerOptions,
       this._graph,
-      this._options.onProgress || undefined,
+      this._options,
     );
 
     return {

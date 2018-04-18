@@ -41,14 +41,13 @@ class DeltaBundler {
     this._deltaCalculators = new Map();
   }
 
-  async buildGraph(options: Options): Promise<Graph> {
+  async buildGraph(
+    entryPoints: $ReadOnlyArray<string>,
+    options: Options,
+  ): Promise<Graph> {
     const depGraph = await this._bundler.getDependencyGraph();
 
-    const deltaCalculator = new DeltaCalculator(
-      this._bundler,
-      depGraph,
-      options,
-    );
+    const deltaCalculator = new DeltaCalculator(entryPoints, depGraph, options);
 
     await deltaCalculator.getDelta({reset: true});
     const graph = deltaCalculator.getGraph();

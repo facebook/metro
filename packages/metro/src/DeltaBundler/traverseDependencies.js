@@ -10,11 +10,6 @@
 
 'use strict';
 
-const removeInlineRequiresBlacklistFromOptions = require('../lib/removeInlineRequiresBlacklistFromOptions');
-
-import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
-import type DependencyGraph from '../node-haste/DependencyGraph';
-import type Module from '../node-haste/Module';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
 export type DependencyType = 'module' | 'script' | 'asset';
@@ -24,10 +19,10 @@ export type DependencyEdge = {|
   inverseDependencies: Set<string>,
   path: string,
   output: {
-    code: string,
-    map: Array<MetroSourceMapSegmentTuple>,
-    source: string,
-    type: DependencyType,
+    +code: string,
+    +map: Array<MetroSourceMapSegmentTuple>,
+    +source: string,
+    +type: DependencyType,
   },
 |};
 
@@ -52,9 +47,20 @@ type Delta = {
   deleted: Set<string>,
 };
 
-export type TransformOptions = {|
-  ...JSTransformerOptions,
-  type: 'module' | 'script',
+export type TransformFn = string => Promise<{
+  dependencies: $ReadOnlyArray<string>,
+  output: {
+    +code: string,
+    +map: Array<MetroSourceMapSegmentTuple>,
+    +source: string,
+    +type: DependencyType,
+  },
+}>;
+
+export type Options = {|
+  resolve: (from: string, to: string) => string,
+  transform: TransformFn,
+  onProgress: ?(numProcessed: number, total: number) => mixed,
 |};
 
 /**
@@ -73,10 +79,8 @@ export type TransformOptions = {|
  */
 async function traverseDependencies(
   paths: $ReadOnlyArray<string>,
-  dependencyGraph: DependencyGraph,
-  transformOptions: TransformOptions,
   graph: Graph,
-  onProgress?: (numProcessed: number, total: number) => mixed = () => {},
+  options: Options,
 ): Promise<Result> {
   const delta = {
     added: new Map(),
@@ -94,14 +98,7 @@ async function traverseDependencies(
 
       delta.modified.set(edge.path, edge);
 
-      await traverseDependenciesForSingleFile(
-        edge,
-        dependencyGraph,
-        transformOptions,
-        graph,
-        delta,
-        onProgress,
-      );
+      await traverseDependenciesForSingleFile(edge, graph, delta, options);
     }),
   );
 
@@ -140,27 +137,11 @@ async function traverseDependencies(
 
 async function initialTraverseDependencies(
   graph: Graph,
-  dependencyGraph: DependencyGraph,
-  transformOptions: TransformOptions,
-  onProgress?: (numProcessed: number, total: number) => mixed = () => {},
+  options: Options,
 ): Promise<Result> {
-  graph.entryPoints.forEach(entryPoint =>
-    createEdge(
-      dependencyGraph.getModuleForPath(
-        entryPoint,
-        transformOptions.type === 'script',
-      ),
-      graph,
-    ),
-  );
+  graph.entryPoints.forEach(entryPoint => createEdge(entryPoint, graph));
 
-  await traverseDependencies(
-    graph.entryPoints,
-    dependencyGraph,
-    transformOptions,
-    graph,
-    onProgress,
-  );
+  await traverseDependencies(graph.entryPoints, graph, options);
 
   reorderGraph(graph);
 
@@ -172,75 +153,55 @@ async function initialTraverseDependencies(
 
 async function traverseDependenciesForSingleFile(
   edge: DependencyEdge,
-  dependencyGraph: DependencyGraph,
-  transformOptions: TransformOptions,
   graph: Graph,
   delta: Delta,
-  onProgress?: (numProcessed: number, total: number) => mixed = () => {},
+  options: Options,
 ): Promise<void> {
   let numProcessed = 0;
   let total = 1;
-  onProgress(numProcessed, total);
+  options.onProgress && options.onProgress(numProcessed, total);
 
   await processEdge(
     edge,
-    dependencyGraph,
-    transformOptions,
     graph,
     delta,
+    options,
     () => {
       total++;
-      onProgress(numProcessed, total);
+      options.onProgress && options.onProgress(numProcessed, total);
     },
     () => {
       numProcessed++;
-      onProgress(numProcessed, total);
+      options.onProgress && options.onProgress(numProcessed, total);
     },
   );
 
   numProcessed++;
-  onProgress(numProcessed, total);
+  options.onProgress && options.onProgress(numProcessed, total);
 }
 
 async function processEdge(
   edge: DependencyEdge,
-  dependencyGraph: DependencyGraph,
-  transformOptions: TransformOptions,
   graph: Graph,
   delta: Delta,
+  options: Options,
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
 ): Promise<void> {
   const previousDependencies = edge.dependencies;
 
-  const {type, ...workerTransformOptions} = transformOptions;
-
-  const module = dependencyGraph.getModuleForPath(edge.path, type === 'script');
-  const result = await module.read(
-    removeInlineRequiresBlacklistFromOptions(edge.path, workerTransformOptions),
-  );
+  const result = await options.transform(edge.path);
 
   // Get the absolute path of all sub-dependencies (some of them could have been
   // moved but maintain the same relative path).
   const currentDependencies = resolveDependencies(
     edge.path,
     result.dependencies,
-    dependencyGraph,
-    transformOptions,
+    options,
   );
 
   // Update the edge information.
-  edge.output.code = result.code;
-  edge.output.map = result.map;
-  // TODO(T28259615): Remove as soon as possible to avoid leaking.
-  // Lazily access source code; if not needed, don't read the file.
-  // eslint-disable-next-line lint/flow-no-fixme
-  // $FlowFixMe: "defineProperty" with a getter is buggy in flow.
-  Object.defineProperty(edge.output, 'source', {
-    configurable: true,
-    enumerable: true,
-    get: () => result.source,
-  });
+  edge.output = result.output;
   edge.dependencies = new Map();
 
   currentDependencies.forEach((absolutePath, relativePath) => {
@@ -266,10 +227,9 @@ async function processEdge(
         await addDependency(
           edge,
           absolutePath,
-          dependencyGraph,
-          transformOptions,
           graph,
           delta,
+          options,
           onDependencyAdd,
           onDependencyAdded,
         );
@@ -281,10 +241,9 @@ async function processEdge(
 async function addDependency(
   parentEdge: DependencyEdge,
   path: string,
-  dependencyGraph: DependencyGraph,
-  transformOptions: TransformOptions,
   graph: Graph,
   delta: Delta,
+  options: Options,
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
 ): Promise<void> {
@@ -297,10 +256,7 @@ async function addDependency(
     return;
   }
 
-  const edge = createEdge(
-    dependencyGraph.getModuleForPath(path, transformOptions.type === 'script'),
-    graph,
-  );
+  const edge = createEdge(path, graph);
 
   edge.inverseDependencies.add(parentEdge.path);
   delta.added.set(edge.path, edge);
@@ -309,10 +265,9 @@ async function addDependency(
 
   await processEdge(
     edge,
-    dependencyGraph,
-    transformOptions,
     graph,
     delta,
+    options,
     onDependencyAdd,
     onDependencyAdded,
   );
@@ -353,33 +308,21 @@ function removeDependency(
   destroyEdge(edge, graph);
 }
 
-function createEdge(module: Module, graph: Graph): DependencyEdge {
+function createEdge(filePath: string, graph: Graph): DependencyEdge {
   const edge = {
     dependencies: new Map(),
     inverseDependencies: new Set(),
-    path: module.path,
+    path: filePath,
     output: {
       code: '',
       map: [],
       source: '',
-      type: getType(module),
+      type: 'module',
     },
   };
-  graph.dependencies.set(module.path, edge);
+  graph.dependencies.set(filePath, edge);
 
   return edge;
-}
-
-function getType(module: Module): DependencyType {
-  if (module.isAsset()) {
-    return 'asset';
-  }
-
-  if (module.isPolyfill()) {
-    return 'script';
-  }
-
-  return 'module';
 }
 
 function destroyEdge(edge: DependencyEdge, graph: Graph) {
@@ -387,24 +330,14 @@ function destroyEdge(edge: DependencyEdge, graph: Graph) {
 }
 
 function resolveDependencies(
-  parentPath,
+  parentPath: string,
   dependencies: $ReadOnlyArray<string>,
-  dependencyGraph: DependencyGraph,
-  transformOptions: TransformOptions,
+  options: Options,
 ): Map<string, string> {
-  const parentModule = dependencyGraph.getModuleForPath(
-    parentPath,
-    transformOptions.type === 'string',
-  );
-
   return new Map(
     dependencies.map(relativePath => [
       relativePath,
-      dependencyGraph.resolveDependency(
-        parentModule,
-        relativePath,
-        transformOptions.platform,
-      ).path,
+      options.resolve(parentPath, relativePath),
     ]),
   );
 }

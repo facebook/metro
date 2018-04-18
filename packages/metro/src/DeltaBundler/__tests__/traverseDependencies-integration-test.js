@@ -44,10 +44,11 @@ beforeEach(() => {
 });
 
 describe('traverseDependencies', function() {
+  let fs;
   let Module;
   let traverseDependencies;
+  let transformHelpers;
   let defaults;
-  let emptyTransformOptions;
   let UnableToResolveError;
 
   async function getOrderedDependenciesAsJSON(
@@ -63,10 +64,29 @@ describe('traverseDependencies', function() {
       entryPoints: [entryPath],
     };
 
+    const bundler = {
+      getDependencyGraph() {
+        return Promise.resolve(dgraph);
+      },
+    };
+
     const {added} = await traverseDependencies.initialTraverseDependencies(
       graph,
-      dgraph,
-      {...emptyTransformOptions, platform},
+      {
+        resolve: await transformHelpers.getResolveDependencyFn(
+          bundler,
+          platform,
+        ),
+        transform: async path => {
+          let dependencies = [];
+          const sourceCode = fs.readFileSync(path, 'utf8');
+
+          if (!path.endsWith('.json')) {
+            dependencies = extractDependencies(sourceCode);
+          }
+          return {dependencies, output: {code: sourceCode}};
+        },
+      },
     );
 
     const dependencies = recursive
@@ -94,13 +114,14 @@ describe('traverseDependencies', function() {
     jest.resetModules();
     jest.mock('fs', () => new (require('metro-memory-fs'))());
 
+    fs = require('fs');
     Module = require('../../node-haste/Module');
     traverseDependencies = require('../traverseDependencies');
+    transformHelpers = require('../../lib/transformHelpers');
     ({
       UnableToResolveError,
     } = require('../../node-haste/DependencyGraph/ModuleResolution'));
 
-    emptyTransformOptions = {transformer: {transform: {}}};
     defaults = {
       assetExts: ['png', 'jpg'],
       // This pattern is not expected to match anything.
@@ -2336,6 +2357,9 @@ describe('traverseDependencies', function() {
       jest.resetModules();
       jest.mock('path', () => require.requireActual('path').win32);
       jest.mock('fs', () => new (require('metro-memory-fs'))('win32'));
+
+      fs = require('fs');
+
       require('os').tmpdir = () => 'c:\\tmp';
       DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
@@ -3425,6 +3449,8 @@ describe('traverseDependencies', function() {
       jest.mock('path', () => require.requireActual('path').win32);
       jest.mock('fs', () => new (require('metro-memory-fs'))('win32'));
       require('os').tmpdir = () => 'c:\\tmp';
+
+      fs = require('fs');
       DependencyGraph = require('../../node-haste/DependencyGraph');
       processDgraph = processDgraphFor.bind(null, DependencyGraph);
       ({
@@ -5036,76 +5062,6 @@ describe('traverseDependencies', function() {
           expect(error.targetModuleName).toBe('./a');
         }
       });
-    });
-  });
-
-  describe('Progress updates', () => {
-    let dependencyGraph, onProgress;
-
-    function makeModule(id, dependencies = []) {
-      return (
-        `
-        /**
-         * @providesModule ${id}
-         */\n` +
-        dependencies.map(d => `require(${JSON.stringify(d)});`).join('\n')
-      );
-    }
-
-    function getDependencies() {
-      return traverseDependencies.initialTraverseDependencies(
-        {
-          dependencies: new Map(),
-          entryPoints: ['/root/index.js'],
-        },
-        dependencyGraph,
-        emptyTransformOptions,
-        onProgress,
-      );
-    }
-
-    beforeEach(function() {
-      onProgress = jest.genMockFn();
-      setMockFileSystem({
-        root: {
-          'index.js': makeModule('index', ['a', 'b']),
-          'a.js': makeModule('a', ['c', 'd']),
-          'b.js': makeModule('b', ['d', 'e']),
-          'c.js': makeModule('c'),
-          'd.js': makeModule('d', ['f']),
-          'e.js': makeModule('e', ['f']),
-          'f.js': makeModule('f', ['g']),
-          'g.js': makeModule('g'),
-        },
-      });
-      const DependencyGraph = require('../../node-haste/DependencyGraph');
-      return DependencyGraph.load(
-        {
-          ...defaults,
-          projectRoots: ['/root'],
-        },
-        false /* since we're mocking the filesystem, we cannot use watchman */,
-      ).then(dg => {
-        dependencyGraph = dg;
-      });
-    });
-
-    afterEach(() => {
-      dependencyGraph.end();
-    });
-
-    it('calls back for each finished module', async () => {
-      await getDependencies();
-
-      // We get a progress change twice per dependency
-      // (when we discover it and when we process it).
-      expect(onProgress.mock.calls.length).toBe(8 * 2);
-    });
-
-    it('increases the number of discover/finished modules in steps of one', async () => {
-      await getDependencies();
-
-      expect(onProgress.mock.calls).toMatchSnapshot();
     });
   });
 

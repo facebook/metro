@@ -24,6 +24,7 @@ jest
   .mock('metro-core/src/Logger')
   .mock('../../lib/getAbsolutePath')
   .mock('../../lib/getPrependedScripts')
+  .mock('../../lib/transformHelpers')
   .mock('../../lib/GlobalTransformCache');
 
 const NativeDate = global.Date;
@@ -35,6 +36,7 @@ describe('processRequest', () => {
   let dependencies;
   let getAsset;
   let getPrependedScripts;
+  let transformHelpers;
   let symbolicate;
   let DeltaBundler;
 
@@ -49,6 +51,7 @@ describe('processRequest', () => {
     crypto = require('crypto');
     getAsset = require('../../Assets').getAsset;
     getPrependedScripts = require('../../lib/getPrependedScripts');
+    transformHelpers = require('../../lib/transformHelpers');
     symbolicate = require('../symbolicate/symbolicate');
     DeltaBundler = require('../../DeltaBundler');
   });
@@ -175,6 +178,11 @@ describe('processRequest', () => {
 
     server = new Server(options);
     requestHandler = server.processRequest.bind(server);
+
+    transformHelpers.getTransformFn = jest.fn().mockReturnValue(() => {});
+    transformHelpers.getResolveDependencyFn = jest
+      .fn()
+      .mockReturnValue(() => {});
 
     let i = 0;
     crypto.randomBytes.mockImplementation(() => `XXXXX-${i++}`);
@@ -369,72 +377,58 @@ describe('processRequest', () => {
     expect(DeltaBundler.prototype.buildGraph.mock.calls.length).toBe(1);
   });
 
-  it('works with .ios.js extension', () => {
-    return makeRequest(requestHandler, 'index.ios.includeRequire.bundle').then(
-      response => {
-        expect(DeltaBundler.prototype.buildGraph).toBeCalledWith({
-          assetPlugins: [],
-          customTransformOptions: {},
-          dev: true,
-          entryPoints: ['/root/index.ios.js'],
-          hot: true,
-          minify: false,
-          onProgress: jasmine.any(Function),
-          platform: null,
-          type: 'module',
-        });
-      },
-    );
-  });
+  it('passes in the platform param', async () => {
+    await makeRequest(requestHandler, 'index.bundle?platform=ios');
 
-  it('passes in the platform param', function() {
-    return makeRequest(requestHandler, 'index.bundle?platform=ios').then(
-      function(response) {
-        expect(DeltaBundler.prototype.buildGraph).toBeCalledWith({
-          assetPlugins: [],
-          customTransformOptions: {},
-          dev: true,
-          entryPoints: ['/root/index.js'],
-          hot: true,
-          minify: false,
-          onProgress: jasmine.any(Function),
-          platform: 'ios',
-          type: 'module',
-        });
-      },
-    );
-  });
-
-  it('passes in the assetPlugin param', function() {
-    return makeRequest(
-      requestHandler,
-      'index.bundle?assetPlugin=assetPlugin1&assetPlugin=assetPlugin2',
-    ).then(function(response) {
-      expect(DeltaBundler.prototype.buildGraph).toBeCalledWith({
-        assetPlugins: ['assetPlugin1', 'assetPlugin2'],
+    expect(transformHelpers.getTransformFn).toBeCalledWith(
+      ['/root/index.js'],
+      jasmine.any(Bundler),
+      jasmine.any(DeltaBundler),
+      {
+        assetPlugins: [],
         customTransformOptions: {},
         dev: true,
-        entryPoints: ['/root/index.js'],
         hot: true,
         minify: false,
         onProgress: jasmine.any(Function),
-        platform: null,
+        platform: 'ios',
         type: 'module',
-      });
-    });
+      },
+    );
+    expect(transformHelpers.getResolveDependencyFn).toBeCalled();
+
+    expect(DeltaBundler.prototype.buildGraph).toBeCalledWith(
+      ['/root/index.js'],
+      {
+        resolve: jasmine.any(Function),
+        transform: jasmine.any(Function),
+        onProgress: jasmine.any(Function),
+      },
+    );
+  });
+
+  it('passes in the assetPlugin param', async () => {
+    await makeRequest(
+      requestHandler,
+      'index.bundle?assetPlugin=assetPlugin1&assetPlugin=assetPlugin2',
+    );
+
+    expect(transformHelpers.getTransformFn).toBeCalledWith(
+      ['/root/index.js'],
+      jasmine.any(Bundler),
+      jasmine.any(DeltaBundler),
+      jasmine.objectContaining({
+        assetPlugins: ['assetPlugin1', 'assetPlugin2'],
+      }),
+    );
   });
 
   it('does not rebuild the bundle when making concurrent requests', async () => {
     let resolveBuildGraph;
 
     // Delay the response of the buildGraph method.
-    DeltaBundler.prototype.buildGraph.mockImplementation(async () => {
+    transformHelpers.getResolveDependencyFn.mockImplementation(async () => {
       return new Promise(res => (resolveBuildGraph = res));
-    });
-    DeltaBundler.prototype.getDelta.mockReturnValue({
-      modified: new Map(),
-      deleted: new Set(),
-      reset: false,
     });
 
     const promise1 = makeRequest(requestHandler, 'index.bundle');
@@ -589,17 +583,9 @@ describe('processRequest', () => {
     it('does return the same initial delta when making concurrent requests', async () => {
       let resolveBuildGraph;
 
-      // force the buildGraph
-      DeltaBundler.prototype.buildGraph.mockImplementation(async () => {
+      transformHelpers.getResolveDependencyFn.mockImplementation(async () => {
         return new Promise(res => (resolveBuildGraph = res));
       });
-      DeltaBundler.prototype.getDelta.mockImplementation(
-        async (graph, {reset}) => ({
-          modified: reset ? dependencies : new Map(),
-          deleted: new Set(),
-          reset,
-        }),
-      );
 
       const promise1 = makeRequest(requestHandler, 'index.delta');
       const promise2 = makeRequest(requestHandler, 'index.delta');
@@ -754,25 +740,37 @@ describe('processRequest', () => {
   });
 
   describe('build(options)', () => {
-    it('Calls the delta bundler with the correct args', () => {
-      return server
-        .build({
-          ...Server.DEFAULT_BUNDLE_OPTIONS,
-          entryFile: 'foo file',
-        })
-        .then(() =>
-          expect(DeltaBundler.prototype.buildGraph).toBeCalledWith({
-            assetPlugins: [],
-            customTransformOptions: {},
-            dev: true,
-            entryPoints: ['/root/foo file'],
-            hot: false,
-            minify: false,
-            onProgress: null,
-            platform: undefined,
-            type: 'module',
-          }),
-        );
+    it('Calls the delta bundler with the correct args', async () => {
+      await server.build({
+        ...Server.DEFAULT_BUNDLE_OPTIONS,
+        entryFile: 'foo file',
+      });
+
+      expect(transformHelpers.getTransformFn).toBeCalledWith(
+        ['/root/foo file'],
+        jasmine.any(Bundler),
+        jasmine.any(DeltaBundler),
+        {
+          assetPlugins: [],
+          customTransformOptions: {},
+          dev: true,
+          hot: false,
+          minify: false,
+          onProgress: null,
+          platform: undefined,
+          type: 'module',
+        },
+      );
+      expect(transformHelpers.getResolveDependencyFn).toBeCalled();
+
+      expect(DeltaBundler.prototype.buildGraph).toBeCalledWith(
+        ['/root/foo file'],
+        {
+          resolve: jasmine.any(Function),
+          transform: jasmine.any(Function),
+          onProgress: null,
+        },
+      );
     });
   });
 

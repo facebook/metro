@@ -10,7 +10,7 @@
 
 'use strict';
 
-const DeltaCalculator = require('../DeltaBundler/DeltaCalculator');
+const transformHelpers = require('../lib/transformHelpers');
 
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 
@@ -28,31 +28,21 @@ async function getTransformOptions(): Promise<JSTransformerOptions> {
       };
     },
   };
-  const dependencyGraph = {
-    getWatcher() {
-      return {on() {}};
-    },
-    getAbsolutePath(path) {
-      return '/' + path;
-    },
-  };
-  const options = {
-    assetPlugins: [],
-    dev: true,
-    entryPoints: [],
-    hot: true,
-    minify: false,
-    platform: 'ios',
-    type: 'module',
-  };
 
-  const deltaCalculator = new DeltaCalculator(
+  return await transformHelpers.calcTransformerOptions(
+    [],
     bundler,
-    dependencyGraph,
-    options,
+    {},
+    {
+      assetPlugins: [],
+      dev: true,
+      entryPoints: [],
+      hot: true,
+      minify: false,
+      platform: 'ios',
+      type: 'module',
+    },
   );
-
-  return await deltaCalculator.getTransformerOptions();
 }
 
 module.exports = getTransformOptions;

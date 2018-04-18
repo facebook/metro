@@ -12,7 +12,9 @@
 
 const defaults = require('../defaults');
 const getPreludeCode = require('./getPreludeCode');
+const transformHelpers = require('./transformHelpers');
 
+import type Bundler from '../Bundler';
 import type {DependencyEdge} from '../DeltaBundler/traverseDependencies';
 import type DeltaBundler from '../DeltaBundler';
 import type {CustomTransformOptions} from '../JSTransformer/worker';
@@ -33,6 +35,7 @@ type BundleOptions = {
 async function getPrependedScripts(
   options: Options,
   bundleOptions: BundleOptions,
+  bundler: Bundler,
   deltaBundler: DeltaBundler,
 ): Promise<Array<DependencyEdge>> {
   // Get all the polyfills from the relevant option params (the
@@ -43,17 +46,33 @@ async function getPrependedScripts(
     })
     .concat(options.polyfillModuleNames);
 
-  const graph = await deltaBundler.buildGraph({
+  const buildOptions = {
     assetPlugins: [],
     customTransformOptions: bundleOptions.customTransformOptions,
     dev: bundleOptions.dev,
-    entryPoints: [defaults.moduleSystem, ...polyfillModuleNames],
     hot: bundleOptions.hot,
     minify: bundleOptions.minify,
     onProgress: null,
     platform: bundleOptions.platform,
     type: 'script',
-  });
+  };
+
+  const graph = await deltaBundler.buildGraph(
+    [defaults.moduleSystem, ...polyfillModuleNames],
+    {
+      resolve: await transformHelpers.getResolveDependencyFn(
+        bundler,
+        buildOptions.platform,
+      ),
+      transform: await transformHelpers.getTransformFn(
+        [defaults.moduleSystem, ...polyfillModuleNames],
+        bundler,
+        deltaBundler,
+        buildOptions,
+      ),
+      onProgress: null,
+    },
+  );
 
   return [
     _getPrelude({dev: bundleOptions.dev}),

@@ -18,17 +18,15 @@ const {
   traverseDependencies,
 } = require('../traverseDependencies');
 
-const Bundler = require('../../Bundler');
 const {EventEmitter} = require('events');
 
 const DeltaCalculator = require('../DeltaCalculator');
-const getTransformOptions = require('../../__fixtures__/getTransformOptions');
 
 describe('DeltaCalculator', () => {
-  const entryModule = createModule({path: '/bundle', name: 'bundle'});
-  const moduleFoo = createModule({path: '/foo', name: 'foo'});
-  const moduleBar = createModule({path: '/bar', name: 'bar'});
-  const moduleBaz = createModule({path: '/baz', name: 'baz'});
+  const entryModule = {path: '/bundle', name: 'bundle'};
+  const moduleFoo = {path: '/foo', name: 'foo'};
+  const moduleBar = {path: '/bar', name: 'bar'};
+  const moduleBaz = {path: '/baz', name: 'baz'};
 
   let edgeModule;
   let edgeFoo;
@@ -37,8 +35,6 @@ describe('DeltaCalculator', () => {
 
   let deltaCalculator;
   let fileWatcher;
-  let mockedDependencies;
-  let bundlerMock;
 
   const options = {
     assetPlugins: [],
@@ -55,94 +51,58 @@ describe('DeltaCalculator', () => {
     sourceMapUrl: undefined,
   };
 
-  function createModule({path, name, isAsset, isJSON}) {
-    return {
-      path,
-      name,
-      getName() {
-        return name;
-      },
-      isAsset() {
-        return !!isAsset;
-      },
-    };
-  }
-
   beforeEach(async () => {
-    bundlerMock = new Bundler();
-
-    mockedDependencies = [entryModule, moduleFoo, moduleBar, moduleBaz];
-
     fileWatcher = new EventEmitter();
 
     const dependencyGraph = {
       getWatcher() {
         return fileWatcher;
       },
-      getAbsolutePath(path) {
-        return '/' + path;
-      },
-      getModuleForPath(path) {
-        return mockedDependencies.filter(dep => dep.path === path)[0];
-      },
     };
 
-    initialTraverseDependencies.mockImplementationOnce(
-      async (graph, dg, opt) => {
-        edgeModule = {
-          ...entryModule,
-          dependencies: new Map([
-            ['foo', '/foo'],
-            ['bar', '/bar'],
-            ['baz', '/baz'],
-          ]),
-        };
-        edgeFoo = {
-          ...moduleFoo,
-          dependencies: new Map(),
-          inverseDependencies: ['/bundle'],
-        };
-        edgeBar = {
-          ...moduleBar,
-          dependencies: new Map(),
-          inverseDependencies: ['/bundle'],
-        };
-        edgeBaz = {
-          ...moduleBaz,
-          dependencies: new Map(),
-          inverseDependencies: ['/bundle'],
-        };
+    initialTraverseDependencies.mockImplementationOnce(async (graph, opt) => {
+      edgeModule = {
+        output: entryModule,
+        dependencies: new Map([
+          ['foo', '/foo'],
+          ['bar', '/bar'],
+          ['baz', '/baz'],
+        ]),
+      };
+      edgeFoo = {
+        output: moduleFoo,
+        dependencies: new Map(),
+        inverseDependencies: ['/bundle'],
+      };
+      edgeBar = {
+        output: moduleBar,
+        dependencies: new Map(),
+        inverseDependencies: ['/bundle'],
+      };
+      edgeBaz = {
+        output: moduleBaz,
+        dependencies: new Map(),
+        inverseDependencies: ['/bundle'],
+      };
 
-        graph.dependencies.set('/bundle', edgeModule);
-        graph.dependencies.set('/foo', edgeFoo);
-        graph.dependencies.set('/bar', edgeBar);
-        graph.dependencies.set('/baz', edgeBaz);
+      graph.dependencies.set('/bundle', edgeModule);
+      graph.dependencies.set('/foo', edgeFoo);
+      graph.dependencies.set('/bar', edgeBar);
+      graph.dependencies.set('/baz', edgeBaz);
 
-        return {
-          added: new Map([
-            ['/bundle', edgeModule],
-            ['/foo', edgeFoo],
-            ['/bar', edgeBar],
-            ['/baz', edgeBaz],
-          ]),
-          deleted: new Set(),
-        };
-      },
-    );
-
-    Bundler.prototype.getGlobalTransformOptions.mockReturnValue({
-      enableBabelRCLookup: false,
-      projectRoot: '/foo',
+      return {
+        added: new Map([
+          ['/bundle', edgeModule],
+          ['/foo', edgeFoo],
+          ['/bar', edgeBar],
+          ['/baz', edgeBaz],
+        ]),
+        deleted: new Set(),
+      };
     });
 
-    Bundler.prototype.getTransformOptionsForEntryFiles.mockReturnValue(
-      Promise.resolve({
-        inlineRequires: false,
-      }),
-    );
-
     deltaCalculator = new DeltaCalculator(
-      bundlerMock,
+      [entryModule.path],
       dependencyGraph,
       options,
     );
@@ -264,12 +224,12 @@ describe('DeltaCalculator', () => {
 
     fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
 
-    const moduleQux = createModule({path: '/qux', name: 'qux'});
-    const edgeQux = {...moduleQux, inverseDependencies: []};
+    const edgeQux = {
+      output: {path: '/qux', name: 'qux'},
+      inverseDependencies: [],
+    };
 
-    mockedDependencies.push(moduleQux);
-
-    traverseDependencies.mockImplementation(async (path, dg, opt, graph) => {
+    traverseDependencies.mockImplementation(async (path, graph, options) => {
       graph.dependencies.set('/qux', edgeQux);
 
       return {
@@ -389,66 +349,5 @@ describe('DeltaCalculator', () => {
     deltaCalculator.end();
 
     expect(graph.dependencies.size).toEqual(numDependencies);
-  });
-
-  describe('getTransformerOptions()', () => {
-    it('should calculate the transform options correctly', async () => {
-      expect(await deltaCalculator.getTransformerOptions()).toEqual({
-        assetDataPlugins: [],
-        dev: true,
-        enableBabelRCLookup: false,
-        hot: true,
-        inlineRequires: false,
-        minify: false,
-        platform: 'ios',
-        projectRoot: '/foo',
-      });
-    });
-
-    it('should return the same params as the standard options', async () => {
-      const options = await deltaCalculator.getTransformerOptions();
-
-      expect(Object.keys(options).sort()).toEqual(
-        Object.keys(await getTransformOptions()).sort(),
-      );
-    });
-
-    it('should handle inlineRequires=true correctly', async () => {
-      Bundler.prototype.getTransformOptionsForEntryFiles.mockReturnValue(
-        Promise.resolve({
-          inlineRequires: true,
-        }),
-      );
-
-      expect(await deltaCalculator.getTransformerOptions()).toEqual({
-        assetDataPlugins: [],
-        dev: true,
-        enableBabelRCLookup: false,
-        hot: true,
-        inlineRequires: true,
-        minify: false,
-        platform: 'ios',
-        projectRoot: '/foo',
-      });
-    });
-
-    it('should handle an inline requires blacklist correctly', async () => {
-      Bundler.prototype.getTransformOptionsForEntryFiles.mockReturnValue(
-        Promise.resolve({
-          inlineRequires: {blacklist: {'/bar': true, '/baz': true}},
-        }),
-      );
-
-      expect(await deltaCalculator.getTransformerOptions()).toEqual({
-        assetDataPlugins: [],
-        dev: true,
-        enableBabelRCLookup: false,
-        hot: true,
-        inlineRequires: {blacklist: {'/bar': true, '/baz': true}},
-        minify: false,
-        platform: 'ios',
-        projectRoot: '/foo',
-      });
-    });
   });
 });

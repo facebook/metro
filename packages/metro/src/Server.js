@@ -36,6 +36,7 @@ const parseCustomTransformOptions = require('./lib/parseCustomTransformOptions')
 const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
 const path = require('path');
 const symbolicate = require('./Server/symbolicate/symbolicate');
+const transformHelpers = require('./lib/transformHelpers');
 const url = require('url');
 
 const {getAsset} = require('./Assets');
@@ -77,11 +78,10 @@ type GraphInfo = {|
   +sequenceId: string,
 |};
 
-type BuildGraphOptions = {|
+export type BuildGraphOptions = {|
   +assetPlugins: Array<string>,
   +customTransformOptions: CustomTransformOptions,
   +dev: boolean,
-  +entryFiles: $ReadOnlyArray<string>,
   +hot: boolean,
   +minify: boolean,
   +onProgress: ?(doneCont: number, totalCount: number) => mixed,
@@ -289,19 +289,26 @@ class Server {
     };
   }
 
-  async buildGraph(options: BuildGraphOptions): Promise<Graph> {
-    return await this._deltaBundler.buildGraph({
-      assetPlugins: options.assetPlugins,
-      customTransformOptions: options.customTransformOptions,
-      dev: options.dev,
-      entryPoints: options.entryFiles.map(entryFile =>
-        getAbsolutePath(entryFile, this._opts.projectRoots),
+  async buildGraph(
+    entryFiles: $ReadOnlyArray<string>,
+    options: BuildGraphOptions,
+  ): Promise<Graph> {
+    entryFiles = entryFiles.map(entryFile =>
+      getAbsolutePath(entryFile, this._opts.projectRoots),
+    );
+
+    return await this._deltaBundler.buildGraph(entryFiles, {
+      resolve: await transformHelpers.getResolveDependencyFn(
+        this._bundler,
+        options.platform,
       ),
-      hot: options.hot,
-      minify: options.minify,
+      transform: await transformHelpers.getTransformFn(
+        entryFiles,
+        this._bundler,
+        this._deltaBundler,
+        options,
+      ),
       onProgress: options.onProgress,
-      platform: options.platform,
-      type: options.type,
     });
   }
 
@@ -376,7 +383,6 @@ class Server {
       assetPlugins: options.assetPlugins,
       customTransformOptions: options.customTransformOptions,
       dev: options.dev,
-      entryPoints: [entryPoint],
       hot: options.hot,
       minify: options.minify,
       onProgress: options.onProgress,
@@ -384,10 +390,24 @@ class Server {
       type: 'module',
     };
 
-    const graph = await this._deltaBundler.buildGraph(crawlingOptions);
+    const graph = await this._deltaBundler.buildGraph([entryPoint], {
+      resolve: await transformHelpers.getResolveDependencyFn(
+        this._bundler,
+        options.platform,
+      ),
+      transform: await transformHelpers.getTransformFn(
+        [entryPoint],
+        this._bundler,
+        this._deltaBundler,
+        crawlingOptions,
+      ),
+      onProgress: options.onProgress,
+    });
+
     const prepend = await getPrependedScripts(
       this._opts,
       crawlingOptions,
+      this._bundler,
       this._deltaBundler,
     );
 

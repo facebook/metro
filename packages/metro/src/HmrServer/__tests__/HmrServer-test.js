@@ -32,12 +32,12 @@ describe('HmrServer', () => {
     callbacks = new Map();
 
     deltaBundlerMock = {
-      buildGraph: buildGraphMock,
       listen: (graph, cb) => {
         callbacks.set(graph, cb);
       },
     };
     serverMock = {
+      buildGraph: buildGraphMock,
       getDeltaBundler() {
         return deltaBundlerMock;
       },
@@ -66,9 +66,9 @@ describe('HmrServer', () => {
     );
 
     expect(buildGraphMock).toBeCalledWith(
+      ['/root/EntryPoint.js'],
       expect.objectContaining({
         dev: true,
-        entryPoints: ['/root/EntryPoint.js'],
         minify: false,
         platform: 'ios',
       }),

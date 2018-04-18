@@ -388,10 +388,9 @@ exports.buildGraph = async function({
   });
 
   try {
-    return await metroServer.buildGraph({
+    return await metroServer.buildGraph(entries, {
       ...MetroServer.DEFAULT_GRAPH_OPTIONS,
       dev,
-      entryFiles: entries,
       onProgress,
       platform,
     });
