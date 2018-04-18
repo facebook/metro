@@ -23,15 +23,10 @@ const {EventEmitter} = require('events');
 const DeltaCalculator = require('../DeltaCalculator');
 
 describe('DeltaCalculator', () => {
-  const entryModule = {path: '/bundle', name: 'bundle'};
-  const moduleFoo = {path: '/foo', name: 'foo'};
-  const moduleBar = {path: '/bar', name: 'bar'};
-  const moduleBaz = {path: '/baz', name: 'baz'};
-
-  let edgeModule;
-  let edgeFoo;
-  let edgeBar;
-  let edgeBaz;
+  let entryModule;
+  let fooModule;
+  let barModule;
+  let bazModule;
 
   let deltaCalculator;
   let fileWatcher;
@@ -61,48 +56,61 @@ describe('DeltaCalculator', () => {
     };
 
     initialTraverseDependencies.mockImplementationOnce(async (graph, opt) => {
-      edgeModule = {
-        output: entryModule,
+      entryModule = {
         dependencies: new Map([
           ['foo', '/foo'],
           ['bar', '/bar'],
           ['baz', '/baz'],
         ]),
+        inverseDependencies: [],
+        output: {
+          name: 'bundle',
+        },
+        path: '/bundle',
       };
-      edgeFoo = {
-        output: moduleFoo,
+      fooModule = {
         dependencies: new Map(),
         inverseDependencies: ['/bundle'],
+        output: {
+          name: 'foo',
+        },
+        path: '/foo',
       };
-      edgeBar = {
-        output: moduleBar,
+      barModule = {
         dependencies: new Map(),
         inverseDependencies: ['/bundle'],
+        output: {
+          name: 'bar',
+        },
+        path: '/bar',
       };
-      edgeBaz = {
-        output: moduleBaz,
+      bazModule = {
         dependencies: new Map(),
         inverseDependencies: ['/bundle'],
+        output: {
+          name: 'baz',
+        },
+        path: '/baz',
       };
 
-      graph.dependencies.set('/bundle', edgeModule);
-      graph.dependencies.set('/foo', edgeFoo);
-      graph.dependencies.set('/bar', edgeBar);
-      graph.dependencies.set('/baz', edgeBaz);
+      graph.dependencies.set('/bundle', entryModule);
+      graph.dependencies.set('/foo', fooModule);
+      graph.dependencies.set('/bar', barModule);
+      graph.dependencies.set('/baz', bazModule);
 
       return {
         added: new Map([
-          ['/bundle', edgeModule],
-          ['/foo', edgeFoo],
-          ['/bar', edgeBar],
-          ['/baz', edgeBaz],
+          ['/bundle', entryModule],
+          ['/foo', fooModule],
+          ['/bar', barModule],
+          ['/baz', bazModule],
         ]),
         deleted: new Set(),
       };
     });
 
     deltaCalculator = new DeltaCalculator(
-      [entryModule.path],
+      ['/bundle'],
       dependencyGraph,
       options,
     );
@@ -130,10 +138,10 @@ describe('DeltaCalculator', () => {
 
     expect(result).toEqual({
       modified: new Map([
-        ['/bundle', edgeModule],
-        ['/foo', edgeFoo],
-        ['/bar', edgeBar],
-        ['/baz', edgeBaz],
+        ['/bundle', entryModule],
+        ['/foo', fooModule],
+        ['/bar', barModule],
+        ['/baz', bazModule],
       ]),
       deleted: new Set(),
       reset: true,
@@ -161,10 +169,10 @@ describe('DeltaCalculator', () => {
 
     expect(result).toEqual({
       modified: new Map([
-        ['/bundle', edgeModule],
-        ['/foo', edgeFoo],
-        ['/bar', edgeBar],
-        ['/baz', edgeBaz],
+        ['/bundle', entryModule],
+        ['/foo', fooModule],
+        ['/bar', barModule],
+        ['/baz', bazModule],
       ]),
       deleted: new Set(),
       reset: true,
@@ -178,7 +186,7 @@ describe('DeltaCalculator', () => {
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
-        added: new Map([['/foo', edgeFoo]]),
+        added: new Map([['/foo', fooModule]]),
         deleted: new Set(),
       }),
     );
@@ -186,7 +194,7 @@ describe('DeltaCalculator', () => {
     const result = await deltaCalculator.getDelta({reset: false});
 
     expect(result).toEqual({
-      modified: new Map([['/foo', edgeFoo]]),
+      modified: new Map([['/foo', fooModule]]),
       deleted: new Set(),
       reset: false,
     });
@@ -202,7 +210,7 @@ describe('DeltaCalculator', () => {
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
-        added: new Map([['/foo', edgeFoo]]),
+        added: new Map([['/foo', fooModule]]),
         deleted: new Set(['/baz']),
       }),
     );
@@ -210,7 +218,7 @@ describe('DeltaCalculator', () => {
     const result = await deltaCalculator.getDelta({reset: false});
 
     expect(result).toEqual({
-      modified: new Map([['/foo', edgeFoo]]),
+      modified: new Map([['/foo', fooModule]]),
       deleted: new Set(['/baz']),
       reset: false,
     });
@@ -224,23 +232,25 @@ describe('DeltaCalculator', () => {
 
     fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
 
-    const edgeQux = {
-      output: {path: '/qux', name: 'qux'},
+    const quxModule = {
+      dependencies: new Map(),
       inverseDependencies: [],
+      output: {name: 'qux'},
+      path: '/qux',
     };
 
     traverseDependencies.mockImplementation(async (path, graph, options) => {
-      graph.dependencies.set('/qux', edgeQux);
+      graph.dependencies.set('/qux', quxModule);
 
       return {
-        added: new Map([['/foo', edgeFoo], ['/qux', edgeQux]]),
+        added: new Map([['/foo', fooModule], ['/qux', quxModule]]),
         deleted: new Set(['/bar', '/baz']),
       };
     });
 
     const result = await deltaCalculator.getDelta({reset: false});
     expect(result).toEqual({
-      modified: new Map([['/foo', edgeFoo], ['/qux', edgeQux]]),
+      modified: new Map([['/foo', fooModule], ['/qux', quxModule]]),
       deleted: new Set(['/bar', '/baz']),
       reset: false,
     });
@@ -301,13 +311,13 @@ describe('DeltaCalculator', () => {
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
-        added: new Map([['/bundle', edgeModule]]),
+        added: new Map([['/bundle', entryModule]]),
         deleted: new Set(['/foo']),
       }),
     );
 
     expect(await deltaCalculator.getDelta({reset: false})).toEqual({
-      modified: new Map([['/bundle', edgeModule]]),
+      modified: new Map([['/bundle', entryModule]]),
       deleted: new Set(['/foo']),
       reset: false,
     });
@@ -329,7 +339,7 @@ describe('DeltaCalculator', () => {
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
-        added: new Map([['/foo', edgeModule]]),
+        added: new Map([['/foo', entryModule]]),
         deleted: new Set(),
       }),
     );

@@ -13,14 +13,14 @@
 const {getAssetFiles} = require('../../Assets');
 
 import type {Graph} from '../DeltaCalculator';
-import type {DependencyEdge} from '../traverseDependencies';
+import type {Module} from '../traverseDependencies';
 
 type Options = {|
   platform: ?string,
 |};
 
 async function getAllFiles(
-  pre: $ReadOnlyArray<DependencyEdge>,
+  pre: $ReadOnlyArray<Module>,
   graph: Graph,
   options: Options,
 ): Promise<$ReadOnlyArray<string>> {

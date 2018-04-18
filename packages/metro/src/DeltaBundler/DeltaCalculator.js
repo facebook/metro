@@ -18,10 +18,10 @@ const {
 const {EventEmitter} = require('events');
 
 import type DependencyGraph from '../node-haste/DependencyGraph';
-import type {DependencyEdge, Graph, Options} from './traverseDependencies';
+import type {Graph, Module, Options} from './traverseDependencies';
 
 export type DeltaResult = {|
-  +modified: Map<string, DependencyEdge>,
+  +modified: Map<string, Module>,
   +deleted: Set<string>,
   +reset: boolean,
 |};
@@ -124,8 +124,8 @@ class DeltaCalculator extends EventEmitter {
       modifiedFiles.forEach(file => this._modifiedFiles.add(file));
       deletedFiles.forEach(file => this._deletedFiles.add(file));
 
-      // If after an error the number of edges has changed, we could be in
-      // a weird state. As a safe net we clean the dependency edges to force
+      // If after an error the number of modules has changed, we could be in
+      // a weird state. As a safe net we clean the dependency modules to force
       // a clean traversal of the graph next time.
       if (this._graph.dependencies.size !== numDependencies) {
         this._graph.dependencies = new Map();
@@ -151,7 +151,7 @@ class DeltaCalculator extends EventEmitter {
   }
 
   /**
-   * Returns the graph with all the dependency edges. Each edge contains the
+   * Returns the graph with all the dependencies. Each module contains the
    * needed information to do the traversing (dependencies, inverseDependencies)
    * plus some metadata.
    */
@@ -208,10 +208,10 @@ class DeltaCalculator extends EventEmitter {
     // If a file has been deleted, we want to invalidate any other file that
     // depends on it, so we can process it and correctly return an error.
     deletedFiles.forEach(filePath => {
-      const edge = this._graph.dependencies.get(filePath);
+      const module = this._graph.dependencies.get(filePath);
 
-      if (edge) {
-        edge.inverseDependencies.forEach(path => modifiedFiles.add(path));
+      if (module) {
+        module.inverseDependencies.forEach(path => modifiedFiles.add(path));
       }
     });
 

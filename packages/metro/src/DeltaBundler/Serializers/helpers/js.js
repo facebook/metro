@@ -13,7 +13,7 @@
 const addParamsToDefineCall = require('../../../lib/addParamsToDefineCall');
 const path = require('path');
 
-import type {DependencyEdge} from '../../traverseDependencies';
+import type {Module} from '../../traverseDependencies';
 
 export type Options = {
   +createModuleId: string => number | string,
@@ -25,7 +25,7 @@ export type Options = {
 // Make sure to set PRINT_REQUIRE_PATHS = true too, and restart Metro
 const PASS_MODULE_PATHS_TO_DEFINE = false;
 
-function wrapModule(module: DependencyEdge, options: Options) {
+function wrapModule(module: Module, options: Options) {
   if (module.output.type === 'script') {
     return module.output.code;
   }

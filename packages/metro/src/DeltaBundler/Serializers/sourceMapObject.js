@@ -13,11 +13,11 @@
 const {fromRawMappings} = require('metro-source-map');
 
 import type {Graph} from '../DeltaCalculator';
-import type {DependencyEdge} from '../traverseDependencies';
+import type {Module} from '../traverseDependencies';
 import type {BabelSourceMap} from '@babel/core';
 
 function fullSourceMapObject(
-  pre: $ReadOnlyArray<DependencyEdge>,
+  pre: $ReadOnlyArray<Module>,
   graph: Graph,
   options: {|+excludeSource: boolean|},
 ): BabelSourceMap {

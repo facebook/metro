@@ -15,7 +15,7 @@ const getAppendScripts = require('../../lib/getAppendScripts');
 const {wrapModule} = require('./helpers/js');
 
 import type {Delta, Graph} from '../../DeltaBundler';
-import type {DependencyEdge} from '../traverseDependencies';
+import type {Module} from '../traverseDependencies';
 
 type Options = {|
   +createModuleId: string => number | string,
@@ -28,7 +28,7 @@ type Options = {|
 
 function deltaJSBundle(
   entryPoint: string,
-  pre: $ReadOnlyArray<DependencyEdge>,
+  pre: $ReadOnlyArray<Module>,
   delta: Delta,
   sequenceId: string,
   graph: Graph,

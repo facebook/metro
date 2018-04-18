@@ -11,7 +11,7 @@
 'use strict';
 
 import type {Graph} from '../DeltaBundler/DeltaCalculator';
-import type {DependencyEdge} from '../DeltaBundler/traverseDependencies';
+import type {Module} from '../DeltaBundler/traverseDependencies';
 
 type Options<T: number | string> = {
   +createModuleId: string => T,
@@ -25,7 +25,7 @@ function getAppendScripts<T: number | string>(
   entryPoint: string,
   graph: Graph,
   options: Options<T>,
-): $ReadOnlyArray<DependencyEdge> {
+): $ReadOnlyArray<Module> {
   const output = [];
 
   if (options.runModule) {

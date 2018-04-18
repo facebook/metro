@@ -43,7 +43,7 @@ const {getAsset} = require('./Assets');
 const resolveSync: ResolveSync = require('resolve').sync;
 
 import type {CustomError} from './lib/formatBundlingError';
-import type {DependencyEdge} from './DeltaBundler/traverseDependencies';
+import type {Module} from './DeltaBundler/traverseDependencies';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from './lib/reporting';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
@@ -73,7 +73,7 @@ type ResolveSync = (path: string, opts: ?{baseDir?: string}) => string;
 
 type GraphInfo = {|
   graph: Graph,
-  prepend: $ReadOnlyArray<DependencyEdge>,
+  prepend: $ReadOnlyArray<Module>,
   lastModified: Date,
   +sequenceId: string,
 |};
@@ -526,7 +526,7 @@ class Server {
     return {...graphInfo, prepend, graph};
   }
 
-  async _minifyModule(module: DependencyEdge): Promise<DependencyEdge> {
+  async _minifyModule(module: Module): Promise<Module> {
     const {code, map} = await this._bundler.minifyModule(
       module.path,
       module.output.code,

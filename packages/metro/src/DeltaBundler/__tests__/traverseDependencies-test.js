@@ -88,7 +88,7 @@ function deferred(value) {
 }
 
 function getPaths({added, deleted}) {
-  const addedPaths = [...added.values()].map(edge => edge.path);
+  const addedPaths = [...added.values()].map(module => module.path);
 
   return {
     added: new Set(addedPaths),

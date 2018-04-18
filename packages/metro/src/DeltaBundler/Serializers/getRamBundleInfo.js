@@ -21,7 +21,7 @@ const {wrapModule} = require('./helpers/js');
 import type {GetTransformOptions} from '../../Bundler';
 import type {ModuleTransportLike} from '../../shared/types.flow';
 import type {Graph} from '../DeltaCalculator';
-import type {DependencyEdge} from '../traverseDependencies';
+import type {Module} from '../traverseDependencies';
 
 type Options = {|
   +createModuleId: string => number,
@@ -44,7 +44,7 @@ export type RamBundleInfo = {|
 
 async function getRamBundleInfo(
   entryPoint: string,
-  pre: $ReadOnlyArray<DependencyEdge>,
+  pre: $ReadOnlyArray<Module>,
   graph: Graph,
   options: Options,
 ): Promise<RamBundleInfo> {

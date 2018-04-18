@@ -90,7 +90,7 @@ describe('traverseDependencies', function() {
     );
 
     const dependencies = recursive
-      ? [...added.values()].map(edge => edge.path)
+      ? [...added.values()].map(module => module.path)
       : graph.dependencies.get(entryPath).dependencies.values();
 
     return await Promise.all(

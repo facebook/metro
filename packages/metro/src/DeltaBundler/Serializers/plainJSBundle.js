@@ -15,7 +15,7 @@ const getAppendScripts = require('../../lib/getAppendScripts');
 const {wrapModule} = require('./helpers/js');
 
 import type {Graph} from '../DeltaCalculator';
-import type {DependencyEdge} from '../traverseDependencies';
+import type {Module} from '../traverseDependencies';
 
 type Options = {|
   +createModuleId: string => number | string,
@@ -28,7 +28,7 @@ type Options = {|
 
 function plainJSBundle(
   entryPoint: string,
-  pre: $ReadOnlyArray<DependencyEdge>,
+  pre: $ReadOnlyArray<Module>,
   graph: Graph,
   options: Options,
 ): string {

@@ -14,7 +14,7 @@ import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
 export type DependencyType = 'module' | 'script' | 'asset';
 
-export type DependencyEdge = {|
+export type Module = {|
   dependencies: Map<string, string>,
   inverseDependencies: Set<string>,
   path: string,
@@ -26,14 +26,12 @@ export type DependencyEdge = {|
   },
 |};
 
-export type DependencyEdges = Map<string, DependencyEdge>;
-
 export type Graph = {|
-  dependencies: DependencyEdges,
+  dependencies: Map<string, Module>,
   entryPoints: $ReadOnlyArray<string>,
 |};
 
-type Result = {added: Map<string, DependencyEdge>, deleted: Set<string>};
+type Result = {added: Map<string, Module>, deleted: Set<string>};
 
 /**
  * Internal data structure that the traversal logic uses to know which of the
@@ -42,8 +40,8 @@ type Result = {added: Map<string, DependencyEdge>, deleted: Set<string>};
  * just has been modified).
  **/
 type Delta = {
-  added: Map<string, DependencyEdge>,
-  modified: Map<string, DependencyEdge>,
+  added: Map<string, Module>,
+  modified: Map<string, Module>,
   deleted: Set<string>,
 };
 
@@ -69,10 +67,7 @@ export type Options = {|
  * dependency graph.
  * Instead of traversing the whole graph each time, it just calculates the
  * difference between runs by only traversing the added/removed dependencies.
- * To do so, it uses the passed `edges` paramater, which is a data structure
- * that contains the whole status of the dependency graph. During the
- * recalculation of the dependencies, it mutates the edges graph.
- *
+ * To do so, it uses the passed passed graph dependencies and it mutates it.
  * The paths parameter contains the absolute paths of the root files that the
  * method should traverse. Normally, these paths should be the modified files
  * since the last traversal.
@@ -90,15 +85,15 @@ async function traverseDependencies(
 
   await Promise.all(
     paths.map(async path => {
-      const edge = graph.dependencies.get(path);
+      const module = graph.dependencies.get(path);
 
-      if (!edge) {
+      if (!module) {
         return;
       }
 
-      delta.modified.set(edge.path, edge);
+      delta.modified.set(module.path, module);
 
-      await traverseDependenciesForSingleFile(edge, graph, delta, options);
+      await traverseDependenciesForSingleFile(module, graph, delta, options);
     }),
   );
 
@@ -106,13 +101,13 @@ async function traverseDependencies(
   const deleted = new Set();
   const modified = new Map();
 
-  for (const [path, edge] of delta.added) {
-    added.set(path, edge);
+  for (const [path, module] of delta.added) {
+    added.set(path, module);
   }
 
-  for (const [path, edge] of delta.modified) {
-    added.set(path, edge);
-    modified.set(path, edge);
+  for (const [path, module] of delta.modified) {
+    added.set(path, module);
+    modified.set(path, module);
   }
 
   for (const path of delta.deleted) {
@@ -139,7 +134,7 @@ async function initialTraverseDependencies(
   graph: Graph,
   options: Options,
 ): Promise<Result> {
-  graph.entryPoints.forEach(entryPoint => createEdge(entryPoint, graph));
+  graph.entryPoints.forEach(entryPoint => createModule(entryPoint, graph));
 
   await traverseDependencies(graph.entryPoints, graph, options);
 
@@ -152,7 +147,7 @@ async function initialTraverseDependencies(
 }
 
 async function traverseDependenciesForSingleFile(
-  edge: DependencyEdge,
+  module: Module,
   graph: Graph,
   delta: Delta,
   options: Options,
@@ -161,8 +156,8 @@ async function traverseDependenciesForSingleFile(
   let total = 1;
   options.onProgress && options.onProgress(numProcessed, total);
 
-  await processEdge(
-    edge,
+  await processModule(
+    module,
     graph,
     delta,
     options,
@@ -180,37 +175,37 @@ async function traverseDependenciesForSingleFile(
   options.onProgress && options.onProgress(numProcessed, total);
 }
 
-async function processEdge(
-  edge: DependencyEdge,
+async function processModule(
+  module: Module,
   graph: Graph,
   delta: Delta,
   options: Options,
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
 ): Promise<void> {
-  const previousDependencies = edge.dependencies;
+  const previousDependencies = module.dependencies;
 
-  const result = await options.transform(edge.path);
+  const result = await options.transform(module.path);
 
   // Get the absolute path of all sub-dependencies (some of them could have been
   // moved but maintain the same relative path).
   const currentDependencies = resolveDependencies(
-    edge.path,
+    module.path,
     result.dependencies,
     options,
   );
 
-  // Update the edge information.
-  edge.output = result.output;
-  edge.dependencies = new Map();
+  // Update the module information.
+  module.output = result.output;
+  module.dependencies = new Map();
 
   currentDependencies.forEach((absolutePath, relativePath) => {
-    edge.dependencies.set(relativePath, absolutePath);
+    module.dependencies.set(relativePath, absolutePath);
   });
 
   for (const [relativePath, absolutePath] of previousDependencies) {
     if (!currentDependencies.has(relativePath)) {
-      removeDependency(edge, absolutePath, graph, delta);
+      removeDependency(module, absolutePath, graph, delta);
     }
   }
 
@@ -225,7 +220,7 @@ async function processEdge(
         }
 
         await addDependency(
-          edge,
+          module,
           absolutePath,
           graph,
           delta,
@@ -239,7 +234,7 @@ async function processEdge(
 }
 
 async function addDependency(
-  parentEdge: DependencyEdge,
+  parentModule: Module,
   path: string,
   graph: Graph,
   delta: Delta,
@@ -247,24 +242,24 @@ async function addDependency(
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
 ): Promise<void> {
-  const existingEdge = graph.dependencies.get(path);
+  const existingModule = graph.dependencies.get(path);
 
   // The new dependency was already in the graph, we don't need to do anything.
-  if (existingEdge) {
-    existingEdge.inverseDependencies.add(parentEdge.path);
+  if (existingModule) {
+    existingModule.inverseDependencies.add(parentModule.path);
 
     return;
   }
 
-  const edge = createEdge(path, graph);
+  const module = createModule(path, graph);
 
-  edge.inverseDependencies.add(parentEdge.path);
-  delta.added.set(edge.path, edge);
+  module.inverseDependencies.add(parentModule.path);
+  delta.added.set(module.path, module);
 
   onDependencyAdd();
 
-  await processEdge(
-    edge,
+  await processModule(
+    module,
     graph,
     delta,
     options,
@@ -276,40 +271,40 @@ async function addDependency(
 }
 
 function removeDependency(
-  parentEdge: DependencyEdge,
+  parentModule: Module,
   absolutePath: string,
   graph: Graph,
   delta: Delta,
 ): void {
-  const edge = graph.dependencies.get(absolutePath);
+  const module = graph.dependencies.get(absolutePath);
 
-  if (!edge) {
+  if (!module) {
     return;
   }
 
-  edge.inverseDependencies.delete(parentEdge.path);
+  module.inverseDependencies.delete(parentModule.path);
 
   // This module is still used by another modules, so we cannot remove it from
   // the bundle.
-  if (edge.inverseDependencies.size) {
+  if (module.inverseDependencies.size) {
     return;
   }
 
-  delta.deleted.add(edge.path);
+  delta.deleted.add(module.path);
 
   // Now we need to iterate through the module dependencies in order to
   // clean up everything (we cannot read the module because it may have
   // been deleted).
-  for (const depAbsolutePath of edge.dependencies.values()) {
-    removeDependency(edge, depAbsolutePath, graph, delta);
+  for (const depAbsolutePath of module.dependencies.values()) {
+    removeDependency(module, depAbsolutePath, graph, delta);
   }
 
   // This module is not used anywhere else!! we can clear it from the bundle
-  destroyEdge(edge, graph);
+  graph.dependencies.delete(module.path);
 }
 
-function createEdge(filePath: string, graph: Graph): DependencyEdge {
-  const edge = {
+function createModule(filePath: string, graph: Graph): Module {
+  const module = {
     dependencies: new Map(),
     inverseDependencies: new Set(),
     path: filePath,
@@ -320,13 +315,9 @@ function createEdge(filePath: string, graph: Graph): DependencyEdge {
       type: 'module',
     },
   };
-  graph.dependencies.set(filePath, edge);
+  graph.dependencies.set(filePath, module);
 
-  return edge;
-}
-
-function destroyEdge(edge: DependencyEdge, graph: Graph) {
-  graph.dependencies.delete(edge.path);
+  return module;
 }
 
 function resolveDependencies(
@@ -357,19 +348,19 @@ function reorderGraph(graph: Graph) {
 }
 
 function reorderDependencies(
-  edge: {|dependencies: Map<string, string>|} | DependencyEdge,
-  dependencies: Map<string, DependencyEdge>,
-  orderedDependencies?: Map<string, DependencyEdge> = new Map(),
-): Map<string, DependencyEdge> {
-  if (edge.path) {
-    if (orderedDependencies.has(edge.path)) {
+  module: {|dependencies: Map<string, string>|} | Module,
+  dependencies: Map<string, Module>,
+  orderedDependencies?: Map<string, Module> = new Map(),
+): Map<string, Module> {
+  if (module.path) {
+    if (orderedDependencies.has(module.path)) {
       return orderedDependencies;
     }
 
-    orderedDependencies.set(edge.path, edge);
+    orderedDependencies.set(module.path, module);
   }
 
-  edge.dependencies.forEach(path => {
+  module.dependencies.forEach(path => {
     const dep = dependencies.get(path);
     if (dep) {
       reorderDependencies(dep, dependencies, orderedDependencies);

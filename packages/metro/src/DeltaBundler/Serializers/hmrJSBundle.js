@@ -15,7 +15,7 @@ const addParamsToDefineCall = require('../../lib/addParamsToDefineCall');
 const {wrapModule} = require('./helpers/js');
 
 import type {Delta, Graph} from '../../DeltaBundler';
-import type {DependencyEdge} from '../traverseDependencies';
+import type {Module} from '../traverseDependencies';
 
 type Options = {
   createModuleId: string => number,
@@ -48,7 +48,7 @@ function hmrJSBundle(delta: Delta, graph: Graph, options: Options): Result {
 }
 
 function _prepareModule(
-  module: DependencyEdge,
+  module: Module,
   graph: Graph,
   options: Options,
 ): {|+id: number, +code: string|} {

@@ -10,7 +10,7 @@
 
 'use strict';
 
-import type {DependencyEdge} from '../DeltaBundler/traverseDependencies';
+import type {Module} from '../DeltaBundler/traverseDependencies';
 import type {Graph} from '../DeltaBundler';
 
 /**
@@ -19,7 +19,7 @@ import type {Graph} from '../DeltaBundler';
  **/
 async function mapGraph(
   graph: Graph,
-  mappingFn: DependencyEdge => Promise<DependencyEdge>,
+  mappingFn: Module => Promise<Module>,
 ): Promise<Graph> {
   const dependencies = new Map(
     await Promise.all(
