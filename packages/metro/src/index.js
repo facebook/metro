@@ -281,6 +281,7 @@ type BuildGraphOptions = {|
   dev?: boolean,
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
   platform?: string,
+  type: 'module' | 'script',
 |};
 
 type RunBuildOptions = {|
@@ -380,6 +381,7 @@ exports.buildGraph = async function({
   entries,
   onProgress,
   platform = `web`,
+  type = 'module',
   ...rest
 }: BuildGraphOptions): Promise<Graph> {
   const metroServer = await runMetro({
@@ -393,6 +395,7 @@ exports.buildGraph = async function({
       dev,
       onProgress,
       platform,
+      type,
     });
   } finally {
     await metroServer.end();
