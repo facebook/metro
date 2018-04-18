@@ -1,5 +1,5 @@
 {
-  "version": "0.32.0",
+  "version": "0.33.0",
   "name": "metro-cache",
   "description": "🚇 Cache layers for Metro",
   "main": "src/index.js",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "jest-serializer": "22.4.3",
-    "metro-core": "0.32.0",
+    "metro-core": "0.33.0",
     "mkdirp": "^0.5.1",
     "rimraf": "^2.5.4"
   }

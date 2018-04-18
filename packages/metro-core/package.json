@@ -1,5 +1,5 @@
 {
-  "version": "0.32.0",
+  "version": "0.33.0",
   "name": "metro-core",
   "description": "🚇 Core files for Metro",
   "main": "src/index.js",
@@ -14,7 +14,7 @@
   "dependencies": {
     "jest-haste-map": "23.0.0-alpha.4",
     "lodash.throttle": "^4.1.1",
-    "metro-resolver": "0.32.0",
+    "metro-resolver": "0.33.0",
     "wordwrap": "^1.0.0"
   }
 }
