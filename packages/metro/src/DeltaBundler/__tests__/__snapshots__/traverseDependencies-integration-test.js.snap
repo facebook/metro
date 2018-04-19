@@ -7,7 +7,7 @@ Array [
       "a",
       "b",
     ],
-    "id": "index",
+    "id": "index.js",
     "isAsset": false,
     "isPolyfill": false,
     "path": "/root/index.js",
@@ -15,7 +15,7 @@ Array [
   },
   Object {
     "dependencies": Array [],
-    "id": "a",
+    "id": "a.js",
     "isAsset": false,
     "isPolyfill": false,
     "path": "/root/a.js",
@@ -23,7 +23,7 @@ Array [
   },
   Object {
     "dependencies": Array [],
-    "id": "b",
+    "id": "b.js",
     "isAsset": false,
     "isPolyfill": false,
     "path": "/root/b.js",

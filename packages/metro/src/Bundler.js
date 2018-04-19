@@ -291,12 +291,6 @@ class Bundler {
       }
     }
 
-    if (!cache && code == null) {
-      throw new Error(
-        'When not using experimental caches, code should always be provided',
-      );
-    }
-
     // Second, if there was no result, compute it ourselves.
     if (!data) {
       data = await this._transformer.transform(

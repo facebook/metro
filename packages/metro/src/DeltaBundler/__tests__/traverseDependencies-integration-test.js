@@ -133,11 +133,15 @@ describe('traverseDependencies', function() {
       transformCache: require('TransformCaching').mocked(),
       transformCode: (module, sourceCode, transformOptions) => {
         return new Promise(resolve => {
+          // require call must stay inline, so the latest defined mock is used!
+          const code = require('fs').readFileSync(module.path, 'utf8');
           const deps = {dependencies: []};
+
           if (!module.path.endsWith('.json')) {
-            deps.dependencies = extractDependencies(sourceCode);
+            deps.dependencies = extractDependencies(code);
           }
-          resolve({...deps, code: sourceCode});
+
+          resolve({...deps, code});
         });
       },
       getTransformCacheKey: () => 'abcdef',
@@ -191,7 +195,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['a'],
             isAsset: false,
@@ -200,7 +204,7 @@ describe('traverseDependencies', function() {
             resolveDependency: undefined,
           },
           {
-            id: 'a',
+            id: 'a.js',
             path: '/root/a.js',
             dependencies: ['b'],
             isAsset: false,
@@ -209,7 +213,7 @@ describe('traverseDependencies', function() {
             resolveDependency: undefined,
           },
           {
-            id: 'b',
+            id: 'b.js',
             path: '/root/b.js',
             dependencies: [],
             isAsset: false,
@@ -248,7 +252,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'a',
+            id: 'a.js',
             path: '/root/a.js',
             dependencies: ['b'],
             isAsset: false,
@@ -281,14 +285,14 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['a'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'a',
+            id: 'a.js',
             path: '/root/a.js',
             dependencies: [],
             isAsset: false,
@@ -325,21 +329,21 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['./a.json', './b'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'package/a.json',
+            id: 'a.json',
             path: '/root/a.json',
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'package/b.json',
+            id: 'b.json',
             path: '/root/b.json',
             dependencies: [],
             isAsset: false,
@@ -373,14 +377,14 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['./package.json'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'package/package.json',
+            id: 'package.json',
             path: '/root/package.json',
             dependencies: [],
             isAsset: false,
@@ -417,7 +421,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['./imgs/a.png'],
             isAsset: false,
@@ -466,7 +470,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['./imgs/a.png', './imgs/b.png', './imgs/c.png'],
             isAsset: false,
@@ -530,7 +534,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['./imgs/a.png', './imgs/b.png', './imgs/c.png'],
             isAsset: false,
@@ -588,14 +592,14 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['a'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'a',
+            id: 'a.js',
             path: '/root/a.js',
             dependencies: ['index'],
             isAsset: false,
@@ -633,7 +637,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['aPackage'],
             isAsset: false,
@@ -678,7 +682,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['aPackage/'],
             isAsset: false,
@@ -731,7 +735,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['sha.js', 'x.y.z'],
             isAsset: false,
@@ -825,7 +829,7 @@ describe('traverseDependencies', function() {
             isPolyfill: false,
           },
           {
-            id: 'EpicModule',
+            id: 'aPackage/index.js',
             path: '/root/aPackage/index.js',
             dependencies: [],
             isAsset: false,
@@ -899,14 +903,14 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'test/index.js',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['./lib/'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'test/lib/index.js',
+            id: 'lib/index.js',
             path: '/root/lib/index.js',
             dependencies: [],
             isAsset: false,
@@ -942,14 +946,14 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'test/index.js',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['./lib/'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: '/root/lib/main.js',
+            id: 'lib/main.js',
             path: '/root/lib/main.js',
             dependencies: [],
             isAsset: false,
@@ -979,7 +983,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: [],
             isAsset: false,
@@ -1074,7 +1078,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['aPackage/subdir/lolynot'],
             isAsset: false,
@@ -1127,7 +1131,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['aPackage'],
             isAsset: false,
@@ -1216,7 +1220,7 @@ describe('traverseDependencies', function() {
             );
             expect(deps).toEqual([
               {
-                id: 'index',
+                id: 'index.js',
                 path: '/root/index.js',
                 dependencies: ['aPackage'],
                 isAsset: false,
@@ -1277,7 +1281,7 @@ describe('traverseDependencies', function() {
             );
             expect(deps).toEqual([
               {
-                id: 'index',
+                id: 'index.js',
                 path: '/root/index.js',
                 dependencies: ['aPackage'],
                 isAsset: false,
@@ -1340,7 +1344,7 @@ describe('traverseDependencies', function() {
             );
             expect(deps).toEqual([
               {
-                id: 'index',
+                id: 'index.js',
                 path: '/root/index.js',
                 dependencies: ['aPackage'],
                 isAsset: false,
@@ -1401,7 +1405,7 @@ describe('traverseDependencies', function() {
           );
           expect(deps).toEqual([
             {
-              id: 'index',
+              id: 'index.js',
               path: '/root/index.js',
               dependencies: ['aPackage'],
               isAsset: false,
@@ -1465,7 +1469,7 @@ describe('traverseDependencies', function() {
             );
             expect(deps).toEqual([
               {
-                id: 'index',
+                id: 'index.js',
                 path: '/root/index.js',
                 dependencies: ['aPackage'],
                 isAsset: false,
@@ -1539,7 +1543,7 @@ describe('traverseDependencies', function() {
             );
             expect(deps).toEqual([
               {
-                id: 'index',
+                id: 'index.js',
                 path: '/root/index.js',
                 dependencies: ['aPackage'],
                 isAsset: false,
@@ -1634,7 +1638,7 @@ describe('traverseDependencies', function() {
             );
             expect(deps).toEqual([
               {
-                id: 'index',
+                id: 'index.js',
                 path: '/root/index.js',
                 dependencies: ['aPackage'],
                 isAsset: false,
@@ -1648,7 +1652,7 @@ describe('traverseDependencies', function() {
                 isPolyfill: false,
               },
               {
-                id: 'browser-package/index.js',
+                id: 'aPackage/browser-package/index.js',
                 path: '/root/aPackage/browser-package/index.js',
                 dependencies: [],
                 isAsset: false,
@@ -1708,7 +1712,7 @@ describe('traverseDependencies', function() {
             );
             expect(deps).toEqual([
               {
-                id: 'index',
+                id: 'index.js',
                 path: '/root/index.js',
                 dependencies: ['aPackage'],
                 isAsset: false,
@@ -1789,7 +1793,7 @@ describe('traverseDependencies', function() {
             );
             expect(deps).toEqual([
               {
-                id: 'index',
+                id: 'index.js',
                 path: '/root/index.js',
                 dependencies: ['aPackage'],
                 isAsset: false,
@@ -1803,7 +1807,7 @@ describe('traverseDependencies', function() {
                 isPolyfill: false,
               },
               {
-                id: 'browser-package/index.js',
+                id: 'aPackage/browser-package/index.js',
                 path: '/root/aPackage/browser-package/index.js',
                 dependencies: [],
                 isAsset: false,
@@ -1860,7 +1864,7 @@ describe('traverseDependencies', function() {
             );
             expect(deps).toEqual([
               {
-                id: 'index',
+                id: 'index.js',
                 path: '/root/index.js',
                 dependencies: ['aPackage'],
                 isAsset: false,
@@ -1927,7 +1931,7 @@ describe('traverseDependencies', function() {
             );
             expect(deps).toEqual([
               {
-                id: 'index',
+                id: 'index.js',
                 path: '/root/index.js',
                 dependencies: ['aPackage'],
                 isAsset: false,
@@ -2006,7 +2010,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['aPackage'],
             isAsset: false,
@@ -2020,14 +2024,14 @@ describe('traverseDependencies', function() {
             isPolyfill: false,
           },
           {
-            id: 'rn-package/index.js',
+            id: 'aPackage/node_modules/rn-package/index.js',
             path: '/root/aPackage/node_modules/rn-package/index.js',
             dependencies: ['nested-package'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'nested-browser-package/index.js',
+            id: 'aPackage/node_modules/nested-browser-package/index.js',
             path: '/root/aPackage/node_modules/nested-browser-package/index.js',
             dependencies: [],
             isAsset: false,
@@ -2161,7 +2165,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['aPackage'],
             isAsset: false,
@@ -2179,21 +2183,21 @@ describe('traverseDependencies', function() {
             isPolyfill: false,
           },
           {
-            id: 'rn-package-a/index.js',
+            id: 'aPackage/node_modules/rn-package-a/index.js',
             path: '/root/aPackage/node_modules/rn-package-a/index.js',
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'rn-package-b/index.js',
+            id: 'aPackage/node_modules/rn-package-b/index.js',
             path: '/root/aPackage/node_modules/rn-package-b/index.js',
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'rn-package-d/index.js',
+            id: 'aPackage/node_modules/rn-package-d/index.js',
             path: '/root/aPackage/node_modules/rn-package-d/index.js',
             dependencies: [],
             isAsset: false,
@@ -2248,7 +2252,7 @@ describe('traverseDependencies', function() {
             isPolyfill: false,
           },
           {
-            id: '/root/provides-bar/lib/bar.js',
+            id: 'provides-bar/lib/bar.js',
             path: '/root/provides-bar/lib/bar.js',
             dependencies: [],
             isAsset: false,
@@ -2332,7 +2336,7 @@ describe('traverseDependencies', function() {
             isPolyfill: false,
           },
           {
-            id: '/root/provides-bar/lib/foo.js',
+            id: 'provides-bar/lib/foo.js',
             path: '/root/provides-bar/lib/foo.js',
             dependencies: [],
             isAsset: false,
@@ -2390,7 +2394,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: 'C:\\root\\index.js',
             dependencies: ['a'],
             isAsset: false,
@@ -2399,7 +2403,7 @@ describe('traverseDependencies', function() {
             resolveDependency: undefined,
           },
           {
-            id: 'a',
+            id: 'a.js',
             path: 'C:\\root\\a.js',
             dependencies: ['b'],
             isAsset: false,
@@ -2408,7 +2412,7 @@ describe('traverseDependencies', function() {
             resolveDependency: undefined,
           },
           {
-            id: 'b',
+            id: 'b.js',
             path: 'C:\\root\\b.js',
             dependencies: [],
             isAsset: false,
@@ -2486,7 +2490,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: 'C:\\root\\index.js',
             dependencies: ['./imgs/a.png', './imgs/b.png', './imgs/c.png'],
             isAsset: false,
@@ -2580,28 +2584,28 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['foo', 'bar'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'foo/main.js',
+            id: 'node_modules/foo/main.js',
             path: '/root/node_modules/foo/main.js',
             dependencies: ['bar'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar/main.js',
+            id: 'node_modules/foo/node_modules/bar/main.js',
             path: '/root/node_modules/foo/node_modules/bar/main.js',
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar/main.js',
+            id: 'node_modules/bar/main.js',
             path: '/root/node_modules/bar/main.js',
             dependencies: [],
             isAsset: false,
@@ -2649,21 +2653,21 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.ios.js',
             path: '/root/index.ios.js',
             dependencies: ['foo', 'bar'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'foo/index.ios.js',
+            id: 'node_modules/foo/index.ios.js',
             path: '/root/node_modules/foo/index.ios.js',
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar/main.ios.js',
+            id: 'node_modules/bar/main.ios.js',
             path: '/root/node_modules/bar/main.ios.js',
             dependencies: [],
             isAsset: false,
@@ -2721,28 +2725,28 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['foo', 'bar/'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'foo/main.js',
+            id: 'node_modules/foo/main.js',
             path: '/root/node_modules/foo/main.js',
             dependencies: ['bar/lol'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar/lol.js',
+            id: 'node_modules/foo/node_modules/bar/lol.js',
             path: '/root/node_modules/foo/node_modules/bar/lol.js',
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar/main.js',
+            id: 'node_modules/bar/main.js',
             path: '/root/node_modules/bar/main.js',
             dependencies: [],
             isAsset: false,
@@ -2804,28 +2808,28 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['foo', 'bar'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'foo/main.js',
+            id: 'node_modules/foo/main.js',
             path: '/root/node_modules/foo/main.js',
             dependencies: ['bar/lol'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar/lol.js',
+            id: 'node_modules/foo/node_modules/bar/lol.js',
             path: '/root/node_modules/foo/node_modules/bar/lol.js',
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar/main2.js',
+            id: 'node_modules/bar/main2.js',
             path: '/root/node_modules/bar/main2.js',
             dependencies: [],
             isAsset: false,
@@ -2876,21 +2880,21 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['bar'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar',
+            id: 'path/to/bar.js',
             path: '/root/path/to/bar.js',
             dependencies: ['foo'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'foo/main.js',
+            id: 'node_modules/foo/main.js',
             path: '/root/node_modules/foo/main.js',
             dependencies: [],
             isAsset: false,
@@ -3023,7 +3027,7 @@ describe('traverseDependencies', function() {
           .then(deps => {
             expect(deps).toEqual([
               {
-                id: 'index',
+                id: 'index.js',
                 path: '/root/index.js',
                 dependencies: [
                   'shouldWork',
@@ -3035,14 +3039,14 @@ describe('traverseDependencies', function() {
                 isPolyfill: false,
               },
               {
-                id: 'shouldWork',
+                id: 'node_modules/react-haste/main.js',
                 path: '/root/node_modules/react-haste/main.js',
                 dependencies: ['submodule'],
                 isAsset: false,
                 isPolyfill: false,
               },
               {
-                id: 'submodule/main.js',
+                id: 'node_modules/react-haste/node_modules/submodule/main.js',
                 path:
                   '/root/node_modules/react-haste/node_modules/submodule/main.js',
                 dependencies: [],
@@ -3050,21 +3054,21 @@ describe('traverseDependencies', function() {
                 isPolyfill: false,
               },
               {
-                id: 'ember/main.js',
+                id: 'node_modules/ember/main.js',
                 path: '/root/node_modules/ember/main.js',
                 dependencies: [],
                 isAsset: false,
                 isPolyfill: false,
               },
               {
-                id: 'internalVendoredPackage',
+                id: 'vendored_modules/a-vendored-package/main.js',
                 path: '/root/vendored_modules/a-vendored-package/main.js',
                 dependencies: [],
                 isAsset: false,
                 isPolyfill: false,
               },
               {
-                id: 'anotherIndex',
+                id: 'index.js',
                 path: '/anotherRoot/index.js',
                 dependencies: [],
                 isAsset: false,
@@ -3107,14 +3111,14 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/react-haste/index.js',
             dependencies: ['shouldWork'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'shouldWork',
+            id: 'node_modules/react-haste/main.js',
             path: '/react-haste/node_modules/react-haste/main.js',
             dependencies: [],
             isAsset: false,
@@ -3154,14 +3158,14 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['sha.js'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'sha.js/main.js',
+            id: 'node_modules/sha.js/main.js',
             path: '/root/node_modules/sha.js/main.js',
             dependencies: [],
             isAsset: false,
@@ -3208,14 +3212,14 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.ios.js',
             path: '/root/index.ios.js',
             dependencies: ['a'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'a',
+            id: 'a.ios.js',
             path: '/root/a.ios.js',
             dependencies: [],
             isAsset: false,
@@ -3265,14 +3269,14 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.ios.js',
             path: '/root/index.ios.js',
             dependencies: ['a'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'a',
+            id: 'a.js',
             path: '/root/a.js',
             dependencies: [],
             isAsset: false,
@@ -3307,7 +3311,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.ios.js',
             path: '/root/index.ios.js',
             dependencies: ['./a'],
             isAsset: false,
@@ -3361,28 +3365,28 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['foo/package.json', 'bar'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'foo/package.json',
+            id: 'node_modules/foo/package.json',
             path: '/root/node_modules/foo/package.json',
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar/main.js',
+            id: 'node_modules/bar/main.js',
             path: '/root/node_modules/bar/main.js',
             dependencies: ['./package.json'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar/package.json',
+            id: 'node_modules/bar/package.json',
             path: '/root/node_modules/bar/package.json',
             dependencies: [],
             isAsset: false,
@@ -3421,7 +3425,7 @@ describe('traverseDependencies', function() {
             isPolyfill: false,
           },
           {
-            id: 'a/index.js',
+            id: 'node_modules/a/index.js',
             path: '/root/node_modules/a/index.js',
             dependencies: [],
             isAsset: false,
@@ -3505,28 +3509,28 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: 'C:\\root\\index.js',
             dependencies: ['foo', 'bar'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'foo/main.js',
+            id: 'node_modules\\foo\\main.js',
             path: 'C:\\root\\node_modules\\foo\\main.js',
             dependencies: ['bar'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar/main.js',
+            id: 'node_modules\\foo\\node_modules\\bar\\main.js',
             path: 'C:\\root\\node_modules\\foo\\node_modules\\bar\\main.js',
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar/main.js',
+            id: 'node_modules\\bar\\main.js',
             path: 'C:\\root\\node_modules\\bar\\main.js',
             dependencies: [],
             isAsset: false,
@@ -3574,21 +3578,21 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.ios.js',
             path: 'C:\\root\\index.ios.js',
             dependencies: ['foo', 'bar'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'foo/index.ios.js',
+            id: 'node_modules\\foo\\index.ios.js',
             path: 'C:\\root\\node_modules\\foo\\index.ios.js',
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar/main.ios.js',
+            id: 'node_modules\\bar\\main.ios.js',
             path: 'C:\\root\\node_modules\\bar\\main.ios.js',
             dependencies: [],
             isAsset: false,
@@ -3646,28 +3650,28 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: 'C:\\root\\index.js',
             dependencies: ['foo', 'bar/'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'foo/main.js',
+            id: 'node_modules\\foo\\main.js',
             path: 'C:\\root\\node_modules\\foo\\main.js',
             dependencies: ['bar/lol'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar/lol.js',
+            id: 'node_modules\\foo\\node_modules\\bar\\lol.js',
             path: 'C:\\root\\node_modules\\foo\\node_modules\\bar\\lol.js',
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar/main.js',
+            id: 'node_modules\\bar\\main.js',
             path: 'C:\\root\\node_modules\\bar\\main.js',
             dependencies: [],
             isAsset: false,
@@ -3729,28 +3733,28 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: 'C:\\root\\index.js',
             dependencies: ['foo', 'bar'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'foo/main.js',
+            id: 'node_modules\\foo\\main.js',
             path: 'C:\\root\\node_modules\\foo\\main.js',
             dependencies: ['bar/lol'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar/lol.js',
+            id: 'node_modules\\foo\\node_modules\\bar\\lol.js',
             path: 'C:\\root\\node_modules\\foo\\node_modules\\bar\\lol.js',
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar/main2.js',
+            id: 'node_modules\\bar\\main2.js',
             path: 'C:\\root\\node_modules\\bar\\main2.js',
             dependencies: [],
             isAsset: false,
@@ -3801,21 +3805,21 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: 'C:\\root\\index.js',
             dependencies: ['bar'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar',
+            id: 'path\\to\\bar.js',
             path: 'C:\\root\\path\\to\\bar.js',
             dependencies: ['foo'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'foo/main.js',
+            id: 'node_modules\\foo\\main.js',
             path: 'C:\\root\\node_modules\\foo\\main.js',
             dependencies: [],
             isAsset: false,
@@ -3948,7 +3952,7 @@ describe('traverseDependencies', function() {
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: 'C:\\root\\index.js',
             dependencies: [
               'shouldWork',
@@ -3960,14 +3964,14 @@ describe('traverseDependencies', function() {
             isPolyfill: false,
           },
           {
-            id: 'shouldWork',
+            id: 'node_modules\\react-haste\\main.js',
             path: 'C:\\root\\node_modules\\react-haste\\main.js',
             dependencies: ['submodule'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'submodule/main.js',
+            id: 'node_modules\\react-haste\\node_modules\\submodule\\main.js',
             path:
               'C:\\root\\node_modules\\react-haste\\node_modules\\submodule\\main.js',
             dependencies: [],
@@ -3975,21 +3979,21 @@ describe('traverseDependencies', function() {
             isPolyfill: false,
           },
           {
-            id: 'ember/main.js',
+            id: 'node_modules\\ember\\main.js',
             path: 'C:\\root\\node_modules\\ember\\main.js',
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'internalVendoredPackage',
+            id: 'vendored_modules\\a-vendored-package\\main.js',
             path: 'C:\\root\\vendored_modules\\a-vendored-package\\main.js',
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'anotherIndex',
+            id: 'index.js',
             path: 'C:\\anotherRoot\\index.js',
             dependencies: [],
             isAsset: false,
@@ -4031,14 +4035,14 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: 'C:\\react-haste\\index.js',
             dependencies: ['shouldWork'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'shouldWork',
+            id: 'node_modules\\react-haste\\main.js',
             path: 'C:\\react-haste\\node_modules\\react-haste\\main.js',
             dependencies: [],
             isAsset: false,
@@ -4078,14 +4082,14 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: 'C:\\root\\index.js',
             dependencies: ['sha.js'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'sha.js/main.js',
+            id: 'node_modules\\sha.js\\main.js',
             path: 'C:\\root\\node_modules\\sha.js\\main.js',
             dependencies: [],
             isAsset: false,
@@ -4132,14 +4136,14 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.ios.js',
             path: 'C:\\root\\index.ios.js',
             dependencies: ['a'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'a',
+            id: 'a.ios.js',
             path: 'C:\\root\\a.ios.js',
             dependencies: [],
             isAsset: false,
@@ -4185,14 +4189,14 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.ios.js',
             path: 'C:\\root\\index.ios.js',
             dependencies: ['a'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'a',
+            id: 'a.js',
             path: 'C:\\root\\a.js',
             dependencies: [],
             isAsset: false,
@@ -4227,7 +4231,7 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.ios.js',
             path: 'C:\\root\\index.ios.js',
             dependencies: ['./a'],
             isAsset: false,
@@ -4281,28 +4285,28 @@ describe('traverseDependencies', function() {
         );
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: 'C:\\root\\index.js',
             dependencies: ['foo/package.json', 'bar'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'foo/package.json',
+            id: 'node_modules\\foo\\package.json',
             path: 'C:\\root\\node_modules\\foo\\package.json',
             dependencies: [],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar/main.js',
+            id: 'node_modules\\bar\\main.js',
             path: 'C:\\root\\node_modules\\bar\\main.js',
             dependencies: ['./package.json'],
             isAsset: false,
             isPolyfill: false,
           },
           {
-            id: 'bar/package.json',
+            id: 'node_modules\\bar\\package.json',
             path: 'C:\\root\\node_modules\\bar\\package.json',
             dependencies: [],
             isAsset: false,
@@ -4370,7 +4374,7 @@ describe('traverseDependencies', function() {
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['aPackage'],
             isAsset: false,
@@ -4427,7 +4431,7 @@ describe('traverseDependencies', function() {
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['aPackage'],
             isAsset: false,
@@ -4535,7 +4539,7 @@ describe('traverseDependencies', function() {
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['aPackage', 'foo'],
             isAsset: false,
@@ -4549,7 +4553,7 @@ describe('traverseDependencies', function() {
             isPolyfill: false,
           },
           {
-            id: 'bar',
+            id: 'bar.js',
             path: '/root/bar.js',
             dependencies: ['foo'],
             isAsset: false,
@@ -4557,7 +4561,7 @@ describe('traverseDependencies', function() {
             resolveDependency: undefined,
           },
           {
-            id: 'foo',
+            id: 'foo.js',
             path: '/root/foo.js',
             dependencies: ['aPackage'],
             isAsset: false,
@@ -4603,7 +4607,7 @@ describe('traverseDependencies', function() {
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['./foo.png'],
             isAsset: false,
@@ -4661,7 +4665,7 @@ describe('traverseDependencies', function() {
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['aPackage'],
             isAsset: false,
@@ -4727,7 +4731,7 @@ describe('traverseDependencies', function() {
         expect(deps).toEqual([
           {
             dependencies: ['bPackage'],
-            id: 'index',
+            id: 'index.js',
             isAsset: false,
             isPolyfill: false,
             path: '/root/index.js',
@@ -4735,7 +4739,7 @@ describe('traverseDependencies', function() {
           },
           {
             dependencies: [],
-            id: 'bPackage/main.js',
+            id: 'aPackage/main.js',
             isAsset: false,
             isPolyfill: false,
             path: '/root/aPackage/main.js',
@@ -4782,7 +4786,7 @@ describe('traverseDependencies', function() {
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['foo'],
             isAsset: false,
@@ -4790,7 +4794,7 @@ describe('traverseDependencies', function() {
             resolveDependency: undefined,
           },
           {
-            id: 'foo/main.js',
+            id: 'node_modules/foo/main.js',
             path: '/root/node_modules/foo/main.js',
             dependencies: ['bar'],
             isAsset: false,
@@ -4798,7 +4802,7 @@ describe('traverseDependencies', function() {
             resolveDependency: undefined,
           },
           {
-            id: 'bar/main.js',
+            id: 'node_modules/foo/node_modules/bar/main.js',
             path: '/root/node_modules/foo/node_modules/bar/main.js',
             dependencies: [],
             isAsset: false,
@@ -4813,7 +4817,7 @@ describe('traverseDependencies', function() {
         const deps2 = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps2).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['foo'],
             isAsset: false,
@@ -4821,7 +4825,7 @@ describe('traverseDependencies', function() {
             resolveDependency: undefined,
           },
           {
-            id: 'foo/main.js',
+            id: 'node_modules/foo/main.js',
             path: '/root/node_modules/foo/main.js',
             dependencies: [],
             isAsset: false,
@@ -4874,7 +4878,7 @@ describe('traverseDependencies', function() {
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toEqual([
           {
-            id: 'index',
+            id: 'index.js',
             path: '/root/index.js',
             dependencies: ['foo'],
             isAsset: false,
@@ -4882,7 +4886,7 @@ describe('traverseDependencies', function() {
             resolveDependency: undefined,
           },
           {
-            id: 'foo/browser.js',
+            id: 'node_modules/foo/browser.js',
             path: '/root/node_modules/foo/browser.js',
             dependencies: [],
             isAsset: false,
@@ -4984,14 +4988,14 @@ describe('traverseDependencies', function() {
         expect(deps).toEqual([
           {
             dependencies: ['a'],
-            id: 'index',
+            id: 'index.jsx',
             isAsset: false,
             isPolyfill: false,
             path: '/root/index.jsx',
           },
           {
             dependencies: [],
-            id: 'a',
+            id: 'a.coffee',
             isAsset: false,
             isPolyfill: false,
             path: '/root/a.coffee',
@@ -5288,7 +5292,7 @@ describe('traverseDependencies', function() {
 
   function setMockFileSystem(object) {
     const fs = require('fs');
-    const root = process.platform === 'win32' ? 'c:\\' : '/';
+    const root = process.platform === 'win32' ? 'C:\\' : '/';
     mockDir(fs, root, {...object, tmp: {}});
   }
 

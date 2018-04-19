@@ -10,363 +10,94 @@
 
 'use strict';
 
-jest
-  .mock('fs', () => new (require('metro-memory-fs'))())
-  .mock('graceful-fs')
-  .mock('../ModuleCache')
-  .mock('../DependencyGraph/DependencyGraphHelpers')
-  .mock('../../lib/TransformCaching');
+jest.mock('fs').mock('../ModuleCache');
 
-const Module = require('../Module');
-const ModuleCache = require('../ModuleCache');
-const DependencyGraphHelpers = require('../DependencyGraph/DependencyGraphHelpers');
-const TransformCaching = require('../../lib/TransformCaching');
 const fs = require('fs');
-
-const packageJson = JSON.stringify({
-  name: 'arbitrary',
-  version: '1.0.0',
-  description: "A require('foo') story",
-});
-
-function mockPackageFile() {
-  fs.reset();
-  fs.mkdirSync('/root');
-  fs.writeFileSync('/root/package.json', packageJson);
-}
-
-function mockIndexFile(indexJs) {
-  fs.reset();
-  fs.mkdirSync('/root');
-  fs.writeFileSync('/root/index.js', indexJs);
-}
+const ModuleCache = require('../ModuleCache');
+const Module = require('../Module');
 
 describe('Module', () => {
-  const fileName = '/root/index.js';
+  let transformCode;
+  let moduleCache;
+  let module;
 
-  let cache;
-  const transformCache = TransformCaching.mocked();
-
-  const createCache = () => ({
-    get: jest
-      .genMockFn()
-      .mockImplementation((filepath, field, cb) => cb(filepath)),
-    invalidate: jest.genMockFn(),
-    end: jest.genMockFn(),
-  });
-
-  let transformCacheKey;
-  const createModule = options =>
-    new Module({
-      options: {transformCache},
-      transformCode: (module, sourceCode, transformOptions) => {
-        return Promise.resolve({code: sourceCode});
-      },
-      ...options,
-      cache,
-      file: (options && options.file) || fileName,
-      depGraphHelpers: new DependencyGraphHelpers(),
-      localPath: (options && options.localPath) || fileName,
-      moduleCache: new ModuleCache({cache}),
-      getTransformCacheKey: () => transformCacheKey,
+  beforeEach(() => {
+    transformCode = jest.fn().mockReturnValue({
+      code: 'int main(void) { return -1; }',
+      dependencies: ['stdlib.h', 'conio.h'],
+      map: [],
     });
 
-  const createJSONModule = options =>
-    createModule({...options, file: '/root/package.json'});
+    moduleCache = new ModuleCache();
 
-  beforeEach(function() {
-    Object.defineProperty(process, 'platform', {
-      configurable: true,
-      enumerable: true,
-      value: 'linux',
-    });
-    cache = createCache();
-    transformCacheKey = 'abcdef';
-    transformCache.mock.reset();
-  });
-
-  describe('Experimental caches', () => {
-    it('Calls into the transformer directly when having experimental caches on', async () => {
-      const transformCode = jest.fn().mockReturnValue({
-        code: 'code',
-        dependencies: ['dep1', 'dep2'],
-        map: [],
-      });
-
-      const module = new Module({
-        cache,
-        experimentalCaches: true,
-        depGraphHelpers: new DependencyGraphHelpers(),
-        file: fileName,
-        getTransformCacheKey: () => transformCacheKey,
-        localPath: fileName,
-        moduleCache: new ModuleCache({cache}),
-        options: {transformCache},
-        transformCode,
-      });
-
-      mockIndexFile('originalCode');
-      jest.spyOn(fs, 'readFileSync');
-
-      // Read the first time, transform code is called.
-      const res1 = await module.read({foo: 3});
-      expect(res1.code).toBe('code');
-      expect(res1.dependencies).toEqual(['dep1', 'dep2']);
-      expect(transformCode).toHaveBeenCalledTimes(1);
-
-      // Read a second time, transformCode is called again!
-      const res2 = await module.read({foo: 3});
-      expect(res2.code).toBe('code');
-      expect(res2.dependencies).toEqual(['dep1', 'dep2']);
-      expect(transformCode).toHaveBeenCalledTimes(2);
-
-      // Code was never read, though, because experimental caches read on the
-      // worker, to speed up local cache!
-      expect(fs.readFileSync).not.toHaveBeenCalled();
+    module = new Module({
+      file: '/root/to/file.js',
+      localPath: 'file.js',
+      moduleCache,
+      transformCode,
     });
   });
 
-  describe('Module ID', () => {
-    const moduleId = 'arbitraryModule';
-    const source = `/**
-       * @providesModule ${moduleId}
-       */
-    `;
+  afterEach(() => {
+    fs.readFileSync.mockReset();
+  });
 
-    let module;
-    beforeEach(() => {
-      module = createModule();
-    });
+  it('Returns the correct values for many properties and methods', () => {
+    expect(module.localPath).toBe('file.js');
+    expect(module.path).toBe('/root/to/file.js');
+    expect(module.type).toBe('Module');
 
-    describe('@providesModule annotations', () => {
-      beforeEach(() => {
-        mockIndexFile(source);
-      });
+    expect(module.hash()).toBeDefined();
+    expect(module.getName()).toBe('file.js');
+    expect(module.isHaste()).toBe(false);
+    expect(module.isAsset()).toBe(false);
+    expect(module.isPolyfill()).toBe(false);
+  });
 
-      it('extracts the module name from the header', () => {
-        expect(module.getName()).toEqual(moduleId);
-      });
+  it('reads the modules correctly', () => {
+    const opts = {};
 
-      it('identifies the module as haste module', () => {
-        expect(module.isHaste()).toBe(true);
-      });
+    // Caches are not in Module.js anymore.
+    expect(module.readCached()).toBe(null);
 
-      it('does not transform the file in order to access the name', () => {
-        const transformCode = jest
-          .genMockFn()
-          .mockReturnValue(Promise.resolve());
+    // When reading fresh, we call directly into read.
+    module.readFresh(opts);
+    expect(transformCode.mock.calls[0][0]).toBe(module);
+    expect(transformCode.mock.calls[0][1]).toBe(null);
+    expect(transformCode.mock.calls[0][2]).toBe(opts);
+  });
 
-        createModule({transformCode}).getName();
-        expect(transformCode).not.toBeCalled();
-      });
+  it('returns the result from the transform code straight away', async () => {
+    fs.readFileSync.mockReturnValue('original code');
 
-      it('does not transform the file in order to access the haste status', () => {
-        const transformCode = jest
-          .genMockFn()
-          .mockReturnValue(Promise.resolve());
-        createModule({transformCode}).isHaste();
-        expect(transformCode).not.toBeCalled();
-      });
-    });
-
-    describe('no annotation', () => {
-      beforeEach(() => {
-        mockIndexFile('arbitrary(code);');
-      });
-
-      it('uses the file name as module name', () => {
-        expect(module.getName()).toEqual(fileName);
-      });
-
-      it('does not identify the module as haste module', () =>
-        expect(module.isHaste()).toBe(false));
-
-      it('does not transform the file in order to access the name', () => {
-        const transformCode = jest
-          .genMockFn()
-          .mockReturnValue(Promise.resolve());
-
-        createModule({transformCode}).getName();
-        expect(transformCode).not.toBeCalled();
-      });
-
-      it('does not transform the file in order to access the haste status', () => {
-        const transformCode = jest
-          .genMockFn()
-          .mockReturnValue(Promise.resolve());
-        createModule({transformCode}).isHaste();
-        expect(transformCode).not.toBeCalled();
-      });
+    expect(await module.read({})).toEqual({
+      code: 'int main(void) { return -1; }',
+      dependencies: ['stdlib.h', 'conio.h'],
+      map: [],
+      source: 'original code',
     });
   });
 
-  describe('Code', () => {
-    const fileContents = 'arbitrary(code)';
-    beforeEach(function() {
-      mockIndexFile(fileContents);
-    });
+  it('checks that code is only read once until invalidated', async () => {
+    fs.readFileSync.mockReturnValue('original code');
 
-    it('exposes file contents as `code` property on the data exposed by `read()`', () =>
-      createModule()
-        .read()
-        .then(({code}) => expect(code).toBe(fileContents)));
-  });
+    // Read once. No access to "source", so no reads.
+    await module.read({});
+    expect(fs.readFileSync).toHaveBeenCalledTimes(0);
 
-  describe('Custom Code Transform', () => {
-    let transformCode;
-    let transformResult;
-    const fileContents = 'arbitrary(code);';
-    const exampleCode = `
-      ${'require'}('a');
-      ${'System.import'}('b');
-      ${'require'}('c');`;
+    // Read again, accessing "source".
+    expect((await module.read({})).source).toEqual('original code');
+    expect(fs.readFileSync).toHaveBeenCalledTimes(1);
 
-    beforeEach(function() {
-      transformResult = {code: ''};
-      transformCode = jest
-        .genMockFn()
-        .mockImplementation((module, sourceCode, options) => {
-          transformCache.writeSync({
-            filePath: module.path,
-            sourceCode,
-            transformOptions: options,
-            getTransformCacheKey: () => transformCacheKey,
-            result: transformResult,
-          });
-          return Promise.resolve(transformResult);
-        });
-      mockIndexFile(fileContents);
-    });
+    // Read again, accessing "source" again. Still 1 because code was cached.
+    expect((await module.read({})).source).toEqual('original code');
+    expect(fs.readFileSync).toHaveBeenCalledTimes(1);
 
-    it('passes the module and file contents to the transform function when reading', () => {
-      const module = createModule({transformCode});
-      return module.read().then(() => {
-        expect(transformCode).toBeCalledWith(module, fileContents, undefined);
-      });
-    });
+    // Invalidate.
+    module.invalidate();
 
-    it('passes any additional options to the transform function when reading', () => {
-      const module = createModule({transformCode});
-      const transformOptions = {arbitrary: Object()};
-      return module
-        .read(transformOptions)
-        .then(() =>
-          expect(transformCode.mock.calls[0][2]).toBe(transformOptions),
-        );
-    });
-
-    it('passes the module and file contents to the transform for JSON files', () => {
-      mockPackageFile();
-      const module = createJSONModule({transformCode});
-      return module.read().then(() => {
-        expect(transformCode).toBeCalledWith(module, packageJson, undefined);
-      });
-    });
-
-    it('does not extend the passed options object for JSON files', () => {
-      mockPackageFile();
-      const module = createJSONModule({transformCode});
-      const options = {arbitrary: 'foo'};
-      return module.read(options).then(() => {
-        expect(transformCode).toBeCalledWith(module, packageJson, options);
-      });
-    });
-
-    it('uses dependencies that `transformCode` resolves to, instead of extracting them', async () => {
-      const mockedDependencies = ['foo', 'bar'];
-      transformResult = {
-        code: exampleCode,
-        dependencies: mockedDependencies,
-      };
-      const module = createModule({transformCode});
-      const data = await module.read();
-
-      expect(data.dependencies).toEqual(mockedDependencies);
-    });
-
-    it('forwards all additional properties of the result provided by `transformCode`', () => {
-      transformResult = {
-        code: exampleCode,
-        arbitrary: 'arbitrary',
-        dependencyOffsets: [12, 764],
-        map: {version: 3},
-        subObject: {foo: 'bar'},
-      };
-      const module = createModule({transformCode});
-
-      return module.read().then(result => {
-        expect(result).toEqual(jasmine.objectContaining(transformResult));
-      });
-    });
-
-    it('exposes the transformed code rather than the raw file contents', async () => {
-      transformResult = {code: exampleCode};
-      const module = createModule({transformCode});
-      const data = await module.read();
-
-      expect(data.code).toBe(exampleCode);
-    });
-
-    it('exposes the raw file contents as `source` property', () => {
-      const module = createModule({transformCode});
-      return module.read().then(data => expect(data.source).toBe(fileContents));
-    });
-
-    it('exposes a source map returned by the transform', async () => {
-      const map = {version: 3};
-      transformResult = {map, code: exampleCode};
-      const module = createModule({transformCode});
-      const data = await module.read();
-
-      expect(data.map).toBe(map);
-    });
-
-    it('caches the transform result for the same transform options', () => {
-      let module = createModule({transformCode});
-      return module.read().then(() => {
-        expect(transformCode).toHaveBeenCalledTimes(1);
-        // We want to check transform caching rather than shallow caching of
-        // Promises returned by read().
-        module = createModule({transformCode});
-        return module.read().then(() => {
-          expect(transformCode).toHaveBeenCalledTimes(1);
-        });
-      });
-    });
-
-    it('triggers a new transform for different transform options', () => {
-      const module = createModule({transformCode});
-      return module.read({foo: 1}).then(() => {
-        expect(transformCode).toHaveBeenCalledTimes(1);
-        return module.read({foo: 2}).then(() => {
-          expect(transformCode).toHaveBeenCalledTimes(2);
-        });
-      });
-    });
-
-    it('triggers a new transform for different source code', () => {
-      let module = createModule({transformCode});
-      return module.read().then(() => {
-        expect(transformCode).toHaveBeenCalledTimes(1);
-        cache = createCache();
-        mockIndexFile('test');
-        module = createModule({transformCode});
-        return module.read().then(() => {
-          expect(transformCode).toHaveBeenCalledTimes(2);
-        });
-      });
-    });
-
-    it('triggers a new transform for different transform cache key', () => {
-      let module = createModule({transformCode});
-      return module.read().then(() => {
-        expect(transformCode).toHaveBeenCalledTimes(1);
-        transformCacheKey = 'other';
-        module = createModule({transformCode});
-        return module.read().then(() => {
-          expect(transformCode).toHaveBeenCalledTimes(2);
-        });
-      });
-    });
+    // Read again, this time it will read it.
+    expect((await module.read({})).source).toEqual('original code');
+    expect(fs.readFileSync).toHaveBeenCalledTimes(2);
   });
 });
