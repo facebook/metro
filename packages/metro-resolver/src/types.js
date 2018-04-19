@@ -38,9 +38,9 @@ export type FileCandidates =
   // JSON...), in which case there can be several extensions we tried, for
   // example `/js/foo.ios.js`, `/js/foo.js`, etc. for a single prefix '/js/foo'.
   | {|
-    +type: 'sourceFile',
-    +filePathPrefix: string,
-    +candidateExts: $ReadOnlyArray<string>,
-  |};
+      +type: 'sourceFile',
+      +filePathPrefix: string,
+      +candidateExts: $ReadOnlyArray<string>,
+    |};
 
 export type CustomResolver = (string, string) => string;

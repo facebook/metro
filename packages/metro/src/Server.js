@@ -1061,7 +1061,9 @@ class Server {
     const assetPlugin = urlQuery.assetPlugin;
     const assetPlugins = Array.isArray(assetPlugin)
       ? assetPlugin
-      : typeof assetPlugin === 'string' ? [assetPlugin] : [];
+      : typeof assetPlugin === 'string'
+        ? [assetPlugin]
+        : [];
 
     const dev = this._getBoolOptionFromQuery(urlQuery, 'dev', true);
     const minify = this._getBoolOptionFromQuery(urlQuery, 'minify', false);

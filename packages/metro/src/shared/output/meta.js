@@ -20,7 +20,9 @@ const constantFor = encoding =>
     ? 1
     : isUTF8(encoding)
       ? 2
-      : /^(?:utf-?16(?:le)?|ucs-?2)$/.test(encoding) ? 3 : 0;
+      : /^(?:utf-?16(?:le)?|ucs-?2)$/.test(encoding)
+        ? 3
+        : 0;
 
 module.exports = function(
   code: Buffer | string,
