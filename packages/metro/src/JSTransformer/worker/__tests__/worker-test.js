@@ -252,4 +252,33 @@ describe('code transformation worker:', () => {
       ].join('\n'),
     );
   });
+
+  it('minifies a JSON file', async () => {
+    expect(
+      (await transformCode(
+        '/root/node_modules/bar/file.json',
+        `node_modules/bar/file.js`,
+        'arbitrary(code);',
+        path.join(__dirname, '../../../transformer.js'),
+        false,
+        {
+          dev: true,
+          minify: true,
+          transform: {},
+          enableBabelRCLookup: false,
+        },
+        [],
+        '',
+        'minifyModulePath',
+        'asyncRequire',
+        'throwAtRuntime',
+      )).result.code,
+    ).toBe(
+      [
+        '__d(function(global, require, module, exports) {',
+        '  module.exports = minified(code);;',
+        '});',
+      ].join('\n'),
+    );
+  });
 });

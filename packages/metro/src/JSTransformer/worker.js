@@ -33,10 +33,8 @@ const {
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
 import type {Ast} from '@babel/core';
-import type {BabelSourceMap} from '@babel/core';
 import type {Plugins as BabelPlugins} from 'babel-core';
 import type {LogEntry} from 'metro-core/src/Logger';
-import type {ResultWithMap} from 'metro-minify-uglify';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
 export type TransformedCode = {
@@ -153,15 +151,26 @@ async function transformCode(
     .digest('hex');
 
   if (filename.endsWith('.json')) {
-    const code = JsFileWrapping.wrapJson(sourceCode);
+    let code = JsFileWrapping.wrapJson(sourceCode);
+    let map = [];
 
     const transformFileEndLogEntry = getEndLogEntry(
       transformFileStartLogEntry,
       filename,
     );
 
+    if (options.minify) {
+      ({map, code} = await minifyCode(
+        filename,
+        code,
+        sourceCode,
+        map,
+        minifierPath,
+      ));
+    }
+
     return {
-      result: {dependencies: [], code, map: []},
+      result: {dependencies: [], code, map},
       sha1,
       transformFileStartLogEntry,
       transformFileEndLogEntry,
@@ -262,19 +271,13 @@ async function transformCode(
   let code = result.code;
 
   if (options.minify) {
-    const sourceMap = fromRawMappings([
-      {code, source: sourceCode, map, path: filename},
-    ]).toMap(undefined, {});
-
-    const minified = await minifyCode(
+    ({map, code} = await minifyCode(
       filename,
       result.code,
-      sourceMap,
+      sourceCode,
+      map,
       minifierPath,
-    );
-
-    code = minified.code;
-    map = minified.map ? toBabelSegments(minified.map).map(toSegmentTuple) : [];
+    ));
   }
 
   return {
@@ -285,15 +288,31 @@ async function transformCode(
   };
 }
 
-function minifyCode(
+async function minifyCode(
   filename: string,
   code: string,
-  sourceMap: BabelSourceMap,
+  source: string,
+  map: Array<MetroSourceMapSegmentTuple>,
   minifierPath: string,
-): ResultWithMap | Promise<ResultWithMap> {
+): Promise<{
+  code: string,
+  map: Array<MetroSourceMapSegmentTuple>,
+}> {
+  const sourceMap = fromRawMappings([
+    {code, source, map, path: filename},
+  ]).toMap(undefined, {});
+
   const minify = getMinifier(minifierPath);
+
   try {
-    return minify.withSourceMap(code, sourceMap, filename);
+    const minified = minify.withSourceMap(code, sourceMap, filename);
+
+    return {
+      code: minified.code,
+      map: minified.map
+        ? toBabelSegments(minified.map).map(toSegmentTuple)
+        : [],
+    };
   } catch (error) {
     if (error.constructor.name === 'JS_Parse_Error') {
       throw new Error(
