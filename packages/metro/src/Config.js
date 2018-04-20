@@ -68,6 +68,12 @@ export type ConfigT = {
   getBlacklistRE(): RegExp,
 
   /**
+   * Specify an implementation module to load async import modules (for
+   * splitting).
+   */
+  getAsyncRequireModulePath(): string,
+
+  /**
    * Specify whether or not to enable Babel's behavior for looking up .babelrc
    * files. If false, only the .babelrc file (if one exists) in the main project
    * root is used.
@@ -175,6 +181,7 @@ const DEFAULT = ({
   cacheStores: [],
   cacheVersion: '1.0',
   dynamicDepsInPackages: 'throwAtRuntime',
+  getAsyncRequireModulePath: () => 'metro/src/lib/bundle-modules/asyncRequire',
   getAssetExts: () => [],
   getBlacklistRE: () => blacklist(),
   getEnableBabelRCLookup: () => true,

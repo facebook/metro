@@ -110,6 +110,7 @@ async function runMetro({
     projectRoots: finalProjectRoots,
   });
   const serverOptions: ServerOptions = {
+    asyncRequireModulePath: normalizedConfig.getAsyncRequireModulePath(),
     assetExts: normalizedConfig.assetTransforms ? [] : assetExts,
     assetRegistryPath: normalizedConfig.assetRegistryPath,
     blacklistRE: normalizedConfig.getBlacklistRE(),

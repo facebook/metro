@@ -78,7 +78,7 @@ export type Options = {|
   // TODO: Remove this option below (T23793920)
   assetTransforms?: boolean,
   assetExts?: Array<string>,
-  +asyncRequireModulePath?: string,
+  +asyncRequireModulePath: string,
   +assetRegistryPath: string,
   blacklistRE?: RegExp,
   cacheStores: $ReadOnlyArray<CacheStore<TransformedCode>>,
