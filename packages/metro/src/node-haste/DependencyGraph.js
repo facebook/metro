@@ -205,15 +205,9 @@ class DependencyGraph extends EventEmitter {
     return new ModuleCache(
       {
         assetDependencies: [_opts.assetRegistryPath],
-        depGraphHelpers: this._helpers,
-        experimentalCaches: _opts.experimentalCaches,
         getClosestPackage: this._getClosestPackage.bind(this),
-        getTransformCacheKey: _opts.getTransformCacheKey,
-        globalTransformCache: _opts.globalTransformCache,
         hasteImplModulePath: _opts.hasteImplModulePath,
         resetCache: _opts.resetCache,
-        transformCache: _opts.transformCache,
-        reporter: _opts.reporter,
         roots: _opts.projectRoots,
         transformCode: _opts.transformCode,
       },
