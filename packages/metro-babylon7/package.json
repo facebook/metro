@@ -12,6 +12,6 @@
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"
   },
   "dependencies": {
-    "babylon": "^7.0.0-beta"
+    "babylon": "7.0.0-beta.40"
   }
 }
