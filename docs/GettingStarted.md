@@ -157,7 +157,7 @@ If you would like to plug-in babel, you can simply do that by passing the code t
 const {transformSync} = require('@babel/core');
 
 module.exports.transform = file => {
-  return transform(file.src, {
+  return transformSync(file.src, {
     // Babel options...
   });
 };
