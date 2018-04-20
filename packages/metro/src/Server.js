@@ -56,7 +56,6 @@ import type {CacheStore} from 'metro-cache';
 import type {Delta, Graph} from './DeltaBundler';
 import type {CustomResolver} from 'metro-resolver';
 import type {MetroSourceMap} from 'metro-source-map';
-import type {TransformCache} from './lib/TransformCaching';
 import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
 import type {
@@ -125,13 +124,11 @@ class Server {
     projectRoots: $ReadOnlyArray<string>,
     providesModuleNodeModules?: Array<string>,
     reporter: Reporter,
-    resetCache: boolean,
     resolveRequest: ?CustomResolver,
     +getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
     +getRunModuleStatement: (number | string) => string,
     silent: boolean,
     +sourceExts: Array<string>,
-    +transformCache: TransformCache,
     +transformModulePath: string,
     watch: boolean,
     workerPath: ?string,
@@ -180,7 +177,6 @@ class Server {
       getPolyfills: options.getPolyfills,
       getRunModuleStatement: options.getRunModuleStatement,
       getTransformOptions: options.getTransformOptions,
-      globalTransformCache: options.globalTransformCache,
       hasteImplModulePath: options.hasteImplModulePath,
       maxWorkers,
       minifierPath:
@@ -194,18 +190,21 @@ class Server {
       projectRoots: options.projectRoots,
       providesModuleNodeModules: options.providesModuleNodeModules,
       reporter,
-      resetCache: options.resetCache || false,
       resolveRequest: options.resolveRequest,
       silent: options.silent || false,
       sourceExts: options.assetTransforms
         ? sourceExts.concat(assetExts)
         : sourceExts,
-      transformCache: options.transformCache,
       transformModulePath:
         options.transformModulePath || defaults.transformModulePath,
       watch: options.watch || false,
       workerPath: options.workerPath,
     };
+
+    if (options.resetCache) {
+      options.cacheStores.forEach(store => store.clear());
+      reporter.update({type: 'transform_cache_reset'});
+    }
 
     const processFileChange = ({type, filePath}) =>
       this.onFileChange(type, filePath);

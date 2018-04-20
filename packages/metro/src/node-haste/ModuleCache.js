@@ -26,7 +26,6 @@ type Options = {|
   hasteImplModulePath?: string,
   getClosestPackage: GetClosestPackageFn,
   roots: $ReadOnlyArray<string>,
-  resetCache: boolean,
   transformCode: TransformCode,
 |};
 
@@ -153,7 +152,6 @@ class ModuleCache {
 
   _getModuleOptions() {
     return {
-      resetCache: this._opts.resetCache,
       hasteImplModulePath: this._opts.hasteImplModulePath,
     };
   }

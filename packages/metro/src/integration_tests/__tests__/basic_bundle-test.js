@@ -101,7 +101,6 @@ describe('basic_bundle', () => {
         getPolyfills: () => [polyfill1, polyfill2],
         getRunModuleStatement,
         projectRoots: [INPUT_PATH, POLYFILLS_PATH],
-        transformCache: Metro.TransformCaching.none(),
         transformModulePath: require.resolve('../../transformer'),
         nonPersistent: true,
         enableBabelRCLookup: false, // dont use metro's own babelrc!
@@ -126,7 +125,6 @@ describe('basic_bundle', () => {
         getPolyfills: () => [],
         getRunModuleStatement,
         projectRoots: [INPUT_PATH, POLYFILLS_PATH],
-        transformCache: Metro.TransformCaching.none(),
         transformModulePath: require.resolve('../../transformer'),
         nonPersistent: true,
         enableBabelRCLookup: false, // dont use metro's own babelrc!

@@ -25,8 +25,6 @@ import type {
   Options as WorkerOptions,
 } from './JSTransformer/worker';
 import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
-import type {GlobalTransformCache} from './lib/GlobalTransformCache';
-import type {TransformCache} from './lib/TransformCaching';
 import type {Reporter} from './lib/reporting';
 import type Module from './node-haste/Module';
 import type {BabelSourceMap} from '@babel/core';
@@ -79,7 +77,6 @@ export type Options = {|
   +extraNodeModules: {},
   +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   +getTransformOptions?: GetTransformOptions,
-  +globalTransformCache: ?GlobalTransformCache,
   +hasteImplModulePath?: string,
   +maxWorkers: number,
   +minifierPath: string,
@@ -90,10 +87,8 @@ export type Options = {|
   +projectRoots: $ReadOnlyArray<string>,
   +providesModuleNodeModules?: Array<string>,
   +reporter: Reporter,
-  +resetCache: boolean,
   +resolveRequest: ?CustomResolver,
   +sourceExts: Array<string>,
-  +transformCache: TransformCache,
   +transformModulePath: string,
   +watch: boolean,
   +workerPath: ?string,
@@ -154,7 +149,6 @@ class Bundler {
         opts.providesModuleNodeModules || defaults.providesModuleNodeModules,
       reporter: opts.reporter,
       resolveRequest: opts.resolveRequest,
-      resetCache: opts.resetCache,
       sourceExts: opts.sourceExts,
       transformCode: this._cachedTransformCode.bind(this),
       watch: opts.watch,

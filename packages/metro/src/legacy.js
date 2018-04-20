@@ -10,8 +10,6 @@
 
 'use strict';
 
-const TransformCaching = require('./lib/TransformCaching');
-
 const blacklist = require('./blacklist');
 const debug = require('debug');
 const invariant = require('fbjs/lib/invariant');
@@ -22,7 +20,6 @@ const {fromRawMappings, toSegmentTuple} = require('metro-source-map');
 
 import type {ConfigT as MetroConfig} from './Config';
 import type Server from './Server';
-import type {TransformCache} from './lib/TransformCaching';
 import type {Options as ServerOptions} from './shared/types.flow';
 
 exports.createBlacklist = blacklist;
@@ -36,7 +33,6 @@ type Options = {|
   ...ServerOptions,
   // optional types to force flow errors in `toServerOptions`
   nonPersistent?: ?boolean,
-  transformCache?: ?TransformCache,
   verbose?: ?boolean,
   targetBabelVersion?: number,
 |};
@@ -50,8 +46,6 @@ type PublicBundleOptions = {
   +runModule?: boolean,
   +sourceMapUrl?: string,
 };
-
-exports.TransformCaching = TransformCaching;
 
 /**
  * This is a public API, so we don't trust the value and purposefully downgrade
@@ -184,7 +178,6 @@ function toServerOptions(options: Options): ServerOptions {
     getPolyfills: options.getPolyfills,
     getRunModuleStatement: options.getRunModuleStatement,
     getTransformOptions: options.getTransformOptions,
-    globalTransformCache: options.globalTransformCache,
     hasteImplModulePath: options.hasteImplModulePath,
     maxWorkers: options.maxWorkers,
     minifierPath: options.minifierPath,
@@ -199,7 +192,6 @@ function toServerOptions(options: Options): ServerOptions {
     resolveRequest: options.resolveRequest,
     silent: options.silent,
     sourceExts: options.sourceExts,
-    transformCache: options.transformCache || TransformCaching.useTempDir(),
     transformModulePath: options.transformModulePath,
     watch:
       typeof options.watch === 'boolean'
