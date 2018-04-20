@@ -9,7 +9,8 @@
     "url": "git@github.com:facebook/metro.git"
   },
   "scripts": {
-    "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",
+    "prepare-release":
+      "test -d build && rm -rf src.real && mv src src.real && mv build src",
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"
   },
   "dependencies": {
@@ -54,7 +55,7 @@
     "babel-plugin-transform-flow-strip-types": "^6.21.0",
     "babel-preset-es2015-node": "^6.1.1",
     "babel-preset-fbjs": "^2.1.4",
-    "babel-preset-react-native": "^4.0.0",
+    "babel-preset-react-native": "^5.0.0",
     "babel-register": "^6.24.1",
     "babel-template": "^6.24.1",
     "babylon": "^6.18.0",
