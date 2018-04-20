@@ -15,7 +15,7 @@ exports.empty = (): Module => virtual('');
 
 // creates a virtual module (i.e. not corresponding to a file on disk)
 // with the given source code.
-const virtual = (exports.virtual = (code: string): Module => ({
+const virtual = (code: string): Module => ({
   dependencies: [],
   file: {
     code,
@@ -23,4 +23,6 @@ const virtual = (exports.virtual = (code: string): Module => ({
     path: '',
     type: 'script',
   },
-}));
+});
+
+exports.virtual = virtual;
