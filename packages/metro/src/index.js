@@ -14,7 +14,6 @@ const Config = require('./Config');
 const MetroHmrServer = require('./HmrServer');
 const MetroServer = require('./Server');
 const TerminalReporter = require('./lib/TerminalReporter');
-const TransformCaching = require('./lib/TransformCaching');
 
 const attachWebsocketServer = require('./lib/attachWebsocketServer');
 const defaults = require('./defaults');
@@ -33,8 +32,6 @@ const {Terminal} = require('metro-core');
 
 import type {ConfigT} from './Config';
 import type {Graph} from './DeltaBundler';
-import type {GlobalTransformCache} from './lib/GlobalTransformCache';
-import type {TransformCache} from './lib/TransformCaching';
 import type {Reporter} from './lib/reporting';
 import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
 import type {Options as ServerOptions} from './shared/types.flow';
@@ -51,12 +48,10 @@ type DeprecatedMetroOptions = {|
 type PublicMetroOptions = {|
   ...DeprecatedMetroOptions,
   config?: ConfigT,
-  globalTransformCache?: ?GlobalTransformCache,
   maxWorkers?: number,
   minifierPath?: string,
   port?: ?number,
   reporter?: Reporter,
-  transformCache?: TransformCache,
 |};
 
 type PrivateMetroOptions = {|
@@ -81,14 +76,12 @@ async function asyncRealpath(path): Promise<string> {
 
 async function runMetro({
   config,
-  globalTransformCache,
   resetCache = false,
   maxWorkers = getMaxWorkers(),
   minifierPath,
   // $FlowFixMe TODO t0 https://github.com/facebook/flow/issues/183
   port = null,
   reporter = new TerminalReporter(new Terminal(process.stdout)),
-  transformCache = TransformCaching.useTempDir(),
   watch = false,
 }: PrivateMetroOptions): Promise<MetroServer> {
   const normalizedConfig = config ? Config.normalize(config) : Config.DEFAULT;
@@ -131,7 +124,6 @@ async function runMetro({
       normalizedConfig.getModulesRunBeforeMainModule,
     getRunModuleStatement: normalizedConfig.getRunModuleStatement,
     getTransformOptions: normalizedConfig.getTransformOptions,
-    globalTransformCache,
     hasteImplModulePath: normalizedConfig.hasteImplModulePath,
     maxWorkers,
     minifierPath,
@@ -145,7 +137,6 @@ async function runMetro({
     sourceExts: normalizedConfig.assetTransforms
       ? sourceExts.concat(assetExts)
       : sourceExts,
-    transformCache,
     transformModulePath: normalizedConfig.getTransformModulePath(),
     watch,
     workerPath:

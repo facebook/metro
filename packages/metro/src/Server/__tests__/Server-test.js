@@ -23,8 +23,7 @@ jest
   .mock('metro-core/src/Logger')
   .mock('../../lib/getAbsolutePath')
   .mock('../../lib/getPrependedScripts')
-  .mock('../../lib/transformHelpers')
-  .mock('../../lib/GlobalTransformCache');
+  .mock('../../lib/transformHelpers');
 
 const NativeDate = global.Date;
 

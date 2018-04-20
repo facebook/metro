@@ -19,7 +19,6 @@ import type {
   TransformedCode,
 } from '../JSTransformer/worker';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
-import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
 import type {TransformCache} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
 import type {CacheStore} from 'metro-cache';
@@ -91,7 +90,6 @@ export type Options = {|
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   +getRunModuleStatement: (number | string) => string,
   getTransformOptions?: GetTransformOptions,
-  globalTransformCache?: ?GlobalTransformCache,
   hasteImplModulePath?: string,
   maxWorkers?: number,
   minifierPath?: string,
