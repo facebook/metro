@@ -145,8 +145,6 @@ class Bundler {
       experimentalCaches: true,
       extraNodeModules: opts.extraNodeModules,
       getPolyfills: opts.getPolyfills,
-      getTransformCacheKey,
-      globalTransformCache: opts.globalTransformCache,
       hasteImplModulePath: opts.hasteImplModulePath,
       maxWorkers: opts.maxWorkers,
       platforms: new Set(opts.platforms),
@@ -159,7 +157,6 @@ class Bundler {
       resetCache: opts.resetCache,
       sourceExts: opts.sourceExts,
       transformCode: this._cachedTransformCode.bind(this),
-      transformCache: opts.transformCache,
       watch: opts.watch,
     });
 

@@ -30,11 +30,6 @@ const {
 } = require('metro-core');
 
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
-import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
-import type {
-  GetTransformCacheKey,
-  TransformCache,
-} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
 import type {ModuleMap} from './DependencyGraph/ModuleResolution';
 import type {TransformCode} from './Module';
@@ -49,8 +44,6 @@ type Options = {|
   +experimentalCaches: boolean,
   +extraNodeModules: ?{},
   +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
-  +getTransformCacheKey: GetTransformCacheKey,
-  +globalTransformCache: ?GlobalTransformCache,
   +hasteImplModulePath?: string,
   +maxWorkers: number,
   +platforms: Set<string>,
@@ -61,7 +54,6 @@ type Options = {|
   +resetCache: boolean,
   +resolveRequest: ?CustomResolver,
   +sourceExts: Array<string>,
-  +transformCache: TransformCache,
   +transformCode: TransformCode,
   +watch: boolean,
 |};
