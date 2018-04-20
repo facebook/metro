@@ -270,6 +270,7 @@ type BuildGraphOptions = {|
   ...PublicMetroOptions,
   entries: $ReadOnlyArray<string>,
   dev?: boolean,
+  minify?: boolean,
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
   platform?: string,
   type: 'module' | 'script',
@@ -370,6 +371,7 @@ exports.buildGraph = async function({
   config,
   dev = false,
   entries,
+  minify = false,
   onProgress,
   platform = `web`,
   type = 'module',
@@ -384,6 +386,7 @@ exports.buildGraph = async function({
     return await metroServer.buildGraph(entries, {
       ...MetroServer.DEFAULT_GRAPH_OPTIONS,
       dev,
+      minify,
       onProgress,
       platform,
       type,
