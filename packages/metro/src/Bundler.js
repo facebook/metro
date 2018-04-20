@@ -103,7 +103,7 @@ const {hasOwnProperty} = Object.prototype;
 
 class Bundler {
   _opts: Options;
-  _cache: ?Cache<TransformedCode>;
+  _cache: Cache<TransformedCode>;
   _baseHash: string;
   _transformer: Transformer;
   _depGraphPromise: Promise<DependencyGraph>;
@@ -122,7 +122,7 @@ class Bundler {
     });
 
     this._opts = opts;
-    this._cache = opts.cacheStores.length ? new Cache(opts.cacheStores) : null;
+    this._cache = new Cache(opts.cacheStores);
 
     this._transformer = new Transformer({
       asyncRequireModulePath: opts.asyncRequireModulePath,
@@ -142,8 +142,7 @@ class Bundler {
       assetExts: opts.assetExts,
       assetRegistryPath: opts.assetRegistryPath,
       blacklistRE: opts.blacklistRE,
-      // TODO: T26134860 Only use experimental caches if stores are provided.
-      experimentalCaches: !!opts.cacheStores.length,
+      experimentalCaches: true,
       extraNodeModules: opts.extraNodeModules,
       getPolyfills: opts.getPolyfills,
       getTransformCacheKey,
@@ -235,86 +234,73 @@ class Bundler {
     transformCodeOptions: WorkerOptions,
   ): Promise<TransformedCode> {
     const cache = this._cache;
-    let data = null;
-    let partialKey;
-    let fullKey;
-    let sha1;
 
-    // First, try getting the result from the cache if enabled.
-    if (cache) {
-      const {
-        assetDataPlugins,
-        customTransformOptions,
-        enableBabelRCLookup,
-        dev,
-        hot,
-        inlineRequires,
-        minify,
-        platform,
-        projectRoot: _projectRoot, // Blacklisted property.
-        ...extra
-      } = transformCodeOptions;
+    const {
+      assetDataPlugins,
+      customTransformOptions,
+      enableBabelRCLookup,
+      dev,
+      hot,
+      inlineRequires,
+      minify,
+      platform,
+      projectRoot: _projectRoot, // Blacklisted property.
+      ...extra
+    } = transformCodeOptions;
 
-      for (const key in extra) {
-        if (hasOwnProperty.call(extra, key)) {
-          throw new Error(
-            'Extra keys detected: ' + Object.keys(extra).join(', '),
-          );
-        }
-      }
-
-      partialKey = stableHash([
-        // This is the hash related to the global Bundler config.
-        this._baseHash,
-
-        // Path and code hash.
-        module.localPath,
-
-        // We cannot include "transformCodeOptions" because of "projectRoot".
-        assetDataPlugins,
-        customTransformOptions,
-        enableBabelRCLookup,
-        dev,
-        hot,
-        inlineRequires,
-        minify,
-        platform,
-      ]);
-
-      sha1 = (await this.getDependencyGraph()).getSha1(module.path);
-      fullKey = Buffer.concat([partialKey, Buffer.from(sha1, 'hex')]);
-
-      const result = await cache.get(fullKey);
-
-      if (result) {
-        data = {result, sha1};
+    for (const key in extra) {
+      if (hasOwnProperty.call(extra, key)) {
+        throw new Error(
+          'Extra keys detected: ' + Object.keys(extra).join(', '),
+        );
       }
     }
 
-    // Second, if there was no result, compute it ourselves.
-    if (!data) {
-      data = await this._transformer.transform(
-        module.path,
-        module.localPath,
-        code,
-        module.isPolyfill(),
-        transformCodeOptions,
-        this._opts.assetExts,
-        this._opts.assetRegistryPath,
-        this._opts.minifierPath,
-      );
+    const partialKey = stableHash([
+      // This is the hash related to the global Bundler config.
+      this._baseHash,
+
+      // Path.
+      module.localPath,
+
+      // We cannot include "transformCodeOptions" because of "projectRoot".
+      assetDataPlugins,
+      customTransformOptions,
+      enableBabelRCLookup,
+      dev,
+      hot,
+      inlineRequires,
+      minify,
+      platform,
+    ]);
+
+    const sha1 = (await this.getDependencyGraph()).getSha1(module.path);
+    let fullKey = Buffer.concat([partialKey, Buffer.from(sha1, 'hex')]);
+    const result = await cache.get(fullKey);
+
+    // A valid result from the cache is used directly; otherwise we call into
+    // the transformer to computed the corresponding result.
+    const data = result
+      ? {result, sha1}
+      : await this._transformer.transform(
+          module.path,
+          module.localPath,
+          code,
+          module.isPolyfill(),
+          transformCodeOptions,
+          this._opts.assetExts,
+          this._opts.assetRegistryPath,
+          this._opts.minifierPath,
+        );
+
+    // Only re-compute the full key if the SHA-1 changed. This is because
+    // references are used by the cache implementation in a weak map to keep
+    // track of the cache that returned the result.
+    if (sha1 !== data.sha1) {
+      fullKey = Buffer.concat([partialKey, Buffer.from(data.sha1, 'hex')]);
     }
 
-    // Third, propagate the result to all cache layers.
-    if (fullKey && partialKey && sha1 && cache) {
-      // It could be that the SHA-1 we had back when we sent to the transformer
-      // was outdated; if so, recompute it.
-      if (sha1 !== data.sha1) {
-        fullKey = Buffer.concat([partialKey, Buffer.from(data.sha1, 'hex')]);
-      }
-
-      cache.set(fullKey, data.result);
-    }
+    cache.set(fullKey, data.result);
 
     return data.result;
   }
