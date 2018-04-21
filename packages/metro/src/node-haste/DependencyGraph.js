@@ -219,14 +219,7 @@ class DependencyGraph extends EventEmitter {
   }
 
   getSha1(filename: string): string {
-    // $FlowFixMe: TODO T27501330: Use getSha1 from HasteFS.
-    const file = this._hasteFS._files[filename];
-
-    if (!file) {
-      throw new ReferenceError(`File ${filename} is not tracked by haste-map`);
-    }
-
-    const sha1 = file[4];
+    const sha1 = this._hasteFS.getSha1(filename);
 
     if (!sha1) {
       throw new ReferenceError(`SHA-1 for file ${filename} is not computed`);
