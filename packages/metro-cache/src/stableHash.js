@@ -32,7 +32,7 @@ function stableHash(value: mixed) {
   return crypto
     .createHash('md4')
     .update(JSON.stringify(value, canonicalize))
-    .digest();
+    .digest('buffer');
 }
 
 module.exports = stableHash;

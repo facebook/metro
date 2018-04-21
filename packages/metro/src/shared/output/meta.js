@@ -31,7 +31,7 @@ module.exports = function(
   const buffer: Buffer = asBuffer(code, encoding);
   const hash = crypto.createHash('sha1');
   hash.update(buffer);
-  const digest = hash.digest();
+  const digest = hash.digest('buffer');
   const signature = Buffer.alloc
     ? Buffer.alloc(digest.length + 1)
     : new Buffer(digest.length + 1);
