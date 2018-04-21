@@ -98,9 +98,9 @@ export type Module = {|
 |};
 
 export type PostProcessModules = (
-  modules: Iterable<Module>,
+  modules: $ReadOnlyArray<Module>,
   entryPoints: Array<string>,
-) => Iterable<Module>;
+) => $ReadOnlyArray<Module>;
 
 export type OutputFn<
   M: FBSourceMap | MetroSourceMap = FBSourceMap | MetroSourceMap,

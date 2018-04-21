@@ -10,13 +10,36 @@
 
 'use strict';
 
-function getPreludeCode({isDev}: {|+isDev: boolean|}): string {
-  return (
-    `var __DEV__=${String(isDev)},` +
-    '__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now(),' +
-    'process=this.process||{};process.env=process.env||{};' +
-    `process.env.NODE_ENV='${isDev ? 'development' : 'production'}';`
-  );
+function getPreludeCode({
+  extraVars,
+  isDev,
+}: {|
+  +extraVars?: {[string]: mixed},
+  +isDev: boolean,
+|}): string {
+  const vars = [
+    ...formatExtraVars(extraVars),
+    `__DEV__=${String(isDev)}`,
+    '__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now()',
+    'process=this.process||{}',
+  ];
+  return `var ${vars.join(',')};${processEnv(
+    isDev ? 'development' : 'production',
+  )}`;
+}
+
+function formatExtraVars(extraVars) {
+  let assignments = [];
+  for (const key in extraVars) {
+    assignments.push(`${key}=${JSON.stringify(extraVars[key])}`);
+  }
+  return assignments;
+}
+
+function processEnv(nodeEnv) {
+  return `process.env=process.env||{};process.env.NODE_ENV=${JSON.stringify(
+    nodeEnv,
+  )};`;
 }
 
 module.exports = getPreludeCode;

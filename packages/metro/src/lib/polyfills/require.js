@@ -14,6 +14,7 @@
 /* eslint-disable no-bitwise */
 
 declare var __DEV__: boolean;
+declare var __NUM_MODULES__: mixed;
 
 type DependencyMap = Array<ModuleID>;
 type Exports = any;
@@ -47,7 +48,6 @@ type ModuleDefinition = {|
   verboseName?: string,
   path?: string,
 |};
-type ModuleMap = {[key: ModuleID]: ModuleDefinition, __proto__: null};
 type PatchedModules = {[ModuleID]: boolean};
 type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
 type VerboseModuleNameForDev = string;
@@ -60,7 +60,10 @@ const PRINT_REQUIRE_PATHS = false;
 global.require = metroRequire;
 global.__d = define;
 
-const modules: ModuleMap = Object.create(null);
+const modules =
+  typeof __NUM_MODULES__ === 'number'
+    ? (Array(__NUM_MODULES__ | 0): Array<ModuleDefinition>)
+    : (Object.create(null): {[number]: ModuleDefinition, __proto__: null});
 if (__DEV__) {
   var verboseNamesToModuleIds: {
     [key: string]: number,
@@ -73,7 +76,7 @@ function define(
   moduleId: number,
   dependencyMap?: DependencyMap,
 ) {
-  if (moduleId in modules) {
+  if (modules[moduleId] != null) {
     if (__DEV__) {
       // (We take `inverseDependencies` from `arguments` to avoid an unused
       // named parameter in `define` in production.

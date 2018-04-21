@@ -52,7 +52,12 @@ async function build(options: BuildOptions): Promise<BuildResult> {
   ]);
 
   const {entryModules} = graph;
-  const preludeScript = virtualModule(getPreludeCode({isDev: !optimize}));
+  const preludeScript = virtualModule(
+    getPreludeCode({
+      extraVars: {__NUM_MODULES__: graph.modules.length},
+      isDev: !optimize,
+    }),
+  );
   const prependedScripts = [preludeScript, ...moduleSystem, ...polyfills];
   return {
     entryModules,
