@@ -157,9 +157,8 @@ class Bundler {
     this._baseHash = stableHash([
       opts.assetExts,
       opts.assetRegistryPath,
-      getTransformCacheKey,
+      getTransformCacheKey(),
       opts.minifierPath,
-      'experimental',
     ]).toString('binary');
 
     this._projectRoots = opts.projectRoots;
