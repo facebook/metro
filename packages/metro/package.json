@@ -78,7 +78,7 @@
     "merge-stream": "^1.0.1",
     "metro-babel7-plugin-react-transform": "0.34.0",
     "metro-babylon7": "0.34.0",
-    "metro-babel-register": "0.34.1",
+    "metro-babel-register": "0.34.2",
     "metro-cache": "0.34.0",
     "metro-core": "0.34.0",
     "metro-minify-uglify": "0.34.0",

@@ -8,6 +8,8 @@
  */
 'use strict';
 
+const escapeRegExp = require('escape-string-regexp');
+const path = require('path');
 require('./node-polyfills');
 
 var _only = [];
@@ -34,14 +36,41 @@ function registerOnly(onlyList) {
 function config(onlyList) {
   _only = _only.concat(onlyList);
   return {
-    presets: [],
-    plugins: PLUGINS,
+    babelrc: false,
+    ignore: null,
     only: _only,
+    plugins: PLUGINS,
+    presets: [],
     retainLines: true,
     sourceMaps: 'inline',
-    babelrc: false,
   };
+}
+
+/**
+ * We use absolute paths for matching only the top-level folders reliably. For
+ * example, we would not want to match some deeply nested forder that happens to
+ * have the same name as one of `BABEL_ENABLED_PATHS`.
+ */
+function buildRegExps(basePath, dirPaths) {
+  return dirPaths.map(
+    folderPath =>
+      // Babel `only` option works with forward slashes in the RegExp so replace
+      // backslashes for Windows.
+      folderPath instanceof RegExp
+        ? new RegExp(
+            `^${escapeRegExp(
+              path.resolve(basePath, '.').replace(/\\/g, '/'),
+            )}/${folderPath.source}`,
+            folderPath.flags,
+          )
+        : new RegExp(
+            `^${escapeRegExp(
+              path.resolve(basePath, folderPath).replace(/\\/g, '/'),
+            )}`,
+          ),
+  );
 }
 
 module.exports = registerOnly;
 module.exports.config = config;
+module.exports.buildRegExps = buildRegExps;
