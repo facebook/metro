@@ -21,9 +21,6 @@ export type Options = {|
   root: string,
 |};
 
-const JOINER_DATA = '\0\0';
-const JOINER_LIST = '\0';
-
 class FileStore {
   _root: string;
 
@@ -34,14 +31,7 @@ class FileStore {
 
   get(key: Buffer): ?TransformedCode {
     try {
-      const data = fs.readFileSync(this._getFilePath(key), 'utf8');
-      const [code, dependencies, map] = data.split(JOINER_DATA);
-
-      return {
-        code,
-        dependencies: dependencies ? dependencies.split(JOINER_LIST) : [],
-        map: JSON.parse(map),
-      };
+      return JSON.parse(fs.readFileSync(this._getFilePath(key), 'utf8'));
     } catch (err) {
       if (err.code === 'ENOENT') {
         return null;
@@ -52,13 +42,7 @@ class FileStore {
   }
 
   set(key: Buffer, value: TransformedCode): void {
-    const data = [
-      value.code,
-      value.dependencies.join(JOINER_LIST),
-      JSON.stringify(value.map),
-    ].join(JOINER_DATA);
-
-    fs.writeFileSync(this._getFilePath(key), data);
+    fs.writeFileSync(this._getFilePath(key), JSON.stringify(value));
   }
 
   clear() {

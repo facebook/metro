@@ -16,5 +16,8 @@
     "metro-core": "0.34.0",
     "mkdirp": "^0.5.1",
     "rimraf": "^2.5.4"
+  },
+  "devDependencies": {
+    "metro-memory-fs": "0.34.0"
   }
 }
