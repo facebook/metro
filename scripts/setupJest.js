@@ -9,4 +9,4 @@
 'use strict';
 
 global.Promise = require('promise');
-require('../packages/metro/src/setupNodePolyfills');
+require('../packages/metro-babel-register/node-polyfills');

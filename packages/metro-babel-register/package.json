@@ -1,0 +1,19 @@
+{
+  "version": "0.34.1",
+  "name": "metro-babel-register",
+  "description": "🚇 babel/register configuration for Metro.",
+  "main": "babel-register.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:facebook/metro.git"
+  },
+  "dependencies": {
+    "@babel/plugin-proposal-class-properties": "7.0.0-beta.40",
+    "@babel/plugin-proposal-object-rest-spread": "7.0.0-beta.40",
+    "@babel/plugin-transform-async-to-generator": "7.0.0-beta.40",
+    "@babel/plugin-transform-flow-strip-types": "7.0.0-beta.40",
+    "@babel/plugin-transform-modules-commonjs": "7.0.0-beta.40",
+    "@babel/register": "7.0.0-beta.40",
+    "core-js": "^2.2.2"
+  }
+}

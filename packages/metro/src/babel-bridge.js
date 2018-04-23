@@ -29,7 +29,7 @@ const inlineRequiresPlugin6 = require('babel-preset-fbjs/plugins/inline-requires
 const makeHMRConfig6 = require('babel-preset-react-native/configs/hmr');
 const resolvePlugins6 = require('babel-preset-react-native/lib/resolvePlugins');
 // register has side effects so don't include by default (only used in a test)
-const getBabelRegisterConfig6 = () => require('./babelRegisterOnly').config;
+const getBabelRegisterConfig6 = () => require('metro-babel-register').config;
 // load given preset as a babel6 preset
 const getPreset6 = (preset: string) =>
   // $FlowFixMe TODO t26372934 plugin require
@@ -152,7 +152,7 @@ function makeMakeHMRConfig7() {
 }
 
 function getPreset7() {
-  // from: fbsource/xplat/js/node_modules/babel-preset-react-native/configs/main.js
+  // from: babel-preset-react-native/configs/main.js
   /**
    * Copyright (c) 2015-present, Facebook, Inc.
    *
@@ -253,7 +253,7 @@ function getPreset7() {
 }
 
 function transformSymbolMember() {
-  // from: fbsource/xplat/js/node_modules/babel-preset-react-native/transforms/transform-symbol-member.js
+  // from: babel-preset-react-native/transforms/transform-symbol-member.js
 
   /**
    * Copyright (c) 2015-present, Facebook, Inc.
@@ -323,7 +323,7 @@ function transformSymbolMember() {
 }
 
 function transformDynamicImport() {
-  // from: fbsource/xplat/js/node_modules/babel-preset-react-native/transforms/transform-dynamic-import.js
+  // from: babel-preset-react-native/transforms/transform-dynamic-import.js
 
   /**
    * Copyright (c) 2015-present, Facebook, Inc.
@@ -358,7 +358,7 @@ function transformDynamicImport() {
 }
 
 function getBabelRegisterConfig7() {
-  // from: fbsource/xplat/js/metro/packages/metro/src/babelRegisterOnly.js
+  // from: metro/packages/metro-babel-register/babel-register.js
   // (dont use babel-register anymore, it obsoleted with babel 7)
 
   /**
@@ -371,7 +371,7 @@ function getBabelRegisterConfig7() {
    */
   'use strict';
 
-  require('./setupNodePolyfills');
+  require('metro-babel-register/node-polyfills');
 
   var _only = [];
 

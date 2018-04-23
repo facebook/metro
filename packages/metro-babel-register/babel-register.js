@@ -8,7 +8,7 @@
  */
 'use strict';
 
-require('./setupNodePolyfills');
+require('./node-polyfills');
 
 var _only = [];
 
