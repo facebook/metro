@@ -193,35 +193,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['a'],
-            isAsset: false,
-            isPolyfill: false,
-
-            resolveDependency: undefined,
-          },
-          {
-            id: 'a.js',
-            path: '/root/a.js',
-            dependencies: ['b'],
-            isAsset: false,
-            isPolyfill: false,
-
-            resolveDependency: undefined,
-          },
-          {
-            id: 'b.js',
-            path: '/root/b.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-
-            resolveDependency: undefined,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -250,15 +222,7 @@ describe('traverseDependencies', function() {
           null,
           false,
         );
-        expect(deps).toEqual([
-          {
-            id: 'a.js',
-            path: '/root/a.js',
-            dependencies: ['b'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -283,22 +247,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['a'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'a.js',
-            path: '/root/a.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -327,29 +276,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['./a.json', './b'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'a.json',
-            path: '/root/a.json',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'b.json',
-            path: '/root/b.json',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -375,22 +302,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['./package.json'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'package.json',
-            path: '/root/package.json',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -419,22 +331,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['./imgs/a.png'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'imgs/a.png',
-            path: '/root/imgs/a.png',
-            dependencies: [],
-            isAsset: true,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -468,36 +365,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['./imgs/a.png', './imgs/b.png', './imgs/c.png'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'imgs/a@1.5x.png',
-            path: '/root/imgs/a@1.5x.png',
-            dependencies: [],
-            isAsset: true,
-            isPolyfill: false,
-          },
-          {
-            id: 'imgs/b@.7x.png',
-            path: '/root/imgs/b@.7x.png',
-            dependencies: [],
-            isAsset: true,
-            isPolyfill: false,
-          },
-          {
-            id: 'imgs/c.png',
-            path: '/root/imgs/c.png',
-            dependencies: [],
-            isAsset: true,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -532,36 +400,7 @@ describe('traverseDependencies', function() {
           '/root/index.js',
           'ios',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['./imgs/a.png', './imgs/b.png', './imgs/c.png'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'imgs/a@1.5x.ios.png',
-            path: '/root/imgs/a@1.5x.ios.png',
-            dependencies: [],
-            isAsset: true,
-            isPolyfill: false,
-          },
-          {
-            id: 'imgs/b@.7x.ios.png',
-            path: '/root/imgs/b@.7x.ios.png',
-            dependencies: [],
-            isAsset: true,
-            isPolyfill: false,
-          },
-          {
-            id: 'imgs/c.ios.png',
-            path: '/root/imgs/c.ios.png',
-            dependencies: [],
-            isAsset: true,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -590,22 +429,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['a'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'a.js',
-            path: '/root/a.js',
-            dependencies: ['index'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -635,22 +459,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['aPackage'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'aPackage/main.js',
-            path: '/root/aPackage/main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -680,22 +489,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['aPackage/'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'aPackage/main.js',
-            path: '/root/aPackage/main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -733,29 +527,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['sha.js', 'x.y.z'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'sha.js/main.js',
-            path: '/root/sha.js/main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'x.y.z/main.js',
-            path: '/root/x.y.z/main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -779,22 +551,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['aPackage'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'aPackage/index.js',
-            path: '/root/aPackage/index.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -820,22 +577,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['aPackage'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'aPackage/index.js',
-            path: '/root/aPackage/index.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -862,22 +604,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['aPackage'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'aPackage/lib/index.js',
-            path: '/root/aPackage/lib/index.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -901,22 +628,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['./lib/'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'lib/index.js',
-            path: '/root/lib/index.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -944,22 +656,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['./lib/'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'lib/main.js',
-            path: '/root/lib/main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -981,15 +678,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -1076,26 +765,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['aPackage/subdir/lolynot'],
-            isAsset: false,
-            isPolyfill: false,
-
-            resolveDependency: undefined,
-          },
-          {
-            id: 'aPackage/subdir/lolynot.js',
-            path: '/root/aPackage/subdir/lolynot.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-
-            resolveDependency: undefined,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -1129,44 +799,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['aPackage'],
-            isAsset: false,
-            isPolyfill: false,
-
-            resolveDependency: undefined,
-          },
-          {
-            id: 'aPackage/main.js',
-            path: '/root/aPackage/main.js',
-            dependencies: ['./subdir/lolynot'],
-            isAsset: false,
-            isPolyfill: false,
-
-            resolveDependency: undefined,
-          },
-          {
-            id: 'aPackage/subdir/lolynot.js',
-            path: '/root/aPackage/subdir/lolynot.js',
-            dependencies: ['../other'],
-            isAsset: false,
-            isPolyfill: false,
-
-            resolveDependency: undefined,
-          },
-          {
-            id: 'aPackage/other.js',
-            path: '/root/aPackage/other.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-
-            resolveDependency: undefined,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -1218,26 +851,7 @@ describe('traverseDependencies', function() {
               dgraph,
               '/root/index.js',
             );
-            expect(deps).toEqual([
-              {
-                id: 'index.js',
-                path: '/root/index.js',
-                dependencies: ['aPackage'],
-                isAsset: false,
-                isPolyfill: false,
-
-                resolveDependency: undefined,
-              },
-              {
-                id: 'aPackage/client.js',
-                path: '/root/aPackage/client.js',
-                dependencies: [],
-                isAsset: false,
-                isPolyfill: false,
-
-                resolveDependency: undefined,
-              },
-            ]);
+            expect(deps).toMatchSnapshot();
           });
         },
       );
@@ -1279,22 +893,7 @@ describe('traverseDependencies', function() {
               dgraph,
               '/root/index.js',
             );
-            expect(deps).toEqual([
-              {
-                id: 'index.js',
-                path: '/root/index.js',
-                dependencies: ['aPackage'],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'aPackage/client.js',
-                path: '/root/aPackage/client.js',
-                dependencies: [],
-                isAsset: false,
-                isPolyfill: false,
-              },
-            ]);
+            expect(deps).toMatchSnapshot();
           });
         },
       );
@@ -1342,24 +941,7 @@ describe('traverseDependencies', function() {
               dgraph,
               '/root/index.js',
             );
-            expect(deps).toEqual([
-              {
-                id: 'index.js',
-                path: '/root/index.js',
-                dependencies: ['aPackage'],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'aPackage/client.js',
-                path: '/root/aPackage/client.js',
-                dependencies: [],
-                isAsset: false,
-                isPolyfill: false,
-
-                resolveDependency: undefined,
-              },
-            ]);
+            expect(deps).toMatchSnapshot();
           });
         },
       );
@@ -1403,24 +985,7 @@ describe('traverseDependencies', function() {
             dgraph,
             '/root/index.js',
           );
-          expect(deps).toEqual([
-            {
-              id: 'index.js',
-              path: '/root/index.js',
-              dependencies: ['aPackage'],
-              isAsset: false,
-              isPolyfill: false,
-            },
-            {
-              id: 'aPackage/client.js',
-              path: '/root/aPackage/client.js',
-              dependencies: [],
-              isAsset: false,
-              isPolyfill: false,
-
-              resolveDependency: undefined,
-            },
-          ]);
+          expect(deps).toMatchSnapshot();
         });
       });
 
@@ -1467,26 +1032,7 @@ describe('traverseDependencies', function() {
               dgraph,
               '/root/index.js',
             );
-            expect(deps).toEqual([
-              {
-                id: 'index.js',
-                path: '/root/index.js',
-                dependencies: ['aPackage'],
-                isAsset: false,
-                isPolyfill: false,
-
-                resolveDependency: undefined,
-              },
-              {
-                id: 'aPackage/client.js',
-                path: '/root/aPackage/client.js',
-                dependencies: [],
-                isAsset: false,
-                isPolyfill: false,
-
-                resolveDependency: undefined,
-              },
-            ]);
+            expect(deps).toMatchSnapshot();
           });
         },
       );
@@ -1541,50 +1087,7 @@ describe('traverseDependencies', function() {
               dgraph,
               '/root/index.js',
             );
-            expect(deps).toEqual([
-              {
-                id: 'index.js',
-                path: '/root/index.js',
-                dependencies: ['aPackage'],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'aPackage/client.js',
-                path: '/root/aPackage/client.js',
-                dependencies: ['./node', './dir/server.js'],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'aPackage/not-node.js',
-                path: '/root/aPackage/not-node.js',
-                dependencies: ['./not-browser'],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'aPackage/browser.js',
-                path: '/root/aPackage/browser.js',
-                dependencies: [],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'aPackage/dir/client.js',
-                path: '/root/aPackage/dir/client.js',
-                dependencies: ['../hello'],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'aPackage/bye.js',
-                path: '/root/aPackage/bye.js',
-                dependencies: [],
-                isAsset: false,
-                isPolyfill: false,
-              },
-            ]);
+            expect(deps).toMatchSnapshot();
           });
         },
       );
@@ -1636,29 +1139,7 @@ describe('traverseDependencies', function() {
               dgraph,
               '/root/index.js',
             );
-            expect(deps).toEqual([
-              {
-                id: 'index.js',
-                path: '/root/index.js',
-                dependencies: ['aPackage'],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'aPackage/index.js',
-                path: '/root/aPackage/index.js',
-                dependencies: ['node-package'],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'aPackage/browser-package/index.js',
-                path: '/root/aPackage/browser-package/index.js',
-                dependencies: [],
-                isAsset: false,
-                isPolyfill: false,
-              },
-            ]);
+            expect(deps).toMatchSnapshot();
           });
         },
       );
@@ -1710,36 +1191,7 @@ describe('traverseDependencies', function() {
               dgraph,
               '/root/index.js',
             );
-            expect(deps).toEqual([
-              {
-                id: 'index.js',
-                path: '/root/index.js',
-                dependencies: ['aPackage'],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'aPackage/index.js',
-                path: '/root/aPackage/index.js',
-                dependencies: ['./dir/ooga'],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'aPackage/dir/ooga.js',
-                path: '/root/aPackage/dir/ooga.js',
-                dependencies: ['node-package'],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'aPackage/dir/browser.js',
-                path: '/root/aPackage/dir/browser.js',
-                dependencies: [],
-                isAsset: false,
-                isPolyfill: false,
-              },
-            ]);
+            expect(deps).toMatchSnapshot();
           });
         },
       );
@@ -1791,29 +1243,7 @@ describe('traverseDependencies', function() {
               dgraph,
               '/root/index.js',
             );
-            expect(deps).toEqual([
-              {
-                id: 'index.js',
-                path: '/root/index.js',
-                dependencies: ['aPackage'],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'aPackage/index.js',
-                path: '/root/aPackage/index.js',
-                dependencies: ['node-package'],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'aPackage/browser-package/index.js',
-                path: '/root/aPackage/browser-package/index.js',
-                dependencies: [],
-                isAsset: false,
-                isPolyfill: false,
-              },
-            ]);
+            expect(deps).toMatchSnapshot();
           });
         },
       );
@@ -1862,29 +1292,7 @@ describe('traverseDependencies', function() {
               dgraph,
               '/root/index.js',
             );
-            expect(deps).toEqual([
-              {
-                id: 'index.js',
-                path: '/root/index.js',
-                dependencies: ['aPackage'],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'aPackage/index.js',
-                path: '/root/aPackage/index.js',
-                dependencies: ['booga'],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                dependencies: [],
-                id: 'emptyModule.js',
-                isAsset: false,
-                isPolyfill: false,
-                path: '/root/emptyModule.js',
-              },
-            ]);
+            expect(deps).toMatchSnapshot();
           });
         },
       );
@@ -1929,29 +1337,7 @@ describe('traverseDependencies', function() {
               dgraph,
               '/root/index.js',
             );
-            expect(deps).toEqual([
-              {
-                id: 'index.js',
-                path: '/root/index.js',
-                dependencies: ['aPackage'],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'aPackage/index.js',
-                path: '/root/aPackage/index.js',
-                dependencies: ['./booga'],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                dependencies: [],
-                id: 'emptyModule.js',
-                isAsset: false,
-                isPolyfill: false,
-                path: '/root/emptyModule.js',
-              },
-            ]);
+            expect(deps).toMatchSnapshot();
           });
         },
       );
@@ -2008,36 +1394,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['aPackage'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'aPackage/index.js',
-            path: '/root/aPackage/index.js',
-            dependencies: ['node-package'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'aPackage/node_modules/rn-package/index.js',
-            path: '/root/aPackage/node_modules/rn-package/index.js',
-            dependencies: ['nested-package'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'aPackage/node_modules/nested-browser-package/index.js',
-            path: '/root/aPackage/node_modules/nested-browser-package/index.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -2056,22 +1413,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['/root/apple.js'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'apple.js',
-            path: '/root/apple.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -2163,47 +1505,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['aPackage'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'aPackage/index.js',
-            path: '/root/aPackage/index.js',
-            dependencies: [
-              'node-package-a',
-              'node-package-b',
-              'node-package-c',
-            ],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'aPackage/node_modules/rn-package-a/index.js',
-            path: '/root/aPackage/node_modules/rn-package-a/index.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'aPackage/node_modules/rn-package-b/index.js',
-            path: '/root/aPackage/node_modules/rn-package-b/index.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'aPackage/node_modules/rn-package-d/index.js',
-            path: '/root/aPackage/node_modules/rn-package-d/index.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -2236,29 +1538,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['./foo'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'foo/index.js',
-            path: '/root/foo/index.js',
-            dependencies: ['bar'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'provides-bar/lib/bar.js',
-            path: '/root/provides-bar/lib/bar.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -2284,22 +1564,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['bar'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/bar.js',
-            path: '/root/node_modules/bar.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -2327,22 +1592,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['bar/lib/foo'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'provides-bar/lib/foo.js',
-            path: '/root/provides-bar/lib/foo.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
   });
@@ -2392,35 +1642,7 @@ describe('traverseDependencies', function() {
           dgraph,
           'C:\\root\\index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: 'C:\\root\\index.js',
-            dependencies: ['a'],
-            isAsset: false,
-            isPolyfill: false,
-
-            resolveDependency: undefined,
-          },
-          {
-            id: 'a.js',
-            path: 'C:\\root\\a.js',
-            dependencies: ['b'],
-            isAsset: false,
-            isPolyfill: false,
-
-            resolveDependency: undefined,
-          },
-          {
-            id: 'b.js',
-            path: 'C:\\root\\b.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-
-            resolveDependency: undefined,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -2439,22 +1661,7 @@ describe('traverseDependencies', function() {
           dgraph,
           'C:\\root\\index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: 'C:\\root\\index.js',
-            dependencies: ['C:/root/apple.js'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'apple.js',
-            path: 'C:\\root\\apple.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -2488,36 +1695,7 @@ describe('traverseDependencies', function() {
           dgraph,
           'C:\\root\\index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: 'C:\\root\\index.js',
-            dependencies: ['./imgs/a.png', './imgs/b.png', './imgs/c.png'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'imgs\\a@1.5x.png',
-            path: 'C:\\root\\imgs\\a@1.5x.png',
-            dependencies: [],
-            isAsset: true,
-            isPolyfill: false,
-          },
-          {
-            id: 'imgs\\b@.7x.png',
-            path: 'C:\\root\\imgs\\b@.7x.png',
-            dependencies: [],
-            isAsset: true,
-            isPolyfill: false,
-          },
-          {
-            id: 'imgs\\c.png',
-            path: 'C:\\root\\imgs\\c.png',
-            dependencies: [],
-            isAsset: true,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
   });
@@ -2582,36 +1760,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['foo', 'bar'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/foo/main.js',
-            path: '/root/node_modules/foo/main.js',
-            dependencies: ['bar'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/foo/node_modules/bar/main.js',
-            path: '/root/node_modules/foo/node_modules/bar/main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/bar/main.js',
-            path: '/root/node_modules/bar/main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -2651,29 +1800,7 @@ describe('traverseDependencies', function() {
           '/root/index.ios.js',
           'ios',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.ios.js',
-            path: '/root/index.ios.js',
-            dependencies: ['foo', 'bar'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/foo/index.ios.js',
-            path: '/root/node_modules/foo/index.ios.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/bar/main.ios.js',
-            path: '/root/node_modules/bar/main.ios.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -2723,36 +1850,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['foo', 'bar/'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/foo/main.js',
-            path: '/root/node_modules/foo/main.js',
-            dependencies: ['bar/lol'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/foo/node_modules/bar/lol.js',
-            path: '/root/node_modules/foo/node_modules/bar/lol.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/bar/main.js',
-            path: '/root/node_modules/bar/main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -2806,36 +1904,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['foo', 'bar'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/foo/main.js',
-            path: '/root/node_modules/foo/main.js',
-            dependencies: ['bar/lol'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/foo/node_modules/bar/lol.js',
-            path: '/root/node_modules/foo/node_modules/bar/lol.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/bar/main2.js',
-            path: '/root/node_modules/bar/main2.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -2878,29 +1947,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['bar'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'path/to/bar.js',
-            path: '/root/path/to/bar.js',
-            dependencies: ['foo'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/foo/main.js',
-            path: '/root/node_modules/foo/main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -3025,56 +2072,7 @@ describe('traverseDependencies', function() {
         })
           .then(() => getOrderedDependenciesAsJSON(dgraph, '/root/index.js'))
           .then(deps => {
-            expect(deps).toEqual([
-              {
-                id: 'index.js',
-                path: '/root/index.js',
-                dependencies: [
-                  'shouldWork',
-                  'ember',
-                  'internalVendoredPackage',
-                  'anotherIndex',
-                ],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'node_modules/react-haste/main.js',
-                path: '/root/node_modules/react-haste/main.js',
-                dependencies: ['submodule'],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'node_modules/react-haste/node_modules/submodule/main.js',
-                path:
-                  '/root/node_modules/react-haste/node_modules/submodule/main.js',
-                dependencies: [],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'node_modules/ember/main.js',
-                path: '/root/node_modules/ember/main.js',
-                dependencies: [],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'vendored_modules/a-vendored-package/main.js',
-                path: '/root/vendored_modules/a-vendored-package/main.js',
-                dependencies: [],
-                isAsset: false,
-                isPolyfill: false,
-              },
-              {
-                id: 'index.js',
-                path: '/anotherRoot/index.js',
-                dependencies: [],
-                isAsset: false,
-                isPolyfill: false,
-              },
-            ]);
+            expect(deps).toMatchSnapshot();
           });
       });
     });
@@ -3109,22 +2107,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/react-haste/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/react-haste/index.js',
-            dependencies: ['shouldWork'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/react-haste/main.js',
-            path: '/react-haste/node_modules/react-haste/main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -3156,22 +2139,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['sha.js'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/sha.js/main.js',
-            path: '/root/node_modules/sha.js/main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -3210,22 +2178,7 @@ describe('traverseDependencies', function() {
           '/root/index.ios.js',
           'ios',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.ios.js',
-            path: '/root/index.ios.js',
-            dependencies: ['a'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'a.ios.js',
-            path: '/root/a.ios.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -3267,22 +2220,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.ios.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.ios.js',
-            path: '/root/index.ios.js',
-            dependencies: ['a'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'a.js',
-            path: '/root/a.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -3309,22 +2247,7 @@ describe('traverseDependencies', function() {
           '/root/index.ios.js',
           'ios',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.ios.js',
-            path: '/root/index.ios.js',
-            dependencies: ['./a'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'a.ios.js',
-            path: '/root/a.ios.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -3363,36 +2286,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['foo/package.json', 'bar'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/foo/package.json',
-            path: '/root/node_modules/foo/package.json',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/bar/main.js',
-            path: '/root/node_modules/bar/main.js',
-            dependencies: ['./package.json'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/bar/package.json',
-            path: '/root/node_modules/bar/package.json',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -3416,22 +2310,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['a/index.js'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules/a/index.js',
-            path: '/root/node_modules/a/index.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
   });
@@ -3507,36 +2386,7 @@ describe('traverseDependencies', function() {
           dgraph,
           'C:\\root\\index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: 'C:\\root\\index.js',
-            dependencies: ['foo', 'bar'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\foo\\main.js',
-            path: 'C:\\root\\node_modules\\foo\\main.js',
-            dependencies: ['bar'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\foo\\node_modules\\bar\\main.js',
-            path: 'C:\\root\\node_modules\\foo\\node_modules\\bar\\main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\bar\\main.js',
-            path: 'C:\\root\\node_modules\\bar\\main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -3576,29 +2426,7 @@ describe('traverseDependencies', function() {
           'C:\\root\\index.ios.js',
           'ios',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.ios.js',
-            path: 'C:\\root\\index.ios.js',
-            dependencies: ['foo', 'bar'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\foo\\index.ios.js',
-            path: 'C:\\root\\node_modules\\foo\\index.ios.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\bar\\main.ios.js',
-            path: 'C:\\root\\node_modules\\bar\\main.ios.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -3648,36 +2476,7 @@ describe('traverseDependencies', function() {
           dgraph,
           'C:\\root\\index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: 'C:\\root\\index.js',
-            dependencies: ['foo', 'bar/'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\foo\\main.js',
-            path: 'C:\\root\\node_modules\\foo\\main.js',
-            dependencies: ['bar/lol'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\foo\\node_modules\\bar\\lol.js',
-            path: 'C:\\root\\node_modules\\foo\\node_modules\\bar\\lol.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\bar\\main.js',
-            path: 'C:\\root\\node_modules\\bar\\main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -3731,36 +2530,7 @@ describe('traverseDependencies', function() {
           dgraph,
           'C:\\root\\index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: 'C:\\root\\index.js',
-            dependencies: ['foo', 'bar'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\foo\\main.js',
-            path: 'C:\\root\\node_modules\\foo\\main.js',
-            dependencies: ['bar/lol'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\foo\\node_modules\\bar\\lol.js',
-            path: 'C:\\root\\node_modules\\foo\\node_modules\\bar\\lol.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\bar\\main2.js',
-            path: 'C:\\root\\node_modules\\bar\\main2.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -3803,29 +2573,7 @@ describe('traverseDependencies', function() {
           dgraph,
           'C:\\root\\index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: 'C:\\root\\index.js',
-            dependencies: ['bar'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'path\\to\\bar.js',
-            path: 'C:\\root\\path\\to\\bar.js',
-            dependencies: ['foo'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\foo\\main.js',
-            path: 'C:\\root\\node_modules\\foo\\main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -3950,56 +2698,7 @@ describe('traverseDependencies', function() {
           );
         });
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: 'C:\\root\\index.js',
-            dependencies: [
-              'shouldWork',
-              'ember',
-              'internalVendoredPackage',
-              'anotherIndex',
-            ],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\react-haste\\main.js',
-            path: 'C:\\root\\node_modules\\react-haste\\main.js',
-            dependencies: ['submodule'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\react-haste\\node_modules\\submodule\\main.js',
-            path:
-              'C:\\root\\node_modules\\react-haste\\node_modules\\submodule\\main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\ember\\main.js',
-            path: 'C:\\root\\node_modules\\ember\\main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'vendored_modules\\a-vendored-package\\main.js',
-            path: 'C:\\root\\vendored_modules\\a-vendored-package\\main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'index.js',
-            path: 'C:\\anotherRoot\\index.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -4033,22 +2732,7 @@ describe('traverseDependencies', function() {
           dgraph,
           'C:\\react-haste\\index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: 'C:\\react-haste\\index.js',
-            dependencies: ['shouldWork'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\react-haste\\main.js',
-            path: 'C:\\react-haste\\node_modules\\react-haste\\main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -4080,22 +2764,7 @@ describe('traverseDependencies', function() {
           dgraph,
           'C:\\root\\index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: 'C:\\root\\index.js',
-            dependencies: ['sha.js'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\sha.js\\main.js',
-            path: 'C:\\root\\node_modules\\sha.js\\main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -4134,22 +2803,7 @@ describe('traverseDependencies', function() {
           'C:\\root\\index.ios.js',
           'ios',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.ios.js',
-            path: 'C:\\root\\index.ios.js',
-            dependencies: ['a'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'a.ios.js',
-            path: 'C:\\root\\a.ios.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -4187,22 +2841,7 @@ describe('traverseDependencies', function() {
           dgraph,
           'C:\\root\\index.ios.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.ios.js',
-            path: 'C:\\root\\index.ios.js',
-            dependencies: ['a'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'a.js',
-            path: 'C:\\root\\a.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -4229,22 +2868,7 @@ describe('traverseDependencies', function() {
           'C:\\root\\index.ios.js',
           'ios',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.ios.js',
-            path: 'C:\\root\\index.ios.js',
-            dependencies: ['./a'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'a.ios.js',
-            path: 'C:\\root\\a.ios.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -4283,36 +2907,7 @@ describe('traverseDependencies', function() {
           dgraph,
           'C:\\root\\index.js',
         );
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: 'C:\\root\\index.js',
-            dependencies: ['foo/package.json', 'bar'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\foo\\package.json',
-            path: 'C:\\root\\node_modules\\foo\\package.json',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\bar\\main.js',
-            path: 'C:\\root\\node_modules\\bar\\main.js',
-            dependencies: ['./package.json'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'node_modules\\bar\\package.json',
-            path: 'C:\\root\\node_modules\\bar\\package.json',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
   });
@@ -4372,22 +2967,7 @@ describe('traverseDependencies', function() {
           );
         });
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['aPackage'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'aPackage/main.js',
-            path: '/root/aPackage/main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -4429,22 +3009,7 @@ describe('traverseDependencies', function() {
           );
         });
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['aPackage'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'aPackage/main.js',
-            path: '/root/aPackage/main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -4537,38 +3102,7 @@ describe('traverseDependencies', function() {
           fs.writeFileSync(root + '/aPackage/main.js', 'require("bar")');
         });
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['aPackage', 'foo'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'aPackage/main.js',
-            path: '/root/aPackage/main.js',
-            dependencies: ['bar'],
-            isAsset: false,
-            isPolyfill: false,
-          },
-          {
-            id: 'bar.js',
-            path: '/root/bar.js',
-            dependencies: ['foo'],
-            isAsset: false,
-            isPolyfill: false,
-            resolveDependency: undefined,
-          },
-          {
-            id: 'foo.js',
-            path: '/root/foo.js',
-            dependencies: ['aPackage'],
-            isAsset: false,
-            isPolyfill: false,
-            resolveDependency: undefined,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -4605,24 +3139,7 @@ describe('traverseDependencies', function() {
           fs.writeFileSync(root + '/foo.png', '');
         });
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['./foo.png'],
-            isAsset: false,
-            isPolyfill: false,
-            resolveDependency: undefined,
-          },
-          {
-            id: 'foo.png',
-            path: '/root/foo.png',
-            dependencies: [],
-            isAsset: true,
-            isPolyfill: false,
-            resolveDependency: undefined,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -4663,24 +3180,7 @@ describe('traverseDependencies', function() {
           );
         });
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['aPackage'],
-            isAsset: false,
-            isPolyfill: false,
-            resolveDependency: undefined,
-          },
-          {
-            id: 'aPackage/browser.js',
-            path: '/root/aPackage/browser.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-            resolveDependency: undefined,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -4728,23 +3228,7 @@ describe('traverseDependencies', function() {
           );
         });
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        expect(deps).toEqual([
-          {
-            dependencies: ['bPackage'],
-            id: 'index.js',
-            isAsset: false,
-            isPolyfill: false,
-            path: '/root/index.js',
-            resolveDependency: undefined,
-          },
-          {
-            dependencies: [],
-            id: 'aPackage/main.js',
-            isAsset: false,
-            isPolyfill: false,
-            path: '/root/aPackage/main.js',
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -4784,56 +3268,13 @@ describe('traverseDependencies', function() {
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['foo'],
-            isAsset: false,
-            isPolyfill: false,
-            resolveDependency: undefined,
-          },
-          {
-            id: 'node_modules/foo/main.js',
-            path: '/root/node_modules/foo/main.js',
-            dependencies: ['bar'],
-            isAsset: false,
-            isPolyfill: false,
-            resolveDependency: undefined,
-          },
-          {
-            id: 'node_modules/foo/node_modules/bar/main.js',
-            path: '/root/node_modules/foo/node_modules/bar/main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-            resolveDependency: undefined,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
 
         await triggerAndProcessWatchEvent(dgraph, () => {
           fs.writeFileSync(root + '/node_modules/foo/main.js', 'lol');
         });
         const deps2 = await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        expect(deps2).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['foo'],
-            isAsset: false,
-            isPolyfill: false,
-            resolveDependency: undefined,
-          },
-          {
-            id: 'node_modules/foo/main.js',
-            path: '/root/node_modules/foo/main.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-
-            resolveDependency: undefined,
-          },
-        ]);
+        expect(deps2).toMatchSnapshot();
       });
     });
 
@@ -4876,25 +3317,7 @@ describe('traverseDependencies', function() {
           );
         });
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        expect(deps).toEqual([
-          {
-            id: 'index.js',
-            path: '/root/index.js',
-            dependencies: ['foo'],
-            isAsset: false,
-            isPolyfill: false,
-            resolveDependency: undefined,
-          },
-          {
-            id: 'node_modules/foo/browser.js',
-            path: '/root/node_modules/foo/browser.js',
-            dependencies: [],
-            isAsset: false,
-            isPolyfill: false,
-
-            resolveDependency: undefined,
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -4985,22 +3408,7 @@ describe('traverseDependencies', function() {
       await processDgraph(opts, async dgraph => {
         const entryPath = '/root/index.jsx';
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
-        expect(deps).toEqual([
-          {
-            dependencies: ['a'],
-            id: 'index.jsx',
-            isAsset: false,
-            isPolyfill: false,
-            path: '/root/index.jsx',
-          },
-          {
-            dependencies: [],
-            id: 'a.coffee',
-            isAsset: false,
-            isPolyfill: false,
-            path: '/root/a.coffee',
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 
@@ -5024,22 +3432,7 @@ describe('traverseDependencies', function() {
           dgraph,
           '/root/index.jsx',
         );
-        expect(deps).toEqual([
-          {
-            dependencies: ['./a'],
-            id: 'index.jsx',
-            isAsset: false,
-            isPolyfill: false,
-            path: '/root/index.jsx',
-          },
-          {
-            dependencies: [],
-            id: 'a.coffee',
-            isAsset: false,
-            isPolyfill: false,
-            path: '/root/a.coffee',
-          },
-        ]);
+        expect(deps).toMatchSnapshot();
       });
     });
 

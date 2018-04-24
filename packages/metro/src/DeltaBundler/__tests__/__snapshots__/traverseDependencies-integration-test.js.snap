@@ -1,5 +1,97 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`traverseDependencies Extensions supports custom file extensions 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "a",
+    ],
+    "id": "index.jsx",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.jsx",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "a.coffee",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/a.coffee",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies Extensions supports custom file extensions with relative paths 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "./a",
+    ],
+    "id": "index.jsx",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.jsx",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "a.coffee",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/a.coffee",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies file watch updating changes to browser field 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/browser.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/browser.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies file watch updating removes old package from cache 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "bPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/main.js",
+    "resolution": undefined,
+  },
+]
+`;
+
 exports[`traverseDependencies file watch updating should recover from multiple modules with the same name 1`] = `
 Array [
   Object {
@@ -27,6 +119,2564 @@ Array [
     "isAsset": false,
     "isPolyfill": false,
     "path": "/root/b.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies file watch updating should update node package changes 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "foo",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "bar",
+    ],
+    "id": "node_modules/foo/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/foo/main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/foo/node_modules/bar/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/foo/node_modules/bar/main.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies file watch updating should update node package changes 2`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "foo",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/foo/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/foo/main.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies file watch updating should update node package main changes 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "foo",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/foo/browser.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/foo/browser.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies file watch updating updates module dependencies 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/main.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies file watch updating updates module dependencies on file add 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+      "foo",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "bar",
+    ],
+    "id": "aPackage/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "foo",
+    ],
+    "id": "bar.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/bar.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "foo.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/foo.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies file watch updating updates module dependencies on file change 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/main.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies file watch updating updates module dependencies on relative asset add 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "./foo.png",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "foo.png",
+    "isAsset": true,
+    "isPolyfill": false,
+    "path": "/root/foo.png",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should be able to resolve paths within \`extraNodeModules\` 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "bar/lib/foo",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "provides-bar/lib/foo.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/provides-bar/lib/foo.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should default main package to index.js 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/index.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should default use index.js if main is a dir 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/lib/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/lib/index.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should fall back to \`extraNodeModules\` 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "./foo",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "bar",
+    ],
+    "id": "foo/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/foo/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "provides-bar/lib/bar.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/provides-bar/lib/bar.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should fall back to browser mapping from react-native mapping 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "node-package",
+    ],
+    "id": "aPackage/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "nested-package",
+    ],
+    "id": "aPackage/node_modules/rn-package/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/node_modules/rn-package/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/node_modules/nested-browser-package/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/node_modules/nested-browser-package/index.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should get dependencies 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "a",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "b",
+    ],
+    "id": "a.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/a.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "b.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/b.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should get dependencies with assets and resolution 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "./imgs/a.png",
+      "./imgs/b.png",
+      "./imgs/c.png",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "imgs/a@1.5x.png",
+    "isAsset": true,
+    "isPolyfill": false,
+    "path": "/root/imgs/a@1.5x.png",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "imgs/b@.7x.png",
+    "isAsset": true,
+    "isPolyfill": false,
+    "path": "/root/imgs/b@.7x.png",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "imgs/c.png",
+    "isAsset": true,
+    "isPolyfill": false,
+    "path": "/root/imgs/c.png",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should get dependencies with relative assets 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "./imgs/a.png",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "imgs/a.png",
+    "isAsset": true,
+    "isPolyfill": false,
+    "path": "/root/imgs/a.png",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should get dependencies with the correct extensions 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "a",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "a.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/a.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should get json dependencies 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "./a.json",
+      "./b",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "a.json",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/a.json",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "b.json",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/b.json",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should get package json as a dep 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "./package.json",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "package.json",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/package.json",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should get recursive dependencies 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "a",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "index",
+    ],
+    "id": "a.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/a.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should get shallow dependencies 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "b",
+    ],
+    "id": "a.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/a.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should ignore malformed packages 1`] = `
+Array [
+  Object {
+    "dependencies": Array [],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should merge browser mapping with react-native mapping 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "node-package-a",
+      "node-package-b",
+      "node-package-c",
+    ],
+    "id": "aPackage/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/node_modules/rn-package-a/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/node_modules/rn-package-a/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/node_modules/rn-package-b/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/node_modules/rn-package-b/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/node_modules/rn-package-d/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/node_modules/rn-package-d/index.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should only use \`extraNodeModules\` after checking all possible filesystem locations 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "bar",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/bar.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/bar.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should resolve require to index if it is a dir 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "./lib/",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "lib/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/lib/index.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should resolve require to main if it is a dir w/ a package.json 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "./lib/",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "lib/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/lib/main.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should resolve using alternative ids 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/index.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should respect platform extension in assets 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "./imgs/a.png",
+      "./imgs/b.png",
+      "./imgs/c.png",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "imgs/a@1.5x.ios.png",
+    "isAsset": true,
+    "isPolyfill": false,
+    "path": "/root/imgs/a@1.5x.ios.png",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "imgs/b@.7x.ios.png",
+    "isAsset": true,
+    "isPolyfill": false,
+    "path": "/root/imgs/b@.7x.ios.png",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "imgs/c.ios.png",
+    "isAsset": true,
+    "isPolyfill": false,
+    "path": "/root/imgs/c.ios.png",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser exclude of a file ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "./booga",
+    ],
+    "id": "aPackage/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "emptyModule.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/emptyModule.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser exclude of a file ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "./booga",
+    ],
+    "id": "aPackage/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "emptyModule.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/emptyModule.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser exclude of a package ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "booga",
+    ],
+    "id": "aPackage/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "emptyModule.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/emptyModule.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser exclude of a package ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "booga",
+    ],
+    "id": "aPackage/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "emptyModule.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/emptyModule.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser field in packages w/o .js ext ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/client.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/client.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser field in packages w/o .js ext ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/client.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/client.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping for packages ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "node-package",
+    ],
+    "id": "aPackage/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/browser-package/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/browser-package/index.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping for packages ("browser") 2`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "node-package",
+    ],
+    "id": "aPackage/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/browser-package/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/browser-package/index.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping for packages ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "node-package",
+    ],
+    "id": "aPackage/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/browser-package/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/browser-package/index.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping for packages ("react-native") 2`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "node-package",
+    ],
+    "id": "aPackage/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/browser-package/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/browser-package/index.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping of a package to a file ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "./dir/ooga",
+    ],
+    "id": "aPackage/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "node-package",
+    ],
+    "id": "aPackage/dir/ooga.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/dir/ooga.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/dir/browser.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/dir/browser.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping of a package to a file ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "./dir/ooga",
+    ],
+    "id": "aPackage/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "node-package",
+    ],
+    "id": "aPackage/dir/ooga.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/dir/ooga.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/dir/browser.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/dir/browser.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping of files ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "./node",
+      "./dir/server.js",
+    ],
+    "id": "aPackage/client.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/client.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "./not-browser",
+    ],
+    "id": "aPackage/not-node.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/not-node.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/browser.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/browser.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "../hello",
+    ],
+    "id": "aPackage/dir/client.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/dir/client.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/bye.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/bye.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping of files ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "./node",
+      "./dir/server.js",
+    ],
+    "id": "aPackage/client.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/client.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "./not-browser",
+    ],
+    "id": "aPackage/not-node.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/not-node.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/browser.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/browser.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "../hello",
+    ],
+    "id": "aPackage/dir/client.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/dir/client.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/bye.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/bye.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support mapping main in browser field json ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/client.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/client.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support mapping main in browser field json ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/client.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/client.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support mapping main in browser field json without path prefix ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/client.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/client.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support mapping main in browser field json without path prefix ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/client.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/client.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support simple browser field in packages ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/client.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/client.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support simple browser field in packages ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/client.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/client.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should work do correct browser mapping w/o js ext ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/client.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/client.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should work do correct browser mapping w/o js ext ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/client.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/client.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should work with absolute paths 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "/root/apple.js",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "apple.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/apple.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should work with packages 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/main.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should work with packages with a dot in the name 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "sha.js",
+      "x.y.z",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "sha.js/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/sha.js/main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "x.y.z/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/x.y.z/main.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should work with packages with a trailing slash 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage/",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/main.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should work with packages with subdirs 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage/subdir/lolynot",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/subdir/lolynot.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/subdir/lolynot.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should work with relative modules in packages 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "aPackage",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "./subdir/lolynot",
+    ],
+    "id": "aPackage/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "../other",
+    ],
+    "id": "aPackage/subdir/lolynot.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/subdir/lolynot.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "aPackage/other.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/aPackage/other.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (win32) should get dependencies 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "a",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "b",
+    ],
+    "id": "a.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\a.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "b.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\b.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (win32) should get dependencies with assets and resolution 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "./imgs/a.png",
+      "./imgs/b.png",
+      "./imgs/c.png",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "imgs\\\\a@1.5x.png",
+    "isAsset": true,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\imgs\\\\a@1.5x.png",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "imgs\\\\b@.7x.png",
+    "isAsset": true,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\imgs\\\\b@.7x.png",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "imgs\\\\c.png",
+    "isAsset": true,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\imgs\\\\c.png",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (win32) should work with absolute paths 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "C:/root/apple.js",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "apple.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\apple.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) nested node_modules with browser field 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "foo",
+      "bar",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "bar/lol",
+    ],
+    "id": "node_modules/foo/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/foo/main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/foo/node_modules/bar/lol.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/foo/node_modules/bar/lol.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/bar/main2.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/bar/main2.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) nested node_modules with specific paths 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "foo",
+      "bar/",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "bar/lol",
+    ],
+    "id": "node_modules/foo/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/foo/main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/foo/node_modules/bar/lol.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/foo/node_modules/bar/lol.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/bar/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/bar/main.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) node_modules should support multi level 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "bar",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "foo",
+    ],
+    "id": "path/to/bar.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/path/to/bar.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/foo/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/foo/main.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) platform should work with node_modules 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "foo",
+      "bar",
+    ],
+    "id": "index.ios.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.ios.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/foo/index.ios.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/foo/index.ios.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/bar/main.ios.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/bar/main.ios.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) should not be confused by prev occuring whitelisted names 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "shouldWork",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/react-haste/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/react-haste/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/react-haste/node_modules/react-haste/main.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) should pick the generic file 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "a",
+    ],
+    "id": "index.ios.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.ios.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "a.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/a.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) should require package.json 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "foo/package.json",
+      "bar",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/foo/package.json",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/foo/package.json",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "./package.json",
+    ],
+    "id": "node_modules/bar/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/bar/main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/bar/package.json",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/bar/package.json",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) should selectively ignore providesModule in node_modules 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "shouldWork",
+      "ember",
+      "internalVendoredPackage",
+      "anotherIndex",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "submodule",
+    ],
+    "id": "node_modules/react-haste/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/react-haste/main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/react-haste/node_modules/submodule/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/react-haste/node_modules/submodule/main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/ember/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/ember/main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "vendored_modules/a-vendored-package/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/vendored_modules/a-vendored-package/main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/anotherRoot/index.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) should work with multiple platforms (haste) 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "a",
+    ],
+    "id": "index.ios.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.ios.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "a.ios.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/a.ios.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) should work with multiple platforms (node) 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "./a",
+    ],
+    "id": "index.ios.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.ios.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "a.ios.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/a.ios.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) should work with nested node_modules 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "foo",
+      "bar",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "bar",
+    ],
+    "id": "node_modules/foo/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/foo/main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/foo/node_modules/bar/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/foo/node_modules/bar/main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/bar/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/bar/main.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) should work with node packages with a .js in the name 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "sha.js",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/sha.js/main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/sha.js/main.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) should work with one-character node_modules 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "a/index.js",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules/a/index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "/root/node_modules/a/index.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) nested node_modules with browser field 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "foo",
+      "bar",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "bar/lol",
+    ],
+    "id": "node_modules\\\\foo\\\\main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules\\\\foo\\\\node_modules\\\\bar\\\\lol.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\node_modules\\\\bar\\\\lol.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules\\\\bar\\\\main2.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\bar\\\\main2.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) nested node_modules with specific paths 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "foo",
+      "bar/",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "bar/lol",
+    ],
+    "id": "node_modules\\\\foo\\\\main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules\\\\foo\\\\node_modules\\\\bar\\\\lol.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\node_modules\\\\bar\\\\lol.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules\\\\bar\\\\main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\bar\\\\main.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) node_modules should support multi level 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "bar",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "foo",
+    ],
+    "id": "path\\\\to\\\\bar.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\path\\\\to\\\\bar.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules\\\\foo\\\\main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\main.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) platform should work with node_modules 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "foo",
+      "bar",
+    ],
+    "id": "index.ios.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\index.ios.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules\\\\foo\\\\index.ios.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\index.ios.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules\\\\bar\\\\main.ios.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\bar\\\\main.ios.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) should not be confused by prev occuring whitelisted names 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "shouldWork",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\react-haste\\\\index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules\\\\react-haste\\\\main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\react-haste\\\\node_modules\\\\react-haste\\\\main.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) should pick the generic file 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "a",
+    ],
+    "id": "index.ios.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\index.ios.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "a.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\a.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) should require package.json 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "foo/package.json",
+      "bar",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules\\\\foo\\\\package.json",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\package.json",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "./package.json",
+    ],
+    "id": "node_modules\\\\bar\\\\main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\bar\\\\main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules\\\\bar\\\\package.json",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\bar\\\\package.json",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) should selectively ignore providesModule in node_modules 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "shouldWork",
+      "ember",
+      "internalVendoredPackage",
+      "anotherIndex",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "submodule",
+    ],
+    "id": "node_modules\\\\react-haste\\\\main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\react-haste\\\\main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules\\\\react-haste\\\\node_modules\\\\submodule\\\\main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\react-haste\\\\node_modules\\\\submodule\\\\main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules\\\\ember\\\\main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\ember\\\\main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "vendored_modules\\\\a-vendored-package\\\\main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\vendored_modules\\\\a-vendored-package\\\\main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\anotherRoot\\\\index.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) should work with multiple platforms (haste) 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "a",
+    ],
+    "id": "index.ios.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\index.ios.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "a.ios.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\a.ios.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) should work with multiple platforms (node) 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "./a",
+    ],
+    "id": "index.ios.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\index.ios.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "a.ios.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\a.ios.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) should work with nested node_modules 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "foo",
+      "bar",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [
+      "bar",
+    ],
+    "id": "node_modules\\\\foo\\\\main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules\\\\foo\\\\node_modules\\\\bar\\\\main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\node_modules\\\\bar\\\\main.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules\\\\bar\\\\main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\bar\\\\main.js",
+    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) should work with node packages with a .js in the name 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      "sha.js",
+    ],
+    "id": "index.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\index.js",
+    "resolution": undefined,
+  },
+  Object {
+    "dependencies": Array [],
+    "id": "node_modules\\\\sha.js\\\\main.js",
+    "isAsset": false,
+    "isPolyfill": false,
+    "path": "C:\\\\root\\\\node_modules\\\\sha.js\\\\main.js",
     "resolution": undefined,
   },
 ]
