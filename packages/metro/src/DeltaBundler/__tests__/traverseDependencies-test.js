@@ -131,11 +131,8 @@ beforeEach(async () => {
       return path;
     },
     transform: path => {
-      const deps = mockedDependencyTree.get(path);
-      const dependencies = deps ? deps.map(dep => dep.name) : [];
-
       return {
-        dependencies,
+        dependencies: mockedDependencyTree.get(path) || [],
         output: {
           code: '// code',
           map: [],

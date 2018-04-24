@@ -126,7 +126,11 @@ describe('code transformation worker:', () => {
         ].join('\n'),
       );
       expect(result.map).toHaveLength(14);
-      expect(result.dependencies).toEqual(['./c', './a', 'b']);
+      expect(result.dependencies).toEqual([
+        {isAsync: false, name: './c'},
+        {isAsync: false, name: './a'},
+        {isAsync: false, name: 'b'},
+      ]);
     });
   } else {
     it(`transforms a module with dependencies (v${BABEL_VERSION})`, async () => {

@@ -30,6 +30,7 @@ const {
 } = require('metro-core');
 
 import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
+import type {TransformResultDependency} from '../ModuleGraph/types.flow';
 import type {Reporter} from '../lib/reporting';
 import type {ModuleMap} from './DependencyGraph/ModuleResolution';
 import type {TransformCode} from './Module';
@@ -211,7 +212,7 @@ class DependencyGraph extends EventEmitter {
   async getShallowDependencies(
     entryPath: string,
     transformOptions: JSTransformerOptions,
-  ): Promise<$ReadOnlyArray<string>> {
+  ): Promise<$ReadOnlyArray<TransformResultDependency>> {
     const module = this._moduleCache.getModule(entryPath);
     const result = await module.read(transformOptions);
 

@@ -30,7 +30,7 @@ const extractDependencies = function(sourceCode: string) {
   let match;
 
   while ((match = regexp.exec(sourceCode))) {
-    deps.push(match[2]);
+    deps.push({name: match[2], isAsync: false});
   }
 
   return deps;

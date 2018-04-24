@@ -17,13 +17,14 @@ import type {
   TransformedCode,
   Options as WorkerOptions,
 } from '../JSTransformer/worker';
+import type {TransformResultDependency} from '../ModuleGraph/types.flow';
 import type ModuleCache from './ModuleCache';
 import type {LocalPath} from './lib/toLocalPath';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
 export type ReadResult = {
   +code: string,
-  +dependencies: $ReadOnlyArray<string>,
+  +dependencies: $ReadOnlyArray<TransformResultDependency>,
   +map: Array<MetroSourceMapSegmentTuple>,
   +source: string,
 };

@@ -10,6 +10,7 @@
 
 'use strict';
 
+import type {TransformResultDependency} from '../ModuleGraph/types.flow';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
 export type DependencyType = 'module' | 'script' | 'asset';
@@ -46,7 +47,7 @@ type Delta = {
 };
 
 export type TransformFn = string => Promise<{
-  dependencies: $ReadOnlyArray<string>,
+  dependencies: $ReadOnlyArray<TransformResultDependency>,
   output: {
     +code: string,
     +map: Array<MetroSourceMapSegmentTuple>,
@@ -322,13 +323,13 @@ function createModule(filePath: string, graph: Graph): Module {
 
 function resolveDependencies(
   parentPath: string,
-  dependencies: $ReadOnlyArray<string>,
+  dependencies: $ReadOnlyArray<TransformResultDependency>,
   options: Options,
 ): Map<string, string> {
   return new Map(
     dependencies.map(relativePath => [
-      relativePath,
-      options.resolve(parentPath, relativePath),
+      relativePath.name,
+      options.resolve(parentPath, relativePath.name),
     ]),
   );
 }

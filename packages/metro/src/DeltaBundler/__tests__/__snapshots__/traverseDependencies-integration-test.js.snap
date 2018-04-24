@@ -4,7 +4,10 @@ exports[`traverseDependencies Extensions supports custom file extensions 1`] = `
 Array [
   Object {
     "dependencies": Array [
-      "a",
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
     ],
     "id": "index.jsx",
     "isAsset": false,
@@ -27,7 +30,10 @@ exports[`traverseDependencies Extensions supports custom file extensions with re
 Array [
   Object {
     "dependencies": Array [
-      "./a",
+      Object {
+        "isAsync": false,
+        "name": "./a",
+      },
     ],
     "id": "index.jsx",
     "isAsset": false,
@@ -50,7 +56,10 @@ exports[`traverseDependencies file watch updating changes to browser field 1`] =
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -73,7 +82,10 @@ exports[`traverseDependencies file watch updating removes old package from cache
 Array [
   Object {
     "dependencies": Array [
-      "bPackage",
+      Object {
+        "isAsync": false,
+        "name": "bPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -96,8 +108,14 @@ exports[`traverseDependencies file watch updating should recover from multiple m
 Array [
   Object {
     "dependencies": Array [
-      "a",
-      "b",
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
+      Object {
+        "isAsync": false,
+        "name": "b",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -128,7 +146,10 @@ exports[`traverseDependencies file watch updating should update node package cha
 Array [
   Object {
     "dependencies": Array [
-      "foo",
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -138,7 +159,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "bar",
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
     ],
     "id": "node_modules/foo/main.js",
     "isAsset": false,
@@ -161,7 +185,10 @@ exports[`traverseDependencies file watch updating should update node package cha
 Array [
   Object {
     "dependencies": Array [
-      "foo",
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -184,7 +211,10 @@ exports[`traverseDependencies file watch updating should update node package mai
 Array [
   Object {
     "dependencies": Array [
-      "foo",
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -207,7 +237,10 @@ exports[`traverseDependencies file watch updating updates module dependencies 1`
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -230,8 +263,14 @@ exports[`traverseDependencies file watch updating updates module dependencies on
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
-      "foo",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -241,7 +280,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "bar",
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
     ],
     "id": "aPackage/main.js",
     "isAsset": false,
@@ -251,7 +293,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "foo",
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
     ],
     "id": "bar.js",
     "isAsset": false,
@@ -261,7 +306,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "foo.js",
     "isAsset": false,
@@ -276,7 +324,10 @@ exports[`traverseDependencies file watch updating updates module dependencies on
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -299,7 +350,10 @@ exports[`traverseDependencies file watch updating updates module dependencies on
 Array [
   Object {
     "dependencies": Array [
-      "./foo.png",
+      Object {
+        "isAsync": false,
+        "name": "./foo.png",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -322,7 +376,10 @@ exports[`traverseDependencies get sync dependencies (posix) should be able to re
 Array [
   Object {
     "dependencies": Array [
-      "bar/lib/foo",
+      Object {
+        "isAsync": false,
+        "name": "bar/lib/foo",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -345,7 +402,10 @@ exports[`traverseDependencies get sync dependencies (posix) should default main 
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -368,7 +428,10 @@ exports[`traverseDependencies get sync dependencies (posix) should default use i
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -391,7 +454,10 @@ exports[`traverseDependencies get sync dependencies (posix) should fall back to 
 Array [
   Object {
     "dependencies": Array [
-      "./foo",
+      Object {
+        "isAsync": false,
+        "name": "./foo",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -401,7 +467,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "bar",
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
     ],
     "id": "foo/index.js",
     "isAsset": false,
@@ -424,7 +493,10 @@ exports[`traverseDependencies get sync dependencies (posix) should fall back to 
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -434,7 +506,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "node-package",
+      Object {
+        "isAsync": false,
+        "name": "node-package",
+      },
     ],
     "id": "aPackage/index.js",
     "isAsset": false,
@@ -444,7 +519,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "nested-package",
+      Object {
+        "isAsync": false,
+        "name": "nested-package",
+      },
     ],
     "id": "aPackage/node_modules/rn-package/index.js",
     "isAsset": false,
@@ -467,7 +545,10 @@ exports[`traverseDependencies get sync dependencies (posix) should get dependenc
 Array [
   Object {
     "dependencies": Array [
-      "a",
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -477,7 +558,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "b",
+      Object {
+        "isAsync": false,
+        "name": "b",
+      },
     ],
     "id": "a.js",
     "isAsset": false,
@@ -500,9 +584,18 @@ exports[`traverseDependencies get sync dependencies (posix) should get dependenc
 Array [
   Object {
     "dependencies": Array [
-      "./imgs/a.png",
-      "./imgs/b.png",
-      "./imgs/c.png",
+      Object {
+        "isAsync": false,
+        "name": "./imgs/a.png",
+      },
+      Object {
+        "isAsync": false,
+        "name": "./imgs/b.png",
+      },
+      Object {
+        "isAsync": false,
+        "name": "./imgs/c.png",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -541,7 +634,10 @@ exports[`traverseDependencies get sync dependencies (posix) should get dependenc
 Array [
   Object {
     "dependencies": Array [
-      "./imgs/a.png",
+      Object {
+        "isAsync": false,
+        "name": "./imgs/a.png",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -564,7 +660,10 @@ exports[`traverseDependencies get sync dependencies (posix) should get dependenc
 Array [
   Object {
     "dependencies": Array [
-      "a",
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -587,8 +686,14 @@ exports[`traverseDependencies get sync dependencies (posix) should get json depe
 Array [
   Object {
     "dependencies": Array [
-      "./a.json",
-      "./b",
+      Object {
+        "isAsync": false,
+        "name": "./a.json",
+      },
+      Object {
+        "isAsync": false,
+        "name": "./b",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -619,7 +724,10 @@ exports[`traverseDependencies get sync dependencies (posix) should get package j
 Array [
   Object {
     "dependencies": Array [
-      "./package.json",
+      Object {
+        "isAsync": false,
+        "name": "./package.json",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -642,7 +750,10 @@ exports[`traverseDependencies get sync dependencies (posix) should get recursive
 Array [
   Object {
     "dependencies": Array [
-      "a",
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -652,7 +763,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "index",
+      Object {
+        "isAsync": false,
+        "name": "index",
+      },
     ],
     "id": "a.js",
     "isAsset": false,
@@ -667,7 +781,10 @@ exports[`traverseDependencies get sync dependencies (posix) should get shallow d
 Array [
   Object {
     "dependencies": Array [
-      "b",
+      Object {
+        "isAsync": false,
+        "name": "b",
+      },
     ],
     "id": "a.js",
     "isAsset": false,
@@ -695,7 +812,10 @@ exports[`traverseDependencies get sync dependencies (posix) should merge browser
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -705,9 +825,18 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "node-package-a",
-      "node-package-b",
-      "node-package-c",
+      Object {
+        "isAsync": false,
+        "name": "node-package-a",
+      },
+      Object {
+        "isAsync": false,
+        "name": "node-package-b",
+      },
+      Object {
+        "isAsync": false,
+        "name": "node-package-c",
+      },
     ],
     "id": "aPackage/index.js",
     "isAsset": false,
@@ -746,7 +875,10 @@ exports[`traverseDependencies get sync dependencies (posix) should only use \`ex
 Array [
   Object {
     "dependencies": Array [
-      "bar",
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -769,7 +901,10 @@ exports[`traverseDependencies get sync dependencies (posix) should resolve requi
 Array [
   Object {
     "dependencies": Array [
-      "./lib/",
+      Object {
+        "isAsync": false,
+        "name": "./lib/",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -792,7 +927,10 @@ exports[`traverseDependencies get sync dependencies (posix) should resolve requi
 Array [
   Object {
     "dependencies": Array [
-      "./lib/",
+      Object {
+        "isAsync": false,
+        "name": "./lib/",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -815,7 +953,10 @@ exports[`traverseDependencies get sync dependencies (posix) should resolve using
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -838,9 +979,18 @@ exports[`traverseDependencies get sync dependencies (posix) should respect platf
 Array [
   Object {
     "dependencies": Array [
-      "./imgs/a.png",
-      "./imgs/b.png",
-      "./imgs/c.png",
+      Object {
+        "isAsync": false,
+        "name": "./imgs/a.png",
+      },
+      Object {
+        "isAsync": false,
+        "name": "./imgs/b.png",
+      },
+      Object {
+        "isAsync": false,
+        "name": "./imgs/c.png",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -879,7 +1029,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support brows
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -889,7 +1042,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "./booga",
+      Object {
+        "isAsync": false,
+        "name": "./booga",
+      },
     ],
     "id": "aPackage/index.js",
     "isAsset": false,
@@ -912,7 +1068,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support brows
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -922,7 +1081,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "./booga",
+      Object {
+        "isAsync": false,
+        "name": "./booga",
+      },
     ],
     "id": "aPackage/index.js",
     "isAsset": false,
@@ -945,7 +1107,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support brows
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -955,7 +1120,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "booga",
+      Object {
+        "isAsync": false,
+        "name": "booga",
+      },
     ],
     "id": "aPackage/index.js",
     "isAsset": false,
@@ -978,7 +1146,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support brows
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -988,7 +1159,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "booga",
+      Object {
+        "isAsync": false,
+        "name": "booga",
+      },
     ],
     "id": "aPackage/index.js",
     "isAsset": false,
@@ -1011,7 +1185,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support brows
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1034,7 +1211,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support brows
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1057,7 +1237,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support brows
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1067,7 +1250,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "node-package",
+      Object {
+        "isAsync": false,
+        "name": "node-package",
+      },
     ],
     "id": "aPackage/index.js",
     "isAsset": false,
@@ -1090,7 +1276,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support brows
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1100,7 +1289,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "node-package",
+      Object {
+        "isAsync": false,
+        "name": "node-package",
+      },
     ],
     "id": "aPackage/index.js",
     "isAsset": false,
@@ -1123,7 +1315,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support brows
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1133,7 +1328,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "node-package",
+      Object {
+        "isAsync": false,
+        "name": "node-package",
+      },
     ],
     "id": "aPackage/index.js",
     "isAsset": false,
@@ -1156,7 +1354,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support brows
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1166,7 +1367,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "node-package",
+      Object {
+        "isAsync": false,
+        "name": "node-package",
+      },
     ],
     "id": "aPackage/index.js",
     "isAsset": false,
@@ -1189,7 +1393,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support brows
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1199,7 +1406,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "./dir/ooga",
+      Object {
+        "isAsync": false,
+        "name": "./dir/ooga",
+      },
     ],
     "id": "aPackage/index.js",
     "isAsset": false,
@@ -1209,7 +1419,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "node-package",
+      Object {
+        "isAsync": false,
+        "name": "node-package",
+      },
     ],
     "id": "aPackage/dir/ooga.js",
     "isAsset": false,
@@ -1232,7 +1445,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support brows
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1242,7 +1458,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "./dir/ooga",
+      Object {
+        "isAsync": false,
+        "name": "./dir/ooga",
+      },
     ],
     "id": "aPackage/index.js",
     "isAsset": false,
@@ -1252,7 +1471,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "node-package",
+      Object {
+        "isAsync": false,
+        "name": "node-package",
+      },
     ],
     "id": "aPackage/dir/ooga.js",
     "isAsset": false,
@@ -1275,7 +1497,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support brows
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1285,8 +1510,14 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "./node",
-      "./dir/server.js",
+      Object {
+        "isAsync": false,
+        "name": "./node",
+      },
+      Object {
+        "isAsync": false,
+        "name": "./dir/server.js",
+      },
     ],
     "id": "aPackage/client.js",
     "isAsset": false,
@@ -1296,7 +1527,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "./not-browser",
+      Object {
+        "isAsync": false,
+        "name": "./not-browser",
+      },
     ],
     "id": "aPackage/not-node.js",
     "isAsset": false,
@@ -1314,7 +1548,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "../hello",
+      Object {
+        "isAsync": false,
+        "name": "../hello",
+      },
     ],
     "id": "aPackage/dir/client.js",
     "isAsset": false,
@@ -1337,7 +1574,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support brows
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1347,8 +1587,14 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "./node",
-      "./dir/server.js",
+      Object {
+        "isAsync": false,
+        "name": "./node",
+      },
+      Object {
+        "isAsync": false,
+        "name": "./dir/server.js",
+      },
     ],
     "id": "aPackage/client.js",
     "isAsset": false,
@@ -1358,7 +1604,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "./not-browser",
+      Object {
+        "isAsync": false,
+        "name": "./not-browser",
+      },
     ],
     "id": "aPackage/not-node.js",
     "isAsset": false,
@@ -1376,7 +1625,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "../hello",
+      Object {
+        "isAsync": false,
+        "name": "../hello",
+      },
     ],
     "id": "aPackage/dir/client.js",
     "isAsset": false,
@@ -1399,7 +1651,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support mappi
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1422,7 +1677,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support mappi
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1445,7 +1703,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support mappi
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1468,7 +1729,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support mappi
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1491,7 +1755,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support simpl
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1514,7 +1781,10 @@ exports[`traverseDependencies get sync dependencies (posix) should support simpl
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1537,7 +1807,10 @@ exports[`traverseDependencies get sync dependencies (posix) should work do corre
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1560,7 +1833,10 @@ exports[`traverseDependencies get sync dependencies (posix) should work do corre
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1583,7 +1859,10 @@ exports[`traverseDependencies get sync dependencies (posix) should work with abs
 Array [
   Object {
     "dependencies": Array [
-      "/root/apple.js",
+      Object {
+        "isAsync": false,
+        "name": "/root/apple.js",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1606,7 +1885,10 @@ exports[`traverseDependencies get sync dependencies (posix) should work with pac
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1629,8 +1911,14 @@ exports[`traverseDependencies get sync dependencies (posix) should work with pac
 Array [
   Object {
     "dependencies": Array [
-      "sha.js",
-      "x.y.z",
+      Object {
+        "isAsync": false,
+        "name": "sha.js",
+      },
+      Object {
+        "isAsync": false,
+        "name": "x.y.z",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1661,7 +1949,10 @@ exports[`traverseDependencies get sync dependencies (posix) should work with pac
 Array [
   Object {
     "dependencies": Array [
-      "aPackage/",
+      Object {
+        "isAsync": false,
+        "name": "aPackage/",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1684,7 +1975,10 @@ exports[`traverseDependencies get sync dependencies (posix) should work with pac
 Array [
   Object {
     "dependencies": Array [
-      "aPackage/subdir/lolynot",
+      Object {
+        "isAsync": false,
+        "name": "aPackage/subdir/lolynot",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1707,7 +2001,10 @@ exports[`traverseDependencies get sync dependencies (posix) should work with rel
 Array [
   Object {
     "dependencies": Array [
-      "aPackage",
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1717,7 +2014,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "./subdir/lolynot",
+      Object {
+        "isAsync": false,
+        "name": "./subdir/lolynot",
+      },
     ],
     "id": "aPackage/main.js",
     "isAsset": false,
@@ -1727,7 +2027,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "../other",
+      Object {
+        "isAsync": false,
+        "name": "../other",
+      },
     ],
     "id": "aPackage/subdir/lolynot.js",
     "isAsset": false,
@@ -1750,7 +2053,10 @@ exports[`traverseDependencies get sync dependencies (win32) should get dependenc
 Array [
   Object {
     "dependencies": Array [
-      "a",
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1760,7 +2066,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "b",
+      Object {
+        "isAsync": false,
+        "name": "b",
+      },
     ],
     "id": "a.js",
     "isAsset": false,
@@ -1783,9 +2092,18 @@ exports[`traverseDependencies get sync dependencies (win32) should get dependenc
 Array [
   Object {
     "dependencies": Array [
-      "./imgs/a.png",
-      "./imgs/b.png",
-      "./imgs/c.png",
+      Object {
+        "isAsync": false,
+        "name": "./imgs/a.png",
+      },
+      Object {
+        "isAsync": false,
+        "name": "./imgs/b.png",
+      },
+      Object {
+        "isAsync": false,
+        "name": "./imgs/c.png",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1824,7 +2142,10 @@ exports[`traverseDependencies get sync dependencies (win32) should work with abs
 Array [
   Object {
     "dependencies": Array [
-      "C:/root/apple.js",
+      Object {
+        "isAsync": false,
+        "name": "C:/root/apple.js",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1847,8 +2168,14 @@ exports[`traverseDependencies node_modules (posix) nested node_modules with brow
 Array [
   Object {
     "dependencies": Array [
-      "foo",
-      "bar",
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1858,7 +2185,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "bar/lol",
+      Object {
+        "isAsync": false,
+        "name": "bar/lol",
+      },
     ],
     "id": "node_modules/foo/main.js",
     "isAsset": false,
@@ -1889,8 +2219,14 @@ exports[`traverseDependencies node_modules (posix) nested node_modules with spec
 Array [
   Object {
     "dependencies": Array [
-      "foo",
-      "bar/",
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar/",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1900,7 +2236,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "bar/lol",
+      Object {
+        "isAsync": false,
+        "name": "bar/lol",
+      },
     ],
     "id": "node_modules/foo/main.js",
     "isAsset": false,
@@ -1931,7 +2270,10 @@ exports[`traverseDependencies node_modules (posix) node_modules should support m
 Array [
   Object {
     "dependencies": Array [
-      "bar",
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -1941,7 +2283,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "foo",
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
     ],
     "id": "path/to/bar.js",
     "isAsset": false,
@@ -1964,8 +2309,14 @@ exports[`traverseDependencies node_modules (posix) platform should work with nod
 Array [
   Object {
     "dependencies": Array [
-      "foo",
-      "bar",
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
     ],
     "id": "index.ios.js",
     "isAsset": false,
@@ -1996,7 +2347,10 @@ exports[`traverseDependencies node_modules (posix) should not be confused by pre
 Array [
   Object {
     "dependencies": Array [
-      "shouldWork",
+      Object {
+        "isAsync": false,
+        "name": "shouldWork",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -2019,7 +2373,10 @@ exports[`traverseDependencies node_modules (posix) should pick the generic file 
 Array [
   Object {
     "dependencies": Array [
-      "a",
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
     ],
     "id": "index.ios.js",
     "isAsset": false,
@@ -2042,8 +2399,14 @@ exports[`traverseDependencies node_modules (posix) should require package.json 1
 Array [
   Object {
     "dependencies": Array [
-      "foo/package.json",
-      "bar",
+      Object {
+        "isAsync": false,
+        "name": "foo/package.json",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -2061,7 +2424,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "./package.json",
+      Object {
+        "isAsync": false,
+        "name": "./package.json",
+      },
     ],
     "id": "node_modules/bar/main.js",
     "isAsset": false,
@@ -2084,10 +2450,22 @@ exports[`traverseDependencies node_modules (posix) should selectively ignore pro
 Array [
   Object {
     "dependencies": Array [
-      "shouldWork",
-      "ember",
-      "internalVendoredPackage",
-      "anotherIndex",
+      Object {
+        "isAsync": false,
+        "name": "shouldWork",
+      },
+      Object {
+        "isAsync": false,
+        "name": "ember",
+      },
+      Object {
+        "isAsync": false,
+        "name": "internalVendoredPackage",
+      },
+      Object {
+        "isAsync": false,
+        "name": "anotherIndex",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -2097,7 +2475,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "submodule",
+      Object {
+        "isAsync": false,
+        "name": "submodule",
+      },
     ],
     "id": "node_modules/react-haste/main.js",
     "isAsset": false,
@@ -2144,7 +2525,10 @@ exports[`traverseDependencies node_modules (posix) should work with multiple pla
 Array [
   Object {
     "dependencies": Array [
-      "a",
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
     ],
     "id": "index.ios.js",
     "isAsset": false,
@@ -2167,7 +2551,10 @@ exports[`traverseDependencies node_modules (posix) should work with multiple pla
 Array [
   Object {
     "dependencies": Array [
-      "./a",
+      Object {
+        "isAsync": false,
+        "name": "./a",
+      },
     ],
     "id": "index.ios.js",
     "isAsset": false,
@@ -2190,8 +2577,14 @@ exports[`traverseDependencies node_modules (posix) should work with nested node_
 Array [
   Object {
     "dependencies": Array [
-      "foo",
-      "bar",
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -2201,7 +2594,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "bar",
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
     ],
     "id": "node_modules/foo/main.js",
     "isAsset": false,
@@ -2232,7 +2628,10 @@ exports[`traverseDependencies node_modules (posix) should work with node package
 Array [
   Object {
     "dependencies": Array [
-      "sha.js",
+      Object {
+        "isAsync": false,
+        "name": "sha.js",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -2255,7 +2654,10 @@ exports[`traverseDependencies node_modules (posix) should work with one-characte
 Array [
   Object {
     "dependencies": Array [
-      "a/index.js",
+      Object {
+        "isAsync": false,
+        "name": "a/index.js",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -2278,8 +2680,14 @@ exports[`traverseDependencies node_modules (win32) nested node_modules with brow
 Array [
   Object {
     "dependencies": Array [
-      "foo",
-      "bar",
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -2289,7 +2697,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "bar/lol",
+      Object {
+        "isAsync": false,
+        "name": "bar/lol",
+      },
     ],
     "id": "node_modules\\\\foo\\\\main.js",
     "isAsset": false,
@@ -2320,8 +2731,14 @@ exports[`traverseDependencies node_modules (win32) nested node_modules with spec
 Array [
   Object {
     "dependencies": Array [
-      "foo",
-      "bar/",
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar/",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -2331,7 +2748,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "bar/lol",
+      Object {
+        "isAsync": false,
+        "name": "bar/lol",
+      },
     ],
     "id": "node_modules\\\\foo\\\\main.js",
     "isAsset": false,
@@ -2362,7 +2782,10 @@ exports[`traverseDependencies node_modules (win32) node_modules should support m
 Array [
   Object {
     "dependencies": Array [
-      "bar",
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -2372,7 +2795,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "foo",
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
     ],
     "id": "path\\\\to\\\\bar.js",
     "isAsset": false,
@@ -2395,8 +2821,14 @@ exports[`traverseDependencies node_modules (win32) platform should work with nod
 Array [
   Object {
     "dependencies": Array [
-      "foo",
-      "bar",
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
     ],
     "id": "index.ios.js",
     "isAsset": false,
@@ -2427,7 +2859,10 @@ exports[`traverseDependencies node_modules (win32) should not be confused by pre
 Array [
   Object {
     "dependencies": Array [
-      "shouldWork",
+      Object {
+        "isAsync": false,
+        "name": "shouldWork",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -2450,7 +2885,10 @@ exports[`traverseDependencies node_modules (win32) should pick the generic file 
 Array [
   Object {
     "dependencies": Array [
-      "a",
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
     ],
     "id": "index.ios.js",
     "isAsset": false,
@@ -2473,8 +2911,14 @@ exports[`traverseDependencies node_modules (win32) should require package.json 1
 Array [
   Object {
     "dependencies": Array [
-      "foo/package.json",
-      "bar",
+      Object {
+        "isAsync": false,
+        "name": "foo/package.json",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -2492,7 +2936,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "./package.json",
+      Object {
+        "isAsync": false,
+        "name": "./package.json",
+      },
     ],
     "id": "node_modules\\\\bar\\\\main.js",
     "isAsset": false,
@@ -2515,10 +2962,22 @@ exports[`traverseDependencies node_modules (win32) should selectively ignore pro
 Array [
   Object {
     "dependencies": Array [
-      "shouldWork",
-      "ember",
-      "internalVendoredPackage",
-      "anotherIndex",
+      Object {
+        "isAsync": false,
+        "name": "shouldWork",
+      },
+      Object {
+        "isAsync": false,
+        "name": "ember",
+      },
+      Object {
+        "isAsync": false,
+        "name": "internalVendoredPackage",
+      },
+      Object {
+        "isAsync": false,
+        "name": "anotherIndex",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -2528,7 +2987,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "submodule",
+      Object {
+        "isAsync": false,
+        "name": "submodule",
+      },
     ],
     "id": "node_modules\\\\react-haste\\\\main.js",
     "isAsset": false,
@@ -2575,7 +3037,10 @@ exports[`traverseDependencies node_modules (win32) should work with multiple pla
 Array [
   Object {
     "dependencies": Array [
-      "a",
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
     ],
     "id": "index.ios.js",
     "isAsset": false,
@@ -2598,7 +3063,10 @@ exports[`traverseDependencies node_modules (win32) should work with multiple pla
 Array [
   Object {
     "dependencies": Array [
-      "./a",
+      Object {
+        "isAsync": false,
+        "name": "./a",
+      },
     ],
     "id": "index.ios.js",
     "isAsset": false,
@@ -2621,8 +3089,14 @@ exports[`traverseDependencies node_modules (win32) should work with nested node_
 Array [
   Object {
     "dependencies": Array [
-      "foo",
-      "bar",
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
     ],
     "id": "index.js",
     "isAsset": false,
@@ -2632,7 +3106,10 @@ Array [
   },
   Object {
     "dependencies": Array [
-      "bar",
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
     ],
     "id": "node_modules\\\\foo\\\\main.js",
     "isAsset": false,
@@ -2663,7 +3140,10 @@ exports[`traverseDependencies node_modules (win32) should work with node package
 Array [
   Object {
     "dependencies": Array [
-      "sha.js",
+      Object {
+        "isAsync": false,
+        "name": "sha.js",
+      },
     ],
     "id": "index.js",
     "isAsset": false,

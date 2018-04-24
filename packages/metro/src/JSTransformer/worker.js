@@ -30,6 +30,7 @@ const {
   toSegmentTuple,
 } = require('metro-source-map');
 
+import type {TransformResultDependency} from '../ModuleGraph/types.flow';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
 import type {Ast} from '@babel/core';
@@ -39,7 +40,7 @@ import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
 export type TransformedCode = {
   code: string,
-  dependencies: $ReadOnlyArray<string>,
+  dependencies: $ReadOnlyArray<TransformResultDependency>,
   map: Array<MetroSourceMapSegmentTuple>,
 };
 
@@ -249,8 +250,6 @@ async function transformCode(
         wrapped.requireName,
       );
     }
-
-    dependencies = dependencies.map(dep => dep.name);
   }
 
   const result = generate(
