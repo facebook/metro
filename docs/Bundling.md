@@ -13,7 +13,7 @@ This is the standard bundling format. In this format, all files are wrapped with
 
 This format composes the bundle as a binary file, which format has the following parts (all numbers are expressed in Little Endian):
 
-* A magic number: a `uint32` must be located at the beginning of the file, with the value '0xFB0BD1E5'. This is used to verify the file.
+* A magic number: a `uint32` must be located at the beginning of the file, with the value `0xFB0BD1E5`. This is used to verify the file.
 * An offset table: the table is a sequence of `uint32` pairs, with a header
     * For the header, two `uint32`s can be found: the length of the table, and the length of the startup code.
     * For the pairs, they represent the offset in the file and the length of code module, in bytes.
