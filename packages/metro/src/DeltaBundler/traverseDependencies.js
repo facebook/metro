@@ -335,40 +335,47 @@ function resolveDependencies(
 }
 
 /**
- * Retraverse the dependency graph in DFS order to reorder the modules and
+ * Re-traverse the dependency graph in DFS order to reorder the modules and
  * guarantee the same order between runs. This method mutates the passed graph.
  */
 function reorderGraph(graph: Graph) {
-  const parent = {
-    dependencies: new Map(graph.entryPoints.map(e => [e, e])),
-  };
+  const orderedDependencies = new Map();
 
-  const dependencies = reorderDependencies(parent, graph.dependencies);
+  graph.entryPoints.forEach(entryPoint => {
+    const mainModule = graph.dependencies.get(entryPoint);
 
-  graph.dependencies = dependencies;
+    if (!mainModule) {
+      throw new ReferenceError('Module not registered in graph: ' + entryPoint);
+    }
+
+    reorderDependencies(graph, mainModule, orderedDependencies);
+  });
+
+  graph.dependencies = orderedDependencies;
 }
 
 function reorderDependencies(
-  module: {|dependencies: Map<string, string>|} | Module,
-  dependencies: Map<string, Module>,
-  orderedDependencies?: Map<string, Module> = new Map(),
-): Map<string, Module> {
+  graph: Graph,
+  module: Module,
+  orderedDependencies: Map<string, Module>,
+): void {
   if (module.path) {
     if (orderedDependencies.has(module.path)) {
-      return orderedDependencies;
+      return;
     }
 
     orderedDependencies.set(module.path, module);
   }
 
   module.dependencies.forEach(path => {
-    const dep = dependencies.get(path);
-    if (dep) {
-      reorderDependencies(dep, dependencies, orderedDependencies);
-    }
-  });
+    const dependency = graph.dependencies.get(path);
 
-  return orderedDependencies;
+    if (!dependency) {
+      throw new ReferenceError('Module not registered in graph: ' + path);
+    }
+
+    reorderDependencies(graph, dependency, orderedDependencies);
+  });
 }
 
 module.exports = {
