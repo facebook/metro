@@ -111,6 +111,10 @@ class HttpStore {
         res.on('error', err => gunzipped.emit('error', err));
       });
 
+      req.on('error', err => {
+        reject(err);
+      });
+
       req.end();
     });
   }
