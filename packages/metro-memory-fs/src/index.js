@@ -50,6 +50,7 @@ type Encoding =
   | 'ascii'
   | 'base64'
   | 'binary'
+  | 'buffer'
   | 'hex'
   | 'latin1'
   | 'ucs2'
@@ -99,6 +100,7 @@ const ASYNC_FUNC_NAMES = [
   'read',
   'readdir',
   'readFile',
+  'readlink',
   'realpath',
   'stat',
   'unlink',
@@ -315,6 +317,34 @@ class MemoryFs {
       return result;
     }
     return result.toString(encoding);
+  };
+
+  readlinkSync = (
+    filePath: string | Buffer,
+    options: ?Encoding | {encoding: ?Encoding},
+  ): string | Buffer => {
+    let encoding;
+    if (typeof options === 'string') {
+      encoding = options;
+    } else if (options != null) {
+      ({encoding} = options);
+    }
+    filePath = pathStr(filePath);
+    const {node} = this._resolve(filePath, {keepFinalSymlink: true});
+    if (node == null) {
+      throw makeError('ENOENT', filePath, 'no such file or directory');
+    }
+    if (node.type !== 'symbolicLink') {
+      throw makeError('EINVAL', filePath, 'entity is not a symlink');
+    }
+    if (encoding == null || encoding === 'utf8') {
+      return node.target;
+    }
+    const buf = Buffer.from(node.target);
+    if (encoding == 'buffer') {
+      return buf;
+    }
+    return buf.toString(encoding);
   };
 
   realpathSync = (filePath: string | Buffer): string => {

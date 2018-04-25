@@ -494,6 +494,25 @@ describe('posix support', () => {
     });
   });
 
+  describe('readlink', () => {
+    it('reads a symlink target', () => {
+      fs.symlinkSync('foo.txt', '/bar.txt');
+      expect(fs.readlinkSync('/bar.txt')).toBe('foo.txt');
+    });
+
+    it('reads a symlink target as buffer', () => {
+      fs.symlinkSync('foo.txt', '/bar.txt');
+      expect(fs.readlinkSync('/bar.txt', 'buffer')).toEqual(
+        Buffer.from('foo.txt'),
+      );
+    });
+
+    it('throws when trying to read a regular file', () => {
+      fs.writeFileSync('/foo.txt', 'test');
+      expectFsError('EINVAL', () => fs.readlinkSync('/foo.txt'));
+    });
+  });
+
   it('throws when trying to read inexistent file', () => {
     expectFsError('ENOENT', () => fs.readFileSync('/foo.txt'));
   });

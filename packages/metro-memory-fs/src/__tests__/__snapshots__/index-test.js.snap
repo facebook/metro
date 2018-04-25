@@ -1,5 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`posix support readlink throws when trying to read a regular file 1`] = `"EINVAL: \`/foo.txt\`: entity is not a symlink"`;
+
 exports[`posix support throws when finding a symlink loop 1`] = `"ELOOP: \`/foo.txt\`: too many levels of symbolic links"`;
 
 exports[`posix support throws when trying to create symlink over existing file 1`] = `"EEXIST: \`/foo.txt\`: directory or file already exists"`;
