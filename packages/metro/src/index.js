@@ -59,6 +59,8 @@ type PrivateMetroOptions = {|
   watch?: boolean,
 |};
 
+import type {CustomTransformOptions} from './JSTransformer/worker';
+
 // We'll be able to remove this to use the one provided by modern versions of
 // fs-extra once https://github.com/jprichardson/node-fs-extra/pull/520 will
 // have been merged (until then, they'll break on devservers/Sandcastle)
@@ -270,11 +272,12 @@ exports.runServer = async ({
 type BuildGraphOptions = {|
   ...PublicMetroOptions,
   entries: $ReadOnlyArray<string>,
+  customTransformOptions?: CustomTransformOptions,
   dev?: boolean,
   minify?: boolean,
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
   platform?: string,
-  type: 'module' | 'script',
+  type?: 'module' | 'script',
 |};
 
 type RunBuildOptions = {|
@@ -370,6 +373,7 @@ exports.runBuild = async ({
 
 exports.buildGraph = async function({
   config,
+  customTransformOptions = Object.create(null),
   dev = false,
   entries,
   minify = false,
@@ -386,6 +390,7 @@ exports.buildGraph = async function({
   try {
     return await metroServer.buildGraph(entries, {
       ...MetroServer.DEFAULT_GRAPH_OPTIONS,
+      customTransformOptions,
       dev,
       minify,
       onProgress,
