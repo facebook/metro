@@ -102,7 +102,10 @@ describe('transforming JS modules:', () => {
   };
 
   it('calls the passed-in transform function with code, file name, and options for all passed in variants', () => {
-    const variants = {dev: {dev: true}, prod: {dev: false}};
+    const variants = {
+      dev: {dev: true, minify: false},
+      prod: {dev: false, minify: true},
+    };
 
     transformModule(sourceCode, options(variants));
     expect(transformer.transform).toBeCalledWith({

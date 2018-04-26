@@ -52,7 +52,7 @@ const defaultTransformOptions = {
   dev: false,
   hot: false,
   inlineRequires: false,
-  minify: false,
+  minify: true,
   platform: '',
   projectRoot: '',
 };
