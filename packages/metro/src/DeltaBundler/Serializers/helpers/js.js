@@ -33,7 +33,9 @@ function wrapModule(module: Module, options: Options) {
   const moduleId = options.createModuleId(module.path);
   const params = [
     moduleId,
-    Array.from(module.dependencies.values()).map(options.createModuleId),
+    Array.from(module.dependencies.values()).map(dependency => {
+      return options.createModuleId(dependency.absolutePath);
+    }),
   ];
 
   // Add the module name as the last parameter (to make it easier to do

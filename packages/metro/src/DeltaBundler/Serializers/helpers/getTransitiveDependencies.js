@@ -35,8 +35,8 @@ function _getDeps(path: string, graph: Graph, deps: Set<string>): Set<string> {
 
   deps.add(path);
 
-  for (const dependencyPath of module.dependencies.values()) {
-    _getDeps(dependencyPath, graph, deps);
+  for (const dependency of module.dependencies.values()) {
+    _getDeps(dependency.absolutePath, graph, deps);
   }
 
   return deps;

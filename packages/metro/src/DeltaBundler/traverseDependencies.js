@@ -15,8 +15,13 @@ import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
 export type DependencyType = 'module' | 'script' | 'asset';
 
+export type Dependency = {|
+  absolutePath: string,
+  data: TransformResultDependency,
+|};
+
 export type Module = {|
-  dependencies: Map<string, string>,
+  dependencies: Map<string, Dependency>,
   inverseDependencies: Set<string>,
   path: string,
   output: {
@@ -186,6 +191,7 @@ async function processModule(
 ): Promise<void> {
   const previousDependencies = module.dependencies;
 
+  // Transform the file via the given option.
   const result = await options.transform(module.path);
 
   // Get the absolute path of all sub-dependencies (some of them could have been
@@ -200,38 +206,38 @@ async function processModule(
   module.output = result.output;
   module.dependencies = new Map();
 
-  currentDependencies.forEach((absolutePath, relativePath) => {
-    module.dependencies.set(relativePath, absolutePath);
-  });
+  for (const [relativePath, dependency] of currentDependencies) {
+    module.dependencies.set(relativePath, dependency);
+  }
 
-  for (const [relativePath, absolutePath] of previousDependencies) {
+  for (const [relativePath, dependency] of previousDependencies) {
     if (!currentDependencies.has(relativePath)) {
-      removeDependency(module, absolutePath, graph, delta);
+      removeDependency(module, dependency.absolutePath, graph, delta);
     }
   }
 
   // Check all the module dependencies and start traversing the tree from each
   // added and removed dependency, to get all the modules that have to be added
   // and removed from the dependency graph.
-  await Promise.all(
-    Array.from(currentDependencies.entries()).map(
-      async ([relativePath, absolutePath]) => {
-        if (previousDependencies.has(relativePath)) {
-          return;
-        }
+  const promises = [];
 
-        await addDependency(
+  for (const [relativePath, dependency] of currentDependencies) {
+    if (!previousDependencies.has(relativePath)) {
+      promises.push(
+        addDependency(
           module,
-          absolutePath,
+          dependency.absolutePath,
           graph,
           delta,
           options,
           onDependencyAdd,
           onDependencyAdded,
-        );
-      },
-    ),
-  );
+        ),
+      );
+    }
+  }
+
+  await Promise.all(promises);
 }
 
 async function addDependency(
@@ -296,8 +302,8 @@ function removeDependency(
   // Now we need to iterate through the module dependencies in order to
   // clean up everything (we cannot read the module because it may have
   // been deleted).
-  for (const depAbsolutePath of module.dependencies.values()) {
-    removeDependency(module, depAbsolutePath, graph, delta);
+  for (const [, dependency] of module.dependencies) {
+    removeDependency(module, dependency.absolutePath, graph, delta);
   }
 
   // This module is not used anywhere else!! we can clear it from the bundle
@@ -316,6 +322,7 @@ function createModule(filePath: string, graph: Graph): Module {
       type: 'module',
     },
   };
+
   graph.dependencies.set(filePath, module);
 
   return module;
@@ -325,12 +332,18 @@ function resolveDependencies(
   parentPath: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   options: Options,
-): Map<string, string> {
+): Map<string, Dependency> {
   return new Map(
-    dependencies.map(relativePath => [
-      relativePath.name,
-      options.resolve(parentPath, relativePath.name),
-    ]),
+    dependencies.map(result => {
+      const relativePath = result.name;
+
+      const dependency = {
+        absolutePath: options.resolve(parentPath, result.name),
+        data: result,
+      };
+
+      return [relativePath, dependency];
+    }),
   );
 }
 
@@ -367,14 +380,15 @@ function reorderDependencies(
     orderedDependencies.set(module.path, module);
   }
 
-  module.dependencies.forEach(path => {
-    const dependency = graph.dependencies.get(path);
+  module.dependencies.forEach(dependency => {
+    const path = dependency.absolutePath;
+    const childModule = graph.dependencies.get(path);
 
-    if (!dependency) {
+    if (!childModule) {
       throw new ReferenceError('Module not registered in graph: ' + path);
     }
 
-    reorderDependencies(graph, dependency, orderedDependencies);
+    reorderDependencies(graph, childModule, orderedDependencies);
   });
 }
 

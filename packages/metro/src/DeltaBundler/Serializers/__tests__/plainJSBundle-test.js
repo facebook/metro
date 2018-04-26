@@ -22,7 +22,7 @@ const polyfill = {
 
 const fooModule = {
   path: 'foo',
-  dependencies: new Map([['./bar', 'bar']]),
+  dependencies: new Map([['./bar', {absolutePath: 'bar', data: {}}]]),
   output: {code: '__d(function() {/* code for foo */});'},
 };
 

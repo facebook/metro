@@ -5,7 +5,13 @@ Object {
   "dependencies": Map {
     "/bundle" => Object {
       "dependencies": Map {
-        "foo" => "/foo",
+        "foo" => Object {
+          "absolutePath": "/foo",
+          "data": Object {
+            "isAsync": false,
+            "name": "foo",
+          },
+        },
       },
       "inverseDependencies": Set {},
       "output": Object {
@@ -18,8 +24,20 @@ Object {
     },
     "/foo" => Object {
       "dependencies": Map {
-        "bar" => "/bar",
-        "baz" => "/baz",
+        "bar" => Object {
+          "absolutePath": "/bar",
+          "data": Object {
+            "isAsync": false,
+            "name": "bar",
+          },
+        },
+        "baz" => Object {
+          "absolutePath": "/baz",
+          "data": Object {
+            "isAsync": false,
+            "name": "baz",
+          },
+        },
       },
       "inverseDependencies": Set {
         "/bundle",

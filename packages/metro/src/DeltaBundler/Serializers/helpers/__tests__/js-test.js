@@ -20,7 +20,10 @@ let myModule;
 beforeEach(() => {
   myModule = {
     path: '/root/foo.js',
-    dependencies: new Map([['bar', '/bar'], ['baz', '/baz']]),
+    dependencies: new Map([
+      ['bar', {absolutePath: '/bar', data: {isAsync: false, name: 'bar'}}],
+      ['baz', {absolutePath: '/baz', data: {isAsync: false, name: 'baz'}}],
+    ]),
     inverseDependencies: new Set(),
     output: {
       code: '__d(function() { console.log("foo") });',

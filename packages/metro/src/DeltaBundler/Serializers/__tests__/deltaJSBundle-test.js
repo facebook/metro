@@ -18,7 +18,12 @@ function createModule(name, dependencies, type = 'module') {
     `/root/${name}.js`,
     {
       path: `/root/${name}.js`,
-      dependencies: new Map(dependencies.map(dep => [dep, `/root/${dep}.js`])),
+      dependencies: new Map(
+        dependencies.map(dep => [
+          dep,
+          {absolutePath: `/root/${dep}.js`, data: {isAsync: false, name: dep}},
+        ]),
+      ),
       output: {type, code: `__d(function() {${name}()});`},
     },
   ];

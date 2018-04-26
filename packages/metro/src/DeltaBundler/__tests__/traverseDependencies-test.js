@@ -132,7 +132,10 @@ beforeEach(async () => {
     },
     transform: path => {
       return {
-        dependencies: mockedDependencyTree.get(path) || [],
+        dependencies: (mockedDependencyTree.get(path) || []).map(dep => ({
+          name: dep.name,
+          isAsync: false,
+        })),
         output: {
           code: '// code',
           map: [],
@@ -349,9 +352,9 @@ describe('edge cases', () => {
     });
 
     expect([...graph.dependencies.get(moduleFoo).dependencies]).toEqual([
-      ['qux', '/qux'],
-      ['bar', '/bar'],
-      ['baz', '/baz'],
+      ['qux', {absolutePath: '/qux', data: {isAsync: false, name: 'qux'}}],
+      ['bar', {absolutePath: '/bar', data: {isAsync: false, name: 'bar'}}],
+      ['baz', {absolutePath: '/baz', data: {isAsync: false, name: 'baz'}}],
     ]);
   });
 
@@ -369,8 +372,26 @@ describe('edge cases', () => {
     });
 
     expect([...graph.dependencies.get(entryModule).dependencies]).toEqual([
-      ['foo.js', '/foo'],
-      ['foo', '/foo'],
+      [
+        'foo.js',
+        {
+          absolutePath: '/foo',
+          data: {
+            isAsync: false,
+            name: 'foo.js',
+          },
+        },
+      ],
+      [
+        'foo',
+        {
+          absolutePath: '/foo',
+          data: {
+            isAsync: false,
+            name: 'foo',
+          },
+        },
+      ],
     ]);
   });
 
@@ -472,17 +493,20 @@ describe('edge cases', () => {
 
 describe('reorderGraph', () => {
   it('should reorder any unordered graph in DFS order', async () => {
+    const dep = path => ({
+      absolutePath: path,
+      data: {isAsync: false, name: path.substr(1)},
+    });
+
+    // prettier-ignore
     const graph = {
       dependencies: new Map([
-        ['/2', {dependencies: new Map(), path: '/2'}],
-        [
-          '/0',
-          {path: '/0', dependencies: new Map([['/1', '/1'], ['/2', '/2']])},
-        ],
-        ['/1', {dependencies: new Map([['/2', '/2']]), path: '/1'}],
-        ['/3', {dependencies: new Map(), path: '/3'}],
-        ['/b', {dependencies: new Map([['/3', '/3']]), path: '/b'}],
-        ['/a', {dependencies: new Map([['/0', '/0']]), path: '/a'}],
+        ['/2', {path: '/2', dependencies: new Map()}],
+        ['/0', {path: '/0', dependencies: new Map([['/1', dep('/1')], ['/2', dep('/2')]])}],
+        ['/1', {path: '/1', dependencies: new Map([['/2', dep('/2')]])}],
+        ['/3', {path: '/3', dependencies: new Map([])}],
+        ['/b', {path: '/b', dependencies: new Map([['/3', dep('/3')]])}],
+        ['/a', {path: '/a', dependencies: new Map([['/0', dep('/0')]])}],
       ]),
       entryPoints: ['/a', '/b'],
     };

@@ -99,7 +99,15 @@ describe('processRequest', () => {
         '/root/mybundle.js',
         {
           path: '/root/mybundle.js',
-          dependencies: new Map([['foo', '/root/foo.js']]),
+          dependencies: new Map([
+            [
+              'foo',
+              {
+                absolutePath: '/root/foo.js',
+                data: {isAsync: false, name: 'foo'},
+              },
+            ],
+          ]),
           output: {
             code: '__d(function() {entry();});',
             map: [],
