@@ -19,6 +19,7 @@ const PLUGINS = [
   require('@babel/plugin-proposal-object-rest-spread'),
   require('@babel/plugin-proposal-class-properties'),
   require('@babel/plugin-transform-modules-commonjs'),
+  require('@babel/plugin-proposal-optional-chaining'),
 ];
 
 if (/^v[0-7]\./.test(process.version)) {
@@ -39,6 +40,7 @@ function config(onlyList) {
     babelrc: false,
     ignore: null,
     only: _only,
+    parserOpts: {plugins: ['optionalChaining']},
     plugins: PLUGINS,
     presets: [],
     retainLines: true,
