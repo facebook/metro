@@ -31,9 +31,6 @@ const resolvePlugins6 = require('babel-preset-react-native/lib/resolvePlugins');
 // register has side effects so don't include by default (only used in a test)
 const getBabelRegisterConfig6 = () => require('metro-babel-register').config;
 // load given preset as a babel6 preset
-const getPreset6 = (preset: string) =>
-  // $FlowFixMe TODO t26372934 plugin require
-  require('babel-preset-' + preset);
 
 // ## Babel 7 stuff
 
@@ -105,7 +102,7 @@ module.exports = {
     : inlineRequiresPlugin6,
   makeHMRConfig: IS_BABEL7 ? makeHMRConfig7 : makeHMRConfig6,
   resolvePlugins: IS_BABEL7 ? resolvePlugins7 : resolvePlugins6,
-  getPreset: IS_BABEL7 ? getPreset7 : getPreset6,
+  getPreset,
 };
 
 function makeMakeHMRConfig7() {
@@ -151,210 +148,18 @@ function makeMakeHMRConfig7() {
   };
 }
 
-function getPreset7() {
-  // from: babel-preset-react-native/configs/main.js
-  /**
-   * Copyright (c) 2015-present, Facebook, Inc.
-   *
-   * This source code is licensed under the MIT license found in the
-   * LICENSE file in the root directory of this source tree.
-   */
-  'use strict';
-
-  function addPluginsWhenSourceNeedsIt(src, plugins) {
-    // not sure what happened to this plugin. obsoleted?
-    // if (src.indexOf('async') !== -1 || src.indexOf('await') !== -1) {
-    //   plugins.push('syntax-async-functions');
-    // }
-    if (src.indexOf('class') !== -1) {
-      plugins.push('transform-classes');
-      if (src.indexOf('...') !== -1) {
-        plugins.push('transform-spread');
-        plugins.push('proposal-object-rest-spread');
+function getPreset(name: string) {
+  if (!/^(?:@babel\/|babel-)preset-/.test(name)) {
+    try {
+      name = require.resolve(`babel-preset-${name}`);
+    } catch (error) {
+      if (error && error.conde === 'MODULE_NOT_FOUND') {
+        name = require.resolve(`@babel/preset-${name}`);
       }
-    }
-    if (src.indexOf('=>') !== -1) {
-      plugins.push('transform-arrow-functions');
-    }
-    if (src.indexOf('const') !== -1) {
-      plugins.push('check-constants');
-    }
-    if (src.indexOf('`') !== -1) {
-      plugins.push('transform-template-literals');
-    }
-    if (src.indexOf('Object.assign') !== -1) {
-      plugins.push('transform-object-assign');
-    }
-    if (src.indexOf('for') !== -1 && src.indexOf('of') !== -1) {
-      plugins.push(['transform-for-of', {loose: true}]);
-      if (src.indexOf('Symbol') !== -1) {
-        plugins.push(transformSymbolMember());
-      }
-    }
-    if (
-      src.indexOf('React.createClass') !== -1 ||
-      src.indexOf('createReactClass') !== -1
-    ) {
-      plugins.push('transform-react-display-name');
-    }
-    if (src.indexOf('import(')) {
-      plugins.push(transformDynamicImport());
     }
   }
-
-  const getPreset = (src, options) => {
-    const plugins = [];
-
-    plugins.push(
-      // 'syntax-class-properties',
-      // 'syntax-trailing-function-commas',
-      'proposal-class-properties',
-      'transform-block-scoping',
-      'transform-computed-properties',
-      'transform-destructuring',
-      'transform-function-name',
-      'transform-literals',
-      'transform-parameters',
-      'transform-shorthand-properties',
-      'transform-flow-strip-types',
-      'transform-react-jsx',
-      'transform-regenerator',
-      ['transform-modules-commonjs', {strict: false, allowTopLevelThis: true}],
-    );
-
-    if (src != null) {
-      addPluginsWhenSourceNeedsIt(src, plugins);
-    }
-
-    if (options && options.dev) {
-      plugins.push('transform-react-jsx-source');
-    }
-
-    return {
-      comments: false,
-      compact: true,
-      plugins: resolvePlugins7(plugins),
-    };
-  };
-
-  let base;
-  let devTools;
-
-  // TODO: options probably has more properties...
-  return (options: {withDevTools?: boolean}) => {
-    if (options.withDevTools == null) {
-      const env = process.env.BABEL_ENV || process.env.NODE_ENV;
-      if (!env || env === 'development') {
-        return devTools || (devTools = getPreset(null, {dev: true}));
-      }
-    }
-    return base || (base = getPreset(null));
-  };
-}
-
-function transformSymbolMember() {
-  // from: babel-preset-react-native/transforms/transform-symbol-member.js
-
-  /**
-   * Copyright (c) 2015-present, Facebook, Inc.
-   *
-   * This source code is licensed under the MIT license found in the
-   * LICENSE file in the root directory of this source tree.
-   */
-
-  'use strict';
-
-  /*eslint consistent-return: 0*/
-
-  /**
-   * Transforms function properties of the `Symbol` into
-   * the presence check, and fallback string "@@<name>".
-   *
-   * Example:
-   *
-   *   Symbol.iterator;
-   *
-   * Transformed to:
-   *
-   *   typeof Symbol.iterator === 'function' ? Symbol.iterator : '@@iterator';
-   */
-  return function symbolMember() {
-    const t = babelTypes7;
-
-    return {
-      visitor: {
-        MemberExpression(path) {
-          if (!isAppropriateMember(path)) {
-            return;
-          }
-
-          const node = path.node;
-
-          path.replaceWith(
-            t.conditionalExpression(
-              t.binaryExpression(
-                '===',
-                t.unaryExpression('typeof', t.identifier('Symbol'), true),
-                t.stringLiteral('function'),
-              ),
-              node,
-              t.stringLiteral(`@@${node.property.name}`),
-            ),
-          );
-
-          // We should stop to avoid infinite recursion, since Babel
-          // traverses replaced path, and again would hit our transform.
-          path.stop();
-        },
-      },
-    };
-  };
-
-  function isAppropriateMember(path) {
-    const node = path.node;
-
-    return (
-      path.parentPath.type !== 'AssignmentExpression' &&
-      node.object.type === 'Identifier' &&
-      node.object.name === 'Symbol' &&
-      node.property.type === 'Identifier'
-    );
-  }
-}
-
-function transformDynamicImport() {
-  // from: babel-preset-react-native/transforms/transform-dynamic-import.js
-
-  /**
-   * Copyright (c) 2015-present, Facebook, Inc.
-   *
-   * This source code is licensed under the MIT license found in the
-   * LICENSE file in the root directory of this source tree.
-   */
-
-  'use strict';
-
-  const buildImport = babelTemplate7(
-    'Promise.resolve().then(() => require(ARGS))',
-  );
-
-  const TYPE_IMPORT = 'Import';
-
-  const plugin = {
-    inherits: require('@babel/plugin-syntax-dynamic-import').default,
-
-    visitor: {
-      CallExpression(path) {
-        if (path.node.callee.type !== TYPE_IMPORT) {
-          return;
-        }
-        const newImport = buildImport({ARGS: path.node.arguments});
-        path.replaceWith(newImport);
-      },
-    },
-  };
-
-  return plugin;
+  //$FlowFixMe: TODO t26372934 this has to be dynamic
+  return require(name);
 }
 
 function getBabelRegisterConfig7() {
