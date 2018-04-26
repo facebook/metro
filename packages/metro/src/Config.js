@@ -10,9 +10,11 @@
 'use strict';
 
 const blacklist = require('./blacklist');
+const os = require('os');
 const path = require('path');
 
 const {providesModuleNodeModules} = require('./defaults');
+const {FileStore} = require('metro-cache');
 
 import type {
   GetTransformOptions,
@@ -178,7 +180,11 @@ const DEFAULT = ({
   enhanceMiddleware: middleware => middleware,
   extraNodeModules: {},
   assetTransforms: false,
-  cacheStores: [],
+  cacheStores: [
+    new FileStore({
+      root: path.join(os.tmpdir(), 'metro-cache'),
+    }),
+  ],
   cacheVersion: '1.0',
   dynamicDepsInPackages: 'throwAtRuntime',
   getAsyncRequireModulePath: () => 'metro/src/lib/bundle-modules/asyncRequire',
