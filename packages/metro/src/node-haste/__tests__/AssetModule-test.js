@@ -10,14 +10,11 @@
 
 'use strict';
 
-jest
-  .mock('fs', () => new (require('metro-memory-fs'))())
-  .mock('../../lib/TransformCaching');
+jest.mock('fs', () => new (require('metro-memory-fs'))());
 
 const AssetModule = require('../AssetModule');
 const DependencyGraphHelpers = require('../DependencyGraph/DependencyGraphHelpers');
 const ModuleCache = require('../ModuleCache');
-const TransformCaching = require('../../lib/TransformCaching');
 const fs = require('fs');
 
 describe('AssetModule:', () => {
@@ -43,7 +40,6 @@ describe('AssetModule:', () => {
       getTransformCacheKey: () => 'foo',
       localPath: 'image.png',
       moduleCache: new ModuleCache({}),
-      options: {transformCache: TransformCaching.mocked()},
       transformCode: () => {
         return Promise.resolve({code: 'module.exports = "asset";'});
       },

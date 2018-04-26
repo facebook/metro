@@ -12,7 +12,6 @@
 
 jest.useRealTimers();
 jest
-  .mock('../../lib/TransformCaching')
   // It's noticeably faster to prevent running watchman from FileWatcher.
   .mock('child_process', () => ({}))
   .mock('os', () => ({
@@ -128,11 +127,11 @@ describe('traverseDependencies', function() {
       assetExts: ['png', 'jpg'],
       // This pattern is not expected to match anything.
       blacklistRE: /.^/,
+      cacheStores: [],
       providesModuleNodeModules: ['haste-fbjs', 'react-haste', 'react-native'],
       platforms: new Set(['ios', 'android']),
       maxWorkers: 1,
       resetCache: true,
-      transformCache: require('TransformCaching').mocked(),
       transformCode: (module, sourceCode, transformOptions) => {
         return new Promise(resolve => {
           // require call must stay inline, so the latest defined mock is used!

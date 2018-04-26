@@ -16,6 +16,8 @@ const HttpStore = require('./stores/HttpStore');
 
 const stableHash = require('./stableHash');
 
+export type {Options as FileOptions} from './stores/FileStore';
+export type {Options as HttpOptions} from './stores/HttpStore';
 export type {CacheStore} from './types.flow';
 
 module.exports.Cache = Cache;
