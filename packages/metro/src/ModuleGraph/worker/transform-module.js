@@ -105,7 +105,7 @@ function transformModule(
         null,
         options.hasteImplModulePath,
       ): HasteImpl);
-      hasteID = HasteImpl.getHasteName(filename, sourceCode);
+      hasteID = HasteImpl.getHasteName(filename);
     } else {
       hasteID = docblock.parse(docblock.extract(sourceCode)).providesModule;
     }
