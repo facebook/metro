@@ -19,7 +19,6 @@ import type {
   TransformedCode,
 } from '../JSTransformer/worker';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
-import type {TransformCache} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
 import type {CacheStore} from 'metro-cache';
 import type {CustomResolver} from 'metro-resolver';
@@ -105,7 +104,6 @@ export type Options = {|
   +getModulesRunBeforeMainModule: (entryPoint: string) => Array<string>,
   silent?: boolean,
   +sourceExts: ?Array<string>,
-  +transformCache?: TransformCache,
   transformModulePath?: string,
   watch?: boolean,
   workerPath: ?string,
