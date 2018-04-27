@@ -12,9 +12,9 @@
 
 const nullthrows = require('fbjs/lib/nullthrows');
 
+const babelTemplate = require('@babel/template').default;
 const generate = require('@babel/generator').default;
 
-const {babelTemplate} = require('../../babel-bridge');
 const {babelTraverse: traverse} = require('../../babel-bridge');
 const {babelTypes: types} = require('../../babel-bridge');
 

@@ -13,7 +13,6 @@
 
 // This is a temporary migration bridge to switch between babel 6 and 7
 
-const babelTemplate7 = require('@babel/template').default;
 const babelTraverse7 = require('@babel/traverse').default;
 const babelTypes7 = require('@babel/types');
 const babylon7 = require('metro-babylon7');
@@ -51,7 +50,6 @@ function resolvePlugins7(plugins: Array<any>) {
 }
 
 module.exports = {
-  babelTemplate: babelTemplate7,
   babelTraverse: babelTraverse7,
   babelTypes: babelTypes7,
   getBabelRegisterConfig: getBabelRegisterConfig7,
