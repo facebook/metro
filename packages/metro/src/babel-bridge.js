@@ -13,27 +13,6 @@
 
 // This is a temporary migration bridge to switch between babel 6 and 7
 
-const IS_BABEL7 = true; // process.env.BABEL_VERSION === '7';
-
-// ## Babel 6 stuff
-
-const babelCore6 = require('babel-core');
-const babelGenerate6 = require('babel-generator').default;
-const babelTemplate6 = require('babel-template');
-const babelTraverse6 = require('babel-core').traverse;
-const babelTypes6 = require('babel-core').types;
-const babylon6 = require('babylon');
-
-const externalHelpersPlugin6 = require('babel-plugin-external-helpers');
-const inlineRequiresPlugin6 = require('babel-preset-fbjs/plugins/inline-requires');
-const makeHMRConfig6 = require('babel-preset-react-native/configs/hmr');
-const resolvePlugins6 = require('babel-preset-react-native/lib/resolvePlugins');
-// register has side effects so don't include by default (only used in a test)
-const getBabelRegisterConfig6 = () => require('metro-babel-register').config;
-// load given preset as a babel6 preset
-
-// ## Babel 7 stuff
-
 const babelCore7 = require('@babel/core');
 const babelGenerate7 = require('@babel/generator').default;
 const babelTemplate7 = require('@babel/template').default;
@@ -74,34 +53,21 @@ function resolvePlugins7(plugins: Array<any>) {
 }
 
 module.exports = {
-  version: IS_BABEL7 ? 7 : 6,
-
   // need to abstract the transform* funcs here since their name changed
-  transformSync: IS_BABEL7 ? babelCore7.transformSync : babelCore6.transform,
-  transformFileSync: IS_BABEL7
-    ? babelCore7.transformFileSync
-    : babelCore6.transformFile,
-  transformFromAstSync: IS_BABEL7
-    ? babelCore7.transformFromAstSync
-    : babelCore6.transformFromAst,
+  transformSync: babelCore7.transformSync,
+  transformFileSync: babelCore7.transformFileSync,
+  transformFromAstSync: babelCore7.transformFromAstSync,
+  babelGenerate: babelGenerate7,
+  babelTemplate: babelTemplate7,
+  babelTraverse: babelTraverse7,
+  babelTypes: babelTypes7,
+  getBabelRegisterConfig: getBabelRegisterConfig7,
+  babylon: babylon7,
 
-  babelGenerate: IS_BABEL7 ? babelGenerate7 : babelGenerate6,
-  babelTemplate: IS_BABEL7 ? babelTemplate7 : babelTemplate6,
-  babelTraverse: IS_BABEL7 ? babelTraverse7 : babelTraverse6,
-  babelTypes: IS_BABEL7 ? babelTypes7 : babelTypes6,
-  getBabelRegisterConfig: IS_BABEL7
-    ? getBabelRegisterConfig7
-    : getBabelRegisterConfig6,
-  babylon: IS_BABEL7 ? babylon7 : babylon6,
-
-  externalHelpersPlugin: IS_BABEL7
-    ? externalHelpersPlugin7
-    : externalHelpersPlugin6,
-  inlineRequiresPlugin: IS_BABEL7
-    ? inlineRequiresPlugin7
-    : inlineRequiresPlugin6,
-  makeHMRConfig: IS_BABEL7 ? makeHMRConfig7 : makeHMRConfig6,
-  resolvePlugins: IS_BABEL7 ? resolvePlugins7 : resolvePlugins6,
+  externalHelpersPlugin: externalHelpersPlugin7,
+  inlineRequiresPlugin: inlineRequiresPlugin7,
+  makeHMRConfig: makeHMRConfig7,
+  resolvePlugins: resolvePlugins7,
   getPreset,
 };
 
