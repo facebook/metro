@@ -17,13 +17,13 @@ const collectDependencies = require('../ModuleGraph/worker/collectDependencies')
 const constantFoldingPlugin = require('./worker/constant-folding-plugin');
 const crypto = require('crypto');
 const fs = require('fs');
+const generate = require('@babel/generator').default;
 const getMinifier = require('../lib/getMinifier');
 const inlinePlugin = require('./worker/inline-plugin');
 const optimizeDependencies = require('../ModuleGraph/worker/optimizeDependencies');
 const path = require('path');
 
 const {babylon} = require('../babel-bridge');
-const {babelGenerate: generate} = require('../babel-bridge');
 const {
   fromRawMappings,
   toBabelSegments,

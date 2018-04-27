@@ -13,7 +13,6 @@
 
 // This is a temporary migration bridge to switch between babel 6 and 7
 
-const babelGenerate7 = require('@babel/generator').default;
 const babelTemplate7 = require('@babel/template').default;
 const babelTraverse7 = require('@babel/traverse').default;
 const babelTypes7 = require('@babel/types');
@@ -52,7 +51,6 @@ function resolvePlugins7(plugins: Array<any>) {
 }
 
 module.exports = {
-  babelGenerate: babelGenerate7,
   babelTemplate: babelTemplate7,
   babelTraverse: babelTraverse7,
   babelTypes: babelTypes7,

@@ -10,7 +10,7 @@
 
 const stub = require('sinon/lib/sinon/stub');
 
-const {babelGenerate: generate} = require('../babel-bridge');
+const generate = require('@babel/generator').default;
 
 exports.fn = () => {
   const s = stub();

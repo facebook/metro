@@ -15,11 +15,12 @@ const invariant = require('fbjs/lib/invariant');
 const nullthrows = require('fbjs/lib/nullthrows');
 const transformModule = require('../transform-module');
 
+const generate = require('@babel/generator').default;
+
 const {
   babylon: {parse},
 } = require('../../../babel-bridge');
 const {babelTypes: types} = require('../../../babel-bridge');
-const {babelGenerate: generate} = require('../../../babel-bridge');
 const {babelTraverse: traverse} = require('../../../babel-bridge');
 const {fn} = require('../../test-helpers');
 const {SourceMapConsumer} = require('source-map');

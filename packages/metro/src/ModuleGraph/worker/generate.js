@@ -10,7 +10,7 @@
 
 'use strict';
 
-const {babelGenerate} = require('../../babel-bridge');
+const babelGenerate = require('@babel/generator').default;
 
 import type {Ast} from '@babel/core';
 
