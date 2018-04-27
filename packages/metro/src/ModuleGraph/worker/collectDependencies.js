@@ -11,12 +11,11 @@
 'use strict';
 
 const nullthrows = require('fbjs/lib/nullthrows');
+const types = require('@babel/types');
 
 const babelTemplate = require('@babel/template').default;
 const generate = require('@babel/generator').default;
 const traverse = require('@babel/traverse').default;
-
-const {babelTypes: types} = require('../../babel-bridge');
 
 import type {TransformResultDependency} from '../types.flow';
 import type {Ast} from '@babel/core';

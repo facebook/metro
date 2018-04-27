@@ -10,7 +10,7 @@
 
 'use strict';
 
-import typeof {types as BabelTypes} from 'babel-core';
+import typeof {types as BabelTypes} from '@babel/core';
 
 const importMap = new Map([['ReactNative', 'react-native']]);
 

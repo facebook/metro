@@ -13,7 +13,6 @@
 
 // This is a temporary migration bridge to switch between babel 6 and 7
 
-const babelTypes7 = require('@babel/types');
 const babylon7 = require('metro-babylon7');
 const externalHelpersPlugin7 = require('babel-plugin-external-helpers');
 const inlineRequiresPlugin7 = require('babel-preset-fbjs/plugins/inline-requires');
@@ -49,7 +48,6 @@ function resolvePlugins7(plugins: Array<any>) {
 }
 
 module.exports = {
-  babelTypes: babelTypes7,
   getBabelRegisterConfig: getBabelRegisterConfig7,
   babylon: babylon7,
 

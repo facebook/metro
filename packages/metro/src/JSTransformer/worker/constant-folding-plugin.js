@@ -10,7 +10,7 @@
 
 'use strict';
 
-import typeof {types as BabelTypes} from 'babel-core';
+import typeof {types as BabelTypes} from '@babel/core';
 
 function constantFoldingPlugin(context: {types: BabelTypes}) {
   const t = context.types;

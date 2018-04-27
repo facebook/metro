@@ -12,7 +12,7 @@
 
 const createInlinePlatformChecks = require('./inline-platform');
 
-import typeof {types as BabelTypes} from 'babel-core';
+import typeof {types as BabelTypes} from '@babel/core';
 import type {Ast} from 'babel-core';
 
 type Context = {types: BabelTypes};
