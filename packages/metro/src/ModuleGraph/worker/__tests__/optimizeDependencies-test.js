@@ -11,9 +11,9 @@
 
 'use strict';
 
+const babylon = require('metro-babylon7');
 const optimizeDependencies = require('../optimizeDependencies');
 
-const {babylon} = require('../../../babel-bridge');
 const {InvalidRequireCallError} = optimizeDependencies;
 
 const {codeFromAst, comparableCode} = require('../../test-helpers');

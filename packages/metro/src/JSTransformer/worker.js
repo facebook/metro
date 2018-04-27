@@ -13,6 +13,7 @@
 const JsFileWrapping = require('../ModuleGraph/worker/JsFileWrapping');
 
 const assetTransformer = require('../assetTransformer');
+const babylon = require('metro-babylon7');
 const collectDependencies = require('../ModuleGraph/worker/collectDependencies');
 const constantFoldingPlugin = require('./worker/constant-folding-plugin');
 const crypto = require('crypto');
@@ -23,7 +24,6 @@ const inlinePlugin = require('./worker/inline-plugin');
 const optimizeDependencies = require('../ModuleGraph/worker/optimizeDependencies');
 const path = require('path');
 
-const {babylon} = require('../babel-bridge');
 const {
   fromRawMappings,
   toBabelSegments,

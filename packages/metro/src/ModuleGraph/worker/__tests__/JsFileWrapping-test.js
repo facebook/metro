@@ -13,7 +13,8 @@
 
 const JsFileWrapping = require('../JsFileWrapping');
 
-const {babylon} = require('../../../babel-bridge');
+const babylon = require('metro-babylon7');
+
 const {codeFromAst, comparableCode} = require('../../test-helpers');
 
 const {WRAP_NAME} = JsFileWrapping;

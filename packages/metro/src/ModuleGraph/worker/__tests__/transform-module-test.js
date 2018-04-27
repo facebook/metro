@@ -19,10 +19,8 @@ const types = require('@babel/types');
 const generate = require('@babel/generator').default;
 const traverse = require('@babel/traverse').default;
 
-const {
-  babylon: {parse},
-} = require('../../../babel-bridge');
 const {fn} = require('../../test-helpers');
+const {parse} = require('metro-babylon7');
 const {SourceMapConsumer} = require('source-map');
 
 import type {TransformVariants} from '../../types.flow';
