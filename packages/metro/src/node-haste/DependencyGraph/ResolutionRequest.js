@@ -18,27 +18,17 @@ const {InvalidPackageError} = require('metro-resolver');
 const {PackageResolutionError} = require('metro-core');
 
 import type DependencyGraphHelpers from './DependencyGraphHelpers';
-import type {Options as TransformWorkerOptions} from '../../JSTransformer/worker';
-import type {ReadResult, CachedReadResult} from '../Module';
 import type {ModuleResolver} from './ModuleResolution';
 
 export type Packageish = {
-  isHaste(): boolean,
-  getName(): string,
   path: string,
   redirectRequire(toModuleName: string): string | false,
   getMain(): string,
-  +root: string,
 };
 
 export type Moduleish = {
   +path: string,
-  isHaste(): boolean,
-  getName(): string,
   getPackage(): ?Packageish,
-  hash(): string,
-  readCached(transformOptions: TransformWorkerOptions): CachedReadResult,
-  readFresh(transformOptions: TransformWorkerOptions): Promise<ReadResult>,
 };
 
 export type ModuleishCache<TModule, TPackage> = {

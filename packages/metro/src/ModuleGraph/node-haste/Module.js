@@ -10,7 +10,6 @@
 
 'use strict';
 
-import type {CachedReadResult, ReadResult} from '../../node-haste/Module';
 import type {TransformedCodeFile} from '../types.flow';
 import type ModuleCache from './ModuleCache';
 
@@ -19,7 +18,6 @@ module.exports = class Module {
   moduleCache: ModuleCache;
   name: string;
   path: string;
-  type: 'Module';
 
   constructor(
     path: string,
@@ -30,19 +28,6 @@ module.exports = class Module {
     this.moduleCache = moduleCache;
     this.name = this.hasteID || getName(path);
     this.path = path;
-    this.type = 'Module';
-  }
-
-  readCached(): CachedReadResult {
-    throw new Error('not implemented');
-  }
-
-  readFresh(): Promise<ReadResult> {
-    return Promise.reject(new Error('not implemented'));
-  }
-
-  getName(): string {
-    return this.name;
   }
 
   getPackage() {
@@ -51,10 +36,6 @@ module.exports = class Module {
 
   isHaste() {
     return Boolean(this.hasteID);
-  }
-
-  hash() {
-    throw new Error('not implemented');
   }
 };
 

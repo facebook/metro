@@ -23,15 +23,13 @@ type PackageContent = {
 
 class Package {
   path: string;
-  root: string;
-  type: string;
 
+  _root: string;
   _content: ?PackageContent;
 
   constructor({file}: {file: string}) {
     this.path = path.resolve(file);
-    this.root = path.dirname(this.path);
-    this.type = 'Package';
+    this._root = path.dirname(this.path);
     this._content = null;
   }
 
@@ -75,15 +73,7 @@ class Package {
     }
 
     /* $FlowFixMe: `getReplacements` doesn't validate the return value. */
-    return path.join(this.root, main);
-  }
-
-  isHaste(): boolean {
-    return !!this.read().name;
-  }
-
-  getName(): string {
-    return this.read().name;
+    return path.join(this._root, main);
   }
 
   invalidate() {
@@ -107,7 +97,7 @@ class Package {
           replacement || name;
     }
 
-    let relPath = './' + path.relative(this.root, name);
+    let relPath = './' + path.relative(this._root, name);
     if (path.sep !== '/') {
       relPath = relPath.replace(new RegExp('\\' + path.sep, 'g'), '/');
     }
@@ -129,7 +119,7 @@ class Package {
 
     if (redirect) {
       return path.join(
-        this.root,
+        this._root,
         /* $FlowFixMe: `getReplacements` doesn't validate the return value. */
         redirect,
       );

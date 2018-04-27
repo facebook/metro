@@ -17,10 +17,6 @@ class AssetModule extends Module {
     return null;
   }
 
-  isHaste() {
-    return false;
-  }
-
   isAsset() {
     return true;
   }

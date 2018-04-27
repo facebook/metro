@@ -45,26 +45,9 @@ describe('Module', () => {
   it('Returns the correct values for many properties and methods', () => {
     expect(module.localPath).toBe('file.js');
     expect(module.path).toBe('/root/to/file.js');
-    expect(module.type).toBe('Module');
 
-    expect(module.hash()).toBeDefined();
-    expect(module.getName()).toBe('file.js');
-    expect(module.isHaste()).toBe(false);
     expect(module.isAsset()).toBe(false);
     expect(module.isPolyfill()).toBe(false);
-  });
-
-  it('reads the modules correctly', () => {
-    const opts = {};
-
-    // Caches are not in Module.js anymore.
-    expect(module.readCached()).toBe(null);
-
-    // When reading fresh, we call directly into read.
-    module.readFresh(opts);
-    expect(transformCode.mock.calls[0][0]).toBe(module);
-    expect(transformCode.mock.calls[0][1]).toBe(null);
-    expect(transformCode.mock.calls[0][2]).toBe(opts);
   });
 
   it('returns the result from the transform code straight away', async () => {

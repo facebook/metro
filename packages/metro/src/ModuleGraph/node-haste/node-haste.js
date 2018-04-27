@@ -46,15 +46,6 @@ const PACKAGE_JSON = path.sep + 'package.json';
 const NULL_MODULE: Moduleish = {
   path: '/',
   getPackage() {},
-  hash() {
-    throw new Error('not implemented');
-  },
-  readCached() {
-    throw new Error('not implemented');
-  },
-  readFresh() {
-    return Promise.reject(new Error('not implemented'));
-  },
   isHaste() {
     throw new Error('not implemented');
   },

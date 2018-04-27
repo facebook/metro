@@ -104,7 +104,6 @@ describe('traverseDependencies', function() {
           isAsset: dep.isAsset(),
           isPolyfill: dep.isPolyfill(),
           resolution: dep.resolution,
-          id: dep.getName(),
           dependencies: moduleDependencies,
         };
       }),
@@ -3648,13 +3647,13 @@ describe('traverseDependencies', function() {
 
     it('returns correctly a JS module', async () => {
       const module = dependencyGraph.getModuleForPath('/root/index.js');
-      expect(module.getName()).toBe('index.js');
+      expect(module.path).toBe('/root/index.js');
       expect(module.isAsset()).toBe(false);
     });
 
     it('returns correctly an asset module', async () => {
       const module = dependencyGraph.getModuleForPath('/root/imgs/a.png');
-      expect(module.getName()).toBe('imgs/a.png');
+      expect(module.path).toBe('/root/imgs/a.png');
       expect(module.isAsset()).toBe(true);
     });
   });

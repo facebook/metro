@@ -16,6 +16,7 @@ const invariant = require('fbjs/lib/invariant');
 const path = require('path');
 const util = require('util');
 
+import type {Moduleish, Packageish} from './ResolutionRequest';
 import type {
   CustomResolver,
   DoesFileExist,
@@ -40,16 +41,6 @@ export type ModuleMap = {
     platform: string | null,
     supportsNativePlatform: ?boolean,
   ): ?string,
-};
-
-export type Packageish = {
-  redirectRequire(toModuleName: string): string | false,
-  getMain(): string,
-};
-
-export type Moduleish = {
-  +path: string,
-  getPackage(): ?Packageish,
 };
 
 export type ModuleishCache<TModule, TPackage> = {

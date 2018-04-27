@@ -22,14 +22,12 @@ import type ModuleCache from './ModuleCache';
 import type {LocalPath} from './lib/toLocalPath';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
-export type ReadResult = {
+type ReadResult = {
   +code: string,
   +dependencies: $ReadOnlyArray<TransformResultDependency>,
   +map: Array<MetroSourceMapSegmentTuple>,
   +source: string,
 };
-
-export type CachedReadResult = ?ReadResult;
 
 export type TransformCode = (
   module: Module,
@@ -47,7 +45,6 @@ export type ConstructorArgs = {
 class Module {
   localPath: LocalPath;
   path: string;
-  type: string;
 
   _moduleCache: ModuleCache;
   _transformCode: TransformCode;
@@ -60,18 +57,9 @@ class Module {
 
     this.localPath = localPath;
     this.path = file;
-    this.type = 'Module';
 
     this._moduleCache = moduleCache;
     this._transformCode = transformCode;
-  }
-
-  isHaste(): boolean {
-    return false;
-  }
-
-  getName(): string {
-    return this.localPath;
   }
 
   getPackage() {
@@ -107,18 +95,6 @@ class Module {
         return module._readSourceCode();
       },
     };
-  }
-
-  readCached(transformOptions: WorkerOptions): null {
-    return null;
-  }
-
-  readFresh(transformOptions: WorkerOptions): Promise<ReadResult> {
-    return this.read(transformOptions);
-  }
-
-  hash() {
-    return `Module : ${this.path}`;
   }
 
   isAsset() {
