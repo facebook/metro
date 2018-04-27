@@ -18,7 +18,7 @@ jest
   .useRealTimers();
 
 const JSONStream = require('JSONStream');
-const buckWorker = require('../worker-tool');
+const buckWorker = require('../');
 const path = require('path');
 const mkdirp = require('mkdirp');
 

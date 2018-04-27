@@ -176,7 +176,7 @@ function getBabelRegisterConfig7() {
    */
   'use strict';
 
-  require('metro-babel-register/node-polyfills');
+  require('metro-babel-register/src/node-polyfills');
 
   var _only = [];
 
