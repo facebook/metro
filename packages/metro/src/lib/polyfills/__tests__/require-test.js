@@ -15,7 +15,7 @@
 const fs = require('fs');
 
 const {getBabelRegisterConfig} = require('../../../babel-bridge');
-const {transformSync} = require('../../../babel-bridge');
+const {transformSync} = require('@babel/core');
 
 const babelConfig = getBabelRegisterConfig();
 

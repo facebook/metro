@@ -18,7 +18,7 @@ const invariant = require('fbjs/lib/invariant');
 const optimizeDependencies = require('./optimizeDependencies');
 const sourceMap = require('source-map');
 
-const {transformSync} = require('../../babel-bridge');
+const {transformSync} = require('@babel/core');
 
 import type {PostMinifyProcess} from '../../Bundler';
 import type {TransformedSourceFile, TransformResult} from '../types.flow';

@@ -13,15 +13,14 @@
 
 // This is a temporary migration bridge to switch between babel 6 and 7
 
-const babelCore7 = require('@babel/core');
 const babelGenerate7 = require('@babel/generator').default;
 const babelTemplate7 = require('@babel/template').default;
 const babelTraverse7 = require('@babel/traverse').default;
 const babelTypes7 = require('@babel/types');
 const babylon7 = require('metro-babylon7');
-
 const externalHelpersPlugin7 = require('babel-plugin-external-helpers');
 const inlineRequiresPlugin7 = require('babel-preset-fbjs/plugins/inline-requires');
+
 const makeHMRConfig7 = makeMakeHMRConfig7();
 function resolvePlugins7(plugins: Array<any>) {
   /**
@@ -53,10 +52,6 @@ function resolvePlugins7(plugins: Array<any>) {
 }
 
 module.exports = {
-  // need to abstract the transform* funcs here since their name changed
-  transformSync: babelCore7.transformSync,
-  transformFileSync: babelCore7.transformFileSync,
-  transformFromAstSync: babelCore7.transformFromAstSync,
   babelGenerate: babelGenerate7,
   babelTemplate: babelTemplate7,
   babelTraverse: babelTraverse7,

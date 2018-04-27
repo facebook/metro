@@ -12,8 +12,8 @@
 
 const constantFoldingPlugin = require('../constant-folding-plugin');
 
-const {transformSync} = require('../../../babel-bridge');
-const {transformFromAstSync} = require('../../../babel-bridge');
+const {transformSync} = require('@babel/core');
+const {transformFromAstSync} = require('@babel/core');
 
 import type {TransformResult} from '@babel/core';
 

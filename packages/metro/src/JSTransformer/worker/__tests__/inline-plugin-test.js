@@ -13,8 +13,8 @@
 const inlinePlugin = require('../inline-plugin');
 const invariant = require('fbjs/lib/invariant');
 
-const {transformSync} = require('../../../babel-bridge');
-const {transformFromAstSync} = require('../../../babel-bridge');
+const {transformSync} = require('@babel/core');
+const {transformFromAstSync} = require('@babel/core');
 
 import type {TransformResult} from '@babel/core';
 import type {Ast} from 'babel-core';

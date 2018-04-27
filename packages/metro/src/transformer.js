@@ -21,7 +21,7 @@ const {getPreset} = require('./babel-bridge');
 const {inlineRequiresPlugin} = require('./babel-bridge');
 const {makeHMRConfig} = require('./babel-bridge');
 const {resolvePlugins} = require('./babel-bridge');
-const {transformSync} = require('./babel-bridge');
+const {transformSync} = require('@babel/core');
 
 import type {Transformer, TransformOptions} from './JSTransformer/worker';
 import type {Plugins as BabelPlugins} from 'babel-core';

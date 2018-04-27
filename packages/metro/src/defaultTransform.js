@@ -9,7 +9,7 @@
  */
 'use strict';
 
-const {transformSync} = require('./babel-bridge');
+const {transformSync} = require('@babel/core');
 
 import type {TransformOptions} from './JSTransformer/worker';
 import type {Plugins as BabelPlugins} from 'babel-core';
