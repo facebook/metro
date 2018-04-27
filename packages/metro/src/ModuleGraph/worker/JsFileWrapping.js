@@ -11,7 +11,8 @@
 'use strict';
 
 /* eslint-disable lint/no-unclear-flowtypes */
-const {babelTypes, babelTraverse: traverse} = require('../../babel-bridge');
+const {babelTypes} = require('../../babel-bridge');
+const traverse = require('@babel/traverse').default;
 
 const MODULE_FACTORY_PARAMETERS = ['global', 'require', 'module', 'exports'];
 const POLYFILL_FACTORY_PARAMETERS = ['global'];

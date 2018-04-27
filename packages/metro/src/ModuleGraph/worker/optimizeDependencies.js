@@ -10,7 +10,8 @@
 
 'use strict';
 
-const {babelTraverse: traverse} = require('../../babel-bridge');
+const traverse = require('@babel/traverse').default;
+
 const babelGenerate = require('@babel/generator').default;
 
 import type {TransformResultDependency} from '../types.flow';

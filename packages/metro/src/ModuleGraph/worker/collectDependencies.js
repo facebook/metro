@@ -14,8 +14,8 @@ const nullthrows = require('fbjs/lib/nullthrows');
 
 const babelTemplate = require('@babel/template').default;
 const generate = require('@babel/generator').default;
+const traverse = require('@babel/traverse').default;
 
-const {babelTraverse: traverse} = require('../../babel-bridge');
 const {babelTypes: types} = require('../../babel-bridge');
 
 import type {TransformResultDependency} from '../types.flow';
