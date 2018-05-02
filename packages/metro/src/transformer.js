@@ -12,11 +12,11 @@
 'use strict';
 
 const crypto = require('crypto');
+const externalHelpersPlugin = require('babel-plugin-external-helpers');
 const fs = require('fs');
 const json5 = require('json5');
 const path = require('path');
 
-const {externalHelpersPlugin} = require('./babel-bridge');
 const {getPreset} = require('./babel-bridge');
 const {inlineRequiresPlugin} = require('./babel-bridge');
 const {makeHMRConfig} = require('./babel-bridge');
