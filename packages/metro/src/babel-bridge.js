@@ -13,8 +13,6 @@
 
 // This is a temporary migration bridge to switch between babel 6 and 7
 
-const inlineRequiresPlugin7 = require('babel-preset-fbjs/plugins/inline-requires');
-
 const makeHMRConfig7 = makeMakeHMRConfig7();
 function resolvePlugins7(plugins: Array<any>) {
   /**
@@ -46,7 +44,6 @@ function resolvePlugins7(plugins: Array<any>) {
 }
 
 module.exports = {
-  inlineRequiresPlugin: inlineRequiresPlugin7,
   makeHMRConfig: makeHMRConfig7,
   resolvePlugins: resolvePlugins7,
   getPreset,

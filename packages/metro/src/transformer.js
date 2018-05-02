@@ -14,11 +14,11 @@
 const crypto = require('crypto');
 const externalHelpersPlugin = require('babel-plugin-external-helpers');
 const fs = require('fs');
+const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
 const json5 = require('json5');
 const path = require('path');
 
 const {getPreset} = require('./babel-bridge');
-const {inlineRequiresPlugin} = require('./babel-bridge');
 const {makeHMRConfig} = require('./babel-bridge');
 const {resolvePlugins} = require('./babel-bridge');
 const {transformSync} = require('@babel/core');
