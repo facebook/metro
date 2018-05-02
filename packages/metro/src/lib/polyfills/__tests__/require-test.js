@@ -12,64 +12,33 @@
 
 'use strict';
 
+require('metro-babel-register/src/node-polyfills');
+
 const fs = require('fs');
 
 const {transformSync} = require('@babel/core');
 
-const babelConfig = getBabelRegisterConfig();
+// from: metro/packages/metro-babel-register/babel-register.js
 
-function getBabelRegisterConfig() {
-  // from: metro/packages/metro-babel-register/babel-register.js
-  // (dont use babel-register anymore, it obsoleted with babel 7)
+const PLUGINS = [
+  '@babel/plugin-transform-flow-strip-types',
+  '@babel/plugin-proposal-object-rest-spread',
+  '@babel/plugin-proposal-class-properties',
+];
 
-  /**
-   * Copyright (c) 2015-present, Facebook, Inc.
-   *
-   * This source code is licensed under the MIT license found in the
-   * LICENSE file in the root directory of this source tree.
-   *
-   * @format
-   */
-  'use strict';
-
-  require('metro-babel-register/src/node-polyfills');
-
-  var _only = [];
-
-  const PLUGINS = [
-    'transform-flow-strip-types',
-    'proposal-object-rest-spread',
-    'proposal-class-properties',
-  ];
-
-  function config(onlyList: Array<string>) {
-    /* $FlowFixMe(>=0.70.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.70 was deployed. To see the error delete this
-     * comment and run Flow. */
-    _only = _only.concat(onlyList);
-    return {
-      presets: [],
-      /* $FlowFixMe(>=0.70.0 site=react_native_fb) This comment suppresses an
-       * error found when Flow v0.70 was deployed. To see the error delete
-       * this comment and run Flow. */
-      plugins: PLUGINS.map(pluginName =>
-        // $FlowFixMe TODO t26372934 plugin require
-        require(`@babel/plugin-${pluginName}`),
-      ),
-      only: _only,
-      retainLines: true,
-      sourceMaps: 'inline',
-      babelrc: false,
-    };
-  }
-
-  return config;
+function createBabelConfig() {
+  return {
+    presets: [],
+    plugins: PLUGINS.map(require),
+    retainLines: true,
+    sourceMaps: 'inline',
+    babelrc: false,
+  };
 }
 
 describe('require', () => {
   const moduleSystemCode = (() => {
-    const {only, ...config} = babelConfig([]);
-    only;
+    const config = createBabelConfig();
     const rawCode = fs.readFileSync(require.resolve('../require'), 'utf8');
     return transformSync(rawCode, config).code;
   })();
