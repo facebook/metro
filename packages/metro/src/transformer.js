@@ -16,9 +16,9 @@ const externalHelpersPlugin = require('babel-plugin-external-helpers');
 const fs = require('fs');
 const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
 const json5 = require('json5');
+const makeHMRConfig = require('./hmrConfig');
 const path = require('path');
 
-const {makeHMRConfig} = require('./babel-bridge');
 const {transformSync} = require('@babel/core');
 
 import type {Transformer, TransformOptions} from './JSTransformer/worker';
