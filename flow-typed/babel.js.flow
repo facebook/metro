@@ -26,17 +26,18 @@ type BabylonOptions = {
   sourceType?: 'script' | 'module',
   sourceFilename?: 'string',
   plugins?: Array<
-    | 'jsx'
-    | 'flow'
-    | 'doExpressions'
-    | 'objectRestSpread'
-    | 'decorators'
-    | 'classProperties'
-    | 'exportExtensions'
     | 'asyncGenerators'
+    | 'classProperties'
+    | 'decorators'
+    | 'doExpressions'
+    | 'dynamicImport'
+    | 'exportExtensions'
+    | 'flow'
     | 'functionBind'
     | 'functionSent'
-    | 'dynamicImport',
+    | 'jsx'
+    | 'objectRestSpread'
+    | 'optionalChaining',
   >,
 };
 
