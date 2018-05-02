@@ -14,38 +14,9 @@
 // This is a temporary migration bridge to switch between babel 6 and 7
 
 const makeHMRConfig7 = makeMakeHMRConfig7();
-function resolvePlugins7(plugins: Array<any>) {
-  /**
-   * from: babel-preset-react-native/lib/resolvePlugins
-   * "Ported" to Babel 7
-   *
-   * Manually resolve all default Babel plugins.
-   * `babel.transform` will attempt to resolve all base plugins relative to
-   * the file it's compiling. This makes sure that we're using the plugins
-   * installed in the react-native package.
-   */
-  type ModuleES6 = {__esModule?: boolean, default?: {}};
-  /* $FlowFixMe(>=0.70.0 site=react_native_fb) This comment suppresses an
-   * error found when Flow v0.70 was deployed. To see the error delete this
-   * comment and run Flow. */
-  return plugins.map(plugin => {
-    // Normalise plugin to an array.
-    plugin = Array.isArray(plugin) ? plugin : [plugin];
-    // Only resolve the plugin if it's a string reference.
-    if (typeof plugin[0] === 'string') {
-      // $FlowFixMe TODO t26372934 plugin require
-      const required: ModuleES6 | {} = require('@babel/plugin-' + plugin[0]);
-      // es6 import default?
-      // $FlowFixMe should properly type this plugin structure
-      plugin[0] = required.__esModule ? required.default : required;
-    }
-    return plugin;
-  });
-}
 
 module.exports = {
   makeHMRConfig: makeHMRConfig7,
-  resolvePlugins: resolvePlugins7,
   getPreset,
 };
 

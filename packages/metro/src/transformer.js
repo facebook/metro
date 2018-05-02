@@ -20,11 +20,12 @@ const path = require('path');
 
 const {getPreset} = require('./babel-bridge');
 const {makeHMRConfig} = require('./babel-bridge');
-const {resolvePlugins} = require('./babel-bridge');
 const {transformSync} = require('@babel/core');
 
 import type {Transformer, TransformOptions} from './JSTransformer/worker';
 import type {Plugins as BabelPlugins} from 'babel-core';
+
+type ModuleES6 = {__esModule?: boolean, default?: {}};
 
 const cacheKeyParts = [
   fs.readFileSync(__filename),
@@ -65,7 +66,24 @@ const getBabelRC = (function() {
 
       // Require the babel-preset's listed in the default babel config
       babelRC.presets = babelRC.presets.map(getPreset);
-      babelRC.plugins = resolvePlugins(babelRC.plugins);
+      babelRC.plugins = babelRC.plugins.map(plugin => {
+        // Manually resolve all default Babel plugins.
+        // `babel.transform` will attempt to resolve all base plugins relative to
+        // the file it's compiling. This makes sure that we're using the plugins
+        // installed in the react-native package.
+
+        // Normalise plugin to an array.
+        plugin = Array.isArray(plugin) ? plugin : [plugin];
+        // Only resolve the plugin if it's a string reference.
+        if (typeof plugin[0] === 'string') {
+          // $FlowFixMe TODO t26372934 plugin require
+          const required: ModuleES6 | {} = require('@babel/plugin-' +
+            plugin[0]);
+          // es6 import default?
+          // $FlowFixMe should properly type this plugin structure
+          plugin[0] = required.__esModule ? required.default : required;
+        }
+      });
     } else {
       // if we find a .babelrc file we tell babel to use it
       babelRC.extends = projectBabelRCPath;
