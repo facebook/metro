@@ -18,7 +18,6 @@ const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires'
 const json5 = require('json5');
 const path = require('path');
 
-const {getPreset} = require('./babel-bridge');
 const {makeHMRConfig} = require('./babel-bridge');
 const {transformSync} = require('@babel/core');
 
@@ -65,7 +64,21 @@ const getBabelRC = (function() {
       );
 
       // Require the babel-preset's listed in the default babel config
-      babelRC.presets = babelRC.presets.map(getPreset);
+      babelRC.presets = babelRC.presets.map((name: string) => {
+        if (!/^(?:@babel\/|babel-)preset-/.test(name)) {
+          try {
+            name = require.resolve(`babel-preset-${name}`);
+          } catch (error) {
+            if (error && error.conde === 'MODULE_NOT_FOUND') {
+              name = require.resolve(`@babel/preset-${name}`);
+            } else {
+              throw new Error(error);
+            }
+          }
+        }
+        //$FlowFixMe: TODO t26372934 this has to be dynamic
+        return require(name);
+      });
       babelRC.plugins = babelRC.plugins.map(plugin => {
         // Manually resolve all default Babel plugins.
         // `babel.transform` will attempt to resolve all base plugins relative to

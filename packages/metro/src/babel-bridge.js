@@ -17,7 +17,6 @@ const makeHMRConfig7 = makeMakeHMRConfig7();
 
 module.exports = {
   makeHMRConfig: makeHMRConfig7,
-  getPreset,
 };
 
 function makeMakeHMRConfig7() {
@@ -61,18 +60,4 @@ function makeMakeHMRConfig7() {
       ],
     };
   };
-}
-
-function getPreset(name: string) {
-  if (!/^(?:@babel\/|babel-)preset-/.test(name)) {
-    try {
-      name = require.resolve(`babel-preset-${name}`);
-    } catch (error) {
-      if (error && error.conde === 'MODULE_NOT_FOUND') {
-        name = require.resolve(`@babel/preset-${name}`);
-      }
-    }
-  }
-  //$FlowFixMe: TODO t26372934 this has to be dynamic
-  return require(name);
 }
