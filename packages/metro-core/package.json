@@ -12,7 +12,7 @@
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"
   },
   "dependencies": {
-    "jest-haste-map": "23.0.0-beta.2",
+    "jest-haste-map": "23.0.0-charlie.1",
     "lodash.throttle": "^4.1.1",
     "metro-resolver": "0.36.1",
     "wordwrap": "^1.0.0"
