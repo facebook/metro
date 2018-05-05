@@ -29,7 +29,7 @@ function getPreludeCode({
 }
 
 function formatExtraVars(extraVars) {
-  const assignments = [];
+  let assignments = [];
   for (const key in extraVars) {
     assignments.push(`${key}=${JSON.stringify(extraVars[key])}`);
   }

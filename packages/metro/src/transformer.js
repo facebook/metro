@@ -60,7 +60,7 @@ const getBabelRC = (function() {
     // use the Babel config provided with react-native.
     if (!projectBabelRCPath || !fs.existsSync(projectBabelRCPath)) {
       babelRC = json5.parse(
-        fs.readFileSync(require.resolve('metro/rn-babelrc.json')),
+        fs.readFileSync(path.resolve(__dirname, '..', 'rn-babelrc.json')),
       );
 
       // Require the babel-preset's listed in the default babel config

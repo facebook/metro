@@ -30,7 +30,7 @@ describe('code transformation worker:', () => {
       'arbitrary/file.js',
       `local/file.js`,
       'someReallyArbitrary(code)',
-      require.resolve('metro/src/transformer.js'),
+      path.join(__dirname, '../../../transformer.js'),
       true,
       {
         dev: true,
@@ -59,7 +59,7 @@ describe('code transformation worker:', () => {
       'arbitrary/file.js',
       `local/file.js`,
       'arbitrary(code)',
-      require.resolve('metro/src/transformer.js'),
+      path.join(__dirname, '../../../transformer.js'),
       false,
       {
         dev: true,
@@ -94,7 +94,7 @@ describe('code transformation worker:', () => {
         'const b = require("b");',
         'import c from "./c";',
       ].join('\n'),
-      require.resolve('metro/src/transformer.js'),
+      path.join(__dirname, '../../../transformer.js'),
       false,
       {
         dev: true,

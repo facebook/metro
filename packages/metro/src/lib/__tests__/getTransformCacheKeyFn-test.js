@@ -16,6 +16,7 @@ jest.mock('../../../package.json', () => ({
 }));
 
 const getTransformCacheKeyFn = require('../getTransformCacheKeyFn');
+const path = require('path');
 
 describe('getTransformCacheKeyFn', () => {
   it('Should return always the same key for the same params', async () => {
@@ -25,7 +26,10 @@ describe('getTransformCacheKeyFn', () => {
         cacheVersion: '1.0',
         dynamicDepsInPackages: 'arbitrary',
         projectRoots: [__dirname],
-        transformModulePath: require.resolve('metro/src/defaultTransform.js'),
+        transformModulePath: path.resolve(
+          __dirname,
+          '../../defaultTransform.js',
+        ),
       })(),
     ).toMatchSnapshot();
   });
@@ -36,7 +40,7 @@ describe('getTransformCacheKeyFn', () => {
       cacheVersion: '1.0',
       dynamicDepsInPackages: 'arbitrary',
       projectRoots: [__dirname],
-      transformModulePath: require.resolve('metro/src/defaultTransform.js'),
+      transformModulePath: path.resolve(__dirname, '../../defaultTransform.js'),
     };
 
     const changedParams = [
@@ -50,7 +54,10 @@ describe('getTransformCacheKeyFn', () => {
       },
       {
         ...baseParams,
-        transformModulePath: require.resolve('metro/src/transformer.js'),
+        transformModulePath: path.resolve(
+          __dirname,
+          '../../../src/transformer.js',
+        ),
       },
     ];
 
