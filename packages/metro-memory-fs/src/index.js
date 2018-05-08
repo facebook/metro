@@ -1079,6 +1079,7 @@ class FSWatcher extends EventEmitter {
   _encoding: Encoding;
   _node: EntityNode;
   _nodeWatcher: NodeWatcher;
+  _persistIntervalId: IntervalID;
 
   constructor(
     node: EntityNode,
@@ -1092,10 +1093,14 @@ class FSWatcher extends EventEmitter {
     };
     node.watchers.push(this._nodeWatcher);
     this._node = node;
+    if (options.persistent) {
+      this._persistIntervalId = setInterval(() => {}, 60000);
+    }
   }
 
   close() {
     this._node.watchers.splice(this._node.watchers.indexOf(this._nodeWatcher));
+    clearInterval(this._persistIntervalId);
   }
 
   _listener = (eventType, filePath: string) => {
