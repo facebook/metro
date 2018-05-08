@@ -10,6 +10,8 @@
 
 'use strict';
 
+/* eslint-disable no-bitwise */
+
 // $FlowFixMe: not defined by Flow
 const constants = require('constants');
 const stream = require('stream');
@@ -17,7 +19,10 @@ const stream = require('stream');
 const {EventEmitter} = require('events');
 
 type NodeBase = {|
+  gid: number,
   id: number,
+  mode: number,
+  uid: number,
   watchers: Array<NodeWatcher>,
 |};
 
@@ -74,6 +79,8 @@ type Descriptor = {|
   position: number,
 |};
 
+type FilePath = string | Buffer;
+
 const FLAGS_SPECS: {
   [string]: {
     exclusive?: true,
@@ -93,6 +100,7 @@ const FLAGS_SPECS: {
 };
 
 const ASYNC_FUNC_NAMES = [
+  'access',
   'close',
   'fstat',
   'lstat',
@@ -120,10 +128,11 @@ class MemoryFs {
   _nextId: number;
   _platform: 'win32' | 'posix';
   _pathSep: string;
+  constants = constants;
 
   close: (fd: number, callback: (error: ?Error) => mixed) => void;
   open: (
-    filePath: string | Buffer,
+    filePath: FilePath,
     flag: string | number,
     mode?: number,
     callback: (error: ?Error, fd: ?number) => mixed,
@@ -137,7 +146,7 @@ class MemoryFs {
     callback: (?Error, ?number) => mixed,
   ) => void;
   readFile: (
-    filePath: string | Buffer,
+    filePath: FilePath,
     options?:
       | {
           encoding?: Encoding,
@@ -147,10 +156,7 @@ class MemoryFs {
       | ((?Error, ?Buffer | string) => mixed),
     callback?: (?Error, ?Buffer | string) => mixed,
   ) => void;
-  realpath: (
-    filePath: string | Buffer,
-    callback: (?Error, ?string) => mixed,
-  ) => void;
+  realpath: (filePath: FilePath, callback: (?Error, ?string) => mixed) => void;
   write: (
     fd: number,
     bufferOrString: Buffer | string,
@@ -160,7 +166,7 @@ class MemoryFs {
     callback?: (?Error, number) => mixed,
   ) => void;
   writeFile: (
-    filePath: string | Buffer,
+    filePath: FilePath,
     data: Buffer | string,
     options?:
       | {
@@ -199,12 +205,56 @@ class MemoryFs {
     this._nextId = 1;
     this._roots = new Map();
     if (this._platform === 'posix') {
-      this._roots.set('', this._makeDir());
+      this._roots.set('', this._makeDir(0o777));
     } else if (this._platform === 'win32') {
-      this._roots.set('C:', this._makeDir());
+      this._roots.set('C:', this._makeDir(0o777));
     }
     this._fds = new Map();
   }
+
+  accessSync = (filePath: FilePath, mode?: number): void => {
+    if (mode == null) {
+      mode = constants.F_OK;
+    }
+    const stats = this.statSync(filePath);
+    if (mode == constants.F_OK) {
+      return;
+    }
+    const filePathStr = pathStr(filePath);
+    if ((mode & constants.R_OK) !== 0) {
+      if (
+        !(
+          (stats.mode & constants.S_IROTH) !== 0 ||
+          ((stats.mode & constants.S_IRGRP) !== 0 && stats.gid === getgid()) ||
+          ((stats.mode & constants.S_IRUSR) !== 0 && stats.uid === getuid())
+        )
+      ) {
+        throw makeError('EPERM', filePathStr, 'file cannot be read');
+      }
+    }
+    if ((mode & constants.W_OK) !== 0) {
+      if (
+        !(
+          (stats.mode & constants.S_IWOTH) !== 0 ||
+          ((stats.mode & constants.S_IWGRP) !== 0 && stats.gid === getgid()) ||
+          ((stats.mode & constants.S_IWUSR) !== 0 && stats.uid === getuid())
+        )
+      ) {
+        throw makeError('EPERM', filePathStr, 'file cannot be written to');
+      }
+    }
+    if ((mode & constants.X_OK) !== 0) {
+      if (
+        !(
+          (stats.mode & constants.S_IXOTH) !== 0 ||
+          ((stats.mode & constants.S_IXGRP) !== 0 && stats.gid === getgid()) ||
+          ((stats.mode & constants.S_IXUSR) !== 0 && stats.uid === getuid())
+        )
+      ) {
+        throw makeError('EPERM', filePathStr, 'file cannot be executed');
+      }
+    }
+  };
 
   closeSync = (fd: number): void => {
     const desc = this._getDesc(fd);
@@ -215,7 +265,7 @@ class MemoryFs {
   };
 
   openSync = (
-    filePath: string | Buffer,
+    filePath: FilePath,
     flags: string | number,
     mode?: number,
   ): number => {
@@ -247,7 +297,7 @@ class MemoryFs {
   };
 
   readdirSync = (
-    filePath: string | Buffer,
+    filePath: FilePath,
     options?:
       | {
           encoding?: Encoding,
@@ -281,7 +331,7 @@ class MemoryFs {
   };
 
   readFileSync = (
-    filePath: string | Buffer,
+    filePath: FilePath,
     options?:
       | {
           encoding?: Encoding,
@@ -320,7 +370,7 @@ class MemoryFs {
   };
 
   readlinkSync = (
-    filePath: string | Buffer,
+    filePath: FilePath,
     options: ?Encoding | {encoding: ?Encoding},
   ): string | Buffer => {
     let encoding;
@@ -347,7 +397,7 @@ class MemoryFs {
     return buf.toString(encoding);
   };
 
-  realpathSync = (filePath: string | Buffer): string => {
+  realpathSync = (filePath: FilePath): string => {
     return this._resolve(pathStr(filePath)).realpath;
   };
 
@@ -384,7 +434,7 @@ class MemoryFs {
   };
 
   writeFileSync = (
-    filePath: string | Buffer,
+    filePath: FilePath,
     data: Buffer | string,
     options?:
       | {
@@ -423,12 +473,12 @@ class MemoryFs {
     if (node != null) {
       throw makeError('EEXIST', dirPath, 'directory or file already exists');
     }
-    dirNode.entries.set(basename, this._makeDir());
+    dirNode.entries.set(basename, this._makeDir(mode));
   };
 
   symlinkSync = (
     target: string | Buffer,
-    filePath: string | Buffer,
+    filePath: FilePath,
     type?: string,
   ) => {
     if (type == null) {
@@ -444,13 +494,16 @@ class MemoryFs {
     }
     dirNode.entries.set(basename, {
       id: this._getId(),
+      gid: getgid(),
       target: pathStr(target),
+      mode: 0o666,
+      uid: getuid(),
       type: 'symbolicLink',
       watchers: [],
     });
   };
 
-  existsSync = (filePath: string | Buffer): boolean => {
+  existsSync = (filePath: FilePath): boolean => {
     try {
       const {node} = this._resolve(pathStr(filePath));
       return node != null;
@@ -462,7 +515,7 @@ class MemoryFs {
     }
   };
 
-  statSync = (filePath: string | Buffer) => {
+  statSync = (filePath: FilePath) => {
     filePath = pathStr(filePath);
     const {node} = this._resolve(filePath);
     if (node == null) {
@@ -471,7 +524,7 @@ class MemoryFs {
     return new Stats(node);
   };
 
-  lstatSync = (filePath: string | Buffer) => {
+  lstatSync = (filePath: FilePath) => {
     filePath = pathStr(filePath);
     const {node} = this._resolve(filePath, {
       keepFinalSymlink: true,
@@ -488,7 +541,7 @@ class MemoryFs {
   };
 
   createReadStream = (
-    filePath: string | Buffer,
+    filePath: FilePath,
     options?:
       | {
           autoClose?: ?boolean,
@@ -530,7 +583,7 @@ class MemoryFs {
     return rst;
   };
 
-  unlinkSync = (filePath: string | Buffer) => {
+  unlinkSync = (filePath: FilePath) => {
     filePath = pathStr(filePath);
     const {basename, dirNode, dirPath, node} = this._resolve(filePath, {
       keepFinalSymlink: true,
@@ -548,7 +601,7 @@ class MemoryFs {
   };
 
   createWriteStream = (
-    filePath: string | Buffer,
+    filePath: FilePath,
     options?:
       | {
           autoClose?: ?boolean,
@@ -585,7 +638,7 @@ class MemoryFs {
   };
 
   watch = (
-    filePath: string | Buffer,
+    filePath: FilePath,
     options?:
       | {
           encoding?: Encoding,
@@ -620,10 +673,13 @@ class MemoryFs {
     return watcher;
   };
 
-  _makeDir() {
+  _makeDir(mode: number): DirectoryNode {
     return {
       entries: new Map(),
+      gid: getgid(),
       id: this._getId(),
+      mode,
+      uid: getuid(),
       type: 'directory',
       watchers: [],
     };
@@ -651,7 +707,10 @@ class MemoryFs {
       }
       node = {
         content: new Buffer(0),
+        gid: getgid(),
         id: this._getId(),
+        mode,
+        uid: getuid(),
         type: 'file',
         watchers: [],
       };
@@ -919,10 +978,10 @@ class Stats {
   constructor(node: EntityNode) {
     this._type = node.type;
     this.dev = 1;
-    this.mode = 0;
+    this.mode = node.mode;
     this.nlink = 1;
-    this.uid = 100;
-    this.gid = 100;
+    this.uid = node.uid;
+    this.gid = node.gid;
     this.rdev = 0;
     this.blksize = 1024;
     this.ino = node.id;
@@ -983,7 +1042,7 @@ class ReadFileSteam extends stream.Readable {
   path: string | Buffer;
 
   constructor(options: {
-    filePath: string | Buffer,
+    filePath: FilePath,
     encoding: ?Encoding,
     end: ?number,
     fd: number,
@@ -1049,7 +1108,7 @@ class WriteFileStream extends stream.Writable {
 
   constructor(opts: {
     fd: number,
-    filePath: string | Buffer,
+    filePath: FilePath,
     writeSync: WriteSync,
     start: ?number,
   }) {
@@ -1126,7 +1185,7 @@ function checkPathLength(entNames, filePath) {
   }
 }
 
-function pathStr(filePath: string | Buffer): string {
+function pathStr(filePath: FilePath): string {
   if (typeof filePath === 'string') {
     return filePath;
   }
@@ -1150,6 +1209,14 @@ function nullthrows<T>(x: ?T): T {
     throw new Error('item was null or undefined');
   }
   return x;
+}
+
+function getgid(): number {
+  return process.getgid != null ? process.getgid() : -1;
+}
+
+function getuid(): number {
+  return process.getuid != null ? process.getuid() : -1;
 }
 
 module.exports = MemoryFs;

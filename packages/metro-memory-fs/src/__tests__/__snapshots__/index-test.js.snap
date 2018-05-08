@@ -1,5 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`posix support accessSync check owned file cannot be read 1`] = `"EPERM: \`/foo.txt\`: file cannot be read"`;
+
+exports[`posix support accessSync check owned file cannot be written to 1`] = `"EPERM: \`/foo.txt\`: file cannot be written to"`;
+
 exports[`posix support readlink throws when trying to read a regular file 1`] = `"EINVAL: \`/foo.txt\`: entity is not a symlink"`;
 
 exports[`posix support throws when finding a symlink loop 1`] = `"ELOOP: \`/foo.txt\`: too many levels of symbolic links"`;

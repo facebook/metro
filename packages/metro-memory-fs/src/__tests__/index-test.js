@@ -11,6 +11,8 @@
 
 'use strict';
 
+/* eslint-disable no-bitwise */
+
 jest.useRealTimers();
 
 const MemoryFs = require('../index');
@@ -20,6 +22,32 @@ let fs;
 describe('posix support', () => {
   beforeEach(() => {
     fs = new MemoryFs();
+  });
+
+  describe('accessSync', () => {
+    it('accesses owned file', () => {
+      fs.writeFileSync('/foo.txt', 'test');
+      fs.accessSync('/foo.txt');
+    });
+
+    it('check owned file can be read and written to', () => {
+      fs.writeFileSync('/foo.txt', 'test');
+      fs.accessSync('/foo.txt', fs.constants.R_OK | fs.constants.W_OK);
+    });
+
+    it('check owned file cannot be read', () => {
+      fs.writeFileSync('/foo.txt', 'test', {mode: 0o000});
+      expectFsError('EPERM', () =>
+        fs.accessSync('/foo.txt', fs.constants.R_OK),
+      );
+    });
+
+    it('check owned file cannot be written to', () => {
+      fs.writeFileSync('/foo.txt', 'test', {mode: 0o000});
+      expectFsError('EPERM', () =>
+        fs.accessSync('/foo.txt', fs.constants.W_OK),
+      );
+    });
   });
 
   it('can write then read a file', () => {
