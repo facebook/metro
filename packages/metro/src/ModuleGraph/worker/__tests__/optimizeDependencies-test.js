@@ -11,7 +11,7 @@
 
 'use strict';
 
-const babylon = require('metro-babylon7');
+const babylon = require('babylon');
 const optimizeDependencies = require('../optimizeDependencies');
 
 const {InvalidRequireCallError} = optimizeDependencies;

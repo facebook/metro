@@ -13,7 +13,7 @@
 const JsFileWrapping = require('../ModuleGraph/worker/JsFileWrapping');
 
 const assetTransformer = require('../assetTransformer');
-const babylon = require('metro-babylon7');
+const babylon = require('babylon');
 const collectDependencies = require('../ModuleGraph/worker/collectDependencies');
 const constantFoldingPlugin = require('./worker/constant-folding-plugin');
 const crypto = require('crypto');

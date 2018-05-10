@@ -11,7 +11,7 @@
 
 'use strict';
 
-const babylon = require('metro-babylon7');
+const babylon = require('babylon');
 const collectDependencies = require('../collectDependencies');
 
 const {codeFromAst, comparableCode} = require('../../test-helpers');
