@@ -22,10 +22,7 @@ type ReadResult = {
   +source: string,
 };
 
-export type TransformCode = (
-  module: Module,
-  transformOptions: WorkerOptions,
-) => Promise<TransformedCode>;
+export type TransformCode = Function;
 
 export type ConstructorArgs = {
   file: string,

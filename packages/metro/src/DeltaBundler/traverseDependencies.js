@@ -44,11 +44,13 @@ type Delta<T> = {
   deleted: Set<string>,
 };
 
-export type TransformFn<T> = string => Promise<{|
+export type TransformResult<T> = {|
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   output: $ReadOnlyArray<T>,
   +getSource: () => string,
-|}>;
+|};
+
+export type TransformFn<T> = string => Promise<TransformResult<T>>;
 
 export type Options<T> = {|
   resolve: (from: string, to: string) => string,

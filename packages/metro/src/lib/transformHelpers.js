@@ -89,7 +89,6 @@ async function getTransformFn(
   deltaBundler: DeltaBundler<JsOutput>,
   options: BuildGraphOptions,
 ): Promise<TransformFn<JsOutput>> {
-  const dependencyGraph = await bundler.getDependencyGraph();
   const {inlineRequires, ...transformerOptions} = await calcTransformerOptions(
     entryFiles,
     bundler,
@@ -98,25 +97,13 @@ async function getTransformFn(
   );
 
   return async (path: string) => {
-    const module = dependencyGraph.getModuleForPath(
-      path,
-      options.type === 'script',
-    );
-    const result = await module.read({
+    return await bundler.transformFile(path, {
       ...transformerOptions,
       inlineRequires: removeInlineRequiresBlacklistFromOptions(
         path,
         inlineRequires,
       ),
     });
-
-    return {
-      getSource() {
-        return result.source;
-      },
-      output: result.output,
-      dependencies: result.dependencies,
-    };
   };
 }
 

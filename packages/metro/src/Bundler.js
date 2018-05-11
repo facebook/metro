@@ -17,13 +17,18 @@ const assert = require('assert');
 const defaults = require('./defaults');
 const fs = require('fs');
 const getTransformCacheKeyFn = require('./lib/getTransformCacheKeyFn');
+const toLocalPath = require('./node-haste/lib/toLocalPath');
 
 const {Cache, stableHash} = require('metro-cache');
 
-import type {TransformedCode, WorkerOptions} from './JSTransformer/worker';
+import type {TransformResult} from './DeltaBundler/traverseDependencies';
+import type {
+  JsOutput,
+  WorkerOptions,
+  TransformedCode,
+} from './JSTransformer/worker';
 import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
 import type {Reporter} from './lib/reporting';
-import type Module from './node-haste/Module';
 import type {BabelSourceMap} from '@babel/core';
 import type {CacheStore} from 'metro-cache';
 import type {CustomResolver} from 'metro-resolver';
@@ -147,7 +152,7 @@ class Bundler {
       reporter: opts.reporter,
       resolveRequest: opts.resolveRequest,
       sourceExts: opts.sourceExts,
-      transformCode: this._cachedTransformCode.bind(this),
+      transformCode: this.transformFile.bind(this),
       watch: opts.watch,
     });
 
@@ -215,10 +220,10 @@ class Bundler {
     return this._depGraphPromise;
   }
 
-  async _cachedTransformCode(
-    module: Module,
+  async transformFile(
+    filePath: string,
     transformCodeOptions: WorkerOptions,
-  ): Promise<TransformedCode> {
+  ): Promise<TransformResult<JsOutput>> {
     const cache = this._cache;
 
     const {
@@ -243,12 +248,14 @@ class Bundler {
       }
     }
 
+    const localPath = toLocalPath(this._projectRoots, filePath);
+
     const partialKey = stableHash([
       // This is the hash related to the global Bundler config.
       this._baseHash,
 
       // Path.
-      module.localPath,
+      localPath,
 
       // We cannot include "transformCodeOptions" because of "projectRoot".
       assetDataPlugins,
@@ -262,7 +269,7 @@ class Bundler {
       platform,
     ]);
 
-    const sha1 = (await this.getDependencyGraph()).getSha1(module.path);
+    const sha1 = (await this.getDependencyGraph()).getSha1(filePath);
     let fullKey = Buffer.concat([partialKey, Buffer.from(sha1, 'hex')]);
     const result = await cache.get(fullKey);
 
@@ -271,8 +278,8 @@ class Bundler {
     const data = result
       ? {result, sha1}
       : await this._transformer.transform(
-          module.path,
-          module.localPath,
+          filePath,
+          localPath,
           transformCodeOptions,
           this._opts.assetExts,
           this._opts.assetRegistryPath,
@@ -288,7 +295,12 @@ class Bundler {
 
     cache.set(fullKey, data.result);
 
-    return data.result;
+    return {
+      ...data.result,
+      getSource() {
+        return fs.readFileSync(filePath, 'utf8');
+      },
+    };
   }
 }
 
