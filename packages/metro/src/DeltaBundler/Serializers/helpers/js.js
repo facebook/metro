@@ -26,7 +26,7 @@ export type Options = {
 const PASS_MODULE_PATHS_TO_DEFINE = false;
 
 function wrapModule(module: Module, options: Options) {
-  if (module.output.type === 'script') {
+  if (module.output.type.startsWith('js/script')) {
     return module.output.code;
   }
 

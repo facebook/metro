@@ -41,7 +41,7 @@ function getAppendScripts<T: number | string>(
             code: options.getRunModuleStatement(options.createModuleId(path)),
             source: '',
             map: [],
-            type: 'script',
+            type: 'js/script/virtual',
           },
         });
       }
@@ -57,7 +57,7 @@ function getAppendScripts<T: number | string>(
         code: `//# sourceMappingURL=${options.sourceMapUrl}`,
         source: '',
         map: [],
-        type: 'script',
+        type: 'js/script/virtual',
       },
     });
   }

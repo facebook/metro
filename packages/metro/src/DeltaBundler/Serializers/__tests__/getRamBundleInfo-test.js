@@ -12,7 +12,7 @@
 
 const getRamBundleInfo = require('../getRamBundleInfo');
 
-function createModule(name, dependencies, type = 'module') {
+function createModule(name, dependencies, type = 'js/module') {
   return [
     `/root/${name}.js`,
     {
@@ -34,13 +34,13 @@ const graph = {
     createModule('entry2', ['foo2']),
     createModule('foo2', []),
     createModule('foo', ['bar', 'baz', 'qux']),
-    createModule('baz', [], 'asset'),
+    createModule('baz', [], 'js/module/asset'),
     createModule('bar', []),
     createModule('qux', []),
   ]),
 };
 
-const pre = [createModule('pre', [], 'script')[1]];
+const pre = [createModule('pre', [], 'js/script')[1]];
 
 const getRunModuleStatement = moduleId =>
   `require(${JSON.stringify(moduleId)});`;

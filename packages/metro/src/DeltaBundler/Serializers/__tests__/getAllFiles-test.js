@@ -27,16 +27,16 @@ describe('getOrderedDependencyPaths', () => {
   it('Should return all module dependencies correctly', async () => {
     const graph = {
       dependencies: new Map([
-        [1, {path: '/tmp/1.js', output: {type: 'module'}}],
-        [2, {path: '/tmp/2.js', output: {type: 'module'}}],
-        [3, {path: '/tmp/3.js', output: {type: 'module'}}],
-        [4, {path: '/tmp/4.js', output: {type: 'module'}}],
+        [1, {path: '/tmp/1.js', output: {type: 'js/module'}}],
+        [2, {path: '/tmp/2.js', output: {type: 'js/module'}}],
+        [3, {path: '/tmp/3.js', output: {type: 'js/module'}}],
+        [4, {path: '/tmp/4.js', output: {type: 'js/module'}}],
       ]),
     };
 
     expect(
       await getAllFiles(
-        [{path: '/tmp/0.js', output: {type: 'module'}}],
+        [{path: '/tmp/0.js', output: {type: 'js/module'}}],
         graph,
         {},
       ),
@@ -52,11 +52,11 @@ describe('getOrderedDependencyPaths', () => {
   it('Should add assets data dependencies correctly', async () => {
     const graph = {
       dependencies: new Map([
-        [1, {path: '/tmp/1.js', output: {type: 'module'}}],
-        [2, {path: '/tmp/2.png', output: {type: 'asset'}}],
-        [3, {path: '/tmp/3.js', output: {type: 'module'}}],
-        [4, {path: '/tmp/4.png', output: {type: 'asset'}}],
-        [5, {path: '/tmp/5.js', output: {type: 'module'}}],
+        [1, {path: '/tmp/1.js', output: {type: 'js/module'}}],
+        [2, {path: '/tmp/2.png', output: {type: 'js/module/asset'}}],
+        [3, {path: '/tmp/3.js', output: {type: 'js/module'}}],
+        [4, {path: '/tmp/4.png', output: {type: 'js/module/asset'}}],
+        [5, {path: '/tmp/5.js', output: {type: 'js/module'}}],
       ]),
     };
 

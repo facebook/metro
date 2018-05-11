@@ -19,7 +19,7 @@ Object {
       "name": "entry.js",
       "source": undefined,
       "sourcePath": "/root/entry.js",
-      "type": "module",
+      "type": "js/module",
     },
     Object {
       "code": "__d(function() {entry2()},\\"/root/entry2.js\\",[\\"/root/foo2.js\\"],\\"entry2.js\\");",
@@ -35,7 +35,7 @@ Object {
       "name": "entry2.js",
       "source": undefined,
       "sourcePath": "/root/entry2.js",
-      "type": "module",
+      "type": "js/module",
     },
     Object {
       "code": "__d(function() {foo2()},\\"/root/foo2.js\\",[],\\"foo2.js\\");",
@@ -51,7 +51,7 @@ Object {
       "name": "foo2.js",
       "source": undefined,
       "sourcePath": "/root/foo2.js",
-      "type": "module",
+      "type": "js/module",
     },
     Object {
       "code": "__d(function() {foo()},\\"/root/foo.js\\",[\\"/root/bar.js\\",\\"/root/baz.js\\",\\"/root/qux.js\\"],\\"foo.js\\");",
@@ -67,7 +67,7 @@ Object {
       "name": "foo.js",
       "source": undefined,
       "sourcePath": "/root/foo.js",
-      "type": "module",
+      "type": "js/module",
     },
     Object {
       "code": "__d(function() {baz()},\\"/root/baz.js\\",[],\\"baz.js\\");",
@@ -83,7 +83,7 @@ Object {
       "name": "baz.js",
       "source": undefined,
       "sourcePath": "/root/baz.js",
-      "type": "asset",
+      "type": "js/module/asset",
     },
     Object {
       "code": "__d(function() {bar()},\\"/root/bar.js\\",[],\\"bar.js\\");",
@@ -99,7 +99,7 @@ Object {
       "name": "bar.js",
       "source": undefined,
       "sourcePath": "/root/bar.js",
-      "type": "module",
+      "type": "js/module",
     },
     Object {
       "code": "__d(function() {qux()},\\"/root/qux.js\\",[],\\"qux.js\\");",
@@ -115,7 +115,7 @@ Object {
       "name": "qux.js",
       "source": undefined,
       "sourcePath": "/root/qux.js",
-      "type": "module",
+      "type": "js/module",
     },
   ],
   "startupModules": Array [
@@ -133,7 +133,7 @@ Object {
       "name": "pre.js",
       "source": undefined,
       "sourcePath": "/root/pre.js",
-      "type": "script",
+      "type": "js/script",
     },
     Object {
       "code": "require(\\"/root/entry.js\\");",
@@ -153,7 +153,7 @@ Object {
       "name": "entry.js",
       "source": "",
       "sourcePath": "require-/root/entry.js",
-      "type": "script",
+      "type": "js/script/virtual",
     },
     Object {
       "code": "//# sourceMappingURL=http://localhost/bundle.map",
@@ -173,7 +173,7 @@ Object {
       "name": "source-map",
       "source": "",
       "sourcePath": "source-map",
-      "type": "script",
+      "type": "js/script/virtual",
     },
   ],
 }

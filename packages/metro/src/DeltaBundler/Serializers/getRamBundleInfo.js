@@ -91,12 +91,12 @@ async function getRamBundleInfo(
       return;
     }
 
-    if (module.type === 'script' || module.type === 'require') {
+    if (module.type.startsWith('js/script')) {
       startupModules.push(module);
       return;
     }
 
-    if (module.type === 'asset' || module.type === 'module') {
+    if (module.type.startsWith('js/module')) {
       lazyModules.push(module);
     }
   });

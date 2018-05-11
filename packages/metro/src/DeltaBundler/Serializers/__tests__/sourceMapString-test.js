@@ -15,7 +15,7 @@ const sourceMapString = require('../sourceMapString');
 const polyfill = {
   path: '/root/pre.js',
   output: {
-    type: 'script',
+    type: 'js/script',
     code: '__d(function() {/* code for polyfill */});',
     map: [],
     source: 'source pre',
@@ -26,6 +26,7 @@ const fooModule = {
   path: '/root/foo.js',
   dependencies: new Map([['./bar', 'bar']]),
   output: {
+    type: 'js/module',
     code: '__d(function() {/* code for foo */});',
     map: [],
     source: 'source foo',
@@ -36,6 +37,7 @@ const barModule = {
   path: '/root/bar.js',
   dependencies: new Map(),
   output: {
+    type: 'js/module',
     code: '__d(function() {/* code for bar */});',
     map: [],
     source: 'source bar',

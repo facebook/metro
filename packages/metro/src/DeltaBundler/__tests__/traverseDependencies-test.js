@@ -140,7 +140,7 @@ beforeEach(async () => {
           code: '// code',
           map: [],
           source: '// source',
-          type: 'module',
+          type: 'js/module',
         },
       };
     },

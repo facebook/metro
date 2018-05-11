@@ -92,7 +92,7 @@ function _getPrelude({dev}: {dev: boolean}): Module {
       code,
       map: [],
       source: code,
-      type: 'script',
+      type: 'js/script/virtual',
     },
   };
 }

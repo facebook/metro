@@ -94,7 +94,7 @@ describe('HmrServer', () => {
               path: '/hi',
               output: {
                 code: '__d(function() { alert("hi"); });',
-                type: 'module',
+                type: 'js/module',
               },
             },
           ],

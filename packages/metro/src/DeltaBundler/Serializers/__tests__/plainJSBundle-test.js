@@ -15,7 +15,7 @@ const plainJSBundle = require('../plainJSBundle');
 
 const polyfill = {
   output: {
-    type: 'script',
+    type: 'js/script',
     code: '__d(function() {/* code for polyfill */});',
   },
 };
@@ -23,13 +23,13 @@ const polyfill = {
 const fooModule = {
   path: 'foo',
   dependencies: new Map([['./bar', {absolutePath: 'bar', data: {}}]]),
-  output: {code: '__d(function() {/* code for foo */});'},
+  output: {type: 'js/module', code: '__d(function() {/* code for foo */});'},
 };
 
 const barModule = {
   path: 'bar',
   dependencies: new Map(),
-  output: {code: '__d(function() {/* code for bar */});'},
+  output: {type: 'js/module', code: '__d(function() {/* code for bar */});'},
 };
 
 const getRunModuleStatement = moduleId =>

@@ -319,7 +319,7 @@ function createModule(filePath: string, graph: Graph): Module {
       code: '',
       map: [],
       source: '',
-      type: 'module',
+      type: 'js/module',
     },
   };
 

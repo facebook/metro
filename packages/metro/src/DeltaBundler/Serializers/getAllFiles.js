@@ -28,7 +28,7 @@ async function getAllFiles(
 
   const dependencies = await Promise.all(
     [...pre, ...modules.values()].map(async module => {
-      if (module.output.type !== 'asset') {
+      if (module.output.type !== 'js/module/asset') {
         return [module.path];
       } else {
         return await getAssetFiles(module.path, options.platform);

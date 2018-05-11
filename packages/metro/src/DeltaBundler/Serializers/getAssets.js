@@ -29,7 +29,7 @@ async function getAssets(
 ): Promise<$ReadOnlyArray<AssetData>> {
   const assets = await Promise.all(
     Array.from(graph.dependencies.values()).map(async module => {
-      if (module.output.type === 'asset') {
+      if (module.output.type === 'js/module/asset') {
         return getAssetData(
           module.path,
           toLocalPath(options.projectRoots, module.path),

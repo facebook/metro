@@ -109,6 +109,7 @@ describe('processRequest', () => {
             ],
           ]),
           output: {
+            type: 'js/module',
             code: '__d(function() {entry();});',
             map: [],
             source: 'code-mybundle',
@@ -121,6 +122,7 @@ describe('processRequest', () => {
           path: '/root/foo.js',
           dependencies: new Map(),
           output: {
+            type: 'js/module',
             code: '__d(function() {foo();});',
             map: [],
             source: 'code-foo',
@@ -159,9 +161,9 @@ describe('processRequest', () => {
           path: 'require-js',
           dependencies: new Map(),
           output: {
+            type: 'js/script',
             code: 'function () {require();}',
             map: [],
-            type: 'script',
             source: 'code-require',
           },
         },
@@ -459,7 +461,11 @@ describe('processRequest', () => {
               '/root/foo.js',
               {
                 path: '/root/foo.js',
-                output: {code: '__d(function() {modified();});'},
+                output: {
+                  type: 'js/module',
+                  code: '__d(function() {modified();});',
+                  map: [],
+                },
                 dependencies: new Map(),
               },
             ],
@@ -500,7 +506,11 @@ describe('processRequest', () => {
               '/root/foo.js',
               {
                 path: '/root/foo.js',
-                output: {code: '__d(function() {modified();});'},
+                output: {
+                  type: 'js/module',
+                  code: '__d(function() {modified();});',
+                  map: [],
+                },
                 dependencies: new Map(),
               },
             ],

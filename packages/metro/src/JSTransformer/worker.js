@@ -141,7 +141,7 @@ async function transformCode(
   };
 
   let data;
-  let type = 'module';
+  let type = 'js/module';
 
   if (sourceCode == null) {
     data = fs.readFileSync(filename);
@@ -196,11 +196,11 @@ async function transformCode(
   };
 
   if (isAsset(filename, assetExts)) {
-    type = 'asset';
+    type = 'js/module/asset';
   }
 
   const transformResult =
-    type === 'asset'
+    type === 'js/module/asset'
       ? await assetTransformer.transform(
           transformerArgs,
           assetRegistryPath,
@@ -228,7 +228,7 @@ async function transformCode(
     dependencies = [];
     wrappedAst = JsFileWrapping.wrapPolyfill(ast);
 
-    type = 'script';
+    type = 'js/script';
   } else {
     let dependencyMapName;
     try {

@@ -29,7 +29,7 @@ beforeEach(() => {
       code: '__d(function() { console.log("foo") });',
       map: [],
       source: '',
-      type: 'module',
+      type: 'js/module',
     },
   };
 });
@@ -54,7 +54,7 @@ describe('wrapModule()', () => {
   });
 
   it('should not wrap a script', () => {
-    myModule.output.type = 'script';
+    myModule.output.type = 'js/script';
 
     expect(
       wrapModule(myModule, {
