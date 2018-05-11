@@ -23,9 +23,8 @@ describe('Module', () => {
 
   beforeEach(() => {
     transformCode = jest.fn().mockReturnValue({
-      code: 'int main(void) { return -1; }',
       dependencies: ['stdlib.h', 'conio.h'],
-      map: [],
+      output: [{code: 'int main(void) { return -1; }', map: []}],
     });
 
     moduleCache = new ModuleCache();
@@ -54,9 +53,14 @@ describe('Module', () => {
     fs.readFileSync.mockReturnValue('original code');
 
     expect(await module.read({})).toEqual({
-      code: 'int main(void) { return -1; }',
       dependencies: ['stdlib.h', 'conio.h'],
-      map: [],
+      output: [
+        {
+          code: 'int main(void) { return -1; }',
+
+          map: [],
+        },
+      ],
       source: 'original code',
     });
   });

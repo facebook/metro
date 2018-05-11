@@ -37,13 +37,12 @@ import type {Ast} from '@babel/core';
 import type {Plugins as BabelPlugins} from 'babel-core';
 import type {LogEntry} from 'metro-core/src/Logger';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
+import type {TransformOutput} from '../DeltaBundler/traverseDependencies';
 
-export type TransformedCode = {
-  code: string,
+export type TransformedCode = {|
+  output: TransformOutput,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
-  map: Array<MetroSourceMapSegmentTuple>,
-  type: string,
-};
+|};
 
 export type TransformArgs<ExtraOptions: {}> = {|
   filename: string,
@@ -173,7 +172,7 @@ async function transformCode(
     }
 
     return {
-      result: {dependencies: [], code, map, type},
+      result: {dependencies: [], output: [{data: {code, map}, type}]},
       sha1,
       transformFileStartLogEntry,
       transformFileEndLogEntry,
@@ -289,7 +288,7 @@ async function transformCode(
   }
 
   return {
-    result: {dependencies, code, map, type},
+    result: {dependencies, output: [{data: {code, map}, type}]},
     sha1,
     transformFileStartLogEntry,
     transformFileEndLogEntry,

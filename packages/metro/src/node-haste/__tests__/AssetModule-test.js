@@ -41,13 +41,12 @@ describe('AssetModule:', () => {
       localPath: 'image.png',
       moduleCache: new ModuleCache({}),
       transformCode: () => {
-        return Promise.resolve({code: 'module.exports = "asset";'});
+        return Promise.resolve({output: [{code: 'module.exports = "asset";'}]});
       },
     });
 
     const data = await module.read();
 
-    expect(data.code).toBe('module.exports = "asset";');
-    expect(data.source).toBe('');
+    expect(data.output[0].code).toBe('module.exports = "asset";');
   });
 });

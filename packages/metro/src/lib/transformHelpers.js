@@ -113,15 +113,7 @@ async function getTransformFn(
       getSource() {
         return result.source;
       },
-      output: [
-        {
-          data: {
-            code: result.code,
-            map: result.map,
-          },
-          type: result.type,
-        },
-      ],
+      output: result.output,
       dependencies: result.dependencies,
     };
   };

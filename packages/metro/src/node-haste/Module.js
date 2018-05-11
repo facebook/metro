@@ -17,17 +17,12 @@ import type {
   TransformedCode,
   Options as WorkerOptions,
 } from '../JSTransformer/worker';
-import type {TransformResultDependency} from '../ModuleGraph/types.flow';
 import type ModuleCache from './ModuleCache';
 import type {LocalPath} from './lib/toLocalPath';
-import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
 type ReadResult = {
-  +code: string,
-  +dependencies: $ReadOnlyArray<TransformResultDependency>,
-  +map: Array<MetroSourceMapSegmentTuple>,
+  ...TransformedCode,
   +source: string,
-  +type: string,
 };
 
 export type TransformCode = (
@@ -89,10 +84,8 @@ class Module {
     const module = this;
 
     return {
-      code: result.code,
       dependencies: result.dependencies,
-      map: result.map,
-      type: result.type,
+      output: result.output,
       get source() {
         return module._readSourceCode();
       },

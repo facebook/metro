@@ -43,14 +43,15 @@ describe('code transformation worker:', () => {
       'reject',
     );
 
-    expect(result.code).toBe(
+    expect(result.output[0].type).toBe('js/script');
+    expect(result.output[0].data.code).toBe(
       [
         '(function (global) {',
         '  someReallyArbitrary(code);',
         '})(this);',
       ].join('\n'),
     );
-    expect(result.map).toHaveLength(3);
+    expect(result.output[0].data.map).toHaveLength(3);
     expect(result.dependencies).toEqual([]);
   });
 
@@ -72,14 +73,15 @@ describe('code transformation worker:', () => {
       'reject',
     );
 
-    expect(result.code).toBe(
+    expect(result.output[0].type).toBe('js/module');
+    expect(result.output[0].data.code).toBe(
       [
         '__d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {',
         '  arbitrary(code);',
         '});',
       ].join('\n'),
     );
-    expect(result.map).toHaveLength(3);
+    expect(result.output[0].data.map).toHaveLength(3);
     expect(result.dependencies).toEqual([]);
   });
 
@@ -107,7 +109,8 @@ describe('code transformation worker:', () => {
       'reject',
     );
 
-    expect(result.code).toBe(
+    expect(result.output[0].type).toBe('js/module');
+    expect(result.output[0].data.code).toBe(
       [
         '__d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {',
         "  'use strict';",
@@ -122,7 +125,7 @@ describe('code transformation worker:', () => {
         '});',
       ].join('\n'),
     );
-    expect(result.map).toHaveLength(14);
+    expect(result.output[0].data.map).toHaveLength(14);
     expect(result.dependencies).toEqual([
       {isAsync: false, name: './c'},
       {isAsync: false, name: './a'},
@@ -200,7 +203,7 @@ describe('code transformation worker:', () => {
         'minifyModulePath',
         'asyncRequire',
         'throwAtRuntime',
-      )).result.code,
+      )).result.output[0].data.code,
     ).toBe(
       [
         '__d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {',
@@ -229,7 +232,7 @@ describe('code transformation worker:', () => {
         'minifyModulePath',
         'asyncRequire',
         'throwAtRuntime',
-      )).result.code,
+      )).result.output[0].data.code,
     ).toBe(
       [
         '__d(function(global, require, module, exports) {',
