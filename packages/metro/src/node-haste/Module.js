@@ -44,14 +44,6 @@ class Module {
   }
 
   invalidate() {}
-
-  isAsset() {
-    return false;
-  }
-
-  isPolyfill() {
-    return false;
-  }
 }
 
 module.exports = Module;

@@ -50,7 +50,6 @@ export type ModuleishCache<TModule, TPackage> = {
     supportsNativePlatform?: boolean,
   ): TPackage,
   getModule(path: string): TModule,
-  getAssetModule(path: string): TModule,
 };
 
 type Options<TModule, TPackage> = {|
@@ -166,7 +165,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         // not just an arbitrary item!
         const arbitrary = getArrayLowestItem(resolution.filePaths);
         invariant(arbitrary != null, 'invalid asset resolution');
-        return this._options.moduleCache.getAssetModule(arbitrary);
+        return this._options.moduleCache.getModule(arbitrary);
       case 'empty':
         const {moduleCache} = this._options;
         const module = moduleCache.getModule(ModuleResolver.EMPTY_MODULE);

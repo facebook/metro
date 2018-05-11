@@ -10,7 +10,6 @@
 
 'use strict';
 
-const AssetModule = require('./AssetModule');
 const Module = require('./Module');
 const Package = require('./Package');
 
@@ -58,22 +57,6 @@ class ModuleCache {
 
   getAllModules() {
     return this._moduleCache;
-  }
-
-  getAssetModule(filePath: string) {
-    if (!this._moduleCache[filePath]) {
-      /* FixMe: AssetModule does not need all these options. This is because
-       * this is an incorrect OOP design in the first place: AssetModule, being
-       * simpler than a normal Module, should not inherit the Module class.
-       */
-      this._moduleCache[filePath] = new AssetModule({
-        file: filePath,
-        localPath: toLocalPath(this._roots, filePath),
-        moduleCache: this,
-        options: this._getModuleOptions(),
-      });
-    }
-    return this._moduleCache[filePath];
   }
 
   getPackage(filePath: string): Package {

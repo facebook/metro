@@ -9,17 +9,11 @@ Array [
         "name": "a",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.jsx",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/a.coffee",
-    "resolution": undefined,
   },
 ]
 `;
@@ -33,17 +27,11 @@ Array [
         "name": "./a",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.jsx",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/a.coffee",
-    "resolution": undefined,
   },
 ]
 `;
@@ -57,17 +45,11 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/browser.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -81,17 +63,11 @@ Array [
         "name": "bPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/main.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -109,24 +85,15 @@ Array [
         "name": "b",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/a.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/b.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -140,10 +107,7 @@ Array [
         "name": "foo",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -152,17 +116,11 @@ Array [
         "name": "bar",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/foo/main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/foo/node_modules/bar/main.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -176,17 +134,11 @@ Array [
         "name": "foo",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/foo/main.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -200,17 +152,11 @@ Array [
         "name": "foo",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/foo/browser.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -224,17 +170,11 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/main.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -252,10 +192,7 @@ Array [
         "name": "foo",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -264,10 +201,7 @@ Array [
         "name": "bar",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -276,10 +210,7 @@ Array [
         "name": "foo",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/bar.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -288,10 +219,7 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/foo.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -305,17 +233,11 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/main.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -329,17 +251,11 @@ Array [
         "name": "./foo.png",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": true,
-    "isPolyfill": false,
     "path": "/root/foo.png",
-    "resolution": undefined,
   },
 ]
 `;
@@ -353,17 +269,11 @@ Array [
         "name": "bar/lib/foo",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/provides-bar/lib/foo.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -377,17 +287,11 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/index.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -401,17 +305,11 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/lib/index.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -425,10 +323,7 @@ Array [
         "name": "./foo",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -437,17 +332,11 @@ Array [
         "name": "bar",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/foo/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/provides-bar/lib/bar.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -461,10 +350,7 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -473,10 +359,7 @@ Array [
         "name": "node-package",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -485,17 +368,11 @@ Array [
         "name": "nested-package",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/node_modules/rn-package/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/node_modules/nested-browser-package/index.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -509,10 +386,7 @@ Array [
         "name": "a",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -521,17 +395,11 @@ Array [
         "name": "b",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/a.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/b.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -553,31 +421,19 @@ Array [
         "name": "./imgs/c.png",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": true,
-    "isPolyfill": false,
     "path": "/root/imgs/a@1.5x.png",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": true,
-    "isPolyfill": false,
     "path": "/root/imgs/b@.7x.png",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": true,
-    "isPolyfill": false,
     "path": "/root/imgs/c.png",
-    "resolution": undefined,
   },
 ]
 `;
@@ -591,17 +447,11 @@ Array [
         "name": "./imgs/a.png",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": true,
-    "isPolyfill": false,
     "path": "/root/imgs/a.png",
-    "resolution": undefined,
   },
 ]
 `;
@@ -615,17 +465,11 @@ Array [
         "name": "a",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/a.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -643,24 +487,15 @@ Array [
         "name": "./b",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/a.json",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/b.json",
-    "resolution": undefined,
   },
 ]
 `;
@@ -674,17 +509,11 @@ Array [
         "name": "./package.json",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/package.json",
-    "resolution": undefined,
   },
 ]
 `;
@@ -698,10 +527,7 @@ Array [
         "name": "a",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -710,10 +536,7 @@ Array [
         "name": "index",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/a.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -727,10 +550,7 @@ Array [
         "name": "b",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/a.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -739,10 +559,7 @@ exports[`traverseDependencies get sync dependencies (posix) should ignore malfor
 Array [
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -756,10 +573,7 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -776,31 +590,19 @@ Array [
         "name": "node-package-c",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/node_modules/rn-package-a/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/node_modules/rn-package-b/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/node_modules/rn-package-d/index.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -814,17 +616,11 @@ Array [
         "name": "bar",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/bar.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -838,17 +634,11 @@ Array [
         "name": "./lib/",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/lib/index.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -862,17 +652,11 @@ Array [
         "name": "./lib/",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/lib/main.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -886,17 +670,11 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/index.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -918,31 +696,19 @@ Array [
         "name": "./imgs/c.png",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": true,
-    "isPolyfill": false,
     "path": "/root/imgs/a@1.5x.ios.png",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": true,
-    "isPolyfill": false,
     "path": "/root/imgs/b@.7x.ios.png",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": true,
-    "isPolyfill": false,
     "path": "/root/imgs/c.ios.png",
-    "resolution": undefined,
   },
 ]
 `;
@@ -956,10 +722,7 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -968,17 +731,11 @@ Array [
         "name": "./booga",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/emptyModule.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -992,10 +749,7 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1004,17 +758,11 @@ Array [
         "name": "./booga",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/emptyModule.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1028,10 +776,7 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1040,17 +785,11 @@ Array [
         "name": "booga",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/emptyModule.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1064,10 +803,7 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1076,17 +812,11 @@ Array [
         "name": "booga",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/emptyModule.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1100,17 +830,11 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/client.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1124,17 +848,11 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/client.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1148,10 +866,7 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1160,17 +875,11 @@ Array [
         "name": "node-package",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/browser-package/index.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1184,10 +893,7 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1196,17 +902,11 @@ Array [
         "name": "node-package",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/browser-package/index.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1220,10 +920,7 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1232,17 +929,11 @@ Array [
         "name": "node-package",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/browser-package/index.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1256,10 +947,7 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1268,17 +956,11 @@ Array [
         "name": "node-package",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/browser-package/index.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1292,10 +974,7 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1304,10 +983,7 @@ Array [
         "name": "./dir/ooga",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1316,17 +992,11 @@ Array [
         "name": "node-package",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/dir/ooga.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/dir/browser.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1340,10 +1010,7 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1352,10 +1019,7 @@ Array [
         "name": "./dir/ooga",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1364,17 +1028,11 @@ Array [
         "name": "node-package",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/dir/ooga.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/dir/browser.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1388,10 +1046,7 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1404,10 +1059,7 @@ Array [
         "name": "./dir/server.js",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/client.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1416,17 +1068,11 @@ Array [
         "name": "./not-browser",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/not-node.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/browser.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1435,17 +1081,11 @@ Array [
         "name": "../hello",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/dir/client.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/bye.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1459,10 +1099,7 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1475,10 +1112,7 @@ Array [
         "name": "./dir/server.js",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/client.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1487,17 +1121,11 @@ Array [
         "name": "./not-browser",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/not-node.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/browser.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1506,17 +1134,11 @@ Array [
         "name": "../hello",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/dir/client.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/bye.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1530,17 +1152,11 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/client.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1554,17 +1170,11 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/client.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1578,17 +1188,11 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/client.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1602,17 +1206,11 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/client.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1626,17 +1224,11 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/client.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1650,17 +1242,11 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/client.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1674,17 +1260,11 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/client.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1698,17 +1278,11 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/client.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1722,17 +1296,11 @@ Array [
         "name": "/root/apple.js",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/apple.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1746,17 +1314,11 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/main.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1774,24 +1336,15 @@ Array [
         "name": "x.y.z",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/sha.js/main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/x.y.z/main.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1805,17 +1358,11 @@ Array [
         "name": "aPackage/",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/main.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1829,17 +1376,11 @@ Array [
         "name": "aPackage/subdir/lolynot",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/subdir/lolynot.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1853,10 +1394,7 @@ Array [
         "name": "aPackage",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1865,10 +1403,7 @@ Array [
         "name": "./subdir/lolynot",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1877,17 +1412,11 @@ Array [
         "name": "../other",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/subdir/lolynot.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/aPackage/other.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1901,10 +1430,7 @@ Array [
         "name": "a",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -1913,17 +1439,11 @@ Array [
         "name": "b",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\a.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\b.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1945,31 +1465,19 @@ Array [
         "name": "./imgs/c.png",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": true,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\imgs\\\\a@1.5x.png",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": true,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\imgs\\\\b@.7x.png",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": true,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\imgs\\\\c.png",
-    "resolution": undefined,
   },
 ]
 `;
@@ -1983,17 +1491,11 @@ Array [
         "name": "C:/root/apple.js",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\apple.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2011,10 +1513,7 @@ Array [
         "name": "bar",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -2023,24 +1522,15 @@ Array [
         "name": "bar/lol",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/foo/main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/foo/node_modules/bar/lol.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/bar/main2.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2058,10 +1548,7 @@ Array [
         "name": "bar/",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -2070,24 +1557,15 @@ Array [
         "name": "bar/lol",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/foo/main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/foo/node_modules/bar/lol.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/bar/main.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2101,10 +1579,7 @@ Array [
         "name": "bar",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -2113,17 +1588,11 @@ Array [
         "name": "foo",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/path/to/bar.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/foo/main.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2141,24 +1610,15 @@ Array [
         "name": "bar",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.ios.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/foo/index.ios.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/bar/main.ios.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2172,17 +1632,11 @@ Array [
         "name": "shouldWork",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/react-haste/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/react-haste/node_modules/react-haste/main.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2196,17 +1650,11 @@ Array [
         "name": "a",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.ios.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/a.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2224,17 +1672,11 @@ Array [
         "name": "bar",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/foo/package.json",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -2243,17 +1685,11 @@ Array [
         "name": "./package.json",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/bar/main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/bar/package.json",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2279,10 +1715,7 @@ Array [
         "name": "anotherIndex",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -2291,38 +1724,23 @@ Array [
         "name": "submodule",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/react-haste/main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/react-haste/node_modules/submodule/main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/ember/main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/vendored_modules/a-vendored-package/main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/anotherRoot/index.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2336,17 +1754,11 @@ Array [
         "name": "a",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.ios.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/a.ios.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2360,17 +1772,11 @@ Array [
         "name": "./a",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.ios.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/a.ios.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2388,10 +1794,7 @@ Array [
         "name": "bar",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -2400,24 +1803,15 @@ Array [
         "name": "bar",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/foo/main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/foo/node_modules/bar/main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/bar/main.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2431,17 +1825,11 @@ Array [
         "name": "sha.js",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/sha.js/main.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2455,17 +1843,11 @@ Array [
         "name": "a/index.js",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/node_modules/a/index.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2483,10 +1865,7 @@ Array [
         "name": "bar",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -2495,24 +1874,15 @@ Array [
         "name": "bar/lol",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\foo\\\\main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\foo\\\\node_modules\\\\bar\\\\lol.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\bar\\\\main2.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2530,10 +1900,7 @@ Array [
         "name": "bar/",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -2542,24 +1909,15 @@ Array [
         "name": "bar/lol",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\foo\\\\main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\foo\\\\node_modules\\\\bar\\\\lol.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\bar\\\\main.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2573,10 +1931,7 @@ Array [
         "name": "bar",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -2585,17 +1940,11 @@ Array [
         "name": "foo",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\path\\\\to\\\\bar.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\foo\\\\main.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2613,24 +1962,15 @@ Array [
         "name": "bar",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\index.ios.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\foo\\\\index.ios.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\bar\\\\main.ios.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2644,17 +1984,11 @@ Array [
         "name": "shouldWork",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\react-haste\\\\index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\react-haste\\\\node_modules\\\\react-haste\\\\main.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2668,17 +2002,11 @@ Array [
         "name": "a",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\index.ios.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\a.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2696,17 +2024,11 @@ Array [
         "name": "bar",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\foo\\\\package.json",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -2715,17 +2037,11 @@ Array [
         "name": "./package.json",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\bar\\\\main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\bar\\\\package.json",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2751,10 +2067,7 @@ Array [
         "name": "anotherIndex",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -2763,38 +2076,23 @@ Array [
         "name": "submodule",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\react-haste\\\\main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\react-haste\\\\node_modules\\\\submodule\\\\main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\ember\\\\main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\vendored_modules\\\\a-vendored-package\\\\main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\anotherRoot\\\\index.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2808,17 +2106,11 @@ Array [
         "name": "a",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\index.ios.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\a.ios.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2832,17 +2124,11 @@ Array [
         "name": "./a",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\index.ios.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\a.ios.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2860,10 +2146,7 @@ Array [
         "name": "bar",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [
@@ -2872,24 +2155,15 @@ Array [
         "name": "bar",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\foo\\\\main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\foo\\\\node_modules\\\\bar\\\\main.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\bar\\\\main.js",
-    "resolution": undefined,
   },
 ]
 `;
@@ -2903,17 +2177,11 @@ Array [
         "name": "sha.js",
       },
     ],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "C:\\\\root\\\\node_modules\\\\sha.js\\\\main.js",
-    "resolution": undefined,
   },
 ]
 `;

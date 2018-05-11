@@ -30,8 +30,5 @@ describe('Module', () => {
   it('Returns the correct values for many properties and methods', () => {
     expect(module.localPath).toBe('file.js');
     expect(module.path).toBe('/root/to/file.js');
-
-    expect(module.isAsset()).toBe(false);
-    expect(module.isPolyfill()).toBe(false);
   });
 });

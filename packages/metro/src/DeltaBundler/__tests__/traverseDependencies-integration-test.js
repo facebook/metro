@@ -96,15 +96,11 @@ describe('traverseDependencies', function() {
 
     return await Promise.all(
       [...dependencies].map(async path => {
-        const dep = dgraph.getModuleForPath(path);
-        const moduleDependencies = (await transformFile(path)).dependencies;
+        const transformResult = await transformFile(path);
 
         return {
-          path: dep.path,
-          isAsset: dep.isAsset(),
-          isPolyfill: dep.isPolyfill(),
-          resolution: dep.resolution,
-          dependencies: moduleDependencies,
+          path,
+          dependencies: transformResult.dependencies,
         };
       }),
     );
@@ -3613,13 +3609,11 @@ describe('traverseDependencies', function() {
     it('returns correctly a JS module', async () => {
       const module = dependencyGraph.getModuleForPath('/root/index.js');
       expect(module.path).toBe('/root/index.js');
-      expect(module.isAsset()).toBe(false);
     });
 
     it('returns correctly an asset module', async () => {
       const module = dependencyGraph.getModuleForPath('/root/imgs/a.png');
       expect(module.path).toBe('/root/imgs/a.png');
-      expect(module.isAsset()).toBe(true);
     });
   });
 

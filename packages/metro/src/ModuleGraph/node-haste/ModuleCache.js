@@ -33,10 +33,6 @@ module.exports = class ModuleCache {
     this.packages = new Map();
   }
 
-  getAssetModule(path: string): Module {
-    return this.getModule(path);
-  }
-
   getModule(path: string): Module {
     let m = this.modules.get(path);
     if (!m) {

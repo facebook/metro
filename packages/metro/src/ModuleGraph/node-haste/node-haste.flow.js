@@ -39,7 +39,6 @@ export type Package = {
 };
 
 export type ModuleCache = {
-  getAssetModule(path: Path): Module,
   getModule(path: Path): Module,
   getPackage(path: Path): Package,
   getPackageOf(path: Path): ?Package,

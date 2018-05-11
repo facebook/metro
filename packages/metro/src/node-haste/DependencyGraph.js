@@ -213,10 +213,6 @@ class DependencyGraph extends EventEmitter {
   }
 
   getModuleForPath(entryFile: string): Module {
-    if (this._helpers.isAssetFile(entryFile)) {
-      return this._moduleCache.getAssetModule(entryFile);
-    }
-
     return this._moduleCache.getModule(entryFile);
   }
 

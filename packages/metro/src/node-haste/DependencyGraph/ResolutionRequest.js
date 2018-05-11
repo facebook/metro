@@ -38,7 +38,6 @@ export type ModuleishCache<TModule, TPackage> = {
     supportsNativePlatform?: boolean,
   ): TPackage,
   getModule(path: string): TModule,
-  getAssetModule(path: string): TModule,
 };
 
 type Options<TModule, TPackage> = {|
