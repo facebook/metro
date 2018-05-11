@@ -13,50 +13,26 @@
 const Module = require('./Module');
 const Package = require('./Package');
 
-const toLocalPath = require('./lib/toLocalPath');
-
 type GetClosestPackageFn = (filePath: string) => ?string;
-
-type Options = {|
-  hasteImplModulePath?: string,
-  getClosestPackage: GetClosestPackageFn,
-  roots: $ReadOnlyArray<string>,
-|};
 
 class ModuleCache {
   _getClosestPackage: GetClosestPackageFn;
   _moduleCache: {[filePath: string]: Module, __proto__: null};
   _packageCache: {[filePath: string]: Package, __proto__: null};
   _packageModuleMap: WeakMap<Module, string>;
-  _platforms: Set<string>;
-  _roots: $ReadOnlyArray<string>;
-  _opts: Options;
 
-  constructor(options: Options, platforms: Set<string>) {
-    const {getClosestPackage, roots} = options;
-    this._opts = options;
-    this._getClosestPackage = getClosestPackage;
+  constructor(options: {getClosestPackage: GetClosestPackageFn}) {
+    this._getClosestPackage = options.getClosestPackage;
     this._moduleCache = Object.create(null);
     this._packageCache = Object.create(null);
     this._packageModuleMap = new WeakMap();
-    this._platforms = platforms;
-    this._roots = roots;
   }
 
   getModule(filePath: string) {
     if (!this._moduleCache[filePath]) {
-      this._moduleCache[filePath] = new Module({
-        file: filePath,
-        localPath: toLocalPath(this._roots, filePath),
-        moduleCache: this,
-        options: this._getModuleOptions(),
-      });
+      this._moduleCache[filePath] = new Module(filePath, this);
     }
     return this._moduleCache[filePath];
-  }
-
-  getAllModules() {
-    return this._moduleCache;
   }
 
   getPackage(filePath: string): Package {
@@ -96,12 +72,6 @@ class ModuleCache {
       this._packageCache[filePath].invalidate();
       delete this._packageCache[filePath];
     }
-  }
-
-  _getModuleOptions() {
-    return {
-      hasteImplModulePath: this._opts.hasteImplModulePath,
-    };
   }
 }
 

@@ -20,15 +20,10 @@ describe('Module', () => {
   beforeEach(() => {
     moduleCache = new ModuleCache({});
 
-    module = new Module({
-      file: '/root/to/file.js',
-      localPath: 'file.js',
-      moduleCache,
-    });
+    module = new Module('/root/to/file.js', moduleCache);
   });
 
   it('Returns the correct values for many properties and methods', () => {
-    expect(module.localPath).toBe('file.js');
     expect(module.path).toBe('/root/to/file.js');
   });
 });

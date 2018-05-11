@@ -184,14 +184,9 @@ class DependencyGraph extends EventEmitter {
 
   _createModuleCache() {
     const {_opts} = this;
-    return new ModuleCache(
-      {
-        getClosestPackage: this._getClosestPackage.bind(this),
-        hasteImplModulePath: _opts.hasteImplModulePath,
-        roots: _opts.projectRoots,
-      },
-      _opts.platforms,
-    );
+    return new ModuleCache({
+      getClosestPackage: this._getClosestPackage.bind(this),
+    });
   }
 
   getSha1(filename: string): string {
@@ -212,24 +207,16 @@ class DependencyGraph extends EventEmitter {
     this._haste.end();
   }
 
-  getModuleForPath(entryFile: string): Module {
-    return this._moduleCache.getModule(entryFile);
-  }
-
-  resolveDependency(
-    fromModule: Module,
-    toModuleName: string,
-    platform: ?string,
-  ): Module {
+  resolveDependency(from: string, to: string, platform: ?string): string {
     const req = new ResolutionRequest({
       moduleResolver: this._moduleResolver,
-      entryPath: fromModule.path,
+      entryPath: from,
       helpers: this._helpers,
       platform: platform || null,
       moduleCache: this._moduleCache,
     });
 
-    return req.resolveDependency(fromModule, toModuleName);
+    return req.resolveDependency(this._moduleCache.getModule(from), to).path;
   }
 
   _doesFileExist = (filePath: string): boolean => {

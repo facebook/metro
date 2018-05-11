@@ -13,29 +13,19 @@
 const isAbsolutePath = require('absolute-path');
 
 import type ModuleCache from './ModuleCache';
-import type {LocalPath} from './lib/toLocalPath';
-
-export type ConstructorArgs = {
-  file: string,
-  localPath: LocalPath,
-  moduleCache: ModuleCache,
-};
 
 class Module {
-  localPath: LocalPath;
   path: string;
 
   _moduleCache: ModuleCache;
   _sourceCode: ?string;
 
-  constructor({file, localPath, moduleCache}: ConstructorArgs) {
+  constructor(file: string, moduleCache: ModuleCache) {
     if (!isAbsolutePath(file)) {
       throw new Error('Expected file to be absolute path but got ' + file);
     }
 
-    this.localPath = localPath;
     this.path = file;
-
     this._moduleCache = moduleCache;
   }
 

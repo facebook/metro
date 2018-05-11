@@ -116,11 +116,7 @@ describe('Bundler', function() {
       });
     });
 
-    const module = new Module({
-      file: '/root/foo.js',
-      localPath: 'foo.js',
-      experimentalCaches: true,
-    });
+    const module = new Module('/root/foo.js');
 
     require('../../JSTransformer').prototype.transform.mockReturnValue({
       sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',

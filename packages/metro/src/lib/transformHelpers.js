@@ -113,13 +113,8 @@ async function getResolveDependencyFn(
 ): Promise<(from: string, to: string) => string> {
   const dependencyGraph = await bundler.getDependencyGraph();
 
-  return (from: string, to: string) => {
-    return dependencyGraph.resolveDependency(
-      dependencyGraph.getModuleForPath(from),
-      to,
-      platform,
-    ).path;
-  };
+  return (from: string, to: string) =>
+    dependencyGraph.resolveDependency(from, to, platform);
 }
 
 module.exports = {

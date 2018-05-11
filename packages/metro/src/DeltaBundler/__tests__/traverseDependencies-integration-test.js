@@ -3578,45 +3578,6 @@ describe('traverseDependencies', function() {
     });
   });
 
-  describe('getModuleForPath()', () => {
-    let DependencyGraph;
-    let dependencyGraph;
-
-    beforeEach(async () => {
-      setMockFileSystem({
-        root: {
-          'index.js': ``,
-          imgs: {
-            'a.png': '',
-          },
-        },
-      });
-
-      DependencyGraph = require('../../node-haste/DependencyGraph');
-      dependencyGraph = await DependencyGraph.load(
-        {
-          ...defaults,
-          projectRoots: ['/root'],
-        },
-        false /* since we're mocking the filesystem, we cannot use watchman */,
-      );
-    });
-
-    afterEach(() => {
-      dependencyGraph.end();
-    });
-
-    it('returns correctly a JS module', async () => {
-      const module = dependencyGraph.getModuleForPath('/root/index.js');
-      expect(module.path).toBe('/root/index.js');
-    });
-
-    it('returns correctly an asset module', async () => {
-      const module = dependencyGraph.getModuleForPath('/root/imgs/a.png');
-      expect(module.path).toBe('/root/imgs/a.png');
-    });
-  });
-
   /**
    * When running a test on the dependency graph, watch mode is enabled by
    * default, so we must end the watcher to ensure the test does not hang up
