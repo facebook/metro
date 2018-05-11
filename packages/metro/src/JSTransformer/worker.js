@@ -42,6 +42,7 @@ export type TransformedCode = {
   code: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   map: Array<MetroSourceMapSegmentTuple>,
+  type: string,
 };
 
 export type TransformArgs<ExtraOptions: {}> = {|
@@ -140,6 +141,7 @@ async function transformCode(
   };
 
   let data;
+  let type = 'module';
 
   if (sourceCode == null) {
     data = fs.readFileSync(filename);
@@ -171,7 +173,7 @@ async function transformCode(
     }
 
     return {
-      result: {dependencies: [], code, map},
+      result: {dependencies: [], code, map, type},
       sha1,
       transformFileStartLogEntry,
       transformFileEndLogEntry,
@@ -193,13 +195,18 @@ async function transformCode(
     src: sourceCode,
   };
 
-  const transformResult = isAsset(filename, assetExts)
-    ? await assetTransformer.transform(
-        transformerArgs,
-        assetRegistryPath,
-        options.assetDataPlugins,
-      )
-    : await transformer.transform(transformerArgs);
+  if (isAsset(filename, assetExts)) {
+    type = 'asset';
+  }
+
+  const transformResult =
+    type === 'asset'
+      ? await assetTransformer.transform(
+          transformerArgs,
+          assetRegistryPath,
+          options.assetDataPlugins,
+        )
+      : await transformer.transform(transformerArgs);
 
   // Transformers can ouptut null ASTs (if they ignore the file). In that case
   // we need to parse the module source code to get their AST.
@@ -220,6 +227,8 @@ async function transformCode(
   if (isScript) {
     dependencies = [];
     wrappedAst = JsFileWrapping.wrapPolyfill(ast);
+
+    type = 'script';
   } else {
     let dependencyMapName;
     try {
@@ -280,7 +289,7 @@ async function transformCode(
   }
 
   return {
-    result: {dependencies, code, map},
+    result: {dependencies, code, map, type},
     sha1,
     transformFileStartLogEntry,
     transformFileEndLogEntry,

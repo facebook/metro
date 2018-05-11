@@ -109,20 +109,12 @@ async function getTransformFn(
       ),
     });
 
-    let type = 'module';
-    if (module.isAsset()) {
-      type = 'asset';
-    }
-    if (module.isPolyfill()) {
-      type = 'script';
-    }
-
     // eslint-disable-next-line lint/flow-no-fixme
     // $FlowFixMe: "defineProperty" with a getter is buggy in flow.
     const output = {
       code: result.code,
       map: result.map,
-      type,
+      type: result.type,
     };
 
     // Lazily access source code; if not needed, don't read the file.

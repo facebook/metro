@@ -27,6 +27,7 @@ type ReadResult = {
   +dependencies: $ReadOnlyArray<TransformResultDependency>,
   +map: Array<MetroSourceMapSegmentTuple>,
   +source: string,
+  +type: string,
 };
 
 export type TransformCode = (
@@ -91,6 +92,7 @@ class Module {
       code: result.code,
       dependencies: result.dependencies,
       map: result.map,
+      type: result.type,
       get source() {
         return module._readSourceCode();
       },

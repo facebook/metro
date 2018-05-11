@@ -13,7 +13,7 @@
 import type {TransformResultDependency} from '../ModuleGraph/types.flow';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
-export type DependencyType = 'module' | 'script' | 'asset';
+export type DependencyType = string;
 
 export type Dependency = {|
   absolutePath: string,
