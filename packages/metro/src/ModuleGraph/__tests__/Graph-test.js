@@ -36,15 +36,6 @@ describe('Graph:', () => {
     graph = Graph.create(resolve, load);
   });
 
-  it('calls back an error when called without any entry point', async () => {
-    expect.assertions(1);
-    try {
-      await graph([], anyPlatform, {log: quiet});
-    } catch (error) {
-      expect(error).toEqual(any(Error));
-    }
-  });
-
   it('resolves the entry point with the passed-in `resolve` function', async () => {
     const entryPoint = '/arbitrary/path';
     await graph([entryPoint], anyPlatform, noOpts);

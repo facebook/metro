@@ -63,13 +63,6 @@ exports.create = function create(resolve: ResolveFn, load: LoadFn): GraphFn {
       skip,
     }));
 
-    if (tasks.length === 0) {
-      log.error('`Graph` called without any entry points');
-      return Promise.reject(
-        new Error('At least one entry point has to be passed.'),
-      );
-    }
-
     queue.enqueue(...tasks);
     return collect(await queue.result);
   }
