@@ -68,13 +68,10 @@ describe('Transformer', function() {
 
   it('passes transform data to the worker farm when transforming', async () => {
     const transformOptions = {arbitrary: 'options'};
-    const code = 'arbitrary(code)';
 
     await new Transformer(opts).transform(
       fileName,
       localPath,
-      code,
-      false,
       transformOptions,
       [],
       '',
@@ -84,9 +81,7 @@ describe('Transformer', function() {
     expect(api.transform).toBeCalledWith(
       fileName,
       localPath,
-      code,
       transformModulePath,
-      false,
       transformOptions,
       [],
       '',
@@ -102,7 +97,7 @@ describe('Transformer', function() {
     const snippet = 'snippet';
 
     api.transform.mockImplementation(
-      (filename, localPth, code, transformPath, opts) => {
+      (filename, localPth, transformPath, opts) => {
         const babelError = new SyntaxError(message);
 
         babelError.type = 'SyntaxError';

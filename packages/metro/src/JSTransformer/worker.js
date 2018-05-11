@@ -78,6 +78,7 @@ export type WorkerOptions = {|
   +dev: boolean,
   +hot: boolean,
   +inlineRequires: boolean,
+  +isScript: boolean,
   +minify: boolean,
   +platform: ?string,
   +projectRoot: string,
@@ -124,9 +125,7 @@ function getDynamicDepsBehavior(
 async function transformCode(
   filename: string,
   localPath: LocalPath,
-  sourceCode: ?string,
   transformerPath: string,
-  isScript: boolean,
   options: WorkerOptions,
   assetExts: $ReadOnlyArray<string>,
   assetRegistryPath: string,
@@ -142,17 +141,13 @@ async function transformCode(
     start_timestamp: process.hrtime(),
   };
 
-  let data;
+  const data = fs.readFileSync(filename);
+  const sourceCode = data.toString('utf8');
   let type = 'js/module';
-
-  if (sourceCode == null) {
-    data = fs.readFileSync(filename);
-    sourceCode = data.toString('utf8');
-  }
 
   const sha1 = crypto
     .createHash('sha1')
-    .update(data || sourceCode)
+    .update(data)
     .digest('hex');
 
   if (filename.endsWith('.json')) {
@@ -226,7 +221,7 @@ async function transformCode(
   // dependency graph and it code will just be prepended to the bundle modules),
   // we need to wrap it differently than a commonJS module (also, scripts do
   // not have dependencies).
-  if (isScript) {
+  if (options.isScript) {
     dependencies = [];
     wrappedAst = JsFileWrapping.wrapPolyfill(ast);
 

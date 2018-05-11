@@ -21,19 +21,45 @@ jest
   .mock('metro-minify-uglify');
 
 const path = require('path');
-const transformCode = require('..').transform;
-const {InvalidRequireCallError} = require('..');
+
+const transformerPath = require.resolve('metro/src/transformer.js');
+const transformerContents = require('fs').readFileSync(transformerPath);
+
+const babelRcPath = require.resolve('metro/rn-babelrc.json');
+const babelRcContents = require('fs').readFileSync(babelRcPath);
+
+let fs;
+let mkdirp;
+let transformCode;
+let InvalidRequireCallError;
 
 describe('code transformation worker:', () => {
+  beforeEach(() => {
+    jest.resetModules();
+
+    jest.mock('fs', () => new (require('metro-memory-fs'))());
+
+    fs = require('fs');
+    mkdirp = require('mkdirp');
+    ({transform: transformCode, InvalidRequireCallError} = require('..'));
+    fs.reset();
+
+    mkdirp.sync('/root/local');
+    mkdirp.sync(path.dirname(transformerPath));
+    fs.writeFileSync(transformerPath, transformerContents);
+    fs.writeFileSync(babelRcPath, babelRcContents);
+  });
+
   it('transforms a simple script', async () => {
+    fs.writeFileSync('/root/local/file.js', 'someReallyArbitrary(code)');
+
     const {result} = await transformCode(
-      'arbitrary/file.js',
+      '/root/local/file.js',
       `local/file.js`,
-      'someReallyArbitrary(code)',
-      require.resolve('metro/src/transformer.js'),
-      true,
+      transformerPath,
       {
         dev: true,
+        isScript: true,
         transform: {},
       },
       [],
@@ -56,14 +82,15 @@ describe('code transformation worker:', () => {
   });
 
   it('transforms a simple module', async () => {
+    fs.writeFileSync('/root/local/file.js', 'arbitrary(code)');
+
     const {result} = await transformCode(
-      'arbitrary/file.js',
+      '/root/local/file.js',
       `local/file.js`,
-      'arbitrary(code)',
-      require.resolve('metro/src/transformer.js'),
-      false,
+      transformerPath,
       {
         dev: true,
+        isScript: false,
         transform: {},
       },
       [],
@@ -86,9 +113,8 @@ describe('code transformation worker:', () => {
   });
 
   it(`transforms a module with dependencies`, async () => {
-    const {result} = await transformCode(
-      'arbitrary/file.js',
-      `local/file.js`,
+    fs.writeFileSync(
+      '/root/local/file.js',
       [
         "'use strict';",
         'require("./a");',
@@ -96,8 +122,12 @@ describe('code transformation worker:', () => {
         'const b = require("b");',
         'import c from "./c";',
       ].join('\n'),
-      require.resolve('metro/src/transformer.js'),
-      false,
+    );
+
+    const {result} = await transformCode(
+      '/root/local/file.js',
+      `local/file.js`,
+      transformerPath,
       {
         dev: true,
         transform: {},
@@ -134,17 +164,20 @@ describe('code transformation worker:', () => {
   });
 
   it('reports filename when encountering unsupported dynamic dependency', async () => {
+    fs.writeFileSync(
+      '/root/local/file.js',
+      [
+        'require("./a");',
+        'let a = arbitrary(code);',
+        'const b = require(a);',
+      ].join('\n'),
+    );
+
     try {
       await transformCode(
-        'arbitrary/file.js',
+        '/root/local/file.js',
         `local/file.js`,
-        [
-          'require("./a");',
-          'let a = arbitrary(code);',
-          'const b = require(a);',
-        ].join('\n'),
-        path.join(__dirname, '../../../transformer.js'),
-        false,
+        transformerPath,
         {
           dev: true,
           transform: {},
@@ -165,12 +198,13 @@ describe('code transformation worker:', () => {
   });
 
   it('supports dynamic dependencies from within `node_modules`', async () => {
+    mkdirp.sync('/root/node_modules/foo');
+    fs.writeFileSync('/root/node_modules/foo/bar.js', 'require(foo.bar);');
+
     await transformCode(
-      '/root/node_modules/bar/file.js',
-      `node_modules/bar/file.js`,
-      'require(global.something);\n',
-      path.join(__dirname, '../../../transformer.js'),
-      false,
+      '/root/node_modules/foo/bar.js',
+      `node_modules/foo/bar.js`,
+      transformerPath,
       {
         dev: true,
         transform: {},
@@ -185,13 +219,13 @@ describe('code transformation worker:', () => {
   });
 
   it('minifies the code correctly', async () => {
+    fs.writeFileSync('/root/local/file.js', 'arbitrary(code);');
+
     expect(
       (await transformCode(
-        '/root/node_modules/bar/file.js',
-        `node_modules/bar/file.js`,
-        'arbitrary(code);',
-        path.join(__dirname, '../../../transformer.js'),
-        false,
+        '/root/local/file.js',
+        `local/file.js`,
+        transformerPath,
         {
           dev: true,
           minify: true,
@@ -214,13 +248,13 @@ describe('code transformation worker:', () => {
   });
 
   it('minifies a JSON file', async () => {
+    fs.writeFileSync('/root/local/file.json', 'arbitrary(code);');
+
     expect(
       (await transformCode(
-        '/root/node_modules/bar/file.json',
-        `node_modules/bar/file.js`,
-        'arbitrary(code);',
-        path.join(__dirname, '../../../transformer.js'),
-        false,
+        '/root/local/file.json',
+        `local/file.json`,
+        transformerPath,
         {
           dev: true,
           minify: true,

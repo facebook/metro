@@ -217,7 +217,6 @@ class Bundler {
 
   async _cachedTransformCode(
     module: Module,
-    code: ?string,
     transformCodeOptions: WorkerOptions,
   ): Promise<TransformedCode> {
     const cache = this._cache;
@@ -229,6 +228,7 @@ class Bundler {
       dev,
       hot,
       inlineRequires,
+      isScript,
       minify,
       platform,
       projectRoot: _projectRoot, // Blacklisted property.
@@ -257,6 +257,7 @@ class Bundler {
       dev,
       hot,
       inlineRequires,
+      isScript,
       minify,
       platform,
     ]);
@@ -272,8 +273,6 @@ class Bundler {
       : await this._transformer.transform(
           module.path,
           module.localPath,
-          code,
-          module.isPolyfill(),
           transformCodeOptions,
           this._opts.assetExts,
           this._opts.assetRegistryPath,

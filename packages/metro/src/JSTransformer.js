@@ -86,8 +86,6 @@ module.exports = class Transformer {
   async transform(
     filename: string,
     localPath: LocalPath,
-    code: ?string,
-    isScript: boolean,
     options: WorkerOptions,
     assetExts: $ReadOnlyArray<string>,
     assetRegistryPath: string,
@@ -99,9 +97,7 @@ module.exports = class Transformer {
       const data = await this._worker.transform(
         filename,
         localPath,
-        code,
         this._transformModulePath,
-        isScript,
         options,
         assetExts,
         assetRegistryPath,

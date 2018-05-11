@@ -36,6 +36,7 @@ async function calcTransformerOptions(
     dev: options.dev,
     hot: options.hot,
     inlineRequires: false,
+    isScript: options.type === 'script',
     minify: options.minify,
     platform: options.platform,
     projectRoot,

@@ -127,7 +127,7 @@ describe('Bundler', function() {
       result: {},
     });
 
-    await bundlerInstance._cachedTransformCode(module, null, {});
+    await bundlerInstance._cachedTransformCode(module, {});
 
     // We got the SHA-1 of the file from the dependency graph.
     expect(depGraph.getSha1).toBeCalledWith('/root/foo.js');

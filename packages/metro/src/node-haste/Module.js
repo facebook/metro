@@ -24,7 +24,6 @@ type ReadResult = {
 
 export type TransformCode = (
   module: Module,
-  sourceCode: ?string,
   transformOptions: WorkerOptions,
 ) => Promise<TransformedCode>;
 
@@ -74,7 +73,6 @@ class Module {
   async read(transformOptions: WorkerOptions): Promise<ReadResult> {
     const result: TransformedCode = await this._transformCode(
       this,
-      null, // Source code is read on the worker
       transformOptions,
     );
 
