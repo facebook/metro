@@ -24,13 +24,18 @@ beforeEach(() => {
       ['bar', {absolutePath: '/bar', data: {isAsync: false, name: 'bar'}}],
       ['baz', {absolutePath: '/baz', data: {isAsync: false, name: 'baz'}}],
     ]),
+    getSource: () => '',
     inverseDependencies: new Set(),
-    output: {
-      code: '__d(function() { console.log("foo") });',
-      map: [],
-      source: '',
-      type: 'js/module',
-    },
+    output: [
+      {
+        data: {
+          code: '__d(function() { console.log("foo") });',
+          map: [],
+        },
+
+        type: 'js/module',
+      },
+    ],
   };
 });
 
@@ -54,14 +59,14 @@ describe('wrapModule()', () => {
   });
 
   it('should not wrap a script', () => {
-    myModule.output.type = 'js/script';
+    myModule.output[0].type = 'js/script';
 
     expect(
       wrapModule(myModule, {
         createModuleId: createModuleIdFactory(),
         dev: true,
       }),
-    ).toEqual(myModule.output.code);
+    ).toEqual(myModule.output[0].data.code);
   });
 
   it('should use custom createModuleId param', () => {

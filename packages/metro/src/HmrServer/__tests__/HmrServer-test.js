@@ -92,10 +92,14 @@ describe('HmrServer', () => {
               dependencies: new Map(),
               inverseDependencies: new Set(),
               path: '/hi',
-              output: {
-                code: '__d(function() { alert("hi"); });',
-                type: 'js/module',
-              },
+              output: [
+                {
+                  type: 'js/module',
+                  data: {
+                    code: '__d(function() { alert("hi"); });',
+                  },
+                },
+              ],
             },
           ],
         ]),

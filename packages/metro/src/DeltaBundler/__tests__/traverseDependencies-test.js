@@ -136,12 +136,16 @@ beforeEach(async () => {
           name: dep.name,
           isAsync: false,
         })),
-        output: {
-          code: '// code',
-          map: [],
-          source: '// source',
-          type: 'js/module',
-        },
+        getSource: () => '// source',
+        output: [
+          {
+            data: {
+              code: '// code',
+              map: [],
+            },
+            type: 'js/module',
+          },
+        ],
       };
     },
     onProgress: null,

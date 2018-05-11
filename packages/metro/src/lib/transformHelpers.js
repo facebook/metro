@@ -109,25 +109,19 @@ async function getTransformFn(
       ),
     });
 
-    // eslint-disable-next-line lint/flow-no-fixme
-    // $FlowFixMe: "defineProperty" with a getter is buggy in flow.
-    const output = {
-      code: result.code,
-      map: result.map,
-      type: result.type,
-    };
-
-    // Lazily access source code; if not needed, don't read the file.
-    // eslint-disable-next-line lint/flow-no-fixme
-    // $FlowFixMe: "defineProperty" with a getter is buggy in flow.
-    Object.defineProperty(output, 'source', {
-      configurable: true,
-      enumerable: true,
-      get: () => result.source,
-    });
-
     return {
-      output,
+      getSource() {
+        return result.source;
+      },
+      output: [
+        {
+          data: {
+            code: result.code,
+            map: result.map,
+          },
+          type: result.type,
+        },
+      ],
       dependencies: result.dependencies,
     };
   };

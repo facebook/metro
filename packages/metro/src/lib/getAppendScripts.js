@@ -36,13 +36,19 @@ function getAppendScripts<T: number | string>(
         output.push({
           path: `require-${path}`,
           dependencies: new Map(),
+          getSource: () => '',
           inverseDependencies: new Set(),
-          output: {
-            code: options.getRunModuleStatement(options.createModuleId(path)),
-            source: '',
-            map: [],
-            type: 'js/script/virtual',
-          },
+          output: [
+            {
+              type: 'js/script/virtual',
+              data: {
+                code: options.getRunModuleStatement(
+                  options.createModuleId(path),
+                ),
+                map: [],
+              },
+            },
+          ],
         });
       }
     }
@@ -52,13 +58,17 @@ function getAppendScripts<T: number | string>(
     output.push({
       path: 'source-map',
       dependencies: new Map(),
+      getSource: () => '',
       inverseDependencies: new Set(),
-      output: {
-        code: `//# sourceMappingURL=${options.sourceMapUrl}`,
-        source: '',
-        map: [],
-        type: 'js/script/virtual',
-      },
+      output: [
+        {
+          type: 'js/script/virtual',
+          data: {
+            code: `//# sourceMappingURL=${options.sourceMapUrl}`,
+            map: [],
+          },
+        },
+      ],
     });
   }
 

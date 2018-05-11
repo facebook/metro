@@ -13,13 +13,17 @@ Object {
           },
         },
       },
+      "getSource": [Function],
       "inverseDependencies": Set {},
-      "output": Object {
-        "code": "// code",
-        "map": Array [],
-        "source": "// source",
-        "type": "js/module",
-      },
+      "output": Array [
+        Object {
+          "data": Object {
+            "code": "// code",
+            "map": Array [],
+          },
+          "type": "js/module",
+        },
+      ],
       "path": "/bundle",
     },
     "/foo" => Object {
@@ -39,41 +43,53 @@ Object {
           },
         },
       },
+      "getSource": [Function],
       "inverseDependencies": Set {
         "/bundle",
       },
-      "output": Object {
-        "code": "// code",
-        "map": Array [],
-        "source": "// source",
-        "type": "js/module",
-      },
+      "output": Array [
+        Object {
+          "data": Object {
+            "code": "// code",
+            "map": Array [],
+          },
+          "type": "js/module",
+        },
+      ],
       "path": "/foo",
     },
     "/bar" => Object {
       "dependencies": Map {},
+      "getSource": [Function],
       "inverseDependencies": Set {
         "/foo",
       },
-      "output": Object {
-        "code": "// code",
-        "map": Array [],
-        "source": "// source",
-        "type": "js/module",
-      },
+      "output": Array [
+        Object {
+          "data": Object {
+            "code": "// code",
+            "map": Array [],
+          },
+          "type": "js/module",
+        },
+      ],
       "path": "/bar",
     },
     "/baz" => Object {
       "dependencies": Map {},
+      "getSource": [Function],
       "inverseDependencies": Set {
         "/foo",
       },
-      "output": Object {
-        "code": "// code",
-        "map": Array [],
-        "source": "// source",
-        "type": "js/module",
-      },
+      "output": Array [
+        Object {
+          "data": Object {
+            "code": "// code",
+            "map": Array [],
+          },
+          "type": "js/module",
+        },
+      ],
       "path": "/baz",
     },
   },

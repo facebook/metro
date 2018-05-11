@@ -13,7 +13,7 @@
 const createModuleIdFactory = require('../../../lib/createModuleIdFactory');
 const deltaJSBundle = require('../deltaJSBundle');
 
-function createModule(name, dependencies, type = 'module') {
+function createModule(name, dependencies, type = 'js/module') {
   return [
     `/root/${name}.js`,
     {
@@ -24,7 +24,7 @@ function createModule(name, dependencies, type = 'module') {
           {absolutePath: `/root/${dep}.js`, data: {isAsync: false, name: dep}},
         ]),
       ),
-      output: {type, code: `__d(function() {${name}()});`},
+      output: [{type, data: {code: `__d(function() {${name}()});`}}],
     },
   ];
 }

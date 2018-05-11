@@ -12,7 +12,7 @@
 
 const addParamsToDefineCall = require('../../lib/addParamsToDefineCall');
 
-const {wrapModule} = require('./helpers/js');
+const {isJsModule, wrapModule} = require('./helpers/js');
 
 import type {Delta, Graph} from '../../DeltaBundler';
 import type {Module} from '../traverseDependencies';
@@ -34,7 +34,9 @@ function hmrJSBundle(delta: Delta, graph: Graph, options: Options): Result {
   const modules = [];
 
   for (const module of delta.modified.values()) {
-    modules.push(_prepareModule(module, graph, options));
+    if (isJsModule(module)) {
+      modules.push(_prepareModule(module, graph, options));
+    }
   }
 
   return {

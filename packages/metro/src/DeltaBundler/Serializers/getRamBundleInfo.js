@@ -13,10 +13,11 @@
 const fullSourceMapObject = require('./sourceMapObject');
 const getAppendScripts = require('../../lib/getAppendScripts');
 const getTransitiveDependencies = require('./helpers/getTransitiveDependencies');
+const nullthrows = require('fbjs/lib/nullthrows');
 const path = require('path');
 
 const {createRamBundleGroups} = require('../../Bundler/util');
-const {wrapModule} = require('./helpers/js');
+const {isJsModule, wrapModule} = require('./helpers/js');
 
 import type {GetTransformOptions} from '../../Bundler';
 import type {ModuleTransportLike} from '../../shared/types.flow';
@@ -56,7 +57,7 @@ async function getRamBundleInfo(
 
   modules.forEach(module => options.createModuleId(module.path));
 
-  const ramModules = modules.map(module => ({
+  const ramModules = modules.filter(isJsModule).map(module => ({
     id: options.createModuleId(module.path),
     code: wrapModule(module, options),
     map: fullSourceMapObject(
@@ -68,8 +69,9 @@ async function getRamBundleInfo(
     ),
     name: path.basename(module.path),
     sourcePath: module.path,
-    source: module.output.source,
-    type: module.output.type,
+    source: module.getSource(),
+    type: nullthrows(module.output.find(({type}) => type.startsWith('js')))
+      .type,
   }));
 
   const {preloadedModules, ramGroups} = await _getRamOptions(

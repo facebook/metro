@@ -11,6 +11,7 @@
 'use strict';
 
 const addParamsToDefineCall = require('../../../lib/addParamsToDefineCall');
+const invariant = require('fbjs/lib/invariant');
 const path = require('path');
 
 import type {Module} from '../../traverseDependencies';
@@ -26,8 +27,9 @@ export type Options = {
 const PASS_MODULE_PATHS_TO_DEFINE = false;
 
 function wrapModule(module: Module, options: Options) {
-  if (module.output.type.startsWith('js/script')) {
-    return module.output.code;
+  const output = getJsOutput(module);
+  if (output.type.startsWith('js/script')) {
+    return output.data.code;
   }
 
   const moduleId = options.createModuleId(module.path);
@@ -49,9 +51,28 @@ function wrapModule(module: Module, options: Options) {
     }
   }
 
-  return addParamsToDefineCall(module.output.code, ...params);
+  return addParamsToDefineCall(output.data.code, ...params);
+}
+
+function getJsOutput(module: Module) {
+  const jsModules = module.output.filter(({type}) => type.startsWith('js/'));
+
+  invariant(
+    jsModules.length === 1,
+    `Modules must have exactly one JS output, but ${module.path} has ${
+      jsModules.length
+    } JS outputs.`,
+  );
+
+  return jsModules[0];
+}
+
+function isJsModule(module: Module) {
+  return module.output.some(output => output.type.startsWith('js/'));
 }
 
 module.exports = {
+  getJsOutput,
+  isJsModule,
   wrapModule,
 };

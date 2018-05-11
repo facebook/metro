@@ -14,34 +14,46 @@ const sourceMapString = require('../sourceMapString');
 
 const polyfill = {
   path: '/root/pre.js',
-  output: {
-    type: 'js/script',
-    code: '__d(function() {/* code for polyfill */});',
-    map: [],
-    source: 'source pre',
-  },
+  getSource: () => 'source pre',
+  output: [
+    {
+      type: 'js/script',
+      data: {
+        code: '__d(function() {/* code for polyfill */});',
+        map: [],
+      },
+    },
+  ],
 };
 
 const fooModule = {
   path: '/root/foo.js',
   dependencies: new Map([['./bar', 'bar']]),
-  output: {
-    type: 'js/module',
-    code: '__d(function() {/* code for foo */});',
-    map: [],
-    source: 'source foo',
-  },
+  getSource: () => 'source foo',
+  output: [
+    {
+      type: 'js/module',
+      data: {
+        code: '__d(function() {/* code for foo */});',
+        map: [],
+      },
+    },
+  ],
 };
 
 const barModule = {
   path: '/root/bar.js',
   dependencies: new Map(),
-  output: {
-    type: 'js/module',
-    code: '__d(function() {/* code for bar */});',
-    map: [],
-    source: 'source bar',
-  },
+  getSource: () => 'source bar',
+  output: [
+    {
+      type: 'js/module',
+      data: {
+        code: '__d(function() {/* code for bar */});',
+        map: [],
+      },
+    },
+  ],
 };
 
 it('should serialize a very simple bundle', () => {

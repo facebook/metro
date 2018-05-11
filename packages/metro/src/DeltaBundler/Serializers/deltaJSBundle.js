@@ -13,6 +13,7 @@
 const getAppendScripts = require('../../lib/getAppendScripts');
 
 const {wrapModule} = require('./helpers/js');
+const {getJsOutput, isJsModule} = require('./helpers/js');
 
 import type {Delta, Graph} from '../../DeltaBundler';
 import type {Module} from '../traverseDependencies';
@@ -39,10 +40,12 @@ function deltaJSBundle(
   const outputDelta = [];
 
   for (const module of delta.modified.values()) {
-    outputDelta.push([
-      options.createModuleId(module.path),
-      wrapModule(module, options),
-    ]);
+    if (isJsModule(module)) {
+      outputDelta.push([
+        options.createModuleId(module.path),
+        wrapModule(module, options),
+      ]);
+    }
   }
 
   for (const path of delta.deleted) {
@@ -53,17 +56,21 @@ function deltaJSBundle(
     let i = -1;
 
     for (const module of pre) {
-      outputPre.push([i, module.output.code]);
-      i--;
+      if (isJsModule(module)) {
+        outputPre.push([i, getJsOutput(module).data.code]);
+        i--;
+      }
     }
 
     const appendScripts = getAppendScripts(entryPoint, graph, options).values();
 
     for (const module of appendScripts) {
-      outputPost.push([
-        options.createModuleId(module.path),
-        module.output.code,
-      ]);
+      if (isJsModule(module)) {
+        outputPost.push([
+          options.createModuleId(module.path),
+          getJsOutput(module).data.code,
+        ]);
+      }
     }
   }
 

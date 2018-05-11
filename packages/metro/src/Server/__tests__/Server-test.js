@@ -108,12 +108,16 @@ describe('processRequest', () => {
               },
             ],
           ]),
-          output: {
-            type: 'js/module',
-            code: '__d(function() {entry();});',
-            map: [],
-            source: 'code-mybundle',
-          },
+          getSource: () => 'code-mybundle',
+          output: [
+            {
+              type: 'js/module',
+              data: {
+                code: '__d(function() {entry();});',
+                map: [],
+              },
+            },
+          ],
         },
       ],
       [
@@ -121,12 +125,16 @@ describe('processRequest', () => {
         {
           path: '/root/foo.js',
           dependencies: new Map(),
-          output: {
-            type: 'js/module',
-            code: '__d(function() {foo();});',
-            map: [],
-            source: 'code-foo',
-          },
+          getSource: () => 'code-foo',
+          output: [
+            {
+              type: 'js/module',
+              data: {
+                code: '__d(function() {foo();});',
+                map: [],
+              },
+            },
+          ],
         },
       ],
     ]);
@@ -160,12 +168,16 @@ describe('processRequest', () => {
         {
           path: 'require-js',
           dependencies: new Map(),
-          output: {
-            type: 'js/script',
-            code: 'function () {require();}',
-            map: [],
-            source: 'code-require',
-          },
+          getSource: () => 'code-require',
+          output: [
+            {
+              type: 'js/script',
+              data: {
+                code: 'function () {require();}',
+                map: [],
+              },
+            },
+          ],
         },
       ]),
     );
@@ -461,11 +473,12 @@ describe('processRequest', () => {
               '/root/foo.js',
               {
                 path: '/root/foo.js',
-                output: {
-                  type: 'js/module',
-                  code: '__d(function() {modified();});',
-                  map: [],
-                },
+                output: [
+                  {
+                    type: 'js/module',
+                    data: {code: '__d(function() {modified();});'},
+                  },
+                ],
                 dependencies: new Map(),
               },
             ],
@@ -506,11 +519,12 @@ describe('processRequest', () => {
               '/root/foo.js',
               {
                 path: '/root/foo.js',
-                output: {
-                  type: 'js/module',
-                  code: '__d(function() {modified();});',
-                  map: [],
-                },
+                output: [
+                  {
+                    type: 'js/module',
+                    data: {code: '__d(function() {modified();});'},
+                  },
+                ],
                 dependencies: new Map(),
               },
             ],

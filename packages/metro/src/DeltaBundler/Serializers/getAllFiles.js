@@ -11,6 +11,7 @@
 'use strict';
 
 const {getAssetFiles} = require('../../Assets');
+const {getJsOutput, isJsModule} = require('./helpers/js');
 
 import type {Graph} from '../DeltaCalculator';
 import type {Module} from '../traverseDependencies';
@@ -26,16 +27,25 @@ async function getAllFiles(
 ): Promise<$ReadOnlyArray<string>> {
   const modules = graph.dependencies;
 
-  const dependencies = await Promise.all(
-    [...pre, ...modules.values()].map(async module => {
-      if (module.output.type !== 'js/module/asset') {
-        return [module.path];
-      } else {
-        return await getAssetFiles(module.path, options.platform);
-      }
-    }),
-  );
+  const promises = [];
 
+  for (const module of pre) {
+    promises.push([module.path]);
+  }
+
+  for (const module of modules.values()) {
+    if (!isJsModule(module)) {
+      continue;
+    }
+
+    if (getJsOutput(module).type === 'js/module/asset') {
+      promises.push(getAssetFiles(module.path, options.platform));
+    } else {
+      promises.push([module.path]);
+    }
+  }
+
+  const dependencies = await Promise.all(promises);
   const output = [];
 
   for (const dependencyArray of dependencies) {

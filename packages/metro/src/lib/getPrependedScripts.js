@@ -86,14 +86,18 @@ function _getPrelude({dev}: {dev: boolean}): Module {
 
   return {
     dependencies: new Map(),
+    getSource: () => code,
     inverseDependencies: new Set(),
     path: name,
-    output: {
-      code,
-      map: [],
-      source: code,
-      type: 'js/script/virtual',
-    },
+    output: [
+      {
+        type: 'js/script/virtual',
+        data: {
+          code,
+          map: [],
+        },
+      },
+    ],
   };
 }
 

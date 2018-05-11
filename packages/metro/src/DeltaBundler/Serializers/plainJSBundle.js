@@ -12,7 +12,7 @@
 
 const getAppendScripts = require('../../lib/getAppendScripts');
 
-const {wrapModule} = require('./helpers/js');
+const {isJsModule, wrapModule} = require('./helpers/js');
 
 import type {Graph} from '../DeltaCalculator';
 import type {Module} from '../traverseDependencies';
@@ -41,6 +41,7 @@ function plainJSBundle(
     ...graph.dependencies.values(),
     ...getAppendScripts(entryPoint, graph, options),
   ]
+    .filter(isJsModule)
     .map(module => wrapModule(module, options))
     .join('\n');
 }

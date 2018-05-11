@@ -13,6 +13,7 @@
 const toLocalPath = require('../../node-haste/lib/toLocalPath');
 
 const {getAssetData} = require('../../Assets');
+const {getJsOutput, isJsModule} = require('./helpers/js');
 
 import type {AssetData} from '../../Assets';
 import type {Graph} from '../DeltaCalculator';
@@ -27,21 +28,22 @@ async function getAssets(
   graph: Graph,
   options: Options,
 ): Promise<$ReadOnlyArray<AssetData>> {
-  const assets = await Promise.all(
-    Array.from(graph.dependencies.values()).map(async module => {
-      if (module.output.type === 'js/module/asset') {
-        return getAssetData(
+  const promises = [];
+
+  for (const module of graph.dependencies.values()) {
+    if (isJsModule(module) && getJsOutput(module).type === 'js/module/asset') {
+      promises.push(
+        getAssetData(
           module.path,
           toLocalPath(options.projectRoots, module.path),
           options.assetPlugins,
           options.platform,
-        );
-      }
-      return null;
-    }),
-  );
+        ),
+      );
+    }
+  }
 
-  return assets.filter(Boolean);
+  return await Promise.all(promises);
 }
 
 module.exports = getAssets;

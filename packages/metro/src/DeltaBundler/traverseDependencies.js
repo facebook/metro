@@ -13,8 +13,6 @@
 import type {TransformResultDependency} from '../ModuleGraph/types.flow';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
-export type DependencyType = string;
-
 export type Dependency = {|
   absolutePath: string,
   data: TransformResultDependency,
@@ -23,13 +21,9 @@ export type Dependency = {|
 export type Module = {|
   dependencies: Map<string, Dependency>,
   inverseDependencies: Set<string>,
+  output: TransformOutput,
   path: string,
-  output: {
-    +code: string,
-    +map: Array<MetroSourceMapSegmentTuple>,
-    +source: string,
-    +type: DependencyType,
-  },
+  getSource: () => string,
 |};
 
 export type Graph = {|
@@ -51,15 +45,19 @@ type Delta = {
   deleted: Set<string>,
 };
 
-export type TransformFn = string => Promise<{
-  dependencies: $ReadOnlyArray<TransformResultDependency>,
-  output: {
+export type TransformOutput = $ReadOnlyArray<{|
+  +data: {
     +code: string,
     +map: Array<MetroSourceMapSegmentTuple>,
-    +source: string,
-    +type: DependencyType,
   },
-}>;
+  +type: string,
+|}>;
+
+export type TransformFn = string => Promise<{|
+  dependencies: $ReadOnlyArray<TransformResultDependency>,
+  output: TransformOutput,
+  +getSource: () => string,
+|}>;
 
 export type Options = {|
   resolve: (from: string, to: string) => string,
@@ -203,6 +201,7 @@ async function processModule(
   );
 
   // Update the module information.
+  module.getSource = result.getSource;
   module.output = result.output;
   module.dependencies = new Map();
 
@@ -315,12 +314,8 @@ function createModule(filePath: string, graph: Graph): Module {
     dependencies: new Map(),
     inverseDependencies: new Set(),
     path: filePath,
-    output: {
-      code: '',
-      map: [],
-      source: '',
-      type: 'js/module',
-    },
+    getSource: () => '',
+    output: [],
   };
 
   graph.dependencies.set(filePath, module);

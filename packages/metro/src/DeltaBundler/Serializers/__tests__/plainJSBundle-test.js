@@ -14,22 +14,28 @@ const createModuleIdFactory = require('../../../lib/createModuleIdFactory');
 const plainJSBundle = require('../plainJSBundle');
 
 const polyfill = {
-  output: {
-    type: 'js/script',
-    code: '__d(function() {/* code for polyfill */});',
-  },
+  output: [
+    {
+      type: 'js/script',
+      data: {code: '__d(function() {/* code for polyfill */});'},
+    },
+  ],
 };
 
 const fooModule = {
   path: 'foo',
   dependencies: new Map([['./bar', {absolutePath: 'bar', data: {}}]]),
-  output: {type: 'js/module', code: '__d(function() {/* code for foo */});'},
+  output: [
+    {type: 'js/module', data: {code: '__d(function() {/* code for foo */});'}},
+  ],
 };
 
 const barModule = {
   path: 'bar',
   dependencies: new Map(),
-  output: {type: 'js/module', code: '__d(function() {/* code for bar */});'},
+  output: [
+    {type: 'js/module', data: {code: '__d(function() {/* code for bar */});'}},
+  ],
 };
 
 const getRunModuleStatement = moduleId =>
