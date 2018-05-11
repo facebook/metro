@@ -21,11 +21,11 @@ const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
 
-import type PackagerServer, {JsGraph} from './Server';
+import type PackagerServer, {OutputGraph} from './Server';
 import type {Reporter} from './lib/reporting';
 
 type Client = {|
-  graph: JsGraph,
+  graph: OutputGraph,
   sendFn: (data: string) => mixed,
 |};
 

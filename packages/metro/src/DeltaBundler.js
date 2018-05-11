@@ -13,7 +13,13 @@
 const DeltaCalculator = require('./DeltaBundler/DeltaCalculator');
 
 import type Bundler from './Bundler';
-import type {DeltaResult, Graph, Options} from './DeltaBundler/types.flow';
+import type {
+  DeltaResult,
+  Graph,
+  // eslint-disable-next-line no-unused-vars
+  MixedOutput,
+  Options,
+} from './DeltaBundler/types.flow';
 
 export type {
   DeltaResult,
@@ -29,7 +35,7 @@ export type {
  * concurrent clients requesting their own deltas. This is done through the
  * `clientId` param (which maps a client to a specific delta transformer).
  */
-class DeltaBundler<T> {
+class DeltaBundler<T = MixedOutput> {
   _bundler: Bundler;
   _deltaCalculators: Map<Graph<T>, DeltaCalculator<T>> = new Map();
 

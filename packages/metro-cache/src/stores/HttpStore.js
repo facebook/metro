@@ -15,8 +15,6 @@ const https = require('https');
 const url = require('url');
 const zlib = require('zlib');
 
-import type {TransformedCode} from 'metro/src/JSTransformer/worker';
-
 export type Options = {|
   endpoint: string,
   timeout?: number,
@@ -26,7 +24,7 @@ const ZLIB_OPTIONS = {
   level: 9,
 };
 
-class HttpStore {
+class HttpStore<T> {
   _module: typeof http | typeof https;
   _timeout: number;
 
@@ -63,7 +61,7 @@ class HttpStore {
     this._setAgent = new module.Agent(agentConfig);
   }
 
-  get(key: Buffer): Promise<?TransformedCode> {
+  get(key: Buffer): Promise<?T> {
     return new Promise((resolve, reject) => {
       const options = {
         agent: this._getAgent,
@@ -119,7 +117,7 @@ class HttpStore {
     });
   }
 
-  set(key: Buffer, value: TransformedCode): Promise<void> {
+  set(key: Buffer, value: T): Promise<void> {
     return new Promise((resolve, reject) => {
       const gzip = zlib.createGzip(ZLIB_OPTIONS);
 

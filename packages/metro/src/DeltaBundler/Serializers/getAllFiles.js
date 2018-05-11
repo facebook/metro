@@ -13,7 +13,6 @@
 const {getAssetFiles} = require('../../Assets');
 const {getJsOutput, isJsModule} = require('./helpers/js');
 
-import type {JsOutput} from '../../JSTransformer/worker';
 import type {Graph, Module} from '../types.flow';
 
 type Options = {|
@@ -21,8 +20,8 @@ type Options = {|
 |};
 
 async function getAllFiles(
-  pre: $ReadOnlyArray<Module<JsOutput>>,
-  graph: Graph<JsOutput>,
+  pre: $ReadOnlyArray<Module<>>,
+  graph: Graph<>,
   options: Options,
 ): Promise<$ReadOnlyArray<string>> {
   const modules = graph.dependencies;

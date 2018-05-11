@@ -14,7 +14,6 @@ const addParamsToDefineCall = require('../../lib/addParamsToDefineCall');
 
 const {isJsModule, wrapModule} = require('./helpers/js');
 
-import type {JsOutput} from '../../JSTransformer/worker';
 import type {DeltaResult, Graph, Module} from '../types.flow';
 
 type Options = {
@@ -31,8 +30,8 @@ export type Result = {
 };
 
 function hmrJSBundle(
-  delta: DeltaResult<JsOutput>,
-  graph: Graph<JsOutput>,
+  delta: DeltaResult<>,
+  graph: Graph<>,
   options: Options,
 ): Result {
   const modules = [];
@@ -54,8 +53,8 @@ function hmrJSBundle(
 }
 
 function _prepareModule(
-  module: Module<JsOutput>,
-  graph: Graph<JsOutput>,
+  module: Module<>,
+  graph: Graph<>,
   options: Options,
 ): {|+id: number, +code: string|} {
   const code = wrapModule(module, {
@@ -87,7 +86,7 @@ function _prepareModule(
  */
 function _getInverseDependencies(
   path: string,
-  graph: Graph<JsOutput>,
+  graph: Graph<>,
   inverseDependencies: {[key: string]: Array<string>} = {},
 ): {[key: string]: Array<string>} {
   // Dependency alredy traversed.

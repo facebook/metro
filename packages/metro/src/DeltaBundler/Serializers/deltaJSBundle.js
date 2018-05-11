@@ -15,7 +15,6 @@ const getAppendScripts = require('../../lib/getAppendScripts');
 const {wrapModule} = require('./helpers/js');
 const {getJsOutput, isJsModule} = require('./helpers/js');
 
-import type {JsOutput} from '../../JSTransformer/worker';
 import type {DeltaResult, Graph, Module} from '../types.flow';
 
 type Options = {|
@@ -29,10 +28,10 @@ type Options = {|
 
 function deltaJSBundle(
   entryPoint: string,
-  pre: $ReadOnlyArray<Module<JsOutput>>,
-  delta: DeltaResult<JsOutput>,
+  pre: $ReadOnlyArray<Module<>>,
+  delta: DeltaResult<>,
   sequenceId: string,
-  graph: Graph<JsOutput>,
+  graph: Graph<>,
   options: Options,
 ): string {
   const outputPre = [];

@@ -15,7 +15,7 @@ const invariant = require('fbjs/lib/invariant');
 const path = require('path');
 
 import type {JsOutput} from '../../../JSTransformer/worker';
-import type {Module} from '../../types.flow';
+import type {MixedOutput, Module} from '../../types.flow';
 
 export type Options = {
   +createModuleId: string => number | string,
@@ -27,8 +27,9 @@ export type Options = {
 // Make sure to set PRINT_REQUIRE_PATHS = true too, and restart Metro
 const PASS_MODULE_PATHS_TO_DEFINE = false;
 
-function wrapModule(module: Module<JsOutput>, options: Options) {
+function wrapModule(module: Module<>, options: Options) {
   const output = getJsOutput(module);
+
   if (output.type.startsWith('js/script')) {
     return output.data.code;
   }
@@ -55,7 +56,7 @@ function wrapModule(module: Module<JsOutput>, options: Options) {
   return addParamsToDefineCall(output.data.code, ...params);
 }
 
-function getJsOutput(module: Module<JsOutput>) {
+function getJsOutput(module: Module<>): JsOutput {
   const jsModules = module.output.filter(({type}) => type.startsWith('js/'));
 
   invariant(
@@ -65,13 +66,15 @@ function getJsOutput(module: Module<JsOutput>) {
     } JS outputs.`,
   );
 
-  return jsModules[0];
+  return (jsModules[0]: any);
 }
 
-function isJsModule(module: Module<JsOutput>) {
-  const jsModules = module.output.filter(({type}) => type.startsWith('js/'));
+function isJsModule(module: Module<>): boolean {
+  return module.output.filter(isJsOutput).length > 0;
+}
 
-  return jsModules.length > 0;
+function isJsOutput(output: MixedOutput): boolean %checks {
+  return output.type.startsWith('js/');
 }
 
 module.exports = {

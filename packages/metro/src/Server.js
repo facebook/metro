@@ -42,7 +42,7 @@ const {getAsset} = require('./Assets');
 const resolveSync: ResolveSync = require('resolve').sync;
 
 import type {CustomError} from './lib/formatBundlingError';
-import type {DeltaResult, Graph, Module} from './DeltaBundler';
+import type {DeltaResult, Graph, Module, TransformResult} from './DeltaBundler';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from './lib/reporting';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
@@ -57,11 +57,7 @@ import type {CustomResolver} from 'metro-resolver';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
-import type {
-  CustomTransformOptions,
-  JsOutput,
-  TransformedCode,
-} from './JSTransformer/worker';
+import type {CustomTransformOptions} from './JSTransformer/worker';
 
 const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
@@ -70,8 +66,8 @@ const {
 type ResolveSync = (path: string, opts: ?{baseDir?: string}) => string;
 
 type GraphInfo = {|
-  graph: Graph<JsOutput>,
-  prepend: $ReadOnlyArray<Module<JsOutput>>,
+  graph: Graph<>,
+  prepend: $ReadOnlyArray<Module<>>,
   lastModified: Date,
   +sequenceId: string,
 |};
@@ -87,7 +83,7 @@ export type BuildGraphOptions = {|
   +type: 'module' | 'script',
 |};
 
-export type JsGraph = Graph<JsOutput>;
+export type OutputGraph = Graph<>;
 
 type DeltaOptions = BundleOptions & {
   deltaBundleId: ?string,
@@ -108,7 +104,7 @@ class Server {
   _opts: {
     assetExts: Array<string>,
     blacklistRE: void | RegExp,
-    cacheStores: $ReadOnlyArray<CacheStore<TransformedCode>>,
+    cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
     cacheVersion: string,
     createModuleId: (path: string) => number,
     enableBabelRCLookup: boolean,
@@ -145,7 +141,7 @@ class Server {
   _symbolicateInWorker: Symbolicate;
   _platforms: Set<string>;
   _nextBundleBuildID: number;
-  _deltaBundler: DeltaBundler<JsOutput>;
+  _deltaBundler: DeltaBundler<>;
   _graphs: Map<string, Promise<GraphInfo>> = new Map();
   _deltaGraphs: Map<string, Promise<GraphInfo>> = new Map();
 
@@ -258,7 +254,7 @@ class Server {
     this._bundler.end();
   }
 
-  getDeltaBundler(): DeltaBundler<JsOutput> {
+  getDeltaBundler(): DeltaBundler<> {
     return this._deltaBundler;
   }
 
@@ -288,7 +284,7 @@ class Server {
   async buildGraph(
     entryFiles: $ReadOnlyArray<string>,
     options: BuildGraphOptions,
-  ): Promise<JsGraph> {
+  ): Promise<OutputGraph> {
     entryFiles = entryFiles.map(entryFile =>
       getAbsolutePath(entryFile, this._opts.projectRoots),
     );
@@ -447,7 +443,7 @@ class Server {
 
   async _getDeltaInfo(
     options: DeltaOptions,
-  ): Promise<{...GraphInfo, delta: DeltaResult<JsOutput>}> {
+  ): Promise<{...GraphInfo, delta: DeltaResult<>}> {
     const id = this._optionsHash(options);
     let graphPromise = this._deltaGraphs.get(id);
     let graphInfo;

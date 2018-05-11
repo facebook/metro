@@ -13,13 +13,12 @@
 const {isJsModule, getJsOutput} = require('./helpers/js');
 const {fromRawMappings} = require('metro-source-map');
 
-import type {JsOutput} from '../../JSTransformer/worker';
 import type {Graph, Module} from '../types.flow';
 import type {BabelSourceMap} from '@babel/core';
 
 function fullSourceMapObject(
-  pre: $ReadOnlyArray<Module<JsOutput>>,
-  graph: Graph<JsOutput>,
+  pre: $ReadOnlyArray<Module<>>,
+  graph: Graph<>,
   options: {|+excludeSource: boolean|},
 ): BabelSourceMap {
   const modules = [...pre, ...graph.dependencies.values()]

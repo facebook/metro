@@ -22,11 +22,7 @@ const toLocalPath = require('./node-haste/lib/toLocalPath');
 const {Cache, stableHash} = require('metro-cache');
 
 import type {TransformResult} from './DeltaBundler';
-import type {
-  JsOutput,
-  WorkerOptions,
-  TransformedCode,
-} from './JSTransformer/worker';
+import type {WorkerOptions} from './JSTransformer/worker';
 import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
 import type {Reporter} from './lib/reporting';
 import type {BabelSourceMap} from '@babel/core';
@@ -72,7 +68,7 @@ export type Options = {|
   +assetRegistryPath: string,
   +asyncRequireModulePath: string,
   +blacklistRE?: RegExp,
-  +cacheStores: $ReadOnlyArray<CacheStore<TransformedCode>>,
+  +cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
   +cacheVersion: string,
   +dynamicDepsInPackages: DynamicRequiresBehavior,
   +enableBabelRCLookup: boolean,
@@ -100,7 +96,7 @@ const {hasOwnProperty} = Object.prototype;
 
 class Bundler {
   _opts: Options;
-  _cache: Cache<TransformedCode>;
+  _cache: Cache<TransformResult<>>;
   _baseHash: string;
   _transformer: Transformer;
   _depGraphPromise: Promise<DependencyGraph>;
@@ -218,7 +214,7 @@ class Bundler {
   async transformFile(
     filePath: string,
     transformCodeOptions: WorkerOptions,
-  ): Promise<TransformResult<JsOutput>> {
+  ): Promise<TransformResult<>> {
     const cache = this._cache;
 
     const {

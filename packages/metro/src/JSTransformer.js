@@ -16,7 +16,8 @@ const {Logger} = require('metro-core');
 const debug = require('debug')('Metro:JStransformer');
 const Worker = require('jest-worker').default;
 
-import type {TransformedCode, WorkerOptions} from './JSTransformer/worker';
+import type {TransformResult} from './DeltaBundler';
+import type {WorkerOptions} from './JSTransformer/worker';
 import type {LocalPath} from './node-haste/lib/toLocalPath';
 import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
 
@@ -32,7 +33,7 @@ type Reporters = {
 };
 
 type TransformerResult = {
-  result: TransformedCode,
+  result: TransformResult<>,
   sha1: string,
 };
 

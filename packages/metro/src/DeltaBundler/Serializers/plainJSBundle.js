@@ -14,7 +14,6 @@ const getAppendScripts = require('../../lib/getAppendScripts');
 
 const {isJsModule, wrapModule} = require('./helpers/js');
 
-import type {JsOutput} from '../../JSTransformer/worker';
 import type {Graph, Module} from '../types.flow';
 
 type Options = {|
@@ -28,8 +27,8 @@ type Options = {|
 
 function plainJSBundle(
   entryPoint: string,
-  pre: $ReadOnlyArray<Module<JsOutput>>,
-  graph: Graph<JsOutput>,
+  pre: $ReadOnlyArray<Module<>>,
+  graph: Graph<>,
   options: Options,
 ): string {
   for (const module of graph.dependencies.values()) {

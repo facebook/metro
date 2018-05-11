@@ -84,25 +84,23 @@ export type WorkerOptions = {|
   +projectRoot: string,
 |};
 
-export type Data = {
-  result: TransformedCode,
+export type JsOutput = {|
+  +data: {|
+    +code: string,
+    +map: Array<MetroSourceMapSegmentTuple>,
+  |},
+  +type: string,
+|};
+
+type Data = {
+  result: {|
+    output: $ReadOnlyArray<JsOutput>,
+    dependencies: $ReadOnlyArray<TransformResultDependency>,
+  |},
   sha1: string,
   transformFileStartLogEntry: LogEntry,
   transformFileEndLogEntry: LogEntry,
 };
-
-export type JsOutput = {|
-  data: {
-    +code: string,
-    +map: Array<MetroSourceMapSegmentTuple>,
-  },
-  type: string,
-|};
-
-export type TransformedCode = {|
-  output: $ReadOnlyArray<JsOutput>,
-  dependencies: $ReadOnlyArray<TransformResultDependency>,
-|};
 
 function getDynamicDepsBehavior(
   inPackages: DynamicRequiresBehavior,

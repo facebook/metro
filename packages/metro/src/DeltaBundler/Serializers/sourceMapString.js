@@ -13,12 +13,11 @@
 const {isJsModule, getJsOutput} = require('./helpers/js');
 const {fromRawMappings} = require('metro-source-map');
 
-import type {JsOutput} from '../../JSTransformer/worker';
 import type {Graph, Module} from '../types.flow';
 
 function fullSourceMap(
-  pre: $ReadOnlyArray<Module<JsOutput>>,
-  graph: Graph<JsOutput>,
+  pre: $ReadOnlyArray<Module<>>,
+  graph: Graph<>,
   options: {|+excludeSource: boolean|},
 ): string {
   const modules = [...pre, ...graph.dependencies.values()]

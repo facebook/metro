@@ -14,10 +14,8 @@ import type {
   PostMinifyProcess,
   PostProcessBundleSourcemap,
 } from '../Bundler';
-import type {
-  CustomTransformOptions,
-  TransformedCode,
-} from '../JSTransformer/worker';
+import type {TransformResult} from '../DeltaBundler';
+import type {CustomTransformOptions} from '../JSTransformer/worker';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
 import type {Reporter} from '../lib/reporting';
 import type {CacheStore} from 'metro-cache';
@@ -80,7 +78,7 @@ export type Options = {|
   +asyncRequireModulePath: string,
   +assetRegistryPath: string,
   blacklistRE?: RegExp,
-  cacheStores: $ReadOnlyArray<CacheStore<TransformedCode>>,
+  cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
   cacheVersion: string,
   createModuleIdFactory?: () => (path: string) => number,
   +dynamicDepsInPackages: DynamicRequiresBehavior,

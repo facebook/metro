@@ -15,13 +15,11 @@ const mkdirp = require('mkdirp');
 const path = require('path');
 const rimraf = require('rimraf');
 
-import type {TransformedCode} from 'metro/src/JSTransformer/worker';
-
 export type Options = {|
   root: string,
 |};
 
-class FileStore {
+class FileStore<T> {
   _root: string;
 
   constructor(options: Options) {
@@ -29,7 +27,7 @@ class FileStore {
     this._createDirs();
   }
 
-  get(key: Buffer): ?TransformedCode {
+  get(key: Buffer): ?T {
     try {
       return JSON.parse(fs.readFileSync(this._getFilePath(key), 'utf8'));
     } catch (err) {
@@ -41,7 +39,7 @@ class FileStore {
     }
   }
 
-  set(key: Buffer, value: TransformedCode): void {
+  set(key: Buffer, value: T): void {
     fs.writeFileSync(this._getFilePath(key), JSON.stringify(value));
   }
 

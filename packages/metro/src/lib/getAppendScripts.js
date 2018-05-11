@@ -11,7 +11,6 @@
 'use strict';
 
 import type {Graph, Module} from '../DeltaBundler';
-import type {JsOutput} from '../JSTransformer/worker';
 
 type Options<T: number | string> = {
   +createModuleId: string => T,
@@ -23,9 +22,9 @@ type Options<T: number | string> = {
 
 function getAppendScripts<T: number | string>(
   entryPoint: string,
-  graph: Graph<JsOutput>,
+  graph: Graph<>,
   options: Options<T>,
-): $ReadOnlyArray<Module<JsOutput>> {
+): $ReadOnlyArray<Module<>> {
   const output = [];
 
   if (options.runModule) {

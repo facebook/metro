@@ -20,7 +20,6 @@ const {createRamBundleGroups} = require('../../Bundler/util');
 const {isJsModule, wrapModule} = require('./helpers/js');
 
 import type {GetTransformOptions} from '../../Bundler';
-import type {JsOutput} from '../../JSTransformer/worker';
 import type {ModuleTransportLike} from '../../shared/types.flow';
 import type {Graph, Module} from '../types.flow';
 
@@ -45,8 +44,8 @@ export type RamBundleInfo = {|
 
 async function getRamBundleInfo(
   entryPoint: string,
-  pre: $ReadOnlyArray<Module<JsOutput>>,
-  graph: Graph<JsOutput>,
+  pre: $ReadOnlyArray<Module<>>,
+  graph: Graph<>,
   options: Options,
 ): Promise<RamBundleInfo> {
   const modules = [

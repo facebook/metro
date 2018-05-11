@@ -16,7 +16,6 @@ const {getAssetData} = require('../../Assets');
 const {getJsOutput, isJsModule} = require('./helpers/js');
 
 import type {AssetData} from '../../Assets';
-import type {JsOutput} from '../../JSTransformer/worker';
 import type {Graph} from '../types.flow';
 
 type Options = {|
@@ -26,7 +25,7 @@ type Options = {|
 |};
 
 async function getAssets(
-  graph: Graph<JsOutput>,
+  graph: Graph<>,
   options: Options,
 ): Promise<$ReadOnlyArray<AssetData>> {
   const promises = [];
