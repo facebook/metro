@@ -19,7 +19,6 @@ const ModuleCache = require('./ModuleCache');
 const ResolutionRequest = require('./DependencyGraph/ResolutionRequest');
 
 const fs = require('fs');
-const parsePlatformFilePath = require('./lib/parsePlatformFilePath');
 const path = require('path');
 const toLocalPath = require('../node-haste/lib/toLocalPath');
 
@@ -29,32 +28,24 @@ const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
 
-import type {WorkerOptions} from '../JSTransformer/worker';
-import type {TransformResultDependency} from '../ModuleGraph/types.flow';
 import type {Reporter} from '../lib/reporting';
 import type {ModuleMap} from './DependencyGraph/ModuleResolution';
-import type {TransformCode} from './Module';
 import type Package from './Package';
 import type {HasteFS} from './types';
 import type {CustomResolver} from 'metro-resolver';
 
 type Options = {|
   +assetExts: Array<string>,
-  +assetRegistryPath: string,
   +blacklistRE?: RegExp,
-  +experimentalCaches: boolean,
   +extraNodeModules: ?{},
-  +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   +hasteImplModulePath?: string,
   +maxWorkers: number,
   +platforms: Set<string>,
-  +polyfillModuleNames?: Array<string>,
   +projectRoots: $ReadOnlyArray<string>,
   +providesModuleNodeModules: Array<string>,
   +reporter: Reporter,
   +resolveRequest: ?CustomResolver,
   +sourceExts: Array<string>,
-  +transformCode: TransformCode,
   +watch: boolean,
 |};
 
@@ -195,28 +186,12 @@ class DependencyGraph extends EventEmitter {
     const {_opts} = this;
     return new ModuleCache(
       {
-        assetDependencies: [_opts.assetRegistryPath],
         getClosestPackage: this._getClosestPackage.bind(this),
         hasteImplModulePath: _opts.hasteImplModulePath,
         roots: _opts.projectRoots,
-        transformCode: _opts.transformCode,
       },
       _opts.platforms,
     );
-  }
-
-  /**
-   * Returns a promise with the direct dependencies the module associated to
-   * the given entryPath has.
-   */
-  async getShallowDependencies(
-    entryPath: string,
-    transformOptions: WorkerOptions,
-  ): Promise<$ReadOnlyArray<TransformResultDependency>> {
-    const module = this._moduleCache.getModule(entryPath);
-    const result = await module.read(transformOptions);
-
-    return result.dependencies;
   }
 
   getSha1(filename: string): string {
@@ -237,11 +212,7 @@ class DependencyGraph extends EventEmitter {
     this._haste.end();
   }
 
-  getModuleForPath(entryFile: string, isPolyfill: boolean): Module {
-    if (isPolyfill) {
-      return this._moduleCache.getPolyfillModule(entryFile);
-    }
-
+  getModuleForPath(entryFile: string): Module {
     if (this._helpers.isAssetFile(entryFile)) {
       return this._moduleCache.getAssetModule(entryFile);
     }
@@ -269,16 +240,6 @@ class DependencyGraph extends EventEmitter {
     return this._hasteFS.exists(filePath);
   };
 
-  _getRequestPlatform(entryPath: string, platform: ?string): ?string {
-    if (platform == null) {
-      platform = parsePlatformFilePath(entryPath, this._opts.platforms)
-        .platform;
-    } else if (!this._opts.platforms.has(platform)) {
-      throw new Error('Unrecognized platform: ' + platform);
-    }
-    return platform;
-  }
-
   getHasteName(filePath: string): string {
     const hasteName = this._hasteFS.getModuleName(filePath);
 
@@ -287,10 +248,6 @@ class DependencyGraph extends EventEmitter {
     }
 
     return toLocalPath(this._opts.projectRoots, filePath);
-  }
-
-  createPolyfill(options: {file: string}) {
-    return this._moduleCache.createPolyfill(options);
   }
 }
 

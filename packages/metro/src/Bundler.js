@@ -137,22 +137,17 @@ class Bundler {
 
     this._depGraphPromise = DependencyGraph.load({
       assetExts: opts.assetExts,
-      assetRegistryPath: opts.assetRegistryPath,
       blacklistRE: opts.blacklistRE,
-      experimentalCaches: true,
       extraNodeModules: opts.extraNodeModules,
-      getPolyfills: opts.getPolyfills,
       hasteImplModulePath: opts.hasteImplModulePath,
       maxWorkers: opts.maxWorkers,
       platforms: new Set(opts.platforms),
-      polyfillModuleNames: opts.polyfillModuleNames,
       projectRoots: opts.projectRoots,
       providesModuleNodeModules:
         opts.providesModuleNodeModules || defaults.providesModuleNodeModules,
       reporter: opts.reporter,
       resolveRequest: opts.resolveRequest,
       sourceExts: opts.sourceExts,
-      transformCode: this.transformFile.bind(this),
       watch: opts.watch,
     });
 

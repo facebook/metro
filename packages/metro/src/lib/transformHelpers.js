@@ -115,7 +115,7 @@ async function getResolveDependencyFn(
 
   return (from: string, to: string) => {
     return dependencyGraph.resolveDependency(
-      dependencyGraph.getModuleForPath(from, false),
+      dependencyGraph.getModuleForPath(from),
       to,
       platform,
     ).path;

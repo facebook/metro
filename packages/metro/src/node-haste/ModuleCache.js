@@ -13,48 +13,34 @@
 const AssetModule = require('./AssetModule');
 const Module = require('./Module');
 const Package = require('./Package');
-const Polyfill = require('./Polyfill');
 
 const toLocalPath = require('./lib/toLocalPath');
-
-import type {TransformCode} from './Module';
 
 type GetClosestPackageFn = (filePath: string) => ?string;
 
 type Options = {|
-  assetDependencies: Array<string>,
   hasteImplModulePath?: string,
   getClosestPackage: GetClosestPackageFn,
   roots: $ReadOnlyArray<string>,
-  transformCode: TransformCode,
 |};
 
 class ModuleCache {
-  _assetDependencies: Array<string>;
   _getClosestPackage: GetClosestPackageFn;
   _moduleCache: {[filePath: string]: Module, __proto__: null};
   _packageCache: {[filePath: string]: Package, __proto__: null};
   _packageModuleMap: WeakMap<Module, string>;
   _platforms: Set<string>;
-  _transformCode: TransformCode;
   _roots: $ReadOnlyArray<string>;
   _opts: Options;
 
   constructor(options: Options, platforms: Set<string>) {
-    const {
-      assetDependencies,
-      getClosestPackage,
-      roots,
-      transformCode,
-    } = options;
+    const {getClosestPackage, roots} = options;
     this._opts = options;
-    this._assetDependencies = assetDependencies;
     this._getClosestPackage = getClosestPackage;
     this._moduleCache = Object.create(null);
     this._packageCache = Object.create(null);
     this._packageModuleMap = new WeakMap();
     this._platforms = platforms;
-    this._transformCode = transformCode;
     this._roots = roots;
   }
 
@@ -65,7 +51,6 @@ class ModuleCache {
         localPath: toLocalPath(this._roots, filePath),
         moduleCache: this,
         options: this._getModuleOptions(),
-        transformCode: this._transformCode,
       });
     }
     return this._moduleCache[filePath];
@@ -86,17 +71,8 @@ class ModuleCache {
         localPath: toLocalPath(this._roots, filePath),
         moduleCache: this,
         options: this._getModuleOptions(),
-        transformCode: this._transformCode,
       });
     }
-    return this._moduleCache[filePath];
-  }
-
-  getPolyfillModule(filePath: string) {
-    if (!this._moduleCache[filePath]) {
-      this._moduleCache[filePath] = this.createPolyfill({file: filePath});
-    }
-
     return this._moduleCache[filePath];
   }
 
@@ -126,17 +102,6 @@ class ModuleCache {
 
     this._packageModuleMap.set(module, packagePath);
     return this.getPackage(packagePath);
-  }
-
-  createPolyfill({file}: {file: string}) {
-    /* $FlowFixMe: there are missing arguments. */
-    return new Polyfill({
-      file,
-      localPath: toLocalPath(this._roots, file),
-      moduleCache: this,
-      options: this._getModuleOptions(),
-      transformCode: this._transformCode,
-    });
   }
 
   processFileChange(type: string, filePath: string) {

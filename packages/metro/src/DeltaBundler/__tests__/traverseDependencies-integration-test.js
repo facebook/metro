@@ -44,8 +44,8 @@ beforeEach(() => {
 
 describe('traverseDependencies', function() {
   let fs;
-  let Module;
   let traverseDependencies;
+  let transformFile;
   let transformHelpers;
   let defaults;
   let UnableToResolveError;
@@ -97,7 +97,7 @@ describe('traverseDependencies', function() {
     return await Promise.all(
       [...dependencies].map(async path => {
         const dep = dgraph.getModuleForPath(path);
-        const moduleDependencies = (await dep.read()).dependencies;
+        const moduleDependencies = (await transformFile(path)).dependencies;
 
         return {
           path: dep.path,
@@ -115,7 +115,6 @@ describe('traverseDependencies', function() {
     jest.mock('fs', () => new (require('metro-memory-fs'))());
 
     fs = require('fs');
-    Module = require('../../node-haste/Module');
     traverseDependencies = require('../traverseDependencies');
     transformHelpers = require('../../lib/transformHelpers');
     ({
@@ -131,23 +130,22 @@ describe('traverseDependencies', function() {
       platforms: new Set(['ios', 'android']),
       maxWorkers: 1,
       resetCache: true,
-      transformCode: (module, sourceCode, transformOptions) => {
-        return new Promise(resolve => {
-          // require call must stay inline, so the latest defined mock is used!
-          const code = require('fs').readFileSync(module.path, 'utf8');
-          const deps = {dependencies: []};
-
-          if (!module.path.endsWith('.json')) {
-            deps.dependencies = extractDependencies(code);
-          }
-
-          resolve({...deps, code});
-        });
-      },
       getTransformCacheKey: () => 'abcdef',
       reporter: require('../../lib/reporting').nullReporter,
       sourceExts: ['js', 'json'],
       watch: true,
+    };
+
+    transformFile = async filePath => {
+      // require call must stay inline, so the latest defined mock is used!
+      const code = require('fs').readFileSync(filePath, 'utf8');
+      const deps = {dependencies: []};
+
+      if (!filePath.endsWith('.json')) {
+        deps.dependencies = extractDependencies(code);
+      }
+
+      return {...deps, code};
     };
   });
 
@@ -3462,46 +3460,13 @@ describe('traverseDependencies', function() {
     });
   });
 
-  describe('Asset module dependencies', () => {
-    let DependencyGraph;
-    let processDgraph;
-
-    beforeEach(() => {
-      DependencyGraph = require('../../node-haste/DependencyGraph');
-      processDgraph = processDgraphFor.bind(null, DependencyGraph);
-    });
-
-    it.skip('allows setting dependencies for asset modules (broken)', async () => {
-      const assetDependencies = ['/root/apple.png', '/root/banana.png'];
-
-      setMockFileSystem({
-        root: {
-          'index.js': 'require("./a.png")',
-          'a.png': '',
-          'apple.png': '',
-          'banana.png': '',
-        },
-      });
-
-      const opts = {...defaults, assetDependencies, projectRoots: ['/root']};
-      await processDgraph(opts, async dgraph => {
-        const {dependencies} = await dgraph.getDependencies({
-          entryPath: '/root/index.js',
-        });
-        const [, assetModule] = dependencies;
-        const deps = await assetModule.getDependencies();
-        expect(deps).toBe(assetDependencies);
-      });
-    });
-  });
-
   describe('Deterministic order of dependencies', () => {
     let callDeferreds, dependencyGraph, moduleReadDeferreds;
-    let moduleRead;
+    let originalTransformFile;
     let DependencyGraph;
 
     beforeEach(() => {
-      moduleRead = Module.prototype.read;
+      originalTransformFile = transformFile;
       DependencyGraph = require('../../node-haste/DependencyGraph');
       setMockFileSystem({
         root: {
@@ -3533,13 +3498,13 @@ describe('traverseDependencies', function() {
       moduleReadDeferreds = {};
       callDeferreds = [defer(), defer()]; // [a.js, b.js]
 
-      Module.prototype.read = jest.genMockFn().mockImplementation(function() {
-        const returnValue = moduleRead.apply(this, arguments);
-        if (/\/[ab]\.js$/.test(this.path)) {
-          let deferred = moduleReadDeferreds[this.path];
+      transformFile = jest.genMockFn().mockImplementation((path, ...args) => {
+        const returnValue = originalTransformFile(path, ...args);
+        if (/\/[ab]\.js$/.test(path)) {
+          let deferred = moduleReadDeferreds[path];
           if (!deferred) {
-            deferred = moduleReadDeferreds[this.path] = defer(returnValue);
-            const index = Number(this.path.endsWith('b.js')); // 0 or 1
+            deferred = moduleReadDeferreds[path] = defer(returnValue);
+            const index = Number(path.endsWith('b.js')); // 0 or 1
             callDeferreds[index].resolve();
           }
           return deferred.promise;
@@ -3551,7 +3516,7 @@ describe('traverseDependencies', function() {
 
     afterEach(() => {
       dependencyGraph.then(dgraph => dgraph.end());
-      Module.prototype.read = moduleRead;
+      transformFile = originalTransformFile;
     });
 
     it('produces a deterministic tree if the "a" module resolves first', () => {

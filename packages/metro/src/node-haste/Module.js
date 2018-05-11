@@ -10,25 +10,15 @@
 
 'use strict';
 
-const fs = require('fs');
 const isAbsolutePath = require('absolute-path');
 
-import type {TransformedCode, WorkerOptions} from '../JSTransformer/worker';
 import type ModuleCache from './ModuleCache';
 import type {LocalPath} from './lib/toLocalPath';
-
-type ReadResult = {
-  ...TransformedCode,
-  +source: string,
-};
-
-export type TransformCode = Function;
 
 export type ConstructorArgs = {
   file: string,
   localPath: LocalPath,
   moduleCache: ModuleCache,
-  transformCode: TransformCode,
 };
 
 class Module {
@@ -36,10 +26,9 @@ class Module {
   path: string;
 
   _moduleCache: ModuleCache;
-  _transformCode: TransformCode;
   _sourceCode: ?string;
 
-  constructor({file, localPath, moduleCache, transformCode}: ConstructorArgs) {
+  constructor({file, localPath, moduleCache}: ConstructorArgs) {
     if (!isAbsolutePath(file)) {
       throw new Error('Expected file to be absolute path but got ' + file);
     }
@@ -48,41 +37,13 @@ class Module {
     this.path = file;
 
     this._moduleCache = moduleCache;
-    this._transformCode = transformCode;
   }
 
   getPackage() {
     return this._moduleCache.getPackageForModule(this);
   }
 
-  invalidate() {
-    this._sourceCode = null;
-  }
-
-  _readSourceCode(): string {
-    if (this._sourceCode == null) {
-      this._sourceCode = fs.readFileSync(this.path, 'utf8');
-    }
-
-    return this._sourceCode;
-  }
-
-  async read(transformOptions: WorkerOptions): Promise<ReadResult> {
-    const result: TransformedCode = await this._transformCode(
-      this,
-      transformOptions,
-    );
-
-    const module = this;
-
-    return {
-      dependencies: result.dependencies,
-      output: result.output,
-      get source() {
-        return module._readSourceCode();
-      },
-    };
-  }
+  invalidate() {}
 
   isAsset() {
     return false;
