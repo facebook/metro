@@ -37,10 +37,17 @@ import type {Ast} from '@babel/core';
 import type {Plugins as BabelPlugins} from 'babel-core';
 import type {LogEntry} from 'metro-core/src/Logger';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
-import type {TransformOutput} from '../DeltaBundler/traverseDependencies';
+
+export type JsOutput = {|
+  data: {
+    +code: string,
+    +map: Array<MetroSourceMapSegmentTuple>,
+  },
+  type: string,
+|};
 
 export type TransformedCode = {|
-  output: TransformOutput,
+  output: $ReadOnlyArray<JsOutput>,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
 |};
 

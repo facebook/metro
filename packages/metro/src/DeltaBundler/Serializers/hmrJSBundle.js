@@ -14,7 +14,9 @@ const addParamsToDefineCall = require('../../lib/addParamsToDefineCall');
 
 const {isJsModule, wrapModule} = require('./helpers/js');
 
-import type {Delta, Graph} from '../../DeltaBundler';
+import type {DeltaResult} from '../../DeltaBundler/DeltaCalculator';
+import type {Graph} from '../../DeltaBundler';
+import type {JsOutput} from '../../JSTransformer/worker';
 import type {Module} from '../traverseDependencies';
 
 type Options = {
@@ -30,7 +32,11 @@ export type Result = {
   },
 };
 
-function hmrJSBundle(delta: Delta, graph: Graph, options: Options): Result {
+function hmrJSBundle(
+  delta: DeltaResult<JsOutput>,
+  graph: Graph<JsOutput>,
+  options: Options,
+): Result {
   const modules = [];
 
   for (const module of delta.modified.values()) {
@@ -50,8 +56,8 @@ function hmrJSBundle(delta: Delta, graph: Graph, options: Options): Result {
 }
 
 function _prepareModule(
-  module: Module,
-  graph: Graph,
+  module: Module<JsOutput>,
+  graph: Graph<JsOutput>,
   options: Options,
 ): {|+id: number, +code: string|} {
   const code = wrapModule(module, {
@@ -83,7 +89,7 @@ function _prepareModule(
  */
 function _getInverseDependencies(
   path: string,
-  graph: Graph,
+  graph: Graph<JsOutput>,
   inverseDependencies: {[key: string]: Array<string>} = {},
 ): {[key: string]: Array<string>} {
   // Dependency alredy traversed.

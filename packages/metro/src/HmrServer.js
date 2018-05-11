@@ -21,12 +21,11 @@ const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
 
-import type {Graph} from './DeltaBundler/DeltaCalculator';
-import type PackagerServer from './Server';
+import type PackagerServer, {JsGraph} from './Server';
 import type {Reporter} from './lib/reporting';
 
 type Client = {|
-  graph: Graph,
+  graph: JsGraph,
   sendFn: (data: string) => mixed,
 |};
 

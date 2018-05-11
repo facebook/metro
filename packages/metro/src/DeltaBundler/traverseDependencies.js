@@ -11,27 +11,26 @@
 'use strict';
 
 import type {TransformResultDependency} from '../ModuleGraph/types.flow';
-import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
 export type Dependency = {|
   absolutePath: string,
   data: TransformResultDependency,
 |};
 
-export type Module = {|
+export type Module<T> = {|
   dependencies: Map<string, Dependency>,
   inverseDependencies: Set<string>,
-  output: TransformOutput,
+  output: $ReadOnlyArray<T>,
   path: string,
   getSource: () => string,
 |};
 
-export type Graph = {|
-  dependencies: Map<string, Module>,
+export type Graph<T> = {|
+  dependencies: Map<string, Module<T>>,
   entryPoints: $ReadOnlyArray<string>,
 |};
 
-type Result = {added: Map<string, Module>, deleted: Set<string>};
+type Result<T> = {added: Map<string, Module<T>>, deleted: Set<string>};
 
 /**
  * Internal data structure that the traversal logic uses to know which of the
@@ -39,29 +38,21 @@ type Result = {added: Map<string, Module>, deleted: Set<string>};
  * (a file should not be deleted if it has been added, but it should if it
  * just has been modified).
  **/
-type Delta = {
-  added: Map<string, Module>,
-  modified: Map<string, Module>,
+type Delta<T> = {
+  added: Map<string, Module<T>>,
+  modified: Map<string, Module<T>>,
   deleted: Set<string>,
 };
 
-export type TransformOutput = $ReadOnlyArray<{|
-  +data: {
-    +code: string,
-    +map: Array<MetroSourceMapSegmentTuple>,
-  },
-  +type: string,
-|}>;
-
-export type TransformFn = string => Promise<{|
+export type TransformFn<T> = string => Promise<{|
   dependencies: $ReadOnlyArray<TransformResultDependency>,
-  output: TransformOutput,
+  output: $ReadOnlyArray<T>,
   +getSource: () => string,
 |}>;
 
-export type Options = {|
+export type Options<T> = {|
   resolve: (from: string, to: string) => string,
-  transform: TransformFn,
+  transform: TransformFn<T>,
   onProgress: ?(numProcessed: number, total: number) => mixed,
 |};
 
@@ -76,11 +67,11 @@ export type Options = {|
  * method should traverse. Normally, these paths should be the modified files
  * since the last traversal.
  */
-async function traverseDependencies(
+async function traverseDependencies<T>(
   paths: $ReadOnlyArray<string>,
-  graph: Graph,
-  options: Options,
-): Promise<Result> {
+  graph: Graph<T>,
+  options: Options<T>,
+): Promise<Result<T>> {
   const delta = {
     added: new Map(),
     modified: new Map(),
@@ -134,10 +125,10 @@ async function traverseDependencies(
   };
 }
 
-async function initialTraverseDependencies(
-  graph: Graph,
-  options: Options,
-): Promise<Result> {
+async function initialTraverseDependencies<T>(
+  graph: Graph<T>,
+  options: Options<T>,
+): Promise<Result<T>> {
   graph.entryPoints.forEach(entryPoint => createModule(entryPoint, graph));
 
   await traverseDependencies(graph.entryPoints, graph, options);
@@ -150,11 +141,11 @@ async function initialTraverseDependencies(
   };
 }
 
-async function traverseDependenciesForSingleFile(
-  module: Module,
-  graph: Graph,
-  delta: Delta,
-  options: Options,
+async function traverseDependenciesForSingleFile<T>(
+  module: Module<T>,
+  graph: Graph<T>,
+  delta: Delta<T>,
+  options: Options<T>,
 ): Promise<void> {
   let numProcessed = 0;
   let total = 1;
@@ -179,11 +170,11 @@ async function traverseDependenciesForSingleFile(
   options.onProgress && options.onProgress(numProcessed, total);
 }
 
-async function processModule(
-  module: Module,
-  graph: Graph,
-  delta: Delta,
-  options: Options,
+async function processModule<T>(
+  module: Module<T>,
+  graph: Graph<T>,
+  delta: Delta<T>,
+  options: Options<T>,
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
 ): Promise<void> {
@@ -239,12 +230,12 @@ async function processModule(
   await Promise.all(promises);
 }
 
-async function addDependency(
-  parentModule: Module,
+async function addDependency<T>(
+  parentModule: Module<T>,
   path: string,
-  graph: Graph,
-  delta: Delta,
-  options: Options,
+  graph: Graph<T>,
+  delta: Delta<T>,
+  options: Options<T>,
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
 ): Promise<void> {
@@ -276,11 +267,11 @@ async function addDependency(
   onDependencyAdded();
 }
 
-function removeDependency(
-  parentModule: Module,
+function removeDependency<T>(
+  parentModule: Module<T>,
   absolutePath: string,
-  graph: Graph,
-  delta: Delta,
+  graph: Graph<T>,
+  delta: Delta<T>,
 ): void {
   const module = graph.dependencies.get(absolutePath);
 
@@ -309,7 +300,7 @@ function removeDependency(
   graph.dependencies.delete(module.path);
 }
 
-function createModule(filePath: string, graph: Graph): Module {
+function createModule<T>(filePath: string, graph: Graph<T>): Module<T> {
   const module = {
     dependencies: new Map(),
     inverseDependencies: new Set(),
@@ -323,10 +314,10 @@ function createModule(filePath: string, graph: Graph): Module {
   return module;
 }
 
-function resolveDependencies(
+function resolveDependencies<T>(
   parentPath: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
-  options: Options,
+  options: Options<T>,
 ): Map<string, Dependency> {
   return new Map(
     dependencies.map(result => {
@@ -346,7 +337,7 @@ function resolveDependencies(
  * Re-traverse the dependency graph in DFS order to reorder the modules and
  * guarantee the same order between runs. This method mutates the passed graph.
  */
-function reorderGraph(graph: Graph) {
+function reorderGraph<T>(graph: Graph<T>) {
   const orderedDependencies = new Map();
 
   graph.entryPoints.forEach(entryPoint => {
@@ -362,10 +353,10 @@ function reorderGraph(graph: Graph) {
   graph.dependencies = orderedDependencies;
 }
 
-function reorderDependencies(
-  graph: Graph,
-  module: Module,
-  orderedDependencies: Map<string, Module>,
+function reorderDependencies<T>(
+  graph: Graph<T>,
+  module: Module<T>,
+  orderedDependencies: Map<string, Module<T>>,
 ): void {
   if (module.path) {
     if (orderedDependencies.has(module.path)) {

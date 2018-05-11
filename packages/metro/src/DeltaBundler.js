@@ -13,14 +13,9 @@
 const DeltaCalculator = require('./DeltaBundler/DeltaCalculator');
 
 import type Bundler from './Bundler';
-import type {
-  DeltaResult,
-  Graph as CalculatorGraph,
-  Options,
-} from './DeltaBundler/DeltaCalculator';
+import type {DeltaResult, Graph, Options} from './DeltaBundler/DeltaCalculator';
 
-export type Delta = DeltaResult;
-export type Graph = CalculatorGraph;
+export type {DeltaResult, Graph} from './DeltaBundler/DeltaCalculator';
 
 /**
  * `DeltaBundler` uses the `DeltaTransformer` to build bundle deltas. This
@@ -28,9 +23,9 @@ export type Graph = CalculatorGraph;
  * concurrent clients requesting their own deltas. This is done through the
  * `clientId` param (which maps a client to a specific delta transformer).
  */
-class DeltaBundler {
+class DeltaBundler<T> {
   _bundler: Bundler;
-  _deltaCalculators: Map<Graph, DeltaCalculator> = new Map();
+  _deltaCalculators: Map<Graph<T>, DeltaCalculator<T>> = new Map();
 
   constructor(bundler: Bundler) {
     this._bundler = bundler;
@@ -43,8 +38,8 @@ class DeltaBundler {
 
   async buildGraph(
     entryPoints: $ReadOnlyArray<string>,
-    options: Options,
-  ): Promise<Graph> {
+    options: Options<T>,
+  ): Promise<Graph<T>> {
     const depGraph = await this._bundler.getDependencyGraph();
 
     const deltaCalculator = new DeltaCalculator(entryPoints, depGraph, options);
@@ -57,7 +52,10 @@ class DeltaBundler {
     return graph;
   }
 
-  async getDelta(graph: Graph, {reset}: {reset: boolean}): Promise<Delta> {
+  async getDelta(
+    graph: Graph<T>,
+    {reset}: {reset: boolean},
+  ): Promise<DeltaResult<T>> {
     const deltaCalculator = this._deltaCalculators.get(graph);
 
     if (!deltaCalculator) {
@@ -67,7 +65,7 @@ class DeltaBundler {
     return await deltaCalculator.getDelta({reset});
   }
 
-  listen(graph: Graph, callback: () => mixed) {
+  listen(graph: Graph<T>, callback: () => mixed) {
     const deltaCalculator = this._deltaCalculators.get(graph);
 
     if (!deltaCalculator) {
@@ -77,7 +75,7 @@ class DeltaBundler {
     deltaCalculator.on('change', callback);
   }
 
-  endGraph(graph: Graph) {
+  endGraph(graph: Graph<T>) {
     const deltaCalculator = this._deltaCalculators.get(graph);
 
     if (!deltaCalculator) {

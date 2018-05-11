@@ -31,7 +31,7 @@ const {readFile} = require('fs-extra');
 const {Terminal} = require('metro-core');
 
 import type {ConfigT} from './Config';
-import type {Graph} from './DeltaBundler';
+import type {JsGraph} from './Server';
 import type {Reporter} from './lib/reporting';
 import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
 import type {Options as ServerOptions} from './shared/types.flow';
@@ -381,7 +381,7 @@ exports.buildGraph = async function({
   platform = `web`,
   type = 'module',
   ...rest
-}: BuildGraphOptions): Promise<Graph> {
+}: BuildGraphOptions): Promise<JsGraph> {
   const metroServer = await runMetro({
     ...rest,
     config,

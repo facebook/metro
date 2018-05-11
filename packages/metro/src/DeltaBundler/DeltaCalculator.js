@@ -20,8 +20,8 @@ const {EventEmitter} = require('events');
 import type DependencyGraph from '../node-haste/DependencyGraph';
 import type {Graph, Module, Options} from './traverseDependencies';
 
-export type DeltaResult = {|
-  +modified: Map<string, Module>,
+export type DeltaResult<T> = {|
+  +modified: Map<string, Module<T>>,
   +deleted: Set<string>,
   +reset: boolean,
 |};
@@ -34,20 +34,20 @@ export type {Graph, Options} from './traverseDependencies';
  * traverse the files that have been changed between calls and avoid having to
  * traverse the whole dependency tree for trivial small changes.
  */
-class DeltaCalculator extends EventEmitter {
+class DeltaCalculator<T> extends EventEmitter {
   _dependencyGraph: DependencyGraph;
-  _options: Options;
+  _options: Options<T>;
 
-  _currentBuildPromise: ?Promise<DeltaResult>;
+  _currentBuildPromise: ?Promise<DeltaResult<T>>;
   _deletedFiles: Set<string> = new Set();
   _modifiedFiles: Set<string> = new Set();
 
-  _graph: Graph;
+  _graph: Graph<T>;
 
   constructor(
     entryPoints: $ReadOnlyArray<string>,
     dependencyGraph: DependencyGraph,
-    options: Options,
+    options: Options<T>,
   ) {
     super();
 
@@ -87,7 +87,7 @@ class DeltaCalculator extends EventEmitter {
    * Main method to calculate the delta of modules. It returns a DeltaResult,
    * which contain the modified/added modules and the removed modules.
    */
-  async getDelta({reset}: {reset: boolean}): Promise<DeltaResult> {
+  async getDelta({reset}: {reset: boolean}): Promise<DeltaResult<T>> {
     // If there is already a build in progress, wait until it finish to start
     // processing a new one (delta server doesn't support concurrent builds).
     if (this._currentBuildPromise) {
@@ -155,7 +155,7 @@ class DeltaCalculator extends EventEmitter {
    * needed information to do the traversing (dependencies, inverseDependencies)
    * plus some metadata.
    */
-  getGraph(): Graph {
+  getGraph(): Graph<T> {
     return this._graph;
   }
 
@@ -191,7 +191,7 @@ class DeltaCalculator extends EventEmitter {
   async _getChangedDependencies(
     modifiedFiles: Set<string>,
     deletedFiles: Set<string>,
-  ): Promise<DeltaResult> {
+  ): Promise<DeltaResult<T>> {
     if (!this._graph.dependencies.size) {
       const {added} = await initialTraverseDependencies(
         this._graph,

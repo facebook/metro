@@ -12,7 +12,10 @@
 
 import type {Graph} from '../../DeltaCalculator';
 
-function getTransitiveDependencies(path: string, graph: Graph): Set<string> {
+function getTransitiveDependencies<T>(
+  path: string,
+  graph: Graph<T>,
+): Set<string> {
   const dependencies = _getDeps(path, graph, new Set());
 
   // Remove the main entry point, since this method only returns the
@@ -22,7 +25,11 @@ function getTransitiveDependencies(path: string, graph: Graph): Set<string> {
   return dependencies;
 }
 
-function _getDeps(path: string, graph: Graph, deps: Set<string>): Set<string> {
+function _getDeps<T>(
+  path: string,
+  graph: Graph<T>,
+  deps: Set<string>,
+): Set<string> {
   if (deps.has(path)) {
     return deps;
   }

@@ -13,7 +13,7 @@
 import type Bundler from '../Bundler';
 import type {TransformFn} from '../DeltaBundler/traverseDependencies';
 import type DeltaBundler from '../DeltaBundler';
-import type {TransformOptions} from '../JSTransformer/worker';
+import type {JsOutput, TransformOptions} from '../JSTransformer/worker';
 import type {BuildGraphOptions} from '../Server';
 
 type InlineRequiresRaw = {+blacklist: {[string]: true}} | boolean;
@@ -21,7 +21,7 @@ type InlineRequiresRaw = {+blacklist: {[string]: true}} | boolean;
 async function calcTransformerOptions(
   entryFiles: $ReadOnlyArray<string>,
   bundler: Bundler,
-  deltaBundler: DeltaBundler,
+  deltaBundler: DeltaBundler<JsOutput>,
   options: BuildGraphOptions,
 ): Promise<{...TransformOptions, inlineRequires: InlineRequiresRaw}> {
   const {
@@ -85,9 +85,9 @@ function removeInlineRequiresBlacklistFromOptions(
 async function getTransformFn(
   entryFiles: $ReadOnlyArray<string>,
   bundler: Bundler,
-  deltaBundler: DeltaBundler,
+  deltaBundler: DeltaBundler<JsOutput>,
   options: BuildGraphOptions,
-): Promise<TransformFn> {
+): Promise<TransformFn<JsOutput>> {
   const dependencyGraph = await bundler.getDependencyGraph();
   const {inlineRequires, ...transformerOptions} = await calcTransformerOptions(
     entryFiles,

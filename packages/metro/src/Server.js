@@ -53,13 +53,15 @@ import type {
   PostProcessBundleSourcemap,
 } from './Bundler';
 import type {CacheStore} from 'metro-cache';
-import type {Delta, Graph} from './DeltaBundler';
+import type {Graph} from './DeltaBundler';
+import type {DeltaResult} from './DeltaBundler/DeltaCalculator';
 import type {CustomResolver} from 'metro-resolver';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
 import type {
   CustomTransformOptions,
+  JsOutput,
   TransformedCode,
 } from './JSTransformer/worker';
 
@@ -70,8 +72,8 @@ const {
 type ResolveSync = (path: string, opts: ?{baseDir?: string}) => string;
 
 type GraphInfo = {|
-  graph: Graph,
-  prepend: $ReadOnlyArray<Module>,
+  graph: Graph<JsOutput>,
+  prepend: $ReadOnlyArray<Module<JsOutput>>,
   lastModified: Date,
   +sequenceId: string,
 |};
@@ -86,6 +88,8 @@ export type BuildGraphOptions = {|
   +platform: ?string,
   +type: 'module' | 'script',
 |};
+
+export type JsGraph = Graph<JsOutput>;
 
 type DeltaOptions = BundleOptions & {
   deltaBundleId: ?string,
@@ -143,7 +147,7 @@ class Server {
   _symbolicateInWorker: Symbolicate;
   _platforms: Set<string>;
   _nextBundleBuildID: number;
-  _deltaBundler: DeltaBundler;
+  _deltaBundler: DeltaBundler<JsOutput>;
   _graphs: Map<string, Promise<GraphInfo>> = new Map();
   _deltaGraphs: Map<string, Promise<GraphInfo>> = new Map();
 
@@ -256,7 +260,7 @@ class Server {
     this._bundler.end();
   }
 
-  getDeltaBundler(): DeltaBundler {
+  getDeltaBundler(): DeltaBundler<JsOutput> {
     return this._deltaBundler;
   }
 
@@ -286,7 +290,7 @@ class Server {
   async buildGraph(
     entryFiles: $ReadOnlyArray<string>,
     options: BuildGraphOptions,
-  ): Promise<Graph> {
+  ): Promise<JsGraph> {
     entryFiles = entryFiles.map(entryFile =>
       getAbsolutePath(entryFile, this._opts.projectRoots),
     );
@@ -445,7 +449,7 @@ class Server {
 
   async _getDeltaInfo(
     options: DeltaOptions,
-  ): Promise<{...GraphInfo, delta: Delta}> {
+  ): Promise<{...GraphInfo, delta: DeltaResult<JsOutput>}> {
     const id = this._optionsHash(options);
     let graphPromise = this._deltaGraphs.get(id);
     let graphInfo;

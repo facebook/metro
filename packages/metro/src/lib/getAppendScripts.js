@@ -12,6 +12,7 @@
 
 import type {Graph} from '../DeltaBundler/DeltaCalculator';
 import type {Module} from '../DeltaBundler/traverseDependencies';
+import type {JsOutput} from '../JSTransformer/worker';
 
 type Options<T: number | string> = {
   +createModuleId: string => T,
@@ -23,9 +24,9 @@ type Options<T: number | string> = {
 
 function getAppendScripts<T: number | string>(
   entryPoint: string,
-  graph: Graph,
+  graph: Graph<JsOutput>,
   options: Options<T>,
-): $ReadOnlyArray<Module> {
+): $ReadOnlyArray<Module<JsOutput>> {
   const output = [];
 
   if (options.runModule) {

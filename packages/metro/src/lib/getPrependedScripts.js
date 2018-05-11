@@ -17,7 +17,7 @@ const transformHelpers = require('./transformHelpers');
 import type Bundler from '../Bundler';
 import type {Module} from '../DeltaBundler/traverseDependencies';
 import type DeltaBundler from '../DeltaBundler';
-import type {CustomTransformOptions} from '../JSTransformer/worker';
+import type {CustomTransformOptions, JsOutput} from '../JSTransformer/worker';
 
 type Options = {
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
@@ -36,8 +36,8 @@ async function getPrependedScripts(
   options: Options,
   bundleOptions: BundleOptions,
   bundler: Bundler,
-  deltaBundler: DeltaBundler,
-): Promise<Array<Module>> {
+  deltaBundler: DeltaBundler<JsOutput>,
+): Promise<Array<Module<JsOutput>>> {
   // Get all the polyfills from the relevant option params (the
   // `getPolyfills()` method and the `polyfillModuleNames` variable).
   const polyfillModuleNames = options
@@ -80,7 +80,7 @@ async function getPrependedScripts(
   ];
 }
 
-function _getPrelude({dev}: {dev: boolean}): Module {
+function _getPrelude({dev}: {dev: boolean}): Module<JsOutput> {
   const code = getPreludeCode({isDev: dev});
   const name = '__prelude__';
 
