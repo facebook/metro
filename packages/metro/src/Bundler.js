@@ -21,7 +21,7 @@ const toLocalPath = require('./node-haste/lib/toLocalPath');
 
 const {Cache, stableHash} = require('metro-cache');
 
-import type {TransformResult} from './DeltaBundler/traverseDependencies';
+import type {TransformResult} from './DeltaBundler';
 import type {
   JsOutput,
   WorkerOptions,

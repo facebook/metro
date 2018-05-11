@@ -13,9 +13,15 @@
 const DeltaCalculator = require('./DeltaBundler/DeltaCalculator');
 
 import type Bundler from './Bundler';
-import type {DeltaResult, Graph, Options} from './DeltaBundler/DeltaCalculator';
+import type {DeltaResult, Graph, Options} from './DeltaBundler/types.flow';
 
-export type {DeltaResult, Graph} from './DeltaBundler/DeltaCalculator';
+export type {
+  DeltaResult,
+  Graph,
+  Module,
+  TransformFn,
+  TransformResult,
+} from './DeltaBundler/types.flow';
 
 /**
  * `DeltaBundler` uses the `DeltaTransformer` to build bundle deltas. This

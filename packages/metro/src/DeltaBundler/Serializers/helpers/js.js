@@ -15,7 +15,7 @@ const invariant = require('fbjs/lib/invariant');
 const path = require('path');
 
 import type {JsOutput} from '../../../JSTransformer/worker';
-import type {Module} from '../../traverseDependencies';
+import type {Module} from '../../types.flow';
 
 export type Options = {
   +createModuleId: string => number | string,

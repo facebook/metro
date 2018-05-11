@@ -42,7 +42,7 @@ const {getAsset} = require('./Assets');
 const resolveSync: ResolveSync = require('resolve').sync;
 
 import type {CustomError} from './lib/formatBundlingError';
-import type {Module} from './DeltaBundler/traverseDependencies';
+import type {DeltaResult, Graph, Module} from './DeltaBundler';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from './lib/reporting';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
@@ -53,8 +53,6 @@ import type {
   PostProcessBundleSourcemap,
 } from './Bundler';
 import type {CacheStore} from 'metro-cache';
-import type {Graph} from './DeltaBundler';
-import type {DeltaResult} from './DeltaBundler/DeltaCalculator';
 import type {CustomResolver} from 'metro-resolver';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {Symbolicate} from './Server/symbolicate/symbolicate';

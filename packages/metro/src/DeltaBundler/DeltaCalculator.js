@@ -18,15 +18,7 @@ const {
 const {EventEmitter} = require('events');
 
 import type DependencyGraph from '../node-haste/DependencyGraph';
-import type {Graph, Module, Options} from './traverseDependencies';
-
-export type DeltaResult<T> = {|
-  +modified: Map<string, Module<T>>,
-  +deleted: Set<string>,
-  +reset: boolean,
-|};
-
-export type {Graph, Options} from './traverseDependencies';
+import type {DeltaResult, Graph, Options} from './types.flow';
 
 /**
  * This class is in charge of calculating the delta of changed modules that

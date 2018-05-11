@@ -10,8 +10,7 @@
 
 'use strict';
 
-import type {Graph} from '../DeltaBundler/DeltaCalculator';
-import type {Module} from '../DeltaBundler/traverseDependencies';
+import type {Graph, Module} from '../DeltaBundler';
 import type {JsOutput} from '../JSTransformer/worker';
 
 type Options<T: number | string> = {

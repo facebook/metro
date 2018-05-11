@@ -11,8 +11,7 @@
 'use strict';
 
 import type Bundler from '../Bundler';
-import type {TransformFn} from '../DeltaBundler/traverseDependencies';
-import type DeltaBundler from '../DeltaBundler';
+import type DeltaBundler, {TransformFn} from '../DeltaBundler';
 import type {JsOutput, WorkerOptions} from '../JSTransformer/worker';
 import type {BuildGraphOptions} from '../Server';
 

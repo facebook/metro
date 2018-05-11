@@ -15,10 +15,8 @@ const getAppendScripts = require('../../lib/getAppendScripts');
 const {wrapModule} = require('./helpers/js');
 const {getJsOutput, isJsModule} = require('./helpers/js');
 
-import type {DeltaResult} from '../../DeltaBundler/DeltaCalculator';
-import type {Graph} from '../../DeltaBundler';
 import type {JsOutput} from '../../JSTransformer/worker';
-import type {Module} from '../traverseDependencies';
+import type {DeltaResult, Graph, Module} from '../types.flow';
 
 type Options = {|
   +createModuleId: string => number | string,

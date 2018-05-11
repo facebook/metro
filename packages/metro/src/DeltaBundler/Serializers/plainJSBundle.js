@@ -15,8 +15,7 @@ const getAppendScripts = require('../../lib/getAppendScripts');
 const {isJsModule, wrapModule} = require('./helpers/js');
 
 import type {JsOutput} from '../../JSTransformer/worker';
-import type {Graph} from '../DeltaCalculator';
-import type {Module} from '../traverseDependencies';
+import type {Graph, Module} from '../types.flow';
 
 type Options = {|
   +createModuleId: string => number | string,

@@ -10,7 +10,7 @@
 
 'use strict';
 
-import type {Graph} from '../../DeltaCalculator';
+import type {Graph} from '../../types.flow';
 
 function getTransitiveDependencies<T>(
   path: string,

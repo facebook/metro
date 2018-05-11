@@ -14,10 +14,8 @@ const addParamsToDefineCall = require('../../lib/addParamsToDefineCall');
 
 const {isJsModule, wrapModule} = require('./helpers/js');
 
-import type {DeltaResult} from '../../DeltaBundler/DeltaCalculator';
-import type {Graph} from '../../DeltaBundler';
 import type {JsOutput} from '../../JSTransformer/worker';
-import type {Module} from '../traverseDependencies';
+import type {DeltaResult, Graph, Module} from '../types.flow';
 
 type Options = {
   createModuleId: string => number,

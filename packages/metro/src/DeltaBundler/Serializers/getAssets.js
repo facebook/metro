@@ -17,7 +17,7 @@ const {getJsOutput, isJsModule} = require('./helpers/js');
 
 import type {AssetData} from '../../Assets';
 import type {JsOutput} from '../../JSTransformer/worker';
-import type {Graph} from '../DeltaCalculator';
+import type {Graph} from '../types.flow';
 
 type Options = {|
   assetPlugins: $ReadOnlyArray<string>,

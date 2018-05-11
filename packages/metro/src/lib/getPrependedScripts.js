@@ -15,8 +15,7 @@ const getPreludeCode = require('./getPreludeCode');
 const transformHelpers = require('./transformHelpers');
 
 import type Bundler from '../Bundler';
-import type {Module} from '../DeltaBundler/traverseDependencies';
-import type DeltaBundler from '../DeltaBundler';
+import type DeltaBundler, {Module} from '../DeltaBundler';
 import type {CustomTransformOptions, JsOutput} from '../JSTransformer/worker';
 
 type Options = {

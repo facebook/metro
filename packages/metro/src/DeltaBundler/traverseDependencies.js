@@ -11,24 +11,7 @@
 'use strict';
 
 import type {TransformResultDependency} from '../ModuleGraph/types.flow';
-
-export type Dependency = {|
-  absolutePath: string,
-  data: TransformResultDependency,
-|};
-
-export type Module<T> = {|
-  dependencies: Map<string, Dependency>,
-  inverseDependencies: Set<string>,
-  output: $ReadOnlyArray<T>,
-  path: string,
-  getSource: () => string,
-|};
-
-export type Graph<T> = {|
-  dependencies: Map<string, Module<T>>,
-  entryPoints: $ReadOnlyArray<string>,
-|};
+import type {Dependency, Graph, Module, Options} from './types.flow';
 
 type Result<T> = {added: Map<string, Module<T>>, deleted: Set<string>};
 
@@ -43,20 +26,6 @@ type Delta<T> = {
   modified: Map<string, Module<T>>,
   deleted: Set<string>,
 };
-
-export type TransformResult<T> = {|
-  dependencies: $ReadOnlyArray<TransformResultDependency>,
-  output: $ReadOnlyArray<T>,
-  +getSource: () => string,
-|};
-
-export type TransformFn<T> = string => Promise<TransformResult<T>>;
-
-export type Options<T> = {|
-  resolve: (from: string, to: string) => string,
-  transform: TransformFn<T>,
-  onProgress: ?(numProcessed: number, total: number) => mixed,
-|};
 
 /**
  * Dependency Traversal logic for the Delta Bundler. This method calculates
