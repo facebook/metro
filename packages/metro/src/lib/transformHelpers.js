@@ -13,7 +13,7 @@
 import type Bundler from '../Bundler';
 import type {TransformFn} from '../DeltaBundler/traverseDependencies';
 import type DeltaBundler from '../DeltaBundler';
-import type {JsOutput, TransformOptions} from '../JSTransformer/worker';
+import type {JsOutput, WorkerOptions} from '../JSTransformer/worker';
 import type {BuildGraphOptions} from '../Server';
 
 type InlineRequiresRaw = {+blacklist: {[string]: true}} | boolean;
@@ -23,7 +23,7 @@ async function calcTransformerOptions(
   bundler: Bundler,
   deltaBundler: DeltaBundler<JsOutput>,
   options: BuildGraphOptions,
-): Promise<{...TransformOptions, inlineRequires: InlineRequiresRaw}> {
+): Promise<{...WorkerOptions, inlineRequires: InlineRequiresRaw}> {
   const {
     enableBabelRCLookup,
     projectRoot,

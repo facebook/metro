@@ -20,10 +20,7 @@ const getTransformCacheKeyFn = require('./lib/getTransformCacheKeyFn');
 
 const {Cache, stableHash} = require('metro-cache');
 
-import type {
-  TransformedCode,
-  Options as WorkerOptions,
-} from './JSTransformer/worker';
+import type {TransformedCode, WorkerOptions} from './JSTransformer/worker';
 import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
 import type {Reporter} from './lib/reporting';
 import type Module from './node-haste/Module';

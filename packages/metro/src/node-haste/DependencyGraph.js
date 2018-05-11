@@ -29,7 +29,7 @@ const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
 
-import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
+import type {WorkerOptions} from '../JSTransformer/worker';
 import type {TransformResultDependency} from '../ModuleGraph/types.flow';
 import type {Reporter} from '../lib/reporting';
 import type {ModuleMap} from './DependencyGraph/ModuleResolution';
@@ -211,7 +211,7 @@ class DependencyGraph extends EventEmitter {
    */
   async getShallowDependencies(
     entryPath: string,
-    transformOptions: JSTransformerOptions,
+    transformOptions: WorkerOptions,
   ): Promise<$ReadOnlyArray<TransformResultDependency>> {
     const module = this._moduleCache.getModule(entryPath);
     const result = await module.read(transformOptions);

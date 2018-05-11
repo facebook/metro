@@ -12,9 +12,9 @@
 
 const transformHelpers = require('../lib/transformHelpers');
 
-import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
+import type {WorkerOptions} from '../JSTransformer/worker';
 
-async function getTransformOptions(): Promise<JSTransformerOptions> {
+async function getTransformOptions(): Promise<WorkerOptions> {
   const bundler = {
     getGlobalTransformOptions() {
       return {

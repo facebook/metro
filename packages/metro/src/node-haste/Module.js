@@ -13,10 +13,7 @@
 const fs = require('fs');
 const isAbsolutePath = require('absolute-path');
 
-import type {
-  TransformedCode,
-  Options as WorkerOptions,
-} from '../JSTransformer/worker';
+import type {TransformedCode, WorkerOptions} from '../JSTransformer/worker';
 import type ModuleCache from './ModuleCache';
 import type {LocalPath} from './lib/toLocalPath';
 

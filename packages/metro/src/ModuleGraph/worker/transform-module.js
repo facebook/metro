@@ -48,7 +48,6 @@ export type TransformOptions<ExtraOptions> = {|
 
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
 const defaultTransformOptions = {
-  assetDataPlugins: [],
   dev: false,
   hot: false,
   inlineRequires: false,

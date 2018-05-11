@@ -38,19 +38,6 @@ import type {Plugins as BabelPlugins} from 'babel-core';
 import type {LogEntry} from 'metro-core/src/Logger';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
-export type JsOutput = {|
-  data: {
-    +code: string,
-    +map: Array<MetroSourceMapSegmentTuple>,
-  },
-  type: string,
-|};
-
-export type TransformedCode = {|
-  output: $ReadOnlyArray<JsOutput>,
-  dependencies: $ReadOnlyArray<TransformResultDependency>,
-|};
-
 export type TransformArgs<ExtraOptions: {}> = {|
   filename: string,
   localPath: string,
@@ -74,7 +61,17 @@ export type Transformer<ExtraOptions: {} = {}> = {
 
 export type CustomTransformOptions = {[string]: mixed, __proto__: null};
 
-export type TransformOptionsStrict = {|
+export type TransformOptions = {
+  +customTransformOptions?: CustomTransformOptions,
+  +enableBabelRCLookup?: boolean,
+  +dev?: boolean,
+  +hot?: boolean,
+  +inlineRequires: boolean,
+  +platform: ?string,
+  +projectRoot: string,
+};
+
+export type WorkerOptions = {|
   +assetDataPlugins: $ReadOnlyArray<string>,
   +customTransformOptions?: CustomTransformOptions,
   +enableBabelRCLookup: boolean,
@@ -86,26 +83,25 @@ export type TransformOptionsStrict = {|
   +projectRoot: string,
 |};
 
-export type TransformOptions = {
-  +assetDataPlugins: $ReadOnlyArray<string>,
-  +customTransformOptions?: CustomTransformOptions,
-  +enableBabelRCLookup?: boolean,
-  +dev?: boolean,
-  +hot?: boolean,
-  +inlineRequires: boolean,
-  +minify: boolean,
-  +platform: ?string,
-  +projectRoot: string,
-};
-
-export type Options = TransformOptionsStrict;
-
 export type Data = {
   result: TransformedCode,
   sha1: string,
   transformFileStartLogEntry: LogEntry,
   transformFileEndLogEntry: LogEntry,
 };
+
+export type JsOutput = {|
+  data: {
+    +code: string,
+    +map: Array<MetroSourceMapSegmentTuple>,
+  },
+  type: string,
+|};
+
+export type TransformedCode = {|
+  output: $ReadOnlyArray<JsOutput>,
+  dependencies: $ReadOnlyArray<TransformResultDependency>,
+|};
 
 function getDynamicDepsBehavior(
   inPackages: DynamicRequiresBehavior,
@@ -131,7 +127,7 @@ async function transformCode(
   sourceCode: ?string,
   transformerPath: string,
   isScript: boolean,
-  options: Options,
+  options: WorkerOptions,
   assetExts: $ReadOnlyArray<string>,
   assetRegistryPath: string,
   minifierPath: string,

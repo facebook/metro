@@ -16,7 +16,7 @@ const {Logger} = require('metro-core');
 const debug = require('debug')('Metro:JStransformer');
 const Worker = require('jest-worker').default;
 
-import type {Options, TransformedCode} from './JSTransformer/worker';
+import type {TransformedCode, WorkerOptions} from './JSTransformer/worker';
 import type {LocalPath} from './node-haste/lib/toLocalPath';
 import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
 
@@ -88,7 +88,7 @@ module.exports = class Transformer {
     localPath: LocalPath,
     code: ?string,
     isScript: boolean,
-    options: Options,
+    options: WorkerOptions,
     assetExts: $ReadOnlyArray<string>,
     assetRegistryPath: string,
     minifierPath: string,
