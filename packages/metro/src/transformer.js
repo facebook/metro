@@ -76,7 +76,6 @@ const getBabelRC = (function() {
             }
           }
         }
-        //$FlowFixMe: TODO t26372934 this has to be dynamic
         return require(name);
       });
       babelRC.plugins = babelRC.plugins.map(plugin => {
