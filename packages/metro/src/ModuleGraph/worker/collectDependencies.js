@@ -74,7 +74,7 @@ function collectDependencies(
         processImportCall(context, path, node, depMapIdent);
         return;
       }
-      if (isRequireCall(node.callee)) {
+      if (isNativeRequireCall(path)) {
         const reqNode = processRequireCall(context, path, node, depMapIdent);
         visited.add(reqNode);
       }
@@ -88,8 +88,14 @@ function collectDependencies(
   };
 }
 
-function isRequireCall(callee) {
-  return callee.type === 'Identifier' && callee.name === 'require';
+function isNativeRequireCall(path) {
+  const node = path.node;
+  const callee = node.callee;
+  return (
+    callee.type === 'Identifier' &&
+    callee.name === 'require' &&
+    path.scope.bindings['require'] == null
+  );
 }
 
 function processImportCall(context, path, node, depMapIdent) {
