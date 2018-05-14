@@ -75,10 +75,22 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   }
 
   _redirectRequire(fromModule: TModule, modulePath: string): string | false {
-    const pck = fromModule.getPackage();
-    if (pck) {
-      return pck.redirectRequire(modulePath);
+    const moduleCache = this._options.moduleCache;
+
+    try {
+      const pck =
+        modulePath.startsWith('.') || path.isAbsolute(modulePath)
+          ? moduleCache.getModule(modulePath).getPackage()
+          : fromModule.getPackage();
+
+      if (pck) {
+        return pck.redirectRequire(modulePath);
+      }
+    } catch (err) {
+      // Do nothing. The standard module cache does not trigger any error, but
+      // the ModuleGraph one does, if the module does not exist.
     }
+
     return modulePath;
   }
 

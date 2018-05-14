@@ -1526,7 +1526,7 @@ Array [
   },
   Object {
     "dependencies": Array [],
-    "path": "/root/node_modules/foo/node_modules/bar/lol.js",
+    "path": "/root/node_modules/foo/node_modules/bar/wow.js",
   },
   Object {
     "dependencies": Array [],
@@ -1878,7 +1878,7 @@ Array [
   },
   Object {
     "dependencies": Array [],
-    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\node_modules\\\\bar\\\\lol.js",
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\node_modules\\\\bar\\\\wow.js",
   },
   Object {
     "dependencies": Array [],

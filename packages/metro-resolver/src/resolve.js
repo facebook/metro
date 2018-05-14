@@ -113,7 +113,8 @@ function resolve(
 
   const allDirPaths = dirPaths.concat(extraPaths);
   for (let i = 0; i < allDirPaths.length; ++i) {
-    const result = resolveFileOrDir(context, allDirPaths[i], platform);
+    const realModuleName = context.redirectModulePath(allDirPaths[i]);
+    const result = resolveFileOrDir(context, realModuleName, platform);
     if (result.type === 'resolved') {
       return result.resolution;
     }
@@ -127,11 +128,6 @@ type ModulePathContext = FileOrDirContext & {
    * resolved.
    */
   +originModulePath: string,
-  /**
-   * Lookup the module's closest `package.json` and process the redirects
-   * metadata. Return an absolute path to the resolved path.
-   */
-  +redirectModulePath: (modulePath: string) => string | false,
 };
 
 /**
@@ -347,6 +343,7 @@ type FileContext = {
   +doesFileExist: DoesFileExist,
   +isAssetFile: IsAssetFile,
   +preferNativePlatform: boolean,
+  +redirectModulePath: (modulePath: string) => string | false,
   +resolveAsset: ResolveAsset,
   +sourceExts: $ReadOnlyArray<string>,
 };
