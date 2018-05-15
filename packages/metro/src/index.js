@@ -149,6 +149,7 @@ async function runMetro({
 
   return new MetroServer(serverOptions);
 }
+exports.runMetro = runMetro;
 
 type CreateConnectMiddlewareOptions = {|
   ...PublicMetroOptions,
