@@ -12,7 +12,7 @@
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"
   },
   "dependencies": {
-    "jest-serializer": "23.0.0-charlie.1",
+    "jest-serializer": "23.0.0-charlie.2",
     "metro-core": "0.37.0",
     "mkdirp": "^0.5.1",
     "rimraf": "^2.5.4"

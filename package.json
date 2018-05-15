@@ -3,7 +3,7 @@
   "devDependencies": {
     "babel-core": "^6.23.1",
     "babel-eslint": "8.2.1",
-    "babel-jest": "23.0.0-charlie.1",
+    "babel-jest": "23.0.0-charlie.2",
     "babel-plugin-syntax-trailing-function-commas": "^6.20.0",
     "babel-plugin-transform-async-to-generator": "^6.24.1",
     "babel-plugin-transform-class-properties": "^6.18.0",

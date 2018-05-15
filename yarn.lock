@@ -988,7 +988,14 @@ babel-helpers@^6.24.1:
     babel-runtime "^6.22.0"
     babel-template "^6.24.1"
 
-babel-jest@23.0.0-charlie.1, babel-jest@^23.0.0-charlie.1:
+babel-jest@23.0.0-charlie.2:
+  version "23.0.0-charlie.2"
+  resolved "https://registry.yarnpkg.com/babel-jest/-/babel-jest-23.0.0-charlie.2.tgz#5f3c7ca0eefcec342e67da7f51b1fee63ba22e9b"
+  dependencies:
+    babel-plugin-istanbul "^4.1.6"
+    babel-preset-jest "^23.0.0-charlie.2"
+
+babel-jest@^23.0.0-charlie.1:
   version "23.0.0-charlie.1"
   resolved "https://registry.yarnpkg.com/babel-jest/-/babel-jest-23.0.0-charlie.1.tgz#275dc7da10420b0da7df54e11e5b21a3daa3581a"
   dependencies:
@@ -1025,6 +1032,10 @@ babel-plugin-istanbul@^4.1.6:
 babel-plugin-jest-hoist@^23.0.0-charlie.1:
   version "23.0.0-charlie.1"
   resolved "https://registry.yarnpkg.com/babel-plugin-jest-hoist/-/babel-plugin-jest-hoist-23.0.0-charlie.1.tgz#2a6d15cb609443158d61eb01ca63ed08edd2c46b"
+
+babel-plugin-jest-hoist@^23.0.0-charlie.2:
+  version "23.0.0-charlie.2"
+  resolved "https://registry.yarnpkg.com/babel-plugin-jest-hoist/-/babel-plugin-jest-hoist-23.0.0-charlie.2.tgz#def92a20f64e732be1c82188b93622ef9641ba67"
 
 babel-plugin-syntax-async-functions@^6.8.0:
   version "6.13.0"
@@ -1338,6 +1349,13 @@ babel-preset-jest@^23.0.0-charlie.1:
   resolved "https://registry.yarnpkg.com/babel-preset-jest/-/babel-preset-jest-23.0.0-charlie.1.tgz#188ac3695737c1f8e76b1737e3064d2d8c783141"
   dependencies:
     babel-plugin-jest-hoist "^23.0.0-charlie.1"
+    babel-plugin-syntax-object-rest-spread "^6.13.0"
+
+babel-preset-jest@^23.0.0-charlie.2:
+  version "23.0.0-charlie.2"
+  resolved "https://registry.yarnpkg.com/babel-preset-jest/-/babel-preset-jest-23.0.0-charlie.2.tgz#9fdaac2c568ef3ab65d787945d7d001ff1597099"
+  dependencies:
+    babel-plugin-jest-hoist "^23.0.0-charlie.2"
     babel-plugin-syntax-object-rest-spread "^6.13.0"
 
 babel-preset-react-native@^5.0.0:
@@ -3834,7 +3852,19 @@ jest-get-type@^22.1.0:
   version "22.1.0"
   resolved "https://registry.yarnpkg.com/jest-get-type/-/jest-get-type-22.1.0.tgz#4e90af298ed6181edc85d2da500dbd2753e0d5a9"
 
-jest-haste-map@23.0.0-charlie.1, jest-haste-map@^23.0.0-charlie.1:
+jest-haste-map@23.0.0-charlie.2:
+  version "23.0.0-charlie.2"
+  resolved "https://registry.yarnpkg.com/jest-haste-map/-/jest-haste-map-23.0.0-charlie.2.tgz#13d1471bf20635a53dd3e456f5a7c627c69ca21f"
+  dependencies:
+    fb-watchman "^2.0.0"
+    graceful-fs "^4.1.11"
+    jest-docblock "^22.4.0"
+    jest-serializer "^23.0.0-charlie.2"
+    jest-worker "^23.0.0-charlie.2"
+    micromatch "^2.3.11"
+    sane "^2.0.0"
+
+jest-haste-map@^23.0.0-charlie.1:
   version "23.0.0-charlie.1"
   resolved "https://registry.yarnpkg.com/jest-haste-map/-/jest-haste-map-23.0.0-charlie.1.tgz#1194d9707201947d563d39aa6e33a18ce40f29b9"
   dependencies:
@@ -3952,7 +3982,11 @@ jest-runtime@^23.0.0-charlie.1:
     write-file-atomic "^2.1.0"
     yargs "^11.0.0"
 
-jest-serializer@23.0.0-charlie.1, jest-serializer@^23.0.0-charlie.1:
+jest-serializer@23.0.0-charlie.2, jest-serializer@^23.0.0-charlie.2:
+  version "23.0.0-charlie.2"
+  resolved "https://registry.yarnpkg.com/jest-serializer/-/jest-serializer-23.0.0-charlie.2.tgz#21beb06b29441f4b29fda4344c0532db286e7d34"
+
+jest-serializer@^23.0.0-charlie.1:
   version "23.0.0-charlie.1"
   resolved "https://registry.yarnpkg.com/jest-serializer/-/jest-serializer-23.0.0-charlie.1.tgz#c73288c67ed332bc9b80743f0ffe98baa665de08"
 
@@ -3988,7 +4022,13 @@ jest-validate@^23.0.0-charlie.1:
     leven "^2.1.0"
     pretty-format "^23.0.0-charlie.1"
 
-jest-worker@23.0.0-charlie.1, jest-worker@^23.0.0-charlie.1:
+jest-worker@23.0.0-charlie.2, jest-worker@^23.0.0-charlie.2:
+  version "23.0.0-charlie.2"
+  resolved "https://registry.yarnpkg.com/jest-worker/-/jest-worker-23.0.0-charlie.2.tgz#b9c5843cb659bcd724ba872666edef327c9893cb"
+  dependencies:
+    merge-stream "^1.0.1"
+
+jest-worker@^23.0.0-charlie.1:
   version "23.0.0-charlie.1"
   resolved "https://registry.yarnpkg.com/jest-worker/-/jest-worker-23.0.0-charlie.1.tgz#ac8212ee454808a21b617a72a3c7678a3b29b0e6"
   dependencies:
