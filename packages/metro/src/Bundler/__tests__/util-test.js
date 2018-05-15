@@ -31,11 +31,26 @@ describe('Util', () => {
   const remoteFileMap = {
     '/foo/bar': {
       'my-asset': {
-        1: 'GCRaTwHwaI1plCgBAAAAAAC5oAcJbnsvAAAZ',
-        1.5: 'GAdeUAEMbQH8hyQGAAAAAAC9H193bnsvAAAZ',
-        2: 'GMsbUgHQlgBGbPsCAAAAAAABXchsbnsvAAAZ',
-        3: 'GMEgUgG9llQL8EUBAAAAAAB2uXdrbnsvAAAZ',
-        4: 'GFleUAEiuVDxD5wGAAAAAAZWLd1dbnsvAAAZ',
+        1: {
+          handle: 'GCRaTwHwaI1plCgBAAAAAAC5oAcJbnsvAAAZ',
+          hash: 'baa06e3fa558fe7f246b3f3e5ee33bc86357c879',
+        },
+        1.5: {
+          handle: 'GAdeUAEMbQH8hyQGAAAAAAC9H193bnsvAAAZ',
+          hash: '7e5c0190b0fab299dab0351a5079368a91a372fe',
+        },
+        2: {
+          handle: 'GMsbUgHQlgBGbPsCAAAAAAABXchsbnsvAAAZ',
+          hash: '328184a20a8a938b378153280bc636182b9136ac',
+        },
+        3: {
+          handle: 'GMEgUgG9llQL8EUBAAAAAAB2uXdrbnsvAAAZ',
+          hash: '4b41f231da982f153257e8384663fae20c7c607d',
+        },
+        4: {
+          handle: 'GFleUAEiuVDxD5wGAAAAAAZWLd1dbnsvAAAZ',
+          hash: 'd022de9b8d34bb1b621ef357f1da7573d5a4205d',
+        },
       },
     },
   };

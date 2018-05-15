@@ -21,7 +21,10 @@ import type {Ast} from '@babel/core';
 export type RemoteFileMap = {
   [string]: {
     [string]: {
-      [number]: string,
+      [number]: {
+        handle: string,
+        hash: string,
+      },
     },
   },
   __proto__: null,
@@ -101,9 +104,14 @@ function generateRemoteAssetCodeFileAst(
 
   const file = remoteFileMap[assetDescriptor.fileSystemLocation];
   const descriptor = file && file[assetDescriptor.name];
+  const data = {};
 
   if (!descriptor) {
     return null;
+  }
+
+  for (const scale in descriptor) {
+    data[+scale] = descriptor[+scale].handle;
   }
 
   // require('AssetSourceResolver')
@@ -125,10 +133,10 @@ function generateRemoteAssetCodeFileAst(
   ]);
 
   // {2: 'path/to/image@2x', 3: 'path/to/image@3x', ...}
-  const data = babylon.parseExpression(JSON.stringify(descriptor));
+  const astData = babylon.parseExpression(JSON.stringify(data));
 
   // ({2: '...', 3: '...'})[require(...).pickScale(...)]
-  const handler = t.memberExpression(data, call, true);
+  const handler = t.memberExpression(astData, call, true);
 
   // 'https://remote.server.com/' + ({2: ...})[require(...).pickScale(...)]
   const uri = t.binaryExpression('+', t.stringLiteral(remoteServer), handler);
