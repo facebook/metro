@@ -220,5 +220,8 @@ it('wraps a JSON file correctly', () => {
 });
 
 function astFromCode(code) {
-  return babylon.parse(code, {plugins: ['dynamicImport']});
+  return babylon.parse(code, {
+    plugins: ['dynamicImport'],
+    sourceType: 'script',
+  });
 }

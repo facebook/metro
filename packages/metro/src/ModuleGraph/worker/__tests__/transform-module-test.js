@@ -168,7 +168,7 @@ describe('transforming JS modules:', () => {
     const dep1 = 'foo';
     const dep2 = 'bar';
     const code = `require('${dep1}'),require('${dep2}')`;
-    const {body} = parse(code).program;
+    const {body} = parse(code, {sourceType: 'script'}).program;
     transformer.transform.stub.returns(transformResult(body));
 
     const result = transformModule(toBuffer(code), options());
