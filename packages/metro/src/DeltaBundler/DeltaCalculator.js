@@ -203,7 +203,13 @@ class DeltaCalculator<T> extends EventEmitter {
       const module = this._graph.dependencies.get(filePath);
 
       if (module) {
-        module.inverseDependencies.forEach(path => modifiedFiles.add(path));
+        module.inverseDependencies.forEach(path => {
+          // Only mark the inverse dependency as modified if it's not already
+          // marked as deleted (in that case we can just ignore it).
+          if (!deletedFiles.has(path)) {
+            modifiedFiles.add(path);
+          }
+        });
       }
     });
 

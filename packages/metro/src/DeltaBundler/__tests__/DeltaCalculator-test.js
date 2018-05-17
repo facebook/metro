@@ -27,6 +27,7 @@ describe('DeltaCalculator', () => {
   let fooModule;
   let barModule;
   let bazModule;
+  let quxModule;
 
   let deltaCalculator;
   let fileWatcher;
@@ -69,7 +70,7 @@ describe('DeltaCalculator', () => {
         path: '/bundle',
       };
       fooModule = {
-        dependencies: new Map(),
+        dependencies: new Map([['qux', '/qux']]),
         inverseDependencies: ['/bundle'],
         output: {
           name: 'foo',
@@ -92,11 +93,20 @@ describe('DeltaCalculator', () => {
         },
         path: '/baz',
       };
+      quxModule = {
+        dependencies: new Map(),
+        inverseDependencies: ['/foo'],
+        output: {
+          name: 'qux',
+        },
+        path: '/qux',
+      };
 
       graph.dependencies.set('/bundle', entryModule);
       graph.dependencies.set('/foo', fooModule);
       graph.dependencies.set('/bar', barModule);
       graph.dependencies.set('/baz', bazModule);
+      graph.dependencies.set('/qux', quxModule);
 
       return {
         added: new Map([
@@ -104,6 +114,7 @@ describe('DeltaCalculator', () => {
           ['/foo', fooModule],
           ['/bar', barModule],
           ['/baz', bazModule],
+          ['/qux', quxModule],
         ]),
         deleted: new Set(),
       };
@@ -142,6 +153,7 @@ describe('DeltaCalculator', () => {
         ['/foo', fooModule],
         ['/bar', barModule],
         ['/baz', bazModule],
+        ['/qux', quxModule],
       ]),
       deleted: new Set(),
       reset: true,
@@ -173,6 +185,7 @@ describe('DeltaCalculator', () => {
         ['/foo', fooModule],
         ['/bar', barModule],
         ['/baz', bazModule],
+        ['/qux', quxModule],
       ]),
       deleted: new Set(),
       reset: true,
@@ -322,6 +335,34 @@ describe('DeltaCalculator', () => {
       reset: false,
     });
 
+    expect(traverseDependencies).toHaveBeenCalledTimes(1);
+    expect(traverseDependencies.mock.calls[0][0]).toEqual(['/bundle']);
+  });
+
+  it('does not traverse a file after deleting it and one of its dependencies', async () => {
+    await deltaCalculator.getDelta({reset: false});
+
+    // Delete a file
+    fileWatcher.emit('change', {
+      eventsQueue: [{type: 'delete', filePath: '/foo'}],
+    });
+
+    // Delete a dependency of the deleted file
+    fileWatcher.emit('change', {
+      eventsQueue: [{type: 'delete', filePath: '/qux'}],
+    });
+
+    traverseDependencies.mockReturnValue(
+      Promise.resolve({
+        added: new Map([['/bundle', entryModule]]),
+        deleted: new Set(['/foo']),
+      }),
+    );
+
+    await deltaCalculator.getDelta({reset: false});
+
+    // Only the /bundle module should have been traversed (since it's an
+    // inverse dependency of /foo).
     expect(traverseDependencies).toHaveBeenCalledTimes(1);
     expect(traverseDependencies.mock.calls[0][0]).toEqual(['/bundle']);
   });
