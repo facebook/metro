@@ -945,6 +945,7 @@ class Server {
           // does not need to symbolication.
           // Skip anything except http(s), because there is no support for that yet
           if (
+            sourceUrl != null &&
             !urls.has(sourceUrl) &&
             !sourceUrl.endsWith('/debuggerWorker.js') &&
             sourceUrl.startsWith('http')
