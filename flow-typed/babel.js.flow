@@ -288,6 +288,8 @@ declare module '@babel/core' {
   // use @babel/traverse instead!
   declare var traverse: TraverseFunc;
 
+  declare var version: string;
+
   // Note: DO NOT USE WITHOUT CALLBACK. Use transformSync instead.
   declare function transform(
     code: string,
@@ -310,6 +312,8 @@ declare module '@babel/core' {
     callback: TransformCallback,
   ): void_DO_NOT_USE_SYNC;
   declare var transformFromAstSync: TransformFromAstSync;
+
+  declare function buildExternalHelpers(Array<string>): string;
 }
 
 // https://github.com/babel/babel/tree/master/packages/babylon
