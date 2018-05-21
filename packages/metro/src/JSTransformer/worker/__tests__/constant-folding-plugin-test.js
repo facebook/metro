@@ -186,4 +186,65 @@ describe('constant expressions', () => {
 
     expect(fold('arbitrary.js', code)).toEqual('var x=3;var y=4;var z=0;');
   });
+
+  it('wipes unused functions', () => {
+    const code = `
+      var xUnused = function () {
+        console.log(100);
+      };
+
+      var yUnused = () => {
+        console.log(200);
+      };
+
+      function zUnused() {
+        console.log(300);
+      }
+
+      var xUsed = () => {
+        console.log(400);
+      };
+
+      var yUsed = function () {
+        console.log(500);
+      };
+
+      function zUsed() {
+        console.log(600);
+      }
+
+      (() => {
+        console.log(700);
+      })();
+
+      xUsed();
+      yUsed();
+      zUsed();
+    `;
+
+    expect(fold('arbitrary.js', code)).toEqual(
+      [
+        'var xUsed=()=>{console.log(400);};',
+        'var yUsed=function(){console.log(500);};',
+        'function zUsed(){console.log(600);}',
+        '(()=>{console.log(700);})();',
+        'xUsed();',
+        'yUsed();',
+        'zUsed();',
+      ].join(''),
+    );
+  });
+
+  it('verifies that mixes of variables and functions properly minifies', () => {
+    const code = `
+      var x = 2;
+      var y = () => x - 2;
+
+      if (x) {
+        z();
+      }
+    `;
+
+    expect(fold('arbitrary.js', code)).toEqual('var x=2;{z();}');
+  });
 });

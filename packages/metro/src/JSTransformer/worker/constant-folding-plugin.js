@@ -15,6 +15,30 @@ import typeof {types as BabelTypes} from '@babel/core';
 function constantFoldingPlugin(context: {types: BabelTypes}) {
   const t = context.types;
 
+  const FunctionDeclaration = {
+    exit(path: Object) {
+      const binding = path.scope.getBinding(path.node.id.name);
+
+      if (binding && !binding.referenced) {
+        path.remove();
+      }
+    },
+  };
+
+  const FunctionExpression = {
+    exit(path: Object) {
+      const parentPath = path.parentPath;
+
+      if (t.isVariableDeclarator(parentPath)) {
+        const binding = parentPath.scope.getBinding(parentPath.node.id.name);
+
+        if (binding && !binding.referenced) {
+          parentPath.remove();
+        }
+      }
+    },
+  };
+
   const Conditional = {
     exit(path: Object) {
       const node = path.node;
@@ -65,12 +89,23 @@ function constantFoldingPlugin(context: {types: BabelTypes}) {
     },
   };
 
+  const Program = {
+    exit(path: Object) {
+      path.traverse({
+        ArrowFunctionExpression: FunctionExpression,
+        FunctionDeclaration,
+        FunctionExpression,
+      });
+    },
+  };
+
   return {
     visitor: {
       BinaryExpression: Expression,
       ConditionalExpression: Conditional,
       IfStatement: Conditional,
       LogicalExpression,
+      Program,
       UnaryExpression: Expression,
     },
   };
