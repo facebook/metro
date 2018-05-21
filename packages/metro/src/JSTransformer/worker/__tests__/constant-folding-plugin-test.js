@@ -38,6 +38,7 @@ function parse(code: string): TransformResult {
     code: false,
     babelrc: false,
     compact: true,
+    plugins: [require('@babel/plugin-syntax-nullish-coalescing-operator')],
     sourceMaps: true,
   });
 }
@@ -107,6 +108,20 @@ describe('constant expressions', () => {
     );
   });
 
+  it('folds null coalescing operator', () => {
+    const code = `
+      var a = undefined ?? u();
+      var b = null ?? v();
+      var c = false ?? w();
+      var d = 0 ?? x();
+      var e = NaN ?? x();
+      var f = "truthy" ?? z();
+    `;
+    expect(fold('arbitrary.js', code)).toEqual(
+      'var a=u();var b=v();var c=false;var d=0;var e=NaN;var f="truthy";',
+    );
+  });
+
   it('can remode an if statement with a falsy constant test', () => {
     const code = `
       if ('production' === 'development' || false) {
@@ -148,5 +163,27 @@ describe('constant expressions', () => {
       }
     `;
     expect(fold('arbitrary.js', code)).toEqual("{{require('c');}}");
+  });
+
+  it('folds if expressions with variables', () => {
+    const code = `
+      var x = 3;
+
+      if (x - 3) {
+        require('a');
+      }
+    `;
+
+    expect(fold('arbitrary.js', code)).toEqual('var x=3;');
+  });
+
+  it('folds logical expressions with variables', () => {
+    const code = `
+      var x = 3;
+      var y = (x - 3) || 4;
+      var z = (y - 4) && 4;
+    `;
+
+    expect(fold('arbitrary.js', code)).toEqual('var x=3;var y=4;var z=0;');
   });
 });

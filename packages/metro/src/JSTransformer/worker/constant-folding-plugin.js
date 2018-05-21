@@ -18,12 +18,48 @@ function constantFoldingPlugin(context: {types: BabelTypes}) {
   const Conditional = {
     exit(path: Object) {
       const node = path.node;
-      const test = node.test;
-      if (t.isLiteral(test)) {
-        if (test.value || node.alternate) {
-          path.replaceWith(test.value ? node.consequent : node.alternate);
-        } else if (!test.value) {
+      const result = path.get('test').evaluate();
+
+      if (result.confident) {
+        if (result.value || node.alternate) {
+          path.replaceWith(result.value ? node.consequent : node.alternate);
+        } else if (!result.value) {
           path.remove();
+        }
+      }
+    },
+  };
+
+  const Expression = {
+    exit(path: Object) {
+      const result = path.evaluate();
+
+      if (result.confident) {
+        path.replaceWith(t.valueToNode(result.value));
+      }
+    },
+  };
+
+  const LogicalExpression = {
+    exit(path: Object) {
+      const node = path.node;
+      const result = path.get('left').evaluate();
+
+      if (result.confident) {
+        const value = result.value;
+
+        switch (node.operator) {
+          case '||':
+            path.replaceWith(value ? node.left : node.right);
+            break;
+
+          case '&&':
+            path.replaceWith(value ? node.right : node.left);
+            break;
+
+          case '??':
+            path.replaceWith(value == null ? node.right : node.left);
+            break;
         }
       }
     },
@@ -31,41 +67,11 @@ function constantFoldingPlugin(context: {types: BabelTypes}) {
 
   return {
     visitor: {
-      BinaryExpression: {
-        exit(path: Object) {
-          const node = path.node;
-          if (t.isLiteral(node.left) && t.isLiteral(node.right)) {
-            const result = path.evaluate();
-            if (result.confident) {
-              path.replaceWith(t.valueToNode(result.value));
-            }
-          }
-        },
-      },
+      BinaryExpression: Expression,
       ConditionalExpression: Conditional,
       IfStatement: Conditional,
-      LogicalExpression: {
-        exit(path: Object) {
-          const node = path.node;
-          const left = node.left;
-          if (t.isLiteral(left)) {
-            const value = t.isNullLiteral(left) ? null : left.value;
-            if (node.operator === '||') {
-              path.replaceWith(value ? left : node.right);
-            } else {
-              path.replaceWith(value ? node.right : left);
-            }
-          }
-        },
-      },
-      UnaryExpression: {
-        exit(path: Object) {
-          const node = path.node;
-          if (node.operator === '!' && t.isLiteral(node.argument)) {
-            path.replaceWith(t.valueToNode(!node.argument.value));
-          }
-        },
-      },
+      LogicalExpression,
+      UnaryExpression: Expression,
     },
   };
 }
