@@ -143,7 +143,7 @@ describe('constant expressions', () => {
         var a = 'b';
       }
     `;
-    expect(fold('arbitrary.js', code)).toEqual('{var a=3;var b=a+4;}');
+    expect(fold('arbitrary.js', code)).toEqual('{var a=3;var b=7;}');
   });
 
   it('can optimize nested if-else constructs', () => {
@@ -233,6 +233,18 @@ describe('constant expressions', () => {
         'zUsed();',
       ].join(''),
     );
+  });
+
+  it('recursively strips off functions', () => {
+    const code = `
+      function x() {}
+
+      if (false) {
+        x();
+      }
+    `;
+
+    expect(fold('arbitrary.js', code)).toEqual('');
   });
 
   it('verifies that mixes of variables and functions properly minifies', () => {
