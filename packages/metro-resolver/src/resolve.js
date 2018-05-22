@@ -103,8 +103,15 @@ function resolve(
   const extraPaths = [];
   const {extraNodeModules} = context;
   if (extraNodeModules) {
-    const bits = path.normalize(moduleName).split(path.sep);
-    const packageName = bits[0];
+    let bits = path.normalize(moduleName).split(path.sep);
+    let packageName;
+    // Normalize packageName and bits for scoped modules
+    if (bits[0] && bits[0][0] === '@') {
+      packageName = bits.slice(0, 2).join('/');
+      bits = bits.slice(1);
+    } else {
+      packageName = bits[0];
+    }
     if (extraNodeModules[packageName]) {
       bits[0] = extraNodeModules[packageName];
       extraPaths.push(path.join.apply(path, bits));
