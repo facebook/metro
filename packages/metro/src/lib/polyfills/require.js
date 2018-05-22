@@ -326,7 +326,7 @@ if (__DEV__) {
         return false;
       }
 
-      parents.push(...inverseDependencies[notAccepted[i]]);
+      parents.push.apply(parents, inverseDependencies[notAccepted[i]]);
     }
 
     return parents.length == 0;

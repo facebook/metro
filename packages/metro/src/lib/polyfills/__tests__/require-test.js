@@ -18,17 +18,13 @@ const fs = require('fs');
 
 const {transformSync} = require('@babel/core');
 
-// from: metro/packages/metro-babel-register/babel-register.js
-
-const PLUGINS = [
-  '@babel/plugin-transform-flow-strip-types',
-  '@babel/plugin-proposal-object-rest-spread',
-  '@babel/plugin-proposal-class-properties',
-];
+// Include the external-helpers plugin to be able to detect if they're
+// needed when transforming the requirejs implementation.
+const PLUGINS = ['@babel/plugin-external-helpers'];
 
 function createBabelConfig() {
   return {
-    presets: [],
+    presets: [require.resolve('babel-preset-react-native')],
     plugins: PLUGINS.map(require),
     retainLines: true,
     sourceMaps: 'inline',
@@ -54,6 +50,12 @@ describe('require', () => {
 
   beforeEach(() => {
     moduleSystem = {};
+  });
+
+  it('does not need any babel helper logic', () => {
+    // Super-simple check to validate that no babel helpers are used.
+    // This check will need to be updated if https://fburl.com/6z0y2kf8 changes.
+    expect(moduleSystemCode.includes('babelHelpers')).toBe(false);
   });
 
   it('works with plain bundles', () => {
