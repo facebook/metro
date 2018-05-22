@@ -259,4 +259,16 @@ describe('constant expressions', () => {
 
     expect(fold('arbitrary.js', code)).toEqual('var x=2;{z();}');
   });
+
+  it('does not mess up -0', () => {
+    const code = `
+      var plusZero = +0;
+      var zero = 0;
+      var minusZero = -0;
+    `;
+
+    expect(fold('arbitrary.js', code)).toEqual(
+      'var plusZero=0;var zero=0;var minusZero=-0;',
+    );
+  });
 });

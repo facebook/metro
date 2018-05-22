@@ -63,7 +63,9 @@ function constantFoldingPlugin(context: {types: BabelTypes}) {
       const result = path.evaluate();
 
       if (result.confident) {
-        path.replaceWith(t.valueToNode(result.value));
+        if (!Object.is(result.value, -0)) {
+          path.replaceWith(t.valueToNode(result.value));
+        }
       }
     },
   };
