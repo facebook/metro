@@ -3494,7 +3494,7 @@ describe('traverseDependencies', function() {
       moduleReadDeferreds = {};
       callDeferreds = [defer(), defer()]; // [a.js, b.js]
 
-      transformFile = jest.genMockFn().mockImplementation((path, ...args) => {
+      transformFile = jest.fn().mockImplementation((path, ...args) => {
         const returnValue = originalTransformFile(path, ...args);
         if (/\/[ab]\.js$/.test(path)) {
           let deferred = moduleReadDeferreds[path];
