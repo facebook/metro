@@ -17,6 +17,7 @@ import type {BuildResult, GraphFn, PostProcessModules} from './types.flow';
 
 type BuildOptions = {|
   +entryPointPaths: Iterable<string>,
+  +framework: string,
   +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   +graphFn: GraphFn,
   +optimize: boolean,
@@ -54,7 +55,10 @@ async function build(options: BuildOptions): Promise<BuildResult> {
   const {entryModules} = graph;
   const preludeScript = virtualModule(
     getPreludeCode({
-      extraVars: {__NUM_MODULES__: graph.modules.length},
+      extraVars: {
+        __NUM_MODULES__: graph.modules.length,
+        __FRAMEWORK__: options.framework,
+      },
       isDev: !optimize,
     }),
   );
