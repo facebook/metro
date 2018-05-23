@@ -106,9 +106,10 @@ describe('constant expressions', () => {
       var c = null && z();
       var d = null || z();
       var e = !1 && z();
+      var f = z() && undefined || undefined;
     `;
     expect(fold('arbitrary.js', code)).toEqual(
-      'var a="truthy";var b=z();var c=null;var d=z();var e=false;',
+      'var a="truthy";var b=z();var c=null;var d=z();var e=false;var f=z()&&undefined||undefined;',
     );
   });
 

@@ -15,6 +15,21 @@ import typeof {types as BabelTypes} from '@babel/core';
 function constantFoldingPlugin(context: {types: BabelTypes}) {
   const t = context.types;
 
+  const evaluate = function(path: Object) {
+    const state = {safe: true};
+    const unsafe = (path: Object, state: Object) => (state.safe = false);
+
+    path.traverse(
+      {
+        CallExpression: unsafe,
+        AssignmentExpression: unsafe,
+      },
+      state,
+    );
+
+    return state.safe ? path.evaluate() : {confident: false, value: null};
+  };
+
   const FunctionDeclaration = {
     exit(path: Object, state: Object) {
       const binding = path.scope.getBinding(path.node.id.name);
@@ -44,7 +59,7 @@ function constantFoldingPlugin(context: {types: BabelTypes}) {
   const Conditional = {
     exit(path: Object, state: Object) {
       const node = path.node;
-      const result = path.get('test').evaluate();
+      const result = evaluate(path.get('test'));
 
       if (result.confident) {
         state.stripped = true;
@@ -60,7 +75,7 @@ function constantFoldingPlugin(context: {types: BabelTypes}) {
 
   const Expression = {
     exit(path: Object) {
-      const result = path.evaluate();
+      const result = evaluate(path);
 
       if (result.confident) {
         if (!Object.is(result.value, -0)) {
@@ -73,7 +88,7 @@ function constantFoldingPlugin(context: {types: BabelTypes}) {
   const LogicalExpression = {
     exit(path: Object) {
       const node = path.node;
-      const result = path.get('left').evaluate();
+      const result = evaluate(path.get('left'));
 
       if (result.confident) {
         const value = result.value;
