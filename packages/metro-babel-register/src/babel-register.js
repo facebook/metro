@@ -15,15 +15,15 @@ require('./node-polyfills');
 var _only = [];
 
 const PLUGINS = [
-  require('@babel/plugin-transform-flow-strip-types'),
-  require('@babel/plugin-proposal-object-rest-spread'),
-  require('@babel/plugin-proposal-class-properties'),
-  require('@babel/plugin-transform-modules-commonjs'),
-  require('@babel/plugin-proposal-optional-chaining'),
+  [require('@babel/plugin-transform-flow-strip-types').default],
+  [require('@babel/plugin-proposal-object-rest-spread').default],
+  [require('@babel/plugin-proposal-class-properties').default],
+  [require('@babel/plugin-transform-modules-commonjs').default],
+  [require('@babel/plugin-proposal-optional-chaining').default],
 ];
 
 if (/^v[0-7]\./.test(process.version)) {
-  PLUGINS.push(require('@babel/plugin-transform-async-to-generator'));
+  PLUGINS.push([require('@babel/plugin-transform-async-to-generator').default]);
 }
 
 function registerOnly(onlyList) {
@@ -40,7 +40,6 @@ function config(onlyList) {
     babelrc: false,
     ignore: null,
     only: _only,
-    parserOpts: {plugins: ['optionalChaining']},
     plugins: PLUGINS,
     presets: [],
     retainLines: true,

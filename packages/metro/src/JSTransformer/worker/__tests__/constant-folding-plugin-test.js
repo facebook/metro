@@ -22,38 +22,42 @@ function constantFolding(
   transformResult: TransformResult,
 ): TransformResult {
   return transformFromAstSync(transformResult.ast, transformResult.code, {
-    filename,
-    plugins: [constantFoldingPlugin],
-    inputSourceMap: transformResult.map || undefined, // may not be null
-    sourceMaps: true,
-    sourceFileName: filename,
+    ast: false,
     babelrc: false,
     compact: true,
+    filename,
+    inputSourceMap: transformResult.map || undefined, // may not be null
+    plugins: [constantFoldingPlugin],
     retainLines: true,
+    sourceFileName: filename,
+    sourceMaps: true,
+    sourceType: 'module',
   });
 }
 
 function parse(code: string): TransformResult {
   return transformSync(code, {
-    code: false,
+    ast: true,
     babelrc: false,
+    code: false,
     compact: true,
     plugins: [require('@babel/plugin-syntax-nullish-coalescing-operator')],
     sourceMaps: true,
+    sourceType: 'module',
   });
 }
-
-const babelOptions = {
-  babelrc: false,
-  compact: true,
-  retainLines: false,
-};
 
 function normalize({code}): string {
   if (code == null) {
     return 'FAIL';
   }
-  return transformSync(code, babelOptions).code;
+  return transformSync(code, {
+    ast: false,
+    babelrc: false,
+    compact: true,
+    retainLines: false,
+    sourceType: 'module',
+  }).code;
 }
 
 function fold(filename, code): string {

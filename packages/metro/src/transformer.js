@@ -160,7 +160,12 @@ function transform({filename, options, src, plugins}: Params) {
 
   try {
     const babelConfig = buildBabelConfig(filename, options, plugins);
-    const {ast} = transformSync(src, babelConfig);
+    const {ast} = transformSync(src, {
+      // ES modules require sourceType='module' but OSS may not always want that
+      sourceType: 'unambiguous',
+      ...babelConfig,
+      ast: true,
+    });
 
     return {ast};
   } finally {

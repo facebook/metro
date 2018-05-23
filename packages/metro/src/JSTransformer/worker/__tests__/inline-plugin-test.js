@@ -38,34 +38,40 @@ function inline(
 ): AstResult {
   const code = transformResult.code;
   const babelOptions = {
-    filename,
-    plugins: [[inlinePlugin, options]],
-    inputSourceMap: transformResult.map,
-    sourceMaps: true,
-    sourceFileName: filename,
-    code: false,
     babelrc: false,
+    code: false,
     compact: true,
+    filename,
+    inputSourceMap: transformResult.map,
+    plugins: [[inlinePlugin, options]],
+    sourceFileName: filename,
+    sourceMaps: true,
+    sourceType: 'module',
   };
 
   const result = transformResult.ast
-    ? transformFromAstSync(transformResult.ast, code, babelOptions)
-    : transformSync(code, babelOptions);
+    ? transformFromAstSync(transformResult.ast, code, {
+        ...babelOptions,
+        ast: true,
+      })
+    : transformSync(code, {...babelOptions, ast: true});
   const {ast} = result;
   invariant(ast != null, 'Missing AST in babel transform results.');
   return {ast, code: result.code, map: result.map};
 }
 
 function toString(ast): string {
-  return normalize(transformFromAstSync(ast, '(unused)', babelOptions).code);
+  return normalize(
+    transformFromAstSync(ast, '(unused)', {...babelOptions, ast: false}).code,
+  );
 }
 
 function normalize(code: string): string {
-  return transformSync(code, babelOptions).code;
+  return transformSync(code, {...babelOptions, ast: false}).code;
 }
 
 function toAst(code: string): TransformResult {
-  return transformSync(code, {...babelOptions, code: false}).ast;
+  return transformSync(code, {...babelOptions, ast: true, code: false}).ast;
 }
 
 describe('inline constants', () => {

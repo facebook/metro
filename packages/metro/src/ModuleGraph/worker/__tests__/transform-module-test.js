@@ -281,7 +281,7 @@ function createTestData() {
   // creates test data with an transformed AST, so that we can test source
   // map generation.
   const sourceCode = 'some(arbitrary(code));';
-  const fileAst = parse(sourceCode);
+  const fileAst = parse(sourceCode, {sourceType: 'module'});
   traverse(fileAst, {
     CallExpression(path) {
       if (path.node.callee.name === 'some') {

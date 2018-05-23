@@ -34,6 +34,7 @@ describe('finds React components', () => {
         'utf8',
       );
       const output = transformSync(input, {
+        ast: false,
         babelrc: false,
         plugins: [
           [
@@ -42,6 +43,7 @@ describe('finds React components', () => {
             JSON.parse(config),
           ],
         ],
+        sourceType: 'unambiguous',
       }).code;
 
       expect(output).toMatchSnapshot();

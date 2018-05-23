@@ -115,13 +115,15 @@ function optimizeCode(
   inliningOptions,
 ): BabelTransformResult {
   return transformSync(code, {
+    ast: true,
+    babelrc: false,
+    code: false,
+    filename,
     plugins: [
       [constantFoldingPlugin],
       [inlinePlugin, {...inliningOptions, isWrapped: true}],
     ],
-    babelrc: false,
-    code: false,
-    filename,
+    sourceType: 'script',
   });
 }
 

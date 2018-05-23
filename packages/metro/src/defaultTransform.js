@@ -27,10 +27,12 @@ module.exports.transform = ({filename, options, plugins, src}: Params) => {
 
   try {
     const {ast} = transformSync(src, {
-      filename,
+      ast: true,
       code: false,
       highlightCode: true,
+      filename,
       plugins,
+      sourceType: 'module',
     });
 
     return {ast};

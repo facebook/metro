@@ -24,11 +24,13 @@ const PLUGINS = ['@babel/plugin-external-helpers'];
 
 function createBabelConfig() {
   return {
-    presets: [require.resolve('babel-preset-react-native')],
+    ast: false,
+    babelrc: false,
     plugins: PLUGINS.map(require),
+    presets: [require.resolve('babel-preset-react-native')],
     retainLines: true,
     sourceMaps: 'inline',
-    babelrc: false,
+    sourceType: 'module',
   };
 }
 
