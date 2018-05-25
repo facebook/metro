@@ -128,16 +128,14 @@ module.exports = class Transformer {
   }
 
   _makeFarm(workerPath, computeWorkerKey, exposedMethods, numWorkers) {
-    // We whitelist only what would work. For example `--inspect` doesn't work
-    // in the workers because it tries to open the same debugging port. Feel
-    // free to add more cases to the RegExp. A whitelist is preferred, to
-    // guarantee robustness when upgrading node, etc.
-    const execArgv = process.execArgv.filter(
-      arg =>
-        /^--stack[_-]trace[_-]limit=[0-9]+$/.test(arg) ||
-        /^--heap[_-]growing[_-]percent=[0-9]+$/.test(arg) ||
-        /^--max[_-]old[_-]space[_-]size=[0-9]+$/.test(arg),
-    );
+    const execArgv = process.execArgv.slice();
+
+    // We swallow the first parameter if it's not an option (some things such as
+    // flow-node like to add themselves into the execArgv array)
+    if (execArgv.length > 0 && execArgv[0].charAt(0) !== '-') {
+      execArgv.shift();
+    }
+
     const env = {
       ...process.env,
       // Force color to print syntax highlighted code frames.
