@@ -43,4 +43,78 @@ export type FileCandidates =
       +candidateExts: $ReadOnlyArray<string>,
     |};
 
-export type CustomResolver = (string, string) => string;
+/**
+ * Check existence of a single file.
+ */
+export type DoesFileExist = (filePath: string) => boolean;
+export type IsAssetFile = (fileName: string) => boolean;
+
+/**
+ * Given a directory path and the base asset name, return a list of all the
+ * asset file names that match the given base name in that directory. Return
+ * null if there's no such named asset. `platform` is used to identify
+ * platform-specific assets, ex. `foo.ios.js` instead of a generic `foo.js`.
+ */
+export type ResolveAsset = (
+  dirPath: string,
+  assetName: string,
+  platform: string | null,
+) => ?$ReadOnlyArray<string>;
+
+export type FileContext = {
+  +doesFileExist: DoesFileExist,
+  +isAssetFile: IsAssetFile,
+  +preferNativePlatform: boolean,
+  +redirectModulePath: (modulePath: string) => string | false,
+  +resolveAsset: ResolveAsset,
+  +sourceExts: $ReadOnlyArray<string>,
+};
+
+export type FileOrDirContext = FileContext & {
+  /**
+   * This should return the path of the "main" module of the specified
+   * `package.json` file, after post-processing: for example, applying the
+   * 'browser' field if necessary.
+   *
+   * FIXME: move the post-processing here. Right now it is
+   * located in `node-haste/Package.js`, and fully duplicated in
+   * `ModuleGraph/node-haste/Package.js` (!)
+   */
+  +getPackageMainPath: (packageJsonPath: string) => string,
+};
+
+export type HasteContext = FileOrDirContext & {
+  /**
+   * Given a name, this should return the full path to the file that provides
+   * a Haste module of that name. Ex. for `Foo` it may return `/smth/Foo.js`.
+   */
+  +resolveHasteModule: (name: string) => ?string,
+  /**
+   * Given a name, this should return the full path to the package manifest that
+   * provides a Haste package of that name. Ex. for `Foo` it may return
+   * `/smth/Foo/package.json`.
+   */
+  +resolveHastePackage: (name: string) => ?string,
+};
+
+export type ModulePathContext = FileOrDirContext & {
+  /**
+   * Full path of the module that is requiring or importing the module to be
+   * resolved.
+   */
+  +originModulePath: string,
+};
+
+export type ResolutionContext = ModulePathContext &
+  HasteContext & {
+    allowHaste: boolean,
+    extraNodeModules: ?{[string]: string},
+    originModulePath: string,
+    resolveRequest?: ?CustomResolver,
+  };
+
+export type CustomResolver = (
+  ResolutionContext,
+  string,
+  string | null,
+) => Resolution;

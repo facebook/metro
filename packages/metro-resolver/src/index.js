@@ -11,18 +11,16 @@
 'use strict';
 
 export type {
-  DoesFileExist,
-  IsAssetFile,
-  ResolutionContext,
-  ResolveAsset,
-} from './resolve';
-export type {
   AssetFileResolution,
   CustomResolver,
+  DoesFileExist,
   FileAndDirCandidates,
   FileCandidates,
   FileResolution,
+  IsAssetFile,
+  ResolutionContext,
   Resolution,
+  ResolveAsset,
   Result,
 } from './types';
 
