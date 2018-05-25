@@ -116,6 +116,21 @@ const ASYNC_FUNC_NAMES = [
   'writeFile',
 ];
 
+type Options = {
+  /**
+   * On a win32 FS, there will be drives at the root, like "C:\". On a Posix FS,
+   * there is only one root "/".
+   */
+  platform?: 'win32' | 'posix',
+  /**
+   * To be able to use relative paths, this function must provide the current
+   * working directory. A possible implementation is to forward `process.cwd`,
+   * but one must ensure to create that directory in the memory FS (no
+   * directory is ever created automatically).
+   */
+  cwd?: () => string,
+};
+
 /**
  * Simulates `fs` API in an isolated, memory-based filesystem. This is useful
  * for testing systems that rely on `fs` without affecting the real filesystem.
@@ -128,6 +143,7 @@ class MemoryFs {
   _nextId: number;
   _platform: 'win32' | 'posix';
   _pathSep: string;
+  _cwd: ?() => string;
   constants = constants;
 
   close: (fd: number, callback: (error: ?Error) => mixed) => void;
@@ -179,9 +195,10 @@ class MemoryFs {
     callback?: (?Error) => mixed,
   ) => void;
 
-  constructor(platform: 'win32' | 'posix' = 'posix') {
-    this._platform = platform;
-    this._pathSep = platform === 'win32' ? '\\' : '/';
+  constructor(options?: ?Options) {
+    this._platform = (options && options.platform) || 'posix';
+    this._cwd = options && options.cwd;
+    this._pathSep = this._platform === 'win32' ? '\\' : '/';
     this.reset();
     ASYNC_FUNC_NAMES.forEach(funcName => {
       const func = (this: $FlowFixMe)[`${funcName}Sync`];
@@ -782,12 +799,21 @@ class MemoryFs {
     }
     let {drive, entNames} = this._parsePath(filePath);
     if (drive == null) {
-      const cwPath = this._parsePath(process.cwd());
+      const {_cwd} = this;
+      if (_cwd == null) {
+        throw new Error(
+          `The path \`${filePath}\` cannot be resolved because no ` +
+            'current working directory function has been specified. Set the ' +
+            '`cwd` option field to specify a current working directory.',
+        );
+      }
+      const cwPath = this._parsePath(_cwd());
       drive = cwPath.drive;
       if (drive == null) {
         throw new Error(
-          'On a win32 FS, `process.cwd()` must return a valid win32 absolute ' +
-            `path. This happened while trying to resolve: \`${filePath}\``,
+          "On a win32 FS, the options' `cwd()` must return a valid win32 " +
+            'absolute path. This happened while trying to ' +
+            `resolve: \`${filePath}\``,
         );
       }
       entNames = cwPath.entNames.concat(entNames);

@@ -1604,7 +1604,10 @@ describe('traverseDependencies', function() {
       // reload path module
       jest.resetModules();
       jest.mock('path', () => require.requireActual('path').win32);
-      jest.mock('fs', () => new (require('metro-memory-fs'))('win32'));
+      jest.mock(
+        'fs',
+        () => new (require('metro-memory-fs'))({platform: 'win32'}),
+      );
 
       fs = require('fs');
 
@@ -2324,7 +2327,10 @@ describe('traverseDependencies', function() {
       // reload path module
       jest.resetModules();
       jest.mock('path', () => require.requireActual('path').win32);
-      jest.mock('fs', () => new (require('metro-memory-fs'))('win32'));
+      jest.mock(
+        'fs',
+        () => new (require('metro-memory-fs'))({platform: 'win32'}),
+      );
       require('os').tmpdir = () => 'c:\\tmp';
 
       fs = require('fs');

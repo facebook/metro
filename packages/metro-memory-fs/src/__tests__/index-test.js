@@ -21,7 +21,7 @@ let fs;
 
 describe('posix support', () => {
   beforeEach(() => {
-    fs = new MemoryFs();
+    fs = new MemoryFs({cwd: () => '/current/working/dir'});
   });
 
   describe('accessSync', () => {
@@ -86,6 +86,16 @@ describe('posix support', () => {
   it('can write then read a file as buffer', () => {
     fs.writeFileSync('/foo.txt', new Buffer([1, 2, 3, 4]));
     expect(fs.readFileSync('/foo.txt')).toEqual(new Buffer([1, 2, 3, 4]));
+  });
+
+  it('can write a file with a relative path', () => {
+    fs.mkdirSync('/current');
+    fs.mkdirSync('/current/working');
+    fs.mkdirSync('/current/working/dir');
+    fs.writeFileSync('foo.txt', 'test');
+    expect(fs.readFileSync('/current/working/dir/foo.txt', 'utf8')).toEqual(
+      'test',
+    );
   });
 
   describe('createWriteStream', () => {
@@ -621,7 +631,7 @@ describe('posix support', () => {
 
 describe('win32 support', () => {
   beforeEach(() => {
-    fs = new MemoryFs('win32');
+    fs = new MemoryFs({platform: 'win32'});
   });
 
   it('can write then read a file', () => {
