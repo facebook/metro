@@ -61,12 +61,12 @@ async function build(options: BuildOptions): Promise<BuildResult> {
       },
       isDev: !optimize,
     }),
+    '/<generated>/prelude.js',
   );
   const prependedScripts = [preludeScript, ...moduleSystem, ...polyfills];
   return {
     entryModules,
     modules: [...prependedScripts, ...graph.modules],
-    prependedScripts,
   };
 }
 

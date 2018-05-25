@@ -38,7 +38,8 @@ function asIndexedRamBundle({
   for (const m of deferredModules) {
     invariant(
       m.id >= 0,
-      'A script (non-module) cannot be part of the deferred modules of a RAM bundle',
+      'A script (non-module) cannot be part of the deferred modules of a RAM bundle ' +
+        `(\`${m.sourcePath}\`, id=${m.id})`,
     );
   }
   const ramGroups = createRamBundleGroups(

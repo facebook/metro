@@ -11,16 +11,16 @@
 
 import type {Module} from './types.flow';
 
-exports.empty = (): Module => virtual('');
+exports.empty = (): Module => virtual('', '/<generated>/empty.js');
 
 // creates a virtual module (i.e. not corresponding to a file on disk)
 // with the given source code.
-const virtual = (code: string): Module => ({
+const virtual = (code: string, filePath: string): Module => ({
   dependencies: [],
   file: {
     code,
     map: null,
-    path: '',
+    path: filePath,
     type: 'script',
   },
 });

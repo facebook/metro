@@ -14,10 +14,7 @@ import type {BabelSourceMap} from '@babel/core';
 import type {Console} from 'console';
 import type {FBSourceMap, MetroSourceMap} from 'metro-source-map';
 
-export type BuildResult = {|
-  ...GraphResult,
-  prependedScripts: $ReadOnlyArray<Module>,
-|};
+export type BuildResult = GraphResult;
 
 export type Callback<A = void, B = void> = (Error => void) &
   ((null | void, A, B) => void);

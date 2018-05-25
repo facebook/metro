@@ -89,7 +89,8 @@ exports.requireCallsTo = function*(
   idForPath: IdForPathFn,
 ): Iterable<Module> {
   for (const module of modules) {
-    yield virtualModule(`require(${idForPath(module.file)});`);
+    const id = idForPath(module.file);
+    yield virtualModule(`require(${id});`, `/<generated>/require-${id}.js`);
   }
 };
 
