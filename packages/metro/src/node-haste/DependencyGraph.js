@@ -190,7 +190,14 @@ class DependencyGraph extends EventEmitter {
   }
 
   getSha1(filename: string): string {
-    const sha1 = this._hasteFS.getSha1(filename);
+    // TODO Calling realpath allows us to get a hash for a given path even when
+    // it's a symlink to a file, which prevents Metro from crashing in such a
+    // case. However, it doesn't allow Metro to track changes to the target file
+    // of the symlink. We should fix this by implementing a symlink map into
+    // Metro (or maybe by implementing those "extra transformation sources" we've
+    // been talking about for stuff like CSS or WASM).
+    const resolvedPath = fs.realpathSync(filename);
+    const sha1 = this._hasteFS.getSha1(resolvedPath);
 
     if (!sha1) {
       throw new ReferenceError(`SHA-1 for file ${filename} is not computed`);
