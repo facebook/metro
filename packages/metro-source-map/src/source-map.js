@@ -127,19 +127,18 @@ function toSegmentTuple(
 function addMappingsForFile(generator, mappings, module, carryOver) {
   generator.startFile(module.path, module.source);
 
-  const columnOffset = module.code.indexOf('{') + 1;
   for (let i = 0, n = mappings.length; i < n; ++i) {
-    addMapping(generator, mappings[i], carryOver, columnOffset);
+    addMapping(generator, mappings[i], carryOver);
   }
 
   generator.endFile();
 }
 
-function addMapping(generator, mapping, carryOver, columnOffset) {
+function addMapping(generator, mapping, carryOver) {
   const n = mapping.length;
   const line = mapping[0] + carryOver;
   // lines start at 1, columns start at 0
-  const column = mapping[0] === 1 ? mapping[1] + columnOffset : mapping[1];
+  const column = mapping[1];
   if (n === 2) {
     generator.addSimpleMapping(line, column);
   } else if (n === 4) {
