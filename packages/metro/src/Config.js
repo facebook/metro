@@ -195,7 +195,7 @@ const DEFAULT = ({
   getPolyfillModuleNames: () => [],
   // We assume the default project path is two levels up from
   // node_modules/metro/
-  getProjectRoots: () => [path.resolve(__dirname, '../..')],
+  getProjectRoots: () => [path.resolve(__dirname, '../../..')],
   getProvidesModuleNodeModules: () => providesModuleNodeModules.slice(),
   getRunModuleStatement: (moduleId: number | string) =>
     `require(${JSON.stringify(moduleId)});`,
