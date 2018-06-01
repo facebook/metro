@@ -289,7 +289,7 @@ type RunBuildOptions = {|
   onBegin?: () => void,
   onComplete?: () => void,
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
-  optimize?: boolean,
+  minify?: boolean,
   output?: {
     build: (
       MetroServer,
@@ -313,7 +313,7 @@ exports.runBuild = async ({
   onBegin,
   onComplete,
   onProgress,
-  optimize = false,
+  minify = true,
   output = outputBundle,
   out,
   platform = `web`,
@@ -330,7 +330,7 @@ exports.runBuild = async ({
     dev,
     entryFile: entry,
     inlineSourceMap: sourceMap && !!sourceMapUrl,
-    minify: optimize,
+    minify,
     platform,
     sourceMapUrl: sourceMap === false ? undefined : sourceMapUrl,
     createModuleIdFactory: config ? config.createModuleIdFactory : undefined,

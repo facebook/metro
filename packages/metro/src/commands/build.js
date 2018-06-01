@@ -40,7 +40,7 @@ module.exports = () => ({
 
     yargs.option('max-workers', {alias: 'j', type: 'number'});
 
-    yargs.option('optimize', {alias: 'z', type: 'boolean'});
+    yargs.option('minify', {alias: 'z', type: 'boolean'});
     yargs.option('dev', {alias: 'g', type: 'boolean'});
 
     yargs.option('source-map', {type: 'boolean'});
