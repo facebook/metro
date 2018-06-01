@@ -16,7 +16,7 @@ const invariant = require('fbjs/lib/invariant');
 const nullthrows = require('fbjs/lib/nullthrows');
 const optimizeModule = require('../optimize-module');
 const transformModule = require('../transform-module');
-const transformer = require('../../../transformer.js');
+const transformer = require('../../../reactNativeTransformer.js');
 
 const {fn} = require('../../test-helpers');
 const {SourceMapConsumer} = require('source-map');

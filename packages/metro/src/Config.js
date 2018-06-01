@@ -200,7 +200,7 @@ const DEFAULT = ({
   getRunModuleStatement: (moduleId: number | string) =>
     `require(${JSON.stringify(moduleId)});`,
   getSourceExts: () => [],
-  getTransformModulePath: () => require.resolve('./transformer.js'),
+  getTransformModulePath: () => require.resolve('./reactNativeTransformer'),
   getTransformOptions: async () => ({}),
   getPolyfills: () => [],
   getUseGlobalHotkey: () => true,

@@ -42,7 +42,7 @@ const getBabelRC = (function() {
   let babelRC: ?{extends?: string, plugins: BabelPlugins} = null;
 
   return function _getBabelRC(projectRoot) {
-    if (babelRC !== null) {
+    if (babelRC != null) {
       return babelRC;
     }
 

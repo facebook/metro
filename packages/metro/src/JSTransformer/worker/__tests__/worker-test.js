@@ -22,7 +22,7 @@ jest
 
 const path = require('path');
 
-const transformerPath = require.resolve('metro/src/transformer.js');
+const transformerPath = require.resolve('metro/src/reactNativeTransformer');
 const transformerContents = require('fs').readFileSync(transformerPath);
 
 const babelRcPath = require.resolve('metro/rn-babelrc.json');

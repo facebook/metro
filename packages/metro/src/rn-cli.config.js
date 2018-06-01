@@ -45,6 +45,6 @@ module.exports = {
   },
 
   getTransformModulePath() {
-    return require.resolve('./transformer');
+    return require.resolve('./reactNativeTransformer');
   },
 };

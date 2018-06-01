@@ -101,7 +101,7 @@ describe('basic_bundle', () => {
         getPolyfills: () => [polyfill1, polyfill2],
         getRunModuleStatement,
         projectRoots: [INPUT_PATH, POLYFILLS_PATH],
-        transformModulePath: require.resolve('../../transformer'),
+        transformModulePath: require.resolve('../../reactNativeTransformer'),
         nonPersistent: true,
         enableBabelRCLookup: false, // dont use metro's own babelrc!
       },
@@ -125,7 +125,7 @@ describe('basic_bundle', () => {
         getPolyfills: () => [],
         getRunModuleStatement,
         projectRoots: [INPUT_PATH, POLYFILLS_PATH],
-        transformModulePath: require.resolve('../../transformer'),
+        transformModulePath: require.resolve('../../reactNativeTransformer'),
         nonPersistent: true,
         enableBabelRCLookup: false, // dont use metro's own babelrc!
       },

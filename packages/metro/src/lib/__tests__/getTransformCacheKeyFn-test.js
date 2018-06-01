@@ -50,7 +50,9 @@ describe('getTransformCacheKeyFn', () => {
       },
       {
         ...baseParams,
-        transformModulePath: require.resolve('metro/src/transformer.js'),
+        transformModulePath: require.resolve(
+          'metro/src/reactNativeTransformer',
+        ),
       },
     ];
 
