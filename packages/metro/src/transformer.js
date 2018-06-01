@@ -141,6 +141,10 @@ function buildBabelConfig(filename, options, plugins?: BabelPlugins = []) {
     config = Object.assign({}, config, hmrConfig);
   }
 
+  if (process.env.BABEL_VERSION === '7') {
+    config = Object.assign({}, config, {ast: true, sourceType: 'unambiguous'});
+  }
+
   return Object.assign({}, babelRC, config);
 }
 
