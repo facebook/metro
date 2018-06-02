@@ -276,4 +276,15 @@ describe('constant expressions', () => {
       'var plusZero=0;var zero=0;var minusZero=-0;',
     );
   });
+
+  it('does not mess up default exports', () => {
+    let code = `export default function () {}`;
+    expect(fold('arbitrary.js', code)).toEqual('export default function(){}');
+    code = `export default () => {}`;
+    expect(fold('arbitrary.js', code)).toEqual('export default(()=>{});');
+    code = `export default class {}`;
+    expect(fold('arbitrary.js', code)).toEqual('export default class{}');
+    code = `export default 1`;
+    expect(fold('arbitrary.js', code)).toEqual('export default 1;');
+  });
 });
