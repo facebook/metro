@@ -32,7 +32,8 @@ function constantFoldingPlugin(context: {types: BabelTypes}) {
 
   const FunctionDeclaration = {
     exit(path: Object, state: Object) {
-      const binding = path.scope.getBinding(path.node.id.name);
+      const binding =
+        path.node.id !== null && path.scope.getBinding(path.node.id.name);
 
       if (binding && !binding.referenced) {
         state.stripped = true;
