@@ -199,6 +199,9 @@ function readArgsAndExecCommand(
         id,
       );
     } else {
+      stderr.write(
+        `This worker does not have a command named \`${commandName}\`.`,
+      );
       respond(invalidMessage(id));
     }
   });

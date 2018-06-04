@@ -353,6 +353,24 @@ describe('Buck worker:', () => {
         }));
     });
 
+    it('responds with error if the command does not exist', async () => {
+      commands.transform = jest.fn(() => Promise.resolve());
+      mockFiles({path: {to: {args: 'inexistent_command'}}});
+      inStream.write(command({
+        id: 123,
+        args_path: '/path/to/args',
+      }));
+
+      const [, response] = await end(2);
+      expect(response).toEqual({
+        id: 123,
+        type: 'error',
+        exit_code: 2,
+      });
+      expect(fs.readFileSync('/arbitrary/stderr', 'utf8'))
+        .toEqual('This worker does not have a command named `inexistent_command`.');
+    });
+
     it('responds with error if the command errors asynchronously', () => {
       commands.transform =
         jest.fn((args, _, callback) => Promise.reject(new Error('arbitrary')));
