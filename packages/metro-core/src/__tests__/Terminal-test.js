@@ -14,14 +14,14 @@ jest.mock('readline', () => ({
   moveCursor: (stream, dx, dy) => {
     const {cursor, columns} = stream;
     stream.cursor =
-      Math.max(cursor - cursor % columns, cursor + dx) + dy * columns;
+      Math.max(cursor - (cursor % columns), cursor + dx) + dy * columns;
   },
   clearLine: (stream, dir) => {
     if (dir !== 0) {
       throw new Error('unsupported');
     }
     const {cursor, columns} = stream;
-    const curLine = cursor - cursor % columns;
+    const curLine = cursor - (cursor % columns);
     const nextLine = curLine + columns;
     for (var i = curLine; i < nextLine; ++i) {
       stream.buffer[i] = ' ';
@@ -49,7 +49,7 @@ describe('Terminal', () => {
       write(str) {
         for (let i = 0; i < str.length; ++i) {
           if (str[i] === '\n') {
-            this.cursor = this.cursor - this.cursor % columns + columns;
+            this.cursor = this.cursor - (this.cursor % columns) + columns;
           } else {
             this.buffer[this.cursor] = str[i];
             ++this.cursor;

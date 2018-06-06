@@ -58,8 +58,7 @@ const hashFiles = denodeify(function hashFilesCb(files, hash, callback) {
     return;
   }
 
-  fs
-    .createReadStream(files.shift())
+  fs.createReadStream(files.shift())
     .on('data', data => hash.update(data))
     .once('end', () => hashFilesCb(files, hash, callback))
     .once('error', error => callback(error));
