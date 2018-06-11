@@ -17,6 +17,7 @@ const zlib = require('zlib');
 
 export type Options = {|
   endpoint: string,
+  family?: 4 | 6,
   timeout?: number,
 |};
 
@@ -40,6 +41,7 @@ class HttpStore<T> {
     const module = uri.protocol === 'http:' ? http : https;
 
     const agentConfig = {
+      family: options.family,
       keepAlive: true,
       keepAliveMsecs: options.timeout || 5000,
       maxSockets: 64,
