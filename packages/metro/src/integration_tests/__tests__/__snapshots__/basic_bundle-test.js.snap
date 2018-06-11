@@ -71,6 +71,12 @@ exports[`basic_bundle bundles package with polyfills 1`] = `
   metroRequire.packModuleId = packModuleId;
 
   function loadModuleImplementation(moduleId, module) {
+    if (!module && global.__defineModule) {
+      global.__defineModule(moduleId);
+
+      module = modules[moduleId];
+    }
+
     var nativeRequire = global.nativeRequire;
 
     if (!module && nativeRequire) {
@@ -260,6 +266,12 @@ exports[`basic_bundle bundles package without polyfills 1`] = `
   metroRequire.packModuleId = packModuleId;
 
   function loadModuleImplementation(moduleId, module) {
+    if (!module && global.__defineModule) {
+      global.__defineModule(moduleId);
+
+      module = modules[moduleId];
+    }
+
     var nativeRequire = global.nativeRequire;
 
     if (!module && nativeRequire) {

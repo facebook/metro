@@ -187,6 +187,11 @@ function packModuleId(value: {segmentId: number, localId: number}): ModuleID {
 metroRequire.packModuleId = packModuleId;
 
 function loadModuleImplementation(moduleId, module) {
+  if (!module && global.__defineModule) {
+    global.__defineModule(moduleId);
+    module = modules[moduleId];
+  }
+
   const nativeRequire = global.nativeRequire;
   if (!module && nativeRequire) {
     const {segmentId, localId} = unpackModuleId(moduleId);
