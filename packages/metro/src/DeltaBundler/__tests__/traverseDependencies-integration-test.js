@@ -124,6 +124,7 @@ describe('traverseDependencies', function() {
       cacheStores: [],
       providesModuleNodeModules: ['haste-fbjs', 'react-haste', 'react-native'],
       platforms: new Set(['ios', 'android']),
+      mainFields: ['react-native', 'browser', 'main'],
       maxWorkers: 1,
       resetCache: true,
       getTransformCacheKey: () => 'abcdef',
@@ -1386,6 +1387,68 @@ describe('traverseDependencies', function() {
       });
 
       const opts = {...defaults, projectRoots: [root]};
+      await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          '/root/index.js',
+        );
+        expect(deps).toMatchSnapshot();
+      });
+    });
+
+    it('should work with custom main fields', async () => {
+      var root = '/root';
+      setMockFileSystem({
+        root: {
+          'index.js': [
+            '/**',
+            ' * @providesModule index',
+            ' */',
+            'require("aPackage")',
+          ].join('\n'),
+          aPackage: {
+            'package.json': JSON.stringify({
+              name: 'aPackage',
+              'custom-field': {
+                'my-package': 'rn-package',
+              },
+              browser: {
+                'my-package': 'node-package',
+              },
+            }),
+            'index.js': 'require("my-package")',
+            node_modules: {
+              'node-package': {
+                'package.json': JSON.stringify({
+                  name: 'node-package',
+                }),
+                'index.js': '/* some node code */',
+              },
+              'rn-package': {
+                'package.json': JSON.stringify({
+                  name: 'rn-package',
+                  browser: {
+                    'nested-package': 'nested-browser-package',
+                  },
+                }),
+                'index.js': 'require("nested-package")',
+              },
+              'nested-browser-package': {
+                'package.json': JSON.stringify({
+                  name: 'nested-browser-package',
+                }),
+                'index.js': '/* some code */',
+              },
+            },
+          },
+        },
+      });
+
+      const opts = {
+        ...defaults,
+        mainFields: ['custom-field', 'browser'],
+        projectRoots: [root],
+      };
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,

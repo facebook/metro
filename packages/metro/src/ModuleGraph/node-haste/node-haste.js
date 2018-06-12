@@ -34,6 +34,7 @@ import type {CustomResolver} from 'metro-resolver';
 type ResolveOptions = {|
   assetExts: Extensions,
   extraNodeModules: {[id: string]: string},
+  mainFields: $ReadOnlyArray<string>,
   resolveRequest?: ?CustomResolver,
   +sourceExts: Extensions,
   transformedFiles: {[path: Path]: TransformedCodeFile},
@@ -133,7 +134,7 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     doesFileExist: filePath => hasteFS.exists(filePath),
     extraNodeModules,
     isAssetFile: filePath => helpers.isAssetFile(filePath),
-    mainFields: ['react-native', 'browser', 'main'],
+    mainFields: options.mainFields,
     moduleCache,
     moduleMap: new ModuleMap({
       duplicates: Object.create(null),

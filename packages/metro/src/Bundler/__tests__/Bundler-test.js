@@ -39,6 +39,7 @@ var commonOptions = {
   cacheVersion: 'smth',
   enableBabelRCLookup: true,
   extraNodeModules: {},
+  getResolverMainFields: () => [],
   minifierPath: defaults.DEFAULT_METRO_MINIFIER_PATH,
   platforms: defaults.platforms,
   postMinifyProcess: e => e,

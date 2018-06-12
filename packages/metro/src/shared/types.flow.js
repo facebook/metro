@@ -85,6 +85,7 @@ export type Options = {|
   enableBabelRCLookup: boolean,
   extraNodeModules?: {},
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
+  +getResolverMainFields: () => $ReadOnlyArray<string>,
   +getRunModuleStatement: (number | string) => string,
   getTransformOptions?: GetTransformOptions,
   hasteImplModulePath?: string,

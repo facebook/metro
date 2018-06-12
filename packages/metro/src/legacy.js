@@ -183,6 +183,7 @@ function toServerOptions(options: Options): ServerOptions {
     extraNodeModules: options.extraNodeModules,
     getModulesRunBeforeMainModule: options.getModulesRunBeforeMainModule,
     getPolyfills: options.getPolyfills,
+    getResolverMainFields: options.getResolverMainFields,
     getRunModuleStatement: options.getRunModuleStatement,
     getTransformOptions: options.getTransformOptions,
     hasteImplModulePath: options.hasteImplModulePath,

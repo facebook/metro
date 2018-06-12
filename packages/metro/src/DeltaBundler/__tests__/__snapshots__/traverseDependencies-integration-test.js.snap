@@ -1305,6 +1305,42 @@ Array [
 ]
 `;
 
+exports[`traverseDependencies get sync dependencies (posix) should work with custom main fields 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "my-package",
+      },
+    ],
+    "path": "/root/aPackage/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "nested-package",
+      },
+    ],
+    "path": "/root/aPackage/node_modules/rn-package/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/node_modules/nested-browser-package/index.js",
+  },
+]
+`;
+
 exports[`traverseDependencies get sync dependencies (posix) should work with packages 1`] = `
 Array [
   Object {

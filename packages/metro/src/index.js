@@ -122,9 +122,10 @@ async function runMetro({
     dynamicDepsInPackages: normalizedConfig.dynamicDepsInPackages,
     enableBabelRCLookup: normalizedConfig.getEnableBabelRCLookup(),
     extraNodeModules: normalizedConfig.extraNodeModules,
-    getPolyfills: normalizedConfig.getPolyfills,
     getModulesRunBeforeMainModule:
       normalizedConfig.getModulesRunBeforeMainModule,
+    getPolyfills: normalizedConfig.getPolyfills,
+    getResolverMainFields: normalizedConfig.getResolverMainFields,
     getRunModuleStatement: normalizedConfig.getRunModuleStatement,
     getTransformOptions: normalizedConfig.getTransformOptions,
     hasteImplModulePath: normalizedConfig.hasteImplModulePath,

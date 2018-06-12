@@ -104,6 +104,14 @@ export type ConfigT = {
   getProvidesModuleNodeModules?: () => Array<string>,
 
   /**
+   * Specify the fields in package.json files that will be used by the module
+   * resolver to do redirections when requiring certain packages. For example,
+   * using `['browser', 'main']` will use the `browser` field if it exists and
+   * will default to `main` if it doesn't.
+   */
+  getResolverMainFields: () => $ReadOnlyArray<string>,
+
+  /**
    * Specify the format of the initial require statements that are appended
    * at the end of the bundle. By default is `require(${moduleId});`
    */
@@ -207,6 +215,7 @@ const DEFAULT = ({
   postMinifyProcess: x => x,
   postProcessBundleSourcemap: ({code, map, outFileName}) => ({code, map}),
   resolveRequest: null,
+  getResolverMainFields: () => ['browser', 'main'],
   getModulesRunBeforeMainModule: () => [],
   getWorkerPath: () => null,
 }: ConfigT);

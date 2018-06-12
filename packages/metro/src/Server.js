@@ -124,6 +124,7 @@ class Server {
     reporter: Reporter,
     resolveRequest: ?CustomResolver,
     +getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
+    +getResolverMainFields: () => $ReadOnlyArray<string>,
     +getRunModuleStatement: (number | string) => string,
     silent: boolean,
     +sourceExts: Array<string>,
@@ -173,6 +174,12 @@ class Server {
       extraNodeModules: options.extraNodeModules || {},
       getModulesRunBeforeMainModule: options.getModulesRunBeforeMainModule,
       getPolyfills: options.getPolyfills,
+      // We need to temporary consider that getResolverMainFields() can be
+      // undefined to not break React Native.
+      // TODO: remove the default value after metro@0.39.0 is released.
+      getResolverMainFields:
+        options.getResolverMainFields ||
+        (() => ['react-native', 'browser', 'main']),
       getRunModuleStatement: options.getRunModuleStatement,
       getTransformOptions: options.getTransformOptions,
       hasteImplModulePath: options.hasteImplModulePath,
