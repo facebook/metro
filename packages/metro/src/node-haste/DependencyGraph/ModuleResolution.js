@@ -57,6 +57,7 @@ type Options<TModule, TPackage> = {|
   +doesFileExist: DoesFileExist,
   +extraNodeModules: ?Object,
   +isAssetFile: IsAssetFile,
+  +mainFields: $ReadOnlyArray<string>,
   +moduleCache: ModuleishCache<TModule, TPackage>,
   +preferNativePlatform: boolean,
   +moduleMap: ModuleMap,
@@ -84,7 +85,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
           : fromModule.getPackage();
 
       if (pck) {
-        return pck.redirectRequire(modulePath);
+        return pck.redirectRequire(modulePath, this._options.mainFields);
       }
     } catch (err) {
       // Do nothing. The standard module cache does not trigger any error, but
@@ -163,7 +164,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
 
   _getPackageMainPath = (packageJsonPath: string): string => {
     const package_ = this._options.moduleCache.getPackage(packageJsonPath);
-    return package_.getMain();
+    return package_.getMain(this._options.mainFields);
   };
 
   /**

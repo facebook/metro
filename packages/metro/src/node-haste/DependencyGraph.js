@@ -172,6 +172,7 @@ class DependencyGraph extends EventEmitter {
       doesFileExist: this._doesFileExist,
       extraNodeModules: this._opts.extraNodeModules,
       isAssetFile: filePath => this._helpers.isAssetFile(filePath),
+      mainFields: ['react-native', 'browser', 'main'],
       moduleCache: this._moduleCache,
       moduleMap: this._moduleMap,
       preferNativePlatform: true,

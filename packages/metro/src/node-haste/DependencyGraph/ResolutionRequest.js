@@ -22,8 +22,11 @@ import type {ModuleResolver} from './ModuleResolution';
 
 export type Packageish = {
   path: string,
-  redirectRequire(toModuleName: string): string | false,
-  getMain(): string,
+  redirectRequire(
+    toModuleName: string,
+    mainFields: $ReadOnlyArray<string>,
+  ): string | false,
+  getMain(mainFields: $ReadOnlyArray<string>): string,
 };
 
 export type Moduleish = {

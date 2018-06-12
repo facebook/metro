@@ -37,19 +37,23 @@ class Package {
    * The `browser` field and replacement behavior is specified in
    * https://github.com/defunctzombie/package-browser-field-spec.
    */
-  getMain(): string {
+  getMain(mainFields: $ReadOnlyArray<string>): string {
     const json = this.read();
 
     let main;
-    if (typeof json['react-native'] === 'string') {
-      main = json['react-native'];
-    } else if (typeof json.browser === 'string') {
-      main = json.browser;
-    } else {
-      main = json.main || 'index';
+
+    for (const name of mainFields) {
+      if (typeof json[name] === 'string') {
+        main = json[name];
+        break;
+      }
     }
 
-    const replacements = getReplacements(json);
+    if (!main) {
+      main = 'index';
+    }
+
+    const replacements = getReplacements(json, mainFields);
     if (replacements) {
       const variants = [main];
       if (main.slice(0, 2) === './') {
@@ -80,9 +84,12 @@ class Package {
     this._content = null;
   }
 
-  redirectRequire(name: string): string | false {
+  redirectRequire(
+    name: string,
+    mainFields: $ReadOnlyArray<string>,
+  ): string | false {
     const json = this.read();
-    const replacements = getReplacements(json);
+    const replacements = getReplacements(json, mainFields);
 
     if (!replacements) {
       return name;
@@ -136,23 +143,27 @@ class Package {
   }
 }
 
-function getReplacements(pkg: PackageContent): ?{[string]: string | boolean} {
-  let rn = pkg['react-native'];
-  let browser = pkg.browser;
-  if (rn == null && browser == null) {
+function getReplacements(
+  pkg: PackageContent,
+  mainFields: $ReadOnlyArray<string>,
+): ?{[string]: string | false} {
+  const replacements = mainFields
+    .map(name => {
+      // If the field is a string, that doesn't mean we want to redirect the
+      //  `main` file itself to anything else. See the spec.
+      if (!pkg[name] || typeof pkg[name] === 'string') {
+        return null;
+      }
+
+      return pkg[name];
+    })
+    .filter(Boolean);
+
+  if (!replacements.length) {
     return null;
   }
-  // If the field is a string, that doesn't mean we want to redirect the `main`
-  // file itself to anything else. See the spec.
-  if (rn == null || typeof rn === 'string') {
-    rn = {};
-  }
-  if (browser == null || typeof browser === 'string') {
-    browser = {};
-  }
-  // merge with "browser" as default,
-  // "react-native" as override
-  return {...browser, ...rn};
+
+  return Object.assign({}, ...replacements.reverse());
 }
 
 module.exports = Package;

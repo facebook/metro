@@ -133,6 +133,7 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     doesFileExist: filePath => hasteFS.exists(filePath),
     extraNodeModules,
     isAssetFile: filePath => helpers.isAssetFile(filePath),
+    mainFields: ['react-native', 'browser', 'main'],
     moduleCache,
     moduleMap: new ModuleMap({
       duplicates: Object.create(null),
