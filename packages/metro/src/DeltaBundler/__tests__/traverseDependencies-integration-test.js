@@ -693,11 +693,14 @@ describe('traverseDependencies', function() {
         throw new Error('should be unreachable');
       } catch (error) {
         expect(error.message).toEqual(
-          `jest-haste-map: @providesModule naming collision:\n` +
-            `  Duplicate module name: index\n` +
-            `  Paths: /root/b.js collides with /root/index.js\n\n` +
-            'This error is caused by a @providesModule declaration ' +
-            'with the same name across two different files.',
+          [
+            'jest-haste-map: @providesModule naming collision:',
+            '  Duplicate module name: index',
+            '  Paths: /root/b.js collides with /root/index.js',
+            '',
+            'This error is caused by a @providesModule declaration with the ' +
+              'same name across two different files.',
+          ].join('\n'),
         );
       }
     });

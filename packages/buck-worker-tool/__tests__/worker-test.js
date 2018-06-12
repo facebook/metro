@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @emails oncall+javascript_foundation
+ * @format
  */
 
 'use strict';
@@ -12,9 +13,11 @@
 jest
   .mock('console')
   .mock('fs', () => new (require('metro-memory-fs'))())
-  .mock('temp', () => ({path() {
-    return '/tmp/repro.args';
-  }}))
+  .mock('temp', () => ({
+    path() {
+      return '/tmp/repro.args';
+    },
+  }))
   .useRealTimers();
 
 const JSONStream = require('JSONStream');
@@ -48,9 +51,7 @@ describe('Buck worker:', () => {
     it('responds to a correct handshake', () => {
       inStream.write(handshake());
 
-      return end().then(data =>
-        expect(data).toEqual([handshake()])
-      );
+      return end().then(data => expect(data).toEqual([handshake()]));
     });
 
     it('responds to a handshake with a `protocol_version` different from "0"', () => {
@@ -62,11 +63,14 @@ describe('Buck worker:', () => {
       });
 
       return end().then(responses =>
-        expect(responses).toEqual([{
-          id: 0,
-          type: 'error',
-          exit_code: INVALID_MESSAGE,
-        }]));
+        expect(responses).toEqual([
+          {
+            id: 0,
+            type: 'error',
+            exit_code: INVALID_MESSAGE,
+          },
+        ]),
+      );
     });
 
     it('errors for a second handshake', () => {
@@ -78,7 +82,8 @@ describe('Buck worker:', () => {
           id: 1,
           type: 'error',
           exit_code: UNKNOWN_MESSAGE,
-        }));
+        }),
+      );
     });
   });
 
@@ -90,7 +95,8 @@ describe('Buck worker:', () => {
         id: 1,
         type: 'error',
         exit_code: UNKNOWN_MESSAGE,
-      }));
+      }),
+    );
   });
 
   describe('commands:', () => {
@@ -118,7 +124,7 @@ describe('Buck worker:', () => {
       fs.createWriteStream = (...args) => {
         const writeStream = createWriteStreamImpl(...args);
         ++openedStreams;
-        writeStream.on('close', () => (--openedStreams));
+        writeStream.on('close', () => --openedStreams);
         return writeStream;
       };
     });
@@ -131,14 +137,14 @@ describe('Buck worker:', () => {
       fs.reset();
       openedStreams = 0;
       mockFiles({
-        'arbitrary': {
-          'args': '',
-          'stdout': '',
-          'stderr': '',
+        arbitrary: {
+          args: '',
+          stdout: '',
+          stderr: '',
         },
         // When an error happens, the worker writes a repro file to the
         // temporary folder.
-        'tmp': {},
+        tmp: {},
       });
 
       inStream.write(handshake());
@@ -191,16 +197,19 @@ describe('Buck worker:', () => {
         },
       });
 
-      inStream.write(command({
-        id: 1,
-        args_path: '/arbitrary/file',
-      }));
+      inStream.write(
+        command({
+          id: 1,
+          args_path: '/arbitrary/file',
+        }),
+      );
       return end(2).then(([, response]) =>
         expect(response).toEqual({
           id: 1,
           type: 'error',
           exit_code: INVALID_MESSAGE,
-        }));
+        }),
+      );
     });
 
     it('errors for empty commands', () => {
@@ -210,16 +219,19 @@ describe('Buck worker:', () => {
         },
       });
 
-      inStream.write(command({
-        id: 2,
-        args_path: '/arbitrary/file',
-      }));
+      inStream.write(
+        command({
+          id: 2,
+          args_path: '/arbitrary/file',
+        }),
+      );
       return end(2).then(([, response]) =>
         expect(response).toEqual({
           id: 2,
           type: 'error',
           exit_code: INVALID_MESSAGE,
-        }));
+        }),
+      );
     });
 
     it('errors for unknown commands', () => {
@@ -229,16 +241,19 @@ describe('Buck worker:', () => {
         },
       });
 
-      inStream.write(command({
-        id: 3,
-        args_path: '/arbitrary/file',
-      }));
+      inStream.write(
+        command({
+          id: 3,
+          args_path: '/arbitrary/file',
+        }),
+      );
       return end(2).then(([, response]) =>
         expect(response).toEqual({
           id: 3,
           type: 'error',
           exit_code: INVALID_MESSAGE,
-        }));
+        }),
+      );
     });
 
     it('errors if no `args_path` is specified', () => {
@@ -249,8 +264,12 @@ describe('Buck worker:', () => {
         stderr_path: '/arbitrary',
       });
       return end().then(([, response]) =>
-        expect(response)
-          .toEqual({id: 1, type: 'error', exit_code: INVALID_MESSAGE}));
+        expect(response).toEqual({
+          id: 1,
+          type: 'error',
+          exit_code: INVALID_MESSAGE,
+        }),
+      );
     });
 
     it('errors if no `stdout_path` is specified', () => {
@@ -261,8 +280,12 @@ describe('Buck worker:', () => {
         stderr_path: '/arbitrary',
       });
       return end().then(([, response]) =>
-        expect(response)
-          .toEqual({id: 1, type: 'error', exit_code: INVALID_MESSAGE}));
+        expect(response).toEqual({
+          id: 1,
+          type: 'error',
+          exit_code: INVALID_MESSAGE,
+        }),
+      );
     });
 
     it('errors if no `stderr_path` is specified', () => {
@@ -273,8 +296,12 @@ describe('Buck worker:', () => {
         stdout_path: '/arbitrary',
       });
       return end(2).then(([, response]) =>
-        expect(response)
-          .toEqual({id: 1, type: 'error', exit_code: INVALID_MESSAGE}));
+        expect(response).toEqual({
+          id: 1,
+          type: 'error',
+          exit_code: INVALID_MESSAGE,
+        }),
+      );
     });
 
     it('passes arguments to an existing command', () => {
@@ -286,13 +313,19 @@ describe('Buck worker:', () => {
         },
       });
 
-      inStream.write(command({
-        args_path: '/arbitrary/file',
-      }));
+      inStream.write(
+        command({
+          args_path: '/arbitrary/file',
+        }),
+      );
 
       return end(1).then(() =>
-        expect(commands.transform)
-          .toBeCalledWith(args.split(/\s+/), null, anything()));
+        expect(commands.transform).toBeCalledWith(
+          args.split(/\s+/),
+          null,
+          anything(),
+        ),
+      );
     });
 
     it('passes JSON/structured arguments to an existing command', async () => {
@@ -304,13 +337,14 @@ describe('Buck worker:', () => {
         },
       });
 
-      inStream.write(command({
-        args_path: '/arbitrary/file',
-      }));
+      inStream.write(
+        command({
+          args_path: '/arbitrary/file',
+        }),
+      );
 
       await end(1);
-      expect(commands.transform)
-        .toBeCalledWith([], args, anything());
+      expect(commands.transform).toBeCalledWith([], args, anything());
     });
 
     it('passes a console object to the command', () => {
@@ -321,45 +355,54 @@ describe('Buck worker:', () => {
 
       commands.transform = jest.fn();
 
-      inStream.write(command({
-        args_path: '/args',
-        stdout_path: '/stdio/out',
-        stderr_path: '/stdio/err',
-      }));
+      inStream.write(
+        command({
+          args_path: '/args',
+          stdout_path: '/stdio/out',
+          stderr_path: '/stdio/err',
+        }),
+      );
 
       return end().then(() => {
         const streams = last(Console.mock.calls);
         expect(streams[0].path).toEqual('/stdio/out');
         expect(streams[1].path).toEqual('/stdio/err');
-        expect(commands.transform)
-          .toBeCalledWith(anything(), null, any(Console));
+        expect(commands.transform).toBeCalledWith(
+          anything(),
+          null,
+          any(Console),
+        );
       });
-
     });
 
     it('responds with success if the command finishes succesfully', () => {
       commands.transform = (args, _) => {};
       mockFiles({path: {to: {args: 'transform'}}});
-      inStream.write(command({
-        id: 123,
-        args_path: '/path/to/args',
-      }));
+      inStream.write(
+        command({
+          id: 123,
+          args_path: '/path/to/args',
+        }),
+      );
 
       return end(2).then(([, response]) =>
         expect(response).toEqual({
           id: 123,
           type: 'result',
           exit_code: 0,
-        }));
+        }),
+      );
     });
 
     it('responds with error if the command does not exist', async () => {
       commands.transform = jest.fn(() => Promise.resolve());
       mockFiles({path: {to: {args: 'inexistent_command'}}});
-      inStream.write(command({
-        id: 123,
-        args_path: '/path/to/args',
-      }));
+      inStream.write(
+        command({
+          id: 123,
+          args_path: '/path/to/args',
+        }),
+      );
 
       const [, response] = await end(2);
       expect(response).toEqual({
@@ -367,25 +410,30 @@ describe('Buck worker:', () => {
         type: 'error',
         exit_code: 2,
       });
-      expect(fs.readFileSync('/arbitrary/stderr', 'utf8'))
-        .toEqual('This worker does not have a command named `inexistent_command`.');
+      expect(fs.readFileSync('/arbitrary/stderr', 'utf8')).toEqual(
+        'This worker does not have a command named `inexistent_command`.',
+      );
     });
 
     it('responds with error if the command errors asynchronously', () => {
-      commands.transform =
-        jest.fn((args, _, callback) => Promise.reject(new Error('arbitrary')));
+      commands.transform = jest.fn((args, _, callback) =>
+        Promise.reject(new Error('arbitrary')),
+      );
       mockFiles({path: {to: {args: 'transform'}}});
-      inStream.write(command({
-        id: 123,
-        args_path: '/path/to/args',
-      }));
+      inStream.write(
+        command({
+          id: 123,
+          args_path: '/path/to/args',
+        }),
+      );
 
       return end(2).then(([, response]) =>
         expect(response).toEqual({
           id: 123,
           type: 'error',
           exit_code: 3,
-        }));
+        }),
+      );
     });
 
     it('responds with error if the command throws synchronously', () => {
@@ -393,25 +441,26 @@ describe('Buck worker:', () => {
         throw new Error('arbitrary');
       };
       mockFiles({path: {to: {args: 'transform'}}});
-      inStream.write(command({
-        id: 456,
-        args_path: '/path/to/args',
-      }));
+      inStream.write(
+        command({
+          id: 456,
+          args_path: '/path/to/args',
+        }),
+      );
 
       return end(2).then(([, response]) =>
         expect(response).toEqual({
           id: 456,
           type: 'error',
           exit_code: 3,
-        }));
+        }),
+      );
     });
   });
 
   function end(afterMessages) {
     return new Promise((resolve, reject) => {
-      worker
-        .once('error', reject)
-        .once('end', () => resolve(written.join('')));
+      worker.once('error', reject).once('end', () => resolve(written.join('')));
 
       if (afterMessages == null || written.length >= afterMessages) {
         inStream.end();

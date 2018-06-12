@@ -278,13 +278,13 @@ describe('constant expressions', () => {
   });
 
   it('does not mess up default exports', () => {
-    let code = `export default function () {}`;
+    let code = 'export default function () {}';
     expect(fold('arbitrary.js', code)).toEqual('export default function(){}');
-    code = `export default () => {}`;
+    code = 'export default () => {}';
     expect(fold('arbitrary.js', code)).toEqual('export default(()=>{});');
-    code = `export default class {}`;
+    code = 'export default class {}';
     expect(fold('arbitrary.js', code)).toEqual('export default class{}');
-    code = `export default 1`;
+    code = 'export default 1';
     expect(fold('arbitrary.js', code)).toEqual('export default 1;');
   });
 });

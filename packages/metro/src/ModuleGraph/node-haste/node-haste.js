@@ -86,12 +86,14 @@ const createModuleMap = ({files, helpers, moduleCache, sourceExts}) => {
 
     if (existingModule && existingModule[0] !== filePath) {
       throw new Error(
-        `@providesModule naming collision:\n` +
-          `  Duplicate module name: \`${id}\`\n` +
-          `  Paths: \`${filePath}\` collides with ` +
-          `\`${existingModule[0]}\`\n\n` +
+        [
+          '@providesModule naming collision:',
+          `  Duplicate module name: \`${id}\``,
+          `  Paths: \`${filePath}\` collides with \`${existingModule[0]}\``,
+          '',
           'This error is caused by a @providesModule declaration ' +
-          'with the same name across two different files.',
+            'with the same name across two different files.',
+        ].join('\n'),
       );
     }
   });

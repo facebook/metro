@@ -45,7 +45,7 @@ class InvalidPackageError extends Error {
   |}) {
     super(
       `The package \`${opts.packageJsonPath}\` is invalid because it ` +
-        `specifies a \`main\` module field that could not be resolved (` +
+        'specifies a `main` module field that could not be resolved (' +
         `\`${opts.mainPrefixPath}\`. Indeed, none of these files exist:\n\n` +
         `  * \`${formatFileCandidates(opts.fileCandidates)}\`\n` +
         `  * \`${formatFileCandidates(opts.indexCandidates)}\``,

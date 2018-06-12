@@ -316,7 +316,7 @@ exports.runBuild = async ({
   minify = true,
   output = outputBundle,
   out,
-  platform = `web`,
+  platform = 'web',
   sourceMap = false,
   sourceMapUrl,
   ...rest
@@ -379,7 +379,7 @@ exports.buildGraph = async function({
   entries,
   minify = false,
   onProgress,
-  platform = `web`,
+  platform = 'web',
   type = 'module',
   ...rest
 }: BuildGraphOptions): Promise<Graph<>> {
@@ -437,7 +437,7 @@ exports.findMetroConfig = function(
     } while (previous !== current);
 
     if (strict) {
-      throw new Error(`Expected to find a Metro config file, found none`);
+      throw new Error('Expected to find a Metro config file, found none');
     } else {
       return null;
     }

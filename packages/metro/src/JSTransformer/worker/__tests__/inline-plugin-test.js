@@ -381,7 +381,7 @@ describe('inline constants', () => {
     );
   });
 
-  it(`doesn't replace Platform.OS in the code if Platform is the left hand side of an assignment expression`, () => {
+  it("doesn't replace Platform.OS in the code if Platform is the left hand side of an assignment expression", () => {
     const code = `function a() {
       Platform.OS = "test"
     }`;
@@ -402,7 +402,7 @@ describe('inline constants', () => {
     );
   });
 
-  it(`doesn't replace React.Platform.OS in the code if Platform is the left hand side of an assignment expression`, () => {
+  it("doesn't replace React.Platform.OS in the code if Platform is the left hand side of an assignment expression", () => {
     const code = `function a() {
       React.Platform.OS = "test"
     }`;
@@ -423,7 +423,7 @@ describe('inline constants', () => {
     );
   });
 
-  it(`doesn't replace ReactNative.Platform.OS in the code if Platform is the left hand side of an assignment expression`, () => {
+  it("doesn't replace ReactNative.Platform.OS in the code if Platform is the left hand side of an assignment expression", () => {
     const code = `function a() {
       ReactNative.Platform.OS = "test"
     }`;
@@ -444,7 +444,7 @@ describe('inline constants', () => {
     );
   });
 
-  it(`doesn't replace require("React").Platform.OS in the code if Platform is the left hand side of an assignment expression`, () => {
+  it('doesn\'t replace require("React").Platform.OS in the code if Platform is the left hand side of an assignment expression', () => {
     const code = `function a() {
       require("React").Platform.OS = "test"
     }`;
@@ -486,7 +486,7 @@ describe('inline constants', () => {
     );
   });
 
-  it(`doesn't replace process.env.NODE_ENV in the code if NODE_ENV is the right hand side of an assignment expression`, () => {
+  it("doesn't replace process.env.NODE_ENV in the code if NODE_ENV is the right hand side of an assignment expression", () => {
     const code = `function a() {
       process.env.NODE_ENV = 'production';
     }`;
@@ -602,7 +602,7 @@ describe('inline PlatformOS.OS', () => {
     );
   });
 
-  it(`doesn't replace PlatformOS.OS in the code if PlatformOS is the left hand side of an assignment expression`, () => {
+  it("doesn't replace PlatformOS.OS in the code if PlatformOS is the left hand side of an assignment expression", () => {
     const code = `function a() {
       PlatformOS.OS = "test"
     }`;

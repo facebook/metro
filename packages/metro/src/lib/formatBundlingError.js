@@ -37,7 +37,7 @@ function formatBundlingError(
     const message =
       "Ambiguous resolution: module '" +
       `${error.fromModulePath}\' tries to require \'${he.hasteName}\', but ` +
-      `there are several files providing this module. You can delete or ` +
+      'there are several files providing this module. You can delete or ' +
       'fix them: \n\n' +
       Object.keys(he.duplicatesSet)
         .sort()

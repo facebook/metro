@@ -190,7 +190,7 @@ function createDepMapLookup(depMapIndent, index: number) {
 }
 
 const makeAsyncRequire = babelTemplate(
-  `require(ASYNC_REQUIRE_PATH)(MODULE_ID)`,
+  'require(ASYNC_REQUIRE_PATH)(MODULE_ID)',
 );
 
 function invalidRequireOf(type, node) {

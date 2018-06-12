@@ -194,7 +194,7 @@ class MissingFileInHastePackageError extends Error {
       `While resolving module \`${opts.moduleName}\`, ` +
         `the Haste package \`${opts.packageName}\` was found. However the ` +
         `module \`${opts.pathInModule}\` could not be found within ` +
-        `the package. Indeed, none of these files exist:\n\n` +
+        'the package. Indeed, none of these files exist:\n\n' +
         `  * \`${formatFileCandidates(opts.candidates.file)}\`\n` +
         `  * \`${formatFileCandidates(opts.candidates.dir)}\``,
     );

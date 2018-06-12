@@ -48,7 +48,7 @@ function wrapJson(source: string): string {
   return [
     `__d(function(${MODULE_FACTORY_PARAMETERS.join(', ')}) {`,
     `  module.exports = ${source};`,
-    `});`,
+    '});',
   ].join('\n');
 }
 

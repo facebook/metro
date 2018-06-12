@@ -58,7 +58,7 @@ it('wraps a module correctly', () => {
 describe('safe renaming of require', () => {
   ['let', 'const', 'var'].forEach(declKeyword => {
     describe('decl type = ' + declKeyword, () => {
-      it(`original name will always be renamed so local decl should be fine`, () => {
+      it('original name will always be renamed so local decl should be fine', () => {
         const dependencyMapName = '_dependencyMapName';
 
         const originalAst = astFromCode(`
@@ -92,7 +92,7 @@ describe('safe renaming of require', () => {
         );
       });
 
-      it(`when the scope has the new name defined too`, () => {
+      it('when the scope has the new name defined too', () => {
         const dependencyMapName = '_dependencyMapName';
 
         const originalAst = astFromCode(`
@@ -126,7 +126,7 @@ describe('safe renaming of require', () => {
         );
       });
 
-      it(`when an inner scope already has the new name defined too`, () => {
+      it('when an inner scope already has the new name defined too', () => {
         const dependencyMapName = '_dependencyMapName';
 
         // Note; it's not important HOW Babel changes the name. Only THAT it does.

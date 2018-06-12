@@ -16,6 +16,7 @@ module.exports = {
   plugins: ['babel', 'flowtype', 'import', 'prettier'],
   parser: 'babel-eslint',
   rules: {
+    'babel/quotes': ['error', 'single', 'avoid-escape'],
     'consistent-return': 'error',
     'import/no-extraneous-dependencies': 'error',
     'lint/extra-arrow-initializer': 'off',

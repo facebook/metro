@@ -15,10 +15,10 @@
 
 const fs = require('fs');
 const path = require('path');
+const reactPlugin = require('../lib/index.js');
 
 /*eslint-disable import/no-extraneous-dependencies*/
 const {transformSync} = require('@babel/core');
-const reactPlugin = require('../lib/index.js');
 
 describe('finds React components', () => {
   const fixturesDir = path.join(__dirname, '__fixtures__');

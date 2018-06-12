@@ -19,7 +19,7 @@ class FailedToResolvePathError extends Error {
 
   constructor(candidates: FileAndDirCandidates) {
     super(
-      `The module could not be resolved because none of these files exist:\n\n` +
+      'The module could not be resolved because none of these files exist:\n\n' +
         `  * \`${formatFileCandidates(candidates.file)}\`\n` +
         `  * \`${formatFileCandidates(candidates.dir)}\``,
     );

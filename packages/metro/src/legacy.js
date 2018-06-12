@@ -37,7 +37,7 @@ type Options = {|
   targetBabelVersion?: number,
 |};
 
-type PublicBundleOptions = {
+type PublicBundleOptions = {|
   +dev?: boolean,
   +entryFile: string,
   +inlineSourceMap?: boolean,
@@ -45,7 +45,7 @@ type PublicBundleOptions = {
   +platform?: string,
   +runModule?: boolean,
   +sourceMapUrl?: string,
-};
+|};
 
 /**
  * This is a public API, so we don't trust the value and purposefully downgrade
@@ -58,6 +58,7 @@ function assertPublicBundleOptions(bo: mixed): PublicBundleOptions {
     'bundle options must be an object',
   );
   invariant(
+    // eslint-disable-next-line lint/strictly-null
     bo.dev === undefined || typeof bo.dev === 'boolean',
     'bundle options field `dev` must be a boolean',
   );
@@ -67,22 +68,27 @@ function assertPublicBundleOptions(bo: mixed): PublicBundleOptions {
     'bundle options must contain a string field `entryFile`',
   );
   invariant(
+    // eslint-disable-next-line lint/strictly-null
     bo.inlineSourceMap === undefined || typeof bo.inlineSourceMap === 'boolean',
     'bundle options field `inlineSourceMap` must be a boolean',
   );
   invariant(
+    // eslint-disable-next-line lint/strictly-null
     bo.minify === undefined || typeof bo.minify === 'boolean',
     'bundle options field `minify` must be a boolean',
   );
   invariant(
+    // eslint-disable-next-line lint/strictly-null
     bo.platform === undefined || typeof bo.platform === 'string',
     'bundle options field `platform` must be a string',
   );
   invariant(
+    // eslint-disable-next-line lint/strictly-null
     bo.runModule === undefined || typeof bo.runModule === 'boolean',
     'bundle options field `runModule` must be a boolean',
   );
   invariant(
+    // eslint-disable-next-line lint/strictly-null
     bo.sourceMapUrl === undefined || typeof bo.sourceMapUrl === 'string',
     'bundle options field `sourceMapUrl` must be a boolean',
   );
@@ -93,6 +99,7 @@ exports.build = async function(
   options: Options,
   bundleOptions: PublicBundleOptions,
 ): Promise<{code: string, map: string}> {
+  // eslint-disable-next-line lint/strictly-null
   if (options.targetBabelVersion !== undefined) {
     process.env.BABEL_VERSION = String(options.targetBabelVersion);
   }

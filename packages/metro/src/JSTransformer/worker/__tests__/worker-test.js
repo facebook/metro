@@ -55,7 +55,7 @@ describe('code transformation worker:', () => {
 
     const {result} = await transformCode(
       '/root/local/file.js',
-      `local/file.js`,
+      'local/file.js',
       transformerPath,
       {
         dev: true,
@@ -86,7 +86,7 @@ describe('code transformation worker:', () => {
 
     const {result} = await transformCode(
       '/root/local/file.js',
-      `local/file.js`,
+      'local/file.js',
       transformerPath,
       {
         dev: true,
@@ -112,7 +112,7 @@ describe('code transformation worker:', () => {
     expect(result.dependencies).toEqual([]);
   });
 
-  it(`transforms a module with dependencies`, async () => {
+  it('transforms a module with dependencies', async () => {
     fs.writeFileSync(
       '/root/local/file.js',
       [
@@ -126,7 +126,7 @@ describe('code transformation worker:', () => {
 
     const {result} = await transformCode(
       '/root/local/file.js',
-      `local/file.js`,
+      'local/file.js',
       transformerPath,
       {
         dev: true,
@@ -176,7 +176,7 @@ describe('code transformation worker:', () => {
     try {
       await transformCode(
         '/root/local/file.js',
-        `local/file.js`,
+        'local/file.js',
         transformerPath,
         {
           dev: true,
@@ -203,7 +203,7 @@ describe('code transformation worker:', () => {
 
     await transformCode(
       '/root/node_modules/foo/bar.js',
-      `node_modules/foo/bar.js`,
+      'node_modules/foo/bar.js',
       transformerPath,
       {
         dev: true,
@@ -224,7 +224,7 @@ describe('code transformation worker:', () => {
     expect(
       (await transformCode(
         '/root/local/file.js',
-        `local/file.js`,
+        'local/file.js',
         transformerPath,
         {
           dev: true,
@@ -253,7 +253,7 @@ describe('code transformation worker:', () => {
     expect(
       (await transformCode(
         '/root/local/file.json',
-        `local/file.json`,
+        'local/file.json',
         transformerPath,
         {
           dev: true,

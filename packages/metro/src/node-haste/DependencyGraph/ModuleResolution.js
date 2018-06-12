@@ -125,11 +125,13 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         throw new UnableToResolveError(
           fromModule.path,
           moduleName,
-          `The module \`${moduleName}\` could not be found ` +
-            `from \`${fromModule.path}\`. ` +
-            `Indeed, none of these files exist:\n\n` +
-            `  * \`${Resolver.formatFileCandidates(candidates.file)}\`\n` +
+          [
+            `The module \`${moduleName}\` could not be found from \`${
+              fromModule.path
+            }\`. Indeed, none of these files exist:`,
+            `  * \`${Resolver.formatFileCandidates(candidates.file)}\``,
             `  * \`${Resolver.formatFileCandidates(candidates.dir)}\``,
+          ].join('\n'),
         );
       }
       if (error instanceof Resolver.FailedToResolveNameError) {
@@ -142,17 +144,17 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         throw new UnableToResolveError(
           fromModule.path,
           moduleName,
-          `Module \`${moduleName}\` does not exist in the Haste module map${hint}\n` +
-            displayDirPaths
-              .map(dirPath => `  ${path.dirname(dirPath)}\n`)
-              .join(', ') +
-            '\n' +
-            `This might be related to https://github.com/facebook/react-native/issues/4968\n` +
-            `To resolve try the following:\n` +
-            `  1. Clear watchman watches: \`watchman watch-del-all\`.\n` +
-            `  2. Delete the \`node_modules\` folder: \`rm -rf node_modules && npm install\`.\n` +
-            '  3. Reset Metro Bundler cache: `rm -rf /tmp/metro-bundler-cache-*` or `npm start -- --reset-cache`.' +
+          [
+            `Module \`${moduleName}\` does not exist in the Haste module map${hint}`,
+            ...displayDirPaths.map(dirPath => `  ${path.dirname(dirPath)}`),
+            '',
+            'This might be related to https://github.com/facebook/react-native/issues/4968',
+            'To resolve try the following:',
+            '  1. Clear watchman watches: `watchman watch-del-all`.',
+            '  2. Delete the `node_modules` folder: `rm -rf node_modules && npm install`.',
+            '  3. Reset Metro Bundler cache: `rm -rf /tmp/metro-bundler-cache-*` or `npm start -- --reset-cache`.',
             '  4. Remove haste cache: `rm -rf /tmp/haste-map-react-native-packager-*`.',
+          ].join('\n'),
         );
       }
       throw error;

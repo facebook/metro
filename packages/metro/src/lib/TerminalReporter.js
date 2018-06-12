@@ -278,7 +278,7 @@ class TerminalReporter {
       const message =
         'ambiguous resolution: module `' +
         `${error.fromModulePath}\` tries to require \`${he.hasteName}\`, ` +
-        `but there are several files providing this module. You can delete ` +
+        'but there are several files providing this module. You can delete ' +
         'or fix them: \n\n' +
         Object.keys(he.duplicatesSet)
           .sort()
