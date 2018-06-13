@@ -10,6 +10,8 @@
 
 'use strict';
 
+const path = require('path');
+
 jest.useRealTimers();
 jest
   // It's noticeably faster to prevent running watchman from FileWatcher.
@@ -804,6 +806,16 @@ describe('traverseDependencies', function() {
     testBrowserField('browser');
     testBrowserField('react-native');
 
+    function resolveRequest(context, moduleName, platform) {
+      return {
+        type: 'sourceFile',
+        filePath: path.resolve(
+          path.dirname(context.originModulePath),
+          moduleName,
+        ),
+      };
+    }
+
     function replaceBrowserField(json, fieldName) {
       if (fieldName !== 'browser') {
         json[fieldName] = json.browser;
@@ -1240,6 +1252,84 @@ describe('traverseDependencies', function() {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
               '/root/index.js',
+            );
+            expect(deps).toMatchSnapshot();
+          });
+        },
+      );
+
+      it(
+        'should support browser mapping for relative requires ("' +
+          fieldName +
+          '")',
+        async () => {
+          var root = '/root';
+          setMockFileSystem({
+            root: {
+              aPackage: {
+                'package.json': JSON.stringify(
+                  replaceBrowserField(
+                    {
+                      name: 'aPackage',
+                      browser: {
+                        './file-node.js': './file-browser.js',
+                      },
+                    },
+                    fieldName,
+                  ),
+                ),
+                'index.js': 'require("./file-node.js")',
+                'file-browser.js': '/* browser file */',
+                'file-node.js': '/* node file */',
+              },
+            },
+          });
+
+          const opts = {...defaults, projectRoots: [root], resolveRequest};
+          await processDgraph(opts, async dgraph => {
+            const deps = await getOrderedDependenciesAsJSON(
+              dgraph,
+              '/root/aPackage/index.js',
+            );
+            expect(deps).toMatchSnapshot();
+          });
+        },
+      );
+
+      it(
+        'should support browser mapping for relative requires from deep within the package ("' +
+          fieldName +
+          '")',
+        async () => {
+          var root = '/root';
+          setMockFileSystem({
+            root: {
+              aPackage: {
+                'package.json': JSON.stringify(
+                  replaceBrowserField(
+                    {
+                      name: 'aPackage',
+                      browser: {
+                        './file-node.js': './file-browser.js',
+                      },
+                    },
+                    fieldName,
+                  ),
+                ),
+                subfolder: {
+                  'index.js': 'require("../file-node.js")',
+                },
+                'file-browser.js': '/* browser file */',
+                'file-node.js': '/* node file */',
+              },
+            },
+          });
+
+          const opts = {...defaults, projectRoots: [root], resolveRequest};
+          await processDgraph(opts, async dgraph => {
+            const deps = await getOrderedDependenciesAsJSON(
+              dgraph,
+              '/root/aPackage/subfolder/index.js',
             );
             expect(deps).toMatchSnapshot();
           });

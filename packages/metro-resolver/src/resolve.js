@@ -47,6 +47,7 @@ function resolve(
   }
 
   const realModuleName = context.redirectModulePath(moduleName);
+
   // exclude
   if (realModuleName === false) {
     return {type: 'empty'};
@@ -70,7 +71,11 @@ function resolve(
 
   if (context.resolveRequest) {
     try {
-      const resolution = context.resolveRequest(context, moduleName, platform);
+      const resolution = context.resolveRequest(
+        context,
+        realModuleName,
+        platform,
+      );
       if (resolution) {
         return resolution;
       }

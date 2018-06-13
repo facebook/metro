@@ -965,6 +965,78 @@ Array [
 ]
 `;
 
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping for relative requires ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./file-node.js",
+      },
+    ],
+    "path": "/root/aPackage/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/file-browser.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping for relative requires ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./file-node.js",
+      },
+    ],
+    "path": "/root/aPackage/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/file-browser.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping for relative requires from deep within the package ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "../file-node.js",
+      },
+    ],
+    "path": "/root/aPackage/subfolder/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/file-browser.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping for relative requires from deep within the package ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "../file-node.js",
+      },
+    ],
+    "path": "/root/aPackage/subfolder/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/file-browser.js",
+  },
+]
+`;
+
 exports[`traverseDependencies get sync dependencies (posix) should support browser mapping of a package to a file ("browser") 1`] = `
 Array [
   Object {

@@ -11,7 +11,6 @@
 'use strict';
 
 const fs = require('fs');
-const isAbsolutePath = require('absolute-path');
 const path = require('path');
 
 type PackageContent = {
@@ -95,7 +94,7 @@ class Package {
       return name;
     }
 
-    if (!isAbsolutePath(name)) {
+    if (!name.startsWith('.') && !path.isAbsolute(name)) {
       const replacement = replacements[name];
       // support exclude with "someDependency": false
       return replacement === false
@@ -104,7 +103,9 @@ class Package {
           replacement || name;
     }
 
-    let relPath = './' + path.relative(this._root, name);
+    let relPath =
+      './' + path.relative(this._root, path.resolve(this._root, name));
+
     if (path.sep !== '/') {
       relPath = relPath.replace(new RegExp('\\' + path.sep, 'g'), '/');
     }

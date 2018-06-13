@@ -77,15 +77,48 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
 
   _redirectRequire(fromModule: TModule, modulePath: string): string | false {
     const moduleCache = this._options.moduleCache;
-
     try {
-      const pck =
-        modulePath.startsWith('.') || path.isAbsolute(modulePath)
+      if (modulePath.startsWith('.')) {
+        const fromPackage = fromModule.getPackage();
+
+        if (fromPackage) {
+          // We need to convert the module path from module-relative to
+          // package-relative, so that we can easily match it against the
+          // "browser" map (where all paths are relative to the package root)
+          const fromPackagePath =
+            './' +
+            path.relative(
+              path.dirname(fromPackage.path),
+              path.resolve(path.dirname(fromModule.path), modulePath),
+            );
+
+          let redirectedPath = fromPackage.redirectRequire(
+            fromPackagePath,
+            this._options.mainFields,
+          );
+
+          // Since the redirected path is still relative to the package root,
+          // we have to transform it back to be module-relative (as it
+          // originally was)
+          if (redirectedPath !== false) {
+            redirectedPath =
+              './' +
+              path.relative(
+                path.dirname(fromModule.path),
+                path.resolve(path.dirname(fromPackage.path), redirectedPath),
+              );
+          }
+
+          return redirectedPath;
+        }
+      } else {
+        const pck = path.isAbsolute(modulePath)
           ? moduleCache.getModule(modulePath).getPackage()
           : fromModule.getPackage();
 
-      if (pck) {
-        return pck.redirectRequire(modulePath, this._options.mainFields);
+        if (pck) {
+          return pck.redirectRequire(modulePath, this._options.mainFields);
+        }
       }
     } catch (err) {
       // Do nothing. The standard module cache does not trigger any error, but
