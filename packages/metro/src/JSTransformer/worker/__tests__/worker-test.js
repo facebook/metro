@@ -239,11 +239,7 @@ describe('code transformation worker:', () => {
         'throwAtRuntime',
       )).result.output[0].data.code,
     ).toBe(
-      [
-        '__d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {',
-        '  minified(code);',
-        '});',
-      ].join('\n'),
+      ['__d(function (g, r, m, e, d) {', '  minified(code);', '});'].join('\n'),
     );
   });
 

@@ -23,6 +23,7 @@ const getMinifier = require('../lib/getMinifier');
 const inlinePlugin = require('./worker/inline-plugin');
 const optimizeDependencies = require('../ModuleGraph/worker/optimizeDependencies');
 const path = require('path');
+const traverse = require('@babel/traverse').default;
 
 const {
   fromRawMappings,
@@ -69,6 +70,10 @@ export type TransformOptions = {
   +inlineRequires: boolean,
   +platform: ?string,
   +projectRoot: string,
+};
+
+export type MinifyOptions = {
+  reserved?: Array<string>,
 };
 
 export type WorkerOptions = {|
@@ -213,7 +218,10 @@ async function transformCode(
     filename,
   );
 
-  let dependencies, wrappedAst;
+  let dependencyMapName = '';
+  let wrappedRequireName = '';
+  let dependencies;
+  let wrappedAst;
 
   // If the module to transform is a script (meaning that is not part of the
   // dependency graph and it code will just be prepended to the bundle modules),
@@ -225,7 +233,6 @@ async function transformCode(
 
     type = 'js/script';
   } else {
-    let dependencyMapName;
     try {
       const opts = {
         asyncRequireModulePath,
@@ -245,15 +252,43 @@ async function transformCode(
     const wrapped = JsFileWrapping.wrapModule(ast, dependencyMapName);
 
     wrappedAst = wrapped.ast;
+    wrappedRequireName = wrapped.requireName;
 
     if (!options.dev) {
       dependencies = optimizeDependencies(
         wrappedAst,
         dependencies,
         dependencyMapName,
-        wrapped.requireName,
+        wrappedRequireName,
       );
     }
+  }
+
+  const minify = [
+    'global',
+    wrappedRequireName,
+    'module',
+    'exports',
+    dependencyMapName,
+  ];
+
+  const reserved = minify.map(name => {
+    return (name.match(/[a-z]/i) || [''])[0].toLowerCase();
+  });
+
+  if (options.minify) {
+    traverse(wrappedAst, {
+      Program(path) {
+        const body = path.get('body.0.expression.arguments.0.body');
+
+        reserved.forEach((shortName, i) => {
+          if (minify[i]) {
+            body.scope.rename(shortName, body.scope.generateUid(shortName));
+            body.scope.rename(minify[i], shortName);
+          }
+        });
+      },
+    });
   }
 
   const result = generate(
@@ -280,6 +315,7 @@ async function transformCode(
       sourceCode,
       map,
       minifierPath,
+      {reserved},
     ));
   }
 
@@ -297,6 +333,7 @@ async function minifyCode(
   source: string,
   map: Array<MetroSourceMapSegmentTuple>,
   minifierPath: string,
+  options?: MinifyOptions = {},
 ): Promise<{
   code: string,
   map: Array<MetroSourceMapSegmentTuple>,
@@ -308,7 +345,7 @@ async function minifyCode(
   const minify = getMinifier(minifierPath);
 
   try {
-    const minified = minify.withSourceMap(code, sourceMap, filename);
+    const minified = minify.withSourceMap(code, sourceMap, filename, options);
 
     return {
       code: minified.code,

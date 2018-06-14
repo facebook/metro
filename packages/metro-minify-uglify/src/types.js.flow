@@ -11,10 +11,14 @@
 'use strict';
 
 import type {BabelSourceMap} from '@babel/core';
+import type {MinifyOptions} from 'metro/src/JSTransformer/worker';
+
+export type {MinifyOptions};
 
 export type ResultWithMap = {
   code: string,
   map: BabelSourceMap,
+  options?: MinifyOptions,
 };
 
 export type ResultWithoutMap = string;
@@ -23,6 +27,7 @@ type MinifierWithSourceMap = (
   code: string,
   inputMap?: ?BabelSourceMap,
   filename: string,
+  options?: MinifyOptions,
 ) => ResultWithMap;
 
 type MinifierWithoutSourceMap = (code: string) => ResultWithoutMap;
