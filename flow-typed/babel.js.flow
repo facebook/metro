@@ -316,18 +316,6 @@ declare module '@babel/core' {
   declare function buildExternalHelpers(Array<string>): string;
 }
 
-// https://github.com/babel/babel/tree/master/packages/babylon
-declare module 'metro-babylon7' {
-  declare function parse(
-    code: string,
-    options?: Babylon7Options,
-  ): BabelNode & {program: {body: BabelNode}};
-  declare function parseExpression(
-    code: string,
-    options?: Babylon7Options,
-  ): BabelNode;
-}
-
 // https://github.com/babel/babel/tree/master/packages/babel-generator
 declare module '@babel/generator' {
   declare export default (
