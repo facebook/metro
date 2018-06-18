@@ -60,7 +60,7 @@ module.exports = class Transformer {
       this._worker = this._makeFarm(
         workerPath,
         this._computeWorkerKey,
-        ['minify', 'transform'],
+        ['transform'],
         options.maxWorkers,
       );
 
