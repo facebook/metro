@@ -42,12 +42,13 @@ type Options = {|
   +mainFields: $ReadOnlyArray<string>,
   +maxWorkers: number,
   +platforms: Set<string>,
-  +projectRoots: $ReadOnlyArray<string>,
+  +projectRoot: string,
   +providesModuleNodeModules: Array<string>,
   +reporter: Reporter,
   +resolveRequest: ?CustomResolver,
   +sourceExts: Array<string>,
   +watch: boolean,
+  +watchFolders: $ReadOnlyArray<string>,
 |};
 
 const JEST_HASTE_MAP_CACHE_BREAKER = 3;
@@ -104,7 +105,7 @@ class DependencyGraph extends EventEmitter {
       platforms: Array.from(opts.platforms),
       providesModuleNodeModules: opts.providesModuleNodeModules,
       retainAllFiles: true,
-      roots: opts.projectRoots,
+      roots: opts.watchFolders,
       throwOnModuleCollision: true,
       useWatchman,
       watch: opts.watch,
@@ -239,7 +240,7 @@ class DependencyGraph extends EventEmitter {
       return hasteName;
     }
 
-    return toLocalPath(this._opts.projectRoots, filePath);
+    return toLocalPath(this._opts.watchFolders, filePath);
   }
 }
 

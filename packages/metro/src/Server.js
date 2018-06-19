@@ -26,7 +26,6 @@ const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
 const debug = require('debug')('Metro:Server');
 const defaults = require('./defaults');
 const formatBundlingError = require('./lib/formatBundlingError');
-const getAbsolutePath = require('./lib/getAbsolutePath');
 const getMaxWorkers = require('./lib/getMaxWorkers');
 const getPrependedScripts = require('./lib/getPrependedScripts');
 const mime = require('mime-types');
@@ -37,6 +36,7 @@ const path = require('path');
 const symbolicate = require('./Server/symbolicate/symbolicate');
 const transformHelpers = require('./lib/transformHelpers');
 const url = require('url');
+const getEntryAbsolutePath = require('./lib/getEntryAbsolutePath');
 
 const {getAsset} = require('./Assets');
 const resolveSync: ResolveSync = require('resolve').sync;
@@ -85,6 +85,39 @@ export type BuildGraphOptions = {|
 
 export type OutputGraph = Graph<>;
 
+export type ServerOptions = {
+  assetExts: Array<string>,
+  blacklistRE: void | RegExp,
+  cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
+  cacheVersion: string,
+  createModuleId: (path: string) => number,
+  enableBabelRCLookup: boolean,
+  extraNodeModules: {},
+  getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
+  getTransformOptions?: GetTransformOptions,
+  hasteImplModulePath?: string,
+  maxWorkers: number,
+  minifierPath: string,
+  platforms: Array<string>,
+  resolveRequest: ?CustomResolver,
+  polyfillModuleNames: Array<string>,
+  postMinifyProcess: PostMinifyProcess,
+  postProcessBundleSourcemap: PostProcessBundleSourcemap,
+  +projectRoot: string,
+  providesModuleNodeModules?: Array<string>,
+  reporter: Reporter,
+  resolveRequest: ?CustomResolver,
+  +getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
+  +getResolverMainFields: () => $ReadOnlyArray<string>,
+  +getRunModuleStatement: (number | string) => string,
+  silent: boolean,
+  +sourceExts: Array<string>,
+  +transformModulePath: string,
+  watch: boolean,
+  +watchFolders: $ReadOnlyArray<string>,
+  workerPath: ?string,
+};
+
 type DeltaOptions = BundleOptions & {
   deltaBundleId: ?string,
 };
@@ -101,37 +134,7 @@ const DELTA_ID_HEADER = 'X-Metro-Delta-ID';
 const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';
 
 class Server {
-  _opts: {
-    assetExts: Array<string>,
-    blacklistRE: void | RegExp,
-    cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
-    cacheVersion: string,
-    createModuleId: (path: string) => number,
-    enableBabelRCLookup: boolean,
-    extraNodeModules: {},
-    getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
-    getTransformOptions?: GetTransformOptions,
-    hasteImplModulePath?: string,
-    maxWorkers: number,
-    minifierPath: string,
-    platforms: Array<string>,
-    resolveRequest: ?CustomResolver,
-    polyfillModuleNames: Array<string>,
-    postMinifyProcess: PostMinifyProcess,
-    postProcessBundleSourcemap: PostProcessBundleSourcemap,
-    projectRoots: $ReadOnlyArray<string>,
-    providesModuleNodeModules?: Array<string>,
-    reporter: Reporter,
-    resolveRequest: ?CustomResolver,
-    +getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
-    +getResolverMainFields: () => $ReadOnlyArray<string>,
-    +getRunModuleStatement: (number | string) => string,
-    silent: boolean,
-    +sourceExts: Array<string>,
-    +transformModulePath: string,
-    watch: boolean,
-    workerPath: ?string,
-  };
+  _opts: ServerOptions;
   _changeWatchers: Array<{
     req: IncomingMessage,
     res: ServerResponse,
@@ -192,7 +195,7 @@ class Server {
       polyfillModuleNames: options.polyfillModuleNames || [],
       postMinifyProcess: options.postMinifyProcess,
       postProcessBundleSourcemap: options.postProcessBundleSourcemap,
-      projectRoots: options.projectRoots,
+      projectRoot: options.projectRoot,
       providesModuleNodeModules: options.providesModuleNodeModules,
       reporter,
       resolveRequest: options.resolveRequest,
@@ -203,6 +206,7 @@ class Server {
       transformModulePath:
         options.transformModulePath || defaults.transformModulePath,
       watch: options.watch || false,
+      watchFolders: options.watchFolders,
       workerPath: options.workerPath,
     };
 
@@ -268,10 +272,7 @@ class Server {
   async build(options: BundleOptions): Promise<{code: string, map: string}> {
     const graphInfo = await this._buildGraph(options);
 
-    const entryPoint = getAbsolutePath(
-      options.entryFile,
-      this._opts.projectRoots,
-    );
+    const entryPoint = getEntryAbsolutePath(this._opts, options.entryFile);
 
     return {
       code: plainJSBundle(entryPoint, graphInfo.prepend, graphInfo.graph, {
@@ -293,7 +294,7 @@ class Server {
     options: BuildGraphOptions,
   ): Promise<OutputGraph> {
     entryFiles = entryFiles.map(entryFile =>
-      getAbsolutePath(entryFile, this._opts.projectRoots),
+      getEntryAbsolutePath(this._opts, entryFile),
     );
 
     return await this._deltaBundler.buildGraph(entryFiles, {
@@ -314,10 +315,7 @@ class Server {
   async getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo> {
     const graphInfo = await this._buildGraph(options);
 
-    const entryPoint = getAbsolutePath(
-      options.entryFile,
-      this._opts.projectRoots,
-    );
+    const entryPoint = getEntryAbsolutePath(this._opts, options.entryFile);
 
     return await getRamBundleInfo(
       entryPoint,
@@ -343,7 +341,7 @@ class Server {
     return await getAssets(graph, {
       assetPlugins: options.assetPlugins,
       platform: options.platform,
-      projectRoots: this._opts.projectRoots,
+      watchFolders: this._opts.watchFolders,
     });
   }
 
@@ -369,10 +367,7 @@ class Server {
   }
 
   async _buildGraph(options: BundleOptions): Promise<GraphInfo> {
-    const entryPoint = getAbsolutePath(
-      options.entryFile,
-      this._opts.projectRoots,
-    );
+    const entryPoint = getEntryAbsolutePath(this._opts, options.entryFile);
 
     const crawlingOptions = {
       assetPlugins: options.assetPlugins,
@@ -570,7 +565,7 @@ class Server {
     try {
       const data = await getAsset(
         assetPath[1],
-        this._opts.projectRoots,
+        this._opts.watchFolders,
         /* $FlowFixMe: query may be empty for invalid URLs */
         urlObj.query.platform,
       );
@@ -1051,10 +1046,7 @@ class Server {
         })
         .join('.') + '.js';
 
-    const absoluteEntryFile = getAbsolutePath(
-      entryFile,
-      this._opts.projectRoots,
-    );
+    const absoluteEntryFile = getEntryAbsolutePath(this._opts, entryFile);
 
     // try to get the platform from the url
     const platform =
@@ -1133,8 +1125,12 @@ class Server {
     return this._reporter;
   }
 
-  getProjectRoots(): $ReadOnlyArray<string> {
-    return this._opts.projectRoots;
+  getProjectRoot(): string {
+    return this._opts.projectRoot;
+  }
+
+  getWatchFolders(): $ReadOnlyArray<string> {
+    return this._opts.watchFolders;
   }
 
   static DEFAULT_GRAPH_OPTIONS = {

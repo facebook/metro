@@ -21,7 +21,7 @@ import type {Graph} from '../types.flow';
 type Options = {|
   assetPlugins: $ReadOnlyArray<string>,
   platform: ?string,
-  projectRoots: $ReadOnlyArray<string>,
+  watchFolders: $ReadOnlyArray<string>,
 |};
 
 async function getAssets(
@@ -35,7 +35,7 @@ async function getAssets(
       promises.push(
         getAssetData(
           module.path,
-          toLocalPath(options.projectRoots, module.path),
+          toLocalPath(options.watchFolders, module.path),
           options.assetPlugins,
           options.platform,
         ),

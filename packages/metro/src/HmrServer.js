@@ -61,7 +61,7 @@ class HmrServer<TClient: Client> {
     // DeltaBundleId param through the WS connection and we'll be able to share
     // the same graph between the WS connection and the HTTP one.
     const graph = await this._packagerServer.buildGraph(
-      [getAbsolutePath(bundleEntry, this._packagerServer.getProjectRoots())],
+      [getAbsolutePath(bundleEntry, this._packagerServer.getWatchFolders())],
       {
         assetPlugins: [],
         customTransformOptions,

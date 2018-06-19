@@ -18,28 +18,20 @@ jest.mock('../../../package.json', () => ({
 const getTransformCacheKeyFn = require('../getTransformCacheKeyFn');
 const {transformModulePath} = require('../../defaults');
 
+const baseParams = {
+  asyncRequireModulePath: 'beep',
+  cacheVersion: '1.0',
+  dynamicDepsInPackages: 'arbitrary',
+  projectRoot: __dirname,
+  transformModulePath,
+};
+
 describe('getTransformCacheKeyFn', () => {
   it('Should return always the same key for the same params', async () => {
-    expect(
-      getTransformCacheKeyFn({
-        asyncRequireModulePath: 'beep',
-        cacheVersion: '1.0',
-        dynamicDepsInPackages: 'arbitrary',
-        projectRoots: [__dirname],
-        transformModulePath,
-      })(),
-    ).toMatchSnapshot();
+    expect(getTransformCacheKeyFn(baseParams)()).toMatchSnapshot();
   });
 
   it('Should return a different key when the params change', async () => {
-    const baseParams = {
-      asyncRequireModulePath: 'beep',
-      cacheVersion: '1.0',
-      dynamicDepsInPackages: 'arbitrary',
-      projectRoots: [__dirname],
-      transformModulePath,
-    };
-
     const changedParams = [
       {
         ...baseParams,
@@ -47,7 +39,7 @@ describe('getTransformCacheKeyFn', () => {
       },
       {
         ...baseParams,
-        projectRoots: ['/foo'],
+        projectRoot: '/foo',
       },
       {
         ...baseParams,

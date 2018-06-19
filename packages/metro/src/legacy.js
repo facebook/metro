@@ -193,7 +193,7 @@ function toServerOptions(options: Options): ServerOptions {
     polyfillModuleNames: options.polyfillModuleNames,
     postMinifyProcess: options.postMinifyProcess,
     postProcessBundleSourcemap: options.postProcessBundleSourcemap,
-    projectRoots: options.projectRoots,
+    projectRoot: options.projectRoot,
     providesModuleNodeModules: options.providesModuleNodeModules,
     reporter: options.reporter,
     resetCache: options.resetCache,
@@ -205,6 +205,7 @@ function toServerOptions(options: Options): ServerOptions {
       typeof options.watch === 'boolean'
         ? options.watch
         : !!options.nonPersistent,
+    watchFolders: options.watchFolders,
     workerPath: options.workerPath,
   };
 }

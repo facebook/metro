@@ -43,16 +43,19 @@ var commonOptions = {
   minifierPath: defaults.DEFAULT_METRO_MINIFIER_PATH,
   platforms: defaults.platforms,
   postMinifyProcess: e => e,
+  projectRoot: '/root',
   resetCache: false,
   sourceExts: defaults.sourceExts,
   transformModulePath: '/path/to/transformer.js',
   watch: false,
+  watchFolders: ['/root'],
 };
 
 describe('Bundler', function() {
   let bundler;
   let assetServer;
-  let projectRoots;
+  let watchFolders;
+  let projectRoot;
 
   beforeEach(function() {
     os.cpus.mockReturnValue({length: 1});
@@ -60,7 +63,8 @@ describe('Bundler', function() {
     // anything to the disk during a unit test!
     os.tmpDir.mockReturnValue(path.join(__dirname));
 
-    projectRoots = ['/root'];
+    projectRoot = '/root';
+    watchFolders = [projectRoot];
 
     mkdirp.sync('/path/to');
     mkdirp.sync('/root');
@@ -72,7 +76,7 @@ describe('Bundler', function() {
 
     bundler = new Bundler({
       ...commonOptions,
-      projectRoots,
+      watchFolders,
       assetServer,
     });
 
@@ -90,7 +94,7 @@ describe('Bundler', function() {
     ]);
     const b = new Bundler({
       ...commonOptions,
-      projectRoots,
+      watchFolders,
       assetServer,
       platforms: ['android', 'vr'],
     });
@@ -104,7 +108,7 @@ describe('Bundler', function() {
     const bundlerInstance = new Bundler({
       ...commonOptions,
       cacheStores: [{get, set}],
-      projectRoots,
+      watchFolders,
     });
 
     const depGraph = {

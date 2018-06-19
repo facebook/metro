@@ -46,7 +46,7 @@ describe('HmrServer', () => {
           update: jest.fn(),
         };
       },
-      getProjectRoots() {
+      getWatchFolders() {
         return ['/root'];
       },
       _opts: {

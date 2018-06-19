@@ -34,7 +34,7 @@ it('should return the bundle assets', async () => {
     ]),
   };
 
-  expect(await getAssets(graph, {projectRoots: ['/tmp']})).toEqual([
+  expect(await getAssets(graph, {watchFolders: ['/tmp']})).toEqual([
     {path: '/tmp/3.png', localPath: '3.png'},
     {path: '/tmp/5.mov', localPath: '5.mov'},
   ]);

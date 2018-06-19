@@ -100,10 +100,11 @@ describe('basic_bundle', () => {
         getModulesRunBeforeMainModule: () => ['InitializeCore'],
         getPolyfills: () => [polyfill1, polyfill2],
         getRunModuleStatement,
-        projectRoots: [INPUT_PATH, POLYFILLS_PATH],
         transformModulePath: require.resolve('../../reactNativeTransformer'),
+        projectRoot: INPUT_PATH,
         nonPersistent: true,
         enableBabelRCLookup: false, // dont use metro's own babelrc!
+        watchFolders: [INPUT_PATH, POLYFILLS_PATH],
       },
       {
         dev: false,
@@ -124,10 +125,11 @@ describe('basic_bundle', () => {
         getModulesRunBeforeMainModule: () => ['InitializeCore'],
         getPolyfills: () => [],
         getRunModuleStatement,
-        projectRoots: [INPUT_PATH, POLYFILLS_PATH],
+        projectRoot: INPUT_PATH,
         transformModulePath: require.resolve('../../reactNativeTransformer'),
         nonPersistent: true,
         enableBabelRCLookup: false, // dont use metro's own babelrc!
+        watchFolders: [INPUT_PATH, POLYFILLS_PATH],
       },
       {
         dev: false,

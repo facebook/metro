@@ -95,7 +95,22 @@ export type ConfigT = {
    */
   getPlatforms: () => Array<string>,
 
-  getProjectRoots(): Array<string>,
+  /**
+   * Specify a list of project roots
+   * @deprecated Previousely used to set up a list of watchers (one per
+   * directory). Discontinued in a favor of getProjectRoot and getWatchFolders
+   */
+  getProjectRoots: ?() => Array<string>,
+
+  /**
+   * Specify a root folder of the user project
+   */
+  getProjectRoot: () => string,
+
+  /**
+   * Specify any additional (to projectRoot) watch folders
+   */
+  getWatchFolders: () => Array<string>,
 
   /**
    * Specify any additional node modules that should be processed for
@@ -201,9 +216,11 @@ const DEFAULT = ({
   getEnableBabelRCLookup: () => true,
   getPlatforms: () => [],
   getPolyfillModuleNames: () => [],
+  getProjectRoots: undefined,
   // We assume the default project path is two levels up from
   // node_modules/metro/
-  getProjectRoots: () => [path.resolve(__dirname, '../../..')],
+  getProjectRoot: () => path.resolve(__dirname, '../../..'),
+  getWatchFolders: () => [],
   getProvidesModuleNodeModules: () => providesModuleNodeModules.slice(),
   getRunModuleStatement: (moduleId: number | string) =>
     `require(${JSON.stringify(moduleId)});`,
@@ -221,10 +238,37 @@ const DEFAULT = ({
 }: ConfigT);
 
 const normalize = (initialConfig: ConfigT, defaults?: ConfigT): ConfigT => {
-  return {
+  const normalizedConfig: ConfigT = {
     ...(defaults || DEFAULT),
     ...initialConfig,
   };
+
+  const watchFolders = normalizedConfig.getWatchFolders();
+  const projectRoot = normalizedConfig.getProjectRoot();
+
+  // TODO: Remove me once getProjectRoots is finally deprecated
+  if (normalizedConfig.getProjectRoots) {
+    const legacyProjectRoots = normalizedConfig.getProjectRoots();
+    normalizedConfig.getProjectRoot = () => legacyProjectRoots[0];
+    normalizedConfig.getWatchFolders = () => legacyProjectRoots;
+    normalizedConfig.getProjectRoots = undefined;
+
+    console.warn(
+      'Warning! Your metro configuration contains a deprecated function ' +
+        '"projectRoots". Please, consider changing it to "getProjectRoot" ' +
+        'with "watchFolders" (if needed)',
+    );
+  } else if (watchFolders.includes(projectRoot)) {
+    console.warn(
+      'Warning! There is no need to specify your projectRoot (' +
+        projectRoot +
+        ') in "watchFolders". It will be watched automatically',
+    );
+  } else {
+    normalizedConfig.getWatchFolders = () => [projectRoot, ...watchFolders];
+  }
+
+  return normalizedConfig;
 };
 
 const load = (configFile: string, defaults?: ConfigT) =>

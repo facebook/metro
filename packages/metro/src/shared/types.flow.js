@@ -95,7 +95,7 @@ export type Options = {|
   polyfillModuleNames?: Array<string>,
   postMinifyProcess: PostMinifyProcess,
   postProcessBundleSourcemap: PostProcessBundleSourcemap,
-  projectRoots: $ReadOnlyArray<string>,
+  projectRoot: string,
   providesModuleNodeModules?: Array<string>,
   reporter?: Reporter,
   resetCache?: boolean,
@@ -105,6 +105,7 @@ export type Options = {|
   +sourceExts: ?Array<string>,
   transformModulePath?: string,
   watch?: boolean,
+  watchFolders: $ReadOnlyArray<string>,
   workerPath: ?string,
 |};
 

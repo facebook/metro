@@ -57,7 +57,8 @@ describe('processRequest', () => {
   let server;
 
   const options = {
-    projectRoots: ['/root'],
+    projectRoot: '/root',
+    watchFolders: ['/root'],
     blacklistRE: null,
     cacheVersion: null,
     getRunModuleStatement: moduleId => `require(${JSON.stringify(moduleId)});`,
@@ -629,7 +630,7 @@ describe('processRequest', () => {
     it('should hold on to request and inform on change', done => {
       jest.useRealTimers();
       server.processRequest(req, res);
-      server.onFileChange('all', options.projectRoots[0] + 'path/file.js');
+      server.onFileChange('all', options.projectRoot + 'path/file.js');
       res.end.mockImplementation(value => {
         expect(value).toBe(JSON.stringify({changed: true}));
         done();
@@ -640,7 +641,7 @@ describe('processRequest', () => {
       server.processRequest(req, res);
       req.emit('close');
       jest.runAllTimers();
-      server.onFileChange('all', options.projectRoots[0] + 'path/file.js');
+      server.onFileChange('all', options.projectRoot + 'path/file.js');
       jest.runAllTimers();
       expect(res.end).not.toBeCalled();
     });

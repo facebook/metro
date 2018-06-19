@@ -26,7 +26,6 @@ const makeServeCommand = require('./commands/serve');
 const outputBundle = require('./shared/output/bundle');
 const path = require('path');
 
-const {realpath} = require('fs');
 const {readFile} = require('fs-extra');
 const {Terminal} = require('metro-core');
 
@@ -61,21 +60,6 @@ type PrivateMetroOptions = {|
 
 import type {CustomTransformOptions} from './JSTransformer/worker';
 
-// We'll be able to remove this to use the one provided by modern versions of
-// fs-extra once https://github.com/jprichardson/node-fs-extra/pull/520 will
-// have been merged (until then, they'll break on devservers/Sandcastle)
-async function asyncRealpath(path): Promise<string> {
-  return new Promise((resolve, reject) => {
-    realpath(path, (error, result) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(result);
-      }
-    });
-  });
-}
-
 async function runMetro({
   config,
   resetCache = false,
@@ -102,14 +86,12 @@ async function runMetro({
       ? normalizedConfig.getProvidesModuleNodeModules()
       : defaults.providesModuleNodeModules;
 
-  const finalProjectRoots = await Promise.all(
-    normalizedConfig.getProjectRoots().map(path => asyncRealpath(path)),
-  );
+  const watchFolders = normalizedConfig.getWatchFolders();
 
   reporter.update({
     type: 'initialize_started',
     port,
-    projectRoots: finalProjectRoots,
+    projectRoots: watchFolders,
   });
   const serverOptions: ServerOptions = {
     asyncRequireModulePath: normalizedConfig.getAsyncRequireModulePath(),
@@ -143,9 +125,10 @@ async function runMetro({
       : sourceExts,
     transformModulePath: normalizedConfig.getTransformModulePath(),
     watch,
+    watchFolders: normalizedConfig.getWatchFolders(),
     workerPath:
       normalizedConfig.getWorkerPath && normalizedConfig.getWorkerPath(),
-    projectRoots: finalProjectRoots,
+    projectRoot: normalizedConfig.getProjectRoot(),
   };
 
   return new MetroServer(serverOptions);

@@ -83,13 +83,14 @@ export type Options = {|
   +polyfillModuleNames: Array<string>,
   +postMinifyProcess: PostMinifyProcess,
   +postProcessBundleSourcemap: PostProcessBundleSourcemap,
-  +projectRoots: $ReadOnlyArray<string>,
+  +projectRoot: string,
   +providesModuleNodeModules?: Array<string>,
   +reporter: Reporter,
   +resolveRequest: ?CustomResolver,
   +sourceExts: Array<string>,
   +transformModulePath: string,
   +watch: boolean,
+  +watchFolders: $ReadOnlyArray<string>,
   +workerPath: ?string,
 |};
 
@@ -101,17 +102,17 @@ class Bundler {
   _baseHash: string;
   _transformer: Transformer;
   _depGraphPromise: Promise<DependencyGraph>;
-  _projectRoots: $ReadOnlyArray<string>;
+  _projectRoot: string;
   _getTransformOptions: void | GetTransformOptions;
 
   constructor(opts: Options) {
-    opts.projectRoots.forEach(verifyRootExists);
+    opts.watchFolders.forEach(verifyRootExists);
 
     const getTransformCacheKey = getTransformCacheKeyFn({
       asyncRequireModulePath: opts.asyncRequireModulePath,
       cacheVersion: opts.cacheVersion,
       dynamicDepsInPackages: opts.dynamicDepsInPackages,
-      projectRoots: opts.projectRoots,
+      projectRoot: opts.projectRoot,
       transformModulePath: opts.transformModulePath,
     });
 
@@ -140,13 +141,14 @@ class Bundler {
       mainFields: opts.getResolverMainFields(),
       maxWorkers: opts.maxWorkers,
       platforms: new Set(opts.platforms),
-      projectRoots: opts.projectRoots,
+      projectRoot: opts.projectRoot,
       providesModuleNodeModules:
         opts.providesModuleNodeModules || defaults.providesModuleNodeModules,
       reporter: opts.reporter,
       resolveRequest: opts.resolveRequest,
       sourceExts: opts.sourceExts,
       watch: opts.watch,
+      watchFolders: opts.watchFolders,
     });
 
     this._baseHash = stableHash([
@@ -156,7 +158,7 @@ class Bundler {
       opts.minifierPath,
     ]).toString('binary');
 
-    this._projectRoots = opts.projectRoots;
+    this._projectRoot = opts.projectRoot;
     this._getTransformOptions = opts.getTransformOptions;
   }
 
@@ -205,7 +207,7 @@ class Bundler {
   } {
     return {
       enableBabelRCLookup: this._opts.enableBabelRCLookup,
-      projectRoot: this._projectRoots[0],
+      projectRoot: this._projectRoot,
     };
   }
 
@@ -241,7 +243,7 @@ class Bundler {
       }
     }
 
-    const localPath = toLocalPath(this._projectRoots, filePath);
+    const localPath = toLocalPath(this._opts.watchFolders, filePath);
 
     const partialKey = stableHash([
       // This is the hash related to the global Bundler config.

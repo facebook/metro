@@ -24,7 +24,7 @@ function getTransformCacheKeyFn(opts: {|
   +asyncRequireModulePath: string,
   +cacheVersion: string,
   +dynamicDepsInPackages: string,
-  +projectRoots: $ReadOnlyArray<string>,
+  +projectRoot: string,
   +transformModulePath: string,
 |}): (options: mixed) => string {
   const transformModuleHash = crypto
@@ -32,18 +32,11 @@ function getTransformCacheKeyFn(opts: {|
     .update(fs.readFileSync(opts.transformModulePath))
     .digest('hex');
 
-  const stableProjectRoots = opts.projectRoots.map(p => {
-    return path.relative(path.join(__dirname, '../../../..'), p);
-  });
-
   const cacheKeyParts = [
     'metro-cache',
     VERSION,
     opts.cacheVersion,
-    stableProjectRoots
-      .join(',')
-      .split(path.sep)
-      .join('-'),
+    path.relative(path.join(__dirname, '../../../..'), opts.projectRoot),
     transformModuleHash,
     opts.asyncRequireModulePath,
     opts.dynamicDepsInPackages,
