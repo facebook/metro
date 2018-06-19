@@ -630,6 +630,41 @@ describe('posix support', () => {
       }
     });
   });
+
+  it('supports copying files', () => {
+    const source = '/source-file';
+    const data = 'arbitrary data';
+    fs.writeFileSync(source, data);
+
+    const dest = '/dest-file';
+    fs.copyFileSync(source, dest);
+    expect(fs.readFileSync(dest, 'utf8')).toBe(data);
+
+    const dest2 = '/dest-file-with-flags';
+    fs.copyFileSync(source, dest2, fs.constants.COPYFILE_FICLONE);
+    expect(fs.readFileSync(dest2, 'utf8')).toBe(data);
+  });
+
+  it('supports COPYFILE_EXCL for copyFile', () => {
+    const data = 'arbitrary data';
+    const source = '/source-file';
+    const dest = '/dest-file';
+    fs.writeFileSync(source, data);
+    fs.writeFileSync(dest, '');
+
+    expectFsError('EEXIST', () =>
+      fs.copyFileSync(
+        source,
+        dest,
+        // pass bitfield with more bits set, to avoid equality test.
+        fs.constants.COPYFILE_EXCL | fs.constants.COPYFILE_FICLONE,
+      ),
+    );
+
+    // ensure that copyFileSync can overwrite when COPYFILE_EXCL is NOT passed.
+    fs.copyFileSync(source, dest);
+    expect(fs.readFileSync(source, 'utf8')).toBe(data);
+  });
 });
 
 describe('win32 support', () => {

@@ -102,6 +102,7 @@ const FLAGS_SPECS: {
 const ASYNC_FUNC_NAMES = [
   'access',
   'close',
+  'copyFile',
   'fstat',
   'lstat',
   'open',
@@ -147,6 +148,17 @@ class MemoryFs {
   constants = constants;
 
   close: (fd: number, callback: (error: ?Error) => mixed) => void;
+  copyFile: ((
+    src: FilePath,
+    dest: FilePath,
+    callback: (error: Error) => mixed,
+  ) => void) &
+    ((
+      src: FilePath,
+      dest: FilePath,
+      flags?: number,
+      callback: (error: ?Error) => mixed,
+    ) => void);
   open: (
     filePath: FilePath,
     flag: string | number,
@@ -279,6 +291,11 @@ class MemoryFs {
       this._emitFileChange(desc.nodePath.slice(), {eventType: 'change'});
     }
     this._fds.delete(fd);
+  };
+
+  copyFileSync = (src: FilePath, dest: FilePath, flags?: number = 0) => {
+    const options = flags & constants.COPYFILE_EXCL ? {flag: 'wx'} : {};
+    this.writeFileSync(dest, this.readFileSync(src), options);
   };
 
   openSync = (
