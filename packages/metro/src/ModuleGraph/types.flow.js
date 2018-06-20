@@ -47,8 +47,8 @@ type GraphOptions = {|
 |};
 
 export type GraphResult = {|
-  entryModules: $ReadOnlyArray<Module>,
-  modules: $ReadOnlyArray<Module>,
+  entryModules: Array<Module>,
+  modules: Array<Module>,
 |};
 
 export type ModuleIds = {|
