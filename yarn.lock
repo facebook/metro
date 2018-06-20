@@ -4486,6 +4486,13 @@ merge@^1.1.3:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/merge/-/merge-1.2.0.tgz#7531e39d4949c281a66b8c5a6e0265e8b05894da"
 
+metro-babel7-plugin-react-transform@^0.39.1:
+  version "0.39.1"
+  resolved "https://registry.yarnpkg.com/metro-babel7-plugin-react-transform/-/metro-babel7-plugin-react-transform-0.39.1.tgz#deb851fa6904ed5b9f4e38f69e3f318a0fb670e6"
+  dependencies:
+    "@babel/helper-module-imports" "7.0.0-beta.47"
+    lodash "^4.17.5"
+
 micromatch@^2.1.5, micromatch@^2.3.11:
   version "2.3.11"
   resolved "https://registry.yarnpkg.com/micromatch/-/micromatch-2.3.11.tgz#86677c97d1720b363431d04d0d15293bd38c1565"
