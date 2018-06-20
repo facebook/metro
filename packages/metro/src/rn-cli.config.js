@@ -15,8 +15,17 @@ const blacklist = require('./blacklist');
 const path = require('path');
 
 module.exports = {
-  getProjectRoots() {
-    return this._getRoots();
+  getProjectRoot() {
+    // Match on either path separator
+    if (__dirname.match(/node_modules[\/\\]metro(-bundler)?$/)) {
+      // Metro Bundler is running from node_modules of another project
+      return path.resolve(__dirname, '../../..');
+    } else if (__dirname.match(/Pods\/React\/packager$/)) {
+      // Metro Bundler is running from node_modules of another project
+      return path.resolve(__dirname, '../../..');
+    } else {
+      return path.resolve(__dirname, '..');
+    }
   },
 
   getAssetExts() {
@@ -29,19 +38,6 @@ module.exports = {
 
   getBlacklistRE() {
     return blacklist();
-  },
-
-  _getRoots() {
-    // match on either path separator
-    if (__dirname.match(/node_modules[\/\\]metro(-bundler)?$/)) {
-      // Metro Bundler is running from node_modules of another project
-      return [path.resolve(__dirname, '../../..')];
-    } else if (__dirname.match(/Pods\/React\/packager$/)) {
-      // Metro Bundler is running from node_modules of another project
-      return [path.resolve(__dirname, '../../..')];
-    } else {
-      return [path.resolve(__dirname, '..')];
-    }
   },
 
   getTransformModulePath() {
