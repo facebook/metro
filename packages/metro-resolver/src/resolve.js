@@ -106,7 +106,7 @@ function resolve(
     let bits = path.normalize(moduleName).split(path.sep);
     let packageName;
     // Normalize packageName and bits for scoped modules
-    if (bits[0] && bits[0][0] === '@') {
+    if (bits.length >= 2 && bits[0].startsWith('@')) {
       packageName = bits.slice(0, 2).join('/');
       bits = bits.slice(1);
     } else {
