@@ -255,7 +255,7 @@ export type ResolvedCodeFile = {|
    * all the other dependencies. For example, it could be
    * `{'foo': 'bar/foo.js', 'bar': 'node_modules/bar/index.js'}`.
    */
-  +filePathsByDependencyName: {+[dependencyName: string]: string},
+  +filePathsByDependencyName: {[dependencyName: string]: string},
 |};
 
 /**
