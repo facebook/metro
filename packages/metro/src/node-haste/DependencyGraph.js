@@ -51,7 +51,7 @@ type Options = {|
   +watchFolders: $ReadOnlyArray<string>,
 |};
 
-const JEST_HASTE_MAP_CACHE_BREAKER = 3;
+const JEST_HASTE_MAP_CACHE_BREAKER = 4;
 
 class DependencyGraph extends EventEmitter {
   _assetResolutionCache: AssetResolutionCache;
