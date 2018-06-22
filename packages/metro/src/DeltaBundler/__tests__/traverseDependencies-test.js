@@ -281,6 +281,18 @@ describe('Progress updates', () => {
 });
 
 describe('edge cases', () => {
+  it('should handle cyclic dependencies', async () => {
+    Actions.addDependency('/bar', '/bundle');
+    files = new Set();
+
+    expect(getPaths(await initialTraverseDependencies(graph, options))).toEqual(
+      {
+        added: new Set(['/bundle', '/foo', '/bar', '/baz']),
+        deleted: new Set(),
+      },
+    );
+  });
+
   it('should handle renames correctly', async () => {
     await initialTraverseDependencies(graph, options);
 
@@ -313,6 +325,8 @@ describe('edge cases', () => {
       added: new Set(['/bundle', '/foo-renamed']),
       deleted: new Set(['/foo']),
     });
+
+    expect(graph.dependencies.get('/foo')).toBe(undefined);
   });
 
   it('modify a file and delete it afterwards', async () => {
@@ -327,6 +341,26 @@ describe('edge cases', () => {
       added: new Set(['/foo']),
       deleted: new Set(['/baz']),
     });
+
+    expect(graph.dependencies.get('/baz')).toBe(undefined);
+  });
+
+  it('remove a dependency and modify it afterwards', async () => {
+    await initialTraverseDependencies(graph, options);
+
+    Actions.removeDependency('/bundle', '/foo');
+    Actions.modifyFile('/foo');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(['/bundle']),
+      deleted: new Set(['/foo', '/bar', '/baz']),
+    });
+
+    expect(graph.dependencies.get('/foo')).toBe(undefined);
+    expect(graph.dependencies.get('/bar')).toBe(undefined);
+    expect(graph.dependencies.get('/baz')).toBe(undefined);
   });
 
   it('move a file to a different folder', async () => {
@@ -341,6 +375,8 @@ describe('edge cases', () => {
       added: new Set(['/foo', '/baz-moved']),
       deleted: new Set(['/baz']),
     });
+
+    expect(graph.dependencies.get('/baz')).toBe(undefined);
   });
 
   it('maintain the order of module dependencies consistent', async () => {
