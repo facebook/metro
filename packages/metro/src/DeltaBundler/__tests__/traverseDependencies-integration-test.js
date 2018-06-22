@@ -1745,6 +1745,34 @@ describe('traverseDependencies', function() {
         expect(deps).toMatchSnapshot();
       });
     });
+
+    it('should be able to resolve scoped `extraNodeModules`', async () => {
+      var root = '/root';
+      setMockFileSystem({
+        [root.slice(1)]: {
+          'index.js': 'require("@org/bar/lib/foo")',
+          'provides-bar': {
+            'package.json': '{}',
+            lib: {'foo.js': ''},
+          },
+        },
+      });
+
+      const opts = {
+        ...defaults,
+        watchFolders: [root],
+        extraNodeModules: {
+          '@org/bar': root + '/provides-bar',
+        },
+      };
+      await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          '/root/index.js',
+        );
+        expect(deps).toMatchSnapshot();
+      });
+    });
   });
 
   describe('get sync dependencies (win32)', () => {
