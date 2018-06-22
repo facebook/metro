@@ -23,21 +23,21 @@ export type Dependency = {|
 |};
 
 export type Module<T = MixedOutput> = {|
-  dependencies: Map<string, Dependency>,
-  inverseDependencies: Set<string>,
-  output: $ReadOnlyArray<T>,
-  path: string,
-  getSource: () => string,
+  +dependencies: Map<string, Dependency>,
+  +inverseDependencies: Set<string>,
+  +output: $ReadOnlyArray<T>,
+  +path: string,
+  +getSource: () => string,
 |};
 
 export type Graph<T = MixedOutput> = {|
   dependencies: Map<string, Module<T>>,
-  entryPoints: $ReadOnlyArray<string>,
+  +entryPoints: $ReadOnlyArray<string>,
 |};
 
 export type TransformResult<T = MixedOutput> = {|
-  dependencies: $ReadOnlyArray<TransformResultDependency>,
-  output: $ReadOnlyArray<T>,
+  +dependencies: $ReadOnlyArray<TransformResultDependency>,
+  +output: $ReadOnlyArray<T>,
   +getSource: () => string,
 |};
 
@@ -46,9 +46,9 @@ export type TransformFn<T = MixedOutput> = string => Promise<
 >;
 
 export type Options<T = MixedOutput> = {|
-  resolve: (from: string, to: string) => string,
-  transform: TransformFn<T>,
-  onProgress: ?(numProcessed: number, total: number) => mixed,
+  +resolve: (from: string, to: string) => string,
+  +transform: TransformFn<T>,
+  +onProgress: ?(numProcessed: number, total: number) => mixed,
 |};
 
 export type DeltaResult<T = MixedOutput> = {|

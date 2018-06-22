@@ -50,19 +50,17 @@ async function traverseDependencies<T>(
     deleted: new Set(),
   };
 
-  await Promise.all(
-    paths.map(async path => {
-      const module = graph.dependencies.get(path);
+  for (const path of paths) {
+    // Only process the path if it's part of the dependency graph. It's possible
+    // that this method receives a path that is no longer part of it (e.g if a
+    // module gets removed from the dependency graph and just afterwards it gets
+    // modified), and we have to ignore these cases.
+    if (graph.dependencies.get(path)) {
+      delta.modified.add(path);
 
-      if (!module) {
-        return;
-      }
-
-      delta.modified.add(module.path);
-
-      await traverseDependenciesForSingleFile(module, graph, delta, options);
-    }),
-  );
+      await traverseDependenciesForSingleFile(path, graph, delta, options);
+    }
+  }
 
   const added = new Map();
   const deleted = new Set();
@@ -98,9 +96,20 @@ async function initialTraverseDependencies<T>(
   graph: Graph<T>,
   options: Options<T>,
 ): Promise<Result<T>> {
-  graph.entryPoints.forEach(entryPoint => createModule(entryPoint, graph));
-
-  await traverseDependencies(graph.entryPoints, graph, options);
+  await Promise.all(
+    graph.entryPoints.map(path =>
+      traverseDependenciesForSingleFile(
+        path,
+        graph,
+        {
+          added: new Set(),
+          modified: new Set(),
+          deleted: new Set(),
+        },
+        options,
+      ),
+    ),
+  );
 
   reorderGraph(graph);
 
@@ -111,7 +120,7 @@ async function initialTraverseDependencies<T>(
 }
 
 async function traverseDependenciesForSingleFile<T>(
-  module: Module<T>,
+  path: string,
   graph: Graph<T>,
   delta: Delta,
   options: Options<T>,
@@ -120,8 +129,8 @@ async function traverseDependenciesForSingleFile<T>(
   let total = 1;
   options.onProgress && options.onProgress(numProcessed, total);
 
-  await processModule(
-    module,
+  const module = await processModule(
+    path,
     graph,
     delta,
     options,
@@ -135,35 +144,44 @@ async function traverseDependenciesForSingleFile<T>(
     },
   );
 
+  graph.dependencies.set(path, module);
+
   numProcessed++;
   options.onProgress && options.onProgress(numProcessed, total);
 }
 
 async function processModule<T>(
-  module: Module<T>,
+  path: string,
   graph: Graph<T>,
   delta: Delta,
   options: Options<T>,
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
-): Promise<void> {
-  const previousDependencies = module.dependencies;
-
+): Promise<Module<T>> {
   // Transform the file via the given option.
-  const result = await options.transform(module.path);
+  const result = await options.transform(path);
 
   // Get the absolute path of all sub-dependencies (some of them could have been
   // moved but maintain the same relative path).
   const currentDependencies = resolveDependencies(
-    module.path,
+    path,
     result.dependencies,
     options,
   );
 
+  const previousModule = graph.dependencies.get(path) || {
+    inverseDependencies: new Set(),
+    path,
+  };
+  const previousDependencies = previousModule.dependencies || new Map();
+
   // Update the module information.
-  module.getSource = result.getSource;
-  module.output = result.output;
-  module.dependencies = new Map();
+  const module = {
+    ...previousModule,
+    dependencies: new Map(),
+    getSource: result.getSource,
+    output: result.output,
+  };
 
   for (const [relativePath, dependency] of currentDependencies) {
     module.dependencies.set(relativePath, dependency);
@@ -197,6 +215,8 @@ async function processModule<T>(
   }
 
   await Promise.all(promises);
+
+  return module;
 }
 
 async function addDependency<T>(
@@ -208,30 +228,33 @@ async function addDependency<T>(
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
 ): Promise<void> {
-  const existingModule = graph.dependencies.get(path);
+  if (delta.added.has(path)) {
+    return;
+  }
 
   // The new dependency was already in the graph, we don't need to do anything.
+  const existingModule = graph.dependencies.get(path);
   if (existingModule) {
     existingModule.inverseDependencies.add(parentModule.path);
 
     return;
   }
 
-  const module = createModule(path, graph);
-
-  module.inverseDependencies.add(parentModule.path);
-  delta.added.add(module.path);
+  delta.added.add(path);
 
   onDependencyAdd();
 
-  await processModule(
-    module,
+  const module = await processModule(
+    path,
     graph,
     delta,
     options,
     onDependencyAdd,
     onDependencyAdded,
   );
+
+  graph.dependencies.set(module.path, module);
+  module.inverseDependencies.add(parentModule.path);
 
   onDependencyAdded();
 }
@@ -261,26 +284,12 @@ function removeDependency<T>(
   // Now we need to iterate through the module dependencies in order to
   // clean up everything (we cannot read the module because it may have
   // been deleted).
-  for (const [, dependency] of module.dependencies) {
+  for (const dependency of module.dependencies.values()) {
     removeDependency(module, dependency.absolutePath, graph, delta);
   }
 
   // This module is not used anywhere else!! we can clear it from the bundle
   graph.dependencies.delete(module.path);
-}
-
-function createModule<T>(filePath: string, graph: Graph<T>): Module<T> {
-  const module = {
-    dependencies: new Map(),
-    inverseDependencies: new Set(),
-    path: filePath,
-    getSource: () => '',
-    output: [],
-  };
-
-  graph.dependencies.set(filePath, module);
-
-  return module;
 }
 
 function resolveDependencies<T>(
