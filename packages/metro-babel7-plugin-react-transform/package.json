@@ -3,7 +3,6 @@
   "name": "metro-babel7-plugin-react-transform",
   "main": "lib/index.js",
   "dependencies": {
-    "@babel/helper-module-imports": "7.0.0-beta.47",
-    "lodash": "^4.17.5"
+    "@babel/helper-module-imports": "7.0.0-beta.47"
   }
 }

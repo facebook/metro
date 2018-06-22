@@ -28,9 +28,29 @@ const find = require('lodash/find');
 
 const {addDefault} = require('@babel/helper-module-imports');
 
+function lodashFindLite(obj, func) {
+  // Lite insofar that it doesn't pass on index/collection to the callback
+  // This inlining prevents having to rely on lodash for this `some`
+  let value = undefined;
+
+  if (!(obj instanceof Array)) {
+    obj = Object.values(obj);
+  }
+
+  obj.some((v, i) => {
+    if (func(v)) {
+      value = v;
+      return true;
+    }
+    return false;
+  });
+
+  return value;
+}
+
 module.exports = function({types: t, template}) {
   function matchesPatterns(path, patterns) {
-    return !!find(patterns, pattern => {
+    return !!lodashFindLite(patterns, pattern => {
       return (
         t.isIdentifier(path.node, {name: pattern}) ||
         path.matchesPattern(pattern)
@@ -39,7 +59,7 @@ module.exports = function({types: t, template}) {
   }
 
   function isReactLikeClass(node) {
-    return !!find(node.body.body, classMember => {
+    return !!lodashFindLite(node.body.body, classMember => {
       return (
         t.isClassMethod(classMember) &&
         t.isIdentifier(classMember.key, {name: 'render'})
@@ -50,7 +70,7 @@ module.exports = function({types: t, template}) {
   function isReactLikeComponentObject(node) {
     return (
       t.isObjectExpression(node) &&
-      !!find(node.properties, objectMember => {
+      !!lodashFindLite(node.properties, objectMember => {
         return (
           (t.isObjectProperty(objectMember) ||
             t.isObjectMethod(objectMember)) &&
@@ -63,7 +83,7 @@ module.exports = function({types: t, template}) {
 
   // `foo({ displayName: 'NAME' });` => 'NAME'
   function getDisplayName(node) {
-    const property = find(
+    const property = lodashFindLite(
       node.arguments[0].properties,
       _node => _node.key.name === 'displayName',
     );
