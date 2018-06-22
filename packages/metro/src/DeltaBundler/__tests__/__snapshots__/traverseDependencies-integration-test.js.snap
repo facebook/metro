@@ -278,6 +278,24 @@ Array [
 ]
 `;
 
+exports[`traverseDependencies get sync dependencies (posix) should be able to resolve scoped \`extraNodeModules\` 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "@org/bar/lib/foo",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/provides-bar/lib/foo.js",
+  },
+]
+`;
+
 exports[`traverseDependencies get sync dependencies (posix) should default main package to index.js 1`] = `
 Array [
   Object {
