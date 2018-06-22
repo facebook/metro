@@ -10,6 +10,8 @@
 
 'use strict';
 
+const nullthrows = require('fbjs/lib/nullthrows');
+
 import type {TransformResultDependency} from '../ModuleGraph/types.flow';
 import type {Dependency, Graph, Module, Options} from './types.flow';
 
@@ -17,13 +19,12 @@ type Result<T> = {added: Map<string, Module<T>>, deleted: Set<string>};
 
 /**
  * Internal data structure that the traversal logic uses to know which of the
- * files have been modified. This helps us know which files to mark as deleted
- * (a file should not be deleted if it has been added, but it should if it
- * just has been modified).
+ * files have been modified. This allows to return the added modules before the
+ * modified ones (which is useful for things like Hot Module Reloading).
  **/
-type Delta<T> = {
-  added: Map<string, Module<T>>,
-  modified: Map<string, Module<T>>,
+type Delta = {
+  added: Set<string>,
+  modified: Set<string>,
   deleted: Set<string>,
 };
 
@@ -44,8 +45,8 @@ async function traverseDependencies<T>(
   options: Options<T>,
 ): Promise<Result<T>> {
   const delta = {
-    added: new Map(),
-    modified: new Map(),
+    added: new Set(),
+    modified: new Set(),
     deleted: new Set(),
   };
 
@@ -57,7 +58,7 @@ async function traverseDependencies<T>(
         return;
       }
 
-      delta.modified.set(module.path, module);
+      delta.modified.add(module.path);
 
       await traverseDependenciesForSingleFile(module, graph, delta, options);
     }),
@@ -65,29 +66,26 @@ async function traverseDependencies<T>(
 
   const added = new Map();
   const deleted = new Set();
-  const modified = new Map();
-
-  for (const [path, module] of delta.added) {
-    added.set(path, module);
-  }
-
-  for (const [path, module] of delta.modified) {
-    added.set(path, module);
-    modified.set(path, module);
-  }
 
   for (const path of delta.deleted) {
-    // If a dependency has been marked as deleted, it should never be included
-    // in the added group.
-    // At the same time, if a dependency has been marked both as added and
-    // deleted, it means that this is a renamed file (or that dependency
-    // has been removed from one path but added back in a different path).
-    // In this case the addition and deletion "get cancelled".
-    const markedAsAdded = added.delete(path);
-
-    if (!markedAsAdded || modified.has(path)) {
+    // If a dependency has been marked both as added and deleted, it means that
+    // this is a renamed file (or that dependency has been removed from one path
+    // but added back in a different path). In this case the addition and
+    // deletion "get cancelled".
+    if (!delta.added.has(path)) {
       deleted.add(path);
     }
+
+    delta.modified.delete(path);
+    delta.added.delete(path);
+  }
+
+  for (const path of delta.added) {
+    added.set(path, nullthrows(graph.dependencies.get(path)));
+  }
+
+  for (const path of delta.modified) {
+    added.set(path, nullthrows(graph.dependencies.get(path)));
   }
 
   return {
@@ -115,7 +113,7 @@ async function initialTraverseDependencies<T>(
 async function traverseDependenciesForSingleFile<T>(
   module: Module<T>,
   graph: Graph<T>,
-  delta: Delta<T>,
+  delta: Delta,
   options: Options<T>,
 ): Promise<void> {
   let numProcessed = 0;
@@ -144,7 +142,7 @@ async function traverseDependenciesForSingleFile<T>(
 async function processModule<T>(
   module: Module<T>,
   graph: Graph<T>,
-  delta: Delta<T>,
+  delta: Delta,
   options: Options<T>,
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
@@ -205,7 +203,7 @@ async function addDependency<T>(
   parentModule: Module<T>,
   path: string,
   graph: Graph<T>,
-  delta: Delta<T>,
+  delta: Delta,
   options: Options<T>,
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
@@ -222,7 +220,7 @@ async function addDependency<T>(
   const module = createModule(path, graph);
 
   module.inverseDependencies.add(parentModule.path);
-  delta.added.set(module.path, module);
+  delta.added.add(module.path);
 
   onDependencyAdd();
 
@@ -242,7 +240,7 @@ function removeDependency<T>(
   parentModule: Module<T>,
   absolutePath: string,
   graph: Graph<T>,
-  delta: Delta<T>,
+  delta: Delta,
 ): void {
   const module = graph.dependencies.get(absolutePath);
 
