@@ -12,7 +12,7 @@ const githubButton = (
     data-count-href="/facebook/metro/stargazers"
     data-count-api="/repos/facebook/metro#stargazers_count"
     data-count-aria-label="# stargazers on GitHub"
-    aria-label="Star this project on GitHub"
+    aria-label="Star facebook/metro on GitHub"
   >
     Star
   </a>

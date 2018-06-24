@@ -5,3 +5,8 @@
 lerna-debug.log
 npm-debug.log*
 packages/*/build/
+
+website/build/
+website/i18n/*
+website/node_modules
+website/translated_docs
