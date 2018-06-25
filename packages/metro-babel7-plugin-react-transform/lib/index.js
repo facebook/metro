@@ -24,13 +24,9 @@
 /*eslint-disable eslint-comments/no-unlimited-disable*/
 /*eslint-disable*/
 
-const find = require('lodash/find');
-
 const {addDefault} = require('@babel/helper-module-imports');
 
-function lodashFindLite(obj, func) {
-  // Lite insofar that it doesn't pass on index/collection to the callback
-  // This inlining prevents having to rely on lodash for this `some`
+function find(obj, func) {
   let value = undefined;
 
   if (!(obj instanceof Array)) {
@@ -50,7 +46,7 @@ function lodashFindLite(obj, func) {
 
 module.exports = function({types: t, template}) {
   function matchesPatterns(path, patterns) {
-    return !!lodashFindLite(patterns, pattern => {
+    return !!find(patterns, pattern => {
       return (
         t.isIdentifier(path.node, {name: pattern}) ||
         path.matchesPattern(pattern)
@@ -59,7 +55,7 @@ module.exports = function({types: t, template}) {
   }
 
   function isReactLikeClass(node) {
-    return !!lodashFindLite(node.body.body, classMember => {
+    return !!find(node.body.body, classMember => {
       return (
         t.isClassMethod(classMember) &&
         t.isIdentifier(classMember.key, {name: 'render'})
@@ -70,7 +66,7 @@ module.exports = function({types: t, template}) {
   function isReactLikeComponentObject(node) {
     return (
       t.isObjectExpression(node) &&
-      !!lodashFindLite(node.properties, objectMember => {
+      !!find(node.properties, objectMember => {
         return (
           (t.isObjectProperty(objectMember) ||
             t.isObjectMethod(objectMember)) &&
@@ -83,7 +79,7 @@ module.exports = function({types: t, template}) {
 
   // `foo({ displayName: 'NAME' });` => 'NAME'
   function getDisplayName(node) {
-    const property = lodashFindLite(
+    const property = find(
       node.arguments[0].properties,
       _node => _node.key.name === 'displayName',
     );
