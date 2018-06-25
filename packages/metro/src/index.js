@@ -61,7 +61,7 @@ type PrivateMetroOptions = {|
 import type {CustomTransformOptions} from './JSTransformer/worker';
 
 async function runMetro({
-  config,
+  config = Config.DEFAULT,
   resetCache = false,
   maxWorkers = getMaxWorkers(),
   minifierPath,
@@ -70,23 +70,20 @@ async function runMetro({
   reporter = new TerminalReporter(new Terminal(process.stdout)),
   watch = false,
 }: PrivateMetroOptions): Promise<MetroServer> {
-  const normalizedConfig = config ? Config.normalize(config) : Config.DEFAULT;
-
   const assetExts = defaults.assetExts.concat(
-    (normalizedConfig.getAssetExts && normalizedConfig.getAssetExts()) || [],
+    (config.getAssetExts && config.getAssetExts()) || [],
   );
   const sourceExts = defaults.sourceExts.concat(
-    (normalizedConfig.getSourceExts && normalizedConfig.getSourceExts()) || [],
+    (config.getSourceExts && config.getSourceExts()) || [],
   );
-  const platforms =
-    (normalizedConfig.getPlatforms && normalizedConfig.getPlatforms()) || [];
+  const platforms = (config.getPlatforms && config.getPlatforms()) || [];
 
   const providesModuleNodeModules =
-    typeof normalizedConfig.getProvidesModuleNodeModules === 'function'
-      ? normalizedConfig.getProvidesModuleNodeModules()
+    typeof config.getProvidesModuleNodeModules === 'function'
+      ? config.getProvidesModuleNodeModules()
       : defaults.providesModuleNodeModules;
 
-  const watchFolders = normalizedConfig.getWatchFolders();
+  const watchFolders = config.getWatchFolders();
 
   reporter.update({
     type: 'initialize_started',
@@ -94,41 +91,39 @@ async function runMetro({
     projectRoots: watchFolders,
   });
   const serverOptions: ServerOptions = {
-    asyncRequireModulePath: normalizedConfig.getAsyncRequireModulePath(),
-    assetExts: normalizedConfig.assetTransforms ? [] : assetExts,
-    assetRegistryPath: normalizedConfig.assetRegistryPath,
-    blacklistRE: normalizedConfig.getBlacklistRE(),
-    cacheStores: normalizedConfig.cacheStores,
-    cacheVersion: normalizedConfig.cacheVersion,
-    createModuleIdFactory: normalizedConfig.createModuleIdFactory,
-    dynamicDepsInPackages: normalizedConfig.dynamicDepsInPackages,
-    enableBabelRCLookup: normalizedConfig.getEnableBabelRCLookup(),
-    extraNodeModules: normalizedConfig.extraNodeModules,
-    getModulesRunBeforeMainModule:
-      normalizedConfig.getModulesRunBeforeMainModule,
-    getPolyfills: normalizedConfig.getPolyfills,
-    getResolverMainFields: normalizedConfig.getResolverMainFields,
-    getRunModuleStatement: normalizedConfig.getRunModuleStatement,
-    getTransformOptions: normalizedConfig.getTransformOptions,
-    hasteImplModulePath: normalizedConfig.hasteImplModulePath,
+    asyncRequireModulePath: config.getAsyncRequireModulePath(),
+    assetExts: config.assetTransforms ? [] : assetExts,
+    assetRegistryPath: config.assetRegistryPath,
+    blacklistRE: config.getBlacklistRE(),
+    cacheStores: config.cacheStores,
+    cacheVersion: config.cacheVersion,
+    createModuleIdFactory: config.createModuleIdFactory,
+    dynamicDepsInPackages: config.dynamicDepsInPackages,
+    enableBabelRCLookup: config.getEnableBabelRCLookup(),
+    extraNodeModules: config.extraNodeModules,
+    getModulesRunBeforeMainModule: config.getModulesRunBeforeMainModule,
+    getPolyfills: config.getPolyfills,
+    getResolverMainFields: config.getResolverMainFields,
+    getRunModuleStatement: config.getRunModuleStatement,
+    getTransformOptions: config.getTransformOptions,
+    hasteImplModulePath: config.hasteImplModulePath,
     maxWorkers,
     minifierPath,
     platforms: defaults.platforms.concat(platforms),
-    postMinifyProcess: normalizedConfig.postMinifyProcess,
-    postProcessBundleSourcemap: normalizedConfig.postProcessBundleSourcemap,
+    postMinifyProcess: config.postMinifyProcess,
+    postProcessBundleSourcemap: config.postProcessBundleSourcemap,
     providesModuleNodeModules,
     resetCache,
     reporter,
-    resolveRequest: normalizedConfig.resolveRequest,
-    sourceExts: normalizedConfig.assetTransforms
+    resolveRequest: config.resolveRequest,
+    sourceExts: config.assetTransforms
       ? sourceExts.concat(assetExts)
       : sourceExts,
-    transformModulePath: normalizedConfig.getTransformModulePath(),
+    transformModulePath: config.getTransformModulePath(),
     watch,
-    watchFolders: normalizedConfig.getWatchFolders(),
-    workerPath:
-      normalizedConfig.getWorkerPath && normalizedConfig.getWorkerPath(),
-    projectRoot: normalizedConfig.getProjectRoot(),
+    watchFolders: config.getWatchFolders(),
+    workerPath: config.getWorkerPath && config.getWorkerPath(),
+    projectRoot: config.getProjectRoot(),
   };
 
   return new MetroServer(serverOptions);
@@ -140,7 +135,7 @@ type CreateConnectMiddlewareOptions = {|
 |};
 
 exports.createConnectMiddleware = async function({
-  config,
+  config = Config.DEFAULT,
   ...rest
 }: CreateConnectMiddlewareOptions) {
   const metroServer = await runMetro({
@@ -149,13 +144,11 @@ exports.createConnectMiddleware = async function({
     watch: true,
   });
 
-  const normalizedConfig = config ? Config.normalize(config) : Config.DEFAULT;
-
   let enhancedMiddleware = metroServer.processRequest;
 
   // Enhance the resulting middleware using the config options
-  if (normalizedConfig.enhanceMiddleware) {
-    enhancedMiddleware = normalizedConfig.enhanceMiddleware(enhancedMiddleware);
+  if (config.enhanceMiddleware) {
+    enhancedMiddleware = config.enhanceMiddleware(enhancedMiddleware);
   }
 
   return {
