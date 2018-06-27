@@ -121,7 +121,7 @@ async function runMetro({
       : sourceExts,
     transformModulePath: config.getTransformModulePath(),
     watch,
-    watchFolders: config.getWatchFolders(),
+    watchFolders,
     workerPath: config.getWorkerPath && config.getWorkerPath(),
     projectRoot: config.getProjectRoot(),
   };
