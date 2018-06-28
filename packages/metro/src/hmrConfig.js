@@ -11,7 +11,7 @@
 
 'use strict';
 
-// imported from: babel-preset-react-native/configs/hmr
+// imported from: metro-react-native-babel-preset/configs/hmr
 
 const path = require('path');
 const hmrTransform = 'react-transform-hmr/lib/index.js';

@@ -30,7 +30,6 @@ const cacheKeyParts = [
   fs.readFileSync(__filename),
   require('babel-plugin-external-helpers/package.json').version,
   require('babel-preset-fbjs/package.json').version,
-  require('babel-preset-react-native/package.json').version,
 ];
 
 /**
@@ -65,7 +64,10 @@ const getBabelRC = (function() {
 
       // Require the babel-preset's listed in the default babel config
       babelRC.presets = babelRC.presets.map((name: string) => {
-        if (!/^(?:@babel\/|babel-)preset-/.test(name)) {
+        if (
+          !/^(?:@babel\/|babel-)preset-/.test(name) &&
+          !/^metro-/.test(name)
+        ) {
           try {
             name = require.resolve(`babel-preset-${name}`);
           } catch (error) {
