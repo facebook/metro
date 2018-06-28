@@ -10,6 +10,8 @@
 
 'use strict';
 
+const HttpError = require('./HttpError');
+
 const http = require('http');
 const https = require('https');
 const url = require('url');
@@ -26,6 +28,8 @@ const ZLIB_OPTIONS = {
 };
 
 class HttpStore<T> {
+  static HttpError = HttpError;
+
   _module: typeof http | typeof https;
   _timeout: number;
 
@@ -81,11 +85,9 @@ class HttpStore<T> {
           // Consume all the data from the response without processing it.
           res.resume();
 
-          if (res.statusCode === 404) {
-            resolve(null);
-          } else {
-            reject(new Error('HTTP error: ' + res.statusCode));
-          }
+          reject(
+            new HttpError('HTTP error: ' + res.statusCode, res.statusCode),
+          );
 
           return;
         }
