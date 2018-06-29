@@ -79,15 +79,17 @@ class HttpStore<T> {
       };
 
       const req = this._module.request(options, res => {
+        const code = res.statusCode;
         let data = '';
 
-        if (res.statusCode !== 200) {
-          // Consume all the data from the response without processing it.
+        if (code === 404) {
           res.resume();
+          resolve(null);
 
-          reject(
-            new HttpError('HTTP error: ' + res.statusCode, res.statusCode),
-          );
+          return;
+        } else if (code !== 200) {
+          res.resume();
+          reject(new HttpError('HTTP error: ' + code, code));
 
           return;
         }
@@ -137,10 +139,6 @@ class HttpStore<T> {
       const req = this._module.request(options, res => {
         res.on('error', err => {
           reject(err);
-        });
-
-        res.on('data', () => {
-          // Do nothing. It is needed so node thinks we are consuming responses.
         });
 
         res.on('end', () => {
