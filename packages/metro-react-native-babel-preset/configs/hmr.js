@@ -9,7 +9,6 @@
 'use strict';
 
 var path = require('path');
-
 var hmrTransform = 'react-transform-hmr/lib/index.js';
 var transformPath = require.resolve(hmrTransform);
 
