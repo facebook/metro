@@ -88,6 +88,8 @@ async function runMetro({
   reporter.update({
     type: 'initialize_started',
     port,
+    // FIXME: We need to change that to watchFolders. It will be a
+    // breaking since it affects custom reporter API.
     projectRoots: watchFolders,
   });
   const serverOptions: ServerOptions = {

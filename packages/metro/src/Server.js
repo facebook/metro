@@ -42,18 +42,11 @@ const {getAsset} = require('./Assets');
 const resolveSync: ResolveSync = require('resolve').sync;
 
 import type {CustomError} from './lib/formatBundlingError';
-import type {DeltaResult, Graph, Module, TransformResult} from './DeltaBundler';
+import type {DeltaResult, Graph, Module} from './DeltaBundler';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from './lib/reporting';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
-import type {BundleOptions, Options} from './shared/types.flow';
-import type {
-  GetTransformOptions,
-  PostMinifyProcess,
-  PostProcessBundleSourcemap,
-} from './Bundler';
-import type {CacheStore} from 'metro-cache';
-import type {CustomResolver} from 'metro-resolver';
+import type {BundleOptions, ServerOptions, Options} from './shared/types.flow';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
@@ -84,39 +77,6 @@ export type BuildGraphOptions = {|
 |};
 
 export type OutputGraph = Graph<>;
-
-export type ServerOptions = {
-  assetExts: Array<string>,
-  blacklistRE: void | RegExp,
-  cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
-  cacheVersion: string,
-  createModuleId: (path: string) => number,
-  enableBabelRCLookup: boolean,
-  extraNodeModules: {},
-  getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
-  getTransformOptions?: GetTransformOptions,
-  hasteImplModulePath?: string,
-  maxWorkers: number,
-  minifierPath: string,
-  platforms: Array<string>,
-  resolveRequest: ?CustomResolver,
-  polyfillModuleNames: Array<string>,
-  postMinifyProcess: PostMinifyProcess,
-  postProcessBundleSourcemap: PostProcessBundleSourcemap,
-  +projectRoot: string,
-  providesModuleNodeModules?: Array<string>,
-  reporter: Reporter,
-  resolveRequest: ?CustomResolver,
-  +getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
-  +getResolverMainFields: () => $ReadOnlyArray<string>,
-  +getRunModuleStatement: (number | string) => string,
-  silent: boolean,
-  +sourceExts: Array<string>,
-  +transformModulePath: string,
-  watch: boolean,
-  +watchFolders: $ReadOnlyArray<string>,
-  workerPath: ?string,
-};
 
 type DeltaOptions = BundleOptions & {
   deltaBundleId: ?string,
