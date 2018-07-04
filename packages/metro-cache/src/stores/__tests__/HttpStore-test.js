@@ -102,13 +102,13 @@ describe('HttpStore', () => {
 
     expect(opts.method).toEqual('GET');
 
-    callback(responseHttpError(503)); // Intentionally unterminated JSON.
+    callback(responseHttpError(503));
     jest.runAllTimers();
 
     promise.catch(err => {
       expect(err).toBeInstanceOf(HttpStore.HttpError);
       expect(err.message).toMatch(/HTTP error: 503/);
-      expect(err.statusCode).toBe(503);
+      expect(err.code).toBe(503);
       done();
     });
   });

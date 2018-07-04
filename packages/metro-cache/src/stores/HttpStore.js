@@ -11,6 +11,7 @@
 'use strict';
 
 const HttpError = require('./HttpError');
+const NetworkError = require('./NetworkError');
 
 const http = require('http');
 const https = require('https');
@@ -29,6 +30,7 @@ const ZLIB_OPTIONS = {
 
 class HttpStore<T> {
   static HttpError = HttpError;
+  static NetworkError = NetworkError;
 
   _module: typeof http | typeof https;
   _timeout: number;
@@ -116,7 +118,7 @@ class HttpStore<T> {
       });
 
       req.on('error', err => {
-        reject(err);
+        reject(new NetworkError(err.message, err.code));
       });
 
       req.end();

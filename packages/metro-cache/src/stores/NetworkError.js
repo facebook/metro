@@ -10,14 +10,14 @@
 
 'use strict';
 
-class HttpError extends Error {
-  code: number;
+class NetworkError extends Error {
+  code: string;
 
-  constructor(message: string, code: number) {
+  constructor(message: string, code: string) {
     super(message);
 
     this.code = code;
   }
 }
 
-module.exports = HttpError;
+module.exports = NetworkError;
