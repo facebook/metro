@@ -27,7 +27,7 @@ function createBabelConfig() {
     ast: false,
     babelrc: false,
     plugins: PLUGINS.map(require),
-    presets: [require.resolve('babel-preset-react-native')],
+    presets: [require.resolve('metro-react-native-babel-preset')],
     retainLines: true,
     sourceMaps: 'inline',
     sourceType: 'module',

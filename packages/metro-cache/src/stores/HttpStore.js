@@ -10,6 +10,9 @@
 
 'use strict';
 
+const HttpError = require('./HttpError');
+const NetworkError = require('./NetworkError');
+
 const http = require('http');
 const https = require('https');
 const url = require('url');
@@ -26,6 +29,9 @@ const ZLIB_OPTIONS = {
 };
 
 class HttpStore<T> {
+  static HttpError = HttpError;
+  static NetworkError = NetworkError;
+
   _module: typeof http | typeof https;
   _timeout: number;
 
@@ -75,17 +81,17 @@ class HttpStore<T> {
       };
 
       const req = this._module.request(options, res => {
+        const code = res.statusCode;
         let data = '';
 
-        if (res.statusCode !== 200) {
-          // Consume all the data from the response without processing it.
+        if (code === 404) {
           res.resume();
+          resolve(null);
 
-          if (res.statusCode === 404) {
-            resolve(null);
-          } else {
-            reject(new Error('HTTP error: ' + res.statusCode));
-          }
+          return;
+        } else if (code !== 200) {
+          res.resume();
+          reject(new HttpError('HTTP error: ' + code, code));
 
           return;
         }
@@ -112,7 +118,7 @@ class HttpStore<T> {
       });
 
       req.on('error', err => {
-        reject(err);
+        reject(new NetworkError(err.message, err.code));
       });
 
       req.end();
@@ -135,10 +141,6 @@ class HttpStore<T> {
       const req = this._module.request(options, res => {
         res.on('error', err => {
           reject(err);
-        });
-
-        res.on('data', () => {
-          // Do nothing. It is needed so node thinks we are consuming responses.
         });
 
         res.on('end', () => {

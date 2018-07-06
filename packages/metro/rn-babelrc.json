@@ -1,4 +1,4 @@
 {
-  "presets": [ "react-native" ],
+  "presets": [ "metro-react-native-babel-preset" ],
   "plugins": []
 }

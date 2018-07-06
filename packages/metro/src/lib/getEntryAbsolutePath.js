@@ -13,7 +13,7 @@
 const getAbsolutePath = require('./getAbsolutePath');
 const path = require('path');
 
-import type {ServerOptions} from '../Server';
+import type {ServerOptions} from '../shared/types.flow';
 
 function getEntryAbsolutePath(
   options: ServerOptions,

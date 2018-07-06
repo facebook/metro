@@ -95,32 +95,20 @@ describe('HttpStore', () => {
     expect(await promise).toEqual({foo: 42});
   });
 
-  it('resolves with "null" when HTTP 404 is returned', async () => {
+  it('rejects when an HTTP different from 200 is returned', done => {
     const store = new HttpStore({endpoint: 'http://example.com'});
     const promise = store.get(Buffer.from('key'));
     const [opts, callback] = require('http').request.mock.calls[0];
 
     expect(opts.method).toEqual('GET');
 
-    callback(responseHttpError(404));
-    jest.runAllTimers();
-
-    expect(await promise).toEqual(null);
-  });
-
-  it('rejects when an HTTP different of 200/404 is returned', done => {
-    const store = new HttpStore({endpoint: 'http://example.com'});
-    const promise = store.get(Buffer.from('key'));
-    const [opts, callback] = require('http').request.mock.calls[0];
-
-    expect(opts.method).toEqual('GET');
-
-    callback(responseHttpError(503)); // Intentionally unterminated JSON.
+    callback(responseHttpError(503));
     jest.runAllTimers();
 
     promise.catch(err => {
-      expect(err).toBeInstanceOf(Error);
+      expect(err).toBeInstanceOf(HttpStore.HttpError);
       expect(err.message).toMatch(/HTTP error: 503/);
+      expect(err.code).toBe(503);
       done();
     });
   });

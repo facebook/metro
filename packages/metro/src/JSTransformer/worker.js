@@ -277,16 +277,31 @@ async function transformCode(
   });
 
   if (options.minify) {
-    traverse(wrappedAst, {
-      Program(path) {
-        const body = path.get('body.0.expression.arguments.0.body');
+    let body;
 
-        reserved.forEach((shortName, i) => {
-          if (minify[i]) {
-            body.scope.rename(shortName, body.scope.generateUid(shortName));
-            body.scope.rename(minify[i], shortName);
-          }
-        });
+    traverse(wrappedAst, {
+      Program: {
+        enter(path, state) {
+          body = path.get('body.0.expression.arguments.0.body');
+        },
+
+        exit(path, state) {
+          reserved.forEach((shortName, i) => {
+            if (minify[i] && shortName) {
+              body.scope.rename(minify[i], shortName);
+            }
+          });
+        },
+      },
+
+      Scope(path, state) {
+        if (path.node !== body.node) {
+          reserved.forEach((shortName, i) => {
+            if (minify[i] && shortName) {
+              path.scope.rename(shortName, path.scope.generateUid(shortName));
+            }
+          });
+        }
       },
     });
   }

@@ -13,7 +13,6 @@
 const blacklist = require('./blacklist');
 const debug = require('debug');
 const invariant = require('fbjs/lib/invariant');
-const makeHMRConfig = require('./hmrConfig');
 
 const {Logger} = require('metro-core');
 const {fromRawMappings, toSegmentTuple} = require('metro-source-map');
@@ -26,7 +25,6 @@ exports.createBlacklist = blacklist;
 exports.sourceMaps = {fromRawMappings, compactMapping: toSegmentTuple};
 exports.createServer = createServer;
 exports.Logger = Logger;
-exports.makeHMRConfig = makeHMRConfig;
 
 export type ConfigT = MetroConfig;
 type Options = {|

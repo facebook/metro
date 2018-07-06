@@ -26,7 +26,7 @@ module.exports = {
     'no-unused-vars': 'error',
     'no-var': 'off',
     'prefer-arrow-callback': 'off',
-    'prefer-const': ['warn', {destructuring: 'all'}],
+    'prefer-const': 'off', // TODO T31052897: ['warn', {destructuring: 'all'}],
     'prettier/prettier': ['error', 'fb', '@format'],
     'sort-keys': 'off',
   },
