@@ -161,6 +161,13 @@ export type ConfigT = {
   getUseGlobalHotkey: () => boolean,
 
   /**
+   * Override the function that executes the minifier.
+   * This path defaults to metro-minify-uglify
+   * Should refer to a module that implements the MetroMinifier interface
+   */
+  minifierPath?: string,
+
+  /**
    * An optional function that can modify the code and source map of bundle
    * after the minifaction took place. (Function applied per module).
    */

@@ -70,6 +70,9 @@ async function runMetro({
   reporter = new TerminalReporter(new Terminal(process.stdout)),
   watch = false,
 }: PrivateMetroOptions): Promise<MetroServer> {
+  if (minifierPath == null) {
+    minifierPath = config.minifierPath;
+  }
   const assetExts = defaults.assetExts.concat(
     (config.getAssetExts && config.getAssetExts()) || [],
   );
