@@ -97,10 +97,7 @@ class Package {
     if (!name.startsWith('.') && !path.isAbsolute(name)) {
       const replacement = replacements[name];
       // support exclude with "someDependency": false
-      return replacement === false
-        ? false
-        : /* $FlowFixMe: type of replacements is not being validated */
-          replacement || name;
+      return replacement === false ? false : replacement || name;
     }
 
     let relPath =
@@ -126,11 +123,7 @@ class Package {
     }
 
     if (redirect) {
-      return path.join(
-        this._root,
-        /* $FlowFixMe: `getReplacements` doesn't validate the return value. */
-        redirect,
-      );
+      return path.join(this._root, redirect);
     }
 
     return name;

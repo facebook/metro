@@ -65,7 +65,6 @@ module.exports = () => ({
         await promisify(server.close).call(server);
       }
 
-      // $FlowFixMe: Flow + Promises don't work consistently https://fb.facebook.com/groups/flow/permalink/1772334656148475/
       const config = await MetroApi.loadMetroConfig(argv.config);
 
       if (argv.projectRoots) {
