@@ -57,6 +57,5 @@ function asBuffer(x, encoding): Buffer {
   if (typeof x !== 'string') {
     return x;
   }
-  // remove `Buffer.from` calls when RN drops support for Node 4
-  return Buffer.from ? Buffer.from(x, encoding) : Buffer.from(x, encoding);
+  return Buffer.from(x, encoding);
 }
