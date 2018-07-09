@@ -2,7 +2,7 @@
   "private": true,
   "devDependencies": {
     "babel-core": "^6.23.1",
-    "babel-eslint": "8.2.1",
+    "babel-eslint": "9.0.0-beta.2",
     "babel-jest": "23.2.0",
     "babel-plugin-syntax-trailing-function-commas": "^6.20.0",
     "babel-plugin-transform-async-to-generator": "^6.24.1",
