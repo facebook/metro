@@ -105,8 +105,7 @@ function writeModules(modules, modulesDir, encoding) {
 }
 
 function writeMagicFlagFile(outputDir) {
-  /* global Buffer: true */
-  const buffer = new Buffer(4);
+  const buffer = Buffer.alloc(4);
   buffer.writeUInt32LE(MAGIC_UNBUNDLE_NUMBER, 0);
   return writeFile(path.join(outputDir, MAGIC_UNBUNDLE_FILENAME), buffer);
 }

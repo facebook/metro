@@ -32,9 +32,7 @@ module.exports = function(
   const hash = crypto.createHash('sha1');
   hash.update(buffer);
   const digest = hash.digest('buffer');
-  const signature = Buffer.alloc
-    ? Buffer.alloc(digest.length + 1)
-    : new Buffer(digest.length + 1);
+  const signature = Buffer.alloc(digest.length + 1);
   digest.copy(signature);
   signature.writeUInt8(
     constantFor(tryAsciiPromotion(buffer, encoding)),
@@ -59,6 +57,6 @@ function asBuffer(x, encoding): Buffer {
   if (typeof x !== 'string') {
     return x;
   }
-  // remove `new Buffer` calls when RN drops support for Node 4
-  return Buffer.from ? Buffer.from(x, encoding) : new Buffer(x, encoding);
+  // remove `Buffer.from` calls when RN drops support for Node 4
+  return Buffer.from ? Buffer.from(x, encoding) : Buffer.from(x, encoding);
 }

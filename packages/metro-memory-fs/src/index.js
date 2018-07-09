@@ -382,14 +382,14 @@ class MemoryFs {
     const fd = this._open(pathStr(filePath), flag || 'r');
     const chunks = [];
     try {
-      const buffer = new Buffer(1024);
+      const buffer = Buffer.alloc(1024);
       let bytesRead;
       do {
         bytesRead = this.readSync(fd, buffer, 0, buffer.length, null);
         if (bytesRead === 0) {
           continue;
         }
-        const chunk = new Buffer(bytesRead);
+        const chunk = Buffer.alloc(bytesRead);
         buffer.copy(chunk, 0, 0, bytesRead);
         chunks.push(chunk);
       } while (bytesRead > 0);
@@ -638,12 +638,12 @@ class MemoryFs {
     filePath: FilePath,
     options?:
       | {
-          autoClose?: ?boolean,
-          encoding?: ?Encoding,
+          autoClose?: boolean,
+          encoding?: Encoding,
           fd?: ?number,
-          flags?: ?string,
-          mode?: ?number,
-          start?: ?number,
+          flags?: string,
+          mode?: number,
+          start?: number,
         }
       | Encoding,
   ) => {
@@ -740,7 +740,7 @@ class MemoryFs {
         throw makeError('ENOENT', filePath, 'no such file or directory');
       }
       node = {
-        content: new Buffer(0),
+        content: Buffer.alloc(0),
         gid: getgid(),
         id: this._getId(),
         mode,
@@ -759,7 +759,7 @@ class MemoryFs {
         throw makeError('EISDIR', filePath, 'cannot read/write to a directory');
       }
       if (truncate) {
-        node.content = new Buffer(0);
+        node.content = Buffer.alloc(0);
       }
       nodePath = dirPath.concat([[basename, node]]);
     }
@@ -939,7 +939,7 @@ class MemoryFs {
     }
     const {node} = desc;
     if (node.content.length < position + length) {
-      const newBuffer = new Buffer(position + length);
+      const newBuffer = Buffer.alloc(position + length);
       node.content.copy(newBuffer, 0, 0, node.content.length);
       node.content = newBuffer;
     }
@@ -1101,10 +1101,10 @@ class ReadFileSteam extends stream.Readable {
     this.path = options.filePath;
     this._readSync = options.readSync;
     this._fd = fd;
-    this._buffer = new Buffer(1024);
+    this._buffer = Buffer.alloc(1024);
     const {start, end} = options;
     if (start != null) {
-      this._readSync(fd, new Buffer(0), 0, 0, start);
+      this._readSync(fd, Buffer.alloc(0), 0, 0, start);
     }
     if (end != null) {
       this._positions = {current: start || 0, last: end + 1};
@@ -1153,7 +1153,7 @@ class WriteFileStream extends stream.Writable {
     fd: number,
     filePath: FilePath,
     writeSync: WriteSync,
-    start: ?number,
+    start?: number,
   }) {
     super();
     this.path = opts.filePath;
@@ -1161,7 +1161,7 @@ class WriteFileStream extends stream.Writable {
     this._fd = opts.fd;
     this._writeSync = opts.writeSync;
     if (opts.start != null) {
-      this._writeSync(opts.fd, new Buffer(0), 0, 0, opts.start);
+      this._writeSync(opts.fd, Buffer.alloc(0), 0, 0, opts.start);
     }
   }
 
