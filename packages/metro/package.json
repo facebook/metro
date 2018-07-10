@@ -102,5 +102,6 @@
     "babel-cli": "^6.26.0",
     "metro-memory-fs": "0.42.1",
     "sinon": "^2.2.0"
-  }
+  },
+  "license": "MIT"
 }
