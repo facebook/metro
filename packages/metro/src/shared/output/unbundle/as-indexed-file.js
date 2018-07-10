@@ -84,9 +84,9 @@ function saveAsIndexedFile(
 
 /* global Buffer: true */
 
-const fileHeader = new Buffer(4);
+const fileHeader = Buffer.alloc(4);
 fileHeader.writeUInt32LE(MAGIC_UNBUNDLE_FILE_HEADER, 0);
-const nullByteBuffer: Buffer = new Buffer(1).fill(0);
+const nullByteBuffer: Buffer = Buffer.alloc(1).fill(0);
 
 function writeBuffers(stream, buffers: Array<Buffer>) {
   buffers.forEach(buffer => stream.write(buffer));
@@ -98,7 +98,7 @@ function writeBuffers(stream, buffers: Array<Buffer>) {
 }
 
 function nullTerminatedBuffer(contents, encoding) {
-  return Buffer.concat([new Buffer(contents, encoding), nullByteBuffer]);
+  return Buffer.concat([Buffer.from(contents, encoding), nullByteBuffer]);
 }
 
 function moduleToBuffer(id, code, encoding) {
@@ -127,7 +127,7 @@ function buildModuleTable(startupCode, moduleBuffers, moduleGroups) {
   const moduleIds = Array.from(moduleGroups.modulesById.keys());
   const maxId = moduleIds.reduce((max, id) => Math.max(max, id));
   const numEntries = maxId + 1;
-  const table: Buffer = new Buffer(entryOffset(numEntries)).fill(0);
+  const table: Buffer = Buffer.alloc(entryOffset(numEntries)).fill(0);
 
   // num_entries
   table.writeUInt32LE(numEntries, 0);
