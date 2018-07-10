@@ -17,5 +17,6 @@
   "devDependencies": {
     "babel-core": "^6.24.1",
     "babel-generator": "^6.26.0"
-  }
+  },
+  "license": "MIT"
 }

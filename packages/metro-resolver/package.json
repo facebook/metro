@@ -13,5 +13,6 @@
   },
   "dependencies": {
     "absolute-path": "^0.0.0"
-  }
+  },
+  "license": "MIT"
 }

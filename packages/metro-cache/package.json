@@ -19,5 +19,6 @@
   },
   "devDependencies": {
     "metro-memory-fs": "0.40.1"
-  }
+  },
+  "license": "MIT"
 }
