@@ -153,7 +153,10 @@ exports.createConnectMiddleware = async function({
 
   // Enhance the resulting middleware using the config options
   if (config.enhanceMiddleware) {
-    enhancedMiddleware = config.enhanceMiddleware(enhancedMiddleware);
+    enhancedMiddleware = config.enhanceMiddleware(
+      enhancedMiddleware,
+      metroServer,
+    );
   }
 
   return {

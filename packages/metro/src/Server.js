@@ -1077,6 +1077,10 @@ class Server {
     return query[opt] === 'true' || query[opt] === '1';
   }
 
+  getGraphs(): Map<string, Promise<GraphInfo>> {
+    return this._graphs;
+  }
+
   getNewBuildID(): string {
     return (this._nextBundleBuildID++).toString(36);
   }
