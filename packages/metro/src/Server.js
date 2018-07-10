@@ -39,7 +39,6 @@ const url = require('url');
 const getEntryAbsolutePath = require('./lib/getEntryAbsolutePath');
 
 const {getAsset} = require('./Assets');
-const resolveSync: ResolveSync = require('resolve').sync;
 
 import type {CustomError} from './lib/formatBundlingError';
 import type {DeltaResult, Graph, Module} from './DeltaBundler';
@@ -55,8 +54,6 @@ import type {CustomTransformOptions} from './JSTransformer/worker';
 const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
-
-type ResolveSync = (path: string, opts: ?{baseDir?: string}) => string;
 
 type GraphInfo = {|
   graph: Graph<>,
@@ -150,7 +147,7 @@ class Server {
       minifierPath:
         options.minifierPath == null
           ? defaults.DEFAULT_METRO_MINIFIER_PATH
-          : resolveSync(options.minifierPath, {basedir: process.cwd()}),
+          : options.minifierPath,
       platforms: options.platforms || defaults.platforms,
       polyfillModuleNames: options.polyfillModuleNames || [],
       postMinifyProcess: options.postMinifyProcess,
@@ -1075,6 +1072,10 @@ class Server {
     }
 
     return query[opt] === 'true' || query[opt] === '1';
+  }
+
+  getGraphs(): Map<string, Promise<GraphInfo>> {
+    return this._graphs;
   }
 
   getNewBuildID(): string {

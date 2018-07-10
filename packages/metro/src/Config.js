@@ -23,6 +23,7 @@ import type {
 } from './Bundler';
 import type {TransformResult} from './DeltaBundler';
 import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
+import type Server from './Server';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
 import type {CustomResolver} from 'metro-resolver';
@@ -50,7 +51,7 @@ export type ConfigT = {
    * Called with the Metro middleware in parameter; can be used to wrap this
    * middleware inside another one
    */
-  enhanceMiddleware: Middleware => Middleware,
+  enhanceMiddleware: (Middleware, Server) => Middleware,
 
   extraNodeModules: {[id: string]: string},
 

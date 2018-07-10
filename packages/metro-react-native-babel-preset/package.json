@@ -1,8 +1,8 @@
 {
   "name": "metro-react-native-babel-preset",
-  "version": "0.40.1",
+  "version": "0.42.1",
   "description": "Babel preset for React Native applications",
-  "main": "index.js",
+  "main": "src/index.js",
   "repository": {
     "type": "git",
     "url": "git@github.com:facebook/metro.git"
@@ -44,6 +44,6 @@
     "@babel/plugin-transform-template-literals": "7.0.0-beta.47",
     "@babel/plugin-transform-unicode-regex": "7.0.0-beta.47",
     "@babel/template": "7.0.0-beta.47",
-    "metro-babel7-plugin-react-transform": "0.40.1"
+    "metro-babel7-plugin-react-transform": "0.42.1"
   }
 }
