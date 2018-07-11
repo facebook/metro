@@ -57,7 +57,10 @@ async function calcTransformerOptions(
     async path => {
       const {dependencies} = await deltaBundler.buildGraph([path], {
         resolve: await getResolveDependencyFn(bundler, options.platform),
-        transform: await getTransformFn([path], bundler, deltaBundler, options),
+        transform: await getTransformFn([path], bundler, deltaBundler, {
+          ...options,
+          minify: false,
+        }),
         onProgress: null,
       });
 
