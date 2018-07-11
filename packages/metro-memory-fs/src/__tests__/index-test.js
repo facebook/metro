@@ -86,8 +86,8 @@ describe('posix support', () => {
   });
 
   it('can write then read a file as buffer', () => {
-    fs.writeFileSync('/foo.txt', new Buffer([1, 2, 3, 4]));
-    expect(fs.readFileSync('/foo.txt')).toEqual(new Buffer([1, 2, 3, 4]));
+    fs.writeFileSync('/foo.txt', Buffer.from([1, 2, 3, 4]));
+    expect(fs.readFileSync('/foo.txt')).toEqual(Buffer.from([1, 2, 3, 4]));
   });
 
   it('can write a file with a relative path', () => {
@@ -232,7 +232,7 @@ describe('posix support', () => {
 
     it('reads a file as buffer', done => {
       const st = fs.createReadStream('/foo.txt');
-      let buffer = new Buffer(0);
+      let buffer = Buffer.alloc(0);
       st.on('data', chunk => {
         buffer = Buffer.concat([buffer, chunk]);
       });
@@ -613,13 +613,13 @@ describe('posix support', () => {
   });
 
   it('throws when trying to write to an inexistent file descriptor', () => {
-    expectFsError('EBADF', () => fs.writeSync(42, new Buffer([1])));
+    expectFsError('EBADF', () => fs.writeSync(42, Buffer.from([1])));
   });
 
   it('throws when trying to write to a read-only file descriptor', () => {
     fs.writeFileSync('/foo.txt', 'test');
     const fd = fs.openSync('/foo.txt', 'r');
-    expectFsError('EBADF', () => fs.writeSync(fd, new Buffer([1])));
+    expectFsError('EBADF', () => fs.writeSync(fd, Buffer.from([1])));
   });
 
   it('throws when trying to open too many files', () => {

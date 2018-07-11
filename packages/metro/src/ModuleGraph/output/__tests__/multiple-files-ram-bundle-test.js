@@ -46,7 +46,7 @@ beforeAll(() => {
 });
 
 it('does not start the bundle file with the magic number (not a binary one)', () => {
-  expect(new Buffer(code).readUInt32LE(0)).not.toBe(0xfb0bd1e5);
+  expect(Buffer.from(code).readUInt32LE(0)).not.toBe(0xfb0bd1e5);
 });
 
 it('contains the startup code on the main file', () => {

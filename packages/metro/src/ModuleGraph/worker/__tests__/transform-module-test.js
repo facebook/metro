@@ -271,7 +271,7 @@ describe('transforming JS modules:', () => {
 
     it('throws on empty images', () => {
       expect(() =>
-        transformModule(new Buffer(0), {...options(), filename: 'foo.png'}),
+        transformModule(Buffer.alloc(0), {...options(), filename: 'foo.png'}),
       ).toThrowErrorMatchingSnapshot();
     });
   });
@@ -309,5 +309,5 @@ function findColumnAndLine(text, string) {
 }
 
 function toBuffer(str) {
-  return new Buffer(str, 'utf8');
+  return Buffer.from(str, 'utf8');
 }

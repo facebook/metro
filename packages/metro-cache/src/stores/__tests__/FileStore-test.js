@@ -28,7 +28,7 @@ describe('FileStore', () => {
 
   it('sets and writes into the cache', () => {
     const fileStore = new FileStore({root: '/root'});
-    const cache = new Buffer([0xfa, 0xce, 0xb0, 0x0c]);
+    const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
 
     fileStore.set(cache, {foo: 42});
     expect(fileStore.get(cache)).toEqual({foo: 42});
@@ -36,7 +36,7 @@ describe('FileStore', () => {
 
   it('returns null when reading a non-existing file', () => {
     const fileStore = new FileStore({root: '/root'});
-    const cache = new Buffer([0xfa, 0xce, 0xb0, 0x0c]);
+    const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
 
     expect(fileStore.get(cache)).toEqual(null);
   });

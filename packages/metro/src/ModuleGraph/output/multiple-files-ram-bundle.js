@@ -33,7 +33,7 @@ function asMultipleFilesRamBundle({
   const [startup, deferred] = partition(modules, preloadedModules);
   const startupModules = Array.from(concat(startup, requireCalls));
   const deferredModules = deferred.map(m => toModuleTransport(m, idsForPath));
-  const magicFileContents = new Buffer(4);
+  const magicFileContents = Buffer.alloc(4);
 
   // Just concatenate all startup modules, one after the other.
   const code = startupModules.map(m => getModuleCode(m, idForPath)).join('\n');

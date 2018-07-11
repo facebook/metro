@@ -35,7 +35,7 @@ class B64Builder {
   hasSegment: boolean;
 
   constructor() {
-    this.buffer = new Buffer(ONE_MEG);
+    this.buffer = Buffer.alloc(ONE_MEG);
     this.pos = 0;
     this.hasSegment = false;
   }
@@ -99,7 +99,7 @@ class B64Builder {
 
   _realloc() {
     const {buffer} = this;
-    this.buffer = new Buffer(buffer.length * 2);
+    this.buffer = Buffer.alloc(buffer.length * 2);
     buffer.copy(this.buffer);
   }
 }

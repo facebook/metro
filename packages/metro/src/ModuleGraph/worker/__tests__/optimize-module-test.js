@@ -33,7 +33,7 @@ describe('optimizing JS modules', () => {
     platform: 'android',
     postMinifyProcess: x => x,
   };
-  const originalCode = new Buffer(
+  const originalCode = Buffer.from(
     `if (Platform.OS !== 'android') {
       require('arbitrary-dev');
     } else {
@@ -47,7 +47,7 @@ describe('optimizing JS modules', () => {
     const trOpts = {asyncRequireModulePath, filename, sourceExts, transformer};
     const result = transformModule(originalCode, trOpts);
     invariant(result.type === 'code', 'result must be code');
-    transformResult = new Buffer(
+    transformResult = Buffer.from(
       JSON.stringify({type: 'code', details: result.details}),
       'utf8',
     );
@@ -143,7 +143,7 @@ describe('optimizing JS modules', () => {
   it('passes through non-code data unmodified', () => {
     const data = {type: 'asset', details: {arbitrary: 'data'}};
     expect(
-      optimizeModule(new Buffer(JSON.stringify(data), 'utf8'), {
+      optimizeModule(Buffer.from(JSON.stringify(data), 'utf8'), {
         dev: true,
         platform: '',
         minifierPath: defaults.DEFAULT_METRO_MINIFIER_PATH,
