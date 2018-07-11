@@ -40,6 +40,10 @@ const siteConfig = {
     secondaryColor: '#f96e6e',
     prismColor: 'rgba(153, 66, 79, 0.03)',
   },
+  cleanUrl: true,
+  scripts: [
+    'https://buttons.github.io/buttons.js',
+  ],
 };
 
 module.exports = siteConfig;
