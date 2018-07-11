@@ -59,7 +59,10 @@ const nullishCoalescingOperator = [
   require('@babel/plugin-proposal-nullish-coalescing-operator'),
   {loose: true},
 ];
-const optionalChaining = [require('@babel/plugin-proposal-optional-chaining')];
+const optionalChaining = [
+  require('@babel/plugin-proposal-optional-chaining'),
+  {loose: true},
+];
 const reactDisplayName = [
   require('@babel/plugin-transform-react-display-name'),
 ];
