@@ -55,18 +55,6 @@ jobs:
       - save-cache: *save-cache
       - run: yarn run jest
 
-  test-node-6:
-    working_directory: ~/metro
-    docker:
-      - image: circleci/node:6
-    steps:
-      - checkout
-      - restore-cache: *restore-cache
-      - run: sudo npm i -g yarn@^1.2.1
-      - run: yarn --no-progress
-      - save-cache: *save-cache
-      - run: yarn run jest
-
   publish-to-npm:
     working_directory: ~/metro
     docker:
