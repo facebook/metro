@@ -94,6 +94,7 @@ class DependencyGraph extends EventEmitter {
     useWatchman?: boolean = true,
   ): JestHasteMap {
     return new JestHasteMap({
+      computeDependencies: false,
       computeSha1: true,
       extensions: opts.sourceExts.concat(opts.assetExts),
       forceNodeFilesystemAPI: !useWatchman,
