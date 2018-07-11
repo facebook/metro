@@ -36,6 +36,7 @@ type BabylonOptions = {
     | 'functionBind'
     | 'functionSent'
     | 'jsx'
+    | 'nullishCoalescingOperator'
     | 'objectRestSpread'
     | 'optionalChaining'
     | 'optionalCatchBinding',

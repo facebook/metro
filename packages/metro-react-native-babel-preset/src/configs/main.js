@@ -55,6 +55,10 @@ const exponentiationOperator = [
 ];
 const objectAssign = [require('@babel/plugin-transform-object-assign')];
 const objectRestSpread = [require('@babel/plugin-proposal-object-rest-spread')];
+const nullishCoalescingOperator = [
+  require('@babel/plugin-proposal-nullish-coalescing-operator'),
+  {loose: true},
+];
 const optionalChaining = [require('@babel/plugin-proposal-optional-chaining')];
 const reactDisplayName = [
   require('@babel/plugin-transform-react-display-name'),
@@ -104,6 +108,9 @@ const getPreset = (src, options) => {
   }
   if (isNull || src.indexOf('?.') !== -1) {
     extraPlugins.push(optionalChaining);
+  }
+  if (isNull || src.indexOf('??') !== -1) {
+    extraPlugins.push(nullishCoalescingOperator);
   }
 
   if (options && options.dev) {
