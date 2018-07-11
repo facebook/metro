@@ -2,22 +2,23 @@
 <rss version="2.0">
     <channel>
         <title>Metro Blog</title>
-        <link>https://facebook.github.io/blog</link>
+        <link>https://facebook.github.io/metro/blog</link>
         <description>The best place to stay up-to-date with the latest Metro news and events.</description>
         <lastBuildDate>Wed, 22 Nov 2017 06:00:00 GMT</lastBuildDate>
         <docs>http://blogs.law.harvard.edu/tech/rss</docs>
         <generator>Feed for Node.js</generator>
         <image>
             <title>Metro Blog</title>
-            <url>https://facebook.github.ioimg/metro.svg</url>
-            <link>https://facebook.github.io/blog</link>
+            <url>https://facebook.github.io/metro/img/metro.svg</url>
+            <link>https://facebook.github.io/metro/blog</link>
         </image>
         <item>
             <title><![CDATA[Train Approaching]]></title>
-            <link>https://facebook.github.io/blog/2017/11/22/train-approaching.html</link>
-            <guid>https://facebook.github.io/blog/2017/11/22/train-approaching.html</guid>
+            <link>https://facebook.github.io/metro/blog/2017/11/22/train-approaching.html</link>
+            <guid>https://facebook.github.io/metro/blog/2017/11/22/train-approaching.html</guid>
             <pubDate>Wed, 22 Nov 2017 06:00:00 GMT</pubDate>
-            <description><![CDATA[The Metro website is live.]]></description>
+            <description><![CDATA[<p>The Metro website is live.</p>
+]]></description>
         </item>
     </channel>
 </rss>
