@@ -37,7 +37,8 @@ type BabylonOptions = {
     | 'functionSent'
     | 'jsx'
     | 'objectRestSpread'
-    | 'optionalChaining',
+    | 'optionalChaining'
+    | 'optionalCatchBinding',
   >,
 };
 

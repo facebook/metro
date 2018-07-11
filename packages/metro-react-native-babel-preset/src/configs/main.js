@@ -10,6 +10,7 @@
 'use strict';
 
 const defaultPlugins = [
+  [require('@babel/plugin-proposal-optional-catch-binding')],
   [require('@babel/plugin-transform-block-scoping')],
   // the flow strip types plugin must go BEFORE class properties!
   // there'll be a test case that fails if you don't.
