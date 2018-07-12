@@ -20,7 +20,7 @@ const generate = require('@babel/generator').default;
 const traverse = require('@babel/traverse').default;
 
 const {fn} = require('../../test-helpers');
-const {parse} = require('babylon');
+const {parse} = require('@babel/parser');
 const {SourceMapConsumer} = require('source-map');
 
 import type {TransformVariants} from '../../types.flow';

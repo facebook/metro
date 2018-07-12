@@ -11,7 +11,7 @@
 
 'use strict';
 
-const babylon = require('babylon');
+const babylon = require('@babel/parser');
 const optimizeDependencies = require('../optimizeDependencies');
 
 const {InvalidRequireCallError} = optimizeDependencies;

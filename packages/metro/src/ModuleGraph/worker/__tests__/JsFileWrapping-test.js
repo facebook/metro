@@ -13,7 +13,7 @@
 
 const JsFileWrapping = require('../JsFileWrapping');
 
-const babylon = require('babylon');
+const babylon = require('@babel/parser');
 
 const {codeFromAst, comparableCode} = require('../../test-helpers');
 

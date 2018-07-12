@@ -265,15 +265,18 @@ describe('constant expressions', () => {
     expect(fold('arbitrary.js', code)).toEqual('var x=2;{z();}');
   });
 
-  it('does not mess up -0', () => {
+  it('does not mess up with negative numbers', () => {
     const code = `
       var plusZero = +0;
       var zero = 0;
       var minusZero = -0;
+      var plusOne = +1;
+      var one = 1;
+      var minusOne = -1;
     `;
 
     expect(fold('arbitrary.js', code)).toEqual(
-      'var plusZero=0;var zero=0;var minusZero=-0;',
+      'var plusZero=0;var zero=0;var minusZero=-0;var plusOne=1;var one=1;var minusOne=-1;',
     );
   });
 

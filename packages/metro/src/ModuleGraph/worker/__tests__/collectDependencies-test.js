@@ -11,7 +11,7 @@
 
 'use strict';
 
-const babylon = require('babylon');
+const babylon = require('@babel/parser');
 const collectDependencies = require('../collectDependencies');
 
 const {codeFromAst, comparableCode} = require('../../test-helpers');
