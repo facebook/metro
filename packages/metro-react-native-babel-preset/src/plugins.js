@@ -30,6 +30,7 @@ module.exports = {
   '@babel/plugin-transform-react-jsx': require('@babel/plugin-transform-react-jsx'),
   '@babel/plugin-transform-react-jsx-source': require('@babel/plugin-transform-react-jsx-source'),
   '@babel/plugin-transform-regenerator': require('@babel/plugin-transform-regenerator'),
+  '@babel/plugin-transform-runtime': require('@babel/plugin-transform-runtime'),
   '@babel/plugin-transform-spread': require('@babel/plugin-transform-spread'),
   '@babel/plugin-transform-sticky-regex': require('@babel/plugin-transform-sticky-regex'),
   '@babel/plugin-transform-unicode-regex': require('@babel/plugin-transform-unicode-regex'),

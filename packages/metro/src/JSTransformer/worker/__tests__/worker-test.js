@@ -143,21 +143,60 @@ describe('code transformation worker:', () => {
         '__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {',
         "  'use strict';",
         '',
-        '  var _c = babelHelpers.interopRequireDefault(_$$_REQUIRE(_dependencyMap[0], "./c"));',
+        '  var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0], "@babel/runtime/helpers/interopRequireDefault");',
         '',
-        '  _$$_REQUIRE(_dependencyMap[1], "./a");',
+        '  var _c = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[1], "./c"));',
+        '',
+        '  _$$_REQUIRE(_dependencyMap[2], "./a");',
         '',
         '  arbitrary(code);',
         '',
-        '  var b = _$$_REQUIRE(_dependencyMap[2], "b");',
+        '  var b = _$$_REQUIRE(_dependencyMap[3], "b");',
         '});',
       ].join('\n'),
     );
     expect(result.output[0].data.map).toMatchSnapshot();
     expect(result.dependencies).toEqual([
+      {
+        data: {isAsync: false},
+        name: '@babel/runtime/helpers/interopRequireDefault',
+      },
       {data: {isAsync: false}, name: './c'},
       {data: {isAsync: false}, name: './a'},
       {data: {isAsync: false}, name: 'b'},
+    ]);
+  });
+
+  it('transforms an es module with regenerator', async () => {
+    const result = await transform(
+      '/root/local/file.js',
+      'local/file.js',
+      'export async function test() {}',
+      {
+        assetExts: [],
+        assetPlugins: [],
+        assetRegistryPath: '',
+        asyncRequireModulePath: 'asyncRequire',
+        isScript: false,
+        minifierPath: 'minifyModulePath',
+        babelTransformerPath,
+        transformOptions: {dev: true},
+        dynamicDepsInPackages: 'reject',
+      },
+    );
+
+    expect(result.output[0].type).toBe('js/module');
+    expect(result.output[0].data.code).toMatchSnapshot();
+    expect(result.output[0].data.map).toHaveLength(13);
+    expect(result.dependencies).toEqual([
+      {
+        data: {isAsync: false},
+        name: '@babel/runtime/helpers/interopRequireDefault',
+      },
+      {
+        data: {isAsync: false},
+        name: '@babel/runtime/regenerator',
+      },
     ]);
   });
 

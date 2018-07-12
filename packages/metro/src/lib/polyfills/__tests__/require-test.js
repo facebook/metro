@@ -14,10 +14,6 @@ const fs = require('fs');
 
 const {transformSync} = require('@babel/core');
 
-// Include the external-helpers plugin to be able to detect if they're
-// needed when transforming the requirejs implementation.
-const PLUGINS = ['@babel/plugin-external-helpers'];
-
 function createModule(
   moduleSystem,
   moduleId,
@@ -34,7 +30,6 @@ describe('require', () => {
     return transformSync(rawCode, {
       ast: false,
       babelrc: false,
-      plugins: PLUGINS.map(require),
       presets: [require.resolve('metro-react-native-babel-preset')],
       retainLines: true,
       sourceMaps: 'inline',
@@ -56,9 +51,9 @@ describe('require', () => {
   });
 
   it('does not need any babel helper logic', () => {
-    // Super-simple check to validate that no babel helpers are used.
-    // This check will need to be updated if https://fburl.com/6z0y2kf8 changes.
-    expect(moduleSystemCode.includes('babelHelpers')).toBe(false);
+    // The react native preset uses @babel/transform-runtime so helpers will be
+    // imported from @babel/runtime.
+    expect(moduleSystemCode.includes('@babel/runtime')).toBe(false);
   });
 
   it('works with plain bundles', () => {
