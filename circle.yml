@@ -90,7 +90,6 @@ workflows:
   build-and-deploy:
     jobs:
       - run-js-checks
-      - test-node-6
       - test-node-8
       - test-node-9
       - test-and-deploy-website
