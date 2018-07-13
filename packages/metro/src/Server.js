@@ -35,6 +35,7 @@ const parseCustomTransformOptions = require('./lib/parseCustomTransformOptions')
 const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
 const path = require('path');
 const symbolicate = require('./Server/symbolicate/symbolicate');
+const toLocalPath = require('./node-haste/lib/toLocalPath');
 const transformHelpers = require('./lib/transformHelpers');
 const url = require('url');
 
@@ -271,7 +272,9 @@ class Server {
         createModuleId: this._opts.createModuleId,
         getRunModuleStatement: this._opts.getRunModuleStatement,
         dev: options.dev,
-        runBeforeMainModule: options.runBeforeMainModule,
+        runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
+          toLocalPath(this._opts.projectRoots, entryPoint),
+        ),
         runModule: options.runModule,
         sourceMapUrl: options.sourceMapUrl,
       }),
@@ -323,7 +326,9 @@ class Server {
         getRunModuleStatement: this._opts.getRunModuleStatement,
         getTransformOptions: this._opts.getTransformOptions,
         platform: options.platform,
-        runBeforeMainModule: options.runBeforeMainModule,
+        runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
+          toLocalPath(this._opts.projectRoots, entryPoint),
+        ),
         runModule: options.runModule,
         sourceMapUrl: options.sourceMapUrl,
       },
@@ -713,7 +718,9 @@ class Server {
             createModuleId: this._opts.createModuleId,
             dev: options.dev,
             getRunModuleStatement: this._opts.getRunModuleStatement,
-            runBeforeMainModule: options.runBeforeMainModule,
+            runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
+              toLocalPath(this._opts.projectRoots, options.entryFile),
+            ),
             runModule: options.runModule,
             sourceMapUrl: options.sourceMapUrl,
           },
@@ -777,7 +784,9 @@ class Server {
           createModuleId: this._opts.createModuleId,
           getRunModuleStatement: this._opts.getRunModuleStatement,
           dev: options.dev,
-          runBeforeMainModule: options.runBeforeMainModule,
+          runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
+            toLocalPath(this._opts.projectRoots, options.entryFile),
+          ),
           runModule: options.runModule,
           sourceMapUrl: options.sourceMapUrl,
         }),
@@ -1091,7 +1100,6 @@ class Server {
       minify,
       excludeSource,
       hot: true,
-      runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(entryFile),
       runModule: this._getBoolOptionFromQuery(urlObj.query, 'runModule', true),
       inlineSourceMap: includeSource,
       platform,
@@ -1145,7 +1153,6 @@ class Server {
     entryModuleOnly: false,
     excludeSource: false,
     inlineSourceMap: false,
-    runBeforeMainModule: [],
     runModule: true,
     sourceMapUrl: null,
   };

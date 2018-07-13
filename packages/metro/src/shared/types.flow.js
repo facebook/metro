@@ -51,7 +51,6 @@ export type BundleOptions = {
   minify: boolean,
   onProgress: ?(doneCont: number, totalCount: number) => mixed,
   +platform: ?string,
-  +runBeforeMainModule: Array<string>,
   +runModule: boolean,
   sourceMapUrl: ?string,
   createModuleIdFactory?: () => (path: string) => number,
