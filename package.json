@@ -30,7 +30,7 @@
     "glob": "^7.1.1",
     "istanbul-api": "^1.1.0",
     "istanbul-lib-coverage": "^1.0.0",
-    "jest": "23.4.0",
+    "jest": "23.4.1",
     "lerna": "2.4.0",
     "micromatch": "^2.3.11",
     "mkdirp": "^0.5.1",
