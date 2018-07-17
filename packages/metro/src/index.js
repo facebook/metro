@@ -311,50 +311,46 @@ exports.runBuild = async ({
     config,
   });
 
-  const requestOptions: RequestOptions = {
-    dev,
-    entryFile: entry,
-    inlineSourceMap: sourceMap && !!sourceMapUrl,
-    minify,
-    platform,
-    sourceMapUrl: sourceMap === false ? undefined : sourceMapUrl,
-    createModuleIdFactory: config ? config.createModuleIdFactory : undefined,
-    onProgress,
-  };
-
-  if (onBegin) {
-    onBegin();
-  }
-
-  let metroBundle;
-
   try {
-    metroBundle = await output.build(metroServer, requestOptions);
-  } catch (error) {
+    const requestOptions: RequestOptions = {
+      dev,
+      entryFile: entry,
+      inlineSourceMap: sourceMap && !!sourceMapUrl,
+      minify,
+      platform,
+      sourceMapUrl: sourceMap === false ? undefined : sourceMapUrl,
+      createModuleIdFactory: config ? config.createModuleIdFactory : undefined,
+      onProgress,
+    };
+
+    if (onBegin) {
+      onBegin();
+    }
+
+    const metroBundle = await output.build(metroServer, requestOptions);
+
+    if (onComplete) {
+      onComplete();
+    }
+
+    const bundleOutput = out.replace(/(\.js)?$/, '.js');
+    const sourcemapOutput =
+      sourceMap === false ? undefined : out.replace(/(\.js)?$/, '.map');
+
+    const outputOptions: OutputOptions = {
+      bundleOutput,
+      sourcemapOutput,
+      dev,
+      platform,
+    };
+
+    // eslint-disable-next-line no-console
+    await output.save(metroBundle, outputOptions, console.log);
+
+    return metroBundle;
+  } finally {
     await metroServer.end();
-    throw error;
   }
-
-  if (onComplete) {
-    onComplete();
-  }
-
-  const bundleOutput = out.replace(/(\.js)?$/, '.js');
-  const sourcemapOutput =
-    sourceMap === false ? undefined : out.replace(/(\.js)?$/, '.map');
-
-  const outputOptions: OutputOptions = {
-    bundleOutput,
-    sourcemapOutput,
-    dev,
-    platform,
-  };
-
-  // eslint-disable-next-line no-console
-  await output.save(metroBundle, outputOptions, console.log);
-  await metroServer.end();
-
-  return metroBundle;
 };
 
 exports.buildGraph = async function({
