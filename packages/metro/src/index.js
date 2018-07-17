@@ -354,7 +354,7 @@ exports.runBuild = async ({
   await output.save(metroBundle, outputOptions, console.log);
   await metroServer.end();
 
-  return {metroServer, metroBundle};
+  return metroBundle;
 };
 
 exports.buildGraph = async function({
