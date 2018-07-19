@@ -22,6 +22,7 @@ import type {
   PostProcessBundleSourcemap,
 } from './Bundler';
 import type {TransformResult} from './DeltaBundler';
+import type {Module, TransformVariants} from './ModuleGraph/types.flow.js';
 import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
 import type Server from './Server';
 import type {IncomingMessage, ServerResponse} from 'http';
@@ -204,6 +205,13 @@ export type ConfigT = {
    * An optional custom module ID factory creator used by the bundler.
    */
   createModuleIdFactory?: () => (path: string) => number,
+
+  postProcessModules: (
+    modules: $ReadOnlyArray<Module>,
+    entryFiles: Array<string>,
+  ) => $ReadOnlyArray<Module>,
+
+  transformVariants: () => TransformVariants,
 };
 
 const DEFAULT = ({
@@ -243,6 +251,12 @@ const DEFAULT = ({
   getResolverMainFields: () => ['browser', 'main'],
   getModulesRunBeforeMainModule: () => [],
   getWorkerPath: () => null,
+  postProcessModules: modules => modules,
+  transformVariants() {
+    return {
+      default: {},
+    };
+  },
 }: ConfigT);
 
 const normalize = (initialConfig: ConfigT, defaults?: ConfigT): ConfigT => {
