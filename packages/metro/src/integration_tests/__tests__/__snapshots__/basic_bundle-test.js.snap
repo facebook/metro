@@ -81,10 +81,10 @@ exports[`basic_bundle bundles package with polyfills 1`] = `
 
     if (!module && nativeRequire) {
       var _unpackModuleId = unpackModuleId(moduleId),
-          _segmentId = _unpackModuleId.segmentId,
-          _localId = _unpackModuleId.localId;
+          segmentId = _unpackModuleId.segmentId,
+          localId = _unpackModuleId.localId;
 
-      nativeRequire(_localId, _segmentId);
+      nativeRequire(localId, segmentId);
       module = modules[moduleId];
     }
 
@@ -276,10 +276,10 @@ exports[`basic_bundle bundles package without polyfills 1`] = `
 
     if (!module && nativeRequire) {
       var _unpackModuleId = unpackModuleId(moduleId),
-          _segmentId = _unpackModuleId.segmentId,
-          _localId = _unpackModuleId.localId;
+          segmentId = _unpackModuleId.segmentId,
+          localId = _unpackModuleId.localId;
 
-      nativeRequire(_localId, _segmentId);
+      nativeRequire(localId, segmentId);
       module = modules[moduleId];
     }
 
