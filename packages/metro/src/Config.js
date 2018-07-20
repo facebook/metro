@@ -13,7 +13,10 @@ const blacklist = require('./blacklist');
 const os = require('os');
 const path = require('path');
 
-const {providesModuleNodeModules} = require('./defaults');
+const {
+  providesModuleNodeModules,
+  DEFAULT_METRO_MINIFIER_PATH,
+} = require('./defaults');
 const {FileStore} = require('metro-cache');
 
 import type {
@@ -163,11 +166,10 @@ export type ConfigT = {
   getUseGlobalHotkey: () => boolean,
 
   /**
-   * Override the function that executes the minifier.
-   * This path defaults to metro-minify-uglify
+   * Set the function that executes the minifier.
    * Should refer to a module that implements the MetroMinifier interface
    */
-  minifierPath?: string,
+  minifierPath: string,
 
   /**
    * An optional function that can modify the code and source map of bundle
@@ -245,6 +247,7 @@ const DEFAULT = ({
   getTransformOptions: async () => ({}),
   getPolyfills: () => [],
   getUseGlobalHotkey: () => true,
+  minifierPath: DEFAULT_METRO_MINIFIER_PATH,
   postMinifyProcess: x => x,
   postProcessBundleSourcemap: ({code, map, outFileName}) => ({code, map}),
   resolveRequest: null,
