@@ -21,7 +21,11 @@ const sourceMap = require('source-map');
 const {transformSync} = require('@babel/core');
 
 import type {PostMinifyProcess} from '../../Bundler';
-import type {TransformedSourceFile, TransformResult} from '../types.flow';
+import type {
+  TransformedCodeFile,
+  TransformedSourceFile,
+  TransformResult,
+} from '../types.flow';
 import type {BabelSourceMap} from '@babel/core';
 import type {TransformResult as BabelTransformResult} from '@babel/core';
 import type {MetroSourceMap} from 'metro-source-map';
@@ -44,7 +48,13 @@ function optimizeModule(
     return data;
   }
 
-  const {details} = data;
+  return optimizeModuleFromObject(data.details, optimizationOptions);
+}
+
+function optimizeModuleFromObject(
+  details: TransformedCodeFile,
+  optimizationOptions: OptimizationOptions,
+): TransformedSourceFile {
   const {file, transformed} = details;
   const result = {...details, transformed: {}};
   const {postMinifyProcess} = optimizationOptions;
@@ -154,3 +164,4 @@ function mergeSourceMaps(
 }
 
 module.exports = optimizeModule;
+module.exports.optimizeModuleFromObject = optimizeModuleFromObject;
