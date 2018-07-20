@@ -21,9 +21,9 @@ const fs = require('fs');
 const generate = require('@babel/generator').default;
 const getMinifier = require('../lib/getMinifier');
 const inlinePlugin = require('./worker/inline-plugin');
+const normalizePseudoglobals = require('./worker/normalizePseudoglobals');
 const optimizeDependencies = require('../ModuleGraph/worker/optimizeDependencies');
 const path = require('path');
-const traverse = require('@babel/traverse').default;
 
 const {
   fromRawMappings,
@@ -73,7 +73,7 @@ export type TransformOptions = {
 };
 
 export type MinifyOptions = {
-  reserved?: Array<string>,
+  reserved?: $ReadOnlyArray<string>,
 };
 
 export type WorkerOptions = {|
@@ -264,52 +264,11 @@ async function transformCode(
     }
   }
 
-  const minify = [
-    'global',
-    wrappedRequireName,
-    'module',
-    'exports',
-    dependencyMapName,
-  ];
-
-  const reserved = minify.map(name => {
-    return (name.match(/[a-z]/i) || [''])[0].toLowerCase();
-  });
-
-  if (options.minify) {
-    let body;
-
-    traverse(wrappedAst, {
-      Program: {
-        enter(path, state) {
-          body = path.get('body.0.expression.arguments.0.body');
-        },
-
-        exit(path, state) {
-          reserved.forEach((shortName, i) => {
-            if (minify[i] && shortName) {
-              body.scope.rename(minify[i], shortName);
-            }
-          });
-        },
-      },
-
-      Scope(path, state) {
-        if (path.node !== body.node) {
-          reserved.forEach((shortName, i) => {
-            if (minify[i] && shortName) {
-              path.scope.rename(shortName, path.scope.generateUid(shortName));
-            }
-          });
-        }
-      },
-    });
-  }
+  const reserved = options.minify ? normalizePseudoglobals(wrappedAst) : [];
 
   const result = generate(
     wrappedAst,
     {
-      code: false,
       comments: false,
       compact: false,
       filename: localPath,

@@ -8,6 +8,7 @@
  * @format
  * @flow
  */
+
 'use strict';
 
 const constantFoldingPlugin = require('../constant-folding-plugin');
