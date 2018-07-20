@@ -10,11 +10,11 @@
 
 'use strict';
 
-const MAGIC_UNBUNDLE_NUMBER = require('../../shared/output/unbundle/magic-number');
+const MAGIC_UNBUNDLE_NUMBER = require('../../shared/output/RamBundle/magic-number');
 const MAGIC_UNBUNDLE_FILENAME = 'UNBUNDLE';
 const JS_MODULES = 'js-modules';
 
-const buildSourceMapWithMetaData = require('../../shared/output/unbundle/build-unbundle-sourcemap-with-metadata.js');
+const buildSourcemapWithMetadata = require('../../shared/output/RamBundle/buildSourcemapWithMetadata.js');
 const path = require('path');
 
 const {concat, getModuleCode, partition, toModuleTransport} = require('./util');
@@ -55,7 +55,7 @@ function asMultipleFilesRamBundle({
   );
 
   // Create the source map (with no module groups, as they are ignored).
-  const map = buildSourceMapWithMetaData({
+  const map = buildSourcemapWithMetadata({
     fixWrapperOffset: false,
     lazyModules: deferredModules,
     moduleGroups: null,

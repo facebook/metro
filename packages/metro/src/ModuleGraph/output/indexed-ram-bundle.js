@@ -10,14 +10,14 @@
 
 'use strict';
 
-const buildSourceMapWithMetaData = require('../../shared/output/unbundle/build-unbundle-sourcemap-with-metadata.js');
+const buildSourcemapWithMetadata = require('../../shared/output/RamBundle/buildSourcemapWithMetadata.js');
 const invariant = require('fbjs/lib/invariant');
 
 const {createRamBundleGroups} = require('../../Bundler/util');
 const {
   buildTableAndContents,
   createModuleGroups,
-} = require('../../shared/output/unbundle/as-indexed-file');
+} = require('../../shared/output/RamBundle/as-indexed-file');
 const {concat, getModuleCode, partition, toModuleTransport} = require('./util');
 
 import type {OutputFn} from '../types.flow';
@@ -58,7 +58,7 @@ function asIndexedRamBundle({
 
   return {
     code: Buffer.concat(tableAndContents),
-    map: buildSourceMapWithMetaData({
+    map: buildSourcemapWithMetadata({
       fixWrapperOffset: false,
       lazyModules: deferredModules,
       moduleGroups,

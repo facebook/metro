@@ -10,42 +10,6 @@
 
 'use strict';
 
-const Server = require('../../Server');
-
-const asAssets = require('./unbundle/as-assets');
-const asIndexedFile = require('./unbundle/as-indexed-file').save;
-
-import type {OutputOptions, RequestOptions} from '../types.flow';
-import type {RamBundleInfo} from '../../DeltaBundler/Serializers/getRamBundleInfo';
-
-async function buildBundle(
-  packagerClient: Server,
-  requestOptions: RequestOptions,
-): Promise<RamBundleInfo> {
-  const options = {
-    ...Server.DEFAULT_BUNDLE_OPTIONS,
-    ...requestOptions,
-    bundleType: 'ram',
-  };
-  return await packagerClient.getRamBundleInfo(options);
-}
-
-function saveUnbundle(
-  bundle: RamBundleInfo,
-  options: OutputOptions,
-  log: (x: string) => void,
-): Promise<mixed> {
-  // we fork here depending on the platform:
-  // while android is pretty good at loading individual assets, ios has a large
-  // overhead when reading hundreds pf assets from disk
-  /* $FlowFixMe(>=0.68.0 site=react_native_fb) This comment suppresses an error
-   * found when Flow v0.68 was deployed. To see the error delete this comment
-   * and run Flow. */
-  return options.platform === 'android' && !options.indexedUnbundle
-    ? asAssets(bundle, options, log)
-    : asIndexedFile(bundle, options, log);
-}
-
-exports.build = buildBundle;
-exports.save = saveUnbundle;
-exports.formatName = 'bundle';
+/* This is for retro-compatibility of React Native with older versions of
+ * Metro. Use the `RamBundle` module directly. */
+module.exports = require('./RamBundle');

@@ -9,9 +9,9 @@
  */
 'use strict';
 
-const MAGIC_UNBUNDLE_NUMBER = require('./magic-number');
+const MAGIC_RAM_BUNDLE_NUMBER = require('./magic-number');
 
-const buildSourceMapWithMetaData = require('./build-unbundle-sourcemap-with-metadata');
+const buildSourcemapWithMetadata = require('./buildSourcemapWithMetadata');
 const mkdirp = require('mkdirp');
 const path = require('path');
 const relativizeSourceMapInline = require('../../../lib/relativizeSourceMap');
@@ -24,7 +24,7 @@ import type {RamBundleInfo} from '../../../DeltaBundler/Serializers/getRamBundle
 import type {OutputOptions} from '../../types.flow';
 
 // must not start with a dot, as that won't go into the apk
-const MAGIC_UNBUNDLE_FILENAME = 'UNBUNDLE';
+const MAGIC_RAM_BUNDLE_FILENAME = 'UNBUNDLE';
 const MODULES_DIR = 'js-modules';
 
 /**
@@ -65,7 +65,7 @@ function saveAsAssets(
   writeUnbundle.then(() => log('Done writing unbundle output'));
 
   if (sourcemapOutput) {
-    const sourceMap = buildSourceMapWithMetaData({
+    const sourceMap = buildSourcemapWithMetadata({
       fixWrapperOffset: true,
       lazyModules: lazyModules.concat(),
       moduleGroups: null,
@@ -106,8 +106,8 @@ function writeModules(modules, modulesDir, encoding) {
 
 function writeMagicFlagFile(outputDir) {
   const buffer = Buffer.alloc(4);
-  buffer.writeUInt32LE(MAGIC_UNBUNDLE_NUMBER, 0);
-  return writeFile(path.join(outputDir, MAGIC_UNBUNDLE_FILENAME), buffer);
+  buffer.writeUInt32LE(MAGIC_RAM_BUNDLE_NUMBER, 0);
+  return writeFile(path.join(outputDir, MAGIC_RAM_BUNDLE_FILENAME), buffer);
 }
 
 module.exports = saveAsAssets;
