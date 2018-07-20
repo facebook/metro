@@ -69,6 +69,7 @@ if (__DEV__) {
     [key: string]: number,
     __proto__: null,
   } = Object.create(null);
+  var initializingModuleIds: Array<number> = [];
 }
 
 function define(
@@ -146,6 +147,23 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev) {
 
   //$FlowFixMe: at this point we know that moduleId is a number
   const moduleIdReallyIsNumber: number = moduleId;
+  if (__DEV__) {
+    const initializingIndex = initializingModuleIds.indexOf(
+      moduleIdReallyIsNumber,
+    );
+    if (initializingIndex !== -1) {
+      const cycle = initializingModuleIds
+        .slice(initializingIndex)
+        .map(id => modules[id].verboseName);
+      // We want to show A -> B -> A:
+      cycle.push(cycle[0]);
+      console.warn(
+        `Require cycle: ${cycle.join(' -> ')}\n\n` +
+          'Require cycles are allowed, but can result in uninitialized values. ' +
+          'Consider refactoring to remove the need for a cycle.',
+      );
+    }
+  }
   const module = modules[moduleIdReallyIsNumber];
   return module && module.isInitialized
     ? module.exports
@@ -222,6 +240,9 @@ function loadModuleImplementation(moduleId, module) {
   module.isInitialized = true;
   const exports = (module.exports = {});
   const {factory, dependencyMap} = module;
+  if (__DEV__) {
+    initializingModuleIds.push(moduleId);
+  }
   try {
     if (PRINT_REQUIRE_PATHS) {
       console.log(`require file path ${module.path || 'unknown'}`); // eslint-disable-line no-console
@@ -259,6 +280,14 @@ function loadModuleImplementation(moduleId, module) {
     module.isInitialized = false;
     module.exports = undefined;
     throw e;
+  } finally {
+    if (__DEV__) {
+      if (initializingModuleIds.pop() !== moduleId) {
+        throw new Error(
+          'initializingModuleIds is corrupt; something is terribly wrong',
+        );
+      }
+    }
   }
 }
 
