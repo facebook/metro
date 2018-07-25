@@ -107,6 +107,8 @@ class Server {
 
   constructor(config: ConfigT) {
     this._config = config;
+    // TODO(ives): Add config as a CLI param instead
+    this._config.watch = true;
     if (this._config.resetCache) {
       this._config.cacheStores.forEach(store => store.clear());
       this._config.reporter.update({type: 'transform_cache_reset'});
