@@ -50,7 +50,12 @@ type YargArguments = {
 };
 
 const explorer = cosmiconfig('metro', {
-  searchPlaces: ['metro-config.js', 'metro-config.json', 'package.json'],
+  searchPlaces: [
+    'metro-config.js',
+    'metro-config.json',
+    'package.json',
+    'rn-cli.config.js',
+  ],
 
   loaders: {
     '.json': cosmiconfig.loadJson,
