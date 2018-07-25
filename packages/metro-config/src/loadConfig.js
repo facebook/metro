@@ -13,7 +13,7 @@
 const cosmiconfig = require('cosmiconfig');
 const getDefaultConfig = require('./defaults');
 
-const {dirname, join, resolve} = require('path');
+const {dirname, resolve} = require('path');
 
 import type {
   ConfigT,

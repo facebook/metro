@@ -17,6 +17,8 @@ jest
 
 const Metro = require('../..');
 const path = require('path');
+const {getDefaultValues} = require('metro-config/src/defaults');
+const {mergeConfig} = require('metro-config');
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 30 * 1000;
 
@@ -91,52 +93,70 @@ describe('basic_bundle', () => {
   }
 
   it('bundles package with polyfills', async () => {
-    const bundleWithPolyfills = await Metro.build(
-      {
-        assetRegistryPath: ASSET_REGISTRY_PATH,
-        cacheStores: [],
-        cacheVersion: '1.0',
+    const opts = await getDefaultValues('/');
+
+    const baseOpts = mergeConfig(opts, {
+      server: {
         dynamicDepsInPackages: 'reject',
-        getModulesRunBeforeMainModule: () => ['InitializeCore'],
-        getPolyfills: () => [polyfill1, polyfill2],
+      },
+      serializer: {
         getRunModuleStatement,
-        transformModulePath: require.resolve('../../reactNativeTransformer'),
-        projectRoot: INPUT_PATH,
-        nonPersistent: true,
+        getPolyfills: () => [polyfill1, polyfill2],
+        getModulesRunBeforeMainModule: () => ['InitializeCore'],
+      },
+      transformer: {
+        assetRegistryPath: ASSET_REGISTRY_PATH,
         enableBabelRCLookup: false, // dont use metro's own babelrc!
-        watchFolders: [INPUT_PATH, POLYFILLS_PATH],
       },
-      {
-        dev: false,
-        entryFile: path.join(INPUT_PATH, 'TestBundle.js'),
-        platform: 'ios',
-      },
-    );
+      cacheStores: [],
+      cacheVersion: '1.0',
+      transformModulePath: require.resolve('../../reactNativeTransformer'),
+      projectRoot: INPUT_PATH,
+      watchFolders: [INPUT_PATH, POLYFILLS_PATH],
+      reporter: {update: () => {}},
+    });
+
+    const buildOpts = {
+      dev: false,
+      entryFile: path.join(INPUT_PATH, 'TestBundle.js'),
+      platform: 'ios',
+    };
+
+    const bundleWithPolyfills = await Metro.build(baseOpts, buildOpts);
     verifyResultCode(bundleWithPolyfills.code);
   });
 
   it('bundles package without polyfills', async () => {
-    const bundleWithoutPolyfills = await Metro.build(
-      {
-        assetRegistryPath: ASSET_REGISTRY_PATH,
-        cacheStores: [],
-        cacheVersion: '1.0',
+    const opts = await getDefaultValues('/');
+
+    const baseOpts = mergeConfig(opts, {
+      server: {
         dynamicDepsInPackages: 'reject',
-        getModulesRunBeforeMainModule: () => ['InitializeCore'],
-        getPolyfills: () => [],
+      },
+      serializer: {
         getRunModuleStatement,
-        projectRoot: INPUT_PATH,
-        transformModulePath: require.resolve('../../reactNativeTransformer'),
-        nonPersistent: true,
+        getPolyfills: () => [],
+        getModulesRunBeforeMainModule: () => ['InitializeCore'],
+      },
+      transformer: {
+        assetRegistryPath: ASSET_REGISTRY_PATH,
         enableBabelRCLookup: false, // dont use metro's own babelrc!
-        watchFolders: [INPUT_PATH, POLYFILLS_PATH],
       },
-      {
-        dev: false,
-        entryFile: path.join(INPUT_PATH, 'TestBundle.js'),
-        platform: 'ios',
-      },
-    );
+      cacheStores: [],
+      cacheVersion: '1.0',
+      transformModulePath: require.resolve('../../reactNativeTransformer'),
+      projectRoot: INPUT_PATH,
+      watchFolders: [INPUT_PATH, POLYFILLS_PATH],
+      reporter: {update: () => {}},
+    });
+
+    const buildOpts = {
+      dev: false,
+      entryFile: path.join(INPUT_PATH, 'TestBundle.js'),
+      platform: 'ios',
+    };
+
+    const bundleWithoutPolyfills = await Metro.build(baseOpts, buildOpts);
     verifyResultCode(bundleWithoutPolyfills.code);
   });
 });

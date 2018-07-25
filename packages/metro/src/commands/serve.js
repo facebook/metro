@@ -13,6 +13,7 @@
 const MetroApi = require('../index');
 
 const {watchFile, makeAsyncCommand} = require('../cli-utils');
+const {loadConfig, resolveConfig} = require('metro-config');
 const {promisify} = require('util');
 
 import typeof Yargs from 'yargs';
@@ -65,24 +66,17 @@ module.exports = () => ({
         await promisify(server.close).call(server);
       }
 
-      const config = await MetroApi.loadMetroConfig(argv.config);
+      const config = await loadConfig(argv);
 
-      if (argv.projectRoots) {
-        config.getProjectRoots = () => argv.projectRoots;
-      }
-
-      server = await MetroApi.runServer({
-        ...argv,
-        config,
-      });
+      server = await MetroApi.runServer(config, argv);
 
       restarting = false;
     }
 
-    const metroConfigLocation = await MetroApi.findMetroConfig(argv.config);
+    const foundConfig = await resolveConfig(argv.config, argv.cwd);
 
-    if (metroConfigLocation) {
-      await watchFile(metroConfigLocation, restart);
+    if (foundConfig) {
+      await watchFile(foundConfig.filepath, restart);
     } else {
       await restart();
     }

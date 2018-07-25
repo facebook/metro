@@ -10,18 +10,14 @@
 
 'use strict';
 
-const defaults = require('../defaults');
+const defaults = require('metro-config/src/defaults/defaults');
 const getPreludeCode = require('./getPreludeCode');
 const transformHelpers = require('./transformHelpers');
 
 import type Bundler from '../Bundler';
 import type DeltaBundler, {Module} from '../DeltaBundler';
 import type {CustomTransformOptions} from '../JSTransformer/worker';
-
-type Options = {
-  getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
-  polyfillModuleNames: Array<string>,
-};
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 type BundleOptions = {
   customTransformOptions: CustomTransformOptions,
@@ -32,18 +28,18 @@ type BundleOptions = {
 };
 
 async function getPrependedScripts(
-  options: Options,
+  config: ConfigT,
   bundleOptions: BundleOptions,
   bundler: Bundler,
   deltaBundler: DeltaBundler<>,
 ): Promise<$ReadOnlyArray<Module<>>> {
   // Get all the polyfills from the relevant option params (the
   // `getPolyfills()` method and the `polyfillModuleNames` variable).
-  const polyfillModuleNames = options
+  const polyfillModuleNames = config.serializer
     .getPolyfills({
       platform: bundleOptions.platform,
     })
-    .concat(options.polyfillModuleNames);
+    .concat(config.serializer.polyfillModuleNames);
 
   const buildOptions = {
     assetPlugins: [],

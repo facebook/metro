@@ -13,16 +13,13 @@
 const getAbsolutePath = require('./getAbsolutePath');
 const path = require('path');
 
-import type {ServerOptions} from '../shared/types.flow';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
-function getEntryAbsolutePath(
-  options: ServerOptions,
-  entryFile: string,
-): string {
-  if (options.projectRoot) {
-    return path.resolve(options.projectRoot, entryFile);
+function getEntryAbsolutePath(config: ConfigT, entryFile: string): string {
+  if (config.projectRoot) {
+    return path.resolve(config.projectRoot, entryFile);
   }
-  return getAbsolutePath(entryFile, options.watchFolders);
+  return getAbsolutePath(entryFile, config.watchFolders);
 }
 
 module.exports = getEntryAbsolutePath;

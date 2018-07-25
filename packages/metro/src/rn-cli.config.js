@@ -11,7 +11,7 @@
  */
 'use strict';
 
-const blacklist = require('./blacklist');
+const blacklist = require('metro-config/src/defaults/blacklist');
 const path = require('path');
 
 module.exports = {

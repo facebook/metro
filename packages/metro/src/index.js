@@ -10,50 +10,43 @@
 
 'use strict';
 
-const Config = require('./Config');
 const MetroHmrServer = require('./HmrServer');
 const MetroServer = require('./Server');
 
 const attachWebsocketServer = require('./lib/attachWebsocketServer');
-const defaults = require('./defaults');
-const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const makeBuildCommand = require('./commands/build');
 const makeServeCommand = require('./commands/serve');
 const outputBundle = require('./shared/output/bundle');
-const path = require('path');
 
 const {readFile} = require('fs-extra');
-const {convertNewToOld} = require('metro-config/src/convertConfig');
+const {loadConfig} = require('metro-config');
 
-import type {ConfigT} from './Config';
 import type {Graph} from './DeltaBundler';
 import type {CustomTransformOptions} from './JSTransformer/worker';
 import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
 import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
-import type {ConfigT as NewConfigT} from 'metro-config/src/configTypes.flow';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import typeof Yargs from 'yargs';
 
-export type {ConfigT} from './Config';
-
-async function runMetro(config: NewConfigT): Promise<MetroServer> {
-  const {serverOptions, extraOptions} = convertNewToOld(config);
-
+async function runMetro(config: ConfigT): Promise<MetroServer> {
   config.reporter.update({
     type: 'initialize_started',
-    port: extraOptions.port,
+    port: config.server.port,
     // FIXME: We need to change that to watchFolders. It will be a
     // breaking since it affects custom reporter API.
-    projectRoots: serverOptions.watchFolders,
+    projectRoots: config.watchFolders,
   });
 
-  return new MetroServer(serverOptions);
+  return new MetroServer(config);
 }
-exports.runMetro = runMetro;
 
-exports.createConnectMiddleware = async function(config: NewConfigT) {
+exports.runMetro = runMetro;
+exports.loadConfig = loadConfig;
+
+exports.createConnectMiddleware = async function(config: ConfigT) {
   const metroServer = await runMetro(config);
 
   let enhancedMiddleware = metroServer.processRequest;
@@ -83,7 +76,6 @@ exports.createConnectMiddleware = async function(config: NewConfigT) {
 };
 
 type RunServerOptions = {|
-  config: NewConfigT,
   host?: string,
   onReady?: (server: HttpServer | HttpsServer) => void,
   secure?: boolean,
@@ -92,15 +84,17 @@ type RunServerOptions = {|
   hmrEnabled?: boolean,
 |};
 
-exports.runServer = async ({
-  host,
-  onReady,
-  secure = false,
-  secureKey,
-  secureCert,
-  hmrEnabled = false,
-  config,
-}: RunServerOptions) => {
+exports.runServer = async (
+  config: ConfigT,
+  {
+    host,
+    onReady,
+    secure = false,
+    secureKey,
+    secureCert,
+    hmrEnabled = false,
+  }: RunServerOptions,
+) => {
   // Lazy require
   const connect = require('connect');
 
@@ -153,7 +147,6 @@ exports.runServer = async ({
 };
 
 type BuildGraphOptions = {|
-  config: NewConfigT,
   entries: $ReadOnlyArray<string>,
   customTransformOptions?: CustomTransformOptions,
   dev?: boolean,
@@ -164,7 +157,6 @@ type BuildGraphOptions = {|
 |};
 
 type RunBuildOptions = {|
-  config: NewConfigT,
   entry: string,
   dev?: boolean,
   out: string,
@@ -188,20 +180,22 @@ type RunBuildOptions = {|
   sourceMapUrl?: string,
 |};
 
-exports.runBuild = async ({
-  config,
-  dev = false,
-  entry,
-  onBegin,
-  onComplete,
-  onProgress,
-  minify = true,
-  output = outputBundle,
-  out,
-  platform = 'web',
-  sourceMap = false,
-  sourceMapUrl,
-}: RunBuildOptions) => {
+exports.runBuild = async (
+  config: ConfigT,
+  {
+    dev = false,
+    entry,
+    onBegin,
+    onComplete,
+    onProgress,
+    minify = true,
+    output = outputBundle,
+    out,
+    platform = 'web',
+    sourceMap = false,
+    sourceMapUrl,
+  }: RunBuildOptions,
+) => {
   const metroServer = await runMetro(config);
 
   try {
@@ -246,16 +240,18 @@ exports.runBuild = async ({
   }
 };
 
-exports.buildGraph = async function({
-  config,
-  customTransformOptions = Object.create(null),
-  dev = false,
-  entries,
-  minify = false,
-  onProgress,
-  platform = 'web',
-  type = 'module',
-}: BuildGraphOptions): Promise<Graph<>> {
+exports.buildGraph = async function(
+  config: ConfigT,
+  {
+    customTransformOptions = Object.create(null),
+    dev = false,
+    entries,
+    minify = false,
+    onProgress,
+    platform = 'web',
+    type = 'module',
+  }: BuildGraphOptions,
+): Promise<Graph<>> {
   const metroServer = await runMetro(config);
 
   try {
@@ -271,60 +267,6 @@ exports.buildGraph = async function({
   } finally {
     await metroServer.end();
   }
-};
-
-type MetroConfigSearchOptions = {|
-  cwd?: string,
-  basename?: string,
-  strict?: boolean,
-|};
-
-const METRO_CONFIG_FILENAME = 'metro.config.js';
-
-exports.findMetroConfig = function(
-  filename: ?string,
-  {
-    cwd = process.cwd(),
-    basename = METRO_CONFIG_FILENAME,
-    strict = false,
-  }: MetroConfigSearchOptions = {},
-): ?string {
-  if (filename) {
-    return path.resolve(cwd, filename);
-  } else {
-    let previous;
-    let current = cwd;
-
-    do {
-      const filename = path.join(current, basename);
-
-      if (fs.existsSync(filename)) {
-        return filename;
-      }
-
-      previous = current;
-      current = path.dirname(current);
-    } while (previous !== current);
-
-    if (strict) {
-      throw new Error('Expected to find a Metro config file, found none');
-    } else {
-      return null;
-    }
-  }
-};
-
-exports.loadMetroConfig = function(
-  filename: ?string,
-  // $FlowFixMe TODO T26072405
-  searchOptions: MetroConfigSearchOptions = {},
-): ConfigT {
-  const location = exports.findMetroConfig(filename, searchOptions);
-
-  // $FlowFixMe: We want this require to be dynamic
-  const config = location ? require(location) : null;
-
-  return config ? Config.normalize(config) : Config.DEFAULT;
 };
 
 type BuildCommandOptions = {||} | null;
@@ -352,9 +294,6 @@ exports.attachMetroCli = function(
   }
   return yargs;
 };
-
-exports.Config = Config;
-exports.defaults = defaults;
 
 // The symbols below belong to the legacy API and should not be relied upon
 Object.assign(exports, require('./legacy'));

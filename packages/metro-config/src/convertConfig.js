@@ -10,7 +10,6 @@
 
 'use strict';
 
-const Config = require('metro/src/Config');
 const TerminalReporter = require('metro/src/lib/TerminalReporter');
 
 const blacklist = require('./defaults/blacklist');
@@ -19,8 +18,7 @@ const getMaxWorkers = require('metro/src/lib/getMaxWorkers');
 
 const {Terminal} = require('metro-core');
 
-import type {ConfigT, Middleware} from './configTypes.flow';
-import type {ConfigT as OldConfigT} from 'metro/src/Config';
+import type {ConfigT, OldConfigT, Middleware} from './configTypes.flow';
 import type {
   Module,
   TransformVariants,
@@ -35,7 +33,7 @@ type DeprecatedMetroOptions = {|
 
 type PublicMetroOptions = {|
   ...DeprecatedMetroOptions,
-  config?: OldConfigT,
+  config: OldConfigT,
   maxWorkers?: number,
   minifierPath?: string,
   port?: ?number,
@@ -49,7 +47,7 @@ type PrivateMetroOptions = {|
 
 // We get the metro runServer signature here and create the new config out of it
 function convertOldToNew({
-  config = Config.DEFAULT,
+  config,
   resetCache = false,
   maxWorkers = getMaxWorkers(),
   minifierPath,
@@ -106,7 +104,7 @@ function convertOldToNew({
       ? getProvidesModuleNodeModules()
       : defaults.providesModuleNodeModules;
 
-  const watchFolders = getWatchFolders();
+  const watchFolders = [getProjectRoot(), ...getWatchFolders()];
 
   return {
     resolver: {
@@ -130,7 +128,7 @@ function convertOldToNew({
       getRunModuleStatement,
       getPolyfills,
       postProcessBundleSourcemap,
-      postProcessModules,
+      postProcessModules: postProcessModules || (modules => modules),
       getModulesRunBeforeMainModule,
     },
     server: {

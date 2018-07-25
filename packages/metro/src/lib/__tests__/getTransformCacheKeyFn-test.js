@@ -16,7 +16,7 @@ jest.mock('../../../package.json', () => ({
 }));
 
 const getTransformCacheKeyFn = require('../getTransformCacheKeyFn');
-const {transformModulePath} = require('../../defaults');
+const {transformModulePath} = require('metro-config/src/defaults/defaults');
 
 const baseParams = {
   asyncRequireModulePath: 'beep',

@@ -9,7 +9,7 @@
  */
 'use strict';
 
-const defaults = require('../defaults');
+const defaults = require('metro-config/src/defaults/defaults');
 const virtualModule = require('./module').virtual;
 const getPreludeCode = require('../lib/getPreludeCode');
 

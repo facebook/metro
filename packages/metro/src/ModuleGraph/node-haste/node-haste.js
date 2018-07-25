@@ -17,7 +17,7 @@ const HasteFS = require('./HasteFS');
 const Module = require('./Module');
 const ModuleCache = require('./ModuleCache');
 
-const defaults = require('../../defaults');
+const defaults = require('metro-config/src/defaults/defaults');
 const parsePlatformFilePath = require('../../node-haste/lib/parsePlatformFilePath');
 const path = require('path');
 

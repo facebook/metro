@@ -15,7 +15,6 @@ const DeltaBundler = require('./DeltaBundler');
 const MultipartResponse = require('./Server/MultipartResponse');
 
 const crypto = require('crypto');
-const defaultCreateModuleIdFactory = require('./lib/createModuleIdFactory');
 const deltaJSBundle = require('./DeltaBundler/Serializers/deltaJSBundle');
 const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('./DeltaBundler/Serializers/getAssets');
@@ -24,9 +23,7 @@ const plainJSBundle = require('./DeltaBundler/Serializers/plainJSBundle');
 const sourceMapObject = require('./DeltaBundler/Serializers/sourceMapObject');
 const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
 const debug = require('debug')('Metro:Server');
-const defaults = require('./defaults');
 const formatBundlingError = require('./lib/formatBundlingError');
-const getMaxWorkers = require('./lib/getMaxWorkers');
 const getPrependedScripts = require('./lib/getPrependedScripts');
 const mime = require('mime-types');
 const nullthrows = require('fbjs/lib/nullthrows');
@@ -45,7 +42,8 @@ import type {DeltaResult, Graph, Module} from './DeltaBundler';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from './lib/reporting';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
-import type {BundleOptions, ServerOptions, Options} from './shared/types.flow';
+import type {BundleOptions} from './shared/types.flow';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
@@ -91,11 +89,12 @@ const DELTA_ID_HEADER = 'X-Metro-Delta-ID';
 const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';
 
 class Server {
-  _opts: ServerOptions;
+  _config: ConfigT;
   _changeWatchers: Array<{
     req: IncomingMessage,
     res: ServerResponse,
   }>;
+  _createModuleId: (path: string) => number;
   _bundler: Bundler;
   _debouncedFileChangeHandler: (filePath: string) => mixed;
   _reporter: Reporter;
@@ -106,96 +105,22 @@ class Server {
   _graphs: Map<string, Promise<GraphInfo>> = new Map();
   _deltaGraphs: Map<string, Promise<GraphInfo>> = new Map();
 
-  constructor(options: Options) {
-    const reporter =
-      options.reporter || require('./lib/reporting').nullReporter;
-    const maxWorkers = getMaxWorkers(options.maxWorkers);
-    const assetExts = options.assetExts || defaults.assetExts;
-    const sourceExts = options.sourceExts || defaults.sourceExts;
-
-    const _createModuleId =
-      /* $FlowFixMe(>=0.68.0 site=react_native_fb) This comment suppresses an
-       * error found when Flow v0.68 was deployed. To see the error delete this
-       * comment and run Flow. */
-      options.createModuleId || defaultCreateModuleIdFactory();
-
-    this._opts = {
-      assetExts: options.assetTransforms ? [] : assetExts,
-      assetRegistryPath: options.assetRegistryPath,
-      blacklistRE: options.blacklistRE,
-      cacheStores: options.cacheStores,
-      cacheVersion: options.cacheVersion,
-      dynamicDepsInPackages: options.dynamicDepsInPackages || 'throwAtRuntime',
-      createModuleId: _createModuleId,
-      enableBabelRCLookup:
-        options.enableBabelRCLookup != null
-          ? options.enableBabelRCLookup
-          : true,
-      extraNodeModules: options.extraNodeModules || {},
-      getModulesRunBeforeMainModule: options.getModulesRunBeforeMainModule,
-      getPolyfills: options.getPolyfills,
-      // We need to temporary consider that getResolverMainFields() can be
-      // undefined to not break React Native.
-      // TODO: remove the default value after metro@0.39.0 is released.
-      getResolverMainFields:
-        options.getResolverMainFields ||
-        (() => ['react-native', 'browser', 'main']),
-      getRunModuleStatement: options.getRunModuleStatement,
-      getTransformOptions: options.getTransformOptions,
-      hasteImplModulePath: options.hasteImplModulePath,
-      maxWorkers,
-      minifierPath:
-        options.minifierPath == null
-          ? defaults.DEFAULT_METRO_MINIFIER_PATH
-          : options.minifierPath,
-      platforms: options.platforms || defaults.platforms,
-      polyfillModuleNames: options.polyfillModuleNames || [],
-      postMinifyProcess: options.postMinifyProcess,
-      postProcessBundleSourcemap: options.postProcessBundleSourcemap,
-      projectRoot: options.projectRoot,
-      providesModuleNodeModules: options.providesModuleNodeModules,
-      reporter,
-      resolveRequest: options.resolveRequest,
-      silent: options.silent || false,
-      sourceExts: options.assetTransforms
-        ? sourceExts.concat(assetExts)
-        : sourceExts,
-      transformModulePath:
-        options.transformModulePath || defaults.transformModulePath,
-      watch: options.watch || false,
-      watchFolders: options.watchFolders,
-      workerPath: options.workerPath,
-    };
-
-    if (options.resetCache) {
-      options.cacheStores.forEach(store => store.clear());
-      reporter.update({type: 'transform_cache_reset'});
+  constructor(config: ConfigT) {
+    this._config = config;
+    if (this._config.resetCache) {
+      this._config.cacheStores.forEach(store => store.clear());
+      this._config.reporter.update({type: 'transform_cache_reset'});
     }
 
     const processFileChange = ({type, filePath}) =>
       this.onFileChange(type, filePath);
 
-    this._reporter = reporter;
+    this._reporter = config.reporter;
     this._changeWatchers = [];
-    this._platforms = new Set(this._opts.platforms);
+    this._platforms = new Set(this._config.resolver.platforms);
+    this._createModuleId = config.serializer.createModuleIdFactory();
 
-    // This slices out options that are not part of the strict BundlerOptions
-    /* eslint-disable no-unused-vars */
-    const {
-      createModuleId,
-      getModulesRunBeforeMainModule,
-      getRunModuleStatement,
-      silent,
-      ...bundlerOptionsFromServerOptions
-    } = this._opts;
-    /* eslint-enable no-unused-vars */
-
-    this._bundler = new Bundler({
-      ...bundlerOptionsFromServerOptions,
-      asyncRequireModulePath:
-        options.asyncRequireModulePath ||
-        'metro/src/lib/bundle-modules/asyncRequire',
-    });
+    this._bundler = new Bundler(config);
 
     // changes to the haste map can affect resolution of files in the bundle
     this._bundler.getDependencyGraph().then(dependencyGraph => {
@@ -229,15 +154,15 @@ class Server {
   async build(options: BundleOptions): Promise<{code: string, map: string}> {
     const graphInfo = await this._buildGraph(options);
 
-    const entryPoint = getEntryAbsolutePath(this._opts, options.entryFile);
+    const entryPoint = getEntryAbsolutePath(this._config, options.entryFile);
 
     return {
       code: plainJSBundle(entryPoint, graphInfo.prepend, graphInfo.graph, {
-        createModuleId: this._opts.createModuleId,
-        getRunModuleStatement: this._opts.getRunModuleStatement,
+        createModuleId: this._createModuleId,
+        getRunModuleStatement: this._config.serializer.getRunModuleStatement,
         dev: options.dev,
-        runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
-          path.relative(this._opts.projectRoot, entryPoint),
+        runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
+          path.relative(this._config.projectRoot, entryPoint),
         ),
         runModule: options.runModule,
         sourceMapUrl: options.sourceMapUrl,
@@ -253,7 +178,7 @@ class Server {
     options: BuildGraphOptions,
   ): Promise<OutputGraph> {
     entryFiles = entryFiles.map(entryFile =>
-      getEntryAbsolutePath(this._opts, entryFile),
+      getEntryAbsolutePath(this._config, entryFile),
     );
 
     return await this._deltaBundler.buildGraph(entryFiles, {
@@ -274,21 +199,21 @@ class Server {
   async getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo> {
     const graphInfo = await this._buildGraph(options);
 
-    const entryPoint = getEntryAbsolutePath(this._opts, options.entryFile);
+    const entryPoint = getEntryAbsolutePath(this._config, options.entryFile);
 
     return await getRamBundleInfo(
       entryPoint,
       graphInfo.prepend,
       graphInfo.graph,
       {
-        createModuleId: this._opts.createModuleId,
+        createModuleId: this._createModuleId,
         dev: options.dev,
         excludeSource: options.excludeSource,
-        getRunModuleStatement: this._opts.getRunModuleStatement,
-        getTransformOptions: this._opts.getTransformOptions,
+        getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+        getTransformOptions: this._config.transformer.getTransformOptions,
         platform: options.platform,
-        runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
-          path.relative(this._opts.projectRoot, entryPoint),
+        runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
+          path.relative(this._config.projectRoot, entryPoint),
         ),
         runModule: options.runModule,
         sourceMapUrl: options.sourceMapUrl,
@@ -302,7 +227,7 @@ class Server {
     return await getAssets(graph, {
       assetPlugins: options.assetPlugins,
       platform: options.platform,
-      watchFolders: this._opts.watchFolders,
+      watchFolders: this._config.watchFolders,
     });
   }
 
@@ -328,7 +253,7 @@ class Server {
   }
 
   async _buildGraph(options: BundleOptions): Promise<GraphInfo> {
-    const entryPoint = getEntryAbsolutePath(this._opts, options.entryFile);
+    const entryPoint = getEntryAbsolutePath(this._config, options.entryFile);
 
     const crawlingOptions = {
       assetPlugins: options.assetPlugins,
@@ -356,7 +281,7 @@ class Server {
     });
 
     const prepend = await getPrependedScripts(
-      this._opts,
+      this._config,
       crawlingOptions,
       this._bundler,
       this._deltaBundler,
@@ -526,7 +451,7 @@ class Server {
     try {
       const data = await getAsset(
         assetPath[1],
-        this._opts.watchFolders,
+        this._config.watchFolders,
         /* $FlowFixMe: query may be empty for invalid URLs */
         urlObj.query.platform,
       );
@@ -607,7 +532,7 @@ class Server {
 
     const buildID = this.getNewBuildID();
 
-    if (!this._opts.silent) {
+    if (this._config.reporter) {
       options.onProgress = (transformedFileCount, totalFileCount) => {
         mres.writeChunk(
           {'Content-Type': 'application/json'},
@@ -673,11 +598,12 @@ class Server {
           sequenceId,
           graph,
           {
-            createModuleId: this._opts.createModuleId,
+            createModuleId: this._createModuleId,
             dev: options.dev,
-            getRunModuleStatement: this._opts.getRunModuleStatement,
-            runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
-              path.relative(this._opts.projectRoot, options.entryFile),
+            getRunModuleStatement: this._config.serializer
+              .getRunModuleStatement,
+            runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
+              path.relative(this._config.projectRoot, options.entryFile),
             ),
             runModule: options.runModule,
             sourceMapUrl: options.sourceMapUrl,
@@ -739,11 +665,11 @@ class Server {
 
       result = {
         bundle: plainJSBundle(options.entryFile, prepend, graph, {
-          createModuleId: this._opts.createModuleId,
-          getRunModuleStatement: this._opts.getRunModuleStatement,
+          createModuleId: this._createModuleId,
+          getRunModuleStatement: this._config.serializer.getRunModuleStatement,
           dev: options.dev,
-          runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
-            path.relative(this._opts.projectRoot, options.entryFile),
+          runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
+            path.relative(this._config.projectRoot, options.entryFile),
           ),
           runModule: options.runModule,
           sourceMapUrl: options.sourceMapUrl,
@@ -1011,7 +937,7 @@ class Server {
         })
         .join('.') + '.js';
 
-    const absoluteEntryFile = getEntryAbsolutePath(this._opts, entryFile);
+    const absoluteEntryFile = getEntryAbsolutePath(this._config, entryFile);
 
     // try to get the platform from the url
     const platform =
@@ -1094,11 +1020,11 @@ class Server {
   }
 
   getProjectRoot(): string {
-    return this._opts.projectRoot;
+    return this._config.projectRoot;
   }
 
   getWatchFolders(): $ReadOnlyArray<string> {
-    return this._opts.watchFolders;
+    return this._config.watchFolders;
   }
 
   static DEFAULT_GRAPH_OPTIONS = {

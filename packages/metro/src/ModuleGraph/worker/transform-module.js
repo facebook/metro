@@ -16,7 +16,7 @@ const Platforms = require('./Platforms');
 
 const collectDependencies = require('./collectDependencies');
 const crypto = require('crypto');
-const defaults = require('../../defaults');
+const defaults = require('metro-config/src/defaults/defaults');
 const docblock = require('jest-docblock');
 const generate = require('./generate');
 const getImageSize = require('image-size');

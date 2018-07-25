@@ -10,30 +10,19 @@
 
 'use strict';
 
-const blacklist = require('./blacklist');
-const debug = require('debug');
+const blacklist = require('metro-config/src/defaults/blacklist');
 const invariant = require('fbjs/lib/invariant');
 
 const {Logger} = require('metro-core');
 const {fromRawMappings, toSegmentTuple} = require('metro-source-map');
 
-import type {ConfigT as MetroConfig} from './Config';
 import type Server from './Server';
-import type {Options as ServerOptions} from './shared/types.flow';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 exports.createBlacklist = blacklist;
 exports.sourceMaps = {fromRawMappings, compactMapping: toSegmentTuple};
 exports.createServer = createServer;
 exports.Logger = Logger;
-
-export type ConfigT = MetroConfig;
-type Options = {|
-  ...ServerOptions,
-  // optional types to force flow errors in `toServerOptions`
-  nonPersistent?: ?boolean,
-  verbose?: ?boolean,
-  targetBabelVersion?: number,
-|};
 
 type PublicBundleOptions = {|
   +dev?: boolean,
@@ -94,13 +83,14 @@ function assertPublicBundleOptions(bo: mixed): PublicBundleOptions {
 }
 
 exports.build = async function(
-  options: Options,
+  options: ConfigT,
   bundleOptions: PublicBundleOptions,
 ): Promise<{code: string, map: string}> {
-  // eslint-disable-next-line lint/strictly-null
-  if (options.targetBabelVersion !== undefined) {
-    process.env.BABEL_VERSION = String(options.targetBabelVersion);
-  }
+  // TODO: Find out if this is used at all
+  // // eslint-disable-next-line lint/strictly-null
+  // if (options.targetBabelVersion !== undefined) {
+  //   process.env.BABEL_VERSION = String(options.targetBabelVersion);
+  // }
   var server = createNonPersistentServer(options);
   const ServerClass = require('./Server');
 
@@ -116,7 +106,7 @@ exports.build = async function(
 };
 
 exports.getOrderedDependencyPaths = async function(
-  options: Options,
+  options: ConfigT,
   depOptions: {
     +entryFile: string,
     +dev: boolean,
@@ -132,78 +122,17 @@ exports.getOrderedDependencyPaths = async function(
   return paths;
 };
 
-function enableDebug() {
-  // Metro Bundler logs debug messages using the 'debug' npm package, and uses
-  // the following prefix throughout.
-  // To enable debugging, we need to set our pattern or append it to any
-  // existing pre-configured pattern to avoid disabling logging for
-  // other packages
-  var debugPattern = 'Metro:*';
-  var existingPattern = debug.load();
-  if (existingPattern) {
-    debugPattern += ',' + existingPattern;
-  }
-  debug.enable(debugPattern);
-}
-
-function createServer(options: Options): Server {
-  // the debug module is configured globally, we need to enable debugging
-  // *before* requiring any packages that use `debug` for logging
-  if (options.verbose) {
-    enableDebug();
-  }
-
+function createServer(options: ConfigT): Server {
   // Some callsites may not be Flowified yet.
   invariant(
-    options.assetRegistryPath != null,
+    options.transformer.assetRegistryPath != null,
     'createServer() requires assetRegistryPath',
   );
 
   const ServerClass = require('./Server');
-  return new ServerClass(toServerOptions(options));
+  return new ServerClass(options);
 }
 
-function createNonPersistentServer(options: Options): Server {
-  return createServer(options);
-}
-
-function toServerOptions(options: Options): ServerOptions {
-  return {
-    assetTransforms: options.assetTransforms,
-    assetExts: options.assetExts,
-    assetRegistryPath: options.assetRegistryPath,
-    asyncRequireModulePath: options.asyncRequireModulePath,
-    blacklistRE: options.blacklistRE,
-    cacheStores: options.cacheStores,
-    cacheVersion: options.cacheVersion,
-    dynamicDepsInPackages: options.dynamicDepsInPackages,
-    enableBabelRCLookup: options.enableBabelRCLookup,
-    extraNodeModules: options.extraNodeModules,
-    getModulesRunBeforeMainModule: options.getModulesRunBeforeMainModule,
-    getPolyfills: options.getPolyfills,
-    getResolverMainFields: options.getResolverMainFields,
-    getRunModuleStatement: options.getRunModuleStatement,
-    getTransformOptions: options.getTransformOptions,
-    hasteImplModulePath: options.hasteImplModulePath,
-    maxWorkers: options.maxWorkers,
-    minifierPath: options.minifierPath,
-    platforms: options.platforms,
-    polyfillModuleNames: options.polyfillModuleNames,
-    postMinifyProcess: options.postMinifyProcess,
-    postProcessBundleSourcemap: options.postProcessBundleSourcemap,
-    projectRoot: options.projectRoot,
-    providesModuleNodeModules: options.providesModuleNodeModules,
-    reporter: options.reporter,
-    resetCache: options.resetCache,
-    resolveRequest: options.resolveRequest,
-    silent: options.silent,
-    sourceExts: options.sourceExts,
-    transformModulePath: options.transformModulePath,
-    watch:
-      typeof options.watch === 'boolean'
-        ? options.watch
-        : !!options.nonPersistent,
-    watchFolders: options.watchFolders,
-    workerPath: options.workerPath,
-  };
+function createNonPersistentServer(config: ConfigT): Server {
+  return createServer(config);
 }

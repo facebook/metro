@@ -49,10 +49,9 @@ describe('HmrServer', () => {
       getWatchFolders() {
         return ['/root'];
       },
-      _opts: {
-        createModuleId(path) {
-          return path + '-id';
-        },
+
+      _createModuleId(path) {
+        return path + '-id';
       },
     };
 

@@ -11,7 +11,7 @@
 
 'use strict';
 
-const defaults = require('../../../defaults');
+const defaults = require('metro-config/src/defaults/defaults');
 const invariant = require('fbjs/lib/invariant');
 const nullthrows = require('fbjs/lib/nullthrows');
 const optimizeModule = require('../optimize-module');

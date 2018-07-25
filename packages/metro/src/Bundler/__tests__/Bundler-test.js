@@ -23,7 +23,8 @@ jest
   .mock('/path/to/transformer.js', () => ({}), {virtual: true});
 
 var Bundler = require('../');
-var defaults = require('../../defaults');
+var {getDefaultValues} = require('metro-config/src/defaults');
+var {mergeConfig} = require('metro-config/src/loadConfig');
 var sizeOf = require('image-size');
 var fs = require('fs');
 const os = require('os');
@@ -31,37 +32,40 @@ const path = require('path');
 const mkdirp = require('mkdirp');
 const Module = require('../../node-haste/Module');
 
-var commonOptions = {
-  allowBundleUpdates: false,
-  assetExts: defaults.assetExts,
-  assetRegistryPath: '/AssetRegistry.js',
-  cacheStores: [],
-  cacheVersion: 'smth',
-  enableBabelRCLookup: true,
-  extraNodeModules: {},
-  getResolverMainFields: () => [],
-  minifierPath: defaults.DEFAULT_METRO_MINIFIER_PATH,
-  platforms: defaults.platforms,
-  postMinifyProcess: e => e,
-  projectRoot: '/root',
-  resetCache: false,
-  sourceExts: defaults.sourceExts,
-  transformModulePath: '/path/to/transformer.js',
-  watch: false,
-  watchFolders: ['/root'],
-};
-
 describe('Bundler', function() {
   let bundler;
   let assetServer;
   let watchFolders;
   let projectRoot;
+  let commonOptions;
 
   beforeEach(function() {
     os.cpus.mockReturnValue({length: 1});
+    os.tmpdir.mockReturnValue('/tmp');
     // local directory on purpose, because it should not actually write
     // anything to the disk during a unit test!
     os.tmpDir.mockReturnValue(path.join(__dirname));
+
+    const baseConfig = {
+      resolver: {
+        extraNodeModules: {},
+        resolverMainFields: [],
+      },
+      transformer: {
+        assetRegistryPath: '/AssetRegistry.js',
+        enableBabelRCLookup: true,
+        postMinifyProcess: e => e,
+      },
+      cacheStores: [],
+      cacheVersion: 'smth',
+      projectRoot: '/root',
+      resetCache: false,
+      transformModulePath: '/path/to/transformer.js',
+      watch: false,
+      watchFolders: ['/root'],
+    };
+
+    commonOptions = mergeConfig(getDefaultValues('/'), baseConfig);
 
     projectRoot = '/root';
     watchFolders = [projectRoot];
@@ -86,7 +90,7 @@ describe('Bundler', function() {
   });
 
   it('allows overriding the platforms array', () => {
-    expect(bundler._opts.platforms).toEqual([
+    expect(bundler._opts.resolver.platforms).toEqual([
       'ios',
       'android',
       'windows',

@@ -126,7 +126,7 @@ class HmrServer<TClient: Client> {
       const delta = await deltaBundler.getDelta(client.graph, {reset: false});
 
       return hmrJSBundle(delta, client.graph, {
-        createModuleId: this._packagerServer._opts.createModuleId,
+        createModuleId: this._packagerServer._createModuleId,
       });
     } catch (error) {
       const formattedError = formatBundlingError(error);

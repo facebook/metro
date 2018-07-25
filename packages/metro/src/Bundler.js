@@ -14,7 +14,6 @@ const DependencyGraph = require('./node-haste/DependencyGraph');
 const Transformer = require('./JSTransformer');
 
 const assert = require('assert');
-const defaults = require('./defaults');
 const fs = require('fs');
 const getTransformCacheKeyFn = require('./lib/getTransformCacheKeyFn');
 const toLocalPath = require('./node-haste/lib/toLocalPath');
@@ -23,11 +22,8 @@ const {Cache, stableHash} = require('metro-cache');
 
 import type {TransformResult} from './DeltaBundler';
 import type {WorkerOptions} from './JSTransformer/worker';
-import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
-import type {Reporter} from './lib/reporting';
 import type {BabelSourceMap} from '@babel/core';
-import type {CacheStore} from 'metro-cache';
-import type {CustomResolver} from 'metro-resolver';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {MetroSourceMap} from 'metro-source-map';
 
 type TransformOptions = {|
@@ -63,41 +59,10 @@ export type PostProcessBundleSourcemap = ({
   outFileName: string,
 }) => {code: Buffer | string, map: MetroSourceMap | string};
 
-export type Options = {|
-  +assetExts: Array<string>,
-  +assetRegistryPath: string,
-  +asyncRequireModulePath: string,
-  +blacklistRE?: RegExp,
-  +cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
-  +cacheVersion: string,
-  +dynamicDepsInPackages: DynamicRequiresBehavior,
-  +enableBabelRCLookup: boolean,
-  +extraNodeModules: {},
-  +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
-  +getResolverMainFields: () => $ReadOnlyArray<string>,
-  +getTransformOptions?: GetTransformOptions,
-  +hasteImplModulePath?: string,
-  +maxWorkers: number,
-  +minifierPath: string,
-  +platforms: Array<string>,
-  +polyfillModuleNames: Array<string>,
-  +postMinifyProcess: PostMinifyProcess,
-  +postProcessBundleSourcemap: PostProcessBundleSourcemap,
-  +projectRoot: string,
-  +providesModuleNodeModules?: Array<string>,
-  +reporter: Reporter,
-  +resolveRequest: ?CustomResolver,
-  +sourceExts: Array<string>,
-  +transformModulePath: string,
-  +watch: boolean,
-  +watchFolders: $ReadOnlyArray<string>,
-  +workerPath: ?string,
-|};
-
 const {hasOwnProperty} = Object.prototype;
 
 class Bundler {
-  _opts: Options;
+  _opts: ConfigT;
   _cache: Cache<TransformResult<>>;
   _baseHash: string;
   _transformer: Transformer;
@@ -105,13 +70,13 @@ class Bundler {
   _projectRoot: string;
   _getTransformOptions: void | GetTransformOptions;
 
-  constructor(opts: Options) {
+  constructor(opts: ConfigT) {
     opts.watchFolders.forEach(verifyRootExists);
 
     const getTransformCacheKey = getTransformCacheKeyFn({
-      asyncRequireModulePath: opts.asyncRequireModulePath,
+      asyncRequireModulePath: opts.serializer.asyncRequireModulePath,
       cacheVersion: opts.cacheVersion,
-      dynamicDepsInPackages: opts.dynamicDepsInPackages,
+      dynamicDepsInPackages: opts.serializer.dynamicDepsInPackages,
       projectRoot: opts.projectRoot,
       transformModulePath: opts.transformModulePath,
     });
@@ -120,7 +85,7 @@ class Bundler {
     this._cache = new Cache(opts.cacheStores);
 
     this._transformer = new Transformer({
-      asyncRequireModulePath: opts.asyncRequireModulePath,
+      asyncRequireModulePath: opts.serializer.asyncRequireModulePath,
       maxWorkers: opts.maxWorkers,
       reporters: {
         stdoutChunk: chunk =>
@@ -129,40 +94,40 @@ class Bundler {
           opts.reporter.update({type: 'worker_stderr_chunk', chunk}),
       },
       transformModulePath: opts.transformModulePath,
-      dynamicDepsInPackages: opts.dynamicDepsInPackages,
-      workerPath: opts.workerPath || undefined,
+      dynamicDepsInPackages: opts.serializer.dynamicDepsInPackages,
+      workerPath: opts.transformer.workerPath || undefined,
     });
 
+    const blacklistRE: RegExp = opts.resolver.blacklistRE;
     this._depGraphPromise = DependencyGraph.load({
-      assetExts: opts.assetExts,
-      blacklistRE: opts.blacklistRE,
-      extraNodeModules: opts.extraNodeModules,
-      hasteImplModulePath: opts.hasteImplModulePath,
-      mainFields: opts.getResolverMainFields(),
+      assetExts: opts.resolver.assetExts,
+      blacklistRE,
+      extraNodeModules: opts.resolver.extraNodeModules,
+      hasteImplModulePath: opts.resolver.hasteImplModulePath,
+      mainFields: opts.resolver.resolverMainFields,
       maxWorkers: opts.maxWorkers,
-      platforms: new Set(opts.platforms),
+      platforms: new Set(opts.resolver.platforms),
       projectRoot: opts.projectRoot,
-      providesModuleNodeModules:
-        opts.providesModuleNodeModules || defaults.providesModuleNodeModules,
+      providesModuleNodeModules: opts.resolver.providesModuleNodeModules,
       reporter: opts.reporter,
-      resolveRequest: opts.resolveRequest,
-      sourceExts: opts.sourceExts,
+      resolveRequest: opts.resolver.resolveRequest,
+      sourceExts: opts.resolver.sourceExts,
       watch: opts.watch,
       watchFolders: opts.watchFolders,
     });
 
     this._baseHash = stableHash([
-      opts.assetExts,
-      opts.assetRegistryPath,
+      opts.resolver.assetExts,
+      opts.transformer.assetRegistryPath,
       getTransformCacheKey(),
-      opts.minifierPath,
+      opts.transformer.minifierPath,
     ]).toString('binary');
 
     this._projectRoot = opts.projectRoot;
-    this._getTransformOptions = opts.getTransformOptions;
+    this._getTransformOptions = opts.transformer.getTransformOptions;
   }
 
-  getOptions(): Options {
+  getOptions(): ConfigT {
     return this._opts;
   }
 
@@ -206,7 +171,7 @@ class Bundler {
     projectRoot: string,
   } {
     return {
-      enableBabelRCLookup: this._opts.enableBabelRCLookup,
+      enableBabelRCLookup: this._opts.transformer.enableBabelRCLookup,
       projectRoot: this._projectRoot,
     };
   }
@@ -276,9 +241,9 @@ class Bundler {
           filePath,
           localPath,
           transformCodeOptions,
-          this._opts.assetExts,
-          this._opts.assetRegistryPath,
-          this._opts.minifierPath,
+          this._opts.resolver.assetExts,
+          this._opts.transformer.assetRegistryPath,
+          this._opts.transformer.minifierPath,
         );
 
     // Only re-compute the full key if the SHA-1 changed. This is because

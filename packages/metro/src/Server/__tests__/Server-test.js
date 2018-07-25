@@ -10,6 +10,8 @@
 
 'use strict';
 
+const {getDefaultValues} = require('metro-config/src/defaults');
+
 jest
   .mock('jest-worker', () => ({}))
   .mock('crypto')
@@ -56,16 +58,16 @@ describe('processRequest', () => {
 
   let server;
 
-  const options = {
-    projectRoot: '/root',
-    watchFolders: ['/root'],
-    blacklistRE: null,
-    cacheVersion: null,
-    getRunModuleStatement: moduleId => `require(${JSON.stringify(moduleId)});`,
-    polyfillModuleNames: null,
-    reporter: require('../../lib/reporting').nullReporter,
-    getModulesRunBeforeMainModule: () => ['InitializeCore'],
-  };
+  const options = getDefaultValues('/');
+  options.projectRoot = '/root';
+  options.watchFolders = ['/root'];
+  options.resolver.blacklistRE = null;
+  options.cacheVersion = null;
+  options.serializer.getRunModuleStatement = moduleId =>
+    `require(${JSON.stringify(moduleId)});`;
+  options.reporter = require('../../lib/reporting').nullReporter;
+  options.serializer.polyfillModuleNames = null;
+  options.serializer.getModulesRunBeforeMainModule = () => ['InitializeCore'];
 
   const makeRequest = (reqHandler, requrl, reqOptions) =>
     new Promise(resolve =>
