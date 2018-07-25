@@ -288,12 +288,6 @@ export type InputConfigT = {
     polyfillModuleNames?: Array<string>, // This one is not sure
 
     /**
-     * Specify an implementation module to load async import modules (for
-     * splitting).
-     */
-    asyncRequireModulePath?: string,
-
-    /**
      * Specify the format of the initial require statements that are appended
      * at the end of the bundle. By default is `require(${moduleId});`
      */
@@ -333,6 +327,12 @@ export type InputConfigT = {
     enableBabelRCLookup?: boolean,
 
     getTransformOptions?: GetTransformOptions,
+
+    /**
+     * Specify an implementation module to load async import modules (for
+     * splitting).
+     */
+    asyncRequireModulePath?: string,
 
     /**
      * An optional function that can modify the code and source map of bundle
@@ -417,7 +417,6 @@ export type IntermediateConfigT = {
   serializer: {
     dynamicDepsInPackages: DynamicRequiresBehavior,
     polyfillModuleNames: Array<string>, // This one is not sure
-    asyncRequireModulePath: string,
     getRunModuleStatement: (number | string) => string,
     getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
     postProcessBundleSourcemap: PostProcessBundleSourcemap,
@@ -430,6 +429,7 @@ export type IntermediateConfigT = {
   },
   transformer: {
     assetRegistryPath: string,
+    asyncRequireModulePath: string,
     enableBabelRCLookup: boolean,
     getTransformOptions: GetTransformOptions,
     postMinifyProcess: PostMinifyProcess,

@@ -74,7 +74,7 @@ class Bundler {
     opts.watchFolders.forEach(verifyRootExists);
 
     const getTransformCacheKey = getTransformCacheKeyFn({
-      asyncRequireModulePath: opts.serializer.asyncRequireModulePath,
+      asyncRequireModulePath: opts.transformer.asyncRequireModulePath,
       cacheVersion: opts.cacheVersion,
       dynamicDepsInPackages: opts.serializer.dynamicDepsInPackages,
       projectRoot: opts.projectRoot,
@@ -85,7 +85,7 @@ class Bundler {
     this._cache = new Cache(opts.cacheStores);
 
     this._transformer = new Transformer({
-      asyncRequireModulePath: opts.serializer.asyncRequireModulePath,
+      asyncRequireModulePath: opts.transformer.asyncRequireModulePath,
       maxWorkers: opts.maxWorkers,
       reporters: {
         stdoutChunk: chunk =>

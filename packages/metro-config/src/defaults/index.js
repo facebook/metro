@@ -48,7 +48,6 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
   serializer: {
     dynamicDepsInPackages: 'throwAtRuntime',
     polyfillModuleNames: [],
-    asyncRequireModulePath: 'metro/src/lib/bundle-modules/asyncRequire',
     getRunModuleStatement: (moduleId: number | string) =>
       `require(${JSON.stringify(moduleId)});`,
     getPolyfills: () => [],
@@ -65,6 +64,7 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
   },
 
   transformer: {
+    asyncRequireModulePath: 'metro/src/lib/bundle-modules/asyncRequire',
     assetRegistryPath: 'missing-asset-registry-path',
     enableBabelRCLookup: true,
     getTransformOptions: async () => ({}),

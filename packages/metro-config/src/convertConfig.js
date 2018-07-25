@@ -124,7 +124,6 @@ function convertOldToNew({
       createModuleIdFactory:
         createModuleIdFactory || defaults.defaultCreateModuleIdFactory,
       polyfillModuleNames: getPolyfillModuleNames(),
-      asyncRequireModulePath: getAsyncRequireModulePath(),
       getRunModuleStatement,
       getPolyfills,
       postProcessBundleSourcemap,
@@ -138,6 +137,7 @@ function convertOldToNew({
     },
     transformer: {
       assetRegistryPath,
+      asyncRequireModulePath: getAsyncRequireModulePath(),
       enableBabelRCLookup: getEnableBabelRCLookup(),
       getTransformOptions,
       postMinifyProcess,
@@ -211,7 +211,6 @@ function convertNewToOld(newConfig: ConfigT): ConvertedOldConfigT {
   const {
     dynamicDepsInPackages,
     polyfillModuleNames,
-    asyncRequireModulePath,
     getRunModuleStatement,
     getPolyfills,
     postProcessBundleSourcemap,
@@ -230,6 +229,7 @@ function convertNewToOld(newConfig: ConfigT): ConvertedOldConfigT {
     workerPath,
     minifierPath,
     transformVariants,
+    asyncRequireModulePath,
   } = transformer;
 
   // Return old config
