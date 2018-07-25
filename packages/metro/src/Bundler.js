@@ -76,7 +76,7 @@ class Bundler {
     const getTransformCacheKey = getTransformCacheKeyFn({
       asyncRequireModulePath: opts.transformer.asyncRequireModulePath,
       cacheVersion: opts.cacheVersion,
-      dynamicDepsInPackages: opts.serializer.dynamicDepsInPackages,
+      dynamicDepsInPackages: opts.transformer.dynamicDepsInPackages,
       projectRoot: opts.projectRoot,
       transformModulePath: opts.transformModulePath,
     });
@@ -94,7 +94,7 @@ class Bundler {
           opts.reporter.update({type: 'worker_stderr_chunk', chunk}),
       },
       transformModulePath: opts.transformModulePath,
-      dynamicDepsInPackages: opts.serializer.dynamicDepsInPackages,
+      dynamicDepsInPackages: opts.transformer.dynamicDepsInPackages,
       workerPath: opts.transformer.workerPath || undefined,
     });
 

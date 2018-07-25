@@ -280,6 +280,7 @@ export type InputConfigT = {
   },
   serializer?: {
     dynamicDepsInPackages?: DynamicRequiresBehavior,
+    assetRegistryPath?: string,
 
     /**
      * Specify any additional polyfill modules that should be processed
@@ -325,6 +326,8 @@ export type InputConfigT = {
      * root is used.
      */
     enableBabelRCLookup?: boolean,
+
+    dynamicDepsInPackages?: DynamicRequiresBehavior,
 
     getTransformOptions?: GetTransformOptions,
 
@@ -415,7 +418,6 @@ export type IntermediateConfigT = {
     enhanceMiddleware: (Middleware, Server) => Middleware,
   },
   serializer: {
-    dynamicDepsInPackages: DynamicRequiresBehavior,
     polyfillModuleNames: Array<string>, // This one is not sure
     getRunModuleStatement: (number | string) => string,
     getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
@@ -431,6 +433,7 @@ export type IntermediateConfigT = {
     assetRegistryPath: string,
     asyncRequireModulePath: string,
     enableBabelRCLookup: boolean,
+    dynamicDepsInPackages: DynamicRequiresBehavior,
     getTransformOptions: GetTransformOptions,
     postMinifyProcess: PostMinifyProcess,
     workerPath: ?string,

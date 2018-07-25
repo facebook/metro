@@ -96,9 +96,6 @@ describe('basic_bundle', () => {
     const opts = await getDefaultValues('/');
 
     const baseOpts = mergeConfig(opts, {
-      server: {
-        dynamicDepsInPackages: 'reject',
-      },
       serializer: {
         getRunModuleStatement,
         getPolyfills: () => [polyfill1, polyfill2],
@@ -106,6 +103,7 @@ describe('basic_bundle', () => {
       },
       transformer: {
         assetRegistryPath: ASSET_REGISTRY_PATH,
+        dynamicDepsInPackages: 'reject',
         enableBabelRCLookup: false, // dont use metro's own babelrc!
       },
       cacheStores: [],
@@ -130,9 +128,6 @@ describe('basic_bundle', () => {
     const opts = await getDefaultValues('/');
 
     const baseOpts = mergeConfig(opts, {
-      server: {
-        dynamicDepsInPackages: 'reject',
-      },
       serializer: {
         getRunModuleStatement,
         getPolyfills: () => [],
@@ -140,6 +135,7 @@ describe('basic_bundle', () => {
       },
       transformer: {
         assetRegistryPath: ASSET_REGISTRY_PATH,
+        dynamicDepsInPackages: 'reject',
         enableBabelRCLookup: false, // dont use metro's own babelrc!
       },
       cacheStores: [],

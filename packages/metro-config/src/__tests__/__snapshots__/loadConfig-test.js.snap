@@ -61,7 +61,6 @@ Object {
   },
   "serializer": Object {
     "createModuleIdFactory": [Function],
-    "dynamicDepsInPackages": "throwAtRuntime",
     "getModulesRunBeforeMainModule": [Function],
     "getPolyfills": [Function],
     "getRunModuleStatement": [Function],
@@ -78,6 +77,7 @@ Object {
   "transformer": Object {
     "assetRegistryPath": "missing-asset-registry-path",
     "asyncRequireModulePath": "metro/src/lib/bundle-modules/asyncRequire",
+    "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "getTransformOptions": [Function],
     "minifierPath": "metro-minify-uglify",
@@ -155,7 +155,6 @@ Object {
   },
   "serializer": Object {
     "createModuleIdFactory": [Function],
-    "dynamicDepsInPackages": "throwAtRuntime",
     "getModulesRunBeforeMainModule": [Function],
     "getPolyfills": [Function],
     "getRunModuleStatement": [Function],
@@ -172,6 +171,7 @@ Object {
   "transformer": Object {
     "assetRegistryPath": "missing-asset-registry-path",
     "asyncRequireModulePath": "metro/src/lib/bundle-modules/asyncRequire",
+    "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "getTransformOptions": [Function],
     "minifierPath": "metro-minify-uglify",

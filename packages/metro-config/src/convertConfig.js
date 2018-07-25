@@ -120,7 +120,6 @@ function convertOldToNew({
       blacklistRE: getBlacklistRE() ? getBlacklistRE() : blacklist(),
     },
     serializer: {
-      dynamicDepsInPackages,
       createModuleIdFactory:
         createModuleIdFactory || defaults.defaultCreateModuleIdFactory,
       polyfillModuleNames: getPolyfillModuleNames(),
@@ -138,6 +137,7 @@ function convertOldToNew({
     transformer: {
       assetRegistryPath,
       asyncRequireModulePath: getAsyncRequireModulePath(),
+      dynamicDepsInPackages,
       enableBabelRCLookup: getEnableBabelRCLookup(),
       getTransformOptions,
       postMinifyProcess,
@@ -209,7 +209,6 @@ function convertNewToOld(newConfig: ConfigT): ConvertedOldConfigT {
   } = resolver;
 
   const {
-    dynamicDepsInPackages,
     polyfillModuleNames,
     getRunModuleStatement,
     getPolyfills,
@@ -224,6 +223,7 @@ function convertNewToOld(newConfig: ConfigT): ConvertedOldConfigT {
   const {
     assetRegistryPath,
     enableBabelRCLookup,
+    dynamicDepsInPackages,
     getTransformOptions,
     postMinifyProcess,
     workerPath,
