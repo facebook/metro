@@ -14,6 +14,7 @@ const MetroApi = require('../index');
 const TerminalReporter = require('../lib/TerminalReporter');
 
 const {makeAsyncCommand} = require('../cli-utils');
+const {convertOldToNew} = require('metro-config/src/convertConfig');
 const {Terminal} = require('metro-core');
 
 import typeof Yargs from 'yargs';
@@ -57,6 +58,7 @@ module.exports = () => ({
   // eslint-disable-next-line lint/no-unclear-flowtypes
   handler: makeAsyncCommand(async (argv: any) => {
     const config = await MetroApi.loadMetroConfig(argv.config);
+    const newConfig = convertOldToNew({config});
 
     if (argv.projectRoots) {
       config.getProjectRoots = () => argv.projectRoots;
@@ -64,7 +66,7 @@ module.exports = () => ({
 
     await MetroApi.runBuild({
       ...argv,
-      config,
+      config: newConfig,
       onBegin: () => {
         updateReporter.update({
           buildID: '$',

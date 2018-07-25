@@ -20,5 +20,5 @@ module.exports = {
   resolveConfig,
   mergeConfig,
   getDefaultConfig,
-  convertConfig,
+  convert: convertConfig,
 };

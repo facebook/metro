@@ -42,13 +42,24 @@ type YargArguments = {
   platforms?: Array<string>,
   providesModuleNodeModules?: Array<string>,
   'max-workers'?: string | number,
+  maxWorkers?: string | number,
   transformer?: string,
   'reset-cache'?: boolean,
+  resetCache?: boolean,
   verbose?: boolean,
 };
 
 const explorer = cosmiconfig('metro', {
   searchPlaces: ['metro-config.js', 'metro-config.json', 'package.json'],
+
+  loaders: {
+    '.json': cosmiconfig.loadJson,
+    '.yaml': cosmiconfig.loadYaml,
+    '.yml': cosmiconfig.loadYaml,
+    '.js': cosmiconfig.loadJs,
+    '.es6': cosmiconfig.loadJs,
+    noExt: cosmiconfig.loadYaml,
+  },
 });
 
 function resolveConfig(
@@ -56,7 +67,7 @@ function resolveConfig(
   cwd?: string,
 ): Promise<CosmiConfigResult> {
   if (path) {
-    return explorer.load(cwd ? join(cwd, path) : path);
+    return explorer.load(path);
   }
 
   return explorer.search(cwd);
@@ -161,8 +172,8 @@ function overrideConfigWithArguments(
     config.resolver.providesModuleNodeModules = argv.providesModuleNodeModules;
   }
 
-  if (argv['max-workers'] != null) {
-    config.maxWorkers = Number(argv['max-workers']);
+  if (argv['max-workers'] != null || argv.maxWorkers != null) {
+    config.maxWorkers = Number(argv['max-workers'] || argv.maxWorkers);
   }
 
   if (argv.transformer != null) {
@@ -173,8 +184,13 @@ function overrideConfigWithArguments(
     config.resetCache = argv['reset-cache'];
   }
 
-  if (argv.verbose != null) {
-    // TODO: move the reporter to their own options and add the silent option back
+  if (argv.resetCache != null) {
+    config.resetCache = argv.resetCache;
+  }
+
+  if (argv.verbose === false) {
+    config.reporter = {update: () => {}};
+    // TODO: Ask if this is the way to go
   }
 
   return config;

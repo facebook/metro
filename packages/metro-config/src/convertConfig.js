@@ -13,12 +13,13 @@
 const Config = require('metro/src/Config');
 const TerminalReporter = require('metro/src/lib/TerminalReporter');
 
+const blacklist = require('./defaults/blacklist');
 const defaults = require('./defaults/defaults');
 const getMaxWorkers = require('metro/src/lib/getMaxWorkers');
 
 const {Terminal} = require('metro-core');
 
-import type {ConfigT, InputConfigT, Middleware} from './configTypes.flow';
+import type {ConfigT, Middleware} from './configTypes.flow';
 import type {ConfigT as OldConfigT} from 'metro/src/Config';
 import type {
   Module,
@@ -56,7 +57,7 @@ function convertOldToNew({
   port = null,
   reporter = new TerminalReporter(new Terminal(process.stdout)),
   watch = false,
-}: PrivateMetroOptions): InputConfigT {
+}: PrivateMetroOptions): ConfigT {
   const {
     getBlacklistRE,
     cacheStores,
@@ -115,14 +116,15 @@ function convertOldToNew({
       resolverMainFields: getResolverMainFields(),
       sourceExts,
       hasteImplModulePath,
-      assetTransforms,
+      assetTransforms: assetTransforms || false,
       extraNodeModules,
       resolveRequest,
-      blacklistRE: getBlacklistRE() ? getBlacklistRE() : undefined,
+      blacklistRE: getBlacklistRE() ? getBlacklistRE() : blacklist(),
     },
     serializer: {
       dynamicDepsInPackages,
-      createModuleIdFactory,
+      createModuleIdFactory:
+        createModuleIdFactory || defaults.defaultCreateModuleIdFactory,
       polyfillModuleNames: getPolyfillModuleNames(),
       asyncRequireModulePath: getAsyncRequireModulePath(),
       getRunModuleStatement,
@@ -142,9 +144,9 @@ function convertOldToNew({
       getTransformOptions,
       postMinifyProcess,
       workerPath: getWorkerPath(),
-      minifierPath,
+      minifierPath: minifierPath || defaults.DEFAULT_METRO_MINIFIER_PATH,
       transformVariants:
-        transformVariants == null ? undefined : transformVariants(),
+        transformVariants == null ? {default: {}} : transformVariants(),
     },
 
     reporter,
@@ -155,6 +157,7 @@ function convertOldToNew({
     transformModulePath: getTransformModulePath(),
     resetCache,
     watch,
+    maxWorkers,
   };
 }
 

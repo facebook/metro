@@ -13,12 +13,10 @@
 const Config = require('./Config');
 const MetroHmrServer = require('./HmrServer');
 const MetroServer = require('./Server');
-const TerminalReporter = require('./lib/TerminalReporter');
 
 const attachWebsocketServer = require('./lib/attachWebsocketServer');
 const defaults = require('./defaults');
 const fs = require('fs');
-const getMaxWorkers = require('./lib/getMaxWorkers');
 const http = require('http');
 const https = require('https');
 const makeBuildCommand = require('./commands/build');
@@ -27,133 +25,42 @@ const outputBundle = require('./shared/output/bundle');
 const path = require('path');
 
 const {readFile} = require('fs-extra');
-const {Terminal} = require('metro-core');
+const {convertNewToOld} = require('metro-config/src/convertConfig');
 
 import type {ConfigT} from './Config';
 import type {Graph} from './DeltaBundler';
-import type {Reporter} from './lib/reporting';
+import type {CustomTransformOptions} from './JSTransformer/worker';
 import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
-import type {Options as ServerOptions} from './shared/types.flow';
 import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
+import type {ConfigT as NewConfigT} from 'metro-config/src/configTypes.flow';
 import typeof Yargs from 'yargs';
 
 export type {ConfigT} from './Config';
 
-type DeprecatedMetroOptions = {|
-  resetCache?: boolean,
-|};
+async function runMetro(config: NewConfigT): Promise<MetroServer> {
+  const {serverOptions, extraOptions} = convertNewToOld(config);
 
-type PublicMetroOptions = {|
-  ...DeprecatedMetroOptions,
-  config?: ConfigT,
-  maxWorkers?: number,
-  minifierPath?: string,
-  port?: ?number,
-  reporter?: Reporter,
-|};
-
-type PrivateMetroOptions = {|
-  ...PublicMetroOptions,
-  watch?: boolean,
-|};
-
-import type {CustomTransformOptions} from './JSTransformer/worker';
-
-async function runMetro({
-  config = Config.DEFAULT,
-  resetCache = false,
-  maxWorkers = getMaxWorkers(),
-  minifierPath,
-  // $FlowFixMe TODO t0 https://github.com/facebook/flow/issues/183
-  port = null,
-  reporter = new TerminalReporter(new Terminal(process.stdout)),
-  watch = false,
-}: PrivateMetroOptions): Promise<MetroServer> {
-  if (minifierPath == null) {
-    minifierPath = config.minifierPath;
-  }
-  const assetExts = defaults.assetExts.concat(
-    (config.getAssetExts && config.getAssetExts()) || [],
-  );
-  const sourceExts = defaults.sourceExts.concat(
-    (config.getSourceExts && config.getSourceExts()) || [],
-  );
-  const platforms = (config.getPlatforms && config.getPlatforms()) || [];
-
-  const providesModuleNodeModules =
-    typeof config.getProvidesModuleNodeModules === 'function'
-      ? config.getProvidesModuleNodeModules()
-      : defaults.providesModuleNodeModules;
-
-  const watchFolders = config.getWatchFolders();
-
-  reporter.update({
+  config.reporter.update({
     type: 'initialize_started',
-    port,
+    port: extraOptions.port,
     // FIXME: We need to change that to watchFolders. It will be a
     // breaking since it affects custom reporter API.
-    projectRoots: watchFolders,
+    projectRoots: serverOptions.watchFolders,
   });
-  const serverOptions: ServerOptions = {
-    asyncRequireModulePath: config.getAsyncRequireModulePath(),
-    assetExts: config.assetTransforms ? [] : assetExts,
-    assetRegistryPath: config.assetRegistryPath,
-    blacklistRE: config.getBlacklistRE(),
-    cacheStores: config.cacheStores,
-    cacheVersion: config.cacheVersion,
-    createModuleIdFactory: config.createModuleIdFactory,
-    dynamicDepsInPackages: config.dynamicDepsInPackages,
-    enableBabelRCLookup: config.getEnableBabelRCLookup(),
-    extraNodeModules: config.extraNodeModules,
-    getModulesRunBeforeMainModule: config.getModulesRunBeforeMainModule,
-    getPolyfills: config.getPolyfills,
-    getResolverMainFields: config.getResolverMainFields,
-    getRunModuleStatement: config.getRunModuleStatement,
-    getTransformOptions: config.getTransformOptions,
-    hasteImplModulePath: config.hasteImplModulePath,
-    maxWorkers,
-    minifierPath,
-    platforms: defaults.platforms.concat(platforms),
-    postMinifyProcess: config.postMinifyProcess,
-    postProcessBundleSourcemap: config.postProcessBundleSourcemap,
-    providesModuleNodeModules,
-    resetCache,
-    reporter,
-    resolveRequest: config.resolveRequest,
-    sourceExts: config.assetTransforms
-      ? sourceExts.concat(assetExts)
-      : sourceExts,
-    transformModulePath: config.getTransformModulePath(),
-    watch,
-    watchFolders,
-    workerPath: config.getWorkerPath && config.getWorkerPath(),
-    projectRoot: config.getProjectRoot(),
-  };
 
   return new MetroServer(serverOptions);
 }
 exports.runMetro = runMetro;
 
-type CreateConnectMiddlewareOptions = {|
-  ...PublicMetroOptions,
-|};
-
-exports.createConnectMiddleware = async function({
-  config = Config.DEFAULT,
-  ...rest
-}: CreateConnectMiddlewareOptions) {
-  const metroServer = await runMetro({
-    ...rest,
-    config,
-    watch: true,
-  });
+exports.createConnectMiddleware = async function(config: NewConfigT) {
+  const metroServer = await runMetro(config);
 
   let enhancedMiddleware = metroServer.processRequest;
 
   // Enhance the resulting middleware using the config options
-  if (config.enhanceMiddleware) {
-    enhancedMiddleware = config.enhanceMiddleware(
+  if (config.server.enhanceMiddleware) {
+    enhancedMiddleware = config.server.enhanceMiddleware(
       enhancedMiddleware,
       metroServer,
     );
@@ -176,10 +83,9 @@ exports.createConnectMiddleware = async function({
 };
 
 type RunServerOptions = {|
-  ...PublicMetroOptions,
+  config: NewConfigT,
   host?: string,
   onReady?: (server: HttpServer | HttpsServer) => void,
-  port?: number,
   secure?: boolean,
   secureKey?: string,
   secureCert?: string,
@@ -189,15 +95,11 @@ type RunServerOptions = {|
 exports.runServer = async ({
   host,
   onReady,
-  minifierPath,
-  // $FlowFixMe Flow messes up when using "destructuring"+"default value"+"spread typing"+"stricter field typing" together
-  port = 8080,
-  reporter = new TerminalReporter(new Terminal(process.stdout)),
   secure = false,
   secureKey,
   secureCert,
   hmrEnabled = false,
-  ...rest
+  config,
 }: RunServerOptions) => {
   // Lazy require
   const connect = require('connect');
@@ -208,12 +110,7 @@ exports.runServer = async ({
     attachHmrServer,
     middleware,
     end,
-  } = await exports.createConnectMiddleware({
-    ...rest,
-    port,
-    reporter,
-    minifierPath,
-  });
+  } = await exports.createConnectMiddleware(config);
 
   serverApp.use(middleware);
 
@@ -235,7 +132,7 @@ exports.runServer = async ({
     attachHmrServer(httpServer);
   }
 
-  httpServer.listen(port, host, () => {
+  httpServer.listen(config.server.port, host, () => {
     onReady && onReady(httpServer);
   });
 
@@ -256,7 +153,7 @@ exports.runServer = async ({
 };
 
 type BuildGraphOptions = {|
-  ...PublicMetroOptions,
+  config: NewConfigT,
   entries: $ReadOnlyArray<string>,
   customTransformOptions?: CustomTransformOptions,
   dev?: boolean,
@@ -267,7 +164,7 @@ type BuildGraphOptions = {|
 |};
 
 type RunBuildOptions = {|
-  ...PublicMetroOptions,
+  config: NewConfigT,
   entry: string,
   dev?: boolean,
   out: string,
@@ -304,12 +201,8 @@ exports.runBuild = async ({
   platform = 'web',
   sourceMap = false,
   sourceMapUrl,
-  ...rest
 }: RunBuildOptions) => {
-  const metroServer = await runMetro({
-    ...rest,
-    config,
-  });
+  const metroServer = await runMetro(config);
 
   try {
     const requestOptions: RequestOptions = {
@@ -319,7 +212,7 @@ exports.runBuild = async ({
       minify,
       platform,
       sourceMapUrl: sourceMap === false ? undefined : sourceMapUrl,
-      createModuleIdFactory: config ? config.createModuleIdFactory : undefined,
+      createModuleIdFactory: config.serializer.createModuleIdFactory,
       onProgress,
     };
 
@@ -362,12 +255,8 @@ exports.buildGraph = async function({
   onProgress,
   platform = 'web',
   type = 'module',
-  ...rest
 }: BuildGraphOptions): Promise<Graph<>> {
-  const metroServer = await runMetro({
-    ...rest,
-    config,
-  });
+  const metroServer = await runMetro(config);
 
   try {
     return await metroServer.buildGraph(entries, {
