@@ -49,6 +49,21 @@ type YargArguments = {
   verbose?: boolean,
 };
 
+/**
+ * Takes the last argument if multiple of the same argument are given
+ */
+function overrideArgument<T>(arg: Array<T> | T): T {
+  if (arg == null) {
+    return arg;
+  }
+
+  if (Array.isArray(arg)) {
+    return arg[arg.length - 1];
+  }
+
+  return arg;
+}
+
 const explorer = cosmiconfig('metro', {
   searchPlaces: [
     'metro-config.js',
@@ -202,6 +217,8 @@ function overrideConfigWithArguments(
 }
 
 async function loadConfig(argv: YargArguments): Promise<ConfigT> {
+  argv.config = overrideArgument(argv.config);
+
   const configuration: IntermediateConfigT = await loadMetroConfigFromDisk(
     argv.config,
     argv.cwd,
