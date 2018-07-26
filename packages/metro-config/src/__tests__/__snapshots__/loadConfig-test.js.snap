@@ -5,7 +5,6 @@ Object {
   "cacheStores": Array [],
   "cacheVersion": "1.0",
   "maxWorkers": 2,
-  "metro": true,
   "projectRoot": "/",
   "reporter": null,
   "resetCache": false,
@@ -125,7 +124,6 @@ Object {
   "cacheStores": Array [],
   "cacheVersion": "1.0",
   "maxWorkers": 2,
-  "metro": true,
   "projectRoot": "/",
   "reporter": null,
   "resetCache": false,
@@ -238,4 +236,19 @@ Object {
     "/",
   ],
 }
+`;
+
+exports[`loadConfig validates config 1`] = `
+"● Validation Error:
+
+  Option \\"resolver\\" must be of type:
+    object
+  but instead received:
+    string
+
+  Example:
+  {
+    \\"resolver\\": {\\"assetExts\\": [\\"bmp\\", \\"gif\\", \\"jpg\\", \\"jpeg\\", \\"png\\", \\"psd\\", \\"svg\\", \\"webp\\", \\"m4v\\", \\"mov\\", \\"mp4\\", \\"mpeg\\", \\"mpg\\", \\"webm\\", \\"aac\\", \\"aiff\\", \\"caf\\", \\"m4a\\", \\"mp3\\", \\"wav\\", \\"html\\", \\"pdf\\", \\"otf\\", \\"ttf\\"], \\"assetTransforms\\": false, \\"blacklistRE\\": /(node_modules[\\\\/\\\\\\\\]react[\\\\/\\\\\\\\]dist[\\\\/\\\\\\\\].*|website\\\\/node_modules\\\\/.*|heapCapture\\\\/bundle\\\\.js|.*\\\\/__tests__\\\\/.*)$/, \\"extraNodeModules\\": {}, \\"platforms\\": [\\"ios\\", \\"android\\", \\"windows\\", \\"web\\"], \\"providesModuleNodeModules\\": [\\"react-native\\", \\"react-native-windows\\"], \\"resolveRequest\\": null, \\"resolverMainFields\\": [\\"browser\\", \\"main\\"], \\"sourceExts\\": [\\"js\\", \\"json\\"]}
+  }
+"
 `;

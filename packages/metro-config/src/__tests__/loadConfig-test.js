@@ -17,6 +17,7 @@ const {loadConfig} = require('../loadConfig');
 const getDefaultConfig = require('../defaults');
 const cosmiconfig = require('cosmiconfig');
 const prettyFormat = require('pretty-format');
+const stripAnsi = require('strip-ansi');
 
 describe('loadConfig', () => {
   beforeEach(() => {
@@ -25,7 +26,6 @@ describe('loadConfig', () => {
 
   it('can load config objects', async () => {
     const config = {
-      metro: true,
       reporter: null,
       maxWorkers: 2,
       cacheStores: [],
@@ -63,7 +63,6 @@ describe('loadConfig', () => {
   it('can load the config with a path', async () => {
     const config = defaultConfig => ({
       ...defaultConfig,
-      metro: true,
       reporter: null,
       maxWorkers: 2,
       cacheStores: [],
@@ -90,5 +89,25 @@ describe('loadConfig', () => {
     };
 
     expect(prettyFormat(result)).toEqual(prettyFormat(defaultConfig));
+  });
+
+  it('validates config', async () => {
+    expect.assertions(1);
+    const config = defaultConfig => ({
+      ...defaultConfig,
+      reporter: null,
+      maxWorkers: 2,
+      resolver: 'test',
+      cacheStores: [],
+      transformModulePath: '',
+    });
+
+    cosmiconfig.setResolvedConfig(config);
+
+    try {
+      await loadConfig({});
+    } catch (error) {
+      expect(stripAnsi(error.message)).toMatchSnapshot();
+    }
   });
 });

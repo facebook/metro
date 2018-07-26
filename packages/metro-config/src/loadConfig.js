@@ -11,7 +11,9 @@
 'use strict';
 
 const cosmiconfig = require('cosmiconfig');
+const {validate} = require('jest-validate');
 const getDefaultConfig = require('./defaults');
+const validConfig = require('./defaults/validConfig');
 
 const {dirname, resolve, join} = require('path');
 
@@ -236,6 +238,8 @@ async function loadConfig(
     argv.cwd,
     defaultConfigOverrides,
   );
+
+  validate(configuration, {exampleConfig: await validConfig});
 
   // Override the configuration with cli parameters
   const configWithArgs = overrideConfigWithArguments(configuration, argv);
