@@ -78,6 +78,7 @@ exports.createConnectMiddleware = async function(config: ConfigT) {
 type RunServerOptions = {|
   host?: string,
   onReady?: (server: HttpServer | HttpsServer) => void,
+  onError?: (Error & {|code?: string|}) => void,
   secure?: boolean,
   secureKey?: string,
   secureCert?: string,
@@ -89,6 +90,7 @@ exports.runServer = async (
   {
     host,
     onReady,
+    onError,
     secure = false,
     secureKey,
     secureCert,
@@ -122,6 +124,11 @@ exports.runServer = async (
     httpServer = http.createServer(serverApp);
   }
 
+  httpServer.on('error', error => {
+    onError && onError(error);
+    end();
+  });
+
   if (hmrEnabled) {
     attachHmrServer(httpServer);
   }
@@ -135,14 +142,9 @@ exports.runServer = async (
   // timeout of 120 seconds to respond to a request.
   httpServer.timeout = 0;
 
-  httpServer.on('error', error => {
-    end();
-  });
-
   httpServer.on('close', () => {
     end();
   });
-
   return httpServer;
 };
 
