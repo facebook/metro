@@ -5,7 +5,9 @@
 <url> <loc>https://facebook.github.io/blog/2017/11/22/train-approaching</loc> <changefreq>weekly</changefreq> <priority>0.3</priority> </url>
 <url> <loc>https://facebook.github.io/docs/en/api</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://facebook.github.io/docs/en/api" /> </url>
 <url> <loc>https://facebook.github.io/docs/en/bundling</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://facebook.github.io/docs/en/bundling" /> </url>
+<url> <loc>https://facebook.github.io/docs/en/caching</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://facebook.github.io/docs/en/caching" /> </url>
 <url> <loc>https://facebook.github.io/docs/en/cli</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://facebook.github.io/docs/en/cli" /> </url>
+<url> <loc>https://facebook.github.io/docs/en/concepts</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://facebook.github.io/docs/en/concepts" /> </url>
 <url> <loc>https://facebook.github.io/docs/en/configuration</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://facebook.github.io/docs/en/configuration" /> </url>
 <url> <loc>https://facebook.github.io/docs/en/getting-started</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://facebook.github.io/docs/en/getting-started" /> </url>
 <url> <loc>https://facebook.github.io/docs/en/troubleshooting</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://facebook.github.io/docs/en/troubleshooting" /> </url>
