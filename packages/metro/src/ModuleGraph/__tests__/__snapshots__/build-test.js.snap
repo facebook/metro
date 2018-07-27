@@ -4,9 +4,9 @@ exports[`build setup adds a prelude containing start time and \`__DEV__\` to the
 Object {
   "dependencies": Array [],
   "file": Object {
-    "code": "var __DEV__=true,__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now(),process=this.process||{};process.env=process.env||{};process.env.NODE_ENV='development';",
+    "code": "var __NUM_MODULES__=0,__FRAMEWORK__=undefined,__DEV__=true,__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now(),process=this.process||{};process.env=process.env||{};process.env.NODE_ENV=\\"development\\";",
     "map": null,
-    "path": "",
+    "path": "/<generated>/prelude.js",
     "type": "script",
   },
 }
@@ -16,9 +16,9 @@ exports[`build setup sets \`__DEV__\` to false in the prelude if optimization is
 Object {
   "dependencies": Array [],
   "file": Object {
-    "code": "var __DEV__=false,__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now(),process=this.process||{};process.env=process.env||{};process.env.NODE_ENV='production';",
+    "code": "var __NUM_MODULES__=0,__FRAMEWORK__=undefined,__DEV__=false,__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now(),process=this.process||{};process.env=process.env||{};process.env.NODE_ENV=\\"production\\";",
     "map": null,
-    "path": "",
+    "path": "/<generated>/prelude.js",
     "type": "script",
   },
 }

@@ -60,7 +60,7 @@
   ],
   "jest": {
     "modulePathIgnorePatterns": [
-      "packages/.*/build"
+      "packages/[^/]+/build/"
     ],
     "testEnvironment": "node",
     "timers": "fake",

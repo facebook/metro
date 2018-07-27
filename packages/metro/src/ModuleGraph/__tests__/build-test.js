@@ -11,7 +11,7 @@
 'use strict';
 
 const build = require('../build');
-const defaults = require('../../defaults');
+const defaults = require('metro-config/src/defaults/defaults');
 
 const FILE_TYPE = 'module';
 
