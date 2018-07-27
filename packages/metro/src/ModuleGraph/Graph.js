@@ -25,7 +25,7 @@ import type {
 const NO_OPTIONS = {};
 
 exports.create = function create(resolve: ResolveFn, load: LoadFn): GraphFn {
-  async function Graph(entryPoints, platform, options) {
+  return async function Graph(entryPoints, platform, options) {
     const {log = (console: any), optimize = false, skip} =
       options || NO_OPTIONS;
 
@@ -65,9 +65,7 @@ exports.create = function create(resolve: ResolveFn, load: LoadFn): GraphFn {
 
     queue.enqueue(...tasks);
     return collect(await queue.result);
-  }
-
-  return Graph;
+  };
 };
 
 class Queue<T, R, A> {

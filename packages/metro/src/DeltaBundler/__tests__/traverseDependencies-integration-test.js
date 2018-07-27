@@ -52,7 +52,7 @@ describe('traverseDependencies', function() {
   let defaults;
   let UnableToResolveError;
 
-  async function getOrderedDependenciesAsJSON(
+  const getOrderedDependenciesAsJSON = async function(
     dgraphPromise,
     entryPath,
     platform,
@@ -106,7 +106,7 @@ describe('traverseDependencies', function() {
         };
       }),
     );
-  }
+  };
 
   beforeEach(function() {
     jest.resetModules();
@@ -3773,7 +3773,7 @@ describe('traverseDependencies', function() {
    * default, so we must end the watcher to ensure the test does not hang up
    * (regardless if the test passes or fails).
    */
-  async function processDgraphFor(DependencyGraph, options, processor) {
+  const processDgraphFor = async function(DependencyGraph, options, processor) {
     const dgraph = await DependencyGraph.load(
       options,
       false /* since we're mocking the filesystem, we cannot use watchman */,
@@ -3783,7 +3783,7 @@ describe('traverseDependencies', function() {
     } finally {
       dgraph.end();
     }
-  }
+  };
 
   function defer(value) {
     let resolve;

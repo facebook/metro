@@ -498,7 +498,7 @@ describe('edge cases', () => {
       };
     }
 
-    async function assertOrder() {
+    const assertOrder = async function() {
       graph = {
         dependencies: new Map(),
         entryPoints: ['/bundle'],
@@ -509,7 +509,7 @@ describe('edge cases', () => {
           getPaths(await initialTraverseDependencies(graph, options)).added,
         ),
       ).toEqual(['/bundle', '/foo', '/baz', '/bar']);
-    }
+    };
 
     // Create a dependency tree where moduleBaz has two inverse dependencies.
     mockedDependencyTree = new Map([
