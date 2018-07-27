@@ -11,7 +11,7 @@
 'use strict';
 
 const formatBundlingError = require('./lib/formatBundlingError');
-const getAbsolutePath = require('./lib/getAbsolutePath');
+const getEntryAbsolutePath = require('./lib/getEntryAbsolutePath');
 const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
 const nullthrows = require('fbjs/lib/nullthrows');
 const parseCustomTransformOptions = require('./lib/parseCustomTransformOptions');
@@ -63,7 +63,7 @@ class HmrServer<TClient: Client> {
     // DeltaBundleId param through the WS connection and we'll be able to share
     // the same graph between the WS connection and the HTTP one.
     const graph = await this._packagerServer.buildGraph(
-      [getAbsolutePath(bundleEntry, this._config.watchFolders)],
+      [getEntryAbsolutePath(this._config, bundleEntry)],
       {
         assetPlugins: [],
         customTransformOptions,
@@ -129,6 +129,7 @@ class HmrServer<TClient: Client> {
 
       return hmrJSBundle(delta, client.graph, {
         createModuleId: this._packagerServer._createModuleId,
+        projectRoot: this._config.projectRoot,
       });
     } catch (error) {
       const formattedError = formatBundlingError(error);

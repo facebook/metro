@@ -30,6 +30,7 @@ type Options = {|
   +getRunModuleStatement: number => string,
   +getTransformOptions: ?GetTransformOptions,
   +platform: ?string,
+  +projectRoot: string,
   +runBeforeMainModule: $ReadOnlyArray<string>,
   +runModule: boolean,
   +sourceMapUrl: ?string,

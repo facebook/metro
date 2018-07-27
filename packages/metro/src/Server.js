@@ -163,6 +163,7 @@ class Server {
         createModuleId: this._createModuleId,
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,
         dev: options.dev,
+        projectRoot: this._config.projectRoot,
         runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
           path.relative(this._config.projectRoot, entryPoint),
         ),
@@ -214,6 +215,7 @@ class Server {
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,
         getTransformOptions: this._config.transformer.getTransformOptions,
         platform: options.platform,
+        projectRoot: this._config.projectRoot,
         runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
           path.relative(this._config.projectRoot, entryPoint),
         ),
@@ -604,6 +606,7 @@ class Server {
             dev: options.dev,
             getRunModuleStatement: this._config.serializer
               .getRunModuleStatement,
+            projectRoot: this._config.projectRoot,
             runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
               path.relative(this._config.projectRoot, options.entryFile),
             ),
@@ -670,6 +673,7 @@ class Server {
           createModuleId: this._createModuleId,
           getRunModuleStatement: this._config.serializer.getRunModuleStatement,
           dev: options.dev,
+          projectRoot: this._config.projectRoot,
           runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
             path.relative(this._config.projectRoot, options.entryFile),
           ),

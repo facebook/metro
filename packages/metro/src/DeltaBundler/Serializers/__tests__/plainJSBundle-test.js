@@ -11,6 +11,7 @@
 'use strict';
 
 const createModuleIdFactory = require('../../../lib/createModuleIdFactory');
+const path = require('path');
 const plainJSBundle = require('../plainJSBundle');
 
 const polyfill = {
@@ -23,15 +24,15 @@ const polyfill = {
 };
 
 const fooModule = {
-  path: 'foo',
-  dependencies: new Map([['./bar', {absolutePath: 'bar', data: {}}]]),
+  path: '/root/foo',
+  dependencies: new Map([['./bar', {absolutePath: '/root/bar', data: {}}]]),
   output: [
     {type: 'js/module', data: {code: '__d(function() {/* code for foo */});'}},
   ],
 };
 
 const barModule = {
-  path: 'bar',
+  path: '/root/bar',
   dependencies: new Map(),
   output: [
     {type: 'js/module', data: {code: '__d(function() {/* code for bar */});'}},
@@ -44,16 +45,20 @@ const getRunModuleStatement = moduleId =>
 it('should serialize a very simple bundle', () => {
   expect(
     plainJSBundle(
-      'foo',
+      '/root/foo',
       [polyfill],
       {
-        dependencies: new Map([['foo', fooModule], ['bar', barModule]]),
+        dependencies: new Map([
+          ['/root/foo', fooModule],
+          ['/root/bar', barModule],
+        ]),
         entryPoints: ['foo'],
       },
       {
-        createModuleId: path => path,
+        createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement,
+        projectRoot: '/root',
         runBeforeMainModule: [],
         runModule: true,
         sourceMapUrl: 'http://localhost/bundle.map',
@@ -73,17 +78,21 @@ it('should serialize a very simple bundle', () => {
 it('should add runBeforeMainModule statements if found in the graph', () => {
   expect(
     plainJSBundle(
-      'foo',
+      '/root/foo',
       [polyfill],
       {
-        dependencies: new Map([['foo', fooModule], ['bar', barModule]]),
-        entryPoints: ['foo'],
+        dependencies: new Map([
+          ['/root/foo', fooModule],
+          ['/root/bar', barModule],
+        ]),
+        entryPoints: ['/root/foo'],
       },
       {
-        createModuleId: path => path,
+        createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement,
-        runBeforeMainModule: ['bar', 'non-existant'],
+        projectRoot: '/root',
+        runBeforeMainModule: ['/root/bar', 'non-existant'],
         runModule: true,
         sourceMapUrl: 'http://localhost/bundle.map',
       },
@@ -103,17 +112,21 @@ it('should add runBeforeMainModule statements if found in the graph', () => {
 it('should handle numeric module ids', () => {
   expect(
     plainJSBundle(
-      'foo',
+      '/root/foo',
       [polyfill],
       {
-        dependencies: new Map([['foo', fooModule], ['bar', barModule]]),
-        entryPoints: ['foo'],
+        dependencies: new Map([
+          ['/root/foo', fooModule],
+          ['/root/bar', barModule],
+        ]),
+        entryPoints: ['/root/foo'],
       },
       {
         createModuleId: createModuleIdFactory(),
         dev: true,
         getRunModuleStatement,
-        runBeforeMainModule: ['bar', 'non-existant'],
+        projectRoot: '/root',
+        runBeforeMainModule: ['/root/bar', 'non-existant'],
         runModule: true,
         sourceMapUrl: 'http://localhost/bundle.map',
       },
@@ -133,18 +146,22 @@ it('should handle numeric module ids', () => {
 it('outputs custom runModule statements', () => {
   expect(
     plainJSBundle(
-      'foo',
+      '/root/foo',
       [polyfill],
       {
-        dependencies: new Map([['foo', fooModule], ['bar', barModule]]),
-        entryPoints: ['foo'],
+        dependencies: new Map([
+          ['/root/foo', fooModule],
+          ['/root/bar', barModule],
+        ]),
+        entryPoints: ['/root/foo'],
       },
       {
-        createModuleId: path => path,
+        createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement: moduleId =>
           `export default require(${JSON.stringify(moduleId)}).default;`,
-        runBeforeMainModule: ['bar'],
+        projectRoot: '/root',
+        runBeforeMainModule: ['/root/bar'],
         runModule: true,
       },
     ),

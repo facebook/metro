@@ -45,6 +45,7 @@ describe('wrapModule()', () => {
       wrapModule(myModule, {
         createModuleId: createModuleIdFactory(),
         dev: false,
+        projectRoot: '/root',
       }),
     ).toEqual('__d(function() { console.log("foo") },0,[1,2]);');
   });
@@ -54,6 +55,7 @@ describe('wrapModule()', () => {
       wrapModule(myModule, {
         createModuleId: createModuleIdFactory(),
         dev: true,
+        projectRoot: '/root',
       }),
     ).toEqual('__d(function() { console.log("foo") },0,[1,2],"foo.js");');
   });
@@ -65,6 +67,7 @@ describe('wrapModule()', () => {
       wrapModule(myModule, {
         createModuleId: createModuleIdFactory(),
         dev: true,
+        projectRoot: '/root',
       }),
     ).toEqual(myModule.output[0].data.code);
   });
@@ -75,6 +78,7 @@ describe('wrapModule()', () => {
       wrapModule(myModule, {
         createModuleId: path => path,
         dev: false,
+        projectRoot: '/root',
       }),
     ).toEqual(
       '__d(function() { console.log("foo") },"/root/foo.js",["/bar","/baz"]);',

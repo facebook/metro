@@ -21,6 +21,7 @@ type Options = {|
   +createModuleId: string => number | string,
   +dev: boolean,
   +getRunModuleStatement: (number | string) => string,
+  +projectRoot: string,
   +runBeforeMainModule: $ReadOnlyArray<string>,
   +runModule: boolean,
   +sourceMapUrl: ?string,
