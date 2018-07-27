@@ -1017,14 +1017,6 @@ class Server {
     return (this._nextBundleBuildID++).toString(36);
   }
 
-  getReporter(): Reporter {
-    return this._reporter;
-  }
-
-  getProjectRoot(): string {
-    return this._config.projectRoot;
-  }
-
   getWatchFolders(): $ReadOnlyArray<string> {
     return this._config.watchFolders;
   }

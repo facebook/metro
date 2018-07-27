@@ -64,7 +64,7 @@ exports.createConnectMiddleware = async function(config: ConfigT) {
       attachWebsocketServer({
         httpServer,
         path: '/hot',
-        websocketServer: new MetroHmrServer(metroServer),
+        websocketServer: new MetroHmrServer(metroServer, config),
       });
     },
     metroServer,

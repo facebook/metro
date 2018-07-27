@@ -23,6 +23,7 @@ const {
 
 import type PackagerServer, {OutputGraph} from './Server';
 import type {Reporter} from './lib/reporting';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 type Client = {|
   graph: OutputGraph,
@@ -39,12 +40,13 @@ type Client = {|
  * `onClientConnect`, `onClientDisconnect` and `onClientError` methods).
  */
 class HmrServer<TClient: Client> {
+  _config: ConfigT;
   _packagerServer: PackagerServer;
   _reporter: Reporter;
 
-  constructor(packagerServer: PackagerServer) {
+  constructor(packagerServer: PackagerServer, config: ConfigT) {
+    this._config = config;
     this._packagerServer = packagerServer;
-    this._reporter = packagerServer.getReporter();
   }
 
   async onClientConnect(
@@ -61,7 +63,7 @@ class HmrServer<TClient: Client> {
     // DeltaBundleId param through the WS connection and we'll be able to share
     // the same graph between the WS connection and the HTTP one.
     const graph = await this._packagerServer.buildGraph(
-      [getAbsolutePath(bundleEntry, this._packagerServer.getWatchFolders())],
+      [getAbsolutePath(bundleEntry, this._config.watchFolders)],
       {
         assetPlugins: [],
         customTransformOptions,
@@ -85,7 +87,7 @@ class HmrServer<TClient: Client> {
   }
 
   onClientError(client: TClient, e: Error) {
-    this._reporter.update({
+    this._config.reporter.update({
       type: 'hmr_client_error',
       error: e,
     });
@@ -131,7 +133,7 @@ class HmrServer<TClient: Client> {
     } catch (error) {
       const formattedError = formatBundlingError(error);
 
-      this._reporter.update({type: 'bundling_error', error});
+      this._config.reporter.update({type: 'bundling_error', error});
 
       return {type: 'error', body: formattedError};
     }

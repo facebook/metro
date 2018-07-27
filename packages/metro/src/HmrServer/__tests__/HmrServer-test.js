@@ -41,21 +41,17 @@ describe('HmrServer', () => {
       getDeltaBundler() {
         return deltaBundlerMock;
       },
-      getReporter() {
-        return {
-          update: jest.fn(),
-        };
-      },
-      getWatchFolders() {
-        return ['/root'];
-      },
-
       _createModuleId(path) {
         return path + '-id';
       },
     };
 
-    hmrServer = new HmrServer(serverMock);
+    hmrServer = new HmrServer(serverMock, {
+      reporter: {
+        update: jest.fn(),
+      },
+      watchFolders: ['/root'],
+    });
   });
 
   it('should pass the correct options to the delta bundler', async () => {
