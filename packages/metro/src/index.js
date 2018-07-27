@@ -133,19 +133,26 @@ exports.runServer = async (
     attachHmrServer(httpServer);
   }
 
-  httpServer.listen(config.server.port, host, () => {
-    onReady && onReady(httpServer);
-  });
+  return new Promise((resolve, reject) => {
+    httpServer.listen(config.server.port, host, () => {
+      onReady && onReady(httpServer);
+      resolve(httpServer);
+    });
 
-  // Disable any kind of automatic timeout behavior for incoming
-  // requests in case it takes the packager more than the default
-  // timeout of 120 seconds to respond to a request.
-  httpServer.timeout = 0;
+    // Disable any kind of automatic timeout behavior for incoming
+    // requests in case it takes the packager more than the default
+    // timeout of 120 seconds to respond to a request.
+    httpServer.timeout = 0;
 
-  httpServer.on('close', () => {
-    end();
+    httpServer.on('error', error => {
+      end();
+      reject(error);
+    });
+
+    httpServer.on('close', () => {
+      end();
+    });
   });
-  return httpServer;
 };
 
 type BuildGraphOptions = {|
