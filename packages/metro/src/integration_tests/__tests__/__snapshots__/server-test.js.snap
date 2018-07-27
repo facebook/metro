@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should create a server 1`] = `
+"var __DEV__=false,__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now(),process=this.process||{};process.env=process.env||{};process.env.NODE_ENV=\\"production\\";
+!(function(r){'use strict';r.require=t,r.__d=function(r,t,n){if(null!=e[t])return;e[t]={dependencyMap:n,exports:void 0,factory:r,hasError:!1,isInitialized:!1}};var e='number'==typeof __NUM_MODULES__?Array(0|__NUM_MODULES__):Object.create(null);function t(r){var t=r,n=e[t];return n&&n.isInitialized?n.exports:i(t,n)}var n=!1;function i(e,t){if(!n&&r.ErrorUtils){var i;n=!0;try{i=d(e,t)}catch(e){r.ErrorUtils.reportFatalError(e)}return n=!1,i}return d(e,t)}var o=16,a=65535;function u(r){return{segmentId:r>>>o,localId:r&a}}function d(n,i){!i&&r.__defineModule&&(r.__defineModule(n),i=e[n]);var o=r.nativeRequire;if(!i&&o){var a=u(n),d=a.segmentId;o(a.localId,d),i=e[n]}if(!i)throw Error('Requiring unknown module \\"'+n+'\\".');if(i.hasError)throw c(n,i.error);i.isInitialized=!0;var l=i.exports={},s=i,f=s.factory,p=s.dependencyMap;try{var _={exports:l};return f(r,t,_,l,p),i.factory=void 0,i.dependencyMap=void 0,i.exports=_.exports}catch(r){throw i.hasError=!0,i.error=r,i.isInitialized=!1,i.exports=void 0,r}}function c(r,e){return Error('Requiring module \\"'+r+'\\", which threw an exception: '+e)}t.unpackModuleId=u,t.packModuleId=function(r){return r.segmentId<<o+r.localId}})(this);
+__d(function(g,r,m,e,d){'use strict';var o=r(d[0]),t=r(d[1]);m.exports={Foo:t,Bar:o}},0,[1,2]);
+__d(function(g,r,m,e,d){'use strict';var t=r(d[0]);m.exports={type:'bar',foo:t.type}},1,[2]);
+__d(function(g,r,m,e,d){'use strict';var t=r(d[0]);m.exports={type:'foo',asset:t}},2,[3]);
+__d(function(g,r,m,e,d){m.exports=r(d[0]).registerAsset({__packager_asset:!0,httpServerLocation:\\"/assets\\",width:8,height:8,scales:[1],hash:\\"77d45c1f7fa73c0f6c444a830dc42f67\\",name:\\"test\\",type:\\"png\\"})},3,[4]);
+__d(function(g,r,m,e,d){'use strict'},4,[]);
+require(0);
+//# sourceMappingURL=/TestBundle.map?platform=ios&dev=false&minify=true"
+`;

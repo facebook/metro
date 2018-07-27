@@ -1,0 +1,141 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should build the dependency graph 1`] = `
+Array [
+  Object {
+    "data": Object {
+      "code": "__d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {
+  'use strict';
+
+  var Bar = _$$_REQUIRE(_dependencyMap[0]);
+
+  var Foo = _$$_REQUIRE(_dependencyMap[1]);
+
+  module.exports = {
+    Foo: Foo,
+    Bar: Bar
+  };
+});",
+      "map": Array [
+        Array [
+          2,
+          0,
+          11,
+          0,
+        ],
+        Array [
+          4,
+          0,
+          13,
+          0,
+        ],
+        Array [
+          4,
+          6,
+          13,
+          6,
+          "Bar",
+        ],
+        Array [
+          4,
+          12,
+          13,
+          12,
+          "require",
+        ],
+        Array [
+          4,
+          42,
+          13,
+          0,
+        ],
+        Array [
+          6,
+          0,
+          14,
+          0,
+        ],
+        Array [
+          6,
+          6,
+          14,
+          6,
+          "Foo",
+        ],
+        Array [
+          6,
+          12,
+          14,
+          12,
+          "require",
+        ],
+        Array [
+          6,
+          42,
+          14,
+          0,
+        ],
+        Array [
+          8,
+          0,
+          16,
+          0,
+          "module",
+        ],
+        Array [
+          8,
+          9,
+          16,
+          7,
+          "exports",
+        ],
+        Array [
+          8,
+          16,
+          16,
+          0,
+        ],
+        Array [
+          8,
+          19,
+          16,
+          17,
+        ],
+        Array [
+          9,
+          0,
+          16,
+          18,
+          "Foo",
+        ],
+        Array [
+          9,
+          12,
+          16,
+          17,
+        ],
+        Array [
+          10,
+          0,
+          16,
+          23,
+          "Bar",
+        ],
+        Array [
+          11,
+          0,
+          16,
+          17,
+        ],
+        Array [
+          11,
+          3,
+          16,
+          0,
+        ],
+      ],
+    },
+    "type": "js/module",
+  },
+]
+`;
