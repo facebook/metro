@@ -24,7 +24,7 @@ describe('HmrServer', () => {
   beforeEach(() => {
     mockedGraph = {
       dependencies: new Map(),
-      entryPoint: 'EntryPoint.js',
+      entryPoint: '/root/EntryPoint.js',
     };
 
     buildGraphMock = jest.fn().mockReturnValue(mockedGraph);
@@ -87,11 +87,11 @@ describe('HmrServer', () => {
       Promise.resolve({
         modified: new Map([
           [
-            '/hi',
+            '/root/hi',
             {
               dependencies: new Map(),
               inverseDependencies: new Set(),
-              path: '/hi',
+              path: '/root/hi',
               output: [
                 {
                   type: 'js/module',
@@ -117,8 +117,9 @@ describe('HmrServer', () => {
         body: {
           modules: [
             {
-              id: '/hi-id',
-              code: '__d(function() { alert("hi"); },"/hi-id",[],"hi",{});',
+              id: '/root/hi-id',
+              code:
+                '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
             },
           ],
           sourceURLs: {},

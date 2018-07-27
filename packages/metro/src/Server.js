@@ -275,6 +275,7 @@ class Server {
         runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
           toLocalPath(this._opts.projectRoots, entryPoint),
         ),
+        projectRoot: this._opts.projectRoots[0],
         runModule: options.runModule,
         sourceMapUrl: options.sourceMapUrl,
       }),
@@ -326,6 +327,7 @@ class Server {
         getRunModuleStatement: this._opts.getRunModuleStatement,
         getTransformOptions: this._opts.getTransformOptions,
         platform: options.platform,
+        projectRoot: this._opts.projectRoots[0],
         runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
           toLocalPath(this._opts.projectRoots, entryPoint),
         ),
@@ -718,6 +720,7 @@ class Server {
             createModuleId: this._opts.createModuleId,
             dev: options.dev,
             getRunModuleStatement: this._opts.getRunModuleStatement,
+            projectRoot: this._opts.projectRoots[0],
             runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
               toLocalPath(this._opts.projectRoots, options.entryFile),
             ),
@@ -784,6 +787,7 @@ class Server {
           createModuleId: this._opts.createModuleId,
           getRunModuleStatement: this._opts.getRunModuleStatement,
           dev: options.dev,
+          projectRoot: this._opts.projectRoots[0],
           runBeforeMainModule: this._opts.getModulesRunBeforeMainModule(
             toLocalPath(this._opts.projectRoots, options.entryFile),
           ),

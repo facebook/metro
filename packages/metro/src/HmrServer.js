@@ -127,6 +127,7 @@ class HmrServer<TClient: Client> {
 
       return hmrJSBundle(delta, client.graph, {
         createModuleId: this._packagerServer._opts.createModuleId,
+        projectRoot: this._packagerServer.getProjectRoots()[0],
       });
     } catch (error) {
       const formattedError = formatBundlingError(error);

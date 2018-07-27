@@ -20,6 +20,7 @@ import type {MixedOutput, Module} from '../../types.flow';
 export type Options = {
   +createModuleId: string => number | string,
   +dev: boolean,
+  +projectRoot: string,
 };
 
 // Used to include paths in production bundles for traces of performance tuned runs,
@@ -42,12 +43,10 @@ function wrapModule(module: Module<>, options: Options) {
     }),
   ];
 
-  // Add the module name as the last parameter (to make it easier to do
+  // Add the module relative path as the last parameter (to make it easier to do
   // requires by name when debugging).
-  // TODO (t26853986): Switch this to use the relative file path (once we have
-  // as single project root).
   if (PASS_MODULE_PATHS_TO_DEFINE || options.dev) {
-    params.push(path.basename(module.path));
+    params.push(path.relative(options.projectRoot, module.path));
     if (PASS_MODULE_PATHS_TO_DEFINE) {
       params.push(module.path);
     }

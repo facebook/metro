@@ -17,7 +17,8 @@ const {isJsModule, wrapModule} = require('./helpers/js');
 import type {DeltaResult, Graph, Module} from '../types.flow';
 
 type Options = {
-  createModuleId: string => number,
+  +createModuleId: string => number,
+  +projectRoot: string,
 };
 
 export type Result = {
@@ -58,7 +59,7 @@ function _prepareModule(
   options: Options,
 ): {|+id: number, +code: string|} {
   const code = wrapModule(module, {
-    createModuleId: options.createModuleId,
+    ...options,
     dev: true,
   });
 

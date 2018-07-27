@@ -44,6 +44,7 @@ const options = {
   createModuleId: createModuleIdFactory(),
   dev: true,
   getRunModuleStatement: moduleId => `require(${JSON.stringify(moduleId)});`,
+  projectRoot: '/root',
   runBeforeMainModule: [],
   runModule: true,
   sourceMapUrl: 'http://localhost/bundle.map',
