@@ -5,7 +5,6 @@ exports[`basic_bundle bundles package with polyfills 1`] = `
 (function (global) {
   'use strict';
 
-  var PRINT_REQUIRE_PATHS = false;
   global.require = metroRequire;
   global.__d = define;
   var modules = typeof __NUM_MODULES__ === 'number' ? Array(__NUM_MODULES__ | 0) : Object.create(null);
@@ -200,7 +199,6 @@ exports[`basic_bundle bundles package without polyfills 1`] = `
 (function (global) {
   'use strict';
 
-  var PRINT_REQUIRE_PATHS = false;
   global.require = metroRequire;
   global.__d = define;
   var modules = typeof __NUM_MODULES__ === 'number' ? Array(__NUM_MODULES__ | 0) : Object.create(null);

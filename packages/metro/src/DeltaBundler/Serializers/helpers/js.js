@@ -23,11 +23,6 @@ export type Options = {
   +projectRoot: string,
 };
 
-// Used to include paths in production bundles for traces of performance tuned runs,
-// e.g. to update fbandroid/apps/fb4a/compiled_react_native_modules.txt
-// Make sure to set PRINT_REQUIRE_PATHS = true too, and restart Metro
-const PASS_MODULE_PATHS_TO_DEFINE = false;
-
 function wrapModule(module: Module<>, options: Options) {
   const output = getJsOutput(module);
 
@@ -45,11 +40,8 @@ function wrapModule(module: Module<>, options: Options) {
 
   // Add the module relative path as the last parameter (to make it easier to do
   // requires by name when debugging).
-  if (PASS_MODULE_PATHS_TO_DEFINE || options.dev) {
+  if (options.dev) {
     params.push(path.relative(options.projectRoot, module.path));
-    if (PASS_MODULE_PATHS_TO_DEFINE) {
-      params.push(module.path);
-    }
   }
 
   return addParamsToDefineCall(output.data.code, ...params);
