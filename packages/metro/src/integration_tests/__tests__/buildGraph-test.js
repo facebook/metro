@@ -27,7 +27,7 @@ it('should build the dependency graph', async () => {
   );
 
   const config = await Metro.loadConfig({
-    config: require.resolve('../metro-config.js'),
+    config: require.resolve('../metro.config.js'),
   });
 
   const graph = await Metro.buildGraph(config, {

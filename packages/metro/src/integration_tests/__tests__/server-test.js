@@ -20,7 +20,7 @@ jasmine.DEFAULT_TIMEOUT_INTERVAL = 30 * 1000;
 
 it('should create a server', async () => {
   const config = await Metro.loadConfig({
-    config: require.resolve('../metro-config.js'),
+    config: require.resolve('../metro.config.js'),
   });
 
   const httpServer = await Metro.runServer(config, {

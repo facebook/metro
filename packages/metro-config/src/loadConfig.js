@@ -66,8 +66,8 @@ function overrideArgument<T>(arg: Array<T> | T): T {
 
 const explorer = cosmiconfig('metro', {
   searchPlaces: [
-    'metro-config.js',
-    'metro-config.json',
+    'metro.config.js',
+    'metro.config.json',
     'package.json',
     'rn-cli.config.js',
   ],
@@ -133,7 +133,7 @@ async function loadMetroConfigFromDisk(
 
   if (resolvedConfigResults == null) {
     throw new Error(
-      "Could not find configuration for metro, did you create a 'metro-config.js'?",
+      "Could not find configuration for metro, did you create a 'metro.config.js'?",
     );
   }
 
