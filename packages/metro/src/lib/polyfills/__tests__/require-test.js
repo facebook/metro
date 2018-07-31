@@ -373,5 +373,24 @@ describe('require', () => {
         foo: 'foo',
       });
     });
+
+    it('handles well requires when redefining module.exports', () => {
+      createModuleSystem(moduleSystem, false);
+
+      createModule(moduleSystem, 0, 'foo.js', (global, require, module) => {
+        module.exports = {
+          foo: 'foo',
+        };
+        module.exports.bar = require(1).bar();
+      });
+
+      createModule(moduleSystem, 1, 'foo.js', (global, require, module) => {
+        module.exports.bar = function() {
+          return require(0).foo + '-cyclic';
+        };
+      });
+
+      expect(moduleSystem.require(0)).toEqual({foo: 'foo', bar: 'foo-cyclic'});
+    });
   });
 });

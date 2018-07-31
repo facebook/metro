@@ -16,7 +16,9 @@ exports[`basic_bundle bundles package with polyfills 1`] = `
 
     modules[moduleId] = {
       dependencyMap: dependencyMap,
-      exports: undefined,
+      publicModule: {
+        exports: undefined
+      },
       factory: factory,
       hasError: false,
       isInitialized: false
@@ -26,7 +28,7 @@ exports[`basic_bundle bundles package with polyfills 1`] = `
   function metroRequire(moduleId) {
     var moduleIdReallyIsNumber = moduleId;
     var module = modules[moduleIdReallyIsNumber];
-    return module && module.isInitialized ? module.exports : guardedLoadModule(moduleIdReallyIsNumber, module);
+    return module && module.isInitialized ? module.publicModule.exports : guardedLoadModule(moduleIdReallyIsNumber, module);
   }
 
   var inGuard = false;
@@ -96,26 +98,27 @@ exports[`basic_bundle bundles package with polyfills 1`] = `
     }
 
     module.isInitialized = true;
-    var exports = module.exports = {};
+    var exports = {};
     var _module = module,
         factory = _module.factory,
         dependencyMap = _module.dependencyMap;
 
     try {
-      var _moduleObject = {
+      var _moduleObject = module.publicModule = {
         exports: exports
       };
+
       factory(global, metroRequire, _moduleObject, exports, dependencyMap);
       {
         module.factory = undefined;
         module.dependencyMap = undefined;
       }
-      return module.exports = _moduleObject.exports;
+      return _moduleObject.exports;
     } catch (e) {
       module.hasError = true;
       module.error = e;
       module.isInitialized = false;
-      module.exports = undefined;
+      module.publicModule.exports = undefined;
       throw e;
     } finally {}
   }
@@ -210,7 +213,9 @@ exports[`basic_bundle bundles package without polyfills 1`] = `
 
     modules[moduleId] = {
       dependencyMap: dependencyMap,
-      exports: undefined,
+      publicModule: {
+        exports: undefined
+      },
       factory: factory,
       hasError: false,
       isInitialized: false
@@ -220,7 +225,7 @@ exports[`basic_bundle bundles package without polyfills 1`] = `
   function metroRequire(moduleId) {
     var moduleIdReallyIsNumber = moduleId;
     var module = modules[moduleIdReallyIsNumber];
-    return module && module.isInitialized ? module.exports : guardedLoadModule(moduleIdReallyIsNumber, module);
+    return module && module.isInitialized ? module.publicModule.exports : guardedLoadModule(moduleIdReallyIsNumber, module);
   }
 
   var inGuard = false;
@@ -290,26 +295,27 @@ exports[`basic_bundle bundles package without polyfills 1`] = `
     }
 
     module.isInitialized = true;
-    var exports = module.exports = {};
+    var exports = {};
     var _module = module,
         factory = _module.factory,
         dependencyMap = _module.dependencyMap;
 
     try {
-      var _moduleObject = {
+      var _moduleObject = module.publicModule = {
         exports: exports
       };
+
       factory(global, metroRequire, _moduleObject, exports, dependencyMap);
       {
         module.factory = undefined;
         module.dependencyMap = undefined;
       }
-      return module.exports = _moduleObject.exports;
+      return _moduleObject.exports;
     } catch (e) {
       module.hasError = true;
       module.error = e;
       module.isInitialized = false;
-      module.exports = undefined;
+      module.publicModule.exports = undefined;
       throw e;
     } finally {}
   }
