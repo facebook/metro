@@ -10,12 +10,5 @@
     "transform-object-rest-spread"
   ],
   "ignore": ["packages/metro/src/lib/polyfills"],
-  "retainLines": true,
-  "env": {
-    "test": {
-      "plugins": [
-        "babel-preset-fbjs/plugins/inline-requires"
-      ]
-    }
-  }
+  "retainLines": true
 }
