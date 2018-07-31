@@ -120,10 +120,10 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev) {
     const verboseName = moduleId;
     moduleId = verboseNamesToModuleIds[verboseName];
     if (moduleId == null) {
-      throw new Error(`Unknown named module: '${verboseName}'`);
+      throw new Error(`Unknown named module: "${verboseName}"`);
     } else {
       console.warn(
-        `Requiring module '${verboseName}' by name is only supported for ` +
+        `Requiring module "${verboseName}" by name is only supported for ` +
           'debugging purposes and will BREAK IN PRODUCTION!',
       );
     }
