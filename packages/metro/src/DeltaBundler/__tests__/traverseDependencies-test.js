@@ -180,6 +180,17 @@ it('should do the initial traversal correctly', async () => {
   expect(graph).toMatchSnapshot();
 });
 
+it('should populate all the inverse dependencies', async () => {
+  // create a second inverse dependency on /bar.
+  Actions.addDependency('/bundle', '/bar');
+
+  await initialTraverseDependencies(graph, options);
+
+  expect(graph.dependencies.get('/bar').inverseDependencies).toEqual(
+    new Set(['/foo', '/bundle']),
+  );
+});
+
 it('should return an empty result when there are no changes', async () => {
   await initialTraverseDependencies(graph, options);
 
@@ -282,7 +293,7 @@ describe('Progress updates', () => {
 
 describe('edge cases', () => {
   it('should handle cyclic dependencies', async () => {
-    Actions.addDependency('/bar', '/bundle');
+    Actions.addDependency('/baz', '/foo');
     files = new Set();
 
     expect(getPaths(await initialTraverseDependencies(graph, options))).toEqual(
@@ -290,6 +301,10 @@ describe('edge cases', () => {
         added: new Set(['/bundle', '/foo', '/bar', '/baz']),
         deleted: new Set(),
       },
+    );
+
+    expect(graph.dependencies.get('/foo').inverseDependencies).toEqual(
+      new Set(['/bundle', '/baz']),
     );
   });
 
@@ -361,6 +376,36 @@ describe('edge cases', () => {
     expect(graph.dependencies.get('/foo')).toBe(undefined);
     expect(graph.dependencies.get('/bar')).toBe(undefined);
     expect(graph.dependencies.get('/baz')).toBe(undefined);
+  });
+
+  it('removes a cyclic dependency', async () => {
+    Actions.addDependency('/baz', '/foo');
+    files = new Set();
+
+    await initialTraverseDependencies(graph, options);
+
+    Actions.removeDependency('/bundle', '/foo');
+
+    // Unfortunately, since we do reference counting we cannot detect that the
+    // whole cycle has been removed from the graph.
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(['/bundle']),
+      deleted: new Set([]),
+    });
+
+    // Now break the cycle. Once we break the cycle, we can detect that no
+    // module is being used and remove all of them.
+    files = new Set();
+    Actions.removeDependency('/baz', '/foo');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set([]),
+      deleted: new Set(['/foo', '/bar', '/baz']),
+    });
   });
 
   it('move a file to a different folder', async () => {

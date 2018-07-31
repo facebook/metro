@@ -129,7 +129,7 @@ async function traverseDependenciesForSingleFile<T>(
   let total = 1;
   options.onProgress && options.onProgress(numProcessed, total);
 
-  const module = await processModule(
+  await processModule(
     path,
     graph,
     delta,
@@ -143,8 +143,6 @@ async function traverseDependenciesForSingleFile<T>(
       options.onProgress && options.onProgress(numProcessed, total);
     },
   );
-
-  graph.dependencies.set(path, module);
 
   numProcessed++;
   options.onProgress && options.onProgress(numProcessed, total);
@@ -182,6 +180,7 @@ async function processModule<T>(
     getSource: result.getSource,
     output: result.output,
   };
+  graph.dependencies.set(module.path, module);
 
   for (const [relativePath, dependency] of currentDependencies) {
     module.dependencies.set(relativePath, dependency);
@@ -228,12 +227,9 @@ async function addDependency<T>(
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
 ): Promise<void> {
-  if (delta.added.has(path)) {
-    return;
-  }
-
   // The new dependency was already in the graph, we don't need to do anything.
   const existingModule = graph.dependencies.get(path);
+
   if (existingModule) {
     existingModule.inverseDependencies.add(parentModule.path);
 
