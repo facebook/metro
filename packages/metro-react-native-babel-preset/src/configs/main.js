@@ -9,6 +9,10 @@
 
 'use strict';
 
+function isTypeScriptSource(fileName) {
+  return !!fileName && (fileName.endsWith('.ts') || fileName.endsWith('.tsx'));
+}
+
 const defaultPlugins = [
   [require('@babel/plugin-proposal-optional-catch-binding')],
   [require('@babel/plugin-transform-block-scoping')],
@@ -124,6 +128,14 @@ const getPreset = (src, options) => {
     comments: false,
     compact: true,
     plugins: defaultPlugins.concat(extraPlugins),
+    overrides: [
+      {
+        test: isTypeScriptSource,
+        plugins: [
+          [require('@babel/plugin-transform-typescript'), {isTSX: true}],
+        ],
+      },
+    ],
   };
 };
 

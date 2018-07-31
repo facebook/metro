@@ -43,7 +43,7 @@ exports.assetExts = [
   'ttf',
 ];
 
-exports.sourceExts = ['js', 'json'];
+exports.sourceExts = ['js', 'json', 'ts', 'tsx'];
 
 exports.moduleSystem = require.resolve('metro/src/lib/polyfills/require.js');
 

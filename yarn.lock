@@ -357,6 +357,12 @@
   dependencies:
     "@babel/helper-plugin-utils" "7.0.0-beta.54"
 
+"@babel/plugin-syntax-typescript@7.0.0-beta.54":
+  version "7.0.0-beta.54"
+  resolved "https://registry.yarnpkg.com/@babel/plugin-syntax-typescript/-/plugin-syntax-typescript-7.0.0-beta.54.tgz#7b01ddebccba8f78693bf2898e1f695bb8a76a7e"
+  dependencies:
+    "@babel/helper-plugin-utils" "7.0.0-beta.54"
+
 "@babel/plugin-transform-arrow-functions@7.0.0-beta.54":
   version "7.0.0-beta.54"
   resolved "https://registry.yarnpkg.com/@babel/plugin-transform-arrow-functions/-/plugin-transform-arrow-functions-7.0.0-beta.54.tgz#44a977b8e61e4efcc7658bbbe260f204ca1bcf72"
@@ -510,6 +516,13 @@
   dependencies:
     "@babel/helper-annotate-as-pure" "7.0.0-beta.54"
     "@babel/helper-plugin-utils" "7.0.0-beta.54"
+
+"@babel/plugin-transform-typescript@7.0.0-beta.54":
+  version "7.0.0-beta.54"
+  resolved "https://registry.yarnpkg.com/@babel/plugin-transform-typescript/-/plugin-transform-typescript-7.0.0-beta.54.tgz#7b614ba0dbea88b70ae82df9c429e128928c9251"
+  dependencies:
+    "@babel/helper-plugin-utils" "7.0.0-beta.54"
+    "@babel/plugin-syntax-typescript" "7.0.0-beta.54"
 
 "@babel/plugin-transform-unicode-regex@7.0.0-beta.54":
   version "7.0.0-beta.54"

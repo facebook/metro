@@ -57,6 +57,8 @@ Object {
     "sourceExts": Array [
       "js",
       "json",
+      "ts",
+      "tsx",
     ],
   },
   "serializer": Object {
@@ -151,6 +153,8 @@ Object {
     "sourceExts": Array [
       "js",
       "json",
+      "ts",
+      "tsx",
     ],
   },
   "serializer": Object {
