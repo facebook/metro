@@ -154,11 +154,14 @@ __d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {
 
   var Foo = _$$_REQUIRE(_dependencyMap[1]);
 
+  var TypeScript = _$$_REQUIRE(_dependencyMap[2]);
+
   module.exports = {
     Foo: Foo,
-    Bar: Bar
+    Bar: Bar,
+    TypeScript: TypeScript
   };
-},0,[1,2]);
+},0,[1,2,5]);
 __d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {
   'use strict';
 
@@ -194,6 +197,16 @@ __d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {
 __d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {
   'use strict';
 },4,[]);
+__d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, \\"__esModule\\", {
+    value: true
+  });
+  exports.test = exports.type = undefined;
+  var type = 'TypeScript';
+  exports.type = type;
+  var test = true;
+  exports.test = test;
+},5,[]);
 require(0);"
 `;
 
@@ -337,11 +350,14 @@ __d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {
 
   var Foo = _$$_REQUIRE(_dependencyMap[1]);
 
+  var TypeScript = _$$_REQUIRE(_dependencyMap[2]);
+
   module.exports = {
     Foo: Foo,
-    Bar: Bar
+    Bar: Bar,
+    TypeScript: TypeScript
   };
-},0,[1,2]);
+},0,[1,2,5]);
 __d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {
   'use strict';
 
@@ -377,5 +393,15 @@ __d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {
 __d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {
   'use strict';
 },4,[]);
+__d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, \\"__esModule\\", {
+    value: true
+  });
+  exports.test = exports.type = undefined;
+  var type = 'TypeScript';
+  exports.type = type;
+  var test = true;
+  exports.test = test;
+},5,[]);
 require(0);"
 `;

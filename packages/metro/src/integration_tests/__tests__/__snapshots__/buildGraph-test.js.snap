@@ -11,9 +11,12 @@ Array [
 
   var Foo = _$$_REQUIRE(_dependencyMap[1]);
 
+  var TypeScript = _$$_REQUIRE(_dependencyMap[2]);
+
   module.exports = {
     Foo: Foo,
-    Bar: Bar
+    Bar: Bar,
+    TypeScript: TypeScript
   };
 });",
       "map": Array [
@@ -78,59 +81,98 @@ Array [
         Array [
           8,
           0,
-          16,
+          17,
           0,
-          "module",
         ],
         Array [
           8,
-          9,
-          16,
-          7,
-          "exports",
-        ],
-        Array [
-          8,
-          16,
-          16,
-          0,
+          6,
+          17,
+          6,
+          "TypeScript",
         ],
         Array [
           8,
           19,
-          16,
           17,
+          19,
+          "require",
         ],
         Array [
-          9,
+          8,
+          49,
+          17,
           0,
-          16,
-          18,
-          "Foo",
-        ],
-        Array [
-          9,
-          12,
-          16,
-          17,
         ],
         Array [
           10,
           0,
-          16,
-          23,
-          "Bar",
+          19,
+          0,
+          "module",
         ],
         Array [
-          11,
-          0,
+          10,
+          9,
+          19,
+          7,
+          "exports",
+        ],
+        Array [
+          10,
           16,
+          19,
+          0,
+        ],
+        Array [
+          10,
+          19,
+          19,
           17,
         ],
         Array [
           11,
+          0,
+          19,
+          18,
+          "Foo",
+        ],
+        Array [
+          11,
+          12,
+          19,
+          17,
+        ],
+        Array [
+          12,
+          0,
+          19,
+          23,
+          "Bar",
+        ],
+        Array [
+          12,
+          12,
+          19,
+          17,
+        ],
+        Array [
+          13,
+          0,
+          19,
+          28,
+          "TypeScript",
+        ],
+        Array [
+          14,
+          0,
+          19,
+          17,
+        ],
+        Array [
+          14,
           3,
-          16,
+          19,
           0,
         ],
       ],
