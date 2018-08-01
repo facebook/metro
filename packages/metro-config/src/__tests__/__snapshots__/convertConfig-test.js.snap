@@ -74,6 +74,8 @@ Object {
     "sourceExts": Array [
       "js",
       "json",
+      "ts",
+      "tsx",
     ],
     "transformModulePath": "",
     "watch": false,

@@ -45,6 +45,7 @@ it('should build the dependency graph', async () => {
     {file: 'Foo.js', types: ['js/module']},
     {file: 'test.png', types: ['js/module/asset']},
     {file: 'AssetRegistry.js', types: ['js/module']},
+    {file: 'TypeScript.ts', types: ['js/module']},
   ]);
 
   expect(graph.dependencies.get(entryPoint)).toEqual(
