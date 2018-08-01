@@ -16,7 +16,7 @@ const fetch = require('node-fetch');
 
 jest.unmock('cosmiconfig');
 
-jasmine.DEFAULT_TIMEOUT_INTERVAL = 30 * 1000;
+jasmine.DEFAULT_TIMEOUT_INTERVAL = 60 * 1000;
 
 it('should create a server', async () => {
   const config = await Metro.loadConfig({

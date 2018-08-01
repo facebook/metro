@@ -16,7 +16,7 @@ const path = require('path');
 
 jest.unmock('cosmiconfig');
 
-jasmine.DEFAULT_TIMEOUT_INTERVAL = 30 * 1000;
+jasmine.DEFAULT_TIMEOUT_INTERVAL = 120 * 1000;
 
 it('should build the dependency graph', async () => {
   const entryPoint = path.resolve(
