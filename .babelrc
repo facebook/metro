@@ -9,6 +9,5 @@
     "transform-flow-strip-types",
     "transform-object-rest-spread"
   ],
-  "ignore": ["packages/metro/src/lib/polyfills"],
   "retainLines": true
 }
