@@ -94,13 +94,14 @@ Given a configuration and a set of options that you would typically pass to a se
 
 #### Options
 
+<!-- TODO(ives): Decide whether we need to show this to the user  * `output (boolean)` -->
+
 * `dev (boolean)`: Create a development version of the build (`process.env.NODE_ENV = 'development'`).
 * `entry (string)`: Pointing to the entry file to bundle.
 * `onBegin (Function)`: Called when the bundling starts.
 * `onComplete (Function)`: Called when the bundling finishes.
 * `onProgress (Function)`: Called during the bundle, every time there's new information available about the module count/progress.
 * `minify (boolean)`: Whether Metro should minify the bundle.
-<!-- TODO(ives): Decide whether we need to show this to the user  * `output (boolean)` -->
 * `out (string)`: Path to the output bundle.
 * `platform ('web' | 'android' | 'ios')`: Which platform to bundle for if a list of platforms is provided.
 * `sourceMap (boolean)`: Whether Metro should generate source maps.
