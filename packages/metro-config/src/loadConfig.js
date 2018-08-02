@@ -95,36 +95,40 @@ function resolveConfig(
 
 function mergeConfig(
   defaultConfig: IntermediateConfigT,
-  configModule: InputConfigT,
+  ...configs: Array<InputConfigT>
 ) {
   // If the file is a plain object we merge the file with the default config,
   // for the function we don't do this since that's the responsibility of the user
-  return {
-    ...defaultConfig,
-    ...configModule,
+  return configs.reduce(
+    (totalConfig, nextConfig) => ({
+      ...totalConfig,
+      ...nextConfig,
 
-    resolver: {
-      ...defaultConfig.resolver,
-      ...(configModule.resolver || {}),
-    },
-    serializer: {
-      ...defaultConfig.serializer,
-      ...(configModule.serializer || {}),
-    },
-    transformer: {
-      ...defaultConfig.transformer,
-      ...(configModule.transformer || {}),
-    },
-    server: {
-      ...defaultConfig.server,
-      ...(configModule.server || {}),
-    },
-  };
+      resolver: {
+        ...totalConfig.resolver,
+        ...(nextConfig.resolver || {}),
+      },
+      serializer: {
+        ...totalConfig.serializer,
+        ...(nextConfig.serializer || {}),
+      },
+      transformer: {
+        ...totalConfig.transformer,
+        ...(nextConfig.transformer || {}),
+      },
+      server: {
+        ...totalConfig.server,
+        ...(nextConfig.server || {}),
+      },
+    }),
+    defaultConfig,
+  );
 }
 
 async function loadMetroConfigFromDisk(
   path?: string,
   cwd?: string,
+  defaultConfigOverrides: InputConfigT,
 ): Promise<IntermediateConfigT> {
   const resolvedConfigResults: CosmiConfigResult = await resolveConfig(
     path,
@@ -152,10 +156,8 @@ async function loadMetroConfigFromDisk(
     return resultedConfig;
   }
 
-  const mergedConfig = mergeConfig(defaultConfig, configModule);
-
   // $FlowExpectedError
-  return mergedConfig;
+  return mergeConfig(defaultConfig, defaultConfigOverrides, configModule);
 }
 
 function overrideConfigWithArguments(
@@ -216,12 +218,22 @@ function overrideConfigWithArguments(
   return config;
 }
 
-async function loadConfig(argv: YargArguments): Promise<ConfigT> {
+/**
+ * Load the metro configuration from disk
+ * @param  {object} argv                    Arguments coming from the CLI, can be empty
+ * @param  {object} defaultConfigOverrides  A configuration that can override the default config
+ * @return {object}                         Configuration returned
+ */
+async function loadConfig(
+  argv: YargArguments = {},
+  defaultConfigOverrides: InputConfigT = {},
+): Promise<ConfigT> {
   argv.config = overrideArgument(argv.config);
 
   const configuration: IntermediateConfigT = await loadMetroConfigFromDisk(
     argv.config,
     argv.cwd,
+    defaultConfigOverrides,
   );
 
   // Override the configuration with cli parameters
