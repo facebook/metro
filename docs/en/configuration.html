@@ -50,7 +50,7 @@
   },
   <span class="hljs-attr">server</span>: {
     <span class="hljs-comment">/* server options */</span>
-  },
+  }
 
   <span class="hljs-comment">/* general options */</span>
 };
@@ -119,6 +119,7 @@
 <tr><td><code>resolverMainFields</code></td><td><code>Array&lt;string&gt;</code></td><td>Specify the fields in package.json files that will be used by the module resolver to do redirections when requiring certain packages. For example, using <code>['browser', 'main']</code> will use the <code>browser</code> field if it exists and will default to <code>main</code> if it doesn't.</td></tr>
 <tr><td><code>extraNodeModules</code></td><td><code>{[name:string]:string}</code></td><td>Which other <code>node_modules</code> to include besides the ones relative to the project directory. This is keyed by dependency name.</td></tr>
 <tr><td><code>resolveRequest</code></td><td><code>?CustomResolver</code></td><td>An optional function used to resolve requests. Ignored when the request can be resolved through Haste.</td></tr>
+<tr><td><code>useWatchman</code></td><td><code>boolean</code></td><td>If set to <code>false</code>, it'll prevent Metro from using watchman (even if it's installed).</td></tr>
 </tbody>
 </table>
 <p>These options are only useful with React Native projects.</p>
