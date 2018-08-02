@@ -130,7 +130,7 @@ beforeEach(async () => {
       }
       return path;
     },
-    transform: path => {
+    transform: jest.fn().mockImplementation(path => {
       return {
         dependencies: (mockedDependencyTree.get(path) || []).map(dep => ({
           name: dep.name,
@@ -147,7 +147,7 @@ beforeEach(async () => {
           },
         ],
       };
-    },
+    }),
     onProgress: null,
   };
 
@@ -441,6 +441,16 @@ describe('edge cases', () => {
       ['bar', {absolutePath: '/bar', data: {isAsync: false, name: 'bar'}}],
       ['baz', {absolutePath: '/baz', data: {isAsync: false, name: 'baz'}}],
     ]);
+  });
+
+  it('should try to transform every file only once', async () => {
+    // create a second inverse dependency on /bar to add a cycle.
+    Actions.addDependency('/bundle', '/bar');
+    files = new Set();
+
+    await initialTraverseDependencies(graph, options);
+
+    expect(options.transform.mock.calls.length).toBe(4);
   });
 
   it('should create two entries when requiring the same file in different forms', async () => {

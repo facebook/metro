@@ -26,6 +26,7 @@ type Delta = {
   added: Set<string>,
   modified: Set<string>,
   deleted: Set<string>,
+  inverseDependencies: Map<string, Set<string>>,
 };
 
 /**
@@ -48,6 +49,7 @@ async function traverseDependencies<T>(
     added: new Set(),
     modified: new Set(),
     deleted: new Set(),
+    inverseDependencies: new Map(),
   };
 
   for (const path of paths) {
@@ -105,6 +107,7 @@ async function initialTraverseDependencies<T>(
           added: new Set(),
           modified: new Set(),
           deleted: new Set(),
+          inverseDependencies: new Map(),
         },
         options,
       ),
@@ -168,7 +171,7 @@ async function processModule<T>(
   );
 
   const previousModule = graph.dependencies.get(path) || {
-    inverseDependencies: new Set(),
+    inverseDependencies: delta.inverseDependencies.get(path) || new Set(),
     path,
   };
   const previousDependencies = previousModule.dependencies || new Map();
@@ -236,7 +239,17 @@ async function addDependency<T>(
     return;
   }
 
+  // This module is being transformed at the moment in parallel, so we should
+  // only mark its parent as an inverse dependency.
+  const inverse = delta.inverseDependencies.get(path);
+  if (inverse) {
+    inverse.add(parentModule.path);
+
+    return;
+  }
+
   delta.added.add(path);
+  delta.inverseDependencies.set(path, new Set([parentModule.path]));
 
   onDependencyAdd();
 
