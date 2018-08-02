@@ -272,6 +272,12 @@ export type InputConfigT = {
      * be resolved through Haste.
      */
     resolveRequest?: ?CustomResolver,
+
+    /**
+     * If false, Metro will avoid using watchman even if it's available on the
+     * system.
+     */
+    useWatchman?: boolean,
   },
   server?: {
     useGlobalHotkey?: boolean,
@@ -411,6 +417,7 @@ export type IntermediateConfigT = {
     extraNodeModules: {[name: string]: string},
     resolveRequest?: ?CustomResolver,
     blacklistRE: RegExp,
+    useWatchman: boolean,
   },
   server: {
     useGlobalHotkey: boolean,

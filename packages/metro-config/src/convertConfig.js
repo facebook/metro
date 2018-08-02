@@ -118,6 +118,7 @@ function convertOldToNew({
       extraNodeModules,
       resolveRequest,
       blacklistRE: getBlacklistRE() ? getBlacklistRE() : blacklist(),
+      useWatchman: true,
     },
     serializer: {
       createModuleIdFactory:

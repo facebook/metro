@@ -47,6 +47,7 @@ type Options = {|
   +reporter: Reporter,
   +resolveRequest: ?CustomResolver,
   +sourceExts: Array<string>,
+  +useWatchman: boolean,
   +watch: boolean,
   +watchFolders: $ReadOnlyArray<string>,
 |};
@@ -89,15 +90,12 @@ class DependencyGraph extends EventEmitter {
     this._createModuleResolver();
   }
 
-  static _createHaste(
-    opts: Options,
-    useWatchman?: boolean = true,
-  ): JestHasteMap {
+  static _createHaste(opts: Options): JestHasteMap {
     return new JestHasteMap({
       computeDependencies: false,
       computeSha1: true,
       extensions: opts.sourceExts.concat(opts.assetExts),
-      forceNodeFilesystemAPI: !useWatchman,
+      forceNodeFilesystemAPI: !opts.useWatchman,
       hasteImplModulePath: opts.hasteImplModulePath,
       ignorePattern: opts.blacklistRE || / ^/,
       maxWorkers: opts.maxWorkers,
@@ -108,23 +106,20 @@ class DependencyGraph extends EventEmitter {
       retainAllFiles: true,
       roots: opts.watchFolders,
       throwOnModuleCollision: true,
-      useWatchman,
+      useWatchman: opts.useWatchman,
       watch: opts.watch,
     });
   }
 
   static _getJestHasteMapOptions(opts: Options) {}
 
-  static async load(
-    opts: Options,
-    useWatchman?: boolean = true,
-  ): Promise<DependencyGraph> {
+  static async load(opts: Options): Promise<DependencyGraph> {
     const initializingMetroLogEntry = log(
       createActionStartEntry('Initializing Metro'),
     );
 
     opts.reporter.update({type: 'dep_graph_loading'});
-    const haste = DependencyGraph._createHaste(opts, useWatchman);
+    const haste = DependencyGraph._createHaste(opts);
     const {hasteFS, moduleMap} = await haste.build();
 
     log(createActionEndEntry(initializingMetroLogEntry));

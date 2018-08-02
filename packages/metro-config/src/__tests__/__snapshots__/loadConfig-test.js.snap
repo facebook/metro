@@ -60,6 +60,7 @@ Object {
       "ts",
       "tsx",
     ],
+    "useWatchman": true,
   },
   "serializer": Object {
     "createModuleIdFactory": [Function],
@@ -156,6 +157,7 @@ Object {
       "ts",
       "tsx",
     ],
+    "useWatchman": true,
   },
   "serializer": Object {
     "createModuleIdFactory": [Function],

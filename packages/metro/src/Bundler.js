@@ -112,6 +112,7 @@ class Bundler {
       reporter: opts.reporter,
       resolveRequest: opts.resolver.resolveRequest,
       sourceExts: opts.resolver.sourceExts,
+      useWatchman: opts.resolver.useWatchman,
       watch: opts.watch,
       watchFolders: opts.watchFolders,
     });

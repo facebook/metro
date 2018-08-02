@@ -43,6 +43,7 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
     // TODO set a default for this one?
     // hasteImplModulePath
     blacklistRE: blacklist(),
+    useWatchman: true,
   },
 
   serializer: {
