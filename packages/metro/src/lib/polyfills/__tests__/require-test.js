@@ -98,6 +98,7 @@ describe('require', () => {
     moduleSystem.nativeRequire = jest
       .fn()
       .mockImplementation((localId, bundleId) => {
+        // eslint-disable-next-line no-bitwise
         moduleSystem.__d(mockFactory, (bundleId << 16) + localId, [2, 3]);
       });
     createModuleSystem(moduleSystem, false);
