@@ -16,11 +16,15 @@ const ROOT_PATH = path.resolve(__dirname, 'basic_bundle');
 
 module.exports = {
   cacheStores: [],
+  maxWorkers: 1,
   projectRoot: ROOT_PATH,
   reporter: {update() {}},
   transformModulePath: require.resolve('metro/src/reactNativeTransformer'),
-  watchFolders: [path.resolve(__dirname, '..')],
+  watchFolders: [path.resolve(__dirname, '../lib/polyfills')],
   server: {port: 10028},
+  resolver: {
+    useWatchman: false,
+  },
   transformer: {
     assetRegistryPath: path.join(ROOT_PATH, 'AssetRegistry'),
     workerPath: path.resolve(__dirname, 'transformWorker.js'),
