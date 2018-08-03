@@ -142,18 +142,18 @@ function addMapping(generator, mapping, carryOver) {
   if (n === 2) {
     generator.addSimpleMapping(line, column);
   } else if (n === 4) {
-    // $FlowIssue #15579526
-    generator.addSourceMapping(line, column, mapping[2], mapping[3]);
+    const sourceMap: SourceMapping = (mapping: any);
+
+    generator.addSourceMapping(line, column, sourceMap[2], sourceMap[3]);
   } else if (n === 5) {
+    const sourceMap: SourceMappingWithName = (mapping: any);
+
     generator.addNamedSourceMapping(
       line,
       column,
-      // $FlowIssue #15579526
-      mapping[2],
-      // $FlowIssue #15579526
-      mapping[3],
-      // $FlowIssue #15579526
-      mapping[4],
+      sourceMap[2],
+      sourceMap[3],
+      sourceMap[4],
     );
   } else {
     throw new Error(`Invalid mapping: [${mapping.join(', ')}]`);
