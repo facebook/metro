@@ -168,7 +168,7 @@ type BuildGraphOptions = {|
 type RunBuildOptions = {|
   entry: string,
   dev?: boolean,
-  out: string,
+  out?: string,
   onBegin?: () => void,
   onComplete?: () => void,
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
@@ -229,19 +229,21 @@ exports.runBuild = async (
       onComplete();
     }
 
-    const bundleOutput = out.replace(/(\.js)?$/, '.js');
-    const sourcemapOutput =
-      sourceMap === false ? undefined : out.replace(/(\.js)?$/, '.map');
+    if (out) {
+      const bundleOutput = out.replace(/(\.js)?$/, '.js');
+      const sourcemapOutput =
+        sourceMap === false ? undefined : out.replace(/(\.js)?$/, '.map');
 
-    const outputOptions: OutputOptions = {
-      bundleOutput,
-      sourcemapOutput,
-      dev,
-      platform,
-    };
+      const outputOptions: OutputOptions = {
+        bundleOutput,
+        sourcemapOutput,
+        dev,
+        platform,
+      };
 
-    // eslint-disable-next-line no-console
-    await output.save(metroBundle, outputOptions, console.log);
+      // eslint-disable-next-line no-console
+      await output.save(metroBundle, outputOptions, console.log);
+    }
 
     return metroBundle;
   } finally {
