@@ -14,9 +14,14 @@
 jest.mock('cosmiconfig');
 
 const {loadConfig} = require('../loadConfig');
+const getDefaultConfig = require('../defaults');
 const cosmiconfig = require('cosmiconfig');
 
 describe('loadConfig', () => {
+  beforeEach(() => {
+    cosmiconfig.reset();
+  });
+
   it('can load config objects', async () => {
     const config = {
       metro: true,
@@ -67,5 +72,21 @@ describe('loadConfig', () => {
 
     expect(result).toMatchSnapshot();
     expect(cosmiconfig.hasLoadBeenCalled()).toBeTruthy();
+  });
+
+  it('can load the config with no config present', async () => {
+    cosmiconfig.setReturnNull(true);
+
+    const result = await loadConfig();
+    result.reporter = {update: () => {}};
+
+    const defaultConfig = await getDefaultConfig(process.cwd());
+    defaultConfig.watchFolders = [
+      defaultConfig.projectRoot,
+      ...defaultConfig.watchFolders,
+    ];
+    defaultConfig.reporter = {update: () => {}};
+
+    expect(JSON.stringify(result)).toEqual(JSON.stringify(defaultConfig));
   });
 });

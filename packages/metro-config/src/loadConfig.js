@@ -13,7 +13,7 @@
 const cosmiconfig = require('cosmiconfig');
 const getDefaultConfig = require('./defaults');
 
-const {dirname, resolve} = require('path');
+const {dirname, resolve, join} = require('path');
 
 import type {
   ConfigT,
@@ -28,7 +28,7 @@ type CosmiConfigResult = {
     | (IntermediateConfigT => Promise<IntermediateConfigT>)
     | (IntermediateConfigT => IntermediateConfigT)
     | InputConfigT,
-} | null;
+};
 
 type YargArguments = {
   config?: string,
@@ -82,7 +82,7 @@ const explorer = cosmiconfig('metro', {
   },
 });
 
-function resolveConfig(
+async function resolveConfig(
   path?: string,
   cwd?: string,
 ): Promise<CosmiConfigResult> {
@@ -90,7 +90,17 @@ function resolveConfig(
     return explorer.load(path);
   }
 
-  return explorer.search(cwd);
+  const result = await explorer.search(cwd);
+  if (result == null) {
+    // No config file found, return a default
+    return {
+      isEmpty: true,
+      filepath: join(cwd || process.cwd(), 'metro.config.stub.js'),
+      config: {},
+    };
+  }
+
+  return result;
 }
 
 function mergeConfig(
@@ -134,12 +144,6 @@ async function loadMetroConfigFromDisk(
     path,
     cwd,
   );
-
-  if (resolvedConfigResults == null) {
-    throw new Error(
-      "Could not find configuration for metro, did you create a 'metro.config.js'?",
-    );
-  }
 
   const {config: configModule, filepath} = resolvedConfigResults;
   const rootPath = dirname(filepath);

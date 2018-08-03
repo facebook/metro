@@ -9,11 +9,18 @@
 
 'use strict';
 
+let resolvedConfig = {};
+let loadHasBeenCalled = false;
+let returnNull = false;
+
 const cosmiconfig = jest.fn(() => ({
-  search: async () => ({
-    filepath: '/metro.config.js',
-    config: resolvedConfig,
-  }),
+  search: async () =>
+    returnNull
+      ? null
+      : {
+          filepath: '/metro.config.js',
+          config: resolvedConfig,
+        },
   load: async path => {
     loadHasBeenCalled = true;
     return {
@@ -22,15 +29,18 @@ const cosmiconfig = jest.fn(() => ({
     };
   },
 }));
-let resolvedConfig = {};
-let loadHasBeenCalled = false;
 
 cosmiconfig.setResolvedConfig = config => {
   resolvedConfig = config;
 };
 
-cosmiconfig.resetCalledTest = () => {
+cosmiconfig.setReturnNull = shouldReturnNull => {
+  returnNull = shouldReturnNull;
+};
+
+cosmiconfig.reset = () => {
   loadHasBeenCalled = false;
+  returnNull = false;
 };
 
 cosmiconfig.hasLoadBeenCalled = () => {
