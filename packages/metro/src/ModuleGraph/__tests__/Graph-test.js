@@ -431,7 +431,7 @@ function idToPath(id) {
 }
 
 function depOf(name) {
-  return {name, isAsync: false};
+  return {name, data: {isAsync: false}};
 }
 
 function deferred(value) {

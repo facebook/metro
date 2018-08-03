@@ -21,8 +21,14 @@ beforeEach(() => {
   myModule = {
     path: '/root/foo.js',
     dependencies: new Map([
-      ['bar', {absolutePath: '/bar', data: {isAsync: false, name: 'bar'}}],
-      ['baz', {absolutePath: '/baz', data: {isAsync: false, name: 'baz'}}],
+      [
+        'bar',
+        {absolutePath: '/bar', data: {data: {isAsync: false}, name: 'bar'}},
+      ],
+      [
+        'baz',
+        {absolutePath: '/baz', data: {data: {isAsync: false}, name: 'baz'}},
+      ],
     ]),
     getSource: () => '',
     inverseDependencies: new Set(),

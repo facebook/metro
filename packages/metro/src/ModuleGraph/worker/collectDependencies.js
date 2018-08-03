@@ -29,7 +29,7 @@ type Options = {|
 type Context = {
   +asyncRequireModulePath: string,
   +dynamicRequires: DynamicRequiresBehavior,
-  dependencies: Array<{|+name: string, isAsync: boolean|}>,
+  dependencies: Array<{|+name: string, +data: {|isAsync: boolean|}|}>,
   nameToIndex: Map<string, number>,
 };
 
@@ -174,12 +174,12 @@ function assignDependencyIndex(
   let index = context.nameToIndex.get(name);
   if (index == null) {
     const isAsync = type === 'import';
-    index = context.dependencies.push({name, isAsync}) - 1;
+    index = context.dependencies.push({name, data: {isAsync}}) - 1;
     context.nameToIndex.set(name, index);
     return index;
   }
   if (type === 'require') {
-    context.dependencies[index].isAsync = false;
+    context.dependencies[index].data.isAsync = false;
   }
   return index;
 }

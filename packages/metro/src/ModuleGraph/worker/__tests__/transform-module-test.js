@@ -176,8 +176,8 @@ describe('transforming JS modules:', () => {
     expect(result.details.transformed.default).toEqual(
       expect.objectContaining({
         dependencies: [
-          {name: dep1, isAsync: false},
-          {name: dep2, isAsync: false},
+          {name: dep1, data: {isAsync: false}},
+          {name: dep2, data: {isAsync: false}},
         ],
       }),
     );

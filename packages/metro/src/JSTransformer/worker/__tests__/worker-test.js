@@ -157,9 +157,9 @@ describe('code transformation worker:', () => {
     );
     expect(result.output[0].data.map).toHaveLength(14);
     expect(result.dependencies).toEqual([
-      {isAsync: false, name: './c'},
-      {isAsync: false, name: './a'},
-      {isAsync: false, name: 'b'},
+      {data: {isAsync: false}, name: './c'},
+      {data: {isAsync: false}, name: './a'},
+      {data: {isAsync: false}, name: 'b'},
     ]);
   });
 

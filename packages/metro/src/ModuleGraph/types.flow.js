@@ -146,10 +146,16 @@ export type TransformResultDependency = {|
    */
   +name: string,
   /**
-   * If `true` this dependency is due to a dynamic `import()` call. If `false`,
-   * this dependency was pulled using a synchronous `require()` call.
+   * Extra data returned by the dependency extractor. Whatever is added here is
+   * blindly piped by Metro to the serializers.
    */
-  +isAsync: boolean,
+  +data: {|
+    /**
+     * If `true` this dependency is due to a dynamic `import()` call. If `false`,
+     * this dependency was pulled using a synchronous `require()` call.
+     */
+    +isAsync: boolean,
+  |},
 |};
 
 export type TransformResult = {|

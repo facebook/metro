@@ -83,7 +83,7 @@ describe('optimizing JS modules', () => {
 
     it('extracts dependencies', () => {
       expect(optimized.dependencies).toEqual([
-        {name: 'arbitrary-android-prod', isAsync: false},
+        {name: 'arbitrary-android-prod', data: {isAsync: false}},
       ]);
     });
 

@@ -57,7 +57,7 @@ exports.create = function create(resolve: ResolveFn, load: LoadFn): GraphFn {
     );
 
     const tasks = Array.from(entryPoints, (id, i) => ({
-      dependency: {name: id, isAsync: false},
+      dependency: {name: id, data: {isAsync: false}},
       parent: null,
       parentDependencyIndex: i,
       skip,
@@ -151,7 +151,7 @@ function onFileLoaded(
   invariant(parentModule, 'Invalid parent module: ' + String(parent));
   parentModule.dependencies[parentDependencyIndex] = {
     id: dependency.name,
-    isAsync: dependency.isAsync,
+    isAsync: dependency.data.isAsync,
     path,
   };
 

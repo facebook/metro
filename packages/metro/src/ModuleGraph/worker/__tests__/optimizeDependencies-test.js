@@ -20,11 +20,11 @@ const {codeFromAst, comparableCode} = require('../../test-helpers');
 
 const DEP_MAP_NAME = 'arbitrary';
 const DEPS = [
-  {name: 'b/lib/a', isAsync: false},
-  {name: 'do', isAsync: false},
-  {name: 'asyncRequire', isAsync: false},
-  {name: 'some/async/module', isAsync: true},
-  {name: 'setup/something', isAsync: false},
+  {name: 'b/lib/a', data: {isAsync: false}},
+  {name: 'do', data: {isAsync: false}},
+  {name: 'asyncRequire', data: {isAsync: false}},
+  {name: 'some/async/module', data: {isAsync: true}},
+  {name: 'setup/something', data: {isAsync: false}},
 ];
 const REQUIRE_NAME = 'require';
 
@@ -64,7 +64,7 @@ it('strips unused dependencies and translates require() calls', () => {
     DEP_MAP_NAME,
     REQUIRE_NAME,
   );
-  expect(dependencies).toEqual([{name: 'do', isAsync: false}]);
+  expect(dependencies).toEqual([{name: 'do', data: {isAsync: false}}]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`require(${DEP_MAP_NAME}[0]);`),
   );
@@ -81,8 +81,8 @@ it('strips unused dependencies and translates loadForModule() calls', () => {
     REQUIRE_NAME,
   );
   expect(dependencies).toEqual([
-    {name: 'asyncRequire', isAsync: false},
-    {name: 'some/async/module', isAsync: true},
+    {name: 'asyncRequire', data: {isAsync: false}},
+    {name: 'some/async/module', data: {isAsync: true}},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -97,9 +97,9 @@ it('strips unused dependencies and translates loadForModule() calls; different o
     require(${DEP_MAP_NAME}[2], "asyncRequire")(${DEP_MAP_NAME}[1]).then(foo => {});
   `);
   const deps = [
-    {name: 'something/else', isAsync: false},
-    {name: 'some/async/module', isAsync: true},
-    {name: 'asyncRequire', isAsync: false},
+    {name: 'something/else', data: {isAsync: false}},
+    {name: 'some/async/module', data: {isAsync: true}},
+    {name: 'asyncRequire', data: {isAsync: false}},
   ];
   const dependencies = optimizeDependencies(
     ast,
@@ -108,9 +108,9 @@ it('strips unused dependencies and translates loadForModule() calls; different o
     REQUIRE_NAME,
   );
   expect(dependencies).toEqual([
-    {name: 'something/else', isAsync: false},
-    {name: 'asyncRequire', isAsync: false},
-    {name: 'some/async/module', isAsync: true},
+    {name: 'something/else', data: {isAsync: false}},
+    {name: 'asyncRequire', data: {isAsync: false}},
+    {name: 'some/async/module', data: {isAsync: true}},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
