@@ -41,12 +41,12 @@ it('collects unique dependency identifiers and transforms the AST', () => {
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
-      const a = require(${dependencyMapName}[0], 'b/lib/a');
+      const a = require(${dependencyMapName}[0], "b/lib/a");
       exports.do = () => require(${dependencyMapName}[1], "do");
       if (!something) {
         require(${dependencyMapName}[2], "setup/something");
       }
-      require(${dependencyMapName}[1], 'do');
+      require(${dependencyMapName}[1], "do");
     `),
   );
 });
@@ -109,7 +109,7 @@ describe('Evaluating static arguments', () => {
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([{name: 'left-pad', data: {isAsync: false}}]);
     expect(codeFromAst(ast)).toEqual(
-      comparableCode(`require(${dependencyMapName}[0], \`left-pad\`);`),
+      comparableCode(`require(${dependencyMapName}[0], "left-pad");`),
     );
   });
 
@@ -118,7 +118,7 @@ describe('Evaluating static arguments', () => {
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([{name: 'left-pad', data: {isAsync: false}}]);
     expect(codeFromAst(ast)).toEqual(
-      comparableCode(`require(${dependencyMapName}[0], \`left\${"-"}pad\`);`),
+      comparableCode(`require(${dependencyMapName}[0], "left-pad");`),
     );
   });
 
@@ -153,7 +153,7 @@ describe('Evaluating static arguments', () => {
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([{name: 'foo_bar', data: {isAsync: false}}]);
     expect(codeFromAst(ast)).toEqual(
-      comparableCode(`require(${dependencyMapName}[0], "foo_" + "bar");`),
+      comparableCode(`require(${dependencyMapName}[0], "foo_bar");`),
     );
   });
 
@@ -164,9 +164,7 @@ describe('Evaluating static arguments', () => {
       {name: 'foo_bar_baz', data: {isAsync: false}},
     ]);
     expect(codeFromAst(ast)).toEqual(
-      comparableCode(
-        `require(${dependencyMapName}[0], "foo_" + "bar" + \`_baz\`);`,
-      ),
+      comparableCode(`require(${dependencyMapName}[0], "foo_bar_baz");`),
     );
   });
 
@@ -176,7 +174,7 @@ describe('Evaluating static arguments', () => {
     expect(dependencies).toEqual([{name: 'foo_my', data: {isAsync: false}}]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(
-        `const myVar = \"my\"; require(${dependencyMapName}[0], "foo_" + myVar);`,
+        `const myVar = \"my\"; require(${dependencyMapName}[0], "foo_my");`,
       ),
     );
   });
@@ -203,11 +201,11 @@ describe('Evaluating static arguments', () => {
     const {dependencies} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([]);
     expect(codeFromAst(ast)).toEqual(
-      comparableCode(
-        "(function (name) { throw new Error('Module `' + name " +
-          "+ '` was required dynamically. This is not supported by " +
-          "Metro bundler.'); })(1);",
-      ),
+      comparableCode(`
+        (function (line) {
+          throw new Error('Dynamic require defined at line ' + line + '; not supported by Metro');
+        })(1);
+      `),
     );
   });
 });
@@ -243,12 +241,12 @@ it('ignores require functions defined defined by lower scopes', () => {
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
-      const a = require(${dependencyMapName}[0], 'b/lib/a');
+      const a = require(${dependencyMapName}[0], "b/lib/a");
       exports.do = () => require(${dependencyMapName}[1], "do");
       if (!something) {
         require(${dependencyMapName}[2], "setup/something");
       }
-      require(${dependencyMapName}[1], 'do');
+      require(${dependencyMapName}[1], "do");
       function testA(require) {
         const b = require('nonExistantModule');
       }
