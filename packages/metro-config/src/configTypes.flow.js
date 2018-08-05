@@ -19,10 +19,8 @@ import type {
   PostProcessBundleSourcemap,
 } from 'metro/src/Bundler';
 import type {TransformResult} from 'metro/src/DeltaBundler';
-import type {
-  Module,
-  TransformVariants,
-} from 'metro/src/ModuleGraph/types.flow.js';
+import type {TransformVariants} from 'metro/src/ModuleGraph/types.flow.js';
+import type {Module} from 'metro/src/DeltaBundler/types.flow.js';
 import type {DynamicRequiresBehavior} from 'metro/src/ModuleGraph/worker/collectDependencies';
 import type Server from 'metro/src/Server';
 import type {Reporter} from 'metro/src/lib/reporting';
@@ -201,10 +199,7 @@ export type OldConfigT = {
    */
   createModuleIdFactory?: () => (path: string) => number,
 
-  postProcessModules?: (
-    modules: $ReadOnlyArray<Module>,
-    entryFiles: Array<string>,
-  ) => $ReadOnlyArray<Module>,
+  processModuleFilter: (modules: Module<>) => boolean,
 
   transformVariants?: () => TransformVariants,
 };
@@ -318,11 +313,6 @@ export type InputConfigT = {
      * contain the absolute path of each module.
      */
     getModulesRunBeforeMainModule?: (entryFilePath: string) => Array<string>,
-
-    postProcessModules?: (
-      modules: $ReadOnlyArray<Module>,
-      paths: Array<string>,
-    ) => $ReadOnlyArray<Module>,
   },
   transformer?: {
     assetRegistryPath?: string,
@@ -430,10 +420,7 @@ export type IntermediateConfigT = {
     getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
     postProcessBundleSourcemap: PostProcessBundleSourcemap,
     getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
-    postProcessModules: (
-      modules: $ReadOnlyArray<Module>,
-      paths: Array<string>,
-    ) => $ReadOnlyArray<Module>,
+    processModuleFilter: (modules: Module<>) => boolean,
     createModuleIdFactory: () => (path: string) => number,
   },
   transformer: {

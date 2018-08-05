@@ -160,6 +160,7 @@ class Server {
 
     return {
       code: plainJSBundle(entryPoint, graphInfo.prepend, graphInfo.graph, {
+        processModuleFilter: this._config.serializer.processModuleFilter,
         createModuleId: this._createModuleId,
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,
         dev: options.dev,
@@ -670,6 +671,7 @@ class Server {
 
       result = {
         bundle: plainJSBundle(options.entryFile, prepend, graph, {
+          processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
           getRunModuleStatement: this._config.serializer.getRunModuleStatement,
           dev: options.dev,

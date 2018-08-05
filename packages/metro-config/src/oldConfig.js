@@ -56,7 +56,7 @@ const DEFAULT = ({
   getResolverMainFields: () => ['browser', 'main'],
   getModulesRunBeforeMainModule: () => [],
   getWorkerPath: () => null,
-  postProcessModules: modules => modules,
+  processModuleFilter: module => true,
 }: ConfigT);
 
 module.exports = {
