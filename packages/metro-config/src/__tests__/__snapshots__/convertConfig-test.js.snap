@@ -6,7 +6,7 @@ Object {
     "enhanceMiddleware": [Function],
     "getUseGlobalHotkey": [Function],
     "port": 8080,
-    "postProcessModules": [Function],
+    "processModuleFilter": [Function],
     "transformVariants": [Function],
   },
   "serverOptions": Object {
@@ -91,7 +91,7 @@ Object {
     "enhanceMiddleware": undefined,
     "getUseGlobalHotkey": [Function],
     "port": undefined,
-    "postProcessModules": undefined,
+    "processModuleFilter": undefined,
     "transformVariants": [Function],
   },
   "serverOptions": Object {

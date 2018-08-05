@@ -209,6 +209,7 @@ function convertNewToOld(newConfig: ConfigT): ConvertedOldConfigT {
     postProcessBundleSourcemap,
     getModulesRunBeforeMainModule,
     createModuleIdFactory,
+    processModuleFilter,
   } = serializer;
 
   const {useGlobalHotkey, port, enhanceMiddleware} = server;
@@ -266,6 +267,7 @@ function convertNewToOld(newConfig: ConfigT): ConvertedOldConfigT {
       enhanceMiddleware,
       getUseGlobalHotkey: () => useGlobalHotkey,
       port,
+      processModuleFilter,
       transformVariants: () => transformVariants,
     },
   };
