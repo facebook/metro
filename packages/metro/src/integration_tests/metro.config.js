@@ -27,6 +27,5 @@ module.exports = {
   },
   transformer: {
     assetRegistryPath: path.join(ROOT_PATH, 'AssetRegistry'),
-    workerPath: path.resolve(__dirname, 'transformWorker.js'),
   },
 };
