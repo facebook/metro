@@ -160,6 +160,7 @@ class Server {
 
     return {
       code: plainJSBundle(entryPoint, graphInfo.prepend, graphInfo.graph, {
+        processModuleFilter: this._config.serializer.processModuleFilter,
         createModuleId: this._createModuleId,
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,
         dev: options.dev,
@@ -172,6 +173,7 @@ class Server {
       }),
       map: sourceMapString(graphInfo.prepend, graphInfo.graph, {
         excludeSource: options.excludeSource,
+        processModuleFilter: this._config.serializer.processModuleFilter,
       }),
     };
   }
@@ -209,6 +211,7 @@ class Server {
       graphInfo.prepend,
       graphInfo.graph,
       {
+        processModuleFilter: this._config.serializer.processModuleFilter,
         createModuleId: this._createModuleId,
         dev: options.dev,
         excludeSource: options.excludeSource,
@@ -229,6 +232,7 @@ class Server {
     const {graph} = await this._buildGraph(options);
 
     return await getAssets(graph, {
+      processModuleFilter: this._config.serializer.processModuleFilter,
       assetPlugins: options.assetPlugins,
       platform: options.platform,
       watchFolders: this._config.watchFolders,
@@ -253,7 +257,10 @@ class Server {
       options.platform ||
       parsePlatformFilePath(options.entryFile, this._platforms).platform;
 
-    return await getAllFiles(prepend, graph, {platform});
+    return await getAllFiles(prepend, graph, {
+      platform,
+      processModuleFilter: this._config.serializer.processModuleFilter,
+    });
   }
 
   async _buildGraph(options: BundleOptions): Promise<GraphInfo> {
@@ -602,6 +609,7 @@ class Server {
           sequenceId,
           graph,
           {
+            processModuleFilter: this._config.serializer.processModuleFilter,
             createModuleId: this._createModuleId,
             dev: options.dev,
             getRunModuleStatement: this._config.serializer
@@ -670,6 +678,7 @@ class Server {
 
       result = {
         bundle: plainJSBundle(options.entryFile, prepend, graph, {
+          processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
           getRunModuleStatement: this._config.serializer.getRunModuleStatement,
           dev: options.dev,
@@ -752,6 +761,7 @@ class Server {
 
       sourceMap = sourceMapString(prepend, graph, {
         excludeSource: options.excludeSource,
+        processModuleFilter: this._config.serializer.processModuleFilter,
       });
     } catch (error) {
       this._handleError(mres, this._optionsHash(options), error);
@@ -890,6 +900,7 @@ class Server {
 
     return sourceMapObject(prepend, graph, {
       excludeSource: options.excludeSource,
+      processModuleFilter: this._config.serializer.processModuleFilter,
     });
   }
 

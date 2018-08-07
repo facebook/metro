@@ -55,6 +55,7 @@ it('should serialize a very simple bundle', () => {
         entryPoints: ['foo'],
       },
       {
+        processModuleFilter: () => true,
         createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement,
@@ -88,6 +89,7 @@ it('should add runBeforeMainModule statements if found in the graph', () => {
         entryPoints: ['/root/foo'],
       },
       {
+        processModuleFilter: () => true,
         createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement,
@@ -122,6 +124,7 @@ it('should handle numeric module ids', () => {
         entryPoints: ['/root/foo'],
       },
       {
+        processModuleFilter: () => true,
         createModuleId: createModuleIdFactory(),
         dev: true,
         getRunModuleStatement,
@@ -156,6 +159,7 @@ it('outputs custom runModule statements', () => {
         entryPoints: ['/root/foo'],
       },
       {
+        processModuleFilter: () => true,
         createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement: moduleId =>

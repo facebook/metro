@@ -53,7 +53,7 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
     getPolyfills: () => [],
     postProcessBundleSourcemap: ({code, map, outFileName}) => ({code, map}),
     getModulesRunBeforeMainModule: () => [],
-    postProcessModules: modules => modules,
+    processModuleFilter: module => true,
     createModuleIdFactory: defaultCreateModuleIdFactory,
   },
 

@@ -65,7 +65,10 @@ it('should serialize a very simple bundle', () => {
           dependencies: new Map([['foo', fooModule], ['bar', barModule]]),
           entryPoints: ['foo'],
         },
-        {excludesSource: false},
+        {
+          excludesSource: false,
+          processModuleFilter: module => true,
+        },
       ),
     ),
   ).toEqual({

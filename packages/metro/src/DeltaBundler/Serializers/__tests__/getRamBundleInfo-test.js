@@ -49,6 +49,7 @@ const getRunModuleStatement = moduleId =>
 it('should return the RAM bundle info', async () => {
   expect(
     await getRamBundleInfo('/root/entry.js', pre, graph, {
+      processModuleFilter: module => true,
       createModuleId: path => path,
       excludeSource: false,
       getRunModuleStatement,
@@ -72,6 +73,7 @@ it('should use the preloadedModules and ramGroup configs to build a RAM bundle',
   });
 
   const bundleInfo = await getRamBundleInfo('/root/entry.js', pre, graph, {
+    processModuleFilter: module => true,
     createModuleId: path => path,
     excludeSource: false,
     getRunModuleStatement,
