@@ -17,6 +17,7 @@ import type {Graph, Module} from '../types.flow';
 
 type Options = {|
   platform: ?string,
+  +processModuleFilter: (module: Module<>) => boolean,
 |};
 
 async function getAllFiles(
@@ -25,15 +26,18 @@ async function getAllFiles(
   options: Options,
 ): Promise<$ReadOnlyArray<string>> {
   const modules = graph.dependencies;
+  const {processModuleFilter} = options;
 
   const promises = [];
 
   for (const module of pre) {
-    promises.push([module.path]);
+    if (processModuleFilter(module)) {
+      promises.push([module.path]);
+    }
   }
 
   for (const module of modules.values()) {
-    if (!isJsModule(module)) {
+    if (!isJsModule(module) || !processModuleFilter(module)) {
       continue;
     }
 

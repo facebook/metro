@@ -257,7 +257,10 @@ class Server {
       options.platform ||
       parsePlatformFilePath(options.entryFile, this._platforms).platform;
 
-    return await getAllFiles(prepend, graph, {platform});
+    return await getAllFiles(prepend, graph, {
+      platform,
+      processModuleFilter: this._config.serializer.processModuleFilter,
+    });
   }
 
   async _buildGraph(options: BundleOptions): Promise<GraphInfo> {

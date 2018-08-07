@@ -38,7 +38,9 @@ describe('getOrderedDependencyPaths', () => {
       await getAllFiles(
         [{path: '/tmp/0.js', output: [{type: 'js/module'}]}],
         graph,
-        {},
+        {
+          processModuleFilter: () => true,
+        },
       ),
     ).toEqual([
       '/tmp/0.js',
@@ -60,7 +62,9 @@ describe('getOrderedDependencyPaths', () => {
       ]),
     };
 
-    expect(await getAllFiles([], graph, {})).toEqual([
+    expect(
+      await getAllFiles([], graph, {processModuleFilter: () => true}),
+    ).toEqual([
       '/tmp/1.js',
       '/tmp/2.png@2x',
       '/tmp/2.png@3x',
