@@ -22,42 +22,10 @@ const {Cache, stableHash} = require('metro-cache');
 
 import type {TransformResult} from './DeltaBundler';
 import type {WorkerOptions} from './JSTransformer/worker';
-import type {BabelSourceMap} from '@babel/core';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
-import type {MetroSourceMap} from 'metro-source-map';
-
-type TransformOptions = {|
-  +inlineRequires: {+blacklist: {[string]: true}} | boolean,
-|};
-
-export type ExtraTransformOptions = {
-  +preloadedModules?: {[path: string]: true} | false,
-  +ramGroups?: Array<string>,
-  +transform?: TransformOptions,
-};
-
-export type GetTransformOptionsOpts = {|
-  dev: boolean,
-  hot: boolean,
-  platform: ?string,
-|};
-
-export type GetTransformOptions = (
-  entryPoints: $ReadOnlyArray<string>,
-  options: GetTransformOptionsOpts,
-  getDependenciesOf: (string) => Promise<Array<string>>,
-) => Promise<ExtraTransformOptions>;
-
-export type PostMinifyProcess = ({
-  code: string,
-  map: ?BabelSourceMap,
-}) => {code: string, map: ?BabelSourceMap};
-
-export type PostProcessBundleSourcemap = ({
-  code: Buffer | string,
-  map: MetroSourceMap,
-  outFileName: string,
-}) => {code: Buffer | string, map: MetroSourceMap | string};
+import type {
+  ConfigT,
+  GetTransformOptions,
+} from 'metro-config/src/configTypes.flow';
 
 const {hasOwnProperty} = Object.prototype;
 
@@ -67,8 +35,8 @@ class Bundler {
   _baseHash: string;
   _transformer: Transformer;
   _depGraphPromise: Promise<DependencyGraph>;
+  _getTransformOptions: GetTransformOptions;
   _projectRoot: string;
-  _getTransformOptions: void | GetTransformOptions;
 
   constructor(opts: ConfigT) {
     opts.watchFolders.forEach(verifyRootExists);
@@ -147,7 +115,9 @@ class Bundler {
     entryFiles: $ReadOnlyArray<string>,
     options: {dev: boolean, platform: ?string},
     getDependencies: string => Promise<Array<string>>,
-  ): Promise<TransformOptions> {
+  ): Promise<{|
+    +inlineRequires: {+blacklist: {[string]: true}} | boolean,
+  |}> {
     if (!this._getTransformOptions) {
       return {
         inlineRequires: false,

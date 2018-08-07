@@ -9,16 +9,16 @@
  */
 'use strict';
 
-import type {
-  GetTransformOptions,
-  PostMinifyProcess,
-  PostProcessBundleSourcemap,
-} from '../Bundler';
 import type {TransformResult} from '../DeltaBundler';
 import type {CustomTransformOptions} from '../JSTransformer/worker';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
 import type {Reporter} from '../lib/reporting';
 import type {CacheStore} from 'metro-cache';
+import type {
+  GetTransformOptions,
+  PostMinifyProcess,
+  PostProcessBundleSourcemap,
+} from 'metro-config/src/configTypes.flow.js';
 import type {CustomResolver} from 'metro-resolver';
 import type {
   MetroSourceMap,

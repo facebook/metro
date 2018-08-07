@@ -47,7 +47,11 @@ const DEFAULT = ({
   getSourceExts: () => [],
   getTransformModulePath: () =>
     require.resolve('metro/src//defaultTransformer'),
-  getTransformOptions: async () => ({}),
+  getTransformOptions: async () => ({
+    transform: {inlineRequires: false},
+    preloadedModules: false,
+    ramGroups: [],
+  }),
   getPolyfills: () => [],
   getUseGlobalHotkey: () => true,
   postMinifyProcess: x => x,

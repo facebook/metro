@@ -20,7 +20,6 @@ const sourceMap = require('source-map');
 
 const {transformSync} = require('@babel/core');
 
-import type {PostMinifyProcess} from '../../Bundler';
 import type {
   TransformedCodeFile,
   TransformedSourceFile,
@@ -28,6 +27,7 @@ import type {
 } from '../types.flow';
 import type {BabelSourceMap} from '@babel/core';
 import type {TransformResult as BabelTransformResult} from '@babel/core';
+import type {PostMinifyProcess} from 'metro-config/src/configTypes.flow.js';
 import type {MetroSourceMap} from 'metro-source-map';
 
 export type OptimizationOptions = {|

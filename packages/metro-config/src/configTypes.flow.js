@@ -10,14 +10,11 @@
 
 'use strict';
 
+import type {BabelSourceMap} from '@babel/core';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
 import type {CustomResolver} from 'metro-resolver';
-import type {
-  GetTransformOptions,
-  PostMinifyProcess,
-  PostProcessBundleSourcemap,
-} from 'metro/src/Bundler';
+import type {MetroSourceMap} from 'metro-source-map';
 import type {TransformResult} from 'metro/src/DeltaBundler';
 import type {
   Module,
@@ -26,6 +23,37 @@ import type {
 import type {DynamicRequiresBehavior} from 'metro/src/ModuleGraph/worker/collectDependencies';
 import type Server from 'metro/src/Server';
 import type {Reporter} from 'metro/src/lib/reporting';
+
+export type PostMinifyProcess = ({
+  code: string,
+  map: ?BabelSourceMap,
+}) => {code: string, map: ?BabelSourceMap};
+
+export type PostProcessBundleSourcemap = ({
+  code: Buffer | string,
+  map: MetroSourceMap,
+  outFileName: string,
+}) => {code: Buffer | string, map: MetroSourceMap | string};
+
+type ExtraTransformOptions = {
+  +preloadedModules: {[path: string]: true} | false,
+  +ramGroups: Array<string>,
+  +transform: {|
+    +inlineRequires: {+blacklist: {[string]: true}} | boolean,
+  |},
+};
+
+export type GetTransformOptionsOpts = {|
+  dev: boolean,
+  hot: boolean,
+  platform: ?string,
+|};
+
+export type GetTransformOptions = (
+  entryPoints: $ReadOnlyArray<string>,
+  options: GetTransformOptionsOpts,
+  getDependenciesOf: (string) => Promise<Array<string>>,
+) => Promise<ExtraTransformOptions>;
 
 export type Middleware = (
   IncomingMessage,

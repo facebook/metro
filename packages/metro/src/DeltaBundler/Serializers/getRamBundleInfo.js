@@ -19,9 +19,9 @@ const path = require('path');
 const {createRamBundleGroups} = require('../../Bundler/util');
 const {isJsModule, wrapModule} = require('./helpers/js');
 
-import type {GetTransformOptions} from '../../Bundler';
 import type {ModuleTransportLike} from '../../shared/types.flow';
 import type {Graph, Module} from '../types.flow';
+import type {GetTransformOptions} from 'metro-config/src/configTypes.flow.js';
 
 type Options = {|
   +createModuleId: string => number,

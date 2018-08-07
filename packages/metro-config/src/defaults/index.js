@@ -68,7 +68,11 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
     assetRegistryPath: 'missing-asset-registry-path',
     dynamicDepsInPackages: 'throwAtRuntime',
     enableBabelRCLookup: true,
-    getTransformOptions: async () => ({}),
+    getTransformOptions: async () => ({
+      transform: {inlineRequires: false},
+      preloadedModules: false,
+      ramGroups: [],
+    }),
     postMinifyProcess: x => x,
     workerPath: null,
     minifierPath: DEFAULT_METRO_MINIFIER_PATH,
