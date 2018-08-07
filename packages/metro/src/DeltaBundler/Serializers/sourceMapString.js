@@ -18,10 +18,14 @@ import type {Graph, Module} from '../types.flow';
 function fullSourceMap(
   pre: $ReadOnlyArray<Module<>>,
   graph: Graph<>,
-  options: {|+excludeSource: boolean|},
+  options: {|
+    +excludeSource: boolean,
+    +processModuleFilter: (module: Module<>) => boolean,
+  |},
 ): string {
   const modules = [...pre, ...graph.dependencies.values()]
     .filter(isJsModule)
+    .filter(options.processModuleFilter)
     .map(module => {
       return {
         ...getJsOutput(module).data,

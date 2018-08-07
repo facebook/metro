@@ -41,6 +41,7 @@ const graph = {
 };
 
 const options = {
+  processModuleFilter: module => true,
   createModuleId: createModuleIdFactory(),
   dev: true,
   getRunModuleStatement: moduleId => `require(${JSON.stringify(moduleId)});`,

@@ -16,9 +16,10 @@ const {getAssetData} = require('../../Assets');
 const {getJsOutput, isJsModule} = require('./helpers/js');
 
 import type {AssetData} from '../../Assets';
-import type {Graph} from '../types.flow';
+import type {Graph, Module} from '../types.flow';
 
 type Options = {|
+  +processModuleFilter: (module: Module<>) => boolean,
   assetPlugins: $ReadOnlyArray<string>,
   platform: ?string,
   watchFolders: $ReadOnlyArray<string>,
@@ -29,9 +30,14 @@ async function getAssets(
   options: Options,
 ): Promise<$ReadOnlyArray<AssetData>> {
   const promises = [];
+  const {processModuleFilter} = options;
 
   for (const module of graph.dependencies.values()) {
-    if (isJsModule(module) && getJsOutput(module).type === 'js/module/asset') {
+    if (
+      isJsModule(module) &&
+      processModuleFilter(module) &&
+      getJsOutput(module).type === 'js/module/asset'
+    ) {
       promises.push(
         getAssetData(
           module.path,

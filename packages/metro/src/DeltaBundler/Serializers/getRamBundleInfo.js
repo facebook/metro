@@ -24,6 +24,7 @@ import type {ModuleTransportLike} from '../../shared/types.flow';
 import type {Graph, Module} from '../types.flow';
 
 type Options = {|
+  +processModuleFilter: (module: Module<>) => boolean,
   +createModuleId: string => number,
   +dev: boolean,
   +excludeSource: boolean,
@@ -57,22 +58,26 @@ async function getRamBundleInfo(
 
   modules.forEach(module => options.createModuleId(module.path));
 
-  const ramModules = modules.filter(isJsModule).map(module => ({
-    id: options.createModuleId(module.path),
-    code: wrapModule(module, options),
-    map: fullSourceMapObject(
-      [module],
-      {dependencies: new Map(), entryPoints: []},
-      {
-        excludeSource: options.excludeSource,
-      },
-    ),
-    name: path.basename(module.path),
-    sourcePath: module.path,
-    source: module.getSource(),
-    type: nullthrows(module.output.find(({type}) => type.startsWith('js')))
-      .type,
-  }));
+  const ramModules = modules
+    .filter(isJsModule)
+    .filter(options.processModuleFilter)
+    .map(module => ({
+      id: options.createModuleId(module.path),
+      code: wrapModule(module, options),
+      map: fullSourceMapObject(
+        [module],
+        {dependencies: new Map(), entryPoints: []},
+        {
+          excludeSource: options.excludeSource,
+          processModuleFilter: options.processModuleFilter,
+        },
+      ),
+      name: path.basename(module.path),
+      sourcePath: module.path,
+      source: module.getSource(),
+      type: nullthrows(module.output.find(({type}) => type.startsWith('js')))
+        .type,
+    }));
 
   const {preloadedModules, ramGroups} = await _getRamOptions(
     entryPoint,
