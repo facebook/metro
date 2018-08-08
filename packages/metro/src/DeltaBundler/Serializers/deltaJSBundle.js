@@ -18,6 +18,7 @@ const {getJsOutput, isJsModule} = require('./helpers/js');
 import type {DeltaResult, Graph, Module} from '../types.flow';
 
 type Options = {|
+  +processModuleFilter: (module: Module<>) => boolean,
   +createModuleId: string => number | string,
   +dev: boolean,
   +getRunModuleStatement: (number | string) => string,
@@ -39,8 +40,10 @@ function deltaJSBundle(
   const outputPost = [];
   const outputDelta = [];
 
+  const {processModuleFilter} = options;
+
   for (const module of delta.modified.values()) {
-    if (isJsModule(module)) {
+    if (isJsModule(module) && processModuleFilter(module)) {
       outputDelta.push([
         options.createModuleId(module.path),
         wrapModule(module, options),
@@ -56,7 +59,7 @@ function deltaJSBundle(
     let i = -1;
 
     for (const module of pre) {
-      if (isJsModule(module)) {
+      if (isJsModule(module) && processModuleFilter(module)) {
         outputPre.push([i, getJsOutput(module).data.code]);
         i--;
       }
@@ -65,7 +68,7 @@ function deltaJSBundle(
     const appendScripts = getAppendScripts(entryPoint, graph, options);
 
     for (const module of appendScripts) {
-      if (isJsModule(module)) {
+      if (isJsModule(module) && processModuleFilter(module)) {
         outputPost.push([
           options.createModuleId(module.path),
           getJsOutput(module).data.code,

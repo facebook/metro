@@ -69,7 +69,7 @@ Object {
     "getRunModuleStatement": [Function],
     "polyfillModuleNames": Array [],
     "postProcessBundleSourcemap": [Function],
-    "postProcessModules": [Function],
+    "processModuleFilter": [Function],
   },
   "server": Object {
     "enhanceMiddleware": [Function],
@@ -166,7 +166,7 @@ Object {
     "getRunModuleStatement": [Function],
     "polyfillModuleNames": Array [],
     "postProcessBundleSourcemap": [Function],
-    "postProcessModules": [Function],
+    "processModuleFilter": [Function],
   },
   "server": Object {
     "enhanceMiddleware": [Function],

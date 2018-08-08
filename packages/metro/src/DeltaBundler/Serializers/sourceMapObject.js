@@ -19,10 +19,14 @@ import type {BabelSourceMap} from '@babel/core';
 function fullSourceMapObject(
   pre: $ReadOnlyArray<Module<>>,
   graph: Graph<>,
-  options: {|+excludeSource: boolean|},
+  options: {|
+    +excludeSource: boolean,
+    +processModuleFilter: (module: Module<>) => boolean,
+  |},
 ): BabelSourceMap {
   const modules = [...pre, ...graph.dependencies.values()]
     .filter(isJsModule)
+    .filter(options.processModuleFilter)
     .map(module => {
       return {
         ...getJsOutput(module).data,

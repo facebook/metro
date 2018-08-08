@@ -19,10 +19,7 @@ const getMaxWorkers = require('metro/src/lib/getMaxWorkers');
 const {Terminal} = require('metro-core');
 
 import type {ConfigT, OldConfigT, Middleware} from './configTypes.flow';
-import type {
-  Module,
-  TransformVariants,
-} from 'metro/src/ModuleGraph/types.flow.js';
+import type {TransformVariants} from 'metro/src/ModuleGraph/types.flow.js';
 import type Server from 'metro/src/Server';
 import type {Reporter} from 'metro/src/lib/reporting';
 import type {Options as ServerOptions} from 'metro/src/shared/types.flow';
@@ -88,7 +85,7 @@ function convertOldToNew({
     getWorkerPath,
     extraNodeModules,
     transformVariants,
-    postProcessModules,
+    processModuleFilter,
   } = config;
 
   const assetExts = defaults.assetExts.concat(
@@ -127,7 +124,7 @@ function convertOldToNew({
       getRunModuleStatement,
       getPolyfills,
       postProcessBundleSourcemap,
-      postProcessModules: postProcessModules || (modules => modules),
+      processModuleFilter: processModuleFilter || (module => true),
       getModulesRunBeforeMainModule,
     },
     server: {
@@ -167,10 +164,6 @@ export type ConvertedOldConfigT = {
     port: number,
     getUseGlobalHotkey: () => boolean,
     transformVariants: () => TransformVariants,
-    postProcessModules: (
-      modules: $ReadOnlyArray<Module>,
-      paths: Array<string>,
-    ) => $ReadOnlyArray<Module>,
   },
 };
 
@@ -215,8 +208,8 @@ function convertNewToOld(newConfig: ConfigT): ConvertedOldConfigT {
     getPolyfills,
     postProcessBundleSourcemap,
     getModulesRunBeforeMainModule,
-    postProcessModules,
     createModuleIdFactory,
+    processModuleFilter,
   } = serializer;
 
   const {useGlobalHotkey, port, enhanceMiddleware} = server;
@@ -274,8 +267,8 @@ function convertNewToOld(newConfig: ConfigT): ConvertedOldConfigT {
       enhanceMiddleware,
       getUseGlobalHotkey: () => useGlobalHotkey,
       port,
+      processModuleFilter,
       transformVariants: () => transformVariants,
-      postProcessModules,
     },
   };
 

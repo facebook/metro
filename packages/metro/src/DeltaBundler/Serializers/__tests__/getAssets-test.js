@@ -34,7 +34,12 @@ it('should return the bundle assets', async () => {
     ]),
   };
 
-  expect(await getAssets(graph, {watchFolders: ['/tmp']})).toEqual([
+  expect(
+    await getAssets(graph, {
+      watchFolders: ['/tmp'],
+      processModuleFilter: () => true,
+    }),
+  ).toEqual([
     {path: '/tmp/3.png', localPath: '3.png'},
     {path: '/tmp/5.mov', localPath: '5.mov'},
   ]);

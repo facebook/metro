@@ -17,6 +17,7 @@ const {isJsModule, wrapModule} = require('./helpers/js');
 import type {Graph, Module} from '../types.flow';
 
 type Options = {|
+  +processModuleFilter: (module: Module<>) => boolean,
   +createModuleId: string => number | string,
   +dev: boolean,
   +getRunModuleStatement: (number | string) => string,
@@ -42,6 +43,7 @@ function plainJSBundle(
     ...getAppendScripts(entryPoint, graph, options),
   ]
     .filter(isJsModule)
+    .filter(options.processModuleFilter)
     .map(module => wrapModule(module, options))
     .join('\n');
 }
