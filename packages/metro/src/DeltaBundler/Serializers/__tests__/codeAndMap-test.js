@@ -61,52 +61,15 @@ const barModule = {
 const getRunModuleStatement = moduleId =>
   `require(${JSON.stringify(moduleId)});`;
 
-it('should serialize a very simple bundle', () => {
-  const {code, map} = codeAndMap(
-    '/root/foo',
-    [polyfill],
-    {
-      dependencies: new Map([
-        ['/root/foo', fooModule],
-        ['/root/bar', barModule],
-      ]),
-      entryPoints: ['foo'],
-    },
-    {
-      processModuleFilter: () => true,
-      createModuleId: filePath => path.basename(filePath),
-      dev: true,
-      getRunModuleStatement,
-      projectRoot: '/root',
-      runBeforeMainModule: [],
-      runModule: true,
-      sourceMapUrl: 'http://localhost/bundle.map',
-      excludeSource: false,
-    },
-  );
+describe('codeAndMap', () => {
+  let postProcessBundleSourcemap;
 
-  expect(code).toEqual(
-    [
-      '__d(function() {/* code for polyfill */});',
-      '__d(function() {/* code for foo */},"foo",["bar"],"foo");',
-      '__d(function() {/* code for bar */},"bar",[],"bar");',
-      'require("foo");',
-      '//# sourceMappingURL=http://localhost/bundle.map',
-    ].join('\n'),
-  );
-
-  expect(JSON.parse(map)).toEqual({
-    version: 3,
-    sources: ['/root/pre.js', '/root/foo', '/root/bar'],
-    sourcesContent: ['source pre', 'source foo', 'source bar'],
-    names: [],
-    mappings: '',
+  beforeEach(() => {
+    postProcessBundleSourcemap = jest.fn().mockImplementation(val => val);
   });
-});
 
-it('should add runBeforeMainModule statements if found in the graph', () => {
-  expect(
-    codeAndMap(
+  it('should serialize a very simple bundle', () => {
+    const {code, map} = codeAndMap(
       '/root/foo',
       [polyfill],
       {
@@ -114,35 +77,47 @@ it('should add runBeforeMainModule statements if found in the graph', () => {
           ['/root/foo', fooModule],
           ['/root/bar', barModule],
         ]),
-        entryPoints: ['/root/foo'],
+        entryPoints: ['foo'],
       },
       {
         processModuleFilter: () => true,
+        postProcessBundleSourcemap,
         createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement,
         projectRoot: '/root',
-        runBeforeMainModule: ['/root/bar', 'non-existant'],
+        runBeforeMainModule: [],
         runModule: true,
         sourceMapUrl: 'http://localhost/bundle.map',
-        excludeSource: true,
+        excludeSource: false,
       },
-    ).code,
-  ).toEqual(
-    [
-      '__d(function() {/* code for polyfill */});',
-      '__d(function() {/* code for foo */},"foo",["bar"],"foo");',
-      '__d(function() {/* code for bar */},"bar",[],"bar");',
-      'require("bar");',
-      'require("foo");',
-      '//# sourceMappingURL=http://localhost/bundle.map',
-    ].join('\n'),
-  );
-});
+    );
+    expect(postProcessBundleSourcemap).toHaveBeenCalled();
+    expect(code).toEqual(
+      [
+        '__d(function() {/* code for polyfill */});',
+        '__d(function() {/* code for foo */},"foo",["bar"],"foo");',
+        '__d(function() {/* code for bar */},"bar",[],"bar");',
+        'require("foo");',
+        '//# sourceMappingURL=http://localhost/bundle.map',
+      ].join('\n'),
+    );
 
-it('should handle numeric module ids', () => {
-  expect(
-    codeAndMap(
+    expect(JSON.parse(map)).toEqual({
+      version: 3,
+      sources: ['/root/pre.js', '/root/foo', '/root/bar'],
+      sourcesContent: ['source pre', 'source foo', 'source bar'],
+      names: [],
+      mappings: '',
+    });
+  });
+
+  it('respects postProcessBundleSourcemap results', () => {
+    postProcessBundleSourcemap = jest
+      .fn()
+      .mockImplementation(() => ({code: 'code', map: 'map'}));
+
+    const {code, map} = codeAndMap(
       '/root/foo',
       [polyfill],
       {
@@ -150,63 +125,133 @@ it('should handle numeric module ids', () => {
           ['/root/foo', fooModule],
           ['/root/bar', barModule],
         ]),
-        entryPoints: ['/root/foo'],
+        entryPoints: ['foo'],
       },
       {
         processModuleFilter: () => true,
-        createModuleId: createModuleIdFactory(),
+        postProcessBundleSourcemap,
+        createModuleId: filePath => path.basename(filePath),
         dev: true,
         getRunModuleStatement,
         projectRoot: '/root',
-        runBeforeMainModule: ['/root/bar', 'non-existant'],
+        runBeforeMainModule: [],
         runModule: true,
         sourceMapUrl: 'http://localhost/bundle.map',
-        excludeSource: true,
+        excludeSource: false,
       },
-    ).code,
-  ).toEqual(
-    [
-      '__d(function() {/* code for polyfill */});',
-      '__d(function() {/* code for foo */},0,[1],"foo");',
-      '__d(function() {/* code for bar */},1,[],"bar");',
-      'require(1);',
-      'require(0);',
-      '//# sourceMappingURL=http://localhost/bundle.map',
-    ].join('\n'),
-  );
-});
+    );
+    expect(postProcessBundleSourcemap).toHaveBeenCalled();
+    expect(code).toEqual('code');
+    expect(map).toEqual('map');
+  });
 
-it('outputs custom runModule statements', () => {
-  expect(
-    codeAndMap(
-      '/root/foo',
-      [polyfill],
-      {
-        dependencies: new Map([
-          ['/root/foo', fooModule],
-          ['/root/bar', barModule],
-        ]),
-        entryPoints: ['/root/foo'],
-      },
-      {
-        processModuleFilter: () => true,
-        createModuleId: filePath => path.basename(filePath),
-        dev: true,
-        getRunModuleStatement: moduleId =>
-          `export default require(${JSON.stringify(moduleId)}).default;`,
-        projectRoot: '/root',
-        runBeforeMainModule: ['/root/bar'],
-        runModule: true,
-        excludeSource: true,
-      },
-    ).code,
-  ).toEqual(
-    [
-      '__d(function() {/* code for polyfill */});',
-      '__d(function() {/* code for foo */},"foo",["bar"],"foo");',
-      '__d(function() {/* code for bar */},"bar",[],"bar");',
-      'export default require("bar").default;',
-      'export default require("foo").default;',
-    ].join('\n'),
-  );
+  it('should add runBeforeMainModule statements if found in the graph', () => {
+    expect(
+      codeAndMap(
+        '/root/foo',
+        [polyfill],
+        {
+          dependencies: new Map([
+            ['/root/foo', fooModule],
+            ['/root/bar', barModule],
+          ]),
+          entryPoints: ['/root/foo'],
+        },
+        {
+          processModuleFilter: () => true,
+          postProcessBundleSourcemap,
+          createModuleId: filePath => path.basename(filePath),
+          dev: true,
+          getRunModuleStatement,
+          projectRoot: '/root',
+          runBeforeMainModule: ['/root/bar', 'non-existant'],
+          runModule: true,
+          sourceMapUrl: 'http://localhost/bundle.map',
+          excludeSource: true,
+        },
+      ).code,
+    ).toEqual(
+      [
+        '__d(function() {/* code for polyfill */});',
+        '__d(function() {/* code for foo */},"foo",["bar"],"foo");',
+        '__d(function() {/* code for bar */},"bar",[],"bar");',
+        'require("bar");',
+        'require("foo");',
+        '//# sourceMappingURL=http://localhost/bundle.map',
+      ].join('\n'),
+    );
+  });
+
+  it('should handle numeric module ids', () => {
+    expect(
+      codeAndMap(
+        '/root/foo',
+        [polyfill],
+        {
+          dependencies: new Map([
+            ['/root/foo', fooModule],
+            ['/root/bar', barModule],
+          ]),
+          entryPoints: ['/root/foo'],
+        },
+        {
+          processModuleFilter: () => true,
+          postProcessBundleSourcemap,
+          createModuleId: createModuleIdFactory(),
+          dev: true,
+          getRunModuleStatement,
+          projectRoot: '/root',
+          runBeforeMainModule: ['/root/bar', 'non-existant'],
+          runModule: true,
+          sourceMapUrl: 'http://localhost/bundle.map',
+          excludeSource: true,
+        },
+      ).code,
+    ).toEqual(
+      [
+        '__d(function() {/* code for polyfill */});',
+        '__d(function() {/* code for foo */},0,[1],"foo");',
+        '__d(function() {/* code for bar */},1,[],"bar");',
+        'require(1);',
+        'require(0);',
+        '//# sourceMappingURL=http://localhost/bundle.map',
+      ].join('\n'),
+    );
+  });
+
+  it('outputs custom runModule statements', () => {
+    expect(
+      codeAndMap(
+        '/root/foo',
+        [polyfill],
+        {
+          dependencies: new Map([
+            ['/root/foo', fooModule],
+            ['/root/bar', barModule],
+          ]),
+          entryPoints: ['/root/foo'],
+        },
+        {
+          processModuleFilter: () => true,
+          postProcessBundleSourcemap,
+          createModuleId: filePath => path.basename(filePath),
+          dev: true,
+          getRunModuleStatement: moduleId =>
+            `export default require(${JSON.stringify(moduleId)}).default;`,
+          projectRoot: '/root',
+          runBeforeMainModule: ['/root/bar'],
+          runModule: true,
+          excludeSource: true,
+        },
+      ).code,
+    ).toEqual(
+      [
+        '__d(function() {/* code for polyfill */});',
+        '__d(function() {/* code for foo */},"foo",["bar"],"foo");',
+        '__d(function() {/* code for bar */},"bar",[],"bar");',
+        'export default require("bar").default;',
+        'export default require("foo").default;',
+      ].join('\n'),
+    );
+  });
 });
