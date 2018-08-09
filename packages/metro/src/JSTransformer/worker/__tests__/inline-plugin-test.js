@@ -549,7 +549,7 @@ describe('inline constants', () => {
   });
 
   it('works with flow-declared variables', () => {
-    const stripFlow = require('babel-plugin-transform-flow-strip-types');
+    const stripFlow = require('@babel/plugin-transform-flow-strip-types');
     const code = `declare var __DEV__;
       const a: boolean = __DEV__;`;
 
@@ -562,7 +562,7 @@ describe('inline constants', () => {
   });
 
   it('works with flow-declared variables in wrapped modules', () => {
-    const stripFlow = require('babel-plugin-transform-flow-strip-types');
+    const stripFlow = require('@babel/plugin-transform-flow-strip-types');
     const code = `__d(() => {
       declare var __DEV__;
       const a: boolean = __DEV__;

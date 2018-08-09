@@ -77,7 +77,7 @@ describe('code transformation worker:', () => {
         '})(this);',
       ].join('\n'),
     );
-    expect(result.output[0].data.map).toHaveLength(3);
+    expect(result.output[0].data.map).toMatchSnapshot();
     expect(result.dependencies).toEqual([]);
   });
 
@@ -108,7 +108,7 @@ describe('code transformation worker:', () => {
         '});',
       ].join('\n'),
     );
-    expect(result.output[0].data.map).toHaveLength(3);
+    expect(result.output[0].data.map).toMatchSnapshot();
     expect(result.dependencies).toEqual([]);
   });
 
@@ -155,7 +155,7 @@ describe('code transformation worker:', () => {
         '});',
       ].join('\n'),
     );
-    expect(result.output[0].data.map).toHaveLength(10);
+    expect(result.output[0].data.map).toMatchSnapshot();
     expect(result.dependencies).toEqual([
       {data: {isAsync: false}, name: './c'},
       {data: {isAsync: false}, name: './a'},

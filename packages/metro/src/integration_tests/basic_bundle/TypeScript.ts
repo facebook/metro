@@ -7,3 +7,6 @@
 
 export const type = 'TypeScript' as string
 export const test = true as boolean
+
+// Exporting default interface was broken before Babel 7.0.0-beta.56
+export default interface A {}

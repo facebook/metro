@@ -1,3 +1,211 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`code transformation worker: reports filename when encountering unsupported dynamic dependency 1`] = `"/root/local/file.js:Invalid call at line 3: require(a)"`;
+
+exports[`code transformation worker: transforms a module with dependencies 1`] = `
+Array [
+  Array [
+    2,
+    0,
+    1,
+    0,
+  ],
+  Array [
+    4,
+    0,
+    5,
+    0,
+  ],
+  Array [
+    6,
+    0,
+    2,
+    0,
+    "require",
+  ],
+  Array [
+    6,
+    2,
+    2,
+    0,
+    "require",
+  ],
+  Array [
+    6,
+    13,
+    2,
+    7,
+  ],
+  Array [
+    6,
+    39,
+    2,
+    0,
+  ],
+  Array [
+    8,
+    0,
+    3,
+    0,
+    "arbitrary",
+  ],
+  Array [
+    8,
+    2,
+    3,
+    0,
+    "arbitrary",
+  ],
+  Array [
+    8,
+    11,
+    3,
+    9,
+  ],
+  Array [
+    8,
+    12,
+    3,
+    10,
+    "code",
+  ],
+  Array [
+    8,
+    16,
+    3,
+    9,
+  ],
+  Array [
+    8,
+    17,
+    3,
+    0,
+  ],
+  Array [
+    10,
+    0,
+    4,
+    0,
+  ],
+  Array [
+    10,
+    6,
+    4,
+    6,
+    "b",
+  ],
+  Array [
+    10,
+    7,
+    4,
+    7,
+  ],
+  Array [
+    10,
+    10,
+    4,
+    10,
+    "require",
+  ],
+  Array [
+    10,
+    21,
+    4,
+    17,
+  ],
+  Array [
+    10,
+    45,
+    4,
+    0,
+  ],
+]
+`;
+
+exports[`code transformation worker: transforms a simple module 1`] = `
+Array [
+  Array [
+    2,
+    0,
+    1,
+    0,
+    "arbitrary",
+  ],
+  Array [
+    2,
+    2,
+    1,
+    0,
+    "arbitrary",
+  ],
+  Array [
+    2,
+    11,
+    1,
+    9,
+  ],
+  Array [
+    2,
+    12,
+    1,
+    10,
+    "code",
+  ],
+  Array [
+    2,
+    16,
+    1,
+    9,
+  ],
+  Array [
+    2,
+    17,
+    1,
+    0,
+  ],
+]
+`;
+
+exports[`code transformation worker: transforms a simple script 1`] = `
+Array [
+  Array [
+    2,
+    0,
+    1,
+    0,
+    "someReallyArbitrary",
+  ],
+  Array [
+    2,
+    2,
+    1,
+    0,
+    "someReallyArbitrary",
+  ],
+  Array [
+    2,
+    21,
+    1,
+    19,
+  ],
+  Array [
+    2,
+    22,
+    1,
+    20,
+    "code",
+  ],
+  Array [
+    2,
+    26,
+    1,
+    19,
+  ],
+  Array [
+    2,
+    27,
+    1,
+    0,
+  ],
+]
+`;
