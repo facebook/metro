@@ -19,9 +19,8 @@ const deltaJSBundle = require('./DeltaBundler/Serializers/deltaJSBundle');
 const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('./DeltaBundler/Serializers/getAssets');
 const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
-const plainJSBundle = require('./DeltaBundler/Serializers/plainJSBundle');
+const codeAndMap = require('./DeltaBundler/Serializers/codeAndMap');
 const sourceMapObject = require('./DeltaBundler/Serializers/sourceMapObject');
-const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
 const debug = require('debug')('Metro:Server');
 const formatBundlingError = require('./lib/formatBundlingError');
 const getPrependedScripts = require('./lib/getPrependedScripts');
@@ -158,8 +157,11 @@ class Server {
 
     const entryPoint = getEntryAbsolutePath(this._config, options.entryFile);
 
-    return {
-      code: plainJSBundle(entryPoint, graphInfo.prepend, graphInfo.graph, {
+    const {code, map} = codeAndMap(
+      entryPoint,
+      graphInfo.prepend,
+      graphInfo.graph,
+      {
         processModuleFilter: this._config.serializer.processModuleFilter,
         createModuleId: this._createModuleId,
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,
@@ -170,12 +172,11 @@ class Server {
         ),
         runModule: options.runModule,
         sourceMapUrl: options.sourceMapUrl,
-      }),
-      map: sourceMapString(graphInfo.prepend, graphInfo.graph, {
         excludeSource: options.excludeSource,
-        processModuleFilter: this._config.serializer.processModuleFilter,
-      }),
-    };
+      },
+    );
+
+    return {code, map};
   }
 
   async buildGraph(
@@ -676,19 +677,22 @@ class Server {
         numModifiedFiles,
       } = await this._getGraphInfo(options, {rebuild: true});
 
+      const {code} = codeAndMap(options.entryFile, prepend, graph, {
+        processModuleFilter: this._config.serializer.processModuleFilter,
+        createModuleId: this._createModuleId,
+        getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+        dev: options.dev,
+        projectRoot: this._config.projectRoot,
+        runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
+          path.relative(this._config.projectRoot, options.entryFile),
+        ),
+        runModule: options.runModule,
+        sourceMapUrl: options.sourceMapUrl,
+        excludeSource: options.excludeSource,
+      });
+
       result = {
-        bundle: plainJSBundle(options.entryFile, prepend, graph, {
-          processModuleFilter: this._config.serializer.processModuleFilter,
-          createModuleId: this._createModuleId,
-          getRunModuleStatement: this._config.serializer.getRunModuleStatement,
-          dev: options.dev,
-          projectRoot: this._config.projectRoot,
-          runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-            path.relative(this._config.projectRoot, options.entryFile),
-          ),
-          runModule: options.runModule,
-          sourceMapUrl: options.sourceMapUrl,
-        }),
+        bundle: code,
         numModifiedFiles,
         lastModified,
       };
@@ -759,10 +763,21 @@ class Server {
         rebuild: false,
       });
 
-      sourceMap = sourceMapString(prepend, graph, {
-        excludeSource: options.excludeSource,
+      const {map} = codeAndMap(options.entryFile, prepend, graph, {
         processModuleFilter: this._config.serializer.processModuleFilter,
+        createModuleId: this._createModuleId,
+        getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+        dev: options.dev,
+        projectRoot: this._config.projectRoot,
+        runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
+          path.relative(this._config.projectRoot, options.entryFile),
+        ),
+        runModule: options.runModule,
+        sourceMapUrl: options.sourceMapUrl,
+        excludeSource: options.excludeSource,
       });
+
+      sourceMap = map;
     } catch (error) {
       this._handleError(mres, this._optionsHash(options), error);
 

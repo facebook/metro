@@ -12,7 +12,8 @@
 
 const getAppendScripts = require('../../lib/getAppendScripts');
 
-const {isJsModule, wrapModule} = require('./helpers/js');
+const {isJsModule, wrapModule, getJsOutput} = require('./helpers/js');
+const {fromRawMappings} = require('metro-source-map');
 
 import type {Graph, Module} from '../types.flow';
 
@@ -25,27 +26,43 @@ type Options = {|
   +runBeforeMainModule: $ReadOnlyArray<string>,
   +runModule: boolean,
   +sourceMapUrl: ?string,
+  +excludeSource: boolean,
 |};
 
-function plainJSBundle(
+function codeAndMap(
   entryPoint: string,
   pre: $ReadOnlyArray<Module<>>,
   graph: Graph<>,
   options: Options,
-): string {
+): {|code: string, map: string|} {
   for (const module of graph.dependencies.values()) {
     options.createModuleId(module.path);
   }
-
-  return [
-    ...pre,
-    ...graph.dependencies.values(),
-    ...getAppendScripts(entryPoint, graph, options),
-  ]
+  const appendedScripts = getAppendScripts(entryPoint, graph, options)
     .filter(isJsModule)
-    .filter(options.processModuleFilter)
+    .filter(options.processModuleFilter);
+
+  const modules = [...pre, ...graph.dependencies.values()]
+    .filter(isJsModule)
+    .filter(options.processModuleFilter);
+
+  const code = [...modules, ...appendedScripts]
     .map(module => wrapModule(module, options))
     .join('\n');
+
+  const mapModules = modules.map(module => {
+    return {
+      ...getJsOutput(module).data,
+      path: module.path,
+      source: options.excludeSource ? '' : module.getSource(),
+    };
+  });
+
+  const map = fromRawMappings(mapModules).toString(undefined, {
+    excludeSource: options.excludeSource,
+  });
+
+  return {code, map};
 }
 
-module.exports = plainJSBundle;
+module.exports = codeAndMap;

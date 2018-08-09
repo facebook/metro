@@ -12,30 +12,49 @@
 
 const createModuleIdFactory = require('../../../lib/createModuleIdFactory');
 const path = require('path');
-const plainJSBundle = require('../plainJSBundle');
+const codeAndMap = require('../codeAndMap');
 
 const polyfill = {
+  path: '/root/pre.js',
+  getSource: () => 'source pre',
   output: [
     {
       type: 'js/script',
-      data: {code: '__d(function() {/* code for polyfill */});'},
+      data: {
+        code: '__d(function() {/* code for polyfill */});',
+        map: [],
+      },
     },
   ],
 };
 
 const fooModule = {
   path: '/root/foo',
+  getSource: () => 'source foo',
   dependencies: new Map([['./bar', {absolutePath: '/root/bar', data: {}}]]),
   output: [
-    {type: 'js/module', data: {code: '__d(function() {/* code for foo */});'}},
+    {
+      type: 'js/module',
+      data: {
+        code: '__d(function() {/* code for foo */});',
+        map: [],
+      },
+    },
   ],
 };
 
 const barModule = {
   path: '/root/bar',
+  getSource: () => 'source bar',
   dependencies: new Map(),
   output: [
-    {type: 'js/module', data: {code: '__d(function() {/* code for bar */});'}},
+    {
+      type: 'js/module',
+      data: {
+        code: '__d(function() {/* code for bar */});',
+        map: [],
+      },
+    },
   ],
 };
 
@@ -43,29 +62,30 @@ const getRunModuleStatement = moduleId =>
   `require(${JSON.stringify(moduleId)});`;
 
 it('should serialize a very simple bundle', () => {
-  expect(
-    plainJSBundle(
-      '/root/foo',
-      [polyfill],
-      {
-        dependencies: new Map([
-          ['/root/foo', fooModule],
-          ['/root/bar', barModule],
-        ]),
-        entryPoints: ['foo'],
-      },
-      {
-        processModuleFilter: () => true,
-        createModuleId: filePath => path.basename(filePath),
-        dev: true,
-        getRunModuleStatement,
-        projectRoot: '/root',
-        runBeforeMainModule: [],
-        runModule: true,
-        sourceMapUrl: 'http://localhost/bundle.map',
-      },
-    ),
-  ).toEqual(
+  const {code, map} = codeAndMap(
+    '/root/foo',
+    [polyfill],
+    {
+      dependencies: new Map([
+        ['/root/foo', fooModule],
+        ['/root/bar', barModule],
+      ]),
+      entryPoints: ['foo'],
+    },
+    {
+      processModuleFilter: () => true,
+      createModuleId: filePath => path.basename(filePath),
+      dev: true,
+      getRunModuleStatement,
+      projectRoot: '/root',
+      runBeforeMainModule: [],
+      runModule: true,
+      sourceMapUrl: 'http://localhost/bundle.map',
+      excludeSource: false,
+    },
+  );
+
+  expect(code).toEqual(
     [
       '__d(function() {/* code for polyfill */});',
       '__d(function() {/* code for foo */},"foo",["bar"],"foo");',
@@ -74,11 +94,19 @@ it('should serialize a very simple bundle', () => {
       '//# sourceMappingURL=http://localhost/bundle.map',
     ].join('\n'),
   );
+
+  expect(JSON.parse(map)).toEqual({
+    version: 3,
+    sources: ['/root/pre.js', '/root/foo', '/root/bar'],
+    sourcesContent: ['source pre', 'source foo', 'source bar'],
+    names: [],
+    mappings: '',
+  });
 });
 
 it('should add runBeforeMainModule statements if found in the graph', () => {
   expect(
-    plainJSBundle(
+    codeAndMap(
       '/root/foo',
       [polyfill],
       {
@@ -97,8 +125,9 @@ it('should add runBeforeMainModule statements if found in the graph', () => {
         runBeforeMainModule: ['/root/bar', 'non-existant'],
         runModule: true,
         sourceMapUrl: 'http://localhost/bundle.map',
+        excludeSource: true,
       },
-    ),
+    ).code,
   ).toEqual(
     [
       '__d(function() {/* code for polyfill */});',
@@ -113,7 +142,7 @@ it('should add runBeforeMainModule statements if found in the graph', () => {
 
 it('should handle numeric module ids', () => {
   expect(
-    plainJSBundle(
+    codeAndMap(
       '/root/foo',
       [polyfill],
       {
@@ -132,8 +161,9 @@ it('should handle numeric module ids', () => {
         runBeforeMainModule: ['/root/bar', 'non-existant'],
         runModule: true,
         sourceMapUrl: 'http://localhost/bundle.map',
+        excludeSource: true,
       },
-    ),
+    ).code,
   ).toEqual(
     [
       '__d(function() {/* code for polyfill */});',
@@ -148,7 +178,7 @@ it('should handle numeric module ids', () => {
 
 it('outputs custom runModule statements', () => {
   expect(
-    plainJSBundle(
+    codeAndMap(
       '/root/foo',
       [polyfill],
       {
@@ -167,8 +197,9 @@ it('outputs custom runModule statements', () => {
         projectRoot: '/root',
         runBeforeMainModule: ['/root/bar'],
         runModule: true,
+        excludeSource: true,
       },
-    ),
+    ).code,
   ).toEqual(
     [
       '__d(function() {/* code for polyfill */});',
