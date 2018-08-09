@@ -55,7 +55,7 @@ const DEFAULT = ({
   getPolyfills: () => [],
   getUseGlobalHotkey: () => true,
   postMinifyProcess: x => x,
-  postProcessBundleSourcemap: ({code, map, outFileName}) => ({code, map}),
+  postProcessBundleSourcemap: ({code, map}) => ({code, map}),
   resolveRequest: null,
   getResolverMainFields: () => ['browser', 'main'],
   getModulesRunBeforeMainModule: () => [],

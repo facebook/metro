@@ -30,7 +30,6 @@ export type PostMinifyProcess = ({
 export type PostProcessBundleSourcemap = ({
   code: Buffer | string,
   map: MetroSourceMap,
-  outFileName: string,
 }) => {code: Buffer | string, map: MetroSourceMap | string};
 
 type ExtraTransformOptions = {
