@@ -163,6 +163,8 @@ class Server {
       graphInfo.graph,
       {
         processModuleFilter: this._config.serializer.processModuleFilter,
+        postProcessBundleSourcemap: this._config.serializer
+          .postProcessBundleSourcemap,
         createModuleId: this._createModuleId,
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,
         dev: options.dev,
@@ -679,6 +681,8 @@ class Server {
 
       const {code} = codeAndMap(options.entryFile, prepend, graph, {
         processModuleFilter: this._config.serializer.processModuleFilter,
+        postProcessBundleSourcemap: this._config.serializer
+          .postProcessBundleSourcemap,
         createModuleId: this._createModuleId,
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,
         dev: options.dev,
@@ -765,6 +769,8 @@ class Server {
 
       const {map} = codeAndMap(options.entryFile, prepend, graph, {
         processModuleFilter: this._config.serializer.processModuleFilter,
+        postProcessBundleSourcemap: this._config.serializer
+          .postProcessBundleSourcemap,
         createModuleId: this._createModuleId,
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,
         dev: options.dev,

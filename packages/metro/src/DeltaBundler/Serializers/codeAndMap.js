@@ -15,6 +15,7 @@ const getAppendScripts = require('../../lib/getAppendScripts');
 const {isJsModule, wrapModule, getJsOutput} = require('./helpers/js');
 const {fromRawMappings} = require('metro-source-map');
 
+import type {MetroSourceMap} from 'metro-source-map';
 import type {Graph, Module} from '../types.flow';
 
 type Options = {|
@@ -27,6 +28,10 @@ type Options = {|
   +runModule: boolean,
   +sourceMapUrl: ?string,
   +excludeSource: boolean,
+  +postProcessBundleSourcemap: ({
+    code: Buffer | string,
+    map: MetroSourceMap,
+  }) => {code: Buffer | string, map: MetroSourceMap | string},
 |};
 
 function codeAndMap(
@@ -58,11 +63,34 @@ function codeAndMap(
     };
   });
 
-  const map = fromRawMappings(mapModules).toString(undefined, {
-    excludeSource: options.excludeSource,
-  });
+  const sourceMapGenerator = fromRawMappings(mapModules);
 
-  return {code, map};
+  if (options.postProcessBundleSourcemap) {
+    const {
+      code: postProcessedCode,
+      map: postProcessedMap,
+    } = options.postProcessBundleSourcemap({
+      code,
+      map: sourceMapGenerator.toMap(undefined, {
+        excludeSource: options.excludeSource,
+      }),
+    });
+
+    return {
+      code: String(postProcessedCode),
+      map:
+        typeof postProcessedMap === 'string'
+          ? postProcessedMap
+          : JSON.stringify(postProcessedMap),
+    };
+  }
+
+  return {
+    code,
+    map: sourceMapGenerator.toString(undefined, {
+      excludeSource: options.excludeSource,
+    }),
+  };
 }
 
 module.exports = codeAndMap;
