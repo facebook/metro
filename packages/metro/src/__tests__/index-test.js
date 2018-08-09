@@ -6,7 +6,7 @@
  *
  * @format
  * @emails oncall+js_foundation
- * @flow
+ * @flow strict-local
  */
 'use strict';
 
