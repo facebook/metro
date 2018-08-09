@@ -170,6 +170,7 @@ class Server {
         ),
         runModule: options.runModule,
         sourceMapUrl: options.sourceMapUrl,
+        inlineSourceMap: options.inlineSourceMap,
       }),
       map: sourceMapString(graphInfo.prepend, graphInfo.graph, {
         excludeSource: options.excludeSource,
@@ -224,6 +225,7 @@ class Server {
         ),
         runModule: options.runModule,
         sourceMapUrl: options.sourceMapUrl,
+        inlineSourceMap: options.inlineSourceMap,
       },
     );
   }
@@ -620,6 +622,7 @@ class Server {
             ),
             runModule: options.runModule,
             sourceMapUrl: options.sourceMapUrl,
+            inlineSourceMap: options.inlineSourceMap,
           },
         ),
         numModifiedFiles: delta.modified.size + delta.deleted.size,
@@ -688,6 +691,7 @@ class Server {
           ),
           runModule: options.runModule,
           sourceMapUrl: options.sourceMapUrl,
+          inlineSourceMap: options.inlineSourceMap,
         }),
         numModifiedFiles,
         lastModified,

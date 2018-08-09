@@ -27,16 +27,24 @@ const fooModule = {
   path: '/root/foo',
   dependencies: new Map([['./bar', {absolutePath: '/root/bar', data: {}}]]),
   output: [
-    {type: 'js/module', data: {code: '__d(function() {/* code for foo */});'}},
+    {
+      type: 'js/module',
+      data: {code: '__d(function() {/* code for foo */});', map: []},
+    },
   ],
+  getSource: () => 'foo-source',
 };
 
 const barModule = {
   path: '/root/bar',
   dependencies: new Map(),
   output: [
-    {type: 'js/module', data: {code: '__d(function() {/* code for bar */});'}},
+    {
+      type: 'js/module',
+      data: {code: '__d(function() {/* code for bar */});', map: []},
+    },
   ],
+  getSource: () => 'bar-source',
 };
 
 const getRunModuleStatement = moduleId =>
@@ -178,4 +186,51 @@ it('outputs custom runModule statements', () => {
       'export default require("foo").default;',
     ].join('\n'),
   );
+});
+
+it('should add an inline source map to a very simple bundle', () => {
+  const bundle = plainJSBundle(
+    '/root/foo',
+    [polyfill],
+    {
+      dependencies: new Map([
+        ['/root/foo', fooModule],
+        ['/root/bar', barModule],
+      ]),
+      entryPoints: ['foo'],
+    },
+    {
+      processModuleFilter: () => true,
+      createModuleId: filePath => path.basename(filePath),
+      dev: true,
+      getRunModuleStatement,
+      projectRoot: '/root',
+      runBeforeMainModule: [],
+      runModule: true,
+      inlineSourceMap: true,
+    },
+  );
+  expect(bundle.slice(0, bundle.lastIndexOf('base64'))).toEqual(
+    [
+      '__d(function() {/* code for polyfill */});',
+      '__d(function() {/* code for foo */},"foo",["bar"],"foo");',
+      '__d(function() {/* code for bar */},"bar",[],"bar");',
+      'require("foo");',
+      '//# sourceMappingURL=data:application/json;charset=utf-8;',
+    ].join('\n'),
+  );
+  expect(
+    JSON.parse(
+      Buffer.from(
+        bundle.slice(bundle.lastIndexOf('base64') + 7),
+        'base64',
+      ).toString(),
+    ),
+  ).toEqual({
+    mappings: '',
+    names: [],
+    sources: ['/root/foo', '/root/bar'],
+    sourcesContent: ['foo-source', 'bar-source'],
+    version: 3,
+  });
 });

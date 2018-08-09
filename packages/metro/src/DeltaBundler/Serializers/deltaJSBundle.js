@@ -26,6 +26,7 @@ type Options = {|
   +runBeforeMainModule: $ReadOnlyArray<string>,
   +runModule: boolean,
   +sourceMapUrl: ?string,
+  +inlineSourceMap: ?boolean,
 |};
 
 function deltaJSBundle(

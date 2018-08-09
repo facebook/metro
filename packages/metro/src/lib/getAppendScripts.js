@@ -10,6 +10,8 @@
 
 'use strict';
 
+const sourceMapString = require('../DeltaBundler/Serializers/sourceMapString');
+
 import type {Graph, Module} from '../DeltaBundler';
 
 type Options<T: number | string> = {
@@ -18,6 +20,7 @@ type Options<T: number | string> = {
   +runBeforeMainModule: $ReadOnlyArray<string>,
   +runModule: boolean,
   +sourceMapUrl: ?string,
+  +inlineSourceMap: ?boolean,
 };
 
 function getAppendScripts<T: number | string>(
@@ -53,7 +56,30 @@ function getAppendScripts<T: number | string>(
     }
   }
 
-  if (options.sourceMapUrl) {
+  if (options.inlineSourceMap) {
+    const sourceMap = Buffer.from(
+      sourceMapString([], graph, {
+        processModuleFilter: () => true,
+        excludeSource: false,
+      }),
+    ).toString('base64');
+
+    output.push({
+      path: 'source-map',
+      dependencies: new Map(),
+      getSource: () => '',
+      inverseDependencies: new Set(),
+      output: [
+        {
+          type: 'js/script/virtual',
+          data: {
+            code: `//# sourceMappingURL=data:application/json;charset=utf-8;base64,${sourceMap}`,
+            map: [],
+          },
+        },
+      ],
+    });
+  } else if (options.sourceMapUrl) {
     output.push({
       path: 'source-map',
       dependencies: new Map(),
