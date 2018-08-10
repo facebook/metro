@@ -44,7 +44,7 @@ const options = {
   processModuleFilter: module => true,
   createModuleId: createModuleIdFactory(),
   dev: true,
-  getRunModuleStatement: moduleId => `require(${JSON.stringify(moduleId)});`,
+  getRunModuleStatement: moduleId => `__r(${JSON.stringify(moduleId)});`,
   projectRoot: '/root',
   runBeforeMainModule: [],
   runModule: true,

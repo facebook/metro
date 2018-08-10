@@ -87,10 +87,14 @@ exports.createIdForPathFn = (): (({path: string}) => number) => {
 exports.requireCallsTo = function*(
   modules: Iterable<Module>,
   idForPath: IdForPathFn,
+  getRunModuleStatement: (id: number | string) => string,
 ): Iterable<Module> {
   for (const module of modules) {
     const id = idForPath(module.file);
-    yield virtualModule(`require(${id});`, `/<generated>/require-${id}.js`);
+    yield virtualModule(
+      getRunModuleStatement(id),
+      `/<generated>/require-${id}.js`,
+    );
   }
 };
 

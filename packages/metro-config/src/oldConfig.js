@@ -43,7 +43,7 @@ const DEFAULT = ({
   getWatchFolders: () => [],
   getProvidesModuleNodeModules: () => providesModuleNodeModules.slice(),
   getRunModuleStatement: (moduleId: number | string) =>
-    `require(${JSON.stringify(moduleId)});`,
+    `__r(${JSON.stringify(moduleId)});`,
   getSourceExts: () => [],
   getTransformModulePath: () =>
     require.resolve('metro/src//defaultTransformer'),

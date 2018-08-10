@@ -49,7 +49,7 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
   serializer: {
     polyfillModuleNames: [],
     getRunModuleStatement: (moduleId: number | string) =>
-      `require(${JSON.stringify(moduleId)});`,
+      `__r(${JSON.stringify(moduleId)});`,
     getPolyfills: () => [],
     postProcessBundleSourcemap: ({code, map, outFileName}) => ({code, map}),
     getModulesRunBeforeMainModule: () => [],

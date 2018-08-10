@@ -63,7 +63,7 @@ describe('require', () => {
 
   it('works with plain bundles', () => {
     createModuleSystem(moduleSystem, false);
-    expect(moduleSystem.require).not.toBeUndefined();
+    expect(moduleSystem.__r).not.toBeUndefined();
     expect(moduleSystem.__d).not.toBeUndefined();
 
     const mockExports = {foo: 'bar'};
@@ -78,7 +78,7 @@ describe('require', () => {
     moduleSystem.__d(mockFactory, 1, [2, 3]);
     expect(mockFactory).not.toBeCalled();
 
-    const m = moduleSystem.require(1);
+    const m = moduleSystem.__r(1);
     expect(mockFactory.mock.calls.length).toBe(1);
     expect(mockFactory.mock.calls[0][0]).toBe(moduleSystem);
     expect(m).toBe(mockExports);
@@ -102,7 +102,7 @@ describe('require', () => {
         moduleSystem.__d(mockFactory, (bundleId << 16) + localId, [2, 3]);
       });
     createModuleSystem(moduleSystem, false);
-    expect(moduleSystem.require).not.toBeUndefined();
+    expect(moduleSystem.__r).not.toBeUndefined();
     expect(moduleSystem.__d).not.toBeUndefined();
 
     expect(moduleSystem.nativeRequire).not.toBeCalled();
@@ -114,7 +114,7 @@ describe('require', () => {
       moduleSystem.nativeRequire.mockClear();
       mockFactory.mockClear();
 
-      const m = moduleSystem.require(moduleId);
+      const m = moduleSystem.__r(moduleId);
 
       expect(moduleSystem.nativeRequire.mock.calls.length).toBe(1);
       expect(moduleSystem.nativeRequire).toBeCalledWith(localId, bundleId);
@@ -140,7 +140,7 @@ describe('require', () => {
         },
       );
 
-      moduleSystem.require(0);
+      moduleSystem.__r(0);
     });
 
     it('exports values correctly via the module.exports variable', () => {
@@ -150,7 +150,7 @@ describe('require', () => {
         module.exports = 'foo';
       });
 
-      expect(moduleSystem.require(0)).toEqual('foo');
+      expect(moduleSystem.__r(0)).toEqual('foo');
     });
 
     it('exports values correctly via the exports variable', () => {
@@ -165,7 +165,7 @@ describe('require', () => {
         },
       );
 
-      expect(moduleSystem.require(0)).toEqual({foo: 'foo'});
+      expect(moduleSystem.__r(0)).toEqual({foo: 'foo'});
     });
 
     it('exports an empty object by default', () => {
@@ -180,7 +180,7 @@ describe('require', () => {
         },
       );
 
-      expect(moduleSystem.require(0)).toEqual({});
+      expect(moduleSystem.__r(0)).toEqual({});
     });
 
     it('exposes the verboseName in dev mode', done => {
@@ -191,7 +191,7 @@ describe('require', () => {
         done();
       });
 
-      moduleSystem.require(0);
+      moduleSystem.__r(0);
     });
 
     it('handles requires/exports correctly', () => {
@@ -207,7 +207,7 @@ describe('require', () => {
         };
       });
 
-      expect(moduleSystem.require(0)).toEqual('barExported');
+      expect(moduleSystem.__r(0)).toEqual('barExported');
     });
 
     it('only evaluates a module once', () => {
@@ -221,8 +221,8 @@ describe('require', () => {
         module.exports = 'my value';
       });
 
-      expect(moduleSystem.require(0)).toEqual('my value');
-      expect(moduleSystem.require(0)).toEqual('my value');
+      expect(moduleSystem.__r(0)).toEqual('my value');
+      expect(moduleSystem.__r(0)).toEqual('my value');
 
       expect(fn.mock.calls.length).toBe(1);
     });
@@ -234,7 +234,7 @@ describe('require', () => {
         require(99);
       });
 
-      expect(() => moduleSystem.require(0)).toThrow(
+      expect(() => moduleSystem.__r(0)).toThrow(
         'Requiring unknown module "99"',
       );
     });
@@ -247,10 +247,10 @@ describe('require', () => {
       });
 
       // First time it throws the original error.
-      expect(() => moduleSystem.require(0)).toThrow('foo!');
+      expect(() => moduleSystem.__r(0)).toThrow('foo!');
 
       // Afterwards it throws a wrapped error (the module is not reevaluated).
-      expect(() => moduleSystem.require(0)).toThrow(
+      expect(() => moduleSystem.__r(0)).toThrow(
         'Requiring module "0", which threw an exception: Error: foo!',
       );
     });
@@ -271,7 +271,7 @@ describe('require', () => {
         module.exports = 'module 33';
       });
 
-      expect(moduleSystem.require(0)).toEqual('module 33');
+      expect(moduleSystem.__r(0)).toEqual('module 33');
     });
 
     it('allows to require verboseNames in dev mode', () => {
@@ -284,7 +284,7 @@ describe('require', () => {
       const warn = console.warn;
       console.warn = jest.fn();
 
-      expect(moduleSystem.require('foo.js')).toEqual('Hi!');
+      expect(moduleSystem.__r('foo.js')).toEqual('Hi!');
       expect(console.warn).toHaveBeenCalledWith(
         'Requiring module "foo.js" by name is only supported for debugging purposes and will BREAK IN PRODUCTION!',
       );
@@ -299,7 +299,7 @@ describe('require', () => {
         module.exports = 'Hi!';
       });
 
-      expect(() => moduleSystem.require('wrong.js')).toThrow(
+      expect(() => moduleSystem.__r('wrong.js')).toThrow(
         'Unknown named module: "wrong.js"',
       );
     });
@@ -324,7 +324,7 @@ describe('require', () => {
       const warn = console.warn;
       console.warn = jest.fn();
 
-      moduleSystem.require(0);
+      moduleSystem.__r(0);
       expect(console.warn).toHaveBeenCalledWith(
         [
           'Require cycle: foo.js -> bar.js -> baz.js -> foo.js',
@@ -349,7 +349,7 @@ describe('require', () => {
         };
       });
 
-      expect(moduleSystem.require(0)).toEqual({});
+      expect(moduleSystem.__r(0)).toEqual({});
     });
 
     it('handles well requires on previously defined exports', () => {
@@ -368,7 +368,7 @@ describe('require', () => {
         };
       });
 
-      expect(moduleSystem.require(0)).toEqual({
+      expect(moduleSystem.__r(0)).toEqual({
         bar: 'foo-cyclic',
         baz: 'baz',
         foo: 'foo',
@@ -391,7 +391,7 @@ describe('require', () => {
         };
       });
 
-      expect(moduleSystem.require(0)).toEqual({foo: 'foo', bar: 'foo-cyclic'});
+      expect(moduleSystem.__r(0)).toEqual({foo: 'foo', bar: 'foo-cyclic'});
     });
   });
 });

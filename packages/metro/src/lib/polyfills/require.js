@@ -52,7 +52,7 @@ type PatchedModules = {[ModuleID]: boolean};
 type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
 type VerboseModuleNameForDev = string;
 
-global.require = metroRequire;
+global.__r = metroRequire;
 global.__d = define;
 
 const modules =
