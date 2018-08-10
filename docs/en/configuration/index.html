@@ -140,7 +140,7 @@
 <tr><th>Option</th><th>Type</th><th>Description</th></tr>
 </thead>
 <tbody>
-<tr><td><code>getRunModuleStatement</code></td><td><code>(number</code> | <code>string) =&gt; string</code></td><td>Specify the format of the initial require statements that are appended at the end of the bundle. By default is <code>require(${moduleId});</code>.</td></tr>
+<tr><td><code>getRunModuleStatement</code></td><td><code>(number</code> | <code>string) =&gt; string</code></td><td>Specify the format of the initial require statements that are appended at the end of the bundle. By default is <code>__r(${moduleId});</code>.</td></tr>
 <tr><td><code>getPolyfills</code></td><td><code>({platform: ?string}) =&gt; $ReadOnlyArray&lt;string&gt;</code></td><td>An optional list of polyfills to include in the bundle. The list defaults to a set of common polyfills for Number, String, Array, Object...</td></tr>
 <tr><td><code>postProcessBundleSourcemap</code></td><td><code>PostProcessBundleSourcemap</code></td><td>An optional function that can modify the code and source map of the bundle before it is written. Applied once for the entire bundle.</td></tr>
 <tr><td><code>getModulesRunBeforeMainModule</code></td><td><code>(entryFilePath: string) =&gt; Array&lt;string&gt;</code></td><td>An array of modules to be required before the entry point. It should contain the absolute path of each module.</td></tr>
