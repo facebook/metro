@@ -22,6 +22,7 @@ const {InvalidRequireCallError} = collectDependencies;
 const opts = {
   asyncRequireModulePath: 'asyncRequire',
   dynamicRequires: 'reject',
+  keepRequireNames: true,
 };
 
 it('collects unique dependency identifiers and transforms the AST', () => {
@@ -62,7 +63,7 @@ it('collects asynchronous dependencies', () => {
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
-      require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0]).then(foo => {});
+      require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0], "some/async/module").then(foo => {});
     `),
   );
 });
@@ -80,7 +81,7 @@ it('collects mixed dependencies as being sync', () => {
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
       const a = require(${dependencyMapName}[0], "some/async/module");
-      require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0]).then(foo => {});
+      require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0], "some/async/module").then(foo => {});
     `),
   );
 });
@@ -97,7 +98,7 @@ it('collects mixed dependencies as being sync; reverse order', () => {
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
-      require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0]).then(foo => {});
+      require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0], "some/async/module").then(foo => {});
       const a = require(${dependencyMapName}[0], "some/async/module");
     `),
   );
@@ -197,6 +198,7 @@ describe('Evaluating static arguments', () => {
     const opts = {
       asyncRequireModulePath: 'asyncRequire',
       dynamicRequires: 'throwAtRuntime',
+      keepRequireNames: true,
     };
     const {dependencies} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([]);

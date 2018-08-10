@@ -22,7 +22,6 @@ const generate = require('@babel/generator').default;
 const getMinifier = require('../lib/getMinifier');
 const inlinePlugin = require('./worker/inline-plugin');
 const normalizePseudoglobals = require('./worker/normalizePseudoglobals');
-const optimizeDependencies = require('../ModuleGraph/worker/optimizeDependencies');
 const path = require('path');
 
 const {
@@ -219,7 +218,6 @@ async function transformCode(
   );
 
   let dependencyMapName = '';
-  let wrappedRequireName = '';
   let dependencies;
   let wrappedAst;
 
@@ -240,6 +238,7 @@ async function transformCode(
           dynamicDepsInPackages,
           filename,
         ),
+        keepRequireNames: options.dev,
       };
       ({dependencies, dependencyMapName} = collectDependencies(ast, opts));
     } catch (error) {
@@ -249,19 +248,7 @@ async function transformCode(
       throw error;
     }
 
-    const wrapped = JsFileWrapping.wrapModule(ast, dependencyMapName);
-
-    wrappedAst = wrapped.ast;
-    wrappedRequireName = wrapped.requireName;
-
-    if (!options.dev) {
-      dependencies = optimizeDependencies(
-        wrappedAst,
-        dependencies,
-        dependencyMapName,
-        wrappedRequireName,
-      );
-    }
+    ({ast: wrappedAst} = JsFileWrapping.wrapModule(ast, dependencyMapName));
   }
 
   const reserved = options.minify ? normalizePseudoglobals(wrappedAst) : [];

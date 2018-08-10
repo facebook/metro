@@ -43,11 +43,13 @@ type State = {|
   dependencyIndexes: Map<string, number>,
   dynamicRequires: DynamicRequiresBehavior,
   dependencyMapIdentifier: ?Identifier,
+  keepRequireNames: boolean,
 |};
 
 export type Options = {|
   +asyncRequireModulePath: string,
   +dynamicRequires: DynamicRequiresBehavior,
+  +keepRequireNames: boolean,
 |};
 
 export type CollectedDependencies = {|
@@ -104,6 +106,7 @@ function collectDependencies(
     dependencyIndexes: new Map(),
     dependencyMapIdentifier: null,
     dynamicRequires: options.dynamicRequires,
+    keepRequireNames: options.keepRequireNames,
   };
 
   const visitor = {
@@ -160,7 +163,7 @@ function processImportCall(path: Path, state: State): Path {
   path.replaceWith(
     makeAsyncRequireTemplate({
       ASYNC_REQUIRE_MODULE_PATH: state.asyncRequireModulePathStringLiteral,
-      MODULE_ID: createDependencyMapLookup(state, 'import', name),
+      MODULE_ID: createDependencyMapLookup(state, name),
     }),
   );
 
@@ -182,7 +185,7 @@ function processRequireCall(path: Path, state: State): Path {
     );
   } else {
     getDependency(state, name).data.isAsync = false;
-    path.node.arguments = createDependencyMapLookup(state, 'require', name);
+    path.node.arguments = createDependencyMapLookup(state, name);
   }
 
   return path;
@@ -217,22 +220,16 @@ function getModuleNameFromCallArgs(path: Path): ?string {
   return null;
 }
 
-function createDependencyMapLookup(
-  state: State,
-  type: string,
-  name: string,
-): Array<mixed> {
+function createDependencyMapLookup(state: State, name: string): Array<mixed> {
   const memberExpression = types.memberExpression(
     state.dependencyMapIdentifier,
     types.numericLiteral(getDependency(state, name).index),
     true,
   );
 
-  if (type === 'require') {
-    return [memberExpression, types.stringLiteral(name)];
-  }
-
-  return [memberExpression];
+  return state.keepRequireNames
+    ? [memberExpression, types.stringLiteral(name)]
+    : [memberExpression];
 }
 
 class InvalidRequireCallError extends Error {

@@ -209,7 +209,11 @@ function makeResult(options: {|
     ast = JsFileWrapping.wrapPolyfill(ast);
   } else {
     const {asyncRequireModulePath} = options;
-    const opts = {asyncRequireModulePath, dynamicRequires: 'reject'};
+    const opts = {
+      asyncRequireModulePath,
+      dynamicRequires: 'reject',
+      keepRequireNames: true,
+    };
     ({dependencies, dependencyMapName} = collectDependencies(ast, opts));
     ({ast, requireName} = JsFileWrapping.wrapModule(ast, dependencyMapName));
   }
