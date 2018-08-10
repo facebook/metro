@@ -147,7 +147,7 @@ describe('transforming JS modules:', () => {
     invariant(result.type === 'code', 'result must be code');
     const {code} = result.details.transformed.default;
     expect(code.replace(/\s+/g, '')).toEqual(
-      `(function(global){${transformedCode}})(this);`,
+      `(function(global){${transformedCode}})(typeofglobal==='undefined'?this:global);`,
     );
   });
 

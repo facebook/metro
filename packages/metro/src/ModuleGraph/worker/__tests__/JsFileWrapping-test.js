@@ -180,7 +180,7 @@ it('wraps a polyfill correctly', () => {
         if (something) {
           console.log('foo');
         }
-      })(this);`),
+      })(typeof global === 'undefined' ? this : global);`),
   );
 });
 

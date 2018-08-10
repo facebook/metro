@@ -12,12 +12,15 @@
 
 /* eslint-disable lint/no-unclear-flowtypes */
 const babelTypes = require('@babel/types');
+const template = require('@babel/template').default;
 
 const traverse = require('@babel/traverse').default;
 
 const MODULE_FACTORY_PARAMETERS = ['global', 'require', 'module', 'exports'];
 const POLYFILL_FACTORY_PARAMETERS = ['global'];
 const WRAP_NAME = '$$_REQUIRE'; // note: babel will prefix this with _
+
+const IIFE_PARAM = template("typeof global === 'undefined' ? this : global");
 
 function wrapModule(
   fileAst: Object,
@@ -40,7 +43,8 @@ function wrapPolyfill(fileAst: Object): Object {
     fileAst.program,
     POLYFILL_FACTORY_PARAMETERS,
   );
-  const iife = t.callExpression(factory, [t.identifier('this')]);
+
+  const iife = t.callExpression(factory, [IIFE_PARAM().expression]);
   return t.file(t.program([t.expressionStatement(iife)]));
 }
 
