@@ -7,7 +7,7 @@
     "cleanup-release": "test ! -e build && mv src build && mv src.real src"
   },
   "dependencies": {
-    "@babel/helper-module-imports": "7.0.0-beta.54"
+    "@babel/helper-module-imports": "7.0.0-beta.56"
   },
   "license": "MIT"
 }
