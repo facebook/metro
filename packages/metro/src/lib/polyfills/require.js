@@ -54,11 +54,22 @@ type VerboseModuleNameForDev = string;
 
 global.__r = metroRequire;
 global.__d = define;
+global.__c = clear;
 
-const modules =
-  typeof __NUM_MODULES__ === 'number'
-    ? (Array(__NUM_MODULES__ | 0): Array<ModuleDefinition>)
-    : (Object.create(null): {[number]: ModuleDefinition, __proto__: null});
+let modules = clear();
+
+function clear() {
+  modules =
+    typeof __NUM_MODULES__ === 'number'
+      ? (Array(__NUM_MODULES__ | 0): Array<ModuleDefinition>)
+      : (Object.create(null): {[number]: ModuleDefinition, __proto__: null});
+
+  // We return modules here so that we can assign an initial value to modules
+  // when defining it. Otherwise, we would have to do "let modules = null",
+  // which will force us to add "nullthrows" everywhere.
+  return modules;
+}
+
 if (__DEV__) {
   var verboseNamesToModuleIds: {
     [key: string]: number,

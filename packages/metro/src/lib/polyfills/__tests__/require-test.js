@@ -305,6 +305,55 @@ describe('require', () => {
     });
   });
 
+  describe('clearing require cache', () => {
+    it('exposes a method', () => {
+      let requireOld;
+      let requireNew;
+
+      const factory = jest.fn((global, require, module) => {
+        module.exports.name = 'foo';
+      });
+
+      function defineModule0() {
+        createModule(moduleSystem, 0, 'foo.js', factory);
+      }
+
+      createModuleSystem(moduleSystem, false);
+
+      // The clearing function exists.
+      expect(moduleSystem.__c).toBeInstanceOf(Function);
+
+      // Resetting the cache will make the module disappear.
+      defineModule0();
+      expect(() => moduleSystem.__r(0)).not.toThrow();
+      moduleSystem.__c();
+      expect(() => moduleSystem.__r(0)).toThrow();
+
+      // Not resetting the cache, the same require twice returns the same instance.
+      defineModule0();
+      requireOld = moduleSystem.__r(0);
+      requireNew = moduleSystem.__r(0);
+      expect(requireOld).toBe(requireNew);
+
+      // Resetting the cache, the same require twice will return a new instance.
+      factory.mockClear();
+
+      moduleSystem.__c();
+      defineModule0();
+      requireOld = moduleSystem.__r(0);
+
+      moduleSystem.__c();
+      defineModule0();
+      requireNew = moduleSystem.__r(0);
+
+      expect(requireOld).not.toBe(requireNew);
+      expect(factory).toHaveBeenCalledTimes(2);
+
+      // But they are equal in structure, because the same code was executed.
+      expect(requireOld).toEqual(requireNew);
+    });
+  });
+
   describe('cyclic dependencies', () => {
     it('logs a warning when there is a cyclic dependency in dev mode', () => {
       createModuleSystem(moduleSystem, true);
