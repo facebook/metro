@@ -56,3 +56,15 @@ export type DeltaResult<T = MixedOutput> = {|
   +deleted: Set<string>,
   +reset: boolean,
 |};
+
+export type SerializerOptions = {|
+  +processModuleFilter: (module: Module<>) => boolean,
+  +createModuleId: string => number,
+  +dev: boolean,
+  +getRunModuleStatement: (number | string) => string,
+  +projectRoot: string,
+  +runBeforeMainModule: $ReadOnlyArray<string>,
+  +runModule: boolean,
+  +sourceMapUrl: ?string,
+  +inlineSourceMap: ?boolean,
+|};

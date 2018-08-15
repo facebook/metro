@@ -14,25 +14,13 @@ const getAppendScripts = require('../../lib/getAppendScripts');
 
 const {isJsModule, wrapModule} = require('./helpers/js');
 
-import type {Graph, Module} from '../types.flow';
-
-type Options = {|
-  +processModuleFilter: (module: Module<>) => boolean,
-  +createModuleId: string => number | string,
-  +dev: boolean,
-  +getRunModuleStatement: (number | string) => string,
-  +projectRoot: string,
-  +runBeforeMainModule: $ReadOnlyArray<string>,
-  +runModule: boolean,
-  +sourceMapUrl: ?string,
-  +inlineSourceMap: ?boolean,
-|};
+import type {Graph, Module, SerializerOptions} from '../types.flow';
 
 function plainJSBundle(
   entryPoint: string,
   pre: $ReadOnlyArray<Module<>>,
   graph: Graph<>,
-  options: Options,
+  options: SerializerOptions,
 ): string {
   for (const module of graph.dependencies.values()) {
     options.createModuleId(module.path);

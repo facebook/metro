@@ -15,19 +15,12 @@ const getAppendScripts = require('../../lib/getAppendScripts');
 const {wrapModule} = require('./helpers/js');
 const {getJsOutput, isJsModule} = require('./helpers/js');
 
-import type {DeltaResult, Graph, Module} from '../types.flow';
-
-type Options = {|
-  +processModuleFilter: (module: Module<>) => boolean,
-  +createModuleId: string => number | string,
-  +dev: boolean,
-  +getRunModuleStatement: (number | string) => string,
-  +projectRoot: string,
-  +runBeforeMainModule: $ReadOnlyArray<string>,
-  +runModule: boolean,
-  +sourceMapUrl: ?string,
-  +inlineSourceMap: ?boolean,
-|};
+import type {
+  DeltaResult,
+  Graph,
+  Module,
+  SerializerOptions,
+} from '../types.flow';
 
 function deltaJSBundle(
   entryPoint: string,
@@ -35,7 +28,7 @@ function deltaJSBundle(
   delta: DeltaResult<>,
   sequenceId: string,
   graph: Graph<>,
-  options: Options,
+  options: SerializerOptions,
 ): string {
   const outputPre = [];
   const outputPost = [];

@@ -20,22 +20,14 @@ const {createRamBundleGroups} = require('../../Bundler/util');
 const {isJsModule, wrapModule} = require('./helpers/js');
 
 import type {ModuleTransportLike} from '../../shared/types.flow';
-import type {Graph, Module} from '../types.flow';
+import type {Graph, Module, SerializerOptions} from '../types.flow';
 import type {GetTransformOptions} from 'metro-config/src/configTypes.flow.js';
 
 type Options = {|
-  +processModuleFilter: (module: Module<>) => boolean,
-  +createModuleId: string => number,
-  +dev: boolean,
+  ...SerializerOptions,
   +excludeSource: boolean,
-  +getRunModuleStatement: number => string,
   +getTransformOptions: ?GetTransformOptions,
   +platform: ?string,
-  +projectRoot: string,
-  +runBeforeMainModule: $ReadOnlyArray<string>,
-  +runModule: boolean,
-  +sourceMapUrl: ?string,
-  +inlineSourceMap: ?boolean,
 |};
 
 export type RamBundleInfo = {|
