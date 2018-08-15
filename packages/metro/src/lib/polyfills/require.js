@@ -33,6 +33,7 @@ type HotModuleReloadingData = {|
   dispose: (callback: HotModuleReloadingCallback) => void,
 |};
 type Module = {
+  id?: string,
   exports: Exports,
   hot?: HotModuleReloadingData,
 };
@@ -106,7 +107,7 @@ function define(
   }
   modules[moduleId] = {
     dependencyMap,
-    publicModule: {exports: undefined},
+    publicModule: {exports: {}},
     factory,
     hasError: false,
     isInitialized: false,
@@ -233,7 +234,7 @@ function loadModuleImplementation(moduleId, module) {
   // factory to keep any require cycles inside the factory from causing an
   // infinite require loop.
   module.isInitialized = true;
-  const exports = {};
+
   const {factory, dependencyMap} = module;
   if (__DEV__) {
     initializingModuleIds.push(moduleId);
@@ -244,15 +245,26 @@ function loadModuleImplementation(moduleId, module) {
       Systrace.beginEvent('JS_require_' + (module.verboseName || moduleId));
     }
 
-    const moduleObject: Module = (module.publicModule = {exports});
-    if (__DEV__ && module.hot) {
-      moduleObject.hot = module.hot;
+    const moduleObject: Module = module.publicModule;
+
+    if (__DEV__) {
+      moduleObject.id = module.verboseName || moduleObject.id;
+
+      if (module.hot) {
+        moduleObject.hot = module.hot;
+      }
     }
 
     // keep args in sync with with defineModuleCode in
     // metro/src/Resolver/index.js
     // and metro/src/ModuleGraph/worker.js
-    factory(global, metroRequire, moduleObject, exports, dependencyMap);
+    factory(
+      global,
+      metroRequire,
+      moduleObject,
+      moduleObject.exports,
+      dependencyMap,
+    );
 
     // avoid removing factory in DEV mode as it breaks HMR
     if (!__DEV__) {

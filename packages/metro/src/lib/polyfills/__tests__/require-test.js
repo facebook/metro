@@ -183,6 +183,22 @@ describe('require', () => {
       expect(moduleSystem.__r(0)).toEqual({});
     });
 
+    it('has the same reference to exports and module.exports', () => {
+      createModuleSystem(moduleSystem, false);
+
+      createModule(
+        moduleSystem,
+        0,
+        'index.js',
+        (global, require, module, exports) => {
+          module.exports.a = 'test';
+          exports.b = 'test2';
+        },
+      );
+
+      expect(moduleSystem.__r(0)).toEqual({a: 'test', b: 'test2'});
+    });
+
     it('exposes the verboseName in dev mode', done => {
       createModuleSystem(moduleSystem, true);
 
@@ -192,6 +208,26 @@ describe('require', () => {
       });
 
       moduleSystem.__r(0);
+    });
+
+    it('exposes module.id as path on the module in dev mode', () => {
+      createModuleSystem(moduleSystem, true);
+
+      createModule(moduleSystem, 0, 'index.js', (global, require, module) => {
+        module.exports = module.id;
+      });
+
+      expect(moduleSystem.__r(0)).toEqual('index.js');
+    });
+
+    it("doesn't expose module.id as moduleId on the module in prod mode", () => {
+      createModuleSystem(moduleSystem, false);
+
+      createModule(moduleSystem, 0, 'index.js', (global, require, module) => {
+        module.exports = module.id;
+      });
+
+      expect(moduleSystem.__r(0)).toBeUndefined();
     });
 
     it('handles requires/exports correctly', () => {
