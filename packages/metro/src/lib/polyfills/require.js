@@ -57,7 +57,7 @@ global.__r = metroRequire;
 global.__d = define;
 global.__c = clear;
 
-let modules = clear();
+var modules = clear();
 
 function clear() {
   modules =
