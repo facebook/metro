@@ -76,3 +76,9 @@ it('minimizes arguments given', () => {
 });"
 `);
 });
+
+it('throws if two variables collapse to the same name', () => {
+  expect(() =>
+    normalizePseudoglobalsCall('__d(function (global, golf) {})'),
+  ).toThrow(ReferenceError);
+});

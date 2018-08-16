@@ -37,6 +37,12 @@ function normalizePseudoglobals(ast: Ast): $ReadOnlyArray<string> {
         reserved = pseudoglobals.map(name => {
           return (name.match(/[a-z]/i) || [''])[0].toLowerCase();
         });
+
+        if (new Set(reserved).size !== pseudoglobals.length) {
+          throw new ReferenceError(
+            'Shortened variables are not unique: ' + reserved.join(', '),
+          );
+        }
       },
 
       exit(path, state) {
