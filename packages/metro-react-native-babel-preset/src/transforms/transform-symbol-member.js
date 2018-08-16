@@ -21,7 +21,7 @@
  *
  * Transformed to:
  *
- *   typeof Symbol.iterator === 'function' ? Symbol.iterator : '@@iterator';
+ *   typeof Symbol === 'function' ? Symbol.iterator : '@@iterator';
  */
 module.exports = function symbolMember(babel) {
   const t = babel.types;
