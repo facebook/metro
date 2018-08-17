@@ -78,6 +78,7 @@ class Bundler {
       projectRoot: opts.projectRoot,
       providesModuleNodeModules: opts.resolver.providesModuleNodeModules,
       reporter: opts.reporter,
+      resetCache: opts.resetCache,
       resolveRequest: opts.resolver.resolveRequest,
       sourceExts: opts.resolver.sourceExts,
       useWatchman: opts.resolver.useWatchman,
