@@ -317,28 +317,27 @@ function resolveFile(
   // but this check will fail to tell the difference between
   // require('./$.html') for an asset '$.html' or a module '$.html.js'.
   // Check both.
-  try {
-    const candidateExts = [];
-    const filePathPrefix = path.join(dirPath, fileNameHint);
-    const sfContext = {...context, candidateExts, filePathPrefix};
-    const filePath = resolveSourceFile(sfContext, platform);
-    if (filePath != null) {
-      return resolvedAs({type: 'sourceFile', filePath});
-    }
-    return failedFor({type: 'sourceFile', filePathPrefix, candidateExts});
-  } catch (err) {
-    if (isMaybeAssetFile(fileNameHint)) {
-      const result = resolveAssetFiles(
-        resolveAsset,
-        dirPath,
-        fileNameHint,
-        platform,
-      );
-      return mapResult(result, filePaths => ({type: 'assetFiles', filePaths}));
-    } else {
-      throw err;
+  let assetResult = null;
+  if (isMaybeAssetFile(fileNameHint)) {
+    assetResult = resolveAssetFiles(
+    resolveAsset,
+    dirPath,
+    fileNameHint,
+    platform);
+
+    if (assetResult.type !== 'failed') {
+      return mapResult(result, filePaths => ({ type: 'assetFiles', filePaths }));
     }
   }
+
+  const candidateExts = [];
+  const filePathPrefix = path.join(dirPath, fileNameHint);
+  const sfContext = _extends({}, context, { candidateExts, filePathPrefix });
+  const filePath = resolveSourceFile(sfContext, platform);
+  if (filePath != null) {
+    return resolvedAs({type: 'sourceFile', filePath});
+  }
+  return assetResult || failedFor({ type: 'sourceFile', filePathPrefix, candidateExts });
 }
 
 type SourceFileContext = SourceFileForAllExtsContext & {
