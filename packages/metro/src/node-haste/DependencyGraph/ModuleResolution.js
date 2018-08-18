@@ -56,7 +56,7 @@ type Options<TModule, TPackage> = {|
   +dirExists: DirExistsFn,
   +doesFileExist: DoesFileExist,
   +extraNodeModules: ?Object,
-  +isAssetFile: IsAssetFile,
+  +isMaybeAssetFile: IsMaybeAssetFile,
   +mainFields: $ReadOnlyArray<string>,
   +moduleCache: ModuleishCache<TModule, TPackage>,
   +preferNativePlatform: boolean,

@@ -46,7 +46,7 @@ class DependencyGraphHelpers {
     return true;
   }
 
-  isAssetFile(file: string) {
+  isMaybeAssetFile(file: string) {
     return this._assetExts.has(this.extname(file));
   }
 

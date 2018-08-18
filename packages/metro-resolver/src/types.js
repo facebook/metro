@@ -47,7 +47,7 @@ export type FileCandidates =
  * Check existence of a single file.
  */
 export type DoesFileExist = (filePath: string) => boolean;
-export type IsAssetFile = (fileName: string) => boolean;
+export type IsMaybeAssetFile = (fileName: string) => boolean;
 
 /**
  * Given a directory path and the base asset name, return a list of all the
@@ -63,7 +63,7 @@ export type ResolveAsset = (
 
 export type FileContext = {
   +doesFileExist: DoesFileExist,
-  +isAssetFile: IsAssetFile,
+  +isMaybeAssetFile: IsMaybeAssetFile,
   +preferNativePlatform: boolean,
   +redirectModulePath: (modulePath: string) => string | false,
   +resolveAsset: ResolveAsset,

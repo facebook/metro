@@ -312,24 +312,33 @@ function resolveFile(
   fileNameHint: string,
   platform: string | null,
 ): Result<FileResolution, FileCandidates> {
-  const {isAssetFile, resolveAsset} = context;
-  if (isAssetFile(fileNameHint)) {
-    const result = resolveAssetFiles(
-      resolveAsset,
-      dirPath,
-      fileNameHint,
-      platform,
-    );
-    return mapResult(result, filePaths => ({type: 'assetFiles', filePaths}));
+  const {isMaybeAssetFile, resolveAsset} = context;
+  // isMaybeAssetFile() tells us if the *name* matches an asset type,
+  // but this check will fail to tell the difference between
+  // require('./$.html') for an asset '$.html' or a module '$.html.js'.
+  // Check both.
+  try {
+    const candidateExts = [];
+    const filePathPrefix = path.join(dirPath, fileNameHint);
+    const sfContext = {...context, candidateExts, filePathPrefix};
+    const filePath = resolveSourceFile(sfContext, platform);
+    if (filePath != null) {
+      return resolvedAs({type: 'sourceFile', filePath});
+    }
+    return failedFor({type: 'sourceFile', filePathPrefix, candidateExts});
+  } catch (err) {
+    if (isMaybeAssetFile(fileNameHint)) {
+      const result = resolveAssetFiles(
+        resolveAsset,
+        dirPath,
+        fileNameHint,
+        platform,
+      );
+      return mapResult(result, filePaths => ({type: 'assetFiles', filePaths}));
+    } else {
+      throw err;
+    }
   }
-  const candidateExts = [];
-  const filePathPrefix = path.join(dirPath, fileNameHint);
-  const sfContext = {...context, candidateExts, filePathPrefix};
-  const filePath = resolveSourceFile(sfContext, platform);
-  if (filePath != null) {
-    return resolvedAs({type: 'sourceFile', filePath});
-  }
-  return failedFor({type: 'sourceFile', filePathPrefix, candidateExts});
 }
 
 type SourceFileContext = SourceFileForAllExtsContext & {

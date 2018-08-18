@@ -57,7 +57,7 @@ const CONTEXT: ResolutionContext = (() => {
     doesFileExist: filePath => fileSet.has(filePath),
     extraNodeModules: null,
     getPackageMainPath: dirPath => path.join(path.dirname(dirPath), 'main'),
-    isAssetFile: () => false,
+    isMaybeAssetFile: () => false,
     originModulePath: '/root/project/foo.js',
     preferNativePlatform: false,
     redirectModulePath: filePath => filePath,
