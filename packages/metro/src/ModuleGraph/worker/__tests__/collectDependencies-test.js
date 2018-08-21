@@ -217,7 +217,7 @@ it('exposes a string as `dependencyMapName` even without collecting dependencies
   expect(collectDependencies(ast, opts).dependencyMapName).toEqual(any(String));
 });
 
-it('ignores require functions defined defined by lower scopes', () => {
+it('ignores require functions defined defined by lower scopes, unless likely part of UMD module', () => {
   const ast = astFromCode(`
     const a = require('b/lib/a');
     exports.do = () => require("do");
@@ -234,12 +234,16 @@ it('ignores require functions defined defined by lower scopes', () => {
       }
       require('nonExistantModule');
     }
+    function probablyUmdModule(require, exports, module) {
+      var dep = require('someUmdDependency');
+    }
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
     {name: 'b/lib/a', data: {isAsync: false}},
     {name: 'do', data: {isAsync: false}},
     {name: 'setup/something', data: {isAsync: false}},
+    {name: 'someUmdDependency', data: {isAsync: false}},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -256,6 +260,9 @@ it('ignores require functions defined defined by lower scopes', () => {
         const require = function (foo) { return; };
         require('nonExistantModule');
       }
+      function probablyUmdModule(require, exports, module) {
+      var dep = require(${dependencyMapName}[3], "someUmdDependency");
+    }
     `),
   );
 });

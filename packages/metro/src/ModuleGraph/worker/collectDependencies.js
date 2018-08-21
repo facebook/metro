@@ -122,7 +122,10 @@ function collectDependencies(
         processImportCall(path, state);
       }
 
-      if (callee.isIdentifier({name}) && !path.scope.getBinding(name)) {
+      if (
+        callee.isIdentifier({name}) &&
+        (!path.scope.getBinding(name) || path.scope.getBinding('exports'))
+      ) {
         visited.add(processRequireCall(path, state).node);
       }
     },
