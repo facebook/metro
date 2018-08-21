@@ -50,6 +50,7 @@ import type {AssetData} from './Assets';
 import type {CustomTransformOptions} from './JSTransformer/worker';
 
 const {
+  Logger,
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
 
@@ -98,6 +99,7 @@ class Server {
   _bundler: Bundler;
   _debouncedFileChangeHandler: (filePath: string) => mixed;
   _reporter: Reporter;
+  _logger: typeof Logger;
   _symbolicateInWorker: Symbolicate;
   _platforms: Set<string>;
   _nextBundleBuildID: number;
@@ -118,6 +120,7 @@ class Server {
       this.onFileChange(type, filePath);
 
     this._reporter = config.reporter;
+    this._logger = Logger;
     this._changeWatchers = [];
     this._platforms = new Set(this._config.resolver.platforms);
     this._createModuleId = config.serializer.createModuleIdFactory();
@@ -628,7 +631,7 @@ class Server {
         numModifiedFiles: delta.modified.size + delta.deleted.size,
       };
     } catch (error) {
-      this._handleError(mres, this._optionsHash(options), error);
+      this._handleError(mres, options, error, buildID);
 
       this._reporter.update({
         buildID,
@@ -666,6 +669,9 @@ class Server {
         bundle_url: req.url,
         entry_point: options.entryFile,
         bundler: 'delta',
+        build_id: buildID,
+        bundle_options: options,
+        bundle_hash: this._optionsHash(options),
       }),
     );
 
@@ -697,12 +703,7 @@ class Server {
         lastModified,
       };
     } catch (error) {
-      this._handleError(mres, this._optionsHash(options), error);
-
-      this._reporter.update({
-        buildID,
-        type: 'bundle_build_failed',
-      });
+      this._handleError(mres, options, error, buildID);
 
       return;
     }
@@ -740,6 +741,10 @@ class Server {
       ...createActionEndEntry(requestingBundleLogEntry),
       outdated_modules: result.numModifiedFiles,
       bundler: 'delta',
+      bundle_size: result.bundle.length,
+      build_id: buildID,
+      bundle_options: options,
+      bundle_hash: this._optionsHash(options),
     });
   }
 
@@ -768,7 +773,7 @@ class Server {
         processModuleFilter: this._config.serializer.processModuleFilter,
       });
     } catch (error) {
-      this._handleError(mres, this._optionsHash(options), error);
+      this._handleError(mres, options, error, buildID);
 
       this._reporter.update({
         buildID,
@@ -812,11 +817,12 @@ class Server {
     try {
       assets = await this.getAssets(options);
     } catch (error) {
-      this._handleError(mres, this._optionsHash(options), error);
+      this._handleError(mres, options, error, buildID);
 
       this._reporter.update({
         buildID,
         type: 'bundle_build_failed',
+        bundleOptions: options,
       });
 
       return;
@@ -908,7 +914,12 @@ class Server {
     });
   }
 
-  _handleError(res: ServerResponse, bundleID: string, error: CustomError) {
+  _handleError(
+    res: ServerResponse,
+    options: BundleOptions,
+    error: CustomError,
+    buildID: string,
+  ) {
     const formattedError = formatBundlingError(error);
 
     res.writeHead(error.status || 500, {
@@ -921,6 +932,8 @@ class Server {
       action_name: 'bundling_error',
       error_type: formattedError.type,
       log_entry_label: 'bundling_error',
+      bundle_id: this._optionsHash(options),
+      build_id: buildID,
       stack: formattedError.message,
     });
   }

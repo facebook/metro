@@ -115,7 +115,7 @@ class HmrServer<TClient: Client> {
       ...createActionEndEntry(processingHmrChange),
       outdated_modules: Array.isArray(response.body.modules)
         ? response.body.modules.length
-        : null,
+        : undefined,
     });
   }
 
