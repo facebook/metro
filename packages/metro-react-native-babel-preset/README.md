@@ -18,9 +18,10 @@ npm i metro-react-native-babel-preset --save-dev
 ### Configuring Babel
 
 Then, create a file called `.babelrc` in your project's root directory. The existence of this `.babelrc` file will tell React Native to use your custom Babel configuration instead of its own. Then load this preset:
+
 ```
 {
-  "presets": ["metro-react-native-babel-preset"]
+  "presets": ["module:metro-react-native-babel-preset"]
 }
 ```
 
