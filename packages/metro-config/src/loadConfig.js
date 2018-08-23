@@ -103,10 +103,10 @@ async function resolveConfig(
   return result;
 }
 
-function mergeConfig(
-  defaultConfig: IntermediateConfigT,
+function mergeConfig<T: InputConfigT>(
+  defaultConfig: T,
   ...configs: Array<InputConfigT>
-) {
+): T {
   // If the file is a plain object we merge the file with the default config,
   // for the function we don't do this since that's the responsibility of the user
   return configs.reduce(

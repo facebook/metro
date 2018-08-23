@@ -232,8 +232,8 @@ export type OldConfigT = {
   transformVariants?: () => TransformVariants,
 };
 
-export type InputConfigT = {
-  resolver?: {
+export type InputConfigT = $ReadOnly<{
+  resolver?: $ReadOnly<{
     /**
      * Returns a regular expression for modules that should be ignored by the
      * packager on a given platform.
@@ -301,15 +301,17 @@ export type InputConfigT = {
      * system.
      */
     useWatchman?: boolean,
-  },
-  server?: {
+  }>,
+  server?: $ReadOnly<{
     useGlobalHotkey?: boolean,
     port?: ?number,
     enhanceMiddleware?: (Middleware, Server) => Middleware,
-  },
-  serializer?: {
-    dynamicDepsInPackages?: DynamicRequiresBehavior,
-    assetRegistryPath?: string,
+  }>,
+  serializer?: $ReadOnly<{
+    /**
+     * An optional custom module ID factory creator used by the bundler.
+     */
+    createModuleIdFactory?: () => (path: string) => number,
 
     /**
      * Specify any additional polyfill modules that should be processed
@@ -341,8 +343,8 @@ export type InputConfigT = {
      * contain the absolute path of each module.
      */
     getModulesRunBeforeMainModule?: (entryFilePath: string) => Array<string>,
-  },
-  transformer?: {
+  }>,
+  transformer?: $ReadOnly<{
     assetRegistryPath?: string,
     /**
      * Specify whether or not to enable Babel's behavior for looking up .babelrc
@@ -375,7 +377,7 @@ export type InputConfigT = {
     minifierPath?: string,
 
     transformVariants?: TransformVariants,
-  },
+  }>,
 
   // Metal
 
@@ -383,11 +385,6 @@ export type InputConfigT = {
    * List of all store caches.
    */
   cacheStores?: $ReadOnlyArray<CacheStore<TransformResult<>>>,
-
-  /**
-   * An optional custom module ID factory creator used by the bundler.
-   */
-  createModuleIdFactory?: () => (path: string) => number,
 
   /**
    * Can be used to generate a key that will invalidate the whole metro cache
@@ -421,7 +418,7 @@ export type InputConfigT = {
   resetCache?: boolean,
 
   maxWorkers?: number,
-};
+}>;
 
 export type IntermediateConfigT = {
   resolver: {
