@@ -63,6 +63,7 @@ async function getPrependedScripts(
         [defaults.moduleSystem, ...polyfillModuleNames],
         bundler,
         deltaBundler,
+        config,
         buildOptions,
       ),
       onProgress: null,

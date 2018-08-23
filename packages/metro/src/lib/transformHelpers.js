@@ -12,33 +12,59 @@
 
 import type Bundler from '../Bundler';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
-import type {WorkerOptions} from '../JSTransformer/worker';
-import type {BuildGraphOptions} from '../Server';
+import type {
+  CustomTransformOptions,
+  TransformOptions,
+  WorkerOptions,
+} from '../JSTransformer/worker';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 type InlineRequiresRaw = {+blacklist: {[string]: true}} | boolean;
+type WorkerOptionsWithRawInlines = {|
+  ...WorkerOptions,
+  +transformOptions: {
+    ...TransformOptions,
+    +inlineRequires: InlineRequiresRaw,
+  },
+|};
+
+type TransformInputOptions = {|
+  +assetPlugins: Array<string>,
+  +customTransformOptions: CustomTransformOptions,
+  +dev: boolean,
+  +hot: boolean,
+  +minify: boolean,
+  +onProgress: ?(doneCont: number, totalCount: number) => mixed,
+  +platform: ?string,
+  +type: 'module' | 'script',
+|};
 
 async function calcTransformerOptions(
   entryFiles: $ReadOnlyArray<string>,
   bundler: Bundler,
   deltaBundler: DeltaBundler<>,
-  options: BuildGraphOptions,
-): Promise<{...WorkerOptions, inlineRequires: InlineRequiresRaw}> {
-  const {
-    enableBabelRCLookup,
-    projectRoot,
-  } = bundler.getGlobalTransformOptions();
-
+  config: ConfigT,
+  options: TransformInputOptions,
+): Promise<WorkerOptionsWithRawInlines> {
   const transformOptionsForBlacklist = {
-    assetDataPlugins: options.assetPlugins,
     customTransformOptions: options.customTransformOptions,
-    enableBabelRCLookup,
     dev: options.dev,
+    enableBabelRCLookup: config.transformer.enableBabelRCLookup,
     hot: options.hot,
     inlineRequires: false,
-    isScript: options.type === 'script',
     minify: options.minify,
     platform: options.platform,
-    projectRoot,
+    projectRoot: config.projectRoot,
+  };
+
+  const baseOptions = {
+    assetPlugins: options.assetPlugins,
+    assetExts: config.resolver.assetExts,
+    assetRegistryPath: config.transformer.assetRegistryPath,
+    asyncRequireModulePath: config.transformer.asyncRequireModulePath,
+    dynamicDepsInPackages: config.transformer.dynamicDepsInPackages,
+    minifierPath: config.transformer.minifierPath,
+    transformerPath: config.transformModulePath,
   };
 
   // When we're processing scripts, we don't need to calculate any
@@ -46,31 +72,38 @@ async function calcTransformerOptions(
   // requires().
   if (options.type === 'script') {
     return {
-      ...transformOptionsForBlacklist,
-      inlineRequires: false,
+      ...baseOptions,
+      isScript: true,
+      transformOptions: transformOptionsForBlacklist,
     };
   }
 
-  const {inlineRequires} = await bundler.getTransformOptionsForEntryFiles(
-    entryFiles,
-    {dev: options.dev, platform: options.platform},
-    async path => {
-      const {dependencies} = await deltaBundler.buildGraph([path], {
-        resolve: await getResolveDependencyFn(bundler, options.platform),
-        transform: await getTransformFn([path], bundler, deltaBundler, {
-          ...options,
-          minify: false,
-        }),
-        onProgress: null,
-      });
+  const getDependencies = async path => {
+    const {dependencies} = await deltaBundler.buildGraph([path], {
+      resolve: await getResolveDependencyFn(bundler, options.platform),
+      transform: await getTransformFn([path], bundler, deltaBundler, config, {
+        ...options,
+        minify: false,
+      }),
+      onProgress: null,
+    });
 
-      return Array.from(dependencies.keys());
-    },
+    return Array.from(dependencies.keys());
+  };
+
+  const {transform} = await config.transformer.getTransformOptions(
+    entryFiles,
+    {dev: options.dev, hot: options.hot, platform: options.platform},
+    getDependencies,
   );
 
   return {
-    ...transformOptionsForBlacklist,
-    inlineRequires: inlineRequires || false,
+    ...baseOptions,
+    isScript: false,
+    transformOptions: {
+      ...transformOptionsForBlacklist,
+      inlineRequires: transform.inlineRequires || false,
+    },
   };
 }
 
@@ -89,22 +122,30 @@ async function getTransformFn(
   entryFiles: $ReadOnlyArray<string>,
   bundler: Bundler,
   deltaBundler: DeltaBundler<>,
-  options: BuildGraphOptions,
+  config: ConfigT,
+  options: TransformInputOptions,
 ): Promise<TransformFn<>> {
-  const {inlineRequires, ...transformerOptions} = await calcTransformerOptions(
+  const {
+    transformOptions: {inlineRequires, ...transformOptions},
+    ...workerOptions
+  } = await calcTransformerOptions(
     entryFiles,
     bundler,
     deltaBundler,
+    config,
     options,
   );
 
   return async (path: string) => {
     return await bundler.transformFile(path, {
-      ...transformerOptions,
-      inlineRequires: removeInlineRequiresBlacklistFromOptions(
-        path,
-        inlineRequires,
-      ),
+      ...workerOptions,
+      transformOptions: {
+        ...transformOptions,
+        inlineRequires: removeInlineRequiresBlacklistFromOptions(
+          path,
+          inlineRequires,
+        ),
+      },
     });
   };
 }
@@ -120,7 +161,6 @@ async function getResolveDependencyFn(
 }
 
 module.exports = {
-  calcTransformerOptions,
   getTransformFn,
   getResolveDependencyFn,
 };

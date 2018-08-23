@@ -376,18 +376,12 @@ describe('processRequest', () => {
 
     expect(transformHelpers.getTransformFn).toBeCalledWith(
       ['/root/index.js'],
-      jasmine.any(Bundler),
-      jasmine.any(DeltaBundler),
-      {
-        assetPlugins: [],
-        customTransformOptions: {},
-        dev: true,
-        hot: true,
-        minify: false,
-        onProgress: jasmine.any(Function),
+      expect.any(Bundler),
+      expect.any(DeltaBundler),
+      expect.any(Object),
+      expect.objectContaining({
         platform: 'ios',
-        type: 'module',
-      },
+      }),
     );
     expect(transformHelpers.getResolveDependencyFn).toBeCalled();
 
@@ -409,9 +403,10 @@ describe('processRequest', () => {
 
     expect(transformHelpers.getTransformFn).toBeCalledWith(
       ['/root/index.js'],
-      jasmine.any(Bundler),
-      jasmine.any(DeltaBundler),
-      jasmine.objectContaining({
+      expect.any(Bundler),
+      expect.any(DeltaBundler),
+      expect.any(Object),
+      expect.objectContaining({
         assetPlugins: ['assetPlugin1', 'assetPlugin2'],
       }),
     );
@@ -729,8 +724,9 @@ describe('processRequest', () => {
 
       expect(transformHelpers.getTransformFn).toBeCalledWith(
         ['/root/foo file'],
-        jasmine.any(Bundler),
-        jasmine.any(DeltaBundler),
+        expect.any(Bundler),
+        expect.any(DeltaBundler),
+        expect.any(Object),
         {
           assetPlugins: [],
           customTransformOptions: {},
@@ -747,8 +743,8 @@ describe('processRequest', () => {
       expect(DeltaBundler.prototype.buildGraph).toBeCalledWith(
         ['/root/foo file'],
         {
-          resolve: jasmine.any(Function),
-          transform: jasmine.any(Function),
+          resolve: expect.any(Function),
+          transform: expect.any(Function),
           onProgress: null,
         },
       );

@@ -19,9 +19,7 @@ const getTransformCacheKeyFn = require('../getTransformCacheKeyFn');
 const {transformModulePath} = require('metro-config/src/defaults/defaults');
 
 const baseParams = {
-  asyncRequireModulePath: 'beep',
   cacheVersion: '1.0',
-  dynamicDepsInPackages: 'arbitrary',
   projectRoot: __dirname,
   transformModulePath,
 };

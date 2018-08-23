@@ -21,9 +21,7 @@ const VERSION = require('../../package.json').version;
  * passed transform options.
  */
 function getTransformCacheKeyFn(opts: {|
-  +asyncRequireModulePath: string,
   +cacheVersion: string,
-  +dynamicDepsInPackages: string,
   +projectRoot: string,
   +transformModulePath: string,
 |}): (options: mixed) => string {
@@ -38,8 +36,6 @@ function getTransformCacheKeyFn(opts: {|
     opts.cacheVersion,
     path.relative(path.join(__dirname, '../../../..'), opts.projectRoot),
     transformModuleHash,
-    opts.asyncRequireModulePath,
-    opts.dynamicDepsInPackages,
   ];
 
   const transformCacheKey = crypto

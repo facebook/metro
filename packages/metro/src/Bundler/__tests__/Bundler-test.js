@@ -132,7 +132,7 @@ describe('Bundler', function() {
       result: {},
     });
 
-    await bundlerInstance.transformFile(module.path, {});
+    await bundlerInstance.transformFile(module.path, {transformOptions: {}});
 
     // We got the SHA-1 of the file from the dependency graph.
     expect(depGraph.getSha1).toBeCalledWith('/root/foo.js');

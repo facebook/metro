@@ -19,7 +19,6 @@ const Worker = require('jest-worker').default;
 import type {TransformResult} from './DeltaBundler';
 import type {WorkerOptions} from './JSTransformer/worker';
 import type {LocalPath} from './node-haste/lib/toLocalPath';
-import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
 
 import typeof {transform as Transform} from './JSTransformer/worker';
 
@@ -39,21 +38,12 @@ type TransformerResult = {
 
 module.exports = class Transformer {
   _worker: WorkerInterface;
-  _transformModulePath: string;
-  _asyncRequireModulePath: string;
-  _dynamicDepsInPackages: DynamicRequiresBehavior;
 
   constructor(options: {|
     +maxWorkers: number,
     +reporters: Reporters,
-    +transformModulePath: string,
-    +asyncRequireModulePath: string,
-    +dynamicDepsInPackages: DynamicRequiresBehavior,
     +workerPath: ?string,
   |}) {
-    this._transformModulePath = options.transformModulePath;
-    this._asyncRequireModulePath = options.asyncRequireModulePath;
-    this._dynamicDepsInPackages = options.dynamicDepsInPackages;
     const {workerPath = require.resolve('./JSTransformer/worker')} = options;
 
     if (options.maxWorkers > 1) {
@@ -88,24 +78,11 @@ module.exports = class Transformer {
     filename: string,
     localPath: LocalPath,
     options: WorkerOptions,
-    assetExts: $ReadOnlyArray<string>,
-    assetRegistryPath: string,
-    minifierPath: string,
   ): Promise<TransformerResult> {
     try {
       debug('Started transforming file', filename);
 
-      const data = await this._worker.transform(
-        filename,
-        localPath,
-        this._transformModulePath,
-        options,
-        assetExts,
-        assetRegistryPath,
-        minifierPath,
-        this._asyncRequireModulePath,
-        this._dynamicDepsInPackages,
-      );
+      const data = await this._worker.transform(filename, localPath, options);
 
       debug('Done transforming file', filename);
 

@@ -41,19 +41,10 @@ class Bundler {
   constructor(opts: ConfigT) {
     opts.watchFolders.forEach(verifyRootExists);
 
-    const getTransformCacheKey = getTransformCacheKeyFn({
-      asyncRequireModulePath: opts.transformer.asyncRequireModulePath,
-      cacheVersion: opts.cacheVersion,
-      dynamicDepsInPackages: opts.transformer.dynamicDepsInPackages,
-      projectRoot: opts.projectRoot,
-      transformModulePath: opts.transformModulePath,
-    });
-
     this._opts = opts;
     this._cache = new Cache(opts.cacheStores);
 
     this._transformer = new Transformer({
-      asyncRequireModulePath: opts.transformer.asyncRequireModulePath,
       maxWorkers: opts.maxWorkers,
       reporters: {
         stdoutChunk: chunk =>
@@ -61,8 +52,6 @@ class Bundler {
         stderrChunk: chunk =>
           opts.reporter.update({type: 'worker_stderr_chunk', chunk}),
       },
-      transformModulePath: opts.transformModulePath,
-      dynamicDepsInPackages: opts.transformer.dynamicDepsInPackages,
       workerPath: opts.transformer.workerPath || undefined,
     });
 
@@ -86,15 +75,15 @@ class Bundler {
       watchFolders: opts.watchFolders,
     });
 
-    this._baseHash = stableHash([
-      opts.resolver.assetExts,
-      opts.transformer.assetRegistryPath,
-      getTransformCacheKey(),
-      opts.transformer.minifierPath,
-    ]).toString('binary');
+    const getTransformCacheKey = getTransformCacheKeyFn({
+      cacheVersion: opts.cacheVersion,
+      projectRoot: opts.projectRoot,
+      transformModulePath: opts.transformModulePath,
+    });
+
+    this._baseHash = stableHash([getTransformCacheKey()]).toString('binary');
 
     this._projectRoot = opts.projectRoot;
-    this._getTransformOptions = opts.transformer.getTransformOptions;
   }
 
   getOptions(): ConfigT {
@@ -108,46 +97,6 @@ class Bundler {
     );
   }
 
-  /**
-   * Returns the transform options related to several entry files, by calling
-   * the config parameter getTransformOptions().
-   */
-  async getTransformOptionsForEntryFiles(
-    entryFiles: $ReadOnlyArray<string>,
-    options: {dev: boolean, platform: ?string},
-    getDependencies: string => Promise<Array<string>>,
-  ): Promise<{|
-    +inlineRequires: {+blacklist: {[string]: true}} | boolean,
-  |}> {
-    if (!this._getTransformOptions) {
-      return {
-        inlineRequires: false,
-      };
-    }
-
-    const {transform} = await this._getTransformOptions(
-      entryFiles,
-      {dev: options.dev, hot: true, platform: options.platform},
-      getDependencies,
-    );
-
-    return transform || {inlineRequires: false};
-  }
-
-  /*
-   * Helper method to return the global transform options that are kept in the
-   * Bundler.
-   */
-  getGlobalTransformOptions(): {
-    enableBabelRCLookup: boolean,
-    projectRoot: string,
-  } {
-    return {
-      enableBabelRCLookup: this._opts.transformer.enableBabelRCLookup,
-      projectRoot: this._projectRoot,
-    };
-  }
-
   getDependencyGraph(): Promise<DependencyGraph> {
     return this._depGraphPromise;
   }
@@ -159,16 +108,24 @@ class Bundler {
     const cache = this._cache;
 
     const {
-      assetDataPlugins,
-      customTransformOptions,
-      enableBabelRCLookup,
-      dev,
-      hot,
-      inlineRequires,
+      assetExts,
+      assetPlugins,
+      assetRegistryPath,
+      asyncRequireModulePath,
+      dynamicDepsInPackages,
+      minifierPath,
+      transformerPath,
+      transformOptions: {
+        customTransformOptions,
+        enableBabelRCLookup,
+        dev,
+        hot,
+        inlineRequires,
+        minify,
+        platform,
+        projectRoot: _projectRoot, // Blacklisted property.
+      },
       isScript,
-      minify,
-      platform,
-      projectRoot: _projectRoot, // Blacklisted property.
       ...extra
     } = transformCodeOptions;
 
@@ -190,7 +147,14 @@ class Bundler {
       localPath,
 
       // We cannot include "transformCodeOptions" because of "projectRoot".
-      assetDataPlugins,
+      assetExts,
+      assetPlugins,
+      assetRegistryPath,
+      asyncRequireModulePath,
+      dynamicDepsInPackages,
+      minifierPath,
+      transformerPath,
+
       customTransformOptions,
       enableBabelRCLookup,
       dev,
@@ -213,9 +177,6 @@ class Bundler {
           filePath,
           localPath,
           transformCodeOptions,
-          this._opts.resolver.assetExts,
-          this._opts.transformer.assetRegistryPath,
-          this._opts.transformer.minifierPath,
         );
 
     // Only re-compute the full key if the SHA-1 changed. This is because

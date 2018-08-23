@@ -64,9 +64,10 @@ export type CustomTransformOptions = {[string]: mixed, __proto__: null};
 export type TransformOptions = {
   +customTransformOptions?: CustomTransformOptions,
   +enableBabelRCLookup?: boolean,
-  +dev?: boolean,
+  +dev: boolean,
   +hot?: boolean,
   +inlineRequires: boolean,
+  +minify: boolean,
   +platform: ?string,
   +projectRoot: string,
 };
@@ -76,16 +77,15 @@ export type MinifyOptions = {
 };
 
 export type WorkerOptions = {|
-  +assetDataPlugins: $ReadOnlyArray<string>,
-  +customTransformOptions?: CustomTransformOptions,
-  +enableBabelRCLookup: boolean,
-  +dev: boolean,
-  +hot: boolean,
-  +inlineRequires: boolean,
+  +assetPlugins: $ReadOnlyArray<string>,
+  +assetExts: $ReadOnlyArray<string>,
+  +assetRegistryPath: string,
+  +asyncRequireModulePath: string,
+  +dynamicDepsInPackages: DynamicRequiresBehavior,
   +isScript: boolean,
-  +minify: boolean,
-  +platform: ?string,
-  +projectRoot: string,
+  +minifierPath: string,
+  +transformerPath: string,
+  +transformOptions: TransformOptions,
 |};
 
 export type JsOutput = {|
@@ -127,13 +127,7 @@ function getDynamicDepsBehavior(
 async function transformCode(
   filename: string,
   localPath: LocalPath,
-  transformerPath: string,
   options: WorkerOptions,
-  assetExts: $ReadOnlyArray<string>,
-  assetRegistryPath: string,
-  minifierPath: string,
-  asyncRequireModulePath: string,
-  dynamicDepsInPackages: DynamicRequiresBehavior,
 ): Promise<Data> {
   const transformFileStartLogEntry = {
     action_name: 'Transforming file',
@@ -161,13 +155,13 @@ async function transformCode(
       filename,
     );
 
-    if (options.minify) {
+    if (options.transformOptions.minify) {
       ({map, code} = await minifyCode(
         filename,
         code,
         sourceCode,
         map,
-        minifierPath,
+        options.minifierPath,
       ));
     }
 
@@ -179,22 +173,25 @@ async function transformCode(
     };
   }
 
-  const plugins = options.dev
+  const plugins = options.transformOptions.dev
     ? []
-    : [[inlinePlugin, options], [constantFoldingPlugin, options]];
+    : [
+        [inlinePlugin, options.transformOptions],
+        [constantFoldingPlugin, options.transformOptions],
+      ];
 
   // $FlowFixMe TODO t26372934 Plugin system
-  const transformer: Transformer<*> = require(transformerPath);
+  const transformer: Transformer<*> = require(options.transformerPath);
 
   const transformerArgs = {
     filename,
     localPath,
-    options,
+    options: options.transformOptions,
     plugins,
     src: sourceCode,
   };
 
-  if (isAsset(filename, assetExts)) {
+  if (isAsset(filename, options.assetExts)) {
     type = 'js/module/asset';
   }
 
@@ -202,8 +199,8 @@ async function transformCode(
     type === 'js/module/asset'
       ? await assetTransformer.transform(
           transformerArgs,
-          assetRegistryPath,
-          options.assetDataPlugins,
+          options.assetRegistryPath,
+          options.assetPlugins,
         )
       : await transformer.transform(transformerArgs);
 
@@ -233,12 +230,12 @@ async function transformCode(
   } else {
     try {
       const opts = {
-        asyncRequireModulePath,
+        asyncRequireModulePath: options.asyncRequireModulePath,
         dynamicRequires: getDynamicDepsBehavior(
-          dynamicDepsInPackages,
+          options.dynamicDepsInPackages,
           filename,
         ),
-        keepRequireNames: options.dev,
+        keepRequireNames: options.transformOptions.dev,
       };
       ({dependencies, dependencyMapName} = collectDependencies(ast, opts));
     } catch (error) {
@@ -251,7 +248,9 @@ async function transformCode(
     ({ast: wrappedAst} = JsFileWrapping.wrapModule(ast, dependencyMapName));
   }
 
-  const reserved = options.minify ? normalizePseudoglobals(wrappedAst) : [];
+  const reserved = options.transformOptions.minify
+    ? normalizePseudoglobals(wrappedAst)
+    : [];
 
   const result = generate(
     wrappedAst,
@@ -269,13 +268,13 @@ async function transformCode(
   let map = result.rawMappings ? result.rawMappings.map(toSegmentTuple) : [];
   let code = result.code;
 
-  if (options.minify) {
+  if (options.transformOptions.minify) {
     ({map, code} = await minifyCode(
       filename,
       result.code,
       sourceCode,
       map,
-      minifierPath,
+      options.minifierPath,
       {reserved},
     ));
   }

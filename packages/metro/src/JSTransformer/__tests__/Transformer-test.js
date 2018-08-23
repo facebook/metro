@@ -9,8 +9,6 @@
  */
 'use strict';
 
-const defaults = require('metro-config/src/defaults/defaults');
-
 const {Readable} = require('stream');
 
 describe('Transformer', function() {
@@ -18,14 +16,10 @@ describe('Transformer', function() {
   let Transformer;
   const fileName = '/an/arbitrary/file.js';
   const localPath = 'arbitrary/file.js';
-  const transformModulePath = __filename;
 
   const opts = {
-    asyncRequireModulePath: 'asyncRequire',
     maxWorkers: 4,
     reporters: {},
-    transformModulePath,
-    dynamicDepsInPackages: 'reject',
     workerPath: null,
   };
 
@@ -73,22 +67,9 @@ describe('Transformer', function() {
       fileName,
       localPath,
       transformOptions,
-      [],
-      '',
-      defaults.DEFAULT_METRO_MINIFIER_PATH,
     );
 
-    expect(api.transform).toBeCalledWith(
-      fileName,
-      localPath,
-      transformModulePath,
-      transformOptions,
-      [],
-      '',
-      defaults.DEFAULT_METRO_MINIFIER_PATH,
-      'asyncRequire',
-      'reject',
-    );
+    expect(api.transform).toBeCalledWith(fileName, localPath, transformOptions);
   });
 
   it('should add file info to parse errors', () => {
