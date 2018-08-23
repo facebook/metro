@@ -17,13 +17,11 @@ const debug = require('debug')('Metro:JStransformer');
 const Worker = require('jest-worker').default;
 
 import type {TransformResult} from './DeltaBundler';
-import type {WorkerOptions} from './JSTransformer/worker';
+import type {WorkerFn, WorkerOptions} from './DeltaBundler/Worker';
 import type {LocalPath} from './node-haste/lib/toLocalPath';
 
-import typeof {transform as Transform} from './JSTransformer/worker';
-
 type WorkerInterface = Worker & {
-  transform: Transform,
+  transform: WorkerFn,
 };
 
 type Reporters = {
@@ -44,7 +42,7 @@ module.exports = class Transformer {
     +reporters: Reporters,
     +workerPath: ?string,
   |}) {
-    const {workerPath = require.resolve('./JSTransformer/worker')} = options;
+    const {workerPath = require.resolve('./DeltaBundler/Worker')} = options;
 
     if (options.maxWorkers > 1) {
       this._worker = this._makeFarm(

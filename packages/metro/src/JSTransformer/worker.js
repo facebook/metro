@@ -16,8 +16,6 @@ const assetTransformer = require('../assetTransformer');
 const babylon = require('@babel/parser');
 const collectDependencies = require('../ModuleGraph/worker/collectDependencies');
 const constantFoldingPlugin = require('./worker/constant-folding-plugin');
-const crypto = require('crypto');
-const fs = require('fs');
 const generate = require('@babel/generator').default;
 const getMinifier = require('../lib/getMinifier');
 const inlinePlugin = require('./worker/inline-plugin');
@@ -35,7 +33,6 @@ import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDepende
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
 import type {Ast} from '@babel/core';
 import type {Plugins as BabelPlugins} from 'babel-core';
-import type {LogEntry} from 'metro-core/src/Logger';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
 export type TransformArgs<ExtraOptions: {}> = {|
@@ -59,19 +56,6 @@ export type Transformer<ExtraOptions: {} = {}> = {
   getCacheKey: () => string,
 };
 
-export type CustomTransformOptions = {[string]: mixed, __proto__: null};
-
-export type TransformOptions = {
-  +customTransformOptions?: CustomTransformOptions,
-  +enableBabelRCLookup?: boolean,
-  +dev: boolean,
-  +hot?: boolean,
-  +inlineRequires: boolean,
-  +minify: boolean,
-  +platform: ?string,
-  +projectRoot: string,
-};
-
 export type MinifyOptions = {
   reserved?: $ReadOnlyArray<string>,
 };
@@ -88,6 +72,19 @@ export type WorkerOptions = {|
   +transformOptions: TransformOptions,
 |};
 
+export type CustomTransformOptions = {[string]: mixed, __proto__: null};
+
+export type TransformOptions = {
+  +customTransformOptions?: CustomTransformOptions,
+  +enableBabelRCLookup?: boolean,
+  +dev: boolean,
+  +hot?: boolean,
+  +inlineRequires: boolean,
+  +minify: boolean,
+  +platform: ?string,
+  +projectRoot: string,
+};
+
 export type JsOutput = {|
   +data: {|
     +code: string,
@@ -96,15 +93,10 @@ export type JsOutput = {|
   +type: string,
 |};
 
-type Data = {
-  result: {|
-    output: $ReadOnlyArray<JsOutput>,
-    dependencies: $ReadOnlyArray<TransformResultDependency>,
-  |},
-  sha1: string,
-  transformFileStartLogEntry: LogEntry,
-  transformFileEndLogEntry: LogEntry,
-};
+type Result = {|
+  output: $ReadOnlyArray<JsOutput>,
+  dependencies: $ReadOnlyArray<TransformResultDependency>,
+|};
 
 function getDynamicDepsBehavior(
   inPackages: DynamicRequiresBehavior,
@@ -127,33 +119,15 @@ function getDynamicDepsBehavior(
 async function transformCode(
   filename: string,
   localPath: LocalPath,
+  data: Buffer,
   options: WorkerOptions,
-): Promise<Data> {
-  const transformFileStartLogEntry = {
-    action_name: 'Transforming file',
-    action_phase: 'start',
-    file_name: filename,
-    log_entry_label: 'Transforming file',
-    start_timestamp: process.hrtime(),
-  };
-
-  const data = fs.readFileSync(filename);
+): Promise<Result> {
   const sourceCode = data.toString('utf8');
   let type = 'js/module';
-
-  const sha1 = crypto
-    .createHash('sha1')
-    .update(data)
-    .digest('hex');
 
   if (filename.endsWith('.json')) {
     let code = JsFileWrapping.wrapJson(sourceCode);
     let map = [];
-
-    const transformFileEndLogEntry = getEndLogEntry(
-      transformFileStartLogEntry,
-      filename,
-    );
 
     if (options.transformOptions.minify) {
       ({map, code} = await minifyCode(
@@ -165,12 +139,7 @@ async function transformCode(
       ));
     }
 
-    return {
-      result: {dependencies: [], output: [{data: {code, map}, type}]},
-      sha1,
-      transformFileStartLogEntry,
-      transformFileEndLogEntry,
-    };
+    return {dependencies: [], output: [{data: {code, map}, type}]};
   }
 
   const plugins = options.transformOptions.dev
@@ -208,11 +177,6 @@ async function transformCode(
   // we need to parse the module source code to get their AST.
   const ast =
     transformResult.ast || babylon.parse(sourceCode, {sourceType: 'module'});
-
-  const transformFileEndLogEntry = getEndLogEntry(
-    transformFileStartLogEntry,
-    filename,
-  );
 
   let dependencyMapName = '';
   let dependencies;
@@ -279,12 +243,7 @@ async function transformCode(
     ));
   }
 
-  return {
-    result: {dependencies, output: [{data: {code, map}, type}]},
-    sha1,
-    transformFileStartLogEntry,
-    transformFileEndLogEntry,
-  };
+  return {dependencies, output: [{data: {code, map}, type}]};
 }
 
 async function minifyCode(
@@ -328,19 +287,6 @@ function isAsset(filePath: string, assetExts: $ReadOnlyArray<string>): boolean {
   return assetExts.indexOf(path.extname(filePath).slice(1)) !== -1;
 }
 
-function getEndLogEntry(startLogEntry: LogEntry, filename: string): LogEntry {
-  const timeDelta = process.hrtime(startLogEntry.start_timestamp);
-  const duration_ms = Math.round((timeDelta[0] * 1e9 + timeDelta[1]) / 1e6);
-
-  return {
-    action_name: 'Transforming file',
-    action_phase: 'end',
-    file_name: filename,
-    duration_ms,
-    log_entry_label: 'Transforming file',
-  };
-}
-
 class InvalidRequireCallError extends Error {
   innerError: collectDependencies.InvalidRequireCallError;
   filename: string;
@@ -357,5 +303,4 @@ class InvalidRequireCallError extends Error {
 
 module.exports = {
   transform: transformCode,
-  InvalidRequireCallError,
 };
