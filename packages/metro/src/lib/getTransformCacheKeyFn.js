@@ -26,15 +26,18 @@ function getTransformCacheKeyFn(opts: {|
   +projectRoot: string,
   +transformerPath: string,
 |}): (options: mixed) => string {
-  const transformModuleHash = crypto
-    .createHash('sha1')
-    .update(fs.readFileSync(opts.transformerPath))
-    .digest('hex');
+  const transformModuleHash = getKeyFromFile(opts.transformerPath);
 
-  const babelTransformerModuleHash = crypto
-    .createHash('sha1')
-    .update(fs.readFileSync(opts.babelTransformerPath))
-    .digest('hex');
+  // eslint-disable-next-line lint/flow-no-fixme
+  /* $FlowFixMe: dynamic requires prevent static typing :'(  */
+  const transformer = require(opts.transformerPath);
+
+  const cacheFiles =
+    typeof transformer.getTransformDependencies !== 'undefined'
+      ? transformer.getTransformDependencies()
+      : [];
+
+  const babelTransformerModuleHash = getKeyFromFile(opts.babelTransformerPath);
 
   const cacheKeyParts = [
     'metro-cache',
@@ -43,6 +46,7 @@ function getTransformCacheKeyFn(opts: {|
     path.relative(path.join(__dirname, '../../../..'), opts.projectRoot),
     transformModuleHash,
     babelTransformerModuleHash,
+    ...cacheFiles.map(getKeyFromFile),
   ];
 
   const transformCacheKey = crypto
@@ -50,17 +54,16 @@ function getTransformCacheKeyFn(opts: {|
     .update(cacheKeyParts.join('$'))
     .digest('hex');
 
-  /* $FlowFixMe: dynamic requires prevent static typing :'(  */
-  const transformer = require(opts.transformerPath);
-
-  const getCacheKey =
-    typeof transformer.getCacheKey !== 'undefined'
-      ? transformer.getCacheKey
-      : (options: mixed) => '';
-
   return function(options: mixed): string {
-    return transformCacheKey + getCacheKey(options);
+    return transformCacheKey;
   };
+}
+
+function getKeyFromFile(filePath: string) {
+  return crypto
+    .createHash('sha1')
+    .update(fs.readFileSync(filePath))
+    .digest('hex');
 }
 
 module.exports = getTransformCacheKeyFn;

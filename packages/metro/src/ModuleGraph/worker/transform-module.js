@@ -36,13 +36,13 @@ import type {
 } from '../types.flow';
 import type {Ast} from '@babel/core';
 
-export type TransformOptions<ExtraOptions> = {|
+export type TransformOptions = {|
   +asyncRequireModulePath: string,
   filename: string,
   hasteImplModulePath?: string,
   polyfill?: boolean,
   +sourceExts: Set<string>,
-  transformer: Transformer<ExtraOptions>,
+  transformer: Transformer,
   variants?: TransformVariants,
 |};
 
@@ -61,7 +61,7 @@ const ASSET_EXTENSIONS = new Set(defaults.assetExts);
 
 function transformModule(
   content: Buffer,
-  options: TransformOptions<{+retainLines?: boolean}>,
+  options: TransformOptions,
 ): TransformedSourceFile {
   const ext = path.extname(options.filename).substr(1);
   if (ASSET_EXTENSIONS.has(ext)) {

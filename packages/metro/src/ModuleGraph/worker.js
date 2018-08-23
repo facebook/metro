@@ -21,5 +21,5 @@ exports.optimizeModule = (wrapWorkerFn(optimizeModule): WorkerFnWithIO<
   OptimizationOptions,
 >);
 exports.transformModule = (wrapWorkerFn(transformModule): WorkerFnWithIO<
-  TransformOptions<{+retainLines?: boolean}>,
+  TransformOptions,
 >);

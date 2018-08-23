@@ -148,7 +148,7 @@ function buildBabelConfig(filename, options, plugins?: BabelPlugins = []) {
 
 type Params = {
   filename: string,
-  options: {+retainLines?: boolean} & TransformOptions,
+  options: TransformOptions,
   plugins?: BabelPlugins,
   src: string,
 };
@@ -184,4 +184,4 @@ function getCacheKey() {
 module.exports = ({
   transform,
   getCacheKey,
-}: Transformer<{+retainLines?: boolean}>);
+}: Transformer);

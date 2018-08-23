@@ -34,10 +34,10 @@ import type {Ast} from '@babel/core';
 import type {Plugins as BabelPlugins} from 'babel-core';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
-export type TransformArgs<ExtraOptions: {}> = {|
+export type TransformArgs = {|
   filename: string,
   localPath: string,
-  options: ExtraOptions & TransformOptions,
+  options: TransformOptions,
   plugins?: BabelPlugins,
   src: string,
 |};
@@ -46,12 +46,10 @@ export type TransformResults = {
   ast: Ast,
 };
 
-export type Transform<ExtraOptions: {}> = (
-  TransformArgs<ExtraOptions>,
-) => TransformResults;
+export type Transform = TransformArgs => TransformResults;
 
-export type Transformer<ExtraOptions: {} = {}> = {
-  transform: Transform<ExtraOptions>,
+export type Transformer = {
+  transform: Transform,
   getCacheKey: () => string,
 };
 
@@ -116,7 +114,7 @@ function getDynamicDepsBehavior(
   }
 }
 
-async function transformCode(
+async function transform(
   filename: string,
   localPath: LocalPath,
   data: Buffer,
@@ -284,6 +282,19 @@ async function minifyCode(
   }
 }
 
+function getTransformDependencies(): $ReadOnlyArray<string> {
+  return [
+    require.resolve('../ModuleGraph/worker/JsFileWrapping'),
+    require.resolve('../assetTransformer'),
+    require.resolve('../ModuleGraph/worker/collectDependencies'),
+    require.resolve('./worker/constant-folding-plugin'),
+    require.resolve('../lib/getMinifier'),
+    require.resolve('./worker/inline-plugin'),
+    require.resolve('./worker/normalizePseudoglobals'),
+    require.resolve('../ModuleGraph/worker/optimizeDependencies'),
+  ];
+}
+
 class InvalidRequireCallError extends Error {
   innerError: collectDependencies.InvalidRequireCallError;
   filename: string;
@@ -299,5 +310,6 @@ class InvalidRequireCallError extends Error {
 }
 
 module.exports = {
-  transform: transformCode,
+  transform,
+  getTransformDependencies,
 };
