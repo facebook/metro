@@ -10,12 +10,15 @@
 
 'use strict';
 
+const path = require('path');
+
 import type Bundler from '../Bundler';
 import type {WorkerOptions} from '../DeltaBundler/Worker';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
 import type {
   CustomTransformOptions,
   TransformOptions,
+  Type,
 } from '../JSTransformer/worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
@@ -57,7 +60,6 @@ async function calcTransformerOptions(
   };
 
   const baseOptions = {
-    assetExts: config.resolver.assetExts,
     assetPlugins: config.transformer.assetPlugins,
     assetRegistryPath: config.transformer.assetRegistryPath,
     asyncRequireModulePath: config.transformer.asyncRequireModulePath,
@@ -72,8 +74,8 @@ async function calcTransformerOptions(
   if (options.type === 'script') {
     return {
       ...baseOptions,
-      isScript: true,
       transformOptions: transformOptionsForBlacklist,
+      type: 'script',
     };
   }
 
@@ -98,11 +100,11 @@ async function calcTransformerOptions(
 
   return {
     ...baseOptions,
-    isScript: false,
     transformOptions: {
       ...transformOptionsForBlacklist,
       inlineRequires: transform.inlineRequires || false,
     },
+    type: 'module',
   };
 }
 
@@ -138,6 +140,7 @@ async function getTransformFn(
   return async (path: string) => {
     return await bundler.transformFile(path, {
       ...workerOptions,
+      type: getType(workerOptions.type, path, config.resolver.assetExts),
       transformOptions: {
         ...transformOptions,
         inlineRequires: removeInlineRequiresBlacklistFromOptions(
@@ -147,6 +150,22 @@ async function getTransformFn(
       },
     });
   };
+}
+
+function getType(
+  type: string,
+  filePath: string,
+  assetExts: $ReadOnlyArray<string>,
+): Type {
+  if (type === 'script') {
+    return type;
+  }
+
+  if (assetExts.indexOf(path.extname(filePath).slice(1)) !== -1) {
+    return 'asset';
+  }
+
+  return 'module';
 }
 
 async function getResolveDependencyFn(

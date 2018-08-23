@@ -22,10 +22,7 @@ const {Cache, stableHash} = require('metro-cache');
 
 import type {WorkerOptions} from './DeltaBundler/Worker';
 import type {TransformResult} from './DeltaBundler';
-import type {
-  ConfigT,
-  GetTransformOptions,
-} from 'metro-config/src/configTypes.flow';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 const {hasOwnProperty} = Object.prototype;
 
@@ -35,8 +32,6 @@ class Bundler {
   _baseHash: string;
   _transformer: Transformer;
   _depGraphPromise: Promise<DependencyGraph>;
-  _getTransformOptions: GetTransformOptions;
-  _projectRoot: string;
 
   constructor(opts: ConfigT) {
     opts.watchFolders.forEach(verifyRootExists);
@@ -55,10 +50,9 @@ class Bundler {
       workerPath: opts.transformer.workerPath || undefined,
     });
 
-    const blacklistRE: RegExp = opts.resolver.blacklistRE;
     this._depGraphPromise = DependencyGraph.load({
       assetExts: opts.resolver.assetExts,
-      blacklistRE,
+      blacklistRE: opts.resolver.blacklistRE,
       extraNodeModules: opts.resolver.extraNodeModules,
       hasteImplModulePath: opts.resolver.hasteImplModulePath,
       mainFields: opts.resolver.resolverMainFields,
@@ -83,8 +77,6 @@ class Bundler {
     });
 
     this._baseHash = stableHash([getTransformCacheKey()]).toString('binary');
-
-    this._projectRoot = opts.projectRoot;
   }
 
   getOptions(): ConfigT {
@@ -109,7 +101,6 @@ class Bundler {
     const cache = this._cache;
 
     const {
-      assetExts,
       assetPlugins,
       assetRegistryPath,
       asyncRequireModulePath,
@@ -127,7 +118,7 @@ class Bundler {
         platform,
         projectRoot: _projectRoot, // Blacklisted property.
       },
-      isScript,
+      type,
       ...extra
     } = transformerOptions;
 
@@ -149,7 +140,6 @@ class Bundler {
       localPath,
 
       // We cannot include "transformCodeOptions" because of "projectRoot".
-      assetExts,
       assetPlugins,
       assetRegistryPath,
       asyncRequireModulePath,
@@ -161,9 +151,9 @@ class Bundler {
       dev,
       hot,
       inlineRequires,
-      isScript,
       minify,
       platform,
+      type,
     ]);
 
     const sha1 = (await this.getDependencyGraph()).getSha1(filePath);

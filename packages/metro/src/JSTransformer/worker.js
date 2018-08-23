@@ -20,7 +20,6 @@ const generate = require('@babel/generator').default;
 const getMinifier = require('../lib/getMinifier');
 const inlinePlugin = require('./worker/inline-plugin');
 const normalizePseudoglobals = require('./worker/normalizePseudoglobals');
-const path = require('path');
 
 const {
   fromRawMappings,
@@ -60,16 +59,17 @@ export type MinifyOptions = {
   reserved?: $ReadOnlyArray<string>,
 };
 
+export type Type = 'script' | 'module' | 'asset';
+
 export type WorkerOptions = {|
   +assetPlugins: $ReadOnlyArray<string>,
-  +assetExts: $ReadOnlyArray<string>,
   +assetRegistryPath: string,
   +asyncRequireModulePath: string,
   +babelTransformerPath: string,
   +dynamicDepsInPackages: DynamicRequiresBehavior,
-  +isScript: boolean,
   +minifierPath: string,
   +transformOptions: TransformOptions,
+  +type: Type,
 |};
 
 export type CustomTransformOptions = {[string]: mixed, __proto__: null};
@@ -125,6 +125,13 @@ async function transformCode(
   const sourceCode = data.toString('utf8');
   let type = 'js/module';
 
+  if (options.type === 'asset') {
+    type = 'js/module/asset';
+  }
+  if (options.type === 'script') {
+    type = 'js/script';
+  }
+
   if (filename.endsWith('.json')) {
     let code = JsFileWrapping.wrapJson(sourceCode);
     let map = [];
@@ -160,10 +167,6 @@ async function transformCode(
     src: sourceCode,
   };
 
-  if (isAsset(filename, options.assetExts)) {
-    type = 'js/module/asset';
-  }
-
   const transformResult =
     type === 'js/module/asset'
       ? await assetTransformer.transform(
@@ -186,11 +189,9 @@ async function transformCode(
   // dependency graph and it code will just be prepended to the bundle modules),
   // we need to wrap it differently than a commonJS module (also, scripts do
   // not have dependencies).
-  if (options.isScript) {
+  if (type === 'js/script') {
     dependencies = [];
     wrappedAst = JsFileWrapping.wrapPolyfill(ast);
-
-    type = 'js/script';
   } else {
     try {
       const opts = {
@@ -281,10 +282,6 @@ async function minifyCode(
 
     throw error;
   }
-}
-
-function isAsset(filePath: string, assetExts: $ReadOnlyArray<string>): boolean {
-  return assetExts.indexOf(path.extname(filePath).slice(1)) !== -1;
 }
 
 class InvalidRequireCallError extends Error {
