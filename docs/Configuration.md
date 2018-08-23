@@ -43,7 +43,7 @@ module.exports = {
 | `cacheVersion`          | `string`                              | Can be used to generate a key that will invalidate the whole metro cache.                         |
 | `projectRoot`           | `string`                              | The root folder of your project.                                                                  |
 | `watchFolders`          | `Array<string>`                       | Specify any additional (to projectRoot) watch folders, this is used to know which files to watch. |
-| `transformModulePath`   | `string`                              | The path to the transformer module to use.                                                        |
+| `transformerPath`       | `string`                              | The path to the transformer to use.                                                               |
 | `watch`                 | `boolean`                             | Whether we should watch for all files.                                                            |
 | `reporter`              | `{update: () => void}`                | Used to report the status of the bundler during the bundling process.                             |
 | `resetCache`            | `boolean`                             | Whether we should reset the cache when starting the build.                                        |
@@ -61,14 +61,15 @@ These options are used when Metro serves the content.
 
 ### Transformer Options
 
-| Option                   | Type                                    | Description                                                       |
-| ------------------------ | --------------------------------------- | ----------------------------------------------------------------- |
-| `asyncRequireModulePath` | `string`                                | What module to use for handling async requires.                   |
-| `dynamicDepsInPackages`  | `string` (`throwAtRuntime` or `reject`) | What should happen when a dynamic dependency is found.            |
-| `enableBabelRCLookup`    | `boolean`                               | Whether we should use the `.babelrc` config file.                 |
-| `getTransformOptions`    | `GetTransformOptions`                   | Get the transform options.                                        |
-| `postMinifyProcess`      | `PostMinifyProcess`                     | What happens after minification..                                 |
-| `minifierPath`           | `string`                                | Path to the minifier that minifies the code after transformation. |
+| Option                   | Type                                    | Description                                                                            |
+| ------------------------ | --------------------------------------- | -------------------------------------------------------------------------------------- |
+| `asyncRequireModulePath` | `string`                                | What module to use for handling async requires.                                        |
+| `babelTransformerPath`   | `string`                                | Use a custom babel transformer (only relevant when using the default transformerPath). |
+| `dynamicDepsInPackages`  | `string` (`throwAtRuntime` or `reject`) | What should happen when a dynamic dependency is found.                                 |
+| `enableBabelRCLookup`    | `boolean`                               | Whether we should use the `.babelrc` config file.                                      |
+| `getTransformOptions`    | `GetTransformOptions`                   | Get the transform options.                                                             |
+| `postMinifyProcess`      | `PostMinifyProcess`                     | What happens after minification..                                                      |
+| `minifierPath`           | `string`                                | Path to the minifier that minifies the code after transformation.                      |
 
 #### React Native Only
 
@@ -99,10 +100,10 @@ These options are only useful with React Native projects.
 
 ### Serializer Options
 
-| Option                          | Type                                                                   | Description                                                                                                                                 |
-| ------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `getRunModuleStatement`         | `(number` &#x7c; `string) => string`                                   | Specify the format of the initial require statements that are appended at the end of the bundle. By default is `__r(${moduleId});`.     |
-| `getPolyfills`                  | `({platform: ?string}) => $ReadOnlyArray<string>`                      | An optional list of polyfills to include in the bundle. The list defaults to a set of common polyfills for Number, String, Array, Object... |
-| `postProcessBundleSourcemap`    | `PostProcessBundleSourcemap`                                           | An optional function that can modify the code and source map of the bundle before it is written. Applied once for the entire bundle.        |
-| `getModulesRunBeforeMainModule` | `(entryFilePath: string) => Array<string>`                             | An array of modules to be required before the entry point. It should contain the absolute path of each module.                              |
-| `processModuleFilter`            | `(module: Array<Module>) => boolean` | A filter function to discard specific modules from the output.                                                                                  |
+| Option                          | Type                                              | Description                                                                                                                                 |
+| ------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getRunModuleStatement`         | `(number` &#x7c; `string) => string`              | Specify the format of the initial require statements that are appended at the end of the bundle. By default is `__r(${moduleId});`.         |
+| `getPolyfills`                  | `({platform: ?string}) => $ReadOnlyArray<string>` | An optional list of polyfills to include in the bundle. The list defaults to a set of common polyfills for Number, String, Array, Object... |
+| `postProcessBundleSourcemap`    | `PostProcessBundleSourcemap`                      | An optional function that can modify the code and source map of the bundle before it is written. Applied once for the entire bundle.        |
+| `getModulesRunBeforeMainModule` | `(entryFilePath: string) => Array<string>`        | An array of modules to be required before the entry point. It should contain the absolute path of each module.                              |
+| `processModuleFilter`           | `(module: Array<Module>) => boolean`              | A filter function to discard specific modules from the output.                                                                              |

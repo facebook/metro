@@ -65,10 +65,10 @@ export type WorkerOptions = {|
   +assetExts: $ReadOnlyArray<string>,
   +assetRegistryPath: string,
   +asyncRequireModulePath: string,
+  +babelTransformerPath: string,
   +dynamicDepsInPackages: DynamicRequiresBehavior,
   +isScript: boolean,
   +minifierPath: string,
-  +transformerPath: string,
   +transformOptions: TransformOptions,
 |};
 
@@ -150,7 +150,7 @@ async function transformCode(
       ];
 
   // $FlowFixMe TODO t26372934 Plugin system
-  const transformer: Transformer<*> = require(options.transformerPath);
+  const transformer: Transformer<*> = require(options.babelTransformerPath);
 
   const transformerArgs = {
     filename,

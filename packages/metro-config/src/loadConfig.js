@@ -203,7 +203,7 @@ function overrideConfigWithArguments(
   }
 
   if (argv.transformer != null) {
-    config.transformModulePath = resolve(argv.transformer);
+    config.transformerPath = resolve(argv.transformer);
   }
 
   if (argv['reset-cache'] != null) {

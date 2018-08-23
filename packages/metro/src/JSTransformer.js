@@ -75,12 +75,18 @@ module.exports = class Transformer {
   async transform(
     filename: string,
     localPath: LocalPath,
+    transformerPath: string,
     options: WorkerOptions,
   ): Promise<TransformerResult> {
     try {
       debug('Started transforming file', filename);
 
-      const data = await this._worker.transform(filename, localPath, options);
+      const data = await this._worker.transform(
+        filename,
+        localPath,
+        transformerPath,
+        options,
+      );
 
       debug('Done transforming file', filename);
 

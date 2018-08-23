@@ -20,7 +20,9 @@ jest
   }))
   .mock('metro-minify-uglify');
 
-const transformerPath = require.resolve('metro/src/reactNativeTransformer');
+const babelTransformerPath = require.resolve(
+  'metro/src/reactNativeTransformer',
+);
 
 const {transform} = require('../../worker.js');
 
@@ -37,7 +39,7 @@ describe('code transformation worker:', () => {
         asyncRequireModulePath: 'asyncRequire',
         isScript: true,
         minifierPath: 'minifyModulePath',
-        transformerPath,
+        babelTransformerPath,
         transformOptions: {dev: true},
         dynamicDepsInPackages: 'reject',
       },
@@ -67,7 +69,7 @@ describe('code transformation worker:', () => {
         asyncRequireModulePath: 'asyncRequire',
         isScript: false,
         minifierPath: 'minifyModulePath',
-        transformerPath,
+        babelTransformerPath,
         transformOptions: {dev: true},
         dynamicDepsInPackages: 'reject',
       },
@@ -105,7 +107,7 @@ describe('code transformation worker:', () => {
         asyncRequireModulePath: 'asyncRequire',
         isScript: false,
         minifierPath: 'minifyModulePath',
-        transformerPath,
+        babelTransformerPath,
         transformOptions: {dev: true},
         dynamicDepsInPackages: 'reject',
       },
@@ -150,7 +152,7 @@ describe('code transformation worker:', () => {
         asyncRequireModulePath: 'asyncRequire',
         isScript: false,
         minifierPath: 'minifyModulePath',
-        transformerPath,
+        babelTransformerPath,
         transformOptions: {dev: true},
         dynamicDepsInPackages: 'reject',
       });
@@ -172,7 +174,7 @@ describe('code transformation worker:', () => {
         asyncRequireModulePath: 'asyncRequire',
         isScript: false,
         minifierPath: 'minifyModulePath',
-        transformerPath,
+        babelTransformerPath,
         transformOptions: {dev: true},
         dynamicDepsInPackages: 'throwAtRuntime',
       },
@@ -192,7 +194,7 @@ describe('code transformation worker:', () => {
           asyncRequireModulePath: 'asyncRequire',
           isScript: false,
           minifierPath: 'minifyModulePath',
-          transformerPath,
+          babelTransformerPath,
           transformOptions: {dev: true, minify: true},
           dynamicDepsInPackages: 'throwAtRuntime',
         },
@@ -215,7 +217,7 @@ describe('code transformation worker:', () => {
           asyncRequireModulePath: 'asyncRequire',
           isScript: false,
           minifierPath: 'minifyModulePath',
-          transformerPath,
+          babelTransformerPath,
           transformOptions: {dev: true, minify: true},
           dynamicDepsInPackages: 'throwAtRuntime',
         },

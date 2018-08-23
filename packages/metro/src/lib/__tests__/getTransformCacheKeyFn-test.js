@@ -16,12 +16,12 @@ jest.mock('../../../package.json', () => ({
 }));
 
 const getTransformCacheKeyFn = require('../getTransformCacheKeyFn');
-const {transformModulePath} = require('metro-config/src/defaults/defaults');
 
 const baseParams = {
+  babelTransformerPath: require.resolve('metro/src/defaultTransformer'),
   cacheVersion: '1.0',
   projectRoot: __dirname,
-  transformModulePath,
+  transformerPath: require.resolve('metro/src/JSTransformer/worker'),
 };
 
 describe('getTransformCacheKeyFn', () => {
@@ -41,7 +41,11 @@ describe('getTransformCacheKeyFn', () => {
       },
       {
         ...baseParams,
-        transformModulePath: require.resolve(
+        transformerPath: require.resolve('metro/src/reactNativeTransformer'),
+      },
+      {
+        ...baseParams,
+        babelTransformerPath: require.resolve(
           'metro/src/reactNativeTransformer',
         ),
       },

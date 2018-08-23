@@ -406,7 +406,7 @@ export type InputConfigT = $ReadOnly<{
    * Returns the path to a custom transformer. This can also be overridden
    * with the --transformer commandline argument.
    */
-  transformModulePath?: string,
+  transformerPath?: string,
 
   /**
    * Whether we should watch for all files
@@ -452,6 +452,7 @@ export type IntermediateConfigT = {
     assetPlugins: Array<string>,
     assetRegistryPath: string,
     asyncRequireModulePath: string,
+    babelTransformerPath: string,
     enableBabelRCLookup: boolean,
     dynamicDepsInPackages: DynamicRequiresBehavior,
     getTransformOptions: GetTransformOptions,
@@ -466,8 +467,8 @@ export type IntermediateConfigT = {
   cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
   cacheVersion: string, // Do we need this?
   projectRoot: string,
+  transformerPath: string,
   watchFolders: Array<string>,
-  transformModulePath: string,
   watch: boolean,
   reporter: Reporter,
   resetCache: boolean,

@@ -77,7 +77,7 @@ Object {
       "ts",
       "tsx",
     ],
-    "transformModulePath": "",
+    "transformModulePath": "metro/src/defaultTransformer",
     "watch": false,
     "watchFolders": Array [],
     "workerPath": null,

@@ -51,8 +51,6 @@ exports.platforms = ['ios', 'android', 'windows', 'web'];
 
 exports.providesModuleNodeModules = ['react-native', 'react-native-windows'];
 
-exports.transformModulePath = require.resolve('metro/src/defaultTransformer');
-
 exports.DEFAULT_METRO_MINIFIER_PATH = 'metro-minify-uglify';
 
 exports.defaultCreateModuleIdFactory = defaultCreateModuleIdFactory;

@@ -11,11 +11,11 @@
 'use strict';
 
 import type Bundler from '../Bundler';
+import type {WorkerOptions} from '../DeltaBundler/Worker';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
 import type {
   CustomTransformOptions,
   TransformOptions,
-  WorkerOptions,
 } from '../JSTransformer/worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
@@ -61,9 +61,9 @@ async function calcTransformerOptions(
     assetPlugins: config.transformer.assetPlugins,
     assetRegistryPath: config.transformer.assetRegistryPath,
     asyncRequireModulePath: config.transformer.asyncRequireModulePath,
+    babelTransformerPath: config.transformer.babelTransformerPath,
     dynamicDepsInPackages: config.transformer.dynamicDepsInPackages,
     minifierPath: config.transformer.minifierPath,
-    transformerPath: config.transformModulePath,
   };
 
   // When we're processing scripts, we don't need to calculate any

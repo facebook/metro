@@ -28,7 +28,7 @@ describe('loadConfig', () => {
       reporter: null,
       maxWorkers: 2,
       cacheStores: [],
-      transformModulePath: '',
+      transformerPath: '',
     };
 
     cosmiconfig.setResolvedConfig(config);
@@ -46,7 +46,7 @@ describe('loadConfig', () => {
       reporter: null,
       maxWorkers: 2,
       resolver: 'test',
-      transformModulePath: '',
+      transformerPath: '',
     });
 
     cosmiconfig.setResolvedConfig(config);
@@ -63,7 +63,7 @@ describe('loadConfig', () => {
       reporter: null,
       maxWorkers: 2,
       cacheStores: [],
-      transformModulePath: '',
+      transformerPath: '',
     });
 
     cosmiconfig.setResolvedConfig(config);

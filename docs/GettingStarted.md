@@ -125,7 +125,7 @@ However, the server is also able to serve specific assets depending on the platf
 
 ### Bundle
 
-Any JS file can be used as the root for a bundle request. The file will be looked into each of the project roots provided (via the `projectRoots` property of the server). All files that are required by the root will be recursively included. In order to request a bundle, just change the extension from `.js` to `.bundle`. Options for building the bundle are passed as query parameters (all optional).
+Any JS file can be used as the root for a bundle request. The file will be looked in the `projectRoot`. All files that are required by the root will be recursively included. In order to request a bundle, just change the extension from `.js` to `.bundle`. Options for building the bundle are passed as query parameters (all optional).
 
 * `dev`: build the bundle in development mode or not. Maps 1:1 to the `dev` setting of the bundles. Pass `true` or `false` as strings into the URL.
 * `platform`: platform requesting the bundle. Can be `ios` or `android`. Maps 1:1 to the `platform` setting of the bundles.
@@ -140,7 +140,7 @@ Source maps are built for each bundle by using the same URL as the bundle (thus,
 
 ## JavaScript transformer
 
-The JavaScript transformer (`transformModulePath`) is the place where JS code will be manipulated; useful for calling Babel. The transformer can export two methods:
+The JavaScript transformer (`babelTransformerPath`) is the place where JS code will be manipulated; useful for calling Babel. The transformer can export two methods:
 
 ### Method `transform(module)`
 

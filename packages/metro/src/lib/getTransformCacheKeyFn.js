@@ -21,13 +21,19 @@ const VERSION = require('../../package.json').version;
  * passed transform options.
  */
 function getTransformCacheKeyFn(opts: {|
+  +babelTransformerPath: string,
   +cacheVersion: string,
   +projectRoot: string,
-  +transformModulePath: string,
+  +transformerPath: string,
 |}): (options: mixed) => string {
   const transformModuleHash = crypto
     .createHash('sha1')
-    .update(fs.readFileSync(opts.transformModulePath))
+    .update(fs.readFileSync(opts.transformerPath))
+    .digest('hex');
+
+  const babelTransformerModuleHash = crypto
+    .createHash('sha1')
+    .update(fs.readFileSync(opts.babelTransformerPath))
     .digest('hex');
 
   const cacheKeyParts = [
@@ -36,6 +42,7 @@ function getTransformCacheKeyFn(opts: {|
     opts.cacheVersion,
     path.relative(path.join(__dirname, '../../../..'), opts.projectRoot),
     transformModuleHash,
+    babelTransformerModuleHash,
   ];
 
   const transformCacheKey = crypto
@@ -44,7 +51,7 @@ function getTransformCacheKeyFn(opts: {|
     .digest('hex');
 
   /* $FlowFixMe: dynamic requires prevent static typing :'(  */
-  const transformer = require(opts.transformModulePath);
+  const transformer = require(opts.transformerPath);
 
   const getCacheKey =
     typeof transformer.getCacheKey !== 'undefined'

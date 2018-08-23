@@ -45,8 +45,7 @@ const DEFAULT = ({
   getRunModuleStatement: (moduleId: number | string) =>
     `__r(${JSON.stringify(moduleId)});`,
   getSourceExts: () => [],
-  getTransformModulePath: () =>
-    require.resolve('metro/src//defaultTransformer'),
+  getTransformModulePath: () => 'metro/src/defaultTransformer',
   getTransformOptions: async () => ({
     transform: {inlineRequires: false},
     preloadedModules: false,

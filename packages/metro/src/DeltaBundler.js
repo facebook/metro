@@ -24,6 +24,7 @@ import type {
 export type {
   DeltaResult,
   Graph,
+  MixedOutput,
   Module,
   TransformFn,
   TransformResult,

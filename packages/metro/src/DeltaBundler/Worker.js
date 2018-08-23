@@ -43,6 +43,7 @@ type Data<T: MixedOutput> = {
 async function transform<T: MixedOutput>(
   filename: string,
   localPath: LocalPath,
+  transformerPath: string,
   transformerOptions: WorkerOptions,
 ): Promise<Data<T>> {
   const transformFileStartLogEntry = {
@@ -61,7 +62,7 @@ async function transform<T: MixedOutput>(
 
   // eslint-disable-next-line lint/flow-no-fixme
   // $FlowFixMe Transforming fixed types to generic types during refactor.
-  const {transform} = (require('../JSTransformer/worker'): {
+  const {transform} = (require(transformerPath): {
     transform: TransformerFn<T>,
   });
 

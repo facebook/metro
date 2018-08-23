@@ -76,9 +76,10 @@ class Bundler {
     });
 
     const getTransformCacheKey = getTransformCacheKeyFn({
+      babelTransformerPath: opts.transformer.babelTransformerPath,
       cacheVersion: opts.cacheVersion,
       projectRoot: opts.projectRoot,
-      transformModulePath: opts.transformModulePath,
+      transformerPath: opts.transformerPath,
     });
 
     this._baseHash = stableHash([getTransformCacheKey()]).toString('binary');
@@ -103,7 +104,7 @@ class Bundler {
 
   async transformFile(
     filePath: string,
-    transformCodeOptions: WorkerOptions,
+    transformerOptions: WorkerOptions,
   ): Promise<TransformResult<>> {
     const cache = this._cache;
 
@@ -112,9 +113,10 @@ class Bundler {
       assetPlugins,
       assetRegistryPath,
       asyncRequireModulePath,
+      // Already in the global cache key.
+      babelTransformerPath: _babelTransformerPath,
       dynamicDepsInPackages,
       minifierPath,
-      transformerPath,
       transformOptions: {
         customTransformOptions,
         enableBabelRCLookup,
@@ -127,7 +129,7 @@ class Bundler {
       },
       isScript,
       ...extra
-    } = transformCodeOptions;
+    } = transformerOptions;
 
     for (const key in extra) {
       if (hasOwnProperty.call(extra, key)) {
@@ -153,7 +155,6 @@ class Bundler {
       asyncRequireModulePath,
       dynamicDepsInPackages,
       minifierPath,
-      transformerPath,
 
       customTransformOptions,
       enableBabelRCLookup,
@@ -176,7 +177,8 @@ class Bundler {
       : await this._transformer.transform(
           filePath,
           localPath,
-          transformCodeOptions,
+          this._opts.transformerPath,
+          transformerOptions,
         );
 
     // Only re-compute the full key if the SHA-1 changed. This is because

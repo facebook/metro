@@ -67,6 +67,7 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
     assetPlugins: [],
     asyncRequireModulePath: 'metro/src/lib/bundle-modules/asyncRequire',
     assetRegistryPath: 'missing-asset-registry-path',
+    babelTransformerPath: 'metro/src/defaultTransformer',
     dynamicDepsInPackages: 'throwAtRuntime',
     enableBabelRCLookup: true,
     getTransformOptions: async () => ({
@@ -91,7 +92,7 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
   projectRoot: projectRoot || path.resolve(__dirname, '../../..'),
   watchFolders: [],
   watch: false,
-  transformModulePath: require.resolve('metro/src/defaultTransformer'),
+  transformerPath: require.resolve('metro/src/JSTransformer/worker.js'),
   maxWorkers: getMaxWorkers(),
   resetCache: false,
   reporter: new TerminalReporter(new Terminal(process.stdout)),

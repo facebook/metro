@@ -19,7 +19,6 @@ module.exports = {
   maxWorkers: 1,
   projectRoot: ROOT_PATH,
   reporter: {update() {}},
-  transformModulePath: require.resolve('metro/src/reactNativeTransformer'),
   watchFolders: [path.resolve(__dirname, '../lib/polyfills')],
   server: {port: 10028},
   resolver: {
@@ -27,5 +26,6 @@ module.exports = {
   },
   transformer: {
     assetRegistryPath: path.join(ROOT_PATH, 'AssetRegistry'),
+    babelTransformerPath: require.resolve('metro/src/reactNativeTransformer'),
   },
 };

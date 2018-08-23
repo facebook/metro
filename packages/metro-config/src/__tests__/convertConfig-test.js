@@ -105,7 +105,7 @@ describe('convertConfig', () => {
     defaultConfig.maxWorkers = 0;
     defaultConfig.reporter = null;
     defaultConfig.cacheStores = [];
-    defaultConfig.transformModulePath = '';
+    defaultConfig.transformerPath = '';
 
     expect(convertNewToOld(defaultConfig)).toMatchSnapshot();
   });

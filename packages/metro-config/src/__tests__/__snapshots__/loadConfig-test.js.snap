@@ -76,11 +76,11 @@ Object {
     "port": 8080,
     "useGlobalHotkey": true,
   },
-  "transformModulePath": "",
   "transformer": Object {
     "assetPlugins": Array [],
     "assetRegistryPath": "missing-asset-registry-path",
     "asyncRequireModulePath": "metro/src/lib/bundle-modules/asyncRequire",
+    "babelTransformerPath": "metro/src/defaultTransformer",
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "getTransformOptions": [Function],
@@ -91,6 +91,7 @@ Object {
     },
     "workerPath": null,
   },
+  "transformerPath": "",
   "watch": false,
   "watchFolders": Array [
     "/",
@@ -174,11 +175,11 @@ Object {
     "port": 8080,
     "useGlobalHotkey": true,
   },
-  "transformModulePath": "",
   "transformer": Object {
     "assetPlugins": Array [],
     "assetRegistryPath": "missing-asset-registry-path",
     "asyncRequireModulePath": "metro/src/lib/bundle-modules/asyncRequire",
+    "babelTransformerPath": "metro/src/defaultTransformer",
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "getTransformOptions": [Function],
@@ -189,6 +190,7 @@ Object {
     },
     "workerPath": null,
   },
+  "transformerPath": "",
   "watch": false,
   "watchFolders": Array [
     "/",

@@ -9,6 +9,8 @@
  */
 'use strict';
 
+const getDefaultConfig = require('metro-config/src/defaults');
+
 const {Readable} = require('stream');
 
 describe('Transformer', function() {
@@ -16,6 +18,7 @@ describe('Transformer', function() {
   let Transformer;
   const fileName = '/an/arbitrary/file.js';
   const localPath = 'arbitrary/file.js';
+  const config = getDefaultConfig();
 
   const opts = {
     maxWorkers: 4,
@@ -66,10 +69,16 @@ describe('Transformer', function() {
     await new Transformer(opts).transform(
       fileName,
       localPath,
+      config.transformerPath,
       transformOptions,
     );
 
-    expect(api.transform).toBeCalledWith(fileName, localPath, transformOptions);
+    expect(api.transform).toBeCalledWith(
+      fileName,
+      localPath,
+      config.transformerPath,
+      transformOptions,
+    );
   });
 
   it('should add file info to parse errors', () => {
