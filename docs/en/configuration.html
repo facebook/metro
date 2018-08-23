@@ -66,7 +66,7 @@
 <tr><td><code>cacheVersion</code></td><td><code>string</code></td><td>Can be used to generate a key that will invalidate the whole metro cache.</td></tr>
 <tr><td><code>projectRoot</code></td><td><code>string</code></td><td>The root folder of your project.</td></tr>
 <tr><td><code>watchFolders</code></td><td><code>Array&lt;string&gt;</code></td><td>Specify any additional (to projectRoot) watch folders, this is used to know which files to watch.</td></tr>
-<tr><td><code>transformModulePath</code></td><td><code>string</code></td><td>The path to the transformer module to use.</td></tr>
+<tr><td><code>transformerPath</code></td><td><code>string</code></td><td>The path to the transformer to use.</td></tr>
 <tr><td><code>watch</code></td><td><code>boolean</code></td><td>Whether we should watch for all files.</td></tr>
 <tr><td><code>reporter</code></td><td><code>{update: () =&gt; void}</code></td><td>Used to report the status of the bundler during the bundling process.</td></tr>
 <tr><td><code>resetCache</code></td><td><code>boolean</code></td><td>Whether we should reset the cache when starting the build.</td></tr>
@@ -92,6 +92,7 @@
 </thead>
 <tbody>
 <tr><td><code>asyncRequireModulePath</code></td><td><code>string</code></td><td>What module to use for handling async requires.</td></tr>
+<tr><td><code>babelTransformerPath</code></td><td><code>string</code></td><td>Use a custom babel transformer (only relevant when using the default transformerPath).</td></tr>
 <tr><td><code>dynamicDepsInPackages</code></td><td><code>string</code> (<code>throwAtRuntime</code> or <code>reject</code>)</td><td>What should happen when a dynamic dependency is found.</td></tr>
 <tr><td><code>enableBabelRCLookup</code></td><td><code>boolean</code></td><td>Whether we should use the <code>.babelrc</code> config file.</td></tr>
 <tr><td><code>getTransformOptions</code></td><td><code>GetTransformOptions</code></td><td>Get the transform options.</td></tr>
@@ -105,6 +106,7 @@
 <tr><th>Option</th><th>Type</th><th>Description</th></tr>
 </thead>
 <tbody>
+<tr><td><code>assetPlugins</code></td><td><code>Array&lt;string&gt;</code></td><td>List of modules to call to modify Asset data</td></tr>
 <tr><td><code>assetRegistryPath</code></td><td><code>string</code></td><td>Where to fetch the assets from.</td></tr>
 </tbody>
 </table>
