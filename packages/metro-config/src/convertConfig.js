@@ -12,8 +12,7 @@
 
 const TerminalReporter = require('metro/src/lib/TerminalReporter');
 
-const blacklist = require('./defaults/blacklist');
-const defaults = require('./defaults/defaults');
+const getDefaultConfig = require('./defaults');
 const getMaxWorkers = require('metro/src/lib/getMaxWorkers');
 
 const {Terminal} = require('metro-core');
@@ -43,7 +42,7 @@ type PrivateMetroOptions = {|
 |};
 
 // We get the metro runServer signature here and create the new config out of it
-function convertOldToNew({
+async function convertOldToNew({
   config,
   resetCache = false,
   maxWorkers = getMaxWorkers(),
@@ -52,7 +51,7 @@ function convertOldToNew({
   port = null,
   reporter = new TerminalReporter(new Terminal(process.stdout)),
   watch = false,
-}: PrivateMetroOptions): ConfigT {
+}: PrivateMetroOptions): Promise<ConfigT> {
   const {
     getBlacklistRE,
     cacheStores,
@@ -88,18 +87,21 @@ function convertOldToNew({
     processModuleFilter,
   } = config;
 
-  const assetExts = defaults.assetExts.concat(
+  const defaultConfig = await getDefaultConfig(getProjectRoot());
+
+  const assetExts = defaultConfig.resolver.assetExts.concat(
     (getAssetExts && getAssetExts()) || [],
   );
-  const sourceExts = defaults.sourceExts.concat(
+  const sourceExts = defaultConfig.resolver.sourceExts.concat(
     (getSourceExts && getSourceExts()) || [],
   );
-  const platforms = (getPlatforms && getPlatforms()) || [];
+  const platforms =
+    (getPlatforms && getPlatforms()) || defaultConfig.resolver.platforms;
 
   const providesModuleNodeModules =
     typeof getProvidesModuleNodeModules === 'function'
       ? getProvidesModuleNodeModules()
-      : defaults.providesModuleNodeModules;
+      : defaultConfig.resolver.providesModuleNodeModules;
 
   const watchFolders = [getProjectRoot(), ...getWatchFolders()];
 
@@ -111,20 +113,24 @@ function convertOldToNew({
       resolverMainFields: getResolverMainFields(),
       sourceExts,
       hasteImplModulePath,
-      assetTransforms: assetTransforms || false,
+      assetTransforms:
+        assetTransforms || defaultConfig.resolver.assetTransforms,
       extraNodeModules,
       resolveRequest,
-      blacklistRE: getBlacklistRE() ? getBlacklistRE() : blacklist(),
+      blacklistRE: getBlacklistRE()
+        ? getBlacklistRE()
+        : defaultConfig.resolver.blacklistRE,
       useWatchman: true,
     },
     serializer: {
       createModuleIdFactory:
-        createModuleIdFactory || defaults.defaultCreateModuleIdFactory,
+        createModuleIdFactory || defaultConfig.serializer.createModuleIdFactory,
       polyfillModuleNames: getPolyfillModuleNames(),
       getRunModuleStatement,
       getPolyfills,
       postProcessBundleSourcemap,
-      processModuleFilter: processModuleFilter || (module => true),
+      processModuleFilter:
+        processModuleFilter || defaultConfig.serializer.processModuleFilter,
       getModulesRunBeforeMainModule,
     },
     server: {
@@ -133,7 +139,7 @@ function convertOldToNew({
       enhanceMiddleware,
     },
     transformer: {
-      assetPlugins: [],
+      assetPlugins: defaultConfig.transformer.assetPlugins,
       assetRegistryPath,
       asyncRequireModulePath: getAsyncRequireModulePath(),
       babelTransformerPath: getTransformModulePath(),
@@ -142,9 +148,10 @@ function convertOldToNew({
       getTransformOptions,
       postMinifyProcess,
       workerPath: getWorkerPath(),
-      minifierPath: minifierPath || defaults.DEFAULT_METRO_MINIFIER_PATH,
-      transformVariants:
-        transformVariants == null ? {default: {}} : transformVariants(),
+      minifierPath: minifierPath || defaultConfig.transformer.minifierPath,
+      transformVariants: transformVariants
+        ? transformVariants()
+        : defaultConfig.transformer.transformVariants,
     },
 
     reporter,
@@ -152,7 +159,7 @@ function convertOldToNew({
     cacheVersion,
     projectRoot: getProjectRoot(),
     watchFolders,
-    transformerPath: require.resolve('metro/src/JSTransformer/worker.js'),
+    transformerPath: defaultConfig.transformerPath,
     resetCache,
     watch,
     maxWorkers,
