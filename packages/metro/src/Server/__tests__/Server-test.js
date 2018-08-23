@@ -395,23 +395,6 @@ describe('processRequest', () => {
     );
   });
 
-  it('passes in the assetPlugin param', async () => {
-    await makeRequest(
-      requestHandler,
-      'index.bundle?assetPlugin=assetPlugin1&assetPlugin=assetPlugin2',
-    );
-
-    expect(transformHelpers.getTransformFn).toBeCalledWith(
-      ['/root/index.js'],
-      expect.any(Bundler),
-      expect.any(DeltaBundler),
-      expect.any(Object),
-      expect.objectContaining({
-        assetPlugins: ['assetPlugin1', 'assetPlugin2'],
-      }),
-    );
-  });
-
   it('does not rebuild the bundle when making concurrent requests', async () => {
     let resolveBuildGraph;
 
@@ -728,7 +711,6 @@ describe('processRequest', () => {
         expect.any(DeltaBundler),
         expect.any(Object),
         {
-          assetPlugins: [],
           customTransformOptions: {},
           dev: true,
           hot: false,

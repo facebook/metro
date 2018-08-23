@@ -72,9 +72,10 @@ These options are used when Metro serves the content.
 
 #### React Native Only
 
-| Option              | Type     | Description                     |
-| ------------------- | -------- | ------------------------------- |
-| `assetRegistryPath` | `string` | Where to fetch the assets from. |
+| Option              | Type            | Description                                  |
+| ------------------- | --------------- | -------------------------------------------- |
+| `assetPlugins`      | `Array<string>` | List of modules to call to modify Asset data |
+| `assetRegistryPath` | `string`        | Where to fetch the assets from.              |
 
 ### Resolver Options
 

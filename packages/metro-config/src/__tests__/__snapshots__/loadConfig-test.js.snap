@@ -78,6 +78,7 @@ Object {
   },
   "transformModulePath": "",
   "transformer": Object {
+    "assetPlugins": Array [],
     "assetRegistryPath": "missing-asset-registry-path",
     "asyncRequireModulePath": "metro/src/lib/bundle-modules/asyncRequire",
     "dynamicDepsInPackages": "throwAtRuntime",
@@ -175,6 +176,7 @@ Object {
   },
   "transformModulePath": "",
   "transformer": Object {
+    "assetPlugins": Array [],
     "assetRegistryPath": "missing-asset-registry-path",
     "asyncRequireModulePath": "metro/src/lib/bundle-modules/asyncRequire",
     "dynamicDepsInPackages": "throwAtRuntime",

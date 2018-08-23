@@ -133,6 +133,7 @@ function convertOldToNew({
       enhanceMiddleware,
     },
     transformer: {
+      assetPlugins: [],
       assetRegistryPath,
       asyncRequireModulePath: getAsyncRequireModulePath(),
       dynamicDepsInPackages,

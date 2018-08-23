@@ -29,7 +29,6 @@ type WorkerOptionsWithRawInlines = {|
 |};
 
 type TransformInputOptions = {|
-  +assetPlugins: Array<string>,
   +customTransformOptions: CustomTransformOptions,
   +dev: boolean,
   +hot: boolean,
@@ -58,8 +57,8 @@ async function calcTransformerOptions(
   };
 
   const baseOptions = {
-    assetPlugins: options.assetPlugins,
     assetExts: config.resolver.assetExts,
+    assetPlugins: config.transformer.assetPlugins,
     assetRegistryPath: config.transformer.assetRegistryPath,
     asyncRequireModulePath: config.transformer.asyncRequireModulePath,
     dynamicDepsInPackages: config.transformer.dynamicDepsInPackages,

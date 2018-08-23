@@ -39,7 +39,6 @@ type MetroSourceMapOrMappings =
   | Array<MetroSourceMapSegmentTuple>;
 
 export type BundleOptions = {
-  +assetPlugins: Array<string>,
   bundleType: BundleType,
   customTransformOptions: CustomTransformOptions,
   dev: boolean,

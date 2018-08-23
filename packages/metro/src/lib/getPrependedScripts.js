@@ -42,7 +42,6 @@ async function getPrependedScripts(
     .concat(config.serializer.polyfillModuleNames);
 
   const buildOptions = {
-    assetPlugins: [],
     customTransformOptions: bundleOptions.customTransformOptions,
     dev: bundleOptions.dev,
     hot: bundleOptions.hot,

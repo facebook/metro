@@ -64,6 +64,7 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
   },
 
   transformer: {
+    assetPlugins: [],
     asyncRequireModulePath: 'metro/src/lib/bundle-modules/asyncRequire',
     assetRegistryPath: 'missing-asset-registry-path',
     dynamicDepsInPackages: 'throwAtRuntime',

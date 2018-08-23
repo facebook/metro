@@ -33,7 +33,6 @@ describe('DeltaCalculator', () => {
   let fileWatcher;
 
   const options = {
-    assetPlugins: [],
     dev: true,
     entryPoints: ['bundle'],
     entryModuleOnly: false,

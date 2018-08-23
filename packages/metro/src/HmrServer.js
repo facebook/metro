@@ -65,7 +65,6 @@ class HmrServer<TClient: Client> {
     const graph = await this._packagerServer.buildGraph(
       [getEntryAbsolutePath(this._config, bundleEntry)],
       {
-        assetPlugins: [],
         customTransformOptions,
         dev: true,
         hot: true,

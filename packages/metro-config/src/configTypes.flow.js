@@ -449,6 +449,7 @@ export type IntermediateConfigT = {
     createModuleIdFactory: () => (path: string) => number,
   },
   transformer: {
+    assetPlugins: Array<string>,
     assetRegistryPath: string,
     asyncRequireModulePath: string,
     enableBabelRCLookup: boolean,

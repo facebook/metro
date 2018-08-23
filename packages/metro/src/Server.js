@@ -62,7 +62,6 @@ type GraphInfo = {|
 |};
 
 export type BuildGraphOptions = {|
-  +assetPlugins: Array<string>,
   +customTransformOptions: CustomTransformOptions,
   +dev: boolean,
   +hot: boolean,
@@ -239,7 +238,7 @@ class Server {
 
     return await getAssets(graph, {
       processModuleFilter: this._config.serializer.processModuleFilter,
-      assetPlugins: options.assetPlugins,
+      assetPlugins: this._config.transformer.assetPlugins,
       platform: options.platform,
       watchFolders: this._config.watchFolders,
     });
@@ -273,7 +272,6 @@ class Server {
     const entryPoint = getEntryAbsolutePath(this._config, options.entryFile);
 
     const crawlingOptions = {
-      assetPlugins: options.assetPlugins,
       customTransformOptions: options.customTransformOptions,
       dev: options.dev,
       hot: options.hot,
@@ -982,13 +980,6 @@ class Server {
 
     const deltaBundleId = urlQuery.deltaBundleId;
 
-    const assetPlugin = urlQuery.assetPlugin;
-    const assetPlugins = Array.isArray(assetPlugin)
-      ? assetPlugin
-      : typeof assetPlugin === 'string'
-        ? [assetPlugin]
-        : [];
-
     const dev = this._getBoolOptionFromQuery(urlQuery, 'dev', true);
     const minify = this._getBoolOptionFromQuery(urlQuery, 'minify', false);
     const excludeSource = this._getBoolOptionFromQuery(
@@ -1025,7 +1016,6 @@ class Server {
         'entryModuleOnly',
         false,
       ),
-      assetPlugins,
       onProgress: null,
     };
   }
@@ -1056,7 +1046,6 @@ class Server {
   }
 
   static DEFAULT_GRAPH_OPTIONS = {
-    assetPlugins: [],
     customTransformOptions: Object.create(null),
     dev: true,
     hot: false,
