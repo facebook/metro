@@ -263,6 +263,6 @@ it('ignores require functions defined defined by lower scopes', () => {
 function astFromCode(code) {
   return babylon.parse(code, {
     plugins: ['dynamicImport'],
-    sourceType: 'script',
+    sourceType: 'module',
   });
 }

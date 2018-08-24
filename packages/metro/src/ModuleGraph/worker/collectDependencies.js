@@ -39,6 +39,7 @@ type InternalDependencyInfo = {|
 type State = {|
   asyncRequireModulePathStringLiteral: ?Identifier,
   dependency: number,
+  dependencyCalls: Set<string>,
   dependencyData: Map<string, InternalDependencyData>,
   dependencyIndexes: Map<string, number>,
   dynamicRequires: DynamicRequiresBehavior,
@@ -102,6 +103,7 @@ function collectDependencies(
   const state: State = {
     asyncRequireModulePathStringLiteral: null,
     dependency: 0,
+    dependencyCalls: new Set(),
     dependencyData: new Map(),
     dependencyIndexes: new Map(),
     dependencyMapIdentifier: null,
@@ -116,13 +118,13 @@ function collectDependencies(
       }
 
       const callee = path.get('callee');
-      const name = 'require';
+      const name = callee.node.name;
 
       if (callee.isImport()) {
         processImportCall(path, state);
       }
 
-      if (callee.isIdentifier({name}) && !path.scope.getBinding(name)) {
+      if (state.dependencyCalls.has(name) && !path.scope.getBinding(name)) {
         visited.add(processRequireCall(path, state).node);
       }
     },
@@ -135,6 +137,13 @@ function collectDependencies(
       state.dependencyMapIdentifier = path.scope.generateUidIdentifier(
         'dependencyMap',
       );
+
+      // In preparation for Babel's unique id generator.
+      state.dependencyCalls = new Set([
+        'require',
+        '_$$_IMPORT_DEFAULT',
+        '_$$_IMPORT_ALL',
+      ]);
     },
   };
 
