@@ -39,7 +39,6 @@ module.exports = {
 | Option                  | Type                                  | Description                                                                                       |
 | ----------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `cacheStores`           | `Array<CacheStore<TransformResult<>>` | List where we store our [caches](./Caching.md).                                                   |
-| `createModuleIdFactory` | `() => (path: string) => number`      | Used to generate the module id for `require` statements.                                          |
 | `cacheVersion`          | `string`                              | Can be used to generate a key that will invalidate the whole metro cache.                         |
 | `projectRoot`           | `string`                              | The root folder of your project.                                                                  |
 | `watchFolders`          | `Array<string>`                       | Specify any additional (to projectRoot) watch folders, this is used to know which files to watch. |
@@ -103,6 +102,7 @@ These options are only useful with React Native projects.
 | Option                          | Type                                              | Description                                                                                                                                 |
 | ------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `getRunModuleStatement`         | `(number` &#x7c; `string) => string`              | Specify the format of the initial require statements that are appended at the end of the bundle. By default is `__r(${moduleId});`.         |
+| `createModuleIdFactory` | `() => (path: string) => number`      | Used to generate the module id for `require` statements.                                          |
 | `getPolyfills`                  | `({platform: ?string}) => $ReadOnlyArray<string>` | An optional list of polyfills to include in the bundle. The list defaults to a set of common polyfills for Number, String, Array, Object... |
 | `postProcessBundleSourcemap`    | `PostProcessBundleSourcemap`                      | An optional function that can modify the code and source map of the bundle before it is written. Applied once for the entire bundle.        |
 | `getModulesRunBeforeMainModule` | `(entryFilePath: string) => Array<string>`        | An array of modules to be required before the entry point. It should contain the absolute path of each module.                              |
