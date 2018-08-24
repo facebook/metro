@@ -52,8 +52,11 @@ async function getPrependedScripts(
     type: 'script',
   };
 
+  const moduleSystem = config.resolver &&
+    config.resolver.moduleSystem || defaults.moduleSystem;
+
   const graph = await deltaBundler.buildGraph(
-    [defaults.moduleSystem, ...polyfillModuleNames],
+    [moduleSystem, ...polyfillModuleNames],
     {
       resolve: await transformHelpers.getResolveDependencyFn(
         bundler,

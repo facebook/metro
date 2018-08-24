@@ -247,6 +247,12 @@ export type InputConfigT = {
     assetExts?: Array<string>,
 
     /**
+     * This property overrides the `require()` polyfill.
+     * It must be an absolute path.
+     */
+    moduleSystem?: string,
+
+    /**
      * Specify any additional platforms to be used by the packager.
      * For example, if you want to add a "custom" platform, and use modules
      * ending in .custom.js, you would return ['custom'] here.
