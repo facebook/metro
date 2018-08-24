@@ -25,12 +25,13 @@ import type {
   BundlerHistory,
   BuildDetails,
 } from '../../middleware/metroHistory.js';
-import {message, Row, Col, Card, Tag} from 'antd';
+import {message, Row, Col, Card, Tag, Icon} from 'antd';
 import type {BundleOptions} from 'metro/src/shared/types.flow.js';
 
 type State = {
   bundlerHistory: BundlerHistory,
   selectedBundleHash?: ?string,
+  showLoadingIndicator: boolean,
 };
 
 class DashboardApp extends React.Component<mixed, State> {
@@ -39,8 +40,12 @@ class DashboardApp extends React.Component<mixed, State> {
   }
 
   fetchBundles() {
+    this.setState({showLoadingIndicator: true});
     fetch('/visualizer/bundles')
-      .then(handleAPIError)
+      .then(res => {
+        this.setState({showLoadingIndicator: false});
+        return handleAPIError(res);
+      })
       .then(response => response.json())
       .then(bundlerHistory => {
         this.setState({bundlerHistory});
@@ -62,7 +67,12 @@ class DashboardApp extends React.Component<mixed, State> {
 
           <Row type="flex" justify="center">
             <Col span={16}>
-              <BundleRunForm handleRanBundle={() => this.fetchBundles()} />
+              <BundleRunForm
+                handleStartedBundling={() =>
+                  this.setState({showLoadingIndicator: true})
+                }
+                handleFinishedBundling={() => this.fetchBundles()}
+              />
             </Col>
           </Row>
 
@@ -81,6 +91,10 @@ class DashboardApp extends React.Component<mixed, State> {
                 ))}
             </Col>
           </Row>
+
+          {this.state.showLoadingIndicator && (
+            <Icon type="loading" className={loadingIndicator} />
+          )}
         </div>
       )
     );
@@ -165,6 +179,14 @@ const initalInfo = css`
   margin-left: 8px;
   font-size: 9pt;
   color: #aaa;
+`;
+
+const loadingIndicator = css`
+  font-size: 4em;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translateY(-50%) translateX(-50%);
 `;
 
 module.exports = DashboardApp;

@@ -19,7 +19,8 @@ const handleAPIError = require('../../utils/handleAPIError');
 import {message, Input, Select, Form, Button} from 'antd';
 
 type Props = {
-  handleRanBundle: () => void,
+  handleStartedBundling: () => void,
+  handleFinishedBundling: () => void,
 };
 
 type State = {
@@ -49,6 +50,7 @@ class BundleRunForm extends React.Component<Props, State> {
   };
 
   handleSubmit = (e: SyntheticEvent<>) => {
+    this.props.handleStartedBundling();
     e.preventDefault();
 
     var url = `${this.state.entryPath}?`;
@@ -71,7 +73,7 @@ class BundleRunForm extends React.Component<Props, State> {
 
     fetch(url.slice(0, -1))
       .then(handleAPIError)
-      .then(res => this.props.handleRanBundle())
+      .then(res => this.props.handleFinishedBundling())
       .catch(error => message.error(error.message));
   };
 
