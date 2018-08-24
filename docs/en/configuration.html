@@ -62,7 +62,6 @@
 </thead>
 <tbody>
 <tr><td><code>cacheStores</code></td><td><code>Array&lt;CacheStore&lt;TransformResult&lt;&gt;&gt;</code></td><td>List where we store our <a href="/metro/docs/en/caching">caches</a>.</td></tr>
-<tr><td><code>createModuleIdFactory</code></td><td><code>() =&gt; (path: string) =&gt; number</code></td><td>Used to generate the module id for <code>require</code> statements.</td></tr>
 <tr><td><code>cacheVersion</code></td><td><code>string</code></td><td>Can be used to generate a key that will invalidate the whole metro cache.</td></tr>
 <tr><td><code>projectRoot</code></td><td><code>string</code></td><td>The root folder of your project.</td></tr>
 <tr><td><code>watchFolders</code></td><td><code>Array&lt;string&gt;</code></td><td>Specify any additional (to projectRoot) watch folders, this is used to know which files to watch.</td></tr>
@@ -143,6 +142,7 @@
 </thead>
 <tbody>
 <tr><td><code>getRunModuleStatement</code></td><td><code>(number</code> | <code>string) =&gt; string</code></td><td>Specify the format of the initial require statements that are appended at the end of the bundle. By default is <code>__r(${moduleId});</code>.</td></tr>
+<tr><td><code>createModuleIdFactory</code></td><td><code>() =&gt; (path: string) =&gt; number</code></td><td>Used to generate the module id for <code>require</code> statements.</td></tr>
 <tr><td><code>getPolyfills</code></td><td><code>({platform: ?string}) =&gt; $ReadOnlyArray&lt;string&gt;</code></td><td>An optional list of polyfills to include in the bundle. The list defaults to a set of common polyfills for Number, String, Array, Object...</td></tr>
 <tr><td><code>postProcessBundleSourcemap</code></td><td><code>PostProcessBundleSourcemap</code></td><td>An optional function that can modify the code and source map of the bundle before it is written. Applied once for the entire bundle.</td></tr>
 <tr><td><code>getModulesRunBeforeMainModule</code></td><td><code>(entryFilePath: string) =&gt; Array&lt;string&gt;</code></td><td>An array of modules to be required before the entry point. It should contain the absolute path of each module.</td></tr>
