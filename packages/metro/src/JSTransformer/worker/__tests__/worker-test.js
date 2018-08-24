@@ -20,13 +20,37 @@ jest
   }))
   .mock('metro-minify-uglify');
 
+const path = require('path');
+
 const babelTransformerPath = require.resolve(
   'metro/src/reactNativeTransformer',
 );
+const transformerContents = require('fs').readFileSync(babelTransformerPath);
 
-const {transform} = require('../../worker.js');
+const babelRcPath = require.resolve('metro/rn-babelrc.json');
+const babelRcContents = require('fs').readFileSync(babelRcPath);
+
+let fs;
+let mkdirp;
+let transform;
 
 describe('code transformation worker:', () => {
+  beforeEach(() => {
+    jest.resetModules();
+
+    jest.mock('fs', () => new (require('metro-memory-fs'))());
+
+    fs = require('fs');
+    mkdirp = require('mkdirp');
+    ({transform: transform} = require('../../worker'));
+    fs.reset();
+
+    mkdirp.sync('/root/local');
+    mkdirp.sync(path.dirname(babelTransformerPath));
+    fs.writeFileSync(babelTransformerPath, transformerContents);
+    fs.writeFileSync(babelRcPath, babelRcContents);
+  });
+
   it('transforms a simple script', async () => {
     const result = await transform(
       '/root/local/file.js',
