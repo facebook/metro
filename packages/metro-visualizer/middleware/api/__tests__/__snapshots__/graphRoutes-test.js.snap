@@ -1,40 +1,49 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`graph/modules endpoint works correctly 1`] = `
-Array [
-  Object {
-    "filePath": "path/to/liverpool-street.js",
-    "name": "liverpool-street",
+exports[`graph/info endpoint works correctly 1`] = `
+Object {
+  "info": Object {
+    "dependencyTypes": Array [
+      "js/module",
+    ],
+    "maxIncomingEdges": 2,
+    "maxOutgoingEdges": 2,
   },
-  Object {
-    "filePath": "path/to/moorgate.js",
-    "name": "moorgate",
-  },
-  Object {
-    "filePath": "path/to/bank.js",
-    "name": "bank",
-  },
-  Object {
-    "filePath": "path/to/st-paul.js",
-    "name": "st-paul",
-  },
-  Object {
-    "filePath": "path/to/chancery-lane.js",
-    "name": "chancery-lane",
-  },
-  Object {
-    "filePath": "path/to/holborn.js",
-    "name": "holborn",
-  },
-  Object {
-    "filePath": "path/to/leicester-square.js",
-    "name": "leicester-square",
-  },
-  Object {
-    "filePath": "path/to/tottenham-court-road.js",
-    "name": "tottenham-court-road",
-  },
-]
+  "modules": Array [
+    Object {
+      "filePath": "path/to/liverpool-street.js",
+      "name": "liverpool-street",
+    },
+    Object {
+      "filePath": "path/to/moorgate.js",
+      "name": "moorgate",
+    },
+    Object {
+      "filePath": "path/to/bank.js",
+      "name": "bank",
+    },
+    Object {
+      "filePath": "path/to/st-paul.js",
+      "name": "st-paul",
+    },
+    Object {
+      "filePath": "path/to/chancery-lane.js",
+      "name": "chancery-lane",
+    },
+    Object {
+      "filePath": "path/to/holborn.js",
+      "name": "holborn",
+    },
+    Object {
+      "filePath": "path/to/leicester-square.js",
+      "name": "leicester-square",
+    },
+    Object {
+      "filePath": "path/to/tottenham-court-road.js",
+      "name": "tottenham-court-road",
+    },
+  ],
+}
 `;
 
 exports[`graph/modules/path(*) endpoint works correctly 1`] = `
@@ -70,6 +79,7 @@ Object {
         "inverseDeps": Array [],
         "label": "liverpool-street",
         "size": 10,
+        "type": "js/module",
       },
     },
     Object {
@@ -85,6 +95,7 @@ Object {
         ],
         "label": "bank",
         "size": 10,
+        "type": "js/module",
       },
     },
     Object {
@@ -100,6 +111,7 @@ Object {
         ],
         "label": "moorgate",
         "size": 10,
+        "type": "js/module",
       },
     },
   ],
@@ -141,6 +153,7 @@ Object {
         ],
         "label": "st-paul",
         "size": 10,
+        "type": "js/module",
       },
     },
     Object {
@@ -156,6 +169,7 @@ Object {
         ],
         "label": "bank",
         "size": 10,
+        "type": "js/module",
       },
     },
     Object {
@@ -171,6 +185,7 @@ Object {
         ],
         "label": "moorgate",
         "size": 10,
+        "type": "js/module",
       },
     },
   ],
@@ -250,6 +265,7 @@ Object {
         "inverseDeps": Array [],
         "label": "liverpool-street",
         "size": 10,
+        "type": "js/module",
       },
     },
     Object {
@@ -265,6 +281,7 @@ Object {
         ],
         "label": "bank",
         "size": 10,
+        "type": "js/module",
       },
     },
     Object {
@@ -281,6 +298,7 @@ Object {
         ],
         "label": "st-paul",
         "size": 10,
+        "type": "js/module",
       },
     },
     Object {
@@ -296,6 +314,7 @@ Object {
         ],
         "label": "chancery-lane",
         "size": 10,
+        "type": "js/module",
       },
     },
     Object {
@@ -311,6 +330,7 @@ Object {
         ],
         "label": "holborn",
         "size": 10,
+        "type": "js/module",
       },
     },
     Object {
@@ -324,6 +344,7 @@ Object {
         ],
         "label": "tottenham-court-road",
         "size": 10,
+        "type": "js/module",
       },
     },
     Object {
@@ -339,6 +360,7 @@ Object {
         ],
         "label": "moorgate",
         "size": 10,
+        "type": "js/module",
       },
     },
   ],

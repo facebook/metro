@@ -30,9 +30,9 @@ app.use((err, req, res, next) => {
 });
 app.use('/graph', graphRoutes(dummyMetroGraph));
 
-it('graph/modules endpoint works correctly', async () => {
+it('graph/info endpoint works correctly', async () => {
   const response = await request(app)
-    .get('/graph/modules')
+    .get('/graph/info')
     .expect(200);
 
   expect(JSON.parse(response.text)).toMatchSnapshot();

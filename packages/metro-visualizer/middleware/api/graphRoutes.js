@@ -15,7 +15,7 @@ const Router = require('router');
 const {
   getGraphFromModule,
   getGraphToModule,
-  getAllModules,
+  getGraphInfo,
   getGraphFromModuleToModule,
 } = require('./graphFunctions');
 
@@ -34,7 +34,8 @@ router.get('/', async function(req, res) {
 });
 
 /*
-* Get basic information about the graph
+* Get basic information about the graph, including a list of all the modules
+* in the graph
 *
 * @response {Object} info
 * @response {String} info.entryPoints
@@ -42,17 +43,8 @@ router.get('/', async function(req, res) {
 * @response {String} info.nodeCount
 */
 router.get('/info', function(req, res) {
-  res.status(500).send('Unimplemented');
-});
-
-/*
-* Get a list of all the modules in the graph
-*
-* @response {Array<string>}
-*/
-router.get('/modules', function(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.write(JSON.stringify(getAllModules(metroGraph)));
+  res.write(JSON.stringify(getGraphInfo(metroGraph)));
   res.end();
 });
 

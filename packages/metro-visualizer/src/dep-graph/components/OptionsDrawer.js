@@ -16,12 +16,23 @@ const React = require('react');
 
 const {css} = require('emotion');
 
-import type {CyGraphOptions} from '../../types.flow';
-import {Drawer, Button, Select} from 'antd';
+import type {CyGraphOptions, CyGraphFilters, GraphInfo} from '../../types.flow';
+import {
+  Drawer,
+  Button,
+  Radio,
+  Slider,
+  Divider,
+  Icon,
+  Form,
+  Checkbox,
+} from 'antd';
 
 type Props = {
   options: CyGraphOptions,
   onOptionChange: CyGraphOptions => void,
+  onFilterChange: CyGraphFilters => void,
+  info: GraphInfo,
 };
 
 type State = {
@@ -54,21 +65,61 @@ class OptionsDrawer extends React.Component<Props, State> {
           icon="setting"
         />
         <Drawer
-          title={'Options and Filters'}
+          title={<Icon type="setting" style={{fontSize: 20}} />}
+          width={350}
           placement="right"
           mask={false}
           onClose={this.onClose}
           visible={this.state.visible}>
-          <Select
-            size="large"
-            defaultValue={this.props.options.layoutName}
-            onChange={layoutName => this.props.onOptionChange({layoutName})}>
-            {['euler', 'dagre', 'klay', 'spread'].map(layout => (
-              <Select.Option value={layout} key={layout}>
-                {layout}
-              </Select.Option>
-            ))}
-          </Select>
+          <Divider>Options</Divider>
+          <Form>
+            <Form.Item label="Layout">
+              <Radio.Group
+                defaultValue={this.props.options.layoutName}
+                onChange={evt =>
+                  this.props.onOptionChange({layoutName: evt.target.value})
+                }>
+                {['dagre', 'euler', 'klay'].map(layout => (
+                  <Radio.Button value={layout} key={layout}>
+                    {layout}
+                  </Radio.Button>
+                ))}
+              </Radio.Group>
+            </Form.Item>
+          </Form>
+
+          <Divider>Filters</Divider>
+          <Form>
+            <Form.Item label="Incoming Edges">
+              <Slider
+                range
+                max={this.props.info.maxIncomingEdges}
+                defaultValue={[0, this.props.info.maxIncomingEdges]}
+                onChange={incomingEdgesRange =>
+                  this.props.onFilterChange({incomingEdgesRange})
+                }
+              />
+            </Form.Item>
+            <Form.Item label="Outgoing Edges">
+              <Slider
+                range
+                max={this.props.info.maxOutgoingEdges}
+                defaultValue={[0, this.props.info.maxOutgoingEdges]}
+                onChange={outgoingEdgesRange =>
+                  this.props.onFilterChange({outgoingEdgesRange})
+                }
+              />
+            </Form.Item>
+            <Form.Item label="Type">
+              <Checkbox.Group
+                options={this.props.info.dependencyTypes}
+                defaultValue={this.props.info.dependencyTypes}
+                onChange={dependencyTypes =>
+                  this.props.onFilterChange({dependencyTypes})
+                }
+              />
+            </Form.Item>
+          </Form>
         </Drawer>
       </div>
     );
@@ -81,4 +132,5 @@ const optionsDrawerButton = css`
   right: 20px;
   font-size: 1.5em;
 `;
+
 module.exports = OptionsDrawer;

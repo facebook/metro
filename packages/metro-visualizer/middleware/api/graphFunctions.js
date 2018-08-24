@@ -17,6 +17,7 @@ import type {
   Node,
   Edge,
   ModuleList,
+  GraphInfo,
 } from 'metro-visualizer/src/types.flow';
 import type {Module} from 'metro/src/DeltaBundler/types.flow';
 import type {Graph} from 'metro/src/DeltaBundler';
@@ -183,17 +184,35 @@ function _buildGraphFromModuleToModule(
   }
 }
 
-function getAllModules(metroGraph: Graph<>): ModuleList {
+function getGraphInfo(
+  metroGraph: Graph<>,
+): {modules: ModuleList, info: GraphInfo} {
   const modules: ModuleList = [];
+  const depTypes: Set<string> = new Set();
+  let maxIncomingEdges: number = 0;
+  let maxOutgoingEdges: number = 0;
 
-  for (const modulePath of metroGraph.dependencies.keys()) {
+  for (const [modulePath, module] of metroGraph.dependencies.entries()) {
+    maxOutgoingEdges = Math.max(module.dependencies.size, maxOutgoingEdges);
+    maxIncomingEdges = Math.max(
+      module.inverseDependencies.size,
+      maxIncomingEdges,
+    );
+    depTypes.add(module.output[0].type);
     modules.push({
       name: path.basename(modulePath, '.js'),
       filePath: modulePath,
     });
   }
 
-  return modules;
+  return {
+    modules,
+    info: {
+      maxIncomingEdges,
+      maxOutgoingEdges,
+      dependencyTypes: [...depTypes],
+    },
+  };
 }
 
 function getModuleSize(module: Module<>): number {
@@ -219,6 +238,7 @@ function moduleToNode(module: Module<>, metroGraph: Graph<>): Node {
       size: getModuleSize(module),
       depsSize: deps.reduce(generateSizeAccumulator(metroGraph), 0),
       invDepsSize: inverseDeps.reduce(generateSizeAccumulator(metroGraph), 0),
+      type: module.output[0].type,
     },
   };
 }
@@ -236,9 +256,9 @@ function createEdge(from: string, to: string, isAsync: boolean) {
 
 module.exports = {
   getGraphFromModule,
-  getAllModules,
   getGraphToModule,
   getGraphFromModuleToModule,
+  getGraphInfo,
   _addPathToGraph,
   _buildGraphFromModuleToModule,
 };

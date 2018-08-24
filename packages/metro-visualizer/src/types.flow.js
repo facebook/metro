@@ -24,6 +24,7 @@ export type NodeData = {
   label: string,
   deps: Array<string>,
   inverseDeps: Array<string>,
+  type: string,
   size?: ?number,
 };
 
@@ -44,5 +45,17 @@ export type CyGraph = {
 export type CyGraphOptions = {
   layoutName: 'dagre' | 'euler' | 'klay' | 'spread',
 };
+
+export type CyGraphFilters = {
+  incomingEdgesRange?: [number, number],
+  outgoingEdgesRange?: [number, number],
+  dependencyTypes?: Array<string>,
+};
+
+export type GraphInfo = {|
+  maxIncomingEdges: number,
+  maxOutgoingEdges: number,
+  dependencyTypes: Array<string>,
+|};
 
 export type ModuleList = Array<{name: string, filePath: string}>;

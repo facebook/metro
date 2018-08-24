@@ -16,7 +16,7 @@ const dummyMetroGraph = require('../dummyMetroGraph');
 const {
   getGraphFromModule,
   getGraphToModule,
-  getAllModules,
+  getGraphInfo,
   getGraphFromModuleToModule,
   _addPathToGraph,
   _buildGraphFromModuleToModule,
@@ -72,5 +72,5 @@ it('builds inverse graph from one module to another', () => {
 });
 
 it('gets module list correctly', () => {
-  expect(getAllModules(dummyMetroGraph)).toMatchSnapshot();
+  expect(getGraphInfo(dummyMetroGraph)).toMatchSnapshot();
 });

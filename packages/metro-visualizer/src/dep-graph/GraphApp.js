@@ -24,10 +24,12 @@ const handleAPIError = require('../utils/handleAPIError');
 const {css} = require('emotion');
 
 import type {
+  CyGraphFilters,
   CyGraphOptions,
   CyGraph,
   ModuleList,
   NodeData,
+  GraphInfo,
 } from '../types.flow';
 import {message, Row, Col, Button, Icon} from 'antd';
 
@@ -43,7 +45,9 @@ type Props = {
 type State = {
   graph?: CyGraph,
   modules?: ModuleList,
+  info?: GraphInfo,
   selectedNodeData?: ?NodeData,
+  graphFilters: CyGraphFilters,
   graphOptions: CyGraphOptions,
   showPathSearch: boolean,
   showLoadingIndicator: boolean,
@@ -56,19 +60,20 @@ class GraphApp extends React.Component<Props, State> {
     showLoadingIndicator: true,
     showPathSearch: false,
     graphOptions: {layoutName: 'dagre'},
+    graphFilters: {},
   };
   firstModule: string;
   secondModule: string;
 
   componentDidMount() {
-    fetch(`/visualizer/graph/modules?hash=${this.props.match.params[0]}`)
+    fetch(`/visualizer/graph/info?hash=${this.props.match.params[0]}`)
       .then(res => {
         this.setState({showLoadingIndicator: false});
         return handleAPIError(res);
       })
       .then(response => response.json())
-      .then(modules => {
-        this.setState({modules});
+      .then(res => {
+        this.setState(res);
       })
       .catch(error => message.error(error.message));
   }
@@ -112,6 +117,12 @@ class GraphApp extends React.Component<Props, State> {
     this.setState({graphOptions: options});
   };
 
+  handleFilterChange = (filters: CyGraphFilters) => {
+    this.setState({
+      graphFilters: Object.assign({}, this.state.graphFilters, filters),
+    });
+  };
+
   togglePathSearch = () => {
     this.setState({showPathSearch: !this.state.showPathSearch});
   };
@@ -124,51 +135,58 @@ class GraphApp extends React.Component<Props, State> {
             hash={this.props.match.params[0]}
             graph={this.state.graph}
             options={this.state.graphOptions}
+            filters={this.state.graphFilters}
             handleSelectionChange={selectedNodeData =>
               this.setState({selectedNodeData})
             }
           />
         )}
-        {this.state.modules && (
-          <Row
-            type="flex"
-            justify="center"
-            align="middle"
-            className={searchRow}>
-            <Col
-              span={this.state.showPathSearch ? 14 : 12}
-              className={searchCol}>
-              <SearchBar
-                data={this.state.modules}
-                onSelection={this.handleModuleSelection}
+        {this.state.modules &&
+          this.state.info && (
+            <div>
+              <Row
+                type="flex"
+                justify="center"
+                align="middle"
+                className={searchRow}>
+                <Col
+                  span={this.state.showPathSearch ? 14 : 12}
+                  className={searchCol}>
+                  <SearchBar
+                    data={this.state.modules}
+                    onSelection={this.handleModuleSelection}
+                  />
+                  {this.state.showPathSearch && (
+                    <Icon
+                      type="arrow-right"
+                      style={{fontSize: 20, marginTop: 10}}
+                    />
+                  )}
+                  {this.state.showPathSearch && (
+                    <SearchBar
+                      data={this.state.modules}
+                      onSelection={this.handleSecondModuleSelection}
+                    />
+                  )}
+                  <Button
+                    className={headerButton}
+                    type="default"
+                    size="large"
+                    onClick={this.togglePathSearch}
+                    icon={this.state.showPathSearch ? 'close' : 'share-alt'}
+                  />
+                </Col>
+              </Row>
+              <InfoDrawer data={this.state.selectedNodeData} />
+              <OptionsDrawer
+                options={this.state.graphOptions}
+                onOptionChange={this.handleOptionChange}
+                onFilterChange={this.handleFilterChange}
+                info={this.state.info}
               />
-              {this.state.showPathSearch && (
-                <Icon
-                  type="arrow-right"
-                  style={{fontSize: 20, marginTop: 10}}
-                />
-              )}
-              {this.state.showPathSearch && (
-                <SearchBar
-                  data={this.state.modules}
-                  onSelection={this.handleSecondModuleSelection}
-                />
-              )}
-              <Button
-                className={headerButton}
-                type="default"
-                size="large"
-                onClick={this.togglePathSearch}
-                icon={this.state.showPathSearch ? 'close' : 'share-alt'}
-              />
-            </Col>
-          </Row>
-        )}
-        <InfoDrawer data={this.state.selectedNodeData} />
-        <OptionsDrawer
-          options={this.state.graphOptions}
-          onOptionChange={this.handleOptionChange}
-        />
+            </div>
+          )}
+
         {this.state.showLoadingIndicator && (
           <Icon type="loading" className={loadingIndicator} />
         )}

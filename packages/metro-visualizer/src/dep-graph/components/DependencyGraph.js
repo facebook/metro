@@ -23,7 +23,12 @@ const {
 } = require('../../utils/dependencyNodes');
 const {showTooltip, hideTooltip} = require('../../utils/nodeTooltips');
 
-import type {CyGraph, CyGraphOptions, NodeData} from '../../types.flow';
+import type {
+  CyGraph,
+  CyGraphOptions,
+  CyGraphFilters,
+  NodeData,
+} from '../../types.flow';
 opaque type CyEvent = Object;
 
 Cytoscape.use(require('cytoscape-dagre'));
@@ -35,6 +40,7 @@ Cytoscape.use(require('cytoscape-popper'));
 type Props = {
   graph: CyGraph,
   options: CyGraphOptions,
+  filters: ?CyGraphFilters,
   handleSelectionChange: (?NodeData) => void,
   hash: string,
 };
@@ -70,9 +76,9 @@ class DependencyGraph extends React.Component<Props> {
       this.cy.layout({...this.layout, randomize: true}).run();
     }
 
-    if (this.props.options.layoutName !== prevProps.options.layoutName) {
-      this.layout.name = this.props.options.layoutName;
-      this.cy.layout({...this.layout, randomize: true, fit: true}).run();
+    this.handleOptionChange(prevProps.options, this.props.options);
+    if (this.props.filters != null) {
+      this.handleFilterChange(prevProps.filters, this.props.filters);
     }
   }
 
@@ -85,6 +91,65 @@ class DependencyGraph extends React.Component<Props> {
     });
     addDependencyNodes(this.cy, this.cy.nodes().toArray(), this.props.hash);
     this.cy.layout({...this.layout, randomize: true, fit: true}).run();
+  }
+
+  handleOptionChange(prevOptions: CyGraphOptions, options: CyGraphOptions) {
+    if (options.layoutName !== prevOptions.layoutName) {
+      this.layout.name = options.layoutName;
+      this.cy.layout({...this.layout, randomize: true, fit: true}).run();
+    }
+  }
+
+  handleFilterChange(prevFilters: ?CyGraphFilters, filters: CyGraphFilters) {
+    if (JSON.stringify(prevFilters) !== JSON.stringify(filters)) {
+      this.cy
+        .style()
+        .selector('node')
+        .style({
+          display: node => {
+            const depType = node.data('type');
+
+            let incomingEdges;
+            let outgoingEdges;
+            if (node.hasClass('dependencies')) {
+              const parent = this.cy.nodes().$id(node.data('parentNodeId'));
+              incomingEdges = parent.data('inverseDeps').length;
+              outgoingEdges = parent.data('deps').length;
+            } else {
+              incomingEdges = node.data('inverseDeps').length;
+              outgoingEdges = node.data('deps').length;
+            }
+
+            if (
+              filters.incomingEdgesRange != null &&
+              (incomingEdges < filters.incomingEdgesRange[0] ||
+                incomingEdges > filters.incomingEdgesRange[1])
+            ) {
+              return 'none';
+            }
+
+            if (
+              filters.outgoingEdgesRange != null &&
+              (outgoingEdges < filters.outgoingEdgesRange[0] ||
+                outgoingEdges > filters.outgoingEdgesRange[1])
+            ) {
+              return 'none';
+            }
+
+            if (
+              filters.dependencyTypes != null &&
+              !filters.dependencyTypes.includes(depType)
+            ) {
+              return 'none';
+            }
+
+            return 'element';
+          },
+        })
+        .update();
+
+      this.cy.layout(this.layout).run();
+    }
   }
 
   handleNodeTap = (evt: CyEvent) => {
