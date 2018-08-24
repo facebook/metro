@@ -17,12 +17,17 @@ const {
   getGraphToModule,
   getGraphInfo,
   getGraphFromModuleToModule,
-} = require('./graphFunctions');
+} = require('./functions');
 
 import type {Graph} from 'metro/src/DeltaBundler';
 
 const router = Router();
 let metroGraph: Graph<>;
+
+function initializeGraphRoutes(graph: Graph<>) {
+  metroGraph = graph;
+  return router;
+}
 
 /*
 * Get the whole dependency graph in a cytoscape format
@@ -98,7 +103,4 @@ router.get('/directories/:path(*)', function(req, res) {
   res.status(500).send('Unimplemented');
 });
 
-module.exports = (graph: Graph<>) => {
-  metroGraph = graph;
-  return router;
-};
+module.exports = {initializeGraphRoutes};

@@ -23,6 +23,7 @@ const handleAPIError = require('../utils/handleAPIError');
 
 const {css} = require('emotion');
 
+import {message, Row, Col, Button, Icon} from 'antd';
 import type {
   CyGraphFilters,
   CyGraphOptions,
@@ -30,8 +31,7 @@ import type {
   ModuleList,
   NodeData,
   GraphInfo,
-} from '../types.flow';
-import {message, Row, Col, Button, Icon} from 'antd';
+} from 'metro-visualizer/src/types.flow';
 
 type Props = {
   match: {

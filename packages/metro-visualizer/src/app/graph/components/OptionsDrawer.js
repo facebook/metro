@@ -16,7 +16,6 @@ const React = require('react');
 
 const {css} = require('emotion');
 
-import type {CyGraphOptions, CyGraphFilters, GraphInfo} from '../../types.flow';
 import {
   Drawer,
   Button,
@@ -27,6 +26,11 @@ import {
   Form,
   Checkbox,
 } from 'antd';
+import type {
+  CyGraphOptions,
+  CyGraphFilters,
+  GraphInfo,
+} from 'metro-visualizer/src/types.flow';
 
 type Props = {
   options: CyGraphOptions,

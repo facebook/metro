@@ -23,14 +23,14 @@ export type BuildDetails = {
   bundleSize?: number,
 };
 
-export type BundlerHistory = {
+export type MetroHistory = {
   [key: string]: {
     options: BundleOptions,
     builds: {[key: string]: BuildDetails},
   },
 };
 
-const bundlerHistory: BundlerHistory = {};
+const metroHistory: MetroHistory = {};
 
 function startRecordingHistory(logger: typeof Logger) {
   logger.on('log', logEntry => {
@@ -94,7 +94,7 @@ function recordToHistory(
   buildID: string,
   buildInfo: BuildDetails,
 ) {
-  const hist = bundlerHistory[bundleHash];
+  const hist = metroHistory[bundleHash];
   if (hist != null) {
     const buildHist = hist.builds[buildID];
     if (buildHist != null) {
@@ -103,7 +103,7 @@ function recordToHistory(
       hist.builds[buildID] = buildInfo;
     }
   } else {
-    bundlerHistory[bundleHash] = {
+    metroHistory[bundleHash] = {
       options,
       builds: {[buildID]: Object.assign(buildInfo, {isInitial: true})},
     };
@@ -111,6 +111,6 @@ function recordToHistory(
 }
 
 module.exports = {
-  bundlerHistory,
+  metroHistory,
   startRecordingHistory,
 };

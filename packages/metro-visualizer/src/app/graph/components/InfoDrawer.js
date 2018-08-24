@@ -18,8 +18,8 @@ const filesize = require('filesize');
 
 const {css} = require('emotion');
 
-import type {NodeData} from '../../types.flow';
 import {Drawer, Button, List} from 'antd';
+import type {NodeData} from 'metro-visualizer/src/types.flow';
 
 type Props = {
   data?: ?NodeData,

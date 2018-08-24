@@ -105,10 +105,16 @@ exports.runServer = async (
   const {
     attachHmrServer,
     middleware,
+    metroServer,
     end,
   } = await exports.createConnectMiddleware(config);
 
   serverApp.use(middleware);
+
+  if (config.server.enableVisualizer) {
+    const {initializeVisualizerMiddleware} = require('metro-visualizer');
+    serverApp.use('/visualizer', initializeVisualizerMiddleware(metroServer));
+  }
 
   let httpServer;
 

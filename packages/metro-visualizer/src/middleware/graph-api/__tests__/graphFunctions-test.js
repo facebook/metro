@@ -11,7 +11,7 @@
 
 'use strict';
 
-const dummyMetroGraph = require('../dummyMetroGraph');
+const testGraph = require('../testGraph');
 
 const {
   getGraphFromModule,
@@ -20,17 +20,15 @@ const {
   getGraphFromModuleToModule,
   _addPathToGraph,
   _buildGraphFromModuleToModule,
-} = require('../graphFunctions');
+} = require('../functions');
 
 it('builds inverse graph from a certain module as root', () => {
-  expect(
-    getGraphToModule(dummyMetroGraph, 'path/to/st-paul.js'),
-  ).toMatchSnapshot();
+  expect(getGraphToModule(testGraph, 'path/to/st-paul.js')).toMatchSnapshot();
 });
 
 it('builds graph from a certain module as root', () => {
   expect(
-    getGraphFromModule(dummyMetroGraph, 'path/to/liverpool-street.js'),
+    getGraphFromModule(testGraph, 'path/to/liverpool-street.js'),
   ).toMatchSnapshot();
 });
 
@@ -43,7 +41,7 @@ it('adds path to graph correctly', () => {
       'path/to/tottenham-court-road.js',
     ]),
     resultGraph,
-    dummyMetroGraph,
+    testGraph,
     false,
   );
   expect(resultGraph).toMatchSnapshot();
@@ -52,7 +50,7 @@ it('adds path to graph correctly', () => {
 it('gets graph from a module to another', () => {
   expect(
     getGraphFromModuleToModule(
-      dummyMetroGraph,
+      testGraph,
       'path/to/liverpool-street.js',
       'path/to/tottenham-court-road.js',
     ),
@@ -62,7 +60,7 @@ it('gets graph from a module to another', () => {
 it('builds inverse graph from one module to another', () => {
   const resultGraph = {nodes: new Map(), edges: []};
   _buildGraphFromModuleToModule(
-    dummyMetroGraph,
+    testGraph,
     'path/to/liverpool-street.js',
     'path/to/tottenham-court-road.js',
     resultGraph,
@@ -72,5 +70,5 @@ it('builds inverse graph from one module to another', () => {
 });
 
 it('gets module list correctly', () => {
-  expect(getGraphInfo(dummyMetroGraph)).toMatchSnapshot();
+  expect(getGraphInfo(testGraph)).toMatchSnapshot();
 });

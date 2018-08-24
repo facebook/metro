@@ -22,14 +22,14 @@ const {injectGlobal, css} = require('emotion');
 const {Link} = require('react-router-dom');
 
 import type {
-  BundlerHistory,
+  MetroHistory,
   BuildDetails,
 } from '../../middleware/metroHistory.js';
 import {message, Row, Col, Card, Tag, Icon} from 'antd';
 import type {BundleOptions} from 'metro/src/shared/types.flow.js';
 
 type State = {
-  bundlerHistory: BundlerHistory,
+  metroHistory: MetroHistory,
   selectedBundleHash?: ?string,
   showLoadingIndicator: boolean,
 };
@@ -47,8 +47,8 @@ class DashboardApp extends React.Component<mixed, State> {
         return handleAPIError(res);
       })
       .then(response => response.json())
-      .then(bundlerHistory => {
-        this.setState({bundlerHistory});
+      .then(metroHistory => {
+        this.setState({metroHistory});
       })
       .catch(error => message.error(error.message));
   }
@@ -78,14 +78,14 @@ class DashboardApp extends React.Component<mixed, State> {
 
           <Row type="flex" justify="center">
             <Col span={16}>
-              {this.state.bundlerHistory &&
-                Object.keys(this.state.bundlerHistory).map(bundleHash => (
+              {this.state.metroHistory &&
+                Object.keys(this.state.metroHistory).map(bundleHash => (
                   <Link to={`/graph/${bundleHash}`} key={bundleHash}>
                     <BundleCard
                       onClick={() =>
                         this.setState({selectedBundleHash: bundleHash})
                       }
-                      bundleInfo={this.state.bundlerHistory[bundleHash]}
+                      bundleInfo={this.state.metroHistory[bundleHash]}
                     />
                   </Link>
                 ))}

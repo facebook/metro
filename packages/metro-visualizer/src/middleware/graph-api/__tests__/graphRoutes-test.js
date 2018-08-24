@@ -12,10 +12,10 @@
 'use strict';
 
 const connect = require('connect');
-const dummyMetroGraph = require('../dummyMetroGraph');
-const graphRoutes = require('../graphRoutes');
 const request = require('supertest');
+const testGraph = require('../testGraph');
 
+const {initializeGraphRoutes} = require('../routes');
 const {parse} = require('url');
 
 const app = connect();
@@ -28,7 +28,7 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send(err.message);
 });
-app.use('/graph', graphRoutes(dummyMetroGraph));
+app.use('/graph', initializeGraphRoutes(testGraph));
 
 it('graph/info endpoint works correctly', async () => {
   const response = await request(app)

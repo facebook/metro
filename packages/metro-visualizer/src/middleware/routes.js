@@ -14,26 +14,35 @@ const Router = require('router');
 const Server = require('metro/src/Server');
 
 const fs = require('fs');
-const graphRoutes = require('./api/graphRoutes');
 const metro = require('metro');
 
-const {bundlerHistory, startRecordingHistory} = require('./metroHistory');
+const {initializeGraphRoutes} = require('./graph-api/routes');
 const {Terminal} = require('metro-core');
 const {parse} = require('url');
 
+import type {MetroHistory} from './metroHistory.js';
 import type {Graph} from 'metro/src/DeltaBundler';
 
 const router = Router();
 const terminal = new Terminal(process.stdout);
 
 let metroServer: Server;
+let metroHistory: MetroHistory;
+
+function initializeMiddlewareRoutes(server: Server, history: MetroHistory) {
+  metroServer = server;
+  metroHistory = history;
+  return router;
+}
 
 router.get('/', (req, res) => {
   const status = 'Launching visualizer';
   terminal.status(status);
 
   res.writeHead(200, {'Content-Type': 'text/html'});
-  res.write(fs.readFileSync(require.resolve('metro-visualizer/index.html')));
+  res.write(
+    fs.readFileSync(require.resolve('metro-visualizer/src/app/index.html')),
+  );
   res.end();
 
   terminal.status(`${status}, done.`);
@@ -53,7 +62,7 @@ router.use('/', (err, req, res, next) => {
 
 router.use('/graph', async (req, res, next) => {
   await getGraph(req.query.hash)
-    .then(metroGraph => graphRoutes(metroGraph)(req, res, next))
+    .then(metroGraph => initializeGraphRoutes(metroGraph)(req, res, next))
     .catch(error => {
       res.writeHead(500, {'Content-Type': 'text/plain'});
       res.write((error && error.stack) || error);
@@ -63,7 +72,7 @@ router.use('/graph', async (req, res, next) => {
 
 router.get('/bundles', async function(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.write(JSON.stringify(bundlerHistory));
+  res.write(JSON.stringify(metroHistory));
   res.end();
 });
 
@@ -72,13 +81,13 @@ router.use('/bundle.js', async (req, res, next) => {
 
   const options = {
     dev: true,
-    entry: './src/index.js',
+    entry: './src/app/index.js',
     minify: false,
     platform: 'web',
   };
 
   const config = await metro.loadConfig({
-    config: require.resolve('./metro.config.js'),
+    config: require.resolve('./build-utils/metro.config.js'),
   });
 
   await metro
@@ -118,10 +127,4 @@ async function getGraph(optionsHash: string): Promise<Graph<>> {
   return graph.then(graphInfo => graphInfo.graph);
 }
 
-function initRouter(server: Server) {
-  metroServer = server;
-  startRecordingHistory(metroServer._logger);
-  return router;
-}
-
-module.exports = initRouter;
+module.exports = {initializeMiddlewareRoutes};

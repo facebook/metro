@@ -2,7 +2,7 @@
   "name": "metro-visualizer",
   "version": "0.43.6",
   "description": "Suite of visual analysis tools for the metro bundler",
-  "main": "./src/index.js",
+  "main": "index.js",
   "license": "MIT",
   "scripts": {
     "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",

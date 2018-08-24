@@ -13,7 +13,7 @@
 'use strict';
 
 const DashboardApp = require('./dashboard/DashboardApp');
-const GraphApp = require('./dep-graph/GraphApp');
+const GraphApp = require('./graph/GraphApp');
 const React = require('react');
 const ReactDOM = require('react-dom');
 

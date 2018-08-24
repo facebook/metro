@@ -306,6 +306,7 @@ export type InputConfigT = $ReadOnly<{
     useGlobalHotkey?: boolean,
     port?: ?number,
     enhanceMiddleware?: (Middleware, Server) => Middleware,
+    enableVisualizer?: boolean,
   }>,
   serializer?: $ReadOnly<{
     /**
@@ -438,6 +439,7 @@ export type IntermediateConfigT = {
     useGlobalHotkey: boolean,
     port: number,
     enhanceMiddleware: (Middleware, Server) => Middleware,
+    enableVisualizer?: boolean,
   },
   serializer: {
     polyfillModuleNames: Array<string>, // This one is not sure

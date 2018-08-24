@@ -28,7 +28,7 @@ import type {
   CyGraphOptions,
   CyGraphFilters,
   NodeData,
-} from '../../types.flow';
+} from 'metro-visualizer/src/types.flow';
 opaque type CyEvent = Object;
 
 Cytoscape.use(require('cytoscape-dagre'));

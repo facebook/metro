@@ -17,8 +17,8 @@ const React = require('react');
 
 const {css} = require('emotion');
 
-import type {ModuleList} from '../../types.flow';
 import {Icon, Input, AutoComplete} from 'antd';
+import type {ModuleList} from 'metro-visualizer/src/types.flow';
 
 type Props = {
   data: ModuleList,
