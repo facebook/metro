@@ -13,91 +13,59 @@
 
 const constantFoldingPlugin = require('../constant-folding-plugin');
 
-const {transformSync} = require('@babel/core');
-const {transformFromAstSync} = require('@babel/core');
-
-import type {TransformResult} from '@babel/core';
-
-function constantFolding(
-  filename: string,
-  transformResult: TransformResult,
-): TransformResult {
-  return transformFromAstSync(transformResult.ast, transformResult.code, {
-    ast: false,
-    babelrc: false,
-    compact: true,
-    filename,
-    inputSourceMap: transformResult.map || undefined, // may not be null
-    plugins: [constantFoldingPlugin],
-    retainLines: true,
-    sourceFileName: filename,
-    sourceMaps: true,
-    sourceType: 'module',
-  });
-}
-
-function parse(code: string): TransformResult {
-  return transformSync(code, {
-    ast: true,
-    babelrc: false,
-    code: false,
-    compact: true,
-    plugins: [require('@babel/plugin-syntax-nullish-coalescing-operator')],
-    sourceMaps: true,
-    sourceType: 'module',
-  });
-}
-
-function normalize({code}): string {
-  if (code == null) {
-    return 'FAIL';
-  }
-  return transformSync(code, {
-    ast: false,
-    babelrc: false,
-    compact: true,
-    retainLines: false,
-    sourceType: 'module',
-  }).code;
-}
-
-function fold(filename, code): string {
-  const p = parse(code);
-  return normalize(constantFolding(filename, p));
-}
+const {compare} = require('../test-helpers');
 
 describe('constant expressions', () => {
   it('can optimize conditional expressions with constant conditions', () => {
     const code = `
       a(
-        'production'=="production",
-        'production'!=='development',
+        'production' == "production",
+        'production' !== 'development',
         false && 1 || 0 || 2,
         true || 3,
-        'android'==='ios' ? null : {},
-        'android'==='android' ? {a:1} : {a:0},
-        'foo'==='bar' ? b : c,
-        f() ? g() : h()
-      );`;
-    expect(fold('arbitrary.js', code)).toEqual(
-      'a(true,true,2,true,{},{a:1},c,f()?g():h());',
-    );
+        'android' === 'ios' ? null : {},
+        'android' === 'android' ? {a: 1} : {a: 0},
+        'foo' === 'bar' ? b : c,
+        f() ? g() : h(),
+      );
+    `;
+
+    const expected = `
+      a(true, true, 2, true, {}, {a: 1}, c, f() ? g() : h());
+    `;
+
+    compare([constantFoldingPlugin], code, expected);
   });
 
   it('can optimize ternary expressions with constant conditions', () => {
-    const code = `var a = true ? 1 : 2;
+    const code = `
+       var a = true ? 1 : 2;
        var b = 'android' == 'android'
          ? ('production' != 'production' ? 'a' : 'A')
-         : 'i';`;
-    expect(fold('arbitrary.js', code)).toEqual("var a=1;var b='A';");
+         : 'i';
+    `;
+
+    const expected = `
+      var a = 1;
+      var b = 'A';
+    `;
+
+    compare([constantFoldingPlugin], code, expected);
   });
 
   it('can optimize logical operator expressions with constant conditions', () => {
     const code = `
       var a = true || 1;
       var b = 'android' == 'android' &&
-        'production' != 'production' || null || "A";`;
-    expect(fold('arbitrary.js', code)).toEqual('var a=true;var b="A";');
+        'production' != 'production' || null || "A";
+    `;
+
+    const expected = `
+      var a = true;
+      var b = "A";
+    `;
+
+    compare([constantFoldingPlugin], code, expected);
   });
 
   it('can optimize logical operators with partly constant operands', () => {
@@ -109,9 +77,17 @@ describe('constant expressions', () => {
       var e = !1 && z();
       var f = z() && undefined || undefined;
     `;
-    expect(fold('arbitrary.js', code)).toEqual(
-      'var a="truthy";var b=z();var c=null;var d=z();var e=false;var f=z()&&undefined||undefined;',
-    );
+
+    const expected = `
+      var a = "truthy";
+      var b = z();
+      var c = null;
+      var d = z();
+      var e = false;
+      var f = z() && undefined || undefined;
+    `;
+
+    compare([constantFoldingPlugin], code, expected);
   });
 
   it('folds null coalescing operator', () => {
@@ -123,9 +99,17 @@ describe('constant expressions', () => {
       var e = NaN ?? x();
       var f = "truthy" ?? z();
     `;
-    expect(fold('arbitrary.js', code)).toEqual(
-      'var a=u();var b=v();var c=false;var d=0;var e=NaN;var f="truthy";',
-    );
+
+    const expected = `
+      var a = u();
+      var b = v();
+      var c = false;
+      var d = 0;
+      var e = NaN;
+      var f = "truthy";
+    `;
+
+    compare([constantFoldingPlugin], code, expected);
   });
 
   it('can remode an if statement with a falsy constant test', () => {
@@ -134,7 +118,8 @@ describe('constant expressions', () => {
         var a = 1;
       }
     `;
-    expect(fold('arbitrary.js', code)).toEqual('');
+
+    compare([constantFoldingPlugin], code, '');
   });
 
   it('can optimize if-else-branches with constant conditions', () => {
@@ -149,7 +134,15 @@ describe('constant expressions', () => {
         var a = 'b';
       }
     `;
-    expect(fold('arbitrary.js', code)).toEqual('{var a=3;var b=7;}');
+
+    const expected = `
+      {
+        var a = 3;
+        var b = 7;
+      }
+    `;
+
+    compare([constantFoldingPlugin], code, expected);
   });
 
   it('can optimize nested if-else constructs', () => {
@@ -168,7 +161,16 @@ describe('constant expressions', () => {
         }
       }
     `;
-    expect(fold('arbitrary.js', code)).toEqual("{{require('c');}}");
+
+    const expected = `
+      {
+        {
+          require('c');
+        }
+      }
+    `;
+
+    compare([constantFoldingPlugin], code, expected);
   });
 
   it('folds if expressions with variables', () => {
@@ -180,7 +182,11 @@ describe('constant expressions', () => {
       }
     `;
 
-    expect(fold('arbitrary.js', code)).toEqual('var x=3;');
+    const expected = `
+      var x = 3;
+    `;
+
+    compare([constantFoldingPlugin], code, expected);
   });
 
   it('folds logical expressions with variables', () => {
@@ -190,7 +196,13 @@ describe('constant expressions', () => {
       var z = (y - 4) && 4;
     `;
 
-    expect(fold('arbitrary.js', code)).toEqual('var x=3;var y=4;var z=0;');
+    const expected = `
+      var x = 3;
+      var y = 4;
+      var z = 0;
+    `;
+
+    compare([constantFoldingPlugin], code, expected);
   });
 
   it('wipes unused functions', () => {
@@ -228,17 +240,29 @@ describe('constant expressions', () => {
       zUsed();
     `;
 
-    expect(fold('arbitrary.js', code)).toEqual(
-      [
-        'var xUsed=()=>{console.log(400);};',
-        'var yUsed=function(){console.log(500);};',
-        'function zUsed(){console.log(600);}',
-        '(()=>{console.log(700);})();',
-        'xUsed();',
-        'yUsed();',
-        'zUsed();',
-      ].join(''),
-    );
+    const expected = `
+      var xUsed = () => {
+        console.log(400);
+      };
+
+      var yUsed = function() {
+        console.log(500);
+      };
+
+      function zUsed() {
+        console.log(600);
+      }
+
+      (() => {
+        console.log(700);
+      })();
+
+      xUsed();
+      yUsed();
+      zUsed();
+    `;
+
+    compare([constantFoldingPlugin], code, expected);
   });
 
   it('recursively strips off functions', () => {
@@ -250,7 +274,7 @@ describe('constant expressions', () => {
       }
     `;
 
-    expect(fold('arbitrary.js', code)).toEqual('');
+    compare([constantFoldingPlugin], code, '');
   });
 
   it('verifies that mixes of variables and functions properly minifies', () => {
@@ -263,7 +287,15 @@ describe('constant expressions', () => {
       }
     `;
 
-    expect(fold('arbitrary.js', code)).toEqual('var x=2;{z();}');
+    const expected = `
+      var x = 2;
+
+      {
+        z();
+      }
+    `;
+
+    compare([constantFoldingPlugin], code, expected);
   });
 
   it('does not mess up with negative numbers', () => {
@@ -276,19 +308,26 @@ describe('constant expressions', () => {
       var minusOne = -1;
     `;
 
-    expect(fold('arbitrary.js', code)).toEqual(
-      'var plusZero=0;var zero=0;var minusZero=-0;var plusOne=1;var one=1;var minusOne=-1;',
-    );
+    const expected = `
+      var plusZero = 0;
+      var zero = 0;
+      var minusZero = -0;
+      var plusOne = 1;
+      var one = 1;
+      var minusOne =- 1;
+    `;
+
+    compare([constantFoldingPlugin], code, expected);
   });
 
   it('does not mess up default exports', () => {
-    let code = 'export default function () {}';
-    expect(fold('arbitrary.js', code)).toEqual('export default function(){}');
-    code = 'export default () => {}';
-    expect(fold('arbitrary.js', code)).toEqual('export default(()=>{});');
-    code = 'export default class {}';
-    expect(fold('arbitrary.js', code)).toEqual('export default class{}');
-    code = 'export default 1';
-    expect(fold('arbitrary.js', code)).toEqual('export default 1;');
+    const nonChanged = [
+      'export default function () {}',
+      'export default () => {}',
+      'export default class {}',
+      'export default 1',
+    ];
+
+    nonChanged.forEach(test => compare([constantFoldingPlugin], test, test));
   });
 });
