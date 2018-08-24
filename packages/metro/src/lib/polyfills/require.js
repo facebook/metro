@@ -21,6 +21,7 @@ type Exports = any;
 type FactoryFn = (
   global: Object,
   require: RequireFn,
+  metroImportDefault: RequireFn,
   moduleObject: {exports: {}},
   exports: {},
   dependencyMap: ?DependencyMap,
@@ -40,14 +41,15 @@ type Module = {
 type ModuleID = number;
 type ModuleDefinition = {|
   dependencyMap: ?DependencyMap,
-  publicModule: Module,
+  error?: any,
   factory: FactoryFn,
   hasError: boolean,
-  error?: any,
   hot?: HotModuleReloadingData,
+  importedDefault: any,
   isInitialized: boolean,
-  verboseName?: string,
   path?: string,
+  publicModule: Module,
+  verboseName?: string,
 |};
 type PatchedModules = {[ModuleID]: boolean};
 type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
@@ -58,6 +60,10 @@ global.__d = define;
 global.__c = clear;
 
 var modules = clear();
+
+// Don't use a Symbol here, it would pull in an extra polyfill with all sorts of
+// additional stuff (e.g. Array.from).
+const EMPTY = {};
 
 function clear() {
   modules =
@@ -107,10 +113,11 @@ function define(
   }
   modules[moduleId] = {
     dependencyMap,
-    publicModule: {exports: {}},
     factory,
     hasError: false,
+    importedDefault: EMPTY,
     isInitialized: false,
+    publicModule: {exports: {}},
   };
   if (__DEV__) {
     // HMR
@@ -143,6 +150,7 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev) {
 
   //$FlowFixMe: at this point we know that moduleId is a number
   const moduleIdReallyIsNumber: number = moduleId;
+
   if (__DEV__) {
     const initializingIndex = initializingModuleIds.indexOf(
       moduleIdReallyIsNumber,
@@ -160,10 +168,35 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev) {
       );
     }
   }
+
   const module = modules[moduleIdReallyIsNumber];
+
   return module && module.isInitialized
     ? module.publicModule.exports
     : guardedLoadModule(moduleIdReallyIsNumber, module);
+}
+
+function metroImportDefault(moduleId: ModuleID | VerboseModuleNameForDev) {
+  if (__DEV__ && typeof moduleId === 'string') {
+    const verboseName = moduleId;
+    moduleId = verboseNamesToModuleIds[verboseName];
+  }
+
+  //$FlowFixMe: at this point we know that moduleId is a number
+  const moduleIdReallyIsNumber: number = moduleId;
+
+  if (
+    modules[moduleIdReallyIsNumber] &&
+    modules[moduleIdReallyIsNumber].importedDefault !== EMPTY
+  ) {
+    return modules[moduleIdReallyIsNumber].importedDefault;
+  }
+
+  const exports = metroRequire(moduleIdReallyIsNumber);
+  const importedDefault =
+    exports && exports.__esModule ? exports.default : exports;
+
+  return (modules[moduleIdReallyIsNumber].importedDefault = importedDefault);
 }
 
 let inGuard = false;
@@ -261,6 +294,7 @@ function loadModuleImplementation(moduleId, module) {
     factory(
       global,
       metroRequire,
+      metroImportDefault,
       moduleObject,
       moduleObject.exports,
       dependencyMap,

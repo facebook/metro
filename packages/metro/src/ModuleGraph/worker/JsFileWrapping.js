@@ -16,7 +16,14 @@ const template = require('@babel/template').default;
 
 const traverse = require('@babel/traverse').default;
 
-const MODULE_FACTORY_PARAMETERS = ['global', 'require', 'module', 'exports'];
+const MODULE_FACTORY_PARAMETERS = [
+  'global',
+  'require',
+  '_$$_IMPORT_DEFAULT', // In preparation for Babel's unique id generator.
+  'module',
+  'exports',
+];
+
 const POLYFILL_FACTORY_PARAMETERS = ['global'];
 const WRAP_NAME = '$$_REQUIRE'; // note: babel will prefix this with _
 

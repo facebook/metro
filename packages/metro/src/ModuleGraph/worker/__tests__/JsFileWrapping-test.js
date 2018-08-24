@@ -43,7 +43,7 @@ it('wraps a module correctly', () => {
   expect(requireName).toBe(BABEL_RENAMED);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
-      __d(function (global, ${BABEL_RENAMED}, module, exports, _dependencyMapName) {
+      __d(function (global, ${BABEL_RENAMED}, _$$_IMPORT_DEFAULT, module, exports, _dependencyMapName) {
         const dynamicRequire = ${BABEL_RENAMED};
         const a = ${BABEL_RENAMED}('b/lib/a');
         exports.do = () => ${BABEL_RENAMED}("do");
@@ -79,7 +79,7 @@ describe('safe renaming of require', () => {
         expect(requireName).toBe(BABEL_RENAMED);
         expect(codeFromAst(ast)).toEqual(
           comparableCode(`
-            __d(function (global, ${BABEL_RENAMED}, module, exports, _dependencyMapName) {
+            __d(function (global, ${BABEL_RENAMED}, _$$_IMPORT_DEFAULT, module, exports, _dependencyMapName) {
               const dynamicRequire = ${BABEL_RENAMED};
               const a = ${BABEL_RENAMED}('b/lib/a');
               ${declKeyword} ${WRAP_NAME} = 'foo';
@@ -113,7 +113,7 @@ describe('safe renaming of require', () => {
         expect(requireName).toBe(BABEL_RENAMED2);
         expect(codeFromAst(ast)).toEqual(
           comparableCode(`
-            __d(function (global, ${BABEL_RENAMED2}, module, exports, _dependencyMapName) {
+            __d(function (global, ${BABEL_RENAMED2}, _$$_IMPORT_DEFAULT, module, exports, _dependencyMapName) {
               const dynamicRequire = ${BABEL_RENAMED2};
               const a = ${BABEL_RENAMED2}('b/lib/a');
               ${declKeyword} ${BABEL_RENAMED} = 'foo';
@@ -150,7 +150,7 @@ describe('safe renaming of require', () => {
         expect(requireName).toBe(BABEL_RENAMED2);
         expect(codeFromAst(ast)).toEqual(
           comparableCode(`
-            __d(function (global, ${BABEL_RENAMED2}, module, exports, _dependencyMapName) {
+            __d(function (global, ${BABEL_RENAMED2}, _$$_IMPORT_DEFAULT, module, exports, _dependencyMapName) {
               const dynamicRequire = ${BABEL_RENAMED2};
               const a = ${BABEL_RENAMED2}('b/lib/a');
               if (a) {
@@ -201,7 +201,7 @@ it('wraps a JSON file correctly', () => {
 
   expect(comparableCode(wrappedJson)).toEqual(
     comparableCode(
-      `__d(function(global, require, module, exports) {
+      `__d(function(global, require, _$$_IMPORT_DEFAULT, module, exports) {
       module.exports = {
         "foo": "foo",
         "bar": "bar",

@@ -70,7 +70,14 @@ describe('require', () => {
     const mockFactory = jest
       .fn()
       .mockImplementation(
-        (global, require, moduleObject, exports, dependencyMap) => {
+        (
+          global,
+          require,
+          importDefault,
+          moduleObject,
+          exports,
+          dependencyMap,
+        ) => {
           moduleObject.exports = mockExports;
         },
       );
@@ -82,7 +89,7 @@ describe('require', () => {
     expect(mockFactory.mock.calls.length).toBe(1);
     expect(mockFactory.mock.calls[0][0]).toBe(moduleSystem);
     expect(m).toBe(mockExports);
-    expect(mockFactory.mock.calls[0][4]).toEqual([2, 3]);
+    expect(mockFactory.mock.calls[0][5]).toEqual([2, 3]);
   });
 
   it('works with Random Access Modules (RAM) bundles', () => {
@@ -90,7 +97,14 @@ describe('require', () => {
     const mockFactory = jest
       .fn()
       .mockImplementation(
-        (global, require, moduleObject, exports, dependencyMap) => {
+        (
+          global,
+          require,
+          importDefault,
+          moduleObject,
+          exports,
+          dependencyMap,
+        ) => {
           moduleObject.exports = mockExports;
         },
       );
@@ -122,7 +136,7 @@ describe('require', () => {
       expect(mockFactory.mock.calls.length).toBe(1);
       expect(mockFactory.mock.calls[0][0]).toBe(moduleSystem);
       expect(m).toBe(mockExports);
-      expect(mockFactory.mock.calls[0][4]).toEqual([2, 3]);
+      expect(mockFactory.mock.calls[0][5]).toEqual([2, 3]);
     });
   });
 
@@ -134,7 +148,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'index.js',
-        (global, require, module, exports) => {
+        (global, require, importDefault, module, exports) => {
           expect(module.exports).toBe(exports);
           done();
         },
@@ -146,9 +160,14 @@ describe('require', () => {
     it('exports values correctly via the module.exports variable', () => {
       createModuleSystem(moduleSystem, false);
 
-      createModule(moduleSystem, 0, 'index.js', (global, require, module) => {
-        module.exports = 'foo';
-      });
+      createModule(
+        moduleSystem,
+        0,
+        'index.js',
+        (global, require, importDefault, module) => {
+          module.exports = 'foo';
+        },
+      );
 
       expect(moduleSystem.__r(0)).toEqual('foo');
     });
@@ -160,7 +179,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'index.js',
-        (global, require, module, exports) => {
+        (global, require, importDefault, module, exports) => {
           exports.foo = 'foo';
         },
       );
@@ -175,7 +194,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'index.js',
-        (global, require, module, exports) => {
+        (global, require, importDefault, module, exports) => {
           // do nothing
         },
       );
@@ -190,7 +209,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'index.js',
-        (global, require, module, exports) => {
+        (global, require, importDefault, module, exports) => {
           module.exports.a = 'test';
           exports.b = 'test2';
         },
@@ -213,9 +232,14 @@ describe('require', () => {
     it('exposes module.id as path on the module in dev mode', () => {
       createModuleSystem(moduleSystem, true);
 
-      createModule(moduleSystem, 0, 'index.js', (global, require, module) => {
-        module.exports = module.id;
-      });
+      createModule(
+        moduleSystem,
+        0,
+        'index.js',
+        (global, require, importDefault, module) => {
+          module.exports = module.id;
+        },
+      );
 
       expect(moduleSystem.__r(0)).toEqual('index.js');
     });
@@ -223,9 +247,14 @@ describe('require', () => {
     it("doesn't expose module.id as moduleId on the module in prod mode", () => {
       createModuleSystem(moduleSystem, false);
 
-      createModule(moduleSystem, 0, 'index.js', (global, require, module) => {
-        module.exports = module.id;
-      });
+      createModule(
+        moduleSystem,
+        0,
+        'index.js',
+        (global, require, importDefault, module) => {
+          module.exports = module.id;
+        },
+      );
 
       expect(moduleSystem.__r(0)).toBeUndefined();
     });
@@ -233,15 +262,25 @@ describe('require', () => {
     it('handles requires/exports correctly', () => {
       createModuleSystem(moduleSystem, false);
 
-      createModule(moduleSystem, 0, 'foo.js', (global, require, module) => {
-        module.exports = require(1).bar;
-      });
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, module) => {
+          module.exports = require(1).bar;
+        },
+      );
 
-      createModule(moduleSystem, 1, 'bar.js', (global, require, module) => {
-        module.exports = {
-          bar: 'barExported',
-        };
-      });
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, module) => {
+          module.exports = {
+            bar: 'barExported',
+          };
+        },
+      );
 
       expect(moduleSystem.__r(0)).toEqual('barExported');
     });
@@ -251,11 +290,16 @@ describe('require', () => {
 
       const fn = jest.fn();
 
-      createModule(moduleSystem, 0, 'foo.js', (global, require, module) => {
-        fn();
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, module) => {
+          fn();
 
-        module.exports = 'my value';
-      });
+          module.exports = 'my value';
+        },
+      );
 
       expect(moduleSystem.__r(0)).toEqual('my value');
       expect(moduleSystem.__r(0)).toEqual('my value');
@@ -266,9 +310,14 @@ describe('require', () => {
     it('throws an error when trying to require an unknown module', () => {
       createModuleSystem(moduleSystem, false);
 
-      createModule(moduleSystem, 0, 'foo.js', (global, require, module) => {
-        require(99);
-      });
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, module) => {
+          require(99);
+        },
+      );
 
       expect(() => moduleSystem.__r(0)).toThrow(
         'Requiring unknown module "99"',
@@ -278,9 +327,14 @@ describe('require', () => {
     it('throws an error when a module throws an error', () => {
       createModuleSystem(moduleSystem, false);
 
-      createModule(moduleSystem, 0, 'foo.js', (global, require, module) => {
-        throw new Error('foo!');
-      });
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, module) => {
+          throw new Error('foo!');
+        },
+      );
 
       // First time it throws the original error.
       expect(() => moduleSystem.__r(0)).toThrow('foo!');
@@ -298,14 +352,19 @@ describe('require', () => {
         moduleSystem,
         0,
         'foo.js',
-        (global, require, module, exports, dependencyMap) => {
+        (global, require, importDefault, module, exports, dependencyMap) => {
           module.exports = require(dependencyMap[0]);
         },
         [33],
       );
-      createModule(moduleSystem, 33, 'foo.js', (global, require, module) => {
-        module.exports = 'module 33';
-      });
+      createModule(
+        moduleSystem,
+        33,
+        'foo.js',
+        (global, require, importDefault, module) => {
+          module.exports = 'module 33';
+        },
+      );
 
       expect(moduleSystem.__r(0)).toEqual('module 33');
     });
@@ -313,9 +372,14 @@ describe('require', () => {
     it('allows to require verboseNames in dev mode', () => {
       createModuleSystem(moduleSystem, true);
 
-      createModule(moduleSystem, 0, 'foo.js', (global, require, module) => {
-        module.exports = 'Hi!';
-      });
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, module) => {
+          module.exports = 'Hi!';
+        },
+      );
 
       const warn = console.warn;
       console.warn = jest.fn();
@@ -331,9 +395,14 @@ describe('require', () => {
     it('throws an error when requiring an incorrect verboseNames in dev mode', () => {
       createModuleSystem(moduleSystem, true);
 
-      createModule(moduleSystem, 0, 'foo.js', (global, require, module) => {
-        module.exports = 'Hi!';
-      });
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, module) => {
+          module.exports = 'Hi!';
+        },
+      );
 
       expect(() => moduleSystem.__r('wrong.js')).toThrow(
         'Unknown named module: "wrong.js"',
@@ -346,7 +415,7 @@ describe('require', () => {
       let requireOld;
       let requireNew;
 
-      const factory = jest.fn((global, require, module) => {
+      const factory = jest.fn((global, require, importDefault, module) => {
         module.exports.name = 'foo';
       });
 
@@ -424,15 +493,25 @@ describe('require', () => {
     it('sets the exports value to their current value', () => {
       createModuleSystem(moduleSystem, false);
 
-      createModule(moduleSystem, 0, 'foo.js', (global, require, module) => {
-        module.exports = require(1).bar();
-      });
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, module) => {
+          module.exports = require(1).bar();
+        },
+      );
 
-      createModule(moduleSystem, 1, 'foo.js', (global, require, module) => {
-        module.exports.bar = function() {
-          return require(0);
-        };
-      });
+      createModule(
+        moduleSystem,
+        1,
+        'foo.js',
+        (global, require, importDefault, module) => {
+          module.exports.bar = function() {
+            return require(0);
+          };
+        },
+      );
 
       expect(moduleSystem.__r(0)).toEqual({});
     });
@@ -440,18 +519,28 @@ describe('require', () => {
     it('handles well requires on previously defined exports', () => {
       createModuleSystem(moduleSystem, false);
 
-      createModule(moduleSystem, 0, 'foo.js', (global, require, module) => {
-        module.exports.foo = 'foo';
-        module.exports.bar = require(1).bar();
-        module.exports.baz = 'baz';
-      });
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, module) => {
+          module.exports.foo = 'foo';
+          module.exports.bar = require(1).bar();
+          module.exports.baz = 'baz';
+        },
+      );
 
-      createModule(moduleSystem, 1, 'foo.js', (global, require, module) => {
-        module.exports.bar = function() {
-          expect(require(0).baz).not.toBeDefined();
-          return require(0).foo + '-cyclic';
-        };
-      });
+      createModule(
+        moduleSystem,
+        1,
+        'foo.js',
+        (global, require, importDefault, module) => {
+          module.exports.bar = function() {
+            expect(require(0).baz).not.toBeDefined();
+            return require(0).foo + '-cyclic';
+          };
+        },
+      );
 
       expect(moduleSystem.__r(0)).toEqual({
         bar: 'foo-cyclic',
@@ -463,20 +552,118 @@ describe('require', () => {
     it('handles well requires when redefining module.exports', () => {
       createModuleSystem(moduleSystem, false);
 
-      createModule(moduleSystem, 0, 'foo.js', (global, require, module) => {
-        module.exports = {
-          foo: 'foo',
-        };
-        module.exports.bar = require(1).bar();
-      });
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, module) => {
+          module.exports = {
+            foo: 'foo',
+          };
+          module.exports.bar = require(1).bar();
+        },
+      );
 
-      createModule(moduleSystem, 1, 'foo.js', (global, require, module) => {
-        module.exports.bar = function() {
-          return require(0).foo + '-cyclic';
-        };
-      });
+      createModule(
+        moduleSystem,
+        1,
+        'foo.js',
+        (global, require, importDefault, module) => {
+          module.exports.bar = function() {
+            return require(0).foo + '-cyclic';
+          };
+        },
+      );
 
       expect(moduleSystem.__r(0)).toEqual({foo: 'foo', bar: 'foo-cyclic'});
+    });
+  });
+
+  describe('ES6 module support with Babel interoperability', () => {
+    it('supports default imports from ES6 modules', () => {
+      createModuleSystem(moduleSystem, false);
+
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, module, exports) => {
+          expect(importDefault(1)).toEqual({bar: 'bar'});
+        },
+      );
+
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, module, exports) => {
+          exports.__esModule = true;
+          exports.default = {bar: 'bar'};
+        },
+      );
+
+      expect.assertions(1);
+      moduleSystem.__r(0);
+    });
+
+    it('supports default imports from non-ES6 modules', () => {
+      createModuleSystem(moduleSystem, false);
+
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, module, exports) => {
+          expect(importDefault(1)).toEqual({bar: 'bar'});
+          expect(importDefault(2)).toBe(null);
+        },
+      );
+
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, module, exports) => {
+          module.exports = {bar: 'bar'};
+        },
+      );
+
+      createModule(
+        moduleSystem,
+        2,
+        'bar.js',
+        (global, require, importDefault, module, exports) => {
+          module.exports = null;
+        },
+      );
+
+      expect.assertions(2);
+      moduleSystem.__r(0);
+    });
+
+    it('supports named imports', () => {
+      createModuleSystem(moduleSystem, false);
+
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, module, exports) => {
+          expect(require(1).bar).toBe('potato');
+        },
+      );
+
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, module, exports) => {
+          module.exports.bar = 'potato';
+        },
+      );
+
+      expect.assertions(1);
+      moduleSystem.__r(0);
     });
   });
 });

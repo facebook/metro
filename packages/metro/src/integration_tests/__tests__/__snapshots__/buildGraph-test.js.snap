@@ -4,7 +4,7 @@ exports[`should build the dependency graph 1`] = `
 Array [
   Object {
     "data": Object {
-      "code": "__d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {
+      "code": "__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, module, exports, _dependencyMap) {
   'use strict';
 
   var Bar = _$$_REQUIRE(_dependencyMap[0]);
