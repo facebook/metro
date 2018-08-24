@@ -74,6 +74,7 @@ describe('require', () => {
           global,
           require,
           importDefault,
+          importAll,
           moduleObject,
           exports,
           dependencyMap,
@@ -89,7 +90,7 @@ describe('require', () => {
     expect(mockFactory.mock.calls.length).toBe(1);
     expect(mockFactory.mock.calls[0][0]).toBe(moduleSystem);
     expect(m).toBe(mockExports);
-    expect(mockFactory.mock.calls[0][5]).toEqual([2, 3]);
+    expect(mockFactory.mock.calls[0][6]).toEqual([2, 3]);
   });
 
   it('works with Random Access Modules (RAM) bundles', () => {
@@ -101,6 +102,7 @@ describe('require', () => {
           global,
           require,
           importDefault,
+          importAll,
           moduleObject,
           exports,
           dependencyMap,
@@ -136,7 +138,7 @@ describe('require', () => {
       expect(mockFactory.mock.calls.length).toBe(1);
       expect(mockFactory.mock.calls[0][0]).toBe(moduleSystem);
       expect(m).toBe(mockExports);
-      expect(mockFactory.mock.calls[0][5]).toEqual([2, 3]);
+      expect(mockFactory.mock.calls[0][6]).toEqual([2, 3]);
     });
   });
 
@@ -148,7 +150,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'index.js',
-        (global, require, importDefault, module, exports) => {
+        (global, require, importDefault, importAll, module, exports) => {
           expect(module.exports).toBe(exports);
           done();
         },
@@ -164,7 +166,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'index.js',
-        (global, require, importDefault, module) => {
+        (global, require, importDefault, importAll, module) => {
           module.exports = 'foo';
         },
       );
@@ -179,7 +181,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'index.js',
-        (global, require, importDefault, module, exports) => {
+        (global, require, importDefault, importAll, module, exports) => {
           exports.foo = 'foo';
         },
       );
@@ -194,7 +196,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'index.js',
-        (global, require, importDefault, module, exports) => {
+        (global, require, importDefault, importAll, module, exports) => {
           // do nothing
         },
       );
@@ -209,7 +211,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'index.js',
-        (global, require, importDefault, module, exports) => {
+        (global, require, importDefault, importAll, module, exports) => {
           module.exports.a = 'test';
           exports.b = 'test2';
         },
@@ -236,7 +238,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'index.js',
-        (global, require, importDefault, module) => {
+        (global, require, importDefault, importAll, module) => {
           module.exports = module.id;
         },
       );
@@ -251,7 +253,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'index.js',
-        (global, require, importDefault, module) => {
+        (global, require, importDefault, importAll, module) => {
           module.exports = module.id;
         },
       );
@@ -266,7 +268,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'foo.js',
-        (global, require, importDefault, module) => {
+        (global, require, importDefault, importAll, module) => {
           module.exports = require(1).bar;
         },
       );
@@ -275,7 +277,7 @@ describe('require', () => {
         moduleSystem,
         1,
         'bar.js',
-        (global, require, importDefault, module) => {
+        (global, require, importDefault, importAll, module) => {
           module.exports = {
             bar: 'barExported',
           };
@@ -294,7 +296,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'foo.js',
-        (global, require, importDefault, module) => {
+        (global, require, importDefault, importAll, module) => {
           fn();
 
           module.exports = 'my value';
@@ -314,7 +316,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'foo.js',
-        (global, require, importDefault, module) => {
+        (global, require, importDefault, importAll, module) => {
           require(99);
         },
       );
@@ -331,7 +333,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'foo.js',
-        (global, require, importDefault, module) => {
+        (global, require, importDefault, importAll, module) => {
           throw new Error('foo!');
         },
       );
@@ -352,7 +354,15 @@ describe('require', () => {
         moduleSystem,
         0,
         'foo.js',
-        (global, require, importDefault, module, exports, dependencyMap) => {
+        (
+          global,
+          require,
+          importDefault,
+          importAll,
+          module,
+          exports,
+          dependencyMap,
+        ) => {
           module.exports = require(dependencyMap[0]);
         },
         [33],
@@ -361,7 +371,7 @@ describe('require', () => {
         moduleSystem,
         33,
         'foo.js',
-        (global, require, importDefault, module) => {
+        (global, require, importDefault, importAll, module) => {
           module.exports = 'module 33';
         },
       );
@@ -376,7 +386,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'foo.js',
-        (global, require, importDefault, module) => {
+        (global, require, importDefault, importAll, module) => {
           module.exports = 'Hi!';
         },
       );
@@ -399,7 +409,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'foo.js',
-        (global, require, importDefault, module) => {
+        (global, require, importDefault, importAll, module) => {
           module.exports = 'Hi!';
         },
       );
@@ -415,9 +425,11 @@ describe('require', () => {
       let requireOld;
       let requireNew;
 
-      const factory = jest.fn((global, require, importDefault, module) => {
-        module.exports.name = 'foo';
-      });
+      const factory = jest.fn(
+        (global, require, importDefault, importAll, module) => {
+          module.exports.name = 'foo';
+        },
+      );
 
       function defineModule0() {
         createModule(moduleSystem, 0, 'foo.js', factory);
@@ -497,7 +509,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'foo.js',
-        (global, require, importDefault, module) => {
+        (global, require, importDefault, importAll, module) => {
           module.exports = require(1).bar();
         },
       );
@@ -506,7 +518,7 @@ describe('require', () => {
         moduleSystem,
         1,
         'foo.js',
-        (global, require, importDefault, module) => {
+        (global, require, importDefault, importAll, module) => {
           module.exports.bar = function() {
             return require(0);
           };
@@ -523,7 +535,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'foo.js',
-        (global, require, importDefault, module) => {
+        (global, require, importDefault, importAll, module) => {
           module.exports.foo = 'foo';
           module.exports.bar = require(1).bar();
           module.exports.baz = 'baz';
@@ -534,7 +546,7 @@ describe('require', () => {
         moduleSystem,
         1,
         'foo.js',
-        (global, require, importDefault, module) => {
+        (global, require, importDefault, importAll, module) => {
           module.exports.bar = function() {
             expect(require(0).baz).not.toBeDefined();
             return require(0).foo + '-cyclic';
@@ -556,7 +568,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'foo.js',
-        (global, require, importDefault, module) => {
+        (global, require, importDefault, importAll, module) => {
           module.exports = {
             foo: 'foo',
           };
@@ -568,7 +580,7 @@ describe('require', () => {
         moduleSystem,
         1,
         'foo.js',
-        (global, require, importDefault, module) => {
+        (global, require, importDefault, importAll, module) => {
           module.exports.bar = function() {
             return require(0).foo + '-cyclic';
           };
@@ -587,7 +599,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'foo.js',
-        (global, require, importDefault, module, exports) => {
+        (global, require, importDefault, importAll, module, exports) => {
           expect(importDefault(1)).toEqual({bar: 'bar'});
         },
       );
@@ -596,7 +608,7 @@ describe('require', () => {
         moduleSystem,
         1,
         'bar.js',
-        (global, require, importDefault, module, exports) => {
+        (global, require, importDefault, importAll, module, exports) => {
           exports.__esModule = true;
           exports.default = {bar: 'bar'};
         },
@@ -613,7 +625,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'foo.js',
-        (global, require, importDefault, module, exports) => {
+        (global, require, importDefault, importAll, module, exports) => {
           expect(importDefault(1)).toEqual({bar: 'bar'});
           expect(importDefault(2)).toBe(null);
         },
@@ -623,7 +635,7 @@ describe('require', () => {
         moduleSystem,
         1,
         'bar.js',
-        (global, require, importDefault, module, exports) => {
+        (global, require, importDefault, importAll, module, exports) => {
           module.exports = {bar: 'bar'};
         },
       );
@@ -632,7 +644,7 @@ describe('require', () => {
         moduleSystem,
         2,
         'bar.js',
-        (global, require, importDefault, module, exports) => {
+        (global, require, importDefault, importAll, module, exports) => {
           module.exports = null;
         },
       );
@@ -648,7 +660,7 @@ describe('require', () => {
         moduleSystem,
         0,
         'foo.js',
-        (global, require, importDefault, module, exports) => {
+        (global, require, importDefault, importAll, module, exports) => {
           expect(require(1).bar).toBe('potato');
         },
       );
@@ -657,12 +669,67 @@ describe('require', () => {
         moduleSystem,
         1,
         'bar.js',
-        (global, require, importDefault, module, exports) => {
+        (global, require, importDefault, importAll, module, exports) => {
           module.exports.bar = 'potato';
         },
       );
 
       expect.assertions(1);
+      moduleSystem.__r(0);
+    });
+
+    it('supports wildcard imports from ES6 modules', () => {
+      createModuleSystem(moduleSystem, false);
+
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          expect(importAll(1)).toMatchObject({default: 'bar', baz: 'baz'});
+        },
+      );
+
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          exports.__esModule = true;
+          exports.default = 'bar';
+          exports.baz = 'baz';
+        },
+      );
+
+      expect.assertions(1);
+      moduleSystem.__r(0);
+    });
+
+    it('supports wildcard imports from non-ES6 modules', () => {
+      createModuleSystem(moduleSystem, false);
+
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          expect(importAll(1).default).toBeInstanceOf(Function);
+          expect(importAll(1).default).toBe(importDefault(1));
+          expect(importAll(1).bar).toBe('bar');
+        },
+      );
+
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          module.exports = function bar() {};
+          module.exports.bar = 'bar';
+        },
+      );
+
+      expect.assertions(3);
       moduleSystem.__r(0);
     });
   });

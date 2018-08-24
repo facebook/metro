@@ -20,6 +20,7 @@ const MODULE_FACTORY_PARAMETERS = [
   'global',
   'require',
   '_$$_IMPORT_DEFAULT', // In preparation for Babel's unique id generator.
+  '_$$_IMPORT_ALL', // In preparation for Babel's unique id generator.
   'module',
   'exports',
 ];

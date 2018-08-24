@@ -70,7 +70,7 @@ describe('optimizing JS modules', () => {
       injectedVars = nullthrows(
         optimized.code.match(/function\(([^)]*)/),
       )[1].split(',');
-      [, requireName, , , , dependencyMapName] = injectedVars;
+      [, requireName, , , , , dependencyMapName] = injectedVars;
     });
 
     it('optimizes code', () => {

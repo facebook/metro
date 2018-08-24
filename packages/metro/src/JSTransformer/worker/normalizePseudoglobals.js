@@ -16,7 +16,7 @@ import type {Ast} from '@babel/core';
 
 function normalizePseudoglobals(ast: Ast): $ReadOnlyArray<string> {
   let pseudoglobals = [];
-  let reserved = [];
+  const reserved = [];
   let params = null;
   let body = null;
 
@@ -34,9 +34,29 @@ function normalizePseudoglobals(ast: Ast): $ReadOnlyArray<string> {
         }
 
         pseudoglobals = params.map(path => path.node.name);
-        reserved = pseudoglobals.map(name => {
-          return (name.match(/[a-z]/i) || [''])[0].toLowerCase();
-        });
+
+        for (let i = 0; i < pseudoglobals.length; i++) {
+          // Try finding letters that are semantically relatable to the name
+          // of the variable given. For instance, in XMLHttpRequest, it will
+          // first match "X", then "H", then "R".
+          const regexp = /^[^A-Za-z]*([A-Za-z])|([A-Z])[a-z]|([A-Z])[A-Z]+$/g;
+          let match;
+
+          while ((match = regexp.exec(pseudoglobals[i]))) {
+            const name = (match[1] || match[2] || match[3] || '').toLowerCase();
+
+            if (!name) {
+              throw new ReferenceError(
+                'Could not identify any valid name for ' + pseudoglobals[i],
+              );
+            }
+
+            if (reserved.indexOf(name) === -1) {
+              reserved[i] = name;
+              break;
+            }
+          }
+        }
 
         if (new Set(reserved).size !== pseudoglobals.length) {
           throw new ReferenceError(

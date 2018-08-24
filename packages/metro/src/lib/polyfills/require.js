@@ -22,6 +22,7 @@ type FactoryFn = (
   global: Object,
   require: RequireFn,
   metroImportDefault: RequireFn,
+  metroImportAll: RequireFn,
   moduleObject: {exports: {}},
   exports: {},
   dependencyMap: ?DependencyMap,
@@ -45,6 +46,7 @@ type ModuleDefinition = {|
   factory: FactoryFn,
   hasError: boolean,
   hot?: HotModuleReloadingData,
+  importedAll: any,
   importedDefault: any,
   isInitialized: boolean,
   path?: string,
@@ -64,6 +66,7 @@ var modules = clear();
 // Don't use a Symbol here, it would pull in an extra polyfill with all sorts of
 // additional stuff (e.g. Array.from).
 const EMPTY = {};
+const {hasOwnProperty} = {};
 
 function clear() {
   modules =
@@ -115,6 +118,7 @@ function define(
     dependencyMap,
     factory,
     hasError: false,
+    importedAll: EMPTY,
     importedDefault: EMPTY,
     isInitialized: false,
     publicModule: {exports: {}},
@@ -197,6 +201,45 @@ function metroImportDefault(moduleId: ModuleID | VerboseModuleNameForDev) {
     exports && exports.__esModule ? exports.default : exports;
 
   return (modules[moduleIdReallyIsNumber].importedDefault = importedDefault);
+}
+
+function metroImportAll(moduleId) {
+  if (__DEV__ && typeof moduleId === 'string') {
+    const verboseName = moduleId;
+    moduleId = verboseNamesToModuleIds[verboseName];
+  }
+
+  //$FlowFixMe: at this point we know that moduleId is a number
+  const moduleIdReallyIsNumber: number = moduleId;
+
+  if (
+    modules[moduleIdReallyIsNumber] &&
+    modules[moduleIdReallyIsNumber].importedAll !== EMPTY
+  ) {
+    return modules[moduleIdReallyIsNumber].importedAll;
+  }
+
+  const exports = metroRequire(moduleIdReallyIsNumber);
+  let importedAll;
+
+  if (exports && exports.__esModule) {
+    importedAll = exports;
+  } else {
+    importedAll = {};
+
+    // Refrain from using Object.assign, it has to work in ES3 environments.
+    if (exports) {
+      for (const key in exports) {
+        if (hasOwnProperty.call(exports, key)) {
+          importedAll[key] = exports[key];
+        }
+      }
+    }
+
+    importedAll.default = exports;
+  }
+
+  return (modules[moduleIdReallyIsNumber].importedAll = importedAll);
 }
 
 let inGuard = false;
@@ -295,6 +338,7 @@ function loadModuleImplementation(moduleId, module) {
       global,
       metroRequire,
       metroImportDefault,
+      metroImportAll,
       moduleObject,
       moduleObject.exports,
       dependencyMap,

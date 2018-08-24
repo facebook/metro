@@ -102,7 +102,7 @@ describe('code transformation worker:', () => {
     expect(result.output[0].type).toBe('js/module');
     expect(result.output[0].data.code).toBe(
       [
-        '__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, module, exports, _dependencyMap) {',
+        '__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {',
         '  arbitrary(code);',
         '});',
       ].join('\n'),
@@ -140,7 +140,7 @@ describe('code transformation worker:', () => {
     expect(result.output[0].type).toBe('js/module');
     expect(result.output[0].data.code).toBe(
       [
-        '__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, module, exports, _dependencyMap) {',
+        '__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {',
         "  'use strict';",
         '',
         '  var _c = babelHelpers.interopRequireDefault(_$$_REQUIRE(_dependencyMap[0], "./c"));',
@@ -224,7 +224,7 @@ describe('code transformation worker:', () => {
         },
       )).output[0].data.code,
     ).toBe(
-      ['__d(function (g, r, i, m, e, d) {', '  minified(code);', '});'].join(
+      ['__d(function (g, r, i, a, m, e, d) {', '  minified(code);', '});'].join(
         '\n',
       ),
     );
@@ -250,7 +250,7 @@ describe('code transformation worker:', () => {
       )).output[0].data.code,
     ).toBe(
       [
-        '__d(function(global, require, _$$_IMPORT_DEFAULT, module, exports) {',
+        '__d(function(global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports) {',
         '  module.exports = minified(code);;',
         '});',
       ].join('\n'),
