@@ -320,13 +320,17 @@ function resolveFile(
   let assetResult = null;
   if (isMaybeAssetFile(fileNameHint)) {
     assetResult = resolveAssetFiles(
-    resolveAsset,
-    dirPath,
-    fileNameHint,
-    platform);
+      resolveAsset,
+      dirPath,
+      fileNameHint,
+      platform,
+    );
 
     if (assetResult.type !== 'failed') {
-      return mapResult(assetResult, filePaths => ({ type: 'assetFiles', filePaths }));
+      return mapResult(assetResult, filePaths => ({
+        type: 'assetFiles',
+        filePaths,
+      }));
     }
   }
 
@@ -337,7 +341,10 @@ function resolveFile(
   if (filePath != null) {
     return resolvedAs({type: 'sourceFile', filePath});
   }
-  return assetResult || failedFor({ type: 'sourceFile', filePathPrefix, candidateExts });
+  return (
+    assetResult ||
+    failedFor({type: 'sourceFile', filePathPrefix, candidateExts})
+  );
 }
 
 type SourceFileContext = SourceFileForAllExtsContext & {
