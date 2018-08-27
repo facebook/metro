@@ -332,7 +332,7 @@ function resolveFile(
 
   const candidateExts = [];
   const filePathPrefix = path.join(dirPath, fileNameHint);
-  const sfContext = _extends({}, context, { candidateExts, filePathPrefix });
+  const sfContext = {...context, candidateExts, filePathPrefix};
   const filePath = resolveSourceFile(sfContext, platform);
   if (filePath != null) {
     return resolvedAs({type: 'sourceFile', filePath});

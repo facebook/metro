@@ -20,7 +20,7 @@ import type {Moduleish, Packageish} from './ResolutionRequest';
 import type {
   CustomResolver,
   DoesFileExist,
-  IsAssetFile,
+  IsMaybeAssetFile,
   ResolveAsset,
   Resolution,
 } from 'metro-resolver';

@@ -17,7 +17,7 @@ export type {
   FileAndDirCandidates,
   FileCandidates,
   FileResolution,
-  IsAssetFile,
+  IsMaybeAssetFile,
   ResolutionContext,
   Resolution,
   ResolveAsset,
