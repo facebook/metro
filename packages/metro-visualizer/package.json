@@ -1,6 +1,6 @@
 {
   "name": "metro-visualizer",
-  "version": "0.43.6",
+  "version": "0.44.0",
   "description": "Suite of visual analysis tools for the metro bundler",
   "main": "index.js",
   "license": "MIT",
@@ -35,8 +35,8 @@
     "tippy.js": "^2.5.4"
   },
   "peerDependencies": {
-    "metro": "^0.43.6",
-    "metro-babel-register": "^0.43.6",
-    "metro-core": "^0.43.6"
+    "metro": "0.44.0",
+    "metro-babel-register": "0.44.0",
+    "metro-core": "0.44.0"
   }
 }
