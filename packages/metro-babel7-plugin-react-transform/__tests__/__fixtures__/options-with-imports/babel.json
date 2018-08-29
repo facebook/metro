@@ -1,0 +1,7 @@
+{
+  "transforms": [{
+    "transform": "transform-lib",
+    "locals": [],
+    "imports": ["react", "react-dom"]
+  }]
+}

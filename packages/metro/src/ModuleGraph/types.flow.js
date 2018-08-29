@@ -1,35 +1,25 @@
 /**
  * Copyright (c) 2016-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
  */
 'use strict';
 
-import type {Ast} from 'babel-core';
+import type {Ast} from '@babel/core';
+import type {BabelSourceMap} from '@babel/core';
 import type {Console} from 'console';
-import type {
-  FBSourceMap,
-  MappingsMap,
-  MetroSourceMap as SourceMap,
-} from 'metro-source-map';
+import type {FBSourceMap, MetroSourceMap} from 'metro-source-map';
 
-export type {Transformer} from '../JSTransformer/worker';
-
-export type BuildResult = {|
-  ...GraphResult,
-  prependedScripts: $ReadOnlyArray<Module>,
-|};
+export type BuildResult = GraphResult;
 
 export type Callback<A = void, B = void> = (Error => void) &
   ((null | void, A, B) => void);
 
-type Dependency = {|
+export type Dependency = {|
   id: string,
   +isAsync: boolean,
   path: string,
@@ -37,7 +27,7 @@ type Dependency = {|
 
 export type File = {|
   code: string,
-  map: ?MappingsMap,
+  map: ?BabelSourceMap,
   path: string,
   type: CodeFileTypes,
 |};
@@ -57,8 +47,8 @@ type GraphOptions = {|
 |};
 
 export type GraphResult = {|
-  entryModules: $ReadOnlyArray<Module>,
-  modules: $ReadOnlyArray<Module>,
+  entryModules: Array<Module>,
+  modules: Array<Module>,
 |};
 
 export type ModuleIds = {|
@@ -105,11 +95,13 @@ export type Module = {|
 |};
 
 export type PostProcessModules = (
-  modules: Iterable<Module>,
+  modules: $ReadOnlyArray<Module>,
   entryPoints: Array<string>,
-) => Iterable<Module>;
+) => $ReadOnlyArray<Module>;
 
-export type OutputFn<M: FBSourceMap | SourceMap = FBSourceMap | SourceMap> = ({|
+export type OutputFn<
+  M: FBSourceMap | MetroSourceMap = FBSourceMap | MetroSourceMap,
+> = ({|
   filename: string,
   idsForPath: IdsForPathFn,
   modules: Iterable<Module>,
@@ -117,7 +109,7 @@ export type OutputFn<M: FBSourceMap | SourceMap = FBSourceMap | SourceMap> = ({|
   sourceMapPath?: ?string,
 |}) => OutputResult<M>;
 
-type OutputResult<M: FBSourceMap | SourceMap> = {|
+type OutputResult<M: FBSourceMap | MetroSourceMap> = {|
   code: string | Buffer,
   extraFiles?: Iterable<[string, string | Buffer]>,
   map: M,
@@ -144,7 +136,7 @@ type ResolveOptions = {
 export type TransformerResult = {|
   ast: ?Ast,
   code: string,
-  map: ?MappingsMap,
+  map: ?BabelSourceMap,
 |};
 
 export type TransformResultDependency = {|
@@ -154,17 +146,24 @@ export type TransformResultDependency = {|
    */
   +name: string,
   /**
-   * If `true` this dependency is due to a dynamic `import()` call. If `false`,
-   * this dependency was pulled using a synchronous `require()` call.
+   * Extra data returned by the dependency extractor. Whatever is added here is
+   * blindly piped by Metro to the serializers.
    */
-  +isAsync: boolean,
+  +data: {|
+    /**
+     * If `true` this dependency is due to a dynamic `import()` call. If `false`,
+     * this dependency was pulled using a synchronous `require()` call.
+     */
+    +isAsync: boolean,
+  |},
 |};
 
 export type TransformResult = {|
   code: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   dependencyMapName?: string,
-  map: ?MappingsMap,
+  map: ?BabelSourceMap,
+  requireName: string,
 |};
 
 export type TransformResults = {[string]: TransformResult};
@@ -199,6 +198,10 @@ export type AssetFile = {|
    */
   +contentType: string,
   /**
+   * Hash of the asset file content.
+   */
+  +hash: string,
+  /**
    * The path of the original file for this asset. For example
    * `foo/bar@3x.ios.png`. This is most useful for reporting purposes, such as
    * error messages.
@@ -229,6 +232,9 @@ export type TransformedSourceFile =
   | {|
       +type: 'asset',
       +details: AssetFile,
+    |}
+  | {|
+      +type: 'unknown',
     |};
 
 export type LibraryOptions = {|
@@ -255,7 +261,7 @@ export type ResolvedCodeFile = {|
    * all the other dependencies. For example, it could be
    * `{'foo': 'bar/foo.js', 'bar': 'node_modules/bar/index.js'}`.
    */
-  +filePathsByDependencyName: {+[dependencyName: string]: string},
+  +filePathsByDependencyName: {[dependencyName: string]: string},
 |};
 
 /**

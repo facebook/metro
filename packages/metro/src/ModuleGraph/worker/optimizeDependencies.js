@@ -1,21 +1,21 @@
 /**
  * Copyright (c) 2016-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow
+ * @flow strict-local
  */
 
 'use strict';
 
-const {traverse} = require('babel-core');
-const prettyPrint = require('babel-generator').default;
+const traverse = require('@babel/traverse').default;
+
+const babelGenerate = require('@babel/generator').default;
 
 import type {TransformResultDependency} from '../types.flow';
+import type {Ast} from '@babel/core';
 
 type Context = {
   oldToNewIndex: Map<number, number>,
@@ -28,16 +28,21 @@ function optimizeDependencies(
   ast: Ast,
   dependencies: Dependencies,
   dependencyMapName: string,
-): Array<TransformResultDependency> {
+  requireName: string,
+): $ReadOnlyArray<TransformResultDependency> {
   const visited = new WeakSet();
-  const context = {oldToNewIndex: new Map(), dependencies: []};
+  const context = {
+    oldToNewIndex: new Map(),
+    dependencies: [],
+  };
   const visitor = {
     CallExpression(path) {
       const {node} = path;
+
       if (visited.has(node)) {
         return;
       }
-      if (isRequireCall(node.callee)) {
+      if (isRequireCall(node.callee, requireName)) {
         processRequireCall(node);
         visited.add(node);
       }
@@ -57,8 +62,8 @@ function optimizeDependencies(
   return context.dependencies;
 }
 
-function isRequireCall(callee) {
-  return callee.type === 'Identifier' && callee.name === 'require';
+function isRequireCall(callee, requireName) {
+  return callee.type === 'Identifier' && callee.name === requireName;
 }
 
 function processRequireCall(node) {
@@ -66,7 +71,7 @@ function processRequireCall(node) {
     throw new InvalidRequireCallError(
       'Post-transform calls to require() expect 2 arguments, the first ' +
         'of which has the shape `_dependencyMapName[123]`, ' +
-        `but this was found: \`${prettyPrint(node).code}\``,
+        `but this was found: \`${babelGenerate(node).code}\``,
     );
   }
   node.arguments = [node.arguments[0]];

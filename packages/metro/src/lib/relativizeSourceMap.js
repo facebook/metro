@@ -1,12 +1,10 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  */
 
@@ -14,15 +12,15 @@
 
 const path = require('path');
 
-import type {MetroSourceMap as SourceMap} from 'metro-source-map';
+import type {MetroSourceMap} from 'metro-source-map';
 
-function relativizeSourceMapInternal(
-  sourceMap: SourceMap,
+function relativizeSourceMapInline(
+  sourceMap: MetroSourceMap,
   sourcesRoot: string,
 ) {
   if (sourceMap.mappings === undefined) {
     for (let i = 0; i < sourceMap.sections.length; i++) {
-      relativizeSourceMapInternal(sourceMap.sections[i].map, sourcesRoot);
+      relativizeSourceMapInline(sourceMap.sections[i].map, sourcesRoot);
     }
   } else {
     for (let i = 0; i < sourceMap.sources.length; i++) {
@@ -31,15 +29,4 @@ function relativizeSourceMapInternal(
   }
 }
 
-function relativizeSourceMap(
-  sourceMap: SourceMap,
-  sourcesRoot?: string,
-): SourceMap {
-  if (!sourcesRoot) {
-    return sourceMap;
-  }
-  relativizeSourceMapInternal(sourceMap, sourcesRoot);
-  return sourceMap;
-}
-
-module.exports = relativizeSourceMap;
+module.exports = relativizeSourceMapInline;

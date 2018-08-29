@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
@@ -15,11 +13,9 @@
 const chalk = require('chalk');
 const path = require('path');
 const reporting = require('./reporting');
-const throttle = require('lodash/throttle');
+const throttle = require('lodash.throttle');
 
-const {
-  AmbiguousModuleResolutionError,
-} = require('../node-haste/DependencyGraph/ResolutionRequest');
+const {AmbiguousModuleResolutionError} = require('metro-core');
 const {formatBanner} = require('metro-core');
 
 import type {
@@ -161,6 +157,7 @@ class TerminalReporter {
         'done',
       );
       this.terminal.log(msg);
+      this._activeBundles.delete(buildID);
     }
   }
 
@@ -172,23 +169,24 @@ class TerminalReporter {
     }
   }
 
-  _logInitializing(port: number, projectRoots: $ReadOnlyArray<string>) {
-    this.terminal.log(
-      formatBanner(
-        'Running Metro Bundler on port ' +
-          port +
-          '.\n\n' +
-          'Keep Metro Bundler running while developing on any JS projects. ' +
-          'Feel free to close this tab and run your own Metro Bundler ' +
-          ' instance if you prefer.\n\n' +
-          'https://github.com/facebook/react-native',
-        {
-          marginLeft: 1,
-          marginRight: 1,
-          paddingBottom: 1,
-        },
-      ),
-    );
+  _logInitializing(port: ?number, projectRoots: $ReadOnlyArray<string>) {
+    if (port) {
+      this.terminal.log(
+        formatBanner(
+          'Running Metro Bundler on port ' +
+            port +
+            '.\n\n' +
+            'Keep Metro running while developing on any JS projects. Feel ' +
+            'free to close this tab and run your own Metro instance ' +
+            'if you prefer.\n\n' +
+            'https://github.com/facebook/react-native',
+          {
+            paddingTop: 1,
+            paddingBottom: 1,
+          },
+        ) + '\n',
+      );
+    }
 
     this.terminal.log(
       'Looking for JS files in\n  ',
@@ -198,6 +196,9 @@ class TerminalReporter {
   }
 
   _logInitializingFailed(port: number, error: Error) {
+    /* $FlowFixMe(>=0.68.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.68 was deployed. To see the error delete this
+     * comment and run Flow. */
     if (error.code === 'EADDRINUSE') {
       this.terminal.log(
         chalk.bgRed.bold(' ERROR '),
@@ -277,7 +278,7 @@ class TerminalReporter {
       const message =
         'ambiguous resolution: module `' +
         `${error.fromModulePath}\` tries to require \`${he.hasteName}\`, ` +
-        `but there are several files providing this module. You can delete ` +
+        'but there are several files providing this module. You can delete ' +
         'or fix them: \n\n' +
         Object.keys(he.duplicatesSet)
           .sort()
@@ -288,6 +289,9 @@ class TerminalReporter {
     }
 
     let message =
+      /* $FlowFixMe(>=0.68.0 site=react_native_fb) This comment suppresses an
+       * error found when Flow v0.68 was deployed. To see the error delete this
+       * comment and run Flow. */
       error.snippet == null && error.stack != null
         ? error.stack
         : error.message;
@@ -297,6 +301,9 @@ class TerminalReporter {
       message += ` [${error.filename}]`;
     }
 
+    /* $FlowFixMe(>=0.68.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.68 was deployed. To see the error delete this
+     * comment and run Flow. */
     if (error.snippet != null) {
       //$FlowFixMe T19379628
       message += '\n' + error.snippet;

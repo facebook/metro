@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
@@ -12,24 +10,31 @@
 
 'use strict';
 
-const babel = require('babel-core');
-const babylon = require('babylon');
+const template = require('@babel/template').default;
+const babelTypes = require('@babel/types');
+const babylon = require('@babel/parser');
 
 import type {AssetDataWithoutFiles} from '../Assets';
 import type {ModuleTransportLike} from '../shared/types.flow';
+import type {Ast} from '@babel/core';
 
 // Structure of the object: dir.name.scale = asset
 export type RemoteFileMap = {
   [string]: {
     [string]: {
-      [number]: string,
+      [number]: {
+        handle: string,
+        hash: string,
+      },
     },
   },
+  __proto__: null,
 };
 
 // Structure of the object: platform.dir.name.scale = asset
 export type PlatformRemoteFileMap = {
   [string]: RemoteFileMap,
+  __proto__: null,
 };
 
 type SubTree<T: ModuleTransportLike> = (
@@ -52,35 +57,19 @@ function generateAssetCodeFileAst(
   const descriptorAst = babylon.parseExpression(
     JSON.stringify(properDescriptor),
   );
-  const t = babel.types;
-
-  // module.exports
-  const moduleExports = t.memberExpression(
-    t.identifier('module'),
-    t.identifier('exports'),
-  );
-
-  // require('AssetRegistry')
-  const requireCall = t.callExpression(t.identifier('require'), [
-    t.stringLiteral(assetRegistryPath),
-  ]);
-
-  // require('AssetRegistry').registerAsset
-  const registerAssetFunction = t.memberExpression(
-    requireCall,
-    t.identifier('registerAsset'),
-  );
+  const t = babelTypes;
 
   // require('AssetRegistry').registerAsset({...})
-  const registerAssetCall = t.callExpression(registerAssetFunction, [
-    descriptorAst,
-  ]);
+  const buildRequire = template(`
+    module.exports = require(ASSET_REGISTRY_PATH).registerAsset(DESCRIPTOR_AST)
+  `);
 
   return t.file(
     t.program([
-      t.expressionStatement(
-        t.assignmentExpression('=', moduleExports, registerAssetCall),
-      ),
+      buildRequire({
+        ASSET_REGISTRY_PATH: t.stringLiteral(assetRegistryPath),
+        DESCRIPTOR_AST: descriptorAst,
+      }),
     ]),
   );
 }
@@ -96,65 +85,53 @@ function generateRemoteAssetCodeFileAst(
   remoteServer: string,
   remoteFileMap: RemoteFileMap,
 ): ?Ast {
-  const t = babel.types;
+  const t = babelTypes;
 
   const file = remoteFileMap[assetDescriptor.fileSystemLocation];
   const descriptor = file && file[assetDescriptor.name];
+  const data = {};
 
   if (!descriptor) {
     return null;
   }
 
-  // require('AssetSourceResolver')
-  const requireCall = t.callExpression(t.identifier('require'), [
-    t.stringLiteral(assetSourceResolverPath),
-  ]);
-
-  // require('AssetSourceResolver').pickScale
-  const pickScale = t.memberExpression(requireCall, t.identifier('pickScale'));
-
-  // require('AssetSourceResolver').pickScale([2, 3, ...])
-  const call = t.callExpression(pickScale, [
-    t.arrayExpression(
-      Object.keys(descriptor)
-        .map(Number)
-        .sort((a, b) => a - b)
-        .map(scale => t.numericLiteral(scale)),
-    ),
-  ]);
+  for (const scale in descriptor) {
+    data[+scale] = descriptor[+scale].handle;
+  }
 
   // {2: 'path/to/image@2x', 3: 'path/to/image@3x', ...}
-  const data = babylon.parseExpression(JSON.stringify(descriptor));
+  const astData = babylon.parseExpression(JSON.stringify(data));
 
-  // ({2: '...', 3: '...'})[require(...).pickScale(...)]
-  const handler = t.memberExpression(data, call, true);
-
-  // 'https://remote.server.com/' + ({2: ...})[require(...).pickScale(...)]
-  const uri = t.binaryExpression('+', t.stringLiteral(remoteServer), handler);
+  // URI to remote server
+  const URI = t.stringLiteral(remoteServer);
 
   // Size numbers.
-  const width = t.numericLiteral(assetDescriptor.width);
-  const height = t.numericLiteral(assetDescriptor.height);
+  const WIDTH = t.numericLiteral(assetDescriptor.width);
+  const HEIGHT = t.numericLiteral(assetDescriptor.height);
 
-  // module.exports
-  const moduleExports = t.memberExpression(
-    t.identifier('module'),
-    t.identifier('exports'),
-  );
+  const buildRequire = template(`
+    module.exports = {
+      "width": WIDTH,
+      "height": HEIGHT,
+      "uri": URI + OBJECT_AST[require(ASSET_SOURCE_RESOLVER_PATH).pickScale(SCALE_ARRAY)]
+    };
+  `);
 
   return t.file(
     t.program([
-      t.expressionStatement(
-        t.assignmentExpression(
-          '=',
-          moduleExports,
-          t.objectExpression([
-            t.objectProperty(t.stringLiteral('width'), width),
-            t.objectProperty(t.stringLiteral('height'), height),
-            t.objectProperty(t.stringLiteral('uri'), uri),
-          ]),
+      buildRequire({
+        WIDTH,
+        HEIGHT,
+        URI,
+        OBJECT_AST: astData,
+        ASSET_SOURCE_RESOLVER_PATH: t.stringLiteral(assetSourceResolverPath),
+        SCALE_ARRAY: t.arrayExpression(
+          Object.keys(descriptor)
+            .map(Number)
+            .sort((a, b) => a - b)
+            .map(scale => t.numericLiteral(scale)),
         ),
-      ),
+      }),
     ]),
   );
 }

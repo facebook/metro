@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
@@ -12,7 +10,7 @@
 
 'use strict';
 
-import {Writable} from 'stream';
+const {Writable} = require('stream');
 
 class JsonReporter<TEvent: {}> {
   _stream: Writable;
@@ -29,9 +27,21 @@ class JsonReporter<TEvent: {}> {
     /* $FlowFixMe: fine to call on `undefined`. */
     if (Object.prototype.toString.call(event.error) === '[object Error]') {
       event = {...event};
+      /* $FlowFixMe(>=0.70.0 site=react_native_fb) This comment suppresses an
+       * error found when Flow v0.70 was deployed. To see the error delete
+       * this comment and run Flow. */
       event.error = {
+        /* $FlowFixMe(>=0.70.0 site=react_native_fb) This comment suppresses an
+         * error found when Flow v0.70 was deployed. To see the error delete
+         * this comment and run Flow. */
         ...event.error,
+        /* $FlowFixMe(>=0.70.0 site=react_native_fb) This comment suppresses an
+         * error found when Flow v0.70 was deployed. To see the error delete
+         * this comment and run Flow. */
         message: event.error.message,
+        /* $FlowFixMe(>=0.70.0 site=react_native_fb) This comment suppresses an
+         * error found when Flow v0.70 was deployed. To see the error delete
+         * this comment and run Flow. */
         stack: event.error.stack,
       };
     }

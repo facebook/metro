@@ -7,14 +7,8 @@
     "transform-es2015-parameters",
     "transform-es2015-spread",
     "transform-flow-strip-types",
-    "transform-object-rest-spread"
+    "transform-object-rest-spread",
+    "transform-react-jsx"
   ],
-  "retainLines": true,
-  "env": {
-    "test": {
-      "plugins": [
-        "babel-preset-fbjs/plugins/inline-requires"
-      ]
-    }
-  }
+  "retainLines": true
 }

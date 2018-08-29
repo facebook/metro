@@ -1,0 +1,638 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`adds path to graph correctly 1`] = `
+Object {
+  "edges": Array [
+    Object {
+      "data": Object {
+        "id": "path/to/liverpool-street.js-path/to/st-paul.js",
+        "isAsync": false,
+        "source": "path/to/liverpool-street.js",
+        "target": "path/to/st-paul.js",
+      },
+    },
+    Object {
+      "data": Object {
+        "id": "path/to/st-paul.js-path/to/tottenham-court-road.js",
+        "isAsync": false,
+        "source": "path/to/st-paul.js",
+        "target": "path/to/tottenham-court-road.js",
+      },
+    },
+  ],
+  "nodes": Map {
+    "path/to/liverpool-street.js" => Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/bank.js",
+          "path/to/moorgate.js",
+        ],
+        "depsSize": 20,
+        "id": "path/to/liverpool-street.js",
+        "invDepsSize": 0,
+        "inverseDeps": Array [],
+        "label": "liverpool-street",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+    "path/to/st-paul.js" => Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/chancery-lane.js",
+        ],
+        "depsSize": 10,
+        "id": "path/to/st-paul.js",
+        "invDepsSize": 20,
+        "inverseDeps": Array [
+          "path/to/bank.js",
+          "path/to/moorgate.js",
+        ],
+        "label": "st-paul",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+    "path/to/tottenham-court-road.js" => Object {
+      "data": Object {
+        "deps": Array [],
+        "depsSize": 0,
+        "id": "path/to/tottenham-court-road.js",
+        "invDepsSize": 10,
+        "inverseDeps": Array [
+          "path/to/holborn.js",
+        ],
+        "label": "tottenham-court-road",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+  },
+}
+`;
+
+exports[`builds graph from a certain module as root 1`] = `
+Object {
+  "edges": Array [
+    Object {
+      "data": Object {
+        "id": "path/to/liverpool-street.js-path/to/bank.js",
+        "isAsync": true,
+        "source": "path/to/liverpool-street.js",
+        "target": "path/to/bank.js",
+      },
+    },
+    Object {
+      "data": Object {
+        "id": "path/to/liverpool-street.js-path/to/moorgate.js",
+        "isAsync": false,
+        "source": "path/to/liverpool-street.js",
+        "target": "path/to/moorgate.js",
+      },
+    },
+  ],
+  "nodes": Array [
+    Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/bank.js",
+          "path/to/moorgate.js",
+        ],
+        "depsSize": 20,
+        "id": "path/to/liverpool-street.js",
+        "invDepsSize": 0,
+        "inverseDeps": Array [],
+        "label": "liverpool-street",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+    Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/st-paul.js",
+        ],
+        "depsSize": 10,
+        "id": "path/to/bank.js",
+        "invDepsSize": 10,
+        "inverseDeps": Array [
+          "path/to/liverpool-street.js",
+        ],
+        "label": "bank",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+    Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/st-paul.js",
+        ],
+        "depsSize": 10,
+        "id": "path/to/moorgate.js",
+        "invDepsSize": 10,
+        "inverseDeps": Array [
+          "path/to/liverpool-street.js",
+        ],
+        "label": "moorgate",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+  ],
+}
+`;
+
+exports[`builds inverse graph from a certain module as root 1`] = `
+Object {
+  "edges": Array [
+    Object {
+      "data": Object {
+        "id": "path/to/bank.js-path/to/st-paul.js",
+        "isAsync": false,
+        "source": "path/to/bank.js",
+        "target": "path/to/st-paul.js",
+      },
+    },
+    Object {
+      "data": Object {
+        "id": "path/to/moorgate.js-path/to/st-paul.js",
+        "isAsync": true,
+        "source": "path/to/moorgate.js",
+        "target": "path/to/st-paul.js",
+      },
+    },
+  ],
+  "nodes": Array [
+    Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/chancery-lane.js",
+        ],
+        "depsSize": 10,
+        "id": "path/to/st-paul.js",
+        "invDepsSize": 20,
+        "inverseDeps": Array [
+          "path/to/bank.js",
+          "path/to/moorgate.js",
+        ],
+        "label": "st-paul",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+    Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/st-paul.js",
+        ],
+        "depsSize": 10,
+        "id": "path/to/bank.js",
+        "invDepsSize": 10,
+        "inverseDeps": Array [
+          "path/to/liverpool-street.js",
+        ],
+        "label": "bank",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+    Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/st-paul.js",
+        ],
+        "depsSize": 10,
+        "id": "path/to/moorgate.js",
+        "invDepsSize": 10,
+        "inverseDeps": Array [
+          "path/to/liverpool-street.js",
+        ],
+        "label": "moorgate",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+  ],
+}
+`;
+
+exports[`builds inverse graph from one module to another 1`] = `
+Object {
+  "edges": Array [
+    Object {
+      "data": Object {
+        "id": "path/to/liverpool-street.js-path/to/bank.js",
+        "isAsync": false,
+        "source": "path/to/liverpool-street.js",
+        "target": "path/to/bank.js",
+      },
+    },
+    Object {
+      "data": Object {
+        "id": "path/to/bank.js-path/to/st-paul.js",
+        "isAsync": false,
+        "source": "path/to/bank.js",
+        "target": "path/to/st-paul.js",
+      },
+    },
+    Object {
+      "data": Object {
+        "id": "path/to/st-paul.js-path/to/chancery-lane.js",
+        "isAsync": false,
+        "source": "path/to/st-paul.js",
+        "target": "path/to/chancery-lane.js",
+      },
+    },
+    Object {
+      "data": Object {
+        "id": "path/to/chancery-lane.js-path/to/holborn.js",
+        "isAsync": false,
+        "source": "path/to/chancery-lane.js",
+        "target": "path/to/holborn.js",
+      },
+    },
+    Object {
+      "data": Object {
+        "id": "path/to/holborn.js-path/to/tottenham-court-road.js",
+        "isAsync": false,
+        "source": "path/to/holborn.js",
+        "target": "path/to/tottenham-court-road.js",
+      },
+    },
+    Object {
+      "data": Object {
+        "id": "path/to/liverpool-street.js-path/to/moorgate.js",
+        "isAsync": false,
+        "source": "path/to/liverpool-street.js",
+        "target": "path/to/moorgate.js",
+      },
+    },
+    Object {
+      "data": Object {
+        "id": "path/to/moorgate.js-path/to/st-paul.js",
+        "isAsync": false,
+        "source": "path/to/moorgate.js",
+        "target": "path/to/st-paul.js",
+      },
+    },
+    Object {
+      "data": Object {
+        "id": "path/to/st-paul.js-path/to/chancery-lane.js",
+        "isAsync": false,
+        "source": "path/to/st-paul.js",
+        "target": "path/to/chancery-lane.js",
+      },
+    },
+    Object {
+      "data": Object {
+        "id": "path/to/chancery-lane.js-path/to/holborn.js",
+        "isAsync": false,
+        "source": "path/to/chancery-lane.js",
+        "target": "path/to/holborn.js",
+      },
+    },
+    Object {
+      "data": Object {
+        "id": "path/to/holborn.js-path/to/tottenham-court-road.js",
+        "isAsync": false,
+        "source": "path/to/holborn.js",
+        "target": "path/to/tottenham-court-road.js",
+      },
+    },
+  ],
+  "nodes": Map {
+    "path/to/liverpool-street.js" => Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/bank.js",
+          "path/to/moorgate.js",
+        ],
+        "depsSize": 20,
+        "id": "path/to/liverpool-street.js",
+        "invDepsSize": 0,
+        "inverseDeps": Array [],
+        "label": "liverpool-street",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+    "path/to/bank.js" => Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/st-paul.js",
+        ],
+        "depsSize": 10,
+        "id": "path/to/bank.js",
+        "invDepsSize": 10,
+        "inverseDeps": Array [
+          "path/to/liverpool-street.js",
+        ],
+        "label": "bank",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+    "path/to/st-paul.js" => Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/chancery-lane.js",
+        ],
+        "depsSize": 10,
+        "id": "path/to/st-paul.js",
+        "invDepsSize": 20,
+        "inverseDeps": Array [
+          "path/to/bank.js",
+          "path/to/moorgate.js",
+        ],
+        "label": "st-paul",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+    "path/to/chancery-lane.js" => Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/holborn.js",
+        ],
+        "depsSize": 10,
+        "id": "path/to/chancery-lane.js",
+        "invDepsSize": 10,
+        "inverseDeps": Array [
+          "path/to/st-paul.js",
+        ],
+        "label": "chancery-lane",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+    "path/to/holborn.js" => Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/tottenham-court-road.js",
+        ],
+        "depsSize": 10,
+        "id": "path/to/holborn.js",
+        "invDepsSize": 10,
+        "inverseDeps": Array [
+          "path/to/chancery-lane.js",
+        ],
+        "label": "holborn",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+    "path/to/tottenham-court-road.js" => Object {
+      "data": Object {
+        "deps": Array [],
+        "depsSize": 0,
+        "id": "path/to/tottenham-court-road.js",
+        "invDepsSize": 10,
+        "inverseDeps": Array [
+          "path/to/holborn.js",
+        ],
+        "label": "tottenham-court-road",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+    "path/to/moorgate.js" => Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/st-paul.js",
+        ],
+        "depsSize": 10,
+        "id": "path/to/moorgate.js",
+        "invDepsSize": 10,
+        "inverseDeps": Array [
+          "path/to/liverpool-street.js",
+        ],
+        "label": "moorgate",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+  },
+}
+`;
+
+exports[`gets graph from a module to another 1`] = `
+Object {
+  "edges": Array [
+    Object {
+      "data": Object {
+        "id": "path/to/liverpool-street.js-path/to/bank.js",
+        "isAsync": false,
+        "source": "path/to/liverpool-street.js",
+        "target": "path/to/bank.js",
+      },
+    },
+    Object {
+      "data": Object {
+        "id": "path/to/bank.js-path/to/st-paul.js",
+        "isAsync": false,
+        "source": "path/to/bank.js",
+        "target": "path/to/st-paul.js",
+      },
+    },
+    Object {
+      "data": Object {
+        "id": "path/to/st-paul.js-path/to/chancery-lane.js",
+        "isAsync": false,
+        "source": "path/to/st-paul.js",
+        "target": "path/to/chancery-lane.js",
+      },
+    },
+    Object {
+      "data": Object {
+        "id": "path/to/chancery-lane.js-path/to/holborn.js",
+        "isAsync": false,
+        "source": "path/to/chancery-lane.js",
+        "target": "path/to/holborn.js",
+      },
+    },
+    Object {
+      "data": Object {
+        "id": "path/to/holborn.js-path/to/tottenham-court-road.js",
+        "isAsync": false,
+        "source": "path/to/holborn.js",
+        "target": "path/to/tottenham-court-road.js",
+      },
+    },
+    Object {
+      "data": Object {
+        "id": "path/to/liverpool-street.js-path/to/moorgate.js",
+        "isAsync": false,
+        "source": "path/to/liverpool-street.js",
+        "target": "path/to/moorgate.js",
+      },
+    },
+    Object {
+      "data": Object {
+        "id": "path/to/moorgate.js-path/to/st-paul.js",
+        "isAsync": false,
+        "source": "path/to/moorgate.js",
+        "target": "path/to/st-paul.js",
+      },
+    },
+  ],
+  "nodes": Array [
+    Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/bank.js",
+          "path/to/moorgate.js",
+        ],
+        "depsSize": 20,
+        "id": "path/to/liverpool-street.js",
+        "invDepsSize": 0,
+        "inverseDeps": Array [],
+        "label": "liverpool-street",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+    Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/st-paul.js",
+        ],
+        "depsSize": 10,
+        "id": "path/to/bank.js",
+        "invDepsSize": 10,
+        "inverseDeps": Array [
+          "path/to/liverpool-street.js",
+        ],
+        "label": "bank",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+    Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/chancery-lane.js",
+        ],
+        "depsSize": 10,
+        "id": "path/to/st-paul.js",
+        "invDepsSize": 20,
+        "inverseDeps": Array [
+          "path/to/bank.js",
+          "path/to/moorgate.js",
+        ],
+        "label": "st-paul",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+    Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/holborn.js",
+        ],
+        "depsSize": 10,
+        "id": "path/to/chancery-lane.js",
+        "invDepsSize": 10,
+        "inverseDeps": Array [
+          "path/to/st-paul.js",
+        ],
+        "label": "chancery-lane",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+    Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/tottenham-court-road.js",
+        ],
+        "depsSize": 10,
+        "id": "path/to/holborn.js",
+        "invDepsSize": 10,
+        "inverseDeps": Array [
+          "path/to/chancery-lane.js",
+        ],
+        "label": "holborn",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+    Object {
+      "data": Object {
+        "deps": Array [],
+        "depsSize": 0,
+        "id": "path/to/tottenham-court-road.js",
+        "invDepsSize": 10,
+        "inverseDeps": Array [
+          "path/to/holborn.js",
+        ],
+        "label": "tottenham-court-road",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+    Object {
+      "data": Object {
+        "deps": Array [
+          "path/to/st-paul.js",
+        ],
+        "depsSize": 10,
+        "id": "path/to/moorgate.js",
+        "invDepsSize": 10,
+        "inverseDeps": Array [
+          "path/to/liverpool-street.js",
+        ],
+        "label": "moorgate",
+        "size": 10,
+        "type": "js/module",
+      },
+    },
+  ],
+}
+`;
+
+exports[`gets module list correctly 1`] = `
+Object {
+  "info": Object {
+    "dependencyTypes": Array [
+      "js/module",
+    ],
+    "maxIncomingEdges": 2,
+    "maxOutgoingEdges": 2,
+  },
+  "modules": Array [
+    Object {
+      "filePath": "path/to/liverpool-street.js",
+      "name": "liverpool-street",
+    },
+    Object {
+      "filePath": "path/to/moorgate.js",
+      "name": "moorgate",
+    },
+    Object {
+      "filePath": "path/to/bank.js",
+      "name": "bank",
+    },
+    Object {
+      "filePath": "path/to/st-paul.js",
+      "name": "st-paul",
+    },
+    Object {
+      "filePath": "path/to/chancery-lane.js",
+      "name": "chancery-lane",
+    },
+    Object {
+      "filePath": "path/to/holborn.js",
+      "name": "holborn",
+    },
+    Object {
+      "filePath": "path/to/leicester-square.js",
+      "name": "leicester-square",
+    },
+    Object {
+      "filePath": "path/to/tottenham-court-road.js",
+      "name": "tottenham-court-road",
+    },
+  ],
+}
+`;

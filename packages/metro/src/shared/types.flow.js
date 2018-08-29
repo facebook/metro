@@ -1,49 +1,57 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  */
 'use strict';
 
+import type {TransformResult} from '../DeltaBundler';
+import type {CustomTransformOptions} from '../JSTransformer/worker';
+import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
+import type {Reporter} from '../lib/reporting';
+import type {CacheStore} from 'metro-cache';
 import type {
   GetTransformOptions,
   PostMinifyProcess,
   PostProcessBundleSourcemap,
-} from '../Bundler';
-import type {PostProcessModules} from '../DeltaBundler';
-import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
-import type {TransformCache} from '../lib/TransformCaching';
-import type {Reporter} from '../lib/reporting';
-import type {HasteImpl} from '../node-haste/Module';
-import type {MetroSourceMap as SourceMap, RawMapping} from 'metro-source-map';
+} from 'metro-config/src/configTypes.flow.js';
+import type {CustomResolver} from 'metro-resolver';
+import type {
+  MetroSourceMap,
+  MetroSourceMapSegmentTuple,
+} from 'metro-source-map';
 
-type BundleType = 'bundle' | 'delta' | 'map' | 'ram' | 'cli' | 'hmr' | 'todo';
-type SourceMapOrMappings = SourceMap | Array<RawMapping>;
+type BundleType =
+  | 'bundle'
+  | 'delta'
+  | 'map'
+  | 'ram'
+  | 'cli'
+  | 'hmr'
+  | 'todo'
+  | 'graph';
+type MetroSourceMapOrMappings =
+  | MetroSourceMap
+  | Array<MetroSourceMapSegmentTuple>;
 
 export type BundleOptions = {
-  +assetPlugins: Array<string>,
   bundleType: BundleType,
+  customTransformOptions: CustomTransformOptions,
   dev: boolean,
   entryFile: string,
   +entryModuleOnly: boolean,
   +excludeSource: boolean,
   +hot: boolean,
   +inlineSourceMap: boolean,
-  +isolateModuleIDs: boolean,
   minify: boolean,
   onProgress: ?(doneCont: number, totalCount: number) => mixed,
   +platform: ?string,
-  +resolutionResponse: ?{},
-  +runBeforeMainModule: Array<string>,
   +runModule: boolean,
   sourceMapUrl: ?string,
-  unbundle: boolean,
   createModuleIdFactory?: () => (path: string) => number,
 };
 
@@ -56,7 +64,7 @@ export type ModuleGroups = {|
 export type ModuleTransportLike = {
   +code: string,
   +id: number,
-  +map: ?SourceMapOrMappings,
+  +map: ?MetroSourceMapOrMappings,
   +name?: string,
   +sourcePath: string,
 };
@@ -65,35 +73,72 @@ export type Options = {|
   // TODO: Remove this option below (T23793920)
   assetTransforms?: boolean,
   assetExts?: Array<string>,
-  +assetRegistryPath: string,
+  asyncRequireModulePath: string,
+  assetRegistryPath: string,
   blacklistRE?: RegExp,
-  cacheVersion?: string,
+  cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
+  cacheVersion: string,
   createModuleIdFactory?: () => (path: string) => number,
-  enableBabelRCLookup?: boolean,
+  dynamicDepsInPackages: DynamicRequiresBehavior,
+  enableBabelRCLookup: boolean,
   extraNodeModules?: {},
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
+  getResolverMainFields: () => $ReadOnlyArray<string>,
+  getRunModuleStatement: (number | string) => string,
   getTransformOptions?: GetTransformOptions,
-  globalTransformCache: ?GlobalTransformCache,
-  hasteImpl?: HasteImpl,
+  hasteImplModulePath?: string,
   maxWorkers?: number,
-  moduleFormat?: string,
+  minifierPath?: string,
   platforms?: Array<string>,
   polyfillModuleNames?: Array<string>,
-  postProcessModules?: PostProcessModules,
   postMinifyProcess: PostMinifyProcess,
   postProcessBundleSourcemap: PostProcessBundleSourcemap,
-  projectRoots: $ReadOnlyArray<string>,
+  projectRoot: string,
   providesModuleNodeModules?: Array<string>,
   reporter?: Reporter,
   resetCache?: boolean,
-  +getModulesRunBeforeMainModule: (entryPoint: string) => Array<string>,
+  resolveRequest: ?CustomResolver,
+  getModulesRunBeforeMainModule: (entryPoint: string) => Array<string>,
   silent?: boolean,
-  +sourceExts: ?Array<string>,
-  +transformCache: TransformCache,
+  sourceExts: ?Array<string>,
   transformModulePath?: string,
   watch?: boolean,
+  watchFolders: $ReadOnlyArray<string>,
   workerPath: ?string,
 |};
+
+export type ServerOptions = {
+  assetExts: Array<string>,
+  blacklistRE: void | RegExp,
+  cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
+  cacheVersion: string,
+  createModuleId: (path: string) => number,
+  enableBabelRCLookup: boolean,
+  extraNodeModules: {},
+  getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
+  getTransformOptions?: GetTransformOptions,
+  hasteImplModulePath?: string,
+  maxWorkers: number,
+  minifierPath: string,
+  platforms: Array<string>,
+  resolveRequest: ?CustomResolver,
+  polyfillModuleNames: Array<string>,
+  postMinifyProcess: PostMinifyProcess,
+  postProcessBundleSourcemap: PostProcessBundleSourcemap,
+  +projectRoot: string,
+  providesModuleNodeModules?: Array<string>,
+  reporter: Reporter,
+  resolveRequest: ?CustomResolver,
+  +getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
+  +getResolverMainFields: () => $ReadOnlyArray<string>,
+  +getRunModuleStatement: (number | string) => string,
+  silent: boolean,
+  +sourceExts: Array<string>,
+  +transformModulePath: string,
+  watch: boolean,
+  +watchFolders: $ReadOnlyArray<string>,
+  workerPath: ?string,
+};
 
 export type OutputOptions = {
   bundleOutput: string,
@@ -113,4 +158,5 @@ export type RequestOptions = {|
   minify: boolean,
   platform: string,
   createModuleIdFactory?: () => (path: string) => number,
+  onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
 |};

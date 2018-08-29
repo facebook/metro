@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2016-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @emails oncall+javascript_foundation
  * @flow
@@ -13,11 +11,12 @@
 
 'use strict';
 
+const defaults = require('metro-config/src/defaults/defaults');
 const invariant = require('fbjs/lib/invariant');
 const nullthrows = require('fbjs/lib/nullthrows');
 const optimizeModule = require('../optimize-module');
 const transformModule = require('../transform-module');
-const transformer = require('../../../transformer.js');
+const transformer = require('../../../reactNativeTransformer.js');
 
 const {fn} = require('../../test-helpers');
 const {SourceMapConsumer} = require('source-map');
@@ -26,12 +25,15 @@ const {objectContaining} = jasmine;
 
 describe('optimizing JS modules', () => {
   const filename = 'arbitrary/file.js';
+  const sourceExts = new Set(['js', 'json']);
+  const asyncRequireModulePath = 'asyncRequire';
   const optimizationOptions = {
     dev: false,
+    minifierPath: defaults.DEFAULT_METRO_MINIFIER_PATH,
     platform: 'android',
     postMinifyProcess: x => x,
   };
-  const originalCode = new Buffer(
+  const originalCode = Buffer.from(
     `if (Platform.OS !== 'android') {
       require('arbitrary-dev');
     } else {
@@ -42,8 +44,10 @@ describe('optimizing JS modules', () => {
 
   let transformResult;
   beforeAll(() => {
-    const result = transformModule(originalCode, {filename, transformer});
-    transformResult = new Buffer(
+    const trOpts = {asyncRequireModulePath, filename, sourceExts, transformer};
+    const result = transformModule(originalCode, trOpts);
+    invariant(result.type === 'code', 'result must be code');
+    transformResult = Buffer.from(
       JSON.stringify({type: 'code', details: result.details}),
       'utf8',
     );
@@ -53,7 +57,7 @@ describe('optimizing JS modules', () => {
     const result = optimizeModule(transformResult, optimizationOptions);
     const expected = JSON.parse(transformResult.toString('utf8')).details;
     delete expected.transformed;
-    expect(result.type).toBe('code');
+    invariant(result.type === 'code', 'result must be code');
     expect(result.details).toEqual(objectContaining(expected));
   });
 
@@ -66,7 +70,7 @@ describe('optimizing JS modules', () => {
       injectedVars = nullthrows(
         optimized.code.match(/function\(([^)]*)/),
       )[1].split(',');
-      [, requireName, , , dependencyMapName] = injectedVars;
+      [, requireName, , , , , dependencyMapName] = injectedVars;
     });
 
     it('optimizes code', () => {
@@ -79,7 +83,7 @@ describe('optimizing JS modules', () => {
 
     it('extracts dependencies', () => {
       expect(optimized.dependencies).toEqual([
-        {name: 'arbitrary-android-prod', isAsync: false},
+        {name: 'arbitrary-android-prod', data: {isAsync: false}},
       ]);
     });
 
@@ -139,9 +143,10 @@ describe('optimizing JS modules', () => {
   it('passes through non-code data unmodified', () => {
     const data = {type: 'asset', details: {arbitrary: 'data'}};
     expect(
-      optimizeModule(new Buffer(JSON.stringify(data), 'utf8'), {
+      optimizeModule(Buffer.from(JSON.stringify(data), 'utf8'), {
         dev: true,
         platform: '',
+        minifierPath: defaults.DEFAULT_METRO_MINIFIER_PATH,
         postMinifyProcess: ({code, map}) => ({code, map}),
       }),
     ).toEqual(data);

@@ -1,0 +1,24 @@
+{
+  "version": "0.44.0",
+  "name": "metro-cache",
+  "description": "🚇 Cache layers for Metro",
+  "main": "src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:facebook/metro.git"
+  },
+  "scripts": {
+    "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",
+    "cleanup-release": "test ! -e build && mv src build && mv src.real src"
+  },
+  "dependencies": {
+    "jest-serializer": "23.0.1",
+    "metro-core": "0.44.0",
+    "mkdirp": "^0.5.1",
+    "rimraf": "^2.5.4"
+  },
+  "devDependencies": {
+    "metro-memory-fs": "0.44.0"
+  },
+  "license": "MIT"
+}

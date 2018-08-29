@@ -23,19 +23,8 @@ aliases:
 
 version: 2
 jobs:
-  test-node-9:
-    working_directory: ~/metro/packager/metro
-    docker:
-      - image: circleci/node:9
-    steps:
-      - checkout
-      - restore-cache: *restore-cache
-      - run: yarn --no-progress
-      - save-cache: *save-cache
-      - run: yarn run test-ci
-
-  test-node-8:
-    working_directory: ~/metro/packager/metro
+  run-js-checks:
+    working_directory: ~/metro
     docker:
       - image: circleci/node:8
     steps:
@@ -44,21 +33,30 @@ jobs:
       - run: yarn --no-progress
       - save-cache: *save-cache
       - run: yarn run test-ci
-
-  test-node-6:
-    working_directory: ~/metro/packager/metro
+  test-node-9:
+    working_directory: ~/metro
     docker:
-      - image: circleci/node:6
+      - image: circleci/node:9
     steps:
       - checkout
       - restore-cache: *restore-cache
-      - run: sudo npm i -g yarn@^1.2.1
       - run: yarn --no-progress
       - save-cache: *save-cache
-      - run: yarn run test-ci
+      - run: yarn run jest
 
-  deploy:
-    working_directory: ~/metro/packager/metro
+  test-node-8:
+    working_directory: ~/metro
+    docker:
+      - image: circleci/node:8
+    steps:
+      - checkout
+      - restore-cache: *restore-cache
+      - run: yarn --no-progress
+      - save-cache: *save-cache
+      - run: yarn run jest
+
+  publish-to-npm:
+    working_directory: ~/metro
     docker:
       - image: circleci/node:8
     steps:
@@ -69,14 +67,10 @@ jobs:
           command: yarn --no-progress
       - save-cache: *save-cache
       - run:
-          working_directory: ~/metro/
-          run: yarn build
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
       - run:
-          working_directory: packages/metro
-          command: |
-            yarn prepare-release
-            npm publish
-            yarn cleanup-release
+          working_directory: ~/metro
+          command: npm run publish
   test-and-deploy-website:
     working_directory: ~/metro
     docker:
@@ -95,11 +89,11 @@ workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - test-node-6
+      - run-js-checks
       - test-node-8
       - test-node-9
       - test-and-deploy-website
-      - deploy:
+      - publish-to-npm:
           filters:
             branches:
               ignore: /.*/

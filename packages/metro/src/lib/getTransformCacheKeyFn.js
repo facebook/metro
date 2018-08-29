@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
@@ -23,28 +21,32 @@ const VERSION = require('../../package.json').version;
  * passed transform options.
  */
 function getTransformCacheKeyFn(opts: {|
+  +babelTransformerPath: string,
   +cacheVersion: string,
-  +projectRoots: $ReadOnlyArray<string>,
-  +transformModulePath: string,
+  +projectRoot: string,
+  +transformerPath: string,
 |}): (options: mixed) => string {
-  const transformModuleHash = crypto
-    .createHash('sha1')
-    .update(fs.readFileSync(opts.transformModulePath))
-    .digest('hex');
+  const transformModuleHash = getKeyFromFile(opts.transformerPath);
 
-  const stableProjectRoots = opts.projectRoots.map(p => {
-    return path.relative(path.join(__dirname, '../../../..'), p);
-  });
+  // eslint-disable-next-line lint/flow-no-fixme
+  /* $FlowFixMe: dynamic requires prevent static typing :'(  */
+  const transformer = require(opts.transformerPath);
+
+  const cacheFiles =
+    typeof transformer.getTransformDependencies !== 'undefined'
+      ? transformer.getTransformDependencies()
+      : [];
+
+  const babelTransformerModuleHash = getKeyFromFile(opts.babelTransformerPath);
 
   const cacheKeyParts = [
     'metro-cache',
     VERSION,
     opts.cacheVersion,
-    stableProjectRoots
-      .join(',')
-      .split(path.sep)
-      .join('-'),
+    path.relative(path.join(__dirname, '../../../..'), opts.projectRoot),
     transformModuleHash,
+    babelTransformerModuleHash,
+    ...cacheFiles.map(getKeyFromFile),
   ];
 
   const transformCacheKey = crypto
@@ -52,17 +54,16 @@ function getTransformCacheKeyFn(opts: {|
     .update(cacheKeyParts.join('$'))
     .digest('hex');
 
-  /* $FlowFixMe: dynamic requires prevent static typing :'(  */
-  const transformer = require(opts.transformModulePath);
-
-  const getCacheKey =
-    typeof transformer.getCacheKey !== 'undefined'
-      ? transformer.getCacheKey
-      : (options: mixed) => '';
-
   return function(options: mixed): string {
-    return transformCacheKey + getCacheKey(options);
+    return transformCacheKey;
   };
+}
+
+function getKeyFromFile(filePath: string) {
+  return crypto
+    .createHash('sha1')
+    .update(fs.readFileSync(filePath))
+    .digest('hex');
 }
 
 module.exports = getTransformCacheKeyFn;

@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2016-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @emails oncall+javascript_foundation
  * @flow
@@ -48,7 +46,7 @@ beforeAll(() => {
 });
 
 it('does not start the bundle file with the magic number (not a binary one)', () => {
-  expect(new Buffer(code).readUInt32LE(0)).not.toBe(0xfb0bd1e5);
+  expect(Buffer.from(code).readUInt32LE(0)).not.toBe(0xfb0bd1e5);
 });
 
 it('contains the startup code on the main file', () => {

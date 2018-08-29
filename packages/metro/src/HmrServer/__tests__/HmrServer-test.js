@@ -1,52 +1,57 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @format
  * @emails oncall+js_foundation
  */
 'use strict';
 
-const HmrServer = require('..');
+jest.mock('../../lib/getAbsolutePath');
 
-const {EventEmitter} = require('events');
+const HmrServer = require('..');
 
 describe('HmrServer', () => {
   let hmrServer;
-  let reporterMock;
   let serverMock;
+  let buildGraphMock;
   let deltaBundlerMock;
-  let deltaTransformerMock;
-  let getDeltaTransformerMock;
+  let callbacks;
+  let mockedGraph;
 
   beforeEach(() => {
-    deltaTransformerMock = new EventEmitter();
-    deltaTransformerMock.getDelta = jest.fn();
-    deltaTransformerMock.getInverseDependencies = jest.fn();
+    mockedGraph = {
+      dependencies: new Map(),
+      entryPoint: '/root/EntryPoint.js',
+    };
 
-    getDeltaTransformerMock = jest
-      .fn()
-      .mockReturnValue(
-        Promise.resolve({deltaTransformer: deltaTransformerMock}),
-      );
+    buildGraphMock = jest.fn().mockReturnValue(mockedGraph);
+
+    callbacks = new Map();
 
     deltaBundlerMock = {
-      getDeltaTransformer: getDeltaTransformerMock,
+      listen: (graph, cb) => {
+        callbacks.set(graph, cb);
+      },
     };
     serverMock = {
+      buildGraph: buildGraphMock,
       getDeltaBundler() {
         return deltaBundlerMock;
       },
-    };
-    getDeltaTransformerMock.reporterMock = {
-      update: jest.fn(),
+      _createModuleId(path) {
+        return path + '-id';
+      },
     };
 
-    hmrServer = new HmrServer(serverMock, reporterMock);
+    hmrServer = new HmrServer(serverMock, {
+      reporter: {
+        update: jest.fn(),
+      },
+      projectRoot: '/root',
+    });
   });
 
   it('should pass the correct options to the delta bundler', async () => {
@@ -55,27 +60,74 @@ describe('HmrServer', () => {
       jest.fn(),
     );
 
-    expect(getDeltaTransformerMock).toBeCalledWith(
+    expect(buildGraphMock).toBeCalledWith(
+      ['/root/EntryPoint.js'],
       expect.objectContaining({
-        deltaBundleId: null,
         dev: true,
-        entryFile: 'EntryPoint.js',
         minify: false,
         platform: 'ios',
       }),
     );
   });
 
-  it('should generate an initial delta when a client is connected', async () => {
+  it('should return the correctly formatted HMR message after a file change', async () => {
+    const sendMessage = jest.fn();
+
     await hmrServer.onClientConnect(
       '/hot?bundleEntry=EntryPoint.js&platform=ios',
-      jest.fn(),
+      sendMessage,
     );
 
-    expect(deltaTransformerMock.getDelta).toBeCalled();
+    deltaBundlerMock.getDelta = jest.fn().mockReturnValue(
+      Promise.resolve({
+        modified: new Map([
+          [
+            '/root/hi',
+            {
+              dependencies: new Map(),
+              inverseDependencies: new Set(),
+              path: '/root/hi',
+              output: [
+                {
+                  type: 'js/module',
+                  data: {
+                    code: '__d(function() { alert("hi"); });',
+                  },
+                },
+              ],
+            },
+          ],
+        ]),
+      }),
+    );
+
+    await callbacks.get(mockedGraph)();
+
+    expect(sendMessage.mock.calls.map(call => JSON.parse(call[0]))).toEqual([
+      {
+        type: 'update-start',
+      },
+      {
+        type: 'update',
+        body: {
+          modules: [
+            {
+              id: '/root/hi-id',
+              code:
+                '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
+            },
+          ],
+          sourceURLs: {},
+          sourceMappingURLs: {},
+        },
+      },
+      {
+        type: 'update-done',
+      },
+    ]);
   });
 
-  it('should return the correctly formatted HMR message after a file change', async done => {
+  it('should return error messages when there is a transform error', async () => {
     jest.useRealTimers();
     const sendMessage = jest.fn();
 
@@ -84,47 +136,34 @@ describe('HmrServer', () => {
       sendMessage,
     );
 
-    deltaTransformerMock.getDelta.mockReturnValue(
-      Promise.resolve({
-        delta: new Map([[1, {code: '__d(function() { alert("hi"); });'}]]),
-      }),
-    );
-    deltaTransformerMock.getInverseDependencies.mockReturnValue(
-      Promise.resolve(
-        new Map([
-          [1, [2, 3]],
-          [2, []],
-          [3, [4]],
-          [4, []],
-          [5, [1, 2, 3]], // this shouldn't be added to the response
-        ]),
-      ),
-    );
+    deltaBundlerMock.getDelta = jest.fn().mockImplementation(async () => {
+      const transformError = new SyntaxError('test syntax error');
+      transformError.type = 'TransformError';
+      transformError.filename = 'EntryPoint.js';
+      transformError.lineNumber = 123;
+      throw transformError;
+    });
 
-    deltaTransformerMock.emit('change');
+    await callbacks.get(mockedGraph)();
 
-    setTimeout(function() {
-      expect(JSON.parse(sendMessage.mock.calls[0][0])).toEqual({
-        type: 'update-start',
-      });
-      expect(JSON.parse(sendMessage.mock.calls[1][0])).toEqual({
-        type: 'update',
-        body: {
-          modules: [
-            {
-              id: 1,
-              code:
-                '__d(function() { alert("hi"); },{"1":[2,3],"2":[],"3":[4],"4":[]});',
-            },
-          ],
-          sourceURLs: {},
-          sourceMappingURLs: {},
+    expect(JSON.parse(sendMessage.mock.calls[0][0])).toEqual({
+      type: 'update-start',
+    });
+    const sentErrorMessage = JSON.parse(sendMessage.mock.calls[1][0]);
+    expect(sentErrorMessage).toMatchObject({type: 'error'});
+    expect(sentErrorMessage.body).toMatchObject({
+      type: 'TransformError',
+      message: 'test syntax error',
+      errors: [
+        {
+          description: 'test syntax error',
+          filename: 'EntryPoint.js',
+          lineNumber: 123,
         },
-      });
-      expect(JSON.parse(sendMessage.mock.calls[2][0])).toEqual({
-        type: 'update-done',
-      });
-      done();
-    }, 30);
+      ],
+    });
+    expect(JSON.parse(sendMessage.mock.calls[2][0])).toEqual({
+      type: 'update-done',
+    });
   });
 });

@@ -1,12 +1,10 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict
  * @format
  */
 'use strict';
@@ -22,7 +20,9 @@ const constantFor = encoding =>
     ? 1
     : isUTF8(encoding)
       ? 2
-      : /^(?:utf-?16(?:le)?|ucs-?2)$/.test(encoding) ? 3 : 0;
+      : /^(?:utf-?16(?:le)?|ucs-?2)$/.test(encoding)
+        ? 3
+        : 0;
 
 module.exports = function(
   code: Buffer | string,
@@ -31,10 +31,8 @@ module.exports = function(
   const buffer: Buffer = asBuffer(code, encoding);
   const hash = crypto.createHash('sha1');
   hash.update(buffer);
-  const digest = hash.digest();
-  const signature = Buffer.alloc
-    ? Buffer.alloc(digest.length + 1)
-    : new Buffer(digest.length + 1);
+  const digest = hash.digest('buffer');
+  const signature = Buffer.alloc(digest.length + 1);
   digest.copy(signature);
   signature.writeUInt8(
     constantFor(tryAsciiPromotion(buffer, encoding)),
@@ -59,6 +57,5 @@ function asBuffer(x, encoding): Buffer {
   if (typeof x !== 'string') {
     return x;
   }
-  // remove `new Buffer` calls when RN drops support for Node 4
-  return Buffer.from ? Buffer.from(x, encoding) : new Buffer(x, encoding);
+  return Buffer.from(x, encoding);
 }

@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @format
  * @flow
@@ -12,17 +10,16 @@
 
 'use strict';
 
+const serializeError = require('serialize-error');
+
 const {
   UnableToResolveError,
 } = require('../node-haste/DependencyGraph/ModuleResolution');
-const {
-  AmbiguousModuleResolutionError,
-} = require('../node-haste/DependencyGraph/ResolutionRequest');
+const {AmbiguousModuleResolutionError} = require('metro-core');
 
 export type CustomError = Error & {|
   status?: number,
   type?: string,
-  description?: string,
   filename?: string,
   lineNumber?: number,
   errors?: Array<{
@@ -40,7 +37,7 @@ function formatBundlingError(
     const message =
       "Ambiguous resolution: module '" +
       `${error.fromModulePath}\' tries to require \'${he.hasteName}\', but ` +
-      `there are several files providing this module. You can delete or ` +
+      'there are several files providing this module. You can delete or ' +
       'fix them: \n\n' +
       Object.keys(he.duplicatesSet)
         .sort()
@@ -61,13 +58,13 @@ function formatBundlingError(
   ) {
     error.errors = [
       {
-        description: error.description,
+        description: error.message,
         filename: error.filename,
         lineNumber: error.lineNumber,
       },
     ];
 
-    return error;
+    return serializeError(error);
   } else {
     return {
       type: 'InternalError',

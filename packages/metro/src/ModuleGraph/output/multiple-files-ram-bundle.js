@@ -1,22 +1,20 @@
 /**
  * Copyright (c) 2017-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  */
 
 'use strict';
 
-const MAGIC_UNBUNDLE_NUMBER = require('../../shared/output/unbundle/magic-number');
+const MAGIC_UNBUNDLE_NUMBER = require('../../shared/output/RamBundle/magic-number');
 const MAGIC_UNBUNDLE_FILENAME = 'UNBUNDLE';
 const JS_MODULES = 'js-modules';
 
-const buildSourceMapWithMetaData = require('../../shared/output/unbundle/build-unbundle-sourcemap-with-metadata.js');
+const buildSourcemapWithMetadata = require('../../shared/output/RamBundle/buildSourcemapWithMetadata.js');
 const path = require('path');
 
 const {concat, getModuleCode, partition, toModuleTransport} = require('./util');
@@ -35,7 +33,7 @@ function asMultipleFilesRamBundle({
   const [startup, deferred] = partition(modules, preloadedModules);
   const startupModules = Array.from(concat(startup, requireCalls));
   const deferredModules = deferred.map(m => toModuleTransport(m, idsForPath));
-  const magicFileContents = new Buffer(4);
+  const magicFileContents = Buffer.alloc(4);
 
   // Just concatenate all startup modules, one after the other.
   const code = startupModules.map(m => getModuleCode(m, idForPath)).join('\n');
@@ -57,7 +55,7 @@ function asMultipleFilesRamBundle({
   );
 
   // Create the source map (with no module groups, as they are ignored).
-  const map = buildSourceMapWithMetaData({
+  const map = buildSourcemapWithMetadata({
     fixWrapperOffset: false,
     lazyModules: deferredModules,
     moduleGroups: null,

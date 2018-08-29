@@ -1,13 +1,14 @@
 /**
  * Copyright (c) 2013-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow
+ * @format
  */
 
-type _SourceMap = {
+type _BabelSourceMap = {
   file?: string,
   mappings: string,
   names: Array<string>,
@@ -25,9 +26,20 @@ type BabylonOptions = {
   sourceType?: 'script' | 'module',
   sourceFilename?: 'string',
   plugins?: Array<
-    'jsx' | 'flow' | 'doExpressions' | 'objectRestSpread' | 'decorators' |
-    'classProperties' | 'exportExtensions' | 'asyncGenerators' |
-    'functionBind' | 'functionSent' | 'dynamicImport'
+    | 'asyncGenerators'
+    | 'classProperties'
+    | 'decorators'
+    | 'doExpressions'
+    | 'dynamicImport'
+    | 'exportExtensions'
+    | 'flow'
+    | 'functionBind'
+    | 'functionSent'
+    | 'jsx'
+    | 'nullishCoalescingOperator'
+    | 'objectRestSpread'
+    | 'optionalChaining'
+    | 'optionalCatchBinding',
   >,
 };
 
@@ -50,7 +62,7 @@ type GeneratorOptions = {
   sourceFileName?: string,
 };
 
-type InlinePlugin = string | {} | () => {};
+type InlinePlugin = string | {} | (() => {});
 type _Plugins = Array<string | Object | [InlinePlugin] | [InlinePlugin, mixed]>;
 
 // based on https://babeljs.io/docs/usage/options/ -- 2016-11-11
@@ -87,51 +99,55 @@ type __TransformOptions = {
   extends?: string,
 };
 
-type _TransformOptions =
-  __TransformOptions & {env?: {[key: string]: __TransformOptions}};
+type _TransformOptions = __TransformOptions & {
+  env?: {[key: string]: __TransformOptions},
+};
 
-type Ast = {};
+type BabelNode = $FlowFixMe;
 
 type TransformResult = {
-  ast: Ast,
+  ast: BabelNode,
   code: ?string,
   ignored: boolean,
-  map: ?_SourceMap,
+  map: ?_BabelSourceMap,
 };
 // https://github.com/babel/babel/blob/master/packages/babel-generator/src/buffer.js#L42
 type GeneratorResult = {
   code: string,
-  map: ?_SourceMap,
-  rawMappings: ?Array<_RawMapping>,
+  map: ?_BabelSourceMap,
+  rawMappings: ?Array<_BabelSourceMapSegment>,
 };
 type VisitFn = <State>(path: Object, state: State) => any;
 
+type BabelTypes = {[key: string]: Function};
+type BabelVisitor = {};
+
 declare module 'babel-core' {
   declare type Plugins = _Plugins;
-  declare type SourceMap = _SourceMap;
-  declare type Ast = {};
+  declare type BabelSourceMap = _BabelSourceMap;
+  declare type Ast = BabelNode;
   declare type TransformOptions = _TransformOptions;
-  declare function transform(
+  declare var transform: TransformSync /*(
     code: string,
     options?: _TransformOptions,
-  ): TransformResult;
+  ): TransformResult*/;
   declare function traverse<State>(
-    ast: Ast,
-    visitor: {[key: string]: VisitFn<State> |
-                             {enter?: VisitFn<State>, exit?: VisitFn<State>}},
+    ast: BabelNode,
+    visitor: BabelVisitor,
     scope?: ?Object,
     state?: State,
     parentPath?: ?Object,
   ): void;
-  declare var types: {[key: string]: Function};
-  declare function transformFromAst(
-    ast: Ast,
+  declare var types: BabelTypes;
+  declare var transformFile: TransformFileSync;
+  declare var transformFromAst: TransformFromAstSync /*(
+    ast: BabelNode,
     code?: ?string,
     babelOptions?: _TransformOptions,
-  ): TransformResult;
+  ): TransformResult*/;
 }
 
-type _RawMapping = {
+type _BabelSourceMapSegment = {
   generated: {column: number, line: number},
   name?: string,
   original?: {column: number, line: number},
@@ -140,10 +156,195 @@ type _RawMapping = {
 
 // https://github.com/babel/babel/tree/master/packages/babel-generator
 declare module 'babel-generator' {
-  declare export type RawMapping = _RawMapping;
+  declare export type BabelSourceMapSegment = _BabelSourceMapSegment;
   declare export default (
-    ast: Ast,
+    ast: BabelNode,
     options?: GeneratorOptions,
     code?: string | {[string]: string},
   ) => GeneratorResult;
+}
+
+// #############################################
+// ############     Babel 7    #################
+// #############################################
+// (Mostly compatible with Babel 6...)
+
+// https://github.com/babel/babel/tree/master/packages/babylon#options
+type Babylon7Options = {|
+  allowImportExportEverywhere?: boolean,
+  allowReturnOutsideFunction?: boolean,
+  allowSuperOutsideMethod?: mixed, // "TODO" okay. Maybe don't use this yet.
+  sourceType?: 'script' | 'module' | 'unambiguous',
+  sourceFilename?: string,
+  startLine?: number,
+  plugins?: Array<string>, // "plugins" here are built-in features to enable
+  strictMode?: boolean, // "TODO" ehh to consider this strict mode?
+  ranges?: boolean,
+  tokens?: boolean,
+|};
+
+// https://github.com/babel/babel/tree/master/packages/babel-core#options
+type BabelCoreOptions = {|
+  ast?: boolean,
+  auxiliaryCommentAfter?: ?string,
+  auxiliaryCommentBefore?: ?string,
+  babelrc?: boolean,
+  envName?: string,
+  code?: boolean,
+  comments?: boolean,
+  compact?: 'auto' | boolean,
+  env?: {production: {[string]: mixed}, staging: {[string]: mixed}},
+  extends?: ?string,
+  filename?: string,
+  filenameRelative?: 'string',
+  generatorOpts?: ?GeneratorOptions,
+  getModuleId?: ?(string) => string | boolean,
+  highlightCode?: boolean,
+  ignore?: ?(string | Array<string> | RegExp | Array<string | RegExp>),
+  inputSourceMap?: ?_BabelSourceMap,
+  minified?: boolean,
+  moduleId?: ?string,
+  moduleIds?: ?{[string]: string},
+  moduleRoot?: string,
+  only?: ?(string | Array<string> | RegExp | Array<string | RegExp>),
+  parserOpts?: ?Babylon7Options,
+  plugins?: ?_Plugins,
+  presets?: Array<string>,
+  retainLines?: boolean,
+  shouldPrintComment?: ?(string) => boolean,
+  sourceFileName?: string,
+  sourceMaps?: boolean | 'inline' | 'both',
+  sourceMapTarget?: string,
+  sourceRoot?: string,
+  sourceType?: 'module' | 'script' | 'unambiguous',
+  wrapPluginVisitorMethod?: ?(
+    pluginAlias: string,
+    visitorType: string,
+    callback: () => void,
+  ) => void,
+|};
+
+// https://github.com/babel/babel/tree/master/packages/babel-template
+type TemplateOptions = Babylon7Options & {|
+  // note: template defaults for these options;
+  // allowReturnOutsideFunction = true
+  // allowSuperOutsideMethod = true
+  // sourceType = module
+  placeholderWhitelist?: Set<string>,
+  placeholderPattern?: RegExp | false,
+  preserveComments?: boolean,
+|};
+
+type Templatable = ({[tokenName: string]: string}) => BabelNode;
+
+type TemplateFunc = (tpl: string, options?: TemplateOptions) => Templatable;
+
+// note: ast is not optional, babel will throw if it would be empty:
+// https://github.com/babel/babel/blob/98969b8a7335e831c069164f5c56132111847224/packages/babel-core/src/transform-ast.js#L52
+// https://github.com/babel/babel/blob/98969b8a7335e831c069164f5c56132111847224/packages/babel-core/src/transform-ast-sync.js#L15
+export type Transform7Result = {|
+  code: string,
+  map?: _BabelSourceMap,
+  ast: BabelNode, // note: babel never allows falsy ast value here
+|};
+
+// Do NOT make this an optional type!
+type TransformCallback = (Error => void) | ((void, Transform7Result) => void);
+
+type TraverseFunc = (
+  ast: BabelNode | Array<BabelNode>,
+  visitor: BabelVisitor,
+  scope?: ?Object,
+  state?: ?Object,
+  parentPath?: ?Object,
+) => void;
+
+export type TransformSync = (
+  code: string,
+  options: BabelCoreOptions,
+) => Transform7Result;
+
+export type TransformFileSync = (
+  filename: string,
+  options: BabelCoreOptions,
+) => Transform7Result;
+
+export type TransformFromAstSync = (
+  ast: BabelNode,
+  code?: string,
+  options?: BabelCoreOptions,
+) => Transform7Result;
+
+// Use the sync versions if you expect a result
+type void_DO_NOT_USE_SYNC = void;
+
+// https://github.com/babel/babel/tree/master/packages/babel-core
+declare module '@babel/core' {
+  declare type Ast = BabelNode;
+  declare type BabelSourceMap = _BabelSourceMap;
+  declare type Plugins = _Plugins;
+  declare type TransformResult = Transform7Result;
+
+  // use @babel/types instead!
+  declare var types: BabelTypes;
+  // use @babel/traverse instead!
+  declare var traverse: TraverseFunc;
+
+  declare var version: string;
+
+  // Note: DO NOT USE WITHOUT CALLBACK. Use transformSync instead.
+  declare function transform(
+    code: string,
+    options: BabelCoreOptions,
+    callback: TransformCallback,
+  ): void_DO_NOT_USE_SYNC;
+  declare var transformSync: TransformSync;
+  // Note: DO NOT USE WITHOUT CALLBACK. Use transformFileSync instead.
+  declare function transformFile(
+    filename: string,
+    options: BabelCoreOptions,
+    callback: TransformCallback,
+  ): void_DO_NOT_USE_SYNC;
+  declare var transformFileSync: TransformFileSync;
+  // Note: DO NOT USE WITHOUT CALLBACK. Use transformFromAstSync instead.
+  declare function transformFromAst(
+    ast: BabelNode,
+    code?: string,
+    options?: BabelCoreOptions,
+    callback: TransformCallback,
+  ): void_DO_NOT_USE_SYNC;
+  declare var transformFromAstSync: TransformFromAstSync;
+
+  declare function buildExternalHelpers(Array<string>): string;
+}
+
+// https://github.com/babel/babel/tree/master/packages/babel-generator
+declare module '@babel/generator' {
+  declare export default (
+    ast: BabelNode,
+    options?: GeneratorOptions,
+    code?: string | {|[filename: string]: string|},
+  ) => GeneratorResult;
+}
+
+// https://github.com/babel/babel/tree/master/packages/babel-template
+declare module '@babel/template' {
+  declare module.exports: TemplateFunc;
+  // & {
+  //   ast: (code: string) => Ast,
+  //   smart: TemplateFunc,
+  //   statement: TemplateFunc,
+  //   statements: TemplateFunc,
+  //   expression: TemplateFunc,
+  //   program: TemplateFunc,
+  // };
+}
+
+declare module '@babel/types' {
+  // TODO we should make this types thing explicit (see pckg babel-flow-types)
+  declare module.exports: BabelTypes;
+}
+
+declare module '@babel/traverse' {
+  declare module.exports: TraverseFunc;
 }

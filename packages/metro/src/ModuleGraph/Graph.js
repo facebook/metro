@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2016-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
@@ -27,7 +25,7 @@ import type {
 const NO_OPTIONS = {};
 
 exports.create = function create(resolve: ResolveFn, load: LoadFn): GraphFn {
-  async function Graph(entryPoints, platform, options) {
+  return async function Graph(entryPoints, platform, options) {
     const {log = (console: any), optimize = false, skip} =
       options || NO_OPTIONS;
 
@@ -59,24 +57,15 @@ exports.create = function create(resolve: ResolveFn, load: LoadFn): GraphFn {
     );
 
     const tasks = Array.from(entryPoints, (id, i) => ({
-      dependency: {name: id, isAsync: false},
+      dependency: {name: id, data: {isAsync: false}},
       parent: null,
       parentDependencyIndex: i,
       skip,
     }));
 
-    if (tasks.length === 0) {
-      log.error('`Graph` called without any entry points');
-      return Promise.reject(
-        new Error('At least one entry point has to be passed.'),
-      );
-    }
-
     queue.enqueue(...tasks);
     return collect(await queue.result);
-  }
-
-  return Graph;
+  };
 };
 
 class Queue<T, R, A> {
@@ -162,7 +151,7 @@ function onFileLoaded(
   invariant(parentModule, 'Invalid parent module: ' + String(parent));
   parentModule.dependencies[parentDependencyIndex] = {
     id: dependency.name,
-    isAsync: dependency.isAsync,
+    isAsync: dependency.data.isAsync,
     path,
   };
 
@@ -229,7 +218,7 @@ function memoizeLoad(load: LoadFn): LoadFn {
   };
 }
 
-// eslint-disable-next-line no-unclear-flowtypes, no-redeclare
+// eslint-disable-next-line lint/no-unclear-flowtypes, no-redeclare
 function isPromise(x: {then?: ?Function}) {
   return x != null && typeof x.then === 'function';
 }

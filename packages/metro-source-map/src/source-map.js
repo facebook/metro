@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
@@ -15,27 +13,22 @@
 const Generator = require('./Generator');
 const SourceMap = require('source-map');
 
-import type {SourceMap as MappingsMap} from 'babel-core';
-import type {RawMapping as BabelRawMapping} from 'babel-generator';
-import type {RawMapping as CompactRawMapping} from 'source-map';
-
-export type {SourceMap as MappingsMap} from 'babel-core';
-export type CompactRawMappings = Array<CompactRawMapping>;
-export type RawMappings = Array<BabelRawMapping>;
+import type {BabelSourceMap} from 'babel-core';
+import type {BabelSourceMapSegment} from 'babel-generator';
 
 type GeneratedCodeMapping = [number, number];
 type SourceMapping = [number, number, number, number];
 type SourceMappingWithName = [number, number, number, number, string];
 
+export type MetroSourceMapSegmentTuple =
+  | SourceMappingWithName
+  | SourceMapping
+  | GeneratedCodeMapping;
+
 type FBExtensions = {
   x_facebook_offsets: Array<number>,
   x_metro_module_paths: Array<string>,
 };
-
-export type RawMapping =
-  | SourceMappingWithName
-  | SourceMapping
-  | GeneratedCodeMapping;
 
 export type IndexMapSection = {
   map: MetroSourceMap,
@@ -50,8 +43,8 @@ export type IndexMap = {
 };
 
 export type FBIndexMap = IndexMap & FBExtensions;
-export type MetroSourceMap = IndexMap | MappingsMap;
-export type FBSourceMap = FBIndexMap | (MappingsMap & FBExtensions);
+export type MetroSourceMap = IndexMap | BabelSourceMap;
+export type FBSourceMap = FBIndexMap | (BabelSourceMap & FBExtensions);
 
 /**
  * Creates a source map from modules with "raw mappings", i.e. an array of
@@ -60,7 +53,7 @@ export type FBSourceMap = FBIndexMap | (MappingsMap & FBExtensions);
  */
 function fromRawMappings(
   modules: $ReadOnlyArray<{
-    +map: ?Array<RawMapping>,
+    +map: ?Array<MetroSourceMapSegmentTuple>,
     +path: string,
     +source: string,
     +code: string,
@@ -91,7 +84,9 @@ function fromRawMappings(
  * Transforms a standard source map object into a Raw Mappings object, to be
  * used across the bundler.
  */
-function toRawMappings(sourceMap: MappingsMap): RawMappings {
+function toBabelSegments(
+  sourceMap: BabelSourceMap,
+): Array<BabelSourceMapSegment> {
   const rawMappings = [];
 
   new SourceMap.SourceMapConsumer(sourceMap).eachMapping(map => {
@@ -112,7 +107,9 @@ function toRawMappings(sourceMap: MappingsMap): RawMappings {
   return rawMappings;
 }
 
-function compactMapping(mapping: BabelRawMapping): RawMapping {
+function toSegmentTuple(
+  mapping: BabelSourceMapSegment,
+): MetroSourceMapSegmentTuple {
   const {column, line} = mapping.generated;
   const {name, original} = mapping;
 
@@ -130,34 +127,33 @@ function compactMapping(mapping: BabelRawMapping): RawMapping {
 function addMappingsForFile(generator, mappings, module, carryOver) {
   generator.startFile(module.path, module.source);
 
-  const columnOffset = module.code.indexOf('{') + 1;
   for (let i = 0, n = mappings.length; i < n; ++i) {
-    addMapping(generator, mappings[i], carryOver, columnOffset);
+    addMapping(generator, mappings[i], carryOver);
   }
 
   generator.endFile();
 }
 
-function addMapping(generator, mapping, carryOver, columnOffset) {
+function addMapping(generator, mapping, carryOver) {
   const n = mapping.length;
   const line = mapping[0] + carryOver;
   // lines start at 1, columns start at 0
-  const column = mapping[0] === 1 ? mapping[1] + columnOffset : mapping[1];
+  const column = mapping[1];
   if (n === 2) {
     generator.addSimpleMapping(line, column);
   } else if (n === 4) {
-    // $FlowIssue #15579526
-    generator.addSourceMapping(line, column, mapping[2], mapping[3]);
+    const sourceMap: SourceMapping = (mapping: any);
+
+    generator.addSourceMapping(line, column, sourceMap[2], sourceMap[3]);
   } else if (n === 5) {
+    const sourceMap: SourceMappingWithName = (mapping: any);
+
     generator.addNamedSourceMapping(
       line,
       column,
-      // $FlowIssue #15579526
-      mapping[2],
-      // $FlowIssue #15579526
-      mapping[3],
-      // $FlowIssue #15579526
-      mapping[4],
+      sourceMap[2],
+      sourceMap[3],
+      sourceMap[4],
     );
   } else {
     throw new Error(`Invalid mapping: [${mapping.join(', ')}]`);
@@ -168,8 +164,20 @@ function countLines(string) {
   return string.split('\n').length;
 }
 
+function createIndexMap(
+  file: string,
+  sections: Array<IndexMapSection>,
+): IndexMap {
+  return {
+    version: 3,
+    file,
+    sections,
+  };
+}
+
 module.exports = {
+  createIndexMap,
   fromRawMappings,
-  toRawMappings,
-  compactMapping,
+  toBabelSegments,
+  toSegmentTuple,
 };

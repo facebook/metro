@@ -1,25 +1,23 @@
 /**
  * Copyright (c) 2016-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  */
 
 'use strict';
 
-const buildSourceMapWithMetaData = require('../../shared/output/unbundle/build-unbundle-sourcemap-with-metadata.js');
-const invariant = require('invariant');
+const buildSourcemapWithMetadata = require('../../shared/output/RamBundle/buildSourcemapWithMetadata.js');
+const invariant = require('fbjs/lib/invariant');
 
 const {createRamBundleGroups} = require('../../Bundler/util');
 const {
   buildTableAndContents,
   createModuleGroups,
-} = require('../../shared/output/unbundle/as-indexed-file');
+} = require('../../shared/output/RamBundle/as-indexed-file');
 const {concat, getModuleCode, partition, toModuleTransport} = require('./util');
 
 import type {OutputFn} from '../types.flow';
@@ -40,7 +38,8 @@ function asIndexedRamBundle({
   for (const m of deferredModules) {
     invariant(
       m.id >= 0,
-      'A script (non-module) cannot be part of the deferred modules of a RAM bundle',
+      'A script (non-module) cannot be part of the deferred modules of a RAM bundle ' +
+        `(\`${m.sourcePath}\`, id=${m.id})`,
     );
   }
   const ramGroups = createRamBundleGroups(
@@ -59,7 +58,7 @@ function asIndexedRamBundle({
 
   return {
     code: Buffer.concat(tableAndContents),
-    map: buildSourceMapWithMetaData({
+    map: buildSourcemapWithMetadata({
       fixWrapperOffset: false,
       lazyModules: deferredModules,
       moduleGroups,

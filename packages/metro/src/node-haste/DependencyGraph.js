@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
@@ -21,10 +19,8 @@ const ModuleCache = require('./ModuleCache');
 const ResolutionRequest = require('./DependencyGraph/ResolutionRequest');
 
 const fs = require('fs');
-const isAbsolutePath = require('absolute-path');
-const parsePlatformFilePath = require('./lib/parsePlatformFilePath');
 const path = require('path');
-const util = require('util');
+const toLocalPath = require('../node-haste/lib/toLocalPath');
 
 const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
 const {EventEmitter} = require('events');
@@ -32,41 +28,32 @@ const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
 
-import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
-import type {GlobalTransformCache} from '../lib/GlobalTransformCache';
-import type {
-  GetTransformCacheKey,
-  TransformCache,
-} from '../lib/TransformCaching';
 import type {Reporter} from '../lib/reporting';
 import type {ModuleMap} from './DependencyGraph/ModuleResolution';
-import type {TransformCode, HasteImpl} from './Module';
 import type Package from './Package';
 import type {HasteFS} from './types';
+import type {CustomResolver} from 'metro-resolver';
 
 type Options = {|
   +assetExts: Array<string>,
-  +assetRegistryPath: string,
   +blacklistRE?: RegExp,
   +extraNodeModules: ?{},
-  +getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
-  +getTransformCacheKey: GetTransformCacheKey,
-  +globalTransformCache: ?GlobalTransformCache,
-  +hasteImpl?: ?HasteImpl,
+  +hasteImplModulePath?: string,
+  +mainFields: $ReadOnlyArray<string>,
   +maxWorkers: number,
   +platforms: Set<string>,
-  +polyfillModuleNames?: Array<string>,
-  +projectRoots: $ReadOnlyArray<string>,
+  +projectRoot: string,
   +providesModuleNodeModules: Array<string>,
   +reporter: Reporter,
   +resetCache: boolean,
+  +resolveRequest: ?CustomResolver,
   +sourceExts: Array<string>,
-  +transformCache: TransformCache,
-  +transformCode: TransformCode,
+  +useWatchman: boolean,
   +watch: boolean,
+  +watchFolders: $ReadOnlyArray<string>,
 |};
 
-const JEST_HASTE_MAP_CACHE_BREAKER = 1;
+const JEST_HASTE_MAP_CACHE_BREAKER = 4;
 
 class DependencyGraph extends EventEmitter {
   _assetResolutionCache: AssetResolutionCache;
@@ -104,39 +91,37 @@ class DependencyGraph extends EventEmitter {
     this._createModuleResolver();
   }
 
-  static _createHaste(
-    opts: Options,
-    useWatchman?: boolean = true,
-  ): JestHasteMap {
+  static _createHaste(opts: Options): JestHasteMap {
     return new JestHasteMap({
+      computeDependencies: false,
+      computeSha1: true,
       extensions: opts.sourceExts.concat(opts.assetExts),
-      forceNodeFilesystemAPI: !useWatchman,
+      forceNodeFilesystemAPI: !opts.useWatchman,
+      hasteImplModulePath: opts.hasteImplModulePath,
       ignorePattern: opts.blacklistRE || / ^/,
       maxWorkers: opts.maxWorkers,
       mocksPattern: '',
       name: 'metro-' + JEST_HASTE_MAP_CACHE_BREAKER,
       platforms: Array.from(opts.platforms),
       providesModuleNodeModules: opts.providesModuleNodeModules,
-      resetCache: opts.resetCache,
       retainAllFiles: true,
-      roots: opts.projectRoots,
-      useWatchman,
+      resetCache: opts.resetCache,
+      roots: opts.watchFolders,
+      throwOnModuleCollision: true,
+      useWatchman: opts.useWatchman,
       watch: opts.watch,
     });
   }
 
   static _getJestHasteMapOptions(opts: Options) {}
 
-  static async load(
-    opts: Options,
-    useWatchman?: boolean = true,
-  ): Promise<DependencyGraph> {
+  static async load(opts: Options): Promise<DependencyGraph> {
     const initializingMetroLogEntry = log(
       createActionStartEntry('Initializing Metro'),
     );
 
     opts.reporter.update({type: 'dep_graph_loading'});
-    const haste = DependencyGraph._createHaste(opts, useWatchman);
+    const haste = DependencyGraph._createHaste(opts);
     const {hasteFS, moduleMap} = await haste.build();
 
     log(createActionEndEntry(initializingMetroLogEntry));
@@ -187,46 +172,39 @@ class DependencyGraph extends EventEmitter {
       doesFileExist: this._doesFileExist,
       extraNodeModules: this._opts.extraNodeModules,
       isAssetFile: filePath => this._helpers.isAssetFile(filePath),
+      mainFields: this._opts.mainFields,
       moduleCache: this._moduleCache,
       moduleMap: this._moduleMap,
       preferNativePlatform: true,
       resolveAsset: (dirPath, assetName, platform) =>
         this._assetResolutionCache.resolve(dirPath, assetName, platform),
+      resolveRequest: this._opts.resolveRequest,
       sourceExts: this._opts.sourceExts,
     });
   }
 
   _createModuleCache() {
     const {_opts} = this;
-    return new ModuleCache(
-      {
-        assetDependencies: [_opts.assetRegistryPath],
-        depGraphHelpers: this._helpers,
-        getClosestPackage: this._getClosestPackage.bind(this),
-        getTransformCacheKey: _opts.getTransformCacheKey,
-        globalTransformCache: _opts.globalTransformCache,
-        hasteImpl: _opts.hasteImpl,
-        resetCache: _opts.resetCache,
-        transformCache: _opts.transformCache,
-        reporter: _opts.reporter,
-        roots: _opts.projectRoots,
-        transformCode: _opts.transformCode,
-      },
-      _opts.platforms,
-    );
+    return new ModuleCache({
+      getClosestPackage: this._getClosestPackage.bind(this),
+    });
   }
 
-  /**
-   * Returns a promise with the direct dependencies the module associated to
-   * the given entryPath has.
-   */
-  getShallowDependencies(
-    entryPath: string,
-    transformOptions: JSTransformerOptions,
-  ): Promise<Array<string>> {
-    return this._moduleCache
-      .getModule(entryPath)
-      .getDependencies(transformOptions);
+  getSha1(filename: string): string {
+    // TODO Calling realpath allows us to get a hash for a given path even when
+    // it's a symlink to a file, which prevents Metro from crashing in such a
+    // case. However, it doesn't allow Metro to track changes to the target file
+    // of the symlink. We should fix this by implementing a symlink map into
+    // Metro (or maybe by implementing those "extra transformation sources" we've
+    // been talking about for stuff like CSS or WASM).
+    const resolvedPath = fs.realpathSync(filename);
+    const sha1 = this._hasteFS.getSha1(resolvedPath);
+
+    if (!sha1) {
+      throw new ReferenceError(`SHA-1 for file ${filename} is not computed`);
+    }
+
+    return sha1;
   }
 
   getWatcher() {
@@ -237,90 +215,31 @@ class DependencyGraph extends EventEmitter {
     this._haste.end();
   }
 
-  getModuleForPath(entryFile: string) {
-    if (this._helpers.isAssetFile(entryFile)) {
-      return this._moduleCache.getAssetModule(entryFile);
-    }
-
-    return this._moduleCache.getModule(entryFile);
-  }
-
-  resolveDependency(
-    fromModule: Module,
-    toModuleName: string,
-    platform: ?string,
-  ): Module {
+  resolveDependency(from: string, to: string, platform: ?string): string {
     const req = new ResolutionRequest({
       moduleResolver: this._moduleResolver,
-      entryPath: fromModule.path,
+      entryPath: from,
       helpers: this._helpers,
       platform: platform || null,
       moduleCache: this._moduleCache,
     });
 
-    return req.resolveDependency(fromModule, toModuleName);
+    return req.resolveDependency(this._moduleCache.getModule(from), to).path;
   }
 
   _doesFileExist = (filePath: string): boolean => {
     return this._hasteFS.exists(filePath);
   };
 
-  _getRequestPlatform(entryPath: string, platform: ?string): ?string {
-    if (platform == null) {
-      platform = parsePlatformFilePath(entryPath, this._opts.platforms)
-        .platform;
-    } else if (!this._opts.platforms.has(platform)) {
-      throw new Error('Unrecognized platform: ' + platform);
-    }
-    return platform;
-  }
+  getHasteName(filePath: string): string {
+    const hasteName = this._hasteFS.getModuleName(filePath);
 
-  getAbsolutePath(filePath: string) {
-    if (isAbsolutePath(filePath)) {
-      return path.resolve(filePath);
+    if (hasteName) {
+      return hasteName;
     }
 
-    for (let i = 0; i < this._opts.projectRoots.length; i++) {
-      const root = this._opts.projectRoots[i];
-      const potentialAbsPath = path.join(root, filePath);
-      if (this._hasteFS.exists(potentialAbsPath)) {
-        return path.resolve(potentialAbsPath);
-      }
-    }
-
-    // If we failed to find a file, maybe this is just a Haste name so try that
-    // TODO: We should prefer Haste name resolution first ideally since it is faster
-    // TODO: Ideally, we should not do any `path.parse().name` here and just use the
-    //       name, but in `metro/src/Server/index.js` we append `'.js'` to all names
-    //       so until that changes, we have to do this.
-    const potentialPath = this._moduleMap.getModule(
-      path.parse(filePath).name,
-      null,
-    );
-    if (potentialPath) {
-      return potentialPath;
-    }
-
-    throw new NotFoundError(
-      'Cannot find entry file %s in any of the roots: %j',
-      filePath,
-      this._opts.projectRoots,
-    );
-  }
-
-  createPolyfill(options: {file: string}) {
-    return this._moduleCache.createPolyfill(options);
+    return toLocalPath(this._opts.watchFolders, filePath);
   }
 }
-
-function NotFoundError(...args) {
-  Error.call(this);
-  Error.captureStackTrace(this, this.constructor);
-  var msg = util.format.apply(util, args);
-  this.message = msg;
-  this.type = this.name = 'NotFoundError';
-  this.status = 404;
-}
-util.inherits(NotFoundError, Error);
 
 module.exports = DependencyGraph;

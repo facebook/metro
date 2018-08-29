@@ -1,42 +1,43 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @emails oncall+javascript_foundation
  * @format
  */
 'use strict';
 
-jest
-  .mock('fs', () => ({writeFileSync: jest.fn()}))
-  .mock('temp', () => ({path: () => '/arbitrary/path'}))
-  .mock('jest-worker', () => ({__esModule: true, default: jest.fn()}));
-
-const Transformer = require('../');
+const getDefaultConfig = require('metro-config/src/defaults');
 
 const {Readable} = require('stream');
 
 describe('Transformer', function() {
-  let api, Cache;
+  let api;
+  let Transformer;
   const fileName = '/an/arbitrary/file.js';
   const localPath = 'arbitrary/file.js';
-  const transformModulePath = __filename;
+  const config = getDefaultConfig();
+
+  const opts = {
+    maxWorkers: 4,
+    reporters: {},
+    workerPath: null,
+  };
 
   beforeEach(function() {
-    Cache = jest.fn();
-    Cache.prototype.get = jest.fn((a, b, c) => c());
+    jest
+      .resetModules()
+      .mock('fs', () => ({writeFileSync: jest.fn()}))
+      .mock('temp', () => ({path: () => '/arbitrary/path'}))
+      .mock('jest-worker', () => ({__esModule: true, default: jest.fn()}));
 
     const fs = require('fs');
     const jestWorker = require('jest-worker');
-
     fs.writeFileSync.mockClear();
-
     jestWorker.default.mockClear();
-    jestWorker.default.mockImplementation((workerPath, opts) => {
+    jestWorker.default.mockImplementation(function(workerPath, opts) {
       api = {
         end: jest.fn(),
         getStdout: () => new Readable({read() {}}),
@@ -47,47 +48,49 @@ describe('Transformer', function() {
         api[method] = jest.fn();
       });
 
+      api.transform.mockImplementation(() => {
+        return {
+          result: 'transformed(code)',
+          sha1: '4ea962697c876e2674d107f0fec6798414f5bf45',
+          transformFileStartLogEntry: {},
+          transformFileEndLogEntry: {},
+        };
+      });
+
       return api;
     });
+
+    Transformer = require('../');
   });
 
-  it('passes transform data to the worker farm when transforming', () => {
+  it('passes transform data to the worker farm when transforming', async () => {
     const transformOptions = {arbitrary: 'options'};
-    const code = 'arbitrary(code)';
 
-    new Transformer(transformModulePath, 4).transformFile(
+    await new Transformer(opts).transform(
       fileName,
       localPath,
-      code,
-      false,
+      config.transformerPath,
       transformOptions,
-      [],
-      '',
     );
 
     expect(api.transform).toBeCalledWith(
-      transformModulePath,
       fileName,
       localPath,
-      code,
-      false,
+      config.transformerPath,
       transformOptions,
-      [],
-      '',
     );
   });
 
   it('should add file info to parse errors', () => {
-    const transformer = new Transformer(transformModulePath, 4);
+    const transformer = new Transformer(opts);
     const message = 'message';
     const snippet = 'snippet';
 
     api.transform.mockImplementation(
-      (transformPath, filename, localPth, code, opts) => {
+      (filename, localPth, transformPath, opts) => {
         const babelError = new SyntaxError(message);
 
         babelError.type = 'SyntaxError';
-        babelError.description = message;
         babelError.loc = {line: 2, column: 15};
         babelError.codeFrame = snippet;
 
@@ -98,7 +101,7 @@ describe('Transformer', function() {
     expect.assertions(6);
 
     return transformer
-      .transformFile(fileName, localPath, '', true, {})
+      .transform(fileName, localPath, '', true, {})
       .catch(function(error) {
         expect(error.type).toEqual('TransformError');
         expect(error.message).toBe(

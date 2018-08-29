@@ -1,13 +1,12 @@
 /**
  * Copyright (c) 2017-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @format
  * @emails oncall+js_foundation
+ * @flow strict-local
  */
 
 'use strict';
@@ -22,7 +21,7 @@ beforeEach(() => {
 it('exposes a fluent interface', () => {
   expect(builder.markLines(0)).toBe(builder);
   expect(builder.markLines(3)).toBe(builder);
-  expect(builder.startSegment()).toBe(builder);
+  expect(builder.startSegment(0)).toBe(builder);
   expect(builder.append(4)).toBe(builder);
 });
 

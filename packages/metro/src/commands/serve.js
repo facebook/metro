@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
@@ -12,91 +10,75 @@
 
 'use strict';
 
-const MetroApi = require('..');
+const MetroApi = require('../index');
 
-const os = require('os');
-
-const {
-  findMetroConfig,
-  fetchMetroConfig,
-  watchFile,
-  makeAsyncCommand,
-} = require('../cli-utils');
+const {watchFile, makeAsyncCommand} = require('../cli-utils');
+const {loadConfig, resolveConfig} = require('metro-config');
 const {promisify} = require('util');
 
 import typeof Yargs from 'yargs';
 
-exports.command = 'serve';
+module.exports = () => ({
+  command: 'serve',
 
-exports.builder = (yargs: Yargs) => {
-  yargs.option('project-roots', {
-    alias: 'P',
-    type: 'string',
-    array: true,
-  });
+  description:
+    'Starts a Metro server on the given port, building bundles on the fly',
 
-  yargs.option('host', {alias: 'h', type: 'string', default: 'localhost'});
-  yargs.option('port', {alias: 'p', type: 'number', default: 8080});
-
-  yargs.option('max-workers', {
-    alias: 'j',
-    type: 'number',
-    default: Math.max(1, Math.floor(os.cpus().length)),
-  });
-
-  yargs.option('secure', {type: 'boolean'});
-  yargs.option('secure-key', {type: 'string'});
-  yargs.option('secure-cert', {type: 'string'});
-
-  yargs.option('legacy-bundler', {type: 'boolean'});
-
-  yargs.option('config', {alias: 'c', type: 'string'});
-
-  // Deprecated
-  yargs.option('reset-cache', {type: 'boolean', describe: null});
-};
-
-// eslint-disable-next-line no-unclear-flowtypes
-exports.handler = makeAsyncCommand(async (argv: any) => {
-  let server = null;
-  let restarting = false;
-
-  async function restart() {
-    if (restarting) {
-      return;
-    } else {
-      restarting = true;
-    }
-
-    if (server) {
-      console.log('Configuration changed. Restarting the server...');
-      await promisify(server.close).call(server);
-    }
-
-    const config = await fetchMetroConfig(argv.config);
-
-    server = await MetroApi.runServer({
-      ...argv,
-      config,
-      onReady,
+  builder: (yargs: Yargs) => {
+    yargs.option('project-roots', {
+      alias: 'P',
+      type: 'string',
+      array: true,
     });
 
-    restarting = false;
-  }
+    yargs.option('host', {alias: 'h', type: 'string', default: 'localhost'});
+    yargs.option('port', {alias: 'p', type: 'number', default: 8080});
 
-  function onReady(server) {
-    console.log(
-      `The HTTP server is ready to accept requests on ${
-        server.address().address
-      }:${server.address().port}`,
-    );
-  }
+    yargs.option('max-workers', {alias: 'j', type: 'number'});
 
-  const metroConfigLocation = await findMetroConfig(argv.config);
+    yargs.option('secure', {type: 'boolean'});
+    yargs.option('secure-key', {type: 'string'});
+    yargs.option('secure-cert', {type: 'string'});
 
-  if (metroConfigLocation) {
-    await watchFile(metroConfigLocation, restart);
-  } else {
-    await restart();
-  }
+    yargs.option('hmr-enabled', {alias: 'hmr', type: 'boolean'});
+
+    yargs.option('config', {alias: 'c', type: 'string'});
+
+    // Deprecated
+    yargs.option('reset-cache', {type: 'boolean', describe: null});
+  },
+
+  // eslint-disable-next-line lint/no-unclear-flowtypes
+  handler: makeAsyncCommand(async (argv: any) => {
+    let server = null;
+    let restarting = false;
+
+    async function restart() {
+      if (restarting) {
+        return;
+      } else {
+        restarting = true;
+      }
+
+      if (server) {
+        // eslint-disable-next-line no-console
+        console.log('Configuration changed. Restarting the server...');
+        await promisify(server.close).call(server);
+      }
+
+      const config = await loadConfig(argv);
+
+      server = await MetroApi.runServer(config, argv);
+
+      restarting = false;
+    }
+
+    const foundConfig = await resolveConfig(argv.config, argv.cwd);
+
+    if (foundConfig) {
+      await watchFile(foundConfig.filepath, restart);
+    } else {
+      await restart();
+    }
+  }),
 });

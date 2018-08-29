@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
@@ -14,7 +12,7 @@
 
 const B64Builder = require('./B64Builder');
 
-import type {SourceMap as MappingsMap} from 'babel-core';
+import type {BabelSourceMap} from 'babel-core';
 
 /**
  * Generates a source map from raw mappings.
@@ -149,7 +147,7 @@ class Generator {
   /**
    * Return the source map as object.
    */
-  toMap(file?: string, options: {excludeSource?: boolean}): MappingsMap {
+  toMap(file?: string, options?: {excludeSource?: boolean}): BabelSourceMap {
     let content;
 
     if (options && options.excludeSource) {
@@ -173,7 +171,7 @@ class Generator {
    *
    * This is ~2.5x faster than calling `JSON.stringify(generator.toMap())`
    */
-  toString(file?: string, options: {excludeSource?: boolean}): string {
+  toString(file?: string, options?: {excludeSource?: boolean}): string {
     let content;
 
     if (options && options.excludeSource) {

@@ -1,8 +1,0 @@
-{
-  "rules": {
-    "operator-assignment": ["error", "never"]
-  },
-  "env": {
-    "node": true
-  }
-}

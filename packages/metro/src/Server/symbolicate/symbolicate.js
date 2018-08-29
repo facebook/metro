@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
@@ -20,12 +18,12 @@ const xpipe = require('xpipe');
 const {LazyPromise, LockingPromise} = require('./util');
 const {fork} = require('child_process');
 
-import type {MetroSourceMap as SourceMap} from 'metro-source-map';
+import type {MetroSourceMap} from 'metro-source-map';
 
 export type Stack = Array<{file: string, lineNumber: number, column: number}>;
 export type Symbolicate = (
   Stack,
-  Iterable<[string, SourceMap]>,
+  Iterable<[string, MetroSourceMap]>,
 ) => Promise<Stack>;
 
 const affixes = {prefix: 'metro-symbolicate', suffix: '.sock'};

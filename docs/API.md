@@ -9,8 +9,59 @@ title: API
 
 ---
 
+## Quick Start
+
+  - Compile a file
+
+    ```
+    const config = await Metro.loadConfig();
+
+    await Metro.runBuild(config, {
+      entry: 'index.js',
+      out: 'bundle.js',
+    });
+    ```
+
+  - Run a server & watch the filesystem for changes
+
+    ```
+    const config = await Metro.loadConfig();
+
+    await Metro.runServer(config, {
+      port: 8080,
+    });
+    ```
+
 ## Reference
 
-### `todo(fn)`
+All functions exposed below accept an additional `config` option. This object should be the [Metro configuration](CLI.md) exposed by your `metro.config.js` file - you can obtain it using `Metro.loadConfig`.
 
-*TODO*
+### `loadConfig(<options>)`
+
+**Basic options:** `config`, `cwd`
+
+Load the Metro configuration, either from `config` in options if specified, or by traversing the directory hierarchy from `cwd` to the root until it finds a file (by default `metro.config.js`). The returned configuration will have been normalized and merged with Metro's default values.
+
+### `async runMetro(config)`
+
+Creates a Metro server based on the config and returns it. You can use this as a middleware in your existing server.
+
+### `async runBuild(config, <options>)`
+
+**Required options:** `entry`, `out`
+
+**Basic options:** `dev`, `optimize`, `platform`, `sourceMap`, `sourceMapUrl`
+
+Bundles `entry` for the given `platform`, and saves it to location `out`. If `sourceMap` is set, also generates a source map. The source map will be inlined, unless `sourceMapUrl` is also defined. In the latter case, a new file will be generated with the basename of the `sourceMapUrl` parameter.
+
+### `async runServer(config, <options>)`
+
+**Basic options:** `host`, `port`, `secure`, `secureKey`, `secureCert`, `hmrEnabled`
+
+Starts a full Metro HTTP server. It will listen on the specified `host:port`, and can then be queried to retrieve bundles for various entry points. If the `secure` family of options are present, the server will be exposed over HTTPS. If `hmrEnabled` is set, the server will also expose a websocket server and inject the HMR client into the generated bundles.
+
+### `createConnectMiddleware(config, <options>)`
+
+**Basic options:** `port`
+
+Instead of creating the full server, creates a Connect middleware that answers to bundle requests. This middleware can then be plugged into your own servers. The `port` parameter is optional and only used for logging purposes.

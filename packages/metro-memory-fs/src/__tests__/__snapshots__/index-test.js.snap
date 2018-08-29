@@ -1,0 +1,35 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`posix support accessSync check owned file cannot be read 1`] = `"EPERM: \`/foo.txt\`: file cannot be read"`;
+
+exports[`posix support accessSync check owned file cannot be written to 1`] = `"EPERM: \`/foo.txt\`: file cannot be written to"`;
+
+exports[`posix support readlink throws when trying to read a regular file 1`] = `"EINVAL: \`/foo.txt\`: entity is not a symlink"`;
+
+exports[`posix support supports COPYFILE_EXCL for copyFile 1`] = `"EEXIST: \`/dest-file\`: directory or file already exists"`;
+
+exports[`posix support throws when finding a symlink loop 1`] = `"ELOOP: \`/foo.txt\`: too many levels of symbolic links"`;
+
+exports[`posix support throws when trying to create symlink over existing file 1`] = `"EEXIST: \`/foo.txt\`: directory or file already exists"`;
+
+exports[`posix support throws when trying to open too many files 1`] = `"EMFILE: \`/foo.txt\`: too many open files"`;
+
+exports[`posix support throws when trying to read a directory entry 1`] = `"EISDIR: \`/glo\`: cannot read/write to a directory"`;
+
+exports[`posix support throws when trying to read directory as file 1`] = `"EISDIR: \`/glo\`: cannot read/write to a directory"`;
+
+exports[`posix support throws when trying to read file via inexistent directory 1`] = `"ENOENT: \`/glo/../foo.txt\`: no such file or directory"`;
+
+exports[`posix support throws when trying to read file with trailing slash 1`] = `"ENOTDIR: \`/foo.txt/\`: not a directory"`;
+
+exports[`posix support throws when trying to read inexistent file (async) 1`] = `"ENOENT: \`/foo.txt\`: no such file or directory"`;
+
+exports[`posix support throws when trying to read inexistent file 1`] = `"ENOENT: \`/foo.txt\`: no such file or directory"`;
+
+exports[`posix support throws when trying to write a directory entry 1`] = `"EISDIR: \`/glo\`: cannot read/write to a directory"`;
+
+exports[`posix support throws when trying to write to a read-only file descriptor 1`] = `"EBADF: file descriptor cannot be written to"`;
+
+exports[`posix support throws when trying to write to a win32-style path 1`] = `"ENOENT: \`C:\\\\foo.txt\`: no such file or directory"`;
+
+exports[`posix support throws when trying to write to an inexistent file descriptor 1`] = `"EBADF: file descriptor is not open"`;

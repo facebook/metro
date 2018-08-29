@@ -2,6 +2,7 @@
 
 [![CircleCI Build Status](https://circleci.com/gh/facebook/metro.svg?style=shield)](https://circleci.com/gh/facebook/metro)
 [![npm version](https://badge.fury.io/js/metro.svg)](http://badge.fury.io/js/metro)
+[![codecov](https://codecov.io/gh/facebook/metro/branch/master/graph/badge.svg)](https://codecov.io/gh/facebook/metro)
 
 🚇 The JavaScript bundler for React Native.
 

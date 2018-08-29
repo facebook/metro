@@ -1,9 +1,8 @@
 /**
- * Copyright (c) 2014, Facebook, Inc. All rights reserved.
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @format
  */
@@ -18,6 +17,8 @@ module.exports = function runCommand(cmd, args, cwd) {
 
   const displayArgs =
     args.length > 25 ? args.slice(0, 25) + '...' : args.join(' ');
+
+  // eslint-disable-next-line no-console
   console.log(chalk.dim('$ cd ' + cwd + `\n$ ${cmd} ${displayArgs}\n`));
   const result = spawn(cmd, args, {
     cwd,

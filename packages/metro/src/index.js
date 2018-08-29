@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
@@ -12,144 +10,65 @@
 
 'use strict';
 
-const Config = require('./Config');
-const Http = require('http');
-const Https = require('https');
-const MetroBundler = require('./shared/output/bundle');
+const MetroHmrServer = require('./HmrServer');
 const MetroServer = require('./Server');
-const TerminalReporter = require('./lib/TerminalReporter');
-const TransformCaching = require('./lib/TransformCaching');
 
-const defaults = require('./defaults');
+const attachWebsocketServer = require('./lib/attachWebsocketServer');
+const http = require('http');
+const https = require('https');
+const makeBuildCommand = require('./commands/build');
+const makeServeCommand = require('./commands/serve');
+const outputBundle = require('./shared/output/bundle');
 
-const {realpath} = require('fs');
 const {readFile} = require('fs-extra');
-const {Terminal} = require('metro-core');
+const {loadConfig} = require('metro-config');
 
-import type {ConfigT} from './Config';
+import type {Graph} from './DeltaBundler';
+import type {CustomTransformOptions} from './JSTransformer/worker';
 import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
-import type {Options as ServerOptions} from './shared/types.flow';
-import type {IncomingMessage, ServerResponse} from 'http';
 import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import typeof Yargs from 'yargs';
 
-export type {ConfigT} from './Config';
-
-type PublicMetroOptions = {|
-  config?: ConfigT,
-  maxWorkers?: number,
-  projectRoots: Array<string>,
-  // deprecated
-  resetCache?: boolean,
-|};
-
-type PrivateMetroOptions = {|
-  ...PublicMetroOptions,
-  watch?: boolean,
-|};
-
-// We'll be able to remove this to use the one provided by modern versions of
-// fs-extra once https://github.com/jprichardson/node-fs-extra/pull/520 will
-// have been merged (until then, they'll break on devservers/Sandcastle)
-async function asyncRealpath(path): Promise<string> {
-  return new Promise((resolve, reject) => {
-    realpath(path, (error, result) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(result);
-      }
-    });
-  });
-}
-
-async function runMetro({
-  config,
-  resetCache = false,
-  maxWorkers = 1,
-  projectRoots = [],
-  watch = false,
-}: PrivateMetroOptions): Promise<MetroServer> {
-  const normalizedConfig = config ? Config.normalize(config) : Config.DEFAULT;
-
-  const assetExts = defaults.assetExts.concat(
-    (normalizedConfig.getAssetExts && normalizedConfig.getAssetExts()) || [],
-  );
-  const sourceExts = defaults.sourceExts.concat(
-    (normalizedConfig.getSourceExts && normalizedConfig.getSourceExts()) || [],
-  );
-  const platforms =
-    (normalizedConfig.getPlatforms && normalizedConfig.getPlatforms()) || [];
-
-  const transformModulePath = false
-    ? ``
-    : normalizedConfig.getTransformModulePath();
-
-  const providesModuleNodeModules =
-    typeof normalizedConfig.getProvidesModuleNodeModules === 'function'
-      ? normalizedConfig.getProvidesModuleNodeModules()
-      : defaults.providesModuleNodeModules;
-
-  const serverOptions: ServerOptions = {
-    assetExts: normalizedConfig.assetTransforms ? [] : assetExts,
-    assetRegistryPath: normalizedConfig.assetRegistryPath,
-    blacklistRE: normalizedConfig.getBlacklistRE(),
-    createModuleIdFactory: normalizedConfig.createModuleIdFactory,
-    extraNodeModules: normalizedConfig.extraNodeModules,
-    getPolyfills: normalizedConfig.getPolyfills,
-    getModulesRunBeforeMainModule:
-      normalizedConfig.getModulesRunBeforeMainModule,
-    getTransformOptions: normalizedConfig.getTransformOptions,
-    globalTransformCache: null,
-    hasteImpl: normalizedConfig.hasteImpl,
-    maxWorkers,
-    platforms: defaults.platforms.concat(platforms),
-    postMinifyProcess: normalizedConfig.postMinifyProcess,
-    postProcessModules: normalizedConfig.postProcessModules,
-    postProcessBundleSourcemap: normalizedConfig.postProcessBundleSourcemap,
-    providesModuleNodeModules,
-    resetCache,
-    reporter: new TerminalReporter(new Terminal(process.stdout)),
-    sourceExts: normalizedConfig.assetTransforms
-      ? sourceExts.concat(assetExts)
-      : sourceExts,
-    transformCache: TransformCaching.useTempDir(),
-    transformModulePath,
-    watch,
-    workerPath:
-      normalizedConfig.getWorkerPath && normalizedConfig.getWorkerPath(),
-    projectRoots: await Promise.all(
-      normalizedConfig
-        .getProjectRoots()
-        .concat(projectRoots)
-        .map(path => asyncRealpath(path)),
-    ),
-  };
-
-  return new MetroServer(serverOptions);
-}
-
-type CreateConnectMiddlewareOptions = {|
-  ...PublicMetroOptions,
-|};
-
-exports.createConnectMiddleware = async function(
-  options: CreateConnectMiddlewareOptions,
-) {
-  const metroServer = await runMetro({
-    config: options.config,
-    maxWorkers: options.maxWorkers,
-    projectRoots: options.projectRoots,
-    resetCache: options.resetCache,
-    watch: true,
+async function runMetro(config: ConfigT): Promise<MetroServer> {
+  config.reporter.update({
+    type: 'initialize_started',
+    port: config.server.port,
+    // FIXME: We need to change that to watchFolders. It will be a
+    // breaking since it affects custom reporter API.
+    projectRoots: config.watchFolders,
   });
 
-  const normalizedConfig = options.config
-    ? Config.normalize(options.config)
-    : Config.DEFAULT;
+  return new MetroServer(config);
+}
+
+exports.runMetro = runMetro;
+exports.loadConfig = loadConfig;
+
+exports.createConnectMiddleware = async function(config: ConfigT) {
+  const metroServer = await runMetro(config);
+
+  let enhancedMiddleware = metroServer.processRequest;
+
+  // Enhance the resulting middleware using the config options
+  if (config.server.enhanceMiddleware) {
+    enhancedMiddleware = config.server.enhanceMiddleware(
+      enhancedMiddleware,
+      metroServer,
+    );
+  }
 
   return {
-    middleware: normalizedConfig.enhanceMiddleware(metroServer.processRequest),
+    attachHmrServer(httpServer: HttpServer | HttpsServer) {
+      attachWebsocketServer({
+        httpServer,
+        path: '/hot',
+        websocketServer: new MetroHmrServer(metroServer, config),
+      });
+    },
+    metroServer,
+    middleware: enhancedMiddleware,
     end() {
       metroServer.end();
     },
@@ -157,112 +76,241 @@ exports.createConnectMiddleware = async function(
 };
 
 type RunServerOptions = {|
-  ...PublicMetroOptions,
   host?: string,
   onReady?: (server: HttpServer | HttpsServer) => void,
-  port?: number,
+  onError?: (Error & {|code?: string|}) => void,
   secure?: boolean,
   secureKey?: string,
   secureCert?: string,
+  hmrEnabled?: boolean,
 |};
 
-exports.runServer = async (options: RunServerOptions) => {
+exports.runServer = async (
+  config: ConfigT,
+  {
+    host,
+    onReady,
+    onError,
+    secure = false,
+    secureKey,
+    secureCert,
+    hmrEnabled = false,
+  }: RunServerOptions,
+) => {
   // Lazy require
   const connect = require('connect');
 
   const serverApp = connect();
 
-  const {middleware, end} = await exports.createConnectMiddleware({
-    config: options.config,
-    maxWorkers: options.maxWorkers,
-    projectRoots: options.projectRoots,
-    resetCache: options.resetCache,
-  });
+  const {
+    attachHmrServer,
+    middleware,
+    metroServer,
+    end,
+  } = await exports.createConnectMiddleware(config);
 
   serverApp.use(middleware);
 
+  if (config.server.enableVisualizer) {
+    const {initializeVisualizerMiddleware} = require('metro-visualizer');
+    serverApp.use('/visualizer', initializeVisualizerMiddleware(metroServer));
+  }
+
   let httpServer;
 
-  if (options.secure) {
-    httpServer = Https.createServer(
+  if (secure) {
+    httpServer = https.createServer(
       {
-        key: await readFile(options.secureKey),
-        cert: await readFile(options.secureCert),
+        key: await readFile(secureKey),
+        cert: await readFile(secureCert),
       },
       serverApp,
     );
   } else {
-    httpServer = Http.createServer(serverApp);
+    httpServer = http.createServer(serverApp);
   }
 
-  httpServer.listen(options.port, options.host, () => {
-    options.onReady && options.onReady(httpServer);
-  });
-
-  // Disable any kind of automatic timeout behavior for incoming
-  // requests in case it takes the packager more than the default
-  // timeout of 120 seconds to respond to a request.
-  httpServer.timeout = 0;
-
   httpServer.on('error', error => {
+    onError && onError(error);
     end();
   });
 
-  httpServer.on('close', () => {
-    end();
-  });
+  if (hmrEnabled) {
+    attachHmrServer(httpServer);
+  }
 
-  return httpServer;
+  return new Promise((resolve, reject) => {
+    httpServer.listen(config.server.port, host, () => {
+      onReady && onReady(httpServer);
+      resolve(httpServer);
+    });
+
+    // Disable any kind of automatic timeout behavior for incoming
+    // requests in case it takes the packager more than the default
+    // timeout of 120 seconds to respond to a request.
+    httpServer.timeout = 0;
+
+    httpServer.on('error', error => {
+      end();
+      reject(error);
+    });
+
+    httpServer.on('close', () => {
+      end();
+    });
+  });
 };
 
-type RunBuildOptions = {|
-  ...PublicMetroOptions,
-  entry: string,
-  out: string,
+type BuildGraphOptions = {|
+  entries: $ReadOnlyArray<string>,
+  customTransformOptions?: CustomTransformOptions,
   dev?: boolean,
-  optimize?: boolean,
+  minify?: boolean,
+  onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
+  platform?: string,
+  type?: 'module' | 'script',
+|};
+
+type RunBuildOptions = {|
+  entry: string,
+  dev?: boolean,
+  out?: string,
+  onBegin?: () => void,
+  onComplete?: () => void,
+  onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
+  minify?: boolean,
+  output?: {
+    build: (
+      MetroServer,
+      RequestOptions,
+    ) => Promise<{code: string, map: string}>,
+    save: (
+      {code: string, map: string},
+      OutputOptions,
+      (...args: Array<string>) => void,
+    ) => Promise<mixed>,
+  },
   platform?: string,
   sourceMap?: boolean,
   sourceMapUrl?: string,
 |};
 
-exports.runBuild = async (options: RunBuildOptions) => {
-  const metroServer = await runMetro({
-    config: options.config,
-    maxWorkers: options.maxWorkers,
-    projectRoots: options.projectRoots,
-    resetCache: options.resetCache,
-  });
+exports.runBuild = async (
+  config: ConfigT,
+  {
+    dev = false,
+    entry,
+    onBegin,
+    onComplete,
+    onProgress,
+    minify = true,
+    output = outputBundle,
+    out,
+    platform = 'web',
+    sourceMap = false,
+    sourceMapUrl,
+  }: RunBuildOptions,
+) => {
+  const metroServer = await runMetro(config);
 
-  const requestOptions: RequestOptions = {
-    dev: options.dev,
-    entryFile: options.entry,
-    inlineSourceMap: options.sourceMap && !!options.sourceMapUrl,
-    minify: options.optimize || false,
-    platform: options.platform || `web`,
-    sourceMapUrl: options.sourceMapUrl,
-    createModuleIdFactory: options.config
-      ? options.config.createModuleIdFactory
-      : undefined,
-  };
+  try {
+    const requestOptions: RequestOptions = {
+      dev,
+      entryFile: entry,
+      inlineSourceMap: sourceMap && !!sourceMapUrl,
+      minify,
+      platform,
+      sourceMapUrl: sourceMap === false ? undefined : sourceMapUrl,
+      createModuleIdFactory: config.serializer.createModuleIdFactory,
+      onProgress,
+    };
 
-  const metroBundle = await MetroBundler.build(metroServer, requestOptions);
+    if (onBegin) {
+      onBegin();
+    }
 
-  const outputOptions: OutputOptions = {
-    bundleOutput: options.out.replace(/(\.js)?$/, '.js'),
-    sourcemapOutput: options.out.replace(/(\.js)?$/, '.map'),
-    dev: options.dev,
-    platform: options.platform || `web`,
-  };
+    const metroBundle = await output.build(metroServer, requestOptions);
 
-  await MetroBundler.save(metroBundle, outputOptions, console.log);
-  await metroServer.end();
+    if (onComplete) {
+      onComplete();
+    }
 
-  return {metroServer, metroBundle};
+    if (out) {
+      const bundleOutput = out.replace(/(\.js)?$/, '.js');
+      const sourcemapOutput =
+        sourceMap === false ? undefined : out.replace(/(\.js)?$/, '.map');
+
+      const outputOptions: OutputOptions = {
+        bundleOutput,
+        sourcemapOutput,
+        dev,
+        platform,
+      };
+
+      // eslint-disable-next-line no-console
+      await output.save(metroBundle, outputOptions, console.log);
+    }
+
+    return metroBundle;
+  } finally {
+    await metroServer.end();
+  }
 };
 
-exports.Config = Config;
-exports.defaults = defaults;
+exports.buildGraph = async function(
+  config: ConfigT,
+  {
+    customTransformOptions = Object.create(null),
+    dev = false,
+    entries,
+    minify = false,
+    onProgress,
+    platform = 'web',
+    type = 'module',
+  }: BuildGraphOptions,
+): Promise<Graph<>> {
+  const metroServer = await runMetro(config);
+
+  try {
+    return await metroServer.buildGraph(entries, {
+      ...MetroServer.DEFAULT_GRAPH_OPTIONS,
+      customTransformOptions,
+      dev,
+      minify,
+      onProgress,
+      platform,
+      type,
+    });
+  } finally {
+    await metroServer.end();
+  }
+};
+
+type BuildCommandOptions = {||} | null;
+type ServeCommandOptions = {||} | null;
+
+exports.attachMetroCli = function(
+  yargs: Yargs,
+  {
+    // $FlowFixMe TODO T26072405
+    build = {},
+    // $FlowFixMe TODO T26072405
+    serve = {},
+  }: {
+    build: BuildCommandOptions,
+    serve: ServeCommandOptions,
+  } = {},
+) {
+  if (build) {
+    const {command, description, builder, handler} = makeBuildCommand();
+    yargs.command(command, description, builder, handler);
+  }
+  if (serve) {
+    const {command, description, builder, handler} = makeServeCommand();
+    yargs.command(command, description, builder, handler);
+  }
+  return yargs;
+};
 
 // The symbols below belong to the legacy API and should not be relied upon
 Object.assign(exports, require('./legacy'));

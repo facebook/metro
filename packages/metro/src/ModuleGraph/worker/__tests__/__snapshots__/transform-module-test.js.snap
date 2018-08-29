@@ -7,6 +7,7 @@ Object {
     "contentBase64": "eyJfX3NpemUiOnsid2lkdGgiOjMwLCJoZWlnaHQiOjIwfX0=",
     "contentType": "png",
     "filePath": "foo.png",
+    "hash": "AGicIEH/IsIy5t7si/9ocI6Ur8s=",
     "physicalSize": Object {
       "height": 20,
       "width": 30,
@@ -25,6 +26,7 @@ Object {
     "contentBase64": "eyJfX3NpemUiOnsid2lkdGgiOjMwLCJoZWlnaHQiOjIwfX0=",
     "contentType": "png",
     "filePath": "foo@2x.ios.png",
+    "hash": "AGicIEH/IsIy5t7si/9ocI6Ur8s=",
     "physicalSize": Object {
       "height": 20,
       "width": 30,

@@ -1,71 +1,74 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`traverseDependencies Progress updates increases the number of discover/finished modules in steps of one 1`] = `
+exports[`traverseDependencies Extensions supports custom file extensions 1`] = `
 Array [
-  Array [
-    0,
-    1,
-  ],
-  Array [
-    0,
-    2,
-  ],
-  Array [
-    0,
-    3,
-  ],
-  Array [
-    0,
-    4,
-  ],
-  Array [
-    0,
-    5,
-  ],
-  Array [
-    0,
-    6,
-  ],
-  Array [
-    0,
-    7,
-  ],
-  Array [
-    1,
-    7,
-  ],
-  Array [
-    2,
-    7,
-  ],
-  Array [
-    3,
-    7,
-  ],
-  Array [
-    3,
-    8,
-  ],
-  Array [
-    4,
-    8,
-  ],
-  Array [
-    5,
-    8,
-  ],
-  Array [
-    6,
-    8,
-  ],
-  Array [
-    7,
-    8,
-  ],
-  Array [
-    8,
-    8,
-  ],
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
+    ],
+    "path": "/root/index.jsx",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/a.coffee",
+  },
+]
+`;
+
+exports[`traverseDependencies Extensions supports custom file extensions with relative paths 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./a",
+      },
+    ],
+    "path": "/root/index.jsx",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/a.coffee",
+  },
+]
+`;
+
+exports[`traverseDependencies file watch updating changes to browser field 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/browser.js",
+  },
+]
+`;
+
+exports[`traverseDependencies file watch updating removes old package from cache 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "bPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/main.js",
+  },
 ]
 `;
 
@@ -73,30 +76,2238 @@ exports[`traverseDependencies file watch updating should recover from multiple m
 Array [
   Object {
     "dependencies": Array [
-      "a",
-      "b",
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
+      Object {
+        "isAsync": false,
+        "name": "b",
+      },
     ],
-    "id": "index",
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/index.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "id": "a",
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/a.js",
-    "resolution": undefined,
   },
   Object {
     "dependencies": Array [],
-    "id": "b",
-    "isAsset": false,
-    "isPolyfill": false,
     "path": "/root/b.js",
-    "resolution": undefined,
+  },
+]
+`;
+
+exports[`traverseDependencies file watch updating should update node package changes 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
+    ],
+    "path": "/root/node_modules/foo/main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/foo/node_modules/bar/main.js",
+  },
+]
+`;
+
+exports[`traverseDependencies file watch updating should update node package changes 2`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/foo/main.js",
+  },
+]
+`;
+
+exports[`traverseDependencies file watch updating should update node package main changes 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/foo/browser.js",
+  },
+]
+`;
+
+exports[`traverseDependencies file watch updating updates module dependencies 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/main.js",
+  },
+]
+`;
+
+exports[`traverseDependencies file watch updating updates module dependencies on file add 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
+    ],
+    "path": "/root/aPackage/main.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+    ],
+    "path": "/root/bar.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/foo.js",
+  },
+]
+`;
+
+exports[`traverseDependencies file watch updating updates module dependencies on file change 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/main.js",
+  },
+]
+`;
+
+exports[`traverseDependencies file watch updating updates module dependencies on relative asset add 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./foo.png",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/foo.png",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should be able to resolve paths within \`extraNodeModules\` 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "bar/lib/foo",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/provides-bar/lib/foo.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should be able to resolve scoped \`extraNodeModules\` 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "@org/bar/lib/foo",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/provides-bar/lib/foo.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should default main package to index.js 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/index.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should default use index.js if main is a dir 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/lib/index.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should fall back to \`extraNodeModules\` 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./foo",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
+    ],
+    "path": "/root/foo/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/provides-bar/lib/bar.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should fall back to browser mapping from react-native mapping 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "node-package",
+      },
+    ],
+    "path": "/root/aPackage/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "nested-package",
+      },
+    ],
+    "path": "/root/aPackage/node_modules/rn-package/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/node_modules/nested-browser-package/index.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should get dependencies 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "b",
+      },
+    ],
+    "path": "/root/a.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/b.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should get dependencies with assets and resolution 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./imgs/a.png",
+      },
+      Object {
+        "isAsync": false,
+        "name": "./imgs/b.png",
+      },
+      Object {
+        "isAsync": false,
+        "name": "./imgs/c.png",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/imgs/a@1.5x.png",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/imgs/b@.7x.png",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/imgs/c.png",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should get dependencies with relative assets 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./imgs/a.png",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/imgs/a.png",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should get dependencies with the correct extensions 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/a.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should get json dependencies 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./a.json",
+      },
+      Object {
+        "isAsync": false,
+        "name": "./b",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/a.json",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/b.json",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should get package json as a dep 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./package.json",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/package.json",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should get recursive dependencies 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "index",
+      },
+    ],
+    "path": "/root/a.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should get shallow dependencies 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "b",
+      },
+    ],
+    "path": "/root/a.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should ignore malformed packages 1`] = `
+Array [
+  Object {
+    "dependencies": Array [],
+    "path": "/root/index.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should merge browser mapping with react-native mapping 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "node-package-a",
+      },
+      Object {
+        "isAsync": false,
+        "name": "node-package-b",
+      },
+      Object {
+        "isAsync": false,
+        "name": "node-package-c",
+      },
+    ],
+    "path": "/root/aPackage/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/node_modules/rn-package-a/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/node_modules/rn-package-b/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/node_modules/rn-package-d/index.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should only use \`extraNodeModules\` after checking all possible filesystem locations 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/bar.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should resolve require to index if it is a dir 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./lib/",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/lib/index.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should resolve require to main if it is a dir w/ a package.json 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./lib/",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/lib/main.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should resolve using alternative ids 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/index.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should respect platform extension in assets 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./imgs/a.png",
+      },
+      Object {
+        "isAsync": false,
+        "name": "./imgs/b.png",
+      },
+      Object {
+        "isAsync": false,
+        "name": "./imgs/c.png",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/imgs/a@1.5x.ios.png",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/imgs/b@.7x.ios.png",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/imgs/c.ios.png",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser exclude of a file ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./booga",
+      },
+    ],
+    "path": "/root/aPackage/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/emptyModule.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser exclude of a file ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./booga",
+      },
+    ],
+    "path": "/root/aPackage/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/emptyModule.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser exclude of a package ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "booga",
+      },
+    ],
+    "path": "/root/aPackage/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/emptyModule.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser exclude of a package ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "booga",
+      },
+    ],
+    "path": "/root/aPackage/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/emptyModule.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser field in packages w/o .js ext ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/client.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser field in packages w/o .js ext ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/client.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping for packages ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "node-package",
+      },
+    ],
+    "path": "/root/aPackage/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/browser-package/index.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping for packages ("browser") 2`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "node-package",
+      },
+    ],
+    "path": "/root/aPackage/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/browser-package/index.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping for packages ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "node-package",
+      },
+    ],
+    "path": "/root/aPackage/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/browser-package/index.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping for packages ("react-native") 2`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "node-package",
+      },
+    ],
+    "path": "/root/aPackage/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/browser-package/index.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping for relative requires ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./file-node.js",
+      },
+    ],
+    "path": "/root/aPackage/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/file-browser.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping for relative requires ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./file-node.js",
+      },
+    ],
+    "path": "/root/aPackage/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/file-browser.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping for relative requires from deep within the package ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "../file-node.js",
+      },
+    ],
+    "path": "/root/aPackage/subfolder/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/file-browser.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping for relative requires from deep within the package ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "../file-node.js",
+      },
+    ],
+    "path": "/root/aPackage/subfolder/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/file-browser.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping of a package to a file ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./dir/ooga",
+      },
+    ],
+    "path": "/root/aPackage/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "node-package",
+      },
+    ],
+    "path": "/root/aPackage/dir/ooga.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/dir/browser.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping of a package to a file ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./dir/ooga",
+      },
+    ],
+    "path": "/root/aPackage/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "node-package",
+      },
+    ],
+    "path": "/root/aPackage/dir/ooga.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/dir/browser.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping of files ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./node",
+      },
+      Object {
+        "isAsync": false,
+        "name": "./dir/server.js",
+      },
+    ],
+    "path": "/root/aPackage/client.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./not-browser",
+      },
+    ],
+    "path": "/root/aPackage/not-node.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/browser.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "../hello",
+      },
+    ],
+    "path": "/root/aPackage/dir/client.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/bye.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support browser mapping of files ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./node",
+      },
+      Object {
+        "isAsync": false,
+        "name": "./dir/server.js",
+      },
+    ],
+    "path": "/root/aPackage/client.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./not-browser",
+      },
+    ],
+    "path": "/root/aPackage/not-node.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/browser.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "../hello",
+      },
+    ],
+    "path": "/root/aPackage/dir/client.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/bye.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support mapping main in browser field json ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/client.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support mapping main in browser field json ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/client.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support mapping main in browser field json without path prefix ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/client.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support mapping main in browser field json without path prefix ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/client.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support simple browser field in packages ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/client.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should support simple browser field in packages ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/client.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should work do correct browser mapping w/o js ext ("browser") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/client.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should work do correct browser mapping w/o js ext ("react-native") 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/client.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should work with absolute paths 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "/root/apple.js",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/apple.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should work with custom main fields 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "my-package",
+      },
+    ],
+    "path": "/root/aPackage/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "nested-package",
+      },
+    ],
+    "path": "/root/aPackage/node_modules/rn-package/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/node_modules/nested-browser-package/index.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should work with packages 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/main.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should work with packages with a dot in the name 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "sha.js",
+      },
+      Object {
+        "isAsync": false,
+        "name": "x.y.z",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/sha.js/main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/x.y.z/main.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should work with packages with a trailing slash 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage/",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/main.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should work with packages with subdirs 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage/subdir/lolynot",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/subdir/lolynot.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (posix) should work with relative modules in packages 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "aPackage",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./subdir/lolynot",
+      },
+    ],
+    "path": "/root/aPackage/main.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "../other",
+      },
+    ],
+    "path": "/root/aPackage/subdir/lolynot.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/aPackage/other.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (win32) should get dependencies 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
+    ],
+    "path": "C:\\\\root\\\\index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "b",
+      },
+    ],
+    "path": "C:\\\\root\\\\a.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\b.js",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (win32) should get dependencies with assets and resolution 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./imgs/a.png",
+      },
+      Object {
+        "isAsync": false,
+        "name": "./imgs/b.png",
+      },
+      Object {
+        "isAsync": false,
+        "name": "./imgs/c.png",
+      },
+    ],
+    "path": "C:\\\\root\\\\index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\imgs\\\\a@1.5x.png",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\imgs\\\\b@.7x.png",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\imgs\\\\c.png",
+  },
+]
+`;
+
+exports[`traverseDependencies get sync dependencies (win32) should work with absolute paths 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "C:/root/apple.js",
+      },
+    ],
+    "path": "C:\\\\root\\\\index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\apple.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) nested node_modules with browser field 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "bar/lol",
+      },
+    ],
+    "path": "/root/node_modules/foo/main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/foo/node_modules/bar/wow.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/bar/main2.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) nested node_modules with specific paths 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar/",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "bar/lol",
+      },
+    ],
+    "path": "/root/node_modules/foo/main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/foo/node_modules/bar/lol.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/bar/main.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) node_modules should support multi level 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+    ],
+    "path": "/root/path/to/bar.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/foo/main.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) platform should work with node_modules 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
+    ],
+    "path": "/root/index.ios.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/foo/index.ios.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/bar/main.ios.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) should not be confused by prev occuring whitelisted names 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "shouldWork",
+      },
+    ],
+    "path": "/react-haste/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/react-haste/node_modules/react-haste/main.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) should pick the generic file 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
+    ],
+    "path": "/root/index.ios.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/a.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) should require package.json 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "foo/package.json",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/foo/package.json",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./package.json",
+      },
+    ],
+    "path": "/root/node_modules/bar/main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/bar/package.json",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) should selectively ignore providesModule in node_modules 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "shouldWork",
+      },
+      Object {
+        "isAsync": false,
+        "name": "ember",
+      },
+      Object {
+        "isAsync": false,
+        "name": "internalVendoredPackage",
+      },
+      Object {
+        "isAsync": false,
+        "name": "anotherIndex",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "submodule",
+      },
+    ],
+    "path": "/root/node_modules/react-haste/main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/react-haste/node_modules/submodule/main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/ember/main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/vendored_modules/a-vendored-package/main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/anotherRoot/index.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) should work with multiple platforms (haste) 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
+    ],
+    "path": "/root/index.ios.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/a.ios.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) should work with multiple platforms (node) 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./a",
+      },
+    ],
+    "path": "/root/index.ios.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/a.ios.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) should work with nested node_modules 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
+    ],
+    "path": "/root/node_modules/foo/main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/foo/node_modules/bar/main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/bar/main.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) should work with node packages with a .js in the name 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "sha.js",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/sha.js/main.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (posix) should work with one-character node_modules 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "a/index.js",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "/root/node_modules/a/index.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) nested node_modules with browser field 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
+    ],
+    "path": "C:\\\\root\\\\index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "bar/lol",
+      },
+    ],
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\node_modules\\\\bar\\\\wow.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\node_modules\\\\bar\\\\main2.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) nested node_modules with specific paths 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar/",
+      },
+    ],
+    "path": "C:\\\\root\\\\index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "bar/lol",
+      },
+    ],
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\node_modules\\\\bar\\\\lol.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\node_modules\\\\bar\\\\main.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) node_modules should support multi level 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
+    ],
+    "path": "C:\\\\root\\\\index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+    ],
+    "path": "C:\\\\root\\\\path\\\\to\\\\bar.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\main.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) platform should work with node_modules 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
+    ],
+    "path": "C:\\\\root\\\\index.ios.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\index.ios.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\node_modules\\\\bar\\\\main.ios.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) should not be confused by prev occuring whitelisted names 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "shouldWork",
+      },
+    ],
+    "path": "C:\\\\react-haste\\\\index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\react-haste\\\\node_modules\\\\react-haste\\\\main.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) should pick the generic file 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
+    ],
+    "path": "C:\\\\root\\\\index.ios.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\a.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) should require package.json 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "foo/package.json",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
+    ],
+    "path": "C:\\\\root\\\\index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\package.json",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./package.json",
+      },
+    ],
+    "path": "C:\\\\root\\\\node_modules\\\\bar\\\\main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\node_modules\\\\bar\\\\package.json",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) should selectively ignore providesModule in node_modules 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "shouldWork",
+      },
+      Object {
+        "isAsync": false,
+        "name": "ember",
+      },
+      Object {
+        "isAsync": false,
+        "name": "internalVendoredPackage",
+      },
+      Object {
+        "isAsync": false,
+        "name": "anotherIndex",
+      },
+    ],
+    "path": "C:\\\\root\\\\index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "submodule",
+      },
+    ],
+    "path": "C:\\\\root\\\\node_modules\\\\react-haste\\\\main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\node_modules\\\\react-haste\\\\node_modules\\\\submodule\\\\main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\node_modules\\\\ember\\\\main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\vendored_modules\\\\a-vendored-package\\\\main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\anotherRoot\\\\index.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) should work with multiple platforms (haste) 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "a",
+      },
+    ],
+    "path": "C:\\\\root\\\\index.ios.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\a.ios.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) should work with multiple platforms (node) 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "./a",
+      },
+    ],
+    "path": "C:\\\\root\\\\index.ios.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\a.ios.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) should work with nested node_modules 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "foo",
+      },
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
+    ],
+    "path": "C:\\\\root\\\\index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "bar",
+      },
+    ],
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\node_modules\\\\foo\\\\node_modules\\\\bar\\\\main.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\node_modules\\\\bar\\\\main.js",
+  },
+]
+`;
+
+exports[`traverseDependencies node_modules (win32) should work with node packages with a .js in the name 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "sha.js",
+      },
+    ],
+    "path": "C:\\\\root\\\\index.js",
+  },
+  Object {
+    "dependencies": Array [],
+    "path": "C:\\\\root\\\\node_modules\\\\sha.js\\\\main.js",
   },
 ]
 `;

@@ -1,0 +1,13 @@
+{
+  "version": "0.44.0",
+  "name": "metro-babel7-plugin-react-transform",
+  "main": "src/index.js",
+  "scripts": {
+    "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",
+    "cleanup-release": "test ! -e build && mv src build && mv src.real src"
+  },
+  "dependencies": {
+    "@babel/helper-module-imports": "7.0.0-beta.56"
+  },
+  "license": "MIT"
+}

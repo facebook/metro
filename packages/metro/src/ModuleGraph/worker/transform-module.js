@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2016-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
@@ -17,7 +15,8 @@ const JsFileWrapping = require('./JsFileWrapping');
 const Platforms = require('./Platforms');
 
 const collectDependencies = require('./collectDependencies');
-const defaults = require('../../defaults');
+const crypto = require('crypto');
+const defaults = require('metro-config/src/defaults/defaults');
 const docblock = require('jest-docblock');
 const generate = require('./generate');
 const getImageSize = require('image-size');
@@ -27,22 +26,23 @@ const path = require('path');
 const {isAssetTypeAnImage} = require('../../Bundler/util');
 const {basename} = require('path');
 
-import type {HasteImpl} from '../../node-haste/Module';
+import type {Transformer} from '../../JSTransformer/worker';
 import type {
   ImageSize,
   TransformedCodeFile,
   TransformedSourceFile,
-  Transformer,
   TransformResult,
   TransformVariants,
 } from '../types.flow';
-import type {Ast} from 'babel-core';
+import type {Ast} from '@babel/core';
 
-export type TransformOptions<ExtraOptions> = {|
+export type TransformOptions = {|
+  +asyncRequireModulePath: string,
   filename: string,
-  hasteImpl?: HasteImpl,
+  hasteImplModulePath?: string,
   polyfill?: boolean,
-  transformer: Transformer<ExtraOptions>,
+  +sourceExts: Set<string>,
+  transformer: Transformer,
   variants?: TransformVariants,
 |};
 
@@ -51,7 +51,7 @@ const defaultTransformOptions = {
   dev: false,
   hot: false,
   inlineRequires: false,
-  minify: false,
+  minify: true,
   platform: '',
   projectRoot: '',
 };
@@ -61,17 +61,20 @@ const ASSET_EXTENSIONS = new Set(defaults.assetExts);
 
 function transformModule(
   content: Buffer,
-  options: TransformOptions<{+retainLines?: boolean}>,
+  options: TransformOptions,
 ): TransformedSourceFile {
-  if (ASSET_EXTENSIONS.has(path.extname(options.filename).substr(1))) {
+  const ext = path.extname(options.filename).substr(1);
+  if (ASSET_EXTENSIONS.has(ext)) {
     return transformAsset(content, options.filename);
   }
-
-  const code = content.toString('utf8');
-  if (options.filename.endsWith('.json')) {
-    return transformJSON(code, options);
+  if (ext === 'json') {
+    return transformJSON(content.toString('utf8'), options);
+  }
+  if (!options.sourceExts.has(ext)) {
+    return {type: 'unknown'};
   }
 
+  const sourceCode = content.toString('utf8');
   const {filename, transformer, polyfill, variants = defaultVariants} = options;
   const transformed: {[key: string]: TransformResult} = {};
 
@@ -80,20 +83,30 @@ function transformModule(
       filename,
       localPath: filename,
       options: {...defaultTransformOptions, ...variants[variantName]},
-      src: code,
+      src: sourceCode,
     });
     invariant(ast != null, 'ast required from the transform results');
-    transformed[variantName] = makeResult(ast, filename, code, polyfill);
+    const {asyncRequireModulePath} = options;
+    transformed[variantName] = makeResult({
+      ast,
+      asyncRequireModulePath,
+      filename,
+      isPolyfill: polyfill || false,
+      sourceCode,
+    });
   }
 
   let hasteID = null;
   if (filename.indexOf(NODE_MODULES) === -1 && !polyfill) {
-    hasteID = docblock.parse(docblock.extract(code)).providesModule;
-    if (options.hasteImpl) {
-      if (options.hasteImpl.enforceHasteNameMatches) {
-        options.hasteImpl.enforceHasteNameMatches(filename, hasteID);
-      }
-      hasteID = options.hasteImpl.getHasteName(filename);
+    if (options.hasteImplModulePath != null) {
+      // eslint-disable-next-line no-useless-call
+      const HasteImpl = (require.call(
+        null,
+        options.hasteImplModulePath,
+      ): HasteImpl);
+      hasteID = HasteImpl.getHasteName(filename);
+    } else {
+      hasteID = docblock.parse(docblock.extract(sourceCode)).providesModule;
     }
   }
 
@@ -111,14 +124,13 @@ function transformModule(
 function transformJSON(json, options): TransformedSourceFile {
   const value = JSON.parse(json);
   const {filename} = options;
-  const code = `__d(function(${JsFileWrapping.MODULE_FACTORY_PARAMETERS.join(
-    ', ',
-  )}) { module.exports = \n${json}\n});`;
+  const code = JsFileWrapping.wrapJson(json);
 
   const moduleData = {
     code,
     map: null, // no source map for JSON files!
     dependencies: [],
+    requireName: '_require', // not relevant for JSON files
   };
   const transformed = {};
 
@@ -154,6 +166,10 @@ function transformAsset(
     assetPath: assetData.assetName,
     contentBase64: content.toString('base64'),
     contentType,
+    hash: crypto
+      .createHash('sha1')
+      .update(content)
+      .digest('base64'),
     filePath,
     physicalSize: getAssetSize(contentType, content, filePath),
     platform: assetData.platform,
@@ -177,22 +193,38 @@ function getAssetSize(
   return {width, height};
 }
 
-function makeResult(ast: Ast, filename, sourceCode, isPolyfill = false) {
-  let dependencies, dependencyMapName, file;
-  if (isPolyfill) {
-    dependencies = [];
-    file = JsFileWrapping.wrapPolyfill(ast);
-  } else {
-    ({dependencies, dependencyMapName} = collectDependencies(ast));
-    file = JsFileWrapping.wrapModule(ast, dependencyMapName);
-  }
+function makeResult(options: {|
+  +ast: Ast,
+  +asyncRequireModulePath: string,
+  +filename: string,
+  +isPolyfill: boolean,
+  +sourceCode: string,
+|}) {
+  let dependencies, dependencyMapName;
+  let requireName = 'require';
+  let {ast} = options;
 
-  const gen = generate(file, filename, sourceCode, false);
+  if (options.isPolyfill) {
+    dependencies = [];
+    ast = JsFileWrapping.wrapPolyfill(ast);
+  } else {
+    const {asyncRequireModulePath} = options;
+    const opts = {
+      asyncRequireModulePath,
+      dynamicRequires: 'reject',
+      keepRequireNames: true,
+    };
+    ({dependencies, dependencyMapName} = collectDependencies(ast, opts));
+    ({ast, requireName} = JsFileWrapping.wrapModule(ast, dependencyMapName));
+  }
+  const {filename, sourceCode} = options;
+  const gen = generate(ast, filename, sourceCode, false);
   return {
     code: gen.code,
     map: gen.map,
     dependencies,
     dependencyMapName,
+    requireName,
   };
 }
 

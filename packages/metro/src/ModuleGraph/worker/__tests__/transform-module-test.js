@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2016-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @emails oncall+javascript_foundation
  * @flow
@@ -15,23 +13,28 @@
 
 const invariant = require('fbjs/lib/invariant');
 const nullthrows = require('fbjs/lib/nullthrows');
-const t = require('babel-types');
 const transformModule = require('../transform-module');
+const types = require('@babel/types');
+
+const generate = require('@babel/generator').default;
+const traverse = require('@babel/traverse').default;
 
 const {fn} = require('../../test-helpers');
-const {parse} = require('babylon');
+const {parse} = require('@babel/parser');
 const {SourceMapConsumer} = require('source-map');
-const generate = require('babel-generator').default;
-const {traverse} = require('babel-core');
 
 import type {TransformVariants} from '../../types.flow';
+
+const t = types;
 
 jest.mock('image-size', () => buffer => {
   return JSON.parse(buffer.toString('utf8')).__size;
 });
 
 describe('transforming JS modules:', () => {
-  const filename = 'arbitrary';
+  const filename = 'arbitrary.js';
+  const sourceExts = new Set(['js', 'json']);
+  const asyncRequireModulePath = 'asyncRequire';
 
   let transformer;
 
@@ -46,7 +49,9 @@ describe('transforming JS modules:', () => {
   const {bodyAst, sourceCode, transformedCode} = createTestData();
 
   const options = (variants?: TransformVariants) => ({
+    asyncRequireModulePath,
     filename,
+    sourceExts,
     transformer,
     variants,
   });
@@ -57,7 +62,7 @@ describe('transforming JS modules:', () => {
 
   it('passes through file name', () => {
     const result = transformModule(sourceCode, options());
-    expect(result.type).toBe('code');
+    invariant(result.type === 'code', 'result must be code');
     expect(result.details).toEqual(
       expect.objectContaining({
         file: filename,
@@ -69,19 +74,19 @@ describe('transforming JS modules:', () => {
     const hasteID = 'TheModule';
     const codeWithHasteID = toBuffer(`/** @providesModule ${hasteID} */`);
     const result = transformModule(codeWithHasteID, options());
-    expect(result.type).toBe('code');
+    invariant(result.type === 'code', 'result must be code');
     expect(result.details).toEqual(expect.objectContaining({hasteID}));
   });
 
   it('sets `type` to `"module"` by default', () => {
     const result = transformModule(sourceCode, options());
-    expect(result.type).toBe('code');
+    invariant(result.type === 'code', 'result must be code');
     expect(result.details).toEqual(expect.objectContaining({type: 'module'}));
   });
 
   it('sets `type` to `"script"` if the input is a polyfill', () => {
     const result = transformModule(sourceCode, {...options(), polyfill: true});
-    expect(result.type).toBe('code');
+    invariant(result.type === 'code', 'result must be code');
     expect(result.details).toEqual(expect.objectContaining({type: 'script'}));
   });
 
@@ -95,7 +100,10 @@ describe('transforming JS modules:', () => {
   };
 
   it('calls the passed-in transform function with code, file name, and options for all passed in variants', () => {
-    const variants = {dev: {dev: true}, prod: {dev: false}};
+    const variants = {
+      dev: {dev: true, minify: false},
+      prod: {dev: false, minify: true},
+    };
 
     transformModule(sourceCode, options(variants));
     expect(transformer.transform).toBeCalledWith({
@@ -130,7 +138,7 @@ describe('transforming JS modules:', () => {
     const {code, dependencyMapName} = result.details.transformed.default;
     invariant(dependencyMapName != null, 'dependencyMapName cannot be null');
     expect(code.replace(/\s+/g, '')).toEqual(
-      `__d(function(global,require,module,exports,${dependencyMapName}){${transformedCode}});`,
+      `__d(function(global,_$$_REQUIRE,_$$_IMPORT_DEFAULT,_$$_IMPORT_ALL,module,exports,${dependencyMapName}){${transformedCode}});`,
     );
   });
 
@@ -139,7 +147,7 @@ describe('transforming JS modules:', () => {
     invariant(result.type === 'code', 'result must be code');
     const {code} = result.details.transformed.default;
     expect(code.replace(/\s+/g, '')).toEqual(
-      `(function(global){${transformedCode}})(this);`,
+      `(function(global){${transformedCode}})(typeofglobal==='undefined'?this:global);`,
     );
   });
 
@@ -160,7 +168,7 @@ describe('transforming JS modules:', () => {
     const dep1 = 'foo';
     const dep2 = 'bar';
     const code = `require('${dep1}'),require('${dep2}')`;
-    const {body} = parse(code).program;
+    const {body} = parse(code, {sourceType: 'script'}).program;
     transformer.transform.stub.returns(transformResult(body));
 
     const result = transformModule(toBuffer(code), options());
@@ -168,8 +176,8 @@ describe('transforming JS modules:', () => {
     expect(result.details.transformed.default).toEqual(
       expect.objectContaining({
         dependencies: [
-          {name: dep1, isAsync: false},
-          {name: dep2, isAsync: false},
+          {name: dep1, data: {isAsync: false}},
+          {name: dep2, data: {isAsync: false}},
         ],
       }),
     );
@@ -187,12 +195,12 @@ describe('transforming JS modules:', () => {
     invariant(result.type === 'code', 'result must be code');
     const {dev, prod} = result.details.transformed;
     expect(dev.code.replace(/\s+/g, '')).toEqual(
-      `__d(function(global,require,module,exports,${nullthrows(
+      `__d(function(global,_$$_REQUIRE,_$$_IMPORT_DEFAULT,_$$_IMPORT_ALL,module,exports,${nullthrows(
         dev.dependencyMapName,
       )}){arbitrary(code);});`,
     );
     expect(prod.code.replace(/\s+/g, '')).toEqual(
-      `__d(function(global,require,module,exports,${nullthrows(
+      `__d(function(global,_$$_REQUIRE,_$$_IMPORT_DEFAULT,_$$_IMPORT_ALL,module,exports,${nullthrows(
         prod.dependencyMapName,
       )}){arbitrary(code);});`,
     );
@@ -208,8 +216,8 @@ describe('transforming JS modules:', () => {
     invariant(result.type === 'code', 'result must be code');
     const {code} = result.details.transformed.default;
     expect(code.replace(/\s+/g, '')).toEqual(
-      '__d(function(global,require,module,exports){' +
-        `module.exports=${json}});`,
+      '__d(function(global,require,_$$_IMPORT_DEFAULT,_$$_IMPORT_ALL,module,exports){' +
+        `module.exports=${json};});`,
     );
   });
 
@@ -240,6 +248,14 @@ describe('transforming JS modules:', () => {
     expect(result.details.package).toEqual(pkg);
   });
 
+  it('does not process non-source files', () => {
+    const result = transformModule(toBuffer('arbitrary'), {
+      ...options(),
+      filename: 'some.yy',
+    });
+    invariant(result.type === 'unknown', 'result must be code');
+  });
+
   describe('assets', () => {
     it('extract image sizes, platform, scale', () => {
       const image = {__size: {width: 30, height: 20}};
@@ -255,7 +271,7 @@ describe('transforming JS modules:', () => {
 
     it('throws on empty images', () => {
       expect(() =>
-        transformModule(new Buffer(0), {...options(), filename: 'foo.png'}),
+        transformModule(Buffer.alloc(0), {...options(), filename: 'foo.png'}),
       ).toThrowErrorMatchingSnapshot();
     });
   });
@@ -265,7 +281,7 @@ function createTestData() {
   // creates test data with an transformed AST, so that we can test source
   // map generation.
   const sourceCode = 'some(arbitrary(code));';
-  const fileAst = parse(sourceCode);
+  const fileAst = parse(sourceCode, {sourceType: 'module'});
   traverse(fileAst, {
     CallExpression(path) {
       if (path.node.callee.name === 'some') {
@@ -293,5 +309,5 @@ function findColumnAndLine(text, string) {
 }
 
 function toBuffer(str) {
-  return new Buffer(str, 'utf8');
+  return Buffer.from(str, 'utf8');
 }

@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2016-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @format
  * @flow
@@ -12,23 +10,30 @@
 
 'use strict';
 
-const babel = require('babel-core');
-const constantFolding = require('../../JSTransformer/worker/constant-folding')
-  .plugin;
+const constantFoldingPlugin = require('../../JSTransformer/worker/constant-folding-plugin');
 const generate = require('./generate');
-const inline = require('../../JSTransformer/worker/inline').plugin;
+const getMinifier = require('../../lib/getMinifier');
+const inlinePlugin = require('../../JSTransformer/worker/inline-plugin');
 const invariant = require('fbjs/lib/invariant');
-const minify = require('../../JSTransformer/worker/minify');
 const optimizeDependencies = require('./optimizeDependencies');
 const sourceMap = require('source-map');
 
-import type {TransformedSourceFile, TransformResult} from '../types.flow';
-import type {MappingsMap, MetroSourceMap as SourceMap} from 'metro-source-map';
-import type {PostMinifyProcess} from '../../Bundler/index.js';
+const {transformSync} = require('@babel/core');
+
+import type {
+  TransformedCodeFile,
+  TransformedSourceFile,
+  TransformResult,
+} from '../types.flow';
+import type {BabelSourceMap} from '@babel/core';
+import type {TransformResult as BabelTransformResult} from '@babel/core';
+import type {PostMinifyProcess} from 'metro-config/src/configTypes.flow.js';
+import type {MetroSourceMap} from 'metro-source-map';
 
 export type OptimizationOptions = {|
   dev: boolean,
   isPolyfill?: boolean,
+  minifierPath: string,
   platform: string,
   postMinifyProcess: PostMinifyProcess,
 |};
@@ -43,7 +48,13 @@ function optimizeModule(
     return data;
   }
 
-  const {details} = data;
+  return optimizeModuleFromObject(data.details, optimizationOptions);
+}
+
+function optimizeModuleFromObject(
+  details: TransformedCodeFile,
+  optimizationOptions: OptimizationOptions,
+): TransformedSourceFile {
   const {file, transformed} = details;
   const result = {...details, transformed: {}};
   const {postMinifyProcess} = optimizationOptions;
@@ -62,7 +73,11 @@ function optimizeModule(
   return {type: 'code', details: result};
 }
 
-function optimize(transformed: TransformResult, file, options) {
+function optimize(
+  transformed: TransformResult,
+  file,
+  options,
+): TransformResult {
   const {code, dependencyMapName, map} = transformed;
   const optimized = optimizeCode(code, map, file, options);
 
@@ -81,6 +96,7 @@ function optimize(transformed: TransformResult, file, options) {
         optimized.ast,
         transformed.dependencies,
         dependencyMapName,
+        transformed.requireName,
       );
     }
   }
@@ -88,31 +104,44 @@ function optimize(transformed: TransformResult, file, options) {
   const inputMap = transformed.map;
   const gen = generate(optimized.ast, file, '', true);
 
+  const minify = getMinifier(options.minifierPath);
   const min = minify.withSourceMap(
     gen.code,
     inputMap && gen.map && mergeSourceMaps(file, inputMap, gen.map),
     file,
   );
-  return {code: min.code, map: min.map, dependencies};
+  return {
+    code: min.code,
+    map: min.map,
+    dependencies,
+    requireName: transformed.requireName,
+  };
 }
 
-function optimizeCode(code, map, filename, inliningOptions) {
-  return babel.transform(code, {
-    plugins: [
-      [constantFolding],
-      [inline, {...inliningOptions, isWrapped: true}],
-    ],
+function optimizeCode(
+  code,
+  map,
+  filename,
+  inliningOptions,
+): BabelTransformResult {
+  return transformSync(code, {
+    ast: true,
     babelrc: false,
     code: false,
     filename,
+    plugins: [
+      [constantFoldingPlugin],
+      [inlinePlugin, {...inliningOptions, isWrapped: true}],
+    ],
+    sourceType: 'script',
   });
 }
 
 function mergeSourceMaps(
   file: string,
-  originalMap: SourceMap,
-  secondMap: SourceMap,
-): MappingsMap {
+  originalMap: MetroSourceMap,
+  secondMap: MetroSourceMap,
+): BabelSourceMap {
   const merged = new sourceMap.SourceMapGenerator();
   const inputMap = new sourceMap.SourceMapConsumer(originalMap);
   new sourceMap.SourceMapConsumer(secondMap).eachMapping(mapping => {
@@ -135,3 +164,4 @@ function mergeSourceMaps(
 }
 
 module.exports = optimizeModule;
+module.exports.optimizeModuleFromObject = optimizeModuleFromObject;

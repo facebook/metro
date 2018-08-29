@@ -1,7 +1,6 @@
 /*eslint sort-keys: 0*/
 /**
  * Copyright (c) 2017-present, Facebook, Inc.
- * All rights reserved.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -41,6 +40,10 @@ const siteConfig = {
     secondaryColor: '#f96e6e',
     prismColor: 'rgba(153, 66, 79, 0.03)',
   },
+  cleanUrl: true,
+  scripts: [
+    'https://buttons.github.io/buttons.js',
+  ],
 };
 
 module.exports = siteConfig;

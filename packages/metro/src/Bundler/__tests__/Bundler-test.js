@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @emails oncall+javascript_foundation
  * @format
@@ -14,112 +12,114 @@
 
 jest
   .setMock('jest-worker', () => ({}))
-  .setMock('../../JSTransformer/worker/minify')
-  .mock('image-size')
-  .mock('fs')
+  .mock('fs', () => new (require('metro-memory-fs'))())
   .mock('os')
   .mock('assert')
   .mock('progress')
+  .mock('../../lib/getTransformCacheKeyFn', () => () => () => 'hash')
   .mock('../../node-haste/DependencyGraph')
   .mock('../../JSTransformer')
   .mock('metro-core')
   .mock('/path/to/transformer.js', () => ({}), {virtual: true});
 
 var Bundler = require('../');
-var defaults = require('../../defaults');
-var sizeOf = require('image-size');
+var {getDefaultValues} = require('metro-config/src/defaults');
+var {mergeConfig} = require('metro-config/src/loadConfig');
 var fs = require('fs');
 const os = require('os');
 const path = require('path');
-
-var commonOptions = {
-  allowBundleUpdates: false,
-  assetExts: defaults.assetExts,
-  assetRegistryPath: '/AssetRegistry.js',
-  cacheVersion: 'smth',
-  enableBabelRCLookup: true,
-  extraNodeModules: {},
-  platforms: defaults.platforms,
-  postMinifyProcess: e => e,
-  resetCache: false,
-  sourceExts: defaults.sourceExts,
-  transformModulePath: '/path/to/transformer.js',
-  watch: false,
-};
+const mkdirp = require('mkdirp');
+const Module = require('../../node-haste/Module');
 
 describe('Bundler', function() {
-  let bundler;
-  let assetServer;
-  let projectRoots;
+  let watchFolders;
+  let projectRoot;
+  let commonOptions;
 
   beforeEach(function() {
     os.cpus.mockReturnValue({length: 1});
+    os.tmpdir.mockReturnValue('/tmp');
     // local directory on purpose, because it should not actually write
     // anything to the disk during a unit test!
     os.tmpDir.mockReturnValue(path.join(__dirname));
 
-    projectRoots = ['/root'];
-
-    fs.__setMockFilesystem({
-      path: {to: {'transformer.js': ''}},
-    });
-
-    fs.statSync.mockImplementation(function() {
-      return {
-        isDirectory: () => true,
-      };
-    });
-
-    assetServer = {
-      getAssetData: jest.fn(),
+    const baseConfig = {
+      resolver: {
+        extraNodeModules: {},
+        resolverMainFields: [],
+      },
+      transformer: {
+        assetRegistryPath: '/AssetRegistry.js',
+        enableBabelRCLookup: true,
+        postMinifyProcess: e => e,
+      },
+      cacheStores: [],
+      cacheVersion: 'smth',
+      projectRoot: '/root',
+      resetCache: false,
+      transformerPath: '/path/to/transformer.js',
+      watch: false,
+      watchFolders: ['/root'],
     };
 
-    bundler = new Bundler({
-      ...commonOptions,
-      projectRoots,
-      assetServer,
-    });
+    commonOptions = mergeConfig(getDefaultValues('/'), baseConfig);
 
-    sizeOf.mockImplementation(function(path, cb) {
-      cb(null, {width: 50, height: 100});
-    });
+    projectRoot = '/root';
+    watchFolders = [projectRoot];
+
+    mkdirp.sync('/path/to');
+    mkdirp.sync('/root');
+    fs.writeFileSync('/path/to/transformer.js', '');
   });
 
-  it('allows overriding the platforms array', () => {
-    expect(bundler._opts.platforms).toEqual([
-      'ios',
-      'android',
-      'windows',
-      'web',
-    ]);
-    const b = new Bundler({
+  it('uses new cache layers when transforming if requested to do so', async () => {
+    const get = jest.fn();
+    const set = jest.fn();
+
+    const bundlerInstance = new Bundler({
       ...commonOptions,
-      projectRoots,
-      assetServer,
-      platforms: ['android', 'vr'],
+      cacheStores: [{get, set}],
+      watchFolders,
     });
-    expect(b._opts.platforms).toEqual(['android', 'vr']);
-  });
 
-  it('should minify code using the Transformer', async () => {
-    const code = 'arbitrary(code)';
-    const id = 'arbitrary.js';
-
-    const minifiedCode = 'minified(code)';
-    const minifiedMap = {
-      version: 3,
-      file: ['minified'],
-      sources: [],
-      mappings: '',
+    const depGraph = {
+      getSha1: jest.fn(() => '0123456789012345678901234567890123456789'),
     };
 
-    bundler._transformer.minify = jest
-      .fn()
-      .mockReturnValue(Promise.resolve({code: minifiedCode, map: minifiedMap}));
+    jest.spyOn(bundlerInstance, 'getDependencyGraph').mockImplementation(() => {
+      return new Promise(resolve => {
+        resolve(depGraph);
+      });
+    });
 
-    const result = await bundler.minifyModule(id, code, []);
+    const module = new Module('/root/foo.js');
 
-    expect(result.code).toEqual(minifiedCode);
-    expect(result.map).toEqual([]);
+    require('../../JSTransformer').prototype.transform.mockReturnValue({
+      sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
+      result: {},
+    });
+
+    await bundlerInstance.transformFile(module.path, {transformOptions: {}});
+
+    // We got the SHA-1 of the file from the dependency graph.
+    expect(depGraph.getSha1).toBeCalledWith('/root/foo.js');
+
+    // Only one get, with the original SHA-1.
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(get.mock.calls[0][0].toString('hex')).toMatch(
+      '0123456789012345678901234567890123456789',
+    );
+
+    // Only one set, with the *modified* SHA-1. This happens when the file gets
+    // modified between querying the caches and saving.
+    expect(set).toHaveBeenCalledTimes(1);
+    expect(set.mock.calls[0][0].toString('hex')).toMatch(
+      'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
+    );
+
+    // But, the common part of the key remains the same.
+    expect(get.mock.calls[0][0].toString('hex').substr(0, 32)).toBe(
+      set.mock.calls[0][0].toString('hex').substr(0, 32),
+    );
   });
 });

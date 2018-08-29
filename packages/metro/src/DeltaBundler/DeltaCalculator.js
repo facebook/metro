@@ -1,12 +1,10 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  */
 
@@ -14,23 +12,13 @@
 
 const {
   initialTraverseDependencies,
+  reorderGraph,
   traverseDependencies,
 } = require('./traverseDependencies');
 const {EventEmitter} = require('events');
 
-import type Bundler from '../Bundler';
-import type {Options as JSTransformerOptions} from '../JSTransformer/worker';
 import type DependencyGraph from '../node-haste/DependencyGraph';
-import type Module from '../node-haste/Module';
-import type {BundleOptions} from '../shared/types.flow';
-
-export type DeltaResult = {|
-  +modified: Map<string, Module>,
-  +deleted: Set<string>,
-  +reset: boolean,
-|};
-
-import type {DependencyEdges} from './traverseDependencies';
+import type {DeltaResult, Graph, Options} from './types.flow';
 
 /**
  * This class is in charge of calculating the delta of changed modules that
@@ -38,28 +26,30 @@ import type {DependencyEdges} from './traverseDependencies';
  * traverse the files that have been changed between calls and avoid having to
  * traverse the whole dependency tree for trivial small changes.
  */
-class DeltaCalculator extends EventEmitter {
-  _bundler: Bundler;
+class DeltaCalculator<T> extends EventEmitter {
   _dependencyGraph: DependencyGraph;
-  _options: BundleOptions;
-  _transformerOptions: ?JSTransformerOptions;
+  _options: Options<T>;
 
-  _currentBuildPromise: ?Promise<DeltaResult>;
+  _currentBuildPromise: ?Promise<DeltaResult<T>>;
   _deletedFiles: Set<string> = new Set();
   _modifiedFiles: Set<string> = new Set();
 
-  _dependencyEdges: DependencyEdges = new Map();
+  _graph: Graph<T>;
 
   constructor(
-    bundler: Bundler,
+    entryPoints: $ReadOnlyArray<string>,
     dependencyGraph: DependencyGraph,
-    options: BundleOptions,
+    options: Options<T>,
   ) {
     super();
 
-    this._bundler = bundler;
     this._options = options;
     this._dependencyGraph = dependencyGraph;
+
+    this._graph = {
+      dependencies: new Map(),
+      entryPoints,
+    };
 
     this._dependencyGraph
       .getWatcher()
@@ -74,21 +64,22 @@ class DeltaCalculator extends EventEmitter {
       .getWatcher()
       .removeListener('change', this._handleMultipleFileChanges);
 
-    this.reset();
-  }
+    this.removeAllListeners();
 
-  reset() {
     // Clean up all the cache data structures to deallocate memory.
+    this._graph = {
+      dependencies: new Map(),
+      entryPoints: this._graph.entryPoints,
+    };
     this._modifiedFiles = new Set();
     this._deletedFiles = new Set();
-    this._dependencyEdges = new Map();
   }
 
   /**
    * Main method to calculate the delta of modules. It returns a DeltaResult,
    * which contain the modified/added modules and the removed modules.
    */
-  async getDelta(): Promise<DeltaResult> {
+  async getDelta({reset}: {reset: boolean}): Promise<DeltaResult<T>> {
     // If there is already a build in progress, wait until it finish to start
     // processing a new one (delta server doesn't support concurrent builds).
     if (this._currentBuildPromise) {
@@ -113,7 +104,7 @@ class DeltaCalculator extends EventEmitter {
 
     let result;
 
-    const numDependencies = this._dependencyEdges.size;
+    const numDependencies = this._graph.dependencies.size;
 
     try {
       result = await this._currentBuildPromise;
@@ -125,11 +116,11 @@ class DeltaCalculator extends EventEmitter {
       modifiedFiles.forEach(file => this._modifiedFiles.add(file));
       deletedFiles.forEach(file => this._deletedFiles.add(file));
 
-      // If after an error the number of edges has changed, we could be in
-      // a weird state. As a safe net we clean the dependency edges to force
+      // If after an error the number of modules has changed, we could be in
+      // a weird state. As a safe net we clean the dependency modules to force
       // a clean traversal of the graph next time.
-      if (this._dependencyEdges.size !== numDependencies) {
-        this._dependencyEdges = new Map();
+      if (this._graph.dependencies.size !== numDependencies) {
+        this._graph.dependencies = new Map();
       }
 
       throw error;
@@ -137,68 +128,27 @@ class DeltaCalculator extends EventEmitter {
       this._currentBuildPromise = null;
     }
 
+    // Return all the modules if the client requested a reset delta.
+    if (reset) {
+      reorderGraph(this._graph);
+
+      return {
+        modified: this._graph.dependencies,
+        deleted: new Set(),
+        reset: true,
+      };
+    }
+
     return result;
   }
 
   /**
-   * Returns the options object that is used by the transformer to parse
-   * all the modules. This can be used by external objects to read again
-   * any module very fast (since the options object instance will be the same).
-   */
-  async getTransformerOptions(): Promise<JSTransformerOptions> {
-    if (!this._transformerOptions) {
-      this._transformerOptions = await this._calcTransformerOptions();
-    }
-    return this._transformerOptions;
-  }
-
-  async _calcTransformerOptions(): Promise<JSTransformerOptions> {
-    const {
-      enableBabelRCLookup,
-      projectRoot,
-    } = this._bundler.getGlobalTransformOptions();
-
-    const transformOptionsForBlacklist = {
-      enableBabelRCLookup,
-      dev: this._options.dev,
-      hot: this._options.hot,
-      inlineRequires: false,
-      minify: this._options.minify,
-      platform: this._options.platform,
-      projectRoot,
-    };
-
-    const {
-      inlineRequires,
-    } = await this._bundler.getTransformOptionsForEntryFile(
-      this._options.entryFile,
-      {dev: this._options.dev, platform: this._options.platform},
-      async path => {
-        const {added} = await initialTraverseDependencies(
-          path,
-          this._dependencyGraph,
-          transformOptionsForBlacklist,
-          new Map(),
-        );
-
-        return [path, ...added];
-      },
-    );
-
-    // $FlowFixMe flow does not recognize well Object.assign() return types.
-    return {
-      ...transformOptionsForBlacklist,
-      inlineRequires: inlineRequires || false,
-    };
-  }
-
-  /**
-   * Returns all the dependency edges from the graph. Each edge contains the
+   * Returns the graph with all the dependencies. Each module contains the
    * needed information to do the traversing (dependencies, inverseDependencies)
    * plus some metadata.
    */
-  getDependencyEdges(): DependencyEdges {
-    return this._dependencyEdges;
+  getGraph(): Graph<T> {
+    return this._graph;
   }
 
   _handleMultipleFileChanges = ({eventsQueue}) => {
@@ -221,6 +171,7 @@ class DeltaCalculator extends EventEmitter {
       this._deletedFiles.add(filePath);
       this._modifiedFiles.delete(filePath);
     } else {
+      this._deletedFiles.delete(filePath);
       this._modifiedFiles.add(filePath);
     }
 
@@ -232,32 +183,15 @@ class DeltaCalculator extends EventEmitter {
   async _getChangedDependencies(
     modifiedFiles: Set<string>,
     deletedFiles: Set<string>,
-  ): Promise<DeltaResult> {
-    const transformerOptions = await this.getTransformerOptions();
-
-    if (!this._dependencyEdges.size) {
-      const path = this._dependencyGraph.getAbsolutePath(
-        this._options.entryFile,
-      );
-
-      const modified = new Map([
-        [path, this._dependencyGraph.getModuleForPath(path)],
-      ]);
-
+  ): Promise<DeltaResult<T>> {
+    if (!this._graph.dependencies.size) {
       const {added} = await initialTraverseDependencies(
-        path,
-        this._dependencyGraph,
-        transformerOptions,
-        this._dependencyEdges,
-        this._options.onProgress || undefined,
+        this._graph,
+        this._options,
       );
-
-      for (const path of added) {
-        modified.set(path, this._dependencyGraph.getModuleForPath(path));
-      }
 
       return {
-        modified,
+        modified: added,
         deleted: new Set(),
         reset: true,
       };
@@ -266,16 +200,22 @@ class DeltaCalculator extends EventEmitter {
     // If a file has been deleted, we want to invalidate any other file that
     // depends on it, so we can process it and correctly return an error.
     deletedFiles.forEach(filePath => {
-      const edge = this._dependencyEdges.get(filePath);
+      const module = this._graph.dependencies.get(filePath);
 
-      if (edge) {
-        edge.inverseDependencies.forEach(path => modifiedFiles.add(path));
+      if (module) {
+        module.inverseDependencies.forEach(path => {
+          // Only mark the inverse dependency as modified if it's not already
+          // marked as deleted (in that case we can just ignore it).
+          if (!deletedFiles.has(path)) {
+            modifiedFiles.add(path);
+          }
+        });
       }
     });
 
     // We only want to process files that are in the bundle.
     const modifiedDependencies = Array.from(modifiedFiles).filter(filePath =>
-      this._dependencyEdges.has(filePath),
+      this._graph.dependencies.has(filePath),
     );
 
     // No changes happened. Return empty delta.
@@ -285,24 +225,12 @@ class DeltaCalculator extends EventEmitter {
 
     const {added, deleted} = await traverseDependencies(
       modifiedDependencies,
-      this._dependencyGraph,
-      transformerOptions,
-      this._dependencyEdges,
-      this._options.onProgress || undefined,
+      this._graph,
+      this._options,
     );
 
-    const modified = new Map();
-
-    for (const path of modifiedDependencies) {
-      modified.set(path, this._dependencyGraph.getModuleForPath(path));
-    }
-
-    for (const path of added) {
-      modified.set(path, this._dependencyGraph.getModuleForPath(path));
-    }
-
     return {
-      modified,
+      modified: added,
       deleted,
       reset: false,
     };

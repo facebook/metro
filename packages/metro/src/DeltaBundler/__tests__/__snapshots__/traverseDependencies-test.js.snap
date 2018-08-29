@@ -1,0 +1,100 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should do the initial traversal correctly 1`] = `
+Object {
+  "dependencies": Map {
+    "/bundle" => Object {
+      "dependencies": Map {
+        "foo" => Object {
+          "absolutePath": "/foo",
+          "data": Object {
+            "isAsync": false,
+            "name": "foo",
+          },
+        },
+      },
+      "getSource": [Function],
+      "inverseDependencies": Set {},
+      "output": Array [
+        Object {
+          "data": Object {
+            "code": "// code",
+            "map": Array [],
+          },
+          "type": "js/module",
+        },
+      ],
+      "path": "/bundle",
+    },
+    "/foo" => Object {
+      "dependencies": Map {
+        "bar" => Object {
+          "absolutePath": "/bar",
+          "data": Object {
+            "isAsync": false,
+            "name": "bar",
+          },
+        },
+        "baz" => Object {
+          "absolutePath": "/baz",
+          "data": Object {
+            "isAsync": false,
+            "name": "baz",
+          },
+        },
+      },
+      "getSource": [Function],
+      "inverseDependencies": Set {
+        "/bundle",
+      },
+      "output": Array [
+        Object {
+          "data": Object {
+            "code": "// code",
+            "map": Array [],
+          },
+          "type": "js/module",
+        },
+      ],
+      "path": "/foo",
+    },
+    "/bar" => Object {
+      "dependencies": Map {},
+      "getSource": [Function],
+      "inverseDependencies": Set {
+        "/foo",
+      },
+      "output": Array [
+        Object {
+          "data": Object {
+            "code": "// code",
+            "map": Array [],
+          },
+          "type": "js/module",
+        },
+      ],
+      "path": "/bar",
+    },
+    "/baz" => Object {
+      "dependencies": Map {},
+      "getSource": [Function],
+      "inverseDependencies": Set {
+        "/foo",
+      },
+      "output": Array [
+        Object {
+          "data": Object {
+            "code": "// code",
+            "map": Array [],
+          },
+          "type": "js/module",
+        },
+      ],
+      "path": "/baz",
+    },
+  },
+  "entryPoints": Array [
+    "/bundle",
+  ],
+}
+`;

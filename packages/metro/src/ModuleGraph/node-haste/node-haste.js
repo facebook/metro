@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
@@ -18,9 +16,8 @@ const FilesByDirNameIndex = require('../../node-haste/FilesByDirNameIndex');
 const HasteFS = require('./HasteFS');
 const Module = require('./Module');
 const ModuleCache = require('./ModuleCache');
-const ResolutionRequest = require('../../node-haste/DependencyGraph/ResolutionRequest');
 
-const defaults = require('../../defaults');
+const defaults = require('metro-config/src/defaults/defaults');
 const parsePlatformFilePath = require('../../node-haste/lib/parsePlatformFilePath');
 const path = require('path');
 
@@ -32,10 +29,13 @@ const {ModuleMap} = require('jest-haste-map');
 import type {Moduleish} from '../../node-haste/DependencyGraph/ResolutionRequest';
 import type {ResolveFn, TransformedCodeFile} from '../types.flow';
 import type {Extensions, Path} from './node-haste.flow';
+import type {CustomResolver} from 'metro-resolver';
 
 type ResolveOptions = {|
   assetExts: Extensions,
   extraNodeModules: {[id: string]: string},
+  mainFields: $ReadOnlyArray<string>,
+  resolveRequest?: ?CustomResolver,
   +sourceExts: Extensions,
   transformedFiles: {[path: Path]: TransformedCodeFile},
 |};
@@ -47,15 +47,6 @@ const PACKAGE_JSON = path.sep + 'package.json';
 const NULL_MODULE: Moduleish = {
   path: '/',
   getPackage() {},
-  hash() {
-    throw new Error('not implemented');
-  },
-  readCached() {
-    throw new Error('not implemented');
-  },
-  readFresh() {
-    return Promise.reject(new Error('not implemented'));
-  },
   isHaste() {
     throw new Error('not implemented');
   },
@@ -96,12 +87,14 @@ const createModuleMap = ({files, helpers, moduleCache, sourceExts}) => {
 
     if (existingModule && existingModule[0] !== filePath) {
       throw new Error(
-        `@providesModule naming collision:\n` +
-          `  Duplicate module name: \`${id}\`\n` +
-          `  Paths: \`${filePath}\` collides with ` +
-          `\`${existingModule[0]}\`\n\n` +
+        [
+          '@providesModule naming collision:',
+          `  Duplicate module name: \`${id}\``,
+          `  Paths: \`${filePath}\` collides with \`${existingModule[0]}\``,
+          '',
           'This error is caused by a @providesModule declaration ' +
-          'with the same name across two different files.',
+            'with the same name across two different files.',
+        ].join('\n'),
       );
     }
   });
@@ -130,7 +123,6 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     getTransformedFile,
   );
 
-  const resolutionRequests = {};
   const filesByDirNameIndex = new FilesByDirNameIndex(files);
   const assetResolutionCache = new AssetResolutionCache({
     assetExtensions: new Set(assetExts),
@@ -142,6 +134,7 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     doesFileExist: filePath => hasteFS.exists(filePath),
     extraNodeModules,
     isAssetFile: filePath => helpers.isAssetFile(filePath),
+    mainFields: options.mainFields,
     moduleCache,
     moduleMap: new ModuleMap({
       duplicates: Object.create(null),
@@ -151,25 +144,17 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     preferNativePlatform: true,
     resolveAsset: (dirPath, assetName, platform) =>
       assetResolutionCache.resolve(dirPath, assetName, platform),
+    resolveRequest: options.resolveRequest,
     sourceExts,
   });
 
   return (id, sourcePath, platform, _, callback) => {
-    let resolutionRequest = resolutionRequests[platform];
-    if (!resolutionRequest) {
-      resolutionRequest = resolutionRequests[platform] = new ResolutionRequest({
-        moduleResolver,
-        entryPath: '',
-        helpers,
-        platform,
-        moduleCache,
-      });
-    }
-
     const from =
       sourcePath != null
         ? new Module(sourcePath, moduleCache, getTransformedFile(sourcePath))
         : NULL_MODULE;
-    return resolutionRequest.resolveDependency(from, id).path;
+    const allowHaste = !helpers.isNodeModulesDir(from.path);
+    return moduleResolver.resolveDependency(from, id, allowHaste, platform)
+      .path;
   };
 };

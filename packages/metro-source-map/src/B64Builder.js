@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
@@ -37,7 +35,7 @@ class B64Builder {
   hasSegment: boolean;
 
   constructor() {
-    this.buffer = new Buffer(ONE_MEG);
+    this.buffer = Buffer.alloc(ONE_MEG);
     this.pos = 0;
     this.hasSegment = false;
   }
@@ -101,7 +99,7 @@ class B64Builder {
 
   _realloc() {
     const {buffer} = this;
-    this.buffer = new Buffer(buffer.length * 2);
+    this.buffer = Buffer.alloc(buffer.length * 2);
     buffer.copy(this.buffer);
   }
 }

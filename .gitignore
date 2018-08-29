@@ -1,8 +1,12 @@
 .eslintcache
 /node_modules
-/packages/*/build/
 /packages/*/node_modules/
-/packages/*/yarn.lock
 /coverage
 lerna-debug.log
 npm-debug.log*
+packages/*/build/
+
+website/build/
+website/i18n/*
+website/node_modules
+website/translated_docs
