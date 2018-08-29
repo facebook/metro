@@ -203,7 +203,7 @@ function overrideConfigWithArguments(
   }
 
   if (argv.transformer != null) {
-    config.transformerPath = resolve(argv.transformer);
+    config.transformer.babelTransformerPath = resolve(argv.transformer);
   }
 
   if (argv['reset-cache'] != null) {
