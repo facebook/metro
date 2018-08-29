@@ -104,6 +104,7 @@ type _TransformOptions = __TransformOptions & {
 };
 
 type BabelNode = $FlowFixMe;
+type BabelPath = $FlowFixMe;
 
 type TransformResult = {
   ast: BabelNode,
@@ -346,5 +347,7 @@ declare module '@babel/types' {
 }
 
 declare module '@babel/traverse' {
+  declare type Path = BabelPath;
+
   declare module.exports: TraverseFunc;
 }

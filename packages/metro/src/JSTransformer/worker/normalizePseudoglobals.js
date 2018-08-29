@@ -4,8 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @format
  * @flow strict
+ * @format
  */
 
 'use strict';
@@ -13,6 +13,7 @@
 const traverse = require('@babel/traverse').default;
 
 import type {Ast} from '@babel/core';
+import type {Path} from '@babel/traverse';
 
 function normalizePseudoglobals(ast: Ast): $ReadOnlyArray<string> {
   let pseudoglobals = [];
@@ -22,7 +23,7 @@ function normalizePseudoglobals(ast: Ast): $ReadOnlyArray<string> {
 
   traverse(ast, {
     Program: {
-      enter(path, state) {
+      enter(path: Path) {
         params = path.get('body.0.expression.arguments.0.params');
         body = path.get('body.0.expression.arguments.0.body');
 
@@ -65,7 +66,7 @@ function normalizePseudoglobals(ast: Ast): $ReadOnlyArray<string> {
         }
       },
 
-      exit(path, state) {
+      exit(path: Path) {
         reserved.forEach((shortName, i) => {
           if (pseudoglobals[i] && shortName && body && params) {
             body.scope.rename(pseudoglobals[i], shortName);
@@ -74,7 +75,7 @@ function normalizePseudoglobals(ast: Ast): $ReadOnlyArray<string> {
       },
     },
 
-    Scope(path, state) {
+    Scope(path: Path) {
       path.scope.crawl();
 
       if (body && params && path.node !== body.node) {
