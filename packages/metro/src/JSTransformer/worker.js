@@ -18,6 +18,7 @@ const collectDependencies = require('../ModuleGraph/worker/collectDependencies')
 const constantFoldingPlugin = require('./worker/constant-folding-plugin');
 const generate = require('@babel/generator').default;
 const getMinifier = require('../lib/getMinifier');
+const importExportPlugin = require('./worker/import-export-plugin');
 const inlinePlugin = require('./worker/inline-plugin');
 const normalizePseudoglobals = require('./worker/normalizePseudoglobals');
 
@@ -75,6 +76,7 @@ export type CustomTransformOptions = {[string]: mixed, __proto__: null};
 export type TransformOptions = {
   +customTransformOptions?: CustomTransformOptions,
   +enableBabelRCLookup?: boolean,
+  +experimentalImportSupport?: boolean,
   +dev: boolean,
   +hot?: boolean,
   +inlineRequires: boolean,
@@ -153,6 +155,10 @@ async function transform(
         [inlinePlugin, options.transformOptions],
         [constantFoldingPlugin, options.transformOptions],
       ];
+
+  if (options.transformOptions.experimentalImportSupport) {
+    plugins.push([importExportPlugin, options]);
+  }
 
   // $FlowFixMe TODO t26372934 Plugin system
   const transformer: Transformer<*> = require(options.babelTransformerPath);

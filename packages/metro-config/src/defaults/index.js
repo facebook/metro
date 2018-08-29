@@ -71,7 +71,7 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
     dynamicDepsInPackages: 'throwAtRuntime',
     enableBabelRCLookup: true,
     getTransformOptions: async () => ({
-      transform: {inlineRequires: false},
+      transform: {experimentalImportSupport: false, inlineRequires: false},
       preloadedModules: false,
       ramGroups: [],
     }),

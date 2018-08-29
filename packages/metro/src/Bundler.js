@@ -111,6 +111,7 @@ class Bundler {
       transformOptions: {
         customTransformOptions,
         enableBabelRCLookup,
+        experimentalImportSupport,
         dev,
         hot,
         inlineRequires,
@@ -148,6 +149,7 @@ class Bundler {
 
       customTransformOptions,
       enableBabelRCLookup,
+      experimentalImportSupport,
       dev,
       hot,
       inlineRequires,

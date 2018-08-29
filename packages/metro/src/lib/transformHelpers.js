@@ -102,6 +102,7 @@ async function calcTransformerOptions(
     ...baseOptions,
     transformOptions: {
       ...transformOptionsForBlacklist,
+      experimentalImportSupport: transform.experimentalImportSupport || false,
       inlineRequires: transform.inlineRequires || false,
     },
     type: 'module',

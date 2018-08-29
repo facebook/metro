@@ -37,6 +37,7 @@ type ExtraTransformOptions = {
   +preloadedModules: {[path: string]: true} | false,
   +ramGroups: Array<string>,
   +transform: {|
+    +experimentalImportSupport: boolean,
     +inlineRequires: {+blacklist: {[string]: true}} | boolean,
   |},
 };

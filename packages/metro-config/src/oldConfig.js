@@ -47,7 +47,7 @@ const DEFAULT = ({
   getSourceExts: () => [],
   getTransformModulePath: () => 'metro/src/defaultTransformer',
   getTransformOptions: async () => ({
-    transform: {inlineRequires: false},
+    transform: {experimentalImportSupport: false, inlineRequires: false},
     preloadedModules: false,
     ramGroups: [],
   }),

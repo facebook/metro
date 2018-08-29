@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict
  * @format
  */
 
@@ -12,34 +12,23 @@
 
 const template = require('@babel/template').default;
 
-const opts = {
-  placeholderPattern: false,
-  placeholderWhitelist: new Set(['LOCAL', 'FILE']),
+import type {Ast} from '@babel/core';
+import type {Path} from '@babel/traverse';
+
+type State = {
+  importExportImportDefault: Ast,
+  importExportImportAll: Ast,
+  opts: {inlineableCalls?: Array<string>},
 };
 
 /**
- * Produces a Babel template that transforms an "import * as x from ..." call
- * into a "const x = importAll(...)" call with the corresponding id in it.
+ * Produces a Babel template that transforms an "import * as x from ..." or an
+ * "import x from ..." call into a "const x = importAll(...)" call with the
+ * corresponding id in it.
  */
-// In preparation for Babel's unique id generator.
-const importAllTemplate = template(
-  `
-  const LOCAL = _$$_IMPORT_ALL(FILE);
-`,
-  opts,
-);
-
-/**
- * Produces a Babel template that transforms an "import x from ..." call into a
- * "const x = importDefault(...)" call with the corresponding id in it.
- */
-// In preparation for Babel's unique id generator.
-const importDefaultTemplate = template(
-  `
-  const LOCAL = _$$_IMPORT_DEFAULT(FILE);
-`,
-  opts,
-);
+const importTemplate = template(`
+  const LOCAL = IMPORT(FILE);
+`);
 
 /**
  * Produces a Babel template that transforms an "import {x as y} from ..." into
@@ -60,7 +49,7 @@ const importSideEffect = template(`
 function importExportPlugin() {
   return {
     visitor: {
-      ImportDeclaration(path: Object, state: {}) {
+      ImportDeclaration(path: Path, state: State) {
         if (path.node.importKind && path.node.importKind !== 'value') {
           return;
         }
@@ -83,7 +72,8 @@ function importExportPlugin() {
             switch (s.node.type) {
               case 'ImportNamespaceSpecifier':
                 anchor.insertBefore(
-                  importAllTemplate({
+                  importTemplate({
+                    IMPORT: state.importExportImportAll,
                     FILE: file,
                     LOCAL: local,
                   }),
@@ -92,7 +82,8 @@ function importExportPlugin() {
 
               case 'ImportDefaultSpecifier':
                 anchor.insertBefore(
-                  importDefaultTemplate({
+                  importTemplate({
+                    IMPORT: state.importExportImportDefault,
                     FILE: file,
                     LOCAL: local,
                   }),
@@ -116,6 +107,29 @@ function importExportPlugin() {
         }
 
         path.remove();
+      },
+
+      Program(path: Path, state: State) {
+        const importExportImportAll = path.scope.generateUidIdentifier(
+          '$$_IMPORT_ALL',
+        );
+
+        const importExportImportDefault = path.scope.generateUidIdentifier(
+          '$$_IMPORT_DEFAULT',
+        );
+
+        // Make the inliner aware of the extra calls.
+        if (!state.opts.inlineableCalls) {
+          state.opts.inlineableCalls = [];
+        }
+
+        state.opts.inlineableCalls.push(
+          importExportImportAll.name,
+          importExportImportDefault.name,
+        );
+
+        state.importExportImportDefault = importExportImportDefault;
+        state.importExportImportAll = importExportImportAll;
       },
     },
   };
