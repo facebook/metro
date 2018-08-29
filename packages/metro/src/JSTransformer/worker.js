@@ -157,7 +157,7 @@ async function transform(
       ];
 
   if (options.transformOptions.experimentalImportSupport) {
-    plugins.push([importExportPlugin, options]);
+    plugins.push([importExportPlugin, options.transformOptions]);
   }
 
   // $FlowFixMe TODO t26372934 Plugin system

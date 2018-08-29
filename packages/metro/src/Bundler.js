@@ -96,7 +96,7 @@ class Bundler {
 
   async transformFile(
     filePath: string,
-    transformerOptions: WorkerOptions,
+    workerOptions: WorkerOptions,
   ): Promise<TransformResult<>> {
     const cache = this._cache;
 
@@ -121,7 +121,7 @@ class Bundler {
       },
       type,
       ...extra
-    } = transformerOptions;
+    } = workerOptions;
 
     for (const key in extra) {
       if (hasOwnProperty.call(extra, key)) {
@@ -170,7 +170,7 @@ class Bundler {
           filePath,
           localPath,
           this._opts.transformerPath,
-          transformerOptions,
+          workerOptions,
         );
 
     // Only re-compute the full key if the SHA-1 changed. This is because
