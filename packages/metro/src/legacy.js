@@ -116,10 +116,11 @@ exports.getOrderedDependencyPaths = async function(
 ): Promise<Array<string>> {
   var server = createNonPersistentServer(options);
 
-  const paths = await server.getOrderedDependencyPaths(depOptions);
-  server.end();
-
-  return paths;
+  try {
+    return await server.getOrderedDependencyPaths(depOptions);
+  } finally {
+    server.end();
+  }
 };
 
 function createServer(options: ConfigT): Server {

@@ -69,14 +69,19 @@ class Bundler {
       watchFolders: opts.watchFolders,
     });
 
-    const getTransformCacheKey = getTransformCacheKeyFn({
-      babelTransformerPath: opts.transformer.babelTransformerPath,
-      cacheVersion: opts.cacheVersion,
-      projectRoot: opts.projectRoot,
-      transformerPath: opts.transformerPath,
-    });
+    try {
+      const getTransformCacheKey = getTransformCacheKeyFn({
+        babelTransformerPath: opts.transformer.babelTransformerPath,
+        cacheVersion: opts.cacheVersion,
+        projectRoot: opts.projectRoot,
+        transformerPath: opts.transformerPath,
+      });
 
-    this._baseHash = stableHash([getTransformCacheKey()]).toString('binary');
+      this._baseHash = stableHash([getTransformCacheKey()]).toString('binary');
+    } catch (e) {
+      this.end();
+      throw e;
+    }
   }
 
   getOptions(): ConfigT {
