@@ -1,6 +1,6 @@
 {
   "name": "metro-config",
-  "version": "0.44.0",
+  "version": "0.45.0",
   "description": "🚇 Config parser for Metro",
   "main": "src/index.js",
   "repository": {
@@ -14,9 +14,9 @@
   "license": "MIT",
   "dependencies": {
     "cosmiconfig": "^5.0.5",
-    "metro": "0.44.0",
-    "metro-cache": "0.44.0",
-    "metro-core": "0.44.0"
+    "metro": "0.45.0",
+    "metro-cache": "0.45.0",
+    "metro-core": "0.45.0"
   },
   "devDependencies": {}
 }
