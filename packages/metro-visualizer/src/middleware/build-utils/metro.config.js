@@ -18,7 +18,7 @@ module.exports = {
   watchFolders: [path.resolve(__dirname, '../../../../../../')],
   server: {port: 10028},
   transformer: {
-    babelTransformerPath: require.resolve('../transformer'),
+    babelTransformerPath: require.resolve('./transformer'),
     workerPath: require.resolve('./transformWorker'),
   },
 };

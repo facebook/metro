@@ -16,4 +16,4 @@ require('metro-babel-register')([
   path.dirname(require.resolve('metro')) + '/../..',
 ]);
 
-module.exports = require('metro/src/JSTransformer/worker');
+module.exports = require('metro/src/DeltaBundler/Worker');
