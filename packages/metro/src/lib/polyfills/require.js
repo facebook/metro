@@ -276,6 +276,23 @@ function packModuleId(value: {segmentId: number, localId: number}): ModuleID {
 }
 metroRequire.packModuleId = packModuleId;
 
+const hooks = [];
+function registerHook(cb: (number, {}) => void) {
+  const hook = {cb};
+  hooks.push(hook);
+  return {
+    release: () => {
+      for (let i = 0; i < hooks.length; ++i) {
+        if (hooks[i] === hook) {
+          hooks.splice(i, 1);
+          break;
+        }
+      }
+    },
+  };
+}
+metroRequire.registerHook = registerHook;
+
 function loadModuleImplementation(moduleId, module) {
   if (!module && global.__defineModule) {
     global.__defineModule(moduleId);
@@ -349,6 +366,12 @@ function loadModuleImplementation(moduleId, module) {
       // $FlowFixMe: This is only sound because we never access `factory` again
       module.factory = undefined;
       module.dependencyMap = undefined;
+    }
+
+    if (hooks.length > 0) {
+      for (let i = 0; i < hooks.length; ++i) {
+        hooks[i].cb(moduleId, moduleObject);
+      }
     }
 
     if (__DEV__) {
