@@ -2,7 +2,7 @@
   "name": "metro-visualizer",
   "version": "0.45.0",
   "description": "Suite of visual analysis tools for the metro bundler",
-  "main": "index.js",
+  "main": "src/index.js",
   "license": "MIT",
   "scripts": {
     "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@babel/core": "^7.0.0",
+    "@babel/preset-env": "^7.0.0",
     "@babel/preset-flow": "^7.0.0",
     "@babel/preset-react": "^7.0.0",
     "antd": "^3.7.1",

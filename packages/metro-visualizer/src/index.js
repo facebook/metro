@@ -10,13 +10,13 @@
 
 'use strict';
 
-const Server = require('metro/src/Server');
-
 const {
   metroHistory,
   startRecordingHistory,
-} = require('./src/middleware/metroHistory');
-const {initializeMiddlewareRoutes} = require('./src/middleware/routes');
+} = require('./middleware/metroHistory');
+const {initializeMiddlewareRoutes} = require('./middleware/routes');
+
+import type Server from 'metro/src/Server';
 
 function initializeVisualizerMiddleware(metroServer: Server) {
   startRecordingHistory(metroServer._logger);

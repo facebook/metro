@@ -11,7 +11,6 @@
 'use strict';
 
 const Router = require('router');
-const Server = require('metro/src/Server');
 
 const fs = require('fs');
 const metro = require('metro');
@@ -22,6 +21,7 @@ const {parse} = require('url');
 
 import type {MetroHistory} from './metroHistory.js';
 import type {Graph} from 'metro/src/DeltaBundler';
+import type Server from 'metro/src/Server';
 
 const router = Router();
 const terminal = new Terminal(process.stdout);

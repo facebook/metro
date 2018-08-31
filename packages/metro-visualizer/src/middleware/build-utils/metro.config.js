@@ -14,7 +14,6 @@ const path = require('path');
 
 module.exports = {
   projectRoot: path.resolve(__dirname, '../../../'),
-  transformModulePath: require.resolve('./transformer'),
   watchFolders: [path.resolve(__dirname, '../../../../../../')],
   server: {port: 10028},
   transformer: {
