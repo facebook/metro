@@ -99,7 +99,7 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
 });
 
 async function getDefaultConfig(
-  rootPath: string,
+  rootPath: ?string,
 ): Promise<IntermediateConfigT> {
   // We can add more logic here to get a sensible default configuration, for
   // now we just return a stub.
