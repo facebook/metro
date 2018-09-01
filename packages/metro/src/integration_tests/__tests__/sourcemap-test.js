@@ -12,9 +12,9 @@
 
 const Metro = require('../../..');
 
+const execBundle = require('../execBundle');
 const fs = require('fs');
 const sourceMap = require('source-map');
-const vm = require('vm');
 
 jest.unmock('cosmiconfig');
 
@@ -56,9 +56,7 @@ it('creates correct sourcemaps in prod mode', async () => {
 
 function getErrorFromCode(code) {
   // Create a vm context to execute the bundle and get back the Error object.
-  const sandbox = {};
-  vm.createContext(sandbox);
-  const error = vm.runInContext(code, sandbox);
+  const error = execBundle(code);
 
   // Override the Error stacktrace serializer to be able to get the raw stack.
   const oldStackTrace = Error.prepareStackTrace;

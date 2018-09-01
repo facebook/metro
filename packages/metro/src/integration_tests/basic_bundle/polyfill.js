@@ -5,13 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow strict
  */
 
 'use strict';
 
-module.exports = {
-  registerAsset(data: mixed): mixed {
-    return data;
-  },
-};
+// Inject something into the global object so we can verify that this file
+// is indeed evaluated.
+global.POLYFILL_IS_INJECTED = 'POLYFILL_IS_INJECTED';

@@ -12,6 +12,7 @@
 
 const Metro = require('../../..');
 
+const execBundle = require('../execBundle');
 const fetch = require('node-fetch');
 
 jest.unmock('cosmiconfig');
@@ -43,7 +44,7 @@ it('should create a server', async () => {
       );
     }
 
-    expect(body.replace(/https?:\/\/[^:]+:[0-9]+/g, '')).toMatchSnapshot();
+    expect(execBundle(body)).toMatchSnapshot();
   } finally {
     httpServer.close();
   }

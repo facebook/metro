@@ -10,8 +10,4 @@
 
 'use strict';
 
-module.exports = {
-  registerAsset(data: mixed): mixed {
-    return data;
-  },
-};
+module.exports = global.POLYFILL_IS_INJECTED;
