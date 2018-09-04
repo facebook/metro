@@ -17,6 +17,8 @@ const multipleFilesRamBundle = require('../multiple-files-ram-bundle');
 
 const {getModuleCode} = require('../util');
 
+import type {Module} from '../../types.flow';
+
 declare var describe: any;
 declare var expect: any;
 declare var it: (string, () => ?Promise<any>) => void;
@@ -109,7 +111,7 @@ function makeModule(
   deps = [],
   type = 'module',
   moduleCode = `var ${name};`,
-) {
+): Module {
   const path = makeModulePath(name);
   return {
     dependencies: deps.map(makeDependency),
@@ -118,6 +120,7 @@ function makeModule(
       map: type !== 'module' ? null : makeModuleMap(name, path),
       path,
       type,
+      libraryIdx: null,
     },
   };
 }

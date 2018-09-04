@@ -22,6 +22,7 @@ const virtual = (code: string, filePath: string): Module => ({
     map: null,
     path: filePath,
     type: 'script',
+    libraryIdx: null,
   },
 });
 

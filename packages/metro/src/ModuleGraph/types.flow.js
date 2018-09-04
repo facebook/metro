@@ -30,6 +30,7 @@ export type File = {|
   map: ?BabelSourceMap,
   path: string,
   type: CodeFileTypes,
+  libraryIdx: ?number,
 |};
 
 type CodeFileTypes = 'module' | 'script';
@@ -262,6 +263,14 @@ export type ResolvedCodeFile = {|
    * `{'foo': 'bar/foo.js', 'bar': 'node_modules/bar/index.js'}`.
    */
   +filePathsByDependencyName: {[dependencyName: string]: string},
+|};
+
+export type LibraryBoundCodeFile = {|
+  ...ResolvedCodeFile,
+  /**
+   * Index of the library that this code file has been exported from.
+   */
+  +libraryIdx: number,
 |};
 
 /**

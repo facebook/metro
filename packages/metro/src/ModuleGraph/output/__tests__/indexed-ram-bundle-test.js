@@ -232,6 +232,7 @@ function makeModule(
       map: type !== 'module' ? null : makeModuleMap(name, path),
       path,
       type,
+      libraryIdx: null,
     },
   };
 }
