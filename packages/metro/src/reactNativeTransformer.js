@@ -155,9 +155,6 @@ type Params = {
 
 function transform({filename, options, src, plugins}: Params) {
   const OLD_BABEL_ENV = process.env.BABEL_ENV;
-  /* $FlowFixMe(>=0.68.0 site=react_native_fb) This comment suppresses an error
-   * found when Flow v0.68 was deployed. To see the error delete this comment
-   * and run Flow. */
   process.env.BABEL_ENV = options.dev ? 'development' : 'production';
 
   try {

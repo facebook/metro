@@ -160,7 +160,6 @@ async function loadMetroConfigFromDisk(
     return resultedConfig;
   }
 
-  // $FlowExpectedError
   return mergeConfig(defaultConfig, defaultConfigOverrides, configModule);
 }
 
