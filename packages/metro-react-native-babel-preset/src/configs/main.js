@@ -34,16 +34,16 @@ const defaultPlugins = [
   [require('@babel/plugin-transform-regenerator')],
   [require('@babel/plugin-transform-sticky-regex')],
   [require('@babel/plugin-transform-unicode-regex')],
-  [
-    require('@babel/plugin-transform-modules-commonjs'),
-    {
-      strict: false,
-      strictMode: false, // prevent "use strict" injections
-      allowTopLevelThis: true, // dont rewrite global `this` -> `undefined`
-    },
-  ],
 ];
 
+const commonJsModules = [
+  require('@babel/plugin-transform-modules-commonjs'),
+  {
+    strict: false,
+    strictMode: false, // prevent "use strict" injections
+    allowTopLevelThis: true, // dont rewrite global `this` -> `undefined`
+  },
+];
 const es2015ArrowFunctions = [
   require('@babel/plugin-transform-arrow-functions'),
 ];
@@ -81,6 +81,9 @@ const getPreset = (src, options) => {
 
   const extraPlugins = [];
 
+  if (options && options.modules !== false) {
+    extraPlugins.push(commonJsModules);
+  }
   if (hasClass) {
     extraPlugins.push(es2015Classes);
   }
@@ -139,17 +142,18 @@ const getPreset = (src, options) => {
   };
 };
 
-const base = getPreset(null);
-const devTools = getPreset(null, {dev: true});
-
-module.exports = options => {
+module.exports = (api, options = {}) => {
+  const presetOptions = {};
+  if (options.modules === false) {
+    presetOptions.modules = false;
+  }
   if (options.withDevTools == null) {
     const env = process.env.BABEL_ENV || process.env.NODE_ENV;
     if (!env || env === 'development') {
-      return devTools;
+      presetOptions.dev = true;
     }
   }
-  return base;
+  return getPreset(null, presetOptions);
 };
 
 module.exports.getPreset = getPreset;
