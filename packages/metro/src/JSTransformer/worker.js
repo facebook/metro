@@ -55,6 +55,7 @@ export type Transformer = {
 };
 
 export type MinifyOptions = {
+  filename?: string,
   reserved?: $ReadOnlyArray<string>,
 };
 

@@ -30,7 +30,10 @@ type MinifierWithSourceMap = (
   options?: MinifyOptions,
 ) => ResultWithMap;
 
-type MinifierWithoutSourceMap = (code: string) => ResultWithoutMap;
+type MinifierWithoutSourceMap = (
+  code: string,
+  options?: MinifyOptions,
+) => ResultWithoutMap;
 
 export type MetroMinifier = {
   noSourceMap: MinifierWithoutSourceMap,
