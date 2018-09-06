@@ -282,7 +282,7 @@ describe('code transformation worker:', () => {
       )).output[0].data.code,
     ).toBe(
       [
-        '__d(function(global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports) {',
+        '__d(function(global, require, _aUnused, _bUnused, module, exports, _cUnused) {',
         '  module.exports = minified(code);;',
         '});',
       ].join('\n'),

@@ -186,8 +186,8 @@ async function transform(
 
   // Select unused names for "metroImportDefault" and "metroImportAll", by
   // calling "generateUid".
-  let importDefault;
-  let importAll;
+  let importDefault = '';
+  let importAll = '';
 
   traverse(ast, {
     Program(path) {
@@ -259,7 +259,12 @@ async function transform(
       throw error;
     }
 
-    ({ast: wrappedAst} = JsFileWrapping.wrapModule(ast, dependencyMapName));
+    ({ast: wrappedAst} = JsFileWrapping.wrapModule(
+      ast,
+      importDefault,
+      importAll,
+      dependencyMapName,
+    ));
   }
 
   const reserved = options.transformOptions.minify

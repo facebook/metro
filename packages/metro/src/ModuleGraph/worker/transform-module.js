@@ -215,7 +215,12 @@ function makeResult(options: {|
       keepRequireNames: true,
     };
     ({dependencies, dependencyMapName} = collectDependencies(ast, opts));
-    ({ast, requireName} = JsFileWrapping.wrapModule(ast, dependencyMapName));
+    ({ast, requireName} = JsFileWrapping.wrapModule(
+      ast,
+      '_aUnused',
+      '_bUnused',
+      dependencyMapName,
+    ));
   }
   const {filename, sourceCode} = options;
   const gen = generate(ast, filename, sourceCode, false);

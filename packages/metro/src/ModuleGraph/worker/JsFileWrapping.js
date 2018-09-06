@@ -11,31 +11,25 @@
 'use strict';
 
 /* eslint-disable lint/no-unclear-flowtypes */
-const babelTypes = require('@babel/types');
+const t = require('@babel/types');
 const template = require('@babel/template').default;
 
 const traverse = require('@babel/traverse').default;
 
-const MODULE_FACTORY_PARAMETERS = [
-  'global',
-  'require',
-  '_$$_IMPORT_DEFAULT', // In preparation for Babel's unique id generator.
-  '_$$_IMPORT_ALL', // In preparation for Babel's unique id generator.
-  'module',
-  'exports',
-];
-
-const POLYFILL_FACTORY_PARAMETERS = ['global'];
 const WRAP_NAME = '$$_REQUIRE'; // note: babel will prefix this with _
-
 const IIFE_PARAM = template("typeof global === 'undefined' ? this : global");
 
 function wrapModule(
   fileAst: Object,
+  importDefaultName: string,
+  importAllName: string,
   dependencyMapName: string,
 ): {ast: Object, requireName: string} {
-  const t = babelTypes;
-  const params = MODULE_FACTORY_PARAMETERS.concat(dependencyMapName);
+  const params = buildParameters(
+    importDefaultName,
+    importAllName,
+    dependencyMapName,
+  );
   const factory = functionFromProgram(fileAst.program, params);
   const def = t.callExpression(t.identifier('__d'), [factory]);
   const ast = t.file(t.program([t.expressionStatement(def)]));
@@ -46,19 +40,22 @@ function wrapModule(
 }
 
 function wrapPolyfill(fileAst: Object): Object {
-  const t = babelTypes;
-  const factory = functionFromProgram(
-    fileAst.program,
-    POLYFILL_FACTORY_PARAMETERS,
-  );
+  const factory = functionFromProgram(fileAst.program, ['global']);
 
   const iife = t.callExpression(factory, [IIFE_PARAM().expression]);
   return t.file(t.program([t.expressionStatement(iife)]));
 }
 
 function wrapJson(source: string): string {
+  // Unused parameters; remember that's wrapping JSON.
+  const moduleFactoryParameters = buildParameters(
+    '_aUnused',
+    '_bUnused',
+    '_cUnused',
+  );
+
   return [
-    `__d(function(${MODULE_FACTORY_PARAMETERS.join(', ')}) {`,
+    `__d(function(${moduleFactoryParameters.join(', ')}) {`,
     `  module.exports = ${source};`,
     '});',
   ].join('\n');
@@ -66,9 +63,8 @@ function wrapJson(source: string): string {
 
 function functionFromProgram(
   program: Object,
-  parameters: Array<string>,
+  parameters: $ReadOnlyArray<string>,
 ): Object {
-  const t = babelTypes;
   return t.functionExpression(
     t.identifier(''),
     parameters.map(makeIdentifier),
@@ -77,7 +73,23 @@ function functionFromProgram(
 }
 
 function makeIdentifier(name: string): Object {
-  return babelTypes.identifier(name);
+  return t.identifier(name);
+}
+
+function buildParameters(
+  importDefaultName: string,
+  importAllName: string,
+  dependencyMapName: string,
+): $ReadOnlyArray<string> {
+  return [
+    'global',
+    'require',
+    importDefaultName,
+    importAllName,
+    'module',
+    'exports',
+    dependencyMapName,
+  ];
 }
 
 function renameRequires(ast: Object) {
