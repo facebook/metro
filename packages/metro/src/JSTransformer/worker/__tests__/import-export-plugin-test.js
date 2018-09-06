@@ -13,6 +13,11 @@ const importExportPlugin = require('../import-export-plugin');
 
 const {compare} = require('../test-helpers');
 
+const opts = {
+  importAll: '_$$_IMPORT_ALL',
+  importDefault: '_$$_IMPORT_DEFAULT',
+};
+
 it('correctly transforms and extracts "import" statements', () => {
   const code = `
     import v from 'foo';
@@ -30,7 +35,7 @@ it('correctly transforms and extracts "import" statements', () => {
     const v = _$$_IMPORT_DEFAULT('foo');
   `;
 
-  compare([importExportPlugin], code, expected);
+  compare([importExportPlugin], code, expected, opts);
 });
 
 it('correctly transforms complex patterns', () => {
@@ -47,7 +52,7 @@ it('correctly transforms complex patterns', () => {
     const b = _$$_IMPORT_ALL('foo');
   `;
 
-  compare([importExportPlugin], code, expected);
+  compare([importExportPlugin], code, expected, opts);
 });
 
 it('hoists declarations to the top', () => {
@@ -61,7 +66,7 @@ it('hoists declarations to the top', () => {
     foo();
   `;
 
-  compare([importExportPlugin], code, expected);
+  compare([importExportPlugin], code, expected, opts);
 });
 
 it('enables module exporting when something is exported', () => {
@@ -81,5 +86,5 @@ it('enables module exporting when something is exported', () => {
     exports.default = _default;
   `;
 
-  compare([importExportPlugin], code, expected);
+  compare([importExportPlugin], code, expected, opts);
 });
