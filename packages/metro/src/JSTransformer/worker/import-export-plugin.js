@@ -46,9 +46,142 @@ const importSideEffect = template(`
   require(FILE);
 `);
 
-function importExportPlugin() {
+const exportAllTemplate = template(`
+  const REQUIRE = require(FILE);
+
+  for (const key in REQUIRE) {
+    exports[key] = REQUIRE[key];
+  }
+`);
+
+const exportTemplate = template(`
+  exports.REMOTE = LOCAL;
+`);
+
+// eslint-disable-next-line lint/flow-no-fixme
+function importExportPlugin({types: t}: $FlowFixMe) {
+  const exportAll: Array<{file: string}> = [];
+  const exportDefault: Array<{local: string}> = [];
+  const exportNamed: Array<{local: string, remote: string}> = [];
+
   return {
     visitor: {
+      ExportAllDeclaration(path: Path, state: State) {
+        if (path.node.exportKind && path.node.exportKind !== 'value') {
+          return;
+        }
+
+        exportAll.push({
+          file: path.get('source').node.value,
+        });
+
+        path.remove();
+      },
+
+      ExportDefaultDeclaration(path: Path, state: State) {
+        if (path.node.exportKind && path.node.exportKind !== 'value') {
+          return;
+        }
+
+        const declaration = path.get('declaration');
+        const node = declaration.node;
+        const id = node.id || path.scope.generateUidIdentifier('default');
+
+        node.id = id;
+
+        exportDefault.push({
+          local: id.name,
+        });
+
+        if (t.isDeclaration(declaration)) {
+          path.insertBefore(node);
+        } else {
+          path.insertBefore(
+            t.variableDeclaration('var', [t.variableDeclarator(id, node)]),
+          );
+        }
+
+        path.remove();
+      },
+
+      ExportNamedDeclaration(path: Path, state: State) {
+        if (path.node.exportKind && path.node.exportKind !== 'value') {
+          return;
+        }
+
+        const declaration = path.get('declaration');
+        const specifiers = path.get('specifiers');
+
+        if (declaration.node) {
+          if (t.isVariableDeclaration(declaration)) {
+            declaration.get('declarations').forEach(d => {
+              const name = d.get('id').node.name;
+
+              exportNamed.push({local: name, remote: name});
+            });
+          } else {
+            const id =
+              declaration.node.id || path.scope.generateUidIdentifier();
+            const name = id.name;
+
+            declaration.node.id = id;
+            exportNamed.push({local: name, remote: name});
+          }
+
+          path.insertBefore(declaration.node);
+        }
+
+        if (specifiers) {
+          specifiers.forEach(s => {
+            const local = s.node.local;
+            const remote = s.node.exported;
+
+            if (path.node.source) {
+              const temp = path.scope.generateUidIdentifier(local.name);
+
+              if (local.name === 'default') {
+                path.insertBefore(
+                  importTemplate({
+                    FILE: path.node.source,
+                    LOCAL: temp,
+                  }),
+                );
+
+                exportNamed.push({local: temp.name, remote: remote.name});
+              } else if (remote.name === 'default') {
+                path.insertBefore(
+                  importNamedTemplate({
+                    FILE: path.node.source,
+                    LOCAL: temp,
+                    REMOTE: local,
+                  }),
+                );
+
+                exportDefault.push({local: temp.name});
+              } else {
+                path.insertBefore(
+                  importNamedTemplate({
+                    FILE: path.node.source,
+                    LOCAL: temp,
+                    REMOTE: local,
+                  }),
+                );
+
+                exportNamed.push({local: temp.name, remote: remote.name});
+              }
+            } else {
+              if (remote.name === 'default') {
+                exportDefault.push({local: local.name});
+              } else {
+                exportNamed.push({local: local.name, remote: remote.name});
+              }
+            }
+          });
+        }
+
+        path.remove();
+      },
+
       ImportDeclaration(path: Path, state: State) {
         if (path.node.importKind && path.node.importKind !== 'value') {
           return;
@@ -109,27 +242,69 @@ function importExportPlugin() {
         path.remove();
       },
 
-      Program(path: Path, state: State) {
-        const importExportImportAll = path.scope.generateUidIdentifier(
-          '$$_IMPORT_ALL',
-        );
+      Program: {
+        enter(path: Path, state: State) {
+          const importExportImportAll = path.scope.generateUidIdentifier(
+            '$$_IMPORT_ALL',
+          );
 
-        const importExportImportDefault = path.scope.generateUidIdentifier(
-          '$$_IMPORT_DEFAULT',
-        );
+          const importExportImportDefault = path.scope.generateUidIdentifier(
+            '$$_IMPORT_DEFAULT',
+          );
 
-        // Make the inliner aware of the extra calls.
-        if (!state.opts.inlineableCalls) {
-          state.opts.inlineableCalls = [];
-        }
+          // Make the inliner aware of the extra calls.
+          if (!state.opts.inlineableCalls) {
+            state.opts.inlineableCalls = [];
+          }
 
-        state.opts.inlineableCalls.push(
-          importExportImportAll.name,
-          importExportImportDefault.name,
-        );
+          state.opts.inlineableCalls.push(
+            importExportImportAll.name,
+            importExportImportDefault.name,
+          );
 
-        state.importExportImportDefault = importExportImportDefault;
-        state.importExportImportAll = importExportImportAll;
+          state.importExportImportDefault = importExportImportDefault;
+          state.importExportImportAll = importExportImportAll;
+        },
+
+        exit(path: Path, state: State) {
+          const body = path.node.body;
+
+          exportDefault.forEach(e => {
+            body.push(
+              exportTemplate({
+                LOCAL: t.identifier(e.local),
+                REMOTE: t.identifier('default'),
+              }),
+            );
+          });
+
+          exportAll.forEach(e => {
+            body.push(
+              ...exportAllTemplate({
+                FILE: t.stringLiteral(e.file),
+                REQUIRE: path.scope.generateUidIdentifier(e.file),
+              }),
+            );
+          });
+
+          exportNamed.forEach(e => {
+            body.push(
+              exportTemplate({
+                LOCAL: t.identifier(e.local),
+                REMOTE: t.identifier(e.remote),
+              }),
+            );
+          });
+
+          if (exportDefault.length || exportAll.length || exportNamed.length) {
+            body.unshift(
+              exportTemplate({
+                LOCAL: t.booleanLiteral(true),
+                REMOTE: t.identifier('__esModule'),
+              }),
+            );
+          }
+        },
       },
     },
   };

@@ -63,3 +63,23 @@ it('hoists declarations to the top', () => {
 
   compare([importExportPlugin], code, expected);
 });
+
+it('enables module exporting when something is exported', () => {
+  const code = `
+    foo();
+    import {foo} from 'bar';
+    export default foo;
+  `;
+
+  const expected = `
+    exports.__esModule = true;
+
+    const foo = require('bar').foo;
+    foo();
+
+    var _default = foo;
+    exports.default = _default;
+  `;
+
+  compare([importExportPlugin], code, expected);
+});
