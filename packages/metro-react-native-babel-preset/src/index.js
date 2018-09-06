@@ -9,4 +9,10 @@
 
 'use strict';
 
-module.exports = require('./configs/main');
+const main = require('./configs/main');
+
+module.exports = function(babel, options) {
+  return main(options);
+};
+
+module.exports.getPreset = main.getPreset;

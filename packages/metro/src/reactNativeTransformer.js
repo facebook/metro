@@ -40,7 +40,7 @@ const cacheKeyParts = [
 const getBabelRC = (function() {
   let babelRC: ?{extends?: string, plugins: BabelPlugins} = null;
 
-  return function _getBabelRC(projectRoot) {
+  return function _getBabelRC(projectRoot, options) {
     if (babelRC != null) {
       return babelRC;
     }
@@ -78,7 +78,7 @@ const getBabelRC = (function() {
             }
           }
         }
-        return require(name);
+        return [require(name), options];
       });
       babelRC.plugins = babelRC.plugins.map(plugin => {
         // Manually resolve all default Babel plugins.
@@ -112,7 +112,7 @@ const getBabelRC = (function() {
  * config object with the appropriate plugins.
  */
 function buildBabelConfig(filename, options, plugins?: BabelPlugins = []) {
-  const babelRC = getBabelRC(options.projectRoot);
+  const babelRC = getBabelRC(options.projectRoot, options);
 
   const extraConfig = {
     babelrc:

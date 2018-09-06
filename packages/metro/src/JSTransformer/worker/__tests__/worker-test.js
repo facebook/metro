@@ -161,6 +161,38 @@ describe('code transformation worker:', () => {
     ]);
   });
 
+  it('keeps import/export syntax if requested to do so', async () => {
+    const contents = ['import c from "./c";'].join('\n');
+
+    const result = await transform(
+      '/root/local/file.js',
+      'local/file.js',
+      contents,
+      {
+        assetExts: [],
+        assetPlugins: [],
+        assetRegistryPath: '',
+        asyncRequireModulePath: 'asyncRequire',
+        isScript: false,
+        minifierPath: 'minifyModulePath',
+        babelTransformerPath,
+        transformOptions: {dev: true, disableImportExportTransform: true},
+        dynamicDepsInPackages: 'reject',
+      },
+    );
+
+    expect(result.output[0].type).toBe('js/module');
+    expect(result.output[0].data.code).toBe(
+      [
+        '__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {',
+        '  import c from "./c";',
+        '});',
+      ].join('\n'),
+    );
+    expect(result.output[0].data.map).toMatchSnapshot();
+    expect(result.dependencies).toEqual([]);
+  });
+
   it('reports filename when encountering unsupported dynamic dependency', async () => {
     const contents = [
       'require("./a");',
