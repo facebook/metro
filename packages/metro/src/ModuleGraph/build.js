@@ -36,14 +36,12 @@ async function build(options: BuildOptions): Promise<BuildResult> {
     postProcessModules,
     translateDefaultsPath,
   } = options;
-  const graphOptions = {optimize};
 
-  const graphWithOptions = entry => graphFn(entry, platform, graphOptions);
-  const graphOnlyModules = async m => (await graphWithOptions(m)).modules;
+  const graphOnlyModules = async m => (await graphFn(m)).modules;
 
   const [graph, moduleSystem, polyfills] = await Promise.all([
     (async () => {
-      const result = await graphWithOptions(entryPointPaths);
+      const result = await graphFn(entryPointPaths);
       const {modules, entryModules} = result;
       const prModules = postProcessModules(modules, [...entryPointPaths]);
       return {modules: prModules, entryModules};

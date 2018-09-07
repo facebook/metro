@@ -11,7 +11,6 @@
 
 import type {Ast} from '@babel/core';
 import type {BabelSourceMap} from '@babel/core';
-import type {Console} from 'console';
 import type {FBSourceMap, MetroSourceMap} from 'metro-source-map';
 
 export type BuildResult = GraphResult;
@@ -37,15 +36,8 @@ type CodeFileTypes = 'module' | 'script';
 
 export type GraphFn = (
   entryPoints: Iterable<string>,
-  platform: string,
-  options?: ?GraphOptions,
-) => Promise<GraphResult>;
-
-type GraphOptions = {|
-  log?: Console,
-  optimize?: boolean,
-  skip?: Set<string>,
-|};
+  // platform: string,
+) => GraphResult;
 
 export type GraphResult = {|
   entryModules: Array<Module>,
@@ -79,16 +71,7 @@ export type LoadResult = {
   dependencies: $ReadOnlyArray<TransformResultDependency>,
 };
 
-export type LoadFn = (
-  file: string,
-  options: LoadOptions,
-) => LoadResult | Promise<LoadResult>;
-
-type LoadOptions = {|
-  log?: Console,
-  optimize?: boolean,
-  platform?: string,
-|};
+export type LoadFn = (file: string) => LoadResult;
 
 export type Module = {|
   dependencies: Array<Dependency>,
@@ -123,16 +106,7 @@ export type PackageData = {|
   'react-native'?: Object | string,
 |};
 
-export type ResolveFn = (
-  id: string,
-  source: ?string,
-  platform: string,
-  options?: ResolveOptions,
-) => string;
-
-type ResolveOptions = {
-  log?: Console,
-};
+export type ResolveFn = (id: string, source: ?string) => string;
 
 export type TransformerResult = {|
   ast: ?Ast,
