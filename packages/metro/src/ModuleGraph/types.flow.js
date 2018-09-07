@@ -30,6 +30,7 @@ export type File = {|
   path: string,
   type: CodeFileTypes,
   libraryIdx: ?number,
+  soundResources?: ?Array<string>,
 |};
 
 type CodeFileTypes = 'module' | 'script';
@@ -139,6 +140,7 @@ export type TransformResult = {|
   dependencyMapName?: string,
   map: ?BabelSourceMap,
   requireName: string,
+  soundResources?: ?Array<string>,
 |};
 
 export type TransformResults = {[string]: TransformResult};
