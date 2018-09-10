@@ -188,7 +188,9 @@ it('wraps a polyfill correctly', () => {
         if (something) {
           console.log('foo');
         }
-      })(typeof global === 'undefined' ? this : global);`),
+      })(typeof window !== 'undefined' ?
+        window :
+        typeof global !== 'undefined' ? global : this);`),
   );
 });
 

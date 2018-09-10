@@ -17,7 +17,9 @@ const template = require('@babel/template').default;
 const traverse = require('@babel/traverse').default;
 
 const WRAP_NAME = '$$_REQUIRE'; // note: babel will prefix this with _
-const IIFE_PARAM = template("typeof global === 'undefined' ? this : global");
+const IIFE_PARAM = template(
+  "typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : this",
+);
 
 function wrapModule(
   fileAst: Object,
