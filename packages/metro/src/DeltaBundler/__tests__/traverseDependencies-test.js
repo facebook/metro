@@ -453,6 +453,19 @@ describe('edge cases', () => {
     expect(options.transform.mock.calls.length).toBe(4);
   });
 
+  it('should try to transform every file only once with multiple entry points', async () => {
+    Actions.createFile('/bundle-2');
+    Actions.addDependency('/bundle-2', '/foo');
+    files = new Set();
+
+    // Add a second entry point to the graph.
+    graph.entryPoints = ['/bundle', '/bundle-2'];
+
+    await initialTraverseDependencies(graph, options);
+
+    expect(options.transform.mock.calls.length).toBe(5);
+  });
+
   it('should create two entries when requiring the same file in different forms', async () => {
     await initialTraverseDependencies(graph, options);
 
