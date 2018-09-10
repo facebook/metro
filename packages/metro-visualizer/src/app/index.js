@@ -17,7 +17,7 @@ const GraphApp = require('./graph/GraphApp');
 const React = require('react');
 const ReactDOM = require('react-dom');
 
-const nullthrows = require('fbjs/lib/nullthrows');
+const nullthrows = require('nullthrows');
 
 const {HashRouter, Route} = require('react-router-dom');
 

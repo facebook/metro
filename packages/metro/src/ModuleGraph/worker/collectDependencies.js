@@ -10,7 +10,7 @@
 
 'use strict';
 
-const nullthrows = require('fbjs/lib/nullthrows');
+const nullthrows = require('nullthrows');
 
 const generate = require('@babel/generator').default;
 const template = require('@babel/template').default;

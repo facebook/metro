@@ -10,7 +10,7 @@
 
 'use strict';
 
-const nullthrows = require('fbjs/lib/nullthrows');
+const nullthrows = require('nullthrows');
 const path = require('path');
 
 import type {PackageData} from '../types.flow';

@@ -11,7 +11,7 @@
 
 'use strict';
 
-const nullthrows = require('fbjs/lib/nullthrows');
+const nullthrows = require('nullthrows');
 
 import type {CustomTransformOptions} from '../JSTransformer/worker';
 

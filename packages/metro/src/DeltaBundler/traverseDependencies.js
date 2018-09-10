@@ -10,7 +10,7 @@
 
 'use strict';
 
-const nullthrows = require('fbjs/lib/nullthrows');
+const nullthrows = require('nullthrows');
 
 import type {TransformResultDependency} from '../ModuleGraph/types.flow';
 import type {Dependency, Graph, Module, Options} from './types.flow';

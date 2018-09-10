@@ -13,7 +13,7 @@
 const formatBundlingError = require('./lib/formatBundlingError');
 const getEntryAbsolutePath = require('./lib/getEntryAbsolutePath');
 const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
-const nullthrows = require('fbjs/lib/nullthrows');
+const nullthrows = require('nullthrows');
 const parseCustomTransformOptions = require('./lib/parseCustomTransformOptions');
 const url = require('url');
 

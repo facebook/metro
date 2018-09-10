@@ -13,7 +13,7 @@
 const fullSourceMapObject = require('./sourceMapObject');
 const getAppendScripts = require('../../lib/getAppendScripts');
 const getTransitiveDependencies = require('./helpers/getTransitiveDependencies');
-const nullthrows = require('fbjs/lib/nullthrows');
+const nullthrows = require('nullthrows');
 const path = require('path');
 
 const {createRamBundleGroups} = require('../../Bundler/util');
