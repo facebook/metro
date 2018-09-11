@@ -1,0 +1,29 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`builds and executes a RAM bundle 1`] = `
+Object {
+  "Bar": Object {
+    "foo": "foo",
+    "type": "bar",
+  },
+  "Foo": Object {
+    "asset": Object {
+      "__packager_asset": true,
+      "hash": "77d45c1f7fa73c0f6c444a830dc42f67",
+      "height": 8,
+      "httpServerLocation": "/assets",
+      "name": "test",
+      "scales": Array [
+        1,
+      ],
+      "type": "png",
+      "width": 8,
+    },
+    "type": "foo",
+  },
+  "TypeScript": Object {
+    "test": true,
+    "type": "TypeScript",
+  },
+}
+`;
