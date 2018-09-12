@@ -32,21 +32,9 @@ const path = require('path');
 
 const SRC_DIR = 'src';
 const BUILD_DIR = 'build';
-const BUILD_ES5_DIR = 'build-es5';
 const JS_FILES_PATTERN = '**/*.js';
 const IGNORE_PATTERN = '**/__tests__/**';
 const PACKAGES_DIR = path.resolve(__dirname, '../packages');
-
-const babelNodeOptions = JSON.parse(
-  fs.readFileSync(path.resolve(__dirname, '..', '.babelrc'), 'utf8')
-);
-babelNodeOptions.babelrc = false;
-const babelEs5Options = Object.assign(
-  {},
-  babelNodeOptions,
-  {presets: 'env'},
-  {plugins: [].concat(babelNodeOptions.plugins, 'transform-runtime')}
-);
 
 const fixedWidth = function(str/*: string*/) {
   const WIDTH = 80;
@@ -85,29 +73,7 @@ function buildPackage(p) {
 }
 
 function buildFile(file, silent) {
-  buildFileFor(file, silent, 'node');
-
-  const pkgJsonPath = path.resolve(
-    PACKAGES_DIR,
-    getPackageName(file),
-    'package.json'
-  );
-  // $FlowFixMe require-string; the require is generated above (status quo)
-  const browser = require(pkgJsonPath).browser;
-  if (browser) {
-    if (browser.indexOf(BUILD_ES5_DIR) !== 0) {
-      throw new Error(
-        `browser field for ${pkgJsonPath} should start with "${BUILD_ES5_DIR}"`
-      );
-    }
-    buildFileFor(file, silent, 'es5');
-  }
-}
-
-function buildFileFor(file, silent, env) {
-  const buildDir = env === 'es5' ? BUILD_ES5_DIR : BUILD_DIR;
-  const destPath = getBuildPath(file, buildDir);
-  const babelOptions = env === 'es5' ? babelEs5Options : babelNodeOptions;
+  const destPath = getBuildPath(file, BUILD_DIR);
 
   mkdirp.sync(path.dirname(destPath));
   if (micromatch.isMatch(file, IGNORE_PATTERN)) {
@@ -130,7 +96,7 @@ function buildFileFor(file, silent, env) {
       );
   } else {
     // $FlowFixMe TODO t25179342 need to update flow-types for babel-core
-    const transformed = babel.transformFileSync(file, babelOptions).code;
+    const transformed = babel.transformFileSync(file, {}).code;
     fs.writeFileSync(destPath, transformed);
     const source = fs.readFileSync(file).toString('utf-8');
     if (/\@flow/.test(source)) {
