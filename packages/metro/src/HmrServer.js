@@ -126,6 +126,8 @@ class HmrServer<TClient: Client> {
     try {
       const delta = await deltaBundler.getDelta(client.graph, {reset: false});
 
+      this._config.serializer.experimentalSerializerHook(client.graph, delta);
+
       return hmrJSBundle(delta, client.graph, {
         createModuleId: this._packagerServer._createModuleId,
         projectRoot: this._config.projectRoot,

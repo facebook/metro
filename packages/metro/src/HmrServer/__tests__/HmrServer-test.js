@@ -47,10 +47,13 @@ describe('HmrServer', () => {
     };
 
     hmrServer = new HmrServer(serverMock, {
+      serializer: {
+        experimentalSerializerHook: () => {},
+      },
+      projectRoot: '/root',
       reporter: {
         update: jest.fn(),
       },
-      projectRoot: '/root',
     });
   });
 

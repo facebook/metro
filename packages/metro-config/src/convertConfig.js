@@ -132,6 +132,7 @@ async function convertOldToNew({
       processModuleFilter:
         processModuleFilter || defaultConfig.serializer.processModuleFilter,
       getModulesRunBeforeMainModule,
+      experimentalSerializerHook: () => {},
     },
     server: {
       useGlobalHotkey: getUseGlobalHotkey(),

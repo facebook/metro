@@ -55,6 +55,7 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
     getModulesRunBeforeMainModule: () => [],
     processModuleFilter: module => true,
     createModuleIdFactory: defaultCreateModuleIdFactory,
+    experimentalSerializerHook: () => {},
   },
 
   server: {
