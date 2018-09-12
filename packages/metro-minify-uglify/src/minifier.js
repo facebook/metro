@@ -23,8 +23,9 @@ import type {BabelSourceMap} from '@babel/core';
 function noSourceMap(
   code: string,
   options?: MinifyOptions = {},
+  uglifyModule: ?Object,
 ): ResultWithoutMap {
-  return minify(code, undefined, options).code;
+  return minify(code, undefined, options, uglifyModule).code;
 }
 
 function withSourceMap(
@@ -32,8 +33,9 @@ function withSourceMap(
   sourceMap: ?BabelSourceMap,
   filename: string,
   options?: MinifyOptions = {},
+  uglifyModule: ?Object,
 ): ResultWithMap {
-  const result = minify(code, sourceMap, options);
+  const result = minify(code, sourceMap, options, uglifyModule);
   const map: BabelSourceMap = JSON.parse(result.map);
 
   map.sources = [filename];
@@ -45,8 +47,9 @@ function minify(
   inputCode: string,
   inputMap: ?BabelSourceMap,
   options: MinifyOptions,
+  uglifyModule: ?Object,
 ) {
-  const result = uglify.minify(inputCode, {
+  const result = (uglifyModule || uglify).minify(inputCode, {
     mangle: {
       toplevel: false,
       reserved: options.reserved,
