@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -22,16 +22,17 @@ jest
 
 const path = require('path');
 
-const transformerPath = require.resolve('metro/src/reactNativeTransformer');
-const transformerContents = require('fs').readFileSync(transformerPath);
+const babelTransformerPath = require.resolve(
+  'metro/src/reactNativeTransformer',
+);
+const transformerContents = require('fs').readFileSync(babelTransformerPath);
 
 const babelRcPath = require.resolve('metro/rn-babelrc.json');
 const babelRcContents = require('fs').readFileSync(babelRcPath);
 
 let fs;
 let mkdirp;
-let transformCode;
-let InvalidRequireCallError;
+let transform;
 
 describe('code transformation worker:', () => {
   beforeEach(() => {
@@ -41,32 +42,32 @@ describe('code transformation worker:', () => {
 
     fs = require('fs');
     mkdirp = require('mkdirp');
-    ({transform: transformCode, InvalidRequireCallError} = require('..'));
+    ({transform: transform} = require('../../worker'));
     fs.reset();
 
     mkdirp.sync('/root/local');
-    mkdirp.sync(path.dirname(transformerPath));
-    fs.writeFileSync(transformerPath, transformerContents);
+    mkdirp.sync(path.dirname(babelTransformerPath));
+    fs.writeFileSync(babelTransformerPath, transformerContents);
     fs.writeFileSync(babelRcPath, babelRcContents);
   });
 
   it('transforms a simple script', async () => {
-    fs.writeFileSync('/root/local/file.js', 'someReallyArbitrary(code)');
-
-    const {result} = await transformCode(
+    const result = await transform(
       '/root/local/file.js',
       'local/file.js',
-      transformerPath,
+      'someReallyArbitrary(code)',
       {
-        dev: true,
-        isScript: true,
-        transform: {},
+        assetExts: [],
+        assetPlugins: [],
+        assetRegistryPath: '',
+        asyncRequireModulePath: 'asyncRequire',
+        type: 'script',
+        minifierPath: 'minifyModulePath',
+        babelTransformerPath,
+        transformOptions: {dev: true},
+        dynamicDepsInPackages: 'reject',
+        optimizationSizeLimit: 100000,
       },
-      [],
-      '',
-      'minifyModulePath',
-      'asyncRequire',
-      'reject',
     );
 
     expect(result.output[0].type).toBe('js/script');
@@ -74,7 +75,7 @@ describe('code transformation worker:', () => {
       [
         '(function (global) {',
         '  someReallyArbitrary(code);',
-        "})(typeof global === 'undefined' ? this : global);",
+        "})(typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : this);",
       ].join('\n'),
     );
     expect(result.output[0].data.map).toMatchSnapshot();
@@ -82,28 +83,28 @@ describe('code transformation worker:', () => {
   });
 
   it('transforms a simple module', async () => {
-    fs.writeFileSync('/root/local/file.js', 'arbitrary(code)');
-
-    const {result} = await transformCode(
+    const result = await transform(
       '/root/local/file.js',
       'local/file.js',
-      transformerPath,
+      'arbitrary(code)',
       {
-        dev: true,
-        isScript: false,
-        transform: {},
+        assetExts: [],
+        assetPlugins: [],
+        assetRegistryPath: '',
+        asyncRequireModulePath: 'asyncRequire',
+        type: 'module',
+        minifierPath: 'minifyModulePath',
+        babelTransformerPath,
+        transformOptions: {dev: true},
+        dynamicDepsInPackages: 'reject',
+        optimizationSizeLimit: 100000,
       },
-      [],
-      '',
-      'minifyModulePath',
-      'asyncRequire',
-      'reject',
     );
 
     expect(result.output[0].type).toBe('js/module');
     expect(result.output[0].data.code).toBe(
       [
-        '__d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {',
+        '__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {',
         '  arbitrary(code);',
         '});',
       ].join('\n'),
@@ -113,36 +114,36 @@ describe('code transformation worker:', () => {
   });
 
   it('transforms a module with dependencies', async () => {
-    fs.writeFileSync(
-      '/root/local/file.js',
-      [
-        "'use strict';",
-        'require("./a");',
-        'arbitrary(code);',
-        'const b = require("b");',
-        'import c from "./c";',
-      ].join('\n'),
-    );
+    const contents = [
+      "'use strict';",
+      'require("./a");',
+      'arbitrary(code);',
+      'const b = require("b");',
+      'import c from "./c";',
+    ].join('\n');
 
-    const {result} = await transformCode(
+    const result = await transform(
       '/root/local/file.js',
       'local/file.js',
-      transformerPath,
+      contents,
       {
-        dev: true,
-        transform: {},
+        assetExts: [],
+        assetPlugins: [],
+        assetRegistryPath: '',
+        asyncRequireModulePath: 'asyncRequire',
+        isScript: false,
+        minifierPath: 'minifyModulePath',
+        babelTransformerPath,
+        transformOptions: {dev: true},
+        dynamicDepsInPackages: 'reject',
+        optimizationSizeLimit: 100000,
       },
-      [],
-      '',
-      'minifyModulePath',
-      'asyncRequire',
-      'reject',
     );
 
     expect(result.output[0].type).toBe('js/module');
     expect(result.output[0].data.code).toBe(
       [
-        '__d(function (global, _$$_REQUIRE, module, exports, _dependencyMap) {',
+        '__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {',
         "  'use strict';",
         '',
         '  var _c = babelHelpers.interopRequireDefault(_$$_REQUIRE(_dependencyMap[0], "./c"));',
@@ -163,109 +164,133 @@ describe('code transformation worker:', () => {
     ]);
   });
 
-  it('reports filename when encountering unsupported dynamic dependency', async () => {
-    fs.writeFileSync(
+  it('keeps import/export syntax if requested to do so', async () => {
+    const contents = ['import c from "./c";'].join('\n');
+
+    const result = await transform(
       '/root/local/file.js',
-      [
-        'require("./a");',
-        'let a = arbitrary(code);',
-        'const b = require(a);',
-      ].join('\n'),
+      'local/file.js',
+      contents,
+      {
+        assetExts: [],
+        assetPlugins: [],
+        assetRegistryPath: '',
+        asyncRequireModulePath: 'asyncRequire',
+        isScript: false,
+        minifierPath: 'minifyModulePath',
+        babelTransformerPath,
+        transformOptions: {dev: true, disableImportExportTransform: true},
+        dynamicDepsInPackages: 'reject',
+        optimizationSizeLimit: 100000,
+      },
     );
 
+    expect(result.output[0].type).toBe('js/module');
+    expect(result.output[0].data.code).toBe(
+      [
+        '__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {',
+        '  import c from "./c";',
+        '});',
+      ].join('\n'),
+    );
+    expect(result.output[0].data.map).toMatchSnapshot();
+    expect(result.dependencies).toEqual([]);
+  });
+
+  it('reports filename when encountering unsupported dynamic dependency', async () => {
+    const contents = [
+      'require("./a");',
+      'let a = arbitrary(code);',
+      'const b = require(a);',
+    ].join('\n');
+
     try {
-      await transformCode(
-        '/root/local/file.js',
-        'local/file.js',
-        transformerPath,
-        {
-          dev: true,
-          transform: {},
-        },
-        [],
-        '',
-        'minifyModulePath',
-        'asyncRequire',
-        'reject',
-      );
+      await transform('/root/local/file.js', 'local/file.js', contents, {
+        assetExts: [],
+        assetPlugins: [],
+        assetRegistryPath: '',
+        asyncRequireModulePath: 'asyncRequire',
+        isScript: false,
+        minifierPath: 'minifyModulePath',
+        babelTransformerPath,
+        transformOptions: {dev: true},
+        dynamicDepsInPackages: 'reject',
+        optimizationSizeLimit: 100000,
+      });
       throw new Error('should not reach this');
     } catch (error) {
-      if (!(error instanceof InvalidRequireCallError)) {
-        throw error;
-      }
       expect(error.message).toMatchSnapshot();
     }
   });
 
   it('supports dynamic dependencies from within `node_modules`', async () => {
-    mkdirp.sync('/root/node_modules/foo');
-    fs.writeFileSync('/root/node_modules/foo/bar.js', 'require(foo.bar);');
-
-    await transformCode(
+    await transform(
       '/root/node_modules/foo/bar.js',
       'node_modules/foo/bar.js',
-      transformerPath,
+      'require(foo.bar);',
       {
-        dev: true,
-        transform: {},
-        enableBabelRCLookup: false,
+        assetExts: [],
+        assetPlugins: [],
+        assetRegistryPath: '',
+        asyncRequireModulePath: 'asyncRequire',
+        isScript: false,
+        minifierPath: 'minifyModulePath',
+        babelTransformerPath,
+        transformOptions: {dev: true},
+        dynamicDepsInPackages: 'throwAtRuntime',
+        optimizationSizeLimit: 100000,
       },
-      [],
-      '',
-      'minifyModulePath',
-      'asyncRequire',
-      'throwAtRuntime',
     );
   });
 
   it('minifies the code correctly', async () => {
-    fs.writeFileSync('/root/local/file.js', 'arbitrary(code);');
-
     expect(
-      (await transformCode(
+      (await transform(
         '/root/local/file.js',
         'local/file.js',
-        transformerPath,
+        'arbitrary(code);',
         {
-          dev: true,
-          minify: true,
-          transform: {},
-          enableBabelRCLookup: false,
+          assetExts: [],
+          assetPlugins: [],
+          assetRegistryPath: '',
+          asyncRequireModulePath: 'asyncRequire',
+          isScript: false,
+          minifierPath: 'minifyModulePath',
+          babelTransformerPath,
+          transformOptions: {dev: true, minify: true},
+          dynamicDepsInPackages: 'throwAtRuntime',
+          optimizationSizeLimit: 100000,
         },
-        [],
-        '',
-        'minifyModulePath',
-        'asyncRequire',
-        'throwAtRuntime',
-      )).result.output[0].data.code,
+      )).output[0].data.code,
     ).toBe(
-      ['__d(function (g, r, m, e, d) {', '  minified(code);', '});'].join('\n'),
+      ['__d(function (g, r, i, a, m, e, d) {', '  minified(code);', '});'].join(
+        '\n',
+      ),
     );
   });
 
   it('minifies a JSON file', async () => {
-    fs.writeFileSync('/root/local/file.json', 'arbitrary(code);');
-
     expect(
-      (await transformCode(
+      (await transform(
         '/root/local/file.json',
         'local/file.json',
-        transformerPath,
+        'arbitrary(code);',
         {
-          dev: true,
-          minify: true,
-          transform: {},
-          enableBabelRCLookup: false,
+          assetExts: [],
+          assetPlugins: [],
+          assetRegistryPath: '',
+          asyncRequireModulePath: 'asyncRequire',
+          isScript: false,
+          minifierPath: 'minifyModulePath',
+          babelTransformerPath,
+          transformOptions: {dev: true, minify: true},
+          dynamicDepsInPackages: 'throwAtRuntime',
+          optimizationsizelimit: 100000,
         },
-        [],
-        '',
-        'minifyModulePath',
-        'asyncRequire',
-        'throwAtRuntime',
-      )).result.output[0].data.code,
+      )).output[0].data.code,
     ).toBe(
       [
-        '__d(function(global, require, module, exports) {',
+        '__d(function(global, require, _aUnused, _bUnused, module, exports, _cUnused) {',
         '  module.exports = minified(code);;',
         '});',
       ].join('\n'),

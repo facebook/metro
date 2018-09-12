@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21,26 +21,29 @@ const makeServeCommand = require('./commands/serve');
 const outputBundle = require('./shared/output/bundle');
 
 const {readFile} = require('fs-extra');
-const {loadConfig} = require('metro-config');
+const {loadConfig, mergeConfig, getDefaultConfig} = require('metro-config');
 
 import type {Graph} from './DeltaBundler';
 import type {CustomTransformOptions} from './JSTransformer/worker';
 import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
 import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {ConfigT, InputConfigT} from 'metro-config/src/configTypes.flow';
 import typeof Yargs from 'yargs';
 
-async function runMetro(config: ConfigT): Promise<MetroServer> {
-  config.reporter.update({
+async function runMetro(config: InputConfigT): Promise<MetroServer> {
+  const defaultConfig = await getDefaultConfig(config.projectRoot);
+  const mergedConfig = mergeConfig(defaultConfig, config);
+
+  mergedConfig.reporter.update({
     type: 'initialize_started',
-    port: config.server.port,
+    port: mergedConfig.server.port,
     // FIXME: We need to change that to watchFolders. It will be a
     // breaking since it affects custom reporter API.
-    projectRoots: config.watchFolders,
+    projectRoots: mergedConfig.watchFolders,
   });
 
-  return new MetroServer(config);
+  return new MetroServer(mergedConfig);
 }
 
 exports.runMetro = runMetro;
@@ -105,10 +108,16 @@ exports.runServer = async (
   const {
     attachHmrServer,
     middleware,
+    metroServer,
     end,
   } = await exports.createConnectMiddleware(config);
 
   serverApp.use(middleware);
+
+  if (config.server.enableVisualizer) {
+    const {initializeVisualizerMiddleware} = require('metro-visualizer');
+    serverApp.use('/visualizer', initializeVisualizerMiddleware(metroServer));
+  }
 
   let httpServer;
 
@@ -252,7 +261,7 @@ exports.runBuild = async (
 };
 
 exports.buildGraph = async function(
-  config: ConfigT,
+  config: InputConfigT,
   {
     customTransformOptions = Object.create(null),
     dev = false,

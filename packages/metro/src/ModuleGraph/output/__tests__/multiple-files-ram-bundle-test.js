@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16,6 +16,8 @@ declare var jest: any;
 const multipleFilesRamBundle = require('../multiple-files-ram-bundle');
 
 const {getModuleCode} = require('../util');
+
+import type {Module} from '../../types.flow';
 
 declare var describe: any;
 declare var expect: any;
@@ -109,7 +111,7 @@ function makeModule(
   deps = [],
   type = 'module',
   moduleCode = `var ${name};`,
-) {
+): Module {
   const path = makeModulePath(name);
   return {
     dependencies: deps.map(makeDependency),
@@ -118,6 +120,7 @@ function makeModule(
       map: type !== 'module' ? null : makeModuleMap(name, path),
       path,
       type,
+      libraryIdx: null,
     },
   };
 }

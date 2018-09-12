@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -26,7 +26,7 @@ const debug = require('debug')('Metro:Server');
 const formatBundlingError = require('./lib/formatBundlingError');
 const getPrependedScripts = require('./lib/getPrependedScripts');
 const mime = require('mime-types');
-const nullthrows = require('fbjs/lib/nullthrows');
+const nullthrows = require('nullthrows');
 const parseCustomTransformOptions = require('./lib/parseCustomTransformOptions');
 const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
 const path = require('path');
@@ -50,6 +50,7 @@ import type {AssetData} from './Assets';
 import type {CustomTransformOptions} from './JSTransformer/worker';
 
 const {
+  Logger,
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
 
@@ -61,7 +62,6 @@ type GraphInfo = {|
 |};
 
 export type BuildGraphOptions = {|
-  +assetPlugins: Array<string>,
   +customTransformOptions: CustomTransformOptions,
   +dev: boolean,
   +hot: boolean,
@@ -98,6 +98,7 @@ class Server {
   _bundler: Bundler;
   _debouncedFileChangeHandler: (filePath: string) => mixed;
   _reporter: Reporter;
+  _logger: typeof Logger;
   _symbolicateInWorker: Symbolicate;
   _platforms: Set<string>;
   _nextBundleBuildID: number;
@@ -118,6 +119,7 @@ class Server {
       this.onFileChange(type, filePath);
 
     this._reporter = config.reporter;
+    this._logger = Logger;
     this._changeWatchers = [];
     this._platforms = new Set(this._config.resolver.platforms);
     this._createModuleId = config.serializer.createModuleIdFactory();
@@ -187,7 +189,7 @@ class Server {
       getEntryAbsolutePath(this._config, entryFile),
     );
 
-    return await this._deltaBundler.buildGraph(entryFiles, {
+    const graph = await this._deltaBundler.buildGraph(entryFiles, {
       resolve: await transformHelpers.getResolveDependencyFn(
         this._bundler,
         options.platform,
@@ -196,10 +198,19 @@ class Server {
         entryFiles,
         this._bundler,
         this._deltaBundler,
+        this._config,
         options,
       ),
       onProgress: options.onProgress,
     });
+
+    this._config.serializer.experimentalSerializerHook(graph, {
+      modified: graph.dependencies,
+      deleted: new Set(),
+      reset: true,
+    });
+
+    return graph;
   }
 
   async getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo> {
@@ -235,7 +246,7 @@ class Server {
 
     return await getAssets(graph, {
       processModuleFilter: this._config.serializer.processModuleFilter,
-      assetPlugins: options.assetPlugins,
+      assetPlugins: this._config.transformer.assetPlugins,
       platform: options.platform,
       watchFolders: this._config.watchFolders,
     });
@@ -269,7 +280,6 @@ class Server {
     const entryPoint = getEntryAbsolutePath(this._config, options.entryFile);
 
     const crawlingOptions = {
-      assetPlugins: options.assetPlugins,
       customTransformOptions: options.customTransformOptions,
       dev: options.dev,
       hot: options.hot,
@@ -288,9 +298,16 @@ class Server {
         [entryPoint],
         this._bundler,
         this._deltaBundler,
+        this._config,
         crawlingOptions,
       ),
       onProgress: options.onProgress,
+    });
+
+    this._config.serializer.experimentalSerializerHook(graph, {
+      modified: graph.dependencies,
+      deleted: new Set(),
+      reset: true,
     });
 
     const prepend = await getPrependedScripts(
@@ -332,10 +349,14 @@ class Server {
           reset: false,
         });
         numModifiedFiles = delta.modified.size;
-      }
 
-      if (numModifiedFiles > 0) {
-        graphInfo.lastModified = new Date();
+        if (numModifiedFiles > 0) {
+          graphInfo.lastModified = new Date();
+          this._config.serializer.experimentalSerializerHook(
+            graphInfo.graph,
+            delta,
+          );
+        }
       }
     }
 
@@ -367,6 +388,11 @@ class Server {
       delta = await this._deltaBundler.getDelta(graphInfo.graph, {
         reset: graphInfo.sequenceId !== options.deltaBundleId,
       });
+
+      this._config.serializer.experimentalSerializerHook(
+        graphInfo.graph,
+        delta,
+      );
 
       // Generate a new sequenceId, to be used to verify the next delta request.
       // $FlowIssue #16581373 spread of an exact object should be exact
@@ -628,7 +654,7 @@ class Server {
         numModifiedFiles: delta.modified.size + delta.deleted.size,
       };
     } catch (error) {
-      this._handleError(mres, this._optionsHash(options), error);
+      this._handleError(mres, options, error, buildID);
 
       this._reporter.update({
         buildID,
@@ -666,6 +692,9 @@ class Server {
         bundle_url: req.url,
         entry_point: options.entryFile,
         bundler: 'delta',
+        build_id: buildID,
+        bundle_options: options,
+        bundle_hash: this._optionsHash(options),
       }),
     );
 
@@ -697,12 +726,7 @@ class Server {
         lastModified,
       };
     } catch (error) {
-      this._handleError(mres, this._optionsHash(options), error);
-
-      this._reporter.update({
-        buildID,
-        type: 'bundle_build_failed',
-      });
+      this._handleError(mres, options, error, buildID);
 
       return;
     }
@@ -740,6 +764,10 @@ class Server {
       ...createActionEndEntry(requestingBundleLogEntry),
       outdated_modules: result.numModifiedFiles,
       bundler: 'delta',
+      bundle_size: result.bundle.length,
+      build_id: buildID,
+      bundle_options: options,
+      bundle_hash: this._optionsHash(options),
     });
   }
 
@@ -768,7 +796,7 @@ class Server {
         processModuleFilter: this._config.serializer.processModuleFilter,
       });
     } catch (error) {
-      this._handleError(mres, this._optionsHash(options), error);
+      this._handleError(mres, options, error, buildID);
 
       this._reporter.update({
         buildID,
@@ -812,11 +840,12 @@ class Server {
     try {
       assets = await this.getAssets(options);
     } catch (error) {
-      this._handleError(mres, this._optionsHash(options), error);
+      this._handleError(mres, options, error, buildID);
 
       this._reporter.update({
         buildID,
         type: 'bundle_build_failed',
+        bundleOptions: options,
       });
 
       return;
@@ -908,7 +937,12 @@ class Server {
     });
   }
 
-  _handleError(res: ServerResponse, bundleID: string, error: CustomError) {
+  _handleError(
+    res: ServerResponse,
+    options: BundleOptions,
+    error: CustomError,
+    buildID: string,
+  ) {
     const formattedError = formatBundlingError(error);
 
     res.writeHead(error.status || 500, {
@@ -921,6 +955,8 @@ class Server {
       action_name: 'bundling_error',
       error_type: formattedError.type,
       log_entry_label: 'bundling_error',
+      bundle_id: this._optionsHash(options),
+      build_id: buildID,
       stack: formattedError.message,
     });
   }
@@ -967,13 +1003,6 @@ class Server {
 
     const deltaBundleId = urlQuery.deltaBundleId;
 
-    const assetPlugin = urlQuery.assetPlugin;
-    const assetPlugins = Array.isArray(assetPlugin)
-      ? assetPlugin
-      : typeof assetPlugin === 'string'
-        ? [assetPlugin]
-        : [];
-
     const dev = this._getBoolOptionFromQuery(urlQuery, 'dev', true);
     const minify = this._getBoolOptionFromQuery(urlQuery, 'minify', false);
     const excludeSource = this._getBoolOptionFromQuery(
@@ -1010,7 +1039,6 @@ class Server {
         'entryModuleOnly',
         false,
       ),
-      assetPlugins,
       onProgress: null,
     };
   }
@@ -1041,7 +1069,6 @@ class Server {
   }
 
   static DEFAULT_GRAPH_OPTIONS = {
-    assetPlugins: [],
     customTransformOptions: Object.create(null),
     dev: true,
     hot: false,

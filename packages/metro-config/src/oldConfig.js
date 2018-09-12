@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -45,10 +45,9 @@ const DEFAULT = ({
   getRunModuleStatement: (moduleId: number | string) =>
     `__r(${JSON.stringify(moduleId)});`,
   getSourceExts: () => [],
-  getTransformModulePath: () =>
-    require.resolve('metro/src//defaultTransformer'),
+  getTransformModulePath: () => 'metro/src/defaultTransformer',
   getTransformOptions: async () => ({
-    transform: {inlineRequires: false},
+    transform: {experimentalImportSupport: false, inlineRequires: false},
     preloadedModules: false,
     ramGroups: [],
   }),

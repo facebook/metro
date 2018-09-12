@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -37,13 +37,15 @@ it('wraps a module correctly', () => {
   `);
   const {ast, requireName} = JsFileWrapping.wrapModule(
     originalAst,
+    '_$$_IMPORT_DEFAULT',
+    '_$$_IMPORT_ALL',
     dependencyMapName,
   );
 
   expect(requireName).toBe(BABEL_RENAMED);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
-      __d(function (global, ${BABEL_RENAMED}, module, exports, _dependencyMapName) {
+      __d(function (global, ${BABEL_RENAMED}, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMapName) {
         const dynamicRequire = ${BABEL_RENAMED};
         const a = ${BABEL_RENAMED}('b/lib/a');
         exports.do = () => ${BABEL_RENAMED}("do");
@@ -73,13 +75,15 @@ describe('safe renaming of require', () => {
         `);
         const {ast, requireName} = JsFileWrapping.wrapModule(
           originalAst,
+          '_$$_IMPORT_DEFAULT',
+          '_$$_IMPORT_ALL',
           dependencyMapName,
         );
 
         expect(requireName).toBe(BABEL_RENAMED);
         expect(codeFromAst(ast)).toEqual(
           comparableCode(`
-            __d(function (global, ${BABEL_RENAMED}, module, exports, _dependencyMapName) {
+            __d(function (global, ${BABEL_RENAMED}, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMapName) {
               const dynamicRequire = ${BABEL_RENAMED};
               const a = ${BABEL_RENAMED}('b/lib/a');
               ${declKeyword} ${WRAP_NAME} = 'foo';
@@ -107,13 +111,15 @@ describe('safe renaming of require', () => {
         `);
         const {ast, requireName} = JsFileWrapping.wrapModule(
           originalAst,
+          '_$$_IMPORT_DEFAULT',
+          '_$$_IMPORT_ALL',
           dependencyMapName,
         );
 
         expect(requireName).toBe(BABEL_RENAMED2);
         expect(codeFromAst(ast)).toEqual(
           comparableCode(`
-            __d(function (global, ${BABEL_RENAMED2}, module, exports, _dependencyMapName) {
+            __d(function (global, ${BABEL_RENAMED2}, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMapName) {
               const dynamicRequire = ${BABEL_RENAMED2};
               const a = ${BABEL_RENAMED2}('b/lib/a');
               ${declKeyword} ${BABEL_RENAMED} = 'foo';
@@ -144,13 +150,15 @@ describe('safe renaming of require', () => {
         `);
         const {ast, requireName} = JsFileWrapping.wrapModule(
           originalAst,
+          '_$$_IMPORT_DEFAULT',
+          '_$$_IMPORT_ALL',
           dependencyMapName,
         );
 
         expect(requireName).toBe(BABEL_RENAMED2);
         expect(codeFromAst(ast)).toEqual(
           comparableCode(`
-            __d(function (global, ${BABEL_RENAMED2}, module, exports, _dependencyMapName) {
+            __d(function (global, ${BABEL_RENAMED2}, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMapName) {
               const dynamicRequire = ${BABEL_RENAMED2};
               const a = ${BABEL_RENAMED2}('b/lib/a');
               if (a) {
@@ -180,7 +188,9 @@ it('wraps a polyfill correctly', () => {
         if (something) {
           console.log('foo');
         }
-      })(typeof global === 'undefined' ? this : global);`),
+      })(typeof window !== 'undefined' ?
+        window :
+        typeof global !== 'undefined' ? global : this);`),
   );
 });
 
@@ -201,7 +211,7 @@ it('wraps a JSON file correctly', () => {
 
   expect(comparableCode(wrappedJson)).toEqual(
     comparableCode(
-      `__d(function(global, require, module, exports) {
+      `__d(function(global, require, _aUnused, _bUnused, module, exports, _cUnused) {
       module.exports = {
         "foo": "foo",
         "bar": "bar",

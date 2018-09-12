@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -136,7 +136,7 @@ beforeEach(async () => {
           name: dep.name,
           isAsync: false,
         })),
-        getSource: () => '// source',
+        getSource: () => Buffer.from('// source'),
         output: [
           {
             data: {
@@ -451,6 +451,19 @@ describe('edge cases', () => {
     await initialTraverseDependencies(graph, options);
 
     expect(options.transform.mock.calls.length).toBe(4);
+  });
+
+  it('should try to transform every file only once with multiple entry points', async () => {
+    Actions.createFile('/bundle-2');
+    Actions.addDependency('/bundle-2', '/foo');
+    files = new Set();
+
+    // Add a second entry point to the graph.
+    graph.entryPoints = ['/bundle', '/bundle-2'];
+
+    await initialTraverseDependencies(graph, options);
+
+    expect(options.transform.mock.calls.length).toBe(5);
   });
 
   it('should create two entries when requiring the same file in different forms', async () => {

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -111,7 +111,7 @@ describe('processRequest', () => {
               },
             ],
           ]),
-          getSource: () => 'code-mybundle',
+          getSource: () => Buffer.from('code-mybundle'),
           output: [
             {
               type: 'js/module',
@@ -128,7 +128,7 @@ describe('processRequest', () => {
         {
           path: '/root/foo.js',
           dependencies: new Map(),
-          getSource: () => 'code-foo',
+          getSource: () => Buffer.from('code-foo'),
           output: [
             {
               type: 'js/module',
@@ -171,7 +171,7 @@ describe('processRequest', () => {
         {
           path: 'require-js',
           dependencies: new Map(),
-          getSource: () => 'code-require',
+          getSource: () => Buffer.from('code-require'),
           output: [
             {
               type: 'js/script',
@@ -376,18 +376,12 @@ describe('processRequest', () => {
 
     expect(transformHelpers.getTransformFn).toBeCalledWith(
       ['/root/index.js'],
-      jasmine.any(Bundler),
-      jasmine.any(DeltaBundler),
-      {
-        assetPlugins: [],
-        customTransformOptions: {},
-        dev: true,
-        hot: true,
-        minify: false,
-        onProgress: jasmine.any(Function),
+      expect.any(Bundler),
+      expect.any(DeltaBundler),
+      expect.any(Object),
+      expect.objectContaining({
         platform: 'ios',
-        type: 'module',
-      },
+      }),
     );
     expect(transformHelpers.getResolveDependencyFn).toBeCalled();
 
@@ -398,22 +392,6 @@ describe('processRequest', () => {
         transform: jasmine.any(Function),
         onProgress: jasmine.any(Function),
       },
-    );
-  });
-
-  it('passes in the assetPlugin param', async () => {
-    await makeRequest(
-      requestHandler,
-      'index.bundle?assetPlugin=assetPlugin1&assetPlugin=assetPlugin2',
-    );
-
-    expect(transformHelpers.getTransformFn).toBeCalledWith(
-      ['/root/index.js'],
-      jasmine.any(Bundler),
-      jasmine.any(DeltaBundler),
-      jasmine.objectContaining({
-        assetPlugins: ['assetPlugin1', 'assetPlugin2'],
-      }),
     );
   });
 
@@ -729,10 +707,10 @@ describe('processRequest', () => {
 
       expect(transformHelpers.getTransformFn).toBeCalledWith(
         ['/root/foo file'],
-        jasmine.any(Bundler),
-        jasmine.any(DeltaBundler),
+        expect.any(Bundler),
+        expect.any(DeltaBundler),
+        expect.any(Object),
         {
-          assetPlugins: [],
           customTransformOptions: {},
           dev: true,
           hot: false,
@@ -747,8 +725,8 @@ describe('processRequest', () => {
       expect(DeltaBundler.prototype.buildGraph).toBeCalledWith(
         ['/root/foo file'],
         {
-          resolve: jasmine.any(Function),
-          transform: jasmine.any(Function),
+          resolve: expect.any(Function),
+          transform: expect.any(Function),
           onProgress: null,
         },
       );

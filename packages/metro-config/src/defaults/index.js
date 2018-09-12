@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -55,6 +55,7 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
     getModulesRunBeforeMainModule: () => [],
     processModuleFilter: module => true,
     createModuleIdFactory: defaultCreateModuleIdFactory,
+    experimentalSerializerHook: () => {},
   },
 
   server: {
@@ -64,19 +65,22 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
   },
 
   transformer: {
+    assetPlugins: [],
     asyncRequireModulePath: 'metro/src/lib/bundle-modules/asyncRequire',
     assetRegistryPath: 'missing-asset-registry-path',
+    babelTransformerPath: 'metro/src/defaultTransformer',
     dynamicDepsInPackages: 'throwAtRuntime',
     enableBabelRCLookup: true,
     getTransformOptions: async () => ({
-      transform: {inlineRequires: false},
+      transform: {experimentalImportSupport: false, inlineRequires: false},
       preloadedModules: false,
       ramGroups: [],
     }),
-    postMinifyProcess: x => x,
-    workerPath: null,
     minifierPath: DEFAULT_METRO_MINIFIER_PATH,
+    optimizationSizeLimit: 150 * 1024, // 150 KiB.
+    postMinifyProcess: x => x,
     transformVariants: {default: {}},
+    workerPath: null,
   },
 
   cacheStores: [
@@ -90,14 +94,14 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
   projectRoot: projectRoot || path.resolve(__dirname, '../../..'),
   watchFolders: [],
   watch: false,
-  transformModulePath: require.resolve('metro/src/defaultTransformer'),
+  transformerPath: require.resolve('metro/src/JSTransformer/worker.js'),
   maxWorkers: getMaxWorkers(),
   resetCache: false,
   reporter: new TerminalReporter(new Terminal(process.stdout)),
 });
 
 async function getDefaultConfig(
-  rootPath: string,
+  rootPath: ?string,
 ): Promise<IntermediateConfigT> {
   // We can add more logic here to get a sensible default configuration, for
   // now we just return a stub.

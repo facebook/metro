@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,7 +11,6 @@
 
 import type {Ast} from '@babel/core';
 import type {BabelSourceMap} from '@babel/core';
-import type {Console} from 'console';
 import type {FBSourceMap, MetroSourceMap} from 'metro-source-map';
 
 export type BuildResult = GraphResult;
@@ -30,21 +29,16 @@ export type File = {|
   map: ?BabelSourceMap,
   path: string,
   type: CodeFileTypes,
+  libraryIdx: ?number,
+  soundResources?: ?Array<string>,
 |};
 
 type CodeFileTypes = 'module' | 'script';
 
 export type GraphFn = (
   entryPoints: Iterable<string>,
-  platform: string,
-  options?: ?GraphOptions,
-) => Promise<GraphResult>;
-
-type GraphOptions = {|
-  log?: Console,
-  optimize?: boolean,
-  skip?: Set<string>,
-|};
+  // platform: string,
+) => GraphResult;
 
 export type GraphResult = {|
   entryModules: Array<Module>,
@@ -78,16 +72,7 @@ export type LoadResult = {
   dependencies: $ReadOnlyArray<TransformResultDependency>,
 };
 
-export type LoadFn = (
-  file: string,
-  options: LoadOptions,
-) => LoadResult | Promise<LoadResult>;
-
-type LoadOptions = {|
-  log?: Console,
-  optimize?: boolean,
-  platform?: string,
-|};
+export type LoadFn = (file: string) => LoadResult;
 
 export type Module = {|
   dependencies: Array<Dependency>,
@@ -122,16 +107,7 @@ export type PackageData = {|
   'react-native'?: Object | string,
 |};
 
-export type ResolveFn = (
-  id: string,
-  source: ?string,
-  platform: string,
-  options?: ResolveOptions,
-) => string;
-
-type ResolveOptions = {
-  log?: Console,
-};
+export type ResolveFn = (id: string, source: ?string) => string;
 
 export type TransformerResult = {|
   ast: ?Ast,
@@ -164,6 +140,7 @@ export type TransformResult = {|
   dependencyMapName?: string,
   map: ?BabelSourceMap,
   requireName: string,
+  soundResources?: ?Array<string>,
 |};
 
 export type TransformResults = {[string]: TransformResult};
@@ -262,6 +239,14 @@ export type ResolvedCodeFile = {|
    * `{'foo': 'bar/foo.js', 'bar': 'node_modules/bar/index.js'}`.
    */
   +filePathsByDependencyName: {[dependencyName: string]: string},
+|};
+
+export type LibraryBoundCodeFile = {|
+  ...ResolvedCodeFile,
+  /**
+   * Index of the library that this code file has been exported from.
+   */
+  +libraryIdx: number,
 |};
 
 /**

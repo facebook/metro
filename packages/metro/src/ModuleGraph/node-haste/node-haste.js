@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -38,6 +38,7 @@ type ResolveOptions = {|
   resolveRequest?: ?CustomResolver,
   +sourceExts: Extensions,
   transformedFiles: {[path: Path]: TransformedCodeFile},
+  +platform: string,
 |};
 
 const platforms = new Set(defaults.platforms);
@@ -102,7 +103,13 @@ const createModuleMap = ({files, helpers, moduleCache, sourceExts}) => {
 };
 
 exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
-  const {assetExts, extraNodeModules, transformedFiles, sourceExts} = options;
+  const {
+    assetExts,
+    extraNodeModules,
+    transformedFiles,
+    sourceExts,
+    platform,
+  } = options;
   const files = Object.keys(transformedFiles);
   function getTransformedFile(path) {
     const result = transformedFiles[path];
@@ -148,7 +155,7 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     sourceExts,
   });
 
-  return (id, sourcePath, platform, _, callback) => {
+  return (id, sourcePath) => {
     const from =
       sourcePath != null
         ? new Module(sourcePath, moduleCache, getTransformedFile(sourcePath))

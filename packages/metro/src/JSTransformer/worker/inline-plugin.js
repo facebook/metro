@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -13,9 +13,18 @@
 const createInlinePlatformChecks = require('./inline-platform');
 
 import typeof {types as BabelTypes} from '@babel/core';
-import type {Ast} from 'babel-core';
+import type {Ast} from '@babel/core';
+import type {Path} from '@babel/traverse';
 
 type Context = {types: BabelTypes};
+
+type State = {
+  opts: {
+    dev: boolean,
+    isWrapped: boolean,
+    platform: string,
+  },
+};
 
 const env = {name: 'env'};
 const nodeEnv = {name: 'NODE_ENV'};
@@ -86,18 +95,18 @@ function inlinePlugin(context: Context) {
 
   return {
     visitor: {
-      Identifier(path: Object, state: Object) {
+      Identifier(path: Path, state: State) {
         if (isDev(path.node, path.parent, path.scope)) {
           path.replaceWith(t.booleanLiteral(state.opts.dev));
         }
       },
-      MemberExpression(path: Object, state: Object) {
+      MemberExpression(path: Path, state: State) {
         const node = path.node;
         const scope = path.scope;
         const opts = state.opts;
 
         if (!isLeftHandSideOfAssignmentExpression(node, path.parent)) {
-          if (isPlatformNode(node, scope, opts.isWrapped)) {
+          if (isPlatformNode(node, scope, !!opts.isWrapped)) {
             path.replaceWith(t.stringLiteral(opts.platform));
           } else if (isProcessEnvNodeEnv(node, scope)) {
             path.replaceWith(
@@ -106,20 +115,20 @@ function inlinePlugin(context: Context) {
           }
         }
       },
-      CallExpression(path: Object, state: Object) {
+      CallExpression(path: Path, state: State) {
         const node = path.node;
         const scope = path.scope;
         const arg = node.arguments[0];
         const opts = state.opts;
 
-        if (isPlatformSelectNode(node, scope, opts.isWrapped)) {
+        if (isPlatformSelectNode(node, scope, !!opts.isWrapped)) {
           if (hasStaticProperties(arg)) {
             const fallback = () =>
               findProperty(arg, 'default', () => t.identifier('undefined'));
 
             path.replaceWith(findProperty(arg, opts.platform, fallback));
           }
-        } else if (isPlatformOSSelect(node, scope, opts.isWrapped)) {
+        } else if (isPlatformOSSelect(node, scope, !!opts.isWrapped)) {
           path.replaceWith(
             getReplacementForPlatformOSSelect(node, opts.platform),
           );

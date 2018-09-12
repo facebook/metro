@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,8 +12,7 @@
 
 const TerminalReporter = require('metro/src/lib/TerminalReporter');
 
-const blacklist = require('./defaults/blacklist');
-const defaults = require('./defaults/defaults');
+const getDefaultConfig = require('./defaults');
 const getMaxWorkers = require('metro/src/lib/getMaxWorkers');
 
 const {Terminal} = require('metro-core');
@@ -43,7 +42,7 @@ type PrivateMetroOptions = {|
 |};
 
 // We get the metro runServer signature here and create the new config out of it
-function convertOldToNew({
+async function convertOldToNew({
   config,
   resetCache = false,
   maxWorkers = getMaxWorkers(),
@@ -52,7 +51,7 @@ function convertOldToNew({
   port = null,
   reporter = new TerminalReporter(new Terminal(process.stdout)),
   watch = false,
-}: PrivateMetroOptions): ConfigT {
+}: PrivateMetroOptions): Promise<ConfigT> {
   const {
     getBlacklistRE,
     cacheStores,
@@ -88,18 +87,21 @@ function convertOldToNew({
     processModuleFilter,
   } = config;
 
-  const assetExts = defaults.assetExts.concat(
+  const defaultConfig = await getDefaultConfig(getProjectRoot());
+
+  const assetExts = defaultConfig.resolver.assetExts.concat(
     (getAssetExts && getAssetExts()) || [],
   );
-  const sourceExts = defaults.sourceExts.concat(
+  const sourceExts = defaultConfig.resolver.sourceExts.concat(
     (getSourceExts && getSourceExts()) || [],
   );
-  const platforms = (getPlatforms && getPlatforms()) || [];
+  const platforms =
+    (getPlatforms && getPlatforms()) || defaultConfig.resolver.platforms;
 
   const providesModuleNodeModules =
     typeof getProvidesModuleNodeModules === 'function'
       ? getProvidesModuleNodeModules()
-      : defaults.providesModuleNodeModules;
+      : defaultConfig.resolver.providesModuleNodeModules;
 
   const watchFolders = [getProjectRoot(), ...getWatchFolders()];
 
@@ -111,21 +113,26 @@ function convertOldToNew({
       resolverMainFields: getResolverMainFields(),
       sourceExts,
       hasteImplModulePath,
-      assetTransforms: assetTransforms || false,
+      assetTransforms:
+        assetTransforms || defaultConfig.resolver.assetTransforms,
       extraNodeModules,
       resolveRequest,
-      blacklistRE: getBlacklistRE() ? getBlacklistRE() : blacklist(),
+      blacklistRE: getBlacklistRE()
+        ? getBlacklistRE()
+        : defaultConfig.resolver.blacklistRE,
       useWatchman: true,
     },
     serializer: {
       createModuleIdFactory:
-        createModuleIdFactory || defaults.defaultCreateModuleIdFactory,
+        createModuleIdFactory || defaultConfig.serializer.createModuleIdFactory,
       polyfillModuleNames: getPolyfillModuleNames(),
       getRunModuleStatement,
       getPolyfills,
       postProcessBundleSourcemap,
-      processModuleFilter: processModuleFilter || (module => true),
+      processModuleFilter:
+        processModuleFilter || defaultConfig.serializer.processModuleFilter,
       getModulesRunBeforeMainModule,
+      experimentalSerializerHook: () => {},
     },
     server: {
       useGlobalHotkey: getUseGlobalHotkey(),
@@ -133,16 +140,20 @@ function convertOldToNew({
       enhanceMiddleware,
     },
     transformer: {
+      assetPlugins: defaultConfig.transformer.assetPlugins,
       assetRegistryPath,
       asyncRequireModulePath: getAsyncRequireModulePath(),
+      babelTransformerPath: getTransformModulePath(),
       dynamicDepsInPackages,
       enableBabelRCLookup: getEnableBabelRCLookup(),
       getTransformOptions,
+      minifierPath: minifierPath || defaultConfig.transformer.minifierPath,
+      optimizationSizeLimit: 150 * 1024, // 150 KiB enforced for old configs.
       postMinifyProcess,
+      transformVariants: transformVariants
+        ? transformVariants()
+        : defaultConfig.transformer.transformVariants,
       workerPath: getWorkerPath(),
-      minifierPath: minifierPath || defaults.DEFAULT_METRO_MINIFIER_PATH,
-      transformVariants:
-        transformVariants == null ? {default: {}} : transformVariants(),
     },
 
     reporter,
@@ -150,7 +161,7 @@ function convertOldToNew({
     cacheVersion,
     projectRoot: getProjectRoot(),
     watchFolders,
-    transformModulePath: getTransformModulePath(),
+    transformerPath: defaultConfig.transformerPath,
     resetCache,
     watch,
     maxWorkers,
@@ -183,7 +194,6 @@ function convertNewToOld(newConfig: ConfigT): ConvertedOldConfigT {
     cacheVersion,
     projectRoot,
     watchFolders,
-    transformModulePath,
     resetCache,
     watch,
     maxWorkers,
@@ -216,6 +226,7 @@ function convertNewToOld(newConfig: ConfigT): ConvertedOldConfigT {
 
   const {
     assetRegistryPath,
+    babelTransformerPath,
     enableBabelRCLookup,
     dynamicDepsInPackages,
     getTransformOptions,
@@ -230,7 +241,9 @@ function convertNewToOld(newConfig: ConfigT): ConvertedOldConfigT {
   const oldConfig: $Shape<ConvertedOldConfigT> = {
     serverOptions: {
       assetExts: assetTransforms ? [] : assetExts,
+      assetRegistryPath,
       assetTransforms,
+      asyncRequireModulePath,
       platforms,
       providesModuleNodeModules,
       getResolverMainFields: () => resolverMainFields,
@@ -238,12 +251,10 @@ function convertNewToOld(newConfig: ConfigT): ConvertedOldConfigT {
       dynamicDepsInPackages,
       polyfillModuleNames,
       extraNodeModules,
-      asyncRequireModulePath,
       getRunModuleStatement,
       getPolyfills,
       postProcessBundleSourcemap,
       getModulesRunBeforeMainModule,
-      assetRegistryPath,
       enableBabelRCLookup,
       getTransformOptions,
       postMinifyProcess,
@@ -253,7 +264,7 @@ function convertNewToOld(newConfig: ConfigT): ConvertedOldConfigT {
       cacheVersion,
       projectRoot,
       watchFolders,
-      transformModulePath,
+      transformModulePath: babelTransformerPath,
       resolveRequest,
       resetCache,
       watch,

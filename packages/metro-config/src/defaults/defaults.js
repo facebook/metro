@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -50,8 +50,6 @@ exports.moduleSystem = require.resolve('metro/src/lib/polyfills/require.js');
 exports.platforms = ['ios', 'android', 'windows', 'web'];
 
 exports.providesModuleNodeModules = ['react-native', 'react-native-windows'];
-
-exports.transformModulePath = require.resolve('metro/src/defaultTransformer');
 
 exports.DEFAULT_METRO_MINIFIER_PATH = 'metro-minify-uglify';
 

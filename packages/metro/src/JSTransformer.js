@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17,14 +17,11 @@ const debug = require('debug')('Metro:JStransformer');
 const Worker = require('jest-worker').default;
 
 import type {TransformResult} from './DeltaBundler';
-import type {WorkerOptions} from './JSTransformer/worker';
+import type {WorkerFn, WorkerOptions} from './DeltaBundler/Worker';
 import type {LocalPath} from './node-haste/lib/toLocalPath';
-import type {DynamicRequiresBehavior} from './ModuleGraph/worker/collectDependencies';
-
-import typeof {transform as Transform} from './JSTransformer/worker';
 
 type WorkerInterface = Worker & {
-  transform: Transform,
+  transform: WorkerFn,
 };
 
 type Reporters = {
@@ -39,22 +36,13 @@ type TransformerResult = {
 
 module.exports = class Transformer {
   _worker: WorkerInterface;
-  _transformModulePath: string;
-  _asyncRequireModulePath: string;
-  _dynamicDepsInPackages: DynamicRequiresBehavior;
 
   constructor(options: {|
     +maxWorkers: number,
     +reporters: Reporters,
-    +transformModulePath: string,
-    +asyncRequireModulePath: string,
-    +dynamicDepsInPackages: DynamicRequiresBehavior,
     +workerPath: ?string,
   |}) {
-    this._transformModulePath = options.transformModulePath;
-    this._asyncRequireModulePath = options.asyncRequireModulePath;
-    this._dynamicDepsInPackages = options.dynamicDepsInPackages;
-    const {workerPath = require.resolve('./JSTransformer/worker')} = options;
+    const {workerPath = require.resolve('./DeltaBundler/Worker')} = options;
 
     if (options.maxWorkers > 1) {
       this._worker = this._makeFarm(
@@ -87,10 +75,8 @@ module.exports = class Transformer {
   async transform(
     filename: string,
     localPath: LocalPath,
+    transformerPath: string,
     options: WorkerOptions,
-    assetExts: $ReadOnlyArray<string>,
-    assetRegistryPath: string,
-    minifierPath: string,
   ): Promise<TransformerResult> {
     try {
       debug('Started transforming file', filename);
@@ -98,13 +84,8 @@ module.exports = class Transformer {
       const data = await this._worker.transform(
         filename,
         localPath,
-        this._transformModulePath,
+        transformerPath,
         options,
-        assetExts,
-        assetRegistryPath,
-        minifierPath,
-        this._asyncRequireModulePath,
-        this._dynamicDepsInPackages,
       );
 
       debug('Done transforming file', filename);

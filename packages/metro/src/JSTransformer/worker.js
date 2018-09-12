@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16,13 +16,14 @@ const assetTransformer = require('../assetTransformer');
 const babylon = require('@babel/parser');
 const collectDependencies = require('../ModuleGraph/worker/collectDependencies');
 const constantFoldingPlugin = require('./worker/constant-folding-plugin');
-const crypto = require('crypto');
-const fs = require('fs');
 const generate = require('@babel/generator').default;
 const getMinifier = require('../lib/getMinifier');
+const importExportPlugin = require('./worker/import-export-plugin');
 const inlinePlugin = require('./worker/inline-plugin');
+const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
 const normalizePseudoglobals = require('./worker/normalizePseudoglobals');
-const path = require('path');
+const {transformFromAstSync} = require('@babel/core');
+const traverse = require('@babel/traverse').default;
 
 const {
   fromRawMappings,
@@ -35,13 +36,12 @@ import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDepende
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
 import type {Ast} from '@babel/core';
 import type {Plugins as BabelPlugins} from 'babel-core';
-import type {LogEntry} from 'metro-core/src/Logger';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
-export type TransformArgs<ExtraOptions: {}> = {|
+export type TransformArgs = {|
   filename: string,
   localPath: string,
-  options: ExtraOptions & TransformOptions,
+  options: TransformOptions,
   plugins?: BabelPlugins,
   src: string,
 |};
@@ -50,43 +50,45 @@ export type TransformResults = {
   ast: Ast,
 };
 
-export type Transform<ExtraOptions: {}> = (
-  TransformArgs<ExtraOptions>,
-) => TransformResults;
+export type Transform = TransformArgs => TransformResults;
 
-export type Transformer<ExtraOptions: {} = {}> = {
-  transform: Transform<ExtraOptions>,
+export type Transformer = {
+  transform: Transform,
   getCacheKey: () => string,
 };
+
+export type MinifyOptions = {
+  filename?: string,
+  reserved?: $ReadOnlyArray<string>,
+};
+
+export type Type = 'script' | 'module' | 'asset';
+
+export type WorkerOptions = {|
+  +assetPlugins: $ReadOnlyArray<string>,
+  +assetRegistryPath: string,
+  +asyncRequireModulePath: string,
+  +babelTransformerPath: string,
+  +dynamicDepsInPackages: DynamicRequiresBehavior,
+  +minifierPath: string,
+  +optimizationSizeLimit: number,
+  +transformOptions: TransformOptions,
+  +type: Type,
+|};
 
 export type CustomTransformOptions = {[string]: mixed, __proto__: null};
 
 export type TransformOptions = {
   +customTransformOptions?: CustomTransformOptions,
   +enableBabelRCLookup?: boolean,
-  +dev?: boolean,
+  +experimentalImportSupport?: boolean,
+  +dev: boolean,
   +hot?: boolean,
   +inlineRequires: boolean,
-  +platform: ?string,
-  +projectRoot: string,
-};
-
-export type MinifyOptions = {
-  reserved?: $ReadOnlyArray<string>,
-};
-
-export type WorkerOptions = {|
-  +assetDataPlugins: $ReadOnlyArray<string>,
-  +customTransformOptions?: CustomTransformOptions,
-  +enableBabelRCLookup: boolean,
-  +dev: boolean,
-  +hot: boolean,
-  +inlineRequires: boolean,
-  +isScript: boolean,
   +minify: boolean,
   +platform: ?string,
   +projectRoot: string,
-|};
+};
 
 export type JsOutput = {|
   +data: {|
@@ -96,15 +98,10 @@ export type JsOutput = {|
   +type: string,
 |};
 
-type Data = {
-  result: {|
-    output: $ReadOnlyArray<JsOutput>,
-    dependencies: $ReadOnlyArray<TransformResultDependency>,
-  |},
-  sha1: string,
-  transformFileStartLogEntry: LogEntry,
-  transformFileEndLogEntry: LogEntry,
-};
+type Result = {|
+  output: $ReadOnlyArray<JsOutput>,
+  dependencies: $ReadOnlyArray<TransformResultDependency>,
+|};
 
 function getDynamicDepsBehavior(
   inPackages: DynamicRequiresBehavior,
@@ -124,98 +121,115 @@ function getDynamicDepsBehavior(
   }
 }
 
-async function transformCode(
+async function transform(
   filename: string,
   localPath: LocalPath,
-  transformerPath: string,
+  data: Buffer,
   options: WorkerOptions,
-  assetExts: $ReadOnlyArray<string>,
-  assetRegistryPath: string,
-  minifierPath: string,
-  asyncRequireModulePath: string,
-  dynamicDepsInPackages: DynamicRequiresBehavior,
-): Promise<Data> {
-  const transformFileStartLogEntry = {
-    action_name: 'Transforming file',
-    action_phase: 'start',
-    file_name: filename,
-    log_entry_label: 'Transforming file',
-    start_timestamp: process.hrtime(),
-  };
-
-  const data = fs.readFileSync(filename);
+): Promise<Result> {
   const sourceCode = data.toString('utf8');
   let type = 'js/module';
 
-  const sha1 = crypto
-    .createHash('sha1')
-    .update(data)
-    .digest('hex');
+  if (options.type === 'asset') {
+    type = 'js/module/asset';
+  }
+  if (options.type === 'script') {
+    type = 'js/script';
+  }
 
   if (filename.endsWith('.json')) {
     let code = JsFileWrapping.wrapJson(sourceCode);
     let map = [];
 
-    const transformFileEndLogEntry = getEndLogEntry(
-      transformFileStartLogEntry,
-      filename,
-    );
-
-    if (options.minify) {
+    if (options.transformOptions.minify) {
       ({map, code} = await minifyCode(
         filename,
         code,
         sourceCode,
         map,
-        minifierPath,
+        options.minifierPath,
       ));
     }
 
-    return {
-      result: {dependencies: [], output: [{data: {code, map}, type}]},
-      sha1,
-      transformFileStartLogEntry,
-      transformFileEndLogEntry,
-    };
+    return {dependencies: [], output: [{data: {code, map}, type}]};
   }
 
-  const plugins = options.dev
-    ? []
-    : [[inlinePlugin, options], [constantFoldingPlugin, options]];
-
   // $FlowFixMe TODO t26372934 Plugin system
-  const transformer: Transformer<*> = require(transformerPath);
+  const transformer: Transformer<*> = require(options.babelTransformerPath);
 
   const transformerArgs = {
     filename,
     localPath,
-    options,
-    plugins,
+    options: {
+      ...options.transformOptions,
+      // Inline requires are now performed at a secondary step. We cannot
+      // unfortunately remove it from the internal transformer, since this one
+      // is used by other tooling, and this would affect it.
+      inlineRequires: false,
+    },
+    plugins: [],
     src: sourceCode,
   };
-
-  if (isAsset(filename, assetExts)) {
-    type = 'js/module/asset';
-  }
 
   const transformResult =
     type === 'js/module/asset'
       ? await assetTransformer.transform(
           transformerArgs,
-          assetRegistryPath,
-          options.assetDataPlugins,
+          options.assetRegistryPath,
+          options.assetPlugins,
         )
       : await transformer.transform(transformerArgs);
 
   // Transformers can ouptut null ASTs (if they ignore the file). In that case
   // we need to parse the module source code to get their AST.
-  const ast =
+  let ast =
     transformResult.ast || babylon.parse(sourceCode, {sourceType: 'module'});
 
-  const transformFileEndLogEntry = getEndLogEntry(
-    transformFileStartLogEntry,
-    filename,
-  );
+  // Select unused names for "metroImportDefault" and "metroImportAll", by
+  // calling "generateUid".
+  let importDefault = '';
+  let importAll = '';
+
+  traverse(ast, {
+    Program(path) {
+      importAll = path.scope.generateUid('$$_IMPORT_ALL');
+      importDefault = path.scope.generateUid('$$_IMPORT_DEFAULT');
+    },
+  });
+
+  // Perform the import-export transform (in case it's still needed), then
+  // fold requires and perform constant folding (if in dev).
+  const plugins = [];
+  const opts = {
+    ...options.transformOptions,
+    inlineableCalls: [importDefault, importAll],
+    importDefault,
+    importAll,
+  };
+
+  if (options.transformOptions.inlineRequires) {
+    plugins.push([inlineRequiresPlugin, opts]);
+  }
+
+  if (!options.transformOptions.dev) {
+    plugins.push([constantFoldingPlugin, opts]);
+    plugins.push([inlinePlugin, opts]);
+  }
+
+  if (options.transformOptions.experimentalImportSupport) {
+    plugins.push([importExportPlugin, opts]);
+  }
+
+  ({ast} = transformFromAstSync(ast, '', {
+    ast: true,
+    babelrc: false,
+    code: false,
+    comments: false,
+    compact: false,
+    filename: localPath,
+    plugins,
+    sourceMaps: false,
+  }));
 
   let dependencyMapName = '';
   let dependencies;
@@ -225,20 +239,18 @@ async function transformCode(
   // dependency graph and it code will just be prepended to the bundle modules),
   // we need to wrap it differently than a commonJS module (also, scripts do
   // not have dependencies).
-  if (options.isScript) {
+  if (type === 'js/script') {
     dependencies = [];
     wrappedAst = JsFileWrapping.wrapPolyfill(ast);
-
-    type = 'js/script';
   } else {
     try {
       const opts = {
-        asyncRequireModulePath,
+        asyncRequireModulePath: options.asyncRequireModulePath,
         dynamicRequires: getDynamicDepsBehavior(
-          dynamicDepsInPackages,
+          options.dynamicDepsInPackages,
           filename,
         ),
-        keepRequireNames: options.dev,
+        keepRequireNames: options.transformOptions.dev,
       };
       ({dependencies, dependencyMapName} = collectDependencies(ast, opts));
     } catch (error) {
@@ -248,10 +260,19 @@ async function transformCode(
       throw error;
     }
 
-    ({ast: wrappedAst} = JsFileWrapping.wrapModule(ast, dependencyMapName));
+    ({ast: wrappedAst} = JsFileWrapping.wrapModule(
+      ast,
+      importDefault,
+      importAll,
+      dependencyMapName,
+    ));
   }
 
-  const reserved = options.minify ? normalizePseudoglobals(wrappedAst) : [];
+  const reserved =
+    options.transformOptions.minify &&
+    data.length <= options.optimizationSizeLimit
+      ? normalizePseudoglobals(wrappedAst)
+      : [];
 
   const result = generate(
     wrappedAst,
@@ -269,23 +290,18 @@ async function transformCode(
   let map = result.rawMappings ? result.rawMappings.map(toSegmentTuple) : [];
   let code = result.code;
 
-  if (options.minify) {
+  if (options.transformOptions.minify) {
     ({map, code} = await minifyCode(
       filename,
       result.code,
       sourceCode,
       map,
-      minifierPath,
+      options.minifierPath,
       {reserved},
     ));
   }
 
-  return {
-    result: {dependencies, output: [{data: {code, map}, type}]},
-    sha1,
-    transformFileStartLogEntry,
-    transformFileEndLogEntry,
-  };
+  return {dependencies, output: [{data: {code, map}, type}]};
 }
 
 async function minifyCode(
@@ -325,21 +341,17 @@ async function minifyCode(
   }
 }
 
-function isAsset(filePath: string, assetExts: $ReadOnlyArray<string>): boolean {
-  return assetExts.indexOf(path.extname(filePath).slice(1)) !== -1;
-}
-
-function getEndLogEntry(startLogEntry: LogEntry, filename: string): LogEntry {
-  const timeDelta = process.hrtime(startLogEntry.start_timestamp);
-  const duration_ms = Math.round((timeDelta[0] * 1e9 + timeDelta[1]) / 1e6);
-
-  return {
-    action_name: 'Transforming file',
-    action_phase: 'end',
-    file_name: filename,
-    duration_ms,
-    log_entry_label: 'Transforming file',
-  };
+function getTransformDependencies(): $ReadOnlyArray<string> {
+  return [
+    require.resolve('../ModuleGraph/worker/JsFileWrapping'),
+    require.resolve('../assetTransformer'),
+    require.resolve('../ModuleGraph/worker/collectDependencies'),
+    require.resolve('./worker/constant-folding-plugin'),
+    require.resolve('../lib/getMinifier'),
+    require.resolve('./worker/inline-plugin'),
+    require.resolve('./worker/normalizePseudoglobals'),
+    require.resolve('../ModuleGraph/worker/optimizeDependencies'),
+  ];
 }
 
 class InvalidRequireCallError extends Error {
@@ -357,6 +369,6 @@ class InvalidRequireCallError extends Error {
 }
 
 module.exports = {
-  transform: transformCode,
-  InvalidRequireCallError,
+  transform,
+  getTransformDependencies,
 };

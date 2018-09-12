@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21,6 +21,8 @@ type Exports = any;
 type FactoryFn = (
   global: Object,
   require: RequireFn,
+  metroImportDefault: RequireFn,
+  metroImportAll: RequireFn,
   moduleObject: {exports: {}},
   exports: {},
   dependencyMap: ?DependencyMap,
@@ -40,14 +42,16 @@ type Module = {
 type ModuleID = number;
 type ModuleDefinition = {|
   dependencyMap: ?DependencyMap,
-  publicModule: Module,
+  error?: any,
   factory: FactoryFn,
   hasError: boolean,
-  error?: any,
   hot?: HotModuleReloadingData,
+  importedAll: any,
+  importedDefault: any,
   isInitialized: boolean,
-  verboseName?: string,
   path?: string,
+  publicModule: Module,
+  verboseName?: string,
 |};
 type PatchedModules = {[ModuleID]: boolean};
 type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
@@ -58,6 +62,11 @@ global.__d = define;
 global.__c = clear;
 
 var modules = clear();
+
+// Don't use a Symbol here, it would pull in an extra polyfill with all sorts of
+// additional stuff (e.g. Array.from).
+const EMPTY = {};
+const {hasOwnProperty} = {};
 
 function clear() {
   modules =
@@ -107,10 +116,12 @@ function define(
   }
   modules[moduleId] = {
     dependencyMap,
-    publicModule: {exports: {}},
     factory,
     hasError: false,
+    importedAll: EMPTY,
+    importedDefault: EMPTY,
     isInitialized: false,
+    publicModule: {exports: {}},
   };
   if (__DEV__) {
     // HMR
@@ -143,6 +154,7 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev) {
 
   //$FlowFixMe: at this point we know that moduleId is a number
   const moduleIdReallyIsNumber: number = moduleId;
+
   if (__DEV__) {
     const initializingIndex = initializingModuleIds.indexOf(
       moduleIdReallyIsNumber,
@@ -160,10 +172,74 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev) {
       );
     }
   }
+
   const module = modules[moduleIdReallyIsNumber];
+
   return module && module.isInitialized
     ? module.publicModule.exports
     : guardedLoadModule(moduleIdReallyIsNumber, module);
+}
+
+function metroImportDefault(moduleId: ModuleID | VerboseModuleNameForDev) {
+  if (__DEV__ && typeof moduleId === 'string') {
+    const verboseName = moduleId;
+    moduleId = verboseNamesToModuleIds[verboseName];
+  }
+
+  //$FlowFixMe: at this point we know that moduleId is a number
+  const moduleIdReallyIsNumber: number = moduleId;
+
+  if (
+    modules[moduleIdReallyIsNumber] &&
+    modules[moduleIdReallyIsNumber].importedDefault !== EMPTY
+  ) {
+    return modules[moduleIdReallyIsNumber].importedDefault;
+  }
+
+  const exports = metroRequire(moduleIdReallyIsNumber);
+  const importedDefault =
+    exports && exports.__esModule ? exports.default : exports;
+
+  return (modules[moduleIdReallyIsNumber].importedDefault = importedDefault);
+}
+
+function metroImportAll(moduleId) {
+  if (__DEV__ && typeof moduleId === 'string') {
+    const verboseName = moduleId;
+    moduleId = verboseNamesToModuleIds[verboseName];
+  }
+
+  //$FlowFixMe: at this point we know that moduleId is a number
+  const moduleIdReallyIsNumber: number = moduleId;
+
+  if (
+    modules[moduleIdReallyIsNumber] &&
+    modules[moduleIdReallyIsNumber].importedAll !== EMPTY
+  ) {
+    return modules[moduleIdReallyIsNumber].importedAll;
+  }
+
+  const exports = metroRequire(moduleIdReallyIsNumber);
+  let importedAll;
+
+  if (exports && exports.__esModule) {
+    importedAll = exports;
+  } else {
+    importedAll = {};
+
+    // Refrain from using Object.assign, it has to work in ES3 environments.
+    if (exports) {
+      for (const key in exports) {
+        if (hasOwnProperty.call(exports, key)) {
+          importedAll[key] = exports[key];
+        }
+      }
+    }
+
+    importedAll.default = exports;
+  }
+
+  return (modules[moduleIdReallyIsNumber].importedAll = importedAll);
 }
 
 let inGuard = false;
@@ -199,6 +275,23 @@ function packModuleId(value: {segmentId: number, localId: number}): ModuleID {
   return value.segmentId << (ID_MASK_SHIFT + value.localId);
 }
 metroRequire.packModuleId = packModuleId;
+
+const hooks = [];
+function registerHook(cb: (number, {}) => void) {
+  const hook = {cb};
+  hooks.push(hook);
+  return {
+    release: () => {
+      for (let i = 0; i < hooks.length; ++i) {
+        if (hooks[i] === hook) {
+          hooks.splice(i, 1);
+          break;
+        }
+      }
+    },
+  };
+}
+metroRequire.registerHook = registerHook;
 
 function loadModuleImplementation(moduleId, module) {
   if (!module && global.__defineModule) {
@@ -255,12 +348,20 @@ function loadModuleImplementation(moduleId, module) {
       }
     }
 
+    if (hooks.length > 0) {
+      for (let i = 0; i < hooks.length; ++i) {
+        hooks[i].cb(moduleId, moduleObject);
+      }
+    }
+
     // keep args in sync with with defineModuleCode in
     // metro/src/Resolver/index.js
     // and metro/src/ModuleGraph/worker.js
     factory(
       global,
       metroRequire,
+      metroImportDefault,
+      metroImportAll,
       moduleObject,
       moduleObject.exports,
       dependencyMap,

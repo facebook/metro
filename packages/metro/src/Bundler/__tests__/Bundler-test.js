@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,11 +12,11 @@
 
 jest
   .setMock('jest-worker', () => ({}))
-  .mock('image-size')
   .mock('fs', () => new (require('metro-memory-fs'))())
   .mock('os')
   .mock('assert')
   .mock('progress')
+  .mock('../../lib/getTransformCacheKeyFn', () => () => () => 'hash')
   .mock('../../node-haste/DependencyGraph')
   .mock('../../JSTransformer')
   .mock('metro-core')
@@ -25,7 +25,6 @@ jest
 var Bundler = require('../');
 var {getDefaultValues} = require('metro-config/src/defaults');
 var {mergeConfig} = require('metro-config/src/loadConfig');
-var sizeOf = require('image-size');
 var fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -33,8 +32,6 @@ const mkdirp = require('mkdirp');
 const Module = require('../../node-haste/Module');
 
 describe('Bundler', function() {
-  let bundler;
-  let assetServer;
   let watchFolders;
   let projectRoot;
   let commonOptions;
@@ -60,7 +57,7 @@ describe('Bundler', function() {
       cacheVersion: 'smth',
       projectRoot: '/root',
       resetCache: false,
-      transformModulePath: '/path/to/transformer.js',
+      transformerPath: '/path/to/transformer.js',
       watch: false,
       watchFolders: ['/root'],
     };
@@ -73,36 +70,6 @@ describe('Bundler', function() {
     mkdirp.sync('/path/to');
     mkdirp.sync('/root');
     fs.writeFileSync('/path/to/transformer.js', '');
-
-    assetServer = {
-      getAssetData: jest.fn(),
-    };
-
-    bundler = new Bundler({
-      ...commonOptions,
-      watchFolders,
-      assetServer,
-    });
-
-    sizeOf.mockImplementation(function(path, cb) {
-      cb(null, {width: 50, height: 100});
-    });
-  });
-
-  it('allows overriding the platforms array', () => {
-    expect(bundler._opts.resolver.platforms).toEqual([
-      'ios',
-      'android',
-      'windows',
-      'web',
-    ]);
-    const b = new Bundler({
-      ...commonOptions,
-      watchFolders,
-      assetServer,
-      platforms: ['android', 'vr'],
-    });
-    expect(b._opts.platforms).toEqual(['android', 'vr']);
   });
 
   it('uses new cache layers when transforming if requested to do so', async () => {
@@ -132,7 +99,7 @@ describe('Bundler', function() {
       result: {},
     });
 
-    await bundlerInstance.transformFile(module.path, {});
+    await bundlerInstance.transformFile(module.path, {transformOptions: {}});
 
     // We got the SHA-1 of the file from the dependency graph.
     expect(depGraph.getSha1).toBeCalledWith('/root/foo.js');

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15,6 +15,8 @@ const path = require('path');
 const process = require('process');
 
 const {EventEmitter} = require('events');
+
+import type {BundleOptions} from 'metro/src/shared/types.flow';
 
 const VERSION = require('../package.json').version;
 
@@ -39,6 +41,11 @@ export type LogEntry = {
   log_entry_label: string,
   log_session?: string,
   start_timestamp?: [number, number],
+  outdated_modules?: number,
+  bundle_size?: number,
+  bundle_options?: BundleOptions,
+  bundle_hash?: string,
+  build_id?: string,
 };
 
 const log_session = `${os.hostname()}-${Date.now()}`;

@@ -1,27 +1,29 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`build a simple bundle with polyfills 1`] = `
-"var __DEV__=false,__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now(),process=this.process||{};process.env=process.env||{};process.env.NODE_ENV=\\"production\\";
-!(function(r){'use strict';r.__r=t,r.__d=function(r,n,t){if(null!=e[n])return;e[n]={dependencyMap:t,publicModule:{exports:{}},factory:r,hasError:!1,isInitialized:!1}},r.__c=n;var e=n();function n(){return e='number'==typeof __NUM_MODULES__?Array(0|__NUM_MODULES__):Object.create(null)}function t(r){var n=r,t=e[n];return t&&t.isInitialized?t.publicModule.exports:i(n,t)}var o=!1;function i(e,n){if(!o&&r.ErrorUtils){var t;o=!0;try{t=l(e,n)}catch(e){r.ErrorUtils.reportFatalError(e)}return o=!1,t}return l(e,n)}var u=16,a=65535;function d(r){return{segmentId:r>>>u,localId:r&a}}function l(n,o){!o&&r.__defineModule&&(r.__defineModule(n),o=e[n]);var i=r.nativeRequire;if(!o&&i){var u=d(n),a=u.segmentId;i(u.localId,a),o=e[n]}if(!o)throw Error('Requiring unknown module \\"'+n+'\\".');if(o.hasError)throw c(n,o.error);o.isInitialized=!0;var l=o,f=l.factory,p=l.dependencyMap;try{var s=o.publicModule;return f(r,t,s,s.exports,p),o.factory=void 0,o.dependencyMap=void 0,s.exports}catch(r){throw o.hasError=!0,o.error=r,o.isInitialized=!1,o.publicModule.exports=void 0,r}}function c(r,e){return Error('Requiring module \\"'+r+'\\", which threw an exception: '+e)}t.unpackModuleId=d,t.packModuleId=function(r){return r.segmentId<<u+r.localId}})('undefined'==typeof global?this:global);
-!(function(e){'use strict';Object.keys||(Object.keys=function(){})})('undefined'==typeof global||global);
-!(function(t){'use strict';String.prototype.repeat||(String.prototype.repeat=function(){})})('undefined'==typeof global||global);
-__d(function(g,r,m,e,d){'use strict';var t=r(d[0]),o=r(d[1]),c=r(d[2]);m.exports={Foo:o,Bar:t,TypeScript:c}},0,[1,2,5]);
-__d(function(g,r,m,e,d){'use strict';var t=r(d[0]);m.exports={type:'bar',foo:t.type}},1,[2]);
-__d(function(g,r,m,e,d){'use strict';var t=r(d[0]);m.exports={type:'foo',asset:t}},2,[3]);
-__d(function(g,r,m,e,d){m.exports=r(d[0]).registerAsset({__packager_asset:!0,httpServerLocation:\\"/assets\\",width:8,height:8,scales:[1],hash:\\"77d45c1f7fa73c0f6c444a830dc42f67\\",name:\\"test\\",type:\\"png\\"})},3,[4]);
-__d(function(g,r,m,e,d){'use strict'},4,[]);
-__d(function(g,r,m,e,d){Object.defineProperty(e,\\"__esModule\\",{value:!0}),e.test=e.type=void 0;e.type='TypeScript';e.test=!0},5,[]);
-__r(0);"
-`;
-
 exports[`builds a simple bundle 1`] = `
-"var __DEV__=false,__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now(),process=this.process||{};process.env=process.env||{};process.env.NODE_ENV=\\"production\\";
-!(function(r){'use strict';r.__r=t,r.__d=function(r,n,t){if(null!=e[n])return;e[n]={dependencyMap:t,publicModule:{exports:{}},factory:r,hasError:!1,isInitialized:!1}},r.__c=n;var e=n();function n(){return e='number'==typeof __NUM_MODULES__?Array(0|__NUM_MODULES__):Object.create(null)}function t(r){var n=r,t=e[n];return t&&t.isInitialized?t.publicModule.exports:i(n,t)}var o=!1;function i(e,n){if(!o&&r.ErrorUtils){var t;o=!0;try{t=l(e,n)}catch(e){r.ErrorUtils.reportFatalError(e)}return o=!1,t}return l(e,n)}var u=16,a=65535;function d(r){return{segmentId:r>>>u,localId:r&a}}function l(n,o){!o&&r.__defineModule&&(r.__defineModule(n),o=e[n]);var i=r.nativeRequire;if(!o&&i){var u=d(n),a=u.segmentId;i(u.localId,a),o=e[n]}if(!o)throw Error('Requiring unknown module \\"'+n+'\\".');if(o.hasError)throw c(n,o.error);o.isInitialized=!0;var l=o,f=l.factory,p=l.dependencyMap;try{var s=o.publicModule;return f(r,t,s,s.exports,p),o.factory=void 0,o.dependencyMap=void 0,s.exports}catch(r){throw o.hasError=!0,o.error=r,o.isInitialized=!1,o.publicModule.exports=void 0,r}}function c(r,e){return Error('Requiring module \\"'+r+'\\", which threw an exception: '+e)}t.unpackModuleId=d,t.packModuleId=function(r){return r.segmentId<<u+r.localId}})('undefined'==typeof global?this:global);
-__d(function(g,r,m,e,d){'use strict';var t=r(d[0]),o=r(d[1]),c=r(d[2]);m.exports={Foo:o,Bar:t,TypeScript:c}},0,[1,2,5]);
-__d(function(g,r,m,e,d){'use strict';var t=r(d[0]);m.exports={type:'bar',foo:t.type}},1,[2]);
-__d(function(g,r,m,e,d){'use strict';var t=r(d[0]);m.exports={type:'foo',asset:t}},2,[3]);
-__d(function(g,r,m,e,d){m.exports=r(d[0]).registerAsset({__packager_asset:!0,httpServerLocation:\\"/assets\\",width:8,height:8,scales:[1],hash:\\"77d45c1f7fa73c0f6c444a830dc42f67\\",name:\\"test\\",type:\\"png\\"})},3,[4]);
-__d(function(g,r,m,e,d){'use strict'},4,[]);
-__d(function(g,r,m,e,d){Object.defineProperty(e,\\"__esModule\\",{value:!0}),e.test=e.type=void 0;e.type='TypeScript';e.test=!0},5,[]);
-__r(0);"
+Object {
+  "Bar": Object {
+    "foo": "foo",
+    "type": "bar",
+  },
+  "Foo": Object {
+    "asset": Object {
+      "__packager_asset": true,
+      "hash": "77d45c1f7fa73c0f6c444a830dc42f67",
+      "height": 8,
+      "httpServerLocation": "/assets",
+      "name": "test",
+      "scales": Array [
+        1,
+      ],
+      "type": "png",
+      "width": 8,
+    },
+    "type": "foo",
+  },
+  "TypeScript": Object {
+    "test": true,
+    "type": "TypeScript",
+  },
+}
 `;

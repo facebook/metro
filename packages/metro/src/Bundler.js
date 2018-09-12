@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -20,12 +20,9 @@ const toLocalPath = require('./node-haste/lib/toLocalPath');
 
 const {Cache, stableHash} = require('metro-cache');
 
+import type {WorkerOptions} from './DeltaBundler/Worker';
 import type {TransformResult} from './DeltaBundler';
-import type {WorkerOptions} from './JSTransformer/worker';
-import type {
-  ConfigT,
-  GetTransformOptions,
-} from 'metro-config/src/configTypes.flow';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 const {hasOwnProperty} = Object.prototype;
 
@@ -35,25 +32,14 @@ class Bundler {
   _baseHash: string;
   _transformer: Transformer;
   _depGraphPromise: Promise<DependencyGraph>;
-  _getTransformOptions: GetTransformOptions;
-  _projectRoot: string;
 
   constructor(opts: ConfigT) {
     opts.watchFolders.forEach(verifyRootExists);
-
-    const getTransformCacheKey = getTransformCacheKeyFn({
-      asyncRequireModulePath: opts.transformer.asyncRequireModulePath,
-      cacheVersion: opts.cacheVersion,
-      dynamicDepsInPackages: opts.transformer.dynamicDepsInPackages,
-      projectRoot: opts.projectRoot,
-      transformModulePath: opts.transformModulePath,
-    });
 
     this._opts = opts;
     this._cache = new Cache(opts.cacheStores);
 
     this._transformer = new Transformer({
-      asyncRequireModulePath: opts.transformer.asyncRequireModulePath,
       maxWorkers: opts.maxWorkers,
       reporters: {
         stdoutChunk: chunk =>
@@ -61,15 +47,12 @@ class Bundler {
         stderrChunk: chunk =>
           opts.reporter.update({type: 'worker_stderr_chunk', chunk}),
       },
-      transformModulePath: opts.transformModulePath,
-      dynamicDepsInPackages: opts.transformer.dynamicDepsInPackages,
       workerPath: opts.transformer.workerPath || undefined,
     });
 
-    const blacklistRE: RegExp = opts.resolver.blacklistRE;
     this._depGraphPromise = DependencyGraph.load({
       assetExts: opts.resolver.assetExts,
-      blacklistRE,
+      blacklistRE: opts.resolver.blacklistRE,
       extraNodeModules: opts.resolver.extraNodeModules,
       hasteImplModulePath: opts.resolver.hasteImplModulePath,
       mainFields: opts.resolver.resolverMainFields,
@@ -86,15 +69,19 @@ class Bundler {
       watchFolders: opts.watchFolders,
     });
 
-    this._baseHash = stableHash([
-      opts.resolver.assetExts,
-      opts.transformer.assetRegistryPath,
-      getTransformCacheKey(),
-      opts.transformer.minifierPath,
-    ]).toString('binary');
+    try {
+      const getTransformCacheKey = getTransformCacheKeyFn({
+        babelTransformerPath: opts.transformer.babelTransformerPath,
+        cacheVersion: opts.cacheVersion,
+        projectRoot: opts.projectRoot,
+        transformerPath: opts.transformerPath,
+      });
 
-    this._projectRoot = opts.projectRoot;
-    this._getTransformOptions = opts.transformer.getTransformOptions;
+      this._baseHash = stableHash([getTransformCacheKey()]).toString('binary');
+    } catch (e) {
+      this.end();
+      throw e;
+    }
   }
 
   getOptions(): ConfigT {
@@ -108,69 +95,39 @@ class Bundler {
     );
   }
 
-  /**
-   * Returns the transform options related to several entry files, by calling
-   * the config parameter getTransformOptions().
-   */
-  async getTransformOptionsForEntryFiles(
-    entryFiles: $ReadOnlyArray<string>,
-    options: {dev: boolean, platform: ?string},
-    getDependencies: string => Promise<Array<string>>,
-  ): Promise<{|
-    +inlineRequires: {+blacklist: {[string]: true}} | boolean,
-  |}> {
-    if (!this._getTransformOptions) {
-      return {
-        inlineRequires: false,
-      };
-    }
-
-    const {transform} = await this._getTransformOptions(
-      entryFiles,
-      {dev: options.dev, hot: true, platform: options.platform},
-      getDependencies,
-    );
-
-    return transform || {inlineRequires: false};
-  }
-
-  /*
-   * Helper method to return the global transform options that are kept in the
-   * Bundler.
-   */
-  getGlobalTransformOptions(): {
-    enableBabelRCLookup: boolean,
-    projectRoot: string,
-  } {
-    return {
-      enableBabelRCLookup: this._opts.transformer.enableBabelRCLookup,
-      projectRoot: this._projectRoot,
-    };
-  }
-
   getDependencyGraph(): Promise<DependencyGraph> {
     return this._depGraphPromise;
   }
 
   async transformFile(
     filePath: string,
-    transformCodeOptions: WorkerOptions,
+    workerOptions: WorkerOptions,
   ): Promise<TransformResult<>> {
     const cache = this._cache;
 
     const {
-      assetDataPlugins,
-      customTransformOptions,
-      enableBabelRCLookup,
-      dev,
-      hot,
-      inlineRequires,
-      isScript,
-      minify,
-      platform,
-      projectRoot: _projectRoot, // Blacklisted property.
+      assetPlugins,
+      assetRegistryPath,
+      asyncRequireModulePath,
+      // Already in the global cache key.
+      babelTransformerPath: _babelTransformerPath,
+      dynamicDepsInPackages,
+      minifierPath,
+      optimizationSizeLimit,
+      transformOptions: {
+        customTransformOptions,
+        enableBabelRCLookup,
+        experimentalImportSupport,
+        dev,
+        hot,
+        inlineRequires,
+        minify,
+        platform,
+        projectRoot: _projectRoot, // Blacklisted property.
+      },
+      type,
       ...extra
-    } = transformCodeOptions;
+    } = workerOptions;
 
     for (const key in extra) {
       if (hasOwnProperty.call(extra, key)) {
@@ -190,15 +147,22 @@ class Bundler {
       localPath,
 
       // We cannot include "transformCodeOptions" because of "projectRoot".
-      assetDataPlugins,
+      assetPlugins,
+      assetRegistryPath,
+      asyncRequireModulePath,
+      dynamicDepsInPackages,
+      minifierPath,
+      optimizationSizeLimit,
+
       customTransformOptions,
       enableBabelRCLookup,
+      experimentalImportSupport,
       dev,
       hot,
       inlineRequires,
-      isScript,
       minify,
       platform,
+      type,
     ]);
 
     const sha1 = (await this.getDependencyGraph()).getSha1(filePath);
@@ -212,10 +176,8 @@ class Bundler {
       : await this._transformer.transform(
           filePath,
           localPath,
-          transformCodeOptions,
-          this._opts.resolver.assetExts,
-          this._opts.transformer.assetRegistryPath,
-          this._opts.transformer.minifierPath,
+          this._opts.transformerPath,
+          workerOptions,
         );
 
     // Only re-compute the full key if the SHA-1 changed. This is because
@@ -230,7 +192,7 @@ class Bundler {
     return {
       ...data.result,
       getSource() {
-        return fs.readFileSync(filePath, 'utf8');
+        return fs.readFileSync(filePath);
       },
     };
   }

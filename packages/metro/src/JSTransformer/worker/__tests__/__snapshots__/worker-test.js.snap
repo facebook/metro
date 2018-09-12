@@ -1,5 +1,41 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`code transformation worker: keeps import/export syntax if requested to do so 1`] = `
+Array [
+  Array [
+    2,
+    0,
+    1,
+    0,
+  ],
+  Array [
+    2,
+    9,
+    1,
+    7,
+    "c",
+  ],
+  Array [
+    2,
+    10,
+    1,
+    0,
+  ],
+  Array [
+    2,
+    16,
+    1,
+    14,
+  ],
+  Array [
+    2,
+    21,
+    1,
+    0,
+  ],
+]
+`;
+
 exports[`code transformation worker: reports filename when encountering unsupported dynamic dependency 1`] = `"/root/local/file.js:Invalid call at line 3: require(a)"`;
 
 exports[`code transformation worker: transforms a module with dependencies 1`] = `

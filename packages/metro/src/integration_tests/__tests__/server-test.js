@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,6 +12,7 @@
 
 const Metro = require('../../..');
 
+const execBundle = require('../execBundle');
 const fetch = require('node-fetch');
 
 jest.unmock('cosmiconfig');
@@ -43,7 +44,7 @@ it('should create a server', async () => {
       );
     }
 
-    expect(body.replace(/https?:\/\/[^:]+:[0-9]+/g, '')).toMatchSnapshot();
+    expect(execBundle(body)).toMatchSnapshot();
   } finally {
     httpServer.close();
   }

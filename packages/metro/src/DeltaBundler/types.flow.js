@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -27,7 +27,7 @@ export type Module<T = MixedOutput> = {|
   +inverseDependencies: Set<string>,
   +output: $ReadOnlyArray<T>,
   +path: string,
-  +getSource: () => string,
+  +getSource: () => Buffer,
 |};
 
 export type Graph<T = MixedOutput> = {|
@@ -38,7 +38,7 @@ export type Graph<T = MixedOutput> = {|
 export type TransformResult<T = MixedOutput> = {|
   +dependencies: $ReadOnlyArray<TransformResultDependency>,
   +output: $ReadOnlyArray<T>,
-  +getSource: () => string,
+  +getSource: () => Buffer,
 |};
 
 export type TransformFn<T = MixedOutput> = string => Promise<

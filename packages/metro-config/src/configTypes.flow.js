@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15,7 +15,11 @@ import type {IncomingMessage, ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
 import type {CustomResolver} from 'metro-resolver';
 import type {MetroSourceMap} from 'metro-source-map';
-import type {Module} from 'metro/src/DeltaBundler/types.flow.js';
+import type {
+  DeltaResult,
+  Graph,
+  Module,
+} from 'metro/src/DeltaBundler/types.flow.js';
 import type {TransformResult} from 'metro/src/DeltaBundler';
 import type {TransformVariants} from 'metro/src/ModuleGraph/types.flow.js';
 import type {DynamicRequiresBehavior} from 'metro/src/ModuleGraph/worker/collectDependencies';
@@ -37,6 +41,7 @@ type ExtraTransformOptions = {
   +preloadedModules: {[path: string]: true} | false,
   +ramGroups: Array<string>,
   +transform: {|
+    +experimentalImportSupport: boolean,
     +inlineRequires: {+blacklist: {[string]: true}} | boolean,
   |},
 };
@@ -232,8 +237,8 @@ export type OldConfigT = {
   transformVariants?: () => TransformVariants,
 };
 
-export type InputConfigT = {
-  resolver?: {
+export type InputConfigT = $ReadOnly<{
+  resolver?: $ReadOnly<{
     /**
      * Returns a regular expression for modules that should be ignored by the
      * packager on a given platform.
@@ -301,15 +306,18 @@ export type InputConfigT = {
      * system.
      */
     useWatchman?: boolean,
-  },
-  server?: {
+  }>,
+  server?: $ReadOnly<{
     useGlobalHotkey?: boolean,
     port?: ?number,
     enhanceMiddleware?: (Middleware, Server) => Middleware,
-  },
-  serializer?: {
-    dynamicDepsInPackages?: DynamicRequiresBehavior,
-    assetRegistryPath?: string,
+    enableVisualizer?: boolean,
+  }>,
+  serializer?: $ReadOnly<{
+    /**
+     * An optional custom module ID factory creator used by the bundler.
+     */
+    createModuleIdFactory?: () => (path: string) => number,
 
     /**
      * Specify any additional polyfill modules that should be processed
@@ -341,8 +349,16 @@ export type InputConfigT = {
      * contain the absolute path of each module.
      */
     getModulesRunBeforeMainModule?: (entryFilePath: string) => Array<string>,
-  },
-  transformer?: {
+
+    /**
+     * Do not use yet, since the Graph API is going to change soon.
+     */
+    experimentalSerializerHook?: (
+      graph: Graph<>,
+      delta: DeltaResult<>,
+    ) => mixed,
+  }>,
+  transformer?: $ReadOnly<{
     assetRegistryPath?: string,
     /**
      * Specify whether or not to enable Babel's behavior for looking up .babelrc
@@ -375,7 +391,7 @@ export type InputConfigT = {
     minifierPath?: string,
 
     transformVariants?: TransformVariants,
-  },
+  }>,
 
   // Metal
 
@@ -383,11 +399,6 @@ export type InputConfigT = {
    * List of all store caches.
    */
   cacheStores?: $ReadOnlyArray<CacheStore<TransformResult<>>>,
-
-  /**
-   * An optional custom module ID factory creator used by the bundler.
-   */
-  createModuleIdFactory?: () => (path: string) => number,
 
   /**
    * Can be used to generate a key that will invalidate the whole metro cache
@@ -409,7 +420,7 @@ export type InputConfigT = {
    * Returns the path to a custom transformer. This can also be overridden
    * with the --transformer commandline argument.
    */
-  transformModulePath?: string,
+  transformerPath?: string,
 
   /**
    * Whether we should watch for all files
@@ -421,7 +432,7 @@ export type InputConfigT = {
   resetCache?: boolean,
 
   maxWorkers?: number,
-};
+}>;
 
 export type IntermediateConfigT = {
   resolver: {
@@ -441,6 +452,7 @@ export type IntermediateConfigT = {
     useGlobalHotkey: boolean,
     port: number,
     enhanceMiddleware: (Middleware, Server) => Middleware,
+    enableVisualizer?: boolean,
   },
   serializer: {
     polyfillModuleNames: Array<string>, // This one is not sure
@@ -450,17 +462,21 @@ export type IntermediateConfigT = {
     getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
     processModuleFilter: (modules: Module<>) => boolean,
     createModuleIdFactory: () => (path: string) => number,
+    experimentalSerializerHook: (graph: Graph<>, delta: DeltaResult<>) => mixed,
   },
   transformer: {
+    assetPlugins: Array<string>,
     assetRegistryPath: string,
     asyncRequireModulePath: string,
+    babelTransformerPath: string,
     enableBabelRCLookup: boolean,
     dynamicDepsInPackages: DynamicRequiresBehavior,
     getTransformOptions: GetTransformOptions,
-    postMinifyProcess: PostMinifyProcess,
-    workerPath: ?string,
     minifierPath: string,
+    optimizationSizeLimit: number,
+    postMinifyProcess: PostMinifyProcess,
     transformVariants: TransformVariants,
+    workerPath: ?string,
   },
 
   // Metal
@@ -468,8 +484,8 @@ export type IntermediateConfigT = {
   cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
   cacheVersion: string, // Do we need this?
   projectRoot: string,
+  transformerPath: string,
   watchFolders: Array<string>,
-  transformModulePath: string,
   watch: boolean,
   reporter: Reporter,
   resetCache: boolean,

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,7 +10,7 @@
 
 'use strict';
 
-const nullthrows = require('fbjs/lib/nullthrows');
+const nullthrows = require('nullthrows');
 
 import type {TransformResultDependency} from '../ModuleGraph/types.flow';
 import type {Dependency, Graph, Module, Options} from './types.flow';
@@ -22,12 +22,12 @@ type Result<T> = {added: Map<string, Module<T>>, deleted: Set<string>};
  * files have been modified. This allows to return the added modules before the
  * modified ones (which is useful for things like Hot Module Reloading).
  **/
-type Delta = {
-  added: Set<string>,
-  modified: Set<string>,
-  deleted: Set<string>,
-  inverseDependencies: Map<string, Set<string>>,
-};
+type Delta = {|
+  +added: Set<string>,
+  +modified: Set<string>,
+  +deleted: Set<string>,
+  +inverseDependencies: Map<string, Set<string>>,
+|};
 
 /**
  * Dependency Traversal logic for the Delta Bundler. This method calculates
@@ -98,19 +98,16 @@ async function initialTraverseDependencies<T>(
   graph: Graph<T>,
   options: Options<T>,
 ): Promise<Result<T>> {
+  const delta = {
+    added: new Set(),
+    modified: new Set(),
+    deleted: new Set(),
+    inverseDependencies: new Map(),
+  };
+
   await Promise.all(
     graph.entryPoints.map(path =>
-      traverseDependenciesForSingleFile(
-        path,
-        graph,
-        {
-          added: new Set(),
-          modified: new Set(),
-          deleted: new Set(),
-          inverseDependencies: new Map(),
-        },
-        options,
-      ),
+      traverseDependenciesForSingleFile(path, graph, delta, options),
     ),
   );
 

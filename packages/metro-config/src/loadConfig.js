@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -103,10 +103,10 @@ async function resolveConfig(
   return result;
 }
 
-function mergeConfig(
-  defaultConfig: IntermediateConfigT,
+function mergeConfig<T: InputConfigT>(
+  defaultConfig: T,
   ...configs: Array<InputConfigT>
-) {
+): T {
   // If the file is a plain object we merge the file with the default config,
   // for the function we don't do this since that's the responsibility of the user
   return configs.reduce(
@@ -160,7 +160,6 @@ async function loadMetroConfigFromDisk(
     return resultedConfig;
   }
 
-  // $FlowExpectedError
   return mergeConfig(defaultConfig, defaultConfigOverrides, configModule);
 }
 
@@ -203,7 +202,7 @@ function overrideConfigWithArguments(
   }
 
   if (argv.transformer != null) {
-    config.transformModulePath = resolve(argv.transformer);
+    config.transformer.babelTransformerPath = resolve(argv.transformer);
   }
 
   if (argv['reset-cache'] != null) {
