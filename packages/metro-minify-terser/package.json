@@ -13,6 +13,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "metro-minify-uglify": "^0.45.2",
     "terser": "^3.8.2"
   },
   "devDependencies": {}

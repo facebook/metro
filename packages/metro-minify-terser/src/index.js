@@ -18,7 +18,7 @@ import type {
 } from './types';
 import type {BabelSourceMap} from '@babel/core';
 
-const minifier = require('metro-minify-uglify/minifier');
+const minifier = require('metro-minify-uglify/src/minifier');
 const terser = require('terser');
 
 export type {MetroMinifier} from './types.js.flow';
