@@ -30,7 +30,7 @@ beforeEach(() => {
         {absolutePath: '/baz', data: {data: {isAsync: false}, name: 'baz'}},
       ],
     ]),
-    getSource: () => '',
+    getSource: () => Buffer.from(''),
     inverseDependencies: new Set(),
     output: [
       {

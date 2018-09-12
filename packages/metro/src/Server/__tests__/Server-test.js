@@ -111,7 +111,7 @@ describe('processRequest', () => {
               },
             ],
           ]),
-          getSource: () => 'code-mybundle',
+          getSource: () => Buffer.from('code-mybundle'),
           output: [
             {
               type: 'js/module',
@@ -128,7 +128,7 @@ describe('processRequest', () => {
         {
           path: '/root/foo.js',
           dependencies: new Map(),
-          getSource: () => 'code-foo',
+          getSource: () => Buffer.from('code-foo'),
           output: [
             {
               type: 'js/module',
@@ -171,7 +171,7 @@ describe('processRequest', () => {
         {
           path: 'require-js',
           dependencies: new Map(),
-          getSource: () => 'code-require',
+          getSource: () => Buffer.from('code-require'),
           output: [
             {
               type: 'js/script',

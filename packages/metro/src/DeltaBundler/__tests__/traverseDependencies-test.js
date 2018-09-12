@@ -136,7 +136,7 @@ beforeEach(async () => {
           name: dep.name,
           isAsync: false,
         })),
-        getSource: () => '// source',
+        getSource: () => Buffer.from('// source'),
         output: [
           {
             data: {

@@ -18,7 +18,7 @@ const dummyModule = {
   inverseDependencies: new Set(),
   output: [{type: 'js/module', data: {code: '0123456789'}}],
   path: '',
-  getSource: () => '',
+  getSource: () => Buffer.from(''),
 };
 
 const dummyMetroGraph: Graph<> = {

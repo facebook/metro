@@ -177,7 +177,11 @@ class DependencyGraph extends React.Component<Props> {
   }
 
   handleNodeSelect = (evt: CyEvent) => {
-    this.props.handleSelectionChange(evt.target.data());
+    const node = evt.target;
+    // Dependency nodes do not map to actual modules; they cannot be selected.
+    if (!node.hasClass('dependencies')) {
+      this.props.handleSelectionChange(evt.target.data());
+    }
   };
 
   handleNodeDeselect = (evt: CyEvent) => {

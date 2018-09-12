@@ -26,6 +26,8 @@ export type NodeData = {
   inverseDeps: Array<string>,
   type: string,
   size?: ?number,
+  source: string,
+  output: string,
 };
 
 export type Edge = {

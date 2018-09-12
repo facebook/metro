@@ -32,7 +32,7 @@ const fooModule = {
       data: {code: '__d(function() {/* code for foo */});', map: []},
     },
   ],
-  getSource: () => 'foo-source',
+  getSource: () => Buffer.from('foo-source'),
 };
 
 const barModule = {
@@ -44,7 +44,7 @@ const barModule = {
       data: {code: '__d(function() {/* code for bar */});', map: []},
     },
   ],
-  getSource: () => 'bar-source',
+  getSource: () => Buffer.from('bar-source'),
 };
 
 const getRunModuleStatement = moduleId =>

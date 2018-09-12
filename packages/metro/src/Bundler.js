@@ -192,7 +192,7 @@ class Bundler {
     return {
       ...data.result,
       getSource() {
-        return fs.readFileSync(filePath, 'utf8');
+        return fs.readFileSync(filePath);
       },
     };
   }

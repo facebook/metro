@@ -239,6 +239,11 @@ function moduleToNode(module: Module<>, metroGraph: Graph<>): Node {
       depsSize: deps.reduce(generateSizeAccumulator(metroGraph), 0),
       invDepsSize: inverseDeps.reduce(generateSizeAccumulator(metroGraph), 0),
       type: module.output[0].type,
+      // $FlowFixMe
+      output: module.output[0].data.code,
+      // Converting to base64 here avoids having to bundle an extra base64
+      // implementation for the browser.
+      source: module.getSource().toString('base64'),
     },
   };
 }

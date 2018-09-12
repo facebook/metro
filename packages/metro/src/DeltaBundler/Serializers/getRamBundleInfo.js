@@ -67,7 +67,7 @@ async function getRamBundleInfo(
       ),
       name: path.basename(module.path),
       sourcePath: module.path,
-      source: module.getSource(),
+      source: module.getSource().toString(),
       type: nullthrows(module.output.find(({type}) => type.startsWith('js')))
         .type,
     }));

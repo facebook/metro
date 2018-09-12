@@ -30,7 +30,7 @@ function fullSourceMap(
       return {
         ...getJsOutput(module).data,
         path: module.path,
-        source: options.excludeSource ? '' : module.getSource(),
+        source: options.excludeSource ? '' : module.getSource().toString(),
       };
     });
 

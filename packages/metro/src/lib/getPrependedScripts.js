@@ -81,7 +81,7 @@ function _getPrelude({dev}: {dev: boolean}): Module<> {
 
   return {
     dependencies: new Map(),
-    getSource: () => code,
+    getSource: () => Buffer.from(code),
     inverseDependencies: new Set(),
     path: name,
     output: [
