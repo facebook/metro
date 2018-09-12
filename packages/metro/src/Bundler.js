@@ -113,6 +113,7 @@ class Bundler {
       babelTransformerPath: _babelTransformerPath,
       dynamicDepsInPackages,
       minifierPath,
+      optimizationSizeLimit,
       transformOptions: {
         customTransformOptions,
         enableBabelRCLookup,
@@ -151,6 +152,7 @@ class Bundler {
       asyncRequireModulePath,
       dynamicDepsInPackages,
       minifierPath,
+      optimizationSizeLimit,
 
       customTransformOptions,
       enableBabelRCLookup,

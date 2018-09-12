@@ -75,10 +75,11 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
       preloadedModules: false,
       ramGroups: [],
     }),
-    postMinifyProcess: x => x,
-    workerPath: null,
     minifierPath: DEFAULT_METRO_MINIFIER_PATH,
+    optimizationSizeLimit: 150 * 1024, // 150 KiB.
+    postMinifyProcess: x => x,
     transformVariants: {default: {}},
+    workerPath: null,
   },
 
   cacheStores: [

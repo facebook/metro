@@ -146,12 +146,13 @@ async function convertOldToNew({
       dynamicDepsInPackages,
       enableBabelRCLookup: getEnableBabelRCLookup(),
       getTransformOptions,
-      postMinifyProcess,
-      workerPath: getWorkerPath(),
       minifierPath: minifierPath || defaultConfig.transformer.minifierPath,
+      optimizationSizeLimit: 150 * 1024, // 150 KiB enforced for old configs.
+      postMinifyProcess,
       transformVariants: transformVariants
         ? transformVariants()
         : defaultConfig.transformer.transformVariants,
+      workerPath: getWorkerPath(),
     },
 
     reporter,

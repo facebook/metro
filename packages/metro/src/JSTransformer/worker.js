@@ -71,6 +71,7 @@ export type WorkerOptions = {|
   +babelTransformerPath: string,
   +dynamicDepsInPackages: DynamicRequiresBehavior,
   +minifierPath: string,
+  +optimizationSizeLimit: number,
   +transformOptions: TransformOptions,
   +type: Type,
 |};
@@ -267,9 +268,11 @@ async function transform(
     ));
   }
 
-  const reserved = options.transformOptions.minify
-    ? normalizePseudoglobals(wrappedAst)
-    : [];
+  const reserved =
+    options.transformOptions.minify &&
+    data.length <= options.optimizationSizeLimit
+      ? normalizePseudoglobals(wrappedAst)
+      : [];
 
   const result = generate(
     wrappedAst,

@@ -85,6 +85,7 @@ Object {
     "enableBabelRCLookup": true,
     "getTransformOptions": [Function],
     "minifierPath": "metro-minify-uglify",
+    "optimizationSizeLimit": 153600,
     "postMinifyProcess": [Function],
     "transformVariants": Object {
       "default": Object {},
@@ -184,6 +185,7 @@ Object {
     "enableBabelRCLookup": true,
     "getTransformOptions": [Function],
     "minifierPath": "metro-minify-uglify",
+    "optimizationSizeLimit": 153600,
     "postMinifyProcess": [Function],
     "transformVariants": Object {
       "default": Object {},

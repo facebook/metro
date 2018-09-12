@@ -66,6 +66,7 @@ describe('code transformation worker:', () => {
         babelTransformerPath,
         transformOptions: {dev: true},
         dynamicDepsInPackages: 'reject',
+        optimizationSizeLimit: 100000,
       },
     );
 
@@ -96,6 +97,7 @@ describe('code transformation worker:', () => {
         babelTransformerPath,
         transformOptions: {dev: true},
         dynamicDepsInPackages: 'reject',
+        optimizationSizeLimit: 100000,
       },
     );
 
@@ -134,6 +136,7 @@ describe('code transformation worker:', () => {
         babelTransformerPath,
         transformOptions: {dev: true},
         dynamicDepsInPackages: 'reject',
+        optimizationSizeLimit: 100000,
       },
     );
 
@@ -178,6 +181,7 @@ describe('code transformation worker:', () => {
         babelTransformerPath,
         transformOptions: {dev: true, disableImportExportTransform: true},
         dynamicDepsInPackages: 'reject',
+        optimizationSizeLimit: 100000,
       },
     );
 
@@ -211,6 +215,7 @@ describe('code transformation worker:', () => {
         babelTransformerPath,
         transformOptions: {dev: true},
         dynamicDepsInPackages: 'reject',
+        optimizationSizeLimit: 100000,
       });
       throw new Error('should not reach this');
     } catch (error) {
@@ -233,6 +238,7 @@ describe('code transformation worker:', () => {
         babelTransformerPath,
         transformOptions: {dev: true},
         dynamicDepsInPackages: 'throwAtRuntime',
+        optimizationSizeLimit: 100000,
       },
     );
   });
@@ -253,6 +259,7 @@ describe('code transformation worker:', () => {
           babelTransformerPath,
           transformOptions: {dev: true, minify: true},
           dynamicDepsInPackages: 'throwAtRuntime',
+          optimizationSizeLimit: 100000,
         },
       )).output[0].data.code,
     ).toBe(
@@ -278,6 +285,7 @@ describe('code transformation worker:', () => {
           babelTransformerPath,
           transformOptions: {dev: true, minify: true},
           dynamicDepsInPackages: 'throwAtRuntime',
+          optimizationsizelimit: 100000,
         },
       )).output[0].data.code,
     ).toBe(

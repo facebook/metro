@@ -459,10 +459,11 @@ export type IntermediateConfigT = {
     enableBabelRCLookup: boolean,
     dynamicDepsInPackages: DynamicRequiresBehavior,
     getTransformOptions: GetTransformOptions,
-    postMinifyProcess: PostMinifyProcess,
-    workerPath: ?string,
     minifierPath: string,
+    optimizationSizeLimit: number,
+    postMinifyProcess: PostMinifyProcess,
     transformVariants: TransformVariants,
+    workerPath: ?string,
   },
 
   // Metal

@@ -66,6 +66,7 @@ async function calcTransformerOptions(
     babelTransformerPath: config.transformer.babelTransformerPath,
     dynamicDepsInPackages: config.transformer.dynamicDepsInPackages,
     minifierPath: config.transformer.minifierPath,
+    optimizationSizeLimit: config.transformer.optimizationSizeLimit,
   };
 
   // When we're processing scripts, we don't need to calculate any
