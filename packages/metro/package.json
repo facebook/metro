@@ -77,7 +77,6 @@
     "metro-react-native-babel-preset": "0.45.2",
     "metro-resolver": "0.45.2",
     "metro-source-map": "0.45.2",
-    "metro-visualizer": "0.45.2",
     "mime-types": "2.1.11",
     "mkdirp": "^0.5.1",
     "node-fetch": "^2.2.0",
@@ -97,6 +96,7 @@
   },
   "devDependencies": {
     "metro-memory-fs": "0.45.2",
+    "metro-visualizer": "0.45.2",
     "sinon": "^2.2.0"
   },
   "license": "MIT"
