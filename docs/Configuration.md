@@ -57,6 +57,8 @@ These options are used when Metro serves the content.
 | `port`              | `number`                             | Which port to listen on.                                               |
 | `useGlobalHotkey`   | `boolean`                            | Whether we should enable CMD+R hotkey for refreshing the bundle.       |
 | `enhanceMiddleware` | `(Middleware, Server) => Middleware` | The possibility to add custom middleware to the server response chain. |
+| `enableVisualizer`  | `boolean`                            | Enable the `metro-visualizer` middleware (available at `/visualizer`). This requires the `metro-visualizer` package to be installed in your project. |
+
 
 ### Transformer Options
 
