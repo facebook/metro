@@ -130,7 +130,7 @@
 </thead>
 <tbody>
 <tr><td><code>blacklistRE</code></td><td><code>RegExp</code></td><td>A RegEx defining which paths to ignore.</td></tr>
-<tr><td><code>hasteImplModulePath</code></td><td><code>string</code></td><td>The path to the haste resolver.</td><td></td></tr>
+<tr><td><code>hasteImplModulePath</code></td><td><code>string</code></td><td>The path to the haste resolver.</td></tr>
 <tr><td><code>platforms</code></td><td><code>Array&lt;string&gt;</code></td><td>Additional platforms to look out for, For example, if you want to add a &quot;custom&quot; platform, and use modules ending in .custom.js, you would return ['custom'] here.</td></tr>
 <tr><td><code>providesModuleNodeModules</code></td><td><code>Array&lt;string&gt;</code></td><td>Specify any additional node modules that should be processed for providesModule declarations.</td></tr>
 </tbody>
@@ -145,10 +145,62 @@
 <tr><td><code>createModuleIdFactory</code></td><td><code>() =&gt; (path: string) =&gt; number</code></td><td>Used to generate the module id for <code>require</code> statements.</td></tr>
 <tr><td><code>getPolyfills</code></td><td><code>({platform: ?string}) =&gt; $ReadOnlyArray&lt;string&gt;</code></td><td>An optional list of polyfills to include in the bundle. The list defaults to a set of common polyfills for Number, String, Array, Object...</td></tr>
 <tr><td><code>postProcessBundleSourcemap</code></td><td><code>PostProcessBundleSourcemap</code></td><td>An optional function that can modify the code and source map of the bundle before it is written. Applied once for the entire bundle.</td></tr>
-<tr><td><code>getModulesRunBeforeMainModule</code></td><td><code>(entryFilePath: string) =&gt; Array&lt;string&gt;</code></td><td>An array of modules to be required before the entry point. It should contain the absolute path of each module.</td></tr>
+<tr><td><code>getModulesRunBeforeMainModule</code></td><td><code>(entryFilePath: string) =&gt; Array&lt;string&gt;</code></td><td>An array of modules to be required before the entry point. It should contain the absolute path of each module. Note that this will add the additional require statements only if the passed modules are already included as part of the bundle.</td></tr>
 <tr><td><code>processModuleFilter</code></td><td><code>(module: Array&lt;Module&gt;) =&gt; boolean</code></td><td>A filter function to discard specific modules from the output.</td></tr>
 </tbody>
 </table>
+<h2><a class="anchor" aria-hidden="true" id="merging-configurations"></a><a href="#merging-configurations" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Merging Configurations</h2>
+<p>Using the <code>metro-config</code> package it is possible to merge multiple configurations together.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>mergeConfig(...configs): MergedConfig</code></td><td>Returns the merged configuration of two or more configuration objects.</td></tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Note:</strong> Arrays and function based config parameters do not deeply merge and will instead override any pre-existing config parameters.
+This allows overriding and removing default config parameters such as <code>platforms</code>, <code>providesModuleNodeModules</code> or <code>getModulesRunBeforeMainModule</code> that may not be required in your environment.</p>
+</blockquote>
+<h4><a class="anchor" aria-hidden="true" id="merging-example"></a><a href="#merging-example" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Merging Example</h4>
+<pre><code class="hljs css languages- js"><span class="hljs-comment">// metro.config.js</span>
+<span class="hljs-keyword">const</span> { mergeConfig } = <span class="hljs-built_in">require</span>(<span class="hljs-string">'metro-config'</span>);
+
+<span class="hljs-keyword">const</span> configA = {
+  <span class="hljs-attr">resolver</span>: {
+    <span class="hljs-comment">/* resolver options */</span>
+  },
+  <span class="hljs-attr">transformer</span>: {
+    <span class="hljs-comment">/* transformer options */</span>
+  },
+  <span class="hljs-attr">serializer</span>: {
+    <span class="hljs-comment">/* serializer options */</span>
+  },
+  <span class="hljs-attr">server</span>: {
+    <span class="hljs-comment">/* server options */</span>
+  }
+  <span class="hljs-comment">/* general options */</span>
+};
+
+<span class="hljs-keyword">const</span> configB = {
+  <span class="hljs-attr">resolver</span>: {
+    <span class="hljs-comment">/* resolver options */</span>
+  },
+  <span class="hljs-attr">transformer</span>: {
+    <span class="hljs-comment">/* transformer options */</span>
+  },
+  <span class="hljs-attr">serializer</span>: {
+    <span class="hljs-comment">/* serializer options */</span>
+  },
+  <span class="hljs-attr">server</span>: {
+    <span class="hljs-comment">/* server options */</span>
+  }
+  <span class="hljs-comment">/* general options */</span>
+};
+
+<span class="hljs-built_in">module</span>.exports = mergeConfig(configA, configB);
+</code></pre>
 </span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/metro/docs/en/api">← API</a><a class="docs-next button" href="/metro/docs/en/cli">Metro CLI Options →</a></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/metro/" class="nav-home"><img src="/metro/img/metro.svg" alt="Metro" width="66" height="58"/></a><div><h5>Docs</h5><a href="/metro/docs/en/getting-started.html">Getting Started</a><a href="/metro/docs/en/api.html">API Reference</a></div><div><h5>Community</h5><a href="https://stackoverflow.com/questions/tagged/metrojs" target="_blank">Stack Overflow</a><a href="https://twitter.com/MetroBundler" target="_blank">Twitter</a></div><div><h5>More</h5><a href="/metro/blog">Blog</a><a href="https://github.com/facebook/metro">GitHub</a><a class="github-button" href="https://github.com/facebook/metro" data-icon="octicon-star" data-count-href="/facebook/metro/stargazers" data-count-api="/repos/facebook/metro#stargazers_count" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div></section><a href="https://code.facebook.com/projects/" target="_blank" class="fbOpenSource"><img src="/metro/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2018 Facebook Inc.</section></footer></div><script type="text/javascript" src="https://cdn.jsdelivr.net/docsearch.js/1/docsearch.min.js"></script><script>
               var search = docsearch({
                 
