@@ -115,8 +115,18 @@ exports.runServer = async (
   serverApp.use(middleware);
 
   if (config.server.enableVisualizer) {
-    const {initializeVisualizerMiddleware} = require('metro-visualizer');
-    serverApp.use('/visualizer', initializeVisualizerMiddleware(metroServer));
+    let initializeVisualizerMiddleware;
+    try {
+      // eslint-disable-next-line import/no-extraneous-dependencies
+      ({initializeVisualizerMiddleware} = require('metro-visualizer'));
+    } catch (e) {
+      console.warn(
+        "'config.server.enableVisualizer' is enabled but the 'metro-visualizer' package was not found - have you installed it?",
+      );
+    }
+    if (initializeVisualizerMiddleware) {
+      serverApp.use('/visualizer', initializeVisualizerMiddleware(metroServer));
+    }
   }
 
   let httpServer;
