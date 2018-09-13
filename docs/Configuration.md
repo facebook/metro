@@ -93,17 +93,70 @@ These options are only useful with React Native projects.
 | Option                      | Type            | Description                                                                                                                                                        |
 | --------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `blacklistRE`               | `RegExp`        | A RegEx defining which paths to ignore.                                                                                                                            |
-| `hasteImplModulePath`       | `string`        | The path to the haste resolver.                                                                                                                                    |  |
+| `hasteImplModulePath`       | `string`        | The path to the haste resolver.                                                                                                                                    |
 | `platforms`                 | `Array<string>` | Additional platforms to look out for, For example, if you want to add a "custom" platform, and use modules ending in .custom.js, you would return ['custom'] here. |
 | `providesModuleNodeModules` | `Array<string>` | Specify any additional node modules that should be processed for providesModule declarations.                                                                      |
 
 ### Serializer Options
 
-| Option                          | Type                                              | Description                                                                                                                                 |
-| ------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `getRunModuleStatement`         | `(number` &#x7c; `string) => string`              | Specify the format of the initial require statements that are appended at the end of the bundle. By default is `__r(${moduleId});`.         |
-| `createModuleIdFactory` | `() => (path: string) => number`      | Used to generate the module id for `require` statements.                                          |
-| `getPolyfills`                  | `({platform: ?string}) => $ReadOnlyArray<string>` | An optional list of polyfills to include in the bundle. The list defaults to a set of common polyfills for Number, String, Array, Object... |
-| `postProcessBundleSourcemap`    | `PostProcessBundleSourcemap`                      | An optional function that can modify the code and source map of the bundle before it is written. Applied once for the entire bundle.        |
-| `getModulesRunBeforeMainModule` | `(entryFilePath: string) => Array<string>`        | An array of modules to be required before the entry point. It should contain the absolute path of each module.                              |
-| `processModuleFilter`           | `(module: Array<Module>) => boolean`              | A filter function to discard specific modules from the output.                                                                              |
+| Option                          | Type                                              | Description                                                                                                                                                                                                                                     |
+| ------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getRunModuleStatement`         | `(number` &#x7c; `string) => string`              | Specify the format of the initial require statements that are appended at the end of the bundle. By default is `__r(${moduleId});`.                                                                                                             |
+| `createModuleIdFactory`         | `() => (path: string) => number`                  | Used to generate the module id for `require` statements.                                                                                                                                                                                        |
+| `getPolyfills`                  | `({platform: ?string}) => $ReadOnlyArray<string>` | An optional list of polyfills to include in the bundle. The list defaults to a set of common polyfills for Number, String, Array, Object...                                                                                                     |
+| `postProcessBundleSourcemap`    | `PostProcessBundleSourcemap`                      | An optional function that can modify the code and source map of the bundle before it is written. Applied once for the entire bundle.                                                                                                            |
+| `getModulesRunBeforeMainModule` | `(entryFilePath: string) => Array<string>`        | An array of modules to be required before the entry point. It should contain the absolute path of each module. Note that this will add the additional require statements only if the passed modules are already included as part of the bundle.  |
+| `processModuleFilter`           | `(module: Array<Module>) => boolean`              | A filter function to discard specific modules from the output.                                                                                                                                                                                  |
+
+## Merging Configurations
+
+Using the `metro-config` package it is possible to merge multiple configurations together. 
+
+| Method                                                 | Description                                                            |
+| ------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `mergeConfig(...configs): MergedConfig`                | Returns the merged configuration of two or more configuration objects. |
+
+> **Note:** Arrays and function based config parameters do not deeply merge and will instead override any pre-existing config parameters.
+This allows overriding and removing default config parameters such as `platforms`, `providesModuleNodeModules` or `getModulesRunBeforeMainModule` that may not be required in your environment.
+
+#### Merging Example
+
+```js
+// metro.config.js
+const { mergeConfig } = require('metro-config');
+
+const configA = {
+  resolver: {
+    /* resolver options */
+  },
+  transformer: {
+    /* transformer options */
+  },
+  serializer: {
+    /* serializer options */
+  },
+  server: {
+    /* server options */
+  }
+  /* general options */
+};
+
+const configB = {
+  resolver: {
+    /* resolver options */
+  },
+  transformer: {
+    /* transformer options */
+  },
+  serializer: {
+    /* serializer options */
+  },
+  server: {
+    /* server options */
+  }
+  /* general options */
+};
+
+module.exports = mergeConfig(configA, configB);
+```
+
