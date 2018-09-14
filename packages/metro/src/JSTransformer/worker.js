@@ -250,6 +250,7 @@ async function transform(
           options.dynamicDepsInPackages,
           filename,
         ),
+        inlineableCalls: [importDefault, importAll],
         keepRequireNames: options.transformOptions.dev,
       };
       ({dependencies, dependencyMapName} = collectDependencies(ast, opts));

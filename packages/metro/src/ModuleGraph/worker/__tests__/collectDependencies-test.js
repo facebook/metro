@@ -22,6 +22,7 @@ const {InvalidRequireCallError} = collectDependencies;
 const opts = {
   asyncRequireModulePath: 'asyncRequire',
   dynamicRequires: 'reject',
+  inlineableCalls: [],
   keepRequireNames: true,
 };
 
@@ -198,6 +199,7 @@ describe('Evaluating static arguments', () => {
     const opts = {
       asyncRequireModulePath: 'asyncRequire',
       dynamicRequires: 'throwAtRuntime',
+      inlineableCalls: [],
       keepRequireNames: true,
     };
     const {dependencies} = collectDependencies(ast, opts);
