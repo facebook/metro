@@ -2450,7 +2450,10 @@ describe('traverseDependencies', function() {
 
       const opts = {
         ...defaults,
-        providesModuleNodeModules: [...defaults.providesModuleNodeModules, '@org/module'],
+        providesModuleNodeModules: [
+          ...defaults.providesModuleNodeModules,
+          '@org/module',
+        ],
         watchFolders: [root],
       };
       await processDgraph(opts, async dgraph => {
@@ -3197,7 +3200,10 @@ describe('traverseDependencies', function() {
 
       const opts = {
         ...defaults,
-        providesModuleNodeModules: [...defaults.providesModuleNodeModules, '@org/module'],
+        providesModuleNodeModules: [
+          ...defaults.providesModuleNodeModules,
+          '@org/module',
+        ],
         watchFolders: [root],
       };
       await processDgraph(opts, async dgraph => {
@@ -3205,7 +3211,6 @@ describe('traverseDependencies', function() {
           dgraph,
           'C:\\root\\index.js',
         );
-        console.error(deps)
         expect(deps).toMatchSnapshot();
       });
     });
