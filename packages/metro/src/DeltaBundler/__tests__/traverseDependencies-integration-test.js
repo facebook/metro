@@ -2405,6 +2405,66 @@ describe('traverseDependencies', function() {
       });
     });
 
+    it('should work with scoped providesModuleNodeModules (haste)', async () => {
+      var root = '/root';
+      setMockFileSystem({
+        root: {
+          'index.js': `
+            /**
+             * @providesModule index
+             */
+             require('shouldWork');
+             require('Bar');
+          `,
+          node_modules: {
+            'react-haste': {
+              'package.json': JSON.stringify({
+                name: 'react-haste',
+                main: 'main.js',
+              }),
+              'main.js': `
+                /**
+                 * @providesModule shouldWork
+                 */
+                require('Bar');
+              `,
+            },
+            '@org': {
+              module: {
+                'package.json': JSON.stringify({
+                  name: '@org/module',
+                  main: 'main.js',
+                }),
+                'main.js': '// Blank',
+                'Bar.js': `
+                  /**
+                   * @providesModule Bar
+                   */
+                   require('shouldWork');
+                `,
+              },
+            },
+          },
+        },
+      });
+
+      const opts = {
+        ...defaults,
+        providesModuleNodeModules: [
+          ...defaults.providesModuleNodeModules,
+          '@org/module',
+        ],
+        watchFolders: [root],
+      };
+      await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          '/root/index.js',
+        );
+        expect(deps).toMatchSnapshot();
+      });
+    });
+
     it('should work with multiple platforms (node)', async () => {
       var root = '/root';
       setMockFileSystem({
@@ -3086,6 +3146,66 @@ describe('traverseDependencies', function() {
       });
 
       const opts = {...defaults, watchFolders: [root]};
+      await processDgraph(opts, async dgraph => {
+        const deps = await getOrderedDependenciesAsJSON(
+          dgraph,
+          'C:\\root\\index.js',
+        );
+        expect(deps).toMatchSnapshot();
+      });
+    });
+
+    it.skip('should work with scoped providesModuleNodeModules (haste, win32)', async () => {
+      var root = 'C:\\root';
+      setMockFileSystem({
+        root: {
+          'index.js': `
+            /**
+             * @providesModule index
+             */
+             require('shouldWork');
+             require('Bar');
+          `,
+          node_modules: {
+            'react-haste': {
+              'package.json': JSON.stringify({
+                name: 'react-haste',
+                main: 'main.js',
+              }),
+              'main.js': `
+                /**
+                 * @providesModule shouldWork
+                 */
+                require('Bar');
+              `,
+            },
+            '@org': {
+              module: {
+                'package.json': JSON.stringify({
+                  name: '@org/module',
+                  main: 'main.js',
+                }),
+                'main.js': '// Blank',
+                'Bar.js': `
+                  /**
+                   * @providesModule Bar
+                   */
+                   require('shouldWork');
+                `,
+              },
+            },
+          },
+        },
+      });
+
+      const opts = {
+        ...defaults,
+        providesModuleNodeModules: [
+          ...defaults.providesModuleNodeModules,
+          '@org/module',
+        ],
+        watchFolders: [root],
+      };
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
