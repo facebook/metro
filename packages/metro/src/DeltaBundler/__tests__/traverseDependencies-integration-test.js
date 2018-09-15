@@ -3155,7 +3155,7 @@ describe('traverseDependencies', function() {
       });
     });
 
-    it('should work with scoped providesModuleNodeModules (haste, win32)', async () => {
+    it.skip('should work with scoped providesModuleNodeModules (haste, win32)', async () => {
       var root = 'C:\\root';
       setMockFileSystem({
         root: {
