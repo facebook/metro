@@ -32,6 +32,13 @@ const defaultPlugins = [
   [require('@babel/plugin-transform-shorthand-properties')],
   [require('@babel/plugin-transform-react-jsx')],
   [require('@babel/plugin-transform-regenerator')],
+  [
+    require('@babel/plugin-transform-runtime'),
+    {
+      helpers: true,
+      regenerator: true,
+    },
+  ],
   [require('@babel/plugin-transform-sticky-regex')],
   [require('@babel/plugin-transform-unicode-regex')],
 ];
