@@ -23,7 +23,7 @@
     "cytoscape-popper": "^1.0.2",
     "cytoscape-spread": "^3.0.0",
     "d3-scale": "^2.1.0",
-    "emotion": "^9.2.6",
+    "emotion": "^9.2.9",
     "fbjs": "0.8.17",
     "filesize": "^3.6.1",
     "fuzzy-search": "^2.1.0",
