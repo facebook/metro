@@ -763,4 +763,19 @@ describe('require', () => {
       moduleSystem.__r(0);
     });
   });
+
+  describe('packModuleId and unpackModuleId', () => {
+    it('packModuleId and unpackModuleId are inverse operations', () => {
+      createModuleSystem(moduleSystem, false);
+
+      const resultSet = new Set();
+      // eslint-disable-next-line no-bitwise
+      for (const id of [0, 1, (1 << 16) - 1, 1 << 16, (1 << 16) + 1]) {
+        const result = moduleSystem.__r.unpackModuleId(id);
+        expect(resultSet.has(result)).not.toBe(true);
+        resultSet.add(result);
+        expect(moduleSystem.__r.packModuleId(result)).toBe(id);
+      }
+    });
+  });
 });

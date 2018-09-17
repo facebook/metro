@@ -272,7 +272,7 @@ function unpackModuleId(
 metroRequire.unpackModuleId = unpackModuleId;
 
 function packModuleId(value: {segmentId: number, localId: number}): ModuleID {
-  return value.segmentId << (ID_MASK_SHIFT + value.localId);
+  return (value.segmentId << ID_MASK_SHIFT) + value.localId;
 }
 metroRequire.packModuleId = packModuleId;
 
