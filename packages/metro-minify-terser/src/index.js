@@ -12,8 +12,4 @@
 
 const minifier = require('./minifier');
 
-export type {MetroMinifier} from './types.js.flow';
-export type {ResultWithMap} from './types.js.flow';
-export type {ResultWithoutMap} from './types.js.flow';
-
 module.exports = minifier;

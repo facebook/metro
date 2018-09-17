@@ -10,7 +10,7 @@
 
 'use strict';
 
-import type {MetroMinifier} from 'metro-minify-uglify';
+import type {MetroMinifier} from '../shared/types.flow.js';
 
 function getMinifier(minifierPath: string): MetroMinifier {
   // Note: minifierPath should be an absolute path OR a module name here!

@@ -47,7 +47,7 @@ describe('Minification:', () => {
   });
 
   it('passes file name, code, and source map to `terser`', () => {
-    minify.withSourceMap(code, map, filename);
+    minify(code, map, filename);
     expect(terser.minify).toBeCalledWith(
       code,
       objectContaining({
@@ -59,29 +59,15 @@ describe('Minification:', () => {
     );
   });
 
-  it('passes code to `terser` when minifying without source map', () => {
-    minify.noSourceMap(code);
-    expect(terser.minify).toBeCalledWith(
-      code,
-      objectContaining({
-        sourceMap: {
-          content: undefined,
-          includeSources: false,
-        },
-      }),
-    );
-  });
-
   it('returns the code provided by terser', () => {
     terser.minify.mockReturnValue({code, map: '{}'});
-    const result = minify.withSourceMap('', getFakeMap(), '');
+    const result = minify('', getFakeMap(), '');
     expect(result.code).toBe(code);
-    expect(minify.noSourceMap('')).toBe(code);
   });
 
   it('parses the source map object provided by terser and sets the sources property', () => {
     terser.minify.mockReturnValue({map: JSON.stringify(map), code: ''});
-    const result = minify.withSourceMap('', getFakeMap(), filename);
+    const result = minify('', getFakeMap(), filename);
     expect(result.map).toEqual({...map, sources: [filename]});
   });
 });

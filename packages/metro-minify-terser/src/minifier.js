@@ -14,25 +14,17 @@ const terser = require('terser');
 
 import type {
   MetroMinifier,
-  ResultWithMap,
-  ResultWithoutMap,
+  MetroMinifierResult,
   MinifyOptions,
-} from './types.js.flow';
+} from 'metro/src/shared/types.flow.js';
 import type {BabelSourceMap} from '@babel/core';
 
-function noSourceMap(
-  code: string,
-  options?: MinifyOptions = {},
-): ResultWithoutMap {
-  return minify(code, undefined, options).code;
-}
-
-function withSourceMap(
+function minifier(
   code: string,
   sourceMap: ?BabelSourceMap,
   filename: string,
   options?: MinifyOptions = {},
-): ResultWithMap {
+): MetroMinifierResult {
   const result = minify(code, sourceMap, options);
   const map: BabelSourceMap = JSON.parse(result.map);
 
@@ -77,9 +69,6 @@ function minify(
   };
 }
 
-const metroMinifier: MetroMinifier = {
-  noSourceMap,
-  withSourceMap,
-};
+const metroMinifier: MetroMinifier = minifier;
 
 module.exports = metroMinifier;

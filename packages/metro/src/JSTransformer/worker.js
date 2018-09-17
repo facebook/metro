@@ -323,7 +323,7 @@ async function minifyCode(
   const minify = getMinifier(minifierPath);
 
   try {
-    const minified = minify.withSourceMap(code, sourceMap, filename, options);
+    const minified = minify(code, sourceMap, filename, options);
 
     return {
       code: minified.code,
