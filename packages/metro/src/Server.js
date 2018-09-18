@@ -13,9 +13,11 @@
 const Bundler = require('./Bundler');
 const DeltaBundler = require('./DeltaBundler');
 const MultipartResponse = require('./Server/MultipartResponse');
+const ResourceNotFoundError = require('./DeltaBundler/ResourceNotFoundError');
 
 const crypto = require('crypto');
 const deltaJSBundle = require('./DeltaBundler/Serializers/deltaJSBundle');
+const fs = require('fs');
 const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('./DeltaBundler/Serializers/getAssets');
 const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
@@ -278,6 +280,14 @@ class Server {
 
   async _buildGraph(options: BundleOptions): Promise<GraphInfo> {
     const entryPoint = getEntryAbsolutePath(this._config, options.entryFile);
+
+    try {
+      // This should throw an error if the file doesn't exist.
+      // Using this instead of fs.exists to account for SimLinks.
+      fs.realpathSync(entryPoint);
+    } catch (err) {
+      throw new ResourceNotFoundError(entryPoint);
+    }
 
     const crawlingOptions = {
       customTransformOptions: options.customTransformOptions,

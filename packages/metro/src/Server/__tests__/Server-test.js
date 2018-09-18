@@ -10,11 +10,14 @@
 
 'use strict';
 
+const ResourceNotFoundError = require('../../DeltaBundler/ResourceNotFoundError');
+
 const {getDefaultValues} = require('metro-config/src/defaults');
 
 jest
   .mock('jest-worker', () => ({}))
   .mock('crypto')
+  .mock('fs')
   .mock('../symbolicate/symbolicate', () => ({
     createWorker: jest.fn().mockReturnValue(jest.fn()),
   }))
@@ -34,6 +37,7 @@ describe('processRequest', () => {
   let Server;
   let crypto;
   let dependencies;
+  let fs;
   let getAsset;
   let getPrependedScripts;
   let transformHelpers;
@@ -49,6 +53,7 @@ describe('processRequest', () => {
     Bundler = require('../../Bundler');
     Server = require('../');
     crypto = require('crypto');
+    fs = require('fs');
     getAsset = require('../../Assets').getAsset;
     getPrependedScripts = require('../../lib/getPrependedScripts');
     transformHelpers = require('../../lib/transformHelpers');
@@ -202,6 +207,8 @@ describe('processRequest', () => {
 
     let i = 0;
     crypto.randomBytes.mockImplementation(() => `XXXXX-${i++}`);
+
+    fs.realpathSync = jest.fn().mockReturnValue(() => '/root/foo.js');
   });
 
   it('returns JS bundle source on request of *.bundle', async () => {
@@ -261,6 +268,21 @@ describe('processRequest', () => {
       response => {
         expect(response.getHeader('Content-Length')).toEqual(
           '' + Buffer.byteLength(response.body),
+        );
+      },
+    );
+  });
+
+  it('returns 404 on request of *.bundle when resource does not exist', async () => {
+    fs.realpathSync = jest.fn().mockImplementation(() => {
+      throw ResourceNotFoundError('unknown.bundle');
+    });
+
+    return makeRequest(requestHandler, 'unknown.bundle?runModule=true').then(
+      response => {
+        expect(response.statusCode).toEqual(404);
+        expect(response.body).toEqual(
+          expect.stringContaining('ResourceNotFoundError'),
         );
       },
     );
