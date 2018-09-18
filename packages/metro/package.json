@@ -65,7 +65,6 @@
     "jest-haste-map": "23.5.0",
     "jest-worker": "23.2.0",
     "json-stable-stringify": "^1.0.1",
-    "json5": "^0.4.0",
     "lodash.throttle": "^4.1.1",
     "merge-stream": "^1.0.1",
     "metro-babel-register": "0.45.3",
@@ -95,6 +94,7 @@
     "yargs": "^9.0.0"
   },
   "devDependencies": {
+    "metro-memory-fs": "0.45.3",
     "metro-memory-fs": "0.45.3",
     "metro-visualizer": "0.45.3",
     "sinon": "^2.2.0"
