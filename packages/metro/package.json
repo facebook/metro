@@ -95,7 +95,6 @@
   },
   "devDependencies": {
     "metro-memory-fs": "0.45.3",
-    "metro-memory-fs": "0.45.3",
     "metro-visualizer": "0.45.3",
     "sinon": "^2.2.0"
   },
