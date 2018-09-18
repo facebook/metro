@@ -24,6 +24,7 @@ const defaultPlugins = [
     // use `this.foo = bar` instead of `this.defineProperty('foo', ...)`
     {loose: true},
   ],
+  [require('@babel/plugin-syntax-dynamic-import')],
   [require('@babel/plugin-transform-computed-properties')],
   [require('@babel/plugin-transform-destructuring')],
   [require('@babel/plugin-transform-function-name')],

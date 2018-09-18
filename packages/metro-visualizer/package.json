@@ -13,6 +13,7 @@
     "@babel/preset-env": "^7.0.0",
     "@babel/preset-flow": "^7.0.0",
     "@babel/preset-react": "^7.0.0",
+    "@babel/plugin-proposal-class-properties": "^7.0.0",
     "antd": "^3.7.1",
     "babel-plugin-import": "^1.8.0",
     "connect": "^3.6.5",

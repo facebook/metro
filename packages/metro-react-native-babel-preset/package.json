@@ -23,6 +23,7 @@
     "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
     "@babel/plugin-proposal-optional-catch-binding": "^7.0.0",
     "@babel/plugin-proposal-optional-chaining": "^7.0.0",
+    "@babel/plugin-syntax-dynamic-import": "^7.0.0",
     "@babel/plugin-transform-arrow-functions": "^7.0.0",
     "@babel/plugin-transform-block-scoping": "^7.0.0",
     "@babel/plugin-transform-classes": "^7.0.0",
@@ -47,6 +48,7 @@
     "@babel/plugin-transform-typescript": "^7.0.0",
     "@babel/plugin-transform-unicode-regex": "^7.0.0",
     "@babel/template": "^7.0.0",
-    "metro-babel7-plugin-react-transform": "0.45.3"
+    "metro-babel7-plugin-react-transform": "0.45.3",
+    "react-transform-hmr": "^1.0.4"
   }
 }
