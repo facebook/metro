@@ -27,9 +27,6 @@ const babelTransformerPath = require.resolve(
 );
 const transformerContents = require('fs').readFileSync(babelTransformerPath);
 
-const babelRcPath = require.resolve('metro/rn-babelrc.json');
-const babelRcContents = require('fs').readFileSync(babelRcPath);
-
 let fs;
 let mkdirp;
 let transform;
@@ -48,7 +45,6 @@ describe('code transformation worker:', () => {
     mkdirp.sync('/root/local');
     mkdirp.sync(path.dirname(babelTransformerPath));
     fs.writeFileSync(babelTransformerPath, transformerContents);
-    fs.writeFileSync(babelRcPath, babelRcContents);
   });
 
   it('transforms a simple script', async () => {

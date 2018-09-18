@@ -36,7 +36,6 @@
     "jest-haste-map": "23.5.0",
     "jest-worker": "23.2.0",
     "json-stable-stringify": "^1.0.1",
-    "json5": "^0.4.0",
     "lodash.throttle": "^4.1.1",
     "merge-stream": "^1.0.1",
     "metro-cache": "0.45.3",
