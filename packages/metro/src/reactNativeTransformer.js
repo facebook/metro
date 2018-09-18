@@ -15,7 +15,6 @@ const crypto = require('crypto');
 const externalHelpersPlugin = require('@babel/plugin-external-helpers');
 const fs = require('fs');
 const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
-const json5 = require('json5');
 const makeHMRConfig = require('metro-react-native-babel-preset/src/configs/hmr');
 const path = require('path');
 
@@ -23,8 +22,6 @@ const {transformSync} = require('@babel/core');
 
 import type {Transformer, TransformOptions} from './JSTransformer/worker';
 import type {Plugins as BabelPlugins} from 'babel-core';
-
-type ModuleES6 = {__esModule?: boolean, default?: {}};
 
 const cacheKeyParts = [
   fs.readFileSync(__filename),
@@ -38,7 +35,13 @@ const cacheKeyParts = [
  * default RN babelrc file and uses that.
  */
 const getBabelRC = (function() {
-  let babelRC: ?{extends?: string, plugins: BabelPlugins} = null;
+  let babelRC: ?{
+    // `any` to avoid flow type mismatch with Babel 7's internal type of
+    // `Array<string>` even though it correctly accepts the usage below
+    presets?: any,
+    extends?: string,
+    plugins: BabelPlugins,
+  } = null;
 
   return function _getBabelRC(projectRoot, options) {
     if (babelRC != null) {
@@ -48,8 +51,7 @@ const getBabelRC = (function() {
     babelRC = {plugins: []};
 
     // Let's look for a babel config file in the project root.
-    // In the future let's look into adding a command line option to specify
-    // this location.
+    // TODO look into adding a command line option to specify this location
     let projectBabelRCPath;
 
     // .babelrc
@@ -57,62 +59,29 @@ const getBabelRC = (function() {
       projectBabelRCPath = path.resolve(projectRoot, '.babelrc');
     }
 
-    // .babelrc.js
-    if (projectBabelRCPath && !fs.existsSync(projectBabelRCPath)) {
-      projectBabelRCPath = path.resolve(projectRoot, '.babelrc.js');
-    }
-
-    // babel.config.js
-    if (projectBabelRCPath && !fs.existsSync(projectBabelRCPath)) {
-      projectBabelRCPath = path.resolve(projectRoot, 'babel.config.js');
-    }
-
-    // We found a babel config file, extend our config off of it
-    if (projectBabelRCPath && fs.existsSync(projectBabelRCPath)) {
-      babelRC.extends = projectBabelRCPath;
-      return babelRC;
-    }
-
-    // Babel config file doesn't exist in the project,
-    // use the Babel config provided with react-native.
-    babelRC = json5.parse(
-      fs.readFileSync(require.resolve('metro/rn-babelrc.json')),
-    );
-
-    // Require the babel-preset's listed in the default babel config
-    babelRC.presets = babelRC.presets.map((name: string) => {
-      if (!/^(?:@babel\/|babel-)preset-/.test(name) && !/^metro-/.test(name)) {
-        try {
-          name = require.resolve(`babel-preset-${name}`);
-        } catch (error) {
-          if (error && error.code === 'MODULE_NOT_FOUND') {
-            name = require.resolve(`@babel/preset-${name}`);
-          } else {
-            throw new Error(error);
-          }
-        }
+    if (projectBabelRCPath) {
+      // .babelrc.js
+      if (!fs.existsSync(projectBabelRCPath)) {
+        projectBabelRCPath = path.resolve(projectRoot, '.babelrc.js');
       }
 
-      return [require(name), options];
-    });
-
-    babelRC.plugins = babelRC.plugins.map(plugin => {
-      // Manually resolve all default Babel plugins.
-      // `babel.transform` will attempt to resolve all base plugins relative to
-      // the file it's compiling. This makes sure that we're using the plugins
-      // installed in the react-native package.
-
-      // Normalise plugin to an array.
-      plugin = Array.isArray(plugin) ? plugin : [plugin];
-      // Only resolve the plugin if it's a string reference.
-      if (typeof plugin[0] === 'string') {
-        // $FlowFixMe TODO t26372934 plugin require
-        const required: ModuleES6 | {} = require('@babel/plugin-' + plugin[0]);
-        // es6 import default?
-        // $FlowFixMe should properly type this plugin structure
-        plugin[0] = required.__esModule ? required.default : required;
+      // babel.config.js
+      if (!fs.existsSync(projectBabelRCPath)) {
+        projectBabelRCPath = path.resolve(projectRoot, 'babel.config.js');
       }
-    });
+
+      // If we found a babel config file, extend our config off of it
+      // otherwise the default config will be used
+      if (fs.existsSync(projectBabelRCPath)) {
+        babelRC.extends = projectBabelRCPath;
+      }
+    }
+
+    // If a babel config file doesn't exist in the project then
+    // the default preset for react-native will be used instead.
+    if (!babelRC.extends) {
+      babelRC.presets = [[require('metro-react-native-babel-preset'), options]];
+    }
 
     return babelRC;
   };
