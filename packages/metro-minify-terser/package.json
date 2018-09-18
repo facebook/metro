@@ -1,0 +1,20 @@
+{
+  "name": "metro-minify-terser",
+  "version": "0.45.2",
+  "description": "🚇 Terser-based minifier alternative for Metro",
+  "main": "src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:facebook/metro.git"
+  },
+  "scripts": {
+    "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",
+    "cleanup-release": "test ! -e build && mv src build && mv src.real src"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "metro-minify-uglify": "^0.45.2",
+    "terser": "^3.8.2"
+  },
+  "devDependencies": {}
+}
