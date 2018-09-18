@@ -98,45 +98,74 @@ function resolve(
         return resolution;
       }
     } catch (error) {}
-  }
-
-  const dirPaths = [];
-  for (
-    let currDir = path.dirname(originModulePath);
-    currDir !== '.' && currDir !== path.parse(originModulePath).root;
-    currDir = path.dirname(currDir)
-  ) {
-    const searchPath = path.join(currDir, 'node_modules');
-    dirPaths.push(path.join(searchPath, realModuleName));
-  }
-
-  const extraPaths = [];
-  const {extraNodeModules} = context;
-  if (extraNodeModules) {
-    let bits = path.normalize(moduleName).split(path.sep);
-    let packageName;
-    // Normalize packageName and bits for scoped modules
-    if (bits.length >= 2 && bits[0].startsWith('@')) {
-      packageName = bits.slice(0, 2).join('/');
-      bits = bits.slice(1);
-    } else {
-      packageName = bits[0];
-    }
-    if (extraNodeModules[packageName]) {
-      bits[0] = extraNodeModules[packageName];
-      extraPaths.push(path.join.apply(path, bits));
+    if (isDirectImport) {
+      throw new Error('Failed to resolve module: ' + realModuleName);
     }
   }
 
-  const allDirPaths = dirPaths.concat(extraPaths);
-  for (let i = 0; i < allDirPaths.length; ++i) {
-    const realModuleName = context.redirectModulePath(allDirPaths[i]);
-    const result = resolveFileOrDir(context, realModuleName, platform);
+  const modulePaths = [];
+  for (let modulePath of yieldPotentialPaths(context, realModuleName)) {
+    modulePath = context.redirectModulePath(modulePath);
+
+    const result = resolveFileOrDir(context, modulePath, platform);
     if (result.type === 'resolved') {
       return result.resolution;
     }
+
+    modulePaths.push(modulePath);
   }
-  throw new FailedToResolveNameError(dirPaths, extraPaths);
+  throw new FailedToResolveNameError(modulePaths);
+}
+
+/** Generate the potential module paths */
+function* yieldPotentialPaths(
+  context: ResolutionContext,
+  toModuleName: string,
+): Iterable<string> {
+  const {extraNodeModules, follow, originModulePath} = context;
+
+  /**
+   * Extract the scope and package name from the module name.
+   */
+  let bits = path.normalize(toModuleName).split(path.sep);
+  let packageName, scopeName;
+  if (bits.length >= 2 && bits[0].startsWith('@')) {
+    packageName = bits.slice(0, 2).join('/');
+    scopeName = bits[0];
+    bits = bits.slice(2);
+  } else {
+    packageName = bits.shift();
+  }
+
+  /**
+   * Find the nearest "node_modules" directory that contains
+   * the imported package.
+   */
+  const {root} = path.parse(originModulePath);
+  let parent = originModulePath;
+  do {
+    parent = path.dirname(parent);
+    if (path.basename(parent) !== 'node_modules') {
+      yield path.join(
+        follow(path.join(parent, 'node_modules', packageName)),
+        ...bits,
+      );
+    }
+  } while (parent !== root);
+
+  /**
+   * Check the user-provided `extraNodeModules` module map for a
+   * direct mapping to a directory that contains the imported package.
+   */
+  if (extraNodeModules) {
+    parent =
+      extraNodeModules[packageName] ||
+      (scopeName ? extraNodeModules[scopeName] : void 0);
+
+    if (parent) {
+      yield path.join(follow(path.join(parent, packageName)), ...bits);
+    }
+  }
 }
 
 /**
