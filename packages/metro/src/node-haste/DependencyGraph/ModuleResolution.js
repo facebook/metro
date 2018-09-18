@@ -26,6 +26,7 @@ import type {
   ResolveAsset,
 } from 'metro-resolver';
 
+export type FollowFn = (filePath: string) => string;
 export type DirExistsFn = (filePath: string) => boolean;
 
 /**
@@ -54,6 +55,7 @@ export type ModuleishCache<TModule, TPackage> = {
 };
 
 type Options<TModule, TPackage> = {|
+  +follow: FollowFn,
   +dirExists: DirExistsFn,
   +doesFileExist: DoesFileExist,
   +extraNodeModules: ?Object,
@@ -173,28 +175,14 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         );
       }
       if (error instanceof Resolver.FailedToResolveNameError) {
-        const {
-          dirPaths,
-          extraPaths,
-        }: {
-          // $flowfixme these types are defined explicitly in FailedToResolveNameError but Flow refuses to recognize them here
-          dirPaths: $ReadOnlyArray<string>,
-          extraPaths: $ReadOnlyArray<string>,
-        } = error;
-        const displayDirPaths = dirPaths
-          .filter((dirPath: string) => this._options.dirExists(dirPath))
-          .map(dirPath => path.relative(this._options.projectRoot, dirPath))
-          .concat(extraPaths);
-
-        const hint = displayDirPaths.length ? ' or in these directories:' : '';
+        const {modulePaths} = error;
+        const hint = modulePaths.length ? ' or at these locations:' : '';
         throw new UnableToResolveError(
           path.relative(this._options.projectRoot, fromModule.path),
           moduleName,
           [
             `${moduleName} could not be found within the project${hint || '.'}`,
-            ...displayDirPaths.map(
-              (dirPath: string) => `  ${path.dirname(dirPath)}`,
-            ),
+            ...modulePaths.map(modulePath => `  ${modulePath}`),
             '\nIf you are sure the module exists, try these steps:',
             ' 1. Clear watchman watches: watchman watch-del-all',
             ' 2. Delete node_modules: rm -rf node_modules and run yarn install',

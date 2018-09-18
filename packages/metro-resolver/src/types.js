@@ -48,6 +48,7 @@ export type FileCandidates =
  */
 export type DoesFileExist = (filePath: string) => boolean;
 export type IsAssetFile = (fileName: string) => boolean;
+export type FollowFn = (filePath: string) => string;
 
 /**
  * Given a directory path and the base asset name, return a list of all the
@@ -111,6 +112,7 @@ export type ResolutionContext = ModulePathContext &
     extraNodeModules: ?{[string]: string},
     originModulePath: string,
     resolveRequest?: ?CustomResolver,
+    follow: FollowFn,
   };
 
 export type CustomResolver = (
