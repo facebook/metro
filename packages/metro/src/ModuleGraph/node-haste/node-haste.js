@@ -143,6 +143,7 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     dirExists: (filePath: string): boolean => hasteFS.dirExists(filePath),
     doesFileExist: (filePath: string): boolean => hasteFS.exists(filePath),
     extraNodeModules,
+    follow: (filePath: string): string => hasteFS.follow(filePath),
     isAssetFile: (filePath: string): boolean => helpers.isAssetFile(filePath),
     mainFields: options.mainFields,
     moduleCache,

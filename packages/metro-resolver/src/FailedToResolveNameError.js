@@ -13,25 +13,17 @@
 const path = require('path');
 
 class FailedToResolveNameError extends Error {
-  dirPaths: $ReadOnlyArray<string>;
-  extraPaths: $ReadOnlyArray<string>;
+  modulePaths: $ReadOnlyArray<string>;
 
-  constructor(
-    dirPaths: $ReadOnlyArray<string>,
-    extraPaths: $ReadOnlyArray<string>,
-  ) {
-    const displayDirPaths = dirPaths.concat(extraPaths);
-    const hint = displayDirPaths.length ? ' or in these directories:' : '';
+  constructor(modulePaths: $ReadOnlyArray<string>) {
+    const hint = modulePaths.length ? ' or at these locations:' : '';
     super(
       `Module does not exist in the Haste module map${hint}\n` +
-        displayDirPaths
-          .map(dirPath => `  ${path.dirname(dirPath)}\n`)
-          .join(', ') +
+        modulePaths.map(modulePath => `  ${modulePath}\n`).join(', ') +
         '\n',
     );
 
-    this.dirPaths = dirPaths;
-    this.extraPaths = extraPaths;
+    this.modulePaths = modulePaths;
   }
 }
 
