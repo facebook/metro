@@ -160,7 +160,7 @@ describe('code transformation worker:', () => {
     ]);
   });
 
-  it('keeps import/export syntax if requested to do so', async () => {
+  it('transforms import/export syntax when experimental flag is on', async () => {
     const contents = ['import c from "./c";'].join('\n');
 
     const result = await transform(
@@ -175,7 +175,7 @@ describe('code transformation worker:', () => {
         isScript: false,
         minifierPath: 'minifyModulePath',
         babelTransformerPath,
-        transformOptions: {dev: true, disableImportExportTransform: true},
+        transformOptions: {dev: true, experimentalImportSupport: true},
         dynamicDepsInPackages: 'reject',
         optimizationSizeLimit: 100000,
       },
@@ -185,12 +185,19 @@ describe('code transformation worker:', () => {
     expect(result.output[0].data.code).toBe(
       [
         '__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {',
-        '  import c from "./c";',
+        '  var c = _$$_IMPORT_DEFAULT(_dependencyMap[0], "./c");',
         '});',
       ].join('\n'),
     );
     expect(result.output[0].data.map).toMatchSnapshot();
-    expect(result.dependencies).toEqual([]);
+    expect(result.dependencies).toEqual([
+      {
+        data: {
+          isAsync: false,
+        },
+        name: './c',
+      },
+    ]);
   });
 
   it('reports filename when encountering unsupported dynamic dependency', async () => {

@@ -81,7 +81,17 @@ const getBabelRC = (function() {
     // If a babel config file doesn't exist in the project then
     // the default preset for react-native will be used instead.
     if (!babelRC.extends) {
-      babelRC.presets = [[require('metro-react-native-babel-preset'), options]];
+      const {experimentalImportSupport, ...presetOptions} = options;
+
+      babelRC.presets = [
+        [
+          require('metro-react-native-babel-preset'),
+          {
+            ...presetOptions,
+            disableImportExportTransform: experimentalImportSupport,
+          },
+        ],
+      ];
     }
 
     return babelRC;
