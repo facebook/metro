@@ -224,6 +224,7 @@ async function transform(
     ast: true,
     babelrc: false,
     code: false,
+    configFile: false,
     comments: false,
     compact: false,
     filename: localPath,
