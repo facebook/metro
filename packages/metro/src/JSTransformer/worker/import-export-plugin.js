@@ -31,7 +31,7 @@ type State = {
  * corresponding id in it.
  */
 const importTemplate = template(`
-  const LOCAL = IMPORT(FILE);
+  var LOCAL = IMPORT(FILE);
 `);
 
 /**
@@ -39,7 +39,7 @@ const importTemplate = template(`
  * "const y = require(...).x" call with the corresponding id in it.
  */
 const importNamedTemplate = template(`
-  const LOCAL = require(FILE).REMOTE;
+  var LOCAL = require(FILE).REMOTE;
 `);
 
 /**
@@ -51,10 +51,10 @@ const importSideEffect = template(`
 `);
 
 const exportAllTemplate = template(`
-  const REQUIRE = require(FILE);
+  const REQUIRED = require(FILE);
 
-  for (const key in REQUIRE) {
-    exports[key] = REQUIRE[key];
+  for (var KEY in REQUIRED) {
+    exports[KEY] = REQUIRED[KEY];
   }
 `);
 
@@ -268,7 +268,8 @@ function importExportPlugin({types: t}: $FlowFixMe) {
             body.push(
               ...exportAllTemplate({
                 FILE: t.stringLiteral(e.file),
-                REQUIRE: path.scope.generateUidIdentifier(e.file),
+                REQUIRED: path.scope.generateUidIdentifier(e.file),
+                KEY: path.scope.generateUidIdentifier('key'),
               }),
             );
           });

@@ -29,10 +29,10 @@ it('correctly transforms and extracts "import" statements', () => {
 
   const expected = `
     require('side-effect');
-    const z = require('qux').y;
-    const x = require('baz').x;
-    const w = _$$_IMPORT_ALL('bar');
-    const v = _$$_IMPORT_DEFAULT('foo');
+    var z = require('qux').y;
+    var x = require('baz').x;
+    var w = _$$_IMPORT_ALL('bar');
+    var v = _$$_IMPORT_DEFAULT('foo');
   `;
 
   compare([importExportPlugin], code, expected, opts);
@@ -45,11 +45,11 @@ it('correctly transforms complex patterns', () => {
   `;
 
   const expected = `
-    const c = _$$_IMPORT_DEFAULT('bar');
-    const e = require('bar').d;
-    const f = require('bar').f;
-    const a = _$$_IMPORT_DEFAULT('foo');
-    const b = _$$_IMPORT_ALL('foo');
+    var c = _$$_IMPORT_DEFAULT('bar');
+    var e = require('bar').d;
+    var f = require('bar').f;
+    var a = _$$_IMPORT_DEFAULT('foo');
+    var b = _$$_IMPORT_ALL('foo');
   `;
 
   compare([importExportPlugin], code, expected, opts);
@@ -62,7 +62,7 @@ it('hoists declarations to the top', () => {
   `;
 
   const expected = `
-    const foo = require('bar').foo;
+    var foo = require('bar').foo;
     foo();
   `;
 
@@ -79,7 +79,7 @@ it('enables module exporting when something is exported', () => {
   const expected = `
     exports.__esModule = true;
 
-    const foo = require('bar').foo;
+    var foo = require('bar').foo;
     foo();
 
     var _default = foo;
