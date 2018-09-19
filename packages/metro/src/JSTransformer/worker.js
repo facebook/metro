@@ -207,6 +207,10 @@ async function transform(
     importAll,
   };
 
+  if (options.transformOptions.experimentalImportSupport) {
+    plugins.push([importExportPlugin, opts]);
+  }
+
   if (options.transformOptions.inlineRequires) {
     plugins.push([inlineRequiresPlugin, opts]);
   }
@@ -214,10 +218,6 @@ async function transform(
   if (!options.transformOptions.dev) {
     plugins.push([constantFoldingPlugin, opts]);
     plugins.push([inlinePlugin, opts]);
-  }
-
-  if (options.transformOptions.experimentalImportSupport) {
-    plugins.push([importExportPlugin, opts]);
   }
 
   ({ast} = transformFromAstSync(ast, '', {

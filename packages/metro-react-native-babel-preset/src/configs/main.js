@@ -25,6 +25,7 @@ const defaultPlugins = [
     {loose: true},
   ],
   [require('@babel/plugin-syntax-dynamic-import')],
+  [require('@babel/plugin-syntax-export-default-from')],
   [require('@babel/plugin-transform-computed-properties')],
   [require('@babel/plugin-transform-destructuring')],
   [require('@babel/plugin-transform-function-name')],
@@ -35,6 +36,10 @@ const defaultPlugins = [
   [require('@babel/plugin-transform-regenerator')],
   [require('@babel/plugin-transform-sticky-regex')],
   [require('@babel/plugin-transform-unicode-regex')],
+];
+
+const es2015ExportDefault = [
+  require('@babel/plugin-proposal-export-default-from'),
 ];
 
 const es2015ImportExport = [
@@ -84,7 +89,7 @@ const getPreset = (src, options) => {
   const extraPlugins = [];
 
   if (!options || !options.disableImportExportTransform) {
-    extraPlugins.push(es2015ImportExport);
+    extraPlugins.push(es2015ImportExport, es2015ExportDefault);
   }
 
   if (hasClass) {

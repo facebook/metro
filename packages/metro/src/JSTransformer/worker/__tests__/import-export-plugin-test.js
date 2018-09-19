@@ -69,6 +69,54 @@ it('hoists declarations to the top', () => {
   compare([importExportPlugin], code, expected, opts);
 });
 
+it('exports members of another module directly from an import (as named)', () => {
+  const code = `
+    export {default as foo} from 'bar';
+  `;
+
+  const expected = `
+    exports.__esModule = true;
+
+    var _default = _$$_IMPORT_DEFAULT('bar');
+    exports.foo = _default;
+  `;
+
+  compare([importExportPlugin], code, expected, opts);
+});
+
+it('exports members of another module directly from an import (as default)', () => {
+  const code = `
+    export {foo as default} from 'bar';
+  `;
+
+  const expected = `
+    exports.__esModule = true;
+
+    var _foo = require('bar').foo;
+    exports.default = _foo;
+  `;
+
+  compare([importExportPlugin], code, expected, opts);
+});
+
+it('exports members of another module directly from an import (as all)', () => {
+  const code = `
+    export * from 'bar';
+  `;
+
+  const expected = `
+    exports.__esModule = true;
+
+    var _bar = require("bar");
+
+    for (var _key in _bar) {
+      exports[_key] = _bar[_key];
+    }
+  `;
+
+  compare([importExportPlugin], code, expected, opts);
+});
+
 it('enables module exporting when something is exported', () => {
   const code = `
     foo();
