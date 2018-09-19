@@ -18,12 +18,15 @@ import type {Path} from '@babel/traverse';
 
 type Context = {types: BabelTypes};
 
+type Options = {
+  dev: boolean,
+  isWrapped: boolean,
+  requireName?: string,
+  platform: string,
+};
+
 type State = {
-  opts: {
-    dev: boolean,
-    isWrapped: boolean,
-    platform: string,
-  },
+  opts: Options,
 };
 
 const env = {name: 'env'};
@@ -32,7 +35,7 @@ const processId = {name: 'process'};
 
 const dev = {name: '__DEV__'};
 
-function inlinePlugin(context: Context) {
+function inlinePlugin(context: Context, options: Options) {
   const t = context.types;
 
   const {
@@ -40,7 +43,7 @@ function inlinePlugin(context: Context) {
     isPlatformSelectNode,
     isPlatformOSSelect,
     getReplacementForPlatformOSSelect,
-  } = createInlinePlatformChecks(t);
+  } = createInlinePlatformChecks(t, options.requireName || 'require');
 
   const isGlobal = binding => !binding;
 

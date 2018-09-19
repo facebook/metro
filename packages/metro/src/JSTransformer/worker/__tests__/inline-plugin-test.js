@@ -321,9 +321,14 @@ describe('inline constants', () => {
       }
     `;
 
-    compare([inlinePlugin], code, code.replace(/Platform\.select[^;]+/, '2'), {
-      platform: 'android',
-    });
+    compare(
+      [inlinePlugin],
+      code,
+      code.replace(/require\('Platform'\)\.select[^;]+/, '2'),
+      {
+        platform: 'android',
+      },
+    );
   });
 
   it('replaces React.Platform.select in the code if React is a global', () => {
@@ -573,7 +578,7 @@ describe('inline constants', () => {
       function a() {
         var env;
         env = process.env.NODE_ENV;
-      } 
+      }
     `;
 
     compare(
@@ -738,8 +743,26 @@ describe('inline PlatformOS.OS', () => {
     compare(
       [inlinePlugin],
       code,
-      code.replace(/PlatformOS\.select\([^;]+/, '2'),
+      code.replace(/require\('PlatformOS'\)\.select\([^;]+/, '2'),
       {platform: 'android'},
+    );
+  });
+});
+
+describe('require names', () => {
+  it('inlines custom require names passed as "requireName"', () => {
+    const code = `
+      function a() {
+        var a = potatoe('PlatformOS').select({ios: 1, android: 2});
+        var b = require('PlatformOS').select({ios: 1, android: 2});
+      }
+    `;
+
+    compare(
+      [inlinePlugin],
+      code,
+      code.replace(/potatoe\('PlatformOS'\)\.select\([^;]+/, '2'),
+      {platform: 'android', requireName: 'potatoe'},
     );
   });
 });

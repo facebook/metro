@@ -14,7 +14,10 @@ import typeof {types as BabelTypes} from '@babel/core';
 
 const importMap = new Map([['ReactNative', 'react-native']]);
 
-function createInlinePlatformChecks(t: BabelTypes) {
+function createInlinePlatformChecks(
+  t: BabelTypes,
+  requireName: string = 'require',
+) {
   const isPlatformNode = (
     node: Object,
     scope: Object,
@@ -58,7 +61,6 @@ function createInlinePlatformChecks(t: BabelTypes) {
 
   const isPlatformSelect = (node, scope, isWrappedModule) =>
     t.isMemberExpression(node.callee) &&
-    t.isIdentifier(node.callee.object, {name: 'Platform'}) &&
     t.isIdentifier(node.callee.property, {name: 'select'}) &&
     isImportOrGlobal(
       node.callee.object,
@@ -85,7 +87,6 @@ function createInlinePlatformChecks(t: BabelTypes) {
     isWrappedModule: boolean,
   ) =>
     t.isMemberExpression(node.callee) &&
-    t.isIdentifier(node.callee.object, {name: 'PlatformOS'}) &&
     t.isIdentifier(node.callee.property, {name: 'select'}) &&
     isImportOrGlobal(
       node.callee.object,
@@ -115,7 +116,7 @@ function createInlinePlatformChecks(t: BabelTypes) {
 
   const isRequireCall = (node, dependencyId, scope) =>
     t.isCallExpression(node) &&
-    t.isIdentifier(node.callee, {name: 'require'}) &&
+    t.isIdentifier(node.callee, {name: requireName}) &&
     checkRequireArgs(node.arguments, dependencyId);
 
   const isImport = (node, scope, patterns) =>
