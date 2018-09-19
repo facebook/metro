@@ -45,7 +45,9 @@ describe('loadConfig', () => {
       cacheStores: [],
       reporter: null,
       maxWorkers: 2,
-      resolver: 'test',
+      resolver: {
+        hasteImplModulePath: 'test',
+      },
       transformerPath: '',
     });
 
@@ -53,7 +55,7 @@ describe('loadConfig', () => {
 
     const result = await loadConfig({});
 
-    expect(result.resolver).toEqual('test');
+    expect(result.resolver.hasteImplModulePath).toEqual('test');
   });
 
   it('can load the config with a path', async () => {
