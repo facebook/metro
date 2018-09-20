@@ -245,6 +245,12 @@ async function loadConfig(
     argv,
   );
 
+  // The resolver breaks if "json" is missing from `resolver.sourceExts`
+  const {sourceExts} = overriddenConfig.resolver;
+  if (!sourceExts.includes('json')) {
+    sourceExts.push('json');
+  }
+
   // Set the watchfolders to include the projectRoot, as Metro assumes that is
   // the case
   overriddenConfig.watchFolders = [
