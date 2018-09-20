@@ -230,7 +230,7 @@ exports.runBuild = async (
     const requestOptions: RequestOptions = {
       dev,
       entryFile: entry,
-      inlineSourceMap: sourceMap && !!sourceMapUrl,
+      inlineSourceMap: sourceMap && !sourceMapUrl,
       minify,
       platform,
       sourceMapUrl: sourceMap === false ? undefined : sourceMapUrl,
