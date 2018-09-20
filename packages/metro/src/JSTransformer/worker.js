@@ -16,6 +16,7 @@ const assetTransformer = require('../assetTransformer');
 const babylon = require('@babel/parser');
 const collectDependencies = require('../ModuleGraph/worker/collectDependencies');
 const constantFoldingPlugin = require('./worker/constant-folding-plugin');
+const generateImportNames = require('../ModuleGraph/worker/generateImportNames');
 const generate = require('@babel/generator').default;
 const getMinifier = require('../lib/getMinifier');
 const importExportPlugin = require('./worker/import-export-plugin');
@@ -23,7 +24,6 @@ const inlinePlugin = require('./worker/inline-plugin');
 const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
 const normalizePseudoglobals = require('./worker/normalizePseudoglobals');
 const {transformFromAstSync} = require('@babel/core');
-const traverse = require('@babel/traverse').default;
 
 const {
   fromRawMappings,
@@ -185,17 +185,7 @@ async function transform(
   let ast =
     transformResult.ast || babylon.parse(sourceCode, {sourceType: 'module'});
 
-  // Select unused names for "metroImportDefault" and "metroImportAll", by
-  // calling "generateUid".
-  let importDefault = '';
-  let importAll = '';
-
-  traverse(ast, {
-    Program(path) {
-      importAll = path.scope.generateUid('$$_IMPORT_ALL');
-      importDefault = path.scope.generateUid('$$_IMPORT_DEFAULT');
-    },
-  });
+  const {importDefault, importAll} = generateImportNames(ast);
 
   // Perform the import-export transform (in case it's still needed), then
   // fold requires and perform constant folding (if in dev).

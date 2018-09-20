@@ -28,7 +28,7 @@ function optimizeDependencies(
   ast: Ast,
   dependencies: Dependencies,
   dependencyMapName: string,
-  requireName: string,
+  requireNames: Set<string>,
 ): $ReadOnlyArray<TransformResultDependency> {
   const visited = new WeakSet();
   const context = {
@@ -42,7 +42,7 @@ function optimizeDependencies(
       if (visited.has(node)) {
         return;
       }
-      if (isRequireCall(node.callee, requireName)) {
+      if (isRequireCall(node.callee, requireNames)) {
         processRequireCall(node);
         visited.add(node);
       }
@@ -62,8 +62,8 @@ function optimizeDependencies(
   return context.dependencies;
 }
 
-function isRequireCall(callee, requireName) {
-  return callee.type === 'Identifier' && callee.name === requireName;
+function isRequireCall(callee, requireNames) {
+  return callee.type === 'Identifier' && requireNames.has(callee.name);
 }
 
 function processRequireCall(node) {

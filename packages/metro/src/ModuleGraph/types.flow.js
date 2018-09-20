@@ -141,6 +141,7 @@ export type TransformResult = {|
   map: ?BabelSourceMap,
   requireName: string,
   soundResources?: ?Array<string>,
+  importNames?: {all: string, default: string},
 |};
 
 export type TransformResults = {[string]: TransformResult};
