@@ -16,6 +16,7 @@
     "@babel/core": "^7.0.0",
     "@babel/generator": "^7.0.0",
     "@babel/parser": "^7.0.0",
+    "@babel/plugin-external-helpers": "^7.0.0",
     "@babel/template": "^7.0.0",
     "@babel/traverse": "^7.0.0",
     "@babel/types": "^7.0.0",
@@ -61,7 +62,6 @@
     "yargs": "^9.0.0"
   },
   "devDependencies": {
-    "@babel/plugin-external-helpers": "^7.0.0",
     "@babel/plugin-syntax-nullish-coalescing-operator": "^7.0.0",
     "@babel/plugin-transform-flow-strip-types": "^7.0.0",
     "metro-memory-fs": "0.45.4",
