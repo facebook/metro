@@ -1,0 +1,23 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`builds a simple bundle 1`] = `
+Object {
+  "__esModule": true,
+  "default": "export-4: FOO",
+  "extraData": Object {
+    "foo": "export-null: FOO",
+    "importStar": Object {
+      "__esModule": true,
+      "default": "export-2: DEFAULT",
+      "foo": "export-2: FOO",
+      "myFunction": [Function],
+    },
+    "myDefault": "export-1: DEFAULT",
+    "myFoo": "export-1: FOO",
+    "myFunction": "export-1: MY_FUNCTION",
+    "primitiveDefault": "export-primitive-default: DEFAULT",
+    "primitiveFoo": "export-primitive-default: FOO",
+  },
+  "namedDefaultExported": "export-3: DEFAULT",
+}
+`;

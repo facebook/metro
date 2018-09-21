@@ -27,5 +27,10 @@ module.exports = {
   transformer: {
     assetRegistryPath: path.join(ROOT_PATH, 'AssetRegistry'),
     babelTransformerPath: require.resolve('metro/src/reactNativeTransformer'),
+    getTransformOptions: async () => ({
+      transform: {experimentalImportSupport: true, inlineRequires: false},
+      preloadedModules: false,
+      ramGroups: [],
+    }),
   },
 };
