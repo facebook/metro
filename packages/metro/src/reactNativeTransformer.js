@@ -12,7 +12,6 @@
 'use strict';
 
 const crypto = require('crypto');
-const externalHelpersPlugin = require('@babel/plugin-external-helpers');
 const fs = require('fs');
 const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
 const makeHMRConfig = require('metro-react-native-babel-preset/src/configs/hmr');
@@ -25,7 +24,6 @@ import type {Plugins as BabelPlugins} from 'babel-core';
 
 const cacheKeyParts = [
   fs.readFileSync(__filename),
-  require('@babel/plugin-external-helpers/package.json').version,
   require('babel-preset-fbjs/package.json').version,
 ];
 
@@ -118,7 +116,7 @@ function buildBabelConfig(filename, options, plugins?: BabelPlugins = []) {
   let config = Object.assign({}, babelRC, extraConfig);
 
   // Add extra plugins
-  const extraPlugins = [externalHelpersPlugin];
+  const extraPlugins = [];
 
   if (options.inlineRequires) {
     extraPlugins.push(inlineRequiresPlugin);

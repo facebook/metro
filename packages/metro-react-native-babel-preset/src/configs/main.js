@@ -80,6 +80,14 @@ const reactDisplayName = [
 const reactJsxSource = [require('@babel/plugin-transform-react-jsx-source')];
 const symbolMember = [require('../transforms/transform-symbol-member')];
 
+const babelRuntime = [
+  require('@babel/plugin-transform-runtime'),
+  {
+    helpers: true,
+    regenerator: true,
+  },
+];
+
 const getPreset = (src, options) => {
   const isNull = src == null;
   const hasClass = isNull || src.indexOf('class') !== -1;
@@ -133,6 +141,10 @@ const getPreset = (src, options) => {
 
   if (options && options.dev) {
     extraPlugins.push(reactJsxSource);
+  }
+
+  if (!options || !options.disableBabelRuntime) {
+    extraPlugins.push(babelRuntime);
   }
 
   return {
