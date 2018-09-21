@@ -185,6 +185,8 @@ describe('code transformation worker:', () => {
     expect(result.output[0].data.code).toBe(
       [
         '__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {',
+        '  "use strict";',
+        '',
         '  var c = _$$_IMPORT_DEFAULT(_dependencyMap[0], "./c");',
         '});',
       ].join('\n'),

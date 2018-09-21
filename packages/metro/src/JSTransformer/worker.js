@@ -24,6 +24,7 @@ const inlinePlugin = require('./worker/inline-plugin');
 const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
 const normalizePseudoglobals = require('./worker/normalizePseudoglobals');
 const {transformFromAstSync} = require('@babel/core');
+const types = require('@babel/types');
 
 const {
   fromRawMappings,
@@ -186,6 +187,17 @@ async function transform(
     transformResult.ast || babylon.parse(sourceCode, {sourceType: 'module'});
 
   const {importDefault, importAll} = generateImportNames(ast);
+
+  // Add "use strict" if the file was parsed as a module, and the directive did
+  // not exist yet.
+  const {directives} = ast.program;
+
+  if (
+    ast.program.sourceType === 'module' &&
+    directives.findIndex(d => d.value.value === 'use strict') === -1
+  ) {
+    directives.push(types.directive(types.directiveLiteral('use strict')));
+  }
 
   // Perform the import-export transform (in case it's still needed), then
   // fold requires and perform constant folding (if in dev).
