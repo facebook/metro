@@ -22,7 +22,6 @@ Object {
     "type": "foo",
   },
   "TypeScript": Object {
-    "__esModule": true,
     "test": true,
     "type": "TypeScript",
   },

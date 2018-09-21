@@ -2,12 +2,10 @@
 
 exports[`builds a simple bundle 1`] = `
 Object {
-  "__esModule": true,
   "default": "export-4: FOO",
   "extraData": Object {
     "foo": "export-null: FOO",
     "importStar": Object {
-      "__esModule": true,
       "default": "export-2: DEFAULT",
       "foo": "export-2: FOO",
       "myFunction": [Function],
