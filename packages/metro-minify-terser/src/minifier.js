@@ -10,7 +10,7 @@
 
 'use strict';
 
-const uglify = require('uglify-es');
+const terser = require('terser');
 
 import type {
   MetroMinifier,
@@ -38,7 +38,7 @@ function minify(
   inputMap: ?BabelSourceMap,
   options: MinifyOptions,
 ) {
-  const result = uglify.minify(inputCode, {
+  const result = terser.minify(inputCode, {
     mangle: {
       toplevel: false,
       reserved: options.reserved,
