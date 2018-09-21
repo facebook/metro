@@ -75,7 +75,7 @@ it('exports members of another module directly from an import (as named)', () =>
   `;
 
   const expected = `
-    exports.__esModule = true;
+    Object.defineProperty(exports, '__esModule', {value: true});
 
     var _default = _$$_IMPORT_DEFAULT('bar');
     exports.foo = _default;
@@ -90,7 +90,7 @@ it('exports members of another module directly from an import (as default)', () 
   `;
 
   const expected = `
-    exports.__esModule = true;
+    Object.defineProperty(exports, '__esModule', {value: true});
 
     var _foo = require('bar').foo;
     exports.default = _foo;
@@ -105,7 +105,7 @@ it('exports members of another module directly from an import (as all)', () => {
   `;
 
   const expected = `
-    exports.__esModule = true;
+    Object.defineProperty(exports, '__esModule', {value: true});
 
     var _bar = require("bar");
 
@@ -125,7 +125,7 @@ it('enables module exporting when something is exported', () => {
   `;
 
   const expected = `
-    exports.__esModule = true;
+    Object.defineProperty(exports, '__esModule', {value: true});
 
     var foo = require('bar').foo;
     foo();

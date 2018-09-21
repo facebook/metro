@@ -66,8 +66,20 @@ const exportAllTemplate = template(`
   }
 `);
 
+/**
+ * Produces a "named export" or "default export" template to export a single
+ * symbol.
+ */
 const exportTemplate = template(`
   exports.REMOTE = LOCAL;
+`);
+
+/**
+ * Flags the exported module as a transpiled ES module. Needs to be kept in 1:1
+ * compatibility with Babel.
+ */
+const esModuleExport = template(`
+  Object.defineProperty(exports, '__esModule', {value: true});
 `);
 
 // eslint-disable-next-line lint/flow-no-fixme
@@ -300,12 +312,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
             state.exportAll.length ||
             state.exportNamed.length
           ) {
-            body.unshift(
-              exportTemplate({
-                LOCAL: t.booleanLiteral(true),
-                REMOTE: t.identifier('__esModule'),
-              }),
-            );
+            body.unshift(esModuleExport());
           }
         },
       },
