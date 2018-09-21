@@ -1,6 +1,7 @@
 {
   "private": true,
   "devDependencies": {
+    "acorn": "^5.1.2",
     "babel-core": "^6.23.1",
     "babel-eslint": "9.0.0",
     "babel-jest": "23.4.0",

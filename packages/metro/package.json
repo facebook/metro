@@ -62,6 +62,7 @@
     "yargs": "^9.0.0"
   },
   "devDependencies": {
+    "acorn": "^5.1.2",
     "@babel/plugin-syntax-nullish-coalescing-operator": "^7.0.0",
     "@babel/plugin-transform-flow-strip-types": "^7.0.0",
     "metro-memory-fs": "0.45.5",
