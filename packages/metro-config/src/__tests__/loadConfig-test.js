@@ -46,6 +46,7 @@ describe('loadConfig', () => {
       reporter: null,
       maxWorkers: 2,
       resolver: {
+        ...defaultConfig.resolver,
         hasteImplModulePath: 'test',
       },
       transformerPath: '',
