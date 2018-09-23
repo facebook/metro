@@ -18,7 +18,7 @@ const getMaxWorkers = require('metro/src/lib/getMaxWorkers');
 const {Terminal} = require('metro-core');
 
 import type {ConfigT, OldConfigT} from './configTypes.flow';
-import type {Reporter} from 'metro/src/lib/reporting';
+import type {Reporter} from 'metro-core/src/reporting';
 
 type DeprecatedMetroOptions = {|
   resetCache?: boolean,

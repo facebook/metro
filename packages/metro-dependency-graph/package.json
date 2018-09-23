@@ -1,0 +1,24 @@
+{
+  "name": "metro-dependency-graph",
+  "version": "0.53.1",
+  "description": "🚇 Dependency Graph for Metro",
+  "main": "src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:facebook/metro.git"
+  },
+  "scripts": {
+    "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",
+    "cleanup-release": "test ! -e build && mv src build && mv src.real src"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "absolute-path": "^0.0.0",
+    "fbjs": "0.8.17",
+    "invariant": "^2.2.4",
+    "jest-haste-map": "^24.5.0",
+    "metro-core": "0.53.1",
+    "metro-resolver": "0.53.1"
+  },
+  "devDependencies": {}
+}

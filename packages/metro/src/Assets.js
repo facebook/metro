@@ -10,7 +10,7 @@
 
 'use strict';
 
-const AssetPaths = require('./node-haste/lib/AssetPaths');
+const {AssetPaths} = require('metro-dependency-graph');
 
 const crypto = require('crypto');
 const denodeify = require('denodeify');

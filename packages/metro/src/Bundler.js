@@ -10,7 +10,7 @@
 
 'use strict';
 
-const DependencyGraph = require('./node-haste/DependencyGraph');
+const {DependencyGraph} = require('metro-dependency-graph');
 const Transformer = require('./DeltaBundler/Transformer');
 
 import type {TransformOptions} from './DeltaBundler/Worker';

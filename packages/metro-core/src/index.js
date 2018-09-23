@@ -14,8 +14,10 @@ const AmbiguousModuleResolutionError = require('./errors/AmbiguousModuleResoluti
 const Logger = require('./Logger');
 const PackageResolutionError = require('./errors/PackageResolutionError');
 const Terminal = require('./Terminal');
+const reporting = require('./reporting');
 
 const formatBanner = require('./formatBanner');
+const toLocalPath = require('./toLocalPath');
 
 module.exports = {
   AmbiguousModuleResolutionError,
@@ -23,4 +25,6 @@ module.exports = {
   PackageResolutionError,
   Terminal,
   formatBanner,
+  reporting,
+  toLocalPath,
 };

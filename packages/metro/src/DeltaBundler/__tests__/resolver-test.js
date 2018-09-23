@@ -75,13 +75,13 @@ describe('traverseDependencies', function() {
       },
       maxWorkers: 1,
       projectRoot: p('/root'),
-      reporter: require('../../lib/reporting').nullReporter,
+      reporter: require('metro-core/src/reporting').nullReporter,
       watch: true,
       watchFolders: [p('/root')],
     };
 
     async function createResolver(config = {}, platform = '') {
-      const DependencyGraph = require('../../node-haste/DependencyGraph');
+      const DependencyGraph = require('metro-dependency-graph/src/DependencyGraph');
 
       dependencyGraphPromise = DependencyGraph.load(
         mergeConfig(defaultConfig, config),
@@ -137,7 +137,7 @@ describe('traverseDependencies', function() {
         transformHelpers = require('../../lib/transformHelpers');
         ({
           UnableToResolveError,
-        } = require('../../node-haste/DependencyGraph/ModuleResolution'));
+        } = require('metro-dependency-graph/src/DependencyGraph/ModuleResolution'));
 
         require('os').tmpdir = () => p('/tmp');
 
@@ -819,7 +819,7 @@ describe('traverseDependencies', function() {
 
             it('supports excluding a package', async () => {
               // TODO: Make this configurable.
-              require('../../node-haste/DependencyGraph/ModuleResolution').ModuleResolver.EMPTY_MODULE = p(
+              require('metro-dependency-graph/src/DependencyGraph/ModuleResolution').ModuleResolver.EMPTY_MODULE = p(
                 '/root/emptyModule.js',
               );
 

@@ -11,7 +11,7 @@
 
 'use strict';
 
-import DependencyGraphHelpers from '../../node-haste/DependencyGraph/DependencyGraphHelpers';
+import {DependencyGraphHelpers} from 'metro-dependency-graph';
 
 type ModuleID = string;
 export type Path = string;
@@ -63,7 +63,7 @@ type HasteMapOptions = {|
 
 /* eslint-disable flowtype/object-type-delimiter */
 declare class HasteMap {
-  // node-haste/DependencyGraph/HasteMap.js
+  // metro-dependency-graph/DependencyGraph/HasteMap.js
   build(): Promise<Object>;
   constructor(options: HasteMapOptions): void;
 }

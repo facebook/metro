@@ -27,7 +27,7 @@ const formatBundlingError = require('./lib/formatBundlingError');
 const mime = require('mime-types');
 const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
 const transformHelpers = require('./lib/transformHelpers');
-const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
+const {parsePlatformFilePath} = require('metro-dependency-graph');
 const path = require('path');
 const serializeDeltaJSBundle = require('./DeltaBundler/Serializers/helpers/serializeDeltaJSBundle');
 const symbolicate = require('./Server/symbolicate/symbolicate');
@@ -38,7 +38,7 @@ const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundErro
 const {getAsset} = require('./Assets');
 
 import type {IncomingMessage, ServerResponse} from 'http';
-import type {Reporter} from './lib/reporting';
+import type {Reporter} from 'metro-core/src/reporting';
 import type {GraphId} from './lib/getGraphId';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
 import type {BundleOptions, SplitBundleOptions} from './shared/types.flow';

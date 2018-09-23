@@ -26,7 +26,7 @@ import type {JsTransformerConfig} from 'metro/src/JSTransformer/worker';
 import type {TransformVariants} from 'metro/src/ModuleGraph/types.flow.js';
 import type {DynamicRequiresBehavior} from 'metro/src/ModuleGraph/worker/collectDependencies';
 import type Server from 'metro/src/Server';
-import type {Reporter} from 'metro/src/lib/reporting';
+import type {Reporter} from 'metro-core/src/reporting';
 
 export type PostMinifyProcess = ({
   code: string,

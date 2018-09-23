@@ -12,7 +12,7 @@
 
 const chalk = require('chalk');
 const path = require('path');
-const reporting = require('./reporting');
+const {reporting} = require('metro-core');
 const throttle = require('lodash.throttle');
 
 const {AmbiguousModuleResolutionError} = require('metro-core');
@@ -22,7 +22,7 @@ import type {
   BundleDetails,
   ReportableEvent,
   GlobalCacheDisabledReason,
-} from './reporting';
+} from 'metro-core/src/reporting';
 import type {Terminal} from 'metro-core';
 
 const DEP_GRAPH_MESSAGE = 'Loading dependency graph';
@@ -58,7 +58,7 @@ type SnippetError = ErrnoError & {
 
 /**
  * We try to print useful information to the terminal for interactive builds.
- * This implements the `Reporter` interface from the './reporting' module.
+ * This implements the `Reporter` interface from the 'metro-core/reporting' module.
  */
 class TerminalReporter {
   /**

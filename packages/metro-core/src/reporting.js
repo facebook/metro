@@ -13,7 +13,7 @@
 const chalk = require('chalk');
 const util = require('util');
 
-const {Terminal} = require('metro-core');
+const Terminal = require('./Terminal');
 
 export type GlobalCacheDisabledReason = 'too_many_errors' | 'too_many_misses';
 

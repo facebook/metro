@@ -10,23 +10,23 @@
 
 'use strict';
 
-const AssetResolutionCache = require('../../node-haste/AssetResolutionCache');
-const DependencyGraphHelpers = require('../../node-haste/DependencyGraph/DependencyGraphHelpers');
-const FilesByDirNameIndex = require('../../node-haste/FilesByDirNameIndex');
+const {
+  parsePlatformFilePath,
+  AssetResolutionCache,
+  DependencyGraphHelpers,
+  FilesByDirNameIndex,
+  ModuleResolver,
+} = require('metro-dependency-graph');
 const HasteFS = require('./HasteFS');
 const Module = require('./Module');
 const ModuleCache = require('./ModuleCache');
 
 const defaults = require('metro-config/src/defaults/defaults');
-const parsePlatformFilePath = require('../../node-haste/lib/parsePlatformFilePath');
 const path = require('path');
 
-const {
-  ModuleResolver,
-} = require('../../node-haste/DependencyGraph/ModuleResolution');
 const {ModuleMap} = require('jest-haste-map');
 
-import type {Moduleish} from '../../node-haste/DependencyGraph/ResolutionRequest';
+import type {Moduleish} from 'metro-dependency-graph/src/DependencyGraph/ResolutionRequest';
 import type {ResolveFn, TransformedCodeFile} from '../types.flow';
 import type {Extensions, Path} from './node-haste.flow';
 import type {CustomResolver} from 'metro-resolver';

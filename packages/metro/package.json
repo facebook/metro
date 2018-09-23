@@ -45,6 +45,7 @@
     "metro-cache": "0.53.1",
     "metro-config": "0.53.1",
     "metro-core": "0.53.1",
+    "metro-dependency-graph": "0.53.1",
     "metro-inspector-proxy": "0.53.1",
     "metro-minify-uglify": "0.53.1",
     "metro-react-native-babel-preset": "0.53.1",

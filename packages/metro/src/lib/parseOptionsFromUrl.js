@@ -11,10 +11,10 @@
 'use strict';
 
 const nullthrows = require('nullthrows');
-const parseCustomTransformOptions = require('./parseCustomTransformOptions');
-const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
+const parsePlatformFilePath = require('metro-dependency-graph/src/lib/parsePlatformFilePath');
 const url = require('url');
 
+const parseCustomTransformOptions = require('./parseCustomTransformOptions');
 const {revisionIdFromString} = require('../IncrementalBundler');
 
 import type {RevisionId} from '../IncrementalBundler';

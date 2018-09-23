@@ -26,7 +26,7 @@ jest
   .mock('../../Bundler')
   .mock('../../DeltaBundler')
   .mock('../../Assets')
-  .mock('../../node-haste/DependencyGraph')
+  .mock('metro-dependency-graph/build/DependencyGraph')
   .mock('metro-core/src/Logger')
   .mock('../../lib/getPrependedScripts')
   .mock('../../lib/transformHelpers');
@@ -71,7 +71,7 @@ describe('processRequest', () => {
   options.cacheVersion = null;
   options.serializer.getRunModuleStatement = moduleId =>
     `require(${JSON.stringify(moduleId)});`;
-  options.reporter = require('../../lib/reporting').nullReporter;
+  options.reporter = require('metro-core/build/reporting').nullReporter;
   options.serializer.polyfillModuleNames = null;
   options.serializer.getModulesRunBeforeMainModule = () => ['InitializeCore'];
 

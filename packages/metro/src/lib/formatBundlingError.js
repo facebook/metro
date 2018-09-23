@@ -16,9 +16,7 @@ const RevisionNotFoundError = require('../IncrementalBundler/RevisionNotFoundErr
 
 const serializeError = require('serialize-error');
 
-const {
-  UnableToResolveError,
-} = require('../node-haste/DependencyGraph/ModuleResolution');
+const {UnableToResolveError} = require('metro-dependency-graph');
 const {AmbiguousModuleResolutionError} = require('metro-core');
 
 import type {FormattedError} from './bundle-modules/types.flow';

@@ -17,7 +17,7 @@ const {
 } = require('./traverseDependencies');
 const {EventEmitter} = require('events');
 
-import type DependencyGraph from '../node-haste/DependencyGraph';
+import type DependencyGraph from 'metro-dependency-graph/src/DependencyGraph';
 import type {DeltaResult, Graph, Options} from './types.flow';
 
 /**
