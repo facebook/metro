@@ -14,7 +14,7 @@ jest
   .setMock('jest-worker', () => ({}))
   .mock('fs', () => new (require('metro-memory-fs'))())
   .mock('assert')
-  .mock('../getTransformCacheKeyFn', () => () => () => 'hash')
+  .mock('../getTransformCacheKey', () => () => 'hash')
   .mock('../../WorkerFarm')
   .mock('/path/to/transformer.js', () => ({}), {virtual: true});
 
@@ -78,9 +78,7 @@ describe('Transformer', function() {
       result: {},
     });
 
-    await transformerInstance.transformFile('./foo.js', {
-      transformOptions: {},
-    });
+    await transformerInstance.transformFile('./foo.js', {});
 
     // We got the SHA-1 of the file from the dependency graph.
     expect(getSha1).toBeCalledWith('./foo.js');

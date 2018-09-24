@@ -13,28 +13,23 @@
 const path = require('path');
 
 import type Bundler from '../Bundler';
-import type {WorkerOptions} from '../DeltaBundler/Worker';
+import type {TransformOptions} from '../DeltaBundler/Worker';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
-import type {CustomTransformOptions, Type} from '../JSTransformer/worker';
-import type {TransformOptions} from '../JSTransformer/workerWrapper';
+import type {Type} from '../JSTransformer/worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 type InlineRequiresRaw = {+blacklist: {[string]: true}} | boolean;
-type WorkerOptionsWithRawInlines = {|
-  ...WorkerOptions,
-  +transformOptions: {
-    ...TransformOptions,
-    +inlineRequires: InlineRequiresRaw,
-  },
-|};
 
-export type TransformInputOptions = {|
-  +customTransformOptions: CustomTransformOptions,
-  +dev: boolean,
-  +hot: boolean,
-  +minify: boolean,
-  +platform: ?string,
-  +type: 'module' | 'script',
+export type TransformInputOptions = $Diff<
+  TransformOptions,
+  {
+    inlineRequires: boolean,
+  },
+>;
+
+type TransformOptionsWithRawInlines = {|
+  ...TransformOptions,
+  +inlineRequires: InlineRequiresRaw,
 |};
 
 async function calcTransformerOptions(
@@ -43,26 +38,14 @@ async function calcTransformerOptions(
   deltaBundler: DeltaBundler<>,
   config: ConfigT,
   options: TransformInputOptions,
-): Promise<WorkerOptionsWithRawInlines> {
-  const transformOptionsForBlacklist = {
+): Promise<TransformOptionsWithRawInlines> {
+  const baseOptions = {
     customTransformOptions: options.customTransformOptions,
     dev: options.dev,
-    enableBabelRCLookup: config.transformer.enableBabelRCLookup,
     hot: options.hot,
     inlineRequires: false,
     minify: options.minify,
     platform: options.platform,
-    projectRoot: config.projectRoot,
-  };
-
-  const baseOptions = {
-    assetPlugins: config.transformer.assetPlugins,
-    assetRegistryPath: config.transformer.assetRegistryPath,
-    asyncRequireModulePath: config.transformer.asyncRequireModulePath,
-    babelTransformerPath: config.transformer.babelTransformerPath,
-    dynamicDepsInPackages: config.transformer.dynamicDepsInPackages,
-    minifierPath: config.transformer.minifierPath,
-    optimizationSizeLimit: config.transformer.optimizationSizeLimit,
   };
 
   // When we're processing scripts, we don't need to calculate any
@@ -71,7 +54,6 @@ async function calcTransformerOptions(
   if (options.type === 'script') {
     return {
       ...baseOptions,
-      transformOptions: transformOptionsForBlacklist,
       type: 'script',
     };
   }
@@ -97,11 +79,8 @@ async function calcTransformerOptions(
 
   return {
     ...baseOptions,
-    transformOptions: {
-      ...transformOptionsForBlacklist,
-      experimentalImportSupport: transform.experimentalImportSupport || false,
-      inlineRequires: transform.inlineRequires || false,
-    },
+    inlineRequires: transform.inlineRequires || false,
+    experimentalImportSupport: transform.experimentalImportSupport || false,
     type: 'module',
   };
 }
@@ -124,10 +103,7 @@ async function getTransformFn(
   config: ConfigT,
   options: TransformInputOptions,
 ): Promise<TransformFn<>> {
-  const {
-    transformOptions: {inlineRequires, ...transformOptions},
-    ...workerOptions
-  } = await calcTransformerOptions(
+  const {inlineRequires, ...transformOptions} = await calcTransformerOptions(
     entryFiles,
     bundler,
     deltaBundler,
@@ -137,15 +113,12 @@ async function getTransformFn(
 
   return async (path: string) => {
     return await bundler.transformFile(path, {
-      ...workerOptions,
-      type: getType(workerOptions.type, path, config.resolver.assetExts),
-      transformOptions: {
-        ...transformOptions,
-        inlineRequires: removeInlineRequiresBlacklistFromOptions(
-          path,
-          inlineRequires,
-        ),
-      },
+      ...transformOptions,
+      type: getType(transformOptions.type, path, config.resolver.assetExts),
+      inlineRequires: removeInlineRequiresBlacklistFromOptions(
+        path,
+        inlineRequires,
+      ),
     });
   };
 }

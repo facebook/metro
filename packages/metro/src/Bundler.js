@@ -13,7 +13,7 @@
 const DependencyGraph = require('./node-haste/DependencyGraph');
 const Transformer = require('./DeltaBundler/Transformer');
 
-import type {WorkerOptions} from './DeltaBundler/Worker';
+import type {TransformOptions} from './DeltaBundler/Worker';
 import type {TransformResult} from './DeltaBundler';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
@@ -33,10 +33,10 @@ class Bundler {
   }
 
   async end() {
+    const dependencyGraph = await this._depGraphPromise;
+
     this._transformer.end();
-    await this._depGraphPromise.then(dependencyGraph =>
-      dependencyGraph.getWatcher().end(),
-    );
+    dependencyGraph.getWatcher().end();
   }
 
   getDependencyGraph(): Promise<DependencyGraph> {
@@ -45,13 +45,13 @@ class Bundler {
 
   async transformFile(
     filePath: string,
-    workerOptions: WorkerOptions,
+    transformOptions: TransformOptions,
   ): Promise<TransformResult<>> {
     // We need to be sure that the DependencyGraph has been initialized.
     // TODO: Remove this ugly hack!
     await this._depGraphPromise;
 
-    return this._transformer.transformFile(filePath, workerOptions);
+    return this._transformer.transformFile(filePath, transformOptions);
   }
 }
 

@@ -92,7 +92,7 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
   projectRoot: projectRoot || path.resolve(__dirname, '../../..'),
   watchFolders: [],
   watch: false,
-  transformerPath: require.resolve('metro/src/JSTransformer/workerWrapper.js'),
+  transformerPath: require.resolve('metro/src/JSTransformer/worker.js'),
   maxWorkers: getMaxWorkers(),
   resetCache: false,
   reporter: new TerminalReporter(new Terminal(process.stdout)),

@@ -18,17 +18,9 @@ describe('Worker Farm', function() {
   let WorkerFarm;
   const fileName = 'arbitrary/file.js';
   const rootFolder = '/root';
-  const config = getDefaultConfig();
+  let config;
 
-  const opts = {
-    maxWorkers: 4,
-    reporter: {},
-    transformer: {
-      workerPath: null,
-    },
-  };
-
-  beforeEach(function() {
+  beforeEach(async function() {
     jest
       .resetModules()
       .mock('fs', () => ({writeFileSync: jest.fn()}))
@@ -37,6 +29,8 @@ describe('Worker Farm', function() {
 
     const fs = require('fs');
     const jestWorker = require('jest-worker');
+    config = await getDefaultConfig();
+
     fs.writeFileSync.mockClear();
     jestWorker.default.mockClear();
     jestWorker.default.mockImplementation(function(workerPath, opts) {
@@ -67,28 +61,33 @@ describe('Worker Farm', function() {
 
   it('passes transform data to the worker farm when transforming', async () => {
     const transformOptions = {arbitrary: 'options'};
+    const transformerConfig = {
+      transformerPath: config.transformerPath,
+      transformerConfig: config.transformer,
+    };
 
-    await new WorkerFarm(opts).transform(
+    await new WorkerFarm(config, transformerConfig).transform(
       fileName,
-      rootFolder,
-      config.transformerPath,
       transformOptions,
     );
 
     expect(api.transform).toBeCalledWith(
       fileName,
-      rootFolder,
-      config.transformerPath,
       transformOptions,
+      config.projectRoot,
+      transformerConfig,
     );
   });
 
   it('should add file info to parse errors', () => {
-    const workerFarm = new WorkerFarm(opts);
+    const workerFarm = new WorkerFarm(config, {
+      transformerPath: config.transformerPath,
+      transformerConfig: config.transformer,
+    });
     const message = 'message';
     const snippet = 'snippet';
 
-    api.transform.mockImplementation((filename, transformPath, opts) => {
+    api.transform.mockImplementation((filename, opts) => {
       const babelError = new SyntaxError(message);
 
       babelError.type = 'SyntaxError';

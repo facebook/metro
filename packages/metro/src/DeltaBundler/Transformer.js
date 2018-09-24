@@ -14,13 +14,13 @@ const WorkerFarm = require('./WorkerFarm');
 
 const assert = require('assert');
 const fs = require('fs');
-const getTransformCacheKeyFn = require('./Transformer/getTransformCacheKeyFn');
+const getTransformCacheKey = require('./Transformer/getTransformCacheKey');
 const path = require('path');
 
 const {Cache, stableHash} = require('metro-cache');
 
 import type {TransformResult} from '../DeltaBundler';
-import type {WorkerOptions} from './Worker';
+import type {TransformOptions, TransformerConfig} from './Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 class Transformer {
@@ -36,43 +36,45 @@ class Transformer {
     this._config.watchFolders.forEach(verifyRootExists);
     this._cache = new Cache(config.cacheStores);
     this._getSha1 = getSha1Fn;
-    this._workerFarm = new WorkerFarm(config);
 
-    const getTransformCacheKey = getTransformCacheKeyFn({
-      babelTransformerPath: this._config.transformer.babelTransformerPath,
+    const transformerConfig: TransformerConfig = {
+      transformerPath: this._config.transformerPath,
+      transformerConfig: {
+        assetPlugins: this._config.transformer.assetPlugins,
+        assetRegistryPath: this._config.transformer.assetRegistryPath,
+        asyncRequireModulePath: this._config.transformer.asyncRequireModulePath,
+        babelTransformerPath: this._config.transformer.babelTransformerPath,
+        dynamicDepsInPackages: this._config.transformer.dynamicDepsInPackages,
+        minifierPath: this._config.transformer.minifierPath,
+        optimizationSizeLimit: this._config.transformer.optimizationSizeLimit,
+      },
+    };
+
+    this._workerFarm = new WorkerFarm(config, transformerConfig);
+
+    const globalCacheKey = getTransformCacheKey({
       cacheVersion: this._config.cacheVersion,
       projectRoot: this._config.projectRoot,
-      transformerPath: this._config.transformerPath,
+      transformerConfig,
     });
 
-    this._baseHash = stableHash([getTransformCacheKey()]).toString('binary');
+    this._baseHash = stableHash([globalCacheKey]).toString('binary');
   }
 
   async transformFile(
     filePath: string,
-    transformerOptions: WorkerOptions,
+    transformerOptions: TransformOptions,
   ): Promise<TransformResult<>> {
     const cache = this._cache;
 
     const {
-      assetPlugins,
-      assetRegistryPath,
-      asyncRequireModulePath,
-      // Already in the global cache key.
-      babelTransformerPath: _babelTransformerPath,
-      dynamicDepsInPackages,
-      minifierPath,
-      optimizationSizeLimit,
-      transformOptions: {
-        customTransformOptions,
-        enableBabelRCLookup,
-        dev,
-        hot,
-        inlineRequires,
-        minify,
-        platform,
-        projectRoot: _projectRoot, // Blacklisted property.
-      },
+      customTransformOptions,
+      dev,
+      experimentalImportSupport,
+      hot,
+      inlineRequires,
+      minify,
+      platform,
       type,
       ...extra
     } = transformerOptions;
@@ -94,20 +96,12 @@ class Transformer {
       // Path.
       localPath,
 
-      // We cannot include "transformCodeOptions" because of "projectRoot".
-      assetPlugins,
-      assetRegistryPath,
-      asyncRequireModulePath,
-      dynamicDepsInPackages,
-      minifierPath,
-
       customTransformOptions,
-      enableBabelRCLookup,
       dev,
+      experimentalImportSupport,
       hot,
       inlineRequires,
       minify,
-      optimizationSizeLimit,
       platform,
       type,
     ]);
@@ -120,12 +114,7 @@ class Transformer {
     // the transformer to computed the corresponding result.
     const data = result
       ? {result, sha1}
-      : await this._workerFarm.transform(
-          localPath,
-          _projectRoot,
-          this._config.transformerPath,
-          transformerOptions,
-        );
+      : await this._workerFarm.transform(localPath, transformerOptions);
 
     // Only re-compute the full key if the SHA-1 changed. This is because
     // references are used by the cache implementation in a weak map to keep

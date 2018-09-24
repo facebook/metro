@@ -14,17 +14,32 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-import type {WorkerOptions as JsWorkerOptions} from '../JSTransformer/workerWrapper';
+import type {
+  JsTransformOptions,
+  JsTransformerConfig,
+} from '../JSTransformer/worker';
 import type {MixedOutput, TransformResultDependency} from './types.flow';
 import type {LogEntry} from 'metro-core/src/Logger';
 
-export type WorkerOptions = JsWorkerOptions;
-export type WorkerFn = typeof transform;
+export type {
+  JsTransformOptions as TransformOptions,
+} from '../JSTransformer/worker';
+
+export type Worker = {
+  transform: typeof transform,
+  setup: typeof setup,
+};
+
 export type TransformerFn<T: MixedOutput> = (
   string,
   Buffer,
-  WorkerOptions,
+  JsTransformOptions,
 ) => Promise<Result<T>>;
+
+export type TransformerConfig = {
+  transformerPath: string,
+  transformerConfig: JsTransformerConfig,
+};
 
 type Result<T: MixedOutput> = {|
   output: $ReadOnlyArray<T>,
@@ -38,12 +53,31 @@ type Data<T: MixedOutput> = {
   transformFileEndLogEntry: LogEntry,
 };
 
+let transformer;
+let projectRoot;
+
+function setup(
+  projectRootArg: string,
+  {transformerPath, transformerConfig}: TransformerConfig,
+) {
+  // eslint-disable-next-line lint/flow-no-fixme
+  // $FlowFixMe Transforming fixed types to generic types during refactor.
+  const Transformer = require(transformerPath);
+
+  projectRoot = projectRootArg;
+  transformer = new Transformer(projectRoot, transformerConfig);
+}
+
 async function transform<T: MixedOutput>(
   filename: string,
-  projectRoot: string,
-  transformerPath: string,
-  transformerOptions: WorkerOptions,
+  transformOptions: JsTransformOptions,
+  projectRootArg: string,
+  transformerConfig: TransformerConfig,
 ): Promise<Data<T>> {
+  if (!projectRoot) {
+    setup(projectRootArg, transformerConfig);
+  }
+
   const transformFileStartLogEntry = {
     action_name: 'Transforming file',
     action_phase: 'start',
@@ -58,13 +92,7 @@ async function transform<T: MixedOutput>(
     .update(data)
     .digest('hex');
 
-  // eslint-disable-next-line lint/flow-no-fixme
-  // $FlowFixMe Transforming fixed types to generic types during refactor.
-  const {transform} = (require(transformerPath): {
-    transform: TransformerFn<T>,
-  });
-
-  const result = await transform(filename, data, transformerOptions);
+  const result = await transformer.transform(filename, data, transformOptions);
 
   const transformFileEndLogEntry = getEndLogEntry(
     transformFileStartLogEntry,
@@ -93,5 +121,6 @@ function getEndLogEntry(startLogEntry: LogEntry, filename: string): LogEntry {
 }
 
 module.exports = {
+  setup,
   transform,
 };

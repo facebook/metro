@@ -13,15 +13,13 @@
 const chalk = require('chalk');
 
 const {Logger} = require('metro-core');
-const Worker = require('jest-worker').default;
+const JestWorker = require('jest-worker').default;
 
 import type {TransformResult} from '../DeltaBundler';
-import type {WorkerFn, WorkerOptions} from './Worker';
+import type {TransformOptions, TransformerConfig, Worker} from './Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
-type WorkerInterface = Worker & {
-  transform: WorkerFn,
-};
+type WorkerInterface = JestWorker & Worker;
 
 type TransformerResult = {
   result: TransformResult<>,
@@ -29,25 +27,29 @@ type TransformerResult = {
 };
 
 class WorkerFarm {
+  _config: ConfigT;
+  _transformerConfig: TransformerConfig;
   _worker: WorkerInterface;
 
-  constructor(options: ConfigT) {
-    if (options.maxWorkers > 1) {
+  constructor(config: ConfigT, transformerConfig: TransformerConfig) {
+    this._config = config;
+    this._transformerConfig = transformerConfig;
+
+    if (this._config.maxWorkers > 1) {
       this._worker = this._makeFarm(
-        options.transformer.workerPath,
-        this._computeWorkerKey,
+        this._config.transformer.workerPath,
         ['transform'],
-        options.maxWorkers,
+        this._config.maxWorkers,
       );
 
       this._worker.getStdout().on('data', chunk => {
-        options.reporter.update({
+        this._config.reporter.update({
           type: 'worker_stdout_chunk',
           chunk: chunk.toString('utf8'),
         });
       });
       this._worker.getStderr().on('data', chunk => {
-        options.reporter.update({
+        this._config.reporter.update({
           type: 'worker_stderr_chunk',
           chunk: chunk.toString('utf8'),
         });
@@ -55,7 +57,7 @@ class WorkerFarm {
     } else {
       // eslint-disable-next-line lint/flow-no-fixme
       // $FlowFixMe: Flow doesn't support dynamic requires
-      this._worker = require(options.transformer.workerPath);
+      this._worker = require(this._config.transformer.workerPath);
     }
   }
 
@@ -67,16 +69,14 @@ class WorkerFarm {
 
   async transform(
     filename: string,
-    projectRoot: string,
-    transformerPath: string,
-    options: WorkerOptions,
+    options: TransformOptions,
   ): Promise<TransformerResult> {
     try {
       const data = await this._worker.transform(
         filename,
-        projectRoot,
-        transformerPath,
         options,
+        this._config.projectRoot,
+        this._transformerConfig,
       );
 
       Logger.log(data.transformFileStartLogEntry);
@@ -95,7 +95,11 @@ class WorkerFarm {
     }
   }
 
-  _makeFarm(workerPath, computeWorkerKey, exposedMethods, numWorkers) {
+  _makeFarm(
+    workerPath: string,
+    exposedMethods: $ReadOnlyArray<string>,
+    numWorkers: number,
+  ) {
     const execArgv = process.execArgv.slice();
 
     // We swallow the first parameter if it's not an option (some things such as
@@ -110,8 +114,8 @@ class WorkerFarm {
       FORCE_COLOR: chalk.supportsColor ? 1 : 0,
     };
 
-    return new Worker(workerPath, {
-      computeWorkerKey,
+    return new JestWorker(workerPath, {
+      computeWorkerKey: this._computeWorkerKey,
       exposedMethods,
       forkOptions: {env, execArgv},
       numWorkers,
