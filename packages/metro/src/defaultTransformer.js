@@ -11,17 +11,12 @@
 
 const {transformSync} = require('@babel/core');
 
-import type {TransformOptions} from './JSTransformer/worker';
-import type {Plugins as BabelPlugins} from 'babel-core';
+import type {
+  BabelTransformer,
+  BabelTransformerArgs,
+} from './JSTransformer/worker';
 
-type Params = {
-  filename: string,
-  options: TransformOptions,
-  plugins?: BabelPlugins,
-  src: string,
-};
-
-module.exports.transform = ({filename, options, plugins, src}: Params) => {
+function transform({filename, options, plugins, src}: BabelTransformerArgs) {
   const OLD_BABEL_ENV = process.env.BABEL_ENV;
   process.env.BABEL_ENV = options.dev ? 'development' : 'production';
 
@@ -39,4 +34,8 @@ module.exports.transform = ({filename, options, plugins, src}: Params) => {
   } finally {
     process.env.BABEL_ENV = OLD_BABEL_ENV;
   }
-};
+}
+
+module.exports = ({
+  transform,
+}: BabelTransformer);

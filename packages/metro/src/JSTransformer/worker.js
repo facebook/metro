@@ -38,23 +38,33 @@ import type {Ast} from '@babel/core';
 import type {Plugins as BabelPlugins} from 'babel-core';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
-export type TransformArgs = {|
+type TransformResults = {
+  ast: Ast,
+};
+
+type BabelTransformerOptions = {
+  +customTransformOptions?: CustomTransformOptions,
+  +dev: boolean,
+  +enableBabelRCLookup?: boolean,
+  +experimentalImportSupport?: boolean,
+  +hot: boolean,
+  +inlineRequires: boolean,
+  +minify: boolean,
+  +platform: ?string,
+  +projectRoot: string,
+};
+
+export type BabelTransformerArgs = {|
   filename: string,
-  options: TransformOptions,
+  options: BabelTransformerOptions,
   plugins?: BabelPlugins,
   src: string,
 |};
 
-export type TransformResults = {
-  ast: Ast,
-};
-
-export type Transform = TransformArgs => TransformResults;
-
-export type Transformer = {
-  transform: Transform,
-  getCacheKey: () => string,
-};
+export type BabelTransformer = {|
+  transform: BabelTransformerArgs => TransformResults,
+  getCacheKey?: () => string,
+|};
 
 export type MinifyOptions = {
   filename?: string,
@@ -77,7 +87,7 @@ export type WorkerOptions = {|
 
 export type CustomTransformOptions = {[string]: mixed, __proto__: null};
 
-export type TransformOptions = {
+export type TransformOptions = {|
   +customTransformOptions?: CustomTransformOptions,
   +enableBabelRCLookup?: boolean,
   +experimentalImportSupport?: boolean,
@@ -87,7 +97,7 @@ export type TransformOptions = {
   +minify: boolean,
   +platform: ?string,
   +projectRoot: string,
-};
+|};
 
 export type JsOutput = {|
   +data: {|

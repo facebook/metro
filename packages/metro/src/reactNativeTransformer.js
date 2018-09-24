@@ -19,8 +19,11 @@ const path = require('path');
 
 const {transformSync} = require('@babel/core');
 
-import type {Transformer, TransformOptions} from './JSTransformer/worker';
-import type {Plugins as BabelPlugins} from 'babel-core';
+import type {
+  BabelTransformer,
+  BabelTransformerArgs,
+} from './JSTransformer/worker';
+import type {Plugins as BabelPlugins} from '@babel/core';
 
 const cacheKeyParts = [
   fs.readFileSync(__filename),
@@ -135,14 +138,7 @@ function buildBabelConfig(filename, options, plugins?: BabelPlugins = []) {
   return Object.assign({}, babelRC, config);
 }
 
-type Params = {
-  filename: string,
-  options: TransformOptions,
-  plugins?: BabelPlugins,
-  src: string,
-};
-
-function transform({filename, options, src, plugins}: Params) {
+function transform({filename, options, src, plugins}: BabelTransformerArgs) {
   const OLD_BABEL_ENV = process.env.BABEL_ENV;
   process.env.BABEL_ENV = options.dev ? 'development' : 'production';
 
@@ -170,4 +166,4 @@ function getCacheKey() {
 module.exports = ({
   transform,
   getCacheKey,
-}: Transformer);
+}: BabelTransformer);

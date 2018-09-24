@@ -14,17 +14,11 @@ const path = require('path');
 const {getAssetData} = require('./Assets');
 const {generateAssetCodeFileAst} = require('./Bundler/util');
 
-import type {TransformOptions} from './JSTransformer/worker';
+import type {BabelTransformerArgs} from './JSTransformer/worker';
 import type {Ast} from '@babel/core';
 
-type Params = {
-  filename: string,
-  options: TransformOptions,
-  src: string,
-};
-
 async function transform(
-  {filename, options, src}: Params,
+  {filename, options, src}: BabelTransformerArgs,
   assetRegistryPath: string,
   assetDataPlugins: $ReadOnlyArray<string>,
 ): Promise<{ast: Ast}> {
