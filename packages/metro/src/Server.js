@@ -250,7 +250,7 @@ class Server {
       processModuleFilter: this._config.serializer.processModuleFilter,
       assetPlugins: this._config.transformer.assetPlugins,
       platform: options.platform,
-      watchFolders: this._config.watchFolders,
+      projectRoot: this._config.projectRoot,
     });
   }
 
@@ -500,7 +500,7 @@ class Server {
     try {
       const data = await getAsset(
         assetPath[1],
-        this._config.watchFolders,
+        this._config.projectRoot,
         /* $FlowFixMe: query may be empty for invalid URLs */
         urlObj.query.platform,
       );

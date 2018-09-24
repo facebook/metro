@@ -675,7 +675,7 @@ describe('processRequest', () => {
 
       server.processRequest(req, res);
       res.end.mockImplementation(value => {
-        expect(getAsset).toBeCalledWith('imgs/a.png', ['/root'], 'ios');
+        expect(getAsset).toBeCalledWith('imgs/a.png', '/root', 'ios');
         expect(value).toBe('i am image');
         done();
       });
@@ -693,7 +693,7 @@ describe('processRequest', () => {
 
       server.processRequest(req, res);
       res.end.mockImplementation(value => {
-        expect(getAsset).toBeCalledWith('imgs/a.png', ['/root'], 'ios');
+        expect(getAsset).toBeCalledWith('imgs/a.png', '/root', 'ios');
         expect(value).toBe(mockData.slice(0, 4));
         done();
       });
@@ -711,7 +711,7 @@ describe('processRequest', () => {
       res.end.mockImplementation(value => {
         expect(getAsset).toBeCalledWith(
           'imgs/\u{4E3B}\u{9875}/logo.png',
-          ['/root'],
+          '/root',
           undefined,
         );
         expect(value).toBe('i am image');

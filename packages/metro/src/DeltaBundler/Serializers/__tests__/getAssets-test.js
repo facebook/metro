@@ -36,6 +36,7 @@ it('should return the bundle assets', async () => {
 
   expect(
     await getAssets(graph, {
+      projectRoot: '/tmp',
       watchFolders: ['/tmp'],
       processModuleFilter: () => true,
     }),

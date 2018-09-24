@@ -20,7 +20,6 @@ const ResolutionRequest = require('./DependencyGraph/ResolutionRequest');
 
 const fs = require('fs');
 const path = require('path');
-const toLocalPath = require('../node-haste/lib/toLocalPath');
 
 const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
 const {EventEmitter} = require('events');
@@ -238,7 +237,7 @@ class DependencyGraph extends EventEmitter {
       return hasteName;
     }
 
-    return toLocalPath(this._opts.watchFolders, filePath);
+    return path.relative(this._opts.projectRoot, filePath);
   }
 }
 
