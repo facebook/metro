@@ -31,7 +31,19 @@ const HEADER_PROD = '__d(function (g, r, i, a, m, e, d) {';
 
 let fs;
 let mkdirp;
-let transform;
+let Transformer;
+let transformer;
+
+const baseOptions = {
+  assetExts: [],
+  assetPlugins: [],
+  assetRegistryPath: '',
+  asyncRequireModulePath: 'asyncRequire',
+  babelTransformerPath,
+  dynamicDepsInPackages: 'reject',
+  minifierPath: 'minifyModulePath',
+  optimizationSizeLimit: 100000,
+};
 
 describe('code transformation worker:', () => {
   beforeEach(() => {
@@ -41,7 +53,8 @@ describe('code transformation worker:', () => {
 
     fs = require('fs');
     mkdirp = require('mkdirp');
-    ({transform: transform} = require('../../worker'));
+    Transformer = require('../../worker');
+    transformer = new Transformer('/root', baseOptions);
     fs.reset();
 
     mkdirp.sync('/root/local');
@@ -50,20 +63,12 @@ describe('code transformation worker:', () => {
   });
 
   it('transforms a simple script', async () => {
-    const result = await transform(
+    const result = await transformer.transform(
       'local/file.js',
       'someReallyArbitrary(code)',
       {
-        assetExts: [],
-        assetPlugins: [],
-        assetRegistryPath: '',
-        asyncRequireModulePath: 'asyncRequire',
+        dev: true,
         type: 'script',
-        minifierPath: 'minifyModulePath',
-        babelTransformerPath,
-        transformOptions: {dev: true},
-        dynamicDepsInPackages: 'reject',
-        optimizationSizeLimit: 100000,
       },
     );
 
@@ -80,18 +85,14 @@ describe('code transformation worker:', () => {
   });
 
   it('transforms a simple module', async () => {
-    const result = await transform('local/file.js', 'arbitrary(code)', {
-      assetExts: [],
-      assetPlugins: [],
-      assetRegistryPath: '',
-      asyncRequireModulePath: 'asyncRequire',
-      type: 'module',
-      minifierPath: 'minifyModulePath',
-      babelTransformerPath,
-      transformOptions: {dev: true},
-      dynamicDepsInPackages: 'reject',
-      optimizationSizeLimit: 100000,
-    });
+    const result = await transformer.transform(
+      'local/file.js',
+      'arbitrary(code)',
+      {
+        dev: true,
+        type: 'module',
+      },
+    );
 
     expect(result.output[0].type).toBe('js/module');
     expect(result.output[0].data.code).toBe(
@@ -110,17 +111,9 @@ describe('code transformation worker:', () => {
       'import c from "./c";',
     ].join('\n');
 
-    const result = await transform('local/file.js', contents, {
-      assetExts: [],
-      assetPlugins: [],
-      assetRegistryPath: '',
-      asyncRequireModulePath: 'asyncRequire',
-      isScript: false,
-      minifierPath: 'minifyModulePath',
-      babelTransformerPath,
-      transformOptions: {dev: true},
-      dynamicDepsInPackages: 'reject',
-      optimizationSizeLimit: 100000,
+    const result = await transformer.transform('local/file.js', contents, {
+      dev: true,
+      type: 'module',
     });
 
     expect(result.output[0].type).toBe('js/module');
@@ -154,19 +147,12 @@ describe('code transformation worker:', () => {
   });
 
   it('transforms an es module with regenerator', async () => {
-    const result = await transform(
+    const result = await transformer.transform(
       'local/file.js',
       'export async function test() {}',
       {
-        assetExts: [],
-        assetPlugins: [],
-        assetRegistryPath: '',
-        asyncRequireModulePath: 'asyncRequire',
-        isScript: false,
-        minifierPath: 'minifyModulePath',
-        babelTransformerPath,
-        transformOptions: {dev: true},
-        dynamicDepsInPackages: 'reject',
+        dev: true,
+        type: 'module',
       },
     );
 
@@ -188,17 +174,10 @@ describe('code transformation worker:', () => {
   it('transforms import/export syntax when experimental flag is on', async () => {
     const contents = ['import c from "./c";'].join('\n');
 
-    const result = await transform('local/file.js', contents, {
-      assetExts: [],
-      assetPlugins: [],
-      assetRegistryPath: '',
-      asyncRequireModulePath: 'asyncRequire',
-      isScript: false,
-      minifierPath: 'minifyModulePath',
-      babelTransformerPath,
-      transformOptions: {dev: true, experimentalImportSupport: true},
-      dynamicDepsInPackages: 'reject',
-      optimizationSizeLimit: 100000,
+    const result = await transformer.transform('local/file.js', contents, {
+      dev: true,
+      experimentalImportSupport: true,
+      type: 'module',
     });
 
     expect(result.output[0].type).toBe('js/module');
@@ -230,17 +209,9 @@ describe('code transformation worker:', () => {
     ].join('\n');
 
     try {
-      await transform('local/file.js', contents, {
-        assetExts: [],
-        assetPlugins: [],
-        assetRegistryPath: '',
-        asyncRequireModulePath: 'asyncRequire',
-        isScript: false,
-        minifierPath: 'minifyModulePath',
-        babelTransformerPath,
-        transformOptions: {dev: true},
-        dynamicDepsInPackages: 'reject',
-        optimizationSizeLimit: 100000,
+      await transformer.transform('local/file.js', contents, {
+        dev: true,
+        type: 'module',
       });
       throw new Error('should not reach this');
     } catch (error) {
@@ -249,18 +220,20 @@ describe('code transformation worker:', () => {
   });
 
   it('supports dynamic dependencies from within `node_modules`', async () => {
+    transformer = new Transformer('/root', {
+      ...baseOptions,
+      dynamicDepsInPackages: 'throwAtRuntime',
+    });
+
     expect(
-      (await transform('node_modules/foo/bar.js', 'require(foo.bar);', {
-        assetExts: [],
-        assetPlugins: [],
-        assetRegistryPath: '',
-        asyncRequireModulePath: 'asyncRequire',
-        isScript: false,
-        minifierPath: 'minifyModulePath',
-        babelTransformerPath,
-        transformOptions: {dev: true},
-        dynamicDepsInPackages: 'throwAtRuntime',
-      })).output[0].data.code,
+      (await transformer.transform(
+        'node_modules/foo/bar.js',
+        'require(foo.bar);',
+        {
+          dev: true,
+          type: 'module',
+        },
+      )).output[0].data.code,
     ).toBe(
       [
         HEADER_DEV,
@@ -274,34 +247,20 @@ describe('code transformation worker:', () => {
 
   it('minifies the code correctly', async () => {
     expect(
-      (await transform('local/file.js', 'arbitrary(code);', {
-        assetExts: [],
-        assetPlugins: [],
-        assetRegistryPath: '',
-        asyncRequireModulePath: 'asyncRequire',
-        isScript: false,
-        minifierPath: 'minifyModulePath',
-        babelTransformerPath,
-        transformOptions: {dev: true, minify: true},
-        dynamicDepsInPackages: 'throwAtRuntime',
-        optimizationSizeLimit: 100000,
+      (await transformer.transform('local/file.js', 'arbitrary(code);', {
+        dev: true,
+        minify: true,
+        type: 'module',
       })).output[0].data.code,
     ).toBe([HEADER_PROD, '  minified(code);', '});'].join('\n'));
   });
 
   it('minifies a JSON file', async () => {
     expect(
-      (await transform('local/file.json', 'arbitrary(code);', {
-        assetExts: [],
-        assetPlugins: [],
-        assetRegistryPath: '',
-        asyncRequireModulePath: 'asyncRequire',
-        isScript: false,
-        minifierPath: 'minifyModulePath',
-        babelTransformerPath,
-        transformOptions: {dev: true, minify: true},
-        dynamicDepsInPackages: 'throwAtRuntime',
-        optimizationsizelimit: 100000,
+      (await transformer.transform('local/file.json', 'arbitrary(code);', {
+        dev: true,
+        minify: true,
+        type: 'module',
       })).output[0].data.code,
     ).toBe(
       [

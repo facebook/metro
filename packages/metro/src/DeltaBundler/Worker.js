@@ -14,7 +14,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-import type {WorkerOptions as JsWorkerOptions} from '../JSTransformer/worker';
+import type {WorkerOptions as JsWorkerOptions} from '../JSTransformer/workerWrapper';
 import type {MixedOutput, TransformResultDependency} from './types.flow';
 import type {LogEntry} from 'metro-core/src/Logger';
 

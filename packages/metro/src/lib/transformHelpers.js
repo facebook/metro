@@ -15,11 +15,8 @@ const path = require('path');
 import type Bundler from '../Bundler';
 import type {WorkerOptions} from '../DeltaBundler/Worker';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
-import type {
-  CustomTransformOptions,
-  TransformOptions,
-  Type,
-} from '../JSTransformer/worker';
+import type {CustomTransformOptions, Type} from '../JSTransformer/worker';
+import type {TransformOptions} from '../JSTransformer/workerWrapper';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 type InlineRequiresRaw = {+blacklist: {[string]: true}} | boolean;
