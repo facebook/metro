@@ -27,35 +27,16 @@ const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
 
-import type {Reporter} from '../lib/reporting';
 import type {ModuleMap} from './DependencyGraph/ModuleResolution';
 import type Package from './Package';
 import type {HasteFS} from './types';
-import type {CustomResolver} from 'metro-resolver';
-
-type Options = {|
-  +assetExts: Array<string>,
-  +blacklistRE?: RegExp,
-  +extraNodeModules: ?{},
-  +hasteImplModulePath?: string,
-  +mainFields: $ReadOnlyArray<string>,
-  +maxWorkers: number,
-  +platforms: Set<string>,
-  +projectRoot: string,
-  +providesModuleNodeModules: Array<string>,
-  +reporter: Reporter,
-  +resetCache: boolean,
-  +resolveRequest: ?CustomResolver,
-  +sourceExts: Array<string>,
-  +useWatchman: boolean,
-  +watch: boolean,
-  +watchFolders: $ReadOnlyArray<string>,
-|};
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 const JEST_HASTE_MAP_CACHE_BREAKER = 4;
 
 class DependencyGraph extends EventEmitter {
   _assetResolutionCache: AssetResolutionCache;
+  _config: ConfigT;
   _filesByDirNameIndex: FilesByDirNameIndex;
   _haste: JestHasteMap;
   _hasteFS: HasteFS;
@@ -63,74 +44,79 @@ class DependencyGraph extends EventEmitter {
   _moduleCache: ModuleCache;
   _moduleMap: ModuleMap;
   _moduleResolver: ModuleResolver<Module, Package>;
-  _opts: Options;
 
-  constructor(config: {|
-    +opts: Options,
+  constructor({
+    config,
+    haste,
+    initialHasteFS,
+    initialModuleMap,
+  }: {|
+    +config: ConfigT,
     +haste: JestHasteMap,
     +initialHasteFS: HasteFS,
     +initialModuleMap: ModuleMap,
   |}) {
     super();
-    this._opts = config.opts;
+    this._config = config;
     this._filesByDirNameIndex = new FilesByDirNameIndex(
-      config.initialHasteFS.getAllFiles(),
+      initialHasteFS.getAllFiles(),
     );
     this._assetResolutionCache = new AssetResolutionCache({
-      assetExtensions: new Set(config.opts.assetExts),
+      assetExtensions: new Set(config.resolver.assetExts),
       getDirFiles: dirPath => this._filesByDirNameIndex.getAllFiles(dirPath),
-      platforms: config.opts.platforms,
+      platforms: new Set(config.resolver.platforms),
     });
-    this._haste = config.haste;
-    this._hasteFS = config.initialHasteFS;
-    this._moduleMap = config.initialModuleMap;
-    this._helpers = new DependencyGraphHelpers(this._opts);
+    this._haste = haste;
+    this._hasteFS = initialHasteFS;
+    this._moduleMap = initialModuleMap;
+    this._helpers = new DependencyGraphHelpers({
+      assetExts: config.resolver.assetExts,
+      providesModuleNodeModules: config.resolver.providesModuleNodeModules,
+    });
     this._haste.on('change', this._onHasteChange.bind(this));
     this._moduleCache = this._createModuleCache();
     this._createModuleResolver();
   }
 
-  static _createHaste(opts: Options): JestHasteMap {
+  static _createHaste(config: ConfigT): JestHasteMap {
     return new JestHasteMap({
       computeDependencies: false,
       computeSha1: true,
-      extensions: opts.sourceExts.concat(opts.assetExts),
-      forceNodeFilesystemAPI: !opts.useWatchman,
-      hasteImplModulePath: opts.hasteImplModulePath,
-      ignorePattern: opts.blacklistRE || / ^/,
-      maxWorkers: opts.maxWorkers,
+      extensions: config.resolver.sourceExts.concat(config.resolver.assetExts),
+      forceNodeFilesystemAPI: !config.resolver.useWatchman,
+      hasteImplModulePath: config.resolver.hasteImplModulePath,
+      ignorePattern: config.resolver.blacklistRE || / ^/,
+      maxWorkers: config.maxWorkers,
       mocksPattern: '',
       name: 'metro-' + JEST_HASTE_MAP_CACHE_BREAKER,
-      platforms: Array.from(opts.platforms),
-      providesModuleNodeModules: opts.providesModuleNodeModules,
+      platforms: config.resolver.platforms,
+      providesModuleNodeModules: config.resolver.providesModuleNodeModules,
       retainAllFiles: true,
-      resetCache: opts.resetCache,
-      roots: opts.watchFolders,
+      resetCache: config.resetCache,
+      roots: config.watchFolders,
       throwOnModuleCollision: true,
-      useWatchman: opts.useWatchman,
-      watch: opts.watch,
+      useWatchman: config.resolver.useWatchman,
+      watch: config.watch,
     });
   }
 
-  static _getJestHasteMapOptions(opts: Options) {}
-
-  static async load(opts: Options): Promise<DependencyGraph> {
+  static async load(config: ConfigT): Promise<DependencyGraph> {
     const initializingMetroLogEntry = log(
       createActionStartEntry('Initializing Metro'),
     );
 
-    opts.reporter.update({type: 'dep_graph_loading'});
-    const haste = DependencyGraph._createHaste(opts);
+    config.reporter.update({type: 'dep_graph_loading'});
+    const haste = DependencyGraph._createHaste(config);
     const {hasteFS, moduleMap} = await haste.build();
 
     log(createActionEndEntry(initializingMetroLogEntry));
-    opts.reporter.update({type: 'dep_graph_loaded'});
+    config.reporter.update({type: 'dep_graph_loaded'});
 
     return new DependencyGraph({
       haste,
       initialHasteFS: hasteFS,
       initialModuleMap: moduleMap,
-      opts,
+      config,
     });
   }
 
@@ -169,21 +155,20 @@ class DependencyGraph extends EventEmitter {
         return false;
       },
       doesFileExist: this._doesFileExist,
-      extraNodeModules: this._opts.extraNodeModules,
+      extraNodeModules: this._config.resolver.extraNodeModules,
       isAssetFile: filePath => this._helpers.isAssetFile(filePath),
-      mainFields: this._opts.mainFields,
+      mainFields: this._config.resolver.resolverMainFields,
       moduleCache: this._moduleCache,
       moduleMap: this._moduleMap,
       preferNativePlatform: true,
       resolveAsset: (dirPath, assetName, platform) =>
         this._assetResolutionCache.resolve(dirPath, assetName, platform),
-      resolveRequest: this._opts.resolveRequest,
-      sourceExts: this._opts.sourceExts,
+      resolveRequest: this._config.resolver.resolveRequest,
+      sourceExts: this._config.resolver.sourceExts,
     });
   }
 
   _createModuleCache() {
-    const {_opts} = this;
     return new ModuleCache({
       getClosestPackage: this._getClosestPackage.bind(this),
     });
@@ -237,7 +222,7 @@ class DependencyGraph extends EventEmitter {
       return hasteName;
     }
 
-    return path.relative(this._opts.projectRoot, filePath);
+    return path.relative(this._config.projectRoot, filePath);
   }
 }
 

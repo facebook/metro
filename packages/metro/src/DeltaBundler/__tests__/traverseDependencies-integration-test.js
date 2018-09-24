@@ -120,18 +120,24 @@ describe('traverseDependencies', function() {
     } = require('../../node-haste/DependencyGraph/ModuleResolution'));
 
     defaults = {
-      assetExts: ['png', 'jpg'],
-      // This pattern is not expected to match anything.
-      blacklistRE: /.^/,
+      resolver: {
+        assetExts: ['png', 'jpg'],
+        // This pattern is not expected to match anything.
+        blacklistRE: /.^/,
+        providesModuleNodeModules: [
+          'haste-fbjs',
+          'react-haste',
+          'react-native',
+        ],
+        platforms: ['ios', 'android'],
+        resolverMainFields: ['react-native', 'browser', 'main'],
+        sourceExts: ['js', 'json'],
+        useWatchman: false,
+      },
       cacheStores: [],
-      providesModuleNodeModules: ['haste-fbjs', 'react-haste', 'react-native'],
-      platforms: new Set(['ios', 'android']),
-      mainFields: ['react-native', 'browser', 'main'],
       maxWorkers: 1,
       resetCache: true,
-      getTransformCacheKey: () => 'abcdef',
       reporter: require('../../lib/reporting').nullReporter,
-      sourceExts: ['js', 'json'],
       watch: true,
     };
 
@@ -943,7 +949,7 @@ describe('traverseDependencies', function() {
 
           const opts = {
             ...defaults,
-            assetExts: ['png', 'jpg'],
+            resolver: {...defaults.resolver, assetExts: ['png', 'jpg']},
             watchFolders: [root],
           };
           await processDgraph(opts, async dgraph => {
@@ -987,7 +993,7 @@ describe('traverseDependencies', function() {
 
         const opts = {
           ...defaults,
-          assetExts: ['png', 'jpg'],
+          resolver: {...defaults.resolver, assetExts: ['png', 'jpg']},
           watchFolders: [root],
         };
         await processDgraph(opts, async dgraph => {
@@ -1034,7 +1040,7 @@ describe('traverseDependencies', function() {
 
           const opts = {
             ...defaults,
-            assetExts: ['png', 'jpg'],
+            resolver: {...defaults.resolver, assetExts: ['png', 'jpg']},
             watchFolders: [root],
           };
           await processDgraph(opts, async dgraph => {
@@ -1285,7 +1291,11 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, watchFolders: [root], resolveRequest};
+          const opts = {
+            ...defaults,
+            watchFolders: [root],
+            resolver: {...defaults.resolver, resolveRequest},
+          };
           await processDgraph(opts, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
@@ -1325,7 +1335,11 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, watchFolders: [root], resolveRequest};
+          const opts = {
+            ...defaults,
+            watchFolders: [root],
+            resolver: {...defaults.resolver, resolveRequest},
+          };
           await processDgraph(opts, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
@@ -1536,7 +1550,10 @@ describe('traverseDependencies', function() {
 
       const opts = {
         ...defaults,
-        mainFields: ['custom-field', 'browser'],
+        resolver: {
+          ...defaults.resolver,
+          resolverMainFields: ['custom-field', 'browser'],
+        },
         watchFolders: [root],
       };
       await processDgraph(opts, async dgraph => {
@@ -1679,8 +1696,11 @@ describe('traverseDependencies', function() {
       const opts = {
         ...defaults,
         watchFolders: [root],
-        extraNodeModules: {
-          bar: root + '/provides-bar',
+        resolver: {
+          ...defaults.resolver,
+          extraNodeModules: {
+            bar: root + '/provides-bar',
+          },
         },
       };
       await processDgraph(opts, async dgraph => {
@@ -1705,8 +1725,11 @@ describe('traverseDependencies', function() {
       const opts = {
         ...defaults,
         watchFolders: [root],
-        extraNodeModules: {
-          bar: root + '/provides-bar',
+        resolver: {
+          ...defaults.resolver,
+          extraNodeModules: {
+            bar: root + '/provides-bar',
+          },
         },
       };
       await processDgraph(opts, async dgraph => {
@@ -1733,8 +1756,11 @@ describe('traverseDependencies', function() {
       const opts = {
         ...defaults,
         watchFolders: [root],
-        extraNodeModules: {
-          bar: root + '/provides-bar',
+        resolver: {
+          ...defaults.resolver,
+          extraNodeModules: {
+            bar: root + '/provides-bar',
+          },
         },
       };
       await processDgraph(opts, async dgraph => {
@@ -1761,8 +1787,11 @@ describe('traverseDependencies', function() {
       const opts = {
         ...defaults,
         watchFolders: [root],
-        extraNodeModules: {
-          '@org/bar': root + '/provides-bar',
+        resolver: {
+          ...defaults.resolver,
+          extraNodeModules: {
+            '@org/bar': root + '/provides-bar',
+          },
         },
       };
       await processDgraph(opts, async dgraph => {
@@ -2393,7 +2422,7 @@ describe('traverseDependencies', function() {
 
       const opts = {
         ...defaults,
-        platforms: new Set(['ios', 'android', 'web']),
+        resolver: {...defaults.resolver, platforms: ['ios', 'android', 'web']},
         watchFolders: [root],
       };
       await processDgraph(opts, async dgraph => {
@@ -2450,10 +2479,13 @@ describe('traverseDependencies', function() {
 
       const opts = {
         ...defaults,
-        providesModuleNodeModules: [
-          ...defaults.providesModuleNodeModules,
-          '@org/module',
-        ],
+        resolver: {
+          ...defaults.resolver,
+          providesModuleNodeModules: [
+            ...defaults.resolver.providesModuleNodeModules,
+            '@org/module',
+          ],
+        },
         watchFolders: [root],
       };
       await processDgraph(opts, async dgraph => {
@@ -3200,10 +3232,13 @@ describe('traverseDependencies', function() {
 
       const opts = {
         ...defaults,
-        providesModuleNodeModules: [
-          ...defaults.providesModuleNodeModules,
-          '@org/module',
-        ],
+        resolver: {
+          ...defaults.resolver,
+          providesModuleNodeModules: [
+            ...defaults.resolver.providesModuleNodeModules,
+            '@org/module',
+          ],
+        },
         watchFolders: [root],
       };
       await processDgraph(opts, async dgraph => {
@@ -3426,7 +3461,11 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, assetExts: ['png'], watchFolders: [root]};
+      const opts = {
+        ...defaults,
+        resolver: {...defaults.resolver, assetExts: ['png']},
+        watchFolders: [root],
+      };
       const entryPath = '/root/index.js';
       await processDgraph(opts, async dgraph => {
         try {
@@ -3707,7 +3746,7 @@ describe('traverseDependencies', function() {
       const opts = {
         ...defaults,
         watchFolders: [root],
-        sourceExts: ['jsx', 'coffee'],
+        resolver: {...defaults.resolver, sourceExts: ['jsx', 'coffee']},
       };
       await processDgraph(opts, async dgraph => {
         const entryPath = '/root/index.jsx';
@@ -3729,7 +3768,7 @@ describe('traverseDependencies', function() {
       const opts = {
         ...defaults,
         watchFolders: [root],
-        sourceExts: ['jsx', 'coffee'],
+        resolver: {...defaults.resolver, sourceExts: ['jsx', 'coffee']},
       };
       await processDgraph(opts, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
@@ -3894,10 +3933,7 @@ describe('traverseDependencies', function() {
    * (regardless if the test passes or fails).
    */
   const processDgraphFor = async function(DependencyGraph, options, processor) {
-    const dgraph = await DependencyGraph.load(
-      options,
-      false /* since we're mocking the filesystem, we cannot use watchman */,
-    );
+    const dgraph = await DependencyGraph.load(options);
     try {
       await processor(dgraph);
     } finally {

@@ -21,29 +21,12 @@ class Bundler {
   _depGraphPromise: Promise<DependencyGraph>;
   _transformer: Transformer;
 
-  constructor(opts: ConfigT) {
-    this._depGraphPromise = DependencyGraph.load({
-      assetExts: opts.resolver.assetExts,
-      blacklistRE: opts.resolver.blacklistRE,
-      extraNodeModules: opts.resolver.extraNodeModules,
-      hasteImplModulePath: opts.resolver.hasteImplModulePath,
-      mainFields: opts.resolver.resolverMainFields,
-      maxWorkers: opts.maxWorkers,
-      platforms: new Set(opts.resolver.platforms),
-      projectRoot: opts.projectRoot,
-      providesModuleNodeModules: opts.resolver.providesModuleNodeModules,
-      reporter: opts.reporter,
-      resetCache: opts.resetCache,
-      resolveRequest: opts.resolver.resolveRequest,
-      sourceExts: opts.resolver.sourceExts,
-      useWatchman: opts.resolver.useWatchman,
-      watch: opts.watch,
-      watchFolders: opts.watchFolders,
-    });
+  constructor(config: ConfigT) {
+    this._depGraphPromise = DependencyGraph.load(config);
 
     this._depGraphPromise.then(dependencyGraph => {
       this._transformer = new Transformer(
-        opts,
+        config,
         dependencyGraph.getSha1.bind(dependencyGraph),
       );
     });
