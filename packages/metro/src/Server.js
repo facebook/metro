@@ -49,7 +49,7 @@ import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
-import type {CustomTransformOptions} from './JSTransformer/worker';
+import type {TransformInputOptions} from './lib/transformHelpers';
 
 const {
   Logger,
@@ -61,16 +61,6 @@ type GraphInfo = {|
   prepend: $ReadOnlyArray<Module<>>,
   lastModified: Date,
   +sequenceId: string,
-|};
-
-export type BuildGraphOptions = {|
-  +customTransformOptions: CustomTransformOptions,
-  +dev: boolean,
-  +hot: boolean,
-  +minify: boolean,
-  +onProgress: ?(doneCont: number, totalCount: number) => mixed,
-  +platform: ?string,
-  +type: 'module' | 'script',
 |};
 
 export type OutputGraph = Graph<>;
@@ -185,7 +175,7 @@ class Server {
 
   async buildGraph(
     entryFiles: $ReadOnlyArray<string>,
-    options: BuildGraphOptions,
+    options: TransformInputOptions,
   ): Promise<OutputGraph> {
     entryFiles = entryFiles.map(entryFile =>
       getEntryAbsolutePath(this._config, entryFile),
@@ -203,7 +193,7 @@ class Server {
         this._config,
         options,
       ),
-      onProgress: options.onProgress,
+      onProgress: null,
     });
 
     this._config.serializer.experimentalSerializerHook(graph, {
@@ -294,7 +284,6 @@ class Server {
       dev: options.dev,
       hot: options.hot,
       minify: options.minify,
-      onProgress: options.onProgress,
       platform: options.platform,
       type: 'module',
     };
@@ -1083,7 +1072,6 @@ class Server {
     dev: true,
     hot: false,
     minify: false,
-    onProgress: null,
     type: 'module',
   };
 
@@ -1092,6 +1080,7 @@ class Server {
     entryModuleOnly: false,
     excludeSource: false,
     inlineSourceMap: false,
+    onProgress: null,
     runModule: true,
     sourceMapUrl: null,
   };

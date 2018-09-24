@@ -185,7 +185,7 @@ export type OldConfigT = {
   /**
    * Returns the path to the worker that is used for transformation.
    */
-  getWorkerPath: () => ?string,
+  getWorkerPath: () => string,
 
   /**
    * An optional list of polyfills to include in the bundle. The list defaults
@@ -476,7 +476,7 @@ export type IntermediateConfigT = {
     optimizationSizeLimit: number,
     postMinifyProcess: PostMinifyProcess,
     transformVariants: TransformVariants,
-    workerPath: ?string,
+    workerPath: string,
   },
 
   // Metal

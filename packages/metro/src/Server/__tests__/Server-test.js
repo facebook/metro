@@ -737,7 +737,6 @@ describe('processRequest', () => {
           dev: true,
           hot: false,
           minify: false,
-          onProgress: null,
           platform: undefined,
           type: 'module',
         },

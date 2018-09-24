@@ -290,7 +290,6 @@ exports.buildGraph = async function(
       customTransformOptions,
       dev,
       minify,
-      onProgress,
       platform,
       type,
     });

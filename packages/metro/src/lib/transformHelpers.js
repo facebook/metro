@@ -31,12 +31,11 @@ type WorkerOptionsWithRawInlines = {|
   },
 |};
 
-type TransformInputOptions = {|
+export type TransformInputOptions = {|
   +customTransformOptions: CustomTransformOptions,
   +dev: boolean,
   +hot: boolean,
   +minify: boolean,
-  +onProgress: ?(doneCont: number, totalCount: number) => mixed,
   +platform: ?string,
   +type: 'module' | 'script',
 |};
