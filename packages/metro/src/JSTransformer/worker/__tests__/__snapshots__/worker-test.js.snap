@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`code transformation worker: reports filename when encountering unsupported dynamic dependency 1`] = `"/root/local/file.js:Invalid call at line 3: require(a)"`;
+exports[`code transformation worker: reports filename when encountering unsupported dynamic dependency 1`] = `"local/file.js:Invalid call at line 3: require(a)"`;
 
 exports[`code transformation worker: transforms a module with dependencies 1`] = `
 Array [

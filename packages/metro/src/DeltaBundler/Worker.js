@@ -12,9 +12,9 @@
 
 const crypto = require('crypto');
 const fs = require('fs');
+const path = require('path');
 
 import type {WorkerOptions as JsWorkerOptions} from '../JSTransformer/worker';
-import type {LocalPath} from '../node-haste/lib/toLocalPath';
 import type {MixedOutput, TransformResultDependency} from './types.flow';
 import type {LogEntry} from 'metro-core/src/Logger';
 
@@ -22,7 +22,6 @@ export type WorkerOptions = JsWorkerOptions;
 export type WorkerFn = typeof transform;
 export type TransformerFn<T: MixedOutput> = (
   string,
-  LocalPath,
   Buffer,
   WorkerOptions,
 ) => Promise<Result<T>>;
@@ -41,7 +40,7 @@ type Data<T: MixedOutput> = {
 
 async function transform<T: MixedOutput>(
   filename: string,
-  localPath: LocalPath,
+  projectRoot: string,
   transformerPath: string,
   transformerOptions: WorkerOptions,
 ): Promise<Data<T>> {
@@ -53,7 +52,7 @@ async function transform<T: MixedOutput>(
     start_timestamp: process.hrtime(),
   };
 
-  const data = fs.readFileSync(filename);
+  const data = fs.readFileSync(path.resolve(projectRoot, filename));
   const sha1 = crypto
     .createHash('sha1')
     .update(data)
@@ -65,7 +64,7 @@ async function transform<T: MixedOutput>(
     transform: TransformerFn<T>,
   });
 
-  const result = await transform(filename, localPath, data, transformerOptions);
+  const result = await transform(filename, data, transformerOptions);
 
   const transformFileEndLogEntry = getEndLogEntry(
     transformFileStartLogEntry,

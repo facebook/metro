@@ -34,14 +34,12 @@ const {
 
 import type {TransformResultDependency} from 'metro/src/DeltaBundler';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
-import type {LocalPath} from '../node-haste/lib/toLocalPath';
 import type {Ast} from '@babel/core';
 import type {Plugins as BabelPlugins} from 'babel-core';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
 export type TransformArgs = {|
   filename: string,
-  localPath: string,
   options: TransformOptions,
   plugins?: BabelPlugins,
   src: string,
@@ -124,7 +122,6 @@ function getDynamicDepsBehavior(
 
 async function transform(
   filename: string,
-  localPath: LocalPath,
   data: Buffer,
   options: WorkerOptions,
 ): Promise<Result> {
@@ -160,7 +157,6 @@ async function transform(
 
   const transformerArgs = {
     filename,
-    localPath,
     options: {
       ...options.transformOptions,
       // Inline requires are now performed at a secondary step. We cannot
@@ -229,7 +225,7 @@ async function transform(
     configFile: false,
     comments: false,
     compact: false,
-    filename: localPath,
+    filename,
     plugins,
     sourceMaps: false,
   }));
@@ -283,7 +279,7 @@ async function transform(
     {
       comments: false,
       compact: false,
-      filename: localPath,
+      filename,
       retainLines: false,
       sourceFileName: filename,
       sourceMaps: true,

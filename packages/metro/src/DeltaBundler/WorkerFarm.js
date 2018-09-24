@@ -67,14 +67,14 @@ class WorkerFarm {
 
   async transform(
     filename: string,
-    localPath: string,
+    projectRoot: string,
     transformerPath: string,
     options: WorkerOptions,
   ): Promise<TransformerResult> {
     try {
       const data = await this._worker.transform(
         filename,
-        localPath,
+        projectRoot,
         transformerPath,
         options,
       );

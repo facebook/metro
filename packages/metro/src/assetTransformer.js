@@ -9,6 +9,8 @@
  */
 'use strict';
 
+const path = require('path');
+
 const {getAssetData} = require('./Assets');
 const {generateAssetCodeFileAst} = require('./Bundler/util');
 
@@ -16,14 +18,13 @@ import type {TransformOptions} from './JSTransformer/worker';
 import type {Ast} from '@babel/core';
 
 type Params = {
-  localPath: string,
   filename: string,
   options: TransformOptions,
   src: string,
 };
 
 async function transform(
-  {filename, localPath, options, src}: Params,
+  {filename, options, src}: Params,
   assetRegistryPath: string,
   assetDataPlugins: $ReadOnlyArray<string>,
 ): Promise<{ast: Ast}> {
@@ -34,9 +35,11 @@ async function transform(
     minify: false,
   };
 
+  const absolutePath = path.resolve(options.projectRoot, filename);
+
   const data = await getAssetData(
+    absolutePath,
     filename,
-    localPath,
     assetDataPlugins,
     options.platform,
   );

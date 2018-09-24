@@ -16,7 +16,7 @@ const WorkerFarm = require('./DeltaBundler/WorkerFarm');
 const assert = require('assert');
 const fs = require('fs');
 const getTransformCacheKeyFn = require('./lib/getTransformCacheKeyFn');
-const toLocalPath = require('./node-haste/lib/toLocalPath');
+const path = require('path');
 
 const {Cache, stableHash} = require('metro-cache');
 
@@ -128,14 +128,14 @@ class Bundler {
       }
     }
 
-    const localPath = toLocalPath(this._opts.watchFolders, filePath);
+    const filename = path.relative(this._opts.projectRoot, filePath);
 
     const partialKey = stableHash([
       // This is the hash related to the global Bundler config.
       this._baseHash,
 
       // Path.
-      localPath,
+      filename,
 
       // We cannot include "transformCodeOptions" because of "projectRoot".
       assetPlugins,
@@ -165,8 +165,8 @@ class Bundler {
     const data = result
       ? {result, sha1}
       : await this._transformer.transform(
-          filePath,
-          localPath,
+          filename,
+          _projectRoot,
           this._opts.transformerPath,
           workerOptions,
         );

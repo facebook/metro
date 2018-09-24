@@ -16,8 +16,8 @@ const {Readable} = require('stream');
 describe('Worker Farm', function() {
   let api;
   let WorkerFarm;
-  const fileName = '/an/arbitrary/file.js';
-  const localPath = 'arbitrary/file.js';
+  const fileName = 'arbitrary/file.js';
+  const rootFolder = '/root';
   const config = getDefaultConfig();
 
   const opts = {
@@ -70,14 +70,14 @@ describe('Worker Farm', function() {
 
     await new WorkerFarm(opts).transform(
       fileName,
-      localPath,
+      rootFolder,
       config.transformerPath,
       transformOptions,
     );
 
     expect(api.transform).toBeCalledWith(
       fileName,
-      localPath,
+      rootFolder,
       config.transformerPath,
       transformOptions,
     );
@@ -88,26 +88,24 @@ describe('Worker Farm', function() {
     const message = 'message';
     const snippet = 'snippet';
 
-    api.transform.mockImplementation(
-      (filename, localPth, transformPath, opts) => {
-        const babelError = new SyntaxError(message);
+    api.transform.mockImplementation((filename, transformPath, opts) => {
+      const babelError = new SyntaxError(message);
 
-        babelError.type = 'SyntaxError';
-        babelError.loc = {line: 2, column: 15};
-        babelError.codeFrame = snippet;
+      babelError.type = 'SyntaxError';
+      babelError.loc = {line: 2, column: 15};
+      babelError.codeFrame = snippet;
 
-        return Promise.reject(babelError);
-      },
-    );
+      return Promise.reject(babelError);
+    });
 
     expect.assertions(6);
 
     return workerFarm
-      .transform(fileName, localPath, '', true, {})
+      .transform(fileName, rootFolder, '', {})
       .catch(function(error) {
         expect(error.type).toEqual('TransformError');
         expect(error.message).toBe(
-          'SyntaxError in /an/arbitrary/file.js: ' + message,
+          'SyntaxError in arbitrary/file.js: ' + message,
         );
         expect(error.lineNumber).toBe(2);
         expect(error.column).toBe(15);
