@@ -32,7 +32,7 @@ const {
   toSegmentTuple,
 } = require('metro-source-map');
 
-import type {TransformResultDependency} from '../ModuleGraph/types.flow';
+import type {TransformResultDependency} from 'metro/src/DeltaBundler';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
 import type {LocalPath} from '../node-haste/lib/toLocalPath';
 import type {Ast} from '@babel/core';
