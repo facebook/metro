@@ -10,7 +10,11 @@
 'use strict';
 
 function isTypeScriptSource(fileName) {
-  return !!fileName && (fileName.endsWith('.ts') || fileName.endsWith('.tsx'));
+  return !!fileName && fileName.endsWith('.ts');
+}
+
+function isTSXSource(fileName) {
+  return !!fileName && fileName.endsWith('.tsx');
 }
 
 const defaultPlugins = [
@@ -154,6 +158,12 @@ const getPreset = (src, options) => {
     overrides: [
       {
         test: isTypeScriptSource,
+        plugins: [
+          [require('@babel/plugin-transform-typescript'), {isTSX: false}],
+        ],
+      },
+      {
+        test: isTSXSource,
         plugins: [
           [require('@babel/plugin-transform-typescript'), {isTSX: true}],
         ],
