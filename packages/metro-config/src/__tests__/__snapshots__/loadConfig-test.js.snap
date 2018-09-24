@@ -91,7 +91,7 @@ Object {
     "transformVariants": Object {
       "default": Object {},
     },
-    "workerPath": null,
+    "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
   "watch": false,
@@ -192,7 +192,7 @@ Object {
     "transformVariants": Object {
       "default": Object {},
     },
-    "workerPath": null,
+    "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
   "watch": false,

@@ -13,20 +13,14 @@
 const chalk = require('chalk');
 
 const {Logger} = require('metro-core');
-const debug = require('debug')('Metro:JStransformer');
 const Worker = require('jest-worker').default;
 
-import type {TransformResult} from './DeltaBundler';
-import type {WorkerFn, WorkerOptions} from './DeltaBundler/Worker';
-import type {LocalPath} from './node-haste/lib/toLocalPath';
+import type {TransformResult} from '../DeltaBundler';
+import type {WorkerFn, WorkerOptions} from './Worker';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 type WorkerInterface = Worker & {
   transform: WorkerFn,
-};
-
-type Reporters = {
-  +stdoutChunk: (chunk: string) => mixed,
-  +stderrChunk: (chunk: string) => mixed,
 };
 
 type TransformerResult = {
@@ -34,35 +28,34 @@ type TransformerResult = {
   sha1: string,
 };
 
-module.exports = class Transformer {
+class WorkerFarm {
   _worker: WorkerInterface;
 
-  constructor(options: {|
-    +maxWorkers: number,
-    +reporters: Reporters,
-    +workerPath: ?string,
-  |}) {
-    const {workerPath = require.resolve('./DeltaBundler/Worker')} = options;
-
+  constructor(options: ConfigT) {
     if (options.maxWorkers > 1) {
       this._worker = this._makeFarm(
-        workerPath,
+        options.transformer.workerPath,
         this._computeWorkerKey,
         ['transform'],
         options.maxWorkers,
       );
 
-      const {reporters} = options;
       this._worker.getStdout().on('data', chunk => {
-        reporters.stdoutChunk(chunk.toString('utf8'));
+        options.reporter.update({
+          type: 'worker_stdout_chunk',
+          chunk: chunk.toString('utf8'),
+        });
       });
       this._worker.getStderr().on('data', chunk => {
-        reporters.stderrChunk(chunk.toString('utf8'));
+        options.reporter.update({
+          type: 'worker_stderr_chunk',
+          chunk: chunk.toString('utf8'),
+        });
       });
     } else {
       // eslint-disable-next-line lint/flow-no-fixme
       // $FlowFixMe: Flow doesn't support dynamic requires
-      this._worker = require(workerPath);
+      this._worker = require(options.transformer.workerPath);
     }
   }
 
@@ -74,21 +67,17 @@ module.exports = class Transformer {
 
   async transform(
     filename: string,
-    localPath: LocalPath,
+    localPath: string,
     transformerPath: string,
     options: WorkerOptions,
   ): Promise<TransformerResult> {
     try {
-      debug('Started transforming file', filename);
-
       const data = await this._worker.transform(
         filename,
         localPath,
         transformerPath,
         options,
       );
-
-      debug('Done transforming file', filename);
 
       Logger.log(data.transformFileStartLogEntry);
       Logger.log(data.transformFileEndLogEntry);
@@ -98,8 +87,6 @@ module.exports = class Transformer {
         sha1: Buffer.from(data.sha1, 'hex'),
       };
     } catch (err) {
-      debug('Failed transform file', filename);
-
       if (err.loc) {
         throw this._formatBabelError(err, filename);
       } else {
@@ -170,7 +157,7 @@ module.exports = class Transformer {
       filename,
     });
   }
-};
+}
 
 class TransformError extends SyntaxError {
   type: string = 'TransformError';
@@ -180,3 +167,5 @@ class TransformError extends SyntaxError {
     Error.captureStackTrace && Error.captureStackTrace(this, TransformError);
   }
 }
+
+module.exports = WorkerFarm;

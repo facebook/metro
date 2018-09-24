@@ -11,7 +11,7 @@
 'use strict';
 
 const DependencyGraph = require('./node-haste/DependencyGraph');
-const Transformer = require('./JSTransformer');
+const WorkerFarm = require('./DeltaBundler/WorkerFarm');
 
 const assert = require('assert');
 const fs = require('fs');
@@ -30,7 +30,7 @@ class Bundler {
   _opts: ConfigT;
   _cache: Cache<TransformResult<>>;
   _baseHash: string;
-  _transformer: Transformer;
+  _transformer: WorkerFarm;
   _depGraphPromise: Promise<DependencyGraph>;
 
   constructor(opts: ConfigT) {
@@ -39,16 +39,7 @@ class Bundler {
     this._opts = opts;
     this._cache = new Cache(opts.cacheStores);
 
-    this._transformer = new Transformer({
-      maxWorkers: opts.maxWorkers,
-      reporters: {
-        stdoutChunk: chunk =>
-          opts.reporter.update({type: 'worker_stdout_chunk', chunk}),
-        stderrChunk: chunk =>
-          opts.reporter.update({type: 'worker_stderr_chunk', chunk}),
-      },
-      workerPath: opts.transformer.workerPath || undefined,
-    });
+    this._transformer = new WorkerFarm(opts);
 
     this._depGraphPromise = DependencyGraph.load({
       assetExts: opts.resolver.assetExts,

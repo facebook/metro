@@ -80,7 +80,7 @@ Object {
     "transformModulePath": "metro/src/defaultTransformer",
     "watch": false,
     "watchFolders": Array [],
-    "workerPath": null,
+    "workerPath": "metro/src/DeltaBundler/Worker",
   },
 }
 `;

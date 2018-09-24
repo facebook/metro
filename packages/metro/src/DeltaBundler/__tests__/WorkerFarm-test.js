@@ -13,17 +13,19 @@ const getDefaultConfig = require('metro-config/src/defaults');
 
 const {Readable} = require('stream');
 
-describe('Transformer', function() {
+describe('Worker Farm', function() {
   let api;
-  let Transformer;
+  let WorkerFarm;
   const fileName = '/an/arbitrary/file.js';
   const localPath = 'arbitrary/file.js';
   const config = getDefaultConfig();
 
   const opts = {
     maxWorkers: 4,
-    reporters: {},
-    workerPath: null,
+    reporter: {},
+    transformer: {
+      workerPath: null,
+    },
   };
 
   beforeEach(function() {
@@ -60,13 +62,13 @@ describe('Transformer', function() {
       return api;
     });
 
-    Transformer = require('../');
+    WorkerFarm = require('../WorkerFarm');
   });
 
   it('passes transform data to the worker farm when transforming', async () => {
     const transformOptions = {arbitrary: 'options'};
 
-    await new Transformer(opts).transform(
+    await new WorkerFarm(opts).transform(
       fileName,
       localPath,
       config.transformerPath,
@@ -82,7 +84,7 @@ describe('Transformer', function() {
   });
 
   it('should add file info to parse errors', () => {
-    const transformer = new Transformer(opts);
+    const workerFarm = new WorkerFarm(opts);
     const message = 'message';
     const snippet = 'snippet';
 
@@ -100,7 +102,7 @@ describe('Transformer', function() {
 
     expect.assertions(6);
 
-    return transformer
+    return workerFarm
       .transform(fileName, localPath, '', true, {})
       .catch(function(error) {
         expect(error.type).toEqual('TransformError');

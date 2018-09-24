@@ -58,7 +58,7 @@ const DEFAULT = ({
   resolveRequest: null,
   getResolverMainFields: () => ['browser', 'main'],
   getModulesRunBeforeMainModule: () => [],
-  getWorkerPath: () => null,
+  getWorkerPath: () => 'metro/src/DeltaBundler/Worker',
   processModuleFilter: module => true,
 }: ConfigT);
 

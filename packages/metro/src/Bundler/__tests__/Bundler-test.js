@@ -18,7 +18,7 @@ jest
   .mock('progress')
   .mock('../../lib/getTransformCacheKeyFn', () => () => () => 'hash')
   .mock('../../node-haste/DependencyGraph')
-  .mock('../../JSTransformer')
+  .mock('../../DeltaBundler/WorkerFarm')
   .mock('metro-core')
   .mock('/path/to/transformer.js', () => ({}), {virtual: true});
 
@@ -94,10 +94,12 @@ describe('Bundler', function() {
 
     const module = new Module('/root/foo.js');
 
-    require('../../JSTransformer').prototype.transform.mockReturnValue({
-      sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
-      result: {},
-    });
+    require('../../DeltaBundler/WorkerFarm').prototype.transform.mockReturnValue(
+      {
+        sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
+        result: {},
+      },
+    );
 
     await bundlerInstance.transformFile(module.path, {transformOptions: {}});
 

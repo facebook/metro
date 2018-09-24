@@ -63,7 +63,6 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
     port: 8080,
     enhanceMiddleware: middleware => middleware,
   },
-
   transformer: {
     assetPlugins: [],
     asyncRequireModulePath: 'metro/src/lib/bundle-modules/asyncRequire',
@@ -80,9 +79,8 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
     optimizationSizeLimit: 150 * 1024, // 150 KiB.
     postMinifyProcess: x => x,
     transformVariants: {default: {}},
-    workerPath: null,
+    workerPath: 'metro/src/DeltaBundler/Worker',
   },
-
   cacheStores: [
     new FileStore({
       root: path.join(os.tmpdir(), 'metro-cache'),
