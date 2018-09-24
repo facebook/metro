@@ -10,7 +10,7 @@
 
 'use strict';
 
-const uglify = require('uglify-es');
+const terser = require('terser');
 
 import type {BabelSourceMap} from '@babel/core';
 import type {
@@ -32,7 +32,6 @@ function minifier(
   }
 
   const map: BabelSourceMap = JSON.parse(result.map);
-
   map.sources = [filename];
 
   return {code: result.code, map};
@@ -43,7 +42,7 @@ function minify(
   inputMap: ?BabelSourceMap,
   options: MinifyOptions,
 ) {
-  const result = uglify.minify(inputCode, {
+  const result = terser.minify(inputCode, {
     mangle: {
       toplevel: false,
       reserved: options.reserved,
@@ -74,4 +73,6 @@ function minify(
   };
 }
 
-module.exports = (minifier: MetroMinifier);
+const metroMinifier: MetroMinifier = minifier;
+
+module.exports = metroMinifier;

@@ -12,11 +12,9 @@
 jest
   .mock('../constant-folding-plugin')
   .mock('../inline-plugin')
-  .mock('../../../lib/getMinifier', () => () => ({
-    withSourceMap: (code, map) => ({
-      code: code.replace('arbitrary(code)', 'minified(code)'),
-      map,
-    }),
+  .mock('../../../lib/getMinifier', () => () => (code, map) => ({
+    code: code.replace('arbitrary(code)', 'minified(code)'),
+    map,
   }))
   .mock('metro-minify-uglify');
 

@@ -10,9 +10,13 @@
 'use strict';
 
 import type {TransformResult} from '../DeltaBundler';
-import type {CustomTransformOptions} from '../JSTransformer/worker';
+import type {
+  CustomTransformOptions,
+  MinifyOptions,
+} from '../JSTransformer/worker';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
 import type {Reporter} from '../lib/reporting';
+import type {BabelSourceMap} from '@babel/core';
 import type {CacheStore} from 'metro-cache';
 import type {
   GetTransformOptions,
@@ -160,3 +164,17 @@ export type RequestOptions = {|
   createModuleIdFactory?: () => (path: string) => number,
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
 |};
+
+export type {MinifyOptions};
+
+export type MetroMinifierResult = {
+  code: string,
+  map?: BabelSourceMap,
+};
+
+export type MetroMinifier = (
+  code: string,
+  inputMap: ?BabelSourceMap,
+  filename: string,
+  options?: MinifyOptions,
+) => MetroMinifierResult;

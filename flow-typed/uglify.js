@@ -96,3 +96,11 @@ declare module 'uglify-es' {
     options: {..._Options, sourceMap: _SourceMapOptions},
   ): _Error | {|..._Result, map: string|};
 }
+
+declare module 'terser' {
+  declare function minify(code: _Input, options?: _Options): _Error | _Result;
+  declare function minify(
+    code: _Input,
+    options: {..._Options, sourceMap: _SourceMapOptions},
+  ): _Error | {|..._Result, map: string|};
+}

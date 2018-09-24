@@ -12,7 +12,7 @@
 
 import type {BabelSourceMap} from '@babel/core';
 
-jest.mock('uglify-es', () => ({
+jest.mock('terser', () => ({
   minify: jest.fn(code => {
     return {
       code: code.replace(/(^|\W)\s+/g, '$1'),
@@ -37,18 +37,18 @@ describe('Minification:', () => {
   const filename = '/arbitrary/file.js';
   const code = 'arbitrary(code)';
   let map: BabelSourceMap;
-  let uglify;
+  let terser;
 
   beforeEach(() => {
-    uglify = require('uglify-es');
-    uglify.minify.mockClear();
-    uglify.minify.mockReturnValue({code: '', map: '{}'});
+    terser = require('terser');
+    terser.minify.mockClear();
+    terser.minify.mockReturnValue({code: '', map: '{}'});
     map = getFakeMap();
   });
 
-  it('passes file name, code, and source map to `uglify`', () => {
+  it('passes file name, code, and source map to `terser`', () => {
     minify(code, map, filename);
-    expect(uglify.minify).toBeCalledWith(
+    expect(terser.minify).toBeCalledWith(
       code,
       objectContaining({
         sourceMap: {
@@ -59,14 +59,14 @@ describe('Minification:', () => {
     );
   });
 
-  it('returns the code provided by uglify', () => {
-    uglify.minify.mockReturnValue({code, map: '{}'});
+  it('returns the code provided by terser', () => {
+    terser.minify.mockReturnValue({code, map: '{}'});
     const result = minify('', getFakeMap(), '');
     expect(result.code).toBe(code);
   });
 
-  it('parses the source map object provided by uglify and sets the sources property', () => {
-    uglify.minify.mockReturnValue({map: JSON.stringify(map), code: ''});
+  it('parses the source map object provided by terser and sets the sources property', () => {
+    terser.minify.mockReturnValue({map: JSON.stringify(map), code: ''});
     const result = minify('', getFakeMap(), filename);
     expect(result.map).toEqual({...map, sources: [filename]});
   });
