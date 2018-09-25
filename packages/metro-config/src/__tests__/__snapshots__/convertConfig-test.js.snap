@@ -38,7 +38,7 @@ Object {
     ],
     "assetRegistryPath": "missing-asset-registry-path",
     "assetTransforms": false,
-    "asyncRequireModulePath": "metro/src/lib/bundle-modules/asyncRequire",
+    "asyncRequireModulePath": StringMatching /metro\\\\/src\\\\/lib\\\\/bundle-modules\\\\/asyncRequire\\.js\\$/,
     "blacklistRE": /\\(node_modules\\[\\\\/\\\\\\\\\\]react\\[\\\\/\\\\\\\\\\]dist\\[\\\\/\\\\\\\\\\]\\.\\*\\|website\\\\/node_modules\\\\/\\.\\*\\|heapCapture\\\\/bundle\\\\\\.js\\|\\.\\*\\\\/__tests__\\\\/\\.\\*\\)\\$/,
     "cacheStores": Array [],
     "cacheVersion": "1.0",
@@ -77,10 +77,10 @@ Object {
       "ts",
       "tsx",
     ],
-    "transformModulePath": "metro/src/defaultTransformer",
+    "transformModulePath": StringMatching /metro\\\\/src\\\\/defaultTransformer\\.js\\$/,
     "watch": false,
     "watchFolders": Array [],
-    "workerPath": "metro/src/DeltaBundler/Worker",
+    "workerPath": StringMatching /metro\\\\/src\\\\/DeltaBundler\\\\/Worker\\.js\\$/,
   },
 }
 `;

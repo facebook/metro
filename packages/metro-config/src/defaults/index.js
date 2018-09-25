@@ -65,9 +65,11 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
   },
   transformer: {
     assetPlugins: [],
-    asyncRequireModulePath: 'metro/src/lib/bundle-modules/asyncRequire',
+    asyncRequireModulePath: require.resolve(
+      'metro/src/lib/bundle-modules/asyncRequire',
+    ),
     assetRegistryPath: 'missing-asset-registry-path',
-    babelTransformerPath: 'metro/src/defaultTransformer',
+    babelTransformerPath: require.resolve('metro/src/defaultTransformer'),
     dynamicDepsInPackages: 'throwAtRuntime',
     enableBabelRCLookup: true,
     getTransformOptions: async () => ({
@@ -79,7 +81,7 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
     optimizationSizeLimit: 150 * 1024, // 150 KiB.
     postMinifyProcess: x => x,
     transformVariants: {default: {}},
-    workerPath: 'metro/src/DeltaBundler/Worker',
+    workerPath: require.resolve('metro/src/DeltaBundler/Worker'),
   },
   cacheStores: [
     new FileStore({
