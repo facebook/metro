@@ -144,14 +144,19 @@ function transform({filename, options, src, plugins}: BabelTransformerArgs) {
 
   try {
     const babelConfig = buildBabelConfig(filename, options, plugins);
-    const {ast} = transformSync(src, {
+    const result = transformSync(src, {
       // ES modules require sourceType='module' but OSS may not always want that
       sourceType: 'unambiguous',
       ...babelConfig,
       ast: true,
     });
 
-    return {ast};
+    // The result from `transformSync` can be null (if the file is ignored)
+    if (!result) {
+      return {ast: null};
+    }
+
+    return {ast: result.ast};
   } finally {
     process.env.BABEL_ENV = OLD_BABEL_ENV;
   }
