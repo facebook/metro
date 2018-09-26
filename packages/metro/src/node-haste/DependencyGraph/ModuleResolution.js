@@ -13,6 +13,7 @@
 const Resolver = require('metro-resolver');
 
 const invariant = require('fbjs/lib/invariant');
+const os = require('os');
 const path = require('path');
 const util = require('util');
 
@@ -175,6 +176,14 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
           .concat(extraPaths);
 
         const hint = displayDirPaths.length ? ' or in these directories:' : '';
+        const metroCacheLocation = path.join(
+          os.tmpdir(),
+          'metro-bundler-cache-*',
+        );
+        const hasteCacheLocation = path.join(
+          os.tmpdir(),
+          'haste-map-metro-4-*',
+        );
         throw new UnableToResolveError(
           fromModule.path,
           moduleName,
@@ -186,8 +195,8 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
             'To resolve try the following:',
             '  1. Clear watchman watches: `watchman watch-del-all`.',
             '  2. Delete the `node_modules` folder: `rm -rf node_modules && npm install`.',
-            '  3. Reset Metro Bundler cache: `rm -rf /tmp/metro-bundler-cache-*` or `npm start -- --reset-cache`.',
-            '  4. Remove haste cache: `rm -rf /tmp/haste-map-react-native-packager-*`.',
+            `  3. Reset Metro Bundler cache: \`rm -rf ${metroCacheLocation}\` or \`npm start -- --reset-cache\`.`,
+            `  4. Remove haste cache: \`rm -rf ${hasteCacheLocation}\`.`,
           ].join('\n'),
         );
       }
