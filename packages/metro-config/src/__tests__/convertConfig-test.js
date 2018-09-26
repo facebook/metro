@@ -107,7 +107,19 @@ describe('convertConfig', () => {
     defaultConfig.cacheStores = [];
     defaultConfig.transformerPath = '';
 
-    expect(convertNewToOld(defaultConfig)).toMatchSnapshot();
+    expect(convertNewToOld(defaultConfig)).toMatchSnapshot({
+      serverOptions: {
+        asyncRequireModulePath: expect.stringMatching(
+          /metro\/src\/lib\/bundle-modules\/asyncRequire.js$/,
+        ),
+        workerPath: expect.stringMatching(
+          /metro\/src\/DeltaBundler\/Worker.js$/,
+        ),
+        transformModulePath: expect.stringMatching(
+          /metro\/src\/defaultTransformer.js$/,
+        ),
+      },
+    });
   });
 
   it('converts the new default config exactly to the old default config', async () => {

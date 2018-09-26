@@ -80,8 +80,8 @@ Object {
   "transformer": Object {
     "assetPlugins": Array [],
     "assetRegistryPath": "missing-asset-registry-path",
-    "asyncRequireModulePath": "metro/src/lib/bundle-modules/asyncRequire",
-    "babelTransformerPath": "metro/src/defaultTransformer",
+    "asyncRequireModulePath": StringMatching /metro\\\\/src\\\\/lib\\\\/bundle-modules\\\\/asyncRequire\\.js\\$/,
+    "babelTransformerPath": StringMatching /metro\\\\/src\\\\/defaultTransformer\\.js\\$/,
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "getTransformOptions": [Function],
@@ -91,7 +91,7 @@ Object {
     "transformVariants": Object {
       "default": Object {},
     },
-    "workerPath": "metro/src/DeltaBundler/Worker",
+    "workerPath": StringMatching /metro\\\\/src\\\\/DeltaBundler\\\\/Worker\\.js\\$/,
   },
   "transformerPath": "",
   "watch": false,
@@ -181,8 +181,8 @@ Object {
   "transformer": Object {
     "assetPlugins": Array [],
     "assetRegistryPath": "missing-asset-registry-path",
-    "asyncRequireModulePath": "metro/src/lib/bundle-modules/asyncRequire",
-    "babelTransformerPath": "metro/src/defaultTransformer",
+    "asyncRequireModulePath": StringMatching /metro\\\\/src\\\\/lib\\\\/bundle-modules\\\\/asyncRequire\\.js\\$/,
+    "babelTransformerPath": StringMatching /metro\\\\/src\\\\/defaultTransformer\\.js\\$/,
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "getTransformOptions": [Function],
@@ -192,7 +192,7 @@ Object {
     "transformVariants": Object {
       "default": Object {},
     },
-    "workerPath": "metro/src/DeltaBundler/Worker",
+    "workerPath": StringMatching /metro\\\\/src\\\\/DeltaBundler\\\\/Worker\\.js\\$/,
   },
   "transformerPath": "",
   "watch": false,

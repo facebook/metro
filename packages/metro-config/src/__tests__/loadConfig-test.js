@@ -35,7 +35,19 @@ describe('loadConfig', () => {
 
     const result = await loadConfig({});
 
-    expect(result).toMatchSnapshot();
+    (expect(result): $FlowFixMe).toMatchSnapshot({
+      transformer: {
+        asyncRequireModulePath: expect.stringMatching(
+          /metro\/src\/lib\/bundle-modules\/asyncRequire.js$/,
+        ),
+        babelTransformerPath: expect.stringMatching(
+          /metro\/src\/defaultTransformer.js$/,
+        ),
+        workerPath: expect.stringMatching(
+          /metro\/src\/DeltaBundler\/Worker.js$/,
+        ),
+      },
+    });
     expect(result.cacheStores).toEqual([]);
   });
 
@@ -73,7 +85,19 @@ describe('loadConfig', () => {
 
     const result = await loadConfig({config: '/metro.config.js'});
 
-    expect(result).toMatchSnapshot();
+    (expect(result): $FlowFixMe).toMatchSnapshot({
+      transformer: {
+        asyncRequireModulePath: expect.stringMatching(
+          /metro\/src\/lib\/bundle-modules\/asyncRequire.js$/,
+        ),
+        babelTransformerPath: expect.stringMatching(
+          /metro\/src\/defaultTransformer.js$/,
+        ),
+        workerPath: expect.stringMatching(
+          /metro\/src\/DeltaBundler\/Worker.js$/,
+        ),
+      },
+    });
     expect(cosmiconfig.hasLoadBeenCalled()).toBeTruthy();
   });
 

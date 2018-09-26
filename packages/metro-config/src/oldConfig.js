@@ -30,7 +30,8 @@ const DEFAULT = ({
   ],
   cacheVersion: '1.0',
   dynamicDepsInPackages: 'throwAtRuntime',
-  getAsyncRequireModulePath: () => 'metro/src/lib/bundle-modules/asyncRequire',
+  getAsyncRequireModulePath: () =>
+    require.resolve('metro/src/lib/bundle-modules/asyncRequire'),
   getAssetExts: () => [],
   getBlacklistRE: () => blacklist(),
   getEnableBabelRCLookup: () => true,
@@ -45,7 +46,7 @@ const DEFAULT = ({
   getRunModuleStatement: (moduleId: number | string) =>
     `__r(${JSON.stringify(moduleId)});`,
   getSourceExts: () => [],
-  getTransformModulePath: () => 'metro/src/defaultTransformer',
+  getTransformModulePath: () => require.resolve('metro/src/defaultTransformer'),
   getTransformOptions: async () => ({
     transform: {experimentalImportSupport: false, inlineRequires: false},
     preloadedModules: false,
@@ -58,7 +59,7 @@ const DEFAULT = ({
   resolveRequest: null,
   getResolverMainFields: () => ['browser', 'main'],
   getModulesRunBeforeMainModule: () => [],
-  getWorkerPath: () => 'metro/src/DeltaBundler/Worker',
+  getWorkerPath: () => require.resolve('metro/src/DeltaBundler/Worker'),
   processModuleFilter: module => true,
 }: ConfigT);
 
