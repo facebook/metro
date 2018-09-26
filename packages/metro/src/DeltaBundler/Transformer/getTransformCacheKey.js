@@ -47,7 +47,7 @@ function getTransformCacheKey(opts: {|
     VERSION,
     opts.cacheVersion,
     path.relative(path.join(__dirname, '../../../..'), opts.projectRoot),
-    getKeyFromFiles([transformerPath]),
+    getKeyFromFiles([require.resolve(transformerPath)]),
     transformerKey,
   ];
 
