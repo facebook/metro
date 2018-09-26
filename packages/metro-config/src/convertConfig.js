@@ -137,6 +137,7 @@ async function convertOldToNew({
     server: {
       useGlobalHotkey: getUseGlobalHotkey(),
       port,
+      enableVisualizer: false,
       enhanceMiddleware,
     },
     transformer: {

@@ -90,7 +90,7 @@ export type Options = {|
   getResolverMainFields: () => $ReadOnlyArray<string>,
   getRunModuleStatement: (number | string) => string,
   getTransformOptions?: GetTransformOptions,
-  hasteImplModulePath?: string,
+  hasteImplModulePath?: ?string,
   maxWorkers?: number,
   minifierPath?: string,
   platforms?: Array<string>,

@@ -39,6 +39,7 @@ Object {
     "assetTransforms": false,
     "blacklistRE": /\\(node_modules\\[\\\\/\\\\\\\\\\]react\\[\\\\/\\\\\\\\\\]dist\\[\\\\/\\\\\\\\\\]\\.\\*\\|website\\\\/node_modules\\\\/\\.\\*\\|heapCapture\\\\/bundle\\\\\\.js\\|\\.\\*\\\\/__tests__\\\\/\\.\\*\\)\\$/,
     "extraNodeModules": Object {},
+    "hasteImplModulePath": undefined,
     "platforms": Array [
       "ios",
       "android",
@@ -73,6 +74,7 @@ Object {
     "processModuleFilter": [Function],
   },
   "server": Object {
+    "enableVisualizer": false,
     "enhanceMiddleware": [Function],
     "port": 8080,
     "useGlobalHotkey": true,
@@ -140,6 +142,7 @@ Object {
     "assetTransforms": false,
     "blacklistRE": /\\(node_modules\\[\\\\/\\\\\\\\\\]react\\[\\\\/\\\\\\\\\\]dist\\[\\\\/\\\\\\\\\\]\\.\\*\\|website\\\\/node_modules\\\\/\\.\\*\\|heapCapture\\\\/bundle\\\\\\.js\\|\\.\\*\\\\/__tests__\\\\/\\.\\*\\)\\$/,
     "extraNodeModules": Object {},
+    "hasteImplModulePath": undefined,
     "platforms": Array [
       "ios",
       "android",
@@ -174,6 +177,7 @@ Object {
     "processModuleFilter": [Function],
   },
   "server": Object {
+    "enableVisualizer": false,
     "enhanceMiddleware": [Function],
     "port": 8080,
     "useGlobalHotkey": true,

@@ -40,8 +40,7 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
     resolverMainFields: ['browser', 'main'],
     extraNodeModules: {},
     resolveRequest: null,
-    // TODO set a default for this one?
-    // hasteImplModulePath
+    hasteImplModulePath: undefined,
     blacklistRE: blacklist(),
     useWatchman: true,
   },
@@ -61,6 +60,7 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
   server: {
     useGlobalHotkey: true,
     port: 8080,
+    enableVisualizer: false,
     enhanceMiddleware: middleware => middleware,
   },
   transformer: {

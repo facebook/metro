@@ -13,7 +13,10 @@ const blacklist = require('./defaults/blacklist');
 const os = require('os');
 const path = require('path');
 
-const {providesModuleNodeModules} = require('./defaults/defaults');
+const {
+  defaultCreateModuleIdFactory,
+  providesModuleNodeModules,
+} = require('./defaults/defaults');
 const {FileStore} = require('metro-cache');
 
 import type {OldConfigT as ConfigT} from './configTypes.flow.js';
@@ -29,6 +32,7 @@ const DEFAULT = ({
     }),
   ],
   cacheVersion: '1.0',
+  createModuleIdFactory: defaultCreateModuleIdFactory,
   dynamicDepsInPackages: 'throwAtRuntime',
   getAsyncRequireModulePath: () => 'metro/src/lib/bundle-modules/asyncRequire',
   getAssetExts: () => [],
@@ -60,6 +64,7 @@ const DEFAULT = ({
   getModulesRunBeforeMainModule: () => [],
   getWorkerPath: () => 'metro/src/DeltaBundler/Worker',
   processModuleFilter: module => true,
+  transformVariants: () => ({default: {}}),
 }: ConfigT);
 
 module.exports = {
