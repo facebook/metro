@@ -33,11 +33,6 @@ type PublicMetroOptions = {|
   reporter?: Reporter,
 |};
 
-type PrivateMetroOptions = {|
-  ...PublicMetroOptions,
-  watch?: boolean,
-|};
-
 // We get the metro runServer signature here and create the new config out of it
 async function convertOldToNew({
   config,
@@ -47,8 +42,7 @@ async function convertOldToNew({
   // $FlowFixMe TODO t0 https://github.com/facebook/flow/issues/183
   port = null,
   reporter = new TerminalReporter(new Terminal(process.stdout)),
-  watch = false,
-}: PrivateMetroOptions): Promise<ConfigT> {
+}: PublicMetroOptions): Promise<ConfigT> {
   const {
     getBlacklistRE,
     cacheStores,

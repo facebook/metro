@@ -99,31 +99,31 @@ export type OldConfigT = {
   transformVariants: () => TransformVariants,
 };
 
-type ResolverConfigT = {
-  assetExts: Array<string>,
+type ResolverConfigT = {|
+  assetExts: $ReadOnlyArray<string>,
   blacklistRE: RegExp,
   extraNodeModules: {[name: string]: string},
   hasteImplModulePath: ?string,
-  platforms: Array<string>,
-  providesModuleNodeModules: Array<string>,
+  platforms: $ReadOnlyArray<string>,
+  providesModuleNodeModules: $ReadOnlyArray<string>,
   resolverMainFields: $ReadOnlyArray<string>,
   resolveRequest: ?CustomResolver,
-  sourceExts: Array<string>,
+  sourceExts: $ReadOnlyArray<string>,
   useWatchman: boolean,
-};
+|};
 
-type SerializerConfigT = {
+type SerializerConfigT = {|
   createModuleIdFactory: () => (path: string) => number,
   experimentalSerializerHook: (graph: Graph<>, delta: DeltaResult<>) => mixed,
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   getRunModuleStatement: (number | string) => string,
-  polyfillModuleNames: Array<string>,
+  polyfillModuleNames: $ReadOnlyArray<string>,
   postProcessBundleSourcemap: PostProcessBundleSourcemap,
   processModuleFilter: (modules: Module<>) => boolean,
-};
+|};
 
-type TransformerConfigT = {
+type TransformerConfigT = {|
   assetPlugins: $ReadOnlyArray<string>,
   assetRegistryPath: string,
   asyncRequireModulePath: string,
@@ -136,9 +136,9 @@ type TransformerConfigT = {
   postMinifyProcess: PostMinifyProcess,
   transformVariants: TransformVariants,
   workerPath: string,
-};
+|};
 
-type MetalConfigT = {
+type MetalConfigT = {|
   cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
   cacheVersion: string,
   maxWorkers: number,
@@ -146,32 +146,42 @@ type MetalConfigT = {
   transformerPath: string,
   reporter: Reporter,
   resetCache: boolean,
-  watchFolders: Array<string>,
-};
+  watchFolders: $ReadOnlyArray<string>,
+|};
 
-type ServerConfigT = {
+type ServerConfigT = {|
   enableVisualizer: boolean,
   enhanceMiddleware: (Middleware, Server) => Middleware,
   useGlobalHotkey: boolean,
   port: number,
-};
+|};
 
-export type InputConfigT = $Shape<
-  MetalConfigT & {
+export type InputConfigT = $Shape<{|
+  ...MetalConfigT,
+  ...$ReadOnly<{|
     resolver: $Shape<ResolverConfigT>,
-    serializer: $Shape<SerializerConfigT>,
     server: $Shape<ServerConfigT>,
+    serializer: $Shape<SerializerConfigT>,
     transformer: $Shape<TransformerConfigT>,
-  },
->;
+  |}>,
+|}>;
 
-export type IntermediateConfigT = MetalConfigT & {
-  resolver: ResolverConfigT,
-  serializer: SerializerConfigT,
-  server: ServerConfigT,
-  transformer: TransformerConfigT,
-};
+export type IntermediateConfigT = {|
+  ...MetalConfigT,
+  ...{|
+    resolver: ResolverConfigT,
+    server: ServerConfigT,
+    serializer: SerializerConfigT,
+    transformer: TransformerConfigT,
+  |},
+|};
 
-// Will become `export type ConfigT = $ReadOnly<IntermediateConfigT>;`
-// in the future when we converted all configuration
-export type ConfigT = IntermediateConfigT;
+export type ConfigT = $ReadOnly<{|
+  ...$ReadOnly<MetalConfigT>,
+  ...$ReadOnly<{|
+    resolver: $ReadOnly<ResolverConfigT>,
+    server: $ReadOnly<ServerConfigT>,
+    serializer: $ReadOnly<SerializerConfigT>,
+    transformer: $ReadOnly<TransformerConfigT>,
+  |}>,
+|}>;

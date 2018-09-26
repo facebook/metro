@@ -15,19 +15,12 @@ const getDefaultConfig = require('./defaults');
 
 const {dirname, resolve, join} = require('path');
 
-import type {
-  ConfigT,
-  InputConfigT,
-  IntermediateConfigT,
-} from './configTypes.flow';
+import type {ConfigT, InputConfigT} from './configTypes.flow';
 
 type CosmiConfigResult = {
   filepath: string,
   isEmpty: boolean,
-  config:
-    | (IntermediateConfigT => Promise<IntermediateConfigT>)
-    | (IntermediateConfigT => IntermediateConfigT)
-    | InputConfigT,
+  config: (ConfigT => Promise<ConfigT>) | (ConfigT => ConfigT) | InputConfigT,
 };
 
 type YargArguments = {
@@ -139,7 +132,7 @@ async function loadMetroConfigFromDisk(
   path?: string,
   cwd?: string,
   defaultConfigOverrides: InputConfigT,
-): Promise<IntermediateConfigT> {
+): Promise<ConfigT> {
   const resolvedConfigResults: CosmiConfigResult = await resolveConfig(
     path,
     cwd,
@@ -148,15 +141,13 @@ async function loadMetroConfigFromDisk(
   const {config: configModule, filepath} = resolvedConfigResults;
   const rootPath = dirname(filepath);
 
-  const defaultConfig: IntermediateConfigT = await getDefaultConfig(rootPath);
+  const defaultConfig: ConfigT = await getDefaultConfig(rootPath);
 
   if (typeof configModule === 'function') {
     // Get a default configuration based on what we know, which we in turn can pass
     // to the function.
 
-    const resultedConfig: IntermediateConfigT = await configModule(
-      defaultConfig,
-    );
+    const resultedConfig = await configModule(defaultConfig);
     return resultedConfig;
   }
 
@@ -164,61 +155,68 @@ async function loadMetroConfigFromDisk(
 }
 
 function overrideConfigWithArguments(
-  config: IntermediateConfigT,
+  config: ConfigT,
   argv: YargArguments,
-): IntermediateConfigT {
+): ConfigT {
   // We override some config arguments here with the argv
 
+  const output: InputConfigT = {
+    resolver: {},
+    serializer: {},
+    server: {},
+    transformer: {},
+  };
+
   if (argv.port != null) {
-    config.server.port = Number(argv.port);
+    output.server.port = Number(argv.port);
   }
 
   if (argv.projectRoot != null) {
-    config.projectRoot = argv.projectRoot;
+    output.projectRoot = argv.projectRoot;
   }
 
   if (argv.watchFolders != null) {
-    config.watchFolders = argv.watchFolders;
+    output.watchFolders = argv.watchFolders;
   }
 
   if (argv.assetExts != null) {
-    config.resolver.assetExts = argv.assetExts;
+    output.resolver.assetExts = argv.assetExts;
   }
 
   if (argv.sourceExts != null) {
-    config.resolver.sourceExts = argv.sourceExts;
+    output.resolver.sourceExts = argv.sourceExts;
   }
 
   if (argv.platforms != null) {
-    config.resolver.platforms = argv.platforms;
+    output.resolver.platforms = argv.platforms;
   }
 
   if (argv.providesModuleNodeModules != null) {
-    config.resolver.providesModuleNodeModules = argv.providesModuleNodeModules;
+    output.resolver.providesModuleNodeModules = argv.providesModuleNodeModules;
   }
 
   if (argv['max-workers'] != null || argv.maxWorkers != null) {
-    config.maxWorkers = Number(argv['max-workers'] || argv.maxWorkers);
+    output.maxWorkers = Number(argv['max-workers'] || argv.maxWorkers);
   }
 
   if (argv.transformer != null) {
-    config.transformer.babelTransformerPath = resolve(argv.transformer);
+    output.transformer.babelTransformerPath = resolve(argv.transformer);
   }
 
   if (argv['reset-cache'] != null) {
-    config.resetCache = argv['reset-cache'];
+    output.resetCache = argv['reset-cache'];
   }
 
   if (argv.resetCache != null) {
-    config.resetCache = argv.resetCache;
+    output.resetCache = argv.resetCache;
   }
 
   if (argv.verbose === false) {
-    config.reporter = {update: () => {}};
+    output.reporter = {update: () => {}};
     // TODO: Ask if this is the way to go
   }
 
-  return config;
+  return mergeConfig(config, output);
 }
 
 /**
@@ -233,32 +231,33 @@ async function loadConfig(
 ): Promise<ConfigT> {
   argv.config = overrideArgument(argv.config);
 
-  const configuration: IntermediateConfigT = await loadMetroConfigFromDisk(
+  const configuration = await loadMetroConfigFromDisk(
     argv.config,
     argv.cwd,
     defaultConfigOverrides,
   );
 
   // Override the configuration with cli parameters
-  const overriddenConfig: ConfigT = overrideConfigWithArguments(
-    configuration,
-    argv,
-  );
+  const configWithArgs = overrideConfigWithArguments(configuration, argv);
+
+  const overriddenConfig = {};
 
   // The resolver breaks if "json" is missing from `resolver.sourceExts`
-  const {sourceExts} = overriddenConfig.resolver;
-  if (!sourceExts.includes('json')) {
-    sourceExts.push('json');
+  const sourceExts = configWithArgs.resolver.sourceExts;
+  if (!configWithArgs.resolver.sourceExts.includes('json')) {
+    overriddenConfig.resolver = {
+      sourceExts: [...sourceExts, 'json'],
+    };
   }
+
+  overriddenConfig.watchFolders = [
+    configWithArgs.projectRoot,
+    ...configWithArgs.watchFolders,
+  ];
 
   // Set the watchfolders to include the projectRoot, as Metro assumes that is
   // the case
-  overriddenConfig.watchFolders = [
-    overriddenConfig.projectRoot,
-    ...overriddenConfig.watchFolders,
-  ];
-
-  return overriddenConfig;
+  return mergeConfig(configWithArgs, overriddenConfig);
 }
 
 module.exports = {

@@ -28,9 +28,9 @@ const {
 const {FileStore} = require('metro-cache');
 const {Terminal} = require('metro-core');
 
-import type {IntermediateConfigT} from '../configTypes.flow';
+import type {ConfigT} from '../configTypes.flow';
 
-const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
+const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   resolver: {
     assetExts,
     platforms,
@@ -96,9 +96,7 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
   reporter: new TerminalReporter(new Terminal(process.stdout)),
 });
 
-async function getDefaultConfig(
-  rootPath: ?string,
-): Promise<IntermediateConfigT> {
+async function getDefaultConfig(rootPath: ?string): Promise<ConfigT> {
   // We can add more logic here to get a sensible default configuration, for
   // now we just return a stub.
 

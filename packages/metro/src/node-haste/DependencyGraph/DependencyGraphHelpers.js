@@ -15,15 +15,15 @@ const path = require('path');
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
 
 class DependencyGraphHelpers {
-  _providesModuleNodeModules: Array<string>;
+  _providesModuleNodeModules: $ReadOnlyArray<string>;
   _assetExts: Set<string>;
 
   constructor({
     providesModuleNodeModules,
     assetExts,
   }: {
-    +providesModuleNodeModules: Array<string>,
-    +assetExts: Array<string>,
+    +providesModuleNodeModules: $ReadOnlyArray<string>,
+    +assetExts: $ReadOnlyArray<string>,
   }) {
     this._providesModuleNodeModules = providesModuleNodeModules;
     this._assetExts = new Set(assetExts);
