@@ -96,7 +96,7 @@ class DependencyGraph extends EventEmitter {
       roots: config.watchFolders,
       throwOnModuleCollision: true,
       useWatchman: config.resolver.useWatchman,
-      watch: config.watch,
+      watch: true,
     });
   }
 

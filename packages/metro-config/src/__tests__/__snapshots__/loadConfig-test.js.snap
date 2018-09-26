@@ -95,7 +95,6 @@ Object {
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
-  "watch": false,
   "watchFolders": Array [
     "/",
   ],
@@ -197,7 +196,6 @@ Object {
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
-  "watch": false,
   "watchFolders": Array [
     "/",
   ],
