@@ -15,6 +15,7 @@ const path = require('path');
 
 const {
   defaultCreateModuleIdFactory,
+  platforms,
   providesModuleNodeModules,
 } = require('./defaults/defaults');
 const {FileStore} = require('metro-cache');
@@ -37,7 +38,7 @@ const DEFAULT = ({
   getAssetExts: () => [],
   getBlacklistRE: () => blacklist(),
   getEnableBabelRCLookup: () => true,
-  getPlatforms: () => [],
+  getPlatforms: () => platforms,
   getPolyfillModuleNames: () => [],
   getProjectRoots: undefined,
   // We assume the default project path is two levels up from

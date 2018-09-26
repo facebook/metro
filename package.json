@@ -38,6 +38,7 @@
     "micromatch": "^2.3.11",
     "mkdirp": "^0.5.1",
     "prettier": "1.13.6",
+    "pretty-format": "^23.4.1",
     "progress": "^2.0.0",
     "promise": "^7.1.1",
     "sinon": "^2.2.0",
