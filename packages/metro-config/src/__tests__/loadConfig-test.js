@@ -16,6 +16,7 @@ jest.mock('cosmiconfig');
 const {loadConfig} = require('../loadConfig');
 const getDefaultConfig = require('../defaults');
 const cosmiconfig = require('cosmiconfig');
+const prettyFormat = require('pretty-format');
 
 describe('loadConfig', () => {
   beforeEach(() => {
@@ -80,16 +81,14 @@ describe('loadConfig', () => {
   it('can load the config with no config present', async () => {
     cosmiconfig.setReturnNull(true);
 
-    const result = await loadConfig();
-    result.reporter = {update: () => {}};
+    const result = await loadConfig({cwd: process.cwd()});
 
-    const defaultConfig = await getDefaultConfig(process.cwd());
-    defaultConfig.watchFolders = [
-      defaultConfig.projectRoot,
-      ...defaultConfig.watchFolders,
-    ];
-    defaultConfig.reporter = {update: () => {}};
+    let defaultConfig = await getDefaultConfig(process.cwd());
+    defaultConfig = {
+      ...defaultConfig,
+      watchFolders: [defaultConfig.projectRoot, ...defaultConfig.watchFolders],
+    };
 
-    expect(JSON.stringify(result)).toEqual(JSON.stringify(defaultConfig));
+    expect(prettyFormat(result)).toEqual(prettyFormat(defaultConfig));
   });
 });
