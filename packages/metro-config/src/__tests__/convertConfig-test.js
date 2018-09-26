@@ -48,7 +48,7 @@ const convertConfigToServerConfig = (
   const watchFolders = config.getWatchFolders();
   const serverOptions: ServerOptions = {
     asyncRequireModulePath: config.getAsyncRequireModulePath(),
-    assetExts: config.assetTransforms ? [] : assetExts,
+    assetExts,
     assetRegistryPath: config.assetRegistryPath,
     blacklistRE: config.getBlacklistRE(),
     cacheStores: config.cacheStores,
@@ -72,9 +72,7 @@ const convertConfigToServerConfig = (
     resetCache,
     reporter,
     resolveRequest: config.resolveRequest,
-    sourceExts: config.assetTransforms
-      ? sourceExts.concat(assetExts)
-      : sourceExts,
+    sourceExts,
     transformModulePath: config.getTransformModulePath(),
     watch,
     watchFolders,
@@ -130,7 +128,6 @@ describe('convertConfig', () => {
     );
 
     const ADDED_FIELDS = [
-      'assetTransforms',
       'enhanceMiddleware',
       'getUseGlobalHotkey',
       'polyfillModuleNames',

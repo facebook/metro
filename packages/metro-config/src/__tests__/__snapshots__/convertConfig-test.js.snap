@@ -37,7 +37,6 @@ Object {
       "ttf",
     ],
     "assetRegistryPath": "missing-asset-registry-path",
-    "assetTransforms": false,
     "asyncRequireModulePath": "metro/src/lib/bundle-modules/asyncRequire",
     "blacklistRE": /\\(node_modules\\[\\\\/\\\\\\\\\\]react\\[\\\\/\\\\\\\\\\]dist\\[\\\\/\\\\\\\\\\]\\.\\*\\|website\\\\/node_modules\\\\/\\.\\*\\|heapCapture\\\\/bundle\\\\\\.js\\|\\.\\*\\\\/__tests__\\\\/\\.\\*\\)\\$/,
     "cacheStores": Array [],
@@ -97,7 +96,6 @@ Object {
   "serverOptions": Object {
     "assetExts": undefined,
     "assetRegistryPath": undefined,
-    "assetTransforms": undefined,
     "asyncRequireModulePath": undefined,
     "cacheStores": undefined,
     "cacheVersion": undefined,

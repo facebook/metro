@@ -35,7 +35,6 @@ const getDefaultValues = (projectRoot: ?string): IntermediateConfigT => ({
     assetExts,
     platforms,
     sourceExts,
-    assetTransforms: false,
     providesModuleNodeModules: providesModuleNodeModules.slice(),
     resolverMainFields: ['browser', 'main'],
     extraNodeModules: {},

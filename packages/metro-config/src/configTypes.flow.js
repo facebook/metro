@@ -66,7 +66,6 @@ export type Middleware = (
 
 export type OldConfigT = {
   assetRegistryPath: string,
-  assetTransforms?: boolean,
   cacheStores: Array<CacheStore<TransformResult<>>>,
   cacheVersion: string,
   createModuleIdFactory: () => (path: string) => number,
@@ -102,7 +101,6 @@ export type OldConfigT = {
 
 type ResolverConfigT = {
   assetExts: Array<string>,
-  assetTransforms: boolean,
   blacklistRE: RegExp,
   extraNodeModules: {[name: string]: string},
   hasteImplModulePath: ?string,

@@ -25,7 +25,6 @@ const DEFAULT = ({
   assetRegistryPath: 'missing-asset-registry-path',
   enhanceMiddleware: middleware => middleware,
   extraNodeModules: {},
-  assetTransforms: false,
   cacheStores: [
     new FileStore({
       root: path.join(os.tmpdir(), 'metro-cache'),

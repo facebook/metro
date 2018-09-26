@@ -67,7 +67,6 @@ async function convertOldToNew({
     getResolverMainFields,
     getSourceExts,
     hasteImplModulePath,
-    assetTransforms,
     dynamicDepsInPackages,
     getPolyfillModuleNames,
     getAsyncRequireModulePath,
@@ -113,8 +112,6 @@ async function convertOldToNew({
       resolverMainFields: getResolverMainFields(),
       sourceExts,
       hasteImplModulePath,
-      assetTransforms:
-        assetTransforms || defaultConfig.resolver.assetTransforms,
       extraNodeModules,
       resolveRequest,
       blacklistRE: getBlacklistRE()
@@ -207,7 +204,6 @@ function convertNewToOld(newConfig: ConfigT): ConvertedOldConfigT {
     resolverMainFields,
     sourceExts,
     hasteImplModulePath,
-    assetTransforms,
     extraNodeModules,
     resolveRequest,
     blacklistRE,
@@ -241,14 +237,13 @@ function convertNewToOld(newConfig: ConfigT): ConvertedOldConfigT {
   // Return old config
   const oldConfig: $Shape<ConvertedOldConfigT> = {
     serverOptions: {
-      assetExts: assetTransforms ? [] : assetExts,
+      assetExts,
       assetRegistryPath,
-      assetTransforms,
       asyncRequireModulePath,
       platforms,
       providesModuleNodeModules,
       getResolverMainFields: () => resolverMainFields,
-      sourceExts: assetTransforms ? sourceExts.concat(assetExts) : sourceExts,
+      sourceExts,
       dynamicDepsInPackages,
       polyfillModuleNames,
       extraNodeModules,

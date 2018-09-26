@@ -74,8 +74,6 @@ export type ModuleTransportLike = {
 };
 
 export type Options = {|
-  // TODO: Remove this option below (T23793920)
-  assetTransforms?: boolean,
   assetExts?: Array<string>,
   asyncRequireModulePath: string,
   assetRegistryPath: string,
