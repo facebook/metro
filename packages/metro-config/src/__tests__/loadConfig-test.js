@@ -35,7 +35,7 @@ describe('loadConfig', () => {
 
     const result = await loadConfig({});
 
-    expect(result).toMatchSnapshot({
+    (expect(result): $FlowFixMe).toMatchSnapshot({
       transformer: {
         asyncRequireModulePath: expect.stringMatching(
           /metro\/src\/lib\/bundle-modules\/asyncRequire.js$/,
@@ -85,7 +85,7 @@ describe('loadConfig', () => {
 
     const result = await loadConfig({config: '/metro.config.js'});
 
-    expect(result).toMatchSnapshot({
+    (expect(result): $FlowFixMe).toMatchSnapshot({
       transformer: {
         asyncRequireModulePath: expect.stringMatching(
           /metro\/src\/lib\/bundle-modules\/asyncRequire.js$/,
