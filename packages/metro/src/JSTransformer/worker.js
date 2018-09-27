@@ -81,6 +81,7 @@ export type JsTransformerConfig = {|
   +asyncRequireModulePath: string,
   +babelTransformerPath: string,
   +dynamicDepsInPackages: DynamicRequiresBehavior,
+  +enableBabelRCLookup: boolean,
   +minifierPath: string,
   +optimizationSizeLimit: number,
 |};
@@ -90,7 +91,6 @@ export type CustomTransformOptions = {[string]: mixed, __proto__: null};
 export type JsTransformOptions = {|
   +customTransformOptions?: CustomTransformOptions,
   +dev: boolean,
-  +enableBabelRCLookup?: boolean,
   +experimentalImportSupport?: boolean,
   +hot: boolean,
   +inlineRequires: boolean,
@@ -173,6 +173,7 @@ class JsTransformer {
       filename,
       options: {
         ...options,
+        enableBabelRCLookup: this._config.enableBabelRCLookup,
         // Inline requires are now performed at a secondary step. We cannot
         // unfortunately remove it from the internal transformer, since this one
         // is used by other tooling, and this would affect it.

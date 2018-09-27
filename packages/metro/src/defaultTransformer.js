@@ -23,6 +23,7 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
   try {
     const {ast} = transformSync(src, {
       ast: true,
+      babelrc: options.enableBabelRCLookup,
       code: false,
       highlightCode: true,
       filename,

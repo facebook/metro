@@ -45,6 +45,7 @@ class Transformer {
         asyncRequireModulePath: this._config.transformer.asyncRequireModulePath,
         babelTransformerPath: this._config.transformer.babelTransformerPath,
         dynamicDepsInPackages: this._config.transformer.dynamicDepsInPackages,
+        enableBabelRCLookup: this._config.transformer.enableBabelRCLookup,
         minifierPath: this._config.transformer.minifierPath,
         optimizationSizeLimit: this._config.transformer.optimizationSizeLimit,
       },
