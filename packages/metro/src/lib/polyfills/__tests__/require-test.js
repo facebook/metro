@@ -226,34 +226,34 @@ describe('require', () => {
       moduleSystem.__r(0);
     });
 
-    it('exposes module.id as path on the module in dev mode', () => {
+    it('exposes module.id as moduleId on the module in dev mode', () => {
       createModuleSystem(moduleSystem, true);
 
       createModule(
         moduleSystem,
-        0,
+        1254,
         'index.js',
         (global, require, importDefault, importAll, module) => {
           module.exports = module.id;
         },
       );
 
-      expect(moduleSystem.__r(0)).toEqual('index.js');
+      expect(moduleSystem.__r(1254)).toEqual(1254);
     });
 
-    it("doesn't expose module.id as moduleId on the module in prod mode", () => {
+    it('exposes module.id as moduleId on the module in prod mode', () => {
       createModuleSystem(moduleSystem, false);
 
       createModule(
         moduleSystem,
-        0,
+        1337,
         'index.js',
         (global, require, importDefault, importAll, module) => {
           module.exports = module.id;
         },
       );
 
-      expect(moduleSystem.__r(0)).toBeUndefined();
+      expect(moduleSystem.__r(1337)).toEqual(1337);
     });
 
     it('handles requires/exports correctly', () => {
@@ -441,7 +441,7 @@ describe('require', () => {
       expect(moduleSystem.__r(0)).toEqual('foo');
       hook.release();
       expect(moduleSystem.__r(1)).toEqual('bar');
-      expect(received).toEqual([[0, {exports: 'foo'}]]);
+      expect(received).toEqual([[0, {exports: 'foo', id: 0}]]);
     });
   });
 

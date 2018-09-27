@@ -34,12 +34,12 @@ type HotModuleReloadingData = {|
   disposeCallback: ?HotModuleReloadingCallback,
   dispose: (callback: HotModuleReloadingCallback) => void,
 |};
+type ModuleID = number;
 type Module = {
-  id?: string,
+  id?: ModuleID,
   exports: Exports,
   hot?: HotModuleReloadingData,
 };
-type ModuleID = number;
 type ModuleDefinition = {|
   dependencyMap: ?DependencyMap,
   error?: any,
@@ -341,12 +341,11 @@ function loadModuleImplementation(moduleId, module) {
     const moduleObject: Module = module.publicModule;
 
     if (__DEV__) {
-      moduleObject.id = module.verboseName || moduleObject.id;
-
       if (module.hot) {
         moduleObject.hot = module.hot;
       }
     }
+    moduleObject.id = moduleId;
 
     if (hooks.length > 0) {
       for (let i = 0; i < hooks.length; ++i) {
