@@ -77,7 +77,7 @@ describe('code transformation worker:', () => {
       [
         '(function (global) {',
         '  someReallyArbitrary(code);',
-        "})(typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : this);",
+        "})(typeof global !== 'undefined' ? global : typeof window !== 'undefined' ? window : this);",
       ].join('\n'),
     );
     expect(result.output[0].data.map).toMatchSnapshot();

@@ -17,8 +17,12 @@ const template = require('@babel/template').default;
 const traverse = require('@babel/traverse').default;
 
 const WRAP_NAME = '$$_REQUIRE'; // note: babel will prefix this with _
+
+// Check first the `global` variable as the global object. This way serializers
+// can create a local variable called global to fake it as a global object
+// without having to pollute the window object on web.
 const IIFE_PARAM = template(
-  "typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : this",
+  "typeof global !== 'undefined' ? global : typeof window !== 'undefined' ? window : this",
 );
 
 function wrapModule(
