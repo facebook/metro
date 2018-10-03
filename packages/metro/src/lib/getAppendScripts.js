@@ -25,6 +25,7 @@ type Options<T: number | string> = {
 
 function getAppendScripts<T: number | string>(
   entryPoint: string,
+  pre: $ReadOnlyArray<Module<>>,
   graph: Graph<>,
   options: Options<T>,
 ): $ReadOnlyArray<Module<>> {
@@ -58,7 +59,7 @@ function getAppendScripts<T: number | string>(
 
   if (options.inlineSourceMap) {
     const sourceMap = Buffer.from(
-      sourceMapString([], graph, {
+      sourceMapString(pre, graph, {
         processModuleFilter: () => true,
         excludeSource: false,
       }),

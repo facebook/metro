@@ -59,7 +59,7 @@ function deltaJSBundle(
       }
     }
 
-    const appendScripts = getAppendScripts(entryPoint, graph, options);
+    const appendScripts = getAppendScripts(entryPoint, pre, graph, options);
 
     for (const module of appendScripts) {
       if (isJsModule(module) && processModuleFilter(module)) {
