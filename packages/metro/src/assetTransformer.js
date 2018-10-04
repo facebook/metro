@@ -36,6 +36,7 @@ async function transform(
     filename,
     assetDataPlugins,
     options.platform,
+    options.publicPath,
   );
 
   return {

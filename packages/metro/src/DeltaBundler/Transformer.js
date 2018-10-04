@@ -48,6 +48,7 @@ class Transformer {
         enableBabelRCLookup: this._config.transformer.enableBabelRCLookup,
         minifierPath: this._config.transformer.minifierPath,
         optimizationSizeLimit: this._config.transformer.optimizationSizeLimit,
+        publicPath: this._config.transformer.publicPath,
       },
     };
 

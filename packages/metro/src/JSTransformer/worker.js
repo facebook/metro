@@ -84,6 +84,7 @@ export type JsTransformerConfig = {|
   +enableBabelRCLookup: boolean,
   +minifierPath: string,
   +optimizationSizeLimit: number,
+  +publicPath: string,
 |};
 
 export type CustomTransformOptions = {[string]: mixed, __proto__: null};
@@ -179,6 +180,7 @@ class JsTransformer {
         // is used by other tooling, and this would affect it.
         inlineRequires: false,
         projectRoot: this._projectRoot,
+        publicPath: this._config.publicPath,
       },
       plugins: [],
       src: sourceCode,

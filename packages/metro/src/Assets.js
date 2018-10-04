@@ -177,8 +177,9 @@ async function getAssetData(
   localPath: string,
   assetDataPlugins: $ReadOnlyArray<string>,
   platform: ?string = null,
+  publicPath: ?string = '/assets',
 ): Promise<AssetData> {
-  let assetUrlPath = path.join('/assets', path.dirname(localPath));
+  let assetUrlPath = `${publicPath}/${path.dirname(localPath)}`;
 
   // On Windows, change backslashes to slashes to get proper URL path from file path.
   if (path.sep === '\\') {
