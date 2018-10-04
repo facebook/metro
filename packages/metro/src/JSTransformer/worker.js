@@ -51,6 +51,7 @@ type BabelTransformerOptions = $ReadOnly<{
   minify: boolean,
   platform: ?string,
   projectRoot: string,
+  publicPath: string,
 }>;
 
 export type BabelTransformerArgs = $ReadOnly<{|
@@ -88,6 +89,7 @@ export type JsTransformerConfig = $ReadOnly<{|
   minifierConfig: MinifierConfig,
   minifierPath: string,
   optimizationSizeLimit: number,
+  publicPath: string,
 |}>;
 
 export type CustomTransformOptions = {[string]: mixed, __proto__: null};
@@ -184,6 +186,7 @@ class JsTransformer {
         // is used by other tooling, and this would affect it.
         inlineRequires: false,
         projectRoot: this._projectRoot,
+        publicPath: this._config.publicPath,
       },
       plugins: [],
       src: sourceCode,

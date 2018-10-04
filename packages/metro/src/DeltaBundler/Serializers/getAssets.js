@@ -23,6 +23,7 @@ type Options = {|
   assetPlugins: $ReadOnlyArray<string>,
   platform: ?string,
   projectRoot: string,
+  publicPath: string,
 |};
 
 async function getAssets(
@@ -44,6 +45,7 @@ async function getAssets(
           path.relative(options.projectRoot, module.path),
           options.assetPlugins,
           options.platform,
+          options.publicPath,
         ),
       );
     }

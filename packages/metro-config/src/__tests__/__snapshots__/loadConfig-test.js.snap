@@ -108,6 +108,7 @@ Object {
     "minifierPath": "metro-minify-uglify",
     "optimizationSizeLimit": 153600,
     "postMinifyProcess": [Function],
+    "publicPath": "/assets",
     "transformVariants": Object {
       "default": Object {},
     },
@@ -228,6 +229,7 @@ Object {
     "minifierPath": "metro-minify-uglify",
     "optimizationSizeLimit": 153600,
     "postMinifyProcess": [Function],
+    "publicPath": "/assets",
     "transformVariants": Object {
       "default": Object {},
     },

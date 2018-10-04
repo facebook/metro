@@ -145,6 +145,7 @@ async function convertOldToNew({
         ? transformVariants()
         : defaultConfig.transformer.transformVariants,
       workerPath: getWorkerPath(),
+      publicPath: '/assets',
     },
 
     reporter,

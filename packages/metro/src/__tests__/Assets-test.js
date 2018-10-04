@@ -125,7 +125,13 @@ describe('getAssetData', () => {
       'b@4.5x.png': 'b4.5 image',
     });
 
-    return getAssetData('/root/imgs/b.png', 'imgs/b.png', []).then(data => {
+    return getAssetData(
+      '/root/imgs/b.png',
+      'imgs/b.png',
+      [],
+      null,
+      '/assets',
+    ).then(data => {
       expect(data).toEqual(
         expect.objectContaining({
           __packager_asset: true,
@@ -153,7 +159,13 @@ describe('getAssetData', () => {
       'b@4.5x.jpg': 'b4.5 image',
     });
 
-    const data = await getAssetData('/root/imgs/b.jpg', 'imgs/b.jpg', []);
+    const data = await getAssetData(
+      '/root/imgs/b.jpg',
+      'imgs/b.jpg',
+      [],
+      null,
+      '/assets',
+    );
 
     expect(data).toEqual(
       expect.objectContaining({
@@ -163,6 +175,40 @@ describe('getAssetData', () => {
         scales: [1, 2, 4, 4.5],
         fileSystemLocation: '/root/imgs',
         httpServerLocation: '/assets/imgs',
+        files: [
+          '/root/imgs/b@1x.jpg',
+          '/root/imgs/b@2x.jpg',
+          '/root/imgs/b@4x.jpg',
+          '/root/imgs/b@4.5x.jpg',
+        ],
+      }),
+    );
+  });
+
+  it('respects `options.publicPath` for output httpServerLocation', async () => {
+    writeImages({
+      'b@1x.jpg': 'b1 image',
+      'b@2x.jpg': 'b2 image',
+      'b@4x.jpg': 'b4 image',
+      'b@4.5x.jpg': 'b4.5 image',
+    });
+
+    const data = await getAssetData(
+      '/root/imgs/b.jpg',
+      'imgs/b.jpg',
+      [],
+      null,
+      '/public_paths/foo-boar/',
+    );
+
+    expect(data).toEqual(
+      expect.objectContaining({
+        __packager_asset: true,
+        type: 'jpg',
+        name: 'b',
+        scales: [1, 2, 4, 4.5],
+        fileSystemLocation: '/root/imgs',
+        httpServerLocation: '/public_paths/foo-boar/imgs',
         files: [
           '/root/imgs/b@1x.jpg',
           '/root/imgs/b@2x.jpg',
@@ -206,10 +252,13 @@ describe('getAssetData', () => {
       'b@3x.png': 'b3 image',
     });
 
-    const data = await getAssetData('/root/imgs/b.png', 'imgs/b.png', [
-      'mockPlugin1',
-      'asyncMockPlugin2',
-    ]);
+    const data = await getAssetData(
+      '/root/imgs/b.png',
+      'imgs/b.png',
+      ['mockPlugin1', 'asyncMockPlugin2'],
+      null,
+      '/assets',
+    );
 
     expect(data).toEqual(
       expect.objectContaining({
@@ -247,9 +296,15 @@ describe('getAssetData', () => {
         hash.update(fs.readFileSync(path.join('/root/imgs', name), 'utf8'));
       }
 
-      expect(await getAssetData('/root/imgs/b.jpg', 'imgs/b.jpg', [])).toEqual(
-        expect.objectContaining({hash: hash.digest('hex')}),
-      );
+      expect(
+        await getAssetData(
+          '/root/imgs/b.jpg',
+          'imgs/b.jpg',
+          [],
+          null,
+          '/assets',
+        ),
+      ).toEqual(expect.objectContaining({hash: hash.digest('hex')}));
     });
 
     it('changes the hash when the passed-in file watcher emits an `all` event', async () => {
@@ -257,11 +312,19 @@ describe('getAssetData', () => {
         '/root/imgs/b.jpg',
         'imgs/b.jpg',
         [],
+        null,
+        '/assets',
       );
 
       fs.writeFileSync('/root/imgs/b@4x.jpg', 'updated data');
 
-      const data = await getAssetData('/root/imgs/b.jpg', 'imgs/b.jpg', []);
+      const data = await getAssetData(
+        '/root/imgs/b.jpg',
+        'imgs/b.jpg',
+        [],
+        null,
+        '/assets',
+      );
       expect(data.hash).not.toEqual(initialData.hash);
     });
   });
