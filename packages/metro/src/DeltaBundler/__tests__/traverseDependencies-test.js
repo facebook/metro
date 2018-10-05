@@ -289,6 +289,31 @@ describe('Progress updates', () => {
       lastCall.total = call[1];
     }
   });
+
+  it('increases the number of discover/finished modules in steps of one when there are multiple entrypoints', async () => {
+    const onProgress = jest.fn();
+
+    // Add a new entry point to the graph.
+    Actions.createFile('/bundle-2');
+    Actions.addDependency('/bundle-2', '/qux');
+    Actions.addDependency('/bundle-2', '/foo');
+    graph.entryPoints.push('/bundle-2');
+
+    await initialTraverseDependencies(graph, {...options, onProgress});
+
+    const lastCall = {
+      num: 0,
+      total: 0,
+    };
+    for (const call of onProgress.mock.calls) {
+      expect(call[0]).toBeGreaterThanOrEqual(lastCall.num);
+      expect(call[1]).toBeGreaterThanOrEqual(lastCall.total);
+
+      expect(call[0] + call[1]).toEqual(lastCall.num + lastCall.total + 1);
+      lastCall.num = call[0];
+      lastCall.total = call[1];
+    }
+  });
 });
 
 describe('edge cases', () => {

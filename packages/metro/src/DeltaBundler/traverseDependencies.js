@@ -27,12 +27,35 @@ type Result<T> = {added: Map<string, Module<T>>, deleted: Set<string>};
  * files have been modified. This allows to return the added modules before the
  * modified ones (which is useful for things like Hot Module Reloading).
  **/
-type Delta = {|
-  +added: Set<string>,
-  +modified: Set<string>,
-  +deleted: Set<string>,
-  +inverseDependencies: Map<string, Set<string>>,
-|};
+type Delta = $ReadOnly<{|
+  added: Set<string>,
+  modified: Set<string>,
+  deleted: Set<string>,
+  inverseDependencies: Map<string, Set<string>>,
+|}>;
+
+type InternalOptions<T> = $ReadOnly<{|
+  resolve: $PropertyType<Options<T>, 'resolve'>,
+  transform: $PropertyType<Options<T>, 'transform'>,
+  onDependencyAdd: () => mixed,
+  onDependencyAdded: () => mixed,
+|}>;
+
+function getInternalOptions<T>({
+  transform,
+  resolve,
+  onProgress,
+}: Options<T>): InternalOptions<T> {
+  let numProcessed = 0;
+  let total = 0;
+
+  return {
+    transform,
+    resolve,
+    onDependencyAdd: () => onProgress && onProgress(numProcessed, ++total),
+    onDependencyAdded: () => onProgress && onProgress(++numProcessed, total),
+  };
+}
 
 /**
  * Dependency Traversal logic for the Delta Bundler. This method calculates
@@ -57,6 +80,8 @@ async function traverseDependencies<T>(
     inverseDependencies: new Map(),
   };
 
+  const internalOptions = getInternalOptions(options);
+
   for (const path of paths) {
     // Only process the path if it's part of the dependency graph. It's possible
     // that this method receives a path that is no longer part of it (e.g if a
@@ -65,7 +90,12 @@ async function traverseDependencies<T>(
     if (graph.dependencies.get(path)) {
       delta.modified.add(path);
 
-      await traverseDependenciesForSingleFile(path, graph, delta, options);
+      await traverseDependenciesForSingleFile(
+        path,
+        graph,
+        delta,
+        internalOptions,
+      );
     }
   }
 
@@ -110,9 +140,11 @@ async function initialTraverseDependencies<T>(
     inverseDependencies: new Map(),
   };
 
+  const internalOptions = getInternalOptions(options);
+
   await Promise.all(
     graph.entryPoints.map(path =>
-      traverseDependenciesForSingleFile(path, graph, delta, options),
+      traverseDependenciesForSingleFile(path, graph, delta, internalOptions),
     ),
   );
 
@@ -128,38 +160,20 @@ async function traverseDependenciesForSingleFile<T>(
   path: string,
   graph: Graph<T>,
   delta: Delta,
-  options: Options<T>,
+  options: InternalOptions<T>,
 ): Promise<void> {
-  let numProcessed = 0;
-  let total = 1;
-  options.onProgress && options.onProgress(numProcessed, total);
+  options.onDependencyAdd();
 
-  await processModule(
-    path,
-    graph,
-    delta,
-    options,
-    () => {
-      total++;
-      options.onProgress && options.onProgress(numProcessed, total);
-    },
-    () => {
-      numProcessed++;
-      options.onProgress && options.onProgress(numProcessed, total);
-    },
-  );
+  await processModule(path, graph, delta, options);
 
-  numProcessed++;
-  options.onProgress && options.onProgress(numProcessed, total);
+  options.onDependencyAdded();
 }
 
 async function processModule<T>(
   path: string,
   graph: Graph<T>,
   delta: Delta,
-  options: Options<T>,
-  onDependencyAdd: () => mixed,
-  onDependencyAdded: () => mixed,
+  options: InternalOptions<T>,
 ): Promise<Module<T>> {
   // Transform the file via the given option.
   const result = await options.transform(path);
@@ -205,15 +219,7 @@ async function processModule<T>(
   for (const [relativePath, dependency] of currentDependencies) {
     if (!previousDependencies.has(relativePath)) {
       promises.push(
-        addDependency(
-          module,
-          dependency.absolutePath,
-          graph,
-          delta,
-          options,
-          onDependencyAdd,
-          onDependencyAdded,
-        ),
+        addDependency(module, dependency.absolutePath, graph, delta, options),
       );
     }
   }
@@ -228,9 +234,7 @@ async function addDependency<T>(
   path: string,
   graph: Graph<T>,
   delta: Delta,
-  options: Options<T>,
-  onDependencyAdd: () => mixed,
-  onDependencyAdded: () => mixed,
+  options: InternalOptions<T>,
 ): Promise<void> {
   // The new dependency was already in the graph, we don't need to do anything.
   const existingModule = graph.dependencies.get(path);
@@ -253,21 +257,14 @@ async function addDependency<T>(
   delta.added.add(path);
   delta.inverseDependencies.set(path, new Set([parentModule.path]));
 
-  onDependencyAdd();
+  options.onDependencyAdd();
 
-  const module = await processModule(
-    path,
-    graph,
-    delta,
-    options,
-    onDependencyAdd,
-    onDependencyAdded,
-  );
+  const module = await processModule(path, graph, delta, options);
 
   graph.dependencies.set(module.path, module);
   module.inverseDependencies.add(parentModule.path);
 
-  onDependencyAdded();
+  options.onDependencyAdded();
 }
 
 function removeDependency<T>(
@@ -306,7 +303,7 @@ function removeDependency<T>(
 function resolveDependencies<T>(
   parentPath: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
-  options: Options<T>,
+  options: InternalOptions<T>,
 ): Map<string, Dependency> {
   return new Map(
     dependencies.map(result => {
