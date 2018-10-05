@@ -1,6 +1,6 @@
 {
   "name": "metro-minify-uglify",
-  "version": "0.47.1",
+  "version": "0.48.0",
   "description": "🚇 Default minifier for Metro",
   "main": "src/index.js",
   "repository": {
