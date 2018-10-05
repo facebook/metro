@@ -75,6 +75,24 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
       preloadedModules: false,
       ramGroups: [],
     }),
+    minifierConfig: {
+      mangle: {
+        toplevel: false,
+      },
+      output: {
+        ascii_only: true,
+        quote_style: 3,
+        wrap_iife: true,
+      },
+      sourceMap: {
+        includeSources: false,
+      },
+      toplevel: false,
+      compress: {
+        // reduce_funcs inlines single-use functions, which cause perf regressions.
+        reduce_funcs: false,
+      },
+    },
     minifierPath: DEFAULT_METRO_MINIFIER_PATH,
     optimizationSizeLimit: 150 * 1024, // 150 KiB.
     postMinifyProcess: x => x,

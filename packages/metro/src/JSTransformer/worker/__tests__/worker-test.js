@@ -42,6 +42,7 @@ const baseOptions = {
   babelTransformerPath,
   dynamicDepsInPackages: 'reject',
   enableBabelRuntime: true,
+  minifierConfig: {},
   minifierPath: 'minifyModulePath',
   optimizationSizeLimit: 100000,
 };

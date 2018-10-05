@@ -71,6 +71,7 @@ These options are used when Metro serves the content.
 | `getTransformOptions`    | `GetTransformOptions`                   | Get the transform options.                                                             |
 | `postMinifyProcess`      | `PostMinifyProcess`                     | What happens after minification.                                                       |
 | `minifierPath`           | `string`                                | Path to the minifier that minifies the code after transformation.                      |
+| `minifierConfig`         | `{[key: string]: mixed}`                | Configuration object that will be passed to the minifier (it should be serializable).  |
 | `optimizationSizeLimit`  | `number`                                | Define a threshold (in bytes) to disable some expensive optimizations for big files.   |
 
 #### React Native Only

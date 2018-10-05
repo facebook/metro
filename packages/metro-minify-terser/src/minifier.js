@@ -35,27 +35,23 @@ function minify({
   code,
   map,
   reserved,
+  config,
 }: MinifierOptions): {code: string, map: ?string} {
-  const result = terser.minify(code, {
+  const options = {
+    ...config,
     mangle: {
-      toplevel: false,
+      ...config.mangle,
       reserved,
     },
-    output: {
-      ascii_only: true,
-      quote_style: 3,
-      wrap_iife: true,
-    },
-    sourceMap: {
-      content: map,
-      includeSources: false,
-    },
-    toplevel: false,
-    compress: {
-      // reduce_funcs inlines single-use function, which cause perf regressions.
-      reduce_funcs: false,
-    },
-  });
+    sourceMap: map
+      ? {
+          ...config.sourceMap,
+          content: map,
+        }
+      : false,
+  };
+
+  const result = terser.minify(code, options);
 
   if (result.error) {
     throw result.error;
@@ -63,6 +59,8 @@ function minify({
 
   return {
     code: result.code,
+    // eslint-disable-next-line lint/flow-no-fixme
+    // $FlowFixMe flow cannot coerce the uglify options after using spread.
     map: result.map,
   };
 }

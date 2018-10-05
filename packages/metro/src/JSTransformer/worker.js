@@ -69,11 +69,14 @@ export type BabelTransformer = {|
   getCacheKey?: () => string,
 |};
 
+type MinifierConfig = $ReadOnly<{[string]: mixed}>;
+
 export type MinifierOptions = {
   code: string,
   map: ?BabelSourceMap,
   filename: string,
   reserved: $ReadOnlyArray<string>,
+  config: MinifierConfig,
 };
 
 export type Type = 'script' | 'module' | 'asset';
@@ -86,6 +89,7 @@ export type JsTransformerConfig = $ReadOnly<{|
   dynamicDepsInPackages: DynamicRequiresBehavior,
   enableBabelRCLookup: boolean,
   enableBabelRuntime: boolean,
+  minifierConfig: MinifierConfig,
   minifierPath: string,
   optimizationSizeLimit: number,
 |}>;
@@ -345,6 +349,7 @@ class JsTransformer {
         map: sourceMap,
         filename,
         reserved,
+        config: this._config.minifierConfig,
       });
 
       return {

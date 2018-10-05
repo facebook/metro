@@ -87,6 +87,23 @@ Object {
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,
     "getTransformOptions": [Function],
+    "minifierConfig": Object {
+      "compress": Object {
+        "reduce_funcs": false,
+      },
+      "mangle": Object {
+        "toplevel": false,
+      },
+      "output": Object {
+        "ascii_only": true,
+        "quote_style": 3,
+        "wrap_iife": true,
+      },
+      "sourceMap": Object {
+        "includeSources": false,
+      },
+      "toplevel": false,
+    },
     "minifierPath": "metro-minify-uglify",
     "optimizationSizeLimit": 153600,
     "postMinifyProcess": [Function],
@@ -189,6 +206,23 @@ Object {
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,
     "getTransformOptions": [Function],
+    "minifierConfig": Object {
+      "compress": Object {
+        "reduce_funcs": false,
+      },
+      "mangle": Object {
+        "toplevel": false,
+      },
+      "output": Object {
+        "ascii_only": true,
+        "quote_style": 3,
+        "wrap_iife": true,
+      },
+      "sourceMap": Object {
+        "includeSources": false,
+      },
+      "toplevel": false,
+    },
     "minifierPath": "metro-minify-uglify",
     "optimizationSizeLimit": 153600,
     "postMinifyProcess": [Function],

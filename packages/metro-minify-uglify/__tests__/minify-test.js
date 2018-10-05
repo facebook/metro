@@ -38,6 +38,7 @@ const baseOptions = {
   map: getFakeMap(),
   filename: '',
   reserved: [],
+  config: {},
 };
 
 describe('Minification:', () => {
@@ -59,6 +60,7 @@ describe('Minification:', () => {
       code,
       map,
       filename,
+      config: {sourceMap: {includeSources: false}},
     });
     expect(uglify.minify).toBeCalledWith(
       code,

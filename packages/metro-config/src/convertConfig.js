@@ -137,6 +137,7 @@ async function convertOldToNew({
       enableBabelRCLookup: getEnableBabelRCLookup(),
       enableBabelRuntime: true,
       getTransformOptions,
+      minifierConfig: defaultConfig.transformer.minifierConfig,
       minifierPath: minifierPath || defaultConfig.transformer.minifierPath,
       optimizationSizeLimit: 150 * 1024, // 150 KiB enforced for old configs.
       postMinifyProcess,
