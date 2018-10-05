@@ -94,10 +94,12 @@
 <tr><td><code>asyncRequireModulePath</code></td><td><code>string</code></td><td>What module to use for handling async requires.</td></tr>
 <tr><td><code>babelTransformerPath</code></td><td><code>string</code></td><td>Use a custom babel transformer (only relevant when using the default transformerPath).</td></tr>
 <tr><td><code>dynamicDepsInPackages</code></td><td><code>string</code> (<code>throwAtRuntime</code> or <code>reject</code>)</td><td>What should happen when a dynamic dependency is found.</td></tr>
-<tr><td><code>enableBabelRCLookup</code></td><td><code>boolean</code></td><td>Whether we should use the <code>.babelrc</code> config file.</td></tr>
+<tr><td><code>enableBabelRCLookup</code></td><td><code>boolean</code> (default: <code>true</code>)</td><td>Whether we should use the <code>.babelrc</code> config file.</td></tr>
+<tr><td><code>enableBabelRuntime</code></td><td><code>boolean</code> (default: <code>true</code>)</td><td>Whether the transformer should use the <code>@babel/transform/runtime</code> plugin.</td></tr>
 <tr><td><code>getTransformOptions</code></td><td><code>GetTransformOptions</code></td><td>Get the transform options.</td></tr>
 <tr><td><code>postMinifyProcess</code></td><td><code>PostMinifyProcess</code></td><td>What happens after minification.</td></tr>
 <tr><td><code>minifierPath</code></td><td><code>string</code></td><td>Path to the minifier that minifies the code after transformation.</td></tr>
+<tr><td><code>minifierConfig</code></td><td><code>{[key: string]: mixed}</code></td><td>Configuration object that will be passed to the minifier (it should be serializable).</td></tr>
 <tr><td><code>optimizationSizeLimit</code></td><td><code>number</code></td><td>Define a threshold (in bytes) to disable some expensive optimizations for big files.</td></tr>
 </tbody>
 </table>
