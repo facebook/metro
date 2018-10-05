@@ -29,6 +29,7 @@ const glob = require('glob');
 const micromatch = require('micromatch');
 const mkdirp = require('mkdirp');
 const path = require('path');
+const prettier = require('prettier');
 
 const SRC_DIR = 'src';
 const BUILD_DIR = 'build';
@@ -96,7 +97,9 @@ function buildFile(file, silent) {
       );
   } else {
     // $FlowFixMe TODO t25179342 need to update flow-types for babel-core
-    const transformed = babel.transformFileSync(file, {}).code;
+    const transformed = prettier.format(babel.transformFileSync(file, {}).code, {
+      parser: 'babylon',
+    });
     fs.writeFileSync(destPath, transformed);
     const source = fs.readFileSync(file).toString('utf-8');
     if (/\@flow/.test(source)) {
