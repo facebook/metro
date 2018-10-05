@@ -135,6 +135,7 @@ async function convertOldToNew({
       babelTransformerPath: getTransformModulePath(),
       dynamicDepsInPackages,
       enableBabelRCLookup: getEnableBabelRCLookup(),
+      enableBabelRuntime: true,
       getTransformOptions,
       minifierPath: minifierPath || defaultConfig.transformer.minifierPath,
       optimizationSizeLimit: 150 * 1024, // 150 KiB enforced for old configs.

@@ -66,7 +66,8 @@ These options are used when Metro serves the content.
 | `asyncRequireModulePath` | `string`                                | What module to use for handling async requires.                                        |
 | `babelTransformerPath`   | `string`                                | Use a custom babel transformer (only relevant when using the default transformerPath). |
 | `dynamicDepsInPackages`  | `string` (`throwAtRuntime` or `reject`) | What should happen when a dynamic dependency is found.                                 |
-| `enableBabelRCLookup`    | `boolean`                               | Whether we should use the `.babelrc` config file.                                      |
+| `enableBabelRCLookup`    | `boolean` (default: `true`)             | Whether we should use the `.babelrc` config file.                                      |
+| `enableBabelRuntime`     | `boolean` (default: `true`)             | Whether the transformer should use the `@babel/transform/runtime` plugin.              |
 | `getTransformOptions`    | `GetTransformOptions`                   | Get the transform options.                                                             |
 | `postMinifyProcess`      | `PostMinifyProcess`                     | What happens after minification.                                                       |
 | `minifierPath`           | `string`                                | Path to the minifier that minifies the code after transformation.                      |

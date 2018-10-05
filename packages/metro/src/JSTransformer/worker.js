@@ -48,6 +48,7 @@ type BabelTransformerOptions = $ReadOnly<{
   customTransformOptions?: CustomTransformOptions,
   dev: boolean,
   enableBabelRCLookup?: boolean,
+  enableBabelRuntime: boolean,
   experimentalImportSupport?: boolean,
   hot: boolean,
   inlineRequires: boolean,
@@ -82,6 +83,7 @@ export type JsTransformerConfig = $ReadOnly<{|
   babelTransformerPath: string,
   dynamicDepsInPackages: DynamicRequiresBehavior,
   enableBabelRCLookup: boolean,
+  enableBabelRuntime: boolean,
   minifierPath: string,
   optimizationSizeLimit: number,
 |}>;
@@ -174,6 +176,7 @@ class JsTransformer {
       options: {
         ...options,
         enableBabelRCLookup: this._config.enableBabelRCLookup,
+        enableBabelRuntime: this._config.enableBabelRuntime,
         // Inline requires are now performed at a secondary step. We cannot
         // unfortunately remove it from the internal transformer, since this one
         // is used by other tooling, and this would affect it.

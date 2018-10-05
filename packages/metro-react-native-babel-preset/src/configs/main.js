@@ -147,7 +147,7 @@ const getPreset = (src, options) => {
     extraPlugins.push(reactJsxSource);
   }
 
-  if (!options || !options.disableBabelRuntime) {
+  if (options && options.enableBabelRuntime) {
     extraPlugins.push(babelRuntime);
   }
 

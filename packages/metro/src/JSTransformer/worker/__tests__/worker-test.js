@@ -41,6 +41,7 @@ const baseOptions = {
   asyncRequireModulePath: 'asyncRequire',
   babelTransformerPath,
   dynamicDepsInPackages: 'reject',
+  enableBabelRuntime: true,
   minifierPath: 'minifyModulePath',
   optimizationSizeLimit: 100000,
 };

@@ -69,6 +69,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     babelTransformerPath: 'metro/src/defaultTransformer',
     dynamicDepsInPackages: 'throwAtRuntime',
     enableBabelRCLookup: true,
+    enableBabelRuntime: true,
     getTransformOptions: async () => ({
       transform: {experimentalImportSupport: false, inlineRequires: false},
       preloadedModules: false,

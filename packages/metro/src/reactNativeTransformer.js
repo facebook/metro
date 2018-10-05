@@ -90,6 +90,7 @@ const getBabelRC = (function() {
           {
             ...presetOptions,
             disableImportExportTransform: experimentalImportSupport,
+            enableBabelRuntime: options.enableBabelRuntime,
           },
         ],
       ];
