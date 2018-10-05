@@ -37,26 +37,28 @@ class Transformer {
     this._cache = new Cache(config.cacheStores);
     this._getSha1 = getSha1Fn;
 
-    const transformerConfig: TransformerConfig = {
+    // Remove the transformer config params that we don't want to pass to the
+    // transformer. We should change the config object and move them away so we
+    // can treat the transformer config params as opaque.
+    const {
+      getTransformOptions: _getTransformOptions,
+      postMinifyProcess: _postMinifyProcess,
+      transformVariants: _transformVariants,
+      workerPath: _workerPath,
+      ...transformerConfig
+    } = this._config.transformer;
+
+    const transformerOptions: TransformerConfig = {
       transformerPath: this._config.transformerPath,
-      transformerConfig: {
-        assetPlugins: this._config.transformer.assetPlugins,
-        assetRegistryPath: this._config.transformer.assetRegistryPath,
-        asyncRequireModulePath: this._config.transformer.asyncRequireModulePath,
-        babelTransformerPath: this._config.transformer.babelTransformerPath,
-        dynamicDepsInPackages: this._config.transformer.dynamicDepsInPackages,
-        enableBabelRCLookup: this._config.transformer.enableBabelRCLookup,
-        minifierPath: this._config.transformer.minifierPath,
-        optimizationSizeLimit: this._config.transformer.optimizationSizeLimit,
-      },
+      transformerConfig,
     };
 
-    this._workerFarm = new WorkerFarm(config, transformerConfig);
+    this._workerFarm = new WorkerFarm(config, transformerOptions);
 
     const globalCacheKey = getTransformCacheKey({
       cacheVersion: this._config.cacheVersion,
       projectRoot: this._config.projectRoot,
-      transformerConfig,
+      transformerConfig: transformerOptions,
     });
 
     this._baseHash = stableHash([globalCacheKey]).toString('binary');

@@ -21,6 +21,7 @@ import type {
   Module,
 } from 'metro/src/DeltaBundler/types.flow.js';
 import type {TransformResult} from 'metro/src/DeltaBundler';
+import type {JsTransformerConfig} from 'metro/src/JSTransformer/worker';
 import type {TransformVariants} from 'metro/src/ModuleGraph/types.flow.js';
 import type {DynamicRequiresBehavior} from 'metro/src/ModuleGraph/worker/collectDependencies';
 import type Server from 'metro/src/Server';
@@ -124,15 +125,8 @@ type SerializerConfigT = {|
 |};
 
 type TransformerConfigT = {|
-  assetPlugins: $ReadOnlyArray<string>,
-  assetRegistryPath: string,
-  asyncRequireModulePath: string,
-  babelTransformerPath: string,
-  dynamicDepsInPackages: DynamicRequiresBehavior,
-  enableBabelRCLookup: boolean,
+  ...JsTransformerConfig,
   getTransformOptions: GetTransformOptions,
-  minifierPath: string,
-  optimizationSizeLimit: number,
   postMinifyProcess: PostMinifyProcess,
   transformVariants: TransformVariants,
   workerPath: string,

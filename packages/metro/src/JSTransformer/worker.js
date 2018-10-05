@@ -44,24 +44,24 @@ type TransformResults = {
   ast: Ast,
 };
 
-type BabelTransformerOptions = {
-  +customTransformOptions?: CustomTransformOptions,
-  +dev: boolean,
-  +enableBabelRCLookup?: boolean,
-  +experimentalImportSupport?: boolean,
-  +hot: boolean,
-  +inlineRequires: boolean,
-  +minify: boolean,
-  +platform: ?string,
-  +projectRoot: string,
-};
+type BabelTransformerOptions = $ReadOnly<{
+  customTransformOptions?: CustomTransformOptions,
+  dev: boolean,
+  enableBabelRCLookup?: boolean,
+  experimentalImportSupport?: boolean,
+  hot: boolean,
+  inlineRequires: boolean,
+  minify: boolean,
+  platform: ?string,
+  projectRoot: string,
+}>;
 
-export type BabelTransformerArgs = {|
+export type BabelTransformerArgs = $ReadOnly<{|
   filename: string,
   options: BabelTransformerOptions,
   plugins?: BabelPlugins,
   src: string,
-|};
+|}>;
 
 export type BabelTransformer = {|
   transform: BabelTransformerArgs => TransformResults,
@@ -75,37 +75,37 @@ export type MinifyOptions = {
 
 export type Type = 'script' | 'module' | 'asset';
 
-export type JsTransformerConfig = {|
-  +assetPlugins: $ReadOnlyArray<string>,
-  +assetRegistryPath: string,
-  +asyncRequireModulePath: string,
-  +babelTransformerPath: string,
-  +dynamicDepsInPackages: DynamicRequiresBehavior,
-  +enableBabelRCLookup: boolean,
-  +minifierPath: string,
-  +optimizationSizeLimit: number,
-|};
+export type JsTransformerConfig = $ReadOnly<{|
+  assetPlugins: $ReadOnlyArray<string>,
+  assetRegistryPath: string,
+  asyncRequireModulePath: string,
+  babelTransformerPath: string,
+  dynamicDepsInPackages: DynamicRequiresBehavior,
+  enableBabelRCLookup: boolean,
+  minifierPath: string,
+  optimizationSizeLimit: number,
+|}>;
 
 export type CustomTransformOptions = {[string]: mixed, __proto__: null};
 
-export type JsTransformOptions = {|
-  +customTransformOptions?: CustomTransformOptions,
-  +dev: boolean,
-  +experimentalImportSupport?: boolean,
-  +hot: boolean,
-  +inlineRequires: boolean,
-  +minify: boolean,
-  +platform: ?string,
-  +type: Type,
-|};
+export type JsTransformOptions = $ReadOnly<{|
+  customTransformOptions?: CustomTransformOptions,
+  dev: boolean,
+  experimentalImportSupport?: boolean,
+  hot: boolean,
+  inlineRequires: boolean,
+  minify: boolean,
+  platform: ?string,
+  type: Type,
+|}>;
 
-export type JsOutput = {|
-  +data: {|
-    +code: string,
-    +map: Array<MetroSourceMapSegmentTuple>,
-  |},
-  +type: string,
-|};
+export type JsOutput = $ReadOnly<{|
+  data: $ReadOnly<{|
+    code: string,
+    map: Array<MetroSourceMapSegmentTuple>,
+  |}>,
+  type: string,
+|}>;
 
 type Result = {|
   output: $ReadOnlyArray<JsOutput>,
