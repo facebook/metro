@@ -11,7 +11,7 @@
 
 import type {
   CustomTransformOptions,
-  MinifyOptions,
+  MinifierOptions,
 } from '../JSTransformer/worker';
 import type {BabelSourceMap} from '@babel/core';
 import type {
@@ -84,16 +84,11 @@ export type RequestOptions = {|
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
 |};
 
-export type {MinifyOptions};
+export type {MinifierOptions};
 
-export type MetroMinifierResult = {
+export type MinifierResult = {
   code: string,
   map?: BabelSourceMap,
 };
 
-export type MetroMinifier = (
-  code: string,
-  inputMap: ?BabelSourceMap,
-  filename: string,
-  options?: MinifyOptions,
-) => MetroMinifierResult;
+export type MetroMinifier = MinifierOptions => MinifierResult;

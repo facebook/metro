@@ -36,7 +36,7 @@ const {
 
 import type {TransformResultDependency} from 'metro/src/DeltaBundler';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
-import type {Ast} from '@babel/core';
+import type {Ast, BabelSourceMap} from '@babel/core';
 import type {Plugins as BabelPlugins} from 'babel-core';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
@@ -69,9 +69,11 @@ export type BabelTransformer = {|
   getCacheKey?: () => string,
 |};
 
-export type MinifyOptions = {
-  filename?: string,
-  reserved?: $ReadOnlyArray<string>,
+export type MinifierOptions = {
+  code: string,
+  map: ?BabelSourceMap,
+  filename: string,
+  reserved: $ReadOnlyArray<string>,
 };
 
 export type Type = 'script' | 'module' | 'asset';
@@ -314,7 +316,7 @@ class JsTransformer {
         result.code,
         sourceCode,
         map,
-        {reserved},
+        reserved,
       ));
     }
 
@@ -326,7 +328,7 @@ class JsTransformer {
     code: string,
     source: string,
     map: Array<MetroSourceMapSegmentTuple>,
-    options?: MinifyOptions = {},
+    reserved?: $ReadOnlyArray<string> = [],
   ): Promise<{
     code: string,
     map: Array<MetroSourceMapSegmentTuple>,
@@ -338,7 +340,12 @@ class JsTransformer {
     const minify = getMinifier(this._config.minifierPath);
 
     try {
-      const minified = minify(code, sourceMap, filename, options);
+      const minified = minify({
+        code,
+        map: sourceMap,
+        filename,
+        reserved,
+      });
 
       return {
         code: minified.code,

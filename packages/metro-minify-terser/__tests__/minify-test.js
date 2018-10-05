@@ -33,6 +33,13 @@ function getFakeMap(): BabelSourceMap {
   };
 }
 
+const baseOptions = {
+  code: '',
+  map: getFakeMap(),
+  filename: '',
+  reserved: [],
+};
+
 describe('Minification:', () => {
   const filename = '/arbitrary/file.js';
   const code = 'arbitrary(code)';
@@ -47,7 +54,12 @@ describe('Minification:', () => {
   });
 
   it('passes file name, code, and source map to `terser`', () => {
-    minify(code, map, filename);
+    minify({
+      ...baseOptions,
+      code,
+      map,
+      filename,
+    });
     expect(terser.minify).toBeCalledWith(
       code,
       objectContaining({
@@ -61,13 +73,13 @@ describe('Minification:', () => {
 
   it('returns the code provided by terser', () => {
     terser.minify.mockReturnValue({code, map: '{}'});
-    const result = minify('', getFakeMap(), '');
+    const result = minify(baseOptions);
     expect(result.code).toBe(code);
   });
 
   it('parses the source map object provided by terser and sets the sources property', () => {
     terser.minify.mockReturnValue({map: JSON.stringify(map), code: ''});
-    const result = minify('', getFakeMap(), filename);
+    const result = minify({...baseOptions, filename});
     expect(result.map).toEqual({...map, sources: [filename]});
   });
 });
