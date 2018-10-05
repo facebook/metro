@@ -28,6 +28,7 @@ module.exports = {
     assetRegistryPath: path.join(ROOT_PATH, 'AssetRegistry'),
     babelTransformerPath: require.resolve('metro/src/reactNativeTransformer'),
     enableBabelRCLookup: false,
+    enableBabelRuntime: false,
     getTransformOptions: async () => ({
       transform: {experimentalImportSupport: true, inlineRequires: false},
       preloadedModules: false,

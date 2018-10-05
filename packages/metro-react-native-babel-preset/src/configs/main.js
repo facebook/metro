@@ -154,8 +154,10 @@ const getPreset = (src, options) => {
   return {
     comments: false,
     compact: true,
-    plugins: defaultPlugins.concat(extraPlugins),
     overrides: [
+      {
+        plugins: defaultPlugins,
+      },
       {
         test: isTypeScriptSource,
         plugins: [
@@ -167,6 +169,9 @@ const getPreset = (src, options) => {
         plugins: [
           [require('@babel/plugin-transform-typescript'), {isTSX: true}],
         ],
+      },
+      {
+        plugins: extraPlugins,
       },
     ],
   };

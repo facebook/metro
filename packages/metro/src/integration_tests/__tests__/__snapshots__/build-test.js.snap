@@ -22,6 +22,7 @@ Object {
     "type": "foo",
   },
   "TypeScript": Object {
+    "B": [Function],
     "test": true,
     "type": "TypeScript",
   },
