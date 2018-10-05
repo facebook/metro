@@ -129,7 +129,10 @@ function buildBabelConfig(filename, options, plugins?: BabelPlugins = []) {
   config.plugins = extraPlugins.concat(config.plugins, plugins);
 
   if (options.dev && options.hot) {
-    const hmrConfig = makeHMRConfig(options, filename);
+    const hmrConfig = makeHMRConfig(
+      options,
+      path.resolve(options.projectRoot, filename),
+    );
     config = Object.assign({}, config, hmrConfig);
   }
 

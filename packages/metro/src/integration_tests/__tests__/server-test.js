@@ -19,33 +19,55 @@ jest.unmock('cosmiconfig');
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 60 * 1000;
 
-it('should create a server', async () => {
-  const config = await Metro.loadConfig({
-    config: require.resolve('../metro.config.js'),
-  });
+describe('Metro development server serves bundles via HTTP', () => {
+  let config;
+  let httpServer;
 
-  const httpServer = await Metro.runServer(config, {
-    reporter: {update() {}},
-  });
-
-  try {
+  async function downloadAndExec(path: string): mixed {
     const response = await fetch(
-      `http://localhost:${
-        config.server.port
-      }/TestBundle.bundle?platform=ios&dev=false&minify=true`,
+      'http://localhost:' + config.server.port + path,
     );
 
     const body = await response.text();
 
     if (!response.ok) {
       console.error(body);
+
       throw new Error(
         'Metro server responded with status code: ' + response.status,
       );
     }
 
-    expect(execBundle(body)).toMatchSnapshot();
-  } finally {
-    httpServer.close();
+    return execBundle(body);
   }
+
+  beforeEach(async () => {
+    config = await Metro.loadConfig({
+      config: require.resolve('../metro.config.js'),
+    });
+
+    httpServer = await Metro.runServer(config, {
+      reporter: {update() {}},
+    });
+  });
+
+  afterEach(() => {
+    httpServer.close();
+  });
+
+  it('should serve deveopment bundles', async () => {
+    expect(
+      await downloadAndExec(
+        '/TestBundle.bundle?platform=ios&dev=true&minify=false',
+      ),
+    ).toMatchSnapshot();
+  });
+
+  it('should serve production bundles', async () => {
+    expect(
+      await downloadAndExec(
+        '/TestBundle.bundle?platform=ios&dev=false&minify=true',
+      ),
+    ).toMatchSnapshot();
+  });
 });
