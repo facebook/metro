@@ -336,4 +336,12 @@ describe('constant expressions', () => {
 
     nonChanged.forEach(test => compare([constantFoldingPlugin], test, test));
   });
+
+  it('will not throw on evaluate exception', () => {
+    const nonChanged = `
+      Object({ 'toString': 0 } + '');
+    `;
+
+    compare([constantFoldingPlugin], nonChanged, nonChanged);
+  });
 });

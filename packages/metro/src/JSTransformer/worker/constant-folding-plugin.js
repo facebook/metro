@@ -27,7 +27,11 @@ function constantFoldingPlugin(context: {types: BabelTypes}) {
       state,
     );
 
-    return state.safe ? path.evaluate() : {confident: false, value: null};
+    try {
+      return state.safe ? path.evaluate() : {confident: false, value: null};
+    } catch (err) {
+      return {confident: false, value: null};
+    }
   };
 
   const FunctionDeclaration = {
