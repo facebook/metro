@@ -51,8 +51,8 @@ describe('Metro development server serves bundles via HTTP', () => {
     });
   });
 
-  afterEach(() => {
-    httpServer.close();
+  afterEach(done => {
+    httpServer.close(done);
   });
 
   it('should serve deveopment bundles', async () => {
