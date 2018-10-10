@@ -10,9 +10,7 @@
 
 'use strict';
 
-const {fn} = require('../../test-helpers');
 const {addModuleIdsToModuleWrapper, createIdForPathFn} = require('../util');
-const {match} = require('sinon');
 
 const {any} = jasmine;
 
@@ -30,14 +28,18 @@ describe('`addModuleIdsToModuleWrapper`:', () => {
     ];
     const module = createModule(dependencies);
 
-    const idForPath = fn();
-    idForPath.stub
-      .withArgs(match({path}))
-      .returns(12)
-      .withArgs(match({path: dependencies[0].path}))
-      .returns(345)
-      .withArgs(match({path: dependencies[1].path}))
-      .returns(6);
+    const idForPath = jest.fn().mockImplementation(({path: inputPath}) => {
+      switch (inputPath) {
+        case path:
+          return 12;
+        case dependencies[0].path:
+          return 345;
+        case dependencies[1].path:
+          return 6;
+      }
+
+      throw new Error(`Unexpected path: ${inputPath}`);
+    });
 
     expect(addModuleIdsToModuleWrapper(module, idForPath)).toEqual(
       '__d(function(){},12,[345,6]);',

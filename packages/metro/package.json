@@ -69,8 +69,7 @@
     "@babel/plugin-transform-flow-strip-types": "^7.0.0",
     "metro-memory-fs": "0.48.0",
     "metro-react-native-babel-preset": "0.48.0",
-    "metro-visualizer": "0.48.0",
-    "sinon": "^2.2.0"
+    "metro-visualizer": "0.48.0"
   },
   "license": "MIT"
 }
