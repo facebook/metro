@@ -91,19 +91,21 @@ type JestMockFn<TArguments: $ReadOnlyArray<*>, TReturn> = {
   /**
    * Sugar for: jest.fn().mockReturnValue(Promise.reject(value));
    */
-  mockRejectedValue(value: TReturn): JestMockFn<TArguments, TReturn>,
+  mockRejectedValue(value: TReturn): JestMockFn<TArguments, Promise<any>>,
   /**
    * Sugar for: jest.fn().mockReturnValueOnce(Promise.reject(value));
    */
-  mockRejectedValueOnce(value: TReturn): JestMockFn<TArguments, TReturn>,
+  mockRejectedValueOnce(value: TReturn): JestMockFn<TArguments, Promise<any>>,
   /**
    * Sugar for: jest.fn().mockReturnValue(Promise.resolve(value));
    */
-  mockResolvedValue(value: TReturn): JestMockFn<TArguments, TReturn>,
+  mockResolvedValue(value: TReturn): JestMockFn<TArguments, Promise<TReturn>>,
   /**
    * Sugar for: jest.fn().mockReturnValueOnce(Promise.resolve(value));
    */
-  mockResolvedValueOnce(value: TReturn): JestMockFn<TArguments, TReturn>,
+  mockResolvedValueOnce(
+    value: TReturn,
+  ): JestMockFn<TArguments, Promise<TReturn>>,
   /**
    * Just a simple sugar function for returning `this`
    */
