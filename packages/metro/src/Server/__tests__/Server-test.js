@@ -26,7 +26,6 @@ jest
   .mock('../../Assets')
   .mock('../../node-haste/DependencyGraph')
   .mock('metro-core/src/Logger')
-  .mock('../../lib/getAbsolutePath')
   .mock('../../lib/getPrependedScripts')
   .mock('../../lib/transformHelpers');
 

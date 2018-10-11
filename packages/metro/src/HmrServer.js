@@ -11,10 +11,10 @@
 'use strict';
 
 const formatBundlingError = require('./lib/formatBundlingError');
-const getEntryAbsolutePath = require('./lib/getEntryAbsolutePath');
 const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
 const nullthrows = require('nullthrows');
 const parseCustomTransformOptions = require('./lib/parseCustomTransformOptions');
+const path = require('path');
 const url = require('url');
 
 const {
@@ -63,7 +63,7 @@ class HmrServer<TClient: Client> {
     // DeltaBundleId param through the WS connection and we'll be able to share
     // the same graph between the WS connection and the HTTP one.
     const graph = await this._packagerServer.buildGraph(
-      [getEntryAbsolutePath(this._config, bundleEntry)],
+      [path.resolve(this._config.projectRoot, bundleEntry)],
       {
         customTransformOptions,
         dev: true,

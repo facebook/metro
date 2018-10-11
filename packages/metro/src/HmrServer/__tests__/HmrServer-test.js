@@ -9,8 +9,6 @@
  */
 'use strict';
 
-jest.mock('../../lib/getAbsolutePath');
-
 const HmrServer = require('..');
 
 describe('HmrServer', () => {

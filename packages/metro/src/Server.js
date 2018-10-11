@@ -35,7 +35,6 @@ const path = require('path');
 const symbolicate = require('./Server/symbolicate/symbolicate');
 const transformHelpers = require('./lib/transformHelpers');
 const url = require('url');
-const getEntryAbsolutePath = require('./lib/getEntryAbsolutePath');
 
 const {getAsset} = require('./Assets');
 
@@ -149,7 +148,10 @@ class Server {
   async build(options: BundleOptions): Promise<{code: string, map: string}> {
     const graphInfo = await this._buildGraph(options);
 
-    const entryPoint = getEntryAbsolutePath(this._config, options.entryFile);
+    const entryPoint = path.resolve(
+      this._config.projectRoot,
+      options.entryFile,
+    );
 
     return {
       code: plainJSBundle(entryPoint, graphInfo.prepend, graphInfo.graph, {
@@ -177,7 +179,7 @@ class Server {
     options: TransformInputOptions,
   ): Promise<OutputGraph> {
     entryFiles = entryFiles.map(entryFile =>
-      getEntryAbsolutePath(this._config, entryFile),
+      path.resolve(this._config.projectRoot, entryFile),
     );
 
     const graph = await this._deltaBundler.buildGraph(entryFiles, {
@@ -207,7 +209,10 @@ class Server {
   async getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo> {
     const graphInfo = await this._buildGraph(options);
 
-    const entryPoint = getEntryAbsolutePath(this._config, options.entryFile);
+    const entryPoint = path.resolve(
+      this._config.projectRoot,
+      options.entryFile,
+    );
 
     return await getRamBundleInfo(
       entryPoint,
@@ -268,7 +273,10 @@ class Server {
   }
 
   async _buildGraph(options: BundleOptions): Promise<GraphInfo> {
-    const entryPoint = getEntryAbsolutePath(this._config, options.entryFile);
+    const entryPoint = path.resolve(
+      this._config.projectRoot,
+      options.entryFile,
+    );
 
     try {
       // This should throw an error if the file doesn't exist.
@@ -992,7 +1000,7 @@ class Server {
         })
         .join('.') + '.js';
 
-    const absoluteEntryFile = getEntryAbsolutePath(this._config, entryFile);
+    const absoluteEntryFile = path.resolve(this._config.projectRoot, entryFile);
 
     // try to get the platform from the url
     const platform =
