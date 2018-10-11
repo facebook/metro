@@ -46,7 +46,7 @@ async function getRamBundleInfo(
   const modules = [
     ...pre,
     ...graph.dependencies.values(),
-    ...getAppendScripts(entryPoint, graph, options),
+    ...getAppendScripts(entryPoint, pre, graph, options),
   ];
 
   modules.forEach(module => options.createModuleId(module.path));

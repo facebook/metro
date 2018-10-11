@@ -10,7 +10,11 @@
 'use strict';
 
 function isTypeScriptSource(fileName) {
-  return !!fileName && (fileName.endsWith('.ts') || fileName.endsWith('.tsx'));
+  return !!fileName && fileName.endsWith('.ts');
+}
+
+function isTSXSource(fileName) {
+  return !!fileName && fileName.endsWith('.tsx');
 }
 
 const defaultPlugins = [
@@ -24,6 +28,8 @@ const defaultPlugins = [
     // use `this.foo = bar` instead of `this.defineProperty('foo', ...)`
     {loose: true},
   ],
+  [require('@babel/plugin-syntax-dynamic-import')],
+  [require('@babel/plugin-syntax-export-default-from')],
   [require('@babel/plugin-transform-computed-properties')],
   [require('@babel/plugin-transform-destructuring')],
   [require('@babel/plugin-transform-function-name')],
@@ -34,6 +40,10 @@ const defaultPlugins = [
   [require('@babel/plugin-transform-regenerator')],
   [require('@babel/plugin-transform-sticky-regex')],
   [require('@babel/plugin-transform-unicode-regex')],
+];
+
+const es2015ExportDefault = [
+  require('@babel/plugin-proposal-export-default-from'),
 ];
 
 const es2015ImportExport = [
@@ -74,6 +84,14 @@ const reactDisplayName = [
 const reactJsxSource = [require('@babel/plugin-transform-react-jsx-source')];
 const symbolMember = [require('../transforms/transform-symbol-member')];
 
+const babelRuntime = [
+  require('@babel/plugin-transform-runtime'),
+  {
+    helpers: true,
+    regenerator: true,
+  },
+];
+
 const getPreset = (src, options) => {
   const isNull = src == null;
   const hasClass = isNull || src.indexOf('class') !== -1;
@@ -83,7 +101,7 @@ const getPreset = (src, options) => {
   const extraPlugins = [];
 
   if (!options || !options.disableImportExportTransform) {
-    extraPlugins.push(es2015ImportExport);
+    extraPlugins.push(es2015ImportExport, es2015ExportDefault);
   }
 
   if (hasClass) {
@@ -129,6 +147,10 @@ const getPreset = (src, options) => {
     extraPlugins.push(reactJsxSource);
   }
 
+  if (!options || !options.disableBabelRuntime) {
+    extraPlugins.push(babelRuntime);
+  }
+
   return {
     comments: false,
     compact: true,
@@ -136,6 +158,12 @@ const getPreset = (src, options) => {
     overrides: [
       {
         test: isTypeScriptSource,
+        plugins: [
+          [require('@babel/plugin-transform-typescript'), {isTSX: false}],
+        ],
+      },
+      {
+        test: isTSXSource,
         plugins: [
           [require('@babel/plugin-transform-typescript'), {isTSX: true}],
         ],

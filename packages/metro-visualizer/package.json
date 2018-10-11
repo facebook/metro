@@ -1,6 +1,6 @@
 {
   "name": "metro-visualizer",
-  "version": "0.45.2",
+  "version": "0.47.1",
   "description": "Suite of visual analysis tools for the metro bundler",
   "main": "src/index.js",
   "license": "MIT",
@@ -13,6 +13,7 @@
     "@babel/preset-env": "^7.0.0",
     "@babel/preset-flow": "^7.0.0",
     "@babel/preset-react": "^7.0.0",
+    "@babel/plugin-proposal-class-properties": "^7.0.0",
     "antd": "^3.7.1",
     "babel-plugin-import": "^1.8.0",
     "connect": "^3.6.5",
@@ -23,8 +24,8 @@
     "cytoscape-popper": "^1.0.2",
     "cytoscape-spread": "^3.0.0",
     "d3-scale": "^2.1.0",
-    "emotion": "^9.2.6",
-    "fbjs": "0.8.17",
+    "emotion": "^9.2.9",
+    "fbjs": "^1.0.0",
     "filesize": "^3.6.1",
     "fuzzy-search": "^2.1.0",
     "nullthrows": "^1.1.0",
@@ -38,8 +39,8 @@
     "tippy.js": "^2.5.4"
   },
   "peerDependencies": {
-    "metro": "0.45.2",
-    "metro-babel-register": "0.45.2",
-    "metro-core": "0.45.2"
+    "metro": "0.47.1",
+    "metro-babel-register": "0.47.1",
+    "metro-core": "0.47.1"
   }
 }

@@ -1,42 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`code transformation worker: keeps import/export syntax if requested to do so 1`] = `
-Array [
-  Array [
-    2,
-    0,
-    1,
-    0,
-  ],
-  Array [
-    2,
-    9,
-    1,
-    7,
-    "c",
-  ],
-  Array [
-    2,
-    10,
-    1,
-    0,
-  ],
-  Array [
-    2,
-    16,
-    1,
-    14,
-  ],
-  Array [
-    2,
-    21,
-    1,
-    0,
-  ],
-]
-`;
-
-exports[`code transformation worker: reports filename when encountering unsupported dynamic dependency 1`] = `"/root/local/file.js:Invalid call at line 3: require(a)"`;
+exports[`code transformation worker: reports filename when encountering unsupported dynamic dependency 1`] = `"local/file.js:Invalid call at line 3: require(a)"`;
 
 exports[`code transformation worker: transforms a module with dependencies 1`] = `
 Array [
@@ -47,110 +11,110 @@ Array [
     0,
   ],
   Array [
-    4,
+    6,
     0,
     5,
     0,
   ],
   Array [
-    6,
+    8,
     0,
     2,
     0,
     "require",
   ],
   Array [
-    6,
+    8,
     2,
     2,
     0,
     "require",
   ],
   Array [
-    6,
+    8,
     13,
     2,
     7,
   ],
   Array [
-    6,
+    8,
     39,
     2,
     0,
   ],
   Array [
-    8,
+    10,
     0,
     3,
     0,
     "arbitrary",
   ],
   Array [
-    8,
+    10,
     2,
     3,
     0,
     "arbitrary",
   ],
   Array [
-    8,
+    10,
     11,
     3,
     9,
   ],
   Array [
-    8,
+    10,
     12,
     3,
     10,
     "code",
   ],
   Array [
-    8,
+    10,
     16,
     3,
     9,
   ],
   Array [
-    8,
+    10,
     17,
     3,
     0,
   ],
   Array [
-    10,
+    12,
     0,
     4,
     0,
   ],
   Array [
-    10,
+    12,
     6,
     4,
     6,
     "b",
   ],
   Array [
-    10,
+    12,
     7,
     4,
     7,
   ],
   Array [
-    10,
+    12,
     10,
     4,
     10,
     "require",
   ],
   Array [
-    10,
+    12,
     21,
     4,
     17,
   ],
   Array [
-    10,
+    12,
     45,
     4,
     0,
@@ -242,6 +206,47 @@ Array [
     27,
     1,
     0,
+  ],
+]
+`;
+
+exports[`code transformation worker: transforms an es module with regenerator 1`] = `
+"__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0], \\"@babel/runtime/helpers/interopRequireDefault\\");
+
+  Object.defineProperty(exports, \\"__esModule\\", {
+    value: true
+  });
+  exports.test = test;
+
+  var _regenerator = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[1], \\"@babel/runtime/regenerator\\"));
+
+  function test() {
+    return _regenerator.default.async(function test$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+          case \\"end\\":
+            return _context.stop();
+        }
+      }
+    }, null, this);
+  }
+});"
+`;
+
+exports[`code transformation worker: transforms import/export syntax when experimental flag is on 1`] = `
+Array [
+  Array [
+    4,
+    6,
+    1,
+    7,
+    "c",
+  ],
+  Array [
+    4,
+    7,
   ],
 ]
 `;

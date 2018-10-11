@@ -13,20 +13,14 @@ const getDefaultConfig = require('metro-config/src/defaults');
 
 const {Readable} = require('stream');
 
-describe('Transformer', function() {
+describe('Worker Farm', function() {
   let api;
-  let Transformer;
-  const fileName = '/an/arbitrary/file.js';
-  const localPath = 'arbitrary/file.js';
-  const config = getDefaultConfig();
+  let WorkerFarm;
+  const fileName = 'arbitrary/file.js';
+  const rootFolder = '/root';
+  let config;
 
-  const opts = {
-    maxWorkers: 4,
-    reporters: {},
-    workerPath: null,
-  };
-
-  beforeEach(function() {
+  beforeEach(async function() {
     jest
       .resetModules()
       .mock('fs', () => ({writeFileSync: jest.fn()}))
@@ -35,6 +29,8 @@ describe('Transformer', function() {
 
     const fs = require('fs');
     const jestWorker = require('jest-worker');
+    config = await getDefaultConfig();
+
     fs.writeFileSync.mockClear();
     jestWorker.default.mockClear();
     jestWorker.default.mockImplementation(function(workerPath, opts) {
@@ -60,52 +56,55 @@ describe('Transformer', function() {
       return api;
     });
 
-    Transformer = require('../');
+    WorkerFarm = require('../WorkerFarm');
   });
 
   it('passes transform data to the worker farm when transforming', async () => {
     const transformOptions = {arbitrary: 'options'};
+    const transformerConfig = {
+      transformerPath: config.transformerPath,
+      transformerConfig: config.transformer,
+    };
 
-    await new Transformer(opts).transform(
+    await new WorkerFarm(config, transformerConfig).transform(
       fileName,
-      localPath,
-      config.transformerPath,
       transformOptions,
     );
 
     expect(api.transform).toBeCalledWith(
       fileName,
-      localPath,
-      config.transformerPath,
       transformOptions,
+      config.projectRoot,
+      transformerConfig,
     );
   });
 
   it('should add file info to parse errors', () => {
-    const transformer = new Transformer(opts);
+    const workerFarm = new WorkerFarm(config, {
+      transformerPath: config.transformerPath,
+      transformerConfig: config.transformer,
+    });
     const message = 'message';
     const snippet = 'snippet';
 
-    api.transform.mockImplementation(
-      (filename, localPth, transformPath, opts) => {
-        const babelError = new SyntaxError(message);
+    api.transform.mockImplementation((filename, opts) => {
+      const babelError = new SyntaxError(message);
 
-        babelError.type = 'SyntaxError';
-        babelError.loc = {line: 2, column: 15};
-        babelError.codeFrame = snippet;
+      babelError.type = 'SyntaxError';
+      babelError.loc = {line: 2, column: 15};
+      babelError.codeFrame = snippet;
 
-        return Promise.reject(babelError);
-      },
-    );
+      return Promise.reject(babelError);
+    });
 
     expect.assertions(6);
 
-    return transformer
-      .transform(fileName, localPath, '', true, {})
+    return workerFarm
+      .transform(fileName, rootFolder, '', {})
       .catch(function(error) {
         expect(error.type).toEqual('TransformError');
         expect(error.message).toBe(
-          'SyntaxError in /an/arbitrary/file.js: ' + message,
+          'SyntaxError in arbitrary/file.js: ' + message,
         );
         expect(error.lineNumber).toBe(2);
         expect(error.column).toBe(15);

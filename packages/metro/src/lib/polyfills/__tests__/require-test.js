@@ -14,10 +14,6 @@ const fs = require('fs');
 
 const {transformSync} = require('@babel/core');
 
-// Include the external-helpers plugin to be able to detect if they're
-// needed when transforming the requirejs implementation.
-const PLUGINS = ['@babel/plugin-external-helpers'];
-
 function createModule(
   moduleSystem,
   moduleId,
@@ -34,7 +30,6 @@ describe('require', () => {
     return transformSync(rawCode, {
       ast: false,
       babelrc: false,
-      plugins: PLUGINS.map(require),
       presets: [require.resolve('metro-react-native-babel-preset')],
       retainLines: true,
       sourceMaps: 'inline',
@@ -56,9 +51,9 @@ describe('require', () => {
   });
 
   it('does not need any babel helper logic', () => {
-    // Super-simple check to validate that no babel helpers are used.
-    // This check will need to be updated if https://fburl.com/6z0y2kf8 changes.
-    expect(moduleSystemCode.includes('babelHelpers')).toBe(false);
+    // The react native preset uses @babel/transform-runtime so helpers will be
+    // imported from @babel/runtime.
+    expect(moduleSystemCode.includes('@babel/runtime')).toBe(false);
   });
 
   it('works with plain bundles', () => {
@@ -231,34 +226,34 @@ describe('require', () => {
       moduleSystem.__r(0);
     });
 
-    it('exposes module.id as path on the module in dev mode', () => {
+    it('exposes module.id as moduleId on the module in dev mode', () => {
       createModuleSystem(moduleSystem, true);
 
       createModule(
         moduleSystem,
-        0,
+        1254,
         'index.js',
         (global, require, importDefault, importAll, module) => {
           module.exports = module.id;
         },
       );
 
-      expect(moduleSystem.__r(0)).toEqual('index.js');
+      expect(moduleSystem.__r(1254)).toEqual(1254);
     });
 
-    it("doesn't expose module.id as moduleId on the module in prod mode", () => {
+    it('exposes module.id as moduleId on the module in prod mode', () => {
       createModuleSystem(moduleSystem, false);
 
       createModule(
         moduleSystem,
-        0,
+        1337,
         'index.js',
         (global, require, importDefault, importAll, module) => {
           module.exports = module.id;
         },
       );
 
-      expect(moduleSystem.__r(0)).toBeUndefined();
+      expect(moduleSystem.__r(1337)).toEqual(1337);
     });
 
     it('handles requires/exports correctly', () => {
@@ -446,7 +441,7 @@ describe('require', () => {
       expect(moduleSystem.__r(0)).toEqual('foo');
       hook.release();
       expect(moduleSystem.__r(1)).toEqual('bar');
-      expect(received).toEqual([[0, {exports: 'foo'}]]);
+      expect(received).toEqual([[0, {exports: 'foo', id: 0}]]);
     });
   });
 
@@ -761,6 +756,21 @@ describe('require', () => {
 
       expect.assertions(3);
       moduleSystem.__r(0);
+    });
+  });
+
+  describe('packModuleId and unpackModuleId', () => {
+    it('packModuleId and unpackModuleId are inverse operations', () => {
+      createModuleSystem(moduleSystem, false);
+
+      const resultSet = new Set();
+      // eslint-disable-next-line no-bitwise
+      for (const id of [0, 1, (1 << 16) - 1, 1 << 16, (1 << 16) + 1]) {
+        const result = moduleSystem.__r.unpackModuleId(id);
+        expect(resultSet.has(result)).not.toBe(true);
+        resultSet.add(result);
+        expect(moduleSystem.__r.packModuleId(result)).toBe(id);
+      }
     });
   });
 });

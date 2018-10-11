@@ -10,7 +10,7 @@
 
 'use strict';
 
-const toLocalPath = require('../../node-haste/lib/toLocalPath');
+const path = require('path');
 
 const {getAssetData} = require('../../Assets');
 const {getJsOutput, isJsModule} = require('./helpers/js');
@@ -22,7 +22,7 @@ type Options = {|
   +processModuleFilter: (module: Module<>) => boolean,
   assetPlugins: $ReadOnlyArray<string>,
   platform: ?string,
-  watchFolders: $ReadOnlyArray<string>,
+  projectRoot: string,
 |};
 
 async function getAssets(
@@ -41,7 +41,7 @@ async function getAssets(
       promises.push(
         getAssetData(
           module.path,
-          toLocalPath(options.watchFolders, module.path),
+          path.relative(options.projectRoot, module.path),
           options.assetPlugins,
           options.platform,
         ),

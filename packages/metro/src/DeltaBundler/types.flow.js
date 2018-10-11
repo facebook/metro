@@ -10,11 +10,29 @@
 
 'use strict';
 
-import type {TransformResultDependency} from '../ModuleGraph/types.flow';
-
 export type MixedOutput = {|
   +data: mixed,
   +type: string,
+|};
+
+export type TransformResultDependency = {|
+  /**
+   * The literal name provided to a require or import call. For example 'foo' in
+   * case of `require('foo')`.
+   */
+  +name: string,
+
+  /**
+   * Extra data returned by the dependency extractor. Whatever is added here is
+   * blindly piped by Metro to the serializers.
+   */
+  +data: {|
+    /**
+     * If `true` this dependency is due to a dynamic `import()` call. If `false`,
+     * this dependency was pulled using a synchronous `require()` call.
+     */
+    +isAsync: boolean,
+  |},
 |};
 
 export type Dependency = {|

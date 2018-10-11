@@ -37,8 +37,8 @@ describe('getAsset', () => {
     writeImages({'b.png': 'b image', 'b@2x.png': 'b2 image'});
 
     return Promise.all([
-      getAssetStr('imgs/b.png', ['/root']),
-      getAssetStr('imgs/b@1x.png', ['/root']),
+      getAssetStr('imgs/b.png', '/root'),
+      getAssetStr('imgs/b@1x.png', '/root'),
     ]).then(resp => resp.forEach(data => expect(data).toBe('b image')));
   });
 
@@ -52,11 +52,11 @@ describe('getAsset', () => {
 
     expect(
       await Promise.all([
-        getAssetStr('imgs/b.png', ['/root'], 'ios'),
-        getAssetStr('imgs/b.png', ['/root'], 'android'),
-        getAssetStr('imgs/c.png', ['/root'], 'android'),
-        getAssetStr('imgs/c.png', ['/root'], 'ios'),
-        getAssetStr('imgs/c.png', ['/root']),
+        getAssetStr('imgs/b.png', '/root', 'ios'),
+        getAssetStr('imgs/b.png', '/root', 'android'),
+        getAssetStr('imgs/c.png', '/root', 'android'),
+        getAssetStr('imgs/c.png', '/root', 'ios'),
+        getAssetStr('imgs/c.png', '/root'),
       ]),
     ).toEqual([
       'b ios image',
@@ -74,8 +74,8 @@ describe('getAsset', () => {
     });
 
     return Promise.all([
-      getAssetStr('imgs/b.jpg', ['/root']),
-      getAssetStr('imgs/b.png', ['/root']),
+      getAssetStr('imgs/b.jpg', '/root'),
+      getAssetStr('imgs/b.png', '/root'),
     ]).then(data => expect(data).toEqual(['jpeg image', 'png image']));
   });
 
@@ -87,7 +87,7 @@ describe('getAsset', () => {
       'b@4.5x.png': 'b4.5 image',
     });
 
-    expect(await getAssetStr('imgs/b@3x.png', ['/root'])).toBe('b4 image');
+    expect(await getAssetStr('imgs/b@3x.png', '/root')).toBe('b4 image');
   });
 
   it('should pick the bigger one with platform ext', async () => {
@@ -104,20 +104,10 @@ describe('getAsset', () => {
 
     expect(
       await Promise.all([
-        getAssetStr('imgs/b@3x.png', ['/root']),
-        getAssetStr('imgs/b@3x.png', ['/root'], 'ios'),
+        getAssetStr('imgs/b@3x.png', '/root'),
+        getAssetStr('imgs/b@3x.png', '/root', 'ios'),
       ]),
     ).toEqual(['b4 image', 'b4 ios image']);
-  });
-
-  it('should support multiple project roots', async () => {
-    writeImages({'b.png': 'b image'});
-    mkdirp.sync('/root2/newImages/imgs');
-    fs.writeFileSync('/root2/newImages/imgs/b@1x.png', 'b1 image');
-
-    expect(await getAssetStr('newImages/imgs/b.png', ['/root', '/root2'])).toBe(
-      'b1 image',
-    );
   });
 });
 

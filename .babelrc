@@ -4,6 +4,7 @@
     "transform-async-to-generator",
     "transform-class-properties",
     "transform-es2015-destructuring",
+    "transform-es2015-modules-commonjs",
     "transform-es2015-parameters",
     "transform-es2015-spread",
     "transform-flow-strip-types",

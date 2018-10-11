@@ -31,13 +31,21 @@ function fullSourceMapObject(
       return {
         ...getJsOutput(module).data,
         path: module.path,
-        source: options.excludeSource ? '' : module.getSource().toString(),
+        source: options.excludeSource ? '' : getModuleSource(module),
       };
     });
 
   return fromRawMappings(modules).toMap(undefined, {
     excludeSource: options.excludeSource,
   });
+}
+
+function getModuleSource(module: Module<>): string {
+  if (getJsOutput(module).type === 'js/module/asset') {
+    return '';
+  }
+
+  return module.getSource().toString();
 }
 
 module.exports = fullSourceMapObject;

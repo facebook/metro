@@ -194,6 +194,7 @@ type BabelCoreOptions = {|
   code?: boolean,
   comments?: boolean,
   compact?: 'auto' | boolean,
+  configFile?: boolean | string,
   env?: {production: {[string]: mixed}, staging: {[string]: mixed}},
   extends?: ?string,
   filename?: string,

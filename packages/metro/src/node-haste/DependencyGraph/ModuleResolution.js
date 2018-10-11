@@ -63,7 +63,7 @@ type Options<TModule, TPackage> = {|
   +moduleMap: ModuleMap,
   +resolveAsset: ResolveAsset,
   +resolveRequest: ?CustomResolver,
-  +sourceExts: Array<string>,
+  +sourceExts: $ReadOnlyArray<string>,
 |};
 
 class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {

@@ -10,6 +10,8 @@
 
 'use strict';
 
+const ResourceNotFoundError = require('../DeltaBundler/ResourceNotFoundError');
+
 const serializeError = require('serialize-error');
 
 const {
@@ -65,6 +67,12 @@ function formatBundlingError(
     ];
 
     return serializeError(error);
+  } else if (error instanceof ResourceNotFoundError) {
+    return {
+      type: 'ResourceNotFoundError',
+      errors: [],
+      message: error.message,
+    };
   } else {
     return {
       type: 'InternalError',

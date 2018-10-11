@@ -11,8 +11,6 @@
 'use strict';
 
 const generate = require('@babel/generator').default;
-const pluginSyntaxNullishCoalescingOperator = require('@babel/plugin-syntax-nullish-coalescing-operator')
-  .default;
 
 const {transformSync} = require('@babel/core');
 
@@ -34,7 +32,7 @@ function transform(
     babelrc: false,
     code: false,
     compact: true,
-    plugins: [pluginSyntaxNullishCoalescingOperator, ...optionsPlugins],
+    plugins: optionsPlugins,
     sourceType: 'module',
   };
 

@@ -13,36 +13,24 @@
 jest
   .setMock('jest-worker', () => ({}))
   .mock('fs', () => new (require('metro-memory-fs'))())
-  .mock('os')
   .mock('assert')
-  .mock('progress')
-  .mock('../../lib/getTransformCacheKeyFn', () => () => () => 'hash')
-  .mock('../../node-haste/DependencyGraph')
-  .mock('../../JSTransformer')
-  .mock('metro-core')
+  .mock('../getTransformCacheKey', () => () => 'hash')
+  .mock('../../WorkerFarm')
   .mock('/path/to/transformer.js', () => ({}), {virtual: true});
 
-var Bundler = require('../');
+var Transformer = require('../');
 var {getDefaultValues} = require('metro-config/src/defaults');
 var {mergeConfig} = require('metro-config/src/loadConfig');
 var fs = require('fs');
-const os = require('os');
-const path = require('path');
 const mkdirp = require('mkdirp');
-const Module = require('../../node-haste/Module');
 
-describe('Bundler', function() {
+describe('Transformer', function() {
   let watchFolders;
   let projectRoot;
   let commonOptions;
+  const getSha1 = jest.fn(() => '0123456789012345678901234567890123456789');
 
   beforeEach(function() {
-    os.cpus.mockReturnValue({length: 1});
-    os.tmpdir.mockReturnValue('/tmp');
-    // local directory on purpose, because it should not actually write
-    // anything to the disk during a unit test!
-    os.tmpDir.mockReturnValue(path.join(__dirname));
-
     const baseConfig = {
       resolver: {
         extraNodeModules: {},
@@ -58,7 +46,6 @@ describe('Bundler', function() {
       projectRoot: '/root',
       resetCache: false,
       transformerPath: '/path/to/transformer.js',
-      watch: false,
       watchFolders: ['/root'],
     };
 
@@ -76,33 +63,24 @@ describe('Bundler', function() {
     const get = jest.fn();
     const set = jest.fn();
 
-    const bundlerInstance = new Bundler({
-      ...commonOptions,
-      cacheStores: [{get, set}],
-      watchFolders,
-    });
+    const transformerInstance = new Transformer(
+      {
+        ...commonOptions,
+        cacheStores: [{get, set}],
+        watchFolders,
+      },
+      getSha1,
+    );
 
-    const depGraph = {
-      getSha1: jest.fn(() => '0123456789012345678901234567890123456789'),
-    };
-
-    jest.spyOn(bundlerInstance, 'getDependencyGraph').mockImplementation(() => {
-      return new Promise(resolve => {
-        resolve(depGraph);
-      });
-    });
-
-    const module = new Module('/root/foo.js');
-
-    require('../../JSTransformer').prototype.transform.mockReturnValue({
+    require('../../WorkerFarm').prototype.transform.mockReturnValue({
       sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
       result: {},
     });
 
-    await bundlerInstance.transformFile(module.path, {transformOptions: {}});
+    await transformerInstance.transformFile('./foo.js', {});
 
     // We got the SHA-1 of the file from the dependency graph.
-    expect(depGraph.getSha1).toBeCalledWith('/root/foo.js');
+    expect(getSha1).toBeCalledWith('./foo.js');
 
     // Only one get, with the original SHA-1.
     expect(get).toHaveBeenCalledTimes(1);

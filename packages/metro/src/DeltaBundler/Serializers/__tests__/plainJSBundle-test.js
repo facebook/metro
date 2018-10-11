@@ -21,6 +21,7 @@ const polyfill = {
       data: {code: '__d(function() {/* code for polyfill */});'},
     },
   ],
+  getSource: () => Buffer.from('polyfill-source'),
 };
 
 const fooModule = {

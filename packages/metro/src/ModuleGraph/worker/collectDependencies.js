@@ -50,6 +50,7 @@ type State = {|
 export type Options = {|
   +asyncRequireModulePath: string,
   +dynamicRequires: DynamicRequiresBehavior,
+  +inlineableCalls: $ReadOnlyArray<string>,
   +keepRequireNames: boolean,
 |};
 
@@ -138,12 +139,7 @@ function collectDependencies(
         'dependencyMap',
       );
 
-      // In preparation for Babel's unique id generator.
-      state.dependencyCalls = new Set([
-        'require',
-        '_$$_IMPORT_DEFAULT',
-        '_$$_IMPORT_ALL',
-      ]);
+      state.dependencyCalls = new Set(['require', ...options.inlineableCalls]);
     },
   };
 

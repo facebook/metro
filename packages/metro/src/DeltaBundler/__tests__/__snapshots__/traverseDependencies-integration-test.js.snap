@@ -1978,6 +1978,42 @@ Array [
 ]
 `;
 
+exports[`traverseDependencies node_modules (posix) should work with scoped providesModuleNodeModules (haste) 1`] = `
+Array [
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "shouldWork",
+      },
+      Object {
+        "isAsync": false,
+        "name": "Bar",
+      },
+    ],
+    "path": "/root/index.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "Bar",
+      },
+    ],
+    "path": "/root/node_modules/react-haste/main.js",
+  },
+  Object {
+    "dependencies": Array [
+      Object {
+        "isAsync": false,
+        "name": "shouldWork",
+      },
+    ],
+    "path": "/root/node_modules/@org/module/Bar.js",
+  },
+]
+`;
+
 exports[`traverseDependencies node_modules (win32) nested node_modules with browser field 1`] = `
 Array [
   Object {

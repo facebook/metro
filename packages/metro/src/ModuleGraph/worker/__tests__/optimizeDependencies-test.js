@@ -26,7 +26,7 @@ const DEPS = [
   {name: 'some/async/module', data: {isAsync: true}},
   {name: 'setup/something', data: {isAsync: false}},
 ];
-const REQUIRE_NAME = 'require';
+const REQUIRE_NAMES = new Set(['require']);
 
 it('returns dependencies from the transformed AST', () => {
   const ast = astFromCode(`
@@ -41,7 +41,7 @@ it('returns dependencies from the transformed AST', () => {
     ast,
     DEPS,
     DEP_MAP_NAME,
-    REQUIRE_NAME,
+    REQUIRE_NAMES,
   );
   expect(dependencies).toEqual(DEPS);
   expect(codeFromAst(ast)).toEqual(
@@ -62,7 +62,7 @@ it('strips unused dependencies and translates require() calls', () => {
     ast,
     DEPS,
     DEP_MAP_NAME,
-    REQUIRE_NAME,
+    REQUIRE_NAMES,
   );
   expect(dependencies).toEqual([{name: 'do', data: {isAsync: false}}]);
   expect(codeFromAst(ast)).toEqual(
@@ -78,7 +78,7 @@ it('strips unused dependencies and translates loadForModule() calls', () => {
     ast,
     DEPS,
     DEP_MAP_NAME,
-    REQUIRE_NAME,
+    REQUIRE_NAMES,
   );
   expect(dependencies).toEqual([
     {name: 'asyncRequire', data: {isAsync: false}},
@@ -105,7 +105,7 @@ it('strips unused dependencies and translates loadForModule() calls; different o
     ast,
     deps,
     DEP_MAP_NAME,
-    REQUIRE_NAME,
+    REQUIRE_NAMES,
   );
   expect(dependencies).toEqual([
     {name: 'something/else', data: {isAsync: false}},
@@ -123,7 +123,7 @@ it('strips unused dependencies and translates loadForModule() calls; different o
 it('throws if an invalid require() call is encountered', () => {
   const ast = astFromCode(`require(${DEP_MAP_NAME}[1]);`);
   try {
-    optimizeDependencies(ast, DEPS, DEP_MAP_NAME, REQUIRE_NAME);
+    optimizeDependencies(ast, DEPS, DEP_MAP_NAME, REQUIRE_NAMES);
     throw new Error('should not reach this');
   } catch (error) {
     expect(error).toBeInstanceOf(InvalidRequireCallError);

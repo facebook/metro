@@ -29,7 +29,7 @@ function plainJSBundle(
   return [
     ...pre,
     ...graph.dependencies.values(),
-    ...getAppendScripts(entryPoint, graph, options),
+    ...getAppendScripts(entryPoint, pre, graph, options),
   ]
     .filter(isJsModule)
     .filter(options.processModuleFilter)

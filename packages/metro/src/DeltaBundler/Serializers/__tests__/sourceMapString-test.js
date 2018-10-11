@@ -79,3 +79,44 @@ it('should serialize a very simple bundle', () => {
     mappings: '',
   });
 });
+
+it('should not include the source of an asset', () => {
+  const assetModule = {
+    path: '/root/asset.jpg',
+    dependencies: new Map(),
+    getSource: () => {
+      throw new Error('should not read the source of an asset');
+    },
+    output: [
+      {
+        type: 'js/module/asset',
+        data: {
+          code: '__d(function() {/* code for bar */});',
+          map: [],
+        },
+      },
+    ],
+  };
+
+  expect(
+    JSON.parse(
+      sourceMapString(
+        [],
+        {
+          dependencies: new Map([['foo', fooModule], ['asset', assetModule]]),
+          entryPoints: ['foo'],
+        },
+        {
+          excludesSource: false,
+          processModuleFilter: module => true,
+        },
+      ),
+    ),
+  ).toEqual({
+    version: 3,
+    sources: ['/root/foo.js', '/root/asset.jpg'],
+    sourcesContent: ['source foo', ''],
+    names: [],
+    mappings: '',
+  });
+});

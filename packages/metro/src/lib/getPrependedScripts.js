@@ -46,7 +46,6 @@ async function getPrependedScripts(
     dev: bundleOptions.dev,
     hot: bundleOptions.hot,
     minify: bundleOptions.minify,
-    onProgress: null,
     platform: bundleOptions.platform,
     type: 'script',
   };

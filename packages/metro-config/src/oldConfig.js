@@ -13,7 +13,11 @@ const blacklist = require('./defaults/blacklist');
 const os = require('os');
 const path = require('path');
 
-const {providesModuleNodeModules} = require('./defaults/defaults');
+const {
+  defaultCreateModuleIdFactory,
+  platforms,
+  providesModuleNodeModules,
+} = require('./defaults/defaults');
 const {FileStore} = require('metro-cache');
 
 import type {OldConfigT as ConfigT} from './configTypes.flow.js';
@@ -22,19 +26,19 @@ const DEFAULT = ({
   assetRegistryPath: 'missing-asset-registry-path',
   enhanceMiddleware: middleware => middleware,
   extraNodeModules: {},
-  assetTransforms: false,
   cacheStores: [
     new FileStore({
       root: path.join(os.tmpdir(), 'metro-cache'),
     }),
   ],
   cacheVersion: '1.0',
+  createModuleIdFactory: defaultCreateModuleIdFactory,
   dynamicDepsInPackages: 'throwAtRuntime',
   getAsyncRequireModulePath: () => 'metro/src/lib/bundle-modules/asyncRequire',
   getAssetExts: () => [],
   getBlacklistRE: () => blacklist(),
   getEnableBabelRCLookup: () => true,
-  getPlatforms: () => [],
+  getPlatforms: () => platforms,
   getPolyfillModuleNames: () => [],
   getProjectRoots: undefined,
   // We assume the default project path is two levels up from
@@ -58,8 +62,9 @@ const DEFAULT = ({
   resolveRequest: null,
   getResolverMainFields: () => ['browser', 'main'],
   getModulesRunBeforeMainModule: () => [],
-  getWorkerPath: () => null,
+  getWorkerPath: () => 'metro/src/DeltaBundler/Worker',
   processModuleFilter: module => true,
+  transformVariants: () => ({default: {}}),
 }: ConfigT);
 
 module.exports = {

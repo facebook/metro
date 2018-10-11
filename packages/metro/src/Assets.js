@@ -20,7 +20,6 @@ const path = require('path');
 
 const {isAssetTypeAnImage} = require('./Bundler/util');
 
-const stat = denodeify(fs.stat);
 const readDir = denodeify(fs.readdir);
 const readFile = denodeify(fs.readFile);
 
@@ -153,65 +152,6 @@ async function getAbsoluteAssetRecord(
   return record;
 }
 
-async function findRoot(
-  roots: $ReadOnlyArray<string>,
-  dir: string,
-  debugInfoFile: string,
-): Promise<string> {
-  const stats = await Promise.all(
-    roots.map(async root => {
-      // important: we want to resolve root + dir
-      // to ensure the requested path doesn't traverse beyond root
-      const absPath = path.resolve(root, dir);
-
-      try {
-        const fstat = await stat(absPath);
-
-        // keep asset requests from traversing files
-        // up from the root (e.g. ../../../etc/hosts)
-        if (!absPath.startsWith(path.resolve(root))) {
-          return {path: absPath, isValid: false};
-        }
-        return {path: absPath, isValid: fstat.isDirectory()};
-      } catch (_) {
-        return {path: absPath, isValid: false};
-      }
-    }),
-  );
-
-  for (let i = 0; i < stats.length; i++) {
-    if (stats[i].isValid) {
-      return stats[i].path;
-    }
-  }
-
-  const rootsString = roots.map(s => `'${s}'`).join(', ');
-  throw new Error(
-    `'${debugInfoFile}' could not be found, because '${dir}' is not a ` +
-      `subdirectory of any of the roots  (${rootsString})`,
-  );
-}
-
-async function getAssetRecord(
-  relativePath: string,
-  projectRoots: $ReadOnlyArray<string>,
-  platform: ?string = null,
-): Promise<{|
-  files: Array<string>,
-  scales: Array<number>,
-|}> {
-  const dir = await findRoot(
-    projectRoots,
-    path.dirname(relativePath),
-    relativePath,
-  );
-
-  return await getAbsoluteAssetRecord(
-    path.join(dir, path.basename(relativePath)),
-    platform,
-  );
-}
-
 async function getAbsoluteAssetInfo(
   assetPath: string,
   platform: ?string = null,
@@ -299,14 +239,13 @@ async function getAssetFiles(
  * project roots:
  *
  * 1. We first parse the directory of the asset
- * 2. We check to find a matching directory in one of the project roots
- * 3. We then build a map of all assets and their scales in this directory
- * 4. Then try to pick platform-specific asset records
- * 5. Then pick the closest resolution (rounding up) to the requested one
+ * 2. We then build a map of all assets and their scales in this directory
+ * 3. Then try to pick platform-specific asset records
+ * 4. Then pick the closest resolution (rounding up) to the requested one
  */
 async function getAsset(
   relativePath: string,
-  projectRoots: $ReadOnlyArray<string>,
+  projectRoot: string,
   platform: ?string = null,
 ): Promise<Buffer> {
   const assetData = AssetPaths.parse(
@@ -314,7 +253,15 @@ async function getAsset(
     new Set(platform != null ? [platform] : []),
   );
 
-  const record = await getAssetRecord(relativePath, projectRoots, platform);
+  const absolutePath = path.resolve(projectRoot, relativePath);
+
+  if (!absolutePath.startsWith(path.resolve(projectRoot))) {
+    throw new Error(
+      `'${relativePath}' could not be found, because it cannot be found in the project root: ${projectRoot})`,
+    );
+  }
+
+  const record = await getAbsoluteAssetRecord(absolutePath, platform);
 
   for (let i = 0; i < record.scales.length; i++) {
     if (record.scales[i] >= assetData.resolution) {

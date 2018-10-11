@@ -69,7 +69,6 @@ class HmrServer<TClient: Client> {
         dev: true,
         hot: true,
         minify: false,
-        onProgress: null,
         platform,
         type: 'module',
       },

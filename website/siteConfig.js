@@ -1,4 +1,3 @@
-/*eslint sort-keys: 0*/
 /**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
@@ -6,11 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+/* eslint sort-keys: 0 */
+
 'use strict';
 
 const siteConfig = {
   title: 'Metro',
-  tagline: '🚇 The JavaScript bundler for React Native',
+  tagline: '\uD832\uDE87 The JavaScript bundler for React Native',
   url: 'https://facebook.github.io',
   baseUrl: '/metro/',
   projectName: 'metro',

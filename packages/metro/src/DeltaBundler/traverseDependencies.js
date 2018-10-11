@@ -12,8 +12,13 @@
 
 const nullthrows = require('nullthrows');
 
-import type {TransformResultDependency} from '../ModuleGraph/types.flow';
-import type {Dependency, Graph, Module, Options} from './types.flow';
+import type {
+  Dependency,
+  Graph,
+  Module,
+  Options,
+  TransformResultDependency,
+} from './types.flow';
 
 type Result<T> = {added: Map<string, Module<T>>, deleted: Set<string>};
 

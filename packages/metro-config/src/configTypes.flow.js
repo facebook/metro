@@ -65,433 +65,123 @@ export type Middleware = (
 ) => mixed;
 
 export type OldConfigT = {
-  // TODO: Remove this option below (T23793920)
-  assetTransforms?: boolean,
-
   assetRegistryPath: string,
-
-  /**
-   * List of all store caches.
-   */
   cacheStores: Array<CacheStore<TransformResult<>>>,
-
-  /**
-   * Can be used to generate a key that will invalidate the whole metro cache
-   * (for example a global dependency version used by the transformer).
-   */
   cacheVersion: string,
-
-  /**
-   * Called with the Metro middleware in parameter; can be used to wrap this
-   * middleware inside another one
-   */
+  createModuleIdFactory: () => (path: string) => number,
   enhanceMiddleware: (Middleware, Server) => Middleware,
-
   extraNodeModules: {[id: string]: string},
-
   +dynamicDepsInPackages: DynamicRequiresBehavior,
-
-  /**
-   * Specify any additional asset file extensions to be used by the packager.
-   * For example, if you want to include a .ttf file, you would return ['ttf']
-   * from here and use `require('./fonts/example.ttf')` inside your app.
-   */
   getAssetExts: () => Array<string>,
-
-  /**
-   * Returns a regular expression for modules that should be ignored by the
-   * packager on a given platform.
-   */
-  getBlacklistRE(): RegExp,
-
-  /**
-   * Specify an implementation module to load async import modules (for
-   * splitting).
-   */
   getAsyncRequireModulePath(): string,
-
-  /**
-   * Specify whether or not to enable Babel's behavior for looking up .babelrc
-   * files. If false, only the .babelrc file (if one exists) in the main project
-   * root is used.
-   */
+  getBlacklistRE(): RegExp,
   getEnableBabelRCLookup(): boolean,
-
-  /**
-   * Specify any additional polyfill modules that should be processed
-   * before regular module loading.
-   */
-  getPolyfillModuleNames: () => Array<string>,
-
-  /**
-   * Specify any additional platforms to be used by the packager.
-   * For example, if you want to add a "custom" platform, and use modules
-   * ending in .custom.js, you would return ['custom'] here.
-   */
+  getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
   getPlatforms: () => Array<string>,
-
-  /**
-   * Specify a list of project roots
-   * @deprecated Previousely used to set up a list of watchers (one per
-   * directory). Discontinued in a favor of getProjectRoot and getWatchFolders
-   */
-  getProjectRoots: ?() => Array<string>,
-
-  /**
-   * Specify a root folder of the user project
-   */
+  getPolyfillModuleNames: () => Array<string>,
+  getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
+  getProjectRoots: ?() => Array<string>, // @deprecated
   getProjectRoot: () => string,
-
-  /**
-   * Specify any additional (to projectRoot) watch folders
-   */
-  getWatchFolders: () => Array<string>,
-
-  /**
-   * Specify any additional node modules that should be processed for
-   * providesModule declarations.
-   */
   getProvidesModuleNodeModules?: () => Array<string>,
-
-  /**
-   * Specify the fields in package.json files that will be used by the module
-   * resolver to do redirections when requiring certain packages. For example,
-   * using `['browser', 'main']` will use the `browser` field if it exists and
-   * will default to `main` if it doesn't.
-   */
   getResolverMainFields: () => $ReadOnlyArray<string>,
-
-  /**
-   * Specify the format of the initial require statements that are appended
-   * at the end of the bundle. By default is `require(${moduleId});`
-   */
   getRunModuleStatement: (number | string) => string,
-
-  /**
-   * Specify any additional source file extensions to be used by the packager.
-   * For example, if you want to include a .ts file, you would return ['ts']
-   * from here and use `require('./module/example')` to require the file with
-   * path 'module/example.ts' inside your app.
-   */
   getSourceExts: () => Array<string>,
-
-  /**
-   * Returns the path to a custom transformer. This can also be overridden
-   * with the --transformer commandline argument.
-   */
   getTransformModulePath: () => string,
   getTransformOptions: GetTransformOptions,
-
-  /**
-   * Returns the path to the worker that is used for transformation.
-   */
-  getWorkerPath: () => ?string,
-
-  /**
-   * An optional list of polyfills to include in the bundle. The list defaults
-   * to a set of common polyfills for Number, String, Array, Object...
-   */
-  getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
-
   getUseGlobalHotkey: () => boolean,
-
-  /**
-   * An optional function that can modify the code and source map of bundle
-   * after the minifaction took place. (Function applied per module).
-   */
+  getWatchFolders: () => Array<string>,
+  getWorkerPath: () => string,
+  hasteImplModulePath?: ?string,
   postMinifyProcess: PostMinifyProcess,
-
-  /**
-   * An optional function that can modify the code and source map of the bundle
-   * before it is written. Applied once for the entire bundle, only works if
-   * output is a plainBundle.
-   */
   postProcessBundleSourcemap: PostProcessBundleSourcemap,
-
-  /**
-   * An optional function used to resolve requests. Ignored when the request can
-   * be resolved through Haste.
-   */
-  resolveRequest: ?CustomResolver,
-
-  /**
-   * Path to a require-able module that exports:
-   * - a `getHasteName(filePath)` method that returns `hasteName` for module at
-   *  `filePath`, or undefined if `filePath` is not a haste module.
-   */
-  hasteImplModulePath?: string,
-
-  /**
-   * An array of modules to be required before the entry point. It should
-   * contain the absolute path of each module.
-   */
-  getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
-
-  /**
-   * An optional custom module ID factory creator used by the bundler.
-   */
-  createModuleIdFactory?: () => (path: string) => number,
-
   processModuleFilter: (modules: Module<>) => boolean,
-
-  transformVariants?: () => TransformVariants,
+  resolveRequest: ?CustomResolver,
+  transformVariants: () => TransformVariants,
 };
 
-export type InputConfigT = $ReadOnly<{
-  resolver?: $ReadOnly<{
-    /**
-     * Returns a regular expression for modules that should be ignored by the
-     * packager on a given platform.
-     */
-    blacklistRE?: RegExp,
-    /**
-     * Specify any additional asset file extensions to be used by the packager.
-     * For example, if you want to include a .ttf file, you would return ['ttf']
-     * from here and use `require('./fonts/example.ttf')` inside your app.
-     */
-    assetExts?: Array<string>,
+type ResolverConfigT = {|
+  assetExts: $ReadOnlyArray<string>,
+  blacklistRE: RegExp,
+  extraNodeModules: {[name: string]: string},
+  hasteImplModulePath: ?string,
+  platforms: $ReadOnlyArray<string>,
+  providesModuleNodeModules: $ReadOnlyArray<string>,
+  resolverMainFields: $ReadOnlyArray<string>,
+  resolveRequest: ?CustomResolver,
+  sourceExts: $ReadOnlyArray<string>,
+  useWatchman: boolean,
+|};
 
-    /**
-     * Specify any additional platforms to be used by the packager.
-     * For example, if you want to add a "custom" platform, and use modules
-     * ending in .custom.js, you would return ['custom'] here.
-     */
-    platforms?: Array<string>,
+type SerializerConfigT = {|
+  createModuleIdFactory: () => (path: string) => number,
+  experimentalSerializerHook: (graph: Graph<>, delta: DeltaResult<>) => mixed,
+  getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
+  getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
+  getRunModuleStatement: (number | string) => string,
+  polyfillModuleNames: $ReadOnlyArray<string>,
+  postProcessBundleSourcemap: PostProcessBundleSourcemap,
+  processModuleFilter: (modules: Module<>) => boolean,
+|};
 
-    /**
-     * Specify any additional node modules that should be processed for
-     * providesModule declarations.
-     */
-    providesModuleNodeModules?: Array<string>,
+type TransformerConfigT = {|
+  assetPlugins: $ReadOnlyArray<string>,
+  assetRegistryPath: string,
+  asyncRequireModulePath: string,
+  babelTransformerPath: string,
+  dynamicDepsInPackages: DynamicRequiresBehavior,
+  enableBabelRCLookup: boolean,
+  getTransformOptions: GetTransformOptions,
+  minifierPath: string,
+  optimizationSizeLimit: number,
+  postMinifyProcess: PostMinifyProcess,
+  transformVariants: TransformVariants,
+  workerPath: string,
+|};
 
-    /**
-     * Specify the fields in package.json files that will be used by the module
-     * resolver to do redirections when requiring certain packages. For example,
-     * using `['browser', 'main']` will use the `browser` field if it exists and
-     * will default to `main` if it doesn't.
-     */
-    resolverMainFields?: $ReadOnlyArray<string>,
-
-    /**
-     * Specify any additional source file extensions to be used by the packager.
-     * For example, if you want to include a .ts file, you would return ['ts']
-     * from here and use `require('./module/example')` to require the file with
-     * path 'module/example.ts' inside your app.
-     */
-    sourceExts?: Array<string>,
-
-    /**
-     * Path to a require-able module that exports:
-     * - a `getHasteName(filePath)` method that returns `hasteName` for module at
-     *  `filePath`, or undefined if `filePath` is not a haste module.
-     */
-    hasteImplModulePath?: string,
-
-    /**
-     * This property specifies if we want to merge the `sourceExts` with the
-     * `assetExts`. We should deprecate this property.
-     */
-    assetTransforms?: boolean,
-
-    extraNodeModules?: {[name: string]: string},
-
-    /**
-     * An optional function used to resolve requests. Ignored when the request can
-     * be resolved through Haste.
-     */
-    resolveRequest?: ?CustomResolver,
-
-    /**
-     * If false, Metro will avoid using watchman even if it's available on the
-     * system.
-     */
-    useWatchman?: boolean,
-  }>,
-  server?: $ReadOnly<{
-    useGlobalHotkey?: boolean,
-    port?: ?number,
-    enhanceMiddleware?: (Middleware, Server) => Middleware,
-    enableVisualizer?: boolean,
-  }>,
-  serializer?: $ReadOnly<{
-    /**
-     * An optional custom module ID factory creator used by the bundler.
-     */
-    createModuleIdFactory?: () => (path: string) => number,
-
-    /**
-     * Specify any additional polyfill modules that should be processed
-     * before regular module loading.
-     */
-    polyfillModuleNames?: Array<string>, // This one is not sure
-
-    /**
-     * Specify the format of the initial require statements that are appended
-     * at the end of the bundle. By default is `require(${moduleId});`
-     */
-    getRunModuleStatement?: (number | string) => string,
-
-    /**
-     * An optional list of polyfills to include in the bundle. The list defaults
-     * to a set of common polyfills for Number, String, Array, Object...
-     */
-    getPolyfills?: ({platform: ?string}) => $ReadOnlyArray<string>,
-
-    /**
-     * An optional function that can modify the code and source map of the bundle
-     * before it is written. Applied once for the entire bundle, only works if
-     * output is a plainBundle.
-     */
-    postProcessBundleSourcemap?: PostProcessBundleSourcemap,
-
-    /**
-     * An array of modules to be required before the entry point. It should
-     * contain the absolute path of each module.
-     */
-    getModulesRunBeforeMainModule?: (entryFilePath: string) => Array<string>,
-
-    /**
-     * Do not use yet, since the Graph API is going to change soon.
-     */
-    experimentalSerializerHook?: (
-      graph: Graph<>,
-      delta: DeltaResult<>,
-    ) => mixed,
-  }>,
-  transformer?: $ReadOnly<{
-    assetRegistryPath?: string,
-    /**
-     * Specify whether or not to enable Babel's behavior for looking up .babelrc
-     * files. If false, only the .babelrc file (if one exists) in the main project
-     * root is used.
-     */
-    enableBabelRCLookup?: boolean,
-
-    dynamicDepsInPackages?: DynamicRequiresBehavior,
-
-    getTransformOptions?: GetTransformOptions,
-
-    /**
-     * Specify an implementation module to load async import modules (for
-     * splitting).
-     */
-    asyncRequireModulePath?: string,
-
-    /**
-     * An optional function that can modify the code and source map of bundle
-     * after the minifaction took place. (Function applied per module).
-     */
-    postMinifyProcess?: PostMinifyProcess,
-
-    /**
-     * The path to the worker that is used for transformation.
-     */
-    workerPath?: ?string,
-
-    minifierPath?: string,
-
-    transformVariants?: TransformVariants,
-  }>,
-
-  // Metal
-
-  /**
-   * List of all store caches.
-   */
-  cacheStores?: $ReadOnlyArray<CacheStore<TransformResult<>>>,
-
-  /**
-   * Can be used to generate a key that will invalidate the whole metro cache
-   * (for example a global dependency version used by the transformer).
-   */
-  cacheVersion?: string, // Do we need this?
-
-  /**
-   * Specify a root folder of the user project
-   */
-  projectRoot?: string,
-
-  /**
-   * Specify any additional (to projectRoot) watch folders
-   */
-  watchFolders?: Array<string>,
-
-  /**
-   * Returns the path to a custom transformer. This can also be overridden
-   * with the --transformer commandline argument.
-   */
-  transformerPath?: string,
-
-  /**
-   * Whether we should watch for all files
-   */
-  watch?: boolean,
-
-  reporter?: Reporter,
-
-  resetCache?: boolean,
-
-  maxWorkers?: number,
-}>;
-
-export type IntermediateConfigT = {
-  resolver: {
-    assetExts: Array<string>,
-    platforms: Array<string>,
-    providesModuleNodeModules: Array<string>,
-    resolverMainFields: $ReadOnlyArray<string>,
-    sourceExts: Array<string>,
-    hasteImplModulePath?: string,
-    assetTransforms: boolean,
-    extraNodeModules: {[name: string]: string},
-    resolveRequest?: ?CustomResolver,
-    blacklistRE: RegExp,
-    useWatchman: boolean,
-  },
-  server: {
-    useGlobalHotkey: boolean,
-    port: number,
-    enhanceMiddleware: (Middleware, Server) => Middleware,
-    enableVisualizer?: boolean,
-  },
-  serializer: {
-    polyfillModuleNames: Array<string>, // This one is not sure
-    getRunModuleStatement: (number | string) => string,
-    getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
-    postProcessBundleSourcemap: PostProcessBundleSourcemap,
-    getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
-    processModuleFilter: (modules: Module<>) => boolean,
-    createModuleIdFactory: () => (path: string) => number,
-    experimentalSerializerHook: (graph: Graph<>, delta: DeltaResult<>) => mixed,
-  },
-  transformer: {
-    assetPlugins: Array<string>,
-    assetRegistryPath: string,
-    asyncRequireModulePath: string,
-    babelTransformerPath: string,
-    enableBabelRCLookup: boolean,
-    dynamicDepsInPackages: DynamicRequiresBehavior,
-    getTransformOptions: GetTransformOptions,
-    minifierPath: string,
-    optimizationSizeLimit: number,
-    postMinifyProcess: PostMinifyProcess,
-    transformVariants: TransformVariants,
-    workerPath: ?string,
-  },
-
-  // Metal
-
+type MetalConfigT = {|
   cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
-  cacheVersion: string, // Do we need this?
+  cacheVersion: string,
+  maxWorkers: number,
   projectRoot: string,
   transformerPath: string,
-  watchFolders: Array<string>,
-  watch: boolean,
   reporter: Reporter,
   resetCache: boolean,
-  maxWorkers: number,
-};
+  watchFolders: $ReadOnlyArray<string>,
+|};
 
-// Will become `export type ConfigT = $ReadOnly<IntermediateConfigT>;`
-// in the future when we converted all configuration
-export type ConfigT = IntermediateConfigT;
+type ServerConfigT = {|
+  enableVisualizer: boolean,
+  enhanceMiddleware: (Middleware, Server) => Middleware,
+  useGlobalHotkey: boolean,
+  port: number,
+|};
+
+export type InputConfigT = $Shape<{|
+  ...MetalConfigT,
+  ...$ReadOnly<{|
+    resolver: $Shape<ResolverConfigT>,
+    server: $Shape<ServerConfigT>,
+    serializer: $Shape<SerializerConfigT>,
+    transformer: $Shape<TransformerConfigT>,
+  |}>,
+|}>;
+
+export type IntermediateConfigT = {|
+  ...MetalConfigT,
+  ...{|
+    resolver: ResolverConfigT,
+    server: ServerConfigT,
+    serializer: SerializerConfigT,
+    transformer: TransformerConfigT,
+  |},
+|};
+
+export type ConfigT = $ReadOnly<{|
+  ...$ReadOnly<MetalConfigT>,
+  ...$ReadOnly<{|
+    resolver: $ReadOnly<ResolverConfigT>,
+    server: $ReadOnly<ServerConfigT>,
+    serializer: $ReadOnly<SerializerConfigT>,
+    transformer: $ReadOnly<TransformerConfigT>,
+  |}>,
+|}>;

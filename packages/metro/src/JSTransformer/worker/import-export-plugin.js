@@ -16,6 +16,10 @@ import type {Ast} from '@babel/core';
 import type {Path} from '@babel/traverse';
 
 type State = {
+  exportAll: Array<{file: string}>,
+  exportDefault: Array<{local: string}>,
+  exportNamed: Array<{local: string, remote: string}>,
+
   importDefault: Ast,
   importAll: Ast,
 
@@ -31,7 +35,7 @@ type State = {
  * corresponding id in it.
  */
 const importTemplate = template(`
-  const LOCAL = IMPORT(FILE);
+  var LOCAL = IMPORT(FILE);
 `);
 
 /**
@@ -39,7 +43,7 @@ const importTemplate = template(`
  * "const y = require(...).x" call with the corresponding id in it.
  */
 const importNamedTemplate = template(`
-  const LOCAL = require(FILE).REMOTE;
+  var LOCAL = require(FILE).REMOTE;
 `);
 
 /**
@@ -50,24 +54,36 @@ const importSideEffect = template(`
   require(FILE);
 `);
 
+/**
+ * Produces an "export all" template that traverses all exported symbols and
+ * re-exposes them.
+ */
 const exportAllTemplate = template(`
-  const REQUIRE = require(FILE);
+  var REQUIRED = require(FILE);
 
-  for (const key in REQUIRE) {
-    exports[key] = REQUIRE[key];
+  for (var KEY in REQUIRED) {
+    exports[KEY] = REQUIRED[KEY];
   }
 `);
 
+/**
+ * Produces a "named export" or "default export" template to export a single
+ * symbol.
+ */
 const exportTemplate = template(`
   exports.REMOTE = LOCAL;
 `);
 
+/**
+ * Flags the exported module as a transpiled ES module. Needs to be kept in 1:1
+ * compatibility with Babel.
+ */
+const esModuleExport = template(`
+  Object.defineProperty(exports, '__esModule', {value: true});
+`);
+
 // eslint-disable-next-line lint/flow-no-fixme
 function importExportPlugin({types: t}: $FlowFixMe) {
-  const exportAll: Array<{file: string}> = [];
-  const exportDefault: Array<{local: string}> = [];
-  const exportNamed: Array<{local: string, remote: string}> = [];
-
   return {
     visitor: {
       ExportAllDeclaration(path: Path, state: State) {
@@ -75,7 +91,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
           return;
         }
 
-        exportAll.push({
+        state.exportAll.push({
           file: path.get('source').node.value,
         });
 
@@ -93,7 +109,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
 
         node.id = id;
 
-        exportDefault.push({
+        state.exportDefault.push({
           local: id.name,
         });
 
@@ -121,7 +137,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
             declaration.get('declarations').forEach(d => {
               const name = d.get('id').node.name;
 
-              exportNamed.push({local: name, remote: name});
+              state.exportNamed.push({local: name, remote: name});
             });
           } else {
             const id =
@@ -129,7 +145,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
             const name = id.name;
 
             declaration.node.id = id;
-            exportNamed.push({local: name, remote: name});
+            state.exportNamed.push({local: name, remote: name});
           }
 
           path.insertBefore(declaration.node);
@@ -146,12 +162,13 @@ function importExportPlugin({types: t}: $FlowFixMe) {
               if (local.name === 'default') {
                 path.insertBefore(
                   importTemplate({
+                    IMPORT: state.importDefault,
                     FILE: path.node.source,
                     LOCAL: temp,
                   }),
                 );
 
-                exportNamed.push({local: temp.name, remote: remote.name});
+                state.exportNamed.push({local: temp.name, remote: remote.name});
               } else if (remote.name === 'default') {
                 path.insertBefore(
                   importNamedTemplate({
@@ -161,7 +178,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
                   }),
                 );
 
-                exportDefault.push({local: temp.name});
+                state.exportDefault.push({local: temp.name});
               } else {
                 path.insertBefore(
                   importNamedTemplate({
@@ -171,13 +188,16 @@ function importExportPlugin({types: t}: $FlowFixMe) {
                   }),
                 );
 
-                exportNamed.push({local: temp.name, remote: remote.name});
+                state.exportNamed.push({local: temp.name, remote: remote.name});
               }
             } else {
               if (remote.name === 'default') {
-                exportDefault.push({local: local.name});
+                state.exportDefault.push({local: local.name});
               } else {
-                exportNamed.push({local: local.name, remote: remote.name});
+                state.exportNamed.push({
+                  local: local.name,
+                  remote: remote.name,
+                });
               }
             }
           });
@@ -248,6 +268,10 @@ function importExportPlugin({types: t}: $FlowFixMe) {
 
       Program: {
         enter(path: Path, state: State) {
+          state.exportAll = [];
+          state.exportDefault = [];
+          state.exportNamed = [];
+
           state.importAll = t.identifier(state.opts.importAll);
           state.importDefault = t.identifier(state.opts.importDefault);
         },
@@ -255,7 +279,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
         exit(path: Path, state: State) {
           const body = path.node.body;
 
-          exportDefault.forEach(e => {
+          state.exportDefault.forEach(e => {
             body.push(
               exportTemplate({
                 LOCAL: t.identifier(e.local),
@@ -264,16 +288,17 @@ function importExportPlugin({types: t}: $FlowFixMe) {
             );
           });
 
-          exportAll.forEach(e => {
+          state.exportAll.forEach(e => {
             body.push(
               ...exportAllTemplate({
                 FILE: t.stringLiteral(e.file),
-                REQUIRE: path.scope.generateUidIdentifier(e.file),
+                REQUIRED: path.scope.generateUidIdentifier(e.file),
+                KEY: path.scope.generateUidIdentifier('key'),
               }),
             );
           });
 
-          exportNamed.forEach(e => {
+          state.exportNamed.forEach(e => {
             body.push(
               exportTemplate({
                 LOCAL: t.identifier(e.local),
@@ -282,13 +307,12 @@ function importExportPlugin({types: t}: $FlowFixMe) {
             );
           });
 
-          if (exportDefault.length || exportAll.length || exportNamed.length) {
-            body.unshift(
-              exportTemplate({
-                LOCAL: t.booleanLiteral(true),
-                REMOTE: t.identifier('__esModule'),
-              }),
-            );
+          if (
+            state.exportDefault.length ||
+            state.exportAll.length ||
+            state.exportNamed.length
+          ) {
+            body.unshift(esModuleExport());
           }
         },
       },

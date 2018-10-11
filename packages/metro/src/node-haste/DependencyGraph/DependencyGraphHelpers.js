@@ -15,15 +15,15 @@ const path = require('path');
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
 
 class DependencyGraphHelpers {
-  _providesModuleNodeModules: Array<string>;
+  _providesModuleNodeModules: $ReadOnlyArray<string>;
   _assetExts: Set<string>;
 
   constructor({
     providesModuleNodeModules,
     assetExts,
   }: {
-    +providesModuleNodeModules: Array<string>,
-    +assetExts: Array<string>,
+    +providesModuleNodeModules: $ReadOnlyArray<string>,
+    +assetExts: $ReadOnlyArray<string>,
   }) {
     this._providesModuleNodeModules = providesModuleNodeModules;
     this._assetExts = new Set(assetExts);
@@ -36,6 +36,16 @@ class DependencyGraphHelpers {
     }
 
     const parts = file.substr(index + 14).split(path.sep);
+
+    // Handle @scoped providesModuleNodeModules on both posix and win32
+    if (
+      parts.length >= 2 &&
+      parts[0][0] === '@' &&
+      this._providesModuleNodeModules.indexOf(parts[0] + '/' + parts[1]) > -1
+    ) {
+      return false;
+    }
+
     const dirs = this._providesModuleNodeModules;
     for (let i = 0; i < dirs.length; i++) {
       if (parts.indexOf(dirs[i]) > -1) {

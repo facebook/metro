@@ -20,6 +20,8 @@ jest.unmock('cosmiconfig');
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 30 * 1000;
 
+const INLINE_SOURCE_MAP_STR =
+  '//# sourceMappingURL=data:application/json;charset=utf-8;base64,';
 const ERROR_STR = "new Error('SOURCEMAP:";
 
 it('creates correct sourcemaps in dev mode', async () => {
@@ -53,6 +55,34 @@ it('creates correct sourcemaps in prod mode', async () => {
     substrFromFile(source, line, column).startsWith(ERROR_STR),
   ).toBeTruthy();
 });
+
+it('creates correct inline sourcemaps', async () => {
+  const config = await Metro.loadConfig({
+    config: require.resolve('../metro.config.js'),
+  });
+  const {code} = await Metro.runBuild(config, {
+    entry: 'ErrorBundle.js',
+    dev: false,
+    minify: true,
+    sourceMap: true,
+  });
+  const map = extractInlineSourceMap(code);
+
+  const {line, column, source} = symbolicate(getErrorFromCode(code), map);
+
+  expect(
+    substrFromFile(source, line, column).startsWith(ERROR_STR),
+  ).toBeTruthy();
+});
+
+function extractInlineSourceMap(code: string) {
+  const idx = code.lastIndexOf(INLINE_SOURCE_MAP_STR);
+
+  return Buffer.from(
+    code.substr(idx + INLINE_SOURCE_MAP_STR.length),
+    'base64',
+  ).toString();
+}
 
 function getErrorFromCode(code) {
   // Create a vm context to execute the bundle and get back the Error object.

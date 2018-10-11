@@ -12,28 +12,25 @@
 
 const uglify = require('uglify-es');
 
+import type {BabelSourceMap} from '@babel/core';
 import type {
   MetroMinifier,
-  ResultWithMap,
-  ResultWithoutMap,
+  MetroMinifierResult,
   MinifyOptions,
-} from './types.js.flow';
-import type {BabelSourceMap} from '@babel/core';
+} from 'metro/src/shared/types.flow.js';
 
-function noSourceMap(
-  code: string,
-  options?: MinifyOptions = {},
-): ResultWithoutMap {
-  return minify(code, undefined, options).code;
-}
-
-function withSourceMap(
+function minifier(
   code: string,
   sourceMap: ?BabelSourceMap,
   filename: string,
   options?: MinifyOptions = {},
-): ResultWithMap {
+): MetroMinifierResult {
   const result = minify(code, sourceMap, options);
+
+  if (!sourceMap) {
+    return {code: result.code};
+  }
+
   const map: BabelSourceMap = JSON.parse(result.map);
 
   map.sources = [filename];
@@ -77,9 +74,4 @@ function minify(
   };
 }
 
-const metroMinifier: MetroMinifier = {
-  noSourceMap,
-  withSourceMap,
-};
-
-module.exports = metroMinifier;
+module.exports = (minifier: MetroMinifier);

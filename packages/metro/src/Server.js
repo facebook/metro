@@ -13,9 +13,11 @@
 const Bundler = require('./Bundler');
 const DeltaBundler = require('./DeltaBundler');
 const MultipartResponse = require('./Server/MultipartResponse');
+const ResourceNotFoundError = require('./DeltaBundler/ResourceNotFoundError');
 
 const crypto = require('crypto');
 const deltaJSBundle = require('./DeltaBundler/Serializers/deltaJSBundle');
+const fs = require('fs');
 const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('./DeltaBundler/Serializers/getAssets');
 const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
@@ -47,7 +49,7 @@ import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
-import type {CustomTransformOptions} from './JSTransformer/worker';
+import type {TransformInputOptions} from './lib/transformHelpers';
 
 const {
   Logger,
@@ -59,16 +61,6 @@ type GraphInfo = {|
   prepend: $ReadOnlyArray<Module<>>,
   lastModified: Date,
   +sequenceId: string,
-|};
-
-export type BuildGraphOptions = {|
-  +customTransformOptions: CustomTransformOptions,
-  +dev: boolean,
-  +hot: boolean,
-  +minify: boolean,
-  +onProgress: ?(doneCont: number, totalCount: number) => mixed,
-  +platform: ?string,
-  +type: 'module' | 'script',
 |};
 
 export type OutputGraph = Graph<>;
@@ -108,8 +100,7 @@ class Server {
 
   constructor(config: ConfigT) {
     this._config = config;
-    // TODO(ives): Add config as a CLI param instead
-    this._config.watch = true;
+
     if (this._config.resetCache) {
       this._config.cacheStores.forEach(store => store.clear());
       this._config.reporter.update({type: 'transform_cache_reset'});
@@ -183,7 +174,7 @@ class Server {
 
   async buildGraph(
     entryFiles: $ReadOnlyArray<string>,
-    options: BuildGraphOptions,
+    options: TransformInputOptions,
   ): Promise<OutputGraph> {
     entryFiles = entryFiles.map(entryFile =>
       getEntryAbsolutePath(this._config, entryFile),
@@ -201,7 +192,7 @@ class Server {
         this._config,
         options,
       ),
-      onProgress: options.onProgress,
+      onProgress: null,
     });
 
     this._config.serializer.experimentalSerializerHook(graph, {
@@ -248,7 +239,7 @@ class Server {
       processModuleFilter: this._config.serializer.processModuleFilter,
       assetPlugins: this._config.transformer.assetPlugins,
       platform: options.platform,
-      watchFolders: this._config.watchFolders,
+      projectRoot: this._config.projectRoot,
     });
   }
 
@@ -279,12 +270,19 @@ class Server {
   async _buildGraph(options: BundleOptions): Promise<GraphInfo> {
     const entryPoint = getEntryAbsolutePath(this._config, options.entryFile);
 
+    try {
+      // This should throw an error if the file doesn't exist.
+      // Using this instead of fs.exists to account for SimLinks.
+      fs.realpathSync(entryPoint);
+    } catch (err) {
+      throw new ResourceNotFoundError(entryPoint);
+    }
+
     const crawlingOptions = {
       customTransformOptions: options.customTransformOptions,
       dev: options.dev,
       hot: options.hot,
       minify: options.minify,
-      onProgress: options.onProgress,
       platform: options.platform,
       type: 'module',
     };
@@ -490,7 +488,7 @@ class Server {
     try {
       const data = await getAsset(
         assetPath[1],
-        this._config.watchFolders,
+        this._config.projectRoot,
         /* $FlowFixMe: query may be empty for invalid URLs */
         urlObj.query.platform,
       );
@@ -1073,7 +1071,6 @@ class Server {
     dev: true,
     hot: false,
     minify: false,
-    onProgress: null,
     type: 'module',
   };
 
@@ -1082,6 +1079,7 @@ class Server {
     entryModuleOnly: false,
     excludeSource: false,
     inlineSourceMap: false,
+    onProgress: null,
     runModule: true,
     sourceMapUrl: null,
   };

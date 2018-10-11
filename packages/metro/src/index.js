@@ -115,8 +115,19 @@ exports.runServer = async (
   serverApp.use(middleware);
 
   if (config.server.enableVisualizer) {
-    const {initializeVisualizerMiddleware} = require('metro-visualizer');
-    serverApp.use('/visualizer', initializeVisualizerMiddleware(metroServer));
+    let initializeVisualizerMiddleware;
+    try {
+      // eslint-disable-next-line import/no-extraneous-dependencies
+      // $FlowExpectedError
+      ({initializeVisualizerMiddleware} = require('metro-visualizer'));
+    } catch (e) {
+      console.warn(
+        "'config.server.enableVisualizer' is enabled but the 'metro-visualizer' package was not found - have you installed it?",
+      );
+    }
+    if (initializeVisualizerMiddleware) {
+      serverApp.use('/visualizer', initializeVisualizerMiddleware(metroServer));
+    }
   }
 
   let httpServer;
@@ -220,7 +231,7 @@ exports.runBuild = async (
     const requestOptions: RequestOptions = {
       dev,
       entryFile: entry,
-      inlineSourceMap: sourceMap && !!sourceMapUrl,
+      inlineSourceMap: sourceMap && !sourceMapUrl,
       minify,
       platform,
       sourceMapUrl: sourceMap === false ? undefined : sourceMapUrl,
@@ -280,7 +291,6 @@ exports.buildGraph = async function(
       customTransformOptions,
       dev,
       minify,
-      onProgress,
       platform,
       type,
     });
