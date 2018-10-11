@@ -35,7 +35,6 @@ class BundleRunForm extends React.Component<Props, State> {
     platform: 'ios',
     dev: false,
     minify: false,
-    entryModuleOnly: false,
     excludeSource: false,
     inlineSourceMap: false,
     runModule: false,

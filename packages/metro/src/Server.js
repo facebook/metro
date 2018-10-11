@@ -1032,11 +1032,6 @@ class Server {
       runModule: this._getBoolOptionFromQuery(urlObj.query, 'runModule', true),
       inlineSourceMap: includeSource,
       platform,
-      entryModuleOnly: this._getBoolOptionFromQuery(
-        urlObj.query,
-        'entryModuleOnly',
-        false,
-      ),
       onProgress: null,
     };
   }
@@ -1076,7 +1071,6 @@ class Server {
 
   static DEFAULT_BUNDLE_OPTIONS = {
     ...Server.DEFAULT_GRAPH_OPTIONS,
-    entryModuleOnly: false,
     excludeSource: false,
     inlineSourceMap: false,
     onProgress: null,

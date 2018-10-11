@@ -37,7 +37,6 @@ export type BundleOptions = {
   customTransformOptions: CustomTransformOptions,
   dev: boolean,
   entryFile: string,
-  +entryModuleOnly: boolean,
   +excludeSource: boolean,
   +hot: boolean,
   +inlineSourceMap: boolean,

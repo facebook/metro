@@ -35,7 +35,6 @@ describe('DeltaCalculator', () => {
   const options = {
     dev: true,
     entryPoints: ['bundle'],
-    entryModuleOnly: false,
     excludeSource: false,
     hot: true,
     inlineSourceMap: true,
