@@ -28,8 +28,7 @@ const debug = require('debug')('Metro:Server');
 const formatBundlingError = require('./lib/formatBundlingError');
 const getPrependedScripts = require('./lib/getPrependedScripts');
 const mime = require('mime-types');
-const nullthrows = require('nullthrows');
-const parseCustomTransformOptions = require('./lib/parseCustomTransformOptions');
+const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
 const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
 const path = require('path');
 const symbolicate = require('./Server/symbolicate/symbolicate');
@@ -49,6 +48,7 @@ import type {MetroSourceMap} from 'metro-source-map';
 import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
 import type {TransformInputOptions} from './lib/transformHelpers';
+import type {DeltaOptions} from './lib/parseOptionsFromUrl';
 
 const {
   Logger,
@@ -63,10 +63,6 @@ type GraphInfo = {|
 |};
 
 export type OutputGraph = Graph<>;
-
-type DeltaOptions = BundleOptions & {
-  deltaBundleId: ?string,
-};
 
 function debounceAndBatch(fn, delay) {
   let timeout;
@@ -567,12 +563,14 @@ class Server {
     req: IncomingMessage,
     mres: MultipartResponse,
   ): {options: DeltaOptions, buildID: string} {
-    const options = this._getOptionsFromUrl(
+    const options = parseOptionsFromUrl(
       url.format({
         ...url.parse(req.url),
         protocol: 'http',
         host: req.headers.host,
       }),
+      this._config.projectRoot,
+      new Set(this._config.resolver.platforms),
     );
 
     const buildID = this.getNewBuildID();
@@ -931,7 +929,11 @@ class Server {
   }
 
   async _sourceMapForURL(reqUrl: string): Promise<MetroSourceMap> {
-    const options: DeltaOptions = this._getOptionsFromUrl(reqUrl);
+    const options: DeltaOptions = parseOptionsFromUrl(
+      reqUrl,
+      this._config.projectRoot,
+      new Set(this._config.resolver.platforms),
+    );
 
     const {graph, prepend} = await this._getGraphInfo(options, {
       rebuild: false,
@@ -965,96 +967,6 @@ class Server {
       build_id: buildID,
       stack: formattedError.message,
     });
-  }
-
-  _getOptionsFromUrl(reqUrl: string): DeltaOptions {
-    // `true` to parse the query param as an object.
-    const urlObj = nullthrows(url.parse(reqUrl, true));
-    const urlQuery = nullthrows(urlObj.query);
-
-    const pathname = urlObj.pathname ? decodeURIComponent(urlObj.pathname) : '';
-
-    let isMap = false;
-
-    // Backwards compatibility. Options used to be as added as '.' to the
-    // entry module name. We can safely remove these options.
-    const entryFile =
-      pathname
-        .replace(/^\//, '')
-        .split('.')
-        .filter(part => {
-          if (part === 'map') {
-            isMap = true;
-            return false;
-          }
-          if (
-            part === 'includeRequire' ||
-            part === 'runModule' ||
-            part === 'bundle' ||
-            part === 'delta' ||
-            part === 'assets'
-          ) {
-            return false;
-          }
-          return true;
-        })
-        .join('.') + '.js';
-
-    const absoluteEntryFile = path.resolve(this._config.projectRoot, entryFile);
-
-    // try to get the platform from the url
-    const platform =
-      urlQuery.platform ||
-      parsePlatformFilePath(pathname, this._platforms).platform;
-
-    const deltaBundleId = urlQuery.deltaBundleId;
-
-    const dev = this._getBoolOptionFromQuery(urlQuery, 'dev', true);
-    const minify = this._getBoolOptionFromQuery(urlQuery, 'minify', false);
-    const excludeSource = this._getBoolOptionFromQuery(
-      urlQuery,
-      'excludeSource',
-      false,
-    );
-    const includeSource = this._getBoolOptionFromQuery(
-      urlQuery,
-      'inlineSourceMap',
-      false,
-    );
-
-    const customTransformOptions = parseCustomTransformOptions(urlObj);
-
-    return {
-      sourceMapUrl: url.format({
-        ...urlObj,
-        pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
-      }),
-      bundleType: isMap ? 'map' : deltaBundleId ? 'delta' : 'bundle',
-      customTransformOptions,
-      entryFile: absoluteEntryFile,
-      deltaBundleId,
-      dev,
-      minify,
-      excludeSource,
-      hot: true,
-      runModule: this._getBoolOptionFromQuery(urlObj.query, 'runModule', true),
-      inlineSourceMap: includeSource,
-      platform,
-      onProgress: null,
-    };
-  }
-
-  _getBoolOptionFromQuery(
-    query: ?{},
-    opt: string,
-    defaultVal: boolean,
-  ): boolean {
-    /* $FlowFixMe: `query` could be empty when it comes from an invalid URL */
-    if (query[opt] == null) {
-      return defaultVal;
-    }
-
-    return query[opt] === 'true' || query[opt] === '1';
   }
 
   getGraphs(): Map<string, Promise<GraphInfo>> {
