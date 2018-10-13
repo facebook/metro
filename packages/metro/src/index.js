@@ -118,7 +118,6 @@ exports.runServer = async (
     let initializeVisualizerMiddleware;
     try {
       // eslint-disable-next-line import/no-extraneous-dependencies
-      // $FlowExpectedError
       ({initializeVisualizerMiddleware} = require('metro-visualizer'));
     } catch (e) {
       console.warn(
