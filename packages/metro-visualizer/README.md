@@ -13,7 +13,7 @@ The goal of this project is to provide a suite of analysis tools for bundle size
 1. Install the `metro-visualizer` package in your project. 
     
     ```
-    yarn add metro-visualizer --save 
+    yarn add metro-visualizer 
     ```
     ```
     npm install metro-visualizer --save 
