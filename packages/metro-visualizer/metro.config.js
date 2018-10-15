@@ -22,7 +22,10 @@ try {
   /* eslint-enable import/no-extraneous-dependencies */
 } catch (e) {
   resolveRequest = undefined;
-  getWatchFolders = () => [];
+  getWatchFolders = () => [
+    fs.realpathSync(path.resolve(__dirname, './')),
+    fs.realpathSync(path.resolve(__dirname, './../..')),
+  ];
 }
 
 module.exports = {

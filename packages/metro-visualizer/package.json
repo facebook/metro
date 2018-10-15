@@ -17,7 +17,7 @@
     "@babel/preset-flow": "^7.0.0",
     "@babel/preset-react": "^7.0.0",
     "@babel/register": "^7.0.0",
-    "antd": "^3.7.1",
+    "antd": "^3.8.1",
     "babel-plugin-import": "^1.8.0",
     "connect": "^3.6.5",
     "cytoscape": "^3.2.14",
