@@ -9,4 +9,18 @@
  */
 'use strict';
 
-module.exports = require('./MetroClient');
+const WebSocketHMRClient = require('./WebSocketHMRClient');
+
+const injectDelta = require('./injectDelta');
+
+class HMRClient extends WebSocketHMRClient {
+  constructor(url: string) {
+    super(url);
+
+    this.on('update', update => {
+      injectDelta(update.delta);
+    });
+  }
+}
+
+module.exports = HMRClient;

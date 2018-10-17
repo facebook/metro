@@ -14,6 +14,10 @@ const addParamsToDefineCall = require('../../lib/addParamsToDefineCall');
 
 const {isJsModule, wrapModule} = require('./helpers/js');
 
+import type {
+  DeltaModuleMap,
+  DeltaModuleEntry,
+} from '../../lib/bundle-modules/types.flow';
 import type {DeltaResult, Graph, Module} from '../types.flow';
 
 type Options = {
@@ -21,20 +25,11 @@ type Options = {
   +projectRoot: string,
 };
 
-export type Result = {
-  type: string,
-  body: {
-    modules: $ReadOnlyArray<{|+id: number, +code: string|}>,
-    sourceURLs: {},
-    sourceMappingURLs: {},
-  },
-};
-
 function hmrJSBundle(
   delta: DeltaResult<>,
   graph: Graph<>,
   options: Options,
-): Result {
+): DeltaModuleMap {
   const modules = [];
 
   for (const module of delta.modified.values()) {
@@ -43,21 +38,14 @@ function hmrJSBundle(
     }
   }
 
-  return {
-    type: 'update',
-    body: {
-      modules,
-      sourceURLs: {},
-      sourceMappingURLs: {}, // TODO: handle Source Maps
-    },
-  };
+  return modules;
 }
 
 function _prepareModule(
   module: Module<>,
   graph: Graph<>,
   options: Options,
-): {|+id: number, +code: string|} {
+): DeltaModuleEntry {
   const code = wrapModule(module, {
     ...options,
     dev: true,
@@ -73,10 +61,10 @@ function _prepareModule(
     ].map(options.createModuleId);
   });
 
-  return {
-    id: options.createModuleId(module.path),
-    code: addParamsToDefineCall(code, inverseDependenciesById),
-  };
+  return [
+    options.createModuleId(module.path),
+    addParamsToDefineCall(code, inverseDependenciesById),
+  ];
 }
 
 /**

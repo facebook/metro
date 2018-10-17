@@ -10,23 +10,35 @@
 
 'use strict';
 
+const GraphNotFoundError = require('./IncrementalBundler/GraphNotFoundError');
+const IncrementalBundler = require('./IncrementalBundler');
+const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundError');
+
+const debounceAsyncQueue = require('./lib/debounceAsyncQueue');
 const formatBundlingError = require('./lib/formatBundlingError');
+const getGraphId = require('./lib/getGraphId');
 const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
 const nullthrows = require('nullthrows');
-const parseCustomTransformOptions = require('./lib/parseCustomTransformOptions');
-const path = require('path');
+const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
+const splitBundleOptions = require('./lib/splitBundleOptions');
 const url = require('url');
 
 const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
 
-import type IncrementalBundler, {OutputGraph} from './IncrementalBundler';
+import type {RevisionId} from './IncrementalBundler';
+import type {
+  HmrMessage,
+  HmrUpdateMessage,
+  HmrErrorMessage,
+} from './lib/bundle-modules/types.flow';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 type Client = {|
-  graph: OutputGraph,
-  sendFn: (data: string) => mixed,
+  +send: (message: HmrMessage) => void,
+  +unlisten: () => void,
+  revisionId: RevisionId,
 |};
 
 /**
@@ -56,34 +68,64 @@ class HmrServer<TClient: Client> {
   async onClientConnect(
     clientUrl: string,
     sendFn: (data: string) => mixed,
-  ): Promise<Client> {
+  ): Promise<?Client> {
     const urlObj = nullthrows(url.parse(clientUrl, true));
+    const query = nullthrows(urlObj.query);
+    urlObj.pathname = query.bundleEntry.replace(/\.js$/, '.bundle');
+    delete query.bundleEntry;
 
-    const {bundleEntry, platform} = nullthrows(urlObj.query);
-    const customTransformOptions = parseCustomTransformOptions(urlObj);
-
-    // Create a new graph for each client. Once the clients are
-    // modified to support Delta Bundles, they'll be able to pass the
-    // DeltaBundleId param through the WS connection and we'll be able to share
-    // the same graph between the WS connection and the HTTP one.
-    const graph = await this._bundler.buildGraphForEntries(
-      [path.resolve(this._config.projectRoot, bundleEntry)],
-      {
-        customTransformOptions,
-        dev: true,
-        hot: true,
-        minify: false,
-        platform,
-        type: 'module',
-      },
+    const {revisionId, options} = parseOptionsFromUrl(
+      url.format(urlObj),
+      this._config.projectRoot,
+      new Set(this._config.resolver.platforms),
     );
 
-    // Listen to file changes.
-    const client = {sendFn, graph};
+    const {entryFile, transformOptions} = splitBundleOptions(options);
 
-    this._bundler
+    const send = (message: HmrMessage) => {
+      sendFn(JSON.stringify(message));
+    };
+
+    let revPromise;
+    if (revisionId == null) {
+      // TODO(T34760695): Deprecate
+      const graphId = getGraphId(entryFile, transformOptions);
+      revPromise = this._bundler.getRevisionByGraphId(graphId);
+
+      if (!revPromise) {
+        send({
+          type: 'error',
+          body: formatBundlingError(new GraphNotFoundError(graphId)),
+        });
+        return null;
+      }
+    } else {
+      revPromise = this._bundler.getRevision(revisionId);
+
+      if (!revPromise) {
+        send({
+          type: 'error',
+          body: formatBundlingError(new RevisionNotFoundError(revisionId)),
+        });
+        return null;
+      }
+    }
+
+    const {graph, id} = await revPromise;
+
+    const client = {
+      send,
+      // Listen to file changes.
+      unlisten: () => unlisten(),
+      revisionId: id,
+    };
+
+    const unlisten = this._bundler
       .getDeltaBundler()
-      .listen(graph, this._handleFileChange.bind(this, client));
+      .listen(
+        graph,
+        debounceAsyncQueue(this._handleFileChange.bind(this, client), 50),
+      );
 
     return client;
   }
@@ -97,9 +139,7 @@ class HmrServer<TClient: Client> {
   }
 
   onClientDisconnect(client: TClient) {
-    // We can safely stop the delta transformer since the
-    // transformer is not shared between clients.
-    this._bundler.getDeltaBundler().endGraph(client.graph);
+    client.unlisten();
   }
 
   async _handleFileChange(client: Client) {
@@ -107,34 +147,50 @@ class HmrServer<TClient: Client> {
       createActionStartEntry({action_name: 'Processing HMR change'}),
     );
 
-    client.sendFn(JSON.stringify({type: 'update-start'}));
-    const response = await this._prepareResponse(client);
-
-    client.sendFn(JSON.stringify(response));
-    client.sendFn(JSON.stringify({type: 'update-done'}));
+    client.send({type: 'update-start'});
+    const message = await this._prepareMessage(client);
+    client.send(message);
+    client.send({type: 'update-done'});
 
     log({
       ...createActionEndEntry(processingHmrChange),
-      outdated_modules: Array.isArray(response.body.modules)
-        ? response.body.modules.length
-        : undefined,
+      outdated_modules:
+        message.type === 'update' ? message.body.delta.length : undefined,
     });
   }
 
-  async _prepareResponse(
+  async _prepareMessage(
     client: Client,
-  ): Promise<{type: string, body: Object}> {
-    const deltaBundler = this._bundler.getDeltaBundler();
-
+  ): Promise<HmrUpdateMessage | HmrErrorMessage> {
     try {
-      const delta = await deltaBundler.getDelta(client.graph, {reset: false});
+      const revPromise = this._bundler.getRevision(client.revisionId);
 
-      this._config.serializer.experimentalSerializerHook(client.graph, delta);
+      if (!revPromise) {
+        return {
+          type: 'error',
+          body: formatBundlingError(
+            new RevisionNotFoundError(client.revisionId),
+          ),
+        };
+      }
 
-      return hmrJSBundle(delta, client.graph, {
-        createModuleId: this._createModuleId,
-        projectRoot: this._config.projectRoot,
-      });
+      const {revision, delta} = await this._bundler.updateGraph(
+        await revPromise,
+        false,
+      );
+
+      client.revisionId = revision.id;
+
+      return {
+        type: 'update',
+        body: {
+          id: revision.id,
+          delta: hmrJSBundle(delta, revision.graph, {
+            createModuleId: this._createModuleId,
+            projectRoot: this._config.projectRoot,
+          }),
+        },
+      };
     } catch (error) {
       const formattedError = formatBundlingError(error);
 

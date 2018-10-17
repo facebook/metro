@@ -11,11 +11,14 @@
 
 const HmrServer = require('..');
 
+const getGraphId = require('../../lib/getGraphId');
+
 describe('HmrServer', () => {
   let hmrServer;
   let incrementalBundlerMock;
+  let getRevisionMock;
+  let getRevisionByGraphIdMock;
   let createModuleIdMock;
-  let buildGraphMock;
   let deltaBundlerMock;
   let callbacks;
   let mockedGraph;
@@ -26,8 +29,6 @@ describe('HmrServer', () => {
       entryPoint: '/root/EntryPoint.js',
     };
 
-    buildGraphMock = jest.fn().mockReturnValue(mockedGraph);
-
     callbacks = new Map();
 
     deltaBundlerMock = {
@@ -35,11 +36,18 @@ describe('HmrServer', () => {
         callbacks.set(graph, cb);
       },
     };
+    getRevisionMock = jest
+      .fn()
+      .mockReturnValue(Promise.resolve({graph: mockedGraph, id: 'XXX'}));
+    getRevisionByGraphIdMock = jest
+      .fn()
+      .mockReturnValue(Promise.resolve({graph: mockedGraph, id: 'XXX'}));
     incrementalBundlerMock = {
-      buildGraphForEntries: buildGraphMock,
       getDeltaBundler() {
         return deltaBundlerMock;
       },
+      getRevision: getRevisionMock,
+      getRevisionByGraphId: getRevisionByGraphIdMock,
     };
     createModuleIdMock = path => {
       return path + '-id';
@@ -53,23 +61,84 @@ describe('HmrServer', () => {
       reporter: {
         update: jest.fn(),
       },
+      resolver: {
+        platforms: [],
+      },
     });
   });
 
-  it('should pass the correct options to the delta bundler', async () => {
+  it('should retrieve the correct graph from the incremental bundler (graphId)', async () => {
     await hmrServer.onClientConnect(
       '/hot?bundleEntry=EntryPoint.js&platform=ios',
       jest.fn(),
     );
 
-    expect(buildGraphMock).toBeCalledWith(
-      ['/root/EntryPoint.js'],
-      expect.objectContaining({
+    expect(getRevisionByGraphIdMock).toBeCalledWith(
+      getGraphId('/root/EntryPoint.js', {
+        hot: true,
         dev: true,
         minify: false,
         platform: 'ios',
+        customTransformOptions: {},
+        type: 'module',
       }),
     );
+
+    await hmrServer.onClientConnect(
+      '/hot?bundleEntry=EntryPoint.js&platform=ios&deltaBundleId=test-id',
+      jest.fn(),
+    );
+
+    expect(getRevisionMock).toBeCalledWith('test-id');
+  });
+
+  it('should send an error message when the graph cannot be found', async () => {
+    const sendMessage = jest.fn();
+    getRevisionByGraphIdMock.mockReturnValueOnce(undefined);
+
+    const client = await hmrServer.onClientConnect(
+      '/hot?bundleEntry=EntryPoint.js&platform=ios',
+      sendMessage,
+    );
+
+    const expectedMessage = `The graph \`${getGraphId('/root/EntryPoint.js', {
+      hot: true,
+      dev: true,
+      minify: false,
+      platform: 'ios',
+      customTransformOptions: {},
+      type: 'module',
+    })}\` was not found.`;
+
+    const sentErrorMessage = JSON.parse(sendMessage.mock.calls[0][0]);
+    expect(sentErrorMessage).toMatchObject({type: 'error'});
+    expect(sentErrorMessage.body).toMatchObject({
+      type: 'GraphNotFoundError',
+      message: expectedMessage,
+      errors: [],
+    });
+    expect(client).toBe(null);
+  });
+
+  it('should send an error message when the revision cannot be found', async () => {
+    const sendMessage = jest.fn();
+    getRevisionMock.mockReturnValueOnce(undefined);
+
+    const client = await hmrServer.onClientConnect(
+      '/hot?bundleEntry=EntryPoint.js&revisionId=test-id',
+      sendMessage,
+    );
+
+    const expectedMessage = 'The revision `test-id` was not found.';
+
+    const sentErrorMessage = JSON.parse(sendMessage.mock.calls[0][0]);
+    expect(sentErrorMessage).toMatchObject({type: 'error'});
+    expect(sentErrorMessage.body).toMatchObject({
+      type: 'RevisionNotFoundError',
+      message: expectedMessage,
+      errors: [],
+    });
+    expect(client).toBe(null);
   });
 
   it('should return the correctly formatted HMR message after a file change', async () => {
@@ -80,30 +149,38 @@ describe('HmrServer', () => {
       sendMessage,
     );
 
-    deltaBundlerMock.getDelta = jest.fn().mockReturnValue(
+    incrementalBundlerMock.updateGraph = jest.fn().mockReturnValue(
       Promise.resolve({
-        modified: new Map([
-          [
-            '/root/hi',
-            {
-              dependencies: new Map(),
-              inverseDependencies: new Set(),
-              path: '/root/hi',
-              output: [
-                {
-                  type: 'js/module',
-                  data: {
-                    code: '__d(function() { alert("hi"); });',
+        revision: {
+          id: 'revision-id',
+          graph: mockedGraph,
+        },
+        delta: {
+          modified: new Map([
+            [
+              '/root/hi',
+              {
+                dependencies: new Map(),
+                inverseDependencies: new Set(),
+                path: '/root/hi',
+                output: [
+                  {
+                    type: 'js/module',
+                    data: {
+                      code: '__d(function() { alert("hi"); });',
+                    },
                   },
-                },
-              ],
-            },
-          ],
-        ]),
+                ],
+              },
+            ],
+          ]),
+        },
       }),
     );
 
-    await callbacks.get(mockedGraph)();
+    const promise = callbacks.get(mockedGraph)();
+    jest.runAllTimers();
+    await promise;
 
     expect(sendMessage.mock.calls.map(call => JSON.parse(call[0]))).toEqual([
       {
@@ -112,15 +189,13 @@ describe('HmrServer', () => {
       {
         type: 'update',
         body: {
-          modules: [
-            {
-              id: '/root/hi-id',
-              code:
-                '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
-            },
+          id: 'revision-id',
+          delta: [
+            [
+              '/root/hi-id',
+              '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
+            ],
           ],
-          sourceURLs: {},
-          sourceMappingURLs: {},
         },
       },
       {
@@ -138,7 +213,7 @@ describe('HmrServer', () => {
       sendMessage,
     );
 
-    deltaBundlerMock.getDelta = jest.fn().mockImplementation(async () => {
+    incrementalBundlerMock.updateGraph = jest.fn().mockImplementation(() => {
       const transformError = new SyntaxError('test syntax error');
       transformError.type = 'TransformError';
       transformError.filename = 'EntryPoint.js';

@@ -17,7 +17,7 @@ type WebsocketServiceInterface<T> = {
   +onClientConnect: (
     url: string,
     sendFn: (data: string) => mixed,
-  ) => Promise<T>,
+  ) => Promise<?T>,
   +onClientDisconnect?: (client: T) => mixed,
   +onClientError?: (client: T, e: Error) => mixed,
   +onClientMessage?: (client: T, message: string) => mixed,
@@ -62,6 +62,11 @@ module.exports = function attachWebsocketServer<TClient: Object>({
     };
 
     const client = await websocketServer.onClientConnect(url, sendFn);
+
+    if (client == null) {
+      ws.close();
+      return;
+    }
 
     ws.on('error', e => {
       websocketServer.onClientError && websocketServer.onClientError(client, e);

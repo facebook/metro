@@ -10,7 +10,9 @@
 
 'use strict';
 
+const GraphNotFoundError = require('../IncrementalBundler/GraphNotFoundError');
 const ResourceNotFoundError = require('../IncrementalBundler/ResourceNotFoundError');
+const RevisionNotFoundError = require('../IncrementalBundler/RevisionNotFoundError');
 
 const serializeError = require('serialize-error');
 
@@ -19,7 +21,9 @@ const {
 } = require('../node-haste/DependencyGraph/ModuleResolution');
 const {AmbiguousModuleResolutionError} = require('metro-core');
 
-export type CustomError = Error & {|
+import type {FormattedError} from './bundle-modules/types.flow';
+
+export type CustomError = Error & {
   type?: string,
   filename?: string,
   lineNumber?: number,
@@ -28,11 +32,9 @@ export type CustomError = Error & {|
     filename: string,
     lineNumber: number,
   }>,
-|};
+};
 
-function formatBundlingError(
-  error: CustomError,
-): {type: string, message: string, errors: Array<{description: string}>} {
+function formatBundlingError(error: CustomError): FormattedError {
   if (error instanceof AmbiguousModuleResolutionError) {
     const he = error.hasteError;
     const message =
@@ -69,6 +71,18 @@ function formatBundlingError(
   } else if (error instanceof ResourceNotFoundError) {
     return {
       type: 'ResourceNotFoundError',
+      errors: [],
+      message: error.message,
+    };
+  } else if (error instanceof GraphNotFoundError) {
+    return {
+      type: 'GraphNotFoundError',
+      errors: [],
+      message: error.message,
+    };
+  } else if (error instanceof RevisionNotFoundError) {
+    return {
+      type: 'RevisionNotFoundError',
       errors: [],
       message: error.message,
     };

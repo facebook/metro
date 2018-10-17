@@ -10,7 +10,7 @@
  */
 'use strict';
 
-const MetroClient = require('../MetroClient');
+const WebSocketHMRClient = require('../WebSocketHMRClient');
 
 let mockSocket = null;
 global.WebSocket = jest.fn(() => {
@@ -39,7 +39,7 @@ global.WebSocket = jest.fn(() => {
 beforeEach(() => (mockSocket = null));
 
 test('connects to a WebSocket and listens to messages', () => {
-  const client = new MetroClient('wss://banana.com/phone');
+  const client = new WebSocketHMRClient('wss://banana.com/phone');
 
   const mockError = {
     message: 'An error occurred.',
