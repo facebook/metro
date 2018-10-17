@@ -18,10 +18,6 @@ const url = require('url');
 
 import type {BundleOptions} from '../shared/types.flow';
 
-export type DeltaOptions = BundleOptions & {
-  deltaBundleId: ?string,
-};
-
 function getBoolOptionFromQuery(
   query: {[string]: string},
   opt: string,
@@ -38,7 +34,10 @@ function parseOptionsFromUrl(
   reqUrl: string,
   projectRoot: string,
   platforms: Set<string>,
-): DeltaOptions {
+): {|
+  revisionId: ?string,
+  options: BundleOptions,
+|} {
   // `true` to parse the query param as an object.
   const urlObj = nullthrows(url.parse(reqUrl, true));
   const urlQuery = nullthrows(urlObj.query);
@@ -80,7 +79,7 @@ function parseOptionsFromUrl(
   const platform =
     urlQuery.platform || parsePlatformFilePath(pathname, platforms).platform;
 
-  const deltaBundleId = urlQuery.deltaBundleId || null;
+  const revisionId = urlQuery.revisionId || urlQuery.deltaBundleId || null;
 
   const dev = getBoolOptionFromQuery(urlQuery, 'dev', true);
   const minify = getBoolOptionFromQuery(urlQuery, 'minify', false);
@@ -99,22 +98,24 @@ function parseOptionsFromUrl(
   const customTransformOptions = parseCustomTransformOptions(urlObj);
 
   return {
-    deltaBundleId,
-    customTransformOptions,
-    dev,
-    hot: true,
-    minify,
-    platform,
-    onProgress: null,
-    entryFile: path.resolve(projectRoot, entryFile),
-    bundleType: isMap ? 'map' : isDelta ? 'delta' : 'bundle',
-    sourceMapUrl: url.format({
-      ...urlObj,
-      pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
-    }),
-    runModule,
-    excludeSource,
-    inlineSourceMap,
+    revisionId,
+    options: {
+      customTransformOptions,
+      dev,
+      hot: true,
+      minify,
+      platform,
+      onProgress: null,
+      entryFile: path.resolve(projectRoot, entryFile),
+      bundleType: isMap ? 'map' : isDelta ? 'delta' : 'bundle',
+      sourceMapUrl: url.format({
+        ...urlObj,
+        pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
+      }),
+      runModule,
+      excludeSource,
+      inlineSourceMap,
+    },
   };
 }
 

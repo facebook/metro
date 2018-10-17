@@ -21,8 +21,7 @@ const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
 
-import type PackagerServer, {OutputGraph} from './Server';
-import type {Reporter} from './lib/reporting';
+import type IncrementalBundler, {OutputGraph} from './IncrementalBundler';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 type Client = {|
@@ -41,12 +40,17 @@ type Client = {|
  */
 class HmrServer<TClient: Client> {
   _config: ConfigT;
-  _packagerServer: PackagerServer;
-  _reporter: Reporter;
+  _bundler: IncrementalBundler;
+  _createModuleId: (path: string) => number;
 
-  constructor(packagerServer: PackagerServer, config: ConfigT) {
+  constructor(
+    bundler: IncrementalBundler,
+    createModuleId: (path: string) => number,
+    config: ConfigT,
+  ) {
     this._config = config;
-    this._packagerServer = packagerServer;
+    this._bundler = bundler;
+    this._createModuleId = createModuleId;
   }
 
   async onClientConnect(
@@ -62,7 +66,7 @@ class HmrServer<TClient: Client> {
     // modified to support Delta Bundles, they'll be able to pass the
     // DeltaBundleId param through the WS connection and we'll be able to share
     // the same graph between the WS connection and the HTTP one.
-    const graph = await this._packagerServer.buildGraph(
+    const graph = await this._bundler.buildGraphForEntries(
       [path.resolve(this._config.projectRoot, bundleEntry)],
       {
         customTransformOptions,
@@ -77,7 +81,7 @@ class HmrServer<TClient: Client> {
     // Listen to file changes.
     const client = {sendFn, graph};
 
-    this._packagerServer
+    this._bundler
       .getDeltaBundler()
       .listen(graph, this._handleFileChange.bind(this, client));
 
@@ -95,7 +99,7 @@ class HmrServer<TClient: Client> {
   onClientDisconnect(client: TClient) {
     // We can safely stop the delta transformer since the
     // transformer is not shared between clients.
-    this._packagerServer.getDeltaBundler().endGraph(client.graph);
+    this._bundler.getDeltaBundler().endGraph(client.graph);
   }
 
   async _handleFileChange(client: Client) {
@@ -120,7 +124,7 @@ class HmrServer<TClient: Client> {
   async _prepareResponse(
     client: Client,
   ): Promise<{type: string, body: Object}> {
-    const deltaBundler = this._packagerServer.getDeltaBundler();
+    const deltaBundler = this._bundler.getDeltaBundler();
 
     try {
       const delta = await deltaBundler.getDelta(client.graph, {reset: false});
@@ -128,7 +132,7 @@ class HmrServer<TClient: Client> {
       this._config.serializer.experimentalSerializerHook(client.graph, delta);
 
       return hmrJSBundle(delta, client.graph, {
-        createModuleId: this._packagerServer._createModuleId,
+        createModuleId: this._createModuleId,
         projectRoot: this._config.projectRoot,
       });
     } catch (error) {

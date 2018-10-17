@@ -99,6 +99,7 @@ describe('processRequest', () => {
     );
 
   let requestHandler;
+  let changeHandler;
 
   beforeEach(() => {
     dependencies = new Map([
@@ -189,10 +190,18 @@ describe('processRequest', () => {
       ]),
     );
 
+    changeHandler = null;
     Bundler.prototype.getDependencyGraph = jest.fn().mockReturnValue(
       Promise.resolve({
         getHasteMap: jest.fn().mockReturnValue({on: jest.fn()}),
         load: jest.fn(() => Promise.resolve()),
+        getWatcher: jest.fn(() => ({
+          on(name, handler) {
+            if (name === 'change') {
+              changeHandler = handler;
+            }
+          },
+        })),
       }),
     );
 
@@ -207,7 +216,7 @@ describe('processRequest', () => {
     let i = 0;
     crypto.randomBytes.mockImplementation(() => `XXXXX-${i++}`);
 
-    fs.realpathSync = jest.fn().mockReturnValue(() => '/root/foo.js');
+    fs.realpath = jest.fn((file, cb) => cb(null, '/root/foo.js'));
   });
 
   it('returns JS bundle source on request of *.bundle', async () => {
@@ -273,9 +282,9 @@ describe('processRequest', () => {
   });
 
   it('returns 404 on request of *.bundle when resource does not exist', async () => {
-    fs.realpathSync = jest.fn().mockImplementation(() => {
-      throw ResourceNotFoundError('unknown.bundle');
-    });
+    fs.realpath = jest.fn((file, cb) =>
+      cb(new ResourceNotFoundError('unknown.bundle')),
+    );
 
     return makeRequest(requestHandler, 'unknown.bundle?runModule=true').then(
       response => {
@@ -427,9 +436,14 @@ describe('processRequest', () => {
     const promise1 = makeRequest(requestHandler, 'index.bundle');
     const promise2 = makeRequest(requestHandler, 'index.bundle');
 
-    resolveBuildGraph({
-      entryPoints: ['/root/mybundle.js'],
-      dependencies,
+    // We must wait for all synchronous promises *before*
+    // `getResolveDependencyFn` to resolve before we can be sure that
+    // `resolveBuildGraph` has been defined.
+    process.nextTick(() => {
+      resolveBuildGraph({
+        entryPoints: ['/root/mybundle.js'],
+        dependencies,
+      });
     });
 
     const [result1, result2] = await Promise.all([promise1, promise2]);
@@ -593,9 +607,11 @@ describe('processRequest', () => {
       const promise1 = makeRequest(requestHandler, 'index.delta');
       const promise2 = makeRequest(requestHandler, 'index.delta');
 
-      resolveBuildGraph({
-        entryPoints: ['/root/mybundle.js'],
-        dependencies,
+      process.nextTick(() => {
+        resolveBuildGraph({
+          entryPoints: ['/root/mybundle.js'],
+          dependencies,
+        });
       });
 
       const [result1, result2] = await Promise.all([promise1, promise2]);
@@ -630,11 +646,15 @@ describe('processRequest', () => {
 
     it('should hold on to request and inform on change', done => {
       jest.useRealTimers();
-      server.processRequest(req, res);
-      server.onFileChange('all', options.projectRoot + 'path/file.js');
-      res.end.mockImplementation(value => {
-        expect(value).toBe(JSON.stringify({changed: true}));
-        done();
+      process.nextTick(() => {
+        // Ensure that the dependency graph has been resolved and the change
+        // handler registered.
+        server.processRequest(req, res);
+        changeHandler();
+        res.end.mockImplementation(value => {
+          expect(value).toBe(JSON.stringify({changed: true}));
+          done();
+        });
       });
     });
 
@@ -642,7 +662,7 @@ describe('processRequest', () => {
       server.processRequest(req, res);
       req.emit('close');
       jest.runAllTimers();
-      server.onFileChange('all', options.projectRoot + 'path/file.js');
+      changeHandler();
       jest.runAllTimers();
       expect(res.end).not.toBeCalled();
     });

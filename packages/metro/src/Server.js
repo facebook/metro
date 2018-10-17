@@ -10,14 +10,10 @@
 
 'use strict';
 
-const Bundler = require('./Bundler');
-const DeltaBundler = require('./DeltaBundler');
+const IncrementalBundler = require('./IncrementalBundler');
 const MultipartResponse = require('./Server/MultipartResponse');
-const ResourceNotFoundError = require('./DeltaBundler/ResourceNotFoundError');
 
-const crypto = require('crypto');
 const deltaJSBundle = require('./DeltaBundler/Serializers/deltaJSBundle');
-const fs = require('fs');
 const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('./DeltaBundler/Serializers/getAssets');
 const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
@@ -26,19 +22,16 @@ const sourceMapObject = require('./DeltaBundler/Serializers/sourceMapObject');
 const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
 const debug = require('debug')('Metro:Server');
 const formatBundlingError = require('./lib/formatBundlingError');
-const getPrependedScripts = require('./lib/getPrependedScripts');
 const mime = require('mime-types');
 const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
 const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
 const path = require('path');
 const symbolicate = require('./Server/symbolicate/symbolicate');
-const transformHelpers = require('./lib/transformHelpers');
 const url = require('url');
 
 const {getAsset} = require('./Assets');
 
 import type {CustomError} from './lib/formatBundlingError';
-import type {DeltaResult, Graph, Module} from './DeltaBundler';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from './lib/reporting';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
@@ -47,22 +40,11 @@ import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
-import type {TransformInputOptions} from './lib/transformHelpers';
-import type {DeltaOptions} from './lib/parseOptionsFromUrl';
 
 const {
   Logger,
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
-
-type GraphInfo = {|
-  graph: Graph<>,
-  prepend: $ReadOnlyArray<Module<>>,
-  lastModified: Date,
-  +sequenceId: string,
-|};
-
-export type OutputGraph = Graph<>;
 
 function debounceAndBatch(fn, delay) {
   let timeout;
@@ -82,16 +64,12 @@ class Server {
     res: ServerResponse,
   }>;
   _createModuleId: (path: string) => number;
-  _bundler: Bundler;
-  _debouncedFileChangeHandler: (filePath: string) => mixed;
   _reporter: Reporter;
   _logger: typeof Logger;
   _symbolicateInWorker: Symbolicate;
   _platforms: Set<string>;
   _nextBundleBuildID: number;
-  _deltaBundler: DeltaBundler<>;
-  _graphs: Map<string, Promise<GraphInfo>> = new Map();
-  _deltaGraphs: Map<string, Promise<GraphInfo>> = new Map();
+  _bundler: IncrementalBundler;
 
   constructor(config: ConfigT) {
     this._config = config;
@@ -101,48 +79,53 @@ class Server {
       this._config.reporter.update({type: 'transform_cache_reset'});
     }
 
-    const processFileChange = ({type, filePath}) =>
-      this.onFileChange(type, filePath);
-
     this._reporter = config.reporter;
     this._logger = Logger;
     this._changeWatchers = [];
     this._platforms = new Set(this._config.resolver.platforms);
+
+    // TODO(T34760917): These two properties should eventually be instantiated
+    // elsewhere and passed as parameters, since they are also needed by
+    // the HmrServer.
+    // The whole bundling/serializing logic should follow as well.
     this._createModuleId = config.serializer.createModuleIdFactory();
+    this._bundler = new IncrementalBundler(config);
 
-    this._bundler = new Bundler(config);
-
-    // changes to the haste map can affect resolution of files in the bundle
-    this._bundler.getDependencyGraph().then(dependencyGraph => {
-      dependencyGraph
-        .getWatcher()
-        .on('change', ({eventsQueue}) =>
-          eventsQueue.forEach(processFileChange),
-        );
-    });
-
-    this._debouncedFileChangeHandler = debounceAndBatch(
+    const debouncedFileChangeHandler = debounceAndBatch(
       () => this._informChangeWatchers(),
       50,
     );
 
+    // changes to the haste map can affect resolution of files in the bundle
+    this._bundler
+      .getBundler()
+      .getDependencyGraph()
+      .then(dependencyGraph => {
+        dependencyGraph.getWatcher().on('change', () => {
+          // Make sure the file watcher event runs through the system before
+          // we rebuild the bundles.
+          debouncedFileChangeHandler();
+        });
+      });
+
     this._symbolicateInWorker = symbolicate.createWorker();
     this._nextBundleBuildID = 1;
-
-    this._deltaBundler = new DeltaBundler(this._bundler);
   }
 
   end() {
-    this._deltaBundler.end();
     this._bundler.end();
   }
 
-  getDeltaBundler(): DeltaBundler<> {
-    return this._deltaBundler;
+  getBundler(): IncrementalBundler {
+    return this._bundler;
+  }
+
+  getCreateModuleId(): (path: string) => number {
+    return this._createModuleId;
   }
 
   async build(options: BundleOptions): Promise<{code: string, map: string}> {
-    const graphInfo = await this._buildGraph(options);
+    const rev = await this._bundler.buildGraph(options);
 
     const entryPoint = path.resolve(
       this._config.projectRoot,
@@ -150,7 +133,7 @@ class Server {
     );
 
     return {
-      code: plainJSBundle(entryPoint, graphInfo.prepend, graphInfo.graph, {
+      code: plainJSBundle(entryPoint, rev.prepend, rev.graph, {
         processModuleFilter: this._config.serializer.processModuleFilter,
         createModuleId: this._createModuleId,
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,
@@ -163,78 +146,41 @@ class Server {
         sourceMapUrl: options.sourceMapUrl,
         inlineSourceMap: options.inlineSourceMap,
       }),
-      map: sourceMapString(graphInfo.prepend, graphInfo.graph, {
+      map: sourceMapString(rev.prepend, rev.graph, {
         excludeSource: options.excludeSource,
         processModuleFilter: this._config.serializer.processModuleFilter,
       }),
     };
   }
 
-  async buildGraph(
-    entryFiles: $ReadOnlyArray<string>,
-    options: TransformInputOptions,
-  ): Promise<OutputGraph> {
-    entryFiles = entryFiles.map(entryFile =>
-      path.resolve(this._config.projectRoot, entryFile),
-    );
-
-    const graph = await this._deltaBundler.buildGraph(entryFiles, {
-      resolve: await transformHelpers.getResolveDependencyFn(
-        this._bundler,
-        options.platform,
-      ),
-      transform: await transformHelpers.getTransformFn(
-        entryFiles,
-        this._bundler,
-        this._deltaBundler,
-        this._config,
-        options,
-      ),
-      onProgress: null,
-    });
-
-    this._config.serializer.experimentalSerializerHook(graph, {
-      modified: graph.dependencies,
-      deleted: new Set(),
-      reset: true,
-    });
-
-    return graph;
-  }
-
   async getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo> {
-    const graphInfo = await this._buildGraph(options);
+    const rev = await this._bundler.buildGraph(options);
 
     const entryPoint = path.resolve(
       this._config.projectRoot,
       options.entryFile,
     );
 
-    return await getRamBundleInfo(
-      entryPoint,
-      graphInfo.prepend,
-      graphInfo.graph,
-      {
-        processModuleFilter: this._config.serializer.processModuleFilter,
-        createModuleId: this._createModuleId,
-        dev: options.dev,
-        excludeSource: options.excludeSource,
-        getRunModuleStatement: this._config.serializer.getRunModuleStatement,
-        getTransformOptions: this._config.transformer.getTransformOptions,
-        platform: options.platform,
-        projectRoot: this._config.projectRoot,
-        runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-          path.relative(this._config.projectRoot, entryPoint),
-        ),
-        runModule: options.runModule,
-        sourceMapUrl: options.sourceMapUrl,
-        inlineSourceMap: options.inlineSourceMap,
-      },
-    );
+    return await getRamBundleInfo(entryPoint, rev.prepend, rev.graph, {
+      processModuleFilter: this._config.serializer.processModuleFilter,
+      createModuleId: this._createModuleId,
+      dev: options.dev,
+      excludeSource: options.excludeSource,
+      getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+      getTransformOptions: this._config.transformer.getTransformOptions,
+      platform: options.platform,
+      projectRoot: this._config.projectRoot,
+      runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
+        path.relative(this._config.projectRoot, entryPoint),
+      ),
+      runModule: options.runModule,
+      sourceMapUrl: options.sourceMapUrl,
+      inlineSourceMap: options.inlineSourceMap,
+    });
   }
 
   async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {
-    const {graph} = await this._buildGraph(options);
+    const {graph} = await this._bundler.buildGraph(options);
 
     return await getAssets(graph, {
       processModuleFilter: this._config.serializer.processModuleFilter,
@@ -247,8 +193,8 @@ class Server {
   async getOrderedDependencyPaths(options: {
     +entryFile: string,
     +dev: boolean,
-    +platform: string,
     +minify: boolean,
+    +platform: string,
   }): Promise<Array<string>> {
     options = {
       ...Server.DEFAULT_BUNDLE_OPTIONS,
@@ -256,7 +202,7 @@ class Server {
       bundleType: 'bundle',
     };
 
-    const {prepend, graph} = await this._buildGraph(options);
+    const {prepend, graph} = await this._bundler.buildGraph(options);
 
     const platform =
       options.platform ||
@@ -266,156 +212,6 @@ class Server {
       platform,
       processModuleFilter: this._config.serializer.processModuleFilter,
     });
-  }
-
-  async _buildGraph(options: BundleOptions): Promise<GraphInfo> {
-    const entryPoint = path.resolve(
-      this._config.projectRoot,
-      options.entryFile,
-    );
-
-    try {
-      // This should throw an error if the file doesn't exist.
-      // Using this instead of fs.exists to account for SimLinks.
-      fs.realpathSync(entryPoint);
-    } catch (err) {
-      throw new ResourceNotFoundError(entryPoint);
-    }
-
-    const crawlingOptions = {
-      customTransformOptions: options.customTransformOptions,
-      dev: options.dev,
-      hot: options.hot,
-      minify: options.minify,
-      platform: options.platform,
-      type: 'module',
-    };
-
-    const graph = await this._deltaBundler.buildGraph([entryPoint], {
-      resolve: await transformHelpers.getResolveDependencyFn(
-        this._bundler,
-        options.platform,
-      ),
-      transform: await transformHelpers.getTransformFn(
-        [entryPoint],
-        this._bundler,
-        this._deltaBundler,
-        this._config,
-        crawlingOptions,
-      ),
-      onProgress: options.onProgress,
-    });
-
-    this._config.serializer.experimentalSerializerHook(graph, {
-      modified: graph.dependencies,
-      deleted: new Set(),
-      reset: true,
-    });
-
-    const prepend = await getPrependedScripts(
-      this._config,
-      crawlingOptions,
-      this._bundler,
-      this._deltaBundler,
-    );
-
-    return {
-      prepend,
-      graph,
-      lastModified: new Date(),
-      sequenceId: crypto.randomBytes(8).toString('hex'),
-    };
-  }
-
-  async _getGraphInfo(
-    options: BundleOptions,
-    {rebuild}: {rebuild: boolean},
-  ): Promise<{...GraphInfo, numModifiedFiles: number}> {
-    const id = this._optionsHash(options);
-    let graphPromise = this._graphs.get(id);
-    let graphInfo: GraphInfo;
-    let numModifiedFiles = 0;
-
-    if (!graphPromise) {
-      graphPromise = this._buildGraph(options);
-      this._graphs.set(id, graphPromise);
-
-      graphInfo = await graphPromise;
-      numModifiedFiles =
-        graphInfo.prepend.length + graphInfo.graph.dependencies.size;
-    } else {
-      graphInfo = await graphPromise;
-
-      if (rebuild) {
-        const delta = await this._deltaBundler.getDelta(graphInfo.graph, {
-          reset: false,
-        });
-        numModifiedFiles = delta.modified.size;
-
-        if (numModifiedFiles > 0) {
-          graphInfo.lastModified = new Date();
-          this._config.serializer.experimentalSerializerHook(
-            graphInfo.graph,
-            delta,
-          );
-        }
-      }
-    }
-
-    return {...graphInfo, numModifiedFiles};
-  }
-
-  async _getDeltaInfo(
-    options: DeltaOptions,
-  ): Promise<{...GraphInfo, delta: DeltaResult<>}> {
-    const id = this._optionsHash(options);
-    let graphPromise = this._deltaGraphs.get(id);
-    let graphInfo;
-
-    let delta;
-
-    if (!graphPromise) {
-      graphPromise = this._buildGraph(options);
-      this._deltaGraphs.set(id, graphPromise);
-      graphInfo = await graphPromise;
-
-      delta = {
-        modified: graphInfo.graph.dependencies,
-        deleted: new Set(),
-        reset: true,
-      };
-    } else {
-      graphInfo = await graphPromise;
-
-      delta = await this._deltaBundler.getDelta(graphInfo.graph, {
-        reset: graphInfo.sequenceId !== options.deltaBundleId,
-      });
-
-      this._config.serializer.experimentalSerializerHook(
-        graphInfo.graph,
-        delta,
-      );
-
-      // Generate a new sequenceId, to be used to verify the next delta request.
-      // $FlowIssue #16581373 spread of an exact object should be exact
-      graphInfo = {
-        ...graphInfo,
-        sequenceId: crypto.randomBytes(8).toString('hex'),
-      };
-
-      this._deltaGraphs.set(id, graphInfo);
-    }
-
-    return {
-      ...graphInfo,
-      delta,
-    };
-  }
-
-  onFileChange(type: string, filePath: string) {
-    // Make sure the file watcher event runs through the system before
-    // we rebuild the bundles.
-    this._debouncedFileChangeHandler(filePath);
   }
 
   _informChangeWatchers() {
@@ -512,20 +308,6 @@ class Server {
     }
   }
 
-  _optionsHash(options: {}) {
-    // List of option parameters that won't affect the build result, so they
-    // can be ignored to calculate the options hash.
-    const ignoredParams = {
-      bundleType: null,
-      onProgress: null,
-      deltaBundleId: null,
-      excludeSource: null,
-      sourceMapUrl: null,
-    };
-
-    return JSON.stringify(Object.assign({}, options, ignoredParams));
-  }
-
   processRequest = async (
     req: IncomingMessage,
     res: ServerResponse,
@@ -562,8 +344,8 @@ class Server {
   _prepareDeltaBundler(
     req: IncomingMessage,
     mres: MultipartResponse,
-  ): {options: DeltaOptions, buildID: string} {
-    const options = parseOptionsFromUrl(
+  ): {options: BundleOptions, revisionId: ?string, buildID: string} {
+    const {revisionId, options} = parseOptionsFromUrl(
       url.format({
         ...url.parse(req.url),
         protocol: 'http',
@@ -606,18 +388,12 @@ class Server {
       type: 'bundle_build_started',
     });
 
-    return {options, buildID};
+    return {options, revisionId, buildID};
   }
 
   async _processDeltaRequest(req: IncomingMessage, res: ServerResponse) {
     const mres = MultipartResponse.wrap(req, res);
-    const {options, buildID} = this._prepareDeltaBundler(req, mres);
-
-    // Make sure that the bundleType is 'delta' (on the first delta request,
-    // since the request does not have a bundleID param it gets detected as
-    // a 'bundle' type).
-    // TODO (T23416372): Improve the parsing of URL params.
-    options.bundleType = 'delta';
+    const {options, revisionId, buildID} = this._prepareDeltaBundler(req, mres);
 
     const requestingBundleLogEntry = log(
       createActionStartEntry({
@@ -627,36 +403,36 @@ class Server {
       }),
     );
 
-    let output, sequenceId;
+    let bundle, nextRevId, numModifiedFiles;
 
     try {
-      let delta, graph, prepend;
-      ({delta, graph, prepend, sequenceId} = await this._getDeltaInfo(options));
+      const {delta, revision} = await this._bundler.updateGraph(options, {
+        revisionId,
+      });
 
-      output = {
-        bundle: deltaJSBundle(
-          options.entryFile,
-          prepend,
-          delta,
-          sequenceId,
-          graph,
-          {
-            processModuleFilter: this._config.serializer.processModuleFilter,
-            createModuleId: this._createModuleId,
-            dev: options.dev,
-            getRunModuleStatement: this._config.serializer
-              .getRunModuleStatement,
-            projectRoot: this._config.projectRoot,
-            runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-              path.relative(this._config.projectRoot, options.entryFile),
-            ),
-            runModule: options.runModule,
-            sourceMapUrl: options.sourceMapUrl,
-            inlineSourceMap: options.inlineSourceMap,
-          },
-        ),
-        numModifiedFiles: delta.modified.size + delta.deleted.size,
-      };
+      bundle = deltaJSBundle(
+        options.entryFile,
+        revision.prepend,
+        delta,
+        revision.id,
+        revision.graph,
+        {
+          processModuleFilter: this._config.serializer.processModuleFilter,
+          createModuleId: this._createModuleId,
+          dev: options.dev,
+          getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+          projectRoot: this._config.projectRoot,
+          runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
+            path.relative(this._config.projectRoot, options.entryFile),
+          ),
+          runModule: options.runModule,
+          sourceMapUrl: options.sourceMapUrl,
+          inlineSourceMap: options.inlineSourceMap,
+        },
+      );
+
+      numModifiedFiles = delta.modified.size + delta.deleted.size;
+      nextRevId = revision.id;
     } catch (error) {
       this._handleError(mres, options, error, buildID);
 
@@ -668,11 +444,11 @@ class Server {
       return;
     }
 
-    mres.setHeader(FILES_CHANGED_COUNT_HEADER, String(output.numModifiedFiles));
-    mres.setHeader(DELTA_ID_HEADER, String(sequenceId));
+    mres.setHeader(FILES_CHANGED_COUNT_HEADER, String(numModifiedFiles));
+    mres.setHeader(DELTA_ID_HEADER, String(nextRevId));
     mres.setHeader('Content-Type', 'application/json');
-    mres.setHeader('Content-Length', String(Buffer.byteLength(output.bundle)));
-    mres.end(output.bundle);
+    mres.setHeader('Content-Length', String(Buffer.byteLength(bundle)));
+    mres.end(bundle);
 
     this._reporter.update({
       buildID,
@@ -682,13 +458,15 @@ class Server {
     debug('Finished response');
     log({
       ...createActionEndEntry(requestingBundleLogEntry),
-      outdated_modules: output.numModifiedFiles,
+      outdated_modules: numModifiedFiles,
     });
   }
 
   async _processBundleRequest(req: IncomingMessage, res: ServerResponse) {
     const mres = MultipartResponse.wrap(req, res);
     const {options, buildID} = this._prepareDeltaBundler(req, mres);
+
+    const hash = IncrementalBundler.getGraphId(options);
 
     const requestingBundleLogEntry = log(
       createActionStartEntry({
@@ -698,22 +476,22 @@ class Server {
         bundler: 'delta',
         build_id: buildID,
         bundle_options: options,
-        bundle_hash: this._optionsHash(options),
+        bundle_hash: hash,
       }),
     );
 
-    let result;
+    let bundle, numModifiedFiles, lastModifiedDate;
 
     try {
-      const {
-        graph,
-        prepend,
-        lastModified,
-        numModifiedFiles,
-      } = await this._getGraphInfo(options, {rebuild: true});
+      const {delta, revision} = await this._bundler.updateGraph(options, {
+        rebuild: true,
+      });
 
-      result = {
-        bundle: plainJSBundle(options.entryFile, prepend, graph, {
+      bundle = plainJSBundle(
+        options.entryFile,
+        revision.prepend,
+        revision.graph,
+        {
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
           getRunModuleStatement: this._config.serializer.getRunModuleStatement,
@@ -725,10 +503,13 @@ class Server {
           runModule: options.runModule,
           sourceMapUrl: options.sourceMapUrl,
           inlineSourceMap: options.inlineSourceMap,
-        }),
-        numModifiedFiles,
-        lastModified,
-      };
+        },
+      );
+
+      numModifiedFiles = delta.reset
+        ? delta.modified.size + revision.prepend.length
+        : delta.modified.size + delta.deleted.size;
+      lastModifiedDate = revision.date;
     } catch (error) {
       this._handleError(mres, options, error, buildID);
 
@@ -739,23 +520,17 @@ class Server {
       // We avoid parsing the dates since the client should never send a more
       // recent date than the one returned by the Delta Bundler (if that's the
       // case it's fine to return the whole bundle).
-      req.headers['if-modified-since'] === result.lastModified.toUTCString()
+      req.headers['if-modified-since'] === lastModifiedDate.toUTCString()
     ) {
       debug('Responding with 304');
       mres.writeHead(304);
       mres.end();
     } else {
-      mres.setHeader(
-        FILES_CHANGED_COUNT_HEADER,
-        String(result.numModifiedFiles),
-      );
+      mres.setHeader(FILES_CHANGED_COUNT_HEADER, String(numModifiedFiles));
       mres.setHeader('Content-Type', 'application/javascript');
-      mres.setHeader('Last-Modified', result.lastModified.toUTCString());
-      mres.setHeader(
-        'Content-Length',
-        String(Buffer.byteLength(result.bundle)),
-      );
-      mres.end(result.bundle);
+      mres.setHeader('Last-Modified', lastModifiedDate.toUTCString());
+      mres.setHeader('Content-Length', String(Buffer.byteLength(bundle)));
+      mres.end(bundle);
     }
 
     this._reporter.update({
@@ -766,12 +541,12 @@ class Server {
     debug('Finished response');
     log({
       ...createActionEndEntry(requestingBundleLogEntry),
-      outdated_modules: result.numModifiedFiles,
+      outdated_modules: numModifiedFiles,
       bundler: 'delta',
-      bundle_size: result.bundle.length,
+      bundle_size: bundle.length,
       build_id: buildID,
       bundle_options: options,
-      bundle_hash: this._optionsHash(options),
+      bundle_hash: hash,
     });
   }
 
@@ -791,11 +566,11 @@ class Server {
     let sourceMap;
 
     try {
-      const {graph, prepend} = await this._getGraphInfo(options, {
+      const {revision} = await this._bundler.updateGraph(options, {
         rebuild: false,
       });
 
-      sourceMap = sourceMapString(prepend, graph, {
+      sourceMap = sourceMapString(revision.prepend, revision.graph, {
         excludeSource: options.excludeSource,
         processModuleFilter: this._config.serializer.processModuleFilter,
       });
@@ -929,17 +704,17 @@ class Server {
   }
 
   async _sourceMapForURL(reqUrl: string): Promise<MetroSourceMap> {
-    const options: DeltaOptions = parseOptionsFromUrl(
+    const {options} = parseOptionsFromUrl(
       reqUrl,
       this._config.projectRoot,
       new Set(this._config.resolver.platforms),
     );
 
-    const {graph, prepend} = await this._getGraphInfo(options, {
+    const {revision} = await this._bundler.updateGraph(options, {
       rebuild: false,
     });
 
-    return sourceMapObject(prepend, graph, {
+    return sourceMapObject(revision.prepend, revision.graph, {
       excludeSource: options.excludeSource,
       processModuleFilter: this._config.serializer.processModuleFilter,
     });
@@ -963,14 +738,10 @@ class Server {
       action_name: 'bundling_error',
       error_type: formattedError.type,
       log_entry_label: 'bundling_error',
-      bundle_id: this._optionsHash(options),
+      bundle_id: IncrementalBundler.getGraphId(options),
       build_id: buildID,
       stack: formattedError.message,
     });
-  }
-
-  getGraphs(): Map<string, Promise<GraphInfo>> {
-    return this._graphs;
   }
 
   getNewBuildID(): string {

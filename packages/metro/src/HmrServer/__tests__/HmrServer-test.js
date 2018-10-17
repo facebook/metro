@@ -13,7 +13,8 @@ const HmrServer = require('..');
 
 describe('HmrServer', () => {
   let hmrServer;
-  let serverMock;
+  let incrementalBundlerMock;
+  let createModuleIdMock;
   let buildGraphMock;
   let deltaBundlerMock;
   let callbacks;
@@ -34,17 +35,17 @@ describe('HmrServer', () => {
         callbacks.set(graph, cb);
       },
     };
-    serverMock = {
-      buildGraph: buildGraphMock,
+    incrementalBundlerMock = {
+      buildGraphForEntries: buildGraphMock,
       getDeltaBundler() {
         return deltaBundlerMock;
       },
-      _createModuleId(path) {
-        return path + '-id';
-      },
+    };
+    createModuleIdMock = path => {
+      return path + '-id';
     };
 
-    hmrServer = new HmrServer(serverMock, {
+    hmrServer = new HmrServer(incrementalBundlerMock, createModuleIdMock, {
       serializer: {
         experimentalSerializerHook: () => {},
       },

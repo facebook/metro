@@ -21,6 +21,7 @@ const {parse} = require('url');
 
 import type {MetroHistory} from './metroHistory.js';
 import type {Graph} from 'metro/src/DeltaBundler';
+import type {GraphId} from 'metro/src/IncrementalBundler';
 import type Server from 'metro/src/Server';
 
 const router = Router();
@@ -109,11 +110,14 @@ router.use('/bundle.js', async (req, res, next) => {
     });
 });
 
-async function getGraph(optionsHash: string): Promise<Graph<>> {
+async function getGraph(graphId: GraphId): Promise<Graph<>> {
   const status = "Getting last bundle's graph";
 
   terminal.status(`${status}... fetching from Metro`);
-  const graph = metroServer.getGraphs().get(optionsHash);
+  const graph = metroServer
+    .getBundler()
+    .getRevisions()
+    .get(graphId);
 
   if (graph == null) {
     terminal.status(`${status}, failed.`);

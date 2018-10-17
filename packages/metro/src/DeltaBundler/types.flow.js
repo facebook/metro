@@ -75,6 +75,11 @@ export type DeltaResult<T = MixedOutput> = {|
   +reset: boolean,
 |};
 
+// (id, code)
+export type DeltaModuleEntry = [number, string];
+
+export type DeltaModuleMap = $ReadOnlyArray<DeltaModuleEntry>;
+
 export type SerializerOptions = {|
   +processModuleFilter: (module: Module<>) => boolean,
   +createModuleId: string => number,

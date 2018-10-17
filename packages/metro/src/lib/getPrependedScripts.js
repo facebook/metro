@@ -16,20 +16,15 @@ const transformHelpers = require('./transformHelpers');
 
 import type Bundler from '../Bundler';
 import type DeltaBundler, {Module} from '../DeltaBundler';
-import type {CustomTransformOptions} from '../JSTransformer/worker';
+import type {TransformInputOptions} from '../lib/transformHelpers';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
-
-type BundleOptions = {
-  customTransformOptions: CustomTransformOptions,
-  +dev: boolean,
-  +hot: boolean,
-  +minify: boolean,
-  +platform: ?string,
-};
 
 async function getPrependedScripts(
   config: ConfigT,
-  bundleOptions: BundleOptions,
+  options: $Diff<
+    TransformInputOptions,
+    {type: $PropertyType<TransformInputOptions, 'type'>},
+  >,
   bundler: Bundler,
   deltaBundler: DeltaBundler<>,
 ): Promise<$ReadOnlyArray<Module<>>> {
@@ -37,16 +32,12 @@ async function getPrependedScripts(
   // `getPolyfills()` method and the `polyfillModuleNames` variable).
   const polyfillModuleNames = config.serializer
     .getPolyfills({
-      platform: bundleOptions.platform,
+      platform: options.platform,
     })
     .concat(config.serializer.polyfillModuleNames);
 
-  const buildOptions = {
-    customTransformOptions: bundleOptions.customTransformOptions,
-    dev: bundleOptions.dev,
-    hot: bundleOptions.hot,
-    minify: bundleOptions.minify,
-    platform: bundleOptions.platform,
+  const transformOptions: TransformInputOptions = {
+    ...options,
     type: 'script',
   };
 
@@ -55,23 +46,20 @@ async function getPrependedScripts(
     {
       resolve: await transformHelpers.getResolveDependencyFn(
         bundler,
-        buildOptions.platform,
+        options.platform,
       ),
       transform: await transformHelpers.getTransformFn(
         [defaults.moduleSystem, ...polyfillModuleNames],
         bundler,
         deltaBundler,
         config,
-        buildOptions,
+        transformOptions,
       ),
       onProgress: null,
     },
   );
 
-  return [
-    _getPrelude({dev: bundleOptions.dev}),
-    ...graph.dependencies.values(),
-  ];
+  return [_getPrelude({dev: options.dev}), ...graph.dependencies.values()];
 }
 
 function _getPrelude({dev}: {dev: boolean}): Module<> {
