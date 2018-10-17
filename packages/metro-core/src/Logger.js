@@ -20,12 +20,12 @@ import type {BundleOptions} from 'metro/src/shared/types.flow';
 
 const VERSION = require('../package.json').version;
 
-type ActionLogEntryData = {
+export type ActionLogEntryData = {
   action_name: string,
   log_entry_label?: string,
 };
 
-type ActionStartLogEntry = {
+export type ActionStartLogEntry = {
   action_name?: string,
   action_phase?: string,
   log_entry_label: string,

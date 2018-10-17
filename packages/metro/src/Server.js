@@ -31,7 +31,6 @@ const url = require('url');
 
 const {getAsset} = require('./Assets');
 
-import type {CustomError} from './lib/formatBundlingError';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from './lib/reporting';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
@@ -40,11 +39,32 @@ import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
+import type {GraphId} from './IncrementalBundler';
 
 const {
   Logger,
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
+
+import type {
+  ActionLogEntryData,
+  ActionStartLogEntry,
+  LogEntry,
+} from 'metro-core/src/Logger';
+
+type ProcessStartContext = {|
+  +mres: MultipartResponse,
+  +req: IncomingMessage,
+  +buildID: string,
+  +options: BundleOptions,
+  +graphId: GraphId,
+  +revisionId: ?string,
+|};
+
+type ProcessEndContext<T> = {|
+  ...ProcessStartContext,
+  +result: T,
+|};
 
 function debounceAndBatch(fn, delay) {
   let timeout;
@@ -341,76 +361,152 @@ class Server {
     }
   };
 
-  _prepareDeltaBundler(
-    req: IncomingMessage,
-    mres: MultipartResponse,
-  ): {options: BundleOptions, revisionId: ?string, buildID: string} {
-    const {revisionId, options} = parseOptionsFromUrl(
-      url.format({
-        ...url.parse(req.url),
-        protocol: 'http',
-        host: req.headers.host,
-      }),
-      this._config.projectRoot,
-      new Set(this._config.resolver.platforms),
-    );
+  _createRequestProcessor<T>({
+    createStartEntry,
+    createEndEntry,
+    build,
+    finish,
+  }: {|
+    +createStartEntry: (context: ProcessStartContext) => ActionLogEntryData,
+    +createEndEntry: (
+      context: ProcessEndContext<T>,
+    ) => $Rest<ActionStartLogEntry, LogEntry>,
+    +build: (context: ProcessStartContext) => Promise<T>,
+    +finish: (context: ProcessEndContext<T>) => void,
+  |}) {
+    return async function requestProcessor(
+      req: IncomingMessage,
+      res: ServerResponse,
+    ) {
+      const mres = MultipartResponse.wrap(req, res);
+      const {revisionId, options} = parseOptionsFromUrl(
+        url.format({
+          ...url.parse(req.url),
+          protocol: 'http',
+          host: req.headers.host,
+        }),
+        this._config.projectRoot,
+        new Set(this._config.resolver.platforms),
+      );
+      const graphId = IncrementalBundler.getGraphId(options);
+      const buildID = this.getNewBuildID();
 
-    const buildID = this.getNewBuildID();
+      if (this._config.reporter) {
+        options.onProgress = (transformedFileCount, totalFileCount) => {
+          mres.writeChunk(
+            {'Content-Type': 'application/json'},
+            JSON.stringify({done: transformedFileCount, total: totalFileCount}),
+          );
 
-    if (this._config.reporter) {
-      options.onProgress = (transformedFileCount, totalFileCount) => {
-        mres.writeChunk(
-          {'Content-Type': 'application/json'},
-          JSON.stringify({done: transformedFileCount, total: totalFileCount}),
-        );
+          this._reporter.update({
+            buildID,
+            type: 'bundle_transform_progressed',
+            transformedFileCount,
+            totalFileCount,
+          });
+        };
+      }
+
+      /* $FlowFixMe(>=0.63.0 site=react_native_fb) This comment suppresses an
+       * error found when Flow v0.63 was deployed. To see the error delete this
+       * comment and run Flow. */
+      this._reporter.update({
+        buildID,
+        bundleDetails: {
+          entryFile: options.entryFile,
+          platform: options.platform,
+          dev: options.dev,
+          minify: options.minify,
+          bundleType: options.bundleType,
+        },
+        type: 'bundle_build_started',
+      });
+
+      const startContext = {
+        req,
+        mres,
+        revisionId,
+        buildID,
+        options,
+        graphId,
+      };
+      const logEntry = log(
+        createActionStartEntry(createStartEntry(startContext)),
+      );
+
+      let result;
+      try {
+        result = await build(startContext);
+      } catch (error) {
+        const formattedError = formatBundlingError(error);
+
+        mres.writeHead(error.status || 500, {
+          'Content-Type': 'application/json; charset=UTF-8',
+        });
+        mres.end(JSON.stringify(formattedError));
+        this._reporter.update({error, type: 'bundling_error'});
+
+        log({
+          action_name: 'bundling_error',
+          error_type: formattedError.type,
+          log_entry_label: 'bundling_error',
+          bundle_id: graphId,
+          build_id: buildID,
+          stack: formattedError.message,
+        });
 
         this._reporter.update({
           buildID,
-          type: 'bundle_transform_progressed',
-          transformedFileCount,
-          totalFileCount,
+          type: 'bundle_build_failed',
+          bundleOptions: options,
         });
+
+        return;
+      }
+
+      const endContext = {
+        ...startContext,
+        result,
       };
-    }
+      finish(endContext);
 
-    /* $FlowFixMe(>=0.63.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.63 was deployed. To see the error delete this
-     * comment and run Flow. */
-    this._reporter.update({
-      buildID,
-      bundleDetails: {
-        entryFile: options.entryFile,
-        platform: options.platform,
-        dev: options.dev,
-        minify: options.minify,
-        bundleType: options.bundleType,
-      },
-      type: 'bundle_build_started',
-    });
+      this._reporter.update({
+        buildID,
+        type: 'bundle_build_done',
+      });
 
-    return {options, revisionId, buildID};
+      log(
+        createActionEndEntry({
+          ...logEntry,
+          ...createEndEntry(endContext),
+        }),
+      );
+    };
   }
 
-  async _processDeltaRequest(req: IncomingMessage, res: ServerResponse) {
-    const mres = MultipartResponse.wrap(req, res);
-    const {options, revisionId, buildID} = this._prepareDeltaBundler(req, mres);
-
-    const requestingBundleLogEntry = log(
-      createActionStartEntry({
+  _processDeltaRequest = this._createRequestProcessor({
+    createStartEntry(context) {
+      return {
         action_name: 'Requesting delta',
-        bundle_url: req.url,
-        entry_point: options.entryFile,
-      }),
-    );
-
-    let bundle, nextRevId, numModifiedFiles;
-
-    try {
+        bundle_url: context.req.url,
+        entry_point: context.options.entryFile,
+        bundler: 'delta',
+        build_id: context.buildID,
+        bundle_options: context.options,
+        bundle_hash: context.graphId,
+      };
+    },
+    createEndEntry(context) {
+      return {
+        outdated_modules: context.result.numModifiedFiles,
+      };
+    },
+    build: async ({revisionId, options}) => {
       const {delta, revision} = await this._bundler.updateGraph(options, {
         revisionId,
       });
 
-      bundle = deltaJSBundle(
+      const bundle = deltaJSBundle(
         options.entryFile,
         revision.prepend,
         delta,
@@ -431,63 +527,50 @@ class Server {
         },
       );
 
-      numModifiedFiles = delta.modified.size + delta.deleted.size;
-      nextRevId = revision.id;
-    } catch (error) {
-      this._handleError(mres, options, error, buildID);
+      return {
+        numModifiedFiles: delta.modified.size + delta.deleted.size,
+        nextRevId: revision.id,
+        bundle,
+      };
+    },
+    finish({mres, result}) {
+      mres.setHeader(
+        FILES_CHANGED_COUNT_HEADER,
+        String(result.numModifiedFiles),
+      );
+      mres.setHeader(DELTA_ID_HEADER, String(result.nextRevId));
+      mres.setHeader('Content-Type', 'application/json');
+      mres.setHeader(
+        'Content-Length',
+        String(Buffer.byteLength(result.bundle)),
+      );
+      mres.end(result.bundle);
+    },
+  });
 
-      this._reporter.update({
-        buildID,
-        type: 'bundle_build_failed',
-      });
-
-      return;
-    }
-
-    mres.setHeader(FILES_CHANGED_COUNT_HEADER, String(numModifiedFiles));
-    mres.setHeader(DELTA_ID_HEADER, String(nextRevId));
-    mres.setHeader('Content-Type', 'application/json');
-    mres.setHeader('Content-Length', String(Buffer.byteLength(bundle)));
-    mres.end(bundle);
-
-    this._reporter.update({
-      buildID,
-      type: 'bundle_build_done',
-    });
-
-    debug('Finished response');
-    log({
-      ...createActionEndEntry(requestingBundleLogEntry),
-      outdated_modules: numModifiedFiles,
-    });
-  }
-
-  async _processBundleRequest(req: IncomingMessage, res: ServerResponse) {
-    const mres = MultipartResponse.wrap(req, res);
-    const {options, buildID} = this._prepareDeltaBundler(req, mres);
-
-    const hash = IncrementalBundler.getGraphId(options);
-
-    const requestingBundleLogEntry = log(
-      createActionStartEntry({
+  _processBundleRequest = this._createRequestProcessor({
+    createStartEntry(context) {
+      return {
         action_name: 'Requesting bundle',
-        bundle_url: req.url,
-        entry_point: options.entryFile,
+        bundle_url: context.req.url,
+        entry_point: context.options.entryFile,
         bundler: 'delta',
-        build_id: buildID,
-        bundle_options: options,
-        bundle_hash: hash,
-      }),
-    );
-
-    let bundle, numModifiedFiles, lastModifiedDate;
-
-    try {
+        build_id: context.buildID,
+        bundle_options: context.options,
+        bundle_hash: context.graphId,
+      };
+    },
+    createEndEntry(context) {
+      return {
+        outdated_modules: context.result.numModifiedFiles,
+      };
+    },
+    build: async ({options}) => {
       const {delta, revision} = await this._bundler.updateGraph(options, {
         rebuild: true,
       });
 
-      bundle = plainJSBundle(
+      const bundle = plainJSBundle(
         options.entryFile,
         revision.prepend,
         revision.graph,
@@ -506,145 +589,94 @@ class Server {
         },
       );
 
-      numModifiedFiles = delta.reset
-        ? delta.modified.size + revision.prepend.length
-        : delta.modified.size + delta.deleted.size;
-      lastModifiedDate = revision.date;
-    } catch (error) {
-      this._handleError(mres, options, error, buildID);
+      return {
+        numModifiedFiles: delta.reset
+          ? delta.modified.size + revision.prepend.length
+          : delta.modified.size + delta.deleted.size,
+        lastModifiedDate: revision.date,
+        nextRevId: revision.id,
+        bundle,
+      };
+    },
+    finish({req, mres, result}) {
+      if (
+        // We avoid parsing the dates since the client should never send a more
+        // recent date than the one returned by the Delta Bundler (if that's the
+        // case it's fine to return the whole bundle).
+        req.headers['if-modified-since'] ===
+        result.lastModifiedDate.toUTCString()
+      ) {
+        debug('Responding with 304');
+        mres.writeHead(304);
+        mres.end();
+      } else {
+        mres.setHeader(
+          FILES_CHANGED_COUNT_HEADER,
+          String(result.numModifiedFiles),
+        );
+        mres.setHeader('Content-Type', 'application/javascript');
+        mres.setHeader('Last-Modified', result.lastModifiedDate.toUTCString());
+        mres.setHeader(
+          'Content-Length',
+          String(Buffer.byteLength(result.bundle)),
+        );
+        mres.end(result.bundle);
+      }
+    },
+  });
 
-      return;
-    }
-
-    if (
-      // We avoid parsing the dates since the client should never send a more
-      // recent date than the one returned by the Delta Bundler (if that's the
-      // case it's fine to return the whole bundle).
-      req.headers['if-modified-since'] === lastModifiedDate.toUTCString()
-    ) {
-      debug('Responding with 304');
-      mres.writeHead(304);
-      mres.end();
-    } else {
-      mres.setHeader(FILES_CHANGED_COUNT_HEADER, String(numModifiedFiles));
-      mres.setHeader('Content-Type', 'application/javascript');
-      mres.setHeader('Last-Modified', lastModifiedDate.toUTCString());
-      mres.setHeader('Content-Length', String(Buffer.byteLength(bundle)));
-      mres.end(bundle);
-    }
-
-    this._reporter.update({
-      buildID,
-      type: 'bundle_build_done',
-    });
-
-    debug('Finished response');
-    log({
-      ...createActionEndEntry(requestingBundleLogEntry),
-      outdated_modules: numModifiedFiles,
-      bundler: 'delta',
-      bundle_size: bundle.length,
-      build_id: buildID,
-      bundle_options: options,
-      bundle_hash: hash,
-    });
-  }
-
-  async _processSourceMapRequest(req: IncomingMessage, res: ServerResponse) {
-    const mres = MultipartResponse.wrap(req, res);
-    const {options, buildID} = this._prepareDeltaBundler(req, mres);
-
-    const requestingBundleLogEntry = log(
-      createActionStartEntry({
+  _processSourceMapRequest = this._createRequestProcessor({
+    createStartEntry(context) {
+      return {
         action_name: 'Requesting sourcemap',
-        bundle_url: req.url,
-        entry_point: options.entryFile,
+        bundle_url: context.req.url,
+        entry_point: context.options.entryFile,
         bundler: 'delta',
-      }),
-    );
-
-    let sourceMap;
-
-    try {
+      };
+    },
+    createEndEntry(context) {
+      return {
+        bundler: 'delta',
+      };
+    },
+    build: async ({options}) => {
       const {revision} = await this._bundler.updateGraph(options, {
         rebuild: false,
       });
 
-      sourceMap = sourceMapString(revision.prepend, revision.graph, {
+      return sourceMapString(revision.prepend, revision.graph, {
         excludeSource: options.excludeSource,
         processModuleFilter: this._config.serializer.processModuleFilter,
       });
-    } catch (error) {
-      this._handleError(mres, options, error, buildID);
+    },
+    finish({mres, result}) {
+      mres.setHeader('Content-Type', 'application/json');
+      mres.end(result.toString());
+    },
+  });
 
-      this._reporter.update({
-        buildID,
-        type: 'bundle_build_failed',
-      });
-
-      return;
-    }
-
-    mres.setHeader('Content-Type', 'application/json');
-    mres.end(sourceMap.toString());
-
-    this._reporter.update({
-      buildID,
-      type: 'bundle_build_done',
-    });
-
-    log(
-      createActionEndEntry({
-        ...requestingBundleLogEntry,
-        bundler: 'delta',
-      }),
-    );
-  }
-
-  async _processAssetsRequest(req: IncomingMessage, res: ServerResponse) {
-    const mres = MultipartResponse.wrap(req, res);
-    const {options, buildID} = this._prepareDeltaBundler(req, mres);
-
-    const requestingAssetsLogEntry = log(
-      createActionStartEntry({
+  _processAssetsRequest = this._createRequestProcessor({
+    createStartEntry(context) {
+      return {
         action_name: 'Requesting assets',
-        bundle_url: req.url,
-        entry_point: options.entryFile,
+        bundle_url: context.req.url,
+        entry_point: context.options.entryFile,
         bundler: 'delta',
-      }),
-    );
-
-    let assets;
-
-    try {
-      assets = await this.getAssets(options);
-    } catch (error) {
-      this._handleError(mres, options, error, buildID);
-
-      this._reporter.update({
-        buildID,
-        type: 'bundle_build_failed',
-        bundleOptions: options,
-      });
-
-      return;
-    }
-
-    mres.setHeader('Content-Type', 'application/json');
-    mres.end(JSON.stringify(assets));
-
-    this._reporter.update({
-      buildID,
-      type: 'bundle_build_done',
-    });
-
-    log(
-      createActionEndEntry({
-        ...requestingAssetsLogEntry,
+      };
+    },
+    createEndEntry(context) {
+      return {
         bundler: 'delta',
-      }),
-    );
-  }
+      };
+    },
+    build: async ({options}) => {
+      return await this.getAssets(options);
+    },
+    finish({mres, result}) {
+      mres.setHeader('Content-Type', 'application/json');
+      mres.end(JSON.stringify(result));
+    },
+  });
 
   _symbolicate(req: IncomingMessage, res: ServerResponse) {
     const symbolicatingLogEntry = log(createActionStartEntry('Symbolicating'));
@@ -717,30 +749,6 @@ class Server {
     return sourceMapObject(revision.prepend, revision.graph, {
       excludeSource: options.excludeSource,
       processModuleFilter: this._config.serializer.processModuleFilter,
-    });
-  }
-
-  _handleError(
-    res: ServerResponse,
-    options: BundleOptions,
-    error: CustomError,
-    buildID: string,
-  ) {
-    const formattedError = formatBundlingError(error);
-
-    res.writeHead(error.status || 500, {
-      'Content-Type': 'application/json; charset=UTF-8',
-    });
-    res.end(JSON.stringify(formattedError));
-    this._reporter.update({error, type: 'bundling_error'});
-
-    log({
-      action_name: 'bundling_error',
-      error_type: formattedError.type,
-      log_entry_label: 'bundling_error',
-      bundle_id: IncrementalBundler.getGraphId(options),
-      build_id: buildID,
-      stack: formattedError.message,
     });
   }
 
