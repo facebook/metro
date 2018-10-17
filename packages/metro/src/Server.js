@@ -9,17 +9,18 @@
  */
 
 'use strict';
-
 const IncrementalBundler = require('./IncrementalBundler');
 const MultipartResponse = require('./Server/MultipartResponse');
 
 const deltaJSBundle = require('./DeltaBundler/Serializers/deltaJSBundle');
 const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('./DeltaBundler/Serializers/getAssets');
+const getGraphId = require('./lib/getGraphId');
 const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
 const plainJSBundle = require('./DeltaBundler/Serializers/plainJSBundle');
 const sourceMapObject = require('./DeltaBundler/Serializers/sourceMapObject');
 const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
+const splitBundleOptions = require('./lib/splitBundleOptions');
 const debug = require('debug')('Metro:Server');
 const formatBundlingError = require('./lib/formatBundlingError');
 const mime = require('mime-types');
@@ -28,18 +29,20 @@ const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
 const path = require('path');
 const symbolicate = require('./Server/symbolicate/symbolicate');
 const url = require('url');
+const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
 
 const {getAsset} = require('./Assets');
 
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from './lib/reporting';
+import type {GraphId} from './lib/getGraphId';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
-import type {BundleOptions} from './shared/types.flow';
+import type {BundleOptions, SplitBundleOptions} from './shared/types.flow';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
-import type {GraphId} from './IncrementalBundler';
+import type {RevisionId} from './IncrementalBundler';
 
 const {
   Logger,
@@ -56,9 +59,10 @@ type ProcessStartContext = {|
   +mres: MultipartResponse,
   +req: IncomingMessage,
   +buildID: string,
-  +options: BundleOptions,
   +graphId: GraphId,
-  +revisionId: ?string,
+  +revisionId: ?RevisionId,
+  +bundleOptions: BundleOptions,
+  ...SplitBundleOptions,
 |};
 
 type ProcessEndContext<T> = {|
@@ -145,67 +149,91 @@ class Server {
   }
 
   async build(options: BundleOptions): Promise<{code: string, map: string}> {
-    const rev = await this._bundler.buildGraph(options);
+    const {
+      entryFile,
+      transformOptions,
+      serializerOptions,
+      onProgress,
+    } = splitBundleOptions(options);
 
-    const entryPoint = path.resolve(
-      this._config.projectRoot,
-      options.entryFile,
+    const {prepend, graph} = await this._bundler.buildGraph(
+      entryFile,
+      transformOptions,
+      {onProgress},
     );
 
+    const entryPoint = path.resolve(this._config.projectRoot, entryFile);
+
     return {
-      code: plainJSBundle(entryPoint, rev.prepend, rev.graph, {
+      code: plainJSBundle(entryPoint, prepend, graph, {
         processModuleFilter: this._config.serializer.processModuleFilter,
         createModuleId: this._createModuleId,
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,
-        dev: options.dev,
+        dev: transformOptions.dev,
         projectRoot: this._config.projectRoot,
         runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
           path.relative(this._config.projectRoot, entryPoint),
         ),
-        runModule: options.runModule,
-        sourceMapUrl: options.sourceMapUrl,
-        inlineSourceMap: options.inlineSourceMap,
+        runModule: serializerOptions.runModule,
+        sourceMapUrl: serializerOptions.sourceMapUrl,
+        inlineSourceMap: serializerOptions.inlineSourceMap,
       }),
-      map: sourceMapString(rev.prepend, rev.graph, {
-        excludeSource: options.excludeSource,
+      map: sourceMapString(prepend, graph, {
+        excludeSource: serializerOptions.excludeSource,
         processModuleFilter: this._config.serializer.processModuleFilter,
       }),
     };
   }
 
   async getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo> {
-    const rev = await this._bundler.buildGraph(options);
+    const {
+      entryFile,
+      transformOptions,
+      serializerOptions,
+      onProgress,
+    } = splitBundleOptions(options);
 
-    const entryPoint = path.resolve(
-      this._config.projectRoot,
-      options.entryFile,
+    const {prepend, graph} = await this._bundler.buildGraph(
+      entryFile,
+      transformOptions,
+      {onProgress},
     );
 
-    return await getRamBundleInfo(entryPoint, rev.prepend, rev.graph, {
+    const entryPoint = path.resolve(this._config.projectRoot, entryFile);
+
+    return await getRamBundleInfo(entryPoint, prepend, graph, {
       processModuleFilter: this._config.serializer.processModuleFilter,
       createModuleId: this._createModuleId,
-      dev: options.dev,
-      excludeSource: options.excludeSource,
+      dev: transformOptions.dev,
+      excludeSource: serializerOptions.excludeSource,
       getRunModuleStatement: this._config.serializer.getRunModuleStatement,
       getTransformOptions: this._config.transformer.getTransformOptions,
-      platform: options.platform,
+      platform: transformOptions.platform,
       projectRoot: this._config.projectRoot,
       runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
         path.relative(this._config.projectRoot, entryPoint),
       ),
-      runModule: options.runModule,
-      sourceMapUrl: options.sourceMapUrl,
-      inlineSourceMap: options.inlineSourceMap,
+      runModule: serializerOptions.runModule,
+      sourceMapUrl: serializerOptions.sourceMapUrl,
+      inlineSourceMap: serializerOptions.inlineSourceMap,
     });
   }
 
   async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {
-    const {graph} = await this._bundler.buildGraph(options);
+    const {entryFile, transformOptions, onProgress} = splitBundleOptions(
+      options,
+    );
+
+    const {graph} = await this._bundler.buildGraph(
+      entryFile,
+      transformOptions,
+      {onProgress},
+    );
 
     return await getAssets(graph, {
       processModuleFilter: this._config.serializer.processModuleFilter,
       assetPlugins: this._config.transformer.assetPlugins,
-      platform: options.platform,
+      platform: transformOptions.platform,
       projectRoot: this._config.projectRoot,
     });
   }
@@ -216,17 +244,21 @@ class Server {
     +minify: boolean,
     +platform: string,
   }): Promise<Array<string>> {
-    options = {
+    const {entryFile, transformOptions, onProgress} = splitBundleOptions({
       ...Server.DEFAULT_BUNDLE_OPTIONS,
       ...options,
       bundleType: 'bundle',
-    };
+    });
 
-    const {prepend, graph} = await this._bundler.buildGraph(options);
+    const {prepend, graph} = await this._bundler.buildGraph(
+      entryFile,
+      transformOptions,
+      {onProgress},
+    );
 
     const platform =
-      options.platform ||
-      parsePlatformFilePath(options.entryFile, this._platforms).platform;
+      transformOptions.platform ||
+      parsePlatformFilePath(entryFile, this._platforms).platform;
 
     return await getAllFiles(prepend, graph, {
       platform,
@@ -379,7 +411,7 @@ class Server {
       res: ServerResponse,
     ) {
       const mres = MultipartResponse.wrap(req, res);
-      const {revisionId, options} = parseOptionsFromUrl(
+      const {revisionId, options: bundleOptions} = parseOptionsFromUrl(
         url.format({
           ...url.parse(req.url),
           protocol: 'http',
@@ -388,11 +420,17 @@ class Server {
         this._config.projectRoot,
         new Set(this._config.resolver.platforms),
       );
-      const graphId = IncrementalBundler.getGraphId(options);
+      const {
+        entryFile,
+        transformOptions,
+        serializerOptions,
+      } = splitBundleOptions(bundleOptions);
+      const graphId = getGraphId(entryFile, transformOptions);
       const buildID = this.getNewBuildID();
 
+      let onProgress = null;
       if (this._config.reporter) {
-        options.onProgress = (transformedFileCount, totalFileCount) => {
+        onProgress = (transformedFileCount, totalFileCount) => {
           mres.writeChunk(
             {'Content-Type': 'application/json'},
             JSON.stringify({done: transformedFileCount, total: totalFileCount}),
@@ -413,11 +451,11 @@ class Server {
       this._reporter.update({
         buildID,
         bundleDetails: {
-          entryFile: options.entryFile,
-          platform: options.platform,
-          dev: options.dev,
-          minify: options.minify,
-          bundleType: options.bundleType,
+          entryFile,
+          platform: transformOptions.platform,
+          dev: transformOptions.dev,
+          minify: transformOptions.minify,
+          bundleType: bundleOptions.bundleType,
         },
         type: 'bundle_build_started',
       });
@@ -427,7 +465,11 @@ class Server {
         mres,
         revisionId,
         buildID,
-        options,
+        bundleOptions,
+        entryFile,
+        transformOptions,
+        serializerOptions,
+        onProgress,
         graphId,
       };
       const logEntry = log(
@@ -440,7 +482,8 @@ class Server {
       } catch (error) {
         const formattedError = formatBundlingError(error);
 
-        mres.writeHead(error.status || 500, {
+        const status = error instanceof ResourceNotFoundError ? 404 : 500;
+        mres.writeHead(status, {
           'Content-Type': 'application/json; charset=UTF-8',
         });
         mres.end(JSON.stringify(formattedError));
@@ -458,7 +501,7 @@ class Server {
         this._reporter.update({
           buildID,
           type: 'bundle_build_failed',
-          bundleOptions: options,
+          bundleOptions,
         });
 
         return;
@@ -489,10 +532,10 @@ class Server {
       return {
         action_name: 'Requesting delta',
         bundle_url: context.req.url,
-        entry_point: context.options.entryFile,
+        entry_point: context.entryFile,
         bundler: 'delta',
         build_id: context.buildID,
-        bundle_options: context.options,
+        bundle_options: context.bundleOptions,
         bundle_hash: context.graphId,
       };
     },
@@ -501,13 +544,47 @@ class Server {
         outdated_modules: context.result.numModifiedFiles,
       };
     },
-    build: async ({revisionId, options}) => {
-      const {delta, revision} = await this._bundler.updateGraph(options, {
-        revisionId,
-      });
+    build: async ({
+      revisionId,
+      graphId,
+      entryFile,
+      transformOptions,
+      serializerOptions,
+      onProgress,
+    }) => {
+      // TODO(T34760593): We should eventually move to a model where this
+      // endpoint is placed at /delta/:revisionId, and requesting an unknown revisionId
+      // throws a 404.
+      // However, this would break existing delta clients, since they expect the
+      // endpoint to rebuild the graph, were it not found in cache.
+      let revPromise;
+      if (revisionId != null) {
+        revPromise = this._bundler.getRevision(revisionId);
+      }
+      // Even if we receive a revisionId, it might have expired.
+      if (revPromise == null) {
+        revPromise = this._bundler.getRevisionByGraphId(graphId);
+      }
+
+      let delta;
+      let revision;
+      if (revPromise != null) {
+        const prevRevision = await revPromise;
+
+        ({delta, revision} = await this._bundler.updateGraph(
+          prevRevision,
+          prevRevision.id !== revisionId,
+        ));
+      } else {
+        ({delta, revision} = await this._bundler.initializeGraph(
+          entryFile,
+          transformOptions,
+          {onProgress},
+        ));
+      }
 
       const bundle = deltaJSBundle(
-        options.entryFile,
+        entryFile,
         revision.prepend,
         delta,
         revision.id,
@@ -515,15 +592,15 @@ class Server {
         {
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
-          dev: options.dev,
+          dev: transformOptions.dev,
           getRunModuleStatement: this._config.serializer.getRunModuleStatement,
           projectRoot: this._config.projectRoot,
           runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-            path.relative(this._config.projectRoot, options.entryFile),
+            path.relative(this._config.projectRoot, entryFile),
           ),
-          runModule: options.runModule,
-          sourceMapUrl: options.sourceMapUrl,
-          inlineSourceMap: options.inlineSourceMap,
+          runModule: serializerOptions.runModule,
+          sourceMapUrl: serializerOptions.sourceMapUrl,
+          inlineSourceMap: serializerOptions.inlineSourceMap,
         },
       );
 
@@ -553,10 +630,10 @@ class Server {
       return {
         action_name: 'Requesting bundle',
         bundle_url: context.req.url,
-        entry_point: context.options.entryFile,
+        entry_point: context.entryFile,
         bundler: 'delta',
         build_id: context.buildID,
-        bundle_options: context.options,
+        bundle_options: context.bundleOptions,
         bundle_hash: context.graphId,
       };
     },
@@ -565,27 +642,38 @@ class Server {
         outdated_modules: context.result.numModifiedFiles,
       };
     },
-    build: async ({options}) => {
-      const {delta, revision} = await this._bundler.updateGraph(options, {
-        rebuild: true,
-      });
+    build: async ({
+      graphId,
+      embedDelta,
+      entryFile,
+      transformOptions,
+      serializerOptions,
+      onProgress,
+    }) => {
+      const revPromise = this._bundler.getRevisionByGraphId(graphId);
+
+      const {delta, revision} = await (revPromise != null
+        ? this._bundler.updateGraph(await revPromise, false)
+        : this._bundler.initializeGraph(entryFile, transformOptions, {
+            onProgress,
+          }));
 
       const bundle = plainJSBundle(
-        options.entryFile,
+        entryFile,
         revision.prepend,
         revision.graph,
         {
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
           getRunModuleStatement: this._config.serializer.getRunModuleStatement,
-          dev: options.dev,
+          dev: transformOptions.dev,
           projectRoot: this._config.projectRoot,
           runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-            path.relative(this._config.projectRoot, options.entryFile),
+            path.relative(this._config.projectRoot, entryFile),
           ),
-          runModule: options.runModule,
-          sourceMapUrl: options.sourceMapUrl,
-          inlineSourceMap: options.inlineSourceMap,
+          runModule: serializerOptions.runModule,
+          sourceMapUrl: serializerOptions.sourceMapUrl,
+          inlineSourceMap: serializerOptions.inlineSourceMap,
         },
       );
 
@@ -630,7 +718,7 @@ class Server {
       return {
         action_name: 'Requesting sourcemap',
         bundle_url: context.req.url,
-        entry_point: context.options.entryFile,
+        entry_point: context.entryFile,
         bundler: 'delta',
       };
     },
@@ -639,13 +727,29 @@ class Server {
         bundler: 'delta',
       };
     },
-    build: async ({options}) => {
-      const {revision} = await this._bundler.updateGraph(options, {
-        rebuild: false,
-      });
+    build: async ({
+      entryFile,
+      transformOptions,
+      serializerOptions,
+      onProgress,
+      graphId,
+    }) => {
+      let revision;
+      const revPromise = this._bundler.getRevisionByGraphId(graphId);
+      if (revPromise == null) {
+        ({revision} = await this._bundler.initializeGraph(
+          entryFile,
+          transformOptions,
+          {onProgress},
+        ));
+      } else {
+        revision = await revPromise;
+      }
 
-      return sourceMapString(revision.prepend, revision.graph, {
-        excludeSource: options.excludeSource,
+      const {prepend, graph} = revision;
+
+      return sourceMapString(prepend, graph, {
+        excludeSource: serializerOptions.excludeSource,
         processModuleFilter: this._config.serializer.processModuleFilter,
       });
     },
@@ -660,7 +764,7 @@ class Server {
       return {
         action_name: 'Requesting assets',
         bundle_url: context.req.url,
-        entry_point: context.options.entryFile,
+        entry_point: context.entryFile,
         bundler: 'delta',
       };
     },
@@ -669,8 +773,19 @@ class Server {
         bundler: 'delta',
       };
     },
-    build: async ({options}) => {
-      return await this.getAssets(options);
+    build: async ({entryFile, transformOptions, onProgress}) => {
+      const {graph} = await this._bundler.buildGraph(
+        entryFile,
+        transformOptions,
+        {onProgress},
+      );
+
+      return await getAssets(graph, {
+        processModuleFilter: this._config.serializer.processModuleFilter,
+        assetPlugins: this._config.transformer.assetPlugins,
+        platform: transformOptions.platform,
+        projectRoot: this._config.projectRoot,
+      });
     },
     finish({mres, result}) {
       mres.setHeader('Content-Type', 'application/json');
@@ -742,12 +857,30 @@ class Server {
       new Set(this._config.resolver.platforms),
     );
 
-    const {revision} = await this._bundler.updateGraph(options, {
-      rebuild: false,
-    });
+    const {
+      entryFile,
+      transformOptions,
+      serializerOptions,
+      onProgress,
+    } = splitBundleOptions(options);
 
-    return sourceMapObject(revision.prepend, revision.graph, {
-      excludeSource: options.excludeSource,
+    const graphId = getGraphId(entryFile, transformOptions);
+    let revision;
+    const revPromise = this._bundler.getRevisionByGraphId(graphId);
+    if (revPromise == null) {
+      ({revision} = await this._bundler.initializeGraph(
+        entryFile,
+        transformOptions,
+        {onProgress},
+      ));
+    } else {
+      revision = await revPromise;
+    }
+
+    const {prepend, graph} = revision;
+
+    return sourceMapObject(prepend, graph, {
+      excludeSource: serializerOptions.excludeSource,
       processModuleFilter: this._config.serializer.processModuleFilter,
     });
   }
@@ -765,7 +898,6 @@ class Server {
     dev: true,
     hot: false,
     minify: false,
-    type: 'module',
   };
 
   static DEFAULT_BUNDLE_OPTIONS = {

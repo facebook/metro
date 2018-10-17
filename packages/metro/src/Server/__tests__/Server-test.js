@@ -10,7 +10,7 @@
 
 'use strict';
 
-const ResourceNotFoundError = require('../../DeltaBundler/ResourceNotFoundError');
+const ResourceNotFoundError = require('../../IncrementalBundler/ResourceNotFoundError');
 
 const {getDefaultValues} = require('metro-config/src/defaults');
 

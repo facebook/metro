@@ -10,7 +10,7 @@
 
 'use strict';
 
-const ResourceNotFoundError = require('../DeltaBundler/ResourceNotFoundError');
+const ResourceNotFoundError = require('../IncrementalBundler/ResourceNotFoundError');
 
 const serializeError = require('serialize-error');
 
@@ -20,7 +20,6 @@ const {
 const {AmbiguousModuleResolutionError} = require('metro-core');
 
 export type CustomError = Error & {|
-  status?: number,
   type?: string,
   filename?: string,
   lineNumber?: number,

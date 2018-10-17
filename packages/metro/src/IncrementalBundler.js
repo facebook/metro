@@ -12,72 +12,54 @@
 
 const Bundler = require('./Bundler');
 const DeltaBundler = require('./DeltaBundler');
-const ResourceNotFoundError = require('./DeltaBundler/ResourceNotFoundError');
+const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
 
 const crypto = require('crypto');
 const fs = require('fs');
+const getGraphId = require('./lib/getGraphId');
 const getPrependedScripts = require('./lib/getPrependedScripts');
 const path = require('path');
 const transformHelpers = require('./lib/transformHelpers');
 
 import type {Options as DeltaBundlerOptions} from './DeltaBundler/types.flow';
 import type {DeltaResult, Module, Graph} from './DeltaBundler';
+import type {GraphId} from './lib/getGraphId';
 import type {TransformInputOptions} from './lib/transformHelpers';
-import type {BundleOptions} from './shared/types.flow';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
-export type GraphId = string;
-export type RevisionId = string;
+export opaque type RevisionId: string = string;
 
 export type OutputGraph = Graph<>;
 
+type OtherOptions = {|
+  +onProgress: $PropertyType<DeltaBundlerOptions<>, 'onProgress'>,
+|};
+
 export type GraphRevision = {|
-  // Identifies the last computed rev.
+  // Identifies the last computed revision.
   +id: RevisionId,
   +date: Date,
+  +graphId: GraphId,
   +graph: OutputGraph,
   +prepend: $ReadOnlyArray<Module<>>,
 |};
+
+function createRevisionId(): RevisionId {
+  return crypto.randomBytes(8).toString('hex');
+}
+
+function revisionIdFromString(str: string): RevisionId {
+  return str;
+}
 
 class IncrementalBundler {
   _config: ConfigT;
   _bundler: Bundler;
   _deltaBundler: DeltaBundler<>;
-  _revisions: Map<GraphId, Promise<GraphRevision>> = new Map();
+  _revisionsById: Map<RevisionId, Promise<GraphRevision>> = new Map();
+  _revisionsByGraphId: Map<GraphId, Promise<GraphRevision>> = new Map();
 
-  static getGraphId(options: BundleOptions): GraphId {
-    // This setup ensures that if we add a field to BuildOptions, we will need
-    // to update this function to make sure that the GraphId is still valid.
-    // The double diff is making an intersection operation.
-    const relevantParams: $Diff<
-      BundleOptions,
-      $Diff<
-        BundleOptions,
-        {
-          entryFile: $PropertyType<BundleOptions, 'entryFile'>,
-          customTransformOptions: $PropertyType<
-            BundleOptions,
-            'customTransformOptions',
-          >,
-          dev: $PropertyType<BundleOptions, 'dev'>,
-          hot: $PropertyType<BundleOptions, 'hot'>,
-          minify: $PropertyType<BundleOptions, 'minify'>,
-          platform: $PropertyType<BundleOptions, 'platform'>,
-        },
-      >,
-    > = {
-      entryFile: options.entryFile,
-      customTransformOptions: options.customTransformOptions,
-      dev: options.dev,
-      hot: options.hot,
-      minify: options.minify,
-      // Platform is nullable, but undefined and null aren't represented the
-      // same way in JSON, so we need to normalize it.
-      platform: options.platform || null,
-    };
-
-    return JSON.stringify(relevantParams);
-  }
+  static revisionIdFromString = revisionIdFromString;
 
   constructor(config: ConfigT) {
     this._config = config;
@@ -98,16 +80,18 @@ class IncrementalBundler {
     return this._deltaBundler;
   }
 
-  getRevisions(): Map<GraphId, Promise<GraphRevision>> {
-    return this._revisions;
+  getRevision(revisionId: RevisionId): ?Promise<GraphRevision> {
+    return this._revisionsById.get(revisionId);
+  }
+
+  getRevisionByGraphId(graphId: GraphId): ?Promise<GraphRevision> {
+    return this._revisionsByGraphId.get(graphId);
   }
 
   async buildGraphForEntries(
     entryFiles: $ReadOnlyArray<string>,
-    options: TransformInputOptions,
-    otherOptions?: {
-      onProgress: $PropertyType<DeltaBundlerOptions<>, 'onProgress'>,
-    } = {
+    transformOptions: TransformInputOptions,
+    otherOptions?: OtherOptions = {
       onProgress: null,
     },
   ): Promise<OutputGraph> {
@@ -135,14 +119,14 @@ class IncrementalBundler {
     const graph = await this._deltaBundler.buildGraph(absoluteEntryFiles, {
       resolve: await transformHelpers.getResolveDependencyFn(
         this._bundler,
-        options.platform,
+        transformOptions.platform,
       ),
       transform: await transformHelpers.getTransformFn(
         absoluteEntryFiles,
         this._bundler,
         this._deltaBundler,
         this._config,
-        options,
+        transformOptions,
       ),
       onProgress: otherOptions.onProgress,
     });
@@ -156,101 +140,103 @@ class IncrementalBundler {
     return graph;
   }
 
-  async buildGraph(options: BundleOptions): Promise<GraphRevision> {
-    const transformOptions = {
-      customTransformOptions: options.customTransformOptions,
-      dev: options.dev,
-      hot: options.hot,
-      minify: options.minify,
-      platform: options.platform,
-    };
-
+  async buildGraph(
+    entryFile: string,
+    transformOptions: TransformInputOptions,
+    otherOptions?: OtherOptions = {
+      onProgress: null,
+    },
+  ): Promise<{|+prepend: $ReadOnlyArray<Module<>>, +graph: OutputGraph|}> {
     const graph = await this.buildGraphForEntries(
-      [options.entryFile],
-      {
-        ...transformOptions,
-        type: 'module',
-      },
-      {
-        onProgress: options.onProgress,
-      },
+      [entryFile],
+      transformOptions,
+      otherOptions,
     );
+
+    const transformOptionsWithoutType = {
+      customTransformOptions: transformOptions.customTransformOptions,
+      dev: transformOptions.dev,
+      experimentalImportSupport: transformOptions.experimentalImportSupport,
+      hot: transformOptions.hot,
+      minify: transformOptions.minify,
+      platform: transformOptions.platform,
+    };
 
     const prepend = await getPrependedScripts(
       this._config,
-      transformOptions,
+      transformOptionsWithoutType,
       this._bundler,
       this._deltaBundler,
     );
 
     return {
-      id: crypto.randomBytes(8).toString('hex'),
-      date: new Date(),
       prepend,
       graph,
     };
   }
 
-  async updateGraph(
-    options: BundleOptions,
-    // This type union might seem strange, but it's the only way I've found to
-    // make flow refine the type of revOptions correctly when options.rebuild
-    // is undefined.
-    revOptions:
-      | {|revisionId: ?string|}
-      | {|rebuild: true|}
-      | {|rebuild: false|},
+  // TODO T34760750 (alexkirsz) Eventually, I'd like to get to a point where
+  // this class exposes only initializeGraph and updateGraph.
+  async initializeGraph(
+    entryFile: string,
+    transformOptions: TransformInputOptions,
+    otherOptions?: OtherOptions = {
+      onProgress: null,
+    },
   ): Promise<{revision: GraphRevision, delta: DeltaResult<>}> {
-    const graphId = IncrementalBundler.getGraphId(options);
-    let revPromise = this._revisions.get(graphId);
-
-    if (revPromise == null) {
-      revPromise = this.buildGraph(options);
-
-      this._revisions.set(graphId, revPromise);
-      const revision = await revPromise;
-
-      const delta = {
-        modified: revision.graph.dependencies,
-        deleted: new Set(),
-        reset: true,
-      };
-
+    const graphId = getGraphId(entryFile, transformOptions);
+    const revisionId = createRevisionId();
+    const revisionPromise = (async () => {
+      const {graph, prepend} = await this.buildGraph(
+        entryFile,
+        transformOptions,
+        otherOptions,
+      );
       return {
-        revision,
-        delta,
+        id: revisionId,
+        date: new Date(),
+        graphId,
+        graph,
+        prepend,
       };
-    }
+    })();
 
-    let revision = await revPromise;
+    this._revisionsById.set(revisionId, revisionPromise);
+    this._revisionsByGraphId.set(graphId, revisionPromise);
+    const revision = await revisionPromise;
 
-    let delta;
-    if (revOptions.rebuild === true) {
-      delta = await this._deltaBundler.getDelta(revision.graph, {
-        reset: false,
-      });
-    } else if (revOptions.rebuild === false) {
-      delta = {
-        modified: new Map(),
-        deleted: new Set(),
-        reset: false,
-      };
-    } else {
-      delta = await this._deltaBundler.getDelta(revision.graph, {
-        reset: revision.id !== revOptions.revisionId,
-      });
-    }
+    const delta = {
+      modified: revision.graph.dependencies,
+      deleted: new Set(),
+      reset: true,
+    };
+
+    return {
+      revision,
+      delta,
+    };
+  }
+
+  async updateGraph(
+    revision: GraphRevision,
+    reset: boolean,
+  ): Promise<{revision: GraphRevision, delta: DeltaResult<>}> {
+    const delta = await this._deltaBundler.getDelta(revision.graph, {reset});
 
     this._config.serializer.experimentalSerializerHook(revision.graph, delta);
 
     if (delta.modified.size > 0) {
+      this._revisionsById.delete(revision.id);
       revision = {
         ...revision,
-        // Generate a new rev id, to be used to verify the next delta request.
+        // Generate a new revision id, to be used to verify the next incremental
+        // request.
         id: crypto.randomBytes(8).toString('hex'),
         date: new Date(),
       };
-      this._revisions.set(graphId, Promise.resolve(revision));
+      const revisionPromise = Promise.resolve(revision);
+      this._revisionsById.set(revision.id, revisionPromise);
+      this._revisionsByGraphId.set(revision.graphId, revisionPromise);
     }
 
     return {revision, delta};

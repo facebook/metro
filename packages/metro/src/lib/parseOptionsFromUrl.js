@@ -16,6 +16,9 @@ const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath')
 const path = require('path');
 const url = require('url');
 
+const {revisionIdFromString} = require('../IncrementalBundler');
+
+import type {RevisionId} from '../IncrementalBundler';
 import type {BundleOptions} from '../shared/types.flow';
 
 function getBoolOptionFromQuery(
@@ -35,7 +38,7 @@ function parseOptionsFromUrl(
   projectRoot: string,
   platforms: Set<string>,
 ): {|
-  revisionId: ?string,
+  revisionId: ?RevisionId,
   options: BundleOptions,
 |} {
   // `true` to parse the query param as an object.
@@ -98,7 +101,7 @@ function parseOptionsFromUrl(
   const customTransformOptions = parseCustomTransformOptions(urlObj);
 
   return {
-    revisionId,
+    revisionId: revisionId != null ? revisionIdFromString(revisionId) : null,
     options: {
       customTransformOptions,
       dev,

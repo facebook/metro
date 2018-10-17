@@ -21,8 +21,8 @@ const {parse} = require('url');
 
 import type {MetroHistory} from './metroHistory.js';
 import type {Graph} from 'metro/src/DeltaBundler';
-import type {GraphId} from 'metro/src/IncrementalBundler';
 import type Server from 'metro/src/Server';
+import type {GraphId} from 'metro/src/lib/getGraphId';
 
 const router = Router();
 const terminal = new Terminal(process.stdout);
@@ -114,10 +114,7 @@ async function getGraph(graphId: GraphId): Promise<Graph<>> {
   const status = "Getting last bundle's graph";
 
   terminal.status(`${status}... fetching from Metro`);
-  const graph = metroServer
-    .getBundler()
-    .getRevisions()
-    .get(graphId);
+  const graph = metroServer.getBundler().getRevisionByGraphId(graphId);
 
   if (graph == null) {
     terminal.status(`${status}, failed.`);
@@ -128,7 +125,7 @@ async function getGraph(graphId: GraphId): Promise<Graph<>> {
 
   terminal.status(`${status}, done.`);
 
-  return graph.then(graphInfo => graphInfo.graph);
+  return graph.then(graphRevision => graphRevision.graph);
 }
 
 module.exports = {initializeMiddlewareRoutes};

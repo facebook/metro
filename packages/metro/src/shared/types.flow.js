@@ -9,10 +9,12 @@
  */
 'use strict';
 
+import type {Options as DeltaBundlerOptions} from '../DeltaBundler/types.flow';
 import type {
   CustomTransformOptions,
   MinifierOptions,
 } from '../JSTransformer/worker';
+import type {TransformInputOptions} from '../lib/transformHelpers';
 import type {BabelSourceMap} from '@babel/core';
 import type {
   MetroSourceMap,
@@ -28,6 +30,7 @@ type BundleType =
   | 'hmr'
   | 'todo'
   | 'graph';
+
 type MetroSourceMapOrMappings =
   | MetroSourceMap
   | Array<MetroSourceMapSegmentTuple>;
@@ -47,6 +50,21 @@ export type BundleOptions = {
   sourceMapUrl: ?string,
   createModuleIdFactory?: () => (path: string) => number,
 };
+
+type SerializerOptions = {|
+  +sourceMapUrl: ?string,
+  +runModule: boolean,
+  +excludeSource: boolean,
+  +inlineSourceMap: boolean,
+|};
+
+// Stricter representation of BundleOptions.
+export type SplitBundleOptions = {|
+  +entryFile: string,
+  +transformOptions: TransformInputOptions,
+  +serializerOptions: SerializerOptions,
+  +onProgress: $PropertyType<DeltaBundlerOptions<>, 'onProgress'>,
+|};
 
 export type ModuleGroups = {|
   groups: Map<number, Set<number>>,

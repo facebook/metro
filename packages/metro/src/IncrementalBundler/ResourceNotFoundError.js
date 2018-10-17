@@ -12,12 +12,10 @@
 
 class ResourceNotFoundError extends Error {
   resourcePath: string;
-  status: number;
 
   constructor(resourcePath: string) {
     super(`The resource \`${resourcePath}\` was not found.`);
     this.resourcePath = resourcePath;
-    this.status = 404;
   }
 }
 
