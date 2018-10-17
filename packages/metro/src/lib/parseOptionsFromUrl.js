@@ -97,12 +97,14 @@ function parseOptionsFromUrl(
     false,
   );
   const runModule = getBoolOptionFromQuery(urlQuery, 'runModule', true);
+  const embedDelta = getBoolOptionFromQuery(urlQuery, 'embedDelta', false);
 
   const customTransformOptions = parseCustomTransformOptions(urlObj);
 
   return {
     revisionId: revisionId != null ? revisionIdFromString(revisionId) : null,
     options: {
+      embedDelta,
       customTransformOptions,
       dev,
       hot: true,

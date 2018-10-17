@@ -48,6 +48,7 @@ export type BundleOptions = {
   +platform: ?string,
   +runModule: boolean,
   sourceMapUrl: ?string,
+  +embedDelta: boolean,
   createModuleIdFactory?: () => (path: string) => number,
 };
 
@@ -56,6 +57,7 @@ type SerializerOptions = {|
   +runModule: boolean,
   +excludeSource: boolean,
   +inlineSourceMap: boolean,
+  +embedDelta: boolean,
 |};
 
 // Stricter representation of BundleOptions.

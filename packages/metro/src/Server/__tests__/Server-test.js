@@ -254,6 +254,25 @@ describe('processRequest', () => {
     );
   });
 
+  it('returns JS bundle with embedded delta bundle', async () => {
+    const response = await makeRequest(
+      requestHandler,
+      'mybundle.bundle?embedDelta=true',
+      null,
+    );
+
+    expect(response.body).toEqual(
+      [
+        'function () {require();}',
+        '__d(function() {entry();},0,[1],"mybundle.js");',
+        '__d(function() {foo();},1,[],"foo.js");',
+        'require(0);',
+        '//# sourceMappingURL=http://localhost:8081/mybundle.map?embedDelta=true',
+        '//# offsetTable={"pre":[[-1,0,24]],"delta":[[0,25,47],[1,73,39]],"post":[[2,113,11],[3,125,71]],"id":"XXXXX-0"}',
+      ].join('\n'),
+    );
+  });
+
   it('returns Last-Modified header on request of *.bundle', () => {
     return makeRequest(requestHandler, 'mybundle.bundle?runModule=true').then(
       response => {

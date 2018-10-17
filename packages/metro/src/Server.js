@@ -177,6 +177,7 @@ class Server {
         runModule: serializerOptions.runModule,
         sourceMapUrl: serializerOptions.sourceMapUrl,
         inlineSourceMap: serializerOptions.inlineSourceMap,
+        embedDelta: false,
       }),
       map: sourceMapString(prepend, graph, {
         excludeSource: serializerOptions.excludeSource,
@@ -658,23 +659,32 @@ class Server {
             onProgress,
           }));
 
+      const options = {
+        processModuleFilter: this._config.serializer.processModuleFilter,
+        createModuleId: this._createModuleId,
+        getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+        dev: transformOptions.dev,
+        projectRoot: this._config.projectRoot,
+        runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
+          path.relative(this._config.projectRoot, entryFile),
+        ),
+        runModule: serializerOptions.runModule,
+        sourceMapUrl: serializerOptions.sourceMapUrl,
+        inlineSourceMap: serializerOptions.inlineSourceMap,
+      };
+
       const bundle = plainJSBundle(
         entryFile,
         revision.prepend,
         revision.graph,
-        {
-          processModuleFilter: this._config.serializer.processModuleFilter,
-          createModuleId: this._createModuleId,
-          getRunModuleStatement: this._config.serializer.getRunModuleStatement,
-          dev: transformOptions.dev,
-          projectRoot: this._config.projectRoot,
-          runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-            path.relative(this._config.projectRoot, entryFile),
-          ),
-          runModule: serializerOptions.runModule,
-          sourceMapUrl: serializerOptions.sourceMapUrl,
-          inlineSourceMap: serializerOptions.inlineSourceMap,
-        },
+        // Putting the ternary inside of the Object.assign call would not yield
+        // the correct union type.
+        serializerOptions.embedDelta
+          ? Object.assign({}, options, {
+              embedDelta: true,
+              revisionId: revision.id,
+            })
+          : Object.assign({}, options, {embedDelta: false}),
       );
 
       return {
@@ -907,6 +917,7 @@ class Server {
     onProgress: null,
     runModule: true,
     sourceMapUrl: null,
+    embedDelta: false,
   };
 }
 
