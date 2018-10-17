@@ -79,7 +79,7 @@ class DeltaBundler<T = MixedOutput> {
     return await deltaCalculator.getDelta({reset});
   }
 
-  listen(graph: Graph<T>, callback: () => mixed) {
+  listen(graph: Graph<T>, callback: () => mixed): () => void {
     const deltaCalculator = this._deltaCalculators.get(graph);
 
     if (!deltaCalculator) {
@@ -87,6 +87,10 @@ class DeltaBundler<T = MixedOutput> {
     }
 
     deltaCalculator.on('change', callback);
+
+    return () => {
+      deltaCalculator.removeListener('change', callback);
+    };
   }
 
   endGraph(graph: Graph<T>) {
