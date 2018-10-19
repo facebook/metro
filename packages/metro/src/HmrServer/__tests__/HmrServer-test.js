@@ -83,11 +83,10 @@ describe('HmrServer', () => {
         type: 'module',
       }),
     );
+  });
 
-    await hmrServer.onClientConnect(
-      '/hot?bundleEntry=EntryPoint.js&platform=ios&deltaBundleId=test-id',
-      jest.fn(),
-    );
+  it('should retrieve the correct graph from the incremental bundler (revisionId)', async () => {
+    await hmrServer.onClientConnect('/hot?revisionId=test-id', jest.fn());
 
     expect(getRevisionMock).toBeCalledWith('test-id');
   });
@@ -125,7 +124,7 @@ describe('HmrServer', () => {
     getRevisionMock.mockReturnValueOnce(undefined);
 
     const client = await hmrServer.onClientConnect(
-      '/hot?bundleEntry=EntryPoint.js&revisionId=test-id',
+      '/hot?revisionId=test-id',
       sendMessage,
     );
 

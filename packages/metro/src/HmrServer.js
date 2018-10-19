@@ -69,26 +69,27 @@ class HmrServer<TClient: Client> {
     clientUrl: string,
     sendFn: (data: string) => mixed,
   ): Promise<?Client> {
-    const urlObj = nullthrows(url.parse(clientUrl, true));
-    const query = nullthrows(urlObj.query);
-    urlObj.pathname = query.bundleEntry.replace(/\.js$/, '.bundle');
-    delete query.bundleEntry;
-
-    const {revisionId, options} = parseOptionsFromUrl(
-      url.format(urlObj),
-      this._config.projectRoot,
-      new Set(this._config.resolver.platforms),
-    );
-
-    const {entryFile, transformOptions} = splitBundleOptions(options);
-
     const send = (message: HmrMessage) => {
       sendFn(JSON.stringify(message));
     };
 
+    const urlObj = nullthrows(url.parse(clientUrl, true));
+    const query = nullthrows(urlObj.query);
+
     let revPromise;
-    if (revisionId == null) {
+    if (query.bundleEntry != null) {
       // TODO(T34760695): Deprecate
+      urlObj.pathname = query.bundleEntry.replace(/\.js$/, '.bundle');
+      delete query.bundleEntry;
+
+      const {options} = parseOptionsFromUrl(
+        url.format(urlObj),
+        this._config.projectRoot,
+        new Set(this._config.resolver.platforms),
+      );
+
+      const {entryFile, transformOptions} = splitBundleOptions(options);
+
       const graphId = getGraphId(entryFile, transformOptions);
       revPromise = this._bundler.getRevisionByGraphId(graphId);
 
@@ -100,6 +101,7 @@ class HmrServer<TClient: Client> {
         return null;
       }
     } else {
+      const revisionId = query.revisionId;
       revPromise = this._bundler.getRevision(revisionId);
 
       if (!revPromise) {
