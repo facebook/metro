@@ -11,30 +11,30 @@
 'use strict';
 
 export type FormattedError = {|
-  type: string,
-  message: string,
-  errors: Array<{description: string}>,
+  +type: string,
+  +message: string,
+  +errors: Array<{description: string}>,
 |};
 
 export type HmrUpdateMessage = {|
-  type: 'update',
-  body: {
-    id: string,
-    delta: DeltaModuleMap,
-  },
+  +type: 'update',
+  +body: {|
+    +id: string,
+    +delta: DeltaModuleMap,
+  |},
 |};
 
 export type HmrErrorMessage = {|
-  type: 'error',
-  body: FormattedError,
+  +type: 'error',
+  +body: FormattedError,
 |};
 
 export type HmrMessage =
   | {|
-      type: 'update-start',
+      +type: 'update-start',
     |}
   | {|
-      type: 'update-done',
+      +type: 'update-done',
     |}
   | HmrUpdateMessage
   | HmrErrorMessage;
