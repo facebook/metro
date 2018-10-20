@@ -14,7 +14,9 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-import type {
+const {stableHash} = require('metro-cache');
+
+import type Transformer, {
   JsTransformOptions,
   JsTransformerConfig,
 } from '../JSTransformer/worker';
@@ -27,7 +29,6 @@ export type {
 
 export type Worker = {|
   +transform: typeof transform,
-  +setup: typeof setup,
 |};
 
 export type TransformerFn = (
@@ -48,30 +49,40 @@ type Data = $ReadOnly<{|
   transformFileEndLogEntry: LogEntry,
 |}>;
 
-let transformer;
-let projectRoot;
+const transformers: {[string]: Transformer} = {};
 
-function setup(
-  projectRootArg: string,
+function getTransformer(
+  projectRoot: string,
   {transformerPath, transformerConfig}: TransformerConfig,
-) {
+): Transformer {
+  const transformerKey = stableHash([
+    projectRoot,
+    transformerPath,
+    transformerConfig,
+  ]).toString('hex');
+
+  if (transformers[transformerKey]) {
+    return transformers[transformerKey];
+  }
+
   // eslint-disable-next-line lint/flow-no-fixme
   // $FlowFixMe Transforming fixed types to generic types during refactor.
   const Transformer = require(transformerPath);
+  transformers[transformerKey] = new Transformer(
+    projectRoot,
+    transformerConfig,
+  );
 
-  projectRoot = projectRootArg;
-  transformer = new Transformer(projectRoot, transformerConfig);
+  return transformers[transformerKey];
 }
 
 async function transform(
   filename: string,
   transformOptions: JsTransformOptions,
-  projectRootArg: string,
+  projectRoot: string,
   transformerConfig: TransformerConfig,
 ): Promise<Data> {
-  if (!projectRoot) {
-    setup(projectRootArg, transformerConfig);
-  }
+  const transformer = getTransformer(projectRoot, transformerConfig);
 
   const transformFileStartLogEntry = {
     action_name: 'Transforming file',
@@ -116,6 +127,5 @@ function getEndLogEntry(startLogEntry: LogEntry, filename: string): LogEntry {
 }
 
 ((module.exports = {
-  setup,
   transform,
 }): Worker);

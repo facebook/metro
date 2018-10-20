@@ -79,6 +79,41 @@ describe('Worker Farm', function() {
     );
   });
 
+  it('Passes the correct config to separate farm instances', async () => {
+    const transformerConfig = {
+      transformerPath: config.transformerPath,
+      transformerConfig: config.transformer,
+    };
+
+    const farm = new WorkerFarm(
+      {...config, projectRoot: '/foo'},
+      transformerConfig,
+    );
+    await farm.transform(fileName, {});
+
+    expect(api.transform).toBeCalledWith(
+      fileName,
+      {},
+      '/foo',
+      transformerConfig,
+    );
+
+    farm.kill();
+
+    const anotherFarm = new WorkerFarm(
+      {...config, projectRoot: '/bar'},
+      transformerConfig,
+    );
+    await anotherFarm.transform(fileName, {});
+
+    expect(api.transform).toBeCalledWith(
+      fileName,
+      {},
+      '/bar',
+      transformerConfig,
+    );
+  });
+
   it('should add file info to parse errors', () => {
     const workerFarm = new WorkerFarm(config, {
       transformerPath: config.transformerPath,
