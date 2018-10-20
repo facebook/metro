@@ -84,7 +84,7 @@ class WorkerFarm {
 
       return {
         result: data.result,
-        sha1: Buffer.from(data.sha1, 'hex'),
+        sha1: data.sha1,
       };
     } catch (err) {
       if (err.loc) {
