@@ -14,7 +14,7 @@ const DependencyGraph = require('./node-haste/DependencyGraph');
 const Transformer = require('./DeltaBundler/Transformer');
 
 import type {TransformOptions} from './DeltaBundler/Worker';
-import type {TransformResult} from './DeltaBundler';
+import type {TransformResultWithSource} from './DeltaBundler';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 class Bundler {
@@ -46,7 +46,7 @@ class Bundler {
   async transformFile(
     filePath: string,
     transformOptions: TransformOptions,
-  ): Promise<TransformResult<>> {
+  ): Promise<TransformResultWithSource<>> {
     // We need to be sure that the DependencyGraph has been initialized.
     // TODO: Remove this ugly hack!
     await this._depGraphPromise;

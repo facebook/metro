@@ -19,7 +19,7 @@ const path = require('path');
 
 const {Cache, stableHash} = require('metro-cache');
 
-import type {TransformResult} from '../DeltaBundler';
+import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
 import type {TransformOptions, TransformerConfig} from './Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
@@ -67,7 +67,7 @@ class Transformer {
   async transformFile(
     filePath: string,
     transformerOptions: TransformOptions,
-  ): Promise<TransformResult<>> {
+  ): Promise<TransformResultWithSource<>> {
     const cache = this._cache;
 
     const {

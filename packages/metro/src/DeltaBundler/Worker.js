@@ -18,40 +18,35 @@ import type {
   JsTransformOptions,
   JsTransformerConfig,
 } from '../JSTransformer/worker';
-import type {MixedOutput, TransformResultDependency} from './types.flow';
+import type {TransformResult} from './types.flow';
 import type {LogEntry} from 'metro-core/src/Logger';
 
 export type {
   JsTransformOptions as TransformOptions,
 } from '../JSTransformer/worker';
 
-export type Worker = {
-  transform: typeof transform,
-  setup: typeof setup,
-};
+export type Worker = {|
+  +transform: typeof transform,
+  +setup: typeof setup,
+|};
 
-export type TransformerFn<T: MixedOutput> = (
+export type TransformerFn = (
   string,
   Buffer,
   JsTransformOptions,
-) => Promise<Result<T>>;
+) => Promise<TransformResult<>>;
 
 export type TransformerConfig = {
   transformerPath: string,
   transformerConfig: JsTransformerConfig,
 };
 
-type Result<T: MixedOutput> = {|
-  output: $ReadOnlyArray<T>,
-  dependencies: $ReadOnlyArray<TransformResultDependency>,
-|};
-
-type Data<T: MixedOutput> = {
-  result: Result<T>,
+type Data = $ReadOnly<{|
+  result: TransformResult<>,
   sha1: string,
   transformFileStartLogEntry: LogEntry,
   transformFileEndLogEntry: LogEntry,
-};
+|}>;
 
 let transformer;
 let projectRoot;
@@ -68,12 +63,12 @@ function setup(
   transformer = new Transformer(projectRoot, transformerConfig);
 }
 
-async function transform<T: MixedOutput>(
+async function transform(
   filename: string,
   transformOptions: JsTransformOptions,
   projectRootArg: string,
   transformerConfig: TransformerConfig,
-): Promise<Data<T>> {
+): Promise<Data> {
   if (!projectRoot) {
     setup(projectRootArg, transformerConfig);
   }
@@ -120,7 +115,7 @@ function getEndLogEntry(startLogEntry: LogEntry, filename: string): LogEntry {
   };
 }
 
-module.exports = {
+((module.exports = {
   setup,
   transform,
-};
+}): Worker);

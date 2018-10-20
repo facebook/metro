@@ -15,45 +15,53 @@ const chalk = require('chalk');
 const {Logger} = require('metro-core');
 const JestWorker = require('jest-worker').default;
 
+import type {Readable} from 'stream';
 import type {TransformResult} from '../DeltaBundler';
 import type {TransformOptions, TransformerConfig, Worker} from './Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
-type WorkerInterface = JestWorker & Worker;
+type WorkerInterface = {|
+  getStdout(): Readable,
+  getStderr(): Readable,
+  end(): void,
+  ...Worker,
+|};
 
-type TransformerResult = {
+type TransformerResult = $ReadOnly<{|
   result: TransformResult<>,
   sha1: string,
-};
+|}>;
 
 class WorkerFarm {
   _config: ConfigT;
   _transformerConfig: TransformerConfig;
-  _worker: WorkerInterface;
+  _worker: WorkerInterface | Worker;
 
   constructor(config: ConfigT, transformerConfig: TransformerConfig) {
     this._config = config;
     this._transformerConfig = transformerConfig;
 
     if (this._config.maxWorkers > 1) {
-      this._worker = this._makeFarm(
+      const worker = this._makeFarm(
         this._config.transformer.workerPath,
         ['transform'],
         this._config.maxWorkers,
       );
 
-      this._worker.getStdout().on('data', chunk => {
+      worker.getStdout().on('data', chunk => {
         this._config.reporter.update({
           type: 'worker_stdout_chunk',
           chunk: chunk.toString('utf8'),
         });
       });
-      this._worker.getStderr().on('data', chunk => {
+      worker.getStderr().on('data', chunk => {
         this._config.reporter.update({
           type: 'worker_stderr_chunk',
           chunk: chunk.toString('utf8'),
         });
       });
+
+      this._worker = worker;
     } else {
       // eslint-disable-next-line lint/flow-no-fixme
       // $FlowFixMe: Flow doesn't support dynamic requires

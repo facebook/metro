@@ -53,14 +53,18 @@ export type Graph<T = MixedOutput> = {|
   +entryPoints: $ReadOnlyArray<string>,
 |};
 
-export type TransformResult<T = MixedOutput> = {|
-  +dependencies: $ReadOnlyArray<TransformResultDependency>,
-  +output: $ReadOnlyArray<T>,
-  +getSource: () => Buffer,
-|};
+export type TransformResult<T = MixedOutput> = $ReadOnly<{|
+  dependencies: $ReadOnlyArray<TransformResultDependency>,
+  output: $ReadOnlyArray<T>,
+|}>;
+
+export type TransformResultWithSource<T = MixedOutput> = $ReadOnly<{|
+  ...TransformResult<T>,
+  getSource: () => Buffer,
+|}>;
 
 export type TransformFn<T = MixedOutput> = string => Promise<
-  TransformResult<T>,
+  TransformResultWithSource<T>,
 >;
 
 export type Options<T = MixedOutput> = {|

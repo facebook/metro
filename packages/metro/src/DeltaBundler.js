@@ -29,6 +29,7 @@ export type {
   TransformFn,
   TransformResult,
   TransformResultDependency,
+  TransformResultWithSource,
 } from './DeltaBundler/types.flow';
 
 /**

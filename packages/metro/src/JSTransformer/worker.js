@@ -40,10 +40,6 @@ import type {Ast, BabelSourceMap} from '@babel/core';
 import type {Plugins as BabelPlugins} from 'babel-core';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
 
-type TransformResults = {
-  ast: Ast,
-};
-
 type BabelTransformerOptions = $ReadOnly<{
   customTransformOptions?: CustomTransformOptions,
   dev: boolean,
@@ -65,7 +61,7 @@ export type BabelTransformerArgs = $ReadOnly<{|
 |}>;
 
 export type BabelTransformer = {|
-  transform: BabelTransformerArgs => TransformResults,
+  transform: BabelTransformerArgs => {ast: Ast},
   getCacheKey?: () => string,
 |};
 
