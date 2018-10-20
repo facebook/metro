@@ -24,6 +24,7 @@ jest
   }))
   .mock('graceful-fs', () => require('fs'));
 
+const hasteImplPath = path.join(__dirname, '../__fixtures__/hasteImpl.js');
 // Super-simple mock for extracting dependencies
 const extractDependencies = function(sourceCode: string) {
   const regexp = /require\s*\(\s*(['"])(.*?)\1\s*\)/g;
@@ -124,6 +125,7 @@ describe('traverseDependencies', function() {
         assetExts: ['png', 'jpg'],
         // This pattern is not expected to match anything.
         blacklistRE: /.^/,
+        hasteImplModulePath: hasteImplPath,
         providesModuleNodeModules: [
           'haste-fbjs',
           'react-haste',
@@ -190,8 +192,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -217,8 +218,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -244,8 +244,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -273,8 +272,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -299,8 +297,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -328,8 +325,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -362,8 +358,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -396,8 +391,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -426,8 +420,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -456,8 +449,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -486,8 +478,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -524,8 +515,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -548,8 +538,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -574,8 +563,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -601,8 +589,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -625,8 +612,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -653,8 +639,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -675,8 +660,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -695,10 +679,8 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-
       try {
-        await processDgraph(opts, async dgraph => {});
+        await processDgraph(defaults, root, async dgraph => {});
         throw new Error('should be unreachable');
       } catch (error) {
         expect(error.message).toEqual(
@@ -727,8 +709,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         try {
           await getOrderedDependenciesAsJSON(dgraph, '/root/index.js');
           throw new Error('should be unreachable');
@@ -765,8 +746,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -799,8 +779,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -861,8 +840,7 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, watchFolders: [root]};
-          await processDgraph(opts, async dgraph => {
+          await processDgraph(defaults, root, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
               '/root/index.js',
@@ -903,8 +881,7 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, watchFolders: [root]};
-          await processDgraph(opts, async dgraph => {
+          await processDgraph(defaults, root, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
               '/root/index.js',
@@ -950,9 +927,8 @@ describe('traverseDependencies', function() {
           const opts = {
             ...defaults,
             resolver: {...defaults.resolver, assetExts: ['png', 'jpg']},
-            watchFolders: [root],
           };
-          await processDgraph(opts, async dgraph => {
+          await processDgraph(opts, root, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
               '/root/index.js',
@@ -994,9 +970,8 @@ describe('traverseDependencies', function() {
         const opts = {
           ...defaults,
           resolver: {...defaults.resolver, assetExts: ['png', 'jpg']},
-          watchFolders: [root],
         };
-        await processDgraph(opts, async dgraph => {
+        await processDgraph(opts, root, async dgraph => {
           const deps = await getOrderedDependenciesAsJSON(
             dgraph,
             '/root/index.js',
@@ -1041,9 +1016,8 @@ describe('traverseDependencies', function() {
           const opts = {
             ...defaults,
             resolver: {...defaults.resolver, assetExts: ['png', 'jpg']},
-            watchFolders: [root],
           };
-          await processDgraph(opts, async dgraph => {
+          await processDgraph(opts, root, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
               '/root/index.js',
@@ -1097,8 +1071,7 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, watchFolders: [root]};
-          await processDgraph(opts, async dgraph => {
+          await processDgraph(defaults, root, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
               '/root/index.js',
@@ -1149,8 +1122,7 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, watchFolders: [root]};
-          await processDgraph(opts, async dgraph => {
+          await processDgraph(defaults, root, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
               '/root/index.js',
@@ -1201,8 +1173,7 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, watchFolders: [root]};
-          await processDgraph(opts, async dgraph => {
+          await processDgraph(defaults, root, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
               '/root/index.js',
@@ -1253,8 +1224,7 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, watchFolders: [root]};
-          await processDgraph(opts, async dgraph => {
+          await processDgraph(defaults, root, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
               '/root/index.js',
@@ -1293,10 +1263,9 @@ describe('traverseDependencies', function() {
 
           const opts = {
             ...defaults,
-            watchFolders: [root],
             resolver: {...defaults.resolver, resolveRequest},
           };
-          await processDgraph(opts, async dgraph => {
+          await processDgraph(opts, root, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
               '/root/aPackage/index.js',
@@ -1337,10 +1306,9 @@ describe('traverseDependencies', function() {
 
           const opts = {
             ...defaults,
-            watchFolders: [root],
             resolver: {...defaults.resolver, resolveRequest},
           };
-          await processDgraph(opts, async dgraph => {
+          await processDgraph(opts, root, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
               '/root/aPackage/subfolder/index.js',
@@ -1388,8 +1356,7 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, watchFolders: [root]};
-          await processDgraph(opts, async dgraph => {
+          await processDgraph(defaults, root, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
               '/root/index.js',
@@ -1433,8 +1400,7 @@ describe('traverseDependencies', function() {
             },
           });
 
-          const opts = {...defaults, watchFolders: [root]};
-          await processDgraph(opts, async dgraph => {
+          await processDgraph(defaults, root, async dgraph => {
             const deps = await getOrderedDependenciesAsJSON(
               dgraph,
               '/root/index.js',
@@ -1490,8 +1456,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -1554,9 +1519,8 @@ describe('traverseDependencies', function() {
           ...defaults.resolver,
           resolverMainFields: ['custom-field', 'browser'],
         },
-        watchFolders: [root],
       };
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(opts, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -1574,8 +1538,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -1666,8 +1629,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -1695,7 +1657,6 @@ describe('traverseDependencies', function() {
 
       const opts = {
         ...defaults,
-        watchFolders: [root],
         resolver: {
           ...defaults.resolver,
           extraNodeModules: {
@@ -1703,7 +1664,7 @@ describe('traverseDependencies', function() {
           },
         },
       };
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(opts, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -1724,7 +1685,6 @@ describe('traverseDependencies', function() {
 
       const opts = {
         ...defaults,
-        watchFolders: [root],
         resolver: {
           ...defaults.resolver,
           extraNodeModules: {
@@ -1732,7 +1692,7 @@ describe('traverseDependencies', function() {
           },
         },
       };
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(opts, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -1755,7 +1715,6 @@ describe('traverseDependencies', function() {
 
       const opts = {
         ...defaults,
-        watchFolders: [root],
         resolver: {
           ...defaults.resolver,
           extraNodeModules: {
@@ -1763,7 +1722,7 @@ describe('traverseDependencies', function() {
           },
         },
       };
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(opts, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -1786,7 +1745,6 @@ describe('traverseDependencies', function() {
 
       const opts = {
         ...defaults,
-        watchFolders: [root],
         resolver: {
           ...defaults.resolver,
           extraNodeModules: {
@@ -1794,7 +1752,7 @@ describe('traverseDependencies', function() {
           },
         },
       };
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(opts, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -1846,8 +1804,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           'C:\\root\\index.js',
@@ -1865,8 +1822,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           'C:\\root\\index.js',
@@ -1899,8 +1855,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           'C:\\root\\index.js',
@@ -1964,8 +1919,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -2003,8 +1957,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.ios.js',
@@ -2054,8 +2007,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -2108,8 +2060,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -2151,8 +2102,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -2259,7 +2209,7 @@ describe('traverseDependencies', function() {
       setMockFileSystem(filesystem);
 
       const opts = {...defaults, watchFolders: [root, otherRoot]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(opts, root, async dgraph => {
         try {
           await getOrderedDependenciesAsJSON(dgraph, '/root/index.js');
           throw new Error('should be unreachable');
@@ -2311,8 +2261,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/react-haste/index.js',
@@ -2343,8 +2292,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -2381,8 +2329,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.ios.js',
@@ -2423,9 +2370,8 @@ describe('traverseDependencies', function() {
       const opts = {
         ...defaults,
         resolver: {...defaults.resolver, platforms: ['ios', 'android', 'web']},
-        watchFolders: [root],
       };
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(opts, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.ios.js',
@@ -2486,9 +2432,8 @@ describe('traverseDependencies', function() {
             '@org/module',
           ],
         },
-        watchFolders: [root],
       };
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(opts, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -2513,8 +2458,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.ios.js',
@@ -2553,8 +2497,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -2577,8 +2520,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.js',
@@ -2656,8 +2598,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           'C:\\root\\index.js',
@@ -2695,8 +2636,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           'C:\\root\\index.ios.js',
@@ -2746,8 +2686,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           'C:\\root\\index.js',
@@ -2800,8 +2739,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           'C:\\root\\index.js',
@@ -2843,8 +2781,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           'C:\\root\\index.js',
@@ -2952,7 +2889,7 @@ describe('traverseDependencies', function() {
 
       const opts = {...defaults, watchFolders: [root, otherRoot]};
       const entryPath = 'C:\\root\\index.js';
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(opts, root, async dgraph => {
         try {
           await getOrderedDependenciesAsJSON(dgraph, entryPath);
           throw new Error('should be unreachable');
@@ -3002,8 +2939,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           'C:\\react-haste\\index.js',
@@ -3034,8 +2970,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           'C:\\root\\index.js',
@@ -3072,8 +3007,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           'C:\\root\\index.ios.js',
@@ -3111,8 +3045,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           'C:\\root\\index.ios.js',
@@ -3137,8 +3070,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           'C:\\root\\index.ios.js',
@@ -3177,8 +3109,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           'C:\\root\\index.js',
@@ -3239,9 +3170,8 @@ describe('traverseDependencies', function() {
             '@org/module',
           ],
         },
-        watchFolders: [root],
       };
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(opts, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           'C:\\root\\index.js',
@@ -3295,9 +3225,8 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
       const entryPath = '/root/index.js';
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
         await triggerAndProcessWatchEvent(dgraph, () => {
           fs.writeFileSync(
@@ -3337,9 +3266,8 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
       const entryPath = '/root/index.js';
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
         await triggerAndProcessWatchEvent(dgraph, () => {
           fs.writeFileSync(
@@ -3379,9 +3307,8 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
       const entryPath = '/root/index.js';
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
         await triggerAndProcessWatchEvent(dgraph, () => {
           fs.unlinkSync(root + '/foo.js');
@@ -3427,9 +3354,8 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
       const entryPath = '/root/index.js';
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
         await triggerAndProcessWatchEvent(dgraph, () => {
           fs.writeFileSync(
@@ -3464,10 +3390,9 @@ describe('traverseDependencies', function() {
       const opts = {
         ...defaults,
         resolver: {...defaults.resolver, assetExts: ['png']},
-        watchFolders: [root],
       };
       const entryPath = '/root/index.js';
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(opts, root, async dgraph => {
         try {
           await getOrderedDependenciesAsJSON(dgraph, entryPath);
           throw new Error('should be unreachable');
@@ -3508,9 +3433,8 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
       const entryPath = '/root/index.js';
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
         await triggerAndProcessWatchEvent(dgraph, () => {
           fs.writeFileSync(
@@ -3548,9 +3472,8 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
       const entryPath = '/root/index.js';
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
         await triggerAndProcessWatchEvent(dgraph, () => {
           fs.writeFileSync(
@@ -3607,9 +3530,8 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
       const entryPath = '/root/index.js';
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toMatchSnapshot();
 
@@ -3645,9 +3567,8 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
       const entryPath = '/root/index.js';
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
         await triggerAndProcessWatchEvent(dgraph, () => {
           fs.writeFileSync(
@@ -3681,9 +3602,8 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
       const entryPath = '/root/index.js';
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         await getOrderedDependenciesAsJSON(dgraph, entryPath);
         await triggerAndProcessWatchEvent(dgraph, () => {
           fs.writeFileSync(
@@ -3745,10 +3665,9 @@ describe('traverseDependencies', function() {
 
       const opts = {
         ...defaults,
-        watchFolders: [root],
         resolver: {...defaults.resolver, sourceExts: ['jsx', 'coffee']},
       };
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(opts, root, async dgraph => {
         const entryPath = '/root/index.jsx';
         const deps = await getOrderedDependenciesAsJSON(dgraph, entryPath);
         expect(deps).toMatchSnapshot();
@@ -3767,10 +3686,9 @@ describe('traverseDependencies', function() {
 
       const opts = {
         ...defaults,
-        watchFolders: [root],
         resolver: {...defaults.resolver, sourceExts: ['jsx', 'coffee']},
       };
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(opts, root, async dgraph => {
         const deps = await getOrderedDependenciesAsJSON(
           dgraph,
           '/root/index.jsx',
@@ -3789,8 +3707,7 @@ describe('traverseDependencies', function() {
         },
       });
 
-      const opts = {...defaults, watchFolders: [root]};
-      await processDgraph(opts, async dgraph => {
+      await processDgraph(defaults, root, async dgraph => {
         try {
           await getOrderedDependenciesAsJSON(dgraph, '/root/index.jsx');
           throw Error('should be unreachable');
@@ -3836,6 +3753,7 @@ describe('traverseDependencies', function() {
       dependencyGraph = DependencyGraph.load(
         {
           ...defaults,
+          projectRoot: '/root',
           watchFolders: ['/root'],
         },
         false /* since we're mocking the filesystem, we cannot use watchman */,
@@ -3932,8 +3850,17 @@ describe('traverseDependencies', function() {
    * default, so we must end the watcher to ensure the test does not hang up
    * (regardless if the test passes or fails).
    */
-  const processDgraphFor = async function(DependencyGraph, options, processor) {
-    const dgraph = await DependencyGraph.load(options);
+  const processDgraphFor = async function(
+    DependencyGraph,
+    options,
+    root,
+    processor,
+  ) {
+    const dgraph = await DependencyGraph.load({
+      projectRoot: root,
+      watchFolders: [root],
+      ...options,
+    });
     try {
       await processor(dgraph);
     } finally {
