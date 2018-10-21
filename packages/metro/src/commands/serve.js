@@ -45,6 +45,7 @@ module.exports = () => ({
     yargs.option('config', {alias: 'c', type: 'string'});
 
     // Deprecated
+    // $FlowFixMe Errors found when flow-typing `yargs`
     yargs.option('reset-cache', {type: 'boolean', describe: null});
   },
 
