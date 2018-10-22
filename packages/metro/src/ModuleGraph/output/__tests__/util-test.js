@@ -10,22 +10,44 @@
 
 'use strict';
 
-const {addModuleIdsToModuleWrapper, createIdForPathFn} = require('../util');
+const {inlineModuleIds, createIdForPathFn} = require('../util');
 
 const {any} = jasmine;
 
-describe('`addModuleIdsToModuleWrapper`:', () => {
+describe('`inlineModuleIds`:', () => {
   const path = 'path/to/file';
+
+  const basicCode = `
+    __d(function(require, depMap) {
+      require(depMap[0]);
+      require(depMap[1]);
+    });
+  `;
+
   const createModule = (dependencies = []) => ({
     dependencies,
-    file: {code: '__d(function(){});', isModule: true, path},
+    file: {code: basicCode, isModule: true, path},
   });
 
-  it('completes the module wrapped with module ID, and an array of dependency IDs', () => {
+  const reUsedVariableCode = `
+    __d(function(require, depMap) {
+      function anotherScope(depMap) {
+        return depMap++;
+      }
+    });
+  `;
+
+  const createReUsedVariableModule = (dependencies = []) => ({
+    dependencies,
+    file: {code: reUsedVariableCode, isModule: true, path},
+  });
+
+  it('inlines module ids', () => {
     const dependencies = [
       {id: 'a', path: 'path/to/a.js'},
       {id: 'b', path: 'location/of/b.js'},
     ];
+
     const module = createModule(dependencies);
 
     const idForPath = jest.fn().mockImplementation(({path: inputPath}) => {
@@ -41,15 +63,28 @@ describe('`addModuleIdsToModuleWrapper`:', () => {
       throw new Error(`Unexpected path: ${inputPath}`);
     });
 
-    expect(addModuleIdsToModuleWrapper(module, idForPath)).toEqual(
-      '__d(function(){},12,[345,6]);',
+    expect(inlineModuleIds(module, idForPath).moduleCode).toEqual(
+      [
+        '__d(function (require, depMap) {',
+        '  require(345);',
+        '',
+        '  require(6);',
+        '},12);',
+      ].join('\n'),
     );
   });
 
-  it('omits the array of dependency IDs if it is empty', () => {
-    const module = createModule();
-    expect(addModuleIdsToModuleWrapper(module, () => 98)).toEqual(
-      `__d(function(){},${98});`,
+  it('avoids inlining if the variable is in a different scope', () => {
+    const module = createReUsedVariableModule();
+
+    expect(inlineModuleIds(module, () => 98).moduleCode).toEqual(
+      [
+        '__d(function (require, depMap) {',
+        '  function anotherScope(depMap) {',
+        '    return depMap++;',
+        '  }',
+        '},98);',
+      ].join('\n'),
     );
   });
 });

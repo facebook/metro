@@ -89,7 +89,7 @@ it('creates a source map', () => {
       return section;
     }),
   );
-  expect(map.x_facebook_offsets).toEqual([1, 2, 3, 4, 5, 6]);
+  expect(map.x_facebook_offsets).toEqual([1, 4, 7, 10, 13, 16]);
 });
 
 describe('Startup section optimization', () => {
@@ -136,7 +136,7 @@ describe('Startup section optimization', () => {
       countLines(requireCall),
     );
 
-    expect(map.x_facebook_offsets).toEqual([4, 5, , , 6]); // eslint-disable-line no-sparse-arrays
+    expect(map.x_facebook_offsets).toEqual([10, 13, undefined, undefined, 16]);
 
     expect(map.sections.slice(1)).toEqual(
       modules.filter(not(Set.prototype.has), new Set(preloaded)).map(m => {
@@ -177,9 +177,9 @@ describe('RAM groups / common sections', () => {
   });
 
   it('reflects section groups in the source map', () => {
-    expect(map.x_facebook_offsets).toEqual([1, 2, 2, 5, 5, 2]);
+    expect(map.x_facebook_offsets).toEqual([1, 4, 4, 13, 13, 4]);
     const maps = map.sections.slice(-2);
-    const toplevelOffsets = [2, 5];
+    const toplevelOffsets = [4, 13];
 
     maps
       .map((groupMap, i) => [groups[i], groupMap])
@@ -240,14 +240,14 @@ function makeModule(
 function makeModuleMap(name, path) {
   return {
     version: 3,
-    mappings: Array(parseInt(name, 36) + 1).join(','),
-    names: [name],
+    mappings: '',
+    names: [],
     sources: [path],
   };
 }
 
 function makeModuleCode(moduleCode) {
-  return `__d(() => {${moduleCode}})`;
+  return `__d(() => {\n${moduleCode}\n})`;
 }
 
 function makeModulePath(name) {
@@ -310,7 +310,7 @@ function countLines(module) {
 function lineByLineMap(file) {
   return {
     file,
-    mappings: 'AAAA;',
+    mappings: '',
     names: [],
     sources: [file],
     version: 3,

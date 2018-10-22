@@ -11,9 +11,15 @@
 'use strict';
 
 const addParamsToDefineCall = require('../../lib/addParamsToDefineCall');
+const generate = require('../worker/generate');
+const mergeSourceMaps = require('../worker/mergeSourceMaps');
+const reverseDependencyMapReferences = require('./reverse-dependency-map-references');
 const virtualModule = require('../module').virtual;
 
+const {transformSync} = require('@babel/core');
+
 import type {IdsForPathFn, Module} from '../types.flow';
+import type {MetroSourceMap} from 'metro-source-map';
 
 // Transformed modules have the form
 //   __d(function(require, module, global, exports, dependencyMap) {
@@ -22,28 +28,45 @@ import type {IdsForPathFn, Module} from '../types.flow';
 //
 // This function adds the numeric module ID, and an array with dependencies of
 // the dependencies of the module before the closing parenthesis.
-function addModuleIdsToModuleWrapper(
+function inlineModuleIds(
   module: Module,
   idForPath: ({path: string}) => number,
-): string {
+): {
+  moduleCode: string,
+  moduleMap: ?MetroSourceMap,
+} {
   const {dependencies, file} = module;
-  const {code} = file;
+  const {code, map, path} = file;
 
   // calling `idForPath` on the module itself first gives us a lower module id
   // for the file itself than for its dependencies. That reflects their order
   // in the bundle.
   const fileId = idForPath(file);
+  const dependencyIds = dependencies.map(idForPath);
 
-  const paramsToAdd = [fileId];
+  const {ast} = transformSync(code, {
+    ast: true,
+    babelrc: false,
+    code: false,
+    configFile: false,
+    minified: false,
+    plugins: [[reverseDependencyMapReferences, {dependencyIds}]],
+  });
 
-  if (dependencies.length) {
-    paramsToAdd.push(dependencies.map(idForPath));
-  }
+  const {code: generatedCode, map: generatedMap} = generate(
+    ast,
+    path,
+    '',
+    false,
+  );
 
-  return addParamsToDefineCall(code, ...paramsToAdd);
+  return {
+    moduleCode: addParamsToDefineCall(generatedCode, fileId),
+    moduleMap: map && generatedMap && mergeSourceMaps(path, map, generatedMap),
+  };
 }
 
-exports.addModuleIdsToModuleWrapper = addModuleIdsToModuleWrapper;
+exports.inlineModuleIds = inlineModuleIds;
 
 type IdForPathFn = ({path: string}) => number;
 
@@ -52,14 +75,11 @@ type IdForPathFn = ({path: string}) => number;
 function getModuleCodeAndMap(module: Module, idForPath: IdForPathFn) {
   const {file} = module;
 
-  const moduleCode =
-    file.type === 'module'
-      ? addModuleIdsToModuleWrapper(module, idForPath)
-      : file.code;
+  if (file.type !== 'module') {
+    return {moduleCode: file.code, moduleMap: file.map};
+  }
 
-  const moduleMap = file.map;
-
-  return {moduleCode, moduleMap};
+  return inlineModuleIds(module, idForPath);
 }
 
 exports.getModuleCodeAndMap = getModuleCodeAndMap;

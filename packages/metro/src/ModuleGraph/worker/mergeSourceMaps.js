@@ -25,6 +25,7 @@ function mergeSourceMaps(
 ): BabelSourceMap {
   const merged = new sourceMap.SourceMapGenerator();
   const inputMap = new sourceMap.SourceMapConsumer(originalMap);
+
   new sourceMap.SourceMapConsumer(secondMap).eachMapping(mapping => {
     const original = inputMap.originalPositionFor({
       line: mapping.originalLine,
@@ -41,7 +42,11 @@ function mergeSourceMaps(
       name: original.name || mapping.name,
     });
   });
-  return merged.toJSON();
+
+  return {
+    ...merged.toJSON(),
+    sources: inputMap.sources,
+  };
 }
 
 module.exports = mergeSourceMaps;

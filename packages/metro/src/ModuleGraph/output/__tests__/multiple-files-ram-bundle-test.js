@@ -67,7 +67,7 @@ it('creates a source map', () => {
       return section;
     }),
   );
-  expect(map.x_facebook_offsets).toEqual([1, 2, 3, 4, 5, 6]);
+  expect(map.x_facebook_offsets).toEqual([1, 4, 7, 10, 13, 16]);
 });
 
 it('creates a magic file with the number', () => {
@@ -128,14 +128,14 @@ function makeModule(
 function makeModuleMap(name, path) {
   return {
     version: 3,
-    mappings: Array(parseInt(name, 36) + 1).join(','),
-    names: [name],
+    mappings: '',
+    names: [],
     sources: [path],
   };
 }
 
 function makeModuleCode(moduleCode) {
-  return `__d(() => {${moduleCode}})`;
+  return `__d(() => {\n${moduleCode}\n})`;
 }
 
 function makeModulePath(name) {
@@ -170,7 +170,7 @@ function countLines(module) {
 function lineByLineMap(file) {
   return {
     file,
-    mappings: 'AAAA;',
+    mappings: '',
     names: [],
     sources: [file],
     version: 3,
