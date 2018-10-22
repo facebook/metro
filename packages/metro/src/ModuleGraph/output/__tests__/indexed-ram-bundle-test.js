@@ -15,7 +15,7 @@ declare var jest: any;
 
 const indexedRamBundle = require('../indexed-ram-bundle');
 
-const {getModuleCode} = require('../util');
+const {getModuleCodeAndMap} = require('../util');
 
 declare var describe: any;
 declare var expect: any;
@@ -264,7 +264,7 @@ function makeDependency(name) {
 }
 
 function expectedCode(module) {
-  return getModuleCode(module, x => idsForPath(x).moduleId);
+  return getModuleCodeAndMap(module, x => idsForPath(x).moduleId).moduleCode;
 }
 
 function getId(path) {

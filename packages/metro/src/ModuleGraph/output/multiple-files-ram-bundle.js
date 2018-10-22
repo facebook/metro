@@ -17,7 +17,12 @@ const JS_MODULES = 'js-modules';
 const buildSourcemapWithMetadata = require('../../shared/output/RamBundle/buildSourcemapWithMetadata.js');
 const path = require('path');
 
-const {concat, getModuleCode, partition, toModuleTransport} = require('./util');
+const {
+  concat,
+  getModuleCodeAndMap,
+  partition,
+  toModuleTransport,
+} = require('./util');
 
 import type {FBIndexMap} from 'metro-source-map';
 import type {OutputFn} from '../types.flow';
@@ -36,7 +41,9 @@ function asMultipleFilesRamBundle({
   const magicFileContents = Buffer.alloc(4);
 
   // Just concatenate all startup modules, one after the other.
-  const code = startupModules.map(m => getModuleCode(m, idForPath)).join('\n');
+  const code = startupModules
+    .map(m => getModuleCodeAndMap(m, idForPath).moduleCode)
+    .join('\n');
 
   // Write one file per module, wrapped with __d() call if it proceeds.
   const extraFiles = new Map();

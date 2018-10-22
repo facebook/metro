@@ -15,7 +15,7 @@ declare var jest: any;
 
 const multipleFilesRamBundle = require('../multiple-files-ram-bundle');
 
-const {getModuleCode} = require('../util');
+const {getModuleCodeAndMap} = require('../util');
 
 import type {Module} from '../../types.flow';
 
@@ -86,7 +86,7 @@ it('bundles each file separately', () => {
   modules.forEach((module, i) => {
     // $FlowFixMe "extraFiles" is always defined at this point.
     expect(extraFiles.get(`js-modules/${i}.js`).toString()).toBe(
-      getModuleCode(modules[i], x => idsForPath(x).moduleId),
+      getModuleCodeAndMap(modules[i], x => idsForPath(x).moduleId).moduleCode,
     );
   });
 });

@@ -12,7 +12,7 @@
 
 const meta = require('../../shared/output/meta');
 
-const {getModuleCode, concat} = require('./util');
+const {getModuleCodeAndMap, concat} = require('./util');
 const {createIndexMap} = require('metro-source-map');
 
 import type {OutputFn} from '../types.flow';
@@ -30,13 +30,12 @@ function asPlainBundle({
   const modIdForPath = x => idsForPath(x).moduleId;
 
   for (const module of concat(modules, requireCalls)) {
-    const {file} = module;
-    const moduleCode = getModuleCode(module, modIdForPath);
+    const {moduleCode, moduleMap} = getModuleCodeAndMap(module, modIdForPath);
 
     code += moduleCode + '\n';
-    if (file.map) {
+    if (moduleMap) {
       sections.push({
-        map: file.map,
+        map: moduleMap,
         offset: {column: 0, line},
       });
     }

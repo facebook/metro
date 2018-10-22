@@ -49,14 +49,20 @@ type IdForPathFn = ({path: string}) => number;
 
 // Adds the module ids to a file if the file is a module. If it's not (e.g. a
 // script) it just keeps it as-is.
-function getModuleCode(module: Module, idForPath: IdForPathFn) {
+function getModuleCodeAndMap(module: Module, idForPath: IdForPathFn) {
   const {file} = module;
-  return file.type === 'module'
-    ? addModuleIdsToModuleWrapper(module, idForPath)
-    : file.code;
+
+  const moduleCode =
+    file.type === 'module'
+      ? addModuleIdsToModuleWrapper(module, idForPath)
+      : file.code;
+
+  const moduleMap = file.map;
+
+  return {moduleCode, moduleMap};
 }
 
-exports.getModuleCode = getModuleCode;
+exports.getModuleCodeAndMap = getModuleCodeAndMap;
 
 // Concatenates many iterables, by calling them sequentially.
 exports.concat = function* concat<T>(
@@ -117,12 +123,17 @@ exports.partition = (
 // around code.
 exports.toModuleTransport = (module: Module, idsForPath: IdsForPathFn) => {
   const {dependencies, file} = module;
+  const {moduleCode, moduleMap} = getModuleCodeAndMap(
+    module,
+    x => idsForPath(x).moduleId,
+  );
+
   return {
-    code: getModuleCode(module, x => idsForPath(x).moduleId),
+    code: moduleCode,
     dependencies,
     // ID is required but we provide an invalid one for "script"s.
     id: file.type === 'module' ? idsForPath(file).localId : -1,
-    map: file.map,
+    map: moduleMap,
     name: file.path,
     sourcePath: file.path,
   };

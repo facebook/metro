@@ -18,7 +18,12 @@ const {
   buildTableAndContents,
   createModuleGroups,
 } = require('../../shared/output/RamBundle/as-indexed-file');
-const {concat, getModuleCode, partition, toModuleTransport} = require('./util');
+const {
+  concat,
+  getModuleCodeAndMap,
+  partition,
+  toModuleTransport,
+} = require('./util');
 
 import type {OutputFn} from '../types.flow';
 import type {FBIndexMap} from 'metro-source-map';
@@ -50,7 +55,9 @@ function asIndexedRamBundle({
   const moduleGroups = createModuleGroups(ramGroups, deferredModules);
 
   const tableAndContents = buildTableAndContents(
-    startupModules.map(m => getModuleCode(m, idForPath)).join('\n'),
+    startupModules
+      .map(m => getModuleCodeAndMap(m, idForPath).moduleCode)
+      .join('\n'),
     deferredModules,
     moduleGroups,
     'utf8',
