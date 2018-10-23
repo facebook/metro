@@ -151,6 +151,7 @@ async function convertOldToNew({
     cacheStores,
     cacheVersion,
     projectRoot: getProjectRoot(),
+    stickyWorkers: defaultConfig.stickyWorkers,
     watchFolders,
     transformerPath: defaultConfig.transformerPath,
     resetCache,

@@ -46,6 +46,7 @@ module.exports = {
 | `watch`           | `boolean`                             | Whether we should watch for all files.                                                            |
 | `reporter`        | `{update: () => void}`                | Used to report the status of the bundler during the bundling process.                             |
 | `resetCache`      | `boolean`                             | Whether we should reset the cache when starting the build.                                        |
+| `stickyWorkers`   | `boolean`                             | Control whether the created workers should stick based on filename or not.                        |
 | `maxWorkers`      | `number`                              | The number of workers we should parallelize the transformer on.                                   |
 
 ### Server Options

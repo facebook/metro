@@ -108,6 +108,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   // We assume the default project path is two levels up from
   // node_modules/metro/
   projectRoot: projectRoot || path.resolve(__dirname, '../../..'),
+  stickyWorkers: true,
   watchFolders: [],
   transformerPath: require.resolve('metro/src/JSTransformer/worker.js'),
   maxWorkers: getMaxWorkers(),

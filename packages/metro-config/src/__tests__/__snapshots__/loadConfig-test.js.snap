@@ -78,6 +78,7 @@ Object {
     "port": 8080,
     "useGlobalHotkey": true,
   },
+  "stickyWorkers": true,
   "transformer": Object {
     "assetPlugins": Array [],
     "assetRegistryPath": "missing-asset-registry-path",
@@ -197,6 +198,7 @@ Object {
     "port": 8080,
     "useGlobalHotkey": true,
   },
+  "stickyWorkers": true,
   "transformer": Object {
     "assetPlugins": Array [],
     "assetRegistryPath": "missing-asset-registry-path",

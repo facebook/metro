@@ -123,7 +123,9 @@ class WorkerFarm {
     };
 
     return new JestWorker(workerPath, {
-      computeWorkerKey: this._computeWorkerKey,
+      computeWorkerKey: this._config.stickyWorkers
+        ? this._computeWorkerKey
+        : undefined,
       exposedMethods,
       forkOptions: {env, execArgv},
       numWorkers,

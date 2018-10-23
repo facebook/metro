@@ -137,6 +137,7 @@ type MetalConfigT = {|
   cacheVersion: string,
   maxWorkers: number,
   projectRoot: string,
+  stickyWorkers: boolean,
   transformerPath: string,
   reporter: Reporter,
   resetCache: boolean,
