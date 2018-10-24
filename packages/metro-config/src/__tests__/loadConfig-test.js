@@ -91,15 +91,64 @@ describe('loadConfig', () => {
     expect(prettyFormat(result)).toEqual(prettyFormat(defaultConfig));
   });
 
-  it('validates config', async () => {
+  it('validates config for resolver', async () => {
     expect.assertions(1);
     const config = defaultConfig => ({
       ...defaultConfig,
-      reporter: null,
-      maxWorkers: 2,
       resolver: 'test',
-      cacheStores: [],
-      transformModulePath: '',
+    });
+
+    cosmiconfig.setResolvedConfig(config);
+
+    try {
+      await loadConfig({});
+    } catch (error) {
+      expect(stripAnsi(error.message)).toMatchSnapshot();
+    }
+  });
+
+  it('validates config for server', async () => {
+    expect.assertions(1);
+    const config = defaultConfig => ({
+      ...defaultConfig,
+      server: {
+        useGlobalHotkey: 'test',
+      },
+    });
+
+    cosmiconfig.setResolvedConfig(config);
+
+    try {
+      await loadConfig({});
+    } catch (error) {
+      expect(stripAnsi(error.message)).toMatchSnapshot();
+    }
+  });
+
+  it('validates config for projectRoot', async () => {
+    expect.assertions(1);
+    const config = defaultConfig => ({
+      ...defaultConfig,
+      projectRoot: ['test'],
+    });
+
+    cosmiconfig.setResolvedConfig(config);
+
+    try {
+      await loadConfig({});
+    } catch (error) {
+      expect(stripAnsi(error.message)).toMatchSnapshot();
+    }
+  });
+
+  it('validates config for transformer', async () => {
+    expect.assertions(1);
+    const config = defaultConfig => ({
+      ...defaultConfig,
+      transformer: {
+        ...defaultConfig.transformer,
+        getTransformOptions: true,
+      },
     });
 
     cosmiconfig.setResolvedConfig(config);

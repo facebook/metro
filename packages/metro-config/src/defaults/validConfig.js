@@ -9,4 +9,16 @@
  */
 'use strict';
 
-module.exports = require('./index')('/path/to/project');
+module.exports = async () => {
+  const defaultConfig = await require('./index')('/path/to/project');
+  const validConfig = {
+    ...defaultConfig,
+    resolver: {
+      ...defaultConfig.resolver,
+      resolveRequest: function CustomResolver() {},
+      hasteImplModulePath: './path',
+    },
+  };
+
+  return validConfig;
+};

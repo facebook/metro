@@ -228,8 +228,8 @@ function overrideConfigWithArguments(
  * @return {object}                         Configuration returned
  */
 async function loadConfig(
-  argv: YargArguments = {},
-  defaultConfigOverrides: InputConfigT = {},
+  argv?: YargArguments = {},
+  defaultConfigOverrides?: InputConfigT = {},
 ): Promise<ConfigT> {
   argv.config = overrideArgument(argv.config);
 
@@ -239,7 +239,10 @@ async function loadConfig(
     defaultConfigOverrides,
   );
 
-  validate(configuration, {exampleConfig: await validConfig});
+  validate(configuration, {
+    exampleConfig: await validConfig(),
+    recursiveBlacklist: ['reporter'],
+  });
 
   // Override the configuration with cli parameters
   const configWithArgs = overrideConfigWithArguments(configuration, argv);

@@ -238,7 +238,22 @@ Object {
 }
 `;
 
-exports[`loadConfig validates config 1`] = `
+exports[`loadConfig validates config for projectRoot 1`] = `
+"● Validation Error:
+
+  Option \\"projectRoot\\" must be of type:
+    string
+  but instead received:
+    array
+
+  Example:
+  {
+    \\"projectRoot\\": \\"/path/to/project\\"
+  }
+"
+`;
+
+exports[`loadConfig validates config for resolver 1`] = `
 "● Validation Error:
 
   Option \\"resolver\\" must be of type:
@@ -248,7 +263,88 @@ exports[`loadConfig validates config 1`] = `
 
   Example:
   {
-    \\"resolver\\": {\\"assetExts\\": [\\"bmp\\", \\"gif\\", \\"jpg\\", \\"jpeg\\", \\"png\\", \\"psd\\", \\"svg\\", \\"webp\\", \\"m4v\\", \\"mov\\", \\"mp4\\", \\"mpeg\\", \\"mpg\\", \\"webm\\", \\"aac\\", \\"aiff\\", \\"caf\\", \\"m4a\\", \\"mp3\\", \\"wav\\", \\"html\\", \\"pdf\\", \\"otf\\", \\"ttf\\"], \\"assetTransforms\\": false, \\"blacklistRE\\": /(node_modules[\\\\/\\\\\\\\]react[\\\\/\\\\\\\\]dist[\\\\/\\\\\\\\].*|website\\\\/node_modules\\\\/.*|heapCapture\\\\/bundle\\\\.js|.*\\\\/__tests__\\\\/.*)$/, \\"extraNodeModules\\": {}, \\"platforms\\": [\\"ios\\", \\"android\\", \\"windows\\", \\"web\\"], \\"providesModuleNodeModules\\": [\\"react-native\\", \\"react-native-windows\\"], \\"resolveRequest\\": null, \\"resolverMainFields\\": [\\"browser\\", \\"main\\"], \\"sourceExts\\": [\\"js\\", \\"json\\"]}
+    \\"resolver\\": {
+      \\"assetExts\\": [
+        \\"bmp\\",
+        \\"gif\\",
+        \\"jpg\\",
+        \\"jpeg\\",
+        \\"png\\",
+        \\"psd\\",
+        \\"svg\\",
+        \\"webp\\",
+        \\"m4v\\",
+        \\"mov\\",
+        \\"mp4\\",
+        \\"mpeg\\",
+        \\"mpg\\",
+        \\"webm\\",
+        \\"aac\\",
+        \\"aiff\\",
+        \\"caf\\",
+        \\"m4a\\",
+        \\"mp3\\",
+        \\"wav\\",
+        \\"html\\",
+        \\"pdf\\",
+        \\"otf\\",
+        \\"ttf\\"
+      ],
+      \\"platforms\\": [
+        \\"ios\\",
+        \\"android\\",
+        \\"windows\\",
+        \\"web\\"
+      ],
+      \\"sourceExts\\": [
+        \\"js\\",
+        \\"json\\",
+        \\"ts\\",
+        \\"tsx\\"
+      ],
+      \\"providesModuleNodeModules\\": [
+        \\"react-native\\",
+        \\"react-native-windows\\"
+      ],
+      \\"resolverMainFields\\": [
+        \\"browser\\",
+        \\"main\\"
+      ],
+      \\"extraNodeModules\\": {},
+      \\"hasteImplModulePath\\": \\"./path\\",
+      \\"blacklistRE\\": {},
+      \\"useWatchman\\": true
+    }
+  }
+"
+`;
+
+exports[`loadConfig validates config for server 1`] = `
+"● Validation Error:
+
+  Option \\"server.useGlobalHotkey\\" must be of type:
+    boolean
+  but instead received:
+    string
+
+  Example:
+  {
+    \\"useGlobalHotkey\\": true
+  }
+"
+`;
+
+exports[`loadConfig validates config for transformer 1`] = `
+"● Validation Error:
+
+  Option \\"transformer.getTransformOptions\\" must be of type:
+    function
+  but instead received:
+    boolean
+
+  Example:
+  {
+    \\"getTransformOptions\\": function getTransformOptions() {return _ref2.apply(this, arguments);}
   }
 "
 `;
