@@ -187,4 +187,60 @@ describe('HttpStore', () => {
       done();
     });
   });
+
+  it('gets the same value that was set', async () => {
+    const store = new HttpStore({endpoint: 'http://www.example.com/endpoint'});
+    const chunks = [];
+    let storedValue;
+
+    httpPassThrough.on('data', chunk => {
+      chunks.push(chunk);
+    });
+
+    httpPassThrough.on('end', () => {
+      storedValue = zlib.gunzipSync(Buffer.concat(chunks));
+
+      const callbackSet = require('http').request.mock.calls[0][1];
+
+      callbackSet(responseHttpOk(''));
+    });
+
+    await store.set(Buffer.from('key-set'), {foo: 42});
+
+    const promiseGet = store.get(Buffer.from('key-set'));
+    const callbackGet = require('http').request.mock.calls[1][1];
+
+    callbackGet(responseHttpOk(storedValue));
+
+    expect(await promiseGet).toEqual({foo: 42});
+  });
+
+  it('gets the same value that was set when storing buffers', async () => {
+    const store = new HttpStore({endpoint: 'http://www.example.com/endpoint'});
+    const chunks = [];
+    let storedValue;
+
+    httpPassThrough.on('data', chunk => {
+      chunks.push(chunk);
+    });
+
+    httpPassThrough.on('end', () => {
+      storedValue = zlib.gunzipSync(Buffer.concat(chunks));
+
+      const callbackSet = require('http').request.mock.calls[0][1];
+
+      callbackSet(responseHttpOk(''));
+    });
+
+    const bufferValue = new Buffer([0xfb, 0xca, 0xc4]);
+
+    await store.set(Buffer.from('key-set'), bufferValue);
+
+    const promiseGet = store.get(Buffer.from('key-set'));
+    const callbackGet = require('http').request.mock.calls[1][1];
+
+    callbackGet(responseHttpOk(storedValue));
+
+    expect(await promiseGet).toEqual(bufferValue);
+  });
 });

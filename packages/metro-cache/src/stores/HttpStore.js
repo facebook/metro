@@ -28,6 +28,9 @@ const ZLIB_OPTIONS = {
   level: 9,
 };
 
+const NULL_BYTE = 0x00;
+const NULL_BYTE_BUFFER = new Buffer([NULL_BYTE]);
+
 class HttpStore<T> {
   static HttpError = HttpError;
   static NetworkError = NetworkError;
@@ -82,7 +85,7 @@ class HttpStore<T> {
 
       const req = this._module.request(options, res => {
         const code = res.statusCode;
-        let data = '';
+        const data = [];
 
         if (code === 404) {
           res.resume();
@@ -99,7 +102,7 @@ class HttpStore<T> {
         const gunzipped = res.pipe(zlib.createGunzip());
 
         gunzipped.on('data', chunk => {
-          data += chunk.toString();
+          data.push(chunk);
         });
 
         gunzipped.on('error', err => {
@@ -108,7 +111,13 @@ class HttpStore<T> {
 
         gunzipped.on('end', () => {
           try {
-            resolve(JSON.parse(data));
+            const buffer = Buffer.concat(data);
+
+            if (buffer.length > 0 && buffer[0] === NULL_BYTE) {
+              resolve((buffer.slice(1): any));
+            } else {
+              resolve(JSON.parse(buffer.toString('utf8')));
+            }
           } catch (err) {
             reject(err);
           }
@@ -152,7 +161,13 @@ class HttpStore<T> {
       });
 
       gzip.pipe(req);
-      gzip.end(JSON.stringify(value) || 'null');
+
+      if (value instanceof Buffer) {
+        gzip.write(NULL_BYTE_BUFFER);
+        gzip.end(value);
+      } else {
+        gzip.end(JSON.stringify(value) || 'null');
+      }
     });
   }
 
