@@ -685,12 +685,12 @@ describe('traverseDependencies', function() {
       } catch (error) {
         expect(error.message).toEqual(
           [
-            'jest-haste-map: @providesModule naming collision:',
+            'jest-haste-map: Haste module naming collision:',
             '  Duplicate module name: index',
             '  Paths: /root/b.js collides with /root/index.js',
             '',
-            'This error is caused by a @providesModule declaration with the ' +
-              'same name across two different files.',
+            'This error is caused by `hasteImpl` returning the same ' +
+              'name for different files.',
           ].join('\n'),
         );
       }

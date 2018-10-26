@@ -34,10 +34,23 @@ module.exports = class ModuleCache {
   }
 
   getModule(path: string): Module {
-    let m = this.modules.get(path);
+    // This is hacky as hell... `ModuleGraph` handles relative paths but which
+    // start with a slash (so we can have `/js/foo.js` or even `/../foo.js`).
+    // This does not play well with `jest-haste-map`, which tries to convert
+    // paths to absolute (https://fburl.com/vbwmjsxa) causing an additional
+    // slashed to be prepended in the file path.
+    // TODO: Refactor the way metro-buck handles paths to make them either
+    // relative or absolute.
+    const normalizedPath = path.startsWith('//') ? path.substr(1) : path;
+
+    let m = this.modules.get(normalizedPath);
     if (!m) {
-      m = new Module(path, this, this.getTransformedFile(path));
-      this.modules.set(path, m);
+      m = new Module(
+        normalizedPath,
+        this,
+        this.getTransformedFile(normalizedPath),
+      );
+      this.modules.set(normalizedPath, m);
     }
     return m;
   }
