@@ -10,27 +10,11 @@
 
 'use strict';
 
+const canonicalize = require('metro-core/src/canonicalize');
+
 import type {TransformInputOptions} from './transformHelpers';
 
 export opaque type GraphId: string = string;
-
-// TODO T35181528 (alexkirsz) This function is extracted from metro-cache.
-// We could re-use stableHash instead.
-function canonicalize(key: string, value: mixed): mixed {
-  if (!(value instanceof Object) || value instanceof Array) {
-    return value;
-  }
-
-  const keys = Object.keys(value).sort();
-  const length = keys.length;
-  const object = {};
-
-  for (let i = 0; i < length; i++) {
-    object[keys[i]] = value[keys[i]];
-  }
-
-  return object;
-}
 
 function getGraphId(
   entryFile: string,
@@ -40,7 +24,10 @@ function getGraphId(
     {
       entryFile,
       options: {
-        customTransformOptions: options.customTransformOptions || null,
+        customTransformOptions:
+          options.customTransformOptions != null
+            ? options.customTransformOptions
+            : null,
         dev: options.dev,
         experimentalImportSupport: options.experimentalImportSupport || false,
         hot: options.hot,
