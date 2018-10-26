@@ -64,13 +64,7 @@ describe('`inlineModuleIds`:', () => {
     });
 
     expect(inlineModuleIds(module, idForPath).moduleCode).toEqual(
-      [
-        '__d(function (require, depMap) {',
-        '  require(345);',
-        '',
-        '  require(6);',
-        '},12);',
-      ].join('\n'),
+      '__d(function(require,depMap){require(345);require(6);},12);',
     );
   });
 
@@ -78,13 +72,7 @@ describe('`inlineModuleIds`:', () => {
     const module = createReUsedVariableModule();
 
     expect(inlineModuleIds(module, () => 98).moduleCode).toEqual(
-      [
-        '__d(function (require, depMap) {',
-        '  function anotherScope(depMap) {',
-        '    return depMap++;',
-        '  }',
-        '},98);',
-      ].join('\n'),
+      '__d(function(require,depMap){function anotherScope(depMap){return depMap++;}},98);',
     );
   });
 });

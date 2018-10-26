@@ -67,7 +67,7 @@ it('creates a source map', () => {
       return section;
     }),
   );
-  expect(map.x_facebook_offsets).toEqual([1, 4, 7, 10, 13, 16]);
+  expect(map.x_facebook_offsets).toEqual([1, 2, 3, 4, 5, 6]);
 });
 
 it('creates a magic file with the number', () => {
@@ -135,7 +135,7 @@ function makeModuleMap(name, path) {
 }
 
 function makeModuleCode(moduleCode) {
-  return `__d(() => {\n${moduleCode}\n})`;
+  return `__d(() => {${moduleCode}})`;
 }
 
 function makeModulePath(name) {

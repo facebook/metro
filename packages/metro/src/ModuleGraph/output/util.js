@@ -49,7 +49,6 @@ function inlineModuleIds(
     babelrc: false,
     code: false,
     configFile: false,
-    minified: false,
     plugins: [[reverseDependencyMapReferences, {dependencyIds}]],
   });
 
@@ -57,7 +56,7 @@ function inlineModuleIds(
     ast,
     path,
     '',
-    false,
+    true,
   );
 
   return {

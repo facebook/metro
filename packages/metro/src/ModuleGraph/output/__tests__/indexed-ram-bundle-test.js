@@ -89,7 +89,7 @@ it('creates a source map', () => {
       return section;
     }),
   );
-  expect(map.x_facebook_offsets).toEqual([1, 4, 7, 10, 13, 16]);
+  expect(map.x_facebook_offsets).toEqual([1, 2, 3, 4, 5, 6]);
 });
 
 describe('Startup section optimization', () => {
@@ -136,7 +136,7 @@ describe('Startup section optimization', () => {
       countLines(requireCall),
     );
 
-    expect(map.x_facebook_offsets).toEqual([10, 13, undefined, undefined, 16]);
+    expect(map.x_facebook_offsets).toEqual([4, 5, undefined, undefined, 6]);
 
     expect(map.sections.slice(1)).toEqual(
       modules.filter(not(Set.prototype.has), new Set(preloaded)).map(m => {
@@ -177,9 +177,9 @@ describe('RAM groups / common sections', () => {
   });
 
   it('reflects section groups in the source map', () => {
-    expect(map.x_facebook_offsets).toEqual([1, 4, 4, 13, 13, 4]);
+    expect(map.x_facebook_offsets).toEqual([1, 2, 2, 5, 5, 2]);
     const maps = map.sections.slice(-2);
-    const toplevelOffsets = [4, 13];
+    const toplevelOffsets = [2, 5];
 
     maps
       .map((groupMap, i) => [groups[i], groupMap])
@@ -247,7 +247,7 @@ function makeModuleMap(name, path) {
 }
 
 function makeModuleCode(moduleCode) {
-  return `__d(() => {\n${moduleCode}\n})`;
+  return `__d(() => {${moduleCode}})`;
 }
 
 function makeModulePath(name) {
