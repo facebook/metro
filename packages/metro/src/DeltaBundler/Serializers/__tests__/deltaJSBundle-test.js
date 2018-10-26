@@ -53,19 +53,17 @@ const options = {
 
 it('returns a reset delta', () => {
   expect(
-    JSON.parse(
-      deltaJSBundle(
-        'foo',
-        prepend,
-        {
-          modified: graph.dependencies,
-          deleted: new Set(),
-          reset: true,
-        },
-        'sequenceId',
-        graph,
-        options,
-      ),
+    deltaJSBundle(
+      'foo',
+      prepend,
+      {
+        modified: graph.dependencies,
+        deleted: new Set(),
+        reset: true,
+      },
+      'sequenceId',
+      graph,
+      options,
     ),
   ).toEqual({
     id: 'sequenceId',
@@ -85,19 +83,17 @@ it('returns a reset delta', () => {
 
 it('returns an incremental delta with modified files', () => {
   expect(
-    JSON.parse(
-      deltaJSBundle(
-        'foo',
-        prepend,
-        {
-          modified: new Map([createModule('bar', [])]),
-          deleted: new Set(),
-          reset: false,
-        },
-        'sequenceId',
-        graph,
-        options,
-      ),
+    deltaJSBundle(
+      'foo',
+      prepend,
+      {
+        modified: new Map([createModule('bar', [])]),
+        deleted: new Set(),
+        reset: false,
+      },
+      'sequenceId',
+      graph,
+      options,
     ),
   ).toEqual({
     id: 'sequenceId',
@@ -110,19 +106,17 @@ it('returns an incremental delta with modified files', () => {
 
 it('returns an incremental delta with deleted files', () => {
   expect(
-    JSON.parse(
-      deltaJSBundle(
-        'foo',
-        prepend,
-        {
-          modified: new Map([createModule('entrypoint', ['foo'])]),
-          deleted: new Set(['/root/bar.js']),
-          reset: false,
-        },
-        'sequenceId',
-        graph,
-        options,
-      ),
+    deltaJSBundle(
+      'foo',
+      prepend,
+      {
+        modified: new Map([createModule('entrypoint', ['foo'])]),
+        deleted: new Set(['/root/bar.js']),
+        reset: false,
+      },
+      'sequenceId',
+      graph,
+      options,
     ),
   ).toEqual({
     id: 'sequenceId',

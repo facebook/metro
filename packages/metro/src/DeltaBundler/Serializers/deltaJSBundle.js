@@ -22,6 +22,14 @@ import type {
   SerializerOptions,
 } from '../types.flow';
 
+export type DeltaBundle = $ReadOnly<{|
+  id: string,
+  pre: $ReadOnlyArray<[number, string]>,
+  post: $ReadOnlyArray<[number, string]>,
+  delta: $ReadOnlyArray<[number, ?string]>,
+  reset: boolean,
+|}>;
+
 function deltaJSBundle(
   entryPoint: string,
   pre: $ReadOnlyArray<Module<>>,
@@ -29,7 +37,7 @@ function deltaJSBundle(
   sequenceId: string,
   graph: Graph<>,
   options: SerializerOptions,
-): string {
+): DeltaBundle {
   const outputPre = [];
   const outputPost = [];
   const outputDelta = [];
@@ -71,15 +79,13 @@ function deltaJSBundle(
     }
   }
 
-  const output = {
+  return {
     id: sequenceId,
     pre: outputPre,
     post: outputPost,
     delta: outputDelta,
     reset: delta.reset,
   };
-
-  return JSON.stringify(output);
 }
 
 module.exports = deltaJSBundle;

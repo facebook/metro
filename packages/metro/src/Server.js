@@ -27,6 +27,7 @@ const mime = require('mime-types');
 const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
 const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
 const path = require('path');
+const serializeDeltaJSBundle = require('./DeltaBundler/Serializers/helpers/serializeDeltaJSBundle');
 const symbolicate = require('./Server/symbolicate/symbolicate');
 const url = require('url');
 const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
@@ -623,11 +624,9 @@ class Server {
       );
       mres.setHeader(DELTA_ID_HEADER, String(result.nextRevId));
       mres.setHeader('Content-Type', 'application/json');
-      mres.setHeader(
-        'Content-Length',
-        String(Buffer.byteLength(result.bundle)),
-      );
-      mres.end(result.bundle);
+      const bundle = serializeDeltaJSBundle.toJSON(result.bundle);
+      mres.setHeader('Content-Length', String(Buffer.byteLength(bundle)));
+      mres.end(bundle);
     },
   });
 
