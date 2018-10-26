@@ -11,7 +11,12 @@
 'use strict';
 
 function canonicalize(key: string, value: mixed): mixed {
-  if (!(value instanceof Object) || value instanceof Array) {
+  if (
+    // eslint-disable-next-line lint/strictly-null
+    value === null ||
+    typeof value !== 'object' ||
+    Array.isArray(value)
+  ) {
     return value;
   }
 

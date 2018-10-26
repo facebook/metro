@@ -148,4 +148,17 @@ describe('canonicalize', () => {
       ),
     );
   });
+
+  it('works with JSON.stringify for objects with no prototype', () => {
+    const obj1 = Object.create(null);
+    obj1.b = true;
+    obj1.a = true;
+    const obj2 = Object.create(null);
+    obj2.a = true;
+    obj2.b = true;
+
+    expect(JSON.stringify(obj1, canonicalize)).toBe(
+      JSON.stringify(obj2, canonicalize),
+    );
+  });
 });
