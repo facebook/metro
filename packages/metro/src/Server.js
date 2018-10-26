@@ -361,11 +361,19 @@ class Server {
     }
   }
 
-  processRequest = async (
+  processRequest = (
     req: IncomingMessage,
     res: ServerResponse,
-    next: ?() => mixed,
+    next: (?Error) => mixed,
   ) => {
+    this._processRequest(req, res, next).catch(next);
+  };
+
+  async _processRequest(
+    req: IncomingMessage,
+    res: ServerResponse,
+    next: (?Error) => mixed,
+  ) {
     const urlObj = url.parse(req.url, true);
     const {host} = req.headers;
     debug(`Handling request: ${host ? 'http://' + host : ''}${req.url}`);
@@ -386,13 +394,10 @@ class Server {
       await this._processSingleAssetRequest(req, res);
     } else if (pathname === '/symbolicate') {
       this._symbolicate(req, res);
-    } else if (next) {
-      next();
     } else {
-      res.writeHead(404);
-      res.end();
+      next();
     }
-  };
+  }
 
   _createRequestProcessor<T>({
     createStartEntry,

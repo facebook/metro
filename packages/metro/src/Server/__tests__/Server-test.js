@@ -74,7 +74,7 @@ describe('processRequest', () => {
   options.serializer.getModulesRunBeforeMainModule = () => ['InitializeCore'];
 
   const makeRequest = (reqHandler, requrl, reqOptions) =>
-    new Promise(resolve =>
+    new Promise((resolve, reject) =>
       reqHandler(
         {url: requrl, headers: {host: 'localhost:8081'}, ...reqOptions},
         {
@@ -94,7 +94,7 @@ describe('processRequest', () => {
             resolve(this);
           },
         },
-        {next: () => {}},
+        reject,
       ),
     );
 

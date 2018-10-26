@@ -62,7 +62,7 @@ export type GetTransformOptions = (
 export type Middleware = (
   IncomingMessage,
   ServerResponse,
-  ?() => mixed,
+  (e: ?Error) => mixed,
 ) => mixed;
 
 export type OldConfigT = {
