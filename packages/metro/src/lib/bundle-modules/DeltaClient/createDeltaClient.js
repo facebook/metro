@@ -19,7 +19,12 @@ const bundleToString = require('./bundleToString');
 const patchBundle = require('./patchBundle');
 const stringToBundle = require('./stringToBundle');
 
-import type {Bundle, DeltaBundle, HmrUpdate} from '../types.flow';
+import type {
+  Bundle,
+  DeltaBundle,
+  HmrUpdate,
+  FormattedError,
+} from '../types.flow';
 
 declare var __DEV__: boolean;
 
@@ -36,7 +41,9 @@ export type GetHmrServerUrl = (
 export type DeltaClientOptions = {|
   +getDeltaBundle?: GetDeltaBundle,
   +getHmrServerUrl?: GetHmrServerUrl,
+  +onUpdateStart?: (clientId: string) => void,
   +onUpdate?: (clientId: string, update: HmrUpdate) => void,
+  +onUpdateError?: (clientId: string, error: FormattedError) => void,
 |};
 
 export type DeltaClient = (event: FetchEvent) => Promise<Response>;
@@ -82,10 +89,33 @@ function defaultOnUpdate(clientId: string, update: HmrUpdate) {
   });
 }
 
+function defaultOnUpdateStart(clientId: string) {
+  clients.get(clientId).then(client => {
+    if (client != null) {
+      client.postMessage({
+        type: 'METRO_UPDATE_START',
+      });
+    }
+  });
+}
+
+function defaultOnUpdateError(clientId: string, error: FormattedError) {
+  clients.get(clientId).then(client => {
+    if (client != null) {
+      client.postMessage({
+        type: 'METRO_UPDATE_ERROR',
+        error,
+      });
+    }
+  });
+}
+
 function createDeltaClient({
   getHmrServerUrl = defaultGetHmrServerUrl,
   getDeltaBundle = defaultGetDeltaBundle,
+  onUpdateStart = defaultOnUpdateStart,
   onUpdate = defaultOnUpdate,
+  onUpdateError = defaultOnUpdateError,
 }: DeltaClientOptions = {}): DeltaClient {
   const clientsByRevId: Map<string, Set<string>> = new Map();
 
@@ -140,6 +170,11 @@ function createDeltaClient({
                 reject(error);
                 return;
               }
+              clientIds.forEach(clientId => onUpdateError(clientId, error));
+            });
+
+            wsClient.on('update-start', () => {
+              clientIds.forEach(clientId => onUpdateStart(clientId));
             });
 
             wsClient.on('update', update => {

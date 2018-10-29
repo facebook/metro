@@ -347,6 +347,89 @@ post(\\"rev0\\");"
       });
     });
 
+    it('sends an update start message to clients', async () => {
+      const clientMock = {
+        postMessage: jest.fn(),
+      };
+      global.clients = {
+        get: jest.fn().mockResolvedValue(clientMock),
+      };
+      const deltaClient = createDeltaClient();
+
+      deltaClient({
+        clientId: 'client0',
+        request: new Request('https://localhost/bundles/cool.bundle'),
+      });
+
+      await flushPromises();
+
+      emit('open');
+      emit('update-start');
+      emit('update', {
+        revisionId: 'rev0',
+        modules: [],
+        deleted: [],
+        sourceMappingURLs: [],
+        sourceURLs: [],
+      });
+      emit('update-done');
+
+      emit('update-start');
+
+      expect(global.clients.get).toHaveBeenCalledWith('client0');
+
+      await flushPromises();
+
+      expect(clientMock.postMessage).toHaveBeenCalledWith({
+        type: 'METRO_UPDATE_START',
+      });
+    });
+
+    it('sends an update error message to clients', async () => {
+      const clientMock = {
+        postMessage: jest.fn(),
+      };
+      global.clients = {
+        get: jest.fn().mockResolvedValue(clientMock),
+      };
+      const deltaClient = createDeltaClient();
+
+      deltaClient({
+        clientId: 'client0',
+        request: new Request('https://localhost/bundles/cool.bundle'),
+      });
+
+      await flushPromises();
+
+      emit('open');
+      emit('update-start');
+      emit('update', {
+        revisionId: 'rev0',
+        modules: [],
+        deleted: [],
+        sourceMappingURLs: [],
+        sourceURLs: [],
+      });
+      emit('update-done');
+
+      const error = {
+        type: 'CompleteFailureError',
+        message: 'Everything went south',
+        errors: [],
+      };
+      emit('update-start');
+      emit('error', error);
+
+      expect(global.clients.get).toHaveBeenCalledWith('client0');
+
+      await flushPromises();
+
+      expect(clientMock.postMessage).toHaveBeenCalledWith({
+        type: 'METRO_UPDATE_ERROR',
+        error,
+      });
+    });
+
     it('patches the cached bundle on later update', async () => {
       const deltaClient = createDeltaClient();
 
@@ -422,6 +505,66 @@ post(\\"rev0\\");"
       emit('update-done');
 
       expect(onUpdate).toHaveBeenCalledWith('client0', update);
+    });
+
+    it('accepts a custom onUpdateStart function', async () => {
+      const onUpdateStart = jest.fn();
+      const deltaClient = createDeltaClient({onUpdateStart});
+
+      deltaClient({
+        clientId: 'client0',
+        request: new Request('https://localhost/bundles/cool.bundle'),
+      });
+
+      await flushPromises();
+
+      emit('open');
+      emit('update-start');
+      emit('update', {
+        revisionId: 'rev0',
+        modules: [],
+        deleted: [],
+        sourceMappingURLs: [],
+        sourceURLs: [],
+      });
+      emit('update-done');
+
+      emit('update-start');
+
+      expect(onUpdateStart).toHaveBeenCalledWith('client0');
+    });
+
+    it('accepts a custom onUpdateError function', async () => {
+      const onUpdateError = jest.fn();
+      const deltaClient = createDeltaClient({onUpdateError});
+
+      deltaClient({
+        clientId: 'client0',
+        request: new Request('https://localhost/bundles/cool.bundle'),
+      });
+
+      await flushPromises();
+
+      emit('open');
+      emit('update-start');
+      emit('update', {
+        revisionId: 'rev0',
+        modules: [],
+        deleted: [],
+        sourceMappingURLs: [],
+        sourceURLs: [],
+      });
+      emit('update-done');
+
+      const error = {
+        type: 'CompleteFailureError',
+        message: 'Everything went south',
+        errors: [],
+      };
+      emit('update-start');
+      emit('error', error);
+
+      expect(onUpdateError).toHaveBeenCalledWith('client0', error);
     });
 
     it('only connects once for a given revisionId', async () => {

@@ -210,6 +210,7 @@ describe('HmrServer', () => {
       },
     ]);
   });
+
   it('should return the correctly formatted HMR message after a file change', async () => {
     const sendMessage = jest.fn();
 

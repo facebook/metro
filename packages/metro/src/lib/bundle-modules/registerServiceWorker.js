@@ -39,9 +39,17 @@ function registerServiceWorker(swUrl: string) {
         sw.addEventListener('message', event => {
           const messageEvent: ServiceWorkerMessageEvent = (event: $FlowIssue);
           switch (messageEvent.data.type) {
+            case 'METRO_UPDATE_START': {
+              console.info('Metro update started.');
+              break;
+            }
             case 'METRO_UPDATE': {
               console.info('Injecting metro update:', messageEvent.data.body);
-              injectUpdate(messageEvent.data.update);
+              injectUpdate(messageEvent.data.body);
+              break;
+            }
+            case 'METRO_UPDATE_ERROR': {
+              console.error('Metro update error: ', messageEvent.data.error);
               break;
             }
           }
