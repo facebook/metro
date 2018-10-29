@@ -21,7 +21,7 @@
 
 'use strict';
 
-const babel = require('babel-core');
+const babel = require('@babel/core');
 const chalk = require('chalk');
 const fs = require('fs');
 const getPackages = require('./_getPackages');

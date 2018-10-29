@@ -20,17 +20,19 @@ function normalizePseudoglobalsCall(source) {
     ast: true,
     babelrc: false,
     code: false,
-    compact: true,
+    compact: false,
+    configFile: false,
     sourceType: 'module',
   });
 
   const reserved = normalizePseudoglobals(ast);
 
-  const {code} = transformFromAstSync(ast, {
+  const {code} = transformFromAstSync(ast, source, {
     ast: false,
     babelrc: false,
     code: true,
-    compact: true,
+    compact: false,
+    configFile: false,
     sourceType: 'module',
   });
 

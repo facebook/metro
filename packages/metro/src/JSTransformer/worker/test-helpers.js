@@ -11,7 +11,6 @@
 'use strict';
 
 const generate = require('@babel/generator').default;
-
 const {transformSync} = require('@babel/core');
 
 opaque type Code = string;
@@ -32,6 +31,7 @@ function transform(
     babelrc: false,
     code: false,
     compact: true,
+    configFile: false,
     plugins: optionsPlugins,
     sourceType: 'module',
   };
