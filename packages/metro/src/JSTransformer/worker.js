@@ -201,7 +201,8 @@ class JsTransformer {
     // Transformers can ouptut null ASTs (if they ignore the file). In that case
     // we need to parse the module source code to get their AST.
     let ast =
-      transformResult.ast || babylon.parse(sourceCode, {sourceType: 'module'});
+      transformResult.ast ||
+      babylon.parse(sourceCode, {sourceType: 'unambiguous'});
 
     const {importDefault, importAll} = generateImportNames(ast);
 

@@ -203,6 +203,23 @@ describe('code transformation worker:', () => {
     ]);
   });
 
+  it('does not add "use strict" on non-modules', async () => {
+    const result = await transformer.transform(
+      'node_modules/local/file.js',
+      'module.exports = {};',
+      {
+        dev: true,
+        experimentalImportSupport: true,
+        type: 'module',
+      },
+    );
+
+    expect(result.output[0].type).toBe('js/module');
+    expect(result.output[0].data.code).toBe(
+      [HEADER_DEV, '  module.exports = {};', '});'].join('\n'),
+    );
+  });
+
   it('reports filename when encountering unsupported dynamic dependency', async () => {
     const contents = [
       'require("./a");',
