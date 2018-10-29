@@ -188,8 +188,8 @@ describe('HmrServer', () => {
       {
         type: 'update',
         body: {
-          id: 'revision-id',
-          delta: [
+          revisionId: 'revision-id',
+          modules: [
             [
               '/root/hi-id',
               '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',

@@ -14,20 +14,31 @@
 const crc32 = (require('buffer-crc32'): {unsigned(Buffer): number});
 const serializeDeltaJSBundle = require('../serializeDeltaJSBundle');
 
-const deltaBundle = {
-  id: 'arbitrary ID',
-  pre: [[-1, 'arbitrary pre string'], [-2, 'arbitrary pre string']],
-  post: [[-3, 'arbitrary post string'], [-4, 'arbitrary post string']],
-  delta: [
+const baseBundle = {
+  base: true,
+  revisionId: 'arbitrary ID',
+  pre: 'arbitrary pre string',
+  post: 'arbitrary post string',
+  modules: [
     [11, 'arbitrary module source'],
-    [1111, null],
     [111111, 'arbitrary module source 2'],
-    [11111111, null],
   ],
-  reset: true,
+};
+
+const deltaBundle = {
+  base: false,
+  revisionId: 'arbitrary ID 2',
+  modules: [
+    [11, 'arbitrary module source'],
+    [111111, 'arbitrary module source 2'],
+  ],
+  deleted: [1111, 11111111],
 };
 
 it('can serialize to a string', () => {
+  expect(serializeDeltaJSBundle.toJSON(baseBundle)).toEqual(
+    JSON.stringify(baseBundle),
+  );
   expect(serializeDeltaJSBundle.toJSON(deltaBundle)).toEqual(
     JSON.stringify(deltaBundle),
   );
@@ -38,12 +49,12 @@ const EMPTY_STRING = 0xffffffff;
 
 describe('binary stream serialization', () => {
   const VERSION_OFFSET = 4;
-  const RESET_OFFSET = VERSION_OFFSET + 3;
-  const BODY_OFFSET = RESET_OFFSET + 1;
+  const BASE_OFFSET = VERSION_OFFSET + 3;
+  const BODY_OFFSET = BASE_OFFSET + 1;
 
   const EMPTY_CRC32 = 0;
 
-  const stream = serializeDeltaJSBundle.toBinaryStream(deltaBundle);
+  const stream = serializeDeltaJSBundle.toBinaryStream(baseBundle);
   const serialized = consumeStream(stream);
 
   let buffer;
@@ -64,25 +75,25 @@ describe('binary stream serialization', () => {
     expect(buffer.readUInt32LE(VERSION_OFFSET) & 0xffffff).toEqual(1);
   });
 
-  it('has the reset flag set', () => {
-    expect(buffer.readUInt8(RESET_OFFSET)).toEqual(1);
+  it('has the base flag set', () => {
+    expect(buffer.readUInt8(BASE_OFFSET)).toEqual(1);
   });
 
-  const expectedSequenceId = binString(deltaBundle.id);
-  it('contains the sequence ID after the magic number', () => {
-    expect(subBuffer(BODY_OFFSET, expectedSequenceId.length)).toEqual(
-      expectedSequenceId,
+  const expectedRevisionId = binString(baseBundle.revisionId);
+  it('contains the revision ID after the magic number', () => {
+    expect(subBuffer(BODY_OFFSET, expectedRevisionId.length)).toEqual(
+      expectedRevisionId,
     );
   });
 
-  const preOffset = BODY_OFFSET + expectedSequenceId.length;
-  const expectedPre = preOrPostSection(deltaBundle.pre);
+  const preOffset = BODY_OFFSET + expectedRevisionId.length;
+  const expectedPre = preOrPostSection(baseBundle.pre);
   it('has data for pre-scripts', () => {
     expect(subBuffer(preOffset, expectedPre.length)).toEqual(expectedPre);
   });
 
   const postOffset = preOffset + expectedPre.length;
-  const expectedPost = preOrPostSection(deltaBundle.post);
+  const expectedPost = preOrPostSection(baseBundle.post);
   it('has data for post-scripts', () => {
     expect(subBuffer(postOffset, expectedPost.length)).toEqual(expectedPost);
   });
@@ -90,28 +101,20 @@ describe('binary stream serialization', () => {
   const modulesOffset = postOffset + expectedPost.length;
   it('has module data', () => {
     expect(buffer.slice(modulesOffset)).toEqual(
-      Buffer.concat(deltaBundle.delta.map(binModule)),
+      Buffer.concat(baseBundle.modules.map(binModule)),
     );
   });
 
-  describe('empty pre or post scripts, reset = false:', () => {
+  describe('empty pre/post', () => {
     const stream = serializeDeltaJSBundle.toBinaryStream({
-      ...deltaBundle,
-      pre: [],
-      post: [],
-      reset: false,
+      ...baseBundle,
+      pre: '',
+      post: '',
     });
     const serialized = consumeStream(stream);
 
-    let buffer, preOffset;
     beforeEach(async () => {
       buffer = await serialized;
-      preOffset =
-        BODY_OFFSET + SIZEOF_UINT32 + buffer.readUInt32LE(BODY_OFFSET);
-    });
-
-    it('has a reset byte of 0', () => {
-      expect(buffer.readUInt8(RESET_OFFSET)).toEqual(0);
     });
 
     it('contains no pre scripts', () => {
@@ -127,6 +130,37 @@ describe('binary stream serialization', () => {
       );
       expect(buffer.readUInt32LE(preOffset + SIZEOF_UINT32 * 3)).toEqual(
         EMPTY_CRC32,
+      );
+    });
+  });
+
+  describe('delta bundle:', () => {
+    const stream = serializeDeltaJSBundle.toBinaryStream(deltaBundle);
+    const serialized = consumeStream(stream);
+
+    beforeEach(async () => {
+      buffer = await serialized;
+    });
+
+    it('has a base flag of 0', () => {
+      expect(buffer.readUInt8(BASE_OFFSET)).toEqual(0);
+    });
+
+    const expectedRevisionId = binString(deltaBundle.revisionId);
+    it('contains the revision ID after the magic number', () => {
+      expect(subBuffer(BODY_OFFSET, expectedRevisionId.length)).toEqual(
+        expectedRevisionId,
+      );
+    });
+
+    const modulesOffset = BODY_OFFSET + expectedRevisionId.length;
+    it('has module and deleted data', () => {
+      expect(buffer.slice(modulesOffset)).toEqual(
+        Buffer.concat(
+          deltaBundle.modules
+            .concat(deltaBundle.deleted.map(id => [id, null]))
+            .map(binModule),
+        ),
       );
     });
   });
@@ -166,7 +200,6 @@ function binModule([id, code]: [number, ?string]) {
 }
 
 function preOrPostSection(section) {
-  const source = section.map(([, code]) => `${code}\n`).join('');
-  const serialized = binString(source);
+  const serialized = binString(section);
   return Buffer.concat([serialized, binUint32LE(crc32.unsigned(serialized))]);
 }

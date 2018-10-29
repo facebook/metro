@@ -618,13 +618,13 @@ class Server {
       };
     },
     finish({mres, result}) {
+      const bundle = serializeDeltaJSBundle.toJSON(result.bundle);
       mres.setHeader(
         FILES_CHANGED_COUNT_HEADER,
         String(result.numModifiedFiles),
       );
       mres.setHeader(DELTA_ID_HEADER, String(result.nextRevId));
       mres.setHeader('Content-Type', 'application/json');
-      const bundle = serializeDeltaJSBundle.toJSON(result.bundle);
       mres.setHeader('Content-Length', String(Buffer.byteLength(bundle)));
       mres.end(bundle);
     },

@@ -13,25 +13,32 @@
 const crc32 = (require('buffer-crc32'): {unsigned(Buffer): number});
 const {Readable} = require('stream');
 
-import {type DeltaBundle} from '../deltaJSBundle';
+import type {DeltaBundle, Bundle} from '../../../lib/bundle-modules/types.flow';
 
-exports.toJSON = (JSON.stringify: DeltaBundle => string);
+exports.toJSON = (JSON.stringify: (DeltaBundle | Bundle) => string);
 
 // binary streaming format for delta bundles:
 // FB DE 17 A5     magic number
 // uint24 format version (1)
-// bool reset
-// uint32 sequenceIdLength of sequenceId
-// char[sequenceIdLength] sequenceId
-// uint32 preLength: length of "pre" section
-// char[preLength] pre section
-// char[4] pre section crc32
-// uint32 postLength : lengthof "post" section
-// char[postLength] post section
-// module[], where module = {uint32 id, uint32 length, char[length] code, crc32(code)}
+// bool base
+// uint32 revisionIdLength: length of revisionId
+// char[revisionIdLength] revisionId
+// if (base)
+//   uint32 preLength: length of "pre" section
+//   char[preLength] pre section
+//   char[4] pre section crc32
+//   uint32 postLength: length of "post" section
+//   char[postLength] post section
+//   char[4] post section crc32
+// module[], where module = {
+//   uint32 id
+//   uint32 length
+//   char[length] code
+//   char[4] code crc32
+// }
 
-exports.toBinaryStream = (deltaBundle: DeltaBundle): Readable => {
-  const gen = streamDeltaBundle(deltaBundle);
+exports.toBinaryStream = (bundle: Bundle | DeltaBundle): Readable => {
+  const gen = streamBundle(bundle);
 
   return new Readable({
     read() {
@@ -44,16 +51,25 @@ exports.toBinaryStream = (deltaBundle: DeltaBundle): Readable => {
 const MAGIC_NUMBER = Buffer.of(0xfb, 0xde, 0x17, 0xa5);
 const FORMAT_VERSION = [0x01, 0x00, 0x00];
 
-function* streamDeltaBundle(deltaBundle) {
+function* streamBundle(bundle: DeltaBundle | Bundle) {
   yield MAGIC_NUMBER;
-  yield Buffer.of(...FORMAT_VERSION, deltaBundle.reset ? 1 : 0);
+  yield Buffer.of(...FORMAT_VERSION, bundle.base ? 1 : 0);
 
-  yield str(deltaBundle.id);
-  yield preOrPostSection(deltaBundle.pre);
-  yield preOrPostSection(deltaBundle.post);
+  yield str(bundle.revisionId);
 
-  for (const m of deltaBundle.delta) {
+  if (bundle.base) {
+    yield preOrPostSection(bundle.pre);
+    yield preOrPostSection(bundle.post);
+  }
+
+  for (const m of bundle.modules) {
     yield module(m);
+  }
+
+  if (!bundle.base) {
+    for (const id of bundle.deleted) {
+      yield module([id, null]);
+    }
   }
 }
 
@@ -77,12 +93,11 @@ function preOrPostSection(section) {
     return EMPTY_PRE_OR_POST_SECTION;
   }
 
-  const sectionCode = section.map(x => x[1]).join('\n') + '\n';
-  const size = Buffer.byteLength(sectionCode, 'utf8');
+  const size = Buffer.byteLength(section, 'utf8');
 
   const buffer = Buffer.allocUnsafe(size + SIZEOF_UINT32 * 2); // space for size and checksum
   buffer.writeUInt32LE(size, 0);
-  buffer.write(sectionCode, SIZEOF_UINT32, size, 'utf8');
+  buffer.write(section, SIZEOF_UINT32, size, 'utf8');
 
   appendCRC32(buffer);
 

@@ -9,10 +9,10 @@
  */
 'use strict';
 
-import type {DeltaModuleMap} from './types.flow';
+import type {HmrUpdate} from './types.flow';
 
-function injectDelta(modules: DeltaModuleMap) {
-  modules.forEach(([id, code], i) => {
+function injectUpdate(update: HmrUpdate) {
+  update.modules.forEach(([id, code], i) => {
     // TODO(T34661038): This used to support source maps, but I've
     // removed the corresponding code for now since the HmrServer
     // does not generate source maps.
@@ -29,4 +29,4 @@ function injectDelta(modules: DeltaModuleMap) {
   });
 }
 
-module.exports = injectDelta;
+module.exports = injectUpdate;

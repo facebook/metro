@@ -157,7 +157,7 @@ class HmrServer<TClient: Client> {
     log({
       ...createActionEndEntry(processingHmrChange),
       outdated_modules:
-        message.type === 'update' ? message.body.delta.length : undefined,
+        message.type === 'update' ? message.body.modules.length : undefined,
     });
   }
 
@@ -186,8 +186,8 @@ class HmrServer<TClient: Client> {
       return {
         type: 'update',
         body: {
-          id: revision.id,
-          delta: hmrJSBundle(delta, revision.graph, {
+          revisionId: revision.id,
+          modules: hmrJSBundle(delta, revision.graph, {
             createModuleId: this._createModuleId,
             projectRoot: this._config.projectRoot,
           }),

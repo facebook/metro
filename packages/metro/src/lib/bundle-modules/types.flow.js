@@ -10,18 +10,37 @@
 
 'use strict';
 
+export type ModuleMap = $ReadOnlyArray<[number, string]>;
+
+export type Bundle = {|
+  +base: true,
+  +revisionId: string,
+  +pre: string,
+  +post: string,
+  +modules: ModuleMap,
+|};
+
+export type DeltaBundle = {|
+  +base: false,
+  +revisionId: string,
+  +modules: ModuleMap,
+  +deleted: $ReadOnlyArray<number>,
+|};
+
 export type FormattedError = {|
   +type: string,
   +message: string,
   +errors: Array<{description: string}>,
 |};
 
+export type HmrUpdate = {|
+  +revisionId: string,
+  +modules: ModuleMap,
+|};
+
 export type HmrUpdateMessage = {|
   +type: 'update',
-  +body: {|
-    +id: string,
-    +delta: DeltaModuleMap,
-  |},
+  +body: HmrUpdate,
 |};
 
 export type HmrErrorMessage = {|
@@ -38,16 +57,3 @@ export type HmrMessage =
     |}
   | HmrUpdateMessage
   | HmrErrorMessage;
-
-// (id, code)
-export type DeltaModuleEntry = [number, string | null];
-
-export type DeltaModuleMap = $ReadOnlyArray<DeltaModuleEntry>;
-
-export type DeltaBundle = {|
-  +id: string,
-  +pre: DeltaModuleMap,
-  +post: DeltaModuleMap,
-  +delta: DeltaModuleMap,
-  +reset: boolean,
-|};

@@ -14,10 +14,7 @@ const addParamsToDefineCall = require('../../lib/addParamsToDefineCall');
 
 const {isJsModule, wrapModule} = require('./helpers/js');
 
-import type {
-  DeltaModuleMap,
-  DeltaModuleEntry,
-} from '../../lib/bundle-modules/types.flow';
+import type {ModuleMap} from '../../lib/bundle-modules/types.flow';
 import type {DeltaResult, Graph, Module} from '../types.flow';
 
 type Options = {
@@ -29,7 +26,7 @@ function hmrJSBundle(
   delta: DeltaResult<>,
   graph: Graph<>,
   options: Options,
-): DeltaModuleMap {
+): ModuleMap {
   const modules = [];
 
   for (const module of delta.modified.values()) {
@@ -45,7 +42,7 @@ function _prepareModule(
   module: Module<>,
   graph: Graph<>,
   options: Options,
-): DeltaModuleEntry {
+): [number, string] {
   const code = wrapModule(module, {
     ...options,
     dev: true,

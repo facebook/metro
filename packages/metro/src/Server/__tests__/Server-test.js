@@ -268,7 +268,7 @@ describe('processRequest', () => {
         '__d(function() {foo();},1,[],"foo.js");',
         'require(0);',
         '//# sourceMappingURL=http://localhost:8081/mybundle.map?embedDelta=true',
-        '//# offsetTable={"pre":[[-1,0,24]],"delta":[[0,25,47],[1,73,39]],"post":[[2,113,11],[3,125,71]],"id":"XXXXX-0"}',
+        '//# offsetTable={"pre":24,"post":83,"modules":[[0,25,47],[1,73,39]],"revisionId":"XXXXX-0"}',
       ].join('\n'),
     );
   });
@@ -482,19 +482,15 @@ describe('processRequest', () => {
       );
 
       expect(JSON.parse(response.body)).toEqual({
-        id: 'XXXXX-0',
-        pre: [[-1, 'function () {require();}']],
-        delta: [
+        base: true,
+        revisionId: 'XXXXX-0',
+        pre: 'function () {require();}',
+        post:
+          '//# sourceMappingURL=http://localhost:8081/index.map?platform=ios',
+        modules: [
           [0, '__d(function() {entry();},0,[1],"mybundle.js");'],
           [1, '__d(function() {foo();},1,[],"foo.js");'],
         ],
-        post: [
-          [
-            2,
-            '//# sourceMappingURL=http://localhost:8081/index.map?platform=ios',
-          ],
-        ],
-        reset: true,
       });
 
       expect(response.headers['X-Metro-Delta-ID']).toEqual('XXXXX-0');
@@ -532,11 +528,10 @@ describe('processRequest', () => {
       );
 
       expect(JSON.parse(response.body)).toEqual({
-        id: 'XXXXX-1',
-        pre: [],
-        post: [],
-        delta: [[1, '__d(function() {modified();},1,[],"foo.js");']],
-        reset: false,
+        base: false,
+        revisionId: 'XXXXX-1',
+        modules: [[1, '__d(function() {modified();},1,[],"foo.js");']],
+        deleted: [],
       });
 
       expect(response.headers['X-Metro-Delta-ID']).toEqual('XXXXX-1');
@@ -546,7 +541,7 @@ describe('processRequest', () => {
       });
     });
 
-    it('should return a reset delta if the sequenceId does not match', async () => {
+    it('should return a base bundle if the revisionId does not match', async () => {
       DeltaBundler.prototype.getDelta.mockReturnValue(
         Promise.resolve({
           modified: new Map([
@@ -616,7 +611,7 @@ describe('processRequest', () => {
       );
     });
 
-    it('does return the same initial delta when making concurrent requests', async () => {
+    it('does return the same base bundle when making concurrent requests', async () => {
       let resolveBuildGraph;
 
       transformHelpers.getResolveDependencyFn.mockImplementation(async () => {
@@ -634,9 +629,9 @@ describe('processRequest', () => {
       });
 
       const [result1, result2] = await Promise.all([promise1, promise2]);
-      const {id: id1, ...delta1} = JSON.parse(result1.body);
-      const {id: id2, ...delta2} = JSON.parse(result2.body);
-      expect(delta1).toEqual(delta2);
+      const {revisionId: id1, ...base1} = JSON.parse(result1.body);
+      const {revisionId: id2, ...base2} = JSON.parse(result2.body);
+      expect(base1).toEqual(base2);
       expect(id1).toEqual('XXXXX-0');
       expect(id2).toEqual('XXXXX-1');
 

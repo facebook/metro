@@ -11,14 +11,14 @@
 
 const WebSocketHMRClient = require('./WebSocketHMRClient');
 
-const injectDelta = require('./injectDelta');
+const injectUpdate = require('./injectUpdate');
 
 class HMRClient extends WebSocketHMRClient {
   constructor(url: string) {
     super(url);
 
     this.on('update', update => {
-      injectDelta(update.delta);
+      injectUpdate(update);
     });
   }
 }
