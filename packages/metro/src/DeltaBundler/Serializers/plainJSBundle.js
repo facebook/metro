@@ -61,13 +61,11 @@ function processModules(
 function generateSource(
   modules: ModuleMap,
   offset: number,
-): [Array<[number, number, number]>, string] {
+): [Array<[number, number]>, string] {
   let output = '';
   const table = [];
   for (const [id, code] of modules) {
-    // TODO(T34761233): The offset is redundant since we can retrieve it from
-    // the sum of the lengths of all previous modules.
-    table.push([id, offset + output.length, code.length]);
+    table.push([id, code.length]);
     output += code + '\n';
   }
   // Remove the extraneous line break at the end.
@@ -110,9 +108,14 @@ function plainJSBundle(
     .join('\n');
 
   const [modules, modulesCode] = generateSource(
-    processModules([...graph.dependencies.values()], processModulesOptions).map(
-      ([module, code]) => [options.createModuleId(module.path), code],
-    ),
+    processModules([...graph.dependencies.values()], processModulesOptions)
+      .map(([module, code]) => [options.createModuleId(module.path), code])
+      // Sorting the modules by id ensures that our build output is
+      // deterministic by id. This is necessary for delta bundle clients to be
+      // able to re-generate plain js bundles that match the output of this
+      // function. Otherwise, source maps wouldn't work properly for delta
+      // bundles.
+      .sort((a, b) => a[0] - b[0]),
     preCode.length + 1,
   );
 

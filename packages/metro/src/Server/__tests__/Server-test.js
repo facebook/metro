@@ -268,7 +268,7 @@ describe('processRequest', () => {
         '__d(function() {foo();},1,[],"foo.js");',
         'require(0);',
         '//# sourceMappingURL=//localhost:8081/mybundle.map?embedDelta=true',
-        '//# offsetTable={"pre":24,"post":78,"modules":[[0,25,47],[1,73,39]],"revisionId":"XXXXX-0"}',
+        '//# offsetTable={"pre":24,"post":78,"modules":[[0,47],[1,39]],"revisionId":"XXXXX-0"}',
       ].join('\n'),
     );
   });
