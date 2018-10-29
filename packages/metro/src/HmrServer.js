@@ -183,14 +183,22 @@ class HmrServer<TClient: Client> {
 
       client.revisionId = revision.id;
 
+      const {modules, sourceMappingURLs, sourceURLs} = hmrJSBundle(
+        delta,
+        revision.graph,
+        {
+          createModuleId: this._createModuleId,
+          projectRoot: this._config.projectRoot,
+        },
+      );
+
       return {
         type: 'update',
         body: {
           revisionId: revision.id,
-          modules: hmrJSBundle(delta, revision.graph, {
-            createModuleId: this._createModuleId,
-            projectRoot: this._config.projectRoot,
-          }),
+          modules,
+          sourceMappingURLs,
+          sourceURLs,
         },
       };
     } catch (error) {

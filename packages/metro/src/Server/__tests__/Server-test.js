@@ -232,7 +232,7 @@ describe('processRequest', () => {
         '__d(function() {entry();},0,[1],"mybundle.js");',
         '__d(function() {foo();},1,[],"foo.js");',
         'require(0);',
-        '//# sourceMappingURL=http://localhost:8081/mybundle.map?runModule=true',
+        '//# sourceMappingURL=//localhost:8081/mybundle.map?runModule=true',
       ].join('\n'),
     );
   });
@@ -249,7 +249,7 @@ describe('processRequest', () => {
         'function () {require();}',
         '__d(function() {entry();},0,[1],"mybundle.js");',
         '__d(function() {foo();},1,[],"foo.js");',
-        '//# sourceMappingURL=http://localhost:8081/mybundle.map?runModule=false',
+        '//# sourceMappingURL=//localhost:8081/mybundle.map?runModule=false',
       ].join('\n'),
     );
   });
@@ -267,8 +267,8 @@ describe('processRequest', () => {
         '__d(function() {entry();},0,[1],"mybundle.js");',
         '__d(function() {foo();},1,[],"foo.js");',
         'require(0);',
-        '//# sourceMappingURL=http://localhost:8081/mybundle.map?embedDelta=true',
-        '//# offsetTable={"pre":24,"post":83,"modules":[[0,25,47],[1,73,39]],"revisionId":"XXXXX-0"}',
+        '//# sourceMappingURL=//localhost:8081/mybundle.map?embedDelta=true',
+        '//# offsetTable={"pre":24,"post":78,"modules":[[0,25,47],[1,73,39]],"revisionId":"XXXXX-0"}',
       ].join('\n'),
     );
   });
@@ -485,8 +485,7 @@ describe('processRequest', () => {
         base: true,
         revisionId: 'XXXXX-0',
         pre: 'function () {require();}',
-        post:
-          '//# sourceMappingURL=http://localhost:8081/index.map?platform=ios',
+        post: '//# sourceMappingURL=//localhost:8081/index.map?platform=ios',
         modules: [
           [0, '__d(function() {entry();},0,[1],"mybundle.js");'],
           [1, '__d(function() {foo();},1,[],"foo.js");'],

@@ -115,6 +115,7 @@ function parseOptionsFromUrl(
       bundleType: isMap ? 'map' : isDelta ? 'delta' : 'bundle',
       sourceMapUrl: url.format({
         ...urlObj,
+        protocol: '',
         pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
       }),
       runModule,

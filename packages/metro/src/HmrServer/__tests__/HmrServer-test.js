@@ -148,6 +148,22 @@ describe('HmrServer', () => {
       sendMessage,
     );
 
+    const hiModule = {
+      dependencies: new Map(),
+      inverseDependencies: new Set(),
+      path: '/root/hi',
+      getSource: () => "alert('hi');",
+      output: [
+        {
+          type: 'js/module',
+          data: {
+            map: [],
+            code: '__d(function() { alert("hi"); });',
+          },
+        },
+      ],
+    };
+
     incrementalBundlerMock.updateGraph = jest.fn().mockReturnValue(
       Promise.resolve({
         revision: {
@@ -155,24 +171,7 @@ describe('HmrServer', () => {
           graph: mockedGraph,
         },
         delta: {
-          modified: new Map([
-            [
-              '/root/hi',
-              {
-                dependencies: new Map(),
-                inverseDependencies: new Set(),
-                path: '/root/hi',
-                output: [
-                  {
-                    type: 'js/module',
-                    data: {
-                      code: '__d(function() { alert("hi"); });',
-                    },
-                  },
-                ],
-              },
-            ],
-          ]),
+          modified: new Map([['/root/hi', hiModule]]),
         },
       }),
     );
@@ -181,7 +180,9 @@ describe('HmrServer', () => {
     jest.runAllTimers();
     await promise;
 
-    expect(sendMessage.mock.calls.map(call => JSON.parse(call[0]))).toEqual([
+    const messages = sendMessage.mock.calls.map(call => JSON.parse(call[0]));
+
+    expect(messages).toMatchObject([
       {
         type: 'update-start',
       },
@@ -195,12 +196,30 @@ describe('HmrServer', () => {
               '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
             ],
           ],
+          sourceURLs: ['/root/hi'],
         },
       },
       {
         type: 'update-done',
       },
     ]);
+
+    const sourceMappingURL = messages[1].body.sourceMappingURLs[0];
+
+    expect(
+      JSON.parse(
+        Buffer.from(
+          sourceMappingURL.slice(sourceMappingURL.indexOf('base64') + 7),
+          'base64',
+        ).toString(),
+      ),
+    ).toEqual({
+      mappings: '',
+      names: [],
+      sources: ['/root/hi'],
+      sourcesContent: [hiModule.getSource()],
+      version: 3,
+    });
   });
 
   it('should return error messages when there is a transform error', async () => {

@@ -11,8 +11,11 @@
 'use strict';
 
 const addParamsToDefineCall = require('../../lib/addParamsToDefineCall');
+const getInlineSourceMappingURL = require('./helpers/getInlineSourceMappingURL');
+const getSourceMapInfo = require('./helpers/getSourceMapInfo');
 
 const {isJsModule, wrapModule} = require('./helpers/js');
+const {fromRawMappings} = require('metro-source-map');
 
 import type {ModuleMap} from '../../lib/bundle-modules/types.flow';
 import type {DeltaResult, Graph, Module} from '../types.flow';
@@ -26,23 +29,44 @@ function hmrJSBundle(
   delta: DeltaResult<>,
   graph: Graph<>,
   options: Options,
-): ModuleMap {
+): {|
+  +modules: ModuleMap,
+  +sourceMappingURLs: $ReadOnlyArray<string>,
+  +sourceURLs: $ReadOnlyArray<string>,
+|} {
   const modules = [];
+  const sourceMappingURLs = [];
+  const sourceURLs = [];
 
   for (const module of delta.modified.values()) {
     if (isJsModule(module)) {
-      modules.push(_prepareModule(module, graph, options));
+      const code = _prepareModule(module, graph, options);
+
+      const mapInfo = getSourceMapInfo(module, {
+        excludeSource: false,
+      });
+
+      sourceMappingURLs.push(
+        getInlineSourceMappingURL(
+          fromRawMappings([mapInfo]).toString(undefined, {
+            excludeSource: false,
+          }),
+        ),
+      );
+      sourceURLs.push(mapInfo.path);
+
+      modules.push([options.createModuleId(module.path), code]);
     }
   }
 
-  return modules;
+  return {modules, sourceMappingURLs, sourceURLs};
 }
 
 function _prepareModule(
   module: Module<>,
   graph: Graph<>,
   options: Options,
-): [number, string] {
+): string {
   const code = wrapModule(module, {
     ...options,
     dev: true,
@@ -58,10 +82,7 @@ function _prepareModule(
     ].map(options.createModuleId);
   });
 
-  return [
-    options.createModuleId(module.path),
-    addParamsToDefineCall(code, inverseDependenciesById),
-  ];
+  return addParamsToDefineCall(code, inverseDependenciesById);
 }
 
 /**

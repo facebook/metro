@@ -88,12 +88,12 @@ describe('parseOptionsFromUrl', () => {
     expect(
       parseOptionsFromUrl('http://localhost/my/bundle.bundle', '/', new Set([]))
         .options,
-    ).toMatchObject({sourceMapUrl: 'http://localhost/my/bundle.map'});
+    ).toMatchObject({sourceMapUrl: '//localhost/my/bundle.map'});
 
     expect(
       parseOptionsFromUrl('http://localhost/my/bundle.delta', '/', new Set([]))
         .options,
-    ).toMatchObject({sourceMapUrl: 'http://localhost/my/bundle.map'});
+    ).toMatchObject({sourceMapUrl: '//localhost/my/bundle.map'});
   });
 
   it('always sets the `hot` option to `true`', () => {
