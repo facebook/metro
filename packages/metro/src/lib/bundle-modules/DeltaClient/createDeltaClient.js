@@ -34,7 +34,6 @@ export type GetHmrServerUrl = (
 ) => string;
 
 export type DeltaClientOptions = {|
-  +hot?: boolean,
   +getDeltaBundle?: GetDeltaBundle,
   +getHmrServerUrl?: GetHmrServerUrl,
   +onUpdate?: (clientId: string, update: HmrUpdate) => void,
@@ -47,30 +46,6 @@ async function fetchBundle(bundleReq: Request): Promise<Bundle> {
     includeCredentials: true,
   });
   return stringToBundle(await bundleRes.text());
-}
-
-async function getOrFetchBundle(
-  bundleReq: Request,
-  getDeltaBundle: GetDeltaBundle,
-): Promise<Bundle> {
-  let bundle = await bundleCache.getBundle(bundleReq);
-
-  if (bundle == null) {
-    // We couldn't retrieve a delta bundle from either the delta cache nor the
-    // browser cache. This can happen when the browser cache is cleared but the
-    // service worker survives. In this case, we retrieve the original bundle.
-    bundle = await fetchBundle(bundleReq);
-  } else {
-    try {
-      const delta = await getDeltaBundle(bundleReq, bundle.revisionId);
-      bundle = patchBundle(bundle, delta);
-    } catch (error) {
-      console.error('[SW] Error retrieving delta bundle', error);
-      bundle = await fetchBundle(bundleReq);
-    }
-  }
-
-  return bundle;
 }
 
 function defaultGetHmrServerUrl(
@@ -100,66 +75,111 @@ function defaultOnUpdate(clientId: string, update: HmrUpdate) {
   clients.get(clientId).then(client => {
     if (client != null) {
       client.postMessage({
-        type: 'HMR_UPDATE',
-        body: update,
+        type: 'METRO_UPDATE',
+        update,
       });
     }
   });
 }
 
 function createDeltaClient({
-  hot = false,
   getHmrServerUrl = defaultGetHmrServerUrl,
   getDeltaBundle = defaultGetDeltaBundle,
   onUpdate = defaultOnUpdate,
 }: DeltaClientOptions = {}): DeltaClient {
-  const updateHandlersMap = new Map();
+  const clientsByRevId: Map<string, Set<string>> = new Map();
 
   return async (event: FetchEvent) => {
     const clientId = event.clientId;
-    const bundleReq = event.request;
+    const bundleReq: Request = event.request;
 
-    let bundle = await getOrFetchBundle(bundleReq, getDeltaBundle);
+    let bundle = await bundleCache.getBundle(bundleReq);
 
-    bundleCache.setBundle(bundleReq, bundle);
-
-    if (__DEV__ && hot) {
-      const existingUpdateHandlers = updateHandlersMap.get(bundle.revisionId);
-      if (existingUpdateHandlers != null) {
-        existingUpdateHandlers.add(onUpdate.bind(null, clientId));
+    if (bundle == null) {
+      // We couldn't retrieve a delta bundle from either the delta cache nor the
+      // browser cache. This can happen when the browser cache is cleared but the
+      // service worker survives. In this case, we retrieve the original bundle.
+      bundle = await fetchBundle(bundleReq);
+    } else if (!__DEV__) {
+      try {
+        const delta = await getDeltaBundle(bundleReq, bundle.revisionId);
+        bundle = patchBundle(bundle, delta);
+      } catch (error) {
+        console.error('[SW] Error retrieving delta bundle', error);
+        bundle = await fetchBundle(bundleReq);
+      }
+    } else {
+      const clientIds = clientsByRevId.get(bundle.revisionId);
+      if (clientIds != null) {
+        // There's already an update client running for this particular
+        // revision id.
+        clientIds.add(clientId);
       } else {
-        const updateHandlers = new Set([onUpdate.bind(null, clientId)]);
-        updateHandlersMap.set(bundle.revisionId, updateHandlers);
+        const clientIds = new Set([clientId]);
+        clientsByRevId.set(bundle.revisionId, clientIds);
 
-        const hmrClient = new WebSocketHMRClient(
-          getHmrServerUrl(bundleReq, bundle.revisionId),
-        );
+        try {
+          let currentBundle = bundle;
 
-        hmrClient.on('update', update => {
-          updateHandlersMap.delete(bundle.revisionId);
-          updateHandlersMap.set(update.revisionId, updateHandlers);
+          bundle = await new Promise((resolve, reject) => {
+            let resolved = false;
+            const wsClient = new WebSocketHMRClient(
+              getHmrServerUrl(bundleReq, currentBundle.revisionId),
+            );
 
-          for (const updateHandler of updateHandlers) {
-            updateHandler(update);
-          }
+            wsClient.on('connection-error', error => {
+              reject(error);
+            });
 
-          bundle = patchBundle(bundle, {
-            base: false,
-            revisionId: update.revisionId,
-            modules: update.modules,
-            deleted: update.deleted,
+            wsClient.on('close', () => {
+              clientsByRevId.delete(currentBundle.revisionId);
+            });
+
+            wsClient.on('error', error => {
+              if (!resolved) {
+                reject(error);
+                return;
+              }
+            });
+
+            wsClient.on('update', update => {
+              if (resolved) {
+                // Only notify clients for later updates.
+                clientIds.forEach(clientId => onUpdate(clientId, update));
+              }
+
+              // Transfers all clients to the new revision id.
+              clientsByRevId.delete(currentBundle.revisionId);
+              clientsByRevId.set(update.revisionId, clientIds);
+
+              currentBundle = patchBundle(currentBundle, {
+                base: false,
+                revisionId: update.revisionId,
+                modules: update.modules,
+                deleted: update.deleted,
+              });
+
+              bundleCache.setBundle(bundleReq, currentBundle);
+
+              if (!resolved) {
+                resolved = true;
+                resolve(currentBundle);
+              }
+            });
+
+            wsClient.enable();
           });
-
-          bundleCache.setBundle(bundleReq, bundle);
-        });
-
-        hmrClient.on('close', () => {
-          updateHandlersMap.delete(bundle.revisionId);
-        });
-
-        hmrClient.enable();
+        } catch (error) {
+          console.error(
+            '[SW] Error connecting to the update server. Try refreshing the page.',
+            error,
+          );
+          bundle = await fetchBundle(bundleReq);
+        }
       }
     }
+
+    bundleCache.setBundle(bundleReq, bundle);
 
     const bundleString = bundleToString(bundle);
     const bundleStringRes = new Response(bundleString, {

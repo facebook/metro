@@ -122,6 +122,8 @@ class HmrServer<TClient: Client> {
       revisionId: id,
     };
 
+    await this._handleFileChange(client);
+
     const unlisten = this._bundler
       .getDeltaBundler()
       .listen(

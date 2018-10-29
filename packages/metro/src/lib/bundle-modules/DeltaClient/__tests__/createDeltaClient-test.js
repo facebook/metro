@@ -43,12 +43,13 @@ function createDelta(revisionId, modules = [], deleted = []) {
 describe('createDeltaClient', () => {
   let fetch;
   beforeEach(() => {
-    global.__DEV__ = true;
+    global.__DEV__ = false;
     fetch = global.fetch = jest.fn();
     global.URL = URL;
     global.Response = Response;
     global.Request = Request;
     global.Headers = Headers;
+    console.error = jest.fn();
   });
 
   it('retrieves a bundle from cache and patches it with a delta bundle', async () => {
@@ -190,111 +191,197 @@ post"
     });
   });
 
-  describe('HMR', () => {
+  describe('Updates', () => {
+    const flushPromises = async () =>
+      await new Promise(resolve => setImmediate(resolve));
+
+    const emit = (name, ...args) => {
+      WebSocketHMRClient.prototype.on.mock.calls
+        .filter(call => call[0] === name)
+        .map(call => call[1](...args));
+    };
+
     beforeEach(() => {
+      global.__DEV__ = true;
+      global.clients = {
+        get: jest.fn().mockResolvedValue({
+          postMessage: jest.fn(),
+        }),
+      };
       const bundle = createBundle('rev0', [0]);
-      const delta = createDelta('rev1', [1], [0]);
       getBundle.mockResolvedValue(bundle);
-      fetch.mockResolvedValue(new Response(JSON.stringify(delta)));
+      WebSocketHMRClient.prototype.on.mockClear();
       WebSocketHMRClient.mockClear();
     });
 
     it('sets up the HMR client', async () => {
-      const deltaClient = createDeltaClient({hot: true});
+      const deltaClient = createDeltaClient();
 
-      await deltaClient({
+      deltaClient({
         clientId: 'client0',
         request: new Request('http://localhost/bundles/cool.bundle'),
       });
 
+      await flushPromises();
+
       expect(WebSocketHMRClient).toHaveBeenCalledWith(
-        'ws://localhost/hot?revisionId=rev1',
+        'ws://localhost/hot?revisionId=rev0',
       );
     });
 
     it('sets up the HMR client (HTTPS)', async () => {
-      const deltaClient = createDeltaClient({hot: true});
+      const deltaClient = createDeltaClient();
 
-      await deltaClient({
+      deltaClient({
         clientId: 'client0',
         request: new Request('https://localhost/bundles/cool.bundle'),
       });
 
+      await flushPromises();
+
       expect(WebSocketHMRClient).toHaveBeenCalledWith(
-        'wss://localhost/hot?revisionId=rev1',
+        'wss://localhost/hot?revisionId=rev0',
       );
     });
 
     it('accepts a custom getHmrServerUrl function', async () => {
       const getHmrServerUrl = jest.fn().mockReturnValue('ws://whatever');
-      const deltaClient = createDeltaClient({hot: true, getHmrServerUrl});
+      const deltaClient = createDeltaClient({getHmrServerUrl});
 
       const bundleReq = new Request('https://localhost/bundles/cool.bundle');
-      await deltaClient({
+
+      deltaClient({
         clientId: 'client0',
         request: bundleReq,
       });
 
-      expect(getHmrServerUrl).toHaveBeenCalledWith(bundleReq, 'rev1');
+      await flushPromises();
+
+      expect(getHmrServerUrl).toHaveBeenCalledWith(bundleReq, 'rev0');
       expect(WebSocketHMRClient).toHaveBeenCalledWith('ws://whatever');
     });
 
-    it('sends an HMR update to clients', async () => {
+    it('retrieves a bundle from cache and patches it with the initial update', async () => {
+      const deltaClient = createDeltaClient();
+
+      const bundleReq = new Request('https://localhost/bundles/cool.bundle');
+      const promise = deltaClient({
+        clientId: 'client0',
+        request: bundleReq,
+      });
+
+      await flushPromises();
+
+      emit('open');
+      emit('update-start');
+      emit('update', {
+        revisionId: 'rev1',
+        modules: [[1, '0.1']],
+        deleted: [0],
+        sourceMappingURLs: [],
+        sourceURLs: [],
+      });
+      emit('update-done');
+
+      const response = await promise;
+
+      expect(setBundle).toHaveBeenCalledWith(bundleReq, {
+        base: true,
+        revisionId: 'rev1',
+        pre: 'pre("rev0");',
+        post: 'post("rev0");',
+        modules: [[1, '0.1']],
+      });
+      expect(await response.text()).toMatchInlineSnapshot(`
+"pre(\\"rev0\\");
+0.1
+post(\\"rev0\\");"
+`);
+    });
+
+    it('sends an update message to clients', async () => {
       const clientMock = {
         postMessage: jest.fn(),
       };
       global.clients = {
         get: jest.fn().mockResolvedValue(clientMock),
       };
-      const deltaClient = createDeltaClient({hot: true});
+      const deltaClient = createDeltaClient();
 
-      await deltaClient({
+      deltaClient({
         clientId: 'client0',
         request: new Request('https://localhost/bundles/cool.bundle'),
       });
-      const hmrUpdate = {
-        revisionId: 'rev2',
-        modules: [[0, '0.1']],
+
+      await flushPromises();
+
+      emit('open');
+      emit('update-start');
+      emit('update', {
+        revisionId: 'rev0',
+        modules: [],
         deleted: [],
         sourceMappingURLs: [],
         sourceURLs: [],
-      };
-      const updateHandlers = WebSocketHMRClient.mock.instances[0].on.mock.calls.filter(
-        call => call[0] === 'update',
-      );
-      updateHandlers.forEach(updateHandler => updateHandler[1](hmrUpdate));
-      expect(global.clients.get).toHaveBeenCalledWith('client0');
-
-      // The default update function is asynchronous.
-      await new Promise(resolve => setImmediate(resolve));
-      expect(clientMock.postMessage).toHaveBeenCalledWith({
-        type: 'HMR_UPDATE',
-        body: hmrUpdate,
       });
-    });
+      emit('update-done');
 
-    it('patches the cached bundle on update', async () => {
-      const deltaClient = createDeltaClient({hot: true});
-
-      const bundleReq = new Request('https://localhost/bundles/cool.bundle');
-      await deltaClient({
-        clientId: 'client0',
-        request: bundleReq,
-      });
-      const hmrUpdate = {
-        revisionId: 'rev2',
+      const update = {
+        revisionId: 'rev1',
         modules: [[1, '0.1']],
         deleted: [0],
         sourceMappingURLs: [],
         sourceURLs: [],
       };
-      const updateHandlers = WebSocketHMRClient.mock.instances[0].on.mock.calls.filter(
-        call => call[0] === 'update',
-      );
-      updateHandlers.forEach(updateHandler => updateHandler[1](hmrUpdate));
+      emit('update-start');
+      emit('update', update);
+      emit('update-done');
+
+      expect(global.clients.get).toHaveBeenCalledWith('client0');
+
+      await flushPromises();
+
+      expect(clientMock.postMessage).toHaveBeenCalledWith({
+        type: 'METRO_UPDATE',
+        update,
+      });
+    });
+
+    it('patches the cached bundle on later update', async () => {
+      const deltaClient = createDeltaClient();
+
+      const bundleReq = new Request('https://localhost/bundles/cool.bundle');
+
+      deltaClient({
+        clientId: 'client0',
+        request: bundleReq,
+      });
+
+      emit('open');
+      emit('update-start');
+      emit('update', {
+        revisionId: 'rev0',
+        modules: [],
+        deleted: [],
+        sourceMappingURLs: [],
+        sourceURLs: [],
+      });
+      emit('update-done');
+
+      const update = {
+        revisionId: 'rev1',
+        modules: [[1, '0.1']],
+        deleted: [0],
+        sourceMappingURLs: [],
+        sourceURLs: [],
+      };
+      emit('update-start');
+      emit('update', update);
+      emit('update-done');
+
       expect(setBundle).toHaveBeenCalledWith(bundleReq, {
         base: true,
-        revisionId: 'rev2',
+        revisionId: 'rev1',
         pre: 'pre("rev0");',
         post: 'post("rev0");',
         modules: [[1, '0.1']],
@@ -303,89 +390,139 @@ post"
 
     it('accepts a custom onUpdate function', async () => {
       const onUpdate = jest.fn();
-      const deltaClient = createDeltaClient({hot: true, onUpdate});
+      const deltaClient = createDeltaClient({onUpdate});
 
-      await deltaClient({
+      deltaClient({
         clientId: 'client0',
         request: new Request('https://localhost/bundles/cool.bundle'),
       });
-      const hmrUpdate = {
-        revisionId: 'rev2',
-        modules: [[0, '0.1']],
+
+      await flushPromises();
+
+      emit('open');
+      emit('update-start');
+      emit('update', {
+        revisionId: 'rev0',
+        modules: [],
         deleted: [],
         sourceMappingURLs: [],
         sourceURLs: [],
-      };
-      const updateHandlers = WebSocketHMRClient.mock.instances[0].on.mock.calls.filter(
-        call => call[0] === 'update',
-      );
-      updateHandlers.forEach(updateHandler => updateHandler[1](hmrUpdate));
+      });
+      emit('update-done');
 
-      expect(onUpdate).toHaveBeenCalledWith('client0', hmrUpdate);
+      const update = {
+        revisionId: 'rev1',
+        modules: [[1, '0.1']],
+        deleted: [0],
+        sourceMappingURLs: [],
+        sourceURLs: [],
+      };
+      emit('update-start');
+      emit('update', update);
+      emit('update-done');
+
+      expect(onUpdate).toHaveBeenCalledWith('client0', update);
     });
 
     it('only connects once for a given revisionId', async () => {
-      const bundle = createBundle('rev0', [0]);
-      const delta = createDelta('rev0', [], []);
-      getBundle.mockResolvedValue(bundle);
-      fetch.mockResolvedValue(new Response(JSON.stringify(delta)));
       const onUpdate = jest.fn();
-      const deltaClient = createDeltaClient({hot: true, onUpdate});
+      const deltaClient = createDeltaClient({onUpdate});
 
-      await deltaClient({
+      deltaClient({
         clientId: 'client0',
         request: new Request('https://localhost/bundles/cool.bundle'),
       });
-      fetch.mockResolvedValue(new Response(JSON.stringify(delta)));
-      await deltaClient({
+
+      deltaClient({
         clientId: 'client1',
         request: new Request('https://localhost/bundles/cool.bundle'),
       });
 
-      const hmrUpdate = {
-        revisionId: 'rev2',
+      await flushPromises();
+
+      emit('open');
+      emit('update-start');
+      emit('update', {
+        revisionId: 'rev0',
+        modules: [],
+        deleted: [],
+        sourceMappingURLs: [],
+        sourceURLs: [],
+      });
+      emit('update-done');
+
+      const update = {
+        revisionId: 'rev1',
         modules: [[0, '0.1']],
         deleted: [],
         sourceMappingURLs: [],
         sourceURLs: [],
       };
 
-      expect(WebSocketHMRClient).toHaveBeenCalledTimes(1);
-      const updateHandlers = WebSocketHMRClient.mock.instances[0].on.mock.calls.filter(
-        call => call[0] === 'update',
-      );
-      updateHandlers.forEach(updateHandler => updateHandler[1](hmrUpdate));
+      emit('update-start');
+      emit('update', update);
+      emit('update-done');
 
-      expect(onUpdate).toHaveBeenCalledWith('client0', hmrUpdate);
-      expect(onUpdate).toHaveBeenCalledWith('client1', hmrUpdate);
+      expect(WebSocketHMRClient).toHaveBeenCalledTimes(1);
+      expect(onUpdate).toHaveBeenNthCalledWith(1, 'client0', update);
+      expect(onUpdate).toHaveBeenNthCalledWith(2, 'client1', update);
     });
 
     it('reconnects when a new request comes in', async () => {
-      const bundle = createBundle('rev0', [0]);
-      const delta = createDelta('rev0', [], []);
-      getBundle.mockResolvedValue(bundle);
-      fetch.mockResolvedValue(new Response(JSON.stringify(delta)));
-      const onUpdate = jest.fn();
-      const deltaClient = createDeltaClient({hot: true, onUpdate});
+      const deltaClient = createDeltaClient();
 
-      await deltaClient({
+      deltaClient({
         clientId: 'client0',
         request: new Request('https://localhost/bundles/cool.bundle'),
       });
 
-      expect(WebSocketHMRClient).toHaveBeenCalledTimes(1);
-      const closeHandlers = WebSocketHMRClient.mock.instances[0].on.mock.calls.filter(
-        call => call[0] === 'close',
-      );
-      closeHandlers.forEach(handler => handler[1]());
+      await flushPromises();
 
-      fetch.mockResolvedValue(new Response(JSON.stringify(delta)));
-      await deltaClient({
+      expect(WebSocketHMRClient).toHaveBeenCalledTimes(1);
+
+      emit('close');
+
+      deltaClient({
         clientId: 'client1',
         request: new Request('https://localhost/bundles/cool.bundle'),
       });
 
+      await flushPromises();
+
+      emit('close');
+
       expect(WebSocketHMRClient).toHaveBeenCalledTimes(2);
+    });
+
+    it('fetches the original bundle if there is a connection error', async () => {
+      fetch.mockResolvedValue(
+        new Response(`pre
+0
+post
+//# offsetTable={"pre":3,"post":4,"modules":[[0,1]],"revisionId":"rev0"}`),
+      );
+      const deltaClient = createDeltaClient();
+
+      const bundleReq = new Request('https://localhost/bundles/cool.bundle');
+      const promise = deltaClient({
+        clientId: 'client0',
+        request: bundleReq,
+      });
+
+      await flushPromises();
+
+      emit('connection-error');
+
+      const res = await promise;
+
+      expect(fetch).toHaveBeenCalledWith(bundleReq, {
+        includeCredentials: true,
+      });
+      expect(await res.text()).toMatchInlineSnapshot(`
+"pre
+0
+post"
+`);
     });
   });
 });

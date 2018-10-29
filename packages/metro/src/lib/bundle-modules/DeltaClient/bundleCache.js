@@ -18,7 +18,7 @@ import type {Bundle} from '../types.flow';
 
 const BUNDLE_CACHE_NAME = '__metroBundleCache';
 
-async function getBundleFromBrowserCache(bundleReq: Request) {
+async function getBundleFromBrowserCache(bundleReq: Request): Promise<?Bundle> {
   const res = await fetch(bundleReq, {
     // This forces using the browser cache, in which the initial bundle request
     // will have been stored.
@@ -48,19 +48,13 @@ async function getBundleFromCustomCache(
  */
 async function getBundle(bundleReq: Request): Promise<?Bundle> {
   const cache = await caches.open(BUNDLE_CACHE_NAME);
-  let deltaBundle = await getBundleFromCustomCache(cache, bundleReq);
 
+  const deltaBundle = await getBundleFromCustomCache(cache, bundleReq);
   if (deltaBundle != null) {
     return deltaBundle;
   }
 
-  deltaBundle = await getBundleFromBrowserCache(bundleReq);
-
-  if (deltaBundle != null) {
-    return deltaBundle;
-  }
-
-  return null;
+  return await getBundleFromBrowserCache(bundleReq);
 }
 
 /**

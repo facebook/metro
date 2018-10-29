@@ -12,13 +12,9 @@
 
 'use strict';
 
-declare var __DEV__: boolean;
-
 const createDeltaClient = require('./DeltaClient/createDeltaClient');
 
-const deltaClient = createDeltaClient({
-  hot: __DEV__,
-});
+const deltaClient = createDeltaClient();
 
 self.addEventListener('fetch', event => {
   const reqUrl = new URL(event.request.url);

@@ -23,6 +23,22 @@ describe('HmrServer', () => {
   let callbacks;
   let mockedGraph;
 
+  const hiModule = {
+    dependencies: new Map(),
+    inverseDependencies: new Set(),
+    path: '/root/hi',
+    getSource: () => "alert('hi');",
+    output: [
+      {
+        type: 'js/module',
+        data: {
+          map: [],
+          code: '__d(function() { alert("hi"); });',
+        },
+      },
+    ],
+  };
+
   beforeEach(() => {
     mockedGraph = {
       dependencies: new Map(),
@@ -48,6 +64,16 @@ describe('HmrServer', () => {
       },
       getRevision: getRevisionMock,
       getRevisionByGraphId: getRevisionByGraphIdMock,
+      updateGraph: jest.fn().mockResolvedValue({
+        revision: {
+          id: 'rev0',
+          graph: mockedGraph,
+        },
+        delta: {
+          modified: new Map(),
+          deleted: new Set(),
+        },
+      }),
     };
     createModuleIdMock = path => {
       return path + '-id';
@@ -140,6 +166,50 @@ describe('HmrServer', () => {
     expect(client).toBe(null);
   });
 
+  it('should send an initial update when a client connects', async () => {
+    const sendMessage = jest.fn();
+
+    incrementalBundlerMock.updateGraph.mockResolvedValue({
+      revision: {
+        id: 'rev0',
+        graph: mockedGraph,
+      },
+      delta: {
+        modified: new Map([[hiModule.path, hiModule]]),
+        deleted: new Set(['/root/bye']),
+      },
+    });
+
+    await hmrServer.onClientConnect(
+      '/hot?bundleEntry=EntryPoint.js&platform=ios',
+      sendMessage,
+    );
+
+    const messages = sendMessage.mock.calls.map(call => JSON.parse(call[0]));
+    expect(messages).toMatchObject([
+      {
+        type: 'update-start',
+      },
+      {
+        type: 'update',
+        body: {
+          revisionId: 'rev0',
+          modules: [
+            [
+              '/root/hi-id',
+              '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
+            ],
+          ],
+          deleted: ['/root/bye-id'],
+          sourceURLs: ['/root/hi'],
+          sourceMappingURLs: [expect.anything()],
+        },
+      },
+      {
+        type: 'update-done',
+      },
+    ]);
+  });
   it('should return the correctly formatted HMR message after a file change', async () => {
     const sendMessage = jest.fn();
 
@@ -148,34 +218,18 @@ describe('HmrServer', () => {
       sendMessage,
     );
 
-    const hiModule = {
-      dependencies: new Map(),
-      inverseDependencies: new Set(),
-      path: '/root/hi',
-      getSource: () => "alert('hi');",
-      output: [
-        {
-          type: 'js/module',
-          data: {
-            map: [],
-            code: '__d(function() { alert("hi"); });',
-          },
-        },
-      ],
-    };
+    sendMessage.mockReset();
 
-    incrementalBundlerMock.updateGraph = jest.fn().mockReturnValue(
-      Promise.resolve({
-        revision: {
-          id: 'revision-id',
-          graph: mockedGraph,
-        },
-        delta: {
-          modified: new Map([['/root/hi', hiModule]]),
-          deleted: new Set(['/root/bye']),
-        },
-      }),
-    );
+    incrementalBundlerMock.updateGraph.mockResolvedValue({
+      revision: {
+        id: 'rev1',
+        graph: mockedGraph,
+      },
+      delta: {
+        modified: new Map([[hiModule.path, hiModule]]),
+        deleted: new Set(['/root/bye']),
+      },
+    });
 
     const promise = callbacks.get(mockedGraph)();
     jest.runAllTimers();
@@ -190,7 +244,7 @@ describe('HmrServer', () => {
       {
         type: 'update',
         body: {
-          revisionId: 'revision-id',
+          revisionId: 'rev1',
           modules: [
             [
               '/root/hi-id',
@@ -233,7 +287,9 @@ describe('HmrServer', () => {
       sendMessage,
     );
 
-    incrementalBundlerMock.updateGraph = jest.fn().mockImplementation(() => {
+    sendMessage.mockReset();
+
+    incrementalBundlerMock.updateGraph.mockImplementation(() => {
       const transformError = new SyntaxError('test syntax error');
       transformError.type = 'TransformError';
       transformError.filename = 'EntryPoint.js';
@@ -243,24 +299,29 @@ describe('HmrServer', () => {
 
     await callbacks.get(mockedGraph)();
 
-    expect(JSON.parse(sendMessage.mock.calls[0][0])).toEqual({
-      type: 'update-start',
-    });
-    const sentErrorMessage = JSON.parse(sendMessage.mock.calls[1][0]);
-    expect(sentErrorMessage).toMatchObject({type: 'error'});
-    expect(sentErrorMessage.body).toMatchObject({
-      type: 'TransformError',
-      message: 'test syntax error',
-      errors: [
-        {
-          description: 'test syntax error',
-          filename: 'EntryPoint.js',
-          lineNumber: 123,
+    const messages = sendMessage.mock.calls.map(call => JSON.parse(call[0]));
+
+    expect(messages).toMatchObject([
+      {
+        type: 'update-start',
+      },
+      {
+        type: 'error',
+        body: {
+          type: 'TransformError',
+          message: 'test syntax error',
+          errors: [
+            {
+              description: 'test syntax error',
+              filename: 'EntryPoint.js',
+              lineNumber: 123,
+            },
+          ],
         },
-      ],
-    });
-    expect(JSON.parse(sendMessage.mock.calls[2][0])).toEqual({
-      type: 'update-done',
-    });
+      },
+      {
+        type: 'update-done',
+      },
+    ]);
   });
 });
