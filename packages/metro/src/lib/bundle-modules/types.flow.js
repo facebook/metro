@@ -36,6 +36,7 @@ export type FormattedError = {|
 export type HmrUpdate = {|
   +revisionId: string,
   +modules: ModuleMap,
+  +deleted: $ReadOnlyArray<number>,
   +sourceMappingURLs: $ReadOnlyArray<string>,
   +sourceURLs: $ReadOnlyArray<string>,
 |};

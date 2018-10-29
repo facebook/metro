@@ -172,6 +172,7 @@ describe('HmrServer', () => {
         },
         delta: {
           modified: new Map([['/root/hi', hiModule]]),
+          deleted: new Set(['/root/bye']),
         },
       }),
     );
@@ -196,6 +197,7 @@ describe('HmrServer', () => {
               '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
             ],
           ],
+          deleted: ['/root/bye-id'],
           sourceURLs: ['/root/hi'],
         },
       },

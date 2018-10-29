@@ -31,6 +31,7 @@ function hmrJSBundle(
   options: Options,
 ): {|
   +modules: ModuleMap,
+  +deleted: $ReadOnlyArray<number>,
   +sourceMappingURLs: $ReadOnlyArray<string>,
   +sourceURLs: $ReadOnlyArray<string>,
 |} {
@@ -59,7 +60,12 @@ function hmrJSBundle(
     }
   }
 
-  return {modules, sourceMappingURLs, sourceURLs};
+  return {
+    modules,
+    deleted: [...delta.deleted].map(path => options.createModuleId(path)),
+    sourceMappingURLs,
+    sourceURLs,
+  };
 }
 
 function _prepareModule(

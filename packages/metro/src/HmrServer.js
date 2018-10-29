@@ -183,7 +183,7 @@ class HmrServer<TClient: Client> {
 
       client.revisionId = revision.id;
 
-      const {modules, sourceMappingURLs, sourceURLs} = hmrJSBundle(
+      const {modules, deleted, sourceMappingURLs, sourceURLs} = hmrJSBundle(
         delta,
         revision.graph,
         {
@@ -197,6 +197,7 @@ class HmrServer<TClient: Client> {
         body: {
           revisionId: revision.id,
           modules,
+          deleted,
           sourceMappingURLs,
           sourceURLs,
         },
