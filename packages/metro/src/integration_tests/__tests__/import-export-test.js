@@ -17,7 +17,7 @@ const execBundle = require('../execBundle');
 
 jest.unmock('cosmiconfig');
 
-jasmine.DEFAULT_TIMEOUT_INTERVAL = 30 * 1000;
+jest.setTimeout(30 * 1000);
 
 it('builds a simple bundle', async () => {
   const config = await Metro.loadConfig({

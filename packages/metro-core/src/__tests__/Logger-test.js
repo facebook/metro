@@ -34,8 +34,8 @@ describe('Logger', () => {
     const logEntry = createEntry('Test');
     expect(logEntry).toEqual({
       log_entry_label: 'Test',
-      log_session: jasmine.any(String),
-      metro_bundler_version: jasmine.any(String),
+      log_session: expect.any(String),
+      metro_bundler_version: expect.any(String),
     });
   });
 
@@ -45,9 +45,9 @@ describe('Logger', () => {
       action_name: 'Test',
       action_phase: 'start',
       log_entry_label: 'Test',
-      log_session: jasmine.any(String),
-      metro_bundler_version: jasmine.any(String),
-      start_timestamp: jasmine.any(Object),
+      log_session: expect.any(String),
+      metro_bundler_version: expect.any(String),
+      start_timestamp: expect.any(Object),
     });
   });
 
@@ -58,11 +58,11 @@ describe('Logger', () => {
     expect(actionEndLogEntry).toEqual({
       action_name: 'Test',
       action_phase: 'end',
-      duration_ms: jasmine.any(Number),
+      duration_ms: expect.any(Number),
       log_entry_label: 'Test',
-      log_session: jasmine.any(String),
-      metro_bundler_version: jasmine.any(String),
-      start_timestamp: jasmine.any(Object),
+      log_session: expect.any(String),
+      metro_bundler_version: expect.any(String),
+      start_timestamp: expect.any(Object),
     });
   });
 });

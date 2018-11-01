@@ -18,7 +18,7 @@ const sourceMap = require('source-map');
 
 jest.unmock('cosmiconfig');
 
-jasmine.DEFAULT_TIMEOUT_INTERVAL = 30 * 1000;
+jest.setTimeout(30 * 1000);
 
 const INLINE_SOURCE_MAP_STR =
   '//# sourceMappingURL=data:application/json;charset=utf-8;base64,';

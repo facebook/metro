@@ -437,9 +437,9 @@ describe('processRequest', () => {
     expect(DeltaBundler.prototype.buildGraph).toBeCalledWith(
       ['/root/index.js'],
       {
-        resolve: jasmine.any(Function),
-        transform: jasmine.any(Function),
-        onProgress: jasmine.any(Function),
+        resolve: expect.any(Function),
+        transform: expect.any(Function),
+        onProgress: expect.any(Function),
       },
     );
   });
@@ -836,7 +836,7 @@ describe('processRequest', () => {
       }).then(response => {
         expect(response.statusCode).toEqual(500);
         expect(JSON.parse(response.body)).toEqual({
-          error: jasmine.any(String),
+          error: expect.any(String),
         });
         expect(console.error).toBeCalled();
       });

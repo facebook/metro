@@ -21,7 +21,7 @@ const vm = require('vm');
 
 jest.unmock('cosmiconfig');
 
-jasmine.DEFAULT_TIMEOUT_INTERVAL = 30 * 1000;
+jest.setTimeout(30 * 1000);
 
 it('builds and executes a RAM bundle', async () => {
   const config = await Metro.loadConfig({
