@@ -15,11 +15,16 @@ module.exports.transform = file => {
   return transform(file.src, {
     ast: true,
     babelrc: false,
-    presets: ['@babel/env', '@babel/preset-react', '@babel/preset-flow'],
+    configFile: false,
+    presets: [
+      require.resolve('@babel/preset-env'),
+      require.resolve('@babel/preset-react'),
+      require.resolve('@babel/preset-flow'),
+    ],
     plugins: [
-      '@babel/plugin-proposal-class-properties',
+      require.resolve('@babel/plugin-proposal-class-properties'),
       [
-        'import',
+        require.resolve('babel-plugin-import'),
         {
           libraryName: 'antd',
           style: false,
