@@ -147,6 +147,7 @@ function makeDependency(name) {
   return {
     id: name,
     isAsync: false,
+    isPrefetchOnly: false,
     path,
   };
 }

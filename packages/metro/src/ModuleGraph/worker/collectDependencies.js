@@ -29,6 +29,7 @@ type InternalDependency<D> = {|
 
 type InternalDependencyData = {|
   isAsync: boolean,
+  isPrefetchOnly?: true,
 |};
 
 type InternalDependencyInfo = {|
@@ -83,7 +84,11 @@ const dynamicRequireErrorTemplate = template(`
  * "require(...)" call to the asyncRequire specified.
  */
 const makeAsyncRequireTemplate = template(`
-  require(ASYNC_REQUIRE_MODULE_PATH)(MODULE_ID)
+  require(ASYNC_REQUIRE_MODULE_PATH)(MODULE_ID, MODULE_NAME)
+`);
+
+const makeAsyncPrefetchTemplate = template(`
+  require(ASYNC_REQUIRE_MODULE_PATH).prefetch(MODULE_ID, MODULE_NAME)
 `);
 
 /**
@@ -122,7 +127,13 @@ function collectDependencies(
       const name = callee.node.name;
 
       if (callee.isImport()) {
-        processImportCall(path, state);
+        processImportCall(path, state, {prefetchOnly: false});
+        return;
+      }
+
+      if (name === '__prefetchImport' && !path.scope.getBinding(name)) {
+        processImportCall(path, state, {prefetchOnly: true});
+        return;
       }
 
       if (state.dependencyCalls.has(name) && !path.scope.getBinding(name)) {
@@ -158,19 +169,44 @@ function collectDependencies(
   };
 }
 
-function processImportCall(path: Path, state: State): Path {
+function processImportCall(
+  path: Path,
+  state: State,
+  options: DepOptions,
+): Path {
   const name = getModuleNameFromCallArgs(path);
 
   if (name == null) {
     throw new InvalidRequireCallError(path);
   }
 
-  path.replaceWith(
-    makeAsyncRequireTemplate({
-      ASYNC_REQUIRE_MODULE_PATH: state.asyncRequireModulePathStringLiteral,
-      MODULE_ID: createDependencyMapLookup(state, name),
-    }),
+  const dep = getDependency(state, name, options);
+  const ASYNC_REQUIRE_MODULE_PATH = state.asyncRequireModulePathStringLiteral;
+  const MODULE_ID = types.memberExpression(
+    state.dependencyMapIdentifier,
+    types.numericLiteral(dep.index),
+    true,
   );
+  const MODULE_NAME = types.stringLiteral(name);
+
+  if (!options.prefetchOnly) {
+    path.replaceWith(
+      makeAsyncRequireTemplate({
+        ASYNC_REQUIRE_MODULE_PATH,
+        MODULE_ID,
+        MODULE_NAME,
+      }),
+    );
+    delete dep.data.isPrefetchOnly;
+  } else {
+    path.replaceWith(
+      makeAsyncPrefetchTemplate({
+        ASYNC_REQUIRE_MODULE_PATH,
+        MODULE_ID,
+        MODULE_NAME,
+      }),
+    );
+  }
 
   return path;
 }
@@ -188,21 +224,44 @@ function processRequireCall(path: Path, state: State): Path {
         LINE: '' + path.node.loc.start.line,
       }),
     );
-  } else {
-    getDependency(state, name).data.isAsync = false;
-    path.node.arguments = createDependencyMapLookup(state, name);
+    return path;
   }
+
+  const dep = getDependency(state, name, {prefetchOnly: false});
+  dep.data.isAsync = false;
+  delete dep.data.isPrefetchOnly;
+
+  const moduleIDExpression = types.memberExpression(
+    state.dependencyMapIdentifier,
+    types.numericLiteral(
+      getDependency(state, name, {prefetchOnly: false}).index,
+    ),
+    true,
+  );
+
+  path.node.arguments = state.keepRequireNames
+    ? [moduleIDExpression, types.stringLiteral(name)]
+    : [moduleIDExpression];
 
   return path;
 }
 
-function getDependency(state: State, name: string): InternalDependencyInfo {
+type DepOptions = $ReadOnly<{prefetchOnly: boolean}>;
+
+function getDependency(
+  state: State,
+  name: string,
+  options: DepOptions,
+): InternalDependencyInfo {
   let index = state.dependencyIndexes.get(name);
-  let data = state.dependencyData.get(name);
+  let data: ?InternalDependencyData = state.dependencyData.get(name);
 
   if (!data) {
     index = state.dependency++;
     data = {isAsync: true};
+    if (options.prefetchOnly) {
+      data.isPrefetchOnly = true;
+    }
 
     state.dependencyIndexes.set(name, index);
     state.dependencyData.set(name, data);
@@ -223,18 +282,6 @@ function getModuleNameFromCallArgs(path: Path): ?string {
   }
 
   return null;
-}
-
-function createDependencyMapLookup(state: State, name: string): Array<mixed> {
-  const memberExpression = types.memberExpression(
-    state.dependencyMapIdentifier,
-    types.numericLiteral(getDependency(state, name).index),
-    true,
-  );
-
-  return state.keepRequireNames
-    ? [memberExpression, types.stringLiteral(name)]
-    : [memberExpression];
 }
 
 class InvalidRequireCallError extends Error {

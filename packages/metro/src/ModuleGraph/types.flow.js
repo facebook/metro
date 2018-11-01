@@ -22,6 +22,7 @@ export type Callback<A = void, B = void> = (Error => void) &
 export type Dependency = {|
   id: string,
   +isAsync: boolean,
+  +isPrefetchOnly: boolean,
   path: string,
 |};
 
