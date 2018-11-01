@@ -115,7 +115,12 @@ function parseOptionsFromUrl(
       bundleType: isMap ? 'map' : isDelta ? 'delta' : 'bundle',
       sourceMapUrl: url.format({
         ...urlObj,
-        protocol: '',
+        // The remote chrome debugger loads bundles via Blob urls, whose
+        // protocol is blob:http. This breaks loading source maps through
+        // protocol-relative URLs, which is why we must force the HTTP protocol
+        // when loading the bundle for either iOS or Android.
+        protocol:
+          platform != null && platform.match(/^(android|ios)$/) ? 'http' : '',
         pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
       }),
       runModule,

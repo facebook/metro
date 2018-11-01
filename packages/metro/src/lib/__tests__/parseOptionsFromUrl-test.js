@@ -96,6 +96,28 @@ describe('parseOptionsFromUrl', () => {
     ).toMatchObject({sourceMapUrl: '//localhost/my/bundle.map'});
   });
 
+  it('forces the HTTP protocol for iOS and Android platforms', () => {
+    expect(
+      parseOptionsFromUrl(
+        'http://localhost/my/bundle.bundle?platform=ios',
+        '/',
+        new Set(['ios']),
+      ).options,
+    ).toMatchObject({
+      sourceMapUrl: 'http://localhost/my/bundle.map?platform=ios',
+    });
+
+    expect(
+      parseOptionsFromUrl(
+        'http://localhost/my/bundle.bundle?platform=android',
+        '/',
+        new Set(['android']),
+      ).options,
+    ).toMatchObject({
+      sourceMapUrl: 'http://localhost/my/bundle.map?platform=android',
+    });
+  });
+
   it('always sets the `hot` option to `true`', () => {
     expect(
       parseOptionsFromUrl('http://localhost/my/bundle.bundle', '/', new Set([]))

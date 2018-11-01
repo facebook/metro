@@ -485,7 +485,8 @@ describe('processRequest', () => {
         base: true,
         revisionId: 'XXXXX-0',
         pre: 'function () {require();}',
-        post: '//# sourceMappingURL=//localhost:8081/index.map?platform=ios',
+        post:
+          '//# sourceMappingURL=http://localhost:8081/index.map?platform=ios',
         modules: [
           [0, '__d(function() {entry();},0,[1],"mybundle.js");'],
           [1, '__d(function() {foo();},1,[],"foo.js");'],
