@@ -24,13 +24,13 @@ const path = require('path');
 class FilesByDirNameIndex {
   _filesByDirName: Map<string, Array<string>>;
 
-  constructor(allFilePaths: Array<string>) {
+  constructor(allFilePaths: Iterable<string>) {
     this._filesByDirName = new Map();
-    for (let i = 0; i < allFilePaths.length; ++i) {
-      const filePath = allFilePaths[i];
+
+    for (const filePath of allFilePaths) {
       const dirName = path.dirname(filePath);
       let dir = this._filesByDirName.get(dirName);
-      if (dir === undefined) {
+      if (dir == null) {
         dir = [];
         this._filesByDirName.set(dirName, dir);
       }
