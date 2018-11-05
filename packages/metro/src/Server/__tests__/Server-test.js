@@ -73,9 +73,9 @@ describe('processRequest', () => {
   options.serializer.polyfillModuleNames = null;
   options.serializer.getModulesRunBeforeMainModule = () => ['InitializeCore'];
 
-  const makeRequest = (reqHandler, requrl, reqOptions) =>
+  const makeRequest = (requrl, reqOptions) =>
     new Promise((resolve, reject) =>
-      reqHandler(
+      server.processRequest(
         {url: requrl, headers: {host: 'localhost:8081'}, ...reqOptions},
         {
           statusCode: 200,
@@ -98,7 +98,6 @@ describe('processRequest', () => {
       ),
     );
 
-  let requestHandler;
   let changeHandler;
 
   beforeEach(() => {
@@ -206,7 +205,6 @@ describe('processRequest', () => {
     );
 
     server = new Server(options);
-    requestHandler = server.processRequest.bind(server);
 
     transformHelpers.getTransformFn = jest.fn().mockReturnValue(() => {});
     transformHelpers.getResolveDependencyFn = jest
@@ -220,11 +218,7 @@ describe('processRequest', () => {
   });
 
   it('returns JS bundle source on request of *.bundle', async () => {
-    const response = await makeRequest(
-      requestHandler,
-      'mybundle.bundle?runModule=true',
-      null,
-    );
+    const response = await makeRequest('mybundle.bundle?runModule=true', null);
 
     expect(response.body).toEqual(
       [
@@ -238,11 +232,7 @@ describe('processRequest', () => {
   });
 
   it('returns JS bundle without the initial require() call', async () => {
-    const response = await makeRequest(
-      requestHandler,
-      'mybundle.bundle?runModule=false',
-      null,
-    );
+    const response = await makeRequest('mybundle.bundle?runModule=false', null);
 
     expect(response.body).toEqual(
       [
@@ -255,11 +245,7 @@ describe('processRequest', () => {
   });
 
   it('returns JS bundle with embedded delta bundle', async () => {
-    const response = await makeRequest(
-      requestHandler,
-      'mybundle.bundle?embedDelta=true',
-      null,
-    );
+    const response = await makeRequest('mybundle.bundle?embedDelta=true', null);
 
     expect(response.body).toEqual(
       [
@@ -274,30 +260,23 @@ describe('processRequest', () => {
   });
 
   it('returns Last-Modified header on request of *.bundle', () => {
-    return makeRequest(requestHandler, 'mybundle.bundle?runModule=true').then(
-      response => {
-        expect(response.getHeader('Last-Modified')).toBeDefined();
-      },
-    );
+    return makeRequest('mybundle.bundle?runModule=true').then(response => {
+      expect(response.getHeader('Last-Modified')).toBeDefined();
+    });
   });
 
   it('returns build info headers on request of *.bundle', async () => {
-    const response = await makeRequest(
-      requestHandler,
-      'mybundle.bundle?runModule=true',
-    );
+    const response = await makeRequest('mybundle.bundle?runModule=true');
 
     expect(response.getHeader('X-Metro-Files-Changed-Count')).toEqual('3');
   });
 
   it('returns Content-Length header on request of *.bundle', () => {
-    return makeRequest(requestHandler, 'mybundle.bundle?runModule=true').then(
-      response => {
-        expect(response.getHeader('Content-Length')).toEqual(
-          '' + Buffer.byteLength(response.body),
-        );
-      },
-    );
+    return makeRequest('mybundle.bundle?runModule=true').then(response => {
+      expect(response.getHeader('Content-Length')).toEqual(
+        '' + Buffer.byteLength(response.body),
+      );
+    });
   });
 
   it('returns 404 on request of *.bundle when resource does not exist', async () => {
@@ -305,21 +284,16 @@ describe('processRequest', () => {
       cb(new ResourceNotFoundError('unknown.bundle')),
     );
 
-    return makeRequest(requestHandler, 'unknown.bundle?runModule=true').then(
-      response => {
-        expect(response.statusCode).toEqual(404);
-        expect(response.body).toEqual(
-          expect.stringContaining('ResourceNotFoundError'),
-        );
-      },
-    );
+    return makeRequest('unknown.bundle?runModule=true').then(response => {
+      expect(response.statusCode).toEqual(404);
+      expect(response.body).toEqual(
+        expect.stringContaining('ResourceNotFoundError'),
+      );
+    });
   });
 
   it('returns 304 on request of *.bundle when if-modified-since equals Last-Modified', async () => {
-    const response = await makeRequest(
-      requestHandler,
-      'mybundle.bundle?runModule=true',
-    );
+    const response = await makeRequest('mybundle.bundle?runModule=true');
     const lastModified = response.headers['Last-Modified'];
 
     global.Date = class {
@@ -331,7 +305,7 @@ describe('processRequest', () => {
       }
     };
 
-    return makeRequest(requestHandler, 'mybundle.bundle?runModule=true', {
+    return makeRequest('mybundle.bundle?runModule=true', {
       headers: {'if-modified-since': lastModified},
     }).then(response => {
       expect(response.statusCode).toEqual(304);
@@ -339,10 +313,7 @@ describe('processRequest', () => {
   });
 
   it('returns 200 on request of *.bundle when something changes (ignoring if-modified-since headers)', async () => {
-    const response = await makeRequest(
-      requestHandler,
-      'mybundle.bundle?runModule=true',
-    );
+    const response = await makeRequest('mybundle.bundle?runModule=true');
     const lastModified = response.headers['Last-Modified'];
 
     DeltaBundler.prototype.getDelta.mockReturnValue(
@@ -364,7 +335,7 @@ describe('processRequest', () => {
       }
     };
 
-    return makeRequest(requestHandler, 'mybundle.bundle?runModule=true', {
+    return makeRequest('mybundle.bundle?runModule=true', {
       headers: {'if-modified-since': lastModified},
     }).then(response => {
       expect(response.statusCode).toEqual(200);
@@ -373,7 +344,7 @@ describe('processRequest', () => {
   });
 
   it('returns sourcemap on request of *.map', async () => {
-    const response = await makeRequest(requestHandler, 'mybundle.map');
+    const response = await makeRequest('mybundle.map');
 
     expect(JSON.parse(response.body)).toEqual({
       version: 3,
@@ -385,43 +356,39 @@ describe('processRequest', () => {
   });
 
   it('does not rebuild the graph when requesting the sourcemaps after having requested the same bundle', async () => {
-    expect(
-      (await makeRequest(requestHandler, 'mybundle.bundle?platform=ios'))
-        .statusCode,
-    ).toBe(200);
+    expect((await makeRequest('mybundle.bundle?platform=ios')).statusCode).toBe(
+      200,
+    );
 
     DeltaBundler.prototype.buildGraph.mockClear();
     DeltaBundler.prototype.getDelta.mockClear();
 
-    expect(
-      (await makeRequest(requestHandler, 'mybundle.map?platform=ios'))
-        .statusCode,
-    ).toBe(200);
+    expect((await makeRequest('mybundle.map?platform=ios')).statusCode).toBe(
+      200,
+    );
 
     expect(DeltaBundler.prototype.buildGraph.mock.calls.length).toBe(0);
     expect(DeltaBundler.prototype.getDelta.mock.calls.length).toBe(0);
   });
 
   it('does rebuild the graph when requesting the sourcemaps if the bundle has not been built yet', async () => {
-    expect(
-      (await makeRequest(requestHandler, 'mybundle.bundle?platform=ios'))
-        .statusCode,
-    ).toBe(200);
+    expect((await makeRequest('mybundle.bundle?platform=ios')).statusCode).toBe(
+      200,
+    );
 
     DeltaBundler.prototype.buildGraph.mockClear();
     DeltaBundler.prototype.getDelta.mockClear();
 
     // request the map of a different bundle
     expect(
-      (await makeRequest(requestHandler, 'mybundle.map?platform=android'))
-        .statusCode,
+      (await makeRequest('mybundle.map?platform=android')).statusCode,
     ).toBe(200);
 
     expect(DeltaBundler.prototype.buildGraph.mock.calls.length).toBe(1);
   });
 
   it('passes in the platform param', async () => {
-    await makeRequest(requestHandler, 'index.bundle?platform=ios');
+    await makeRequest('index.bundle?platform=ios');
 
     expect(transformHelpers.getTransformFn).toBeCalledWith(
       ['/root/index.js'],
@@ -452,8 +419,8 @@ describe('processRequest', () => {
       return new Promise(res => (resolveBuildGraph = res));
     });
 
-    const promise1 = makeRequest(requestHandler, 'index.bundle');
-    const promise2 = makeRequest(requestHandler, 'index.bundle');
+    const promise1 = makeRequest('index.bundle');
+    const promise2 = makeRequest('index.bundle');
 
     // We must wait for all synchronous promises *before*
     // `getResolveDependencyFn` to resolve before we can be sure that
@@ -476,10 +443,7 @@ describe('processRequest', () => {
 
   describe('Generate delta bundle endpoint', () => {
     it('should generate the initial delta correctly', async () => {
-      const response = await makeRequest(
-        requestHandler,
-        'index.delta?platform=ios',
-      );
+      const response = await makeRequest('index.delta?platform=ios');
 
       expect(JSON.parse(response.body)).toEqual({
         base: true,
@@ -520,10 +484,9 @@ describe('processRequest', () => {
       );
 
       // initial request.
-      await makeRequest(requestHandler, 'index.delta?platform=ios');
+      await makeRequest('index.delta?platform=ios');
 
       const response = await makeRequest(
-        requestHandler,
         'index.delta?platform=ios&deltaBundleId=XXXXX-0',
       );
 
@@ -565,17 +528,11 @@ describe('processRequest', () => {
       );
 
       // Do an initial request.
-      await makeRequest(requestHandler, 'index.delta?platform=ios');
+      await makeRequest('index.delta?platform=ios');
       // First delta request has a matching id.
-      await makeRequest(
-        requestHandler,
-        'index.delta?platform=ios&deltaBundleId=XXXXX-0',
-      );
+      await makeRequest('index.delta?platform=ios&deltaBundleId=XXXXX-0');
       // Second delta request does not have a matching id.
-      await makeRequest(
-        requestHandler,
-        'index.delta?platform=ios&deltaBundleId=XXXXX-0',
-      );
+      await makeRequest('index.delta?platform=ios&deltaBundleId=XXXXX-0');
 
       expect(DeltaBundler.prototype.getDelta.mock.calls[0][1]).toEqual({
         reset: false,
@@ -594,21 +551,19 @@ describe('processRequest', () => {
         throw transformError;
       });
 
-      return makeRequest(requestHandler, 'index.delta?platform=ios').then(
-        function(response) {
-          expect(() => JSON.parse(response.body)).not.toThrow();
-          const body = JSON.parse(response.body);
-          expect(body).toMatchObject({
-            type: 'TransformError',
-            message: 'test syntax error',
-          });
-          expect(body.errors).toContainEqual({
-            description: 'test syntax error',
-            filename: 'testFile.js',
-            lineNumber: 123,
-          });
-        },
-      );
+      return makeRequest('index.delta?platform=ios').then(function(response) {
+        expect(() => JSON.parse(response.body)).not.toThrow();
+        const body = JSON.parse(response.body);
+        expect(body).toMatchObject({
+          type: 'TransformError',
+          message: 'test syntax error',
+        });
+        expect(body.errors).toContainEqual({
+          description: 'test syntax error',
+          filename: 'testFile.js',
+          lineNumber: 123,
+        });
+      });
     });
 
     it('does return the same base bundle when making concurrent requests', async () => {
@@ -618,8 +573,8 @@ describe('processRequest', () => {
         return new Promise(res => (resolveBuildGraph = res));
       });
 
-      const promise1 = makeRequest(requestHandler, 'index.delta');
-      const promise2 = makeRequest(requestHandler, 'index.delta');
+      const promise1 = makeRequest('index.delta');
+      const promise2 = makeRequest('index.delta');
 
       process.nextTick(() => {
         resolveBuildGraph({
@@ -818,7 +773,7 @@ describe('processRequest', () => {
         return outputStack;
       });
 
-      return makeRequest(requestHandler, '/symbolicate', {
+      return makeRequest('/symbolicate', {
         rawBody: body,
       }).then(response =>
         expect(JSON.parse(response.body)).toEqual({stack: outputStack}),
@@ -831,7 +786,7 @@ describe('processRequest', () => {
       const body = 'clearly-not-json';
       console.error = jest.fn();
 
-      return makeRequest(requestHandler, '/symbolicate', {
+      return makeRequest('/symbolicate', {
         rawBody: body,
       }).then(response => {
         expect(response.statusCode).toEqual(500);
