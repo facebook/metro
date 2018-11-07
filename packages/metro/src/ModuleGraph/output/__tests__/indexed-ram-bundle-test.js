@@ -210,6 +210,7 @@ function createRamBundle(preloadedModules = new Set(), ramGroups) {
     idsForPath,
     modules,
     requireCalls: [requireCall],
+    enableIDInlining: true,
   });
 
   if (typeof result.code === 'string') {
@@ -265,7 +266,9 @@ function makeDependency(name) {
 }
 
 function expectedCode(module) {
-  return getModuleCodeAndMap(module, x => idsForPath(x).moduleId).moduleCode;
+  return getModuleCodeAndMap(module, x => idsForPath(x).moduleId, {
+    enableIDInlining: true,
+  }).moduleCode;
 }
 
 function getId(path) {

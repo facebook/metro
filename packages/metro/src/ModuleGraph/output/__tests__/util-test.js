@@ -10,9 +10,53 @@
 
 'use strict';
 
-const {inlineModuleIds, createIdForPathFn} = require('../util');
+const {
+  addModuleIdsToModuleWrapper,
+  inlineModuleIds,
+  createIdForPathFn,
+} = require('../util');
 
 const {any} = jasmine;
+
+describe('addModuleIdsToModuleWrapper', () => {
+  const path = 'path/to/file';
+  const createModule = (dependencies = []) => ({
+    dependencies,
+    file: {code: '__d(function(){});', isModule: true, path},
+  });
+
+  it('completes the module wrapped with module ID, and an array of dependency IDs', () => {
+    const dependencies = [
+      {id: 'a', path: 'path/to/a.js'},
+      {id: 'b', path: 'location/of/b.js'},
+    ];
+    const module = createModule(dependencies);
+
+    const idForPath = jest.fn().mockImplementation(({path: inputPath}) => {
+      switch (inputPath) {
+        case path:
+          return 12;
+        case dependencies[0].path:
+          return 345;
+        case dependencies[1].path:
+          return 6;
+      }
+
+      throw new Error(`Unexpected path: ${inputPath}`);
+    });
+
+    expect(addModuleIdsToModuleWrapper(module, idForPath)).toEqual(
+      '__d(function(){},12,[345,6]);',
+    );
+  });
+
+  it('omits the array of dependency IDs if it is empty', () => {
+    const module = createModule();
+    expect(addModuleIdsToModuleWrapper(module, () => 98)).toEqual(
+      `__d(function(){},${98});`,
+    );
+  });
+});
 
 describe('`inlineModuleIds`:', () => {
   const path = 'path/to/file';

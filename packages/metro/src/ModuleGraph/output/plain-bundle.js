@@ -23,6 +23,7 @@ function asPlainBundle({
   modules,
   requireCalls,
   sourceMapPath,
+  enableIDInlining,
 }) {
   let code = '';
   let line = 0;
@@ -30,7 +31,9 @@ function asPlainBundle({
   const modIdForPath = x => idsForPath(x).moduleId;
 
   for (const module of concat(modules, requireCalls)) {
-    const {moduleCode, moduleMap} = getModuleCodeAndMap(module, modIdForPath);
+    const {moduleCode, moduleMap} = getModuleCodeAndMap(module, modIdForPath, {
+      enableIDInlining,
+    });
 
     code += moduleCode + '\n';
     if (moduleMap) {

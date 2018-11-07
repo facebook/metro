@@ -28,6 +28,29 @@ import type {MetroSourceMap} from 'metro-source-map';
 //
 // This function adds the numeric module ID, and an array with dependencies of
 // the dependencies of the module before the closing parenthesis.
+function addModuleIdsToModuleWrapper(
+  module: Module,
+  idForPath: ({path: string}) => number,
+): string {
+  const {dependencies, file} = module;
+  const {code} = file;
+
+  // calling `idForPath` on the module itself first gives us a lower module id
+  // for the file itself than for its dependencies. That reflects their order
+  // in the bundle.
+  const fileId = idForPath(file);
+
+  const paramsToAdd = [fileId];
+
+  if (dependencies.length) {
+    paramsToAdd.push(dependencies.map(idForPath));
+  }
+
+  return addParamsToDefineCall(code, ...paramsToAdd);
+}
+
+exports.addModuleIdsToModuleWrapper = addModuleIdsToModuleWrapper;
+
 function inlineModuleIds(
   module: Module,
   idForPath: ({path: string}) => number,
@@ -71,11 +94,22 @@ type IdForPathFn = ({path: string}) => number;
 
 // Adds the module ids to a file if the file is a module. If it's not (e.g. a
 // script) it just keeps it as-is.
-function getModuleCodeAndMap(module: Module, idForPath: IdForPathFn) {
+function getModuleCodeAndMap(
+  module: Module,
+  idForPath: IdForPathFn,
+  options: $ReadOnly<{enableIDInlining: boolean}>,
+) {
   const {file} = module;
 
   if (file.type !== 'module') {
     return {moduleCode: file.code, moduleMap: file.map};
+  }
+
+  if (!options.enableIDInlining) {
+    return {
+      moduleCode: addModuleIdsToModuleWrapper(module, idForPath),
+      moduleMap: file.map,
+    };
   }
 
   return inlineModuleIds(module, idForPath);
@@ -145,6 +179,7 @@ exports.toModuleTransport = (module: Module, idsForPath: IdsForPathFn) => {
   const {moduleCode, moduleMap} = getModuleCodeAndMap(
     module,
     x => idsForPath(x).moduleId,
+    {enableIDInlining: true},
   );
 
   return {

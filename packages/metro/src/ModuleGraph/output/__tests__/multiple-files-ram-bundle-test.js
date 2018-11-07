@@ -86,7 +86,9 @@ it('bundles each file separately', () => {
   modules.forEach((module, i) => {
     // $FlowFixMe "extraFiles" is always defined at this point.
     expect(extraFiles.get(`js-modules/${i}.js`).toString()).toBe(
-      getModuleCodeAndMap(modules[i], x => idsForPath(x).moduleId).moduleCode,
+      getModuleCodeAndMap(modules[i], x => idsForPath(x).moduleId, {
+        enableIDInlining: true,
+      }).moduleCode,
     );
   });
 });
@@ -101,6 +103,7 @@ function createRamBundle(preloadedModules = new Set(), ramGroups) {
     idsForPath,
     modules,
     requireCalls: [requireCall],
+    enableIDInlining: true,
   });
 
   return {code: result.code, map: result.map, extraFiles: result.extraFiles};

@@ -95,6 +95,7 @@ export type OutputFn<
   requireCalls: Iterable<Module>,
   sourceMapPath?: ?string,
   bundleOrderFile?: ?string,
+  enableIDInlining: boolean,
 |}) => OutputResult<M>;
 
 type OutputResult<M: FBSourceMap | MetroSourceMap> = {|
