@@ -26,6 +26,7 @@ import type {TransformVariants} from 'metro/src/ModuleGraph/types.flow.js';
 import type {DynamicRequiresBehavior} from 'metro/src/ModuleGraph/worker/collectDependencies';
 import type Server from 'metro/src/Server';
 import type {Reporter} from 'metro/src/lib/reporting';
+import type {Options} from 'metro/src/DeltaBundler/Serializers/plainJSBundle';
 
 export type PostMinifyProcess = ({
   code: string,
@@ -115,6 +116,12 @@ type ResolverConfigT = {|
 
 type SerializerConfigT = {|
   createModuleIdFactory: () => (path: string) => number,
+  customSerializer: ?(
+    entryPoint: string,
+    preModules: $ReadOnlyArray<Module<>>,
+    graph: Graph<>,
+    options: Options,
+  ) => string,
   experimentalSerializerHook: (graph: Graph<>, delta: DeltaResult<>) => mixed,
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,

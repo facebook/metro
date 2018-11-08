@@ -54,6 +54,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     processModuleFilter: module => true,
     createModuleIdFactory: defaultCreateModuleIdFactory,
     experimentalSerializerHook: () => {},
+    customSerializer: null,
   },
 
   server: {

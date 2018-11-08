@@ -64,6 +64,7 @@ Object {
   },
   "serializer": Object {
     "createModuleIdFactory": [Function],
+    "customSerializer": null,
     "experimentalSerializerHook": [Function],
     "getModulesRunBeforeMainModule": [Function],
     "getPolyfills": [Function],
@@ -184,6 +185,7 @@ Object {
   },
   "serializer": Object {
     "createModuleIdFactory": [Function],
+    "customSerializer": null,
     "experimentalSerializerHook": [Function],
     "getModulesRunBeforeMainModule": [Function],
     "getPolyfills": [Function],

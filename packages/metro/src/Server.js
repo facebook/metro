@@ -664,7 +664,6 @@ class Server {
           }));
 
       const options = {
-        customSerializer: this._config.serializer.customSerializer,
         processModuleFilter: this._config.serializer.processModuleFilter,
         createModuleId: this._createModuleId,
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,
@@ -692,8 +691,9 @@ class Server {
           : Object.assign({}, options, {embedDelta: false}),
       ];
       let bundle;
-      if (options.customSerializer) {
-        bundle = options.customSerializer(...serializerArguments);
+      const possibleCustomSerializer = this._config.serializer.customSerializer;
+      if (possibleCustomSerializer) {
+        bundle = possibleCustomSerializer(...serializerArguments);
       } else {
         bundle = plainJSBundle(...serializerArguments);
       }

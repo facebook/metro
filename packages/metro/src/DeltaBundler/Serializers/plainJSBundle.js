@@ -17,7 +17,7 @@ const {isJsModule, wrapModule} = require('./helpers/js');
 import type {ModuleMap} from '../../lib/bundle-modules/types.flow';
 import type {Graph, Module, SerializerOptions} from '../types.flow';
 
-type Options =
+export type Options =
   | {|
       ...SerializerOptions,
       embedDelta: false,
