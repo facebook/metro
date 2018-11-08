@@ -12,6 +12,10 @@
 const HmrServer = require('..');
 
 const getGraphId = require('../../lib/getGraphId');
+jest.mock('../../lib/transformHelpers', () => ({
+  getResolveDependencyFn: () => (from, to) =>
+    `${from.replace(/\.$/, '')}${to}.js`,
+}));
 
 describe('HmrServer', () => {
   let hmrServer;
@@ -74,6 +78,7 @@ describe('HmrServer', () => {
           deleted: new Set(),
         },
       }),
+      getBundler() {},
     };
     createModuleIdMock = path => {
       return path + '-id';

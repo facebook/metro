@@ -11,6 +11,7 @@
 'use strict';
 
 const ResourceNotFoundError = require('../../IncrementalBundler/ResourceNotFoundError');
+const path = require('path');
 
 const {getDefaultValues} = require('metro-config/src/defaults');
 
@@ -209,8 +210,7 @@ describe('processRequest', () => {
     transformHelpers.getTransformFn = jest.fn().mockReturnValue(() => {});
     transformHelpers.getResolveDependencyFn = jest
       .fn()
-      .mockReturnValue(() => {});
-
+      .mockReturnValue((a, b) => path.resolve(a, `${b}.js`));
     let i = 0;
     crypto.randomBytes.mockImplementation(() => `XXXXX-${i++}`);
 
@@ -412,25 +412,9 @@ describe('processRequest', () => {
   });
 
   it('does not rebuild the bundle when making concurrent requests', async () => {
-    let resolveBuildGraph;
-
     // Delay the response of the buildGraph method.
-    transformHelpers.getResolveDependencyFn.mockImplementation(async () => {
-      return new Promise(res => (resolveBuildGraph = res));
-    });
-
     const promise1 = makeRequest('index.bundle');
     const promise2 = makeRequest('index.bundle');
-
-    // We must wait for all synchronous promises *before*
-    // `getResolveDependencyFn` to resolve before we can be sure that
-    // `resolveBuildGraph` has been defined.
-    process.nextTick(() => {
-      resolveBuildGraph({
-        entryPoints: ['/root/mybundle.js'],
-        dependencies,
-      });
-    });
 
     const [result1, result2] = await Promise.all([promise1, promise2]);
     expect(result1.body).toEqual(result2.body);
@@ -567,21 +551,8 @@ describe('processRequest', () => {
     });
 
     it('does return the same base bundle when making concurrent requests', async () => {
-      let resolveBuildGraph;
-
-      transformHelpers.getResolveDependencyFn.mockImplementation(async () => {
-        return new Promise(res => (resolveBuildGraph = res));
-      });
-
       const promise1 = makeRequest('index.delta');
       const promise2 = makeRequest('index.delta');
-
-      process.nextTick(() => {
-        resolveBuildGraph({
-          entryPoints: ['/root/mybundle.js'],
-          dependencies,
-        });
-      });
 
       const [result1, result2] = await Promise.all([promise1, promise2]);
       const {revisionId: id1, ...base1} = JSON.parse(result1.body);

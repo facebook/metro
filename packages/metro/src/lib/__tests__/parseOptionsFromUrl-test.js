@@ -18,39 +18,24 @@ jest.mock('../parseCustomTransformOptions', () => () => ({}));
 describe('parseOptionsFromUrl', () => {
   it.each([['map'], ['delta'], ['bundle']])('detects %s requests', type => {
     expect(
-      parseOptionsFromUrl(
-        `http://localhost/my/bundle.${type}`,
-        '/',
-        new Set([]),
-      ).options,
+      parseOptionsFromUrl(`http://localhost/my/bundle.${type}`, new Set([]))
+        .options,
     ).toMatchObject({bundleType: type});
-  });
-
-  it('resolves the entry file from the project root', () => {
-    expect(
-      parseOptionsFromUrl(
-        'http://localhost/my/bundle.bundle.includeRequire.runModule.assets',
-        '/static/bundles/',
-        new Set([]),
-      ).options,
-    ).toMatchObject({entryFile: '/static/bundles/my/bundle.js'});
   });
 
   it('removes extraneous options from the pathname', () => {
     expect(
       parseOptionsFromUrl(
         'http://localhost/my/bundle.bundle.includeRequire.runModule.assets',
-        '/',
         new Set([]),
       ).options,
-    ).toMatchObject({entryFile: '/my/bundle.js'});
+    ).toMatchObject({entryFile: './my/bundle'});
   });
 
   it('retrieves the platform from the query parameters', () => {
     expect(
       parseOptionsFromUrl(
         'http://localhost/my/bundle.bundle?platform=ios',
-        '/',
         new Set([]),
       ).options,
     ).toMatchObject({platform: 'ios'});
@@ -60,7 +45,6 @@ describe('parseOptionsFromUrl', () => {
     expect(
       parseOptionsFromUrl(
         'http://localhost/my/bundle.test.bundle',
-        '/',
         new Set(['test']),
       ).options,
     ).toMatchObject({platform: 'test'});
@@ -70,7 +54,6 @@ describe('parseOptionsFromUrl', () => {
     expect(
       parseOptionsFromUrl(
         'http://localhost/my/bundle.delta?revisionId=XXX',
-        '/',
         new Set([]),
       ),
     ).toMatchObject({revisionId: 'XXX'});
@@ -78,7 +61,6 @@ describe('parseOptionsFromUrl', () => {
     expect(
       parseOptionsFromUrl(
         'http://localhost/my/bundle.delta?deltaBundleId=XXX',
-        '/',
         new Set([]),
       ),
     ).toMatchObject({revisionId: 'XXX'});
@@ -86,12 +68,12 @@ describe('parseOptionsFromUrl', () => {
 
   it('infers the source map url from the pathname', () => {
     expect(
-      parseOptionsFromUrl('http://localhost/my/bundle.bundle', '/', new Set([]))
+      parseOptionsFromUrl('http://localhost/my/bundle.bundle', new Set([]))
         .options,
     ).toMatchObject({sourceMapUrl: '//localhost/my/bundle.map'});
 
     expect(
-      parseOptionsFromUrl('http://localhost/my/bundle.delta', '/', new Set([]))
+      parseOptionsFromUrl('http://localhost/my/bundle.delta', new Set([]))
         .options,
     ).toMatchObject({sourceMapUrl: '//localhost/my/bundle.map'});
   });
@@ -100,7 +82,6 @@ describe('parseOptionsFromUrl', () => {
     expect(
       parseOptionsFromUrl(
         'http://localhost/my/bundle.bundle?platform=ios',
-        '/',
         new Set(['ios']),
       ).options,
     ).toMatchObject({
@@ -110,7 +91,6 @@ describe('parseOptionsFromUrl', () => {
     expect(
       parseOptionsFromUrl(
         'http://localhost/my/bundle.bundle?platform=android',
-        '/',
         new Set(['android']),
       ).options,
     ).toMatchObject({
@@ -120,7 +100,7 @@ describe('parseOptionsFromUrl', () => {
 
   it('always sets the `hot` option to `true`', () => {
     expect(
-      parseOptionsFromUrl('http://localhost/my/bundle.bundle', '/', new Set([]))
+      parseOptionsFromUrl('http://localhost/my/bundle.bundle', new Set([]))
         .options,
     ).toMatchObject({hot: true});
   });
@@ -134,11 +114,8 @@ describe('parseOptionsFromUrl', () => {
   ])('boolean option `%s`', (optionName, defaultValue) => {
     it(`defaults to \`${String(defaultValue)}\``, () => {
       expect(
-        parseOptionsFromUrl(
-          'http://localhost/my/bundle.bundle',
-          '/',
-          new Set([]),
-        ).options,
+        parseOptionsFromUrl('http://localhost/my/bundle.bundle', new Set([]))
+          .options,
       ).toMatchObject({[optionName]: defaultValue});
     });
 
@@ -146,7 +123,6 @@ describe('parseOptionsFromUrl', () => {
       expect(
         parseOptionsFromUrl(
           `http://localhost/my/bundle.bundle?${optionName}=true`,
-          '/',
           new Set([]),
         ).options,
       ).toMatchObject({[optionName]: true});
@@ -154,7 +130,6 @@ describe('parseOptionsFromUrl', () => {
       expect(
         parseOptionsFromUrl(
           `http://localhost/my/bundle.bundle?${optionName}=false`,
-          '/',
           new Set([]),
         ).options,
       ).toMatchObject({[optionName]: false});
