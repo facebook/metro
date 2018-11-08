@@ -20,6 +20,7 @@ const getGraphId = require('./lib/getGraphId');
 const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
 const nullthrows = require('nullthrows');
 const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
+const transformHelpers = require('./lib/transformHelpers');
 const splitBundleOptions = require('./lib/splitBundleOptions');
 const url = require('url');
 
@@ -84,13 +85,24 @@ class HmrServer<TClient: Client> {
 
       const {options} = parseOptionsFromUrl(
         url.format(urlObj),
-        this._config.projectRoot,
         new Set(this._config.resolver.platforms),
       );
 
       const {entryFile, transformOptions} = splitBundleOptions(options);
 
-      const graphId = getGraphId(entryFile, transformOptions);
+      /**
+       * `entryFile` is relative to projectRoot, we need to use resolution function
+       * to find the appropriate file with supported extensions.
+       */
+      const resolutionFn = await transformHelpers.getResolveDependencyFn(
+        this._bundler.getBundler(),
+        transformOptions.platform,
+      );
+      const resolvedEntryFilePath = resolutionFn(
+        `${this._config.projectRoot}/.`,
+        entryFile,
+      );
+      const graphId = getGraphId(resolvedEntryFilePath, transformOptions);
       revPromise = this._bundler.getRevisionByGraphId(graphId);
 
       if (!revPromise) {

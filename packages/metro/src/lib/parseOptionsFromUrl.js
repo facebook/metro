@@ -13,7 +13,6 @@
 const nullthrows = require('nullthrows');
 const parseCustomTransformOptions = require('./parseCustomTransformOptions');
 const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
-const path = require('path');
 const url = require('url');
 
 const {revisionIdFromString} = require('../IncrementalBundler');
@@ -35,7 +34,6 @@ function getBoolOptionFromQuery(
 
 function parseOptionsFromUrl(
   reqUrl: string,
-  projectRoot: string,
   platforms: Set<string>,
 ): {|
   revisionId: ?RevisionId,
@@ -53,30 +51,29 @@ function parseOptionsFromUrl(
 
   // Backwards compatibility. Options used to be as added as '.' to the
   // entry module name. We can safely remove these options.
-  const entryFile =
-    pathname
-      .replace(/^\//, '')
-      .split('.')
-      .filter(part => {
-        if (part === 'map') {
-          isMap = true;
-          return false;
-        }
-        if (part === 'delta') {
-          isDelta = true;
-          return false;
-        }
-        if (
-          part === 'includeRequire' ||
-          part === 'runModule' ||
-          part === 'bundle' ||
-          part === 'assets'
-        ) {
-          return false;
-        }
-        return true;
-      })
-      .join('.') + '.js';
+  const entryFileRelativeToProjectRoot = pathname
+    .replace(/^\//, './') // We want to produce a relative path to project root
+    .split('.')
+    .filter(part => {
+      if (part === 'map') {
+        isMap = true;
+        return false;
+      }
+      if (part === 'delta') {
+        isDelta = true;
+        return false;
+      }
+      if (
+        part === 'includeRequire' ||
+        part === 'runModule' ||
+        part === 'bundle' ||
+        part === 'assets'
+      ) {
+        return false;
+      }
+      return true;
+    })
+    .join('.');
 
   // try to get the platform from the url
   const platform =
@@ -111,7 +108,7 @@ function parseOptionsFromUrl(
       minify,
       platform,
       onProgress: null,
-      entryFile: path.resolve(projectRoot, entryFile),
+      entryFile: entryFileRelativeToProjectRoot,
       bundleType: isMap ? 'map' : isDelta ? 'delta' : 'bundle',
       sourceMapUrl: url.format({
         ...urlObj,
