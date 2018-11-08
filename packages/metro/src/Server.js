@@ -690,13 +690,10 @@ class Server {
             })
           : Object.assign({}, options, {embedDelta: false}),
       ];
-      let bundle;
       const possibleCustomSerializer = this._config.serializer.customSerializer;
-      if (possibleCustomSerializer) {
-        bundle = possibleCustomSerializer(...serializerArguments);
-      } else {
-        bundle = plainJSBundle(...serializerArguments);
-      }
+      const bundle = possibleCustomSerializer
+        ? possibleCustomSerializer(...serializerArguments)
+        : plainJSBundle(...serializerArguments);
 
       return {
         numModifiedFiles: delta.reset
