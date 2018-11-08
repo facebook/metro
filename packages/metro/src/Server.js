@@ -664,6 +664,7 @@ class Server {
           }));
 
       const options = {
+        customSerializer: this._config.serializer.customSerializer,
         processModuleFilter: this._config.serializer.processModuleFilter,
         createModuleId: this._createModuleId,
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,
@@ -677,7 +678,7 @@ class Server {
         inlineSourceMap: serializerOptions.inlineSourceMap,
       };
 
-      const bundle = plainJSBundle(
+      const serializerArguments = [
         entryFile,
         revision.prepend,
         revision.graph,
@@ -689,7 +690,13 @@ class Server {
               revisionId: revision.id,
             })
           : Object.assign({}, options, {embedDelta: false}),
-      );
+      ];
+      let bundle;
+      if (options.customSerializer) {
+        bundle = options.customSerializer(...serializerArguments);
+      } else {
+        bundle = plainJSBundle(...serializerArguments);
+      }
 
       return {
         numModifiedFiles: delta.reset
