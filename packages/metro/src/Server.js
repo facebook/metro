@@ -25,6 +25,7 @@ const debug = require('debug')('Metro:Server');
 const formatBundlingError = require('./lib/formatBundlingError');
 const mime = require('mime-types');
 const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
+const transformHelpers = require('./lib/transformHelpers');
 const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
 const path = require('path');
 const serializeDeltaJSBundle = require('./DeltaBundler/Serializers/helpers/serializeDeltaJSBundle');
@@ -425,7 +426,6 @@ class Server {
           protocol: 'http',
           host: req.headers.host,
         }),
-        this._config.projectRoot,
         new Set(this._config.resolver.platforms),
       );
       const {
@@ -433,7 +433,20 @@ class Server {
         transformOptions,
         serializerOptions,
       } = splitBundleOptions(bundleOptions);
-      const graphId = getGraphId(entryFile, transformOptions);
+
+      /**
+       * `entryFile` is relative to projectRoot, we need to use resolution function
+       * to find the appropriate file with supported extensions.
+       */
+      const resolutionFn = await transformHelpers.getResolveDependencyFn(
+        this._bundler.getBundler(),
+        transformOptions.platform,
+      );
+      const resolvedEntryFilePath = resolutionFn(
+        `${this._config.projectRoot}/.`,
+        entryFile,
+      );
+      const graphId = getGraphId(resolvedEntryFilePath, transformOptions);
       const buildID = this.getNewBuildID();
 
       let onProgress = null;
@@ -459,7 +472,7 @@ class Server {
       this._reporter.update({
         buildID,
         bundleDetails: {
-          entryFile,
+          entryFile: resolvedEntryFilePath,
           platform: transformOptions.platform,
           dev: transformOptions.dev,
           minify: transformOptions.minify,
@@ -474,7 +487,7 @@ class Server {
         revisionId,
         buildID,
         bundleOptions,
-        entryFile,
+        entryFile: resolvedEntryFilePath,
         transformOptions,
         serializerOptions,
         onProgress,
@@ -873,7 +886,6 @@ class Server {
   async _sourceMapForURL(reqUrl: string): Promise<MetroSourceMap> {
     const {options} = parseOptionsFromUrl(
       reqUrl,
-      this._config.projectRoot,
       new Set(this._config.resolver.platforms),
     );
 
@@ -884,12 +896,25 @@ class Server {
       onProgress,
     } = splitBundleOptions(options);
 
-    const graphId = getGraphId(entryFile, transformOptions);
+    /**
+     * `entryFile` is relative to projectRoot, we need to use resolution function
+     * to find the appropriate file with supported extensions.
+     */
+    const resolutionFn = await transformHelpers.getResolveDependencyFn(
+      this._bundler.getBundler(),
+      transformOptions.platform,
+    );
+    const resolvedEntryFilePath = resolutionFn(
+      `${this._config.projectRoot}/.`,
+      entryFile,
+    );
+
+    const graphId = getGraphId(resolvedEntryFilePath, transformOptions);
     let revision;
     const revPromise = this._bundler.getRevisionByGraphId(graphId);
     if (revPromise == null) {
       ({revision} = await this._bundler.initializeGraph(
-        entryFile,
+        resolvedEntryFilePath,
         transformOptions,
         {onProgress},
       ));
