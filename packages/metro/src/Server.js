@@ -677,7 +677,7 @@ class Server {
         inlineSourceMap: serializerOptions.inlineSourceMap,
       };
 
-      const bundle = plainJSBundle(
+      const serializerArguments = [
         entryFile,
         revision.prepend,
         revision.graph,
@@ -689,7 +689,11 @@ class Server {
               revisionId: revision.id,
             })
           : Object.assign({}, options, {embedDelta: false}),
-      );
+      ];
+      const possibleCustomSerializer = this._config.serializer.customSerializer;
+      const bundle = possibleCustomSerializer
+        ? possibleCustomSerializer(...serializerArguments)
+        : plainJSBundle(...serializerArguments);
 
       return {
         numModifiedFiles: delta.reset
