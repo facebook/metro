@@ -237,6 +237,7 @@ class Server {
       assetPlugins: this._config.transformer.assetPlugins,
       platform: transformOptions.platform,
       projectRoot: this._config.projectRoot,
+      publicPath: this._config.transformer.publicPath,
     });
   }
 
@@ -802,6 +803,7 @@ class Server {
         processModuleFilter: this._config.serializer.processModuleFilter,
         assetPlugins: this._config.transformer.assetPlugins,
         platform: transformOptions.platform,
+        publicPath: this._config.transformer.publicPath,
         projectRoot: this._config.projectRoot,
       });
     },

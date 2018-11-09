@@ -137,6 +137,7 @@ type TransformerConfigT = {|
   postMinifyProcess: PostMinifyProcess,
   transformVariants: TransformVariants,
   workerPath: string,
+  publicPath: string,
 |};
 
 type MetalConfigT = {|
