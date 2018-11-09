@@ -19,6 +19,7 @@ module.exports = function(api /*: any */) /*: BabelCoreOptions */ {
     '@babel/plugin-transform-async-to-generator',
     '@babel/plugin-transform-destructuring',
     '@babel/plugin-transform-flow-strip-types',
+    '@babel/plugin-syntax-dynamic-import',
 
     // TODO: Check if plugins from the list below are actually in use
     '@babel/plugin-proposal-class-properties',

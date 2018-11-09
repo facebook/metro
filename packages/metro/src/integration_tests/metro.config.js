@@ -19,13 +19,16 @@ module.exports = {
   maxWorkers: 1,
   projectRoot: ROOT_PATH,
   reporter: {update() {}},
-  watchFolders: [path.resolve(__dirname, '../lib/polyfills')],
+  watchFolders: [path.resolve(__dirname, '../../')],
   server: {port: 10028},
   resolver: {
     useWatchman: false,
   },
   transformer: {
     assetRegistryPath: path.join(ROOT_PATH, 'AssetRegistry'),
+    asyncRequireModulePath: require.resolve(
+      'metro/src/lib/bundle-modules/asyncRequire',
+    ),
     babelTransformerPath: require.resolve('metro/src/reactNativeTransformer'),
     enableBabelRCLookup: false,
     enableBabelRuntime: false,

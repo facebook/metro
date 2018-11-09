@@ -2,6 +2,8 @@
 
 exports[`builds a simple bundle 1`] = `
 Object {
+  "asyncImportCJS": Promise {},
+  "asyncImportESM": Promise {},
   "default": "export-4: FOO",
   "extraData": Object {
     "foo": "export-null: FOO",
@@ -17,5 +19,21 @@ Object {
     "primitiveFoo": "export-primitive-default: FOO",
   },
   "namedDefaultExported": "export-3: DEFAULT",
+}
+`;
+
+exports[`builds a simple bundle 2`] = `
+Object {
+  "default": Object {
+    "foo": "export-5: FOO",
+  },
+  "foo": "export-5: FOO",
+}
+`;
+
+exports[`builds a simple bundle 3`] = `
+Object {
+  "default": "export-6: DEFAULT",
+  "foo": "export-6: FOO",
 }
 `;

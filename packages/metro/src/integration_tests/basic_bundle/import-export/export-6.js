@@ -10,8 +10,6 @@
 
 'use strict';
 
-// eslint-disable-next-line lint/flow-no-fixme
-const dynamicRequire = (require: $FlowFixMe);
-module.exports = function(moduleID: mixed): Promise<mixed> {
-  return Promise.resolve().then(() => dynamicRequire.importAll(moduleID));
-};
+export default 'export-6: DEFAULT';
+
+export const foo = 'export-6: FOO';
