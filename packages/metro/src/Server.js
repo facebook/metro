@@ -12,12 +12,13 @@
 const IncrementalBundler = require('./IncrementalBundler');
 const MultipartResponse = require('./Server/MultipartResponse');
 
+const baseJSBundle = require('./DeltaBundler/Serializers/baseJSBundle');
+const bundleToString = require('./lib/bundle-modules/DeltaClient/bundleToString');
 const deltaJSBundle = require('./DeltaBundler/Serializers/deltaJSBundle');
 const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('./DeltaBundler/Serializers/getAssets');
 const getGraphId = require('./lib/getGraphId');
 const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
-const plainJSBundle = require('./DeltaBundler/Serializers/plainJSBundle');
 const sourceMapObject = require('./DeltaBundler/Serializers/sourceMapObject');
 const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
 const splitBundleOptions = require('./lib/splitBundleOptions');
@@ -166,21 +167,22 @@ class Server {
 
     const entryPoint = path.resolve(this._config.projectRoot, entryFile);
 
+    const bundle = baseJSBundle(entryPoint, prepend, graph, {
+      processModuleFilter: this._config.serializer.processModuleFilter,
+      createModuleId: this._createModuleId,
+      getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+      dev: transformOptions.dev,
+      projectRoot: this._config.projectRoot,
+      runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
+        path.relative(this._config.projectRoot, entryPoint),
+      ),
+      runModule: serializerOptions.runModule,
+      sourceMapUrl: serializerOptions.sourceMapUrl,
+      inlineSourceMap: serializerOptions.inlineSourceMap,
+    });
+
     return {
-      code: plainJSBundle(entryPoint, prepend, graph, {
-        processModuleFilter: this._config.serializer.processModuleFilter,
-        createModuleId: this._createModuleId,
-        getRunModuleStatement: this._config.serializer.getRunModuleStatement,
-        dev: transformOptions.dev,
-        projectRoot: this._config.projectRoot,
-        runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-          path.relative(this._config.projectRoot, entryPoint),
-        ),
-        runModule: serializerOptions.runModule,
-        sourceMapUrl: serializerOptions.sourceMapUrl,
-        inlineSourceMap: serializerOptions.inlineSourceMap,
-        embedDelta: false,
-      }),
+      code: bundleToString({...bundle, base: true, revisionId: ''}, false),
       map: sourceMapString(prepend, graph, {
         excludeSource: serializerOptions.excludeSource,
         processModuleFilter: this._config.serializer.processModuleFilter,
@@ -677,37 +679,41 @@ class Server {
             onProgress,
           }));
 
-      const options = {
-        processModuleFilter: this._config.serializer.processModuleFilter,
-        createModuleId: this._createModuleId,
-        getRunModuleStatement: this._config.serializer.getRunModuleStatement,
-        dev: transformOptions.dev,
-        projectRoot: this._config.projectRoot,
-        runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-          path.relative(this._config.projectRoot, entryFile),
-        ),
-        runModule: serializerOptions.runModule,
-        sourceMapUrl: serializerOptions.sourceMapUrl,
-        inlineSourceMap: serializerOptions.inlineSourceMap,
-      };
+      let bundle;
 
       const serializerArguments = [
         entryFile,
         revision.prepend,
         revision.graph,
-        // Putting the ternary inside of the Object.assign call would not yield
-        // the correct union type.
-        serializerOptions.embedDelta
-          ? Object.assign({}, options, {
-              embedDelta: true,
-              revisionId: revision.id,
-            })
-          : Object.assign({}, options, {embedDelta: false}),
+        {
+          processModuleFilter: this._config.serializer.processModuleFilter,
+          createModuleId: this._createModuleId,
+          getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+          dev: transformOptions.dev,
+          projectRoot: this._config.projectRoot,
+          runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
+            path.relative(this._config.projectRoot, entryFile),
+          ),
+          runModule: serializerOptions.runModule,
+          sourceMapUrl: serializerOptions.sourceMapUrl,
+          inlineSourceMap: serializerOptions.inlineSourceMap,
+        },
       ];
+
       const possibleCustomSerializer = this._config.serializer.customSerializer;
-      const bundle = possibleCustomSerializer
-        ? possibleCustomSerializer(...serializerArguments)
-        : plainJSBundle(...serializerArguments);
+      if (possibleCustomSerializer) {
+        bundle = possibleCustomSerializer(...serializerArguments);
+      } else {
+        const base = baseJSBundle(...serializerArguments);
+        bundle = bundleToString(
+          {
+            ...base,
+            base: true,
+            revisionId: revision.id,
+          },
+          serializerOptions.embedDelta,
+        );
+      }
 
       return {
         numModifiedFiles: delta.reset
@@ -734,6 +740,7 @@ class Server {
           FILES_CHANGED_COUNT_HEADER,
           String(result.numModifiedFiles),
         );
+        mres.setHeader(DELTA_ID_HEADER, String(result.nextRevId));
         mres.setHeader('Content-Type', 'application/javascript');
         mres.setHeader('Last-Modified', result.lastModifiedDate.toUTCString());
         mres.setHeader(

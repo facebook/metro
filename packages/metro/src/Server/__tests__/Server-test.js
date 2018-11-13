@@ -255,7 +255,7 @@ describe('processRequest', () => {
         '__d(function() {foo();},1,[],"foo.js");',
         'require(0);',
         '//# sourceMappingURL=//localhost:8081/mybundle.map?embedDelta=true',
-        '//# offsetTable={"pre":24,"post":78,"modules":[[0,47],[1,39]],"revisionId":"XXXXX-0"}',
+        '//# offsetTable={"revisionId":"XXXXX-0","pre":24,"post":78,"modules":[[0, 47],[1,39]]}',
       ].join('\n'),
     );
   });

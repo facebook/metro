@@ -12,13 +12,19 @@
 
 'use strict';
 
-const stringToBundle = require('../stringToBundle');
+const bundleToString = require('../bundleToString');
 
-const {getBundle, setBundle} = require('../bundleCache');
+const {getBundleResponse, setBundleResponse} = require('../bundleCache');
 const {Request, Response, Headers} = require('node-fetch');
 const {URL} = require('url');
 
-jest.mock('../stringToBundle');
+function createResponse(bundle) {
+  return new Response(bundleToString(bundle, true), {
+    headers: {
+      'X-Metro-Delta-ID': bundle.revisionId,
+    },
+  });
+}
 
 describe('bundleCache', () => {
   let putMock;
@@ -40,8 +46,8 @@ describe('bundleCache', () => {
     };
   });
 
-  describe('getBundle', () => {
-    it('retrieves a bundle from the bundle cache', async () => {
+  describe('getBundleResponse', () => {
+    it('retrieves a bundle response from the bundle cache', async () => {
       const bundle = {
         base: true,
         revisionId: 'revId',
@@ -50,14 +56,14 @@ describe('bundleCache', () => {
         modules: [[0, '0'], [100, '100']],
       };
       const bundleReq = new Request('http://localhost/bundles/cool-bundle');
-      matchMock.mockResolvedValue(new Response(JSON.stringify(bundle)));
-      expect(await getBundle(bundleReq)).toEqual(bundle);
+      const response = createResponse(bundle);
+      matchMock.mockResolvedValue(response);
+      expect(await getBundleResponse(bundleReq)).toEqual(response);
       expect(fetch).not.toHaveBeenCalled();
       expect(matchMock).toHaveBeenCalledWith(bundleReq);
     });
 
-    it('retrieves a bundle from the browser cache', async () => {
-      const stringBundle = 'stringBundle';
+    it('retrieves a bundle response from the browser cache', async () => {
       const bundle = {
         base: true,
         revisionId: 'revId',
@@ -66,23 +72,22 @@ describe('bundleCache', () => {
         modules: [[0, '0'], [100, '100']],
       };
       const bundleReq = new Request('http://localhost/bundles/cool-bundle');
+      const response = createResponse(bundle);
       matchMock.mockResolvedValue(null);
-      fetch.mockResolvedValue(new Response(stringBundle));
-      stringToBundle.mockReturnValue(bundle);
-      expect(await getBundle(bundleReq)).toEqual(bundle);
+      fetch.mockResolvedValue(response);
+      expect(await getBundleResponse(bundleReq)).toEqual(response);
       expect(fetch).toHaveBeenCalledWith(bundleReq, {cache: 'force-cache'});
-      expect(stringToBundle).toHaveBeenCalledWith(stringBundle);
     });
 
-    it('returns null when a bundle cannot be found', async () => {
+    it('returns null when a bundle response cannot be found', async () => {
       matchMock.mockResolvedValue(null);
       fetch.mockResolvedValue(null);
-      expect(await getBundle({})).toEqual(null);
+      expect(await getBundleResponse({})).toEqual(null);
     });
   });
 
-  describe('setBundle', () => {
-    it('stores a bundle in the bundle cache', async () => {
+  describe('setBundleResponse', () => {
+    it('stores a bundle response in the bundle cache', async () => {
       const bundle = {
         base: true,
         revisionId: 'revId',
@@ -91,10 +96,9 @@ describe('bundleCache', () => {
         modules: [[0, '0'], [100, '100']],
       };
       const bundleReq = new Request('http://localhost/bundles/cool-bundle');
-      await setBundle(bundleReq, bundle);
-      const putCall = putMock.mock.calls[0];
-      expect(putCall[0]).toBe(bundleReq);
-      expect(await putCall[1].json()).toEqual(bundle);
+      const response = createResponse(bundle);
+      await setBundleResponse(bundleReq, response);
+      expect(putMock).toHaveBeenCalledWith(bundleReq, response);
     });
   });
 });

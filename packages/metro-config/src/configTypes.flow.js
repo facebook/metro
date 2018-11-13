@@ -15,12 +15,12 @@ import type {IncomingMessage, ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
 import type {CustomResolver} from 'metro-resolver';
 import type {MetroSourceMap} from 'metro-source-map';
-import type {Options} from 'metro/src/DeltaBundler/Serializers/plainJSBundle';
 import type {
   DeltaResult,
   Graph,
   Module,
 } from 'metro/src/DeltaBundler/types.flow.js';
+import type {SerializerOptions} from 'metro/src/DeltaBundler/types.flow';
 import type {TransformResult} from 'metro/src/DeltaBundler';
 import type {JsTransformerConfig} from 'metro/src/JSTransformer/worker';
 import type {TransformVariants} from 'metro/src/ModuleGraph/types.flow.js';
@@ -120,7 +120,7 @@ type SerializerConfigT = {|
     entryPoint: string,
     preModules: $ReadOnlyArray<Module<>>,
     graph: Graph<>,
-    options: Options,
+    options: SerializerOptions,
   ) => string,
   experimentalSerializerHook: (graph: Graph<>, delta: DeltaResult<>) => mixed,
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,

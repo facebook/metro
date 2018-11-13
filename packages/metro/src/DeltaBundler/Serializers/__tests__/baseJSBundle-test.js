@@ -10,9 +10,9 @@
 
 'use strict';
 
+const baseJSBundle = require('../baseJSBundle');
 const createModuleIdFactory = require('../../../lib/createModuleIdFactory');
 const path = require('path');
-const plainJSBundle = require('../plainJSBundle');
 
 const polyfill = {
   output: [
@@ -51,9 +51,9 @@ const barModule = {
 const getRunModuleStatement = moduleId =>
   `require(${JSON.stringify(moduleId)});`;
 
-it('should serialize a very simple bundle', () => {
+it('should generate a very simple bundle', () => {
   expect(
-    plainJSBundle(
+    baseJSBundle(
       '/root/foo',
       [polyfill],
       {
@@ -74,20 +74,28 @@ it('should serialize a very simple bundle', () => {
         sourceMapUrl: 'http://localhost/bundle.map',
       },
     ),
-  ).toEqual(
-    [
-      '__d(function() {/* code for polyfill */});',
-      '__d(function() {/* code for foo */},"foo",["bar"],"foo");',
-      '__d(function() {/* code for bar */},"bar",[],"bar");',
-      'require("foo");',
-      '//# sourceMappingURL=http://localhost/bundle.map',
-    ].join('\n'),
-  );
+  ).toMatchInlineSnapshot(`
+Object {
+  "modules": Array [
+    Array [
+      "foo",
+      "__d(function() {/* code for foo */},\\"foo\\",[\\"bar\\"],\\"foo\\");",
+    ],
+    Array [
+      "bar",
+      "__d(function() {/* code for bar */},\\"bar\\",[],\\"bar\\");",
+    ],
+  ],
+  "post": "require(\\"foo\\");
+//# sourceMappingURL=http://localhost/bundle.map",
+  "pre": "__d(function() {/* code for polyfill */});",
+}
+`);
 });
 
 it('should add runBeforeMainModule statements if found in the graph', () => {
   expect(
-    plainJSBundle(
+    baseJSBundle(
       '/root/foo',
       [polyfill],
       {
@@ -107,22 +115,17 @@ it('should add runBeforeMainModule statements if found in the graph', () => {
         runModule: true,
         sourceMapUrl: 'http://localhost/bundle.map',
       },
-    ),
-  ).toEqual(
-    [
-      '__d(function() {/* code for polyfill */});',
-      '__d(function() {/* code for foo */},"foo",["bar"],"foo");',
-      '__d(function() {/* code for bar */},"bar",[],"bar");',
-      'require("bar");',
-      'require("foo");',
-      '//# sourceMappingURL=http://localhost/bundle.map',
-    ].join('\n'),
-  );
+    ).post,
+  ).toMatchInlineSnapshot(`
+"require(\\"bar\\");
+require(\\"foo\\");
+//# sourceMappingURL=http://localhost/bundle.map"
+`);
 });
 
 it('should handle numeric module ids', () => {
   expect(
-    plainJSBundle(
+    baseJSBundle(
       '/root/foo',
       [polyfill],
       {
@@ -142,22 +145,24 @@ it('should handle numeric module ids', () => {
         runModule: true,
         sourceMapUrl: 'http://localhost/bundle.map',
       },
-    ),
-  ).toEqual(
-    [
-      '__d(function() {/* code for polyfill */});',
-      '__d(function() {/* code for foo */},0,[1],"foo");',
-      '__d(function() {/* code for bar */},1,[],"bar");',
-      'require(1);',
-      'require(0);',
-      '//# sourceMappingURL=http://localhost/bundle.map',
-    ].join('\n'),
-  );
+    ).modules,
+  ).toMatchInlineSnapshot(`
+Array [
+  Array [
+    0,
+    "__d(function() {/* code for foo */},0,[1],\\"foo\\");",
+  ],
+  Array [
+    1,
+    "__d(function() {/* code for bar */},1,[],\\"bar\\");",
+  ],
+]
+`);
 });
 
 it('outputs custom runModule statements', () => {
   expect(
-    plainJSBundle(
+    baseJSBundle(
       '/root/foo',
       [polyfill],
       {
@@ -177,20 +182,15 @@ it('outputs custom runModule statements', () => {
         runBeforeMainModule: ['/root/bar'],
         runModule: true,
       },
-    ),
-  ).toEqual(
-    [
-      '__d(function() {/* code for polyfill */});',
-      '__d(function() {/* code for foo */},"foo",["bar"],"foo");',
-      '__d(function() {/* code for bar */},"bar",[],"bar");',
-      'export default require("bar").default;',
-      'export default require("foo").default;',
-    ].join('\n'),
-  );
+    ).post,
+  ).toMatchInlineSnapshot(`
+"export default require(\\"bar\\").default;
+export default require(\\"foo\\").default;"
+`);
 });
 
 it('should add an inline source map to a very simple bundle', () => {
-  const bundle = plainJSBundle(
+  const bundle = baseJSBundle(
     '/root/foo',
     [polyfill],
     {
@@ -211,19 +211,13 @@ it('should add an inline source map to a very simple bundle', () => {
       inlineSourceMap: true,
     },
   );
-  expect(bundle.slice(0, bundle.lastIndexOf('base64'))).toEqual(
-    [
-      '__d(function() {/* code for polyfill */});',
-      '__d(function() {/* code for foo */},"foo",["bar"],"foo");',
-      '__d(function() {/* code for bar */},"bar",[],"bar");',
-      'require("foo");',
-      '//# sourceMappingURL=data:application/json;charset=utf-8;',
-    ].join('\n'),
+  expect(bundle.post.slice(0, bundle.post.lastIndexOf('base64'))).toEqual(
+    'require("foo");\n//# sourceMappingURL=data:application/json;charset=utf-8;',
   );
   expect(
     JSON.parse(
       Buffer.from(
-        bundle.slice(bundle.lastIndexOf('base64') + 7),
+        bundle.post.slice(bundle.post.lastIndexOf('base64') + 7),
         'base64',
       ).toString(),
     ),

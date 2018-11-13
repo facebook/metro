@@ -12,9 +12,10 @@
 
 const WebSocketHMRClient = require('../../WebSocketHMRClient');
 
+const bundleToString = require('../bundleToString');
 const createDeltaClient = require('../createDeltaClient');
 
-const {getBundle, setBundle} = require('../bundleCache');
+const {getBundleResponse, setBundleResponse} = require('../bundleCache');
 const {Request, Response, Headers} = require('node-fetch');
 const {URL} = require('url');
 
@@ -40,6 +41,14 @@ function createDelta(revisionId, modules = [], deleted = []) {
   };
 }
 
+function createResponse(bundle) {
+  return new Response(bundleToString(bundle, true), {
+    headers: {
+      'X-Metro-Delta-ID': bundle.revisionId,
+    },
+  });
+}
+
 describe('createDeltaClient', () => {
   let fetch;
   beforeEach(() => {
@@ -50,12 +59,14 @@ describe('createDeltaClient', () => {
     global.Request = Request;
     global.Headers = Headers;
     console.error = jest.fn();
+    getBundleResponse.mockReset();
+    setBundleResponse.mockReset();
   });
 
   it('retrieves a bundle from cache and patches it with a delta bundle', async () => {
     const bundle = createBundle('0', [0]);
     const delta = createDelta('1', [1], [0]);
-    getBundle.mockResolvedValue(bundle);
+    getBundleResponse.mockResolvedValue(createResponse(bundle));
     fetch.mockResolvedValue(new Response(JSON.stringify(delta)));
     const deltaClient = createDeltaClient();
 
@@ -74,14 +85,16 @@ describe('createDeltaClient', () => {
     expect(await res.text()).toMatchInlineSnapshot(`
 "pre(\\"0\\");
 __d(1);
-post(\\"0\\");"
+post(\\"0\\");
+//# offsetTable={\\"revisionId\\":\\"1\\",\\"pre\\":9,\\"post\\":10,\\"modules\\":[[1,7]]}"
 `);
   });
 
   it('supports a custom getDeltaBundle function', async () => {
     const bundle = createBundle('rev0', [0]);
     const delta = createDelta('rev2', [2], [0]);
-    getBundle.mockResolvedValue(bundle);
+    const response = createResponse(bundle);
+    getBundleResponse.mockResolvedValue(response);
     const getDeltaBundle = jest.fn().mockResolvedValue(delta);
     const deltaClient = createDeltaClient({getDeltaBundle});
 
@@ -91,18 +104,43 @@ post(\\"0\\");"
       request: bundleReq,
     });
 
-    expect(getDeltaBundle).toHaveBeenCalledWith(bundleReq, 'rev0');
+    expect(getDeltaBundle).toHaveBeenCalledWith(bundleReq, response);
     expect(await res.text()).toMatchInlineSnapshot(`
 "pre(\\"rev0\\");
 __d(2);
-post(\\"rev0\\");"
+post(\\"rev0\\");
+//# offsetTable={\\"revisionId\\":\\"rev2\\",\\"pre\\":12,\\"post\\":13,\\"modules\\":[[2,7]]}"
+`);
+  });
+
+  it('supports a custom shouldUpdateBundle function', async () => {
+    const bundle = createBundle('rev0', [0]);
+    const delta = createDelta('rev2', [2], [0]);
+    const response = createResponse(bundle);
+    getBundleResponse.mockResolvedValue(response);
+    fetch.mockResolvedValue(new Response(JSON.stringify(delta)));
+    const shouldUpdateBundle = jest.fn().mockReturnValue(false);
+    const deltaClient = createDeltaClient({shouldUpdateBundle});
+
+    const bundleReq = new Request('http://localhost/bundles/cool.bundle');
+    const res = await deltaClient({
+      clientId: 'clientId',
+      request: bundleReq,
+    });
+
+    expect(shouldUpdateBundle).toHaveBeenCalledWith(bundleReq, response, delta);
+    expect(await res.text()).toMatchInlineSnapshot(`
+"pre(\\"rev0\\");
+__d(0);
+post(\\"rev0\\");
+//# offsetTable={\\"revisionId\\":\\"rev0\\",\\"pre\\":12,\\"post\\":13,\\"modules\\":[[0,7]]}"
 `);
   });
 
   it('retrieves a bundle from cache and patches it with a new bundle', async () => {
     const bundle = createBundle('rev0', [0]);
     const newBundle = createBundle('rev1', [1]);
-    getBundle.mockResolvedValue(bundle);
+    getBundleResponse.mockResolvedValue(createResponse(bundle));
     fetch.mockResolvedValue(new Response(JSON.stringify(newBundle)));
     const deltaClient = createDeltaClient();
 
@@ -112,67 +150,51 @@ post(\\"rev0\\");"
       request: bundleReq,
     });
 
-    expect(getBundle).toHaveBeenCalledWith(bundleReq);
+    expect(getBundleResponse).toHaveBeenCalledWith(bundleReq);
     expect(await res.text()).toMatchInlineSnapshot(`
 "pre(\\"rev1\\");
 __d(1);
-post(\\"rev1\\");"
+post(\\"rev1\\");
+//# offsetTable={\\"revisionId\\":\\"rev1\\",\\"pre\\":12,\\"post\\":13,\\"modules\\":[[1,7]]}"
 `);
   });
 
-  it('fetches the original bundle if an error is thrown while fetching a delta bundle', async () => {
+  it('errors from fetch bubble up', async () => {
     const bundle = createBundle('rev0', [0]);
-    getBundle.mockResolvedValue(bundle);
-    fetch.mockRejectedValueOnce(new Error('Fetch error')).mockResolvedValueOnce(
-      new Response(`pre1
-1
-post1
-//# offsetTable={"pre": 4,"post":5,"modules":[[1,1]],"revisionId":"rev1"}`),
-    );
+    const error = new Error('Fetch error');
+    getBundleResponse.mockResolvedValue(createResponse(bundle));
+    fetch.mockRejectedValueOnce(error);
     const deltaClient = createDeltaClient();
 
     const bundleReq = new Request('http://localhost/bundles/cool.bundle');
-    const res = await deltaClient({
-      clientId: 'clientId',
-      request: bundleReq,
-    });
-
-    expect(fetch).toHaveBeenCalledWith(bundleReq, {includeCredentials: true});
-    expect(await res.text()).toMatchInlineSnapshot(`
-"pre1
-1
-post1"
-`);
+    expect(
+      deltaClient({
+        clientId: 'clientId',
+        request: bundleReq,
+      }),
+    ).rejects.toBe(error);
   });
 
-  it('fetches the original bundle if a previous bundle cannot be found in cache', async () => {
-    getBundle.mockResolvedValue(null);
-    fetch.mockResolvedValueOnce(
-      new Response(`pre
-0
-post
-//# offsetTable={"pre": 3,"post":4,"modules":[[0,1]],"revisionId":"rev0"}`),
-    );
+  it("throws when a previous bundle can't be found in cache", async () => {
+    getBundleResponse.mockResolvedValue(null);
     const deltaClient = createDeltaClient();
 
     const bundleReq = new Request('http://localhost/bundles/cool.bundle');
-    const res = await deltaClient({
-      clientId: 'clientId',
-      request: bundleReq,
-    });
-
-    expect(fetch).toHaveBeenCalledWith(bundleReq, {includeCredentials: true});
-    expect(await res.text()).toMatchInlineSnapshot(`
-"pre
-0
-post"
-`);
+    expect(
+      deltaClient({
+        clientId: 'clientId',
+        request: bundleReq,
+      }),
+    ).rejects.toThrowErrorMatchingInlineSnapshot(
+      '"Couldn\'t retrieve a bundle corresponding to http://localhost/bundles/cool.bundle from neither the bundle cache nor the browser cache. This can happen when the browser cache is cleared but the service worker isn\'t."',
+    );
   });
 
   it('sets the patched bundle in cache', async () => {
     const bundle = createBundle('rev0', [0]);
     const delta = createDelta('rev1', [1], [0]);
-    getBundle.mockResolvedValue(bundle);
+    const response = createResponse(bundle);
+    getBundleResponse.mockResolvedValue(response);
     fetch.mockResolvedValue(new Response(JSON.stringify(delta)));
     const deltaClient = createDeltaClient();
 
@@ -182,13 +204,15 @@ post"
       request: bundleReq,
     });
 
-    expect(setBundle).toHaveBeenCalledWith(bundleReq, {
-      base: true,
-      revisionId: 'rev1',
-      pre: 'pre("rev0");',
-      post: 'post("rev0");',
-      modules: [[1, '__d(1);']],
-    });
+    expect(setBundleResponse).toHaveBeenCalledTimes(1);
+    expect(setBundleResponse.mock.calls[0][0]).toEqual(bundleReq);
+    expect(await setBundleResponse.mock.calls[0][1].text())
+      .toMatchInlineSnapshot(`
+"pre(\\"rev0\\");
+__d(1);
+post(\\"rev0\\");
+//# offsetTable={\\"revisionId\\":\\"rev1\\",\\"pre\\":12,\\"post\\":13,\\"modules\\":[[1,7]]}"
+`);
   });
 
   describe('Updates', () => {
@@ -201,6 +225,7 @@ post"
         .map(call => call[1](...args));
     };
 
+    let response;
     beforeEach(() => {
       global.__DEV__ = true;
       global.clients = {
@@ -209,7 +234,8 @@ post"
         }),
       };
       const bundle = createBundle('rev0', [0]);
-      getBundle.mockResolvedValue(bundle);
+      response = createResponse(bundle);
+      getBundleResponse.mockResolvedValue(response);
       WebSocketHMRClient.prototype.on.mockClear();
       WebSocketHMRClient.mockClear();
     });
@@ -257,7 +283,7 @@ post"
 
       await flushPromises();
 
-      expect(getHmrServerUrl).toHaveBeenCalledWith(bundleReq, 'rev0');
+      expect(getHmrServerUrl).toHaveBeenCalledWith(bundleReq, response);
       expect(WebSocketHMRClient).toHaveBeenCalledWith('ws://whatever');
     });
 
@@ -283,19 +309,19 @@ post"
       });
       emit('update-done');
 
-      const response = await promise;
+      const response2 = await promise;
 
-      expect(setBundle).toHaveBeenCalledWith(bundleReq, {
-        base: true,
-        revisionId: 'rev1',
-        pre: 'pre("rev0");',
-        post: 'post("rev0");',
-        modules: [[1, '0.1']],
-      });
-      expect(await response.text()).toMatchInlineSnapshot(`
+      expect(setBundleResponse).toHaveBeenCalledTimes(1);
+      expect(setBundleResponse.mock.calls[0][0]).toEqual(bundleReq);
+      const responseText = await setBundleResponse.mock.calls[0][1]
+        .clone()
+        .text();
+      expect(await response2.text()).toBe(responseText);
+      expect(responseText).toMatchInlineSnapshot(`
 "pre(\\"rev0\\");
 0.1
-post(\\"rev0\\");"
+post(\\"rev0\\");
+//# offsetTable={\\"revisionId\\":\\"rev1\\",\\"pre\\":12,\\"post\\":13,\\"modules\\":[[1,3]]}"
 `);
     });
 
@@ -440,6 +466,8 @@ post(\\"rev0\\");"
         request: bundleReq,
       });
 
+      await flushPromises();
+
       emit('open');
       emit('update-start');
       emit('update', {
@@ -462,13 +490,17 @@ post(\\"rev0\\");"
       emit('update', update);
       emit('update-done');
 
-      expect(setBundle).toHaveBeenCalledWith(bundleReq, {
-        base: true,
-        revisionId: 'rev1',
-        pre: 'pre("rev0");',
-        post: 'post("rev0");',
-        modules: [[1, '0.1']],
-      });
+      await flushPromises();
+
+      expect(setBundleResponse).toHaveBeenCalledTimes(1);
+      expect(setBundleResponse.mock.calls[0][0]).toEqual(bundleReq);
+      expect(await setBundleResponse.mock.calls[0][1].text())
+        .toMatchInlineSnapshot(`
+"pre(\\"rev0\\");
+0.1
+post(\\"rev0\\");
+//# offsetTable={\\"revisionId\\":\\"rev1\\",\\"pre\\":12,\\"post\\":13,\\"modules\\":[[1,3]]}"
+`);
     });
 
     it('accepts a custom onUpdate function', async () => {
@@ -637,34 +669,21 @@ post(\\"rev0\\");"
       expect(WebSocketHMRClient).toHaveBeenCalledTimes(2);
     });
 
-    it('fetches the original bundle if there is a connection error', async () => {
-      fetch.mockResolvedValue(
-        new Response(`pre
-0
-post
-//# offsetTable={"pre":3,"post":4,"modules":[[0,1]],"revisionId":"rev0"}`),
-      );
+    it('connection errors bubble up', async () => {
       const deltaClient = createDeltaClient();
 
-      const bundleReq = new Request('https://localhost/bundles/cool.bundle');
       const promise = deltaClient({
         clientId: 'client0',
-        request: bundleReq,
+        request: new Request('https://localhost/bundles/cool.bundle'),
       });
 
       await flushPromises();
 
-      emit('connection-error');
+      emit('connection-error', new Error('Oh no! An error was thrown!'));
 
-      const res = await promise;
-
-      expect(fetch).toHaveBeenCalledWith(bundleReq, {
-        includeCredentials: true,
-      });
-      expect(await res.text()).toMatchInlineSnapshot(`
-"pre
-0
-post"
+      expect(promise).rejects.toThrowErrorMatchingInlineSnapshot(`
+"Error retrieving update from the update server for https://localhost/bundles/cool.bundle. Try refreshing the page.
+Error message: Oh no! An error was thrown!"
 `);
     });
   });
