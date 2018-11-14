@@ -116,10 +116,10 @@ Object {
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
+  "useCustomPolyfill": false,
   "watchFolders": Array [
     "/",
   ],
-  "useCustomPolyfill": false,
 }
 `;
 
@@ -239,9 +239,9 @@ Object {
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
+  "useCustomPolyfill": false,
   "watchFolders": Array [
     "/",
   ],
-  "useCustomPolyfill": false,
 }
 `;
