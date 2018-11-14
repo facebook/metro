@@ -42,6 +42,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     hasteImplModulePath: undefined,
     blacklistRE: blacklist(),
     useWatchman: true,
+    useCustomPolyfill: false,
   },
 
   serializer: {
