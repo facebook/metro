@@ -119,6 +119,7 @@ Object {
   "watchFolders": Array [
     "/",
   ],
+  "useCustomPolyfill": false,
 }
 `;
 
@@ -241,5 +242,6 @@ Object {
   "watchFolders": Array [
     "/",
   ],
+  "useCustomPolyfill": false,
 }
 `;
