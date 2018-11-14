@@ -12,9 +12,10 @@
 const HmrServer = require('..');
 
 const getGraphId = require('../../lib/getGraphId');
+
 jest.mock('../../lib/transformHelpers', () => ({
   getResolveDependencyFn: () => (from, to) =>
-    `${from.replace(/\.$/, '')}${to}.js`,
+    `${require('path').resolve(from, to)}.js`,
 }));
 
 describe('HmrServer', () => {

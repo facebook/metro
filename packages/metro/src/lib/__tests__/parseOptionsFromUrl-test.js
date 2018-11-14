@@ -105,6 +105,12 @@ describe('parseOptionsFromUrl', () => {
     ).toMatchObject({hot: true});
   });
 
+  it('retrieves stuff from HMR urls', () => {
+    expect(
+      parseOptionsFromUrl('my/bundle.bundle', new Set([])).options,
+    ).toMatchObject({entryFile: './my/bundle'});
+  });
+
   describe.each([
     ['dev', true],
     ['minify', false],

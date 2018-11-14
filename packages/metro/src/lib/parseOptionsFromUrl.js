@@ -52,7 +52,7 @@ function parseOptionsFromUrl(
   // Backwards compatibility. Options used to be as added as '.' to the
   // entry module name. We can safely remove these options.
   const entryFileRelativeToProjectRoot = pathname
-    .replace(/^\//, './') // We want to produce a relative path to project root
+    .replace(/^(?:\.?\/)?/, './') // We want to produce a relative path to project root
     .split('.')
     .filter(part => {
       if (part === 'map') {
