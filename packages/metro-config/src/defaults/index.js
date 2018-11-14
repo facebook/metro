@@ -42,7 +42,6 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     hasteImplModulePath: undefined,
     blacklistRE: blacklist(),
     useWatchman: true,
-    useCustomPolyfill: false,
   },
 
   serializer: {
@@ -117,6 +116,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   maxWorkers: getMaxWorkers(),
   resetCache: false,
   reporter: new TerminalReporter(new Terminal(process.stdout)),
+  useCustomPolyfill: false,
 });
 
 async function getDefaultConfig(rootPath: ?string): Promise<ConfigT> {

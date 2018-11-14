@@ -109,7 +109,6 @@ async function convertOldToNew({
         ? getBlacklistRE()
         : defaultConfig.resolver.blacklistRE,
       useWatchman: true,
-      useCustomPolyfill: false,
     },
     serializer: {
       customSerializer: defaultConfig.serializer.customSerializer,
@@ -159,6 +158,7 @@ async function convertOldToNew({
     transformerPath: defaultConfig.transformerPath,
     resetCache,
     maxWorkers,
+    useCustomPolyfill: false,
   };
 }
 
