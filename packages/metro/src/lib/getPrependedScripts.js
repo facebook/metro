@@ -41,23 +41,26 @@ async function getPrependedScripts(
     type: 'script',
   };
 
-  const graph = await deltaBundler.buildGraph(
-    [defaults.moduleSystem, ...polyfillModuleNames],
-    {
-      resolve: await transformHelpers.getResolveDependencyFn(
-        bundler,
-        options.platform,
-      ),
-      transform: await transformHelpers.getTransformFn(
-        [defaults.moduleSystem, ...polyfillModuleNames],
-        bundler,
-        deltaBundler,
-        config,
-        transformOptions,
-      ),
-      onProgress: null,
-    },
-  );
+  // If useCustomPolyfill is false, it means that
+  // we have added `require.js` into the result of getPolyfills function.
+  const entryPoints: $ReadOnlyArray<string> = config.useCustomPolyfill
+    ? polyfillModuleNames
+    : [defaults.moduleSystem, ...polyfillModuleNames];
+
+  const graph = await deltaBundler.buildGraph(entryPoints, {
+    resolve: await transformHelpers.getResolveDependencyFn(
+      bundler,
+      options.platform,
+    ),
+    transform: await transformHelpers.getTransformFn(
+      entryPoints,
+      bundler,
+      deltaBundler,
+      config,
+      transformOptions,
+    ),
+    onProgress: null,
+  });
 
   return [_getPrelude({dev: options.dev}), ...graph.dependencies.values()];
 }

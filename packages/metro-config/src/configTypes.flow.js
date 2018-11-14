@@ -150,6 +150,7 @@ type MetalConfigT = {|
   reporter: Reporter,
   resetCache: boolean,
   watchFolders: $ReadOnlyArray<string>,
+  useCustomPolyfill: boolean,
 |};
 
 type ServerConfigT = {|
