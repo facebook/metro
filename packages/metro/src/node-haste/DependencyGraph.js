@@ -12,7 +12,6 @@
 
 const AssetResolutionCache = require('./AssetResolutionCache');
 const DependencyGraphHelpers = require('./DependencyGraph/DependencyGraphHelpers');
-const FilesByDirNameIndex = require('./FilesByDirNameIndex');
 const JestHasteMap = require('jest-haste-map');
 const Module = require('./Module');
 const ModuleCache = require('./ModuleCache');
@@ -37,7 +36,6 @@ const JEST_HASTE_MAP_CACHE_BREAKER = 4;
 class DependencyGraph extends EventEmitter {
   _assetResolutionCache: AssetResolutionCache;
   _config: ConfigT;
-  _filesByDirNameIndex: FilesByDirNameIndex;
   _haste: JestHasteMap;
   _hasteFS: HasteFS;
   _helpers: DependencyGraphHelpers;
@@ -58,12 +56,9 @@ class DependencyGraph extends EventEmitter {
   |}) {
     super();
     this._config = config;
-    this._filesByDirNameIndex = new FilesByDirNameIndex(
-      initialHasteFS.getFileIterator(),
-    );
     this._assetResolutionCache = new AssetResolutionCache({
       assetExtensions: new Set(config.resolver.assetExts),
-      getDirFiles: dirPath => this._filesByDirNameIndex.getAllFiles(dirPath),
+      getDirFiles: dirPath => fs.readdirSync(dirPath),
       platforms: new Set(config.resolver.platforms),
     });
     this._haste = haste;
@@ -137,9 +132,6 @@ class DependencyGraph extends EventEmitter {
 
   _onHasteChange({eventsQueue, hasteFS, moduleMap}) {
     this._hasteFS = hasteFS;
-    this._filesByDirNameIndex = new FilesByDirNameIndex(
-      hasteFS.getFileIterator(),
-    );
     this._assetResolutionCache.clear();
     this._moduleMap = moduleMap;
     eventsQueue.forEach(({type, filePath}) =>
