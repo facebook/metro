@@ -53,5 +53,8 @@
     "@babel/template": "^7.0.0",
     "metro-babel7-plugin-react-transform": "0.49.1",
     "react-transform-hmr": "^1.0.4"
+  },
+  "peerDependencies": {
+    "@babel/core": "*"
   }
 }
