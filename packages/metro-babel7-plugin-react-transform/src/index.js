@@ -25,6 +25,7 @@
 /*eslint-disable*/
 
 const {addDefault} = require('@babel/helper-module-imports');
+const {relative} = require('path');
 
 function find(obj, func) {
   let value = undefined;
@@ -395,7 +396,12 @@ module.exports = function({types: t, template}) {
             configuredTransformId,
             t.callExpression(transformImportId, [
               toObjectExpression({
-                filename: t.stringLiteral(this.file.opts.filename || 'unknown'),
+                filename: t.stringLiteral(
+                  // Equivalent to `this.file.opts.sourceFileName` when defined.
+                  this.file.opts.filename
+                    ? relative(this.file.opts.cwd, this.file.opts.filename)
+                    : 'unknown',
+                ),
                 components: componentsDeclarationId,
                 locals: t.arrayExpression(transformLocals),
                 imports: t.arrayExpression(transformImports),
