@@ -232,7 +232,7 @@ describe('HttpStore', () => {
       callbackSet(responseHttpOk(''));
     });
 
-    const bufferValue = new Buffer([0xfb, 0xca, 0xc4]);
+    const bufferValue = Buffer.from([0xfb, 0xca, 0xc4]);
 
     await store.set(Buffer.from('key-set'), bufferValue);
 

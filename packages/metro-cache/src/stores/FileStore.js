@@ -16,7 +16,7 @@ const path = require('path');
 const rimraf = require('rimraf');
 
 const NULL_BYTE = 0x00;
-const NULL_BYTE_BUFFER = new Buffer([NULL_BYTE]);
+const NULL_BYTE_BUFFER = Buffer.from([NULL_BYTE]);
 
 export type Options = {|
   root: string,
