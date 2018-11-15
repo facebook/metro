@@ -115,9 +115,6 @@ describe('Startup section optimization', () => {
     );
 
     preloaded.forEach(m => {
-      /* $FlowFixMe(>=0.86.0 site=react_native_fb) This comment suppresses an
-       * error found when Flow v0.86 was deployed. To see the error, delete
-       * this comment and run Flow. */
       const idx = idsForPath(m.file).moduleId;
       expect(table[idx]).toEqual(m === last ? undefined : [0, 0]);
     });
@@ -135,9 +132,6 @@ describe('Startup section optimization', () => {
 
   it('reflects additional sources in the startup section in the source map', () => {
     let line = preloaded.reduce(
-      /* $FlowFixMe(>=0.86.0 site=react_native_fb) This comment suppresses an
-       * error found when Flow v0.86 was deployed. To see the error, delete
-       * this comment and run Flow. */
       (l, m) => l + countLines(m),
       countLines(requireCall),
     );
@@ -150,9 +144,6 @@ describe('Startup section optimization', () => {
           map: m.file.map || lineByLineMap(m.file.path),
           offset: {column: 0, line},
         };
-        /* $FlowFixMe(>=0.86.0 site=react_native_fb) This comment suppresses an
-         * error found when Flow v0.86 was deployed. To see the error, delete
-         * this comment and run Flow. */
         line += countLines(m);
         return section;
       }),
@@ -275,9 +266,6 @@ function makeDependency(name) {
 }
 
 function expectedCode(module) {
-  /* $FlowFixMe(>=0.86.0 site=react_native_fb) This comment suppresses an error
-   * found when Flow v0.86 was deployed. To see the error, delete this comment
-   * and run Flow. */
   return getModuleCodeAndMap(module, x => idsForPath(x).moduleId, {
     enableIDInlining: true,
   }).moduleCode;
@@ -296,9 +284,6 @@ function getId(path) {
 }
 
 function getPath(module) {
-  /* $FlowFixMe(>=0.86.0 site=react_native_fb) This comment suppresses an error
-   * found when Flow v0.86 was deployed. To see the error, delete this comment
-   * and run Flow. */
   return module.file.path;
 }
 
@@ -323,9 +308,6 @@ function parseOffsetTable(buffer) {
 }
 
 function countLines(module) {
-  /* $FlowFixMe(>=0.86.0 site=react_native_fb) This comment suppresses an error
-   * found when Flow v0.86 was deployed. To see the error, delete this comment
-   * and run Flow. */
   return module.file.code.split('\n').length;
 }
 
