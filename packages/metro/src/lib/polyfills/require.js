@@ -103,10 +103,6 @@ function define(
       // called with inverseDependencies, we can hot reload it.
       if (inverseDependencies) {
         global.__accept(moduleId, factory, dependencyMap, inverseDependencies);
-      } else {
-        console.warn(
-          `Trying to define twice module ID ${moduleId} in the same bundle`,
-        );
       }
     }
 
