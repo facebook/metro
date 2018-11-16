@@ -42,19 +42,6 @@ const defaultPlugins = [
   [require('@babel/plugin-transform-unicode-regex')],
 ];
 
-const es2015ExportDefault = [
-  require('@babel/plugin-proposal-export-default-from'),
-];
-
-const es2015ImportExport = [
-  require('@babel/plugin-transform-modules-commonjs'),
-  {
-    strict: false,
-    strictMode: false, // prevent "use strict" injections
-    allowTopLevelThis: true, // dont rewrite global `this` -> `undefined`
-  },
-];
-
 const es2015ArrowFunctions = [
   require('@babel/plugin-transform-arrow-functions'),
 ];
@@ -101,7 +88,21 @@ const getPreset = (src, options) => {
   const extraPlugins = [];
 
   if (!options || !options.disableImportExportTransform) {
-    extraPlugins.push(es2015ImportExport, es2015ExportDefault);
+    extraPlugins.push(
+      [require('@babel/plugin-proposal-export-default-from')],
+      [
+        require('@babel/plugin-transform-modules-commonjs'),
+        {
+          strict: false,
+          strictMode: false, // prevent "use strict" injections
+          lazy: !!(options && options.lazyImportExportTransform),
+          allowTopLevelThis: true, // dont rewrite global `this` -> `undefined`
+        },
+      ],
+    );
+  }
+
+  if (!options || !options.lazyCommonJS) {
   }
 
   if (hasClass) {
