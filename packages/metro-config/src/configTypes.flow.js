@@ -67,6 +67,7 @@ export type Middleware = (
 ) => mixed;
 
 export type OldConfigT = {
+  allowPnp: boolean,
   assetRegistryPath: string,
   cacheStores: Array<CacheStore<TransformResult<>>>,
   cacheVersion: string,
@@ -102,6 +103,7 @@ export type OldConfigT = {
 };
 
 type ResolverConfigT = {|
+  allowPnp: boolean,
   assetExts: $ReadOnlyArray<string>,
   blacklistRE: RegExp,
   extraNodeModules: {[name: string]: string},

@@ -44,6 +44,7 @@ async function convertOldToNew({
   reporter = new TerminalReporter(new Terminal(process.stdout)),
 }: PublicMetroOptions): Promise<ConfigT> {
   const {
+    allowPnp,
     getBlacklistRE,
     cacheStores,
     createModuleIdFactory,
@@ -97,6 +98,7 @@ async function convertOldToNew({
 
   return {
     resolver: {
+      allowPnp,
       assetExts,
       platforms,
       providesModuleNodeModules,

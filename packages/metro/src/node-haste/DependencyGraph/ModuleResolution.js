@@ -53,6 +53,7 @@ export type ModuleishCache<TModule, TPackage> = {
 };
 
 type Options<TModule, TPackage> = {|
+  +allowPnp: boolean,
   +dirExists: DirExistsFn,
   +doesFileExist: DoesFileExist,
   +extraNodeModules: ?Object,

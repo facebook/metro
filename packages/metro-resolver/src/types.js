@@ -107,6 +107,7 @@ export type ModulePathContext = FileOrDirContext & {
 
 export type ResolutionContext = ModulePathContext &
   HasteContext & {
+    allowPnp: boolean,
     allowHaste: boolean,
     extraNodeModules: ?{[string]: string},
     originModulePath: string,

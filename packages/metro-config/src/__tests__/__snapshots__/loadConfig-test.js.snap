@@ -10,6 +10,7 @@ Object {
   "reporter": null,
   "resetCache": false,
   "resolver": Object {
+    "allowPnp": true,
     "assetExts": Array [
       "bmp",
       "gif",
@@ -132,6 +133,7 @@ Object {
   "reporter": null,
   "resetCache": false,
   "resolver": Object {
+    "allowPnp": true,
     "assetExts": Array [
       "bmp",
       "gif",
