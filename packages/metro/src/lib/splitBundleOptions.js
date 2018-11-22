@@ -31,7 +31,6 @@ function splitBundleOptions(options: BundleOptions): SplitBundleOptions {
       runModule: options.runModule,
       excludeSource: options.excludeSource,
       inlineSourceMap: options.inlineSourceMap,
-      embedDelta: options.embedDelta,
     },
     onProgress: options.onProgress,
   };

@@ -10,16 +10,19 @@
 
 'use strict';
 
-import type {Bundle} from '../types.flow';
-
-const PRAGMA = '//# offsetTable=';
+import type {Bundle, BundleMetadata} from '../types.flow';
 
 /**
  * Serializes a bundle into a plain JS bundle.
  */
-function bundleToString(bundle: Bundle, embedDelta: boolean): string {
-  let output = bundle.pre + '\n';
-  let modulesTable = '';
+function bundleToString(
+  bundle: Bundle,
+): {|
+  +code: string,
+  +metadata: BundleMetadata,
+|} {
+  let code = bundle.pre + '\n';
+  const modules = [];
 
   const sortedModules = bundle.modules
     .slice()
@@ -27,24 +30,17 @@ function bundleToString(bundle: Bundle, embedDelta: boolean): string {
     // maps to work properly.
     .sort((a, b) => a[0] - b[0]);
 
-  for (const [id, code] of sortedModules.slice(0, -1)) {
-    output += code + '\n';
-    modulesTable += `[${id}, ${code.length}],`;
+  for (const [id, moduleCode] of sortedModules) {
+    code += moduleCode + '\n';
+    modules.push([id, moduleCode.length]);
   }
 
-  const [lastId, lastCode] = sortedModules[sortedModules.length - 1];
-  output += lastCode + '\n';
-  modulesTable += `[${lastId},${lastCode.length}]`;
+  code += bundle.post;
 
-  output += bundle.post;
-
-  if (embedDelta) {
-    output += `\n${PRAGMA}{"revisionId":"${bundle.revisionId}","pre":${
-      bundle.pre.length
-    },"post":${bundle.post.length},"modules":[${modulesTable}]}`;
-  }
-
-  return output;
+  return {
+    code,
+    metadata: {pre: bundle.pre.length, post: bundle.post.length, modules},
+  };
 }
 
 module.exports = bundleToString;

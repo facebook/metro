@@ -46,21 +46,16 @@ function parseOptionsFromUrl(
   const pathname =
     urlObj.pathname != null ? decodeURIComponent(urlObj.pathname) : '';
 
-  let isMap = false;
-  let isDelta = false;
+  let bundleType = 'bundle';
 
   // Backwards compatibility. Options used to be as added as '.' to the
   // entry module name. We can safely remove these options.
   const entryFileRelativeToProjectRoot = pathname
     .replace(/^(?:\.?\/)?/, './') // We want to produce a relative path to project root
     .split('.')
-    .filter(part => {
-      if (part === 'map') {
-        isMap = true;
-        return false;
-      }
-      if (part === 'delta') {
-        isDelta = true;
+    .filter((part, i) => {
+      if (part === 'delta' || part === 'map' || part === 'meta') {
+        bundleType = part;
         return false;
       }
       if (
@@ -94,14 +89,12 @@ function parseOptionsFromUrl(
     false,
   );
   const runModule = getBoolOptionFromQuery(urlQuery, 'runModule', true);
-  const embedDelta = getBoolOptionFromQuery(urlQuery, 'embedDelta', false);
 
   const customTransformOptions = parseCustomTransformOptions(urlObj);
 
   return {
     revisionId: revisionId != null ? revisionIdFromString(revisionId) : null,
     options: {
-      embedDelta,
       customTransformOptions,
       dev,
       hot: true,
@@ -109,7 +102,7 @@ function parseOptionsFromUrl(
       platform,
       onProgress: null,
       entryFile: entryFileRelativeToProjectRoot,
-      bundleType: isMap ? 'map' : isDelta ? 'delta' : 'bundle',
+      bundleType,
       sourceMapUrl: url.format({
         ...urlObj,
         // The remote chrome debugger loads bundles via Blob urls, whose

@@ -13,18 +13,24 @@
 export type ModuleMap = $ReadOnlyArray<[number, string]>;
 
 export type Bundle = {|
-  +base: true,
-  +revisionId: string,
   +pre: string,
   +post: string,
   +modules: ModuleMap,
 |};
 
 export type DeltaBundle = {|
-  +base: false,
-  +revisionId: string,
   +modules: ModuleMap,
   +deleted: $ReadOnlyArray<number>,
+|};
+
+export type BundleVariant =
+  | {|+base: true, +revisionId: string, ...Bundle|}
+  | {|+base: false, +revisionId: string, ...DeltaBundle|};
+
+export type BundleMetadata = {|
+  +pre: number,
+  +post: number,
+  +modules: $ReadOnlyArray<[number, number]>,
 |};
 
 export type FormattedError = {|
@@ -34,9 +40,8 @@ export type FormattedError = {|
 |};
 
 export type HmrUpdate = {|
+  ...DeltaBundle,
   +revisionId: string,
-  +modules: ModuleMap,
-  +deleted: $ReadOnlyArray<number>,
   +sourceMappingURLs: $ReadOnlyArray<string>,
   +sourceURLs: $ReadOnlyArray<string>,
 |};

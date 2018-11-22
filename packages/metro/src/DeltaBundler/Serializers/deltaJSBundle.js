@@ -16,7 +16,7 @@ const {wrapModule} = require('./helpers/js');
 const {getJsOutput, isJsModule} = require('./helpers/js');
 
 import type {RevisionId} from '../../IncrementalBundler';
-import type {Bundle, DeltaBundle} from '../../lib/bundle-modules/types.flow';
+import type {BundleVariant} from '../../lib/bundle-modules/types.flow';
 import type {
   DeltaResult,
   Graph,
@@ -31,7 +31,7 @@ function deltaJSBundle(
   revisionId: RevisionId,
   graph: Graph<>,
   options: SerializerOptions,
-): Bundle | DeltaBundle {
+): BundleVariant {
   const {processModuleFilter} = options;
 
   const modules = [...delta.modified.values()]

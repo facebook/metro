@@ -16,12 +16,15 @@ const parseOptionsFromUrl = require('../parseOptionsFromUrl');
 jest.mock('../parseCustomTransformOptions', () => () => ({}));
 
 describe('parseOptionsFromUrl', () => {
-  it.each([['map'], ['delta'], ['bundle']])('detects %s requests', type => {
-    expect(
-      parseOptionsFromUrl(`http://localhost/my/bundle.${type}`, new Set([]))
-        .options,
-    ).toMatchObject({bundleType: type});
-  });
+  it.each([['map'], ['delta'], ['bundle'], ['meta']])(
+    'detects %s requests',
+    type => {
+      expect(
+        parseOptionsFromUrl(`http://localhost/my/bundle.${type}`, new Set([]))
+          .options,
+      ).toMatchObject({bundleType: type});
+    },
+  );
 
   it('removes extraneous options from the pathname', () => {
     expect(

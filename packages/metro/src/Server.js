@@ -33,6 +33,7 @@ const serializeDeltaJSBundle = require('./DeltaBundler/Serializers/helpers/seria
 const symbolicate = require('./Server/symbolicate/symbolicate');
 const url = require('url');
 const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
+const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundError');
 
 const {getAsset} = require('./Assets');
 
@@ -182,7 +183,7 @@ class Server {
     });
 
     return {
-      code: bundleToString({...bundle, base: true, revisionId: ''}, false),
+      code: bundleToString(bundle).code,
       map: sourceMapString(prepend, graph, {
         excludeSource: serializerOptions.excludeSource,
         processModuleFilter: this._config.serializer.processModuleFilter,
@@ -393,6 +394,8 @@ class Server {
       await this._processAssetsRequest(req, res);
     } else if (pathname.match(/\.delta$/)) {
       await this._processDeltaRequest(req, res);
+    } else if (pathname.match(/\.meta/)) {
+      await this._processMetadataRequest(req, res);
     } else if (pathname.match(/^\/onchange\/?$/)) {
       this._processOnChangeRequest(req, res);
     } else if (pathname.match(/^\/assets\//)) {
@@ -665,7 +668,6 @@ class Server {
     },
     build: async ({
       graphId,
-      embedDelta,
       entryFile,
       transformOptions,
       serializerOptions,
@@ -679,41 +681,23 @@ class Server {
             onProgress,
           }));
 
-      let bundle;
+      const serializer =
+        this._config.serializer.customSerializer ||
+        ((...args) => bundleToString(baseJSBundle(...args)).code);
 
-      const serializerArguments = [
-        entryFile,
-        revision.prepend,
-        revision.graph,
-        {
-          processModuleFilter: this._config.serializer.processModuleFilter,
-          createModuleId: this._createModuleId,
-          getRunModuleStatement: this._config.serializer.getRunModuleStatement,
-          dev: transformOptions.dev,
-          projectRoot: this._config.projectRoot,
-          runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-            path.relative(this._config.projectRoot, entryFile),
-          ),
-          runModule: serializerOptions.runModule,
-          sourceMapUrl: serializerOptions.sourceMapUrl,
-          inlineSourceMap: serializerOptions.inlineSourceMap,
-        },
-      ];
-
-      const possibleCustomSerializer = this._config.serializer.customSerializer;
-      if (possibleCustomSerializer) {
-        bundle = possibleCustomSerializer(...serializerArguments);
-      } else {
-        const base = baseJSBundle(...serializerArguments);
-        bundle = bundleToString(
-          {
-            ...base,
-            base: true,
-            revisionId: revision.id,
-          },
-          serializerOptions.embedDelta,
-        );
-      }
+      const bundle = serializer(entryFile, revision.prepend, revision.graph, {
+        processModuleFilter: this._config.serializer.processModuleFilter,
+        createModuleId: this._createModuleId,
+        getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+        dev: transformOptions.dev,
+        projectRoot: this._config.projectRoot,
+        runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
+          path.relative(this._config.projectRoot, entryFile),
+        ),
+        runModule: serializerOptions.runModule,
+        sourceMapUrl: serializerOptions.sourceMapUrl,
+        inlineSourceMap: serializerOptions.inlineSourceMap,
+      });
 
       return {
         numModifiedFiles: delta.reset
@@ -795,6 +779,63 @@ class Server {
     finish({mres, result}) {
       mres.setHeader('Content-Type', 'application/json');
       mres.end(result.toString());
+    },
+  });
+
+  _processMetadataRequest = this._createRequestProcessor({
+    createStartEntry(context) {
+      return {
+        action_name: 'Requesting bundle metadata',
+        bundle_url: context.req.url,
+        entry_point: context.entryFile,
+        bundler: 'delta',
+      };
+    },
+    createEndEntry(context) {
+      return {
+        bundler: 'delta',
+      };
+    },
+    build: async ({
+      entryFile,
+      transformOptions,
+      serializerOptions,
+      onProgress,
+      revisionId,
+    }) => {
+      if (revisionId == null) {
+        throw new Error(
+          'You must provide a `revisionId` query parameter to the metadata endpoint.',
+        );
+      }
+
+      let revision;
+      const revPromise = this._bundler.getRevision(revisionId);
+      if (revPromise == null) {
+        throw new RevisionNotFoundError(revisionId);
+      } else {
+        revision = await revPromise;
+      }
+
+      const base = baseJSBundle(entryFile, revision.prepend, revision.graph, {
+        processModuleFilter: this._config.serializer.processModuleFilter,
+        createModuleId: this._createModuleId,
+        getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+        dev: transformOptions.dev,
+        projectRoot: this._config.projectRoot,
+        runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
+          path.relative(this._config.projectRoot, entryFile),
+        ),
+        runModule: serializerOptions.runModule,
+        sourceMapUrl: serializerOptions.sourceMapUrl,
+        inlineSourceMap: serializerOptions.inlineSourceMap,
+      });
+
+      return bundleToString(base).metadata;
+    },
+    finish({mres, result}) {
+      mres.setHeader('Content-Type', 'application/json');
+      mres.end(JSON.stringify(result));
     },
   });
 
@@ -959,7 +1000,6 @@ class Server {
     onProgress: null,
     runModule: true,
     sourceMapUrl: null,
-    embedDelta: false,
   };
 }
 

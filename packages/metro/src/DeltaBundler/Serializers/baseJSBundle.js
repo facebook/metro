@@ -13,6 +13,7 @@
 const getAppendScripts = require('../../lib/getAppendScripts');
 const processModules = require('./helpers/processModules');
 
+import type {Bundle} from '../../lib/bundle-modules/types.flow';
 import type {Graph, Module, SerializerOptions} from '../types.flow';
 
 function baseJSBundle(
@@ -20,7 +21,7 @@ function baseJSBundle(
   preModules: $ReadOnlyArray<Module<>>,
   graph: Graph<>,
   options: SerializerOptions,
-): {|+pre: string, +post: string, +modules: $ReadOnlyArray<[number, string]>|} {
+): Bundle {
   for (const module of graph.dependencies.values()) {
     options.createModuleId(module.path);
   }
