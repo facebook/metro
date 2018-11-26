@@ -68,6 +68,7 @@
       "packages/[^/]+/build/"
     ],
     "testEnvironment": "node",
+    "testRegex": "/__tests__/.*-test\\.js$",
     "timers": "fake",
     "transform": {
       "\\.js$": "<rootDir>/scripts/babelJestTransformer.js"
