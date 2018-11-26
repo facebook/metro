@@ -190,6 +190,7 @@ type BabelCoreOptions = {|
   auxiliaryCommentAfter?: ?string,
   auxiliaryCommentBefore?: ?string,
   babelrc?: boolean,
+  babelrcRoots?: Array<string>,
   envName?: string,
   code?: boolean,
   comments?: boolean,
