@@ -22,6 +22,7 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
 
   try {
     const {ast} = transformSync(src, {
+      caller: {name: 'metro', platform: options.platform},
       ast: true,
       babelrc: options.enableBabelRCLookup,
       code: false,
