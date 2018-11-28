@@ -192,6 +192,7 @@ type BabelCoreOptions = {|
   babelrc?: boolean,
   babelrcRoots?: Array<string>,
   envName?: string,
+  caller?: {name: string},
   code?: boolean,
   comments?: boolean,
   compact?: 'auto' | boolean,
