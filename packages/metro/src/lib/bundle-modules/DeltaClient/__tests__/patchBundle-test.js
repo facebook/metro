@@ -22,14 +22,15 @@ describe('patchBundle', () => {
           modules: [[0, '0'], [1, '1']],
         },
         {
-          modules: [[0, '0.1']],
+          added: [[2, '2']],
+          modified: [[0, '0.1']],
           deleted: [1],
         },
       ),
     ).toEqual({
       pre: 'pre',
       post: 'post',
-      modules: [[0, '0.1']],
+      modules: [[0, '0.1'], [2, '2']],
     });
   });
 });

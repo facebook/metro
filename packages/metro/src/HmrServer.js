@@ -171,7 +171,9 @@ class HmrServer<TClient: Client> {
     log({
       ...createActionEndEntry(processingHmrChange),
       outdated_modules:
-        message.type === 'update' ? message.body.modules.length : undefined,
+        message.type === 'update'
+          ? message.body.added.length + message.body.modified.length
+          : undefined,
     });
   }
 
@@ -197,23 +199,16 @@ class HmrServer<TClient: Client> {
 
       client.revisionId = revision.id;
 
-      const {modules, deleted, sourceMappingURLs, sourceURLs} = hmrJSBundle(
-        delta,
-        revision.graph,
-        {
-          createModuleId: this._createModuleId,
-          projectRoot: this._config.projectRoot,
-        },
-      );
+      const hmrUpdate = hmrJSBundle(delta, revision.graph, {
+        createModuleId: this._createModuleId,
+        projectRoot: this._config.projectRoot,
+      });
 
       return {
         type: 'update',
         body: {
           revisionId: revision.id,
-          modules,
-          deleted,
-          sourceMappingURLs,
-          sourceURLs,
+          ...hmrUpdate,
         },
       };
     } catch (error) {

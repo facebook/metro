@@ -60,13 +60,19 @@ function* streamBundle(bundle: BundleVariant) {
   if (bundle.base) {
     yield preOrPostSection(bundle.pre);
     yield preOrPostSection(bundle.post);
-  }
 
-  for (const m of bundle.modules) {
-    yield module(m);
-  }
+    for (const m of bundle.modules) {
+      yield module(m);
+    }
+  } else {
+    for (const m of bundle.added) {
+      yield module(m);
+    }
 
-  if (!bundle.base) {
+    for (const m of bundle.modified) {
+      yield module(m);
+    }
+
     for (const id of bundle.deleted) {
       yield module([id, null]);
     }

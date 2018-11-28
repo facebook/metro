@@ -204,7 +204,8 @@ function create({
           return;
         }
         const nextBundle = patchBundle(bundle, {
-          modules: update.modules,
+          added: update.added,
+          modified: update.modified,
           deleted: update.deleted,
         });
         bundlePromise = Promise.resolve(nextBundle);

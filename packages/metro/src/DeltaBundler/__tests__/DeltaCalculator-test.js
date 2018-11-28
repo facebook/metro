@@ -114,6 +114,7 @@ describe('DeltaCalculator', () => {
           ['/baz', bazModule],
           ['/qux', quxModule],
         ]),
+        modified: new Map(),
         deleted: new Set(),
       };
     });
@@ -146,13 +147,14 @@ describe('DeltaCalculator', () => {
     const result = await deltaCalculator.getDelta({reset: false});
 
     expect(result).toEqual({
-      modified: new Map([
+      added: new Map([
         ['/bundle', entryModule],
         ['/foo', fooModule],
         ['/bar', barModule],
         ['/baz', bazModule],
         ['/qux', quxModule],
       ]),
+      modified: new Map(),
       deleted: new Set(),
       reset: true,
     });
@@ -164,6 +166,7 @@ describe('DeltaCalculator', () => {
     await deltaCalculator.getDelta({reset: false});
 
     expect(await deltaCalculator.getDelta({reset: false})).toEqual({
+      added: new Map(),
       modified: new Map(),
       deleted: new Set(),
       reset: false,
@@ -178,13 +181,14 @@ describe('DeltaCalculator', () => {
     const result = await deltaCalculator.getDelta({reset: true});
 
     expect(result).toEqual({
-      modified: new Map([
+      added: new Map([
         ['/bundle', entryModule],
         ['/foo', fooModule],
         ['/bar', barModule],
         ['/baz', bazModule],
         ['/qux', quxModule],
       ]),
+      modified: new Map(),
       deleted: new Set(),
       reset: true,
     });
@@ -197,7 +201,8 @@ describe('DeltaCalculator', () => {
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
-        added: new Map([['/foo', fooModule]]),
+        added: new Map(),
+        modified: new Map([['/foo', fooModule]]),
         deleted: new Set(),
       }),
     );
@@ -205,6 +210,7 @@ describe('DeltaCalculator', () => {
     const result = await deltaCalculator.getDelta({reset: false});
 
     expect(result).toEqual({
+      added: new Map(),
       modified: new Map([['/foo', fooModule]]),
       deleted: new Set(),
       reset: false,
@@ -221,7 +227,8 @@ describe('DeltaCalculator', () => {
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
-        added: new Map([['/foo', fooModule]]),
+        added: new Map(),
+        modified: new Map([['/foo', fooModule]]),
         deleted: new Set(['/baz']),
       }),
     );
@@ -229,6 +236,7 @@ describe('DeltaCalculator', () => {
     const result = await deltaCalculator.getDelta({reset: false});
 
     expect(result).toEqual({
+      added: new Map(),
       modified: new Map([['/foo', fooModule]]),
       deleted: new Set(['/baz']),
       reset: false,
@@ -254,13 +262,15 @@ describe('DeltaCalculator', () => {
       graph.dependencies.set('/qux', quxModule);
 
       return {
-        added: new Map([['/foo', fooModule], ['/qux', quxModule]]),
+        added: new Map(),
+        modified: new Map([['/foo', fooModule], ['/qux', quxModule]]),
         deleted: new Set(['/bar', '/baz']),
       };
     });
 
     const result = await deltaCalculator.getDelta({reset: false});
     expect(result).toEqual({
+      added: new Map([]),
       modified: new Map([['/foo', fooModule], ['/qux', quxModule]]),
       deleted: new Set(['/bar', '/baz']),
       reset: false,
@@ -322,12 +332,14 @@ describe('DeltaCalculator', () => {
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
-        added: new Map([['/bundle', entryModule]]),
+        added: new Map(),
+        modified: new Map([['/bundle', entryModule]]),
         deleted: new Set(['/foo']),
       }),
     );
 
     expect(await deltaCalculator.getDelta({reset: false})).toEqual({
+      added: new Map(),
       modified: new Map([['/bundle', entryModule]]),
       deleted: new Set(['/foo']),
       reset: false,
@@ -352,7 +364,8 @@ describe('DeltaCalculator', () => {
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
-        added: new Map([['/bundle', entryModule]]),
+        added: new Map(),
+        modified: new Map([['/bundle', entryModule]]),
         deleted: new Set(['/foo']),
       }),
     );
@@ -378,7 +391,8 @@ describe('DeltaCalculator', () => {
 
     traverseDependencies.mockReturnValue(
       Promise.resolve({
-        added: new Map([['/foo', entryModule]]),
+        added: new Map(),
+        modified: new Map([['/foo', entryModule]]),
         deleted: new Set(),
       }),
     );

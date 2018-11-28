@@ -19,7 +19,8 @@ export type Bundle = {|
 |};
 
 export type DeltaBundle = {|
-  +modules: ModuleMap,
+  +added: ModuleMap,
+  +modified: ModuleMap,
   +deleted: $ReadOnlyArray<number>,
 |};
 
@@ -42,8 +43,10 @@ export type FormattedError = {|
 export type HmrUpdate = {|
   ...DeltaBundle,
   +revisionId: string,
-  +sourceMappingURLs: $ReadOnlyArray<string>,
-  +sourceURLs: $ReadOnlyArray<string>,
+  +addedSourceMappingURLs: $ReadOnlyArray<string>,
+  +addedSourceURLs: $ReadOnlyArray<string>,
+  +modifiedSourceMappingURLs: $ReadOnlyArray<string>,
+  +modifiedSourceURLs: $ReadOnlyArray<string>,
 |};
 
 export type HmrUpdateMessage = {|

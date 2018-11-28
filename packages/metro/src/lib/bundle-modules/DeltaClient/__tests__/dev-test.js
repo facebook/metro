@@ -28,6 +28,19 @@ const {URL} = require('url');
 jest.mock('../bundleDB');
 jest.mock('../../WebSocketHMRClient');
 
+function createUpdate(rev, added = [], modified = [], deleted = []) {
+  return {
+    revisionId: rev,
+    added: added.map(i => [i, `__d("${i}.${rev}");`]),
+    modified: modified.map(i => [i, `__d("${i}.${rev}");`]),
+    deleted,
+    addedSourceMappingURLs: [],
+    addedSourceURLs: [],
+    modifiedSourceMappingURLs: [],
+    modifiedSourceURLs: [],
+  };
+}
+
 describe('DeltaClient/dev', () => {
   global.URL = URL;
   global.Response = Response;
@@ -47,7 +60,7 @@ describe('DeltaClient/dev', () => {
   const {code, metadata} = bundleToString({
     pre: 'pre("rev0");',
     post: 'post("rev0");',
-    modules: [[0, '__d(0);']],
+    modules: [[0, '__d("0.rev0");']],
   });
 
   const dbMock = {};
@@ -152,13 +165,7 @@ describe('DeltaClient/dev', () => {
 
       emit('open');
       emit('update-start');
-      emit('update', {
-        revisionId: 'rev1',
-        modules: [[1, '0.1']],
-        deleted: [0],
-        sourceMappingURLs: [],
-        sourceURLs: [],
-      });
+      emit('update', createUpdate('rev1', [1], [], [0]));
       emit('update-done');
 
       const response2 = await promise;
@@ -170,12 +177,12 @@ describe('DeltaClient/dev', () => {
       expect(await response2.text()).toBe(responseText);
       expect(responseText).toMatchInlineSnapshot(`
 "pre(\\"rev0\\");
-0.1
+__d(\\"1.rev1\\");
 post(\\"rev0\\");"
 `);
 
       expect(setBundleMetadata).toHaveBeenCalledWith(dbMock, 'rev1', {
-        modules: [[1, 3]],
+        modules: [[1, 14]],
         post: 13,
         pre: 12,
       });
@@ -189,22 +196,10 @@ post(\\"rev0\\");"
 
       emit('open');
       emit('update-start');
-      emit('update', {
-        revisionId: 'rev0',
-        modules: [],
-        deleted: [],
-        sourceMappingURLs: [],
-        sourceURLs: [],
-      });
+      emit('update', createUpdate('rev0'));
       emit('update-done');
 
-      const update = {
-        revisionId: 'rev1',
-        modules: [[1, '0.1']],
-        deleted: [0],
-        sourceMappingURLs: [],
-        sourceURLs: [],
-      };
+      const update = createUpdate('rev1', [1], [], [0]);
       emit('update-start');
       emit('update', update);
       emit('update-done');
@@ -227,13 +222,7 @@ post(\\"rev0\\");"
 
       emit('open');
       emit('update-start');
-      emit('update', {
-        revisionId: 'rev0',
-        modules: [],
-        deleted: [],
-        sourceMappingURLs: [],
-        sourceURLs: [],
-      });
+      emit('update', createUpdate('rev0'));
       emit('update-done');
 
       emit('update-start');
@@ -255,13 +244,7 @@ post(\\"rev0\\");"
 
       emit('open');
       emit('update-start');
-      emit('update', {
-        revisionId: 'rev0',
-        modules: [],
-        deleted: [],
-        sourceMappingURLs: [],
-        sourceURLs: [],
-      });
+      emit('update', createUpdate('rev0'));
       emit('update-done');
 
       const error = {
@@ -290,22 +273,10 @@ post(\\"rev0\\");"
 
       emit('open');
       emit('update-start');
-      emit('update', {
-        revisionId: 'rev0',
-        modules: [],
-        deleted: [],
-        sourceMappingURLs: [],
-        sourceURLs: [],
-      });
+      emit('update', createUpdate('rev0'));
       emit('update-done');
 
-      const update = {
-        revisionId: 'rev1',
-        modules: [[1, '0.1']],
-        deleted: [0],
-        sourceMappingURLs: [],
-        sourceURLs: [],
-      };
+      const update = createUpdate('rev1', [1], [], [0]);
       emit('update-start');
       emit('update', update);
       emit('update-done');
@@ -318,7 +289,7 @@ post(\\"rev0\\");"
       const responseText = await bundleRes.clone().text();
       expect(responseText).toMatchInlineSnapshot(`
 "pre(\\"rev0\\");
-0.1
+__d(\\"1.rev1\\");
 post(\\"rev0\\");"
 `);
     });
@@ -326,32 +297,16 @@ post(\\"rev0\\");"
     it('accepts a custom onUpdate function', async () => {
       const onUpdate = jest.fn();
       const deltaClient = DeltaClient.create({onUpdate});
-      deltaClient.getBundle(
-        bundleUrl,
-
-        'client0',
-      );
+      deltaClient.getBundle(bundleUrl, 'client0');
 
       await flushPromises();
 
       emit('open');
       emit('update-start');
-      emit('update', {
-        revisionId: 'rev0',
-        modules: [],
-        deleted: [],
-        sourceMappingURLs: [],
-        sourceURLs: [],
-      });
+      emit('update', createUpdate('rev0'));
       emit('update-done');
 
-      const update = {
-        revisionId: 'rev1',
-        modules: [[1, '0.1']],
-        deleted: [0],
-        sourceMappingURLs: [],
-        sourceURLs: [],
-      };
+      const update = createUpdate('rev1', [1], [], [0]);
       emit('update-start');
       emit('update', update);
       emit('update-done');
@@ -368,13 +323,7 @@ post(\\"rev0\\");"
 
       emit('open');
       emit('update-start');
-      emit('update', {
-        revisionId: 'rev0',
-        modules: [],
-        deleted: [],
-        sourceMappingURLs: [],
-        sourceURLs: [],
-      });
+      emit('update', createUpdate('rev0'));
       emit('update-done');
 
       emit('update-start');
@@ -391,13 +340,7 @@ post(\\"rev0\\");"
 
       emit('open');
       emit('update-start');
-      emit('update', {
-        revisionId: 'rev0',
-        modules: [],
-        deleted: [],
-        sourceMappingURLs: [],
-        sourceURLs: [],
-      });
+      emit('update', createUpdate('rev0'));
       emit('update-done');
 
       const error = {
@@ -424,23 +367,10 @@ post(\\"rev0\\");"
 
       emit('open');
       emit('update-start');
-      emit('update', {
-        revisionId: 'rev0',
-        modules: [],
-        deleted: [],
-        sourceMappingURLs: [],
-        sourceURLs: [],
-      });
+      emit('update', createUpdate('rev0'));
       emit('update-done');
 
-      const update = {
-        revisionId: 'rev1',
-        modules: [[0, '0.1']],
-        deleted: [],
-        sourceMappingURLs: [],
-        sourceURLs: [],
-      };
-
+      const update = createUpdate('rev1', [1], [], [0]);
       emit('update-start');
       emit('update', update);
       emit('update-done');
@@ -453,28 +383,14 @@ post(\\"rev0\\");"
     it('can serve multiple clients at the same time', async () => {
       const onUpdate = jest.fn();
       const deltaClient = DeltaClient.create({onUpdate});
-      const promise1 = deltaClient.getBundle(
-        bundleUrl,
-
-        'client0',
-      );
-      const promise2 = deltaClient.getBundle(
-        bundleUrl,
-
-        'client1',
-      );
+      const promise1 = deltaClient.getBundle(bundleUrl, 'client0');
+      const promise2 = deltaClient.getBundle(bundleUrl, 'client1');
 
       await flushPromises();
 
       emit('open');
       emit('update-start');
-      emit('update', {
-        revisionId: 'rev0',
-        modules: [],
-        deleted: [],
-        sourceMappingURLs: [],
-        sourceURLs: [],
-      });
+      emit('update', createUpdate('rev0'));
       emit('update-done');
 
       const response1 = await promise1;
@@ -482,7 +398,7 @@ post(\\"rev0\\");"
       const text1 = await response1.text();
       expect(text1).toMatchInlineSnapshot(`
 "pre(\\"rev0\\");
-__d(0);
+__d(\\"0.rev0\\");
 post(\\"rev0\\");"
 `);
       expect(await response2.text()).toEqual(text1);
@@ -490,11 +406,7 @@ post(\\"rev0\\");"
 
     it('reconnects when a new request comes in', async () => {
       const deltaClient = DeltaClient.create();
-      deltaClient.getBundle(
-        bundleUrl,
-
-        'client0',
-      );
+      deltaClient.getBundle(bundleUrl, 'client0');
 
       await flushPromises();
 
@@ -502,11 +414,7 @@ post(\\"rev0\\");"
 
       emit('close');
 
-      deltaClient.getBundle(
-        bundleUrl,
-
-        'client1',
-      );
+      deltaClient.getBundle(bundleUrl, 'client1');
 
       await flushPromises();
 

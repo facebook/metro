@@ -18,7 +18,11 @@ import type {Bundle, DeltaBundle} from '../types.flow';
 function patchBundle(bundle: Bundle, delta: DeltaBundle): Bundle {
   const map = new Map(bundle.modules);
 
-  for (const [key, value] of delta.modules) {
+  for (const [key, value] of delta.modified) {
+    map.set(key, value);
+  }
+
+  for (const [key, value] of delta.added) {
     map.set(key, value);
   }
 

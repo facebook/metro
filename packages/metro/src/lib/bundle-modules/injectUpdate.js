@@ -9,10 +9,14 @@
  */
 'use strict';
 
-import type {HmrUpdate} from './types.flow';
+import type {HmrUpdate, ModuleMap} from './types.flow';
 
-function injectUpdate(update: HmrUpdate) {
-  update.modules.forEach(([id, code], i) => {
+function injectModules(
+  modules: ModuleMap,
+  sourceMappingURLs: $ReadOnlyArray<string>,
+  sourceURLs: $ReadOnlyArray<string>,
+) {
+  modules.forEach(([id, code], i) => {
     // In JSC we need to inject from native for sourcemaps to work
     // (Safari doesn't support `sourceMappingURL` nor any variant when
     // evaluating code) but on Chrome we can simply use eval.
@@ -26,10 +30,23 @@ function injectUpdate(update: HmrUpdate) {
     // version.
     const pragma = 'sourceMappingURL';
     injectFunction(
-      code + `\n//# ${pragma}=${update.sourceMappingURLs[i]}`,
-      update.sourceURLs[i],
+      code + `\n//# ${pragma}=${sourceMappingURLs[i]}`,
+      sourceURLs[i],
     );
   });
+}
+
+function injectUpdate(update: HmrUpdate) {
+  injectModules(
+    update.added,
+    update.addedSourceMappingURLs,
+    update.addedSourceURLs,
+  );
+  injectModules(
+    update.modified,
+    update.modifiedSourceMappingURLs,
+    update.modifiedSourceURLs,
+  );
 }
 
 module.exports = injectUpdate;

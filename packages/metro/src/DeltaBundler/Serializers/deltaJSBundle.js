@@ -11,8 +11,8 @@
 'use strict';
 
 const getAppendScripts = require('../../lib/getAppendScripts');
+const processModules = require('./helpers/processModules');
 
-const {wrapModule} = require('./helpers/js');
 const {getJsOutput, isJsModule} = require('./helpers/js');
 
 import type {RevisionId} from '../../IncrementalBundler';
@@ -34,13 +34,16 @@ function deltaJSBundle(
 ): BundleVariant {
   const {processModuleFilter} = options;
 
-  const modules = [...delta.modified.values()]
-    .filter(isJsModule)
-    .filter(processModuleFilter)
-    .map(module => [
-      options.createModuleId(module.path),
-      wrapModule(module, options),
-    ]);
+  const processOpts = {
+    filter: processModuleFilter,
+    dev: options.dev,
+    createModuleId: options.createModuleId,
+    projectRoot: options.projectRoot,
+  };
+
+  const added = processModules([...delta.added.values()], processOpts).map(
+    ([module, code]) => [options.createModuleId(module.path), code],
+  );
 
   if (delta.reset) {
     const appendScripts = getAppendScripts(entryPoint, pre, graph, options);
@@ -58,15 +61,23 @@ function deltaJSBundle(
         .filter(processModuleFilter)
         .map(module => getJsOutput(module).data.code)
         .join('\n'),
-      modules,
+      modules: [...added],
     };
   }
+
+  const modified = processModules(
+    [...delta.modified.values()],
+    processOpts,
+  ).map(([module, code]) => [options.createModuleId(module.path), code]);
+
+  const deleted = [...delta.deleted].map(path => options.createModuleId(path));
 
   return {
     base: false,
     revisionId,
-    modules,
-    deleted: [...delta.deleted].map(path => options.createModuleId(path)),
+    added,
+    modified,
+    deleted,
   };
 }
 

@@ -631,7 +631,8 @@ class Server {
       );
 
       return {
-        numModifiedFiles: delta.modified.size + delta.deleted.size,
+        numModifiedFiles:
+          delta.added.size + delta.modified.size + delta.deleted.size,
         nextRevId: revision.id,
         bundle,
       };
@@ -701,8 +702,8 @@ class Server {
 
       return {
         numModifiedFiles: delta.reset
-          ? delta.modified.size + revision.prepend.length
-          : delta.modified.size + delta.deleted.size,
+          ? delta.added.size + revision.prepend.length
+          : delta.added.size + delta.modified.size + delta.deleted.size,
         lastModifiedDate: revision.date,
         nextRevId: revision.id,
         bundle,

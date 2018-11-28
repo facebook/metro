@@ -181,6 +181,7 @@ describe('HmrServer', () => {
         graph: mockedGraph,
       },
       delta: {
+        added: new Map(),
         modified: new Map([[hiModule.path, hiModule]]),
         deleted: new Set(['/root/bye']),
       },
@@ -200,15 +201,18 @@ describe('HmrServer', () => {
         type: 'update',
         body: {
           revisionId: 'rev0',
-          modules: [
+          added: [],
+          modified: [
             [
               '/root/hi-id',
               '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
             ],
           ],
           deleted: ['/root/bye-id'],
-          sourceURLs: ['/root/hi'],
-          sourceMappingURLs: [expect.anything()],
+          addedSourceMappingURLs: [],
+          addedSourceURLs: [],
+          modifiedSourceURLs: ['/root/hi'],
+          modifiedSourceMappingURLs: [expect.anything()],
         },
       },
       {
@@ -233,6 +237,7 @@ describe('HmrServer', () => {
         graph: mockedGraph,
       },
       delta: {
+        added: new Map(),
         modified: new Map([[hiModule.path, hiModule]]),
         deleted: new Set(['/root/bye']),
       },
@@ -252,14 +257,15 @@ describe('HmrServer', () => {
         type: 'update',
         body: {
           revisionId: 'rev1',
-          modules: [
+          added: [],
+          modified: [
             [
               '/root/hi-id',
               '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
             ],
           ],
           deleted: ['/root/bye-id'],
-          sourceURLs: ['/root/hi'],
+          modifiedSourceURLs: ['/root/hi'],
         },
       },
       {
@@ -267,12 +273,15 @@ describe('HmrServer', () => {
       },
     ]);
 
-    const sourceMappingURL = messages[1].body.sourceMappingURLs[0];
+    const modifiedSourceMappingURL =
+      messages[1].body.modifiedSourceMappingURLs[0];
 
     expect(
       JSON.parse(
         Buffer.from(
-          sourceMappingURL.slice(sourceMappingURL.indexOf('base64') + 7),
+          modifiedSourceMappingURL.slice(
+            modifiedSourceMappingURL.indexOf('base64') + 7,
+          ),
           'base64',
         ).toString(),
       ),

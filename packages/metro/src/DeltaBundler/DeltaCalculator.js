@@ -133,7 +133,8 @@ class DeltaCalculator<T> extends EventEmitter {
       reorderGraph(this._graph);
 
       return {
-        modified: this._graph.dependencies,
+        added: this._graph.dependencies,
+        modified: new Map(),
         deleted: new Set(),
         reset: true,
       };
@@ -191,7 +192,8 @@ class DeltaCalculator<T> extends EventEmitter {
       );
 
       return {
-        modified: added,
+        added,
+        modified: new Map(),
         deleted: new Set(),
         reset: true,
       };
@@ -220,17 +222,23 @@ class DeltaCalculator<T> extends EventEmitter {
 
     // No changes happened. Return empty delta.
     if (modifiedDependencies.length === 0) {
-      return {modified: new Map(), deleted: new Set(), reset: false};
+      return {
+        added: new Map(),
+        modified: new Map(),
+        deleted: new Set(),
+        reset: false,
+      };
     }
 
-    const {added, deleted} = await traverseDependencies(
+    const {added, modified, deleted} = await traverseDependencies(
       modifiedDependencies,
       this._graph,
       this._options,
     );
 
     return {
-      modified: added,
+      added,
+      modified,
       deleted,
       reset: false,
     };
