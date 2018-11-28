@@ -202,7 +202,10 @@ class TerminalReporter {
     if (error.code === 'EADDRINUSE') {
       this.terminal.log(
         chalk.bgRed.bold(' ERROR '),
-        chalk.red("Metro Bundler can't listen on port", chalk.bold(port)),
+        chalk.red(
+          "Metro Bundler can't listen on port",
+          chalk.bold(String(port)),
+        ),
       );
       this.terminal.log(
         'Most likely another process is already using this port',
