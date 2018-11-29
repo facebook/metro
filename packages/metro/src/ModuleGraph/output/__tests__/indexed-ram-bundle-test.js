@@ -132,9 +132,6 @@ describe('Startup section optimization', () => {
 
   it('reflects additional sources in the startup section in the source map', () => {
     let line = preloaded.reduce(
-      /* $FlowFixMe(>=0.86.0 site=react_native_fb) This comment suppresses an
-       * error found when Flow v0.86 was deployed. To see the error, delete
-       * this comment and run Flow. */
       (l, m) => l + countLines(m),
       countLines(requireCall),
     );
