@@ -10,6 +10,7 @@
 
 'use strict';
 
+const bundleToString = require('../bundleToString');
 const stringToBundle = require('../stringToBundle');
 
 describe('stringToBundle', () => {
@@ -27,6 +28,79 @@ post
       pre: 'pre',
       post: 'post',
       modules: [[0, '0'], [100, '1.0']],
+    });
+  });
+
+  it('retrieves the original bundle from bundleToString', () => {
+    function testBundle(bundle) {
+      const {code, metadata} = bundleToString(bundle);
+      expect(stringToBundle(code, metadata)).toEqual(bundle);
+    }
+
+    testBundle({
+      pre: 'pre',
+      post: 'post',
+      modules: [[0, '__d(0);']],
+    });
+
+    testBundle({
+      pre: 'pre',
+      post: 'post',
+      modules: [[0, '__d(0);'], [1, '__d(1);']],
+    });
+
+    testBundle({
+      pre: 'pre',
+      post: 'post',
+      modules: [],
+    });
+
+    testBundle({
+      pre: 'pre',
+      post: 'post',
+      modules: [[0, ''], [1, '__d(1);']],
+    });
+
+    testBundle({
+      pre: 'pre',
+      post: 'post',
+      modules: [[0, '__d(0);'], [1, '']],
+    });
+
+    testBundle({
+      pre: 'pre',
+      post: 'post',
+      modules: [[0, '__d(0);'], [1, ''], [2, '__d(2);']],
+    });
+
+    testBundle({
+      pre: '',
+      post: 'post',
+      modules: [[0, '__d(0);']],
+    });
+
+    testBundle({
+      pre: 'pre',
+      post: '',
+      modules: [[0, '__d(0);']],
+    });
+
+    testBundle({
+      pre: '',
+      post: '',
+      modules: [[0, '__d(0);']],
+    });
+
+    testBundle({
+      pre: '',
+      post: '',
+      modules: [],
+    });
+
+    testBundle({
+      pre: '',
+      post: '',
+      modules: [[0, '']],
     });
   });
 });

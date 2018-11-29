@@ -21,8 +21,10 @@ function sliceModules(
   let offset = startOffset;
   for (const [id, length] of moduleLengths) {
     modules.push([id, str.slice(offset, offset + length)]);
-    // Modules are separated by a line break.
-    offset += length + 1;
+    if (length > 0) {
+      // Modules are separated by a line break, when their code is non-null.
+      offset += length + 1;
+    }
   }
   return [offset, modules];
 }
@@ -35,8 +37,8 @@ function stringToBundle(str: string, metadata: BundleMetadata): Bundle {
   const [offset, modules] = sliceModules(
     metadata.modules,
     str,
-    // There's a line break after the pre segment.
-    metadata.pre + 1,
+    // There's a line break after the pre segment, when it exists.
+    pre.length > 0 ? pre.length + 1 : 0,
   );
   // We technically don't need the bundle post segment length, since it should
   // normally continue until the end.

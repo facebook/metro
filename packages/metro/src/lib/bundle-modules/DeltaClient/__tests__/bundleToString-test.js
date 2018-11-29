@@ -57,4 +57,82 @@ console.log(\\"That's all folks!\\");"
     expect(bundle2.post).toEqual(bundle.post);
     expect(bundle2.modules).toEqual(expect.arrayContaining(bundle.modules));
   });
+
+  it("doesn't add extraneous line breaks when either pre, post or modules are absent", () => {
+    expect(
+      bundleToString({
+        pre: '',
+        post: '',
+        modules: [[0, ''], [1, '']],
+      }).code,
+    ).toMatchInlineSnapshot('""');
+
+    expect(
+      bundleToString({
+        pre: 'pre',
+        post: 'post',
+        modules: [[0, ''], [1, '']],
+      }).code,
+    ).toMatchInlineSnapshot(`
+"pre
+post"
+`);
+
+    expect(
+      bundleToString({
+        pre: '',
+        post: 'console.log("That\'s all folks!");',
+        modules: [[0, '0']],
+      }).code,
+    ).toMatchInlineSnapshot(`
+"0
+console.log(\\"That's all folks!\\");"
+`);
+
+    expect(
+      bundleToString({
+        pre: 'console.log("Hello World!");',
+        post: '',
+        modules: [[0, '0']],
+      }).code,
+    ).toMatchInlineSnapshot(`
+"console.log(\\"Hello World!\\");
+0"
+`);
+
+    expect(
+      bundleToString({
+        pre: '',
+        post: '',
+        modules: [[0, '0']],
+      }).code,
+    ).toMatchInlineSnapshot('"0"');
+
+    expect(
+      bundleToString({
+        pre: '',
+        post: '',
+        modules: [],
+      }).code,
+    ).toMatchInlineSnapshot('""');
+
+    expect(
+      bundleToString({
+        pre: 'console.log("Hello World!");',
+        post: '',
+        modules: [],
+      }).code,
+    ).toMatchInlineSnapshot('"console.log(\\"Hello World!\\");"');
+
+    expect(
+      bundleToString({
+        pre: '',
+        post: 'console.log("That\'s all folks!");',
+        modules: [[0, '0']],
+      }).code,
+    ).toMatchInlineSnapshot(`
+"0
+console.log(\\"That's all folks!\\");"
+`);
+  });
 });

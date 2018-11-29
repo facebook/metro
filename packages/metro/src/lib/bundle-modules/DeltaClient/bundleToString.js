@@ -21,7 +21,7 @@ function bundleToString(
   +code: string,
   +metadata: BundleMetadata,
 |} {
-  let code = bundle.pre + '\n';
+  let code = bundle.pre.length > 0 ? bundle.pre + '\n' : '';
   const modules = [];
 
   const sortedModules = bundle.modules
@@ -31,11 +31,17 @@ function bundleToString(
     .sort((a, b) => a[0] - b[0]);
 
   for (const [id, moduleCode] of sortedModules) {
-    code += moduleCode + '\n';
+    if (moduleCode.length > 0) {
+      code += moduleCode + '\n';
+    }
     modules.push([id, moduleCode.length]);
   }
 
-  code += bundle.post;
+  if (bundle.post.length > 0) {
+    code += bundle.post;
+  } else {
+    code = code.slice(0, -1);
+  }
 
   return {
     code,
