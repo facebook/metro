@@ -179,7 +179,12 @@ async function getAssetData(
   platform: ?string = null,
   publicPath: string,
 ): Promise<AssetData> {
-  let assetUrlPath = path.join(publicPath, path.dirname(localPath));
+  // If the path of the asset is outside of the projectRoot, we don't want to
+  // use `path.join` since this will generate an incorrect URL path. In that
+  // case we just concatenate the publicPath with the relative path.
+  let assetUrlPath = localPath.startsWith('..')
+    ? publicPath.replace(/\/$/, '') + '/' + path.dirname(localPath)
+    : path.join(publicPath, path.dirname(localPath));
 
   // On Windows, change backslashes to slashes to get proper URL path from file path.
   if (path.sep === '\\') {
@@ -247,6 +252,7 @@ async function getAssetFiles(
 async function getAsset(
   relativePath: string,
   projectRoot: string,
+  watchFolders: $ReadOnlyArray<string>,
   platform: ?string = null,
 ): Promise<Buffer> {
   const assetData = AssetPaths.parse(
@@ -256,9 +262,9 @@ async function getAsset(
 
   const absolutePath = path.resolve(projectRoot, relativePath);
 
-  if (!absolutePath.startsWith(path.resolve(projectRoot))) {
+  if (!pathBelongsToRoots(absolutePath, [projectRoot, ...watchFolders])) {
     throw new Error(
-      `'${relativePath}' could not be found, because it cannot be found in the project root: ${projectRoot})`,
+      `'${relativePath}' could not be found, because it cannot be found in the project root or any watch folder`,
     );
   }
 
@@ -271,6 +277,19 @@ async function getAsset(
   }
 
   return readFile(record.files[record.files.length - 1]);
+}
+
+function pathBelongsToRoots(
+  pathToCheck: string,
+  roots: $ReadOnlyArray<string>,
+): boolean {
+  for (const rootFolder of roots) {
+    if (pathToCheck.startsWith(path.resolve(rootFolder))) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 module.exports = {
