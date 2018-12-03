@@ -16,7 +16,7 @@ const JSONStream = require('JSONStream');
 const duplexer = require('duplexer');
 const each = require('async/each');
 const fs = require('fs');
-const invariant = require('fbjs/lib/invariant');
+const invariant = require('invariant');
 const path = require('path');
 const temp = require('temp');
 

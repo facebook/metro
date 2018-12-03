@@ -11,7 +11,7 @@
 'use strict';
 
 const addParamsToDefineCall = require('../../../lib/addParamsToDefineCall');
-const invariant = require('fbjs/lib/invariant');
+const invariant = require('invariant');
 const path = require('path');
 
 import type {JsOutput} from '../../../JSTransformer/worker';

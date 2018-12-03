@@ -9,6 +9,7 @@
     "async": "^2.4.0",
     "duplexer": "^0.1.1",
     "fbjs": "^1.0.0",
+    "invariant": "^2.2.4",
     "temp": "^0.8.3"
   },
   "devDependencies": {
