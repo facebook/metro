@@ -15,6 +15,7 @@
 const BundlePlots = require('./components/BundlePlots');
 const BundleRunForm = require('./components/BundleRunForm');
 const React = require('react');
+const WelcomeMessage = require('./components/WelcomeMessage');
 
 const handleAPIError = require('../utils/handleAPIError');
 
@@ -29,21 +30,29 @@ import {message, Row, Col, Card, Tag, Icon} from 'antd';
 import type {BundleOptions} from 'metro/src/shared/types.flow.js';
 
 type State = {
-  metroHistory: MetroHistory,
-  selectedBundleHash?: ?string,
-  showLoadingIndicator: boolean,
+  metroHistory: ?MetroHistory,
+  selectedBundleHash: ?string,
+  isLoadingData: boolean,
+  isBundling: boolean,
 };
 
 class DashboardApp extends React.Component<mixed, State> {
+  state = {
+    metroHistory: undefined,
+    selectedBundleHash: undefined,
+    isLoadingData: false,
+    isBundling: false,
+  };
+
   componentDidMount() {
     this.fetchBundles();
   }
 
   fetchBundles() {
-    this.setState({showLoadingIndicator: true});
+    this.setState({isLoadingData: true});
     fetch('/visualizer/bundles')
       .then(res => {
-        this.setState({showLoadingIndicator: false});
+        this.setState({isLoadingData: false});
         return handleAPIError(res);
       })
       .then(response => response.json())
@@ -53,50 +62,60 @@ class DashboardApp extends React.Component<mixed, State> {
       .catch(error => message.error(error.message));
   }
 
+  _handleReload = () => {
+    this.fetchBundles();
+  };
+
   render() {
+    const {metroHistory, isLoadingData, isBundling} = this.state;
+    const loadedEmptyHistory =
+      !isLoadingData && metroHistory && Object.keys(metroHistory).length === 0;
     return (
-      this.state && (
-        <div>
-          <Row type="flex" justify="center">
-            <img
-              src={'https://facebook.github.io/metro/img/metro.svg'}
-              className={logo}
-              alt="logo"
+      <div>
+        <Row type="flex" justify="center">
+          <img
+            src={'https://facebook.github.io/metro/img/metro.svg'}
+            className={logo}
+            alt="logo"
+          />
+        </Row>
+
+        <Row type="flex" justify="center">
+          <Col span={16}>
+            <BundleRunForm
+              handleStartedBundling={() => this.setState({isBundling: true})}
+              handleFinishedBundling={() => {
+                this.fetchBundles();
+                this.setState({isBundling: false});
+              }}
             />
-          </Row>
+          </Col>
+        </Row>
 
-          <Row type="flex" justify="center">
-            <Col span={16}>
-              <BundleRunForm
-                handleStartedBundling={() =>
-                  this.setState({showLoadingIndicator: true})
-                }
-                handleFinishedBundling={() => this.fetchBundles()}
-              />
-            </Col>
-          </Row>
+        {loadedEmptyHistory && !isBundling ? (
+          <WelcomeMessage onReload={this._handleReload} />
+        ) : null}
 
-          <Row type="flex" justify="center">
-            <Col span={16}>
-              {this.state.metroHistory &&
-                Object.keys(this.state.metroHistory).map(bundleHash => (
-                  <Link to={`/graph/${bundleHash}`} key={bundleHash}>
-                    <BundleCard
-                      onClick={() =>
-                        this.setState({selectedBundleHash: bundleHash})
-                      }
-                      bundleInfo={this.state.metroHistory[bundleHash]}
-                    />
-                  </Link>
-                ))}
-            </Col>
-          </Row>
+        <Row type="flex" justify="center">
+          <Col span={16}>
+            {metroHistory &&
+              Object.keys(metroHistory).map(bundleHash => (
+                <Link to={`/graph/${bundleHash}`} key={bundleHash}>
+                  <BundleCard
+                    onClick={() =>
+                      this.setState({selectedBundleHash: bundleHash})
+                    }
+                    bundleInfo={metroHistory[bundleHash]}
+                  />
+                </Link>
+              ))}
+          </Col>
+        </Row>
 
-          {this.state.showLoadingIndicator && (
-            <Icon type="loading" className={loadingIndicator} />
-          )}
-        </div>
-      )
+        {(isLoadingData || isBundling) && (
+          <Icon type="loading" className={loadingIndicator} />
+        )}
+      </div>
     );
   }
 }
