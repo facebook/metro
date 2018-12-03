@@ -101,11 +101,14 @@ class BundlePlots extends React.Component<Props, State> {
             data={sizeData}
           />
           <Crosshair values={this.state.crosshairValues}>
-            {this.state.crosshairValues.length > 0 && (
-              <div className={crosshair} key={this.state.crosshairValues[1].x}>
-                <p>{filesize(this.state.crosshairValues[1].y)}</p>
-              </div>
-            )}
+            {this.state.crosshairValues.length > 0 &&
+              typeof this.state.crosshairValues[1].y === 'number' && (
+                <div
+                  className={crosshair}
+                  key={this.state.crosshairValues[1].x}>
+                  <p>{filesize(this.state.crosshairValues[1].y)}</p>
+                </div>
+              )}
           </Crosshair>
         </XYPlot>
 
