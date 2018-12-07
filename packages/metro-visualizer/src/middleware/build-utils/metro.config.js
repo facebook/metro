@@ -13,22 +13,17 @@
 const fs = require('fs');
 const path = require('path');
 
-let resolveRequest;
 let getWatchFolders;
+
 try {
   /* eslint-disable import/no-extraneous-dependencies */
-  resolveRequest = require('@xplatjs/metro-scripts/resolver');
   getWatchFolders = require('@xplatjs/metro-scripts/get-watch-folders');
   /* eslint-enable import/no-extraneous-dependencies */
 } catch (e) {
-  resolveRequest = undefined;
   getWatchFolders = () => [];
 }
 
 module.exports = {
-  resolver: {
-    resolveRequest,
-  },
   projectRoot: fs.realpathSync(path.resolve(__dirname, '../../../')),
   watchFolders: getWatchFolders(),
   server: {port: 10028},
