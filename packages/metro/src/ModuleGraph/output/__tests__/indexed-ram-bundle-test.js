@@ -211,6 +211,7 @@ function createRamBundle(preloadedModules = new Set(), ramGroups) {
     modules,
     requireCalls: [requireCall],
     enableIDInlining: true,
+    segmentID: 0,
   });
 
   if (typeof result.code === 'string') {

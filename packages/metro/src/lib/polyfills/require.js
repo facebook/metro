@@ -60,6 +60,7 @@ type VerboseModuleNameForDev = string;
 global.__r = metroRequire;
 global.__d = define;
 global.__c = clear;
+global.__registerSegment = registerSegment;
 
 var modules = clear();
 
@@ -291,10 +292,20 @@ function registerHook(cb: (number, {}) => void) {
 }
 metroRequire.registerHook = registerHook;
 
+const moduleDefinersBySegmentID = [];
+
+function registerSegment(segmentID, moduleDefiner) {
+  moduleDefinersBySegmentID[segmentID] = moduleDefiner;
+}
+
 function loadModuleImplementation(moduleId, module) {
-  if (!module && global.__defineModule) {
-    global.__defineModule(moduleId);
-    module = modules[moduleId];
+  if (!module && moduleDefinersBySegmentID.length > 0) {
+    const {segmentId, localId} = unpackModuleId(moduleId);
+    const definer = moduleDefinersBySegmentID[segmentId];
+    if (definer != null) {
+      definer(localId);
+      module = modules[moduleId];
+    }
   }
 
   const nativeRequire = global.nativeRequire;
