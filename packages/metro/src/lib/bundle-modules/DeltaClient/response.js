@@ -35,15 +35,16 @@ function getRevisionId(bundleRes: Response): string {
 }
 
 function createResponse(
-  contents: string | ReadableStream,
+  contents: string | ?ReadableStream,
   revisionId: string,
+  headersEntries: Iterable<[string, string]> = new Map(),
 ): Response {
-  return new Response(contents, {
-    headers: new Headers({
-      'Cache-Control': 'no-cache',
-      [REVISION_ID_HEADER]: revisionId,
-    }),
-  });
+  const headers = new Headers();
+  for (const [name, value] of headersEntries) {
+    headers.append(name, value);
+  }
+  headers.set(REVISION_ID_HEADER, revisionId);
+  return new Response(contents, {headers});
 }
 
 module.exports = {createResponse, getRevisionId};

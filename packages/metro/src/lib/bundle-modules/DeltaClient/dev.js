@@ -211,7 +211,16 @@ function create({
         bundlePromise = Promise.resolve(nextBundle);
 
         const {code: stringBundle, metadata} = bundleToString(nextBundle);
-        nextBundleRes = createResponse(stringBundle, update.revisionId);
+        nextBundleRes = createResponse(
+          stringBundle,
+          update.revisionId,
+          new Headers({
+            // In development, we expect the bundle URL to be static. As such,
+            // the browser should always request the Service Worker for the
+            // latest version.
+            'Cache-Control': 'no-cache',
+          }),
+        );
 
         cache.put(bundleKey, nextBundleRes.clone());
         setBundleMetadata(db, update.revisionId, metadata);
