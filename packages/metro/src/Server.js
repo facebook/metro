@@ -47,6 +47,7 @@ import type {MetroSourceMap} from 'metro-source-map';
 import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
 import type {RevisionId} from './IncrementalBundler';
+import type {Graph, Module} from './DeltaBundler/types.flow';
 
 const {
   Logger,
@@ -184,7 +185,7 @@ class Server {
 
     return {
       code: bundleToString(bundle).code,
-      map: sourceMapString(prepend, graph, {
+      map: sourceMapString([...prepend, ...this._getSortedModules(graph)], {
         excludeSource: serializerOptions.excludeSource,
         processModuleFilter: this._config.serializer.processModuleFilter,
       }),
@@ -738,6 +739,14 @@ class Server {
     },
   });
 
+  // This function ensures that modules in source maps are sorted in the same
+  // order as in a plain JS bundle.
+  _getSortedModules(graph: Graph<>): $ReadOnlyArray<Module<>> {
+    return [...graph.dependencies.values()].sort(
+      (a, b) => this._createModuleId(a.path) - this._createModuleId(b.path),
+    );
+  }
+
   _processSourceMapRequest = this._createRequestProcessor({
     createStartEntry(context) {
       return {
@@ -773,7 +782,7 @@ class Server {
 
       const {prepend, graph} = revision;
 
-      return sourceMapString(prepend, graph, {
+      return sourceMapString([...prepend, ...this._getSortedModules(graph)], {
         excludeSource: serializerOptions.excludeSource,
         processModuleFilter: this._config.serializer.processModuleFilter,
       });
@@ -974,7 +983,7 @@ class Server {
 
     const {prepend, graph} = revision;
 
-    return sourceMapObject(prepend, graph, {
+    return sourceMapObject([...prepend, ...this._getSortedModules(graph)], {
       excludeSource: serializerOptions.excludeSource,
       processModuleFilter: this._config.serializer.processModuleFilter,
     });

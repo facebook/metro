@@ -14,7 +14,7 @@ const getInlineSourceMappingURL = require('../DeltaBundler/Serializers/helpers/g
 const nullthrows = require('nullthrows');
 const sourceMapString = require('../DeltaBundler/Serializers/sourceMapString');
 
-import type {Graph, Module} from '../DeltaBundler';
+import type {Module} from '../DeltaBundler';
 
 type Options<T: number | string> = {
   +createModuleId: string => T,
@@ -27,8 +27,7 @@ type Options<T: number | string> = {
 
 function getAppendScripts<T: number | string>(
   entryPoint: string,
-  pre: $ReadOnlyArray<Module<>>,
-  graph: Graph<>,
+  modules: $ReadOnlyArray<Module<>>,
   options: Options<T>,
 ): $ReadOnlyArray<Module<>> {
   const output = [];
@@ -37,7 +36,7 @@ function getAppendScripts<T: number | string>(
     const paths = [...options.runBeforeMainModule, entryPoint];
 
     for (const path of paths) {
-      if (graph.dependencies.has(path)) {
+      if (modules.some(module => module.path === path)) {
         output.push({
           path: `require-${path}`,
           dependencies: new Map(),
@@ -62,7 +61,7 @@ function getAppendScripts<T: number | string>(
   if (options.inlineSourceMap || options.sourceMapUrl) {
     const sourceMappingURL = options.inlineSourceMap
       ? getInlineSourceMappingURL(
-          sourceMapString(pre, graph, {
+          sourceMapString(modules, {
             processModuleFilter: () => true,
             excludeSource: false,
           }),

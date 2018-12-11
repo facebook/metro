@@ -10,31 +10,20 @@
 
 'use strict';
 
-const getSourceMapInfo = require('./helpers/getSourceMapInfo');
+const sourceMapGenerator = require('./sourceMapGenerator');
 
-const {isJsModule} = require('./helpers/js');
-const {fromRawMappings} = require('metro-source-map');
+import type {Module} from '../types.flow';
 
-import type {Graph, Module} from '../types.flow';
-
-function fullSourceMap(
-  pre: $ReadOnlyArray<Module<>>,
-  graph: Graph<>,
+function sourceMapString(
+  modules: $ReadOnlyArray<Module<>>,
   options: {|
     +excludeSource: boolean,
     +processModuleFilter: (module: Module<>) => boolean,
   |},
 ): string {
-  const modules = [...pre, ...graph.dependencies.values()]
-    .filter(isJsModule)
-    .filter(options.processModuleFilter)
-    .map(module =>
-      getSourceMapInfo(module, {excludeSource: options.excludeSource}),
-    );
-
-  return fromRawMappings(modules).toString(undefined, {
+  return sourceMapGenerator(modules, options).toString(undefined, {
     excludeSource: options.excludeSource,
   });
 }
 
-module.exports = fullSourceMap;
+module.exports = sourceMapString;

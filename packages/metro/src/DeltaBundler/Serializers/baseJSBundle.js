@@ -37,8 +37,12 @@ function baseJSBundle(
     .map(([_, code]) => code)
     .join('\n');
 
+  const modules = [...graph.dependencies.values()].sort(
+    (a, b) => options.createModuleId(a.path) - options.createModuleId(b.path),
+  );
+
   const postCode = processModules(
-    getAppendScripts(entryPoint, preModules, graph, {
+    getAppendScripts(entryPoint, [...preModules, ...modules], {
       createModuleId: options.createModuleId,
       getRunModuleStatement: options.getRunModuleStatement,
       runBeforeMainModule: options.runBeforeMainModule,

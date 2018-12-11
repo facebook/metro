@@ -46,7 +46,14 @@ function deltaJSBundle(
   );
 
   if (delta.reset) {
-    const appendScripts = getAppendScripts(entryPoint, pre, graph, options);
+    const modules = [...graph.dependencies.values()].sort(
+      (a, b) => options.createModuleId(a.path) - options.createModuleId(b.path),
+    );
+    const appendScripts = getAppendScripts(
+      entryPoint,
+      [...pre, ...modules],
+      options,
+    );
 
     return {
       base: true,
