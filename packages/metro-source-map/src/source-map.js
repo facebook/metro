@@ -13,8 +13,8 @@
 const Generator = require('./Generator');
 const SourceMap = require('source-map');
 
-import type {BabelSourceMap} from 'babel-core';
-import type {BabelSourceMapSegment} from 'babel-generator';
+import type {BabelSourceMap} from '@babel/core';
+import type {BabelSourceMapSegment} from '@babel/generator';
 
 type GeneratedCodeMapping = [number, number];
 type SourceMapping = [number, number, number, number];

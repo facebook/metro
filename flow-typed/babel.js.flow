@@ -155,16 +155,6 @@ type _BabelSourceMapSegment = {
   source?: string,
 };
 
-// https://github.com/babel/babel/tree/master/packages/babel-generator
-declare module 'babel-generator' {
-  declare export type BabelSourceMapSegment = _BabelSourceMapSegment;
-  declare export default (
-    ast: BabelNode,
-    options?: GeneratorOptions,
-    code?: string | {[string]: string},
-  ) => GeneratorResult;
-}
-
 // #############################################
 // ############     Babel 7    #################
 // #############################################
@@ -326,6 +316,12 @@ declare module '@babel/core' {
 
 // https://github.com/babel/babel/tree/master/packages/babel-generator
 declare module '@babel/generator' {
+  declare export type BabelSourceMapSegment = _BabelSourceMapSegment;
+  declare export default (
+    ast: BabelNode,
+    options?: GeneratorOptions,
+    code?: string | {[string]: string},
+  ) => GeneratorResult;
   declare export default (
     ast: BabelNode,
     options?: GeneratorOptions,
