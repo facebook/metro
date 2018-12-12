@@ -55,7 +55,8 @@ async function dependencies(args: any, config: any) {
     // (a) JS code to not depend on anything outside this directory, or
     // (b) Come up with a way to declare this dependency in Buck.
     const isInsideProjectRoots =
-      config.watchFolders.filter(root => modulePath.startsWith(root)).length > 0;
+      config.watchFolders.filter(root => modulePath.startsWith(root)).length >
+      0;
     if (isInsideProjectRoots) {
       outStream.write(modulePath + '\n');
     }
@@ -69,11 +70,11 @@ module.exports = {
   command: 'dependencies',
   description: 'List dependencies',
   builder: (yargs: Yargs) => {
-    yargs.option('entry-file', { type: 'string', demandOption: true });
-    yargs.option('output', { type: 'string' });
-    yargs.option('platform', { type: 'string' });
-    yargs.option('transformer', { type: 'string' });
-    yargs.option('max-workers', { type: 'number' });
+    yargs.option('entry-file', {type: 'string', demandOption: true});
+    yargs.option('output', {type: 'string'});
+    yargs.option('platform', {type: 'string'});
+    yargs.option('transformer', {type: 'string'});
+    yargs.option('max-workers', {type: 'number'});
   },
   handler: makeAsyncCommand(async (argv: any) => {
     const config = await loadConfig(argv);
