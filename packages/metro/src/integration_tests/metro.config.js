@@ -29,7 +29,9 @@ module.exports = {
     asyncRequireModulePath: require.resolve(
       'metro/src/lib/bundle-modules/asyncRequire',
     ),
-    babelTransformerPath: require.resolve('metro/src/reactNativeTransformer'),
+    babelTransformerPath: require.resolve(
+      'metro-react-native-babel-transformer',
+    ),
     enableBabelRCLookup: false,
     enableBabelRuntime: false,
     getTransformOptions: async () => ({

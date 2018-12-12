@@ -68,7 +68,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     assetPlugins: [],
     asyncRequireModulePath: 'metro/src/lib/bundle-modules/asyncRequire',
     assetRegistryPath: 'missing-asset-registry-path',
-    babelTransformerPath: 'metro/src/defaultTransformer',
+    babelTransformerPath: 'metro-babel-transformer',
     dynamicDepsInPackages: 'throwAtRuntime',
     enableBabelRCLookup: true,
     enableBabelRuntime: true,

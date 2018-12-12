@@ -21,7 +21,7 @@ jest
 const path = require('path');
 
 const babelTransformerPath = require.resolve(
-  'metro/src/reactNativeTransformer',
+  'metro-react-native-babel-transformer',
 );
 const transformerContents = require('fs').readFileSync(babelTransformerPath);
 

@@ -40,6 +40,7 @@
     "json-stable-stringify": "^1.0.1",
     "lodash.throttle": "^4.1.1",
     "merge-stream": "^1.0.1",
+    "metro-babel-transformer": "0.50.0",
     "metro-cache": "0.50.0",
     "metro-config": "0.50.0",
     "metro-core": "0.50.0",
@@ -70,6 +71,7 @@
     "acorn": "^5.1.2",
     "metro-memory-fs": "0.50.0",
     "metro-react-native-babel-preset": "0.50.0",
+    "metro-react-native-babel-transformer": "0.50.0",
     "metro-visualizer": "0.50.0"
   },
   "license": "MIT"

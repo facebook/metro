@@ -50,7 +50,7 @@ const DEFAULT = ({
   getRunModuleStatement: (moduleId: number | string) =>
     `__r(${JSON.stringify(moduleId)});`,
   getSourceExts: () => [],
-  getTransformModulePath: () => 'metro/src/defaultTransformer',
+  getTransformModulePath: () => 'metro-babel-transformer',
   getTransformOptions: async () => ({
     transform: {experimentalImportSupport: false, inlineRequires: false},
     preloadedModules: false,
