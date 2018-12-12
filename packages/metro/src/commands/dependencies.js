@@ -66,7 +66,7 @@ async function dependencies(args: any, config: any) {
     : Promise.resolve();
 }
 
-module.exports = {
+module.exports = () => ({
   command: 'dependencies',
   description: 'List dependencies',
   builder: (yargs: Yargs) => {
@@ -80,4 +80,4 @@ module.exports = {
     const config = await loadConfig(argv);
     await dependencies(argv, config);
   }),
-};
+});
