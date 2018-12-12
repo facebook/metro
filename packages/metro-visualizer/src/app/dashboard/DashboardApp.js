@@ -34,6 +34,7 @@ type State = {
   selectedBundleHash: ?string,
   isLoadingData: boolean,
   isBundling: boolean,
+  platforms: $ReadOnlyArray<string>,
 };
 
 class DashboardApp extends React.Component<mixed, State> {
@@ -42,32 +43,35 @@ class DashboardApp extends React.Component<mixed, State> {
     selectedBundleHash: undefined,
     isLoadingData: false,
     isBundling: false,
+    platforms: ['ios', 'android', 'windows', 'web'],
   };
 
   componentDidMount() {
-    this.fetchBundles();
+    this.fetchData();
   }
 
-  fetchBundles() {
+  fetchData() {
     this.setState({isLoadingData: true});
-    fetch('/visualizer/bundles')
-      .then(res => {
+    return Promise.all([
+      fetch('/visualizer/bundles'),
+      fetch('/visualizer/platforms'),
+    ])
+      .then(responses => {
         this.setState({isLoadingData: false});
-        return handleAPIError(res);
+        return Promise.all(responses.map(res => handleAPIError(res).json()));
       })
-      .then(response => response.json())
-      .then(metroHistory => {
-        this.setState({metroHistory});
+      .then(([metroHistory, platforms]) => {
+        this.setState({metroHistory, platforms});
       })
       .catch(error => message.error(error.message));
   }
 
   _handleReload = () => {
-    this.fetchBundles();
+    this.fetchData();
   };
 
   render() {
-    const {metroHistory, isLoadingData, isBundling} = this.state;
+    const {metroHistory, isLoadingData, isBundling, platforms} = this.state;
     const loadedEmptyHistory =
       !isLoadingData && metroHistory && Object.keys(metroHistory).length === 0;
     return (
@@ -80,23 +84,19 @@ class DashboardApp extends React.Component<mixed, State> {
           />
         </Row>
 
-        <Row type="flex" justify="center">
-          <Col span={16}>
-            <BundleRunForm
-              handleStartedBundling={() => this.setState({isBundling: true})}
-              handleFinishedBundling={() => {
-                this.fetchBundles();
-                this.setState({isBundling: false});
-              }}
-            />
-          </Col>
-        </Row>
+        <BundleRunForm
+          platforms={platforms}
+          handleStartedBundling={() => this.setState({isBundling: true})}
+          handleFinishedBundling={() => {
+            this.fetchData().then(() => this.setState({isBundling: false}));
+          }}
+        />
 
         {loadedEmptyHistory && !isBundling ? (
           <WelcomeMessage onReload={this._handleReload} />
         ) : null}
 
-        <Row type="flex" justify="center">
+        <Row type="flex" justify="center" gutter={8}>
           <Col span={16}>
             {metroHistory &&
               Object.keys(metroHistory).map(bundleHash => (
@@ -138,7 +138,7 @@ const BundleCard = (props: {
           .map(
             info =>
               info.duration != null ? (
-                <span className={initalInfo} key="initial">
+                <span className={initialInfo} key="initial">
                   {info.duration} ms | {info.numModifiedFiles} files
                 </span>
               ) : null,
@@ -194,7 +194,7 @@ const logo = css`
   width: 80px;
 `;
 
-const initalInfo = css`
+const initialInfo = css`
   margin-left: 8px;
   font-size: 9pt;
   color: #aaa;

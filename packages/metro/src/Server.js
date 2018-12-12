@@ -993,6 +993,10 @@ class Server {
     return (this._nextBundleBuildID++).toString(36);
   }
 
+  getPlatforms(): $ReadOnlyArray<string> {
+    return this._config.resolver.platforms;
+  }
+
   getWatchFolders(): $ReadOnlyArray<string> {
     return this._config.watchFolders;
   }

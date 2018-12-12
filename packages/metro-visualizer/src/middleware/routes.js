@@ -77,6 +77,12 @@ router.get('/bundles', async function(req, res) {
   res.end();
 });
 
+router.get('/platforms', async function(req, res) {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.write(JSON.stringify(metroServer.getPlatforms()));
+  res.end();
+});
+
 router.use('/bundle.js', async (req, res, next) => {
   const status = 'Bundling visualizer app';
 
