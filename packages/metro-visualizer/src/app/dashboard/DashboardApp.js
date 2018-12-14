@@ -27,6 +27,7 @@ import type {
   BuildDetails,
 } from '../../middleware/metroHistory.js';
 import {message, Row, Col, Card, Tag, Icon} from 'antd';
+import type {VisualizerConfigT} from 'metro-config/src/configTypes.flow.js';
 import type {BundleOptions} from 'metro/src/shared/types.flow.js';
 
 type State = {
@@ -34,15 +35,19 @@ type State = {
   selectedBundleHash: ?string,
   isLoadingData: boolean,
   isBundling: boolean,
+  visualizerConfig: ?VisualizerConfigT,
   platforms: $ReadOnlyArray<string>,
 };
 
 class DashboardApp extends React.Component<mixed, State> {
+  _bundleRunForm = React.createRef();
+
   state = {
     metroHistory: undefined,
     selectedBundleHash: undefined,
     isLoadingData: false,
     isBundling: false,
+    visualizerConfig: undefined,
     platforms: ['ios', 'android', 'windows', 'web'],
   };
 
@@ -55,13 +60,14 @@ class DashboardApp extends React.Component<mixed, State> {
     return Promise.all([
       fetch('/visualizer/bundles'),
       fetch('/visualizer/platforms'),
+      fetch('/visualizer/config'),
     ])
       .then(responses => {
         this.setState({isLoadingData: false});
         return Promise.all(responses.map(res => handleAPIError(res).json()));
       })
-      .then(([metroHistory, platforms]) => {
-        this.setState({metroHistory, platforms});
+      .then(([metroHistory, platforms, visualizerConfig]) => {
+        this.setState({metroHistory, platforms, visualizerConfig});
       })
       .catch(error => message.error(error.message));
   }
@@ -70,8 +76,21 @@ class DashboardApp extends React.Component<mixed, State> {
     this.fetchData();
   };
 
+  _handleBuildPreset = (entryPath, buildOptions) => {
+    const bundleRunForm = this._bundleRunForm.current;
+    if (bundleRunForm) {
+      bundleRunForm.build(entryPath, buildOptions);
+    }
+  };
+
   render() {
-    const {metroHistory, isLoadingData, isBundling, platforms} = this.state;
+    const {
+      metroHistory,
+      isLoadingData,
+      isBundling,
+      visualizerConfig,
+      platforms,
+    } = this.state;
     const loadedEmptyHistory =
       !isLoadingData && metroHistory && Object.keys(metroHistory).length === 0;
     return (
@@ -85,6 +104,7 @@ class DashboardApp extends React.Component<mixed, State> {
         </Row>
 
         <BundleRunForm
+          ref={this._bundleRunForm}
           platforms={platforms}
           handleStartedBundling={() => this.setState({isBundling: true})}
           handleFinishedBundling={() => {
@@ -93,7 +113,12 @@ class DashboardApp extends React.Component<mixed, State> {
         />
 
         {loadedEmptyHistory && !isBundling ? (
-          <WelcomeMessage onReload={this._handleReload} />
+          <WelcomeMessage
+            onReload={this._handleReload}
+            platforms={platforms}
+            presets={visualizerConfig && visualizerConfig.presets}
+            onBuildPreset={this._handleBuildPreset}
+          />
         ) : null}
 
         <Row type="flex" justify="center" gutter={8}>
