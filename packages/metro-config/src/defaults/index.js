@@ -117,6 +117,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   maxWorkers: getMaxWorkers(),
   resetCache: false,
   reporter: new TerminalReporter(new Terminal(process.stdout)),
+  visualizer: {presets: []},
 });
 
 async function getDefaultConfig(rootPath: ?string): Promise<ConfigT> {

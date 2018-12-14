@@ -117,6 +117,9 @@ Object {
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
+  "visualizer": Object {
+    "presets": Array [],
+  },
   "watchFolders": Array [
     "/",
   ],
@@ -240,6 +243,9 @@ Object {
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
+  "visualizer": Object {
+    "presets": Array [],
+  },
   "watchFolders": Array [
     "/",
   ],

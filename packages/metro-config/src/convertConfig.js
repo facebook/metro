@@ -160,6 +160,7 @@ async function convertOldToNew({
     transformerPath: defaultConfig.transformerPath,
     resetCache,
     maxWorkers,
+    visualizer: {presets: []},
   };
 }
 

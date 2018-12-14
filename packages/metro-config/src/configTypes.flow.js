@@ -142,6 +142,16 @@ type TransformerConfigT = {|
   publicPath: string,
 |};
 
+export type VisualizerConfigT = {|
+  presets: $ReadOnlyArray<{|
+    entryPath: string,
+    name: string,
+    description: string,
+    featured?: boolean,
+    platforms?: $ReadOnlyArray<string>,
+  |}>,
+|};
+
 type MetalConfigT = {|
   cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
   cacheVersion: string,
@@ -168,6 +178,7 @@ export type InputConfigT = $Shape<{|
     server: $Shape<ServerConfigT>,
     serializer: $Shape<SerializerConfigT>,
     transformer: $Shape<TransformerConfigT>,
+    visualizer: $Shape<VisualizerConfigT>,
   |}>,
 |}>;
 
@@ -178,6 +189,7 @@ export type IntermediateConfigT = {|
     server: ServerConfigT,
     serializer: SerializerConfigT,
     transformer: TransformerConfigT,
+    visualizer: VisualizerConfigT,
   |},
 |};
 
@@ -188,5 +200,6 @@ export type ConfigT = $ReadOnly<{|
     server: $ReadOnly<ServerConfigT>,
     serializer: $ReadOnly<SerializerConfigT>,
     transformer: $ReadOnly<TransformerConfigT>,
+    visualizer: $ReadOnly<VisualizerConfigT>,
   |}>,
 |}>;

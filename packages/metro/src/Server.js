@@ -42,7 +42,10 @@ import type {Reporter} from './lib/reporting';
 import type {GraphId} from './lib/getGraphId';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
 import type {BundleOptions, SplitBundleOptions} from './shared/types.flow';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {
+  ConfigT,
+  VisualizerConfigT,
+} from 'metro-config/src/configTypes.flow';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
@@ -999,6 +1002,10 @@ class Server {
 
   getWatchFolders(): $ReadOnlyArray<string> {
     return this._config.watchFolders;
+  }
+
+  getVisualizerConfig(): $ReadOnly<VisualizerConfigT> {
+    return this._config.visualizer;
   }
 
   static DEFAULT_GRAPH_OPTIONS = {
