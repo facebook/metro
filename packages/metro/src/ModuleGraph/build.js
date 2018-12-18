@@ -54,7 +54,6 @@ async function build(options: BuildOptions): Promise<BuildResult> {
   const preludeScript = virtualModule(
     getPreludeCode({
       extraVars: {
-        __NUM_MODULES__: graph.modules.length,
         __FRAMEWORK__: options.framework,
       },
       isDev: !optimize,
