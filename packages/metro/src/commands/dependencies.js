@@ -75,6 +75,8 @@ module.exports = () => ({
     yargs.option('platform', {type: 'string'});
     yargs.option('transformer', {type: 'string'});
     yargs.option('max-workers', {type: 'number'});
+    yargs.option('dev', {type: 'boolean'});
+    yargs.option('verbose', {type: 'boolean'});
   },
   handler: makeAsyncCommand(async (argv: any) => {
     const config = await loadConfig(argv);
