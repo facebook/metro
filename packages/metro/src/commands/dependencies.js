@@ -70,13 +70,40 @@ module.exports = () => ({
   command: 'dependencies',
   description: 'List dependencies',
   builder: (yargs: Yargs) => {
-    yargs.option('entry-file', {type: 'string', demandOption: true});
-    yargs.option('output', {type: 'string'});
-    yargs.option('platform', {type: 'string'});
-    yargs.option('transformer', {type: 'string'});
-    yargs.option('max-workers', {type: 'number'});
-    yargs.option('dev', {type: 'boolean'});
-    yargs.option('verbose', {type: 'boolean'});
+    yargs.option('entry-file', {
+      type: 'string',
+      demandOption: true,
+      describe: 'Absolute path to the root JS file',
+    });
+    yargs.option('output', {
+      type: 'string',
+      describe:
+        'File name where to store the output, ex. /tmp/dependencies.txt',
+    });
+    yargs.option('platform', {
+      type: 'string',
+      describe: 'The platform extension used for selecting modules',
+    });
+    yargs.option('transformer', {
+      type: 'string',
+      describe: 'The platform extension used for selecting modules',
+    });
+    yargs.option('max-workers', {
+      type: 'number',
+      describe:
+        'Specifies the maximum number of workers the worker-pool ' +
+        'will spawn for transforming files. This defaults to the number of the ' +
+        'cores available on your machine.',
+    });
+    yargs.option('dev', {
+      type: 'boolean',
+      default: true,
+      describe: 'If false, skip all dev-only code path',
+    });
+    yargs.option('verbose', {
+      type: 'boolean',
+      default: false,
+    });
   },
   handler: makeAsyncCommand(async (argv: any) => {
     const config = await loadConfig(argv);
