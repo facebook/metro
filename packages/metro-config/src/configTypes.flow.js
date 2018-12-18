@@ -100,6 +100,7 @@ export type OldConfigT = {
   processModuleFilter: (modules: Module<>) => boolean,
   resolveRequest: ?CustomResolver,
   transformVariants: () => TransformVariants,
+  virtualMapper: (file: string) => Array<string>,
 };
 
 type ResolverConfigT = {|
@@ -114,6 +115,7 @@ type ResolverConfigT = {|
   resolveRequest: ?CustomResolver,
   sourceExts: $ReadOnlyArray<string>,
   useWatchman: boolean,
+  virtualMapper: (file: string) => Array<string>,
 |};
 
 type SerializerConfigT = {|

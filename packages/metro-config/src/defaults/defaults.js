@@ -41,6 +41,8 @@ exports.assetExts = [
   // Font formats
   'otf',
   'ttf',
+  // Archives (virtual files)
+  'zip',
 ];
 
 exports.sourceExts = ['js', 'json', 'ts', 'tsx'];

@@ -36,6 +36,7 @@ Object {
       "pdf",
       "otf",
       "ttf",
+      "zip",
     ],
     "blacklistRE": /\\(node_modules\\[\\\\/\\\\\\\\\\]react\\[\\\\/\\\\\\\\\\]dist\\[\\\\/\\\\\\\\\\]\\.\\*\\|website\\\\/node_modules\\\\/\\.\\*\\|heapCapture\\\\/bundle\\\\\\.js\\|\\.\\*\\\\/__tests__\\\\/\\.\\*\\)\\$/,
     "extraNodeModules": Object {},
@@ -62,6 +63,7 @@ Object {
       "tsx",
     ],
     "useWatchman": true,
+    "virtualMapper": [Function],
   },
   "serializer": Object {
     "createModuleIdFactory": [Function],
@@ -162,6 +164,7 @@ Object {
       "pdf",
       "otf",
       "ttf",
+      "zip",
     ],
     "blacklistRE": /\\(node_modules\\[\\\\/\\\\\\\\\\]react\\[\\\\/\\\\\\\\\\]dist\\[\\\\/\\\\\\\\\\]\\.\\*\\|website\\\\/node_modules\\\\/\\.\\*\\|heapCapture\\\\/bundle\\\\\\.js\\|\\.\\*\\\\/__tests__\\\\/\\.\\*\\)\\$/,
     "extraNodeModules": Object {},
@@ -188,6 +191,7 @@ Object {
       "tsx",
     ],
     "useWatchman": true,
+    "virtualMapper": [Function],
   },
   "serializer": Object {
     "createModuleIdFactory": [Function],
