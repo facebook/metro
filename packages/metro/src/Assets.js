@@ -57,10 +57,17 @@ const hashFiles = denodeify(function hashFilesCb(files, hash, callback) {
     return;
   }
 
-  fs.createReadStream(files.shift())
-    .on('data', data => hash.update(data))
-    .once('end', () => hashFilesCb(files, hash, callback))
-    .once('error', error => callback(error));
+  const file = files.shift();
+
+  fs.readFile(file, (err, data) => {
+    if (err) {
+      callback(err);
+      return;
+    } else {
+      hash.update(data);
+      hashFilesCb(files, hash, callback);
+    }
+  });
 });
 
 function buildAssetMap(
@@ -193,7 +200,11 @@ async function getAssetData(
 
   const isImage = isAssetTypeAnImage(path.extname(assetPath).slice(1));
   const assetInfo = await getAbsoluteAssetInfo(assetPath, platform);
-  const dimensions = isImage ? imageSize(assetInfo.files[0]) : null;
+
+  const isImageInput = assetInfo.files[0].includes('.zip/')
+    ? fs.readFileSync(assetInfo.files[0])
+    : assetInfo.files[0];
+  const dimensions = isImage ? imageSize(isImageInput) : null;
   const scale = assetInfo.scales[0];
 
   const assetData = {
