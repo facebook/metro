@@ -67,7 +67,7 @@ async function dependencies(args: any, config: any) {
 }
 
 module.exports = () => ({
-  command: 'dependencies',
+  command: 'get-dependencies',
   description: 'List dependencies',
   builder: (yargs: Yargs) => {
     yargs.option('entry-file', {
@@ -86,7 +86,7 @@ module.exports = () => ({
     });
     yargs.option('transformer', {
       type: 'string',
-      describe: 'The platform extension used for selecting modules',
+      describe: 'Specify a custom transformer to be used',
     });
     yargs.option('max-workers', {
       type: 'number',
@@ -103,6 +103,7 @@ module.exports = () => ({
     yargs.option('verbose', {
       type: 'boolean',
       default: false,
+      description: 'Enables logging',
     });
   },
   handler: makeAsyncCommand(async (argv: any) => {
