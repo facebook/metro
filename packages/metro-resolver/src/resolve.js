@@ -104,7 +104,7 @@ function resolve(
   }
 
   const modulePaths = [];
-  for (let modulePath of yieldPotentialPaths(context, realModuleName)) {
+  for (let modulePath of genModulePaths(context, realModuleName)) {
     modulePath = context.redirectModulePath(modulePath);
 
     const result = resolveFileOrDir(context, modulePath, platform);
@@ -118,7 +118,7 @@ function resolve(
 }
 
 /** Generate the potential module paths */
-function* yieldPotentialPaths(
+function* genModulePaths(
   context: ResolutionContext,
   toModuleName: string,
 ): Iterable<string> {
