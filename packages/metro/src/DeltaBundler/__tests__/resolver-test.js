@@ -1178,6 +1178,37 @@ describe('traverseDependencies', function() {
             resolver.resolve(p('/root/index.js'), './c.png'),
           ).toThrow();
         });
+
+        it('checks asset extensions case insensitively', async () => {
+          setMockFileSystem({
+            'index.js': '',
+            'asset.PNG': '',
+          });
+
+          resolver = await createResolver();
+
+          // TODO: Is this behaviour correct?
+          expect(() =>
+            resolver.resolve(p('/root/index.js'), './asset.PNG'),
+          ).toThrow(UnableToResolveError);
+        });
+
+        it('resolves custom asset extensions when overriding assetExts', async () => {
+          setMockFileSystem({
+            'index.js': '',
+            'asset1.ast': '',
+            'asset2.png': '',
+          });
+
+          resolver = await createResolver({resolver: {assetExts: ['ast']}});
+
+          expect(resolver.resolve(p('/root/index.js'), './asset1.ast')).toBe(
+            p('/root/asset1.ast'),
+          );
+          expect(() =>
+            resolver.resolve(p('/root/index.js'), './asset2.png'),
+          ).toThrow(UnableToResolveError);
+        });
       });
 
       describe('global packages', () => {
@@ -1792,6 +1823,121 @@ describe('traverseDependencies', function() {
           expect(resolver.resolve(p('/root/folder/index.js'), 'foo')).toBe(
             p('/root/providesFoo/index-client.js'),
           );
+        });
+      });
+
+      describe('resolveRequest config param', () => {
+        let resolveRequest;
+
+        beforeEach(() => {
+          resolveRequest = jest.fn().mockReturnValue({
+            type: 'sourceFile',
+            filePath: p('/root/overriden.js'),
+          });
+        });
+
+        it('overrides relative paths', async () => {
+          setMockFileSystem({
+            'index.js': '',
+            myFolder: {'foo.js': ''},
+            'overriden.js': '',
+          });
+
+          resolver = await createResolver({resolver: {resolveRequest}});
+
+          expect(resolver.resolve(p('/root/index.js'), './myFolder/foo')).toBe(
+            p('/root/overriden.js'),
+          );
+          expect(resolver.resolve(p('/root/index.js'), './invalid')).toBe(
+            p('/root/overriden.js'),
+          );
+        });
+
+        it('overrides node_modules package resolutions', async () => {
+          setMockFileSystem({
+            'index.js': '',
+            node_modules: {
+              aPackage: {
+                'package.json': JSON.stringify({name: 'aPackage'}),
+                'index.js': '',
+              },
+            },
+            'overriden.js': '',
+          });
+
+          resolver = await createResolver({resolver: {resolveRequest}});
+
+          expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
+            p('/root/overriden.js'),
+          );
+        });
+
+        it('does not override global package resolutions', async () => {
+          setMockFileSystem({
+            'index.js': '',
+            aPackage: {
+              'package.json': JSON.stringify({name: 'aPackage'}),
+              'index.js': '',
+            },
+            'overriden.js': '',
+          });
+
+          resolver = await createResolver({resolver: {resolveRequest}});
+
+          expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
+            p('/root/aPackage/index.js'),
+          );
+        });
+
+        it('does not override haste names', async () => {
+          setMockFileSystem({
+            'index.js': '',
+            'aPackage.js': '@providesModule aPackage',
+            'overriden.js': '',
+          });
+
+          resolver = await createResolver({
+            resolver: {
+              resolveRequest,
+              hasteImplModulePath: path.join(
+                __dirname,
+                '../__fixtures__/hasteImpl.js',
+              ),
+            },
+          });
+
+          expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
+            p('/root/aPackage.js'),
+          );
+        });
+
+        it('throws if resolveRequest returns null', async () => {
+          setMockFileSystem({'index.js': '', 'foo.js': ''});
+
+          resolveRequest.mockReturnValue(null);
+          resolver = await createResolver({resolver: {resolveRequest}});
+
+          expect(() => resolver.resolve(p('/root/index.js'), './foo')).toThrow(
+            UnableToResolveError,
+          );
+        });
+
+        it('calls resolveRequest with the correct arguments', async () => {
+          setMockFileSystem({
+            'index.js': '',
+            'foo.js': '',
+            'overriden.js': '',
+          });
+
+          resolver = await createResolver({resolver: {resolveRequest}}, 'ios');
+
+          resolver.resolve(p('/root/index.js'), './foo');
+
+          const [context, request, platform] = resolveRequest.mock.calls[0];
+
+          expect(context.originModulePath).toEqual(p('/root/index.js'));
+          expect(request).toEqual('./foo');
+          expect(platform).toEqual('ios');
         });
       });
     });

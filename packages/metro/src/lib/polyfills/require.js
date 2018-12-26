@@ -14,7 +14,6 @@
 /* eslint-disable no-bitwise */
 
 declare var __DEV__: boolean;
-declare var __NUM_MODULES__: mixed;
 
 type DependencyMap = Array<ModuleID>;
 type Exports = any;
@@ -60,6 +59,7 @@ type VerboseModuleNameForDev = string;
 global.__r = metroRequire;
 global.__d = define;
 global.__c = clear;
+global.__registerSegment = registerSegment;
 
 var modules = clear();
 
@@ -69,10 +69,10 @@ const EMPTY = {};
 const {hasOwnProperty} = {};
 
 function clear() {
-  modules =
-    typeof __NUM_MODULES__ === 'number'
-      ? (Array(__NUM_MODULES__ | 0): Array<ModuleDefinition>)
-      : (Object.create(null): {[number]: ModuleDefinition, __proto__: null});
+  modules = (Object.create(null): {
+    [number]: ModuleDefinition,
+    __proto__: null,
+  });
 
   // We return modules here so that we can assign an initial value to modules
   // when defining it. Otherwise, we would have to do "let modules = null",
@@ -103,10 +103,6 @@ function define(
       // called with inverseDependencies, we can hot reload it.
       if (inverseDependencies) {
         global.__accept(moduleId, factory, dependencyMap, inverseDependencies);
-      } else {
-        console.warn(
-          `Trying to define twice module ID ${moduleId} in the same bundle`,
-        );
       }
     }
 
@@ -295,10 +291,20 @@ function registerHook(cb: (number, {}) => void) {
 }
 metroRequire.registerHook = registerHook;
 
+const moduleDefinersBySegmentID = [];
+
+function registerSegment(segmentID, moduleDefiner) {
+  moduleDefinersBySegmentID[segmentID] = moduleDefiner;
+}
+
 function loadModuleImplementation(moduleId, module) {
-  if (!module && global.__defineModule) {
-    global.__defineModule(moduleId);
-    module = modules[moduleId];
+  if (!module && moduleDefinersBySegmentID.length > 0) {
+    const {segmentId, localId} = unpackModuleId(moduleId);
+    const definer = moduleDefinersBySegmentID[segmentId];
+    if (definer != null) {
+      definer(localId);
+      module = modules[moduleId];
+    }
   }
 
   const nativeRequire = global.nativeRequire;

@@ -19,6 +19,7 @@ const http = require('http');
 const https = require('https');
 const makeBuildCommand = require('./commands/build');
 const makeServeCommand = require('./commands/serve');
+const makeDependenciesCommand = require('./commands/dependencies');
 const outputBundle = require('./shared/output/bundle');
 
 const {readFile} = require('fs-extra');
@@ -319,9 +320,11 @@ exports.attachMetroCli = function(
     build = {},
     // $FlowFixMe TODO T26072405
     serve = {},
+    dependencies = {},
   }: {
     build: BuildCommandOptions,
     serve: ServeCommandOptions,
+    dependencies: any,
   } = {},
 ) {
   if (build) {
@@ -330,6 +333,10 @@ exports.attachMetroCli = function(
   }
   if (serve) {
     const {command, description, builder, handler} = makeServeCommand();
+    yargs.command(command, description, builder, handler);
+  }
+  if (dependencies) {
+    const {command, description, builder, handler} = makeDependenciesCommand();
     yargs.command(command, description, builder, handler);
   }
   return yargs;

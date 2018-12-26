@@ -30,6 +30,7 @@ module.exports = function(api /*: any */) /*: BabelCoreOptions */ {
   ];
 
   return {
+    babelrcRoots: ['.', 'packages/*'],
     plugins: plugins.map(plugin => require.resolve(plugin)),
   };
 };

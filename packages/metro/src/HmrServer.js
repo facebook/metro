@@ -37,10 +37,20 @@ import type {
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 type Client = {|
-  +send: (message: HmrMessage) => void,
+  +sendFn: string => void,
+  revisionId: RevisionId,
+|};
+
+type ClientGroup = {|
+  +clients: Set<Client>,
   +unlisten: () => void,
   revisionId: RevisionId,
 |};
+
+function send(sendFns: Array<(string) => void>, message: HmrMessage) {
+  const strMessage = JSON.stringify(message);
+  sendFns.forEach(sendFn => sendFn(strMessage));
+}
 
 /**
  * The HmrServer (Hot Module Reloading) implements a lightweight interface
@@ -55,6 +65,7 @@ class HmrServer<TClient: Client> {
   _config: ConfigT;
   _bundler: IncrementalBundler;
   _createModuleId: (path: string) => number;
+  _clientGroups: Map<RevisionId, ClientGroup>;
 
   constructor(
     bundler: IncrementalBundler,
@@ -64,16 +75,13 @@ class HmrServer<TClient: Client> {
     this._config = config;
     this._bundler = bundler;
     this._createModuleId = createModuleId;
+    this._clientGroups = new Map();
   }
 
   async onClientConnect(
     clientUrl: string,
-    sendFn: (data: string) => mixed,
+    sendFn: (data: string) => void,
   ): Promise<?Client> {
-    const send = (message: HmrMessage) => {
-      sendFn(JSON.stringify(message));
-    };
-
     const urlObj = nullthrows(url.parse(clientUrl, true));
     const query = nullthrows(urlObj.query);
 
@@ -106,7 +114,7 @@ class HmrServer<TClient: Client> {
       revPromise = this._bundler.getRevisionByGraphId(graphId);
 
       if (!revPromise) {
-        send({
+        send([sendFn], {
           type: 'error',
           body: formatBundlingError(new GraphNotFoundError(graphId)),
         });
@@ -117,7 +125,7 @@ class HmrServer<TClient: Client> {
       revPromise = this._bundler.getRevision(revisionId);
 
       if (!revPromise) {
-        send({
+        send([sendFn], {
           type: 'error',
           body: formatBundlingError(new RevisionNotFoundError(revisionId)),
         });
@@ -128,20 +136,34 @@ class HmrServer<TClient: Client> {
     const {graph, id} = await revPromise;
 
     const client = {
-      send,
-      // Listen to file changes.
-      unlisten: () => unlisten(),
+      sendFn,
       revisionId: id,
     };
 
-    await this._handleFileChange(client);
+    let clientGroup = this._clientGroups.get(id);
+    if (clientGroup != null) {
+      clientGroup.clients.add(client);
+    } else {
+      clientGroup = {
+        clients: new Set([client]),
+        unlisten: () => unlisten(),
+        revisionId: id,
+      };
 
-    const unlisten = this._bundler
-      .getDeltaBundler()
-      .listen(
-        graph,
-        debounceAsyncQueue(this._handleFileChange.bind(this, client), 50),
-      );
+      this._clientGroups.set(id, clientGroup);
+
+      const unlisten = this._bundler
+        .getDeltaBundler()
+        .listen(
+          graph,
+          debounceAsyncQueue(
+            this._handleFileChange.bind(this, clientGroup),
+            50,
+          ),
+        );
+    }
+
+    await this._handleFileChange(clientGroup);
 
     return client;
   }
@@ -155,37 +177,49 @@ class HmrServer<TClient: Client> {
   }
 
   onClientDisconnect(client: TClient) {
-    client.unlisten();
+    const group = this._clientGroups.get(client.revisionId);
+    if (group != null) {
+      if (group.clients.size === 1) {
+        this._clientGroups.delete(client.revisionId);
+        group.unlisten();
+      } else {
+        group.clients.delete(client);
+      }
+    }
   }
 
-  async _handleFileChange(client: Client) {
+  async _handleFileChange(group: ClientGroup) {
     const processingHmrChange = log(
       createActionStartEntry({action_name: 'Processing HMR change'}),
     );
 
-    client.send({type: 'update-start'});
-    const message = await this._prepareMessage(client);
-    client.send(message);
-    client.send({type: 'update-done'});
+    const sendFns = [...group.clients].map(client => client.sendFn);
+
+    send(sendFns, {type: 'update-start'});
+    const message = await this._prepareMessage(group);
+    send(sendFns, message);
+    send(sendFns, {type: 'update-done'});
 
     log({
       ...createActionEndEntry(processingHmrChange),
       outdated_modules:
-        message.type === 'update' ? message.body.modules.length : undefined,
+        message.type === 'update'
+          ? message.body.added.length + message.body.modified.length
+          : undefined,
     });
   }
 
   async _prepareMessage(
-    client: Client,
+    group: ClientGroup,
   ): Promise<HmrUpdateMessage | HmrErrorMessage> {
     try {
-      const revPromise = this._bundler.getRevision(client.revisionId);
+      const revPromise = this._bundler.getRevision(group.revisionId);
 
       if (!revPromise) {
         return {
           type: 'error',
           body: formatBundlingError(
-            new RevisionNotFoundError(client.revisionId),
+            new RevisionNotFoundError(group.revisionId),
           ),
         };
       }
@@ -195,25 +229,23 @@ class HmrServer<TClient: Client> {
         false,
       );
 
-      client.revisionId = revision.id;
+      this._clientGroups.delete(group.revisionId);
+      group.revisionId = revision.id;
+      for (const client of group.clients) {
+        client.revisionId = revision.id;
+      }
+      this._clientGroups.set(group.revisionId, group);
 
-      const {modules, deleted, sourceMappingURLs, sourceURLs} = hmrJSBundle(
-        delta,
-        revision.graph,
-        {
-          createModuleId: this._createModuleId,
-          projectRoot: this._config.projectRoot,
-        },
-      );
+      const hmrUpdate = hmrJSBundle(delta, revision.graph, {
+        createModuleId: this._createModuleId,
+        projectRoot: this._config.projectRoot,
+      });
 
       return {
         type: 'update',
         body: {
           revisionId: revision.id,
-          modules,
-          deleted,
-          sourceMappingURLs,
-          sourceURLs,
+          ...hmrUpdate,
         },
       };
     } catch (error) {

@@ -132,7 +132,8 @@ class IncrementalBundler {
     });
 
     this._config.serializer.experimentalSerializerHook(graph, {
-      modified: graph.dependencies,
+      added: graph.dependencies,
+      modified: new Map(),
       deleted: new Set(),
       reset: true,
     });
@@ -206,7 +207,8 @@ class IncrementalBundler {
     const revision = await revisionPromise;
 
     const delta = {
-      modified: revision.graph.dependencies,
+      added: revision.graph.dependencies,
+      modified: new Map(),
       deleted: new Set(),
       reset: true,
     };
@@ -225,7 +227,11 @@ class IncrementalBundler {
 
     this._config.serializer.experimentalSerializerHook(revision.graph, delta);
 
-    if (delta.modified.size > 0) {
+    if (
+      delta.added.size > 0 ||
+      delta.modified.size > 0 ||
+      delta.deleted.size > 0
+    ) {
       this._revisionsById.delete(revision.id);
       revision = {
         ...revision,

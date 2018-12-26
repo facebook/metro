@@ -77,6 +77,12 @@ router.get('/bundles', async function(req, res) {
   res.end();
 });
 
+router.get('/platforms', async function(req, res) {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.write(JSON.stringify(metroServer.getPlatforms()));
+  res.end();
+});
+
 router.use('/bundle.js', async (req, res, next) => {
   const status = 'Bundling visualizer app';
 
@@ -108,6 +114,12 @@ router.use('/bundle.js', async (req, res, next) => {
       terminal.status(`${status}, failed.`);
       terminal.persistStatus();
     });
+});
+
+router.get('/config', async function(req, res) {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.write(JSON.stringify(metroServer.getVisualizerConfig()));
+  res.end();
 });
 
 async function getGraph(graphId: GraphId): Promise<Graph<>> {

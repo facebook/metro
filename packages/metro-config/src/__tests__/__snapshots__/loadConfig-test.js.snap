@@ -10,6 +10,7 @@ Object {
   "reporter": null,
   "resetCache": false,
   "resolver": Object {
+    "allowPnp": true,
     "assetExts": Array [
       "bmp",
       "gif",
@@ -35,6 +36,7 @@ Object {
       "pdf",
       "otf",
       "ttf",
+      "zip",
     ],
     "blacklistRE": /\\(node_modules\\[\\\\/\\\\\\\\\\]react\\[\\\\/\\\\\\\\\\]dist\\[\\\\/\\\\\\\\\\]\\.\\*\\|website\\\\/node_modules\\\\/\\.\\*\\|heapCapture\\\\/bundle\\\\\\.js\\|\\.\\*\\\\/__tests__\\\\/\\.\\*\\)\\$/,
     "extraNodeModules": Object {},
@@ -61,6 +63,7 @@ Object {
       "tsx",
     ],
     "useWatchman": true,
+    "virtualMapper": [Function],
   },
   "serializer": Object {
     "createModuleIdFactory": [Function],
@@ -84,7 +87,7 @@ Object {
     "assetPlugins": Array [],
     "assetRegistryPath": "missing-asset-registry-path",
     "asyncRequireModulePath": "metro/src/lib/bundle-modules/asyncRequire",
-    "babelTransformerPath": "metro/src/defaultTransformer",
+    "babelTransformerPath": "metro-babel-transformer",
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,
@@ -117,6 +120,9 @@ Object {
   },
   "transformerPath": "",
   "useCustomPolyfill": false,
+  "visualizer": Object {
+    "presets": Array [],
+  },
   "watchFolders": Array [
     "/",
   ],
@@ -133,6 +139,7 @@ Object {
   "reporter": null,
   "resetCache": false,
   "resolver": Object {
+    "allowPnp": true,
     "assetExts": Array [
       "bmp",
       "gif",
@@ -158,6 +165,7 @@ Object {
       "pdf",
       "otf",
       "ttf",
+      "zip",
     ],
     "blacklistRE": /\\(node_modules\\[\\\\/\\\\\\\\\\]react\\[\\\\/\\\\\\\\\\]dist\\[\\\\/\\\\\\\\\\]\\.\\*\\|website\\\\/node_modules\\\\/\\.\\*\\|heapCapture\\\\/bundle\\\\\\.js\\|\\.\\*\\\\/__tests__\\\\/\\.\\*\\)\\$/,
     "extraNodeModules": Object {},
@@ -184,6 +192,7 @@ Object {
       "tsx",
     ],
     "useWatchman": true,
+    "virtualMapper": [Function],
   },
   "serializer": Object {
     "createModuleIdFactory": [Function],
@@ -207,7 +216,7 @@ Object {
     "assetPlugins": Array [],
     "assetRegistryPath": "missing-asset-registry-path",
     "asyncRequireModulePath": "metro/src/lib/bundle-modules/asyncRequire",
-    "babelTransformerPath": "metro/src/defaultTransformer",
+    "babelTransformerPath": "metro-babel-transformer",
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,
@@ -240,6 +249,9 @@ Object {
   },
   "transformerPath": "",
   "useCustomPolyfill": false,
+  "visualizer": Object {
+    "presets": Array [],
+  },
   "watchFolders": Array [
     "/",
   ],

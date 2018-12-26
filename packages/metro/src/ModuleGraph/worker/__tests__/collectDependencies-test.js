@@ -292,9 +292,25 @@ it('ignores require functions defined defined by lower scopes', () => {
   );
 });
 
+it('collects imports', () => {
+  const ast = astFromCode(`
+    import b from 'b/lib/a';
+    import * as d from 'do';
+    import type {s} from 'setup/something';
+  `);
+
+  const {dependencies} = collectDependencies(ast, opts);
+
+  expect(dependencies).toEqual([
+    {name: 'b/lib/a', data: {isAsync: false}},
+    {name: 'do', data: {isAsync: false}},
+    {name: 'setup/something', data: {isAsync: false}},
+  ]);
+});
+
 function astFromCode(code) {
   return babylon.parse(code, {
-    plugins: ['dynamicImport'],
+    plugins: ['dynamicImport', 'flow'],
     sourceType: 'module',
   });
 }

@@ -10,32 +10,21 @@
 
 'use strict';
 
-const getSourceMapInfo = require('./helpers/getSourceMapInfo');
+const sourceMapGenerator = require('./sourceMapGenerator');
 
-const {isJsModule} = require('./helpers/js');
-const {fromRawMappings} = require('metro-source-map');
-
-import type {Graph, Module} from '../types.flow';
+import type {Module} from '../types.flow';
 import type {BabelSourceMap} from '@babel/core';
 
-function fullSourceMapObject(
-  pre: $ReadOnlyArray<Module<>>,
-  graph: Graph<>,
+function sourceMapObject(
+  modules: $ReadOnlyArray<Module<>>,
   options: {|
     +excludeSource: boolean,
     +processModuleFilter: (module: Module<>) => boolean,
   |},
 ): BabelSourceMap {
-  const modules = [...pre, ...graph.dependencies.values()]
-    .filter(isJsModule)
-    .filter(options.processModuleFilter)
-    .map(module =>
-      getSourceMapInfo(module, {excludeSource: options.excludeSource}),
-    );
-
-  return fromRawMappings(modules).toMap(undefined, {
+  return sourceMapGenerator(modules, options).toMap(undefined, {
     excludeSource: options.excludeSource,
   });
 }
 
-module.exports = fullSourceMapObject;
+module.exports = sourceMapObject;

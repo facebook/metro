@@ -20,7 +20,11 @@ import type {
   TransformResultDependency,
 } from './types.flow';
 
-type Result<T> = {added: Map<string, Module<T>>, deleted: Set<string>};
+type Result<T> = {
+  added: Map<string, Module<T>>,
+  modified: Map<string, Module<T>>,
+  deleted: Set<string>,
+};
 
 /**
  * Internal data structure that the traversal logic uses to know which of the
@@ -100,6 +104,7 @@ async function traverseDependencies<T>(
   }
 
   const added = new Map();
+  const modified = new Map();
   const deleted = new Set();
 
   for (const path of delta.deleted) {
@@ -120,11 +125,17 @@ async function traverseDependencies<T>(
   }
 
   for (const path of delta.modified) {
-    added.set(path, nullthrows(graph.dependencies.get(path)));
+    // Similarly to the above, a file can be marked as both added and modified
+    // when its path and dependencies have changed. In this case, we only
+    // consider the addition.
+    if (!delta.added.has(path)) {
+      modified.set(path, nullthrows(graph.dependencies.get(path)));
+    }
   }
 
   return {
     added,
+    modified,
     deleted,
   };
 }
@@ -152,6 +163,7 @@ async function initialTraverseDependencies<T>(
 
   return {
     added: graph.dependencies,
+    modified: new Map(),
     deleted: new Set(),
   };
 }

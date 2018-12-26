@@ -99,6 +99,50 @@ it('exports members of another module directly from an import (as default)', () 
   compare([importExportPlugin], code, expected, opts);
 });
 
+it('exports named members', () => {
+  const code = `
+    export const foo = 'bar';
+  `;
+
+  const expected = `
+    Object.defineProperty(exports, '__esModule', {value: true});
+    const foo = 'bar';
+    exports.foo = foo;
+  `;
+
+  compare([importExportPlugin], code, expected, opts);
+});
+
+it('exports destructured named object members', () => {
+  const code = `
+    export const {foo,bar} = {foo: 'bar',bar: 'baz'};
+  `;
+
+  const expected = `
+    Object.defineProperty(exports, '__esModule', {value: true});
+    const {foo,bar} = {foo: 'bar',bar: 'baz'};
+    exports.foo = foo;
+    exports.bar = bar;
+  `;
+
+  compare([importExportPlugin], code, expected, opts);
+});
+
+it('exports destructured named array members', () => {
+  const code = `
+    export const [foo,bar] = ['bar','baz'];
+  `;
+
+  const expected = `
+    Object.defineProperty(exports, '__esModule', {value: true});
+    const [foo,bar] = ['bar','baz'];
+    exports.foo = foo;
+    exports.bar = bar;
+  `;
+
+  compare([importExportPlugin], code, expected, opts);
+});
+
 it('exports members of another module directly from an import (as all)', () => {
   const code = `
     export * from 'bar';

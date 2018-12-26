@@ -135,9 +135,32 @@ function importExportPlugin({types: t}: $FlowFixMe) {
         if (declaration.node) {
           if (t.isVariableDeclaration(declaration)) {
             declaration.get('declarations').forEach(d => {
-              const name = d.get('id').node.name;
-
-              state.exportNamed.push({local: name, remote: name});
+              switch (d.get('id').node.type) {
+                case 'ObjectPattern':
+                  {
+                    const properties = d.get('id').get('properties');
+                    properties.forEach(p => {
+                      const name = p.get('key').node.name;
+                      state.exportNamed.push({local: name, remote: name});
+                    });
+                  }
+                  break;
+                case 'ArrayPattern':
+                  {
+                    const elements = d.get('id').get('elements');
+                    elements.forEach(e => {
+                      const name = e.node.name;
+                      state.exportNamed.push({local: name, remote: name});
+                    });
+                  }
+                  break;
+                default:
+                  {
+                    const name = d.get('id').node.name;
+                    state.exportNamed.push({local: name, remote: name});
+                  }
+                  break;
+              }
             });
           } else {
             const id =

@@ -15,14 +15,14 @@ import type {Bundle, DeltaBundle} from '../types.flow';
 /**
  * Patches a bundle with a delta.
  */
-function patchBundle(bundle: Bundle, delta: Bundle | DeltaBundle): Bundle {
-  if (delta.base) {
-    return delta;
-  }
-
+function patchBundle(bundle: Bundle, delta: DeltaBundle): Bundle {
   const map = new Map(bundle.modules);
 
-  for (const [key, value] of delta.modules) {
+  for (const [key, value] of delta.modified) {
+    map.set(key, value);
+  }
+
+  for (const [key, value] of delta.added) {
     map.set(key, value);
   }
 
@@ -33,8 +33,6 @@ function patchBundle(bundle: Bundle, delta: Bundle | DeltaBundle): Bundle {
   const modules = Array.from(map.entries());
 
   return {
-    base: true,
-    revisionId: delta.revisionId,
     pre: bundle.pre,
     post: bundle.post,
     modules,

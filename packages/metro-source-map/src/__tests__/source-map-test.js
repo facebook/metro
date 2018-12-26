@@ -106,6 +106,48 @@ describe('build map from raw mappings', () => {
       }),
     ).toMatchSnapshot();
   });
+
+  it('offsets the resulting source map by the provided offset argument', () => {
+    const input = [
+      {
+        code: lines(11),
+        map: [
+          [1, 2],
+          [3, 4, 5, 6, 'apples'],
+          [7, 8, 9, 10],
+          [11, 12, 13, 14, 'pears'],
+        ],
+        source: 'code1',
+        path: 'path1',
+      },
+      {
+        code: lines(3),
+        map: [[1, 2], [3, 4, 15, 16, 'bananas']],
+        source: 'code2',
+        path: 'path2',
+      },
+      {
+        code: lines(23),
+        map: [
+          [11, 12],
+          [13, 14, 15, 16, 'bananas'],
+          [17, 18, 19, 110],
+          [21, 112, 113, 114, 'pears'],
+        ],
+        source: 'code3',
+        path: 'path3',
+      },
+    ];
+
+    expect(fromRawMappings(input, 8).toMap()).toEqual({
+      mappings:
+        ';;;;;;;;E;;IAIMA;;;;QAII;;;;YAIIC;E;;ICEEC;;;;;;;;;;;Y;;cCAAA;;;;kBAI8F;;;;gHA8FID',
+      names: ['apples', 'pears', 'bananas'],
+      sources: ['path1', 'path2', 'path3'],
+      sourcesContent: ['code1', 'code2', 'code3'],
+      version: 3,
+    });
+  });
 });
 
 const lines = n => Array(n).join('\n');

@@ -78,6 +78,7 @@ export type Options<T = MixedOutput> = {|
 |};
 
 export type DeltaResult<T = MixedOutput> = {|
+  +added: Map<string, Module<T>>,
   +modified: Map<string, Module<T>>,
   +deleted: Set<string>,
   +reset: boolean,

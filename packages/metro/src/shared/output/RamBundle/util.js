@@ -9,7 +9,7 @@
  */
 'use strict';
 
-const invariant = require('fbjs/lib/invariant');
+const invariant = require('invariant');
 
 import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
 import type {BabelSourceMap} from '@babel/core';

@@ -11,7 +11,7 @@
 'use strict';
 
 const buildSourcemapWithMetadata = require('../../shared/output/RamBundle/buildSourcemapWithMetadata.js');
-const invariant = require('fbjs/lib/invariant');
+const invariant = require('invariant');
 
 const {createRamBundleGroups} = require('../../Bundler/util');
 const {

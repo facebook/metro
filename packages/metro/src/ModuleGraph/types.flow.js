@@ -96,6 +96,7 @@ export type OutputFn<
   sourceMapPath?: ?string,
   bundleOrderFile?: ?string,
   enableIDInlining: boolean,
+  segmentID: number,
 |}) => OutputResult<M>;
 
 type OutputResult<M: FBSourceMap | MetroSourceMap> = {|

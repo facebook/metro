@@ -104,6 +104,7 @@ function createRamBundle(preloadedModules = new Set(), ramGroups) {
     modules,
     requireCalls: [requireCall],
     enableIDInlining: true,
+    segmentID: 0,
   });
 
   return {code: result.code, map: result.map, extraFiles: result.extraFiles};

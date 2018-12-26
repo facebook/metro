@@ -13,11 +13,13 @@
 
 // eslint-disable no-console
 
-const fs = require('fs');
-const {execSync} = require('child_process');
-const path = require('path');
 const chalk = require('chalk');
+const chokidar = require('chokidar');
+const fs = require('fs');
 const getPackages = require('./_getPackages');
+const path = require('path');
+
+const {execSync} = require('child_process');
 
 const BUILD_CMD = `node ${path.resolve(__dirname, './build.js')}`;
 
@@ -35,26 +37,28 @@ getPackages().forEach(p => {
   const srcDir = path.resolve(p, 'src');
   try {
     fs.accessSync(srcDir, fs.F_OK);
-    fs.watch(path.resolve(p, 'src'), {recursive: true}, (event, filename) => {
-      const filePath = path.resolve(srcDir, filename);
+    chokidar
+      .watch(path.resolve(p, 'src'), {ignoreInitial: true})
+      .on('all', (event, filename) => {
+        const filePath = path.resolve(srcDir, filename);
 
-      if ((event === 'change' || event === 'rename') && exists(filePath)) {
-        // eslint-disable-next-line no-console
-        console.log(chalk.green('->'), `${event}: ${filename}`);
-        rebuild(filePath);
-      } else {
-        const buildFile = path.resolve(srcDir, '..', 'build', filename);
-        try {
-          fs.unlinkSync(buildFile);
-          process.stdout.write(
-            chalk.red('  \u2022 ') +
-              path.relative(path.resolve(srcDir, '..', '..'), buildFile) +
-              ' (deleted)' +
-              '\n',
-          );
-        } catch (e) {}
-      }
-    });
+        if ((event === 'add' || event === 'change') && exists(filePath)) {
+          // eslint-disable-next-line no-console
+          console.log(chalk.green('->'), `${event}: ${filename}`);
+          rebuild(filePath);
+        } else if (event === 'unlink') {
+          const buildFile = path.resolve(srcDir, '..', 'build', filename);
+          try {
+            fs.unlinkSync(buildFile);
+            process.stdout.write(
+              chalk.red('  \u2022 ') +
+                path.relative(path.resolve(srcDir, '..', '..'), buildFile) +
+                ' (deleted)' +
+                '\n',
+            );
+          } catch (e) {}
+        }
+      });
   } catch (e) {
     // doesn't exist
   }

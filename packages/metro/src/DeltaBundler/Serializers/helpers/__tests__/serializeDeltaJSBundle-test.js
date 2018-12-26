@@ -28,9 +28,13 @@ const baseBundle = {
 const deltaBundle = {
   base: false,
   revisionId: 'arbitrary ID 2',
-  modules: [
+  added: [
     [11, 'arbitrary module source'],
     [111111, 'arbitrary module source 2'],
+  ],
+  modified: [
+    [111, 'arbitrary module source 3'],
+    [11111, 'arbitrary module source 4'],
   ],
   deleted: [1111, 11111111],
 };
@@ -154,10 +158,11 @@ describe('binary stream serialization', () => {
     });
 
     const modulesOffset = BODY_OFFSET + expectedRevisionId.length;
-    it('has module and deleted data', () => {
+    it('has added, modified and deleted data', () => {
       expect(buffer.slice(modulesOffset)).toEqual(
         Buffer.concat(
-          deltaBundle.modules
+          deltaBundle.added
+            .concat(deltaBundle.modified)
             .concat(deltaBundle.deleted.map(id => [id, null]))
             .map(binModule),
         ),

@@ -22,6 +22,10 @@ import type {Ast} from '@babel/core';
 opaque type Identifier = any;
 opaque type Path = any;
 
+type DepOptions = {|
+  +prefetchOnly: boolean,
+|};
+
 type InternalDependency<D> = {|
   +data: D,
   +name: string,
@@ -141,6 +145,14 @@ function collectDependencies(
       }
     },
 
+    ImportDeclaration(path: Path, state: State) {
+      const dep = getDependency(state, path.node.source.value, {
+        prefetchOnly: false,
+      });
+
+      dep.data.isAsync = false;
+    },
+
     Program(path: Path, state: State) {
       state.asyncRequireModulePathStringLiteral = types.stringLiteral(
         options.asyncRequireModulePath,
@@ -246,8 +258,6 @@ function processRequireCall(path: Path, state: State): Path {
   return path;
 }
 
-type DepOptions = $ReadOnly<{prefetchOnly: boolean}>;
-
 function getDependency(
   state: State,
   name: string,
@@ -259,6 +269,7 @@ function getDependency(
   if (!data) {
     index = state.dependency++;
     data = {isAsync: true};
+
     if (options.prefetchOnly) {
       data.isPrefetchOnly = true;
     }

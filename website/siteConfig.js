@@ -11,7 +11,7 @@
 
 const siteConfig = {
   title: 'Metro',
-  tagline: '\uD832\uDE87 The JavaScript bundler for React Native',
+  tagline: '\ud83d\ude87 The JavaScript bundler for React Native',
   url: 'https://facebook.github.io',
   baseUrl: '/metro/',
   projectName: 'metro',

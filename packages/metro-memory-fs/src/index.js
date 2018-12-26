@@ -104,6 +104,8 @@ const ASYNC_FUNC_NAMES = [
   'close',
   'copyFile',
   'fstat',
+  'fsync',
+  'fdatasync',
   'lstat',
   'open',
   'read',
@@ -298,6 +300,14 @@ class MemoryFs {
     this.writeFileSync(dest, this.readFileSync(src), options);
   };
 
+  fsyncSync = (fd: number): void => {
+    this._getDesc(fd);
+  };
+
+  fdatasyncSync = (fd: number): void => {
+    this._getDesc(fd);
+  };
+
   openSync = (
     filePath: FilePath,
     flags: string | number,
@@ -468,7 +478,7 @@ class MemoryFs {
   };
 
   writeFileSync = (
-    filePath: FilePath,
+    filePathOrFd: FilePath | number,
     data: Buffer | string,
     options?:
       | {
@@ -490,11 +500,16 @@ class MemoryFs {
     if (typeof data === 'string') {
       data = (Buffer: $FlowFixMe).from(data, encoding);
     }
-    const fd = this._open(pathStr(filePath), flag || 'w', mode);
+    const fd: number =
+      typeof filePathOrFd === 'number'
+        ? filePathOrFd
+        : this._open(pathStr(filePathOrFd), flag || 'w', mode);
     try {
       this._write(fd, data, 0, data.length);
     } finally {
-      this.closeSync(fd);
+      if (typeof filePathOrFd !== 'number') {
+        this.closeSync(fd);
+      }
     }
   };
 

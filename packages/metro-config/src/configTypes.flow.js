@@ -15,12 +15,12 @@ import type {IncomingMessage, ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
 import type {CustomResolver} from 'metro-resolver';
 import type {MetroSourceMap} from 'metro-source-map';
-import type {Options} from 'metro/src/DeltaBundler/Serializers/plainJSBundle';
 import type {
   DeltaResult,
   Graph,
   Module,
 } from 'metro/src/DeltaBundler/types.flow.js';
+import type {SerializerOptions} from 'metro/src/DeltaBundler/types.flow';
 import type {TransformResult} from 'metro/src/DeltaBundler';
 import type {JsTransformerConfig} from 'metro/src/JSTransformer/worker';
 import type {TransformVariants} from 'metro/src/ModuleGraph/types.flow.js';
@@ -67,6 +67,7 @@ export type Middleware = (
 ) => mixed;
 
 export type OldConfigT = {
+  allowPnp: boolean,
   assetRegistryPath: string,
   cacheStores: Array<CacheStore<TransformResult<>>>,
   cacheVersion: string,
@@ -99,9 +100,11 @@ export type OldConfigT = {
   processModuleFilter: (modules: Module<>) => boolean,
   resolveRequest: ?CustomResolver,
   transformVariants: () => TransformVariants,
+  virtualMapper: (file: string) => Array<string>,
 };
 
 type ResolverConfigT = {|
+  allowPnp: boolean,
   assetExts: $ReadOnlyArray<string>,
   blacklistRE: RegExp,
   extraNodeModules: {[name: string]: string},
@@ -112,6 +115,7 @@ type ResolverConfigT = {|
   resolveRequest: ?CustomResolver,
   sourceExts: $ReadOnlyArray<string>,
   useWatchman: boolean,
+  virtualMapper: (file: string) => Array<string>,
 |};
 
 type SerializerConfigT = {|
@@ -120,7 +124,7 @@ type SerializerConfigT = {|
     entryPoint: string,
     preModules: $ReadOnlyArray<Module<>>,
     graph: Graph<>,
-    options: Options,
+    options: SerializerOptions,
   ) => string,
   experimentalSerializerHook: (graph: Graph<>, delta: DeltaResult<>) => mixed,
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
@@ -138,6 +142,16 @@ type TransformerConfigT = {|
   transformVariants: TransformVariants,
   workerPath: string,
   publicPath: string,
+|};
+
+export type VisualizerConfigT = {|
+  presets: $ReadOnlyArray<{|
+    entryPath: string,
+    name: string,
+    description: string,
+    featured?: boolean,
+    platforms?: $ReadOnlyArray<string>,
+  |}>,
 |};
 
 type MetalConfigT = {|
@@ -167,6 +181,7 @@ export type InputConfigT = $Shape<{|
     server: $Shape<ServerConfigT>,
     serializer: $Shape<SerializerConfigT>,
     transformer: $Shape<TransformerConfigT>,
+    visualizer: $Shape<VisualizerConfigT>,
   |}>,
 |}>;
 
@@ -177,6 +192,7 @@ export type IntermediateConfigT = {|
     server: ServerConfigT,
     serializer: SerializerConfigT,
     transformer: TransformerConfigT,
+    visualizer: VisualizerConfigT,
   |},
 |};
 
@@ -187,5 +203,6 @@ export type ConfigT = $ReadOnly<{|
     server: $ReadOnly<ServerConfigT>,
     serializer: $ReadOnly<SerializerConfigT>,
     transformer: $ReadOnly<TransformerConfigT>,
+    visualizer: $ReadOnly<VisualizerConfigT>,
   |}>,
 |}>;

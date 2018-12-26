@@ -12,13 +12,24 @@
 
 'use strict';
 
-const createDeltaClient = require('./DeltaClient/createDeltaClient');
+const DeltaClient = require('./DeltaClient/dev');
 
-const deltaClient = createDeltaClient();
+const deltaClient = DeltaClient.create();
 
 self.addEventListener('fetch', event => {
-  const reqUrl = new URL(event.request.url);
-  if (reqUrl.pathname.match(/\.bundle$/)) {
-    event.respondWith(deltaClient(event));
+  const bundleUrl = new URL(event.request.url);
+  if (/\/(.+?.bundle)$/.test(bundleUrl.pathname)) {
+    event.respondWith(
+      deltaClient.getBundle(event.request.url, event.clientId).catch(error =>
+        fetch(event.request).then(res => {
+          deltaClient.registerBundle(
+            event.request.url,
+            res.clone(),
+            event.clientId,
+          );
+          return res;
+        }),
+      ),
+    );
   }
 });

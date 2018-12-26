@@ -12,7 +12,7 @@
 
 const Resolver = require('metro-resolver');
 
-const invariant = require('fbjs/lib/invariant');
+const invariant = require('invariant');
 const path = require('path');
 const util = require('util');
 
@@ -53,6 +53,7 @@ export type ModuleishCache<TModule, TPackage> = {
 };
 
 type Options<TModule, TPackage> = {|
+  +allowPnp: boolean,
   +dirExists: DirExistsFn,
   +doesFileExist: DoesFileExist,
   +extraNodeModules: ?Object,

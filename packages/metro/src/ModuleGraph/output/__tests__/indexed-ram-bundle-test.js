@@ -211,6 +211,7 @@ function createRamBundle(preloadedModules = new Set(), ramGroups) {
     modules,
     requireCalls: [requireCall],
     enableIDInlining: true,
+    segmentID: 0,
   });
 
   if (typeof result.code === 'string') {
@@ -307,7 +308,7 @@ function parseOffsetTable(buffer) {
   };
 }
 
-function countLines(module) {
+function countLines(module): number {
   return module.file.code.split('\n').length;
 }
 

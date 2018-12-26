@@ -16,12 +16,15 @@ const parseOptionsFromUrl = require('../parseOptionsFromUrl');
 jest.mock('../parseCustomTransformOptions', () => () => ({}));
 
 describe('parseOptionsFromUrl', () => {
-  it.each([['map'], ['delta'], ['bundle']])('detects %s requests', type => {
-    expect(
-      parseOptionsFromUrl(`http://localhost/my/bundle.${type}`, new Set([]))
-        .options,
-    ).toMatchObject({bundleType: type});
-  });
+  it.each([['map'], ['delta'], ['bundle'], ['meta']])(
+    'detects %s requests',
+    type => {
+      expect(
+        parseOptionsFromUrl(`http://localhost/my/bundle.${type}`, new Set([]))
+          .options,
+      ).toMatchObject({bundleType: type});
+    },
+  );
 
   it('removes extraneous options from the pathname', () => {
     expect(
@@ -103,6 +106,12 @@ describe('parseOptionsFromUrl', () => {
       parseOptionsFromUrl('http://localhost/my/bundle.bundle', new Set([]))
         .options,
     ).toMatchObject({hot: true});
+  });
+
+  it('retrieves stuff from HMR urls', () => {
+    expect(
+      parseOptionsFromUrl('my/bundle.bundle', new Set([])).options,
+    ).toMatchObject({entryFile: './my/bundle'});
   });
 
   describe.each([
