@@ -233,11 +233,6 @@
   resolved "https://registry.yarnpkg.com/@babel/parser/-/parser-7.1.3.tgz#2c92469bac2b7fbff810b67fca07bd138b48af77"
   integrity sha512-gqmspPZOMW3MIRb9HlrnbZHXI1/KHTOroBwN1NcLL6pWxzqzEKGvRTq0W/PxS45OtQGbaFikSQpkS5zbnsQm2w==
 
-"@babel/plugin-check-constants@^7.0.0-beta.38":
-  version "7.0.0-beta.38"
-  resolved "https://registry.yarnpkg.com/@babel/plugin-check-constants/-/plugin-check-constants-7.0.0-beta.38.tgz#bbda6306d45a4f097ccb416c0b52d6503f6502cf"
-  integrity sha512-MjdGn/2sMLu0fnNFbkILut0OsegzRTeCOJ/uGHH88TwTXPzxONx2cTVJ36i3cTQXHMiIOUT3hX6HqzWM99Q6vA==
-
 "@babel/plugin-external-helpers@^7.0.0":
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/@babel/plugin-external-helpers/-/plugin-external-helpers-7.0.0.tgz#61ee7ba5dba27d7cad72a13d46bec23c060b762e"
@@ -1394,12 +1389,11 @@ babel-plugin-syntax-trailing-function-commas@^7.0.0-beta.0:
   resolved "https://registry.yarnpkg.com/babel-plugin-syntax-trailing-function-commas/-/babel-plugin-syntax-trailing-function-commas-7.0.0-beta.0.tgz#aa213c1435e2bffeb6fca842287ef534ad05d5cf"
   integrity sha512-Xj9XuRuz3nTSbaTXWv3itLOcxyF4oPD8douBBmj7U9BBC6nEBYfyOJYQMf/8PJAFotC62UY5dFfIGEPr7WswzQ==
 
-babel-preset-fbjs@^3.0.1:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/babel-preset-fbjs/-/babel-preset-fbjs-3.0.1.tgz#0be99c39367d6fb5bbcf1f6c33be0321b5234c1c"
-  integrity sha512-Fc0t7v8T1tBwv5AVyDDZEnS3T7OQ97qV0XawVZg1ouarlM9xCHL994C5tU8TBIKPk3yZXG+SaEM1YQcx/yLlcg==
+babel-preset-fbjs@^3.1.1:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/babel-preset-fbjs/-/babel-preset-fbjs-3.1.1.tgz#1412c70dec67d67c10326a3b56045def72985025"
+  integrity sha512-zg3n3PN6PXOObLCEgJQxLHZXui8S6RJe4uToP7n2grmUSEfgMMolv3x41K4jWzhNkgYNxTwflVlVmd8fketjOg==
   dependencies:
-    "@babel/plugin-check-constants" "^7.0.0-beta.38"
     "@babel/plugin-proposal-class-properties" "^7.0.0"
     "@babel/plugin-proposal-object-rest-spread" "^7.0.0"
     "@babel/plugin-syntax-class-properties" "^7.0.0"

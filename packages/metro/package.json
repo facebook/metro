@@ -22,7 +22,7 @@
     "@babel/types": "^7.0.0",
     "absolute-path": "^0.0.0",
     "async": "^2.4.0",
-    "babel-preset-fbjs": "^3.0.1",
+    "babel-preset-fbjs": "^3.1.1",
     "buffer-crc32": "^0.2.13",
     "chalk": "^2.4.1",
     "concat-stream": "^1.6.0",
