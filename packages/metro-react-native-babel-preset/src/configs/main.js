@@ -18,11 +18,9 @@ function isTSXSource(fileName) {
 }
 
 const defaultPlugins = [
+  [require('@babel/plugin-syntax-flow')],
   [require('@babel/plugin-proposal-optional-catch-binding')],
   [require('@babel/plugin-transform-block-scoping')],
-  // the flow strip types plugin must go BEFORE class properties!
-  // there'll be a test case that fails if you don't.
-  [require('@babel/plugin-transform-flow-strip-types')],
   [
     require('@babel/plugin-proposal-class-properties'),
     // use `this.foo = bar` instead of `this.defineProperty('foo', ...)`
@@ -152,10 +150,20 @@ const getPreset = (src, options) => {
     extraPlugins.push(babelRuntime);
   }
 
+  let flowPlugins = {};
+  if (!options || !options.disableFlowStripTypesTransform) {
+    flowPlugins = {
+      plugins: [require('@babel/plugin-transform-flow-strip-types')],
+    };
+  }
+
   return {
     comments: false,
     compact: true,
     overrides: [
+      // the flow strip types plugin must go BEFORE class properties!
+      // there'll be a test case that fails if you don't.
+      flowPlugins,
       {
         plugins: defaultPlugins,
       },

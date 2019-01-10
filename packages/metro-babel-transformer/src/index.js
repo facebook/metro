@@ -19,6 +19,7 @@ export type CustomTransformOptions = {[string]: mixed, __proto__: null};
 type BabelTransformerOptions = $ReadOnly<{
   customTransformOptions?: CustomTransformOptions,
   dev: boolean,
+  disableFlowStripTypesTransform?: boolean,
   enableBabelRCLookup?: boolean,
   enableBabelRuntime: boolean,
   experimentalImportSupport?: boolean,

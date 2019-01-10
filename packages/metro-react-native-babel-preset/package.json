@@ -26,6 +26,7 @@
     "@babel/plugin-proposal-optional-chaining": "^7.0.0",
     "@babel/plugin-syntax-dynamic-import": "^7.0.0",
     "@babel/plugin-syntax-export-default-from": "^7.0.0",
+    "@babel/plugin-syntax-flow": "^7.2.0",
     "@babel/plugin-transform-arrow-functions": "^7.0.0",
     "@babel/plugin-transform-block-scoping": "^7.0.0",
     "@babel/plugin-transform-classes": "^7.0.0",
