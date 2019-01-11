@@ -38,12 +38,10 @@ const dev = {name: '__DEV__'};
 function inlinePlugin(context: Context, options: Options) {
   const t = context.types;
 
-  const {
-    isPlatformNode,
-    isPlatformSelectNode,
-    isPlatformOSSelect,
-    getReplacementForPlatformOSSelect,
-  } = createInlinePlatformChecks(t, options.requireName || 'require');
+  const {isPlatformNode, isPlatformSelectNode} = createInlinePlatformChecks(
+    t,
+    options.requireName || 'require',
+  );
 
   const isGlobal = binding => !binding;
 
@@ -131,10 +129,6 @@ function inlinePlugin(context: Context, options: Options) {
 
             path.replaceWith(findProperty(arg, opts.platform, fallback));
           }
-        } else if (isPlatformOSSelect(node, scope, !!opts.isWrapped)) {
-          path.replaceWith(
-            getReplacementForPlatformOSSelect(node, opts.platform),
-          );
         }
       },
     },

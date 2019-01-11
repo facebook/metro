@@ -24,8 +24,7 @@ function createInlinePlatformChecks(
     isWrappedModule: boolean,
   ) =>
     isPlatformOS(node, scope, isWrappedModule) ||
-    isReactPlatformOS(node, scope, isWrappedModule) ||
-    isPlatformOSOS(node, scope, isWrappedModule);
+    isReactPlatformOS(node, scope, isWrappedModule);
 
   const isPlatformSelectNode = (
     node: Object,
@@ -50,15 +49,6 @@ function createInlinePlatformChecks(
       isWrappedModule,
     );
 
-  const isPlatformOSOS = (node, scope, isWrappedModule) =>
-    t.isIdentifier(node.property, {name: 'OS'}) &&
-    isImportOrGlobal(
-      node.object,
-      scope,
-      [{name: 'PlatformOS'}],
-      isWrappedModule,
-    );
-
   const isPlatformSelect = (node, scope, isWrappedModule) =>
     t.isMemberExpression(node.callee) &&
     t.isIdentifier(node.callee.property, {name: 'select'}) &&
@@ -80,37 +70,6 @@ function createInlinePlatformChecks(
       [{name: 'React'}, {name: 'ReactNative'}],
       isWrappedModule,
     );
-
-  const isPlatformOSSelect = (
-    node: Object,
-    scope: Object,
-    isWrappedModule: boolean,
-  ) =>
-    t.isMemberExpression(node.callee) &&
-    t.isIdentifier(node.callee.property, {name: 'select'}) &&
-    isImportOrGlobal(
-      node.callee.object,
-      scope,
-      [{name: 'PlatformOS'}],
-      isWrappedModule,
-    );
-
-  const getReplacementForPlatformOSSelect = (
-    node: Object,
-    platform: string,
-  ) => {
-    const matchingProperty = node.arguments[0].properties.find(
-      p => p.key.name === platform,
-    );
-
-    if (!matchingProperty) {
-      throw new Error(
-        'No matching property was found for PlatformOS.select:\n' +
-          JSON.stringify(node),
-      );
-    }
-    return matchingProperty.value;
-  };
 
   const isGlobal = binding => !binding;
 
@@ -155,8 +114,6 @@ function createInlinePlatformChecks(
   return {
     isPlatformNode,
     isPlatformSelectNode,
-    isPlatformOSSelect,
-    getReplacementForPlatformOSSelect,
   };
 }
 
