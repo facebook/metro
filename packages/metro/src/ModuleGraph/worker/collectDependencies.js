@@ -50,6 +50,7 @@ type State = {|
   dynamicRequires: DynamicRequiresBehavior,
   dependencyMapIdentifier: ?Identifier,
   keepRequireNames: boolean,
+  disableRequiresTransform: boolean,
 |};
 
 export type Options = {|
@@ -57,6 +58,7 @@ export type Options = {|
   +dynamicRequires: DynamicRequiresBehavior,
   +inlineableCalls: $ReadOnlyArray<string>,
   +keepRequireNames: boolean,
+  +disableRequiresTransform?: boolean,
 |};
 
 export type CollectedDependencies = {|
@@ -119,6 +121,7 @@ function collectDependencies(
     dependencyMapIdentifier: null,
     dynamicRequires: options.dynamicRequires,
     keepRequireNames: options.keepRequireNames,
+    disableRequiresTransform: !!options.disableRequiresTransform,
   };
 
   const visitor = {
@@ -243,11 +246,13 @@ function processRequireCall(path: Path, state: State): Path {
   dep.data.isAsync = false;
   delete dep.data.isPrefetchOnly;
 
+  if (state.disableRequiresTransform) {
+    return path;
+  }
+
   const moduleIDExpression = types.memberExpression(
     state.dependencyMapIdentifier,
-    types.numericLiteral(
-      getDependency(state, name, {prefetchOnly: false}).index,
-    ),
+    types.numericLiteral(dep.index),
     true,
   );
 

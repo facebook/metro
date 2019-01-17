@@ -200,7 +200,8 @@ function readArgsAndExecCommand(
       );
     } else {
       stderr.write(
-        `This worker does not have a command named \`${commandName}\`.`,
+        `This worker does not have a command named \`${commandName}\`. ` +
+          `Available commands are: ${Object.keys(commands).join(', ')}`,
       );
       respond(invalidMessage(id));
     }
