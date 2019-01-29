@@ -1,0 +1,19 @@
+{
+  "name": "metro-inspector-proxy",
+  "version": "0.51.1",
+  "description": "metro-inspector-proxy",
+  "main": "src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:facebook/metro.git"
+  },
+  "scripts": {
+    "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",
+    "cleanup-release": "test ! -e build && mv src build && mv src.real src"
+  },
+  "keywords": [
+    "metro"
+  ],
+  "license": "MIT",
+  "dependencies": {}
+}
