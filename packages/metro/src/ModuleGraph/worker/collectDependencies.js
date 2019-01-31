@@ -299,6 +299,7 @@ function getModuleNameFromCallArgs(path: Path): ?string {
 
   return null;
 }
+collectDependencies.getModuleNameFromCallArgs = getModuleNameFromCallArgs;
 
 class InvalidRequireCallError extends Error {
   constructor({node}) {
