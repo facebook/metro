@@ -24,15 +24,16 @@ class Bundler {
   constructor(config: ConfigT) {
     this._depGraphPromise = DependencyGraph.load(config);
 
-    this._depGraphPromise.then(dependencyGraph => {
-      this._transformer = new Transformer(
-        config,
-        dependencyGraph.getSha1.bind(dependencyGraph),
-      );
-    }).catch(e => {
-      console.error("Failed to construct transformer");
-      console.error(e);
-    });
+    this._depGraphPromise
+      .then(dependencyGraph => {
+        this._transformer = new Transformer(
+          config,
+          dependencyGraph.getSha1.bind(dependencyGraph),
+        );
+      })
+      .catch(error => {
+        console.error('Failed to construct transformer: ', error);
+      });
   }
 
   async end() {
