@@ -10,15 +10,12 @@
 
 'use strict';
 
-const CommandFailedError = require('./CommandFailedError');
 const JSONStream = require('JSONStream');
 
 const duplexer = require('duplexer');
 const each = require('async/each');
 const fs = require('fs');
 const invariant = require('invariant');
-const path = require('path');
-const temp = require('temp');
 
 const {Console} = require('console');
 
@@ -232,11 +229,8 @@ async function execCommand(
     }
     await command(args.slice(), structuredArgs, commandSpecificConsole);
   } catch (e) {
-    if (!(e instanceof CommandFailedError)) {
-      commandSpecificConsole.error(e);
-    }
+    commandSpecificConsole.error(e.stack);
     makeResponse = commandError;
-    displayDebugMessage(commandSpecificConsole, argsString);
   }
 
   respond(makeResponse(messageId));
@@ -244,26 +238,6 @@ async function execCommand(
 
 function shouldDebugCommand(argsString) {
   return DEBUG_RE && DEBUG_RE.test(argsString);
-}
-
-const ENV_VARS_FOR_REPRO = ['GRAPHQL_SCHEMAS_DIR'];
-
-function displayDebugMessage(commandSpecificConsole, argsString) {
-  const binPath = path.resolve(process.cwd(), 'js/metro-buck/cli.js');
-
-  const reproPath = temp.path({
-    prefix: 'packager-buck-worker-repro.',
-    suffix: '.args',
-  });
-  fs.writeFileSync(reproPath, argsString);
-  const nodePath = process.execPath;
-  const envVars = ENV_VARS_FOR_REPRO.map(
-    name => `${name}='${(process.env[name] || '').replace("'", "'\\''")}'`,
-  ).join(' ');
-  commandSpecificConsole.error(
-    '\nTo reproduce, run:\n' +
-      `  ${envVars} ${nodePath} --preserve-symlinks ${binPath} ${reproPath}\n`,
-  );
 }
 
 const error = (id, exitCode) => ({type: 'error', id, exit_code: exitCode});
