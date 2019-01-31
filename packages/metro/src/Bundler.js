@@ -29,6 +29,9 @@ class Bundler {
         config,
         dependencyGraph.getSha1.bind(dependencyGraph),
       );
+    }).catch(e => {
+      console.error("Failed to construct transformer");
+      console.error(e);
     });
   }
 
