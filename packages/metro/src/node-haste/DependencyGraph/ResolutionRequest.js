@@ -22,6 +22,7 @@ import type {ModuleResolver} from './ModuleResolution';
 
 export type Packageish = {
   path: string,
+  root: string,
   redirectRequire(
     toModuleName: string,
     mainFields: $ReadOnlyArray<string>,

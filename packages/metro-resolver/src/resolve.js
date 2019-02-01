@@ -14,7 +14,6 @@ const FailedToResolveNameError = require('./FailedToResolveNameError');
 const FailedToResolvePathError = require('./FailedToResolvePathError');
 const InvalidPackageError = require('./InvalidPackageError');
 
-const formatFileCandidates = require('./formatFileCandidates');
 const isAbsolutePath = require('absolute-path');
 const path = require('path');
 
@@ -26,13 +25,18 @@ import type {
   FileContext,
   FileOrDirContext,
   FileResolution,
-  HasteContext,
   ModulePathContext,
   ResolutionContext,
   Resolution,
   ResolveAsset,
   Result,
 } from './types';
+
+type ModuleParts = {
+  +package: string,
+  +scope: string,
+  +file: string,
+};
 
 function resolve(
   context: ResolutionContext,
@@ -55,20 +59,20 @@ function resolve(
   }
 
   const {originModulePath} = context;
-
+  const normalizedName = normalizePath(realModuleName);
   const isDirectImport =
-    isRelativeImport(realModuleName) || isAbsolutePath(realModuleName);
+    isRelativeImport(normalizedName) || isAbsolutePath(normalizedName);
 
   // We disable the direct file loading to let the custom resolvers deal with it
   if (!resolveRequest && isDirectImport) {
-    // derive absolute path /.../node_modules/originModuleDir/realModuleName
+    // derive absolute path /.../node_modules/originModuleDir/normalizedName
     const fromModuleParentIdx =
       originModulePath.lastIndexOf('node_modules' + path.sep) + 13;
     const originModuleDir = originModulePath.slice(
       0,
       originModulePath.indexOf(path.sep, fromModuleParentIdx),
     );
-    const absPath = path.join(originModuleDir, realModuleName);
+    const absPath = path.join(originModuleDir, normalizedName);
     return resolveModulePath(context, absPath, platform);
   }
 
@@ -76,72 +80,64 @@ function resolve(
   // to allow overriding imports. It could be part of the custom resolver, but
   // that's not the case right now.
   if (context.allowHaste && !isDirectImport) {
-    const normalizedName = normalizePath(realModuleName);
-    const result = resolveHasteName(context, normalizedName, platform);
-    if (result.type === 'resolved') {
-      return result.resolution;
+    const modulePath = context.resolveHasteModule(normalizedName);
+    if (modulePath != null) {
+      return {type: 'sourceFile', filePath: modulePath};
     }
   }
 
   if (resolveRequest) {
     try {
-      const resolution = resolveRequest(context, realModuleName, platform);
+      const resolution = resolveRequest(context, normalizedName, platform);
       if (resolution) {
         return resolution;
       }
     } catch (error) {}
     if (isDirectImport) {
-      throw new Error('Failed to resolve module: ' + realModuleName);
+      throw new Error('Failed to resolve module: ' + normalizedName);
     }
   }
 
+  const parsedName = parseModuleName(normalizedName);
   const modulePaths = [];
-  for (let modulePath of genModulePaths(context, realModuleName)) {
-    modulePath = context.redirectModulePath(modulePath);
-
+  for (let packagePath of genPackagePaths(context, parsedName)) {
+    packagePath = context.redirectPackage(packagePath);
+    const modulePath = context.redirectModulePath(
+      path.join(packagePath, parsedName.file),
+    );
     const result = resolveFileOrDir(context, modulePath, platform);
     if (result.type === 'resolved') {
       return result.resolution;
     }
-
     modulePaths.push(modulePath);
   }
   throw new FailedToResolveNameError(modulePaths);
 }
 
-/** Generate the potential module paths */
-function* genModulePaths(
+function parseModuleName(moduleName: string): ModuleParts {
+  const parts = moduleName.split(path.sep);
+  const scope = parts[0].startsWith('@') ? parts[0] : '';
+  return {
+    scope,
+    package: parts.slice(0, scope ? 2 : 1).join(path.sep),
+    file: parts.slice(scope ? 2 : 1).join(path.sep),
+  };
+}
+
+function* genPackagePaths(
   context: ResolutionContext,
-  toModuleName: string,
+  parsedName: ModuleParts,
 ): Iterable<string> {
-  const {extraNodeModules, follow, originModulePath} = context;
-
-  /**
-   * Extract the scope and package name from the module name.
-   */
-  let bits = path.normalize(toModuleName).split(path.sep);
-  let packageName, scopeName;
-  if (bits.length >= 2 && bits[0].startsWith('@')) {
-    packageName = bits.slice(0, 2).join('/');
-    scopeName = bits[0];
-    bits = bits.slice(2);
-  } else {
-    packageName = bits.shift();
-  }
-
   /**
    * Find the nearest "node_modules" directory that contains
    * the imported package.
    */
-  const {root} = path.parse(originModulePath);
-  let parent = originModulePath;
+  const {root} = path.parse(context.originModulePath);
+  let parent = context.originModulePath;
   do {
     parent = path.dirname(parent);
     if (path.basename(parent) !== 'node_modules') {
-      yield path.join(
-        follow(path.join(parent, 'node_modules', packageName)),
-        ...bits,
-      );
+      yield path.join(parent, 'node_modules', parsedName.package);
     }
   } while (parent !== root);
 
@@ -149,13 +145,13 @@ function* genModulePaths(
    * Check the user-provided `extraNodeModules` module map for a
    * direct mapping to a directory that contains the imported package.
    */
-  if (extraNodeModules) {
-    parent =
-      extraNodeModules[packageName] ||
-      (scopeName ? extraNodeModules[scopeName] : void 0);
-
-    if (parent) {
-      yield path.join(follow(path.join(parent, packageName)), ...bits);
+  if (context.extraNodeModules) {
+    const extras = context.extraNodeModules;
+    if ((parent = extras[parsedName.package])) {
+      yield path.join(parent, parsedName.package);
+    }
+    if (parsedName.scope && (parent = extras[parsedName.scope])) {
+      yield path.join(parent, parsedName.package);
     }
   }
 }
@@ -184,65 +180,6 @@ function resolveModulePath(
     return result.resolution;
   }
   throw new FailedToResolvePathError(result.candidates);
-}
-
-/**
- * Resolve a module as a Haste module or package. For example we might try to
- * resolve `Foo`, that is provided by file `/smth/Foo.js`. Or, in the case of
- * a Haste package, it could be `/smth/Foo/index.js`.
- */
-function resolveHasteName(
-  context: HasteContext,
-  moduleName: string,
-  platform: string | null,
-): Result<FileResolution, void> {
-  const modulePath = context.resolveHasteModule(moduleName);
-  if (modulePath != null) {
-    return resolvedAs({type: 'sourceFile', filePath: modulePath});
-  }
-  let packageName = moduleName;
-  let packageJsonPath = context.resolveHastePackage(packageName);
-  while (packageJsonPath == null && packageName && packageName !== '.') {
-    packageName = path.dirname(packageName);
-    packageJsonPath = context.resolveHastePackage(packageName);
-  }
-  if (packageJsonPath == null) {
-    return failedFor();
-  }
-  const packageDirPath = path.dirname(packageJsonPath);
-  const pathInModule = moduleName.substring(packageName.length + 1);
-  const potentialModulePath = path.join(packageDirPath, pathInModule);
-  const result = resolveFileOrDir(context, potentialModulePath, platform);
-  if (result.type === 'resolved') {
-    return result;
-  }
-  const {candidates} = result;
-  const opts = {moduleName, packageName, pathInModule, candidates};
-  throw new MissingFileInHastePackageError(opts);
-}
-
-class MissingFileInHastePackageError extends Error {
-  candidates: FileAndDirCandidates;
-  moduleName: string;
-  packageName: string;
-  pathInModule: string;
-
-  constructor(opts: {|
-    +candidates: FileAndDirCandidates,
-    +moduleName: string,
-    +packageName: string,
-    +pathInModule: string,
-  |}) {
-    super(
-      `While resolving module \`${opts.moduleName}\`, ` +
-        `the Haste package \`${opts.packageName}\` was found. However the ` +
-        `module \`${opts.pathInModule}\` could not be found within ` +
-        'the package. Indeed, none of these files exist:\n\n' +
-        `  * \`${formatFileCandidates(opts.candidates.file)}\`\n` +
-        `  * \`${formatFileCandidates(opts.candidates.dir)}\``,
-    );
-    Object.assign(this, opts);
-  }
 }
 
 /**
