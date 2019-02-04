@@ -697,6 +697,22 @@ describe('win32 support', () => {
   });
 });
 
+describe('promises', () => {
+  beforeEach(() => {
+    fs = new MemoryFs({cwd: () => '/current/working/dir'});
+  });
+
+  it('exists', () => {
+    expect(fs.promises).toBeDefined();
+  });
+
+  it('can write then read a file', async () => {
+    await fs.promises.writeFile('/foo.txt', 'test');
+
+    expect(await fs.promises.readFile('/foo.txt', 'utf8')).toEqual('test');
+  });
+});
+
 function expectFsError(code, handler) {
   try {
     handler();
