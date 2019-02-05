@@ -299,7 +299,16 @@ class JsTransformer {
       ));
     }
 
-    return {dependencies, output: [{data: {code, map}, type}]};
+    return {
+      dependencies: dependencies.map(dep => ({
+        name: dep.name,
+        data: {
+          isAsync: dep.asyncType != null,
+          isPrefetchOnly: dep.asyncType === 'prefetch' ? true : undefined,
+        },
+      })),
+      output: [{data: {code, map}, type}],
+    };
   }
 
   async _minifyCode(
