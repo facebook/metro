@@ -12,18 +12,17 @@
 import type {Ast} from '@babel/core';
 import type {BabelSourceMap} from '@babel/core';
 import type {FBSourceMap, MetroSourceMap} from 'metro-source-map';
+import type {TransformResultDependency} from 'metro/src/DeltaBundler';
 
 export type BuildResult = GraphResult;
 
 export type Callback<A = void, B = void> = (Error => void) &
   ((null | void, A, B) => void);
 
-import type {AsyncDependencyType} from './worker/collectDependencies';
-export type {AsyncDependencyType};
-
 export type Dependency = {|
   id: string,
-  asyncType?: AsyncDependencyType,
+  +isAsync: boolean,
+  +isPrefetchOnly: boolean,
   path: string,
 |};
 
@@ -120,9 +119,6 @@ export type TransformerResult = {|
   code: string,
   map: ?BabelSourceMap,
 |};
-
-import type {Dependency as TransformResultDependency} from './worker/collectDependencies';
-export type {TransformResultDependency};
 
 export type TransformResult = {|
   code: string,
