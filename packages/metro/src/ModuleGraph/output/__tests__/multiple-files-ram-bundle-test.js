@@ -148,12 +148,7 @@ function makeModulePath(name) {
 
 function makeDependency(name) {
   const path = makeModulePath(name);
-  return {
-    id: name,
-    isAsync: false,
-    isPrefetchOnly: false,
-    path,
-  };
+  return {id: name, path};
 }
 
 function getId(path) {
