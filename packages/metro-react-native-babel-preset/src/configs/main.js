@@ -100,9 +100,6 @@ const getPreset = (src, options) => {
     );
   }
 
-  if (!options || !options.lazyCommonJS) {
-  }
-
   if (hasClass) {
     extraPlugins.push(es2015Classes);
   }
