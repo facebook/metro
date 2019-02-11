@@ -37,9 +37,9 @@ it('collects unique dependency identifiers and transforms the AST', () => {
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'b/lib/a'},
-    {name: 'do'},
-    {name: 'setup/something'},
+    {name: 'b/lib/a', data: {isAsync: false}},
+    {name: 'do', data: {isAsync: false}},
+    {name: 'setup/something', data: {isAsync: false}},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -59,8 +59,8 @@ it('collects asynchronous dependencies', () => {
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'some/async/module', asyncType: 'async'},
-    {name: 'asyncRequire'},
+    {name: 'some/async/module', data: {isAsync: true}},
+    {name: 'asyncRequire', data: {isAsync: false}},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -69,40 +69,38 @@ it('collects asynchronous dependencies', () => {
   );
 });
 
-it('collects mixed sync/async dependencies', () => {
+it('collects mixed dependencies as being sync', () => {
   const ast = astFromCode(`
     const a = require("some/async/module");
     import("some/async/module").then(foo => {});
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'some/async/module'},
-    {name: 'some/async/module', asyncType: 'async'},
-    {name: 'asyncRequire'},
+    {name: 'some/async/module', data: {isAsync: false}},
+    {name: 'asyncRequire', data: {isAsync: false}},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
       const a = require(${dependencyMapName}[0], "some/async/module");
-      require(${dependencyMapName}[2], "asyncRequire")(${dependencyMapName}[1], "some/async/module").then(foo => {});
+      require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0], "some/async/module").then(foo => {});
     `),
   );
 });
 
-it('collects mixed sync/async dependencies; reverse order', () => {
+it('collects mixed dependencies as being sync; reverse order', () => {
   const ast = astFromCode(`
     import("some/async/module").then(foo => {});
     const a = require("some/async/module");
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'some/async/module', asyncType: 'async'},
-    {name: 'asyncRequire'},
-    {name: 'some/async/module'},
+    {name: 'some/async/module', data: {isAsync: false}},
+    {name: 'asyncRequire', data: {isAsync: false}},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
       require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0], "some/async/module").then(foo => {});
-      const a = require(${dependencyMapName}[2], "some/async/module");
+      const a = require(${dependencyMapName}[0], "some/async/module");
     `),
   );
 });
@@ -114,8 +112,8 @@ describe('import() prefetching', () => {
     `);
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
-      {name: 'some/async/module', asyncType: 'prefetch'},
-      {name: 'asyncRequire'},
+      {name: 'some/async/module', data: {isAsync: true, isPrefetchOnly: true}},
+      {name: 'asyncRequire', data: {isAsync: false}},
     ]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`
@@ -124,16 +122,15 @@ describe('import() prefetching', () => {
     );
   });
 
-  it('collected mixed import/prefetch calls', () => {
+  it('disable prefetch-only flag for mixed import/prefetch calls', () => {
     const ast = astFromCode(`
       __prefetchImport("some/async/module");
       import("some/async/module").then(() => {});
     `);
     const {dependencies} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
-      {name: 'some/async/module', asyncType: 'prefetch'},
-      {name: 'asyncRequire'},
-      {name: 'some/async/module', asyncType: 'async'},
+      {name: 'some/async/module', data: {isAsync: true}},
+      {name: 'asyncRequire', data: {isAsync: false}},
     ]);
   });
 });
@@ -142,7 +139,7 @@ describe('Evaluating static arguments', () => {
   it('supports template literals as arguments', () => {
     const ast = astFromCode('require(`left-pad`)');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
-    expect(dependencies).toEqual([{name: 'left-pad'}]);
+    expect(dependencies).toEqual([{name: 'left-pad', data: {isAsync: false}}]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`require(${dependencyMapName}[0], "left-pad");`),
     );
@@ -151,7 +148,7 @@ describe('Evaluating static arguments', () => {
   it('supports template literals with static interpolations', () => {
     const ast = astFromCode('require(`left${"-"}pad`)');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
-    expect(dependencies).toEqual([{name: 'left-pad'}]);
+    expect(dependencies).toEqual([{name: 'left-pad', data: {isAsync: false}}]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`require(${dependencyMapName}[0], "left-pad");`),
     );
@@ -186,7 +183,7 @@ describe('Evaluating static arguments', () => {
   it('supports multiple static strings concatenated', () => {
     const ast = astFromCode('require("foo_" + "bar")');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
-    expect(dependencies).toEqual([{name: 'foo_bar'}]);
+    expect(dependencies).toEqual([{name: 'foo_bar', data: {isAsync: false}}]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`require(${dependencyMapName}[0], "foo_bar");`),
     );
@@ -195,7 +192,9 @@ describe('Evaluating static arguments', () => {
   it('supports concatenating strings and template literasl', () => {
     const ast = astFromCode('require("foo_" + "bar" + `_baz`)');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
-    expect(dependencies).toEqual([{name: 'foo_bar_baz'}]);
+    expect(dependencies).toEqual([
+      {name: 'foo_bar_baz', data: {isAsync: false}},
+    ]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`require(${dependencyMapName}[0], "foo_bar_baz");`),
     );
@@ -204,7 +203,7 @@ describe('Evaluating static arguments', () => {
   it('supports using static variables in require statements', () => {
     const ast = astFromCode('const myVar="my";require("foo_" + myVar)');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
-    expect(dependencies).toEqual([{name: 'foo_my'}]);
+    expect(dependencies).toEqual([{name: 'foo_my', data: {isAsync: false}}]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(
         `const myVar = \"my\"; require(${dependencyMapName}[0], "foo_my");`,
@@ -270,9 +269,9 @@ it('ignores require functions defined defined by lower scopes', () => {
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'b/lib/a'},
-    {name: 'do'},
-    {name: 'setup/something'},
+    {name: 'b/lib/a', data: {isAsync: false}},
+    {name: 'do', data: {isAsync: false}},
+    {name: 'setup/something', data: {isAsync: false}},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -303,9 +302,9 @@ it('collects imports', () => {
   const {dependencies} = collectDependencies(ast, opts);
 
   expect(dependencies).toEqual([
-    {name: 'b/lib/a'},
-    {name: 'do'},
-    {name: 'setup/something'},
+    {name: 'b/lib/a', data: {isAsync: false}},
+    {name: 'do', data: {isAsync: false}},
+    {name: 'setup/something', data: {isAsync: false}},
   ]);
 });
 

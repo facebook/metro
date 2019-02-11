@@ -26,19 +26,27 @@ type DepOptions = {|
   +prefetchOnly: boolean,
 |};
 
-export type AsyncDependencyType = 'async' | 'prefetch';
+type InternalDependency<D> = {|
+  +data: D,
+  +name: string,
+|};
 
-type DependencyData = {|
+type InternalDependencyData = {|
+  isAsync: boolean,
+  isPrefetchOnly?: true,
+|};
+
+type InternalDependencyInfo = {|
+  data: InternalDependencyData,
   index: number,
-  name: string,
-  asyncType?: AsyncDependencyType,
 |};
 
 type State = {|
   asyncRequireModulePathStringLiteral: ?Identifier,
-  nextDependencyIndex: number,
+  dependency: number,
   dependencyCalls: Set<string>,
-  dependencyData: Map<string, DependencyData>,
+  dependencyData: Map<string, InternalDependencyData>,
+  dependencyIndexes: Map<string, number>,
   dynamicRequires: DynamicRequiresBehavior,
   dependencyMapIdentifier: ?Identifier,
   keepRequireNames: boolean,
@@ -58,12 +66,9 @@ export type CollectedDependencies = {|
   +dependencies: $ReadOnlyArray<Dependency>,
 |};
 
-export type Dependency = $ReadOnly<{|
-  // If left unspecified, then the dependency is synchronous.
-  // (ex. `require('foo')`)
-  asyncType?: AsyncDependencyType,
-  name: string,
-|}>;
+export type DependencyData = $ReadOnly<InternalDependencyData>;
+
+export type Dependency = InternalDependency<DependencyData>;
 
 export type DynamicRequiresBehavior = 'throwAtRuntime' | 'reject';
 
@@ -109,9 +114,10 @@ function collectDependencies(
 
   const state: State = {
     asyncRequireModulePathStringLiteral: null,
-    nextDependencyIndex: 0,
+    dependency: 0,
     dependencyCalls: new Set(),
     dependencyData: new Map(),
+    dependencyIndexes: new Map(),
     dependencyMapIdentifier: null,
     dynamicRequires: options.dynamicRequires,
     keepRequireNames: options.keepRequireNames,
@@ -143,7 +149,11 @@ function collectDependencies(
     },
 
     ImportDeclaration(path: Path, state: State) {
-      registerDependency(state, {name: path.node.source.value});
+      const dep = getDependency(state, path.node.source.value, {
+        prefetchOnly: false,
+      });
+
+      dep.data.isAsync = false;
     },
 
     Program(path: Path, state: State) {
@@ -162,10 +172,10 @@ function collectDependencies(
   traverse(ast, visitor, null, state);
 
   // Compute the list of dependencies.
-  const dependencies = new Array(state.nextDependencyIndex);
+  const dependencies = new Array(state.dependency);
 
-  for (const {name, asyncType, index} of state.dependencyData.values()) {
-    dependencies[index] = {name, asyncType};
+  for (const [name, data] of state.dependencyData) {
+    dependencies[nullthrows(state.dependencyIndexes.get(name))] = {name, data};
   }
 
   return {
@@ -185,23 +195,15 @@ function processImportCall(
     throw new InvalidRequireCallError(path);
   }
 
-  const depIndex = registerDependency(state, {
-    name,
-    asyncType: options.prefetchOnly ? 'prefetch' : 'async',
-  });
-
-  if (state.disableRequiresTransform) {
-    return path;
-  }
-
+  const dep = getDependency(state, name, options);
+  const ASYNC_REQUIRE_MODULE_PATH = state.asyncRequireModulePathStringLiteral;
   const MODULE_ID = types.memberExpression(
     state.dependencyMapIdentifier,
-    types.numericLiteral(depIndex),
+    types.numericLiteral(dep.index),
     true,
   );
   const MODULE_NAME = types.stringLiteral(name);
 
-  const ASYNC_REQUIRE_MODULE_PATH = state.asyncRequireModulePathStringLiteral;
   if (!options.prefetchOnly) {
     path.replaceWith(
       makeAsyncRequireTemplate({
@@ -210,6 +212,7 @@ function processImportCall(
         MODULE_NAME,
       }),
     );
+    delete dep.data.isPrefetchOnly;
   } else {
     path.replaceWith(
       makeAsyncPrefetchTemplate({
@@ -239,7 +242,9 @@ function processRequireCall(path: Path, state: State): Path {
     return path;
   }
 
-  const depIndex = registerDependency(state, {name});
+  const dep = getDependency(state, name, {prefetchOnly: false});
+  dep.data.isAsync = false;
+  delete dep.data.isPrefetchOnly;
 
   if (state.disableRequiresTransform) {
     return path;
@@ -247,7 +252,7 @@ function processRequireCall(path: Path, state: State): Path {
 
   const moduleIDExpression = types.memberExpression(
     state.dependencyMapIdentifier,
-    types.numericLiteral(depIndex),
+    types.numericLiteral(dep.index),
     true,
   );
 
@@ -258,19 +263,27 @@ function processRequireCall(path: Path, state: State): Path {
   return path;
 }
 
-type ImportQualifier = {name: string, asyncType?: AsyncDependencyType};
+function getDependency(
+  state: State,
+  name: string,
+  options: DepOptions,
+): InternalDependencyInfo {
+  let index = state.dependencyIndexes.get(name);
+  let data: ?InternalDependencyData = state.dependencyData.get(name);
 
-function registerDependency(state: State, qualifier: ImportQualifier): number {
-  const key = JSON.stringify(qualifier);
-  let data: ?DependencyData = state.dependencyData.get(key);
   if (!data) {
-    data = {name: qualifier.name, index: state.nextDependencyIndex++};
-    if (qualifier.asyncType != null) {
-      data.asyncType = qualifier.asyncType;
+    index = state.dependency++;
+    data = {isAsync: true};
+
+    if (options.prefetchOnly) {
+      data.isPrefetchOnly = true;
     }
-    state.dependencyData.set(key, data);
+
+    state.dependencyIndexes.set(name, index);
+    state.dependencyData.set(name, data);
   }
-  return data.index;
+
+  return {index: nullthrows(index), data: nullthrows(data)};
 }
 
 function getModuleNameFromCallArgs(path: Path): ?string {
