@@ -102,6 +102,7 @@ class Server {
   _platforms: Set<string>;
   _nextBundleBuildID: number;
   _bundler: IncrementalBundler;
+  _isEnded: boolean;
 
   constructor(config: ConfigT) {
     this._config = config;
@@ -115,6 +116,7 @@ class Server {
     this._logger = Logger;
     this._changeWatchers = [];
     this._platforms = new Set(this._config.resolver.platforms);
+    this._isEnded = false;
 
     // TODO(T34760917): These two properties should eventually be instantiated
     // elsewhere and passed as parameters, since they are also needed by
@@ -145,7 +147,10 @@ class Server {
   }
 
   end() {
-    this._bundler.end();
+    if (!this._isEnded) {
+      this._bundler.end();
+      this._isEnded = true;
+    }
   }
 
   getBundler(): IncrementalBundler {
