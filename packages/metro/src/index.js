@@ -158,13 +158,12 @@ exports.runServer = async (
     end();
   });
 
-  if (hmrEnabled) {
-    attachHmrServer(httpServer);
-  }
-
   return new Promise((resolve, reject) => {
     httpServer.listen(config.server.port, host, () => {
       onReady && onReady(httpServer);
+      if (hmrEnabled) {
+        attachHmrServer(httpServer);
+      }
       resolve(httpServer);
     });
 
