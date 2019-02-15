@@ -196,6 +196,13 @@ function processImportCall(
   }
 
   const dep = getDependency(state, name, options);
+  if (!options.prefetchOnly) {
+    delete dep.data.isPrefetchOnly;
+  }
+  if (state.disableRequiresTransform) {
+    return path;
+  }
+
   const ASYNC_REQUIRE_MODULE_PATH = state.asyncRequireModulePathStringLiteral;
   const MODULE_ID = types.memberExpression(
     state.dependencyMapIdentifier,
@@ -212,7 +219,6 @@ function processImportCall(
         MODULE_NAME,
       }),
     );
-    delete dep.data.isPrefetchOnly;
   } else {
     path.replaceWith(
       makeAsyncPrefetchTemplate({
