@@ -19,7 +19,7 @@ const virtualModule = require('../module').virtual;
 const {transformSync} = require('@babel/core');
 
 import type {IdsForPathFn, Module} from '../types.flow';
-import type {MetroSourceMap} from 'metro-source-map';
+import type {BabelSourceMap} from '@babel/core';
 
 // Transformed modules have the form
 //   __d(function(require, module, global, exports, dependencyMap) {
@@ -56,7 +56,7 @@ function inlineModuleIds(
   idForPath: ({path: string}) => number,
 ): {
   moduleCode: string,
-  moduleMap: ?MetroSourceMap,
+  moduleMap: ?BabelSourceMap,
 } {
   const {dependencies, file} = module;
   const {code, map, path} = file;
@@ -92,27 +92,32 @@ exports.inlineModuleIds = inlineModuleIds;
 
 type IdForPathFn = ({path: string}) => number;
 
-// Adds the module ids to a file if the file is a module. If it's not (e.g. a
-// script) it just keeps it as-is.
+/**
+ * 1. Adds the module ids to a file if the file is a module. If it's not (e.g.
+ *    a script) it just keeps it as-is.
+ * 2. Packs the function map into the file's source map, if one exists.
+ */
 function getModuleCodeAndMap(
   module: Module,
   idForPath: IdForPathFn,
   options: $ReadOnly<{enableIDInlining: boolean}>,
 ) {
   const {file} = module;
+  let moduleCode, moduleMap;
 
   if (file.type !== 'module') {
-    return {moduleCode: file.code, moduleMap: file.map};
+    moduleCode = file.code;
+    moduleMap = file.map;
+  } else if (!options.enableIDInlining) {
+    moduleCode = addModuleIdsToModuleWrapper(module, idForPath);
+    moduleMap = file.map;
+  } else {
+    ({moduleCode, moduleMap} = inlineModuleIds(module, idForPath));
   }
-
-  if (!options.enableIDInlining) {
-    return {
-      moduleCode: addModuleIdsToModuleWrapper(module, idForPath),
-      moduleMap: file.map,
-    };
+  if (moduleMap) {
+    moduleMap = {...moduleMap, x_facebook_sources: [[module.file.functionMap]]};
   }
-
-  return inlineModuleIds(module, idForPath);
+  return {moduleCode, moduleMap};
 }
 
 exports.getModuleCodeAndMap = getModuleCodeAndMap;

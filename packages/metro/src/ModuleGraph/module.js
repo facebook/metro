@@ -20,6 +20,7 @@ const virtual = (code: string, filePath: string): Module => ({
   file: {
     code,
     map: null,
+    functionMap: null,
     path: filePath,
     type: 'script',
     libraryIdx: null,

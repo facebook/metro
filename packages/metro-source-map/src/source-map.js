@@ -32,7 +32,7 @@ type FBExtensions = {
 };
 
 export type FBSourcesArray = $ReadOnlyArray<FBSourceMetadata>;
-export type FBSourceMetadata = [FBSourceFunctionMap];
+export type FBSourceMetadata = [?FBSourceFunctionMap];
 export type FBSourceFunctionMap = {|
   +names: $ReadOnlyArray<string>,
   +mappings: string,

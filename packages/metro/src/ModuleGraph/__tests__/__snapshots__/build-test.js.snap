@@ -5,6 +5,7 @@ Object {
   "dependencies": Array [],
   "file": Object {
     "code": "var __FRAMEWORK__=undefined,__DEV__=true,__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now(),process=this.process||{};process.env=process.env||{};process.env.NODE_ENV=\\"development\\";",
+    "functionMap": null,
     "libraryIdx": null,
     "map": null,
     "path": "/<generated>/prelude.js",
@@ -18,6 +19,7 @@ Object {
   "dependencies": Array [],
   "file": Object {
     "code": "var __FRAMEWORK__=undefined,__DEV__=false,__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now(),process=this.process||{};process.env=process.env||{};process.env.NODE_ENV=\\"production\\";",
+    "functionMap": null,
     "libraryIdx": null,
     "map": null,
     "path": "/<generated>/prelude.js",

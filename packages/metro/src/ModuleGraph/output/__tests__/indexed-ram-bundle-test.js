@@ -232,6 +232,7 @@ function makeModule(
     file: {
       code: type === 'module' ? makeModuleCode(moduleCode) : moduleCode,
       map: type !== 'module' ? null : makeModuleMap(name, path),
+      functionMap: null,
       path,
       type,
       libraryIdx: null,
@@ -245,6 +246,7 @@ function makeModuleMap(name, path) {
     mappings: '',
     names: [],
     sources: [path],
+    x_facebook_sources: [[null]],
   };
 }
 
