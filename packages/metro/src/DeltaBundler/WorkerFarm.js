@@ -127,7 +127,7 @@ class WorkerFarm {
         ? this._computeWorkerKey
         : undefined,
       exposedMethods,
-      forkOptions: {env, execArgv},
+      forkOptions: {env},
       numWorkers,
     });
   }
