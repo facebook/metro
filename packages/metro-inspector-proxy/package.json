@@ -3,6 +3,7 @@
   "version": "0.52.0",
   "description": "metro-inspector-proxy",
   "main": "src/index.js",
+  "bin": "src/cli.js",
   "repository": {
     "type": "git",
     "url": "git@github.com:facebook/metro.git"
@@ -15,5 +16,11 @@
     "metro"
   ],
   "license": "MIT",
-  "dependencies": {}
+  "dependencies": {
+    "chalk": "^2.4.1",
+    "connect": "^3.6.5",
+    "rxjs": "^5.4.3",
+    "ws": "^1.1.5",
+    "yargs": "^9.0.0"
+  }
 }

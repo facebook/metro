@@ -9,3 +9,7 @@
  */
 
 'use strict';
+
+const InspectorProxy = require('./InspectorProxy');
+
+module.exports = {InspectorProxy};
