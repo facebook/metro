@@ -14,7 +14,6 @@
     "@babel/plugin-transform-spread": "^7.0.0",
     "@babel/preset-env": "^7.0.0",
     "acorn": "^5.1.2",
-    "babel-core": "^7.0.0-bridge",
     "babel-eslint": "^10.0.1",
     "babel-jest": "24.1.0",
     "babel-preset-fbjs": "^3.1.2",

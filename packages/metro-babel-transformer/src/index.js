@@ -11,8 +11,7 @@
 
 const {transformSync} = require('@babel/core');
 
-import type {Ast} from '@babel/core';
-import type {Plugins} from 'babel-core';
+import type {Ast, Plugins} from '@babel/core';
 
 export type CustomTransformOptions = {[string]: mixed, __proto__: null};
 
