@@ -18,6 +18,9 @@ const https = require('https');
 const url = require('url');
 const zlib = require('zlib');
 
+import type {Agent as HttpAgent} from 'http';
+import type {Agent as HttpsAgent} from 'https';
+
 export type Options = {|
   endpoint: string,
   family?: 4 | 6,
@@ -42,8 +45,8 @@ class HttpStore<T> {
   _port: number;
   _path: string;
 
-  _getAgent: http$Agent<>;
-  _setAgent: http$Agent<>;
+  _getAgent: HttpAgent | HttpsAgent;
+  _setAgent: HttpAgent | HttpsAgent;
 
   constructor(options: Options) {
     const uri = url.parse(options.endpoint);
@@ -68,16 +71,7 @@ class HttpStore<T> {
     this._path = uri.pathname;
     this._port = +uri.port;
 
-    //Note to whomst maintains this code: the new flow errors happened because of libdef changes
-    //that made http$Agent take a generic argument. Because we don't know which module you're
-    //accessing here (it's a union type) we can't give it a proper type annotation.
-    /*'$FlowFixMe(>=0.93.0 site=react_native_fb) This
-    * comment suppresses an error found when Flow v0.93 was deployed. To see
-    * the error delete this comment and run Flow. */
     this._getAgent = new module.Agent(agentConfig);
-    /*'$FlowFixMe(>=0.93.0 site=react_native_fb) This
-    * comment suppresses an error found when Flow v0.93 was deployed. To see
-    * the error delete this comment and run Flow. */
     this._setAgent = new module.Agent(agentConfig);
   }
 

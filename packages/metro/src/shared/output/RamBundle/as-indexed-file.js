@@ -183,7 +183,7 @@ function buildTableAndContents(
   modules: $ReadOnlyArray<ModuleTransportLike>,
   moduleGroups: ModuleGroups,
   encoding?: 'utf8' | 'utf16le' | 'ascii',
-) {
+): Array<Buffer> {
   // file contents layout:
   // - magic number      char[4]  0xE5 0xD1 0x0B 0xFB (0xFB0BD1E5 uint32 LE)
   // - offset table      table    see `buildModuleTables`
@@ -198,9 +198,6 @@ function buildTableAndContents(
     moduleGroups,
   );
 
-  /* $FlowFixMe(>=0.70.0 site=react_native_fb) This comment suppresses an
-   * error found when Flow v0.70 was deployed. To see the error delete this
-   * comment and run Flow. */
   return [fileHeader, table, startupCodeBuffer].concat(
     moduleBuffers.map(({buffer}) => buffer),
   );

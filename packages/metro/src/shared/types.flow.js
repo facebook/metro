@@ -85,6 +85,7 @@ export type OutputOptions = {
   bundleOutput: string,
   bundleEncoding?: 'utf8' | 'utf16le' | 'ascii',
   dev?: boolean,
+  indexedRamBundle?: boolean,
   platform: string,
   sourcemapOutput?: string,
   sourcemapSourcesRoot?: string,

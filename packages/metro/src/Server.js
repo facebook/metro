@@ -332,7 +332,7 @@ class Server {
         'Accept-Ranges': 'bytes',
         'Content-Length': chunksize.toString(),
         'Content-Range': `bytes ${dataStart}-${dataEnd}/${data.length}`,
-        'Content-Type': mime.lookup(path.basename(assetPath[1])),
+        'Content-Type': mime.lookup(path.basename(assetPath)),
       });
 
       return data.slice(dataStart, dataEnd + 1);
@@ -343,8 +343,12 @@ class Server {
 
   async _processSingleAssetRequest(req: IncomingMessage, res: ServerResponse) {
     const urlObj = url.parse(decodeURI(req.url), true);
-    /* $FlowFixMe: could be empty if the url is invalid */
-    const assetPath: string = urlObj.pathname.match(/^\/assets\/(.+)$/);
+    const assetPath =
+      urlObj && urlObj.pathname && urlObj.pathname.match(/^\/assets\/(.+)$/);
+
+    if (!assetPath) {
+      throw new Error('Could not extract asset path from URL');
+    }
 
     const processingAssetRequestLogEntry = log(
       createActionStartEntry({
@@ -366,7 +370,7 @@ class Server {
       if (process.env.REACT_NATIVE_ENABLE_ASSET_CACHING === true) {
         res.setHeader('Cache-Control', 'max-age=31536000');
       }
-      res.end(this._rangeRequestMiddleware(req, res, data, assetPath));
+      res.end(this._rangeRequestMiddleware(req, res, data, assetPath[1]));
       process.nextTick(() => {
         log(createActionEndEntry(processingAssetRequestLogEntry));
       });
@@ -481,9 +485,6 @@ class Server {
         };
       }
 
-      /* $FlowFixMe(>=0.63.0 site=react_native_fb) This comment suppresses an
-       * error found when Flow v0.63 was deployed. To see the error delete this
-       * comment and run Flow. */
       this._reporter.update({
         buildID,
         bundleDetails: {

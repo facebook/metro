@@ -46,21 +46,16 @@ module.exports = class HasteFS {
   }
 
   getAllFiles() {
-    /* $FlowFixMe(>=0.70.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.70 was deployed. To see the error delete this
-     * comment and run Flow. */
-    return Array.from(this.files.keys());
+    return Array.from<string>(this.files.keys());
   }
 
   matchFiles() {
     throw new Error('HasteFS.matchFiles is not implemented yet.');
   }
 
-  matches(directory: string, pattern: RegExp) {
+  matches(directory: string, pattern: RegExp): Array<string> {
     const entries = this.directoryEntries.get(directory);
-    /* $FlowFixMe(>=0.70.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.70 was deployed. To see the error delete this
-     * comment and run Flow. */
+
     return entries ? entries.filter(pattern.test, pattern) : [];
   }
 };
