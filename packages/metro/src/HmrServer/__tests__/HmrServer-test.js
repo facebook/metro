@@ -30,7 +30,6 @@ describe('HmrServer', () => {
 
   const hiModule = {
     dependencies: new Map(),
-    dependencyMapOrder: [],
     inverseDependencies: new Set(),
     path: '/root/hi',
     getSource: () => "alert('hi');",

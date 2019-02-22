@@ -23,7 +23,6 @@ function createModule(name, dependencies, type = 'js/module') {
           {absolutePath: `/root/${dep}.js`, data: {isAsync: false, name: dep}},
         ]),
       ),
-      dependencyMapOrder: dependencies,
       getSource: () => Buffer.from(`source of ${name}`),
       output: [{type, data: {code: `__d(function() {${name}()});`}}],
     },

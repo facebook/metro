@@ -30,7 +30,6 @@ beforeEach(() => {
         {absolutePath: '/baz', data: {data: {isAsync: false}, name: 'baz'}},
       ],
     ]),
-    dependencyMapOrder: ['bar', 'baz'],
     getSource: () => Buffer.from(''),
     inverseDependencies: new Set(),
     output: [

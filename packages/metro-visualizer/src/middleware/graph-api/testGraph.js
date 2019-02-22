@@ -15,7 +15,6 @@ import type {Graph} from 'metro/src/DeltaBundler';
 
 const dummyModule = {
   dependencies: new Map(),
-  dependencyMapOrder: [],
   inverseDependencies: new Set(),
   output: [{type: 'js/module', data: {code: '0123456789'}}],
   path: '',

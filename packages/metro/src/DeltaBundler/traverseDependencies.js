@@ -192,12 +192,11 @@ async function processModule<T>(
 
   // Get the absolute path of all sub-dependencies (some of them could have been
   // moved but maintain the same relative path).
-  const currentDependenciesArr = resolveDependencies(
+  const currentDependencies = resolveDependencies(
     path,
     result.dependencies,
     options,
   );
-  const currentDependencies = new Map(currentDependenciesArr);
 
   const previousModule = graph.dependencies.get(path) || {
     inverseDependencies: delta.inverseDependencies.get(path) || new Set(),
@@ -207,10 +206,8 @@ async function processModule<T>(
 
   // Update the module information.
   const module = {
-    path: previousModule.path,
-    inverseDependencies: previousModule.inverseDependencies,
+    ...previousModule,
     dependencies: new Map(),
-    dependencyMapOrder: currentDependenciesArr.map(entry => entry[0]),
     getSource: result.getSource,
     output: result.output,
   };
@@ -319,17 +316,19 @@ function resolveDependencies<T>(
   parentPath: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   options: InternalOptions<T>,
-): Array<[string, Dependency]> {
-  return dependencies.map(result => {
-    const relativePath = result.name;
+): Map<string, Dependency> {
+  return new Map(
+    dependencies.map(result => {
+      const relativePath = result.name;
 
-    const dependency = {
-      absolutePath: options.resolve(parentPath, result.name),
-      data: result,
-    };
+      const dependency = {
+        absolutePath: options.resolve(parentPath, result.name),
+        data: result,
+      };
 
-    return [relativePath, dependency];
-  });
+      return [relativePath, dependency];
+    }),
+  );
 }
 
 /**

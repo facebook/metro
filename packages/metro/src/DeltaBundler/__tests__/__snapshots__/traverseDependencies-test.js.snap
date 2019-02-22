@@ -13,9 +13,6 @@ Object {
           },
         },
       },
-      "dependencyMapOrder": Array [
-        "foo",
-      ],
       "getSource": [Function],
       "inverseDependencies": Set {},
       "output": Array [
@@ -46,10 +43,6 @@ Object {
           },
         },
       },
-      "dependencyMapOrder": Array [
-        "bar",
-        "baz",
-      ],
       "getSource": [Function],
       "inverseDependencies": Set {
         "/bundle",
@@ -67,7 +60,6 @@ Object {
     },
     "/bar" => Object {
       "dependencies": Map {},
-      "dependencyMapOrder": Array [],
       "getSource": [Function],
       "inverseDependencies": Set {
         "/foo",
@@ -85,7 +77,6 @@ Object {
     },
     "/baz" => Object {
       "dependencies": Map {},
-      "dependencyMapOrder": Array [],
       "getSource": [Function],
       "inverseDependencies": Set {
         "/foo",
