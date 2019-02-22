@@ -737,6 +737,10 @@ interface JestExpectType {
    */
   toThrowErrorMatchingSnapshot(): void;
   toThrowErrorMatchingInlineSnapshot(snapshot?: string): void;
+  /**
+   * Custom extension of the async matchers.
+   */
+  toHave: (...$ReadOnlyArray<any>) => void;
 }
 
 type JestObjectType = {
