@@ -205,7 +205,7 @@ type TemplateOptions = Babylon7Options & {|
   preserveComments?: boolean,
 |};
 
-type Templatable = ({[tokenName: string]: string}) => BabelNode;
+type Templatable = ({[tokenName: string]: mixed}) => BabelNode;
 
 type TemplateFunc = (tpl: string, options?: TemplateOptions) => Templatable;
 
