@@ -9,6 +9,8 @@
 
 'use strict';
 
+const lazyImports = require('./lazy-imports');
+
 function isTypeScriptSource(fileName) {
   return !!fileName && fileName.endsWith('.ts');
 }
@@ -93,7 +95,10 @@ const getPreset = (src, options) => {
         {
           strict: false,
           strictMode: false, // prevent "use strict" injections
-          lazy: !!(options && options.lazyImportExportTransform),
+          lazy:
+            options && options.lazyImportExportTransform !== undefined
+              ? options.lazyImportExportTransform
+              : importSpecifier => lazyImports.has(importSpecifier),
           allowTopLevelThis: true, // dont rewrite global `this` -> `undefined`
         },
       ],
