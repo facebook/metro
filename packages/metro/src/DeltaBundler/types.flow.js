@@ -46,6 +46,7 @@ export type Dependency = {|
 
 export type Module<T = MixedOutput> = {|
   +dependencies: Map<string, Dependency>,
+  +dependencyMapOrder: $ReadOnlyArray<string>,
   +inverseDependencies: Set<string>,
   +output: $ReadOnlyArray<T>,
   +path: string,

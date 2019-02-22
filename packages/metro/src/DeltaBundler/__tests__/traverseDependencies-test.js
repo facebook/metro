@@ -467,6 +467,11 @@ describe('edge cases', () => {
       ['bar', {absolutePath: '/bar', data: {isAsync: false, name: 'bar'}}],
       ['baz', {absolutePath: '/baz', data: {isAsync: false, name: 'baz'}}],
     ]);
+    expect(graph.dependencies.get(moduleFoo).dependencyMapOrder).toEqual([
+      'qux',
+      'bar',
+      'baz',
+    ]);
   });
 
   it('should try to transform every file only once', async () => {

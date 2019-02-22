@@ -27,6 +27,7 @@ const polyfill = {
 const fooModule = {
   path: '/root/foo',
   dependencies: new Map([['./bar', {absolutePath: '/root/bar', data: {}}]]),
+  dependencyMapOrder: ['./bar'],
   output: [
     {
       type: 'js/module',
@@ -39,6 +40,7 @@ const fooModule = {
 const barModule = {
   path: '/root/bar',
   dependencies: new Map(),
+  dependencyMapOrder: [],
   output: [
     {
       type: 'js/module',

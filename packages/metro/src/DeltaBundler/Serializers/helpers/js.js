@@ -12,6 +12,7 @@
 
 const addParamsToDefineCall = require('../../../lib/addParamsToDefineCall');
 const invariant = require('invariant');
+const nullthrows = require('nullthrows');
 const path = require('path');
 
 import type {JsOutput} from '../../../JSTransformer/worker';
@@ -33,7 +34,8 @@ function wrapModule(module: Module<>, options: Options) {
   const moduleId = options.createModuleId(module.path);
   const params = [
     moduleId,
-    Array.from(module.dependencies.values()).map(dependency => {
+    Array.from(module.dependencyMapOrder).map(dependencyName => {
+      const dependency = nullthrows(module.dependencies.get(dependencyName));
       return options.createModuleId(dependency.absolutePath);
     }),
   ];

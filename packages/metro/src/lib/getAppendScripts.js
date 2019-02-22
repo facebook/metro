@@ -40,6 +40,7 @@ function getAppendScripts<T: number | string>(
         output.push({
           path: `require-${path}`,
           dependencies: new Map(),
+          dependencyMapOrder: [],
           getSource: () => Buffer.from(''),
           inverseDependencies: new Set(),
           output: [
@@ -71,6 +72,7 @@ function getAppendScripts<T: number | string>(
     output.push({
       path: 'source-map',
       dependencies: new Map(),
+      dependencyMapOrder: [],
       getSource: () => Buffer.from(''),
       inverseDependencies: new Set(),
       output: [

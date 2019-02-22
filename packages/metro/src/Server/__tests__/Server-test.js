@@ -117,6 +117,7 @@ describe('processRequest', () => {
               },
             ],
           ]),
+          dependencyMapOrder: ['foo'],
           getSource: () => Buffer.from('code-mybundle'),
           output: [
             {
@@ -134,6 +135,7 @@ describe('processRequest', () => {
         {
           path: '/root/foo.js',
           dependencies: new Map(),
+          dependencyMapOrder: [],
           getSource: () => Buffer.from('code-foo'),
           output: [
             {
@@ -178,6 +180,7 @@ describe('processRequest', () => {
         {
           path: 'require-js',
           dependencies: new Map(),
+          dependencyMapOrder: [],
           getSource: () => Buffer.from('code-require'),
           output: [
             {
@@ -448,6 +451,7 @@ describe('processRequest', () => {
                   },
                 ],
                 dependencies: new Map(),
+                dependencyMapOrder: [],
               },
             ],
           ]),
@@ -494,6 +498,7 @@ describe('processRequest', () => {
                   },
                 ],
                 dependencies: new Map(),
+                dependencyMapOrder: [],
               },
             ],
           ]),
