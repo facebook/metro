@@ -28,7 +28,7 @@ const siteConfig = {
   ],
   headerIcon: 'img/metro.svg',
   footerIcon: 'img/metro.svg',
-  favicon: 'img/favicon/favicon.ico',
+  favicon: 'img/favicon.png',
   ogImage: 'img/opengraph.png',
   recruitingLink: 'https://crowdin.com/project/metro',
   algolia: {
