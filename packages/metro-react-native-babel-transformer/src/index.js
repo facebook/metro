@@ -141,7 +141,9 @@ function buildBabelConfig(filename, options, plugins?: BabelPlugins = []) {
 
 function transform({filename, options, src, plugins}: BabelTransformerArgs) {
   const OLD_BABEL_ENV = process.env.BABEL_ENV;
-  process.env.BABEL_ENV = options.dev ? 'development' : 'production';
+  process.env.BABEL_ENV = options.dev
+    ? 'development'
+    : process.env.BABEL_ENV || 'production';
 
   try {
     const babelConfig = buildBabelConfig(filename, options, plugins);

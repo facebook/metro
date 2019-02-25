@@ -44,7 +44,9 @@ export type BabelTransformer = {|
 
 function transform({filename, options, plugins, src}: BabelTransformerArgs) {
   const OLD_BABEL_ENV = process.env.BABEL_ENV;
-  process.env.BABEL_ENV = options.dev ? 'development' : 'production';
+  process.env.BABEL_ENV = options.dev
+    ? 'development'
+    : process.env.BABEL_ENV || 'production';
 
   try {
     const {ast} = transformSync(src, {
