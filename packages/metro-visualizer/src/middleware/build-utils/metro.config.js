@@ -20,7 +20,9 @@ try {
   getWatchFolders = require('@xplatjs/metro-scripts/get-watch-folders');
   /* eslint-enable import/no-extraneous-dependencies */
 } catch (e) {
-  getWatchFolders = () => [];
+  getWatchFolders = () => [
+    fs.realpathSync(path.resolve(__dirname, '../../../../../')),
+  ];
 }
 
 module.exports = {
