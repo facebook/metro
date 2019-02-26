@@ -265,6 +265,7 @@ async function getAsset(
   projectRoot: string,
   watchFolders: $ReadOnlyArray<string>,
   platform: ?string = null,
+  assetExts: $ReadOnlyArray<string>,
 ): Promise<Buffer> {
   const assetData = AssetPaths.parse(
     relativePath,
@@ -276,6 +277,12 @@ async function getAsset(
   if (!pathBelongsToRoots(absolutePath, [projectRoot, ...watchFolders])) {
     throw new Error(
       `'${relativePath}' could not be found, because it cannot be found in the project root or any watch folder`,
+    );
+  }
+
+  if (!assetExts.includes(assetData.type)) {
+    throw new Error(
+      `'${relativePath}' cannot be loaded as its extension is not registered in assetExts`,
     );
   }
 
