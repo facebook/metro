@@ -364,7 +364,6 @@ class Server {
         this._config.watchFolders,
         /* $FlowFixMe: query may be empty for invalid URLs */
         urlObj.query.platform,
-        this._config.resolver.assetExts,
       );
       // Tell clients to cache this for 1 year.
       // This is safe as the asset url contains a hash of the asset.

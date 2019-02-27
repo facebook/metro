@@ -630,7 +630,6 @@ describe('processRequest', () => {
           '/root',
           ['/root'],
           'ios',
-          expect.any(Array),
         );
         expect(value).toBe('i am image');
         done();
@@ -654,7 +653,6 @@ describe('processRequest', () => {
           '/root',
           ['/root'],
           'ios',
-          expect.any(Array),
         );
         expect(value).toBe(mockData.slice(0, 4));
         done();
@@ -676,7 +674,6 @@ describe('processRequest', () => {
           '/root',
           ['/root'],
           undefined,
-          expect.any(Array),
         );
         expect(value).toBe('i am image');
         done();
