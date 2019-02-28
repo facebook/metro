@@ -10,15 +10,24 @@
 
 'use strict';
 
-const path = require('path');
+const createCacheKeyFunction = require('fbjs-scripts/jest/createCacheKeyFunction');
 
-const {createTransformer} = require('babel-jest');
+const {transformSync: babelTransformSync} = require('@babel/core');
 
-/**
- * babel@7 introduced changes in config lookup.
- *
- * @see https://babeljs.io/docs/en/config-files#6x-vs-7x-babelrc-loading
- */
-module.exports = createTransformer({
-  root: path.join(__dirname, '..'),
-});
+const BABEL_CONFIG_PATH = require.resolve('../babel.config.js');
+const babelConfigCacheKey = require('../babel.config.js').getCacheKey();
+
+module.exports = {
+  process(src /*: string */, file /*: string */) {
+    return babelTransformSync(src, {
+      filename: file,
+      configFile: BABEL_CONFIG_PATH,
+      sourceMaps: 'both',
+    });
+  },
+
+  getCacheKey: createCacheKeyFunction(
+    [__filename, require.resolve('@babel/core/package.json')],
+    [babelConfigCacheKey],
+  ),
+};
