@@ -74,6 +74,7 @@ export type JsTransformOptions = $ReadOnly<{|
   disableFlowStripTypesTransform?: boolean,
   experimentalImportSupport?: boolean,
   hot: boolean,
+  inlinePlatform: boolean,
   inlineRequires: boolean,
   minify: boolean,
   platform: ?string,
@@ -215,8 +216,9 @@ class JsTransformer {
 
     if (!options.dev) {
       plugins.push([constantFoldingPlugin, opts]);
-      plugins.push([inlinePlugin, opts]);
     }
+
+    plugins.push([inlinePlugin, opts]);
 
     ({ast} = transformFromAstSync(ast, '', {
       ast: true,

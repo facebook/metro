@@ -20,6 +20,7 @@ type Context = {types: BabelTypes};
 
 type Options = {
   dev: boolean,
+  inlinePlatform: boolean,
   isWrapped: boolean,
   requireName?: string,
   platform: string,
@@ -97,7 +98,7 @@ function inlinePlugin(context: Context, options: Options) {
   return {
     visitor: {
       Identifier(path: Path, state: State) {
-        if (isDev(path.node, path.parent, path.scope)) {
+        if (!state.opts.dev && isDev(path.node, path.parent, path.scope)) {
           path.replaceWith(t.booleanLiteral(state.opts.dev));
         }
       },
@@ -107,9 +108,12 @@ function inlinePlugin(context: Context, options: Options) {
         const opts = state.opts;
 
         if (!isLeftHandSideOfAssignmentExpression(node, path.parent)) {
-          if (isPlatformNode(node, scope, !!opts.isWrapped)) {
+          if (
+            opts.inlinePlatform &&
+            isPlatformNode(node, scope, !!opts.isWrapped)
+          ) {
             path.replaceWith(t.stringLiteral(opts.platform));
-          } else if (isProcessEnvNodeEnv(node, scope)) {
+          } else if (!opts.dev && isProcessEnvNodeEnv(node, scope)) {
             path.replaceWith(
               t.stringLiteral(opts.dev ? 'development' : 'production'),
             );
@@ -122,7 +126,10 @@ function inlinePlugin(context: Context, options: Options) {
         const arg = node.arguments[0];
         const opts = state.opts;
 
-        if (isPlatformSelectNode(node, scope, !!opts.isWrapped)) {
+        if (
+          opts.inlinePlatform &&
+          isPlatformSelectNode(node, scope, !!opts.isWrapped)
+        ) {
           if (hasStaticProperties(arg)) {
             const fallback = () =>
               findProperty(arg, 'default', () => t.identifier('undefined'));

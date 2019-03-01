@@ -23,6 +23,7 @@ type InlineRequiresRaw = {+blacklist: {[string]: true}} | boolean;
 export type TransformInputOptions = $Diff<
   TransformOptions,
   {
+    inlinePlatform: boolean,
     inlineRequires: boolean,
   },
 >;
@@ -44,6 +45,7 @@ async function calcTransformerOptions(
     dev: options.dev,
     hot: options.hot,
     inlineRequires: false,
+    inlinePlatform: true,
     minify: options.minify,
     platform: options.platform,
   };

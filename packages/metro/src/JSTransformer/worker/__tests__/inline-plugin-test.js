@@ -25,7 +25,9 @@ describe('inline constants', () => {
       }
     `;
 
-    compare([inlinePlugin], code, code.replace(/__DEV__/, 'true'), {dev: true});
+    compare([inlinePlugin], code, code.replace(/__DEV__/, 'false'), {
+      dev: false,
+    });
   });
 
   it("doesn't replace a local __DEV__ variable", () => {
@@ -48,6 +50,7 @@ describe('inline constants', () => {
     `;
 
     compare([inlinePlugin], code, code.replace(/Platform\.OS/, '"ios"'), {
+      inlinePlatform: true,
       platform: 'ios',
     });
   });
@@ -66,6 +69,7 @@ describe('inline constants', () => {
     `;
 
     compare([inlinePlugin], code, code.replace(/Platform\.OS/, '"ios"'), {
+      inlinePlatform: true,
       platform: 'ios',
     });
   });
@@ -84,6 +88,7 @@ describe('inline constants', () => {
     `;
 
     compare([inlinePlugin], code, code.replace(/Platform\.OS/, '"ios"'), {
+      inlinePlatform: true,
       platform: 'ios',
     });
   });
@@ -100,7 +105,7 @@ describe('inline constants', () => {
       [inlinePlugin],
       code,
       code.replace(/require\('Platform'\)\.OS/, '"android"'),
-      {platform: 'android'},
+      {inlinePlatform: true, platform: 'android'},
     );
   });
 
@@ -117,6 +122,7 @@ describe('inline constants', () => {
       code,
       code.replace(/React\.Platform\.OS/, '"ios"'),
       {
+        inlinePlatform: 'true',
         platform: 'ios',
       },
     );
@@ -134,7 +140,7 @@ describe('inline constants', () => {
       [inlinePlugin],
       code,
       code.replace(/ReactNative\.Platform\.OS/, '"ios"'),
-      {platform: 'ios'},
+      {inlinePlatform: true, platform: 'ios'},
     );
   });
 
@@ -156,6 +162,7 @@ describe('inline constants', () => {
       code,
       code.replace(/React\.Platform\.OS/, '"ios"'),
       {
+        inlinePlatform: 'true',
         platform: 'ios',
       },
     );
@@ -173,7 +180,7 @@ describe('inline constants', () => {
       [inlinePlugin],
       code,
       code.replace(/require\('React'\)\.Platform\.OS/, '"android"'),
-      {platform: 'android'},
+      {inlinePlatform: true, platform: 'android'},
     );
   });
 
@@ -194,7 +201,7 @@ describe('inline constants', () => {
       [inlinePlugin],
       code,
       code.replace(/ReactNative\.Platform\.OS/, '"android"'),
-      {platform: 'android'},
+      {inlinePlatform: true, platform: 'android'},
     );
   });
 
@@ -210,7 +217,7 @@ describe('inline constants', () => {
       [inlinePlugin],
       code,
       code.replace(/require\('react-native'\)\.Platform\.OS/, '"android"'),
-      {platform: 'android'},
+      {inlinePlatform: true, platform: 'android'},
     );
   });
 
@@ -223,6 +230,7 @@ describe('inline constants', () => {
     `;
 
     compare([inlinePlugin], code, code.replace(/Platform\.select[^;]+/, '1'), {
+      inlinePlatform: 'true',
       platform: 'ios',
     });
   });
@@ -236,6 +244,7 @@ describe('inline constants', () => {
     `;
 
     compare([inlinePlugin], code, code.replace(/Platform\.select[^;]+/, '2'), {
+      inlinePlatform: 'true',
       platform: 'android',
     });
   });
@@ -248,6 +257,7 @@ describe('inline constants', () => {
     `;
 
     compare([inlinePlugin], code, code.replace(/Platform\.select[^;]+/, '2'), {
+      inlinePlatform: 'true',
       platform: 'android',
     });
   });
@@ -261,7 +271,10 @@ describe('inline constants', () => {
       }
     `;
 
-    compare([inlinePlugin], code, code, {platform: 'android'});
+    compare([inlinePlugin], code, code, {
+      inlinePlatform: true,
+      platform: 'android',
+    });
   });
 
   it('does not inline Platform.select when all properties are dynamic', () => {
@@ -271,7 +284,10 @@ describe('inline constants', () => {
       }
     `;
 
-    compare([inlinePlugin], code, code, {platform: 'android'});
+    compare([inlinePlugin], code, code, {
+      inlinePlatform: true,
+      platform: 'android',
+    });
   });
 
   it('does not inline Platform.select if it receives a non-object', () => {
@@ -281,7 +297,10 @@ describe('inline constants', () => {
       }
     `;
 
-    compare([inlinePlugin], code, code, {platform: 'android'});
+    compare([inlinePlugin], code, code, {
+      inlinePlatform: true,
+      platform: 'android',
+    });
   });
 
   it('replaces Platform.select in the code if Platform is a top level import', () => {
@@ -295,6 +314,7 @@ describe('inline constants', () => {
     `;
 
     compare([inlinePlugin], code, code.replace(/Platform\.select[^;]+/, '2'), {
+      inlinePlatform: 'true',
       platform: 'android',
     });
   });
@@ -309,6 +329,7 @@ describe('inline constants', () => {
     `;
 
     compare([inlinePlugin], code, code.replace(/Platform\.select[^;]+/, '1'), {
+      inlinePlatform: 'true',
       platform: 'ios',
     });
   });
@@ -326,6 +347,7 @@ describe('inline constants', () => {
       code,
       code.replace(/require\('Platform'\)\.select[^;]+/, '2'),
       {
+        inlinePlatform: 'true',
         platform: 'android',
       },
     );
@@ -343,7 +365,7 @@ describe('inline constants', () => {
       [inlinePlugin],
       code,
       code.replace(/React\.Platform\.select[^;]+/, '1'),
-      {platform: 'ios'},
+      {inlinePlatform: true, platform: 'ios'},
     );
   });
 
@@ -359,7 +381,7 @@ describe('inline constants', () => {
       [inlinePlugin],
       code,
       code.replace(/ReactNative\.Platform\.select[^;]+/, '1'),
-      {platform: 'ios'},
+      {inlinePlatform: true, platform: 'ios'},
     );
   });
 
@@ -377,7 +399,7 @@ describe('inline constants', () => {
       [inlinePlugin],
       code,
       code.replace(/React\.Platform\.select[^;]+/, '1'),
-      {platform: 'ios'},
+      {inlinePlatform: true, platform: 'ios'},
     );
   });
 
@@ -393,7 +415,7 @@ describe('inline constants', () => {
       [inlinePlugin],
       code,
       code.replace(/require\('React'\)\.Platform\.select[^;]+/, '2'),
-      {platform: 'android'},
+      {inlinePlatform: true, platform: 'android'},
     );
   });
 
@@ -411,7 +433,7 @@ describe('inline constants', () => {
       [inlinePlugin],
       code,
       code.replace(/ReactNative\.Platform\.select[^;]+/, '2'),
-      {platform: 'android'},
+      {inlinePlatform: true, platform: 'android'},
     );
   });
 
@@ -425,7 +447,8 @@ describe('inline constants', () => {
       [inlinePlugin],
       code,
       code.replace(/require\('react-native'\)\.Platform\.select[^;]+/, '2'),
-      {platform: 'android'},
+
+      {inlinePlatform: true, platform: 'android'},
     );
   });
 
@@ -436,7 +459,10 @@ describe('inline constants', () => {
       }
     `;
 
-    compare([inlinePlugin], code, code, {platform: 'ios'});
+    compare([inlinePlugin], code, code, {
+      inlinePlatform: true,
+      platform: 'ios',
+    });
   });
 
   it('replaces Platform.OS in the code if Platform is the right hand side of an assignment expression', () => {
@@ -448,6 +474,7 @@ describe('inline constants', () => {
     `;
 
     compare([inlinePlugin], code, code.replace(/Platform\.OS/, '"ios"'), {
+      inlinePlatform: 'true',
       platform: 'ios',
     });
   });
@@ -459,7 +486,10 @@ describe('inline constants', () => {
       }
     `;
 
-    compare([inlinePlugin], code, code, {platform: 'ios'});
+    compare([inlinePlugin], code, code, {
+      inlinePlatform: true,
+      platform: 'ios',
+    });
   });
 
   it('replaces React.Platform.OS in the code if Platform is the right hand side of an assignment expression', () => {
@@ -475,6 +505,7 @@ describe('inline constants', () => {
       code,
       code.replace(/React\.Platform\.OS/, '"ios"'),
       {
+        inlinePlatform: 'true',
         platform: 'ios',
       },
     );
@@ -487,7 +518,10 @@ describe('inline constants', () => {
       }
     `;
 
-    compare([inlinePlugin], code, code, {platform: 'ios'});
+    compare([inlinePlugin], code, code, {
+      inlinePlatform: true,
+      platform: 'ios',
+    });
   });
 
   it('replaces ReactNative.Platform.OS in the code if Platform is the right hand side of an assignment expression', () => {
@@ -501,7 +535,7 @@ describe('inline constants', () => {
       [inlinePlugin],
       code,
       code.replace(/ReactNative\.Platform\.OS/, '"ios"'),
-      {platform: 'ios'},
+      {inlinePlatform: true, platform: 'ios'},
     );
   });
 
@@ -512,7 +546,10 @@ describe('inline constants', () => {
       }
     `;
 
-    compare([inlinePlugin], code, code, {platform: 'ios'});
+    compare([inlinePlugin], code, code, {
+      inlinePlatform: true,
+      platform: 'ios',
+    });
   });
 
   it('replaces require("React").Platform.OS in the code if Platform is the right hand side of an assignment expression', () => {
@@ -527,7 +564,7 @@ describe('inline constants', () => {
       [inlinePlugin],
       code,
       code.replace(/require\("React"\)\.Platform\.OS/, '"ios"'),
-      {platform: 'ios'},
+      {inlinePlatform: true, platform: 'ios'},
     );
   });
 
@@ -540,7 +577,7 @@ describe('inline constants', () => {
       [inlinePlugin],
       code,
       code.replace(/Platform\.select[^;]+/, 'undefined'),
-      {platform: 'does-not-exist'},
+      {inlinePlatform: 'true', platform: 'does-not-exist'},
     );
   });
 
@@ -603,7 +640,7 @@ describe('inline constants', () => {
       code
         .replace(/Platform\.OS/, '"android"')
         .replace(/Platform\.select[^)]+\)/, '1'),
-      {dev: true, platform: 'android', isWrapped: true},
+      {inlinePlatform: true, platform: 'android', isWrapped: true},
     );
   });
 
@@ -618,7 +655,7 @@ describe('inline constants', () => {
       [inlinePlugin],
       code,
       code.replace(/require\([^)]+\)\.Platform\.OS/, '"android"'),
-      {dev: true, platform: 'android', isWrapped: true},
+      {inlinePlatform: true, platform: 'android', isWrapped: true},
     );
   });
 
@@ -647,10 +684,10 @@ describe('inline constants', () => {
 
     const expected = `
       __d(() => {
-        const a = true;
+        const a = false;
       });
     `;
 
-    compare([stripFlow, inlinePlugin], code, expected, {dev: true});
+    compare([stripFlow, inlinePlugin], code, expected, {dev: false});
   });
 });
