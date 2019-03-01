@@ -24,6 +24,15 @@ global thrower.js:1:null
 "
 `;
 
+exports[`symbolicating a stack trace with a function map 1`] = `
+"/js/RKJSModules/segmented/biz.js:5:module.exports.throwSmthInner
+/js/RKJSModules/segmented/glo.js:7:module.exports.throwSmth
+/js/RKJSModules/bar.js:14:makeItThrowInner
+/js/RKJSModules/bar.js:10:makeItThrow
+/js/RKJSModules/bar.js:5:import.then$argument_0
+"
+`;
+
 exports[`symbolicating an attribution file 1`] = `
 "{\\"functionId\\":1,\\"location\\":{\\"file\\":\\"thrower.js\\",\\"line\\":4,\\"column\\":11},\\"usage\\":[]}
 {\\"functionId\\":2,\\"location\\":{\\"file\\":\\"thrower.js\\",\\"line\\":14,\\"column\\":14},\\"usage\\":[]}

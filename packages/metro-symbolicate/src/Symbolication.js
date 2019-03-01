@@ -11,6 +11,8 @@
 
 /* eslint-disable no-console */
 
+const SourceMetadataMapConsumer = require('./SourceMetadataMapConsumer');
+
 const fs = require('fs');
 
 const UNKNOWN_MODULE_IDS = {
@@ -64,20 +66,30 @@ function getOriginalPositionFor(lineNumber, columnNumber, moduleIds, context) {
     }
     moduleLineOffset = moduleOffsets[localId];
   }
-  return metadata.consumer.originalPositionFor({
+  const original = metadata.consumer.originalPositionFor({
     line: Number(lineNumber) + moduleLineOffset,
     column: Number(columnNumber),
   });
+  if (metadata.sourceFunctionsConsumer) {
+    const functionName = metadata.sourceFunctionsConsumer.functionNameFor(
+      original,
+    );
+    if (functionName) {
+      return {...original, name: functionName};
+    }
+  }
+  return original;
 }
 
 function createContext(SourceMapConsumer, sourceMapContent) {
   var sourceMapJson = JSON.parse(sourceMapContent.replace(/^\)\]\}'/, ''));
   return {
     segments: Object.entries(sourceMapJson.x_facebook_segments || {}).reduce(
-      (acc, seg) => {
-        acc[seg[0]] = {
-          consumer: new SourceMapConsumer(seg[1]),
-          moduleOffsets: seg[1].x_facebook_offsets || {},
+      (acc, [key, map]) => {
+        acc[key] = {
+          consumer: new SourceMapConsumer(map),
+          moduleOffsets: map.x_facebook_offsets || {},
+          sourceFunctionsConsumer: new SourceMetadataMapConsumer(map),
         };
         return acc;
       },
@@ -85,6 +97,7 @@ function createContext(SourceMapConsumer, sourceMapContent) {
         '0': {
           consumer: new SourceMapConsumer(sourceMapJson),
           moduleOffsets: sourceMapJson.x_facebook_offsets || {},
+          sourceFunctionsConsumer: new SourceMetadataMapConsumer(sourceMapJson),
         },
       },
     ),
@@ -260,4 +273,5 @@ module.exports = {
   symbolicateProfilerMap,
   symbolicateAttribution,
   symbolicateChromeTrace,
+  SourceMetadataMapConsumer,
 };

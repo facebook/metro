@@ -21,6 +21,7 @@
   ],
   "dependencies": {
     "source-map": "^0.5.6",
-    "through2": "^2.0.1"
+    "through2": "^2.0.1",
+    "vlq": "^1.0.0"
   }
 }

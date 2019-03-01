@@ -54,6 +54,7 @@ afterAll(() => {
 });
 
 const TESTFILE_MAP = resolve('testfile.js.map');
+const WITH_FUNCTION_MAP_MAP = resolve('with-function-map.js.map');
 
 test('symbolicating a stack trace', async () =>
   await expect(
@@ -96,3 +97,8 @@ test('symbolicating with a cpuprofile', async () => {
 
   expect(read('testfile.temp.cpuprofile')).toMatchSnapshot();
 });
+
+test('symbolicating a stack trace with a function map', async () =>
+  await expect(
+    execute([WITH_FUNCTION_MAP_MAP], read('with-function-map.stack')),
+  ).resolves.toMatchSnapshot());
