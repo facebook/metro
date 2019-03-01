@@ -97,24 +97,35 @@ function writeBuffers(stream, buffers: Array<Buffer>) {
   });
 }
 
-function nullTerminatedBuffer(contents, encoding) {
+function nullTerminatedBuffer(
+  contents: string,
+  encoding: void | 'ascii' | 'utf16le' | 'utf8',
+) {
   return Buffer.concat([Buffer.from(contents, encoding), nullByteBuffer]);
 }
 
-function moduleToBuffer(id, code, encoding) {
+function moduleToBuffer(
+  id: number,
+  code: string,
+  encoding: void | 'ascii' | 'utf16le' | 'utf8',
+) {
   return {
     id,
     buffer: nullTerminatedBuffer(code, encoding),
   };
 }
 
-function entryOffset(n) {
+function entryOffset(n: number) {
   // 2: num_entries + startup_code_len
   // n * 2: each entry consists of two uint32s
   return (2 + n * 2) * SIZEOF_UINT32;
 }
 
-function buildModuleTable(startupCode, moduleBuffers, moduleGroups) {
+function buildModuleTable(
+  startupCode: Buffer,
+  moduleBuffers: Array<{buffer: Buffer, id: number}>,
+  moduleGroups: ModuleGroups,
+) {
   // table format:
   // - num_entries:      uint_32  number of entries
   // - startup_code_len: uint_32  length of the startup section
@@ -124,7 +135,7 @@ function buildModuleTable(startupCode, moduleBuffers, moduleGroups) {
   //  - module_offset:   uint_32  offset into the modules blob
   //  - module_length:   uint_32  length of the module code in bytes
 
-  const moduleIds = Array.from(moduleGroups.modulesById.keys());
+  const moduleIds = [...moduleGroups.modulesById.keys()];
   const maxId = moduleIds.reduce((max, id) => Math.max(max, id));
   const numEntries = maxId + 1;
   const table: Buffer = Buffer.alloc(entryOffset(numEntries)).fill(0);
@@ -154,7 +165,11 @@ function buildModuleTable(startupCode, moduleBuffers, moduleGroups) {
   return table;
 }
 
-function groupCode(rootCode, moduleGroup, modulesById) {
+function groupCode(
+  rootCode: string,
+  moduleGroup: void | Set<number>,
+  modulesById: Map<number, ModuleTransportLike>,
+) {
   if (!moduleGroup || !moduleGroup.size) {
     return rootCode;
   }
@@ -166,7 +181,11 @@ function groupCode(rootCode, moduleGroup, modulesById) {
   return code.join('\n');
 }
 
-function buildModuleBuffers(modules, moduleGroups, encoding) {
+function buildModuleBuffers(
+  modules: $ReadOnlyArray<ModuleTransportLike>,
+  moduleGroups: ModuleGroups,
+  encoding: void | 'ascii' | 'utf16le' | 'utf8',
+): Array<{buffer: Buffer, id: number}> {
   return modules
     .filter(m => !moduleGroups.modulesInGroups.has(m.id))
     .map(({id, code}) =>
@@ -214,7 +233,7 @@ function createModuleGroups(
   };
 }
 
-function* concat(iterators) {
+function* concat(iterators: Iterator<Set<number>>) {
   for (const it of iterators) {
     yield* it;
   }

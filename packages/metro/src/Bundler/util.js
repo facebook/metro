@@ -146,7 +146,7 @@ function isAssetTypeAnImage(type: string): boolean {
   );
 }
 
-function filterObject(object, blacklist) {
+function filterObject(object: AssetDataWithoutFiles, blacklist: Set<string>) {
   const copied = Object.assign({}, object);
   for (const key of blacklist) {
     delete copied[key];
@@ -209,7 +209,10 @@ function createRamBundleGroups<T: ModuleTransportLike>(
   return result;
 }
 
-function* filter(iterator, predicate) {
+function* filter(
+  iterator: ArrayMap<number, number>,
+  predicate: ([number, Array<number>]) => boolean,
+) {
   for (const value of iterator) {
     if (predicate(value)) {
       yield value;
