@@ -1,6 +1,6 @@
 {
   "name": "metro-symbolicate",
-  "version": "0.52.0",
+  "version": "0.53.0",
   "description": "A tool to find the source location from JS bundles and stack traces.",
   "license": "MIT",
   "main": "./src/symbolicate.js",
