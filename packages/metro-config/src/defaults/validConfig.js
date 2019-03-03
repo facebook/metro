@@ -18,6 +18,10 @@ module.exports = async () => {
       resolveRequest: function CustomResolver() {},
       hasteImplModulePath: './path',
     },
+    transformer: {
+      ...defaultConfig.transformer,
+      getTransformOptions: function getTransformOptions() {},
+    },
   };
 
   return validConfig;
