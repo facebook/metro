@@ -348,7 +348,9 @@ exports[`loadConfig validates config for transformer 1`] = `
 
   Example:
   {
-    \\"getTransformOptions\\": function getTransformOptions() {return _ref2.apply(this, arguments);}
+    \\"getTransformOptions\\": function getTransformOptions() {
+        return _ref2.apply(this, arguments);
+      }
   }
 "
 `;
