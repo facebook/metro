@@ -51,87 +51,73 @@ const options = {
   sourceMapUrl: 'http://localhost/bundle.map',
 };
 
-it('returns a reset delta', () => {
+it('returns a base bundle', () => {
   expect(
-    JSON.parse(
-      deltaJSBundle(
-        'foo',
-        prepend,
-        {
-          modified: graph.dependencies,
-          deleted: new Set(),
-          reset: true,
-        },
-        'sequenceId',
-        graph,
-        options,
-      ),
+    deltaJSBundle(
+      'foo',
+      prepend,
+      {
+        modified: graph.dependencies,
+        deleted: new Set(),
+        reset: true,
+      },
+      'revisionId',
+      graph,
+      options,
     ),
   ).toEqual({
-    id: 'sequenceId',
-    reset: true,
-    pre: [
-      [-1, '__d(function() {prep1()});'],
-      [-2, '__d(function() {prep2()});'],
-    ],
-    delta: [
+    base: true,
+    revisionId: 'revisionId',
+    pre: '__d(function() {prep1()});\n__d(function() {prep2()});',
+    post: '//# sourceMappingURL=http://localhost/bundle.map',
+    modules: [
       [0, '__d(function() {entrypoint()},0,[1,2],"entrypoint.js");'],
       [1, '__d(function() {foo()},1,[],"foo.js");'],
       [2, '__d(function() {bar()},2,[],"bar.js");'],
     ],
-    post: [[3, '//# sourceMappingURL=http://localhost/bundle.map']],
   });
 });
 
 it('returns an incremental delta with modified files', () => {
   expect(
-    JSON.parse(
-      deltaJSBundle(
-        'foo',
-        prepend,
-        {
-          modified: new Map([createModule('bar', [])]),
-          deleted: new Set(),
-          reset: false,
-        },
-        'sequenceId',
-        graph,
-        options,
-      ),
+    deltaJSBundle(
+      'foo',
+      prepend,
+      {
+        modified: new Map([createModule('bar', [])]),
+        deleted: new Set(),
+        reset: false,
+      },
+      'revisionId',
+      graph,
+      options,
     ),
   ).toEqual({
-    id: 'sequenceId',
-    reset: false,
-    pre: [],
-    post: [],
-    delta: [[2, '__d(function() {bar()},2,[],"bar.js");']],
+    base: false,
+    revisionId: 'revisionId',
+    modules: [[2, '__d(function() {bar()},2,[],"bar.js");']],
+    deleted: [],
   });
 });
 
 it('returns an incremental delta with deleted files', () => {
   expect(
-    JSON.parse(
-      deltaJSBundle(
-        'foo',
-        prepend,
-        {
-          modified: new Map([createModule('entrypoint', ['foo'])]),
-          deleted: new Set(['/root/bar.js']),
-          reset: false,
-        },
-        'sequenceId',
-        graph,
-        options,
-      ),
+    deltaJSBundle(
+      'foo',
+      prepend,
+      {
+        modified: new Map([createModule('entrypoint', ['foo'])]),
+        deleted: new Set(['/root/bar.js']),
+        reset: false,
+      },
+      'revisionId',
+      graph,
+      options,
     ),
   ).toEqual({
-    id: 'sequenceId',
-    reset: false,
-    pre: [],
-    post: [],
-    delta: [
-      [0, '__d(function() {entrypoint()},0,[1],"entrypoint.js");'],
-      [2, null],
-    ],
+    base: false,
+    revisionId: 'revisionId',
+    modules: [[0, '__d(function() {entrypoint()},0,[1],"entrypoint.js");']],
+    deleted: [2],
   });
 });

@@ -51,6 +51,7 @@ type BabelTransformerOptions = $ReadOnly<{
   minify: boolean,
   platform: ?string,
   projectRoot: string,
+  publicPath: string,
 }>;
 
 export type BabelTransformerArgs = $ReadOnly<{|
@@ -88,6 +89,7 @@ export type JsTransformerConfig = $ReadOnly<{|
   minifierConfig: MinifierConfig,
   minifierPath: string,
   optimizationSizeLimit: number,
+  publicPath: string,
 |}>;
 
 export type CustomTransformOptions = {[string]: mixed, __proto__: null};
@@ -184,6 +186,7 @@ class JsTransformer {
         // is used by other tooling, and this would affect it.
         inlineRequires: false,
         projectRoot: this._projectRoot,
+        publicPath: this._config.publicPath,
       },
       plugins: [],
       src: sourceCode,
@@ -201,7 +204,8 @@ class JsTransformer {
     // Transformers can ouptut null ASTs (if they ignore the file). In that case
     // we need to parse the module source code to get their AST.
     let ast =
-      transformResult.ast || babylon.parse(sourceCode, {sourceType: 'module'});
+      transformResult.ast ||
+      babylon.parse(sourceCode, {sourceType: 'unambiguous'});
 
     const {importDefault, importAll} = generateImportNames(ast);
 

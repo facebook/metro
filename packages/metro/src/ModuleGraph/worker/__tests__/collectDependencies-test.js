@@ -105,6 +105,36 @@ it('collects mixed dependencies as being sync; reverse order', () => {
   );
 });
 
+describe('import() prefetching', () => {
+  it('collects prefetch calls', () => {
+    const ast = astFromCode(`
+      __prefetchImport("some/async/module");
+    `);
+    const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
+    expect(dependencies).toEqual([
+      {name: 'some/async/module', data: {isAsync: true, isPrefetchOnly: true}},
+      {name: 'asyncRequire', data: {isAsync: false}},
+    ]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        require(${dependencyMapName}[1], "asyncRequire").prefetch(${dependencyMapName}[0], "some/async/module");
+      `),
+    );
+  });
+
+  it('disable prefetch-only flag for mixed import/prefetch calls', () => {
+    const ast = astFromCode(`
+      __prefetchImport("some/async/module");
+      import("some/async/module").then(() => {});
+    `);
+    const {dependencies} = collectDependencies(ast, opts);
+    expect(dependencies).toEqual([
+      {name: 'some/async/module', data: {isAsync: true}},
+      {name: 'asyncRequire', data: {isAsync: false}},
+    ]);
+  });
+});
+
 describe('Evaluating static arguments', () => {
   it('supports template literals as arguments', () => {
     const ast = astFromCode('require(`left-pad`)');

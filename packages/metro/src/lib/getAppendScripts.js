@@ -10,6 +10,8 @@
 
 'use strict';
 
+const getInlineSourceMappingURL = require('../DeltaBundler/Serializers/helpers/getInlineSourceMappingURL');
+const nullthrows = require('nullthrows');
 const sourceMapString = require('../DeltaBundler/Serializers/sourceMapString');
 
 import type {Graph, Module} from '../DeltaBundler';
@@ -57,13 +59,15 @@ function getAppendScripts<T: number | string>(
     }
   }
 
-  if (options.inlineSourceMap) {
-    const sourceMap = Buffer.from(
-      sourceMapString(pre, graph, {
-        processModuleFilter: () => true,
-        excludeSource: false,
-      }),
-    ).toString('base64');
+  if (options.inlineSourceMap || options.sourceMapUrl) {
+    const sourceMappingURL = options.inlineSourceMap
+      ? getInlineSourceMappingURL(
+          sourceMapString(pre, graph, {
+            processModuleFilter: () => true,
+            excludeSource: false,
+          }),
+        )
+      : nullthrows(options.sourceMapUrl);
 
     output.push({
       path: 'source-map',
@@ -74,23 +78,7 @@ function getAppendScripts<T: number | string>(
         {
           type: 'js/script/virtual',
           data: {
-            code: `//# sourceMappingURL=data:application/json;charset=utf-8;base64,${sourceMap}`,
-            map: [],
-          },
-        },
-      ],
-    });
-  } else if (options.sourceMapUrl) {
-    output.push({
-      path: 'source-map',
-      dependencies: new Map(),
-      getSource: () => Buffer.from(''),
-      inverseDependencies: new Set(),
-      output: [
-        {
-          type: 'js/script/virtual',
-          data: {
-            code: `//# sourceMappingURL=${options.sourceMapUrl}`,
+            code: `//# sourceMappingURL=${sourceMappingURL}`,
             map: [],
           },
         },

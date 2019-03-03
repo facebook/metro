@@ -25,8 +25,10 @@ const debug = require('debug')('Metro:Server');
 const formatBundlingError = require('./lib/formatBundlingError');
 const mime = require('mime-types');
 const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
+const transformHelpers = require('./lib/transformHelpers');
 const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
 const path = require('path');
+const serializeDeltaJSBundle = require('./DeltaBundler/Serializers/helpers/serializeDeltaJSBundle');
 const symbolicate = require('./Server/symbolicate/symbolicate');
 const url = require('url');
 const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
@@ -236,6 +238,7 @@ class Server {
       assetPlugins: this._config.transformer.assetPlugins,
       platform: transformOptions.platform,
       projectRoot: this._config.projectRoot,
+      publicPath: this._config.transformer.publicPath,
     });
   }
 
@@ -361,11 +364,19 @@ class Server {
     }
   }
 
-  processRequest = async (
+  processRequest = (
     req: IncomingMessage,
     res: ServerResponse,
-    next: ?() => mixed,
+    next: (?Error) => mixed,
   ) => {
+    this._processRequest(req, res, next).catch(next);
+  };
+
+  async _processRequest(
+    req: IncomingMessage,
+    res: ServerResponse,
+    next: (?Error) => mixed,
+  ) {
     const urlObj = url.parse(req.url, true);
     const {host} = req.headers;
     debug(`Handling request: ${host ? 'http://' + host : ''}${req.url}`);
@@ -386,13 +397,10 @@ class Server {
       await this._processSingleAssetRequest(req, res);
     } else if (pathname === '/symbolicate') {
       this._symbolicate(req, res);
-    } else if (next) {
-      next();
     } else {
-      res.writeHead(404);
-      res.end();
+      next();
     }
-  };
+  }
 
   _createRequestProcessor<T>({
     createStartEntry,
@@ -418,7 +426,6 @@ class Server {
           protocol: 'http',
           host: req.headers.host,
         }),
-        this._config.projectRoot,
         new Set(this._config.resolver.platforms),
       );
       const {
@@ -426,7 +433,20 @@ class Server {
         transformOptions,
         serializerOptions,
       } = splitBundleOptions(bundleOptions);
-      const graphId = getGraphId(entryFile, transformOptions);
+
+      /**
+       * `entryFile` is relative to projectRoot, we need to use resolution function
+       * to find the appropriate file with supported extensions.
+       */
+      const resolutionFn = await transformHelpers.getResolveDependencyFn(
+        this._bundler.getBundler(),
+        transformOptions.platform,
+      );
+      const resolvedEntryFilePath = resolutionFn(
+        `${this._config.projectRoot}/.`,
+        entryFile,
+      );
+      const graphId = getGraphId(resolvedEntryFilePath, transformOptions);
       const buildID = this.getNewBuildID();
 
       let onProgress = null;
@@ -452,7 +472,7 @@ class Server {
       this._reporter.update({
         buildID,
         bundleDetails: {
-          entryFile,
+          entryFile: resolvedEntryFilePath,
           platform: transformOptions.platform,
           dev: transformOptions.dev,
           minify: transformOptions.minify,
@@ -467,7 +487,7 @@ class Server {
         revisionId,
         buildID,
         bundleOptions,
-        entryFile,
+        entryFile: resolvedEntryFilePath,
         transformOptions,
         serializerOptions,
         onProgress,
@@ -612,17 +632,15 @@ class Server {
       };
     },
     finish({mres, result}) {
+      const bundle = serializeDeltaJSBundle.toJSON(result.bundle);
       mres.setHeader(
         FILES_CHANGED_COUNT_HEADER,
         String(result.numModifiedFiles),
       );
       mres.setHeader(DELTA_ID_HEADER, String(result.nextRevId));
       mres.setHeader('Content-Type', 'application/json');
-      mres.setHeader(
-        'Content-Length',
-        String(Buffer.byteLength(result.bundle)),
-      );
-      mres.end(result.bundle);
+      mres.setHeader('Content-Length', String(Buffer.byteLength(bundle)));
+      mres.end(bundle);
     },
   });
 
@@ -673,7 +691,7 @@ class Server {
         inlineSourceMap: serializerOptions.inlineSourceMap,
       };
 
-      const bundle = plainJSBundle(
+      const serializerArguments = [
         entryFile,
         revision.prepend,
         revision.graph,
@@ -685,7 +703,11 @@ class Server {
               revisionId: revision.id,
             })
           : Object.assign({}, options, {embedDelta: false}),
-      );
+      ];
+      const possibleCustomSerializer = this._config.serializer.customSerializer;
+      const bundle = possibleCustomSerializer
+        ? possibleCustomSerializer(...serializerArguments)
+        : plainJSBundle(...serializerArguments);
 
       return {
         numModifiedFiles: delta.reset
@@ -794,6 +816,7 @@ class Server {
         processModuleFilter: this._config.serializer.processModuleFilter,
         assetPlugins: this._config.transformer.assetPlugins,
         platform: transformOptions.platform,
+        publicPath: this._config.transformer.publicPath,
         projectRoot: this._config.projectRoot,
       });
     },
@@ -863,7 +886,6 @@ class Server {
   async _sourceMapForURL(reqUrl: string): Promise<MetroSourceMap> {
     const {options} = parseOptionsFromUrl(
       reqUrl,
-      this._config.projectRoot,
       new Set(this._config.resolver.platforms),
     );
 
@@ -874,12 +896,25 @@ class Server {
       onProgress,
     } = splitBundleOptions(options);
 
-    const graphId = getGraphId(entryFile, transformOptions);
+    /**
+     * `entryFile` is relative to projectRoot, we need to use resolution function
+     * to find the appropriate file with supported extensions.
+     */
+    const resolutionFn = await transformHelpers.getResolveDependencyFn(
+      this._bundler.getBundler(),
+      transformOptions.platform,
+    );
+    const resolvedEntryFilePath = resolutionFn(
+      `${this._config.projectRoot}/.`,
+      entryFile,
+    );
+
+    const graphId = getGraphId(resolvedEntryFilePath, transformOptions);
     let revision;
     const revPromise = this._bundler.getRevisionByGraphId(graphId);
     if (revPromise == null) {
       ({revision} = await this._bundler.initializeGraph(
-        entryFile,
+        resolvedEntryFilePath,
         transformOptions,
         {onProgress},
       ));

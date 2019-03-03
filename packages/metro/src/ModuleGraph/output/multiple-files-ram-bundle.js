@@ -42,7 +42,10 @@ function asMultipleFilesRamBundle({
 
   // Just concatenate all startup modules, one after the other.
   const code = startupModules
-    .map(m => getModuleCodeAndMap(m, idForPath).moduleCode)
+    .map(
+      m =>
+        getModuleCodeAndMap(m, idForPath, {enableIDInlining: true}).moduleCode,
+    )
     .join('\n');
 
   // Write one file per module, wrapped with __d() call if it proceeds.

@@ -9,14 +9,10 @@
  */
 'use strict';
 
-import type {DeltaModuleMap} from './types.flow';
+import type {HmrUpdate} from './types.flow';
 
-function injectDelta(modules: DeltaModuleMap) {
-  modules.forEach(([id, code], i) => {
-    // TODO(T34661038): This used to support source maps, but I've
-    // removed the corresponding code for now since the HmrServer
-    // does not generate source maps.
-
+function injectUpdate(update: HmrUpdate) {
+  update.modules.forEach(([id, code], i) => {
     // In JSC we need to inject from native for sourcemaps to work
     // (Safari doesn't support `sourceMappingURL` nor any variant when
     // evaluating code) but on Chrome we can simply use eval.
@@ -25,8 +21,15 @@ function injectDelta(modules: DeltaModuleMap) {
         ? global.nativeInjectHMRUpdate
         : eval; // eslint-disable-line no-eval
 
-    injectFunction(code);
+    // Fool regular expressions trying to remove sourceMappingURL comments from
+    // source files, which would incorrectly detect and remove the inlined
+    // version.
+    const pragma = 'sourceMappingURL';
+    injectFunction(
+      code + `\n//# ${pragma}=${update.sourceMappingURLs[i]}`,
+      update.sourceURLs[i],
+    );
   });
 }
 
-module.exports = injectDelta;
+module.exports = injectUpdate;

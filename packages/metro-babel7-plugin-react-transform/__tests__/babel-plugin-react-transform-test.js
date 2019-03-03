@@ -36,6 +36,7 @@ describe('finds React components', () => {
       const output = transformSync(input, {
         ast: false,
         babelrc: false,
+        configFile: false,
         plugins: [
           [
             reactPlugin,

@@ -111,6 +111,7 @@ async function convertOldToNew({
       useWatchman: true,
     },
     serializer: {
+      customSerializer: defaultConfig.serializer.customSerializer,
       createModuleIdFactory:
         createModuleIdFactory || defaultConfig.serializer.createModuleIdFactory,
       polyfillModuleNames: getPolyfillModuleNames(),
@@ -145,6 +146,7 @@ async function convertOldToNew({
         ? transformVariants()
         : defaultConfig.transformer.transformVariants,
       workerPath: getWorkerPath(),
+      publicPath: '/assets',
     },
 
     reporter,

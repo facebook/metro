@@ -15,6 +15,7 @@ import type {IncomingMessage, ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
 import type {CustomResolver} from 'metro-resolver';
 import type {MetroSourceMap} from 'metro-source-map';
+import type {Options} from 'metro/src/DeltaBundler/Serializers/plainJSBundle';
 import type {
   DeltaResult,
   Graph,
@@ -62,7 +63,7 @@ export type GetTransformOptions = (
 export type Middleware = (
   IncomingMessage,
   ServerResponse,
-  ?() => mixed,
+  (e: ?Error) => mixed,
 ) => mixed;
 
 export type OldConfigT = {
@@ -115,6 +116,12 @@ type ResolverConfigT = {|
 
 type SerializerConfigT = {|
   createModuleIdFactory: () => (path: string) => number,
+  customSerializer: ?(
+    entryPoint: string,
+    preModules: $ReadOnlyArray<Module<>>,
+    graph: Graph<>,
+    options: Options,
+  ) => string,
   experimentalSerializerHook: (graph: Graph<>, delta: DeltaResult<>) => mixed,
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
@@ -130,6 +137,7 @@ type TransformerConfigT = {|
   postMinifyProcess: PostMinifyProcess,
   transformVariants: TransformVariants,
   workerPath: string,
+  publicPath: string,
 |};
 
 type MetalConfigT = {|

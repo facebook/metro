@@ -12,6 +12,8 @@
 
 const ResourceNotFoundError = require('../../IncrementalBundler/ResourceNotFoundError');
 
+const path = require('path');
+
 const {getDefaultValues} = require('metro-config/src/defaults');
 
 jest
@@ -73,9 +75,9 @@ describe('processRequest', () => {
   options.serializer.polyfillModuleNames = null;
   options.serializer.getModulesRunBeforeMainModule = () => ['InitializeCore'];
 
-  const makeRequest = (reqHandler, requrl, reqOptions) =>
-    new Promise(resolve =>
-      reqHandler(
+  const makeRequest = (requrl, reqOptions) =>
+    new Promise((resolve, reject) =>
+      server.processRequest(
         {url: requrl, headers: {host: 'localhost:8081'}, ...reqOptions},
         {
           statusCode: 200,
@@ -94,11 +96,10 @@ describe('processRequest', () => {
             resolve(this);
           },
         },
-        {next: () => {}},
+        reject,
       ),
     );
 
-  let requestHandler;
   let changeHandler;
 
   beforeEach(() => {
@@ -206,13 +207,11 @@ describe('processRequest', () => {
     );
 
     server = new Server(options);
-    requestHandler = server.processRequest.bind(server);
 
     transformHelpers.getTransformFn = jest.fn().mockReturnValue(() => {});
     transformHelpers.getResolveDependencyFn = jest
       .fn()
-      .mockReturnValue(() => {});
-
+      .mockReturnValue((a, b) => path.resolve(a, `${b}.js`));
     let i = 0;
     crypto.randomBytes.mockImplementation(() => `XXXXX-${i++}`);
 
@@ -220,11 +219,7 @@ describe('processRequest', () => {
   });
 
   it('returns JS bundle source on request of *.bundle', async () => {
-    const response = await makeRequest(
-      requestHandler,
-      'mybundle.bundle?runModule=true',
-      null,
-    );
+    const response = await makeRequest('mybundle.bundle?runModule=true', null);
 
     expect(response.body).toEqual(
       [
@@ -232,34 +227,26 @@ describe('processRequest', () => {
         '__d(function() {entry();},0,[1],"mybundle.js");',
         '__d(function() {foo();},1,[],"foo.js");',
         'require(0);',
-        '//# sourceMappingURL=http://localhost:8081/mybundle.map?runModule=true',
+        '//# sourceMappingURL=//localhost:8081/mybundle.map?runModule=true',
       ].join('\n'),
     );
   });
 
   it('returns JS bundle without the initial require() call', async () => {
-    const response = await makeRequest(
-      requestHandler,
-      'mybundle.bundle?runModule=false',
-      null,
-    );
+    const response = await makeRequest('mybundle.bundle?runModule=false', null);
 
     expect(response.body).toEqual(
       [
         'function () {require();}',
         '__d(function() {entry();},0,[1],"mybundle.js");',
         '__d(function() {foo();},1,[],"foo.js");',
-        '//# sourceMappingURL=http://localhost:8081/mybundle.map?runModule=false',
+        '//# sourceMappingURL=//localhost:8081/mybundle.map?runModule=false',
       ].join('\n'),
     );
   });
 
   it('returns JS bundle with embedded delta bundle', async () => {
-    const response = await makeRequest(
-      requestHandler,
-      'mybundle.bundle?embedDelta=true',
-      null,
-    );
+    const response = await makeRequest('mybundle.bundle?embedDelta=true', null);
 
     expect(response.body).toEqual(
       [
@@ -267,37 +254,30 @@ describe('processRequest', () => {
         '__d(function() {entry();},0,[1],"mybundle.js");',
         '__d(function() {foo();},1,[],"foo.js");',
         'require(0);',
-        '//# sourceMappingURL=http://localhost:8081/mybundle.map?embedDelta=true',
-        '//# offsetTable={"pre":[[-1,0,24]],"delta":[[0,25,47],[1,73,39]],"post":[[2,113,11],[3,125,71]],"id":"XXXXX-0"}',
+        '//# sourceMappingURL=//localhost:8081/mybundle.map?embedDelta=true',
+        '//# offsetTable={"pre":24,"post":78,"modules":[[0,47],[1,39]],"revisionId":"XXXXX-0"}',
       ].join('\n'),
     );
   });
 
   it('returns Last-Modified header on request of *.bundle', () => {
-    return makeRequest(requestHandler, 'mybundle.bundle?runModule=true').then(
-      response => {
-        expect(response.getHeader('Last-Modified')).toBeDefined();
-      },
-    );
+    return makeRequest('mybundle.bundle?runModule=true').then(response => {
+      expect(response.getHeader('Last-Modified')).toBeDefined();
+    });
   });
 
   it('returns build info headers on request of *.bundle', async () => {
-    const response = await makeRequest(
-      requestHandler,
-      'mybundle.bundle?runModule=true',
-    );
+    const response = await makeRequest('mybundle.bundle?runModule=true');
 
     expect(response.getHeader('X-Metro-Files-Changed-Count')).toEqual('3');
   });
 
   it('returns Content-Length header on request of *.bundle', () => {
-    return makeRequest(requestHandler, 'mybundle.bundle?runModule=true').then(
-      response => {
-        expect(response.getHeader('Content-Length')).toEqual(
-          '' + Buffer.byteLength(response.body),
-        );
-      },
-    );
+    return makeRequest('mybundle.bundle?runModule=true').then(response => {
+      expect(response.getHeader('Content-Length')).toEqual(
+        '' + Buffer.byteLength(response.body),
+      );
+    });
   });
 
   it('returns 404 on request of *.bundle when resource does not exist', async () => {
@@ -305,21 +285,16 @@ describe('processRequest', () => {
       cb(new ResourceNotFoundError('unknown.bundle')),
     );
 
-    return makeRequest(requestHandler, 'unknown.bundle?runModule=true').then(
-      response => {
-        expect(response.statusCode).toEqual(404);
-        expect(response.body).toEqual(
-          expect.stringContaining('ResourceNotFoundError'),
-        );
-      },
-    );
+    return makeRequest('unknown.bundle?runModule=true').then(response => {
+      expect(response.statusCode).toEqual(404);
+      expect(response.body).toEqual(
+        expect.stringContaining('ResourceNotFoundError'),
+      );
+    });
   });
 
   it('returns 304 on request of *.bundle when if-modified-since equals Last-Modified', async () => {
-    const response = await makeRequest(
-      requestHandler,
-      'mybundle.bundle?runModule=true',
-    );
+    const response = await makeRequest('mybundle.bundle?runModule=true');
     const lastModified = response.headers['Last-Modified'];
 
     global.Date = class {
@@ -331,7 +306,7 @@ describe('processRequest', () => {
       }
     };
 
-    return makeRequest(requestHandler, 'mybundle.bundle?runModule=true', {
+    return makeRequest('mybundle.bundle?runModule=true', {
       headers: {'if-modified-since': lastModified},
     }).then(response => {
       expect(response.statusCode).toEqual(304);
@@ -339,10 +314,7 @@ describe('processRequest', () => {
   });
 
   it('returns 200 on request of *.bundle when something changes (ignoring if-modified-since headers)', async () => {
-    const response = await makeRequest(
-      requestHandler,
-      'mybundle.bundle?runModule=true',
-    );
+    const response = await makeRequest('mybundle.bundle?runModule=true');
     const lastModified = response.headers['Last-Modified'];
 
     DeltaBundler.prototype.getDelta.mockReturnValue(
@@ -364,7 +336,7 @@ describe('processRequest', () => {
       }
     };
 
-    return makeRequest(requestHandler, 'mybundle.bundle?runModule=true', {
+    return makeRequest('mybundle.bundle?runModule=true', {
       headers: {'if-modified-since': lastModified},
     }).then(response => {
       expect(response.statusCode).toEqual(200);
@@ -373,7 +345,7 @@ describe('processRequest', () => {
   });
 
   it('returns sourcemap on request of *.map', async () => {
-    const response = await makeRequest(requestHandler, 'mybundle.map');
+    const response = await makeRequest('mybundle.map');
 
     expect(JSON.parse(response.body)).toEqual({
       version: 3,
@@ -385,43 +357,39 @@ describe('processRequest', () => {
   });
 
   it('does not rebuild the graph when requesting the sourcemaps after having requested the same bundle', async () => {
-    expect(
-      (await makeRequest(requestHandler, 'mybundle.bundle?platform=ios'))
-        .statusCode,
-    ).toBe(200);
+    expect((await makeRequest('mybundle.bundle?platform=ios')).statusCode).toBe(
+      200,
+    );
 
     DeltaBundler.prototype.buildGraph.mockClear();
     DeltaBundler.prototype.getDelta.mockClear();
 
-    expect(
-      (await makeRequest(requestHandler, 'mybundle.map?platform=ios'))
-        .statusCode,
-    ).toBe(200);
+    expect((await makeRequest('mybundle.map?platform=ios')).statusCode).toBe(
+      200,
+    );
 
     expect(DeltaBundler.prototype.buildGraph.mock.calls.length).toBe(0);
     expect(DeltaBundler.prototype.getDelta.mock.calls.length).toBe(0);
   });
 
   it('does rebuild the graph when requesting the sourcemaps if the bundle has not been built yet', async () => {
-    expect(
-      (await makeRequest(requestHandler, 'mybundle.bundle?platform=ios'))
-        .statusCode,
-    ).toBe(200);
+    expect((await makeRequest('mybundle.bundle?platform=ios')).statusCode).toBe(
+      200,
+    );
 
     DeltaBundler.prototype.buildGraph.mockClear();
     DeltaBundler.prototype.getDelta.mockClear();
 
     // request the map of a different bundle
     expect(
-      (await makeRequest(requestHandler, 'mybundle.map?platform=android'))
-        .statusCode,
+      (await makeRequest('mybundle.map?platform=android')).statusCode,
     ).toBe(200);
 
     expect(DeltaBundler.prototype.buildGraph.mock.calls.length).toBe(1);
   });
 
   it('passes in the platform param', async () => {
-    await makeRequest(requestHandler, 'index.bundle?platform=ios');
+    await makeRequest('index.bundle?platform=ios');
 
     expect(transformHelpers.getTransformFn).toBeCalledWith(
       ['/root/index.js'],
@@ -437,33 +405,17 @@ describe('processRequest', () => {
     expect(DeltaBundler.prototype.buildGraph).toBeCalledWith(
       ['/root/index.js'],
       {
-        resolve: jasmine.any(Function),
-        transform: jasmine.any(Function),
-        onProgress: jasmine.any(Function),
+        resolve: expect.any(Function),
+        transform: expect.any(Function),
+        onProgress: expect.any(Function),
       },
     );
   });
 
   it('does not rebuild the bundle when making concurrent requests', async () => {
-    let resolveBuildGraph;
-
     // Delay the response of the buildGraph method.
-    transformHelpers.getResolveDependencyFn.mockImplementation(async () => {
-      return new Promise(res => (resolveBuildGraph = res));
-    });
-
-    const promise1 = makeRequest(requestHandler, 'index.bundle');
-    const promise2 = makeRequest(requestHandler, 'index.bundle');
-
-    // We must wait for all synchronous promises *before*
-    // `getResolveDependencyFn` to resolve before we can be sure that
-    // `resolveBuildGraph` has been defined.
-    process.nextTick(() => {
-      resolveBuildGraph({
-        entryPoints: ['/root/mybundle.js'],
-        dependencies,
-      });
-    });
+    const promise1 = makeRequest('index.bundle');
+    const promise2 = makeRequest('index.bundle');
 
     const [result1, result2] = await Promise.all([promise1, promise2]);
     expect(result1.body).toEqual(result2.body);
@@ -476,25 +428,18 @@ describe('processRequest', () => {
 
   describe('Generate delta bundle endpoint', () => {
     it('should generate the initial delta correctly', async () => {
-      const response = await makeRequest(
-        requestHandler,
-        'index.delta?platform=ios',
-      );
+      const response = await makeRequest('index.delta?platform=ios');
 
       expect(JSON.parse(response.body)).toEqual({
-        id: 'XXXXX-0',
-        pre: [[-1, 'function () {require();}']],
-        delta: [
+        base: true,
+        revisionId: 'XXXXX-0',
+        pre: 'function () {require();}',
+        post:
+          '//# sourceMappingURL=http://localhost:8081/index.map?platform=ios',
+        modules: [
           [0, '__d(function() {entry();},0,[1],"mybundle.js");'],
           [1, '__d(function() {foo();},1,[],"foo.js");'],
         ],
-        post: [
-          [
-            2,
-            '//# sourceMappingURL=http://localhost:8081/index.map?platform=ios',
-          ],
-        ],
-        reset: true,
       });
 
       expect(response.headers['X-Metro-Delta-ID']).toEqual('XXXXX-0');
@@ -524,19 +469,17 @@ describe('processRequest', () => {
       );
 
       // initial request.
-      await makeRequest(requestHandler, 'index.delta?platform=ios');
+      await makeRequest('index.delta?platform=ios');
 
       const response = await makeRequest(
-        requestHandler,
         'index.delta?platform=ios&deltaBundleId=XXXXX-0',
       );
 
       expect(JSON.parse(response.body)).toEqual({
-        id: 'XXXXX-1',
-        pre: [],
-        post: [],
-        delta: [[1, '__d(function() {modified();},1,[],"foo.js");']],
-        reset: false,
+        base: false,
+        revisionId: 'XXXXX-1',
+        modules: [[1, '__d(function() {modified();},1,[],"foo.js");']],
+        deleted: [],
       });
 
       expect(response.headers['X-Metro-Delta-ID']).toEqual('XXXXX-1');
@@ -546,7 +489,7 @@ describe('processRequest', () => {
       });
     });
 
-    it('should return a reset delta if the sequenceId does not match', async () => {
+    it('should return a base bundle if the revisionId does not match', async () => {
       DeltaBundler.prototype.getDelta.mockReturnValue(
         Promise.resolve({
           modified: new Map([
@@ -570,17 +513,11 @@ describe('processRequest', () => {
       );
 
       // Do an initial request.
-      await makeRequest(requestHandler, 'index.delta?platform=ios');
+      await makeRequest('index.delta?platform=ios');
       // First delta request has a matching id.
-      await makeRequest(
-        requestHandler,
-        'index.delta?platform=ios&deltaBundleId=XXXXX-0',
-      );
+      await makeRequest('index.delta?platform=ios&deltaBundleId=XXXXX-0');
       // Second delta request does not have a matching id.
-      await makeRequest(
-        requestHandler,
-        'index.delta?platform=ios&deltaBundleId=XXXXX-0',
-      );
+      await makeRequest('index.delta?platform=ios&deltaBundleId=XXXXX-0');
 
       expect(DeltaBundler.prototype.getDelta.mock.calls[0][1]).toEqual({
         reset: false,
@@ -599,44 +536,29 @@ describe('processRequest', () => {
         throw transformError;
       });
 
-      return makeRequest(requestHandler, 'index.delta?platform=ios').then(
-        function(response) {
-          expect(() => JSON.parse(response.body)).not.toThrow();
-          const body = JSON.parse(response.body);
-          expect(body).toMatchObject({
-            type: 'TransformError',
-            message: 'test syntax error',
-          });
-          expect(body.errors).toContainEqual({
-            description: 'test syntax error',
-            filename: 'testFile.js',
-            lineNumber: 123,
-          });
-        },
-      );
-    });
-
-    it('does return the same initial delta when making concurrent requests', async () => {
-      let resolveBuildGraph;
-
-      transformHelpers.getResolveDependencyFn.mockImplementation(async () => {
-        return new Promise(res => (resolveBuildGraph = res));
-      });
-
-      const promise1 = makeRequest(requestHandler, 'index.delta');
-      const promise2 = makeRequest(requestHandler, 'index.delta');
-
-      process.nextTick(() => {
-        resolveBuildGraph({
-          entryPoints: ['/root/mybundle.js'],
-          dependencies,
+      return makeRequest('index.delta?platform=ios').then(function(response) {
+        expect(() => JSON.parse(response.body)).not.toThrow();
+        const body = JSON.parse(response.body);
+        expect(body).toMatchObject({
+          type: 'TransformError',
+          message: 'test syntax error',
+        });
+        expect(body.errors).toContainEqual({
+          description: 'test syntax error',
+          filename: 'testFile.js',
+          lineNumber: 123,
         });
       });
+    });
+
+    it('does return the same base bundle when making concurrent requests', async () => {
+      const promise1 = makeRequest('index.delta');
+      const promise2 = makeRequest('index.delta');
 
       const [result1, result2] = await Promise.all([promise1, promise2]);
-      const {id: id1, ...delta1} = JSON.parse(result1.body);
-      const {id: id2, ...delta2} = JSON.parse(result2.body);
-      expect(delta1).toEqual(delta2);
+      const {revisionId: id1, ...base1} = JSON.parse(result1.body);
+      const {revisionId: id2, ...base2} = JSON.parse(result2.body);
+      expect(base1).toEqual(base2);
       expect(id1).toEqual('XXXXX-0');
       expect(id2).toEqual('XXXXX-1');
 
@@ -823,7 +745,7 @@ describe('processRequest', () => {
         return outputStack;
       });
 
-      return makeRequest(requestHandler, '/symbolicate', {
+      return makeRequest('/symbolicate', {
         rawBody: body,
       }).then(response =>
         expect(JSON.parse(response.body)).toEqual({stack: outputStack}),
@@ -836,12 +758,12 @@ describe('processRequest', () => {
       const body = 'clearly-not-json';
       console.error = jest.fn();
 
-      return makeRequest(requestHandler, '/symbolicate', {
+      return makeRequest('/symbolicate', {
         rawBody: body,
       }).then(response => {
         expect(response.statusCode).toEqual(500);
         expect(JSON.parse(response.body)).toEqual({
-          error: jasmine.any(String),
+          error: expect.any(String),
         });
         expect(console.error).toBeCalled();
       });

@@ -59,7 +59,7 @@ class DependencyGraph extends EventEmitter {
     super();
     this._config = config;
     this._filesByDirNameIndex = new FilesByDirNameIndex(
-      initialHasteFS.getAllFiles(),
+      initialHasteFS.getFileIterator(),
     );
     this._assetResolutionCache = new AssetResolutionCache({
       assetExtensions: new Set(config.resolver.assetExts),
@@ -93,6 +93,7 @@ class DependencyGraph extends EventEmitter {
       providesModuleNodeModules: config.resolver.providesModuleNodeModules,
       retainAllFiles: true,
       resetCache: config.resetCache,
+      rootDir: config.projectRoot,
       roots: config.watchFolders,
       throwOnModuleCollision: true,
       useWatchman: config.resolver.useWatchman,
@@ -136,7 +137,9 @@ class DependencyGraph extends EventEmitter {
 
   _onHasteChange({eventsQueue, hasteFS, moduleMap}) {
     this._hasteFS = hasteFS;
-    this._filesByDirNameIndex = new FilesByDirNameIndex(hasteFS.getAllFiles());
+    this._filesByDirNameIndex = new FilesByDirNameIndex(
+      hasteFS.getFileIterator(),
+    );
     this._assetResolutionCache.clear();
     this._moduleMap = moduleMap;
     eventsQueue.forEach(({type, filePath}) =>

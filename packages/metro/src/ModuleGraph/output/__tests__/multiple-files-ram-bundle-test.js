@@ -67,7 +67,7 @@ it('creates a source map', () => {
       return section;
     }),
   );
-  expect(map.x_facebook_offsets).toEqual([1, 4, 7, 10, 13, 16]);
+  expect(map.x_facebook_offsets).toEqual([1, 2, 3, 4, 5, 6]);
 });
 
 it('creates a magic file with the number', () => {
@@ -86,7 +86,9 @@ it('bundles each file separately', () => {
   modules.forEach((module, i) => {
     // $FlowFixMe "extraFiles" is always defined at this point.
     expect(extraFiles.get(`js-modules/${i}.js`).toString()).toBe(
-      getModuleCodeAndMap(modules[i], x => idsForPath(x).moduleId).moduleCode,
+      getModuleCodeAndMap(modules[i], x => idsForPath(x).moduleId, {
+        enableIDInlining: true,
+      }).moduleCode,
     );
   });
 });
@@ -101,6 +103,7 @@ function createRamBundle(preloadedModules = new Set(), ramGroups) {
     idsForPath,
     modules,
     requireCalls: [requireCall],
+    enableIDInlining: true,
   });
 
   return {code: result.code, map: result.map, extraFiles: result.extraFiles};
@@ -135,7 +138,7 @@ function makeModuleMap(name, path) {
 }
 
 function makeModuleCode(moduleCode) {
-  return `__d(() => {\n${moduleCode}\n})`;
+  return `__d(() => {${moduleCode}})`;
 }
 
 function makeModulePath(name) {
@@ -147,6 +150,7 @@ function makeDependency(name) {
   return {
     id: name,
     isAsync: false,
+    isPrefetchOnly: false,
     path,
   };
 }

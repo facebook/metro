@@ -213,6 +213,7 @@ type BabelCoreOptions = {|
   plugins?: ?_Plugins,
   presets?: Array<string>,
   retainLines?: boolean,
+  root?: string,
   shouldPrintComment?: ?(string) => boolean,
   sourceFileName?: string,
   sourceMaps?: boolean | 'inline' | 'both',
@@ -286,6 +287,7 @@ declare module '@babel/core' {
   declare type BabelSourceMap = _BabelSourceMap;
   declare type Plugins = _Plugins;
   declare type TransformResult = Transform7Result;
+  declare type BabelCoreOptions = BabelCoreOptions;
 
   // use @babel/types instead!
   declare var types: BabelTypes;

@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @emails oncall+javascript_foundation
- * @flow
  * @format
  */
 
@@ -17,7 +16,7 @@ const execBundle = require('../execBundle');
 
 jest.unmock('cosmiconfig');
 
-jasmine.DEFAULT_TIMEOUT_INTERVAL = 30 * 1000;
+jest.setTimeout(30 * 1000);
 
 it('builds a simple bundle', async () => {
   const config = await Metro.loadConfig({
@@ -28,5 +27,12 @@ it('builds a simple bundle', async () => {
     entry: 'import-export/index.js',
   });
 
-  expect(execBundle(result.code)).toMatchSnapshot();
+  const object = execBundle(result.code);
+  const cjs = await object.asyncImportCJS;
+
+  expect(object).toMatchSnapshot();
+  expect(cjs).toEqual(expect.objectContaining(cjs.default));
+
+  await expect(object.asyncImportCJS).resolves.toMatchSnapshot();
+  await expect(object.asyncImportESM).resolves.toMatchSnapshot();
 });

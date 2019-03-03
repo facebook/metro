@@ -56,7 +56,11 @@ function asIndexedRamBundle({
 
   const tableAndContents = buildTableAndContents(
     startupModules
-      .map(m => getModuleCodeAndMap(m, idForPath).moduleCode)
+      .map(
+        m =>
+          getModuleCodeAndMap(m, idForPath, {enableIDInlining: true})
+            .moduleCode,
+      )
       .join('\n'),
     deferredModules,
     moduleGroups,

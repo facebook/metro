@@ -17,7 +17,7 @@ const fetch = require('node-fetch');
 
 jest.unmock('cosmiconfig');
 
-jasmine.DEFAULT_TIMEOUT_INTERVAL = 60 * 1000;
+jest.setTimeout(60 * 1000);
 
 describe('Metro development server serves bundles via HTTP', () => {
   let config;

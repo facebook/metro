@@ -40,4 +40,13 @@ describe('FileStore', () => {
 
     expect(fileStore.get(cache)).toEqual(null);
   });
+
+  it('reads and writes binary data', () => {
+    const fileStore = new FileStore({root: '/root'});
+    const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
+    const data = Buffer.from([0xca, 0xc4, 0xe5]);
+
+    fileStore.set(cache, data);
+    expect(fileStore.get(cache)).toEqual(data);
+  });
 });

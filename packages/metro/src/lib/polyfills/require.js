@@ -202,6 +202,7 @@ function metroImportDefault(moduleId: ModuleID | VerboseModuleNameForDev) {
 
   return (modules[moduleIdReallyIsNumber].importedDefault = importedDefault);
 }
+metroRequire.importDefault = metroImportDefault;
 
 function metroImportAll(moduleId) {
   if (__DEV__ && typeof moduleId === 'string') {
@@ -241,6 +242,7 @@ function metroImportAll(moduleId) {
 
   return (modules[moduleIdReallyIsNumber].importedAll = importedAll);
 }
+metroRequire.importAll = metroImportAll;
 
 let inGuard = false;
 function guardedLoadModule(moduleId: ModuleID, module) {

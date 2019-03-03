@@ -32,6 +32,10 @@ export type TransformResultDependency = {|
      * this dependency was pulled using a synchronous `require()` call.
      */
     +isAsync: boolean,
+    /**
+     * The dependency is actually a `__prefetchImport()` call.
+     */
+    +isPrefetchOnly?: true,
   |},
 |};
 

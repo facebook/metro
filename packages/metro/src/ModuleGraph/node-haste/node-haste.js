@@ -58,7 +58,8 @@ const NULL_MODULE: Moduleish = {
 
 // This function maps the ModuleGraph data structure to jest-haste-map's ModuleMap
 const createModuleMap = ({files, helpers, moduleCache, sourceExts}) => {
-  const map = Object.create(null);
+  const map = new Map();
+
   files.forEach(filePath => {
     if (helpers.isNodeModulesDir(filePath)) {
       return;
@@ -76,15 +77,15 @@ const createModuleMap = ({files, helpers, moduleCache, sourceExts}) => {
     if (!(id && module && module.isHaste())) {
       return;
     }
-    if (!map[id]) {
-      map[id] = Object.create(null);
-    }
+
+    const mapModule = map.get(id) || Object.create(null);
+
     const platform =
       parsePlatformFilePath(filePath, platforms).platform || GENERIC_PLATFORM;
 
-    const existingModule = map[id][platform];
+    const existingModule = mapModule[platform];
     // 0 = Module, 1 = Package in jest-haste-map
-    map[id][platform] = [filePath, module.type === 'Package' ? 1 : 0];
+    mapModule[platform] = [filePath, module.type === 'Package' ? 1 : 0];
 
     if (existingModule && existingModule[0] !== filePath) {
       throw new Error(
@@ -98,6 +99,8 @@ const createModuleMap = ({files, helpers, moduleCache, sourceExts}) => {
         ].join('\n'),
       );
     }
+
+    map.set(id, mapModule);
   });
   return map;
 };
@@ -144,9 +147,10 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     mainFields: options.mainFields,
     moduleCache,
     moduleMap: new ModuleMap({
-      duplicates: Object.create(null),
+      duplicates: new Map(),
       map: createModuleMap({files, helpers, moduleCache, sourceExts}),
-      mocks: Object.create(null),
+      mocks: new Map(),
+      rootDir: '',
     }),
     preferNativePlatform: true,
     resolveAsset: (dirPath, assetName, platform) =>

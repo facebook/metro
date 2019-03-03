@@ -29,3 +29,6 @@ export const extraData = {
   primitiveDefault,
   primitiveFoo,
 };
+
+export const asyncImportCJS = import('./export-5');
+export const asyncImportESM = import('./export-6');

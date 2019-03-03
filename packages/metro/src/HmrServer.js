@@ -21,6 +21,7 @@ const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
 const nullthrows = require('nullthrows');
 const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
 const splitBundleOptions = require('./lib/splitBundleOptions');
+const transformHelpers = require('./lib/transformHelpers');
 const url = require('url');
 
 const {
@@ -84,13 +85,24 @@ class HmrServer<TClient: Client> {
 
       const {options} = parseOptionsFromUrl(
         url.format(urlObj),
-        this._config.projectRoot,
         new Set(this._config.resolver.platforms),
       );
 
       const {entryFile, transformOptions} = splitBundleOptions(options);
 
-      const graphId = getGraphId(entryFile, transformOptions);
+      /**
+       * `entryFile` is relative to projectRoot, we need to use resolution function
+       * to find the appropriate file with supported extensions.
+       */
+      const resolutionFn = await transformHelpers.getResolveDependencyFn(
+        this._bundler.getBundler(),
+        transformOptions.platform,
+      );
+      const resolvedEntryFilePath = resolutionFn(
+        `${this._config.projectRoot}/.`,
+        entryFile,
+      );
+      const graphId = getGraphId(resolvedEntryFilePath, transformOptions);
       revPromise = this._bundler.getRevisionByGraphId(graphId);
 
       if (!revPromise) {
@@ -121,6 +133,8 @@ class HmrServer<TClient: Client> {
       unlisten: () => unlisten(),
       revisionId: id,
     };
+
+    await this._handleFileChange(client);
 
     const unlisten = this._bundler
       .getDeltaBundler()
@@ -157,7 +171,7 @@ class HmrServer<TClient: Client> {
     log({
       ...createActionEndEntry(processingHmrChange),
       outdated_modules:
-        message.type === 'update' ? message.body.delta.length : undefined,
+        message.type === 'update' ? message.body.modules.length : undefined,
     });
   }
 
@@ -183,14 +197,23 @@ class HmrServer<TClient: Client> {
 
       client.revisionId = revision.id;
 
+      const {modules, deleted, sourceMappingURLs, sourceURLs} = hmrJSBundle(
+        delta,
+        revision.graph,
+        {
+          createModuleId: this._createModuleId,
+          projectRoot: this._config.projectRoot,
+        },
+      );
+
       return {
         type: 'update',
         body: {
-          id: revision.id,
-          delta: hmrJSBundle(delta, revision.graph, {
-            createModuleId: this._createModuleId,
-            projectRoot: this._config.projectRoot,
-          }),
+          revisionId: revision.id,
+          modules,
+          deleted,
+          sourceMappingURLs,
+          sourceURLs,
         },
       };
     } catch (error) {

@@ -15,6 +15,8 @@ const getAppendScripts = require('../../lib/getAppendScripts');
 const {wrapModule} = require('./helpers/js');
 const {getJsOutput, isJsModule} = require('./helpers/js');
 
+import type {RevisionId} from '../../IncrementalBundler';
+import type {Bundle, DeltaBundle} from '../../lib/bundle-modules/types.flow';
 import type {
   DeltaResult,
   Graph,
@@ -26,60 +28,46 @@ function deltaJSBundle(
   entryPoint: string,
   pre: $ReadOnlyArray<Module<>>,
   delta: DeltaResult<>,
-  sequenceId: string,
+  revisionId: RevisionId,
   graph: Graph<>,
   options: SerializerOptions,
-): string {
-  const outputPre = [];
-  const outputPost = [];
-  const outputDelta = [];
-
+): Bundle | DeltaBundle {
   const {processModuleFilter} = options;
 
-  for (const module of delta.modified.values()) {
-    if (isJsModule(module) && processModuleFilter(module)) {
-      outputDelta.push([
-        options.createModuleId(module.path),
-        wrapModule(module, options),
-      ]);
-    }
-  }
-
-  for (const path of delta.deleted) {
-    outputDelta.push([options.createModuleId(path), null]);
-  }
+  const modules = [...delta.modified.values()]
+    .filter(isJsModule)
+    .filter(processModuleFilter)
+    .map(module => [
+      options.createModuleId(module.path),
+      wrapModule(module, options),
+    ]);
 
   if (delta.reset) {
-    let i = -1;
-
-    for (const module of pre) {
-      if (isJsModule(module) && processModuleFilter(module)) {
-        outputPre.push([i, getJsOutput(module).data.code]);
-        i--;
-      }
-    }
-
     const appendScripts = getAppendScripts(entryPoint, pre, graph, options);
 
-    for (const module of appendScripts) {
-      if (isJsModule(module) && processModuleFilter(module)) {
-        outputPost.push([
-          options.createModuleId(module.path),
-          getJsOutput(module).data.code,
-        ]);
-      }
-    }
+    return {
+      base: true,
+      revisionId,
+      pre: pre
+        .filter(isJsModule)
+        .filter(processModuleFilter)
+        .map(module => getJsOutput(module).data.code)
+        .join('\n'),
+      post: appendScripts
+        .filter(isJsModule)
+        .filter(processModuleFilter)
+        .map(module => getJsOutput(module).data.code)
+        .join('\n'),
+      modules,
+    };
   }
 
-  const output = {
-    id: sequenceId,
-    pre: outputPre,
-    post: outputPost,
-    delta: outputDelta,
-    reset: delta.reset,
+  return {
+    base: false,
+    revisionId,
+    modules,
+    deleted: [...delta.deleted].map(path => options.createModuleId(path)),
   };
-
-  return JSON.stringify(output);
 }
 
 module.exports = deltaJSBundle;

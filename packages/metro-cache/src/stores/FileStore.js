@@ -15,6 +15,9 @@ const mkdirp = require('mkdirp');
 const path = require('path');
 const rimraf = require('rimraf');
 
+const NULL_BYTE = 0x00;
+const NULL_BYTE_BUFFER = new Buffer([NULL_BYTE]);
+
 export type Options = {|
   root: string,
 |};
@@ -29,7 +32,13 @@ class FileStore<T> {
 
   get(key: Buffer): ?T {
     try {
-      return JSON.parse(fs.readFileSync(this._getFilePath(key), 'utf8'));
+      const data = fs.readFileSync(this._getFilePath(key));
+
+      if (data[0] === NULL_BYTE) {
+        return (data.slice(1): any);
+      } else {
+        return JSON.parse(data.toString('utf8'));
+      }
     } catch (err) {
       if (err.code === 'ENOENT') {
         return null;
@@ -40,7 +49,16 @@ class FileStore<T> {
   }
 
   set(key: Buffer, value: T): void {
-    fs.writeFileSync(this._getFilePath(key), JSON.stringify(value));
+    if (value instanceof Buffer) {
+      const fd = fs.openSync(this._getFilePath(key), 'w');
+
+      fs.writeSync(fd, NULL_BYTE_BUFFER);
+      fs.writeSync(fd, value);
+
+      fs.closeSync(fd);
+    } else {
+      fs.writeFileSync(this._getFilePath(key), JSON.stringify(value));
+    }
   }
 
   clear() {

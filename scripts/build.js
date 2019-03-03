@@ -21,7 +21,7 @@
 
 'use strict';
 
-const babel = require('babel-core');
+const babel = require('@babel/core');
 const chalk = require('chalk');
 const fs = require('fs');
 const getPackages = require('./_getPackages');
@@ -96,7 +96,6 @@ function buildFile(file, silent) {
           '\n'
       );
   } else {
-    // $FlowFixMe TODO t25179342 need to update flow-types for babel-core
     const transformed = prettier.format(babel.transformFileSync(file, {}).code, {
       parser: 'babylon',
     });
@@ -121,7 +120,6 @@ const files = process.argv.slice(2);
 if (files.length) {
   files.forEach(buildFile);
 } else {
-  // $FlowFixMe TODO t25179342 Add version to the flow types for this module
   process.stdout.write(chalk.bold.inverse('Building packages') + ' (using Babel v' + babel.version + ')\n');
   getPackages().forEach(buildPackage);
   process.stdout.write('\n');

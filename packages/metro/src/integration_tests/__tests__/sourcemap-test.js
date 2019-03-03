@@ -18,7 +18,7 @@ const sourceMap = require('source-map');
 
 jest.unmock('cosmiconfig');
 
-jasmine.DEFAULT_TIMEOUT_INTERVAL = 30 * 1000;
+jest.setTimeout(30 * 1000);
 
 const INLINE_SOURCE_MAP_STR =
   '//# sourceMappingURL=data:application/json;charset=utf-8;base64,';
@@ -34,8 +34,10 @@ it('creates correct sourcemaps in dev mode', async () => {
 
   const {line, column, source} = symbolicate(getErrorFromCode(code), map);
 
+  const fileName = source.replace(/^metro:\/\//, '');
+
   expect(
-    substrFromFile(source, line, column).startsWith(ERROR_STR),
+    substrFromFile(fileName, line, column).startsWith(ERROR_STR),
   ).toBeTruthy();
 });
 
@@ -51,8 +53,10 @@ it('creates correct sourcemaps in prod mode', async () => {
 
   const {line, column, source} = symbolicate(getErrorFromCode(code), map);
 
+  const fileName = source.replace(/^metro:\/\//, '');
+
   expect(
-    substrFromFile(source, line, column).startsWith(ERROR_STR),
+    substrFromFile(fileName, line, column).startsWith(ERROR_STR),
   ).toBeTruthy();
 });
 
@@ -70,8 +74,10 @@ it('creates correct inline sourcemaps', async () => {
 
   const {line, column, source} = symbolicate(getErrorFromCode(code), map);
 
+  const fileName = source.replace(/^metro:\/\//, '');
+
   expect(
-    substrFromFile(source, line, column).startsWith(ERROR_STR),
+    substrFromFile(fileName, line, column).startsWith(ERROR_STR),
   ).toBeTruthy();
 });
 

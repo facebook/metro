@@ -22,6 +22,7 @@ export type Callback<A = void, B = void> = (Error => void) &
 export type Dependency = {|
   id: string,
   +isAsync: boolean,
+  +isPrefetchOnly: boolean,
   path: string,
 |};
 
@@ -94,6 +95,7 @@ export type OutputFn<
   requireCalls: Iterable<Module>,
   sourceMapPath?: ?string,
   bundleOrderFile?: ?string,
+  enableIDInlining: boolean,
 |}) => OutputResult<M>;
 
 type OutputResult<M: FBSourceMap | MetroSourceMap> = {|
