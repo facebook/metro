@@ -10,33 +10,97 @@
 
 'use strict';
 
+const bundleToString = require('../bundleToString');
 const stringToBundle = require('../stringToBundle');
 
 describe('stringToBundle', () => {
-  it('parses a bundle from a string', () => {
+  it('parses a bundle from a string and metadata', () => {
     expect(
-      stringToBundle(`pre
+      stringToBundle(
+        `pre
 0
 1.0
 post
-//# offsetTable={"pre":3,"post":4,"modules":[[0,1],[100,3]],"revisionId":"rev0"}`),
+`,
+        {pre: 3, post: 4, modules: [[0, 1], [100, 3]]},
+      ),
     ).toEqual({
-      base: true,
-      revisionId: 'rev0',
       pre: 'pre',
       post: 'post',
       modules: [[0, '0'], [100, '1.0']],
     });
   });
 
-  it('throws an error when the string bundle does not contain a pragma', () => {
-    expect(() =>
-      stringToBundle(`pre
-0
-1.0
-post`),
-    ).toThrowErrorMatchingInlineSnapshot(
-      '"stringToBundle: Pragma not found in string bundle."',
-    );
+  it('retrieves the original bundle from bundleToString', () => {
+    function testBundle(bundle) {
+      const {code, metadata} = bundleToString(bundle);
+      expect(stringToBundle(code, metadata)).toEqual(bundle);
+    }
+
+    testBundle({
+      pre: 'pre',
+      post: 'post',
+      modules: [[0, '__d(0);']],
+    });
+
+    testBundle({
+      pre: 'pre',
+      post: 'post',
+      modules: [[0, '__d(0);'], [1, '__d(1);']],
+    });
+
+    testBundle({
+      pre: 'pre',
+      post: 'post',
+      modules: [],
+    });
+
+    testBundle({
+      pre: 'pre',
+      post: 'post',
+      modules: [[0, ''], [1, '__d(1);']],
+    });
+
+    testBundle({
+      pre: 'pre',
+      post: 'post',
+      modules: [[0, '__d(0);'], [1, '']],
+    });
+
+    testBundle({
+      pre: 'pre',
+      post: 'post',
+      modules: [[0, '__d(0);'], [1, ''], [2, '__d(2);']],
+    });
+
+    testBundle({
+      pre: '',
+      post: 'post',
+      modules: [[0, '__d(0);']],
+    });
+
+    testBundle({
+      pre: 'pre',
+      post: '',
+      modules: [[0, '__d(0);']],
+    });
+
+    testBundle({
+      pre: '',
+      post: '',
+      modules: [[0, '__d(0);']],
+    });
+
+    testBundle({
+      pre: '',
+      post: '',
+      modules: [],
+    });
+
+    testBundle({
+      pre: '',
+      post: '',
+      modules: [[0, '']],
+    });
   });
 });

@@ -18,11 +18,9 @@ function isTSXSource(fileName) {
 }
 
 const defaultPlugins = [
+  [require('@babel/plugin-syntax-flow')],
   [require('@babel/plugin-proposal-optional-catch-binding')],
   [require('@babel/plugin-transform-block-scoping')],
-  // the flow strip types plugin must go BEFORE class properties!
-  // there'll be a test case that fails if you don't.
-  [require('@babel/plugin-transform-flow-strip-types')],
   [
     require('@babel/plugin-proposal-class-properties'),
     // use `this.foo = bar` instead of `this.defineProperty('foo', ...)`
@@ -40,19 +38,6 @@ const defaultPlugins = [
   [require('@babel/plugin-transform-regenerator')],
   [require('@babel/plugin-transform-sticky-regex')],
   [require('@babel/plugin-transform-unicode-regex')],
-];
-
-const es2015ExportDefault = [
-  require('@babel/plugin-proposal-export-default-from'),
-];
-
-const es2015ImportExport = [
-  require('@babel/plugin-transform-modules-commonjs'),
-  {
-    strict: false,
-    strictMode: false, // prevent "use strict" injections
-    allowTopLevelThis: true, // dont rewrite global `this` -> `undefined`
-  },
 ];
 
 const es2015ArrowFunctions = [
@@ -101,7 +86,18 @@ const getPreset = (src, options) => {
   const extraPlugins = [];
 
   if (!options || !options.disableImportExportTransform) {
-    extraPlugins.push(es2015ImportExport, es2015ExportDefault);
+    extraPlugins.push(
+      [require('@babel/plugin-proposal-export-default-from')],
+      [
+        require('@babel/plugin-transform-modules-commonjs'),
+        {
+          strict: false,
+          strictMode: false, // prevent "use strict" injections
+          lazy: !!(options && options.lazyImportExportTransform),
+          allowTopLevelThis: true, // dont rewrite global `this` -> `undefined`
+        },
+      ],
+    );
   }
 
   if (hasClass) {
@@ -151,10 +147,20 @@ const getPreset = (src, options) => {
     extraPlugins.push(babelRuntime);
   }
 
+  let flowPlugins = {};
+  if (!options || !options.disableFlowStripTypesTransform) {
+    flowPlugins = {
+      plugins: [require('@babel/plugin-transform-flow-strip-types')],
+    };
+  }
+
   return {
     comments: false,
     compact: true,
     overrides: [
+      // the flow strip types plugin must go BEFORE class properties!
+      // there'll be a test case that fails if you don't.
+      flowPlugins,
       {
         plugins: defaultPlugins,
       },

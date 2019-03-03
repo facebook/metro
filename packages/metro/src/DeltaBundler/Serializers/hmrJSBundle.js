@@ -25,13 +25,12 @@ type Options = {
   +projectRoot: string,
 };
 
-function hmrJSBundle(
-  delta: DeltaResult<>,
+function generateModules(
+  sourceModules: Iterable<Module<>>,
   graph: Graph<>,
   options: Options,
 ): {|
   +modules: ModuleMap,
-  +deleted: $ReadOnlyArray<number>,
   +sourceMappingURLs: $ReadOnlyArray<string>,
   +sourceURLs: $ReadOnlyArray<string>,
 |} {
@@ -39,7 +38,7 @@ function hmrJSBundle(
   const sourceMappingURLs = [];
   const sourceURLs = [];
 
-  for (const module of delta.modified.values()) {
+  for (const module of sourceModules) {
     if (isJsModule(module)) {
       const code = _prepareModule(module, graph, options);
 
@@ -60,11 +59,41 @@ function hmrJSBundle(
     }
   }
 
+  return {modules, sourceMappingURLs, sourceURLs};
+}
+
+function hmrJSBundle(
+  delta: DeltaResult<>,
+  graph: Graph<>,
+  options: Options,
+): {|
+  +added: ModuleMap,
+  +modified: ModuleMap,
+  +deleted: $ReadOnlyArray<number>,
+  +addedSourceMappingURLs: $ReadOnlyArray<string>,
+  +addedSourceURLs: $ReadOnlyArray<string>,
+  +modifiedSourceMappingURLs: $ReadOnlyArray<string>,
+  +modifiedSourceURLs: $ReadOnlyArray<string>,
+|} {
+  const {
+    modules: added,
+    sourceMappingURLs: addedSourceMappingURLs,
+    sourceURLs: addedSourceURLs,
+  } = generateModules(delta.added.values(), graph, options);
+  const {
+    modules: modified,
+    sourceMappingURLs: modifiedSourceMappingURLs,
+    sourceURLs: modifiedSourceURLs,
+  } = generateModules(delta.modified.values(), graph, options);
+
   return {
-    modules,
+    added,
+    modified,
     deleted: [...delta.deleted].map(path => options.createModuleId(path)),
-    sourceMappingURLs,
-    sourceURLs,
+    addedSourceMappingURLs,
+    addedSourceURLs,
+    modifiedSourceMappingURLs,
+    modifiedSourceURLs,
   };
 }
 

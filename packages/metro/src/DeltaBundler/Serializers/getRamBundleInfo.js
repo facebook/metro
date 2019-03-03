@@ -43,11 +43,8 @@ async function getRamBundleInfo(
   graph: Graph<>,
   options: Options,
 ): Promise<RamBundleInfo> {
-  const modules = [
-    ...pre,
-    ...graph.dependencies.values(),
-    ...getAppendScripts(entryPoint, pre, graph, options),
-  ];
+  let modules = [...pre, ...graph.dependencies.values()];
+  modules = modules.concat(getAppendScripts(entryPoint, modules, options));
 
   modules.forEach(module => options.createModuleId(module.path));
 
@@ -57,14 +54,10 @@ async function getRamBundleInfo(
     .map(module => ({
       id: options.createModuleId(module.path),
       code: wrapModule(module, options),
-      map: fullSourceMapObject(
-        [module],
-        {dependencies: new Map(), entryPoints: []},
-        {
-          excludeSource: options.excludeSource,
-          processModuleFilter: options.processModuleFilter,
-        },
-      ),
+      map: fullSourceMapObject([module], {
+        excludeSource: options.excludeSource,
+        processModuleFilter: options.processModuleFilter,
+      }),
       name: path.basename(module.path),
       sourcePath: module.path,
       source: module.getSource().toString(),

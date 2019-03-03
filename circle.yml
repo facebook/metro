@@ -1,90 +1,96 @@
-aliases:
-  - &restore-cache
-    keys:
-      - dependencies-{{ .Branch }}-{{ checksum "package.json" }}
-      # Fallback in case checksum fails
-      - dependencies-{{ .Branch }}-
+commands:
+  yarn_install:
+    description: "A wrapper to yarn install with caching"
+    parameters:
+      working_directory:
+        type: string
+        default: ""
+    steps:
+      - restore_cache:
+          keys:
+            - dependencies-{{ .Branch }}-{{ checksum "yarn.lock" }}
+            # Fallback in case checksum fails
+            - dependencies-{{ .Branch }}-
+      - run:
+          command: NPM_TOKEN= yarn --no-progress
+          working_directory: << parameters.working_directory >>
+      - save_cache:
+          paths:
+            - node_modules
+          key: dependencies-{{ .Branch }}-{{ checksum "yarn.lock" }}
 
-  - &save-cache
-    paths:
-      - node_modules
-    key: dependencies-{{ .Branch }}-{{ checksum "package.json" }}
+  yarn_run:
+    description: "A wrapper to execute yarn commands in a safe way"
+    parameters:
+      working_directory:
+        type: string
+        default: ""
+      command:
+        type: string
+    steps:
+      - run:
+          command: NPM_TOKEN= yarn run << parameters.command >>
+          working_directory: << parameters.working_directory >>
 
-  - &deploy-website
-    command: |
-      # Deploy Metro website
-      git config --global user.email "metro-bot@users.noreply.github.com"
-      git config --global user.name "Website Deployment Script"
-      echo "machine github.com login metro-bot password $GITHUB_TOKEN" > ~/.netrc
-      # install Docusaurus and generate file of English strings
-      cd website && yarn && yarn run write-translations
-      # build and publish website
-      GIT_USER=metro-bot yarn run publish-gh-pages
+  deploy_website:
+    steps:
+      - run: git config --global user.email "metro-bot@users.noreply.github.com"
+      - run: git config --global user.name "Website Deployment Script"
+      - run: echo "machine github.com login metro-bot password $GITHUB_TOKEN" > ~/.netrc
+      - yarn_install:
+          working_directory: website
+      - yarn_run:
+          command: write-translations
+          working_directory: website
+      - yarn_run:
+          command: publish-gh-pages
+          working_directory: website
 
-version: 2
+version: 2.1
 jobs:
   run-js-checks:
-    working_directory: ~/metro
     docker:
       - image: circleci/node:8
     steps:
       - checkout
-      - restore-cache: *restore-cache
-      - run: yarn --no-progress
-      - save-cache: *save-cache
-      - run: yarn run test-ci
+      - yarn_install
+      - yarn_run:
+          command: test-ci
 
   test-node-10:
-    working_directory: ~/metro
     docker:
       - image: circleci/node:10
     steps:
       - checkout
-      - restore-cache: *restore-cache
-      - run: yarn --no-progress
-      - save-cache: *save-cache
-      - run: yarn run jest
+      - yarn_install
+      - yarn_run:
+          command: jest
 
   test-node-8:
-    working_directory: ~/metro
     docker:
       - image: circleci/node:8
     steps:
       - checkout
-      - restore-cache: *restore-cache
-      - run: yarn --no-progress
-      - save-cache: *save-cache
-      - run: yarn run jest
+      - yarn_install
+      - yarn_run:
+          command: jest
 
   publish-to-npm:
-    working_directory: ~/metro
     docker:
       - image: circleci/node:8
     steps:
       - checkout
-      - restore-cache: *restore-cache
-      - run:
-          working_directory: packages/metro
-          command: yarn --no-progress
-      - save-cache: *save-cache
-      - run:
-          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-      - run:
-          working_directory: ~/metro
-          command: npm run publish
+      - yarn_install
+      - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+      - run: npm run publish
+      - run: rm ~/.npmrc
 
   test-and-deploy-website:
-    working_directory: ~/metro
     docker:
       - image: circleci/node:8
     steps:
       - checkout
-      - restore-cache: *restore-cache
-      - run: |
-          cd website
-          yarn --no-progress
-      - save-cache: *save-cache
-      - deploy: *deploy-website
+      - deploy_website
 
 # Workflows enables us to run multiple jobs in parallel
 workflows:

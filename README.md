@@ -15,3 +15,7 @@ This project was previously part of the [react-native](https://github.com/facebo
 ## Installation & Documentation
 
 See [the Metro website](https://facebook.github.io/metro/) for documentation.
+
+## License
+
+Metro is MIT licensed, as found in the LICENSE file.

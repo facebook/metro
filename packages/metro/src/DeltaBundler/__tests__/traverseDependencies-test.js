@@ -87,11 +87,13 @@ function deferred(value) {
   return {promise, resolve: () => resolve(value)};
 }
 
-function getPaths({added, deleted}) {
+function getPaths({added, modified, deleted}) {
   const addedPaths = [...added.values()].map(module => module.path);
+  const modifiedPaths = [...modified.values()].map(module => module.path);
 
   return {
     added: new Set(addedPaths),
+    modified: new Set(modifiedPaths),
     deleted,
   };
 }
@@ -174,6 +176,7 @@ it('should do the initial traversal correctly', async () => {
 
   expect(getPaths(result)).toEqual({
     added: new Set(['/bundle', '/foo', '/bar', '/baz']),
+    modified: new Set(),
     deleted: new Set(),
   });
 
@@ -197,7 +200,8 @@ it('should return an empty result when there are no changes', async () => {
   expect(
     getPaths(await traverseDependencies(['/bundle'], graph, options)),
   ).toEqual({
-    added: new Set(['/bundle']),
+    added: new Set(),
+    modified: new Set(['/bundle']),
     deleted: new Set(),
   });
 });
@@ -210,7 +214,8 @@ it('should return a removed dependency', async () => {
   expect(
     getPaths(await traverseDependencies([...files], graph, options)),
   ).toEqual({
-    added: new Set(['/foo']),
+    added: new Set(),
+    modified: new Set(['/foo']),
     deleted: new Set(['/bar']),
   });
 });
@@ -225,23 +230,10 @@ it('should return added/removed dependencies', async () => {
   expect(
     getPaths(await traverseDependencies([...files], graph, options)),
   ).toEqual({
-    added: new Set(['/foo', '/qux']),
+    added: new Set(['/qux']),
+    modified: new Set(['/foo']),
     deleted: new Set(['/bar', '/baz']),
   });
-});
-
-it('should return added modules before the modified ones', async () => {
-  await initialTraverseDependencies(graph, options);
-
-  Actions.addDependency('/foo', '/qux');
-  Actions.modifyFile('/bar');
-  Actions.modifyFile('/baz');
-
-  // extect.toEqual() does not check order of Sets/Maps, so we need to convert
-  // it to an array.
-  expect([
-    ...getPaths(await traverseDependencies([...files], graph, options)).added,
-  ]).toEqual(['/qux', '/foo', '/bar', '/baz']);
 });
 
 it('should retry to traverse the dependencies as it was after getting an error', async () => {
@@ -324,6 +316,7 @@ describe('edge cases', () => {
     expect(getPaths(await initialTraverseDependencies(graph, options))).toEqual(
       {
         added: new Set(['/bundle', '/foo', '/bar', '/baz']),
+        modified: new Set(),
         deleted: new Set(),
       },
     );
@@ -343,7 +336,8 @@ describe('edge cases', () => {
     expect(
       getPaths(await traverseDependencies([...files], graph, options)),
     ).toEqual({
-      added: new Set(['/foo', '/qux']),
+      added: new Set(['/qux']),
+      modified: new Set(['/foo']),
       deleted: new Set(['/baz']),
     });
   });
@@ -362,7 +356,8 @@ describe('edge cases', () => {
     expect(
       getPaths(await traverseDependencies([...files], graph, options)),
     ).toEqual({
-      added: new Set(['/bundle', '/foo-renamed']),
+      added: new Set(['/foo-renamed']),
+      modified: new Set(['/bundle']),
       deleted: new Set(['/foo']),
     });
 
@@ -378,7 +373,8 @@ describe('edge cases', () => {
     expect(
       getPaths(await traverseDependencies([...files], graph, options)),
     ).toEqual({
-      added: new Set(['/foo']),
+      added: new Set(),
+      modified: new Set(['/foo']),
       deleted: new Set(['/baz']),
     });
 
@@ -394,7 +390,8 @@ describe('edge cases', () => {
     expect(
       getPaths(await traverseDependencies([...files], graph, options)),
     ).toEqual({
-      added: new Set(['/bundle']),
+      added: new Set(),
+      modified: new Set(['/bundle']),
       deleted: new Set(['/foo', '/bar', '/baz']),
     });
 
@@ -416,7 +413,8 @@ describe('edge cases', () => {
     expect(
       getPaths(await traverseDependencies([...files], graph, options)),
     ).toEqual({
-      added: new Set(['/bundle']),
+      added: new Set(),
+      modified: new Set(['/bundle']),
       deleted: new Set([]),
     });
 
@@ -429,6 +427,7 @@ describe('edge cases', () => {
       getPaths(await traverseDependencies([...files], graph, options)),
     ).toEqual({
       added: new Set([]),
+      modified: new Set([]),
       deleted: new Set(['/foo', '/bar', '/baz']),
     });
   });
@@ -442,7 +441,8 @@ describe('edge cases', () => {
     expect(
       getPaths(await traverseDependencies([...files], graph, options)),
     ).toEqual({
-      added: new Set(['/foo', '/baz-moved']),
+      added: new Set(['/baz-moved']),
+      modified: new Set(['/foo']),
       deleted: new Set(['/baz']),
     });
 
@@ -457,7 +457,8 @@ describe('edge cases', () => {
     expect(
       getPaths(await traverseDependencies([...files], graph, options)),
     ).toEqual({
-      added: new Set(['/foo', '/qux']),
+      added: new Set(['/qux']),
+      modified: new Set(['/foo']),
       deleted: new Set(),
     });
 
@@ -500,7 +501,8 @@ describe('edge cases', () => {
     expect(
       getPaths(await traverseDependencies([...files], graph, options)),
     ).toEqual({
-      added: new Set(['/bundle']),
+      added: new Set(),
+      modified: new Set(['/bundle']),
       deleted: new Set(),
     });
 

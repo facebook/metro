@@ -11,7 +11,6 @@
 
 jest
   .mock('../constant-folding-plugin')
-  .mock('../inline-plugin')
   .mock('../../../lib/getMinifier', () => () => ({code, map}) => ({
     code: code.replace('arbitrary(code)', 'minified(code)'),
     map,
@@ -21,7 +20,7 @@ jest
 const path = require('path');
 
 const babelTransformerPath = require.resolve(
-  'metro/src/reactNativeTransformer',
+  'metro-react-native-babel-transformer',
 );
 const transformerContents = require('fs').readFileSync(babelTransformerPath);
 
@@ -52,6 +51,7 @@ describe('code transformation worker:', () => {
     jest.resetModules();
 
     jest.mock('fs', () => new (require('metro-memory-fs'))());
+    jest.mock('../inline-plugin', () => ({}));
 
     fs = require('fs');
     mkdirp = require('mkdirp');

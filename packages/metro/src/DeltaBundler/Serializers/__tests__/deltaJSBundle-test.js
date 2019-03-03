@@ -57,7 +57,8 @@ it('returns a base bundle', () => {
       'foo',
       prepend,
       {
-        modified: graph.dependencies,
+        added: graph.dependencies,
+        modified: new Map(),
         deleted: new Set(),
         reset: true,
       },
@@ -78,12 +79,41 @@ it('returns a base bundle', () => {
   });
 });
 
+it('returns an incremental delta with added files', () => {
+  expect(
+    deltaJSBundle(
+      'foo',
+      prepend,
+      {
+        added: new Map([createModule('foobar', [])]),
+        modified: new Map([
+          createModule('entrypoint', ['foo', 'bar', 'foobar']),
+        ]),
+        deleted: new Set(),
+        reset: false,
+      },
+      'revisionId',
+      graph,
+      options,
+    ),
+  ).toEqual({
+    base: false,
+    revisionId: 'revisionId',
+    added: [[3, '__d(function() {foobar()},3,[],"foobar.js");']],
+    modified: [
+      [0, '__d(function() {entrypoint()},0,[1,2,3],"entrypoint.js");'],
+    ],
+    deleted: [],
+  });
+});
+
 it('returns an incremental delta with modified files', () => {
   expect(
     deltaJSBundle(
       'foo',
       prepend,
       {
+        added: new Map(),
         modified: new Map([createModule('bar', [])]),
         deleted: new Set(),
         reset: false,
@@ -95,7 +125,8 @@ it('returns an incremental delta with modified files', () => {
   ).toEqual({
     base: false,
     revisionId: 'revisionId',
-    modules: [[2, '__d(function() {bar()},2,[],"bar.js");']],
+    added: [],
+    modified: [[2, '__d(function() {bar()},2,[],"bar.js");']],
     deleted: [],
   });
 });
@@ -106,6 +137,7 @@ it('returns an incremental delta with deleted files', () => {
       'foo',
       prepend,
       {
+        added: new Map(),
         modified: new Map([createModule('entrypoint', ['foo'])]),
         deleted: new Set(['/root/bar.js']),
         reset: false,
@@ -117,7 +149,8 @@ it('returns an incremental delta with deleted files', () => {
   ).toEqual({
     base: false,
     revisionId: 'revisionId',
-    modules: [[0, '__d(function() {entrypoint()},0,[1],"entrypoint.js");']],
+    added: [],
+    modified: [[0, '__d(function() {entrypoint()},0,[1],"entrypoint.js");']],
     deleted: [2],
   });
 });

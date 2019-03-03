@@ -41,6 +41,12 @@ module.exports = {
       },
     },
     {
+      files: ['packages/metro-source-map/**/*.js'],
+      env: {
+        node: true,
+      },
+    },
+    {
       files: ['scripts/**/*.js'],
       rules: {
         'babel/func-params-comma-dangle': 'off',

@@ -59,22 +59,32 @@ const barModule = {
 it('should serialize a very simple bundle', () => {
   expect(
     JSON.parse(
-      sourceMapString(
-        [polyfill],
-        {
-          dependencies: new Map([['foo', fooModule], ['bar', barModule]]),
-          entryPoints: ['foo'],
-        },
-        {
-          excludesSource: false,
-          processModuleFilter: module => true,
-        },
-      ),
+      sourceMapString([polyfill, fooModule, barModule], {
+        excludesSource: false,
+        processModuleFilter: module => true,
+      }),
     ),
   ).toEqual({
     version: 3,
     sources: ['/root/pre.js', '/root/foo.js', '/root/bar.js'],
     sourcesContent: ['source pre', 'source foo', 'source bar'],
+    names: [],
+    mappings: '',
+  });
+});
+
+it('modules should appear in their original order', () => {
+  expect(
+    JSON.parse(
+      sourceMapString([polyfill, barModule, fooModule], {
+        excludesSource: false,
+        processModuleFilter: module => true,
+      }),
+    ),
+  ).toEqual({
+    version: 3,
+    sources: ['/root/pre.js', '/root/bar.js', '/root/foo.js'],
+    sourcesContent: ['source pre', 'source bar', 'source foo'],
     names: [],
     mappings: '',
   });
@@ -100,17 +110,10 @@ it('should not include the source of an asset', () => {
 
   expect(
     JSON.parse(
-      sourceMapString(
-        [],
-        {
-          dependencies: new Map([['foo', fooModule], ['asset', assetModule]]),
-          entryPoints: ['foo'],
-        },
-        {
-          excludesSource: false,
-          processModuleFilter: module => true,
-        },
-      ),
+      sourceMapString([fooModule, assetModule], {
+        excludesSource: false,
+        processModuleFilter: module => true,
+      }),
     ),
   ).toEqual({
     version: 3,

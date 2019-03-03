@@ -55,7 +55,6 @@ function startupChild(socket) {
       child.removeAllListeners();
       resolve(child);
     });
-    // $FlowFixMe ChildProcess.send should accept any type.
     child.send(socket);
   });
 }

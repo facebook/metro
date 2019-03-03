@@ -11,7 +11,7 @@
 'use strict';
 
 const blacklist = require('metro-config/src/defaults/blacklist');
-const invariant = require('fbjs/lib/invariant');
+const invariant = require('invariant');
 
 const {Logger} = require('metro-core');
 const {fromRawMappings, toSegmentTuple} = require('metro-source-map');

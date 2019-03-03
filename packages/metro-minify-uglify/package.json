@@ -1,6 +1,6 @@
 {
   "name": "metro-minify-uglify",
-  "version": "0.49.1",
+  "version": "0.53.0",
   "description": "🚇 Default minifier for Metro",
   "main": "src/index.js",
   "repository": {
@@ -14,6 +14,5 @@
   "license": "MIT",
   "dependencies": {
     "uglify-es": "^3.1.9"
-  },
-  "devDependencies": {}
+  }
 }

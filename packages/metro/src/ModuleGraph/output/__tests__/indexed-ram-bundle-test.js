@@ -211,6 +211,7 @@ function createRamBundle(preloadedModules = new Set(), ramGroups) {
     modules,
     requireCalls: [requireCall],
     enableIDInlining: true,
+    segmentID: 0,
   });
 
   if (typeof result.code === 'string') {
@@ -231,6 +232,7 @@ function makeModule(
     file: {
       code: type === 'module' ? makeModuleCode(moduleCode) : moduleCode,
       map: type !== 'module' ? null : makeModuleMap(name, path),
+      functionMap: null,
       path,
       type,
       libraryIdx: null,
@@ -244,6 +246,7 @@ function makeModuleMap(name, path) {
     mappings: '',
     names: [],
     sources: [path],
+    x_facebook_sources: [[null]],
   };
 }
 
@@ -307,7 +310,7 @@ function parseOffsetTable(buffer) {
   };
 }
 
-function countLines(module) {
+function countLines(module): number {
   return module.file.code.split('\n').length;
 }
 

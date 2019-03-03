@@ -18,6 +18,9 @@ const https = require('https');
 const url = require('url');
 const zlib = require('zlib');
 
+import type {Agent as HttpAgent} from 'http';
+import type {Agent as HttpsAgent} from 'https';
+
 export type Options = {|
   endpoint: string,
   family?: 4 | 6,
@@ -29,7 +32,7 @@ const ZLIB_OPTIONS = {
 };
 
 const NULL_BYTE = 0x00;
-const NULL_BYTE_BUFFER = new Buffer([NULL_BYTE]);
+const NULL_BYTE_BUFFER = Buffer.from([NULL_BYTE]);
 
 class HttpStore<T> {
   static HttpError = HttpError;
@@ -42,8 +45,8 @@ class HttpStore<T> {
   _port: number;
   _path: string;
 
-  _getAgent: http$Agent;
-  _setAgent: http$Agent;
+  _getAgent: HttpAgent | HttpsAgent;
+  _setAgent: HttpAgent | HttpsAgent;
 
   constructor(options: Options) {
     const uri = url.parse(options.endpoint);

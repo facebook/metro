@@ -16,6 +16,7 @@ const InvalidPackageError = require('./InvalidPackageError');
 
 const formatFileCandidates = require('./formatFileCandidates');
 const isAbsolutePath = require('absolute-path');
+const makePnpResolver = require('./makePnpResolver');
 const path = require('path');
 
 import type {
@@ -39,8 +40,16 @@ function resolve(
   moduleName: string,
   platform: string | null,
 ): Resolution {
+  let resolveRequest = context.resolveRequest;
+
+  if (!resolveRequest && context.allowPnp && process.versions.pnp) {
+    // $FlowFixMe `pnpapi` is a builtin under PnP environments
+    const pnp = require('pnpapi');
+    resolveRequest = makePnpResolver(pnp);
+  }
+
   if (
-    !context.resolveRequest &&
+    !resolveRequest &&
     (isRelativeImport(moduleName) || isAbsolutePath(moduleName))
   ) {
     return resolveModulePath(context, moduleName, platform);
@@ -59,7 +68,7 @@ function resolve(
     isRelativeImport(realModuleName) || isAbsolutePath(realModuleName);
 
   // We disable the direct file loading to let the custom resolvers deal with it
-  if (!context.resolveRequest && isDirectImport) {
+  if (!resolveRequest && isDirectImport) {
     // derive absolute path /.../node_modules/originModuleDir/realModuleName
     const fromModuleParentIdx =
       originModulePath.lastIndexOf('node_modules' + path.sep) + 13;
@@ -82,13 +91,9 @@ function resolve(
     }
   }
 
-  if (context.resolveRequest) {
+  if (resolveRequest) {
     try {
-      const resolution = context.resolveRequest(
-        context,
-        realModuleName,
-        platform,
-      );
+      const resolution = resolveRequest(context, realModuleName, platform);
       if (resolution) {
         return resolution;
       }
@@ -428,10 +433,17 @@ function resolveAssetFiles(
   fileNameHint: string,
   platform: string | null,
 ): Result<AssetFileResolution, FileCandidates> {
-  const assetNames = resolveAsset(dirPath, fileNameHint, platform);
-  if (assetNames != null) {
-    const res = assetNames.map(assetName => path.join(dirPath, assetName));
-    return resolvedAs(res);
+  try {
+    const assetNames = resolveAsset(dirPath, fileNameHint, platform);
+
+    if (assetNames != null) {
+      const res = assetNames.map(assetName => path.join(dirPath, assetName));
+      return resolvedAs(res);
+    }
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return failedFor({type: 'asset', name: fileNameHint});
+    }
   }
   return failedFor({type: 'asset', name: fileNameHint});
 }

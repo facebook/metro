@@ -26,6 +26,7 @@ type State = {
   opts: {
     importDefault: string,
     importAll: string,
+    resolve: boolean,
   },
 };
 
@@ -50,7 +51,7 @@ const importNamedTemplate = template(`
  * Produces a Babel template that transforms an "import ..." into
  * "require(...)", which is considered a side-effect call.
  */
-const importSideEffect = template(`
+const importSideEffectTemplate = template(`
   require(FILE);
 `);
 
@@ -78,9 +79,29 @@ const exportTemplate = template(`
  * Flags the exported module as a transpiled ES module. Needs to be kept in 1:1
  * compatibility with Babel.
  */
-const esModuleExport = template(`
+const esModuleExportTemplate = template(`
   Object.defineProperty(exports, '__esModule', {value: true});
 `);
+
+/**
+ * Resolution template in case it is requested.
+ */
+const resolveTemplate = template.expression(`
+  require.resolve(NODE)
+`);
+
+/**
+ * Enforces the resolution of a path to a fully-qualified one, if set.
+ */
+function resolvePath(node: {value: string}, resolve: boolean) {
+  if (!resolve) {
+    return node;
+  }
+
+  return resolveTemplate({
+    NODE: node,
+  });
+}
 
 // eslint-disable-next-line lint/flow-no-fixme
 function importExportPlugin({types: t}: $FlowFixMe) {
@@ -135,9 +156,32 @@ function importExportPlugin({types: t}: $FlowFixMe) {
         if (declaration.node) {
           if (t.isVariableDeclaration(declaration)) {
             declaration.get('declarations').forEach(d => {
-              const name = d.get('id').node.name;
-
-              state.exportNamed.push({local: name, remote: name});
+              switch (d.get('id').node.type) {
+                case 'ObjectPattern':
+                  {
+                    const properties = d.get('id').get('properties');
+                    properties.forEach(p => {
+                      const name = p.get('key').node.name;
+                      state.exportNamed.push({local: name, remote: name});
+                    });
+                  }
+                  break;
+                case 'ArrayPattern':
+                  {
+                    const elements = d.get('id').get('elements');
+                    elements.forEach(e => {
+                      const name = e.node.name;
+                      state.exportNamed.push({local: name, remote: name});
+                    });
+                  }
+                  break;
+                default:
+                  {
+                    const name = d.get('id').node.name;
+                    state.exportNamed.push({local: name, remote: name});
+                  }
+                  break;
+              }
             });
           } else {
             const id =
@@ -163,7 +207,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
                 path.insertBefore(
                   importTemplate({
                     IMPORT: state.importDefault,
-                    FILE: path.node.source,
+                    FILE: resolvePath(path.node.source, state.opts.resolve),
                     LOCAL: temp,
                   }),
                 );
@@ -172,7 +216,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
               } else if (remote.name === 'default') {
                 path.insertBefore(
                   importNamedTemplate({
-                    FILE: path.node.source,
+                    FILE: resolvePath(path.node.source, state.opts.resolve),
                     LOCAL: temp,
                     REMOTE: local,
                   }),
@@ -182,7 +226,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
               } else {
                 path.insertBefore(
                   importNamedTemplate({
-                    FILE: path.node.source,
+                    FILE: resolvePath(path.node.source, state.opts.resolve),
                     LOCAL: temp,
                     REMOTE: local,
                   }),
@@ -217,8 +261,8 @@ function importExportPlugin({types: t}: $FlowFixMe) {
 
         if (!specifiers.length) {
           anchor.insertBefore(
-            importSideEffect({
-              FILE: file,
+            importSideEffectTemplate({
+              FILE: resolvePath(file, state.opts.resolve),
             }),
           );
         } else {
@@ -231,7 +275,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
                 anchor.insertBefore(
                   importTemplate({
                     IMPORT: state.importAll,
-                    FILE: file,
+                    FILE: resolvePath(file, state.opts.resolve),
                     LOCAL: local,
                   }),
                 );
@@ -241,7 +285,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
                 anchor.insertBefore(
                   importTemplate({
                     IMPORT: state.importDefault,
-                    FILE: file,
+                    FILE: resolvePath(file, state.opts.resolve),
                     LOCAL: local,
                   }),
                 );
@@ -250,7 +294,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
               case 'ImportSpecifier':
                 anchor.insertBefore(
                   importNamedTemplate({
-                    FILE: file,
+                    FILE: resolvePath(file, state.opts.resolve),
                     LOCAL: local,
                     REMOTE: imported,
                   }),
@@ -291,7 +335,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
           state.exportAll.forEach(e => {
             body.push(
               ...exportAllTemplate({
-                FILE: t.stringLiteral(e.file),
+                FILE: resolvePath(t.stringLiteral(e.file), state.opts.resolve),
                 REQUIRED: path.scope.generateUidIdentifier(e.file),
                 KEY: path.scope.generateUidIdentifier('key'),
               }),
@@ -312,7 +356,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
             state.exportAll.length ||
             state.exportNamed.length
           ) {
-            body.unshift(esModuleExport());
+            body.unshift(esModuleExportTemplate());
           }
         },
       },

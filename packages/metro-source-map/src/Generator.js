@@ -12,7 +12,7 @@
 
 const B64Builder = require('./B64Builder');
 
-import type {BabelSourceMap} from 'babel-core';
+import type {BabelSourceMap} from '@babel/core';
 
 /**
  * Generates a source map from raw mappings.

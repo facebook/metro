@@ -10,7 +10,7 @@
 
 'use strict';
 
-const invariant = require('fbjs/lib/invariant');
+const invariant = require('invariant');
 
 type ProcessBatch<TItem, TResult> = (
   batch: Array<TItem>,
@@ -40,7 +40,7 @@ class BatchProcessor<TItem, TResult> {
   _options: BatchProcessorOptions;
   _processBatch: ProcessBatch<TItem, TResult>;
   _queue: Array<QueueItem<TItem, TResult>>;
-  _timeoutHandle: ?number;
+  _timeoutHandle: ?TimeoutID;
 
   constructor(
     options: BatchProcessorOptions,
@@ -92,17 +92,11 @@ class BatchProcessor<TItem, TResult> {
 
   _processQueueOnceReady() {
     if (this._queue.length >= this._options.maximumItems) {
-      /* $FlowFixMe(>=0.63.0 site=react_native_fb) This comment suppresses an
-       * error found when Flow v0.63 was deployed. To see the error delete this
-       * comment and run Flow. */
       clearTimeout(this._timeoutHandle);
       process.nextTick(this._processQueue);
       return;
     }
     if (this._timeoutHandle == null) {
-      /* $FlowFixMe(>=0.63.0 site=react_native_fb) This comment suppresses an
-       * error found when Flow v0.63 was deployed. To see the error delete this
-       * comment and run Flow. */
       this._timeoutHandle = setTimeout(
         this._processQueue,
         this._options.maximumDelayMs,

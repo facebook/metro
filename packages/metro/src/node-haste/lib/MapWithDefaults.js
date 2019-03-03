@@ -20,8 +20,6 @@ class MapWithDefaults<TK, TV> extends Map<TK, TV> {
 
   get(key: TK): TV {
     if (this.has(key)) {
-      /* $FlowFixMe: can never be `undefined` since we tested with `has`
-       * (except if `TV` includes `void` as subtype, ex. is nullable) */
       return Map.prototype.get.call(this, key);
     }
     const value = this._factory(key);

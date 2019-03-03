@@ -127,7 +127,7 @@ class WorkerFarm {
         ? this._computeWorkerKey
         : undefined,
       exposedMethods,
-      forkOptions: {env, execArgv},
+      forkOptions: {env},
       numWorkers,
     });
   }
@@ -143,7 +143,7 @@ class WorkerFarm {
     return null;
   }
 
-  _formatGenericError(err, filename) {
+  _formatGenericError(err, filename: string) {
     const error = new TransformError(`${filename}: ${err.message}`);
 
     return Object.assign(error, {
@@ -155,7 +155,7 @@ class WorkerFarm {
     });
   }
 
-  _formatBabelError(err, filename) {
+  _formatBabelError(err, filename: string) {
     const error = new TransformError(
       `${err.type || 'Error'}${
         err.message.includes(filename) ? '' : ' in ' + filename

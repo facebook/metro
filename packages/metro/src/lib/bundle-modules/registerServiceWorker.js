@@ -18,47 +18,57 @@ declare var __DEV__: boolean;
 const injectUpdate = require('./injectUpdate');
 
 function registerServiceWorker(swUrl: string) {
-  if ('serviceWorker' in navigator) {
-    const sw: ServiceWorkerContainer = (navigator.serviceWorker: $FlowIssue);
-    window.addEventListener('load', function() {
-      const registrationPromise = sw.register(swUrl);
+  const serviceWorker = navigator.serviceWorker;
 
-      if (__DEV__) {
-        registrationPromise.then(
-          registration => {
-            console.info(
-              'ServiceWorker registration successful with scope: ',
-              registration.scope,
-            );
-          },
-          error => {
-            console.error('ServiceWorker registration failed: ', error);
-          },
-        );
+  if (!serviceWorker) {
+    if (__DEV__) {
+      console.info('ServiceWorker not supported');
+    }
 
-        sw.addEventListener('message', event => {
-          const messageEvent: ServiceWorkerMessageEvent = (event: $FlowIssue);
-          switch (messageEvent.data.type) {
-            case 'METRO_UPDATE_START': {
-              console.info('Metro update started.');
-              break;
-            }
-            case 'METRO_UPDATE': {
-              console.info('Injecting metro update:', messageEvent.data.body);
-              injectUpdate(messageEvent.data.body);
-              break;
-            }
-            case 'METRO_UPDATE_ERROR': {
-              console.error('Metro update error: ', messageEvent.data.error);
-              break;
-            }
-          }
-        });
-      }
-    });
-  } else if (__DEV__) {
-    console.info('ServiceWorker not supported');
+    return;
   }
+
+  window.addEventListener('load', function() {
+    const registrationPromise = serviceWorker.register(swUrl);
+
+    if (__DEV__) {
+      registrationPromise.then(
+        registration => {
+          console.info(
+            'ServiceWorker registration successful with scope: ',
+            registration.scope,
+          );
+        },
+        error => {
+          console.error('ServiceWorker registration failed: ', error);
+        },
+      );
+
+      serviceWorker.addEventListener('message', (event: MessageEvent) => {
+        const data = event.data;
+
+        if (!(data instanceof Object) || typeof data.type !== 'string') {
+          return;
+        }
+
+        switch (data.type) {
+          case 'METRO_UPDATE_START': {
+            console.info('Metro update started.');
+            break;
+          }
+          case 'METRO_UPDATE': {
+            console.info('Injecting metro update:', data.body);
+            injectUpdate(data.body);
+            break;
+          }
+          case 'METRO_UPDATE_ERROR': {
+            console.error('Metro update error: ', data.error);
+            break;
+          }
+        }
+      });
+    }
+  });
 }
 
 module.exports = registerServiceWorker;

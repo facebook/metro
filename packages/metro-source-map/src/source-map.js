@@ -13,8 +13,8 @@
 const Generator = require('./Generator');
 const SourceMap = require('source-map');
 
-import type {BabelSourceMap} from 'babel-core';
-import type {BabelSourceMapSegment} from 'babel-generator';
+import type {BabelSourceMap} from '@babel/core';
+import type {BabelSourceMapSegment} from '@babel/generator';
 
 type GeneratedCodeMapping = [number, number];
 type SourceMapping = [number, number, number, number];
@@ -28,7 +28,15 @@ export type MetroSourceMapSegmentTuple =
 type FBExtensions = {
   x_facebook_offsets: Array<number>,
   x_metro_module_paths: Array<string>,
+  x_facebook_sources?: FBSourcesArray,
 };
+
+export type FBSourcesArray = $ReadOnlyArray<FBSourceMetadata>;
+export type FBSourceMetadata = [?FBSourceFunctionMap];
+export type FBSourceFunctionMap = {|
+  +names: $ReadOnlyArray<string>,
+  +mappings: string,
+|};
 
 export type IndexMapSection = {
   map: MetroSourceMap,
@@ -44,12 +52,15 @@ export type IndexMap = {
 
 export type FBIndexMap = IndexMap & FBExtensions;
 export type MetroSourceMap = IndexMap | BabelSourceMap;
+export type FBBasicSourceMap = BabelSourceMap & FBExtensions;
 export type FBSourceMap = FBIndexMap | (BabelSourceMap & FBExtensions);
 
 /**
  * Creates a source map from modules with "raw mappings", i.e. an array of
  * tuples with either 2, 4, or 5 elements:
  * generated line, generated column, source line, source line, symbol name.
+ * Accepts an `offsetLines` argument in case modules' code is to be offset in
+ * the resulting bundle, e.g. by some prefix code.
  */
 function fromRawMappings(
   modules: $ReadOnlyArray<{
@@ -58,9 +69,10 @@ function fromRawMappings(
     +source: string,
     +code: string,
   }>,
+  offsetLines: number = 0,
 ): Generator {
   const generator = new Generator();
-  let carryOver = 0;
+  let carryOver = offsetLines;
 
   for (var j = 0, o = modules.length; j < o; ++j) {
     var module = modules[j];

@@ -51,6 +51,11 @@ export type TerminalReportableEvent =
 
 type BuildPhase = 'in_progress' | 'done' | 'failed';
 
+type SnippetError = ErrnoError & {
+  filename?: string,
+  snippet?: string,
+};
+
 /**
  * We try to print useful information to the terminal for interactive builds.
  * This implements the `Reporter` interface from the './reporting' module.
@@ -195,14 +200,14 @@ class TerminalReporter {
     );
   }
 
-  _logInitializingFailed(port: number, error: Error) {
-    /* $FlowFixMe(>=0.68.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.68 was deployed. To see the error delete this
-     * comment and run Flow. */
+  _logInitializingFailed(port: number, error: SnippetError) {
     if (error.code === 'EADDRINUSE') {
       this.terminal.log(
         chalk.bgRed.bold(' ERROR '),
-        chalk.red("Metro Bundler can't listen on port", chalk.bold(port)),
+        chalk.red(
+          "Metro Bundler can't listen on port",
+          chalk.bold(String(port)),
+        ),
       );
       this.terminal.log(
         'Most likely another process is already using this port',
@@ -272,7 +277,7 @@ class TerminalReporter {
    * these are operational errors, not programming errors, and the stacktrace
    * is not actionable to end users.
    */
-  _logBundlingError(error: Error) {
+  _logBundlingError(error: SnippetError) {
     if (error instanceof AmbiguousModuleResolutionError) {
       const he = error.hasteError;
       const message =
@@ -289,23 +294,14 @@ class TerminalReporter {
     }
 
     let message =
-      /* $FlowFixMe(>=0.68.0 site=react_native_fb) This comment suppresses an
-       * error found when Flow v0.68 was deployed. To see the error delete this
-       * comment and run Flow. */
       error.snippet == null && error.stack != null
         ? error.stack
         : error.message;
-    //$FlowFixMe T19379628
     if (error.filename && !message.includes(error.filename)) {
-      //$FlowFixMe T19379628
       message += ` [${error.filename}]`;
     }
 
-    /* $FlowFixMe(>=0.68.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.68 was deployed. To see the error delete this
-     * comment and run Flow. */
     if (error.snippet != null) {
-      //$FlowFixMe T19379628
       message += '\n' + error.snippet;
     }
     this._logBundlingErrorMessage(message);

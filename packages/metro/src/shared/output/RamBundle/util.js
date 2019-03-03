@@ -9,7 +9,7 @@
  */
 'use strict';
 
-const invariant = require('fbjs/lib/invariant');
+const invariant = require('invariant');
 
 import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
 import type {BabelSourceMap} from '@babel/core';
@@ -76,8 +76,8 @@ function combineSourceMapsAddingOffsets(
 function combineMaps(
   modules: $ReadOnlyArray<ModuleTransportLike>,
   offsets: ?Array<number>,
-  moduleGroups,
-  options,
+  moduleGroups: ?ModuleGroups,
+  options: ?CombineOptions,
 ) {
   const sections = [];
 

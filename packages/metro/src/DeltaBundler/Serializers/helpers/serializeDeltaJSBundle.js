@@ -13,9 +13,9 @@
 const crc32 = (require('buffer-crc32'): {unsigned(Buffer): number});
 const {Readable} = require('stream');
 
-import type {DeltaBundle, Bundle} from '../../../lib/bundle-modules/types.flow';
+import type {BundleVariant} from '../../../lib/bundle-modules/types.flow';
 
-exports.toJSON = (JSON.stringify: (DeltaBundle | Bundle) => string);
+exports.toJSON = (JSON.stringify: BundleVariant => string);
 
 // binary streaming format for delta bundles:
 // FB DE 17 A5     magic number
@@ -37,7 +37,7 @@ exports.toJSON = (JSON.stringify: (DeltaBundle | Bundle) => string);
 //   char[4] code crc32
 // }
 
-exports.toBinaryStream = (bundle: Bundle | DeltaBundle): Readable => {
+exports.toBinaryStream = (bundle: BundleVariant): Readable => {
   const gen = streamBundle(bundle);
 
   return new Readable({
@@ -51,7 +51,7 @@ exports.toBinaryStream = (bundle: Bundle | DeltaBundle): Readable => {
 const MAGIC_NUMBER = Buffer.of(0xfb, 0xde, 0x17, 0xa5);
 const FORMAT_VERSION = [0x01, 0x00, 0x00];
 
-function* streamBundle(bundle: DeltaBundle | Bundle) {
+function* streamBundle(bundle: BundleVariant) {
   yield MAGIC_NUMBER;
   yield Buffer.of(...FORMAT_VERSION, bundle.base ? 1 : 0);
 
@@ -60,13 +60,19 @@ function* streamBundle(bundle: DeltaBundle | Bundle) {
   if (bundle.base) {
     yield preOrPostSection(bundle.pre);
     yield preOrPostSection(bundle.post);
-  }
 
-  for (const m of bundle.modules) {
-    yield module(m);
-  }
+    for (const m of bundle.modules) {
+      yield module(m);
+    }
+  } else {
+    for (const m of bundle.added) {
+      yield module(m);
+    }
 
-  if (!bundle.base) {
+    for (const m of bundle.modified) {
+      yield module(m);
+    }
+
     for (const id of bundle.deleted) {
       yield module([id, null]);
     }

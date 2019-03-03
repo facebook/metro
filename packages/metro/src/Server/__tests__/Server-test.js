@@ -165,7 +165,8 @@ describe('processRequest', () => {
         }
 
         return {
-          modified: reset ? dependencies : new Map(),
+          added: reset ? dependencies : new Map(),
+          modified: new Map(),
           deleted: new Set(),
           reset,
         };
@@ -245,21 +246,6 @@ describe('processRequest', () => {
     );
   });
 
-  it('returns JS bundle with embedded delta bundle', async () => {
-    const response = await makeRequest('mybundle.bundle?embedDelta=true', null);
-
-    expect(response.body).toEqual(
-      [
-        'function () {require();}',
-        '__d(function() {entry();},0,[1],"mybundle.js");',
-        '__d(function() {foo();},1,[],"foo.js");',
-        'require(0);',
-        '//# sourceMappingURL=//localhost:8081/mybundle.map?embedDelta=true',
-        '//# offsetTable={"pre":24,"post":78,"modules":[[0,47],[1,39]],"revisionId":"XXXXX-0"}',
-      ].join('\n'),
-    );
-  });
-
   it('returns Last-Modified header on request of *.bundle', () => {
     return makeRequest('mybundle.bundle?runModule=true').then(response => {
       expect(response.getHeader('Last-Modified')).toBeDefined();
@@ -319,6 +305,7 @@ describe('processRequest', () => {
 
     DeltaBundler.prototype.getDelta.mockReturnValue(
       Promise.resolve({
+        added: new Map(),
         modified: new Map([
           [0, '__d(function() {entry();},0,[1],"mybundle.js");'],
         ]),
@@ -448,6 +435,7 @@ describe('processRequest', () => {
     it('should generate an incremental delta correctly', async () => {
       DeltaBundler.prototype.getDelta.mockReturnValue(
         Promise.resolve({
+          added: new Map(),
           modified: new Map([
             [
               '/root/foo.js',
@@ -478,7 +466,8 @@ describe('processRequest', () => {
       expect(JSON.parse(response.body)).toEqual({
         base: false,
         revisionId: 'XXXXX-1',
-        modules: [[1, '__d(function() {modified();},1,[],"foo.js");']],
+        added: [],
+        modified: [[1, '__d(function() {modified();},1,[],"foo.js");']],
         deleted: [],
       });
 
@@ -492,6 +481,7 @@ describe('processRequest', () => {
     it('should return a base bundle if the revisionId does not match', async () => {
       DeltaBundler.prototype.getDelta.mockReturnValue(
         Promise.resolve({
+          added: new Map(),
           modified: new Map([
             [
               '/root/foo.js',
@@ -635,7 +625,12 @@ describe('processRequest', () => {
 
       server.processRequest(req, res);
       res.end.mockImplementation(value => {
-        expect(getAsset).toBeCalledWith('imgs/a.png', '/root', 'ios');
+        expect(getAsset).toBeCalledWith(
+          'imgs/a.png',
+          '/root',
+          ['/root'],
+          'ios',
+        );
         expect(value).toBe('i am image');
         done();
       });
@@ -653,7 +648,12 @@ describe('processRequest', () => {
 
       server.processRequest(req, res);
       res.end.mockImplementation(value => {
-        expect(getAsset).toBeCalledWith('imgs/a.png', '/root', 'ios');
+        expect(getAsset).toBeCalledWith(
+          'imgs/a.png',
+          '/root',
+          ['/root'],
+          'ios',
+        );
         expect(value).toBe(mockData.slice(0, 4));
         done();
       });
@@ -672,6 +672,7 @@ describe('processRequest', () => {
         expect(getAsset).toBeCalledWith(
           'imgs/\u{4E3B}\u{9875}/logo.png',
           '/root',
+          ['/root'],
           undefined,
         );
         expect(value).toBe('i am image');

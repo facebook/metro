@@ -10,15 +10,12 @@
 
 'use strict';
 
-const CommandFailedError = require('./CommandFailedError');
 const JSONStream = require('JSONStream');
 
 const duplexer = require('duplexer');
 const each = require('async/each');
 const fs = require('fs');
-const invariant = require('fbjs/lib/invariant');
-const path = require('path');
-const temp = require('temp');
+const invariant = require('invariant');
 
 const {Console} = require('console');
 
@@ -35,6 +32,7 @@ type Message<Type: string, Data> = Data & {
   id: number,
   type: Type,
 };
+
 type HandshakeMessage = Message<
   'handshake',
   {
@@ -42,6 +40,7 @@ type HandshakeMessage = Message<
     capabilities: [],
   },
 >;
+
 type CommandMessage = Message<
   'command',
   {
@@ -50,32 +49,45 @@ type CommandMessage = Message<
     stderr_path: string,
   },
 >;
-type UnknownMessage = Message<any, {}>;
-type HandshakeReponse = HandshakeMessage;
+
+type HandshakeReponse = Message<
+  'handshake',
+  {
+    protocol_version: '0',
+    capabilities: [],
+  },
+>;
+
 type CommandResponse = Message<
   'result',
   {
     exit_code: 0,
   },
 >;
+
 type ErrorResponse = Message<
   'error',
   {
     exit_code: number,
   },
 >;
-type IncomingMessage = HandshakeMessage | CommandMessage | UnknownMessage;
+
+type IncomingMessage = HandshakeMessage | CommandMessage;
 type Response = HandshakeReponse | CommandResponse | ErrorResponse;
 type RespondFn = (response: Response) => void;
 
+type JSONReaderDataHandler = IncomingMessage => mixed;
+type JSONReaderEndHandler = () => mixed;
+
+type JSONReaderDataListener = ('data', JSONReaderDataHandler) => JSONReader;
+type JSONReaderEndListener = ('end', JSONReaderEndHandler) => JSONReader;
+type JSONReaderListener = JSONReaderDataListener & JSONReaderEndListener;
+
 type JSONReader = {
-  on: ((
-    type: 'data',
-    listener: (message: IncomingMessage) => any,
-  ) => JSONReader) &
-    ((type: 'end') => JSONReader),
-  removeListener(type: 'data' | 'end', listener: Function): JSONReader,
+  on: JSONReaderListener,
+  removeListener: JSONReaderListener,
 };
+
 type JSONWriter = {
   write(object: Response): void,
   end(object?: Response): void,
@@ -85,23 +97,24 @@ function buckWorker(commands: Commands) {
   const reader: JSONReader = JSONStream.parse('*');
   const writer: JSONWriter = JSONStream.stringify();
 
-  function handleHandshake(message: IncomingMessage) {
-    const response = handShakeResponse(message);
+  function handleHandshake(message: IncomingMessage): void {
+    const response = handshakeResponse(message);
+
     writer.write(response);
+
     if (response.type === 'handshake') {
       reader.removeListener('data', handleHandshake).on('data', handleCommand);
     }
   }
 
-  function handleCommand(message: CommandMessage | UnknownMessage) {
+  function handleCommand(message: IncomingMessage): void {
     const {id} = message;
+
     if (message.type !== 'command') {
       writer.write(unknownMessage(id));
       return;
     }
 
-    /* $FlowFixMe(>=0.44.0 site=react_native_fb) Flow error found while
-     * deploying v0.44.0. Remove this comment to see the error */
     if (!message.args_path || !message.stdout_path || !message.stderr_path) {
       writer.write(invalidMessage(id));
       return;
@@ -109,6 +122,7 @@ function buckWorker(commands: Commands) {
 
     let responded: boolean = false;
     let stdout, stderr;
+
     try {
       stdout = fs.createWriteStream(message.stdout_path);
       stderr = fs.createWriteStream(message.stderr_path);
@@ -137,22 +151,25 @@ function buckWorker(commands: Commands) {
     }
   }
 
-  /* $FlowFixMe(site=react_native_fb) - Flow now prevents you from calling a
-   * function with more arguments than it expects. This comment suppresses an
-   * error that was noticed when we made this change. Delete this comment to
-   * see the error. */
   reader.on('data', handleHandshake).on('end', () => writer.end());
   return duplexer(reader, writer);
 }
 
-function handShakeResponse(message: HandshakeMessage | UnknownMessage) {
-  return message.type !== 'handshake'
-    ? unknownMessage(message.id)
-    : /* $FlowFixMe(>=0.44.0 site=react_native_fb) Flow error found while
-     * deploying v0.44.0. Remove this comment to see the error */
-      message.protocol_version !== '0'
-      ? invalidMessage(message.id)
-      : handshake(message.id);
+function handshakeResponse(message: IncomingMessage) {
+  if (message.type !== 'handshake') {
+    return unknownMessage(message.id);
+  }
+
+  if (message.protocol_version !== '0') {
+    return invalidMessage(message.id);
+  }
+
+  return {
+    id: message.id,
+    type: 'handshake',
+    protocol_version: '0',
+    capabilities: [],
+  };
 }
 
 function readArgsAndExecCommand(
@@ -200,7 +217,8 @@ function readArgsAndExecCommand(
       );
     } else {
       stderr.write(
-        `This worker does not have a command named \`${commandName}\`.`,
+        `This worker does not have a command named \`${commandName}\`. ` +
+          `Available commands are: ${Object.keys(commands).join(', ')}`,
       );
       respond(invalidMessage(id));
     }
@@ -231,11 +249,8 @@ async function execCommand(
     }
     await command(args.slice(), structuredArgs, commandSpecificConsole);
   } catch (e) {
-    if (!(e instanceof CommandFailedError)) {
-      commandSpecificConsole.error(e);
-    }
+    commandSpecificConsole.error(e.stack);
     makeResponse = commandError;
-    displayDebugMessage(commandSpecificConsole, argsString);
   }
 
   respond(makeResponse(messageId));
@@ -245,33 +260,7 @@ function shouldDebugCommand(argsString) {
   return DEBUG_RE && DEBUG_RE.test(argsString);
 }
 
-const ENV_VARS_FOR_REPRO = ['GRAPHQL_SCHEMAS_DIR'];
-
-function displayDebugMessage(commandSpecificConsole, argsString) {
-  const binPath = path.resolve(process.cwd(), 'js/metro-buck/cli.js');
-
-  const reproPath = temp.path({
-    prefix: 'packager-buck-worker-repro.',
-    suffix: '.args',
-  });
-  fs.writeFileSync(reproPath, argsString);
-  const nodePath = process.execPath;
-  const envVars = ENV_VARS_FOR_REPRO.map(
-    name => `${name}='${(process.env[name] || '').replace("'", "'\\''")}'`,
-  ).join(' ');
-  commandSpecificConsole.error(
-    '\nTo reproduce, run:\n' +
-      `  ${envVars} ${nodePath} --preserve-symlinks ${binPath} ${reproPath}\n`,
-  );
-}
-
 const error = (id, exitCode) => ({type: 'error', id, exit_code: exitCode});
-const handshake = id => ({
-  id,
-  type: 'handshake',
-  protocol_version: '0',
-  capabilities: [],
-});
 const unknownMessage = id => error(id, 1);
 const invalidMessage = id => error(id, 2);
 const commandError = id => error(id, 3);

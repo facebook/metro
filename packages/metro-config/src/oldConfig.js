@@ -23,6 +23,7 @@ const {FileStore} = require('metro-cache');
 import type {OldConfigT as ConfigT} from './configTypes.flow.js';
 
 const DEFAULT = ({
+  allowPnp: true,
   assetRegistryPath: 'missing-asset-registry-path',
   enhanceMiddleware: middleware => middleware,
   extraNodeModules: {},
@@ -49,7 +50,7 @@ const DEFAULT = ({
   getRunModuleStatement: (moduleId: number | string) =>
     `__r(${JSON.stringify(moduleId)});`,
   getSourceExts: () => [],
-  getTransformModulePath: () => 'metro/src/defaultTransformer',
+  getTransformModulePath: () => 'metro-babel-transformer',
   getTransformOptions: async () => ({
     transform: {experimentalImportSupport: false, inlineRequires: false},
     preloadedModules: false,
@@ -65,6 +66,7 @@ const DEFAULT = ({
   getWorkerPath: () => 'metro/src/DeltaBundler/Worker',
   processModuleFilter: module => true,
   transformVariants: () => ({default: {}}),
+  virtualMapper: file => [file],
 }: ConfigT);
 
 module.exports = {

@@ -123,47 +123,12 @@ type VisitFn = <State>(path: Object, state: State) => any;
 type BabelTypes = {[key: string]: Function};
 type BabelVisitor = {};
 
-declare module 'babel-core' {
-  declare type Plugins = _Plugins;
-  declare type BabelSourceMap = _BabelSourceMap;
-  declare type Ast = BabelNode;
-  declare type TransformOptions = _TransformOptions;
-  declare var transform: TransformSync /*(
-    code: string,
-    options?: _TransformOptions,
-  ): TransformResult*/;
-  declare function traverse<State>(
-    ast: BabelNode,
-    visitor: BabelVisitor,
-    scope?: ?Object,
-    state?: State,
-    parentPath?: ?Object,
-  ): void;
-  declare var types: BabelTypes;
-  declare var transformFile: TransformFileSync;
-  declare var transformFromAst: TransformFromAstSync /*(
-    ast: BabelNode,
-    code?: ?string,
-    babelOptions?: _TransformOptions,
-  ): TransformResult*/;
-}
-
 type _BabelSourceMapSegment = {
   generated: {column: number, line: number},
   name?: string,
   original?: {column: number, line: number},
   source?: string,
 };
-
-// https://github.com/babel/babel/tree/master/packages/babel-generator
-declare module 'babel-generator' {
-  declare export type BabelSourceMapSegment = _BabelSourceMapSegment;
-  declare export default (
-    ast: BabelNode,
-    options?: GeneratorOptions,
-    code?: string | {[string]: string},
-  ) => GeneratorResult;
-}
 
 // #############################################
 // ############     Babel 7    #################
@@ -190,7 +155,9 @@ type BabelCoreOptions = {|
   auxiliaryCommentAfter?: ?string,
   auxiliaryCommentBefore?: ?string,
   babelrc?: boolean,
+  babelrcRoots?: Array<string>,
   envName?: string,
+  caller?: {name: string},
   code?: boolean,
   comments?: boolean,
   compact?: 'auto' | boolean,
@@ -238,7 +205,7 @@ type TemplateOptions = Babylon7Options & {|
   preserveComments?: boolean,
 |};
 
-type Templatable = ({[tokenName: string]: string}) => BabelNode;
+type Templatable = ({[tokenName: string]: mixed}) => BabelNode;
 
 type TemplateFunc = (tpl: string, options?: TemplateOptions) => Templatable;
 
@@ -324,6 +291,12 @@ declare module '@babel/core' {
 
 // https://github.com/babel/babel/tree/master/packages/babel-generator
 declare module '@babel/generator' {
+  declare export type BabelSourceMapSegment = _BabelSourceMapSegment;
+  declare export default (
+    ast: BabelNode,
+    options?: GeneratorOptions,
+    code?: string | {[string]: string},
+  ) => GeneratorResult;
   declare export default (
     ast: BabelNode,
     options?: GeneratorOptions,

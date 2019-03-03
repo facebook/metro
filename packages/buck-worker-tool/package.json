@@ -1,6 +1,6 @@
 {
   "name": "buck-worker-tool",
-  "version": "0.49.1",
+  "version": "0.53.0",
   "description": "Implementation of the Buck worker protocol for Node.js.",
   "license": "MIT",
   "main": "src/worker-tool.js",
@@ -9,10 +9,11 @@
     "async": "^2.4.0",
     "duplexer": "^0.1.1",
     "fbjs": "^1.0.0",
+    "invariant": "^2.2.4",
     "temp": "^0.8.3"
   },
   "devDependencies": {
-    "metro-memory-fs": "0.49.1",
+    "metro-memory-fs": "0.53.0",
     "mkdirp": "^0.5.1"
   },
   "scripts": {

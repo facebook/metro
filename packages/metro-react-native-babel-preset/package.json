@@ -1,6 +1,6 @@
 {
   "name": "metro-react-native-babel-preset",
-  "version": "0.49.1",
+  "version": "0.53.0",
   "description": "Babel preset for React Native applications",
   "main": "src/index.js",
   "repository": {
@@ -26,6 +26,7 @@
     "@babel/plugin-proposal-optional-chaining": "^7.0.0",
     "@babel/plugin-syntax-dynamic-import": "^7.0.0",
     "@babel/plugin-syntax-export-default-from": "^7.0.0",
+    "@babel/plugin-syntax-flow": "^7.2.0",
     "@babel/plugin-transform-arrow-functions": "^7.0.0",
     "@babel/plugin-transform-block-scoping": "^7.0.0",
     "@babel/plugin-transform-classes": "^7.0.0",
@@ -51,7 +52,10 @@
     "@babel/plugin-transform-typescript": "^7.0.0",
     "@babel/plugin-transform-unicode-regex": "^7.0.0",
     "@babel/template": "^7.0.0",
-    "metro-babel7-plugin-react-transform": "0.49.1",
+    "metro-babel7-plugin-react-transform": "0.53.0",
     "react-transform-hmr": "^1.0.4"
+  },
+  "peerDependencies": {
+    "@babel/core": "*"
   }
 }

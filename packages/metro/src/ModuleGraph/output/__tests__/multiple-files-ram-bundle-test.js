@@ -104,6 +104,7 @@ function createRamBundle(preloadedModules = new Set(), ramGroups) {
     modules,
     requireCalls: [requireCall],
     enableIDInlining: true,
+    segmentID: 0,
   });
 
   return {code: result.code, map: result.map, extraFiles: result.extraFiles};
@@ -121,6 +122,7 @@ function makeModule(
     file: {
       code: type === 'module' ? makeModuleCode(moduleCode) : moduleCode,
       map: type !== 'module' ? null : makeModuleMap(name, path),
+      functionMap: null,
       path,
       type,
       libraryIdx: null,
@@ -134,6 +136,7 @@ function makeModuleMap(name, path) {
     mappings: '',
     names: [],
     sources: [path],
+    x_facebook_sources: [[null]],
   };
 }
 

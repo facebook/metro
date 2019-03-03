@@ -24,6 +24,7 @@ import type {
 type BundleType =
   | 'bundle'
   | 'delta'
+  | 'meta'
   | 'map'
   | 'ram'
   | 'cli'
@@ -48,7 +49,6 @@ export type BundleOptions = {
   +platform: ?string,
   +runModule: boolean,
   sourceMapUrl: ?string,
-  +embedDelta: boolean,
   createModuleIdFactory?: () => (path: string) => number,
 };
 
@@ -57,7 +57,6 @@ type SerializerOptions = {|
   +runModule: boolean,
   +excludeSource: boolean,
   +inlineSourceMap: boolean,
-  +embedDelta: boolean,
 |};
 
 // Stricter representation of BundleOptions.
@@ -86,6 +85,7 @@ export type OutputOptions = {
   bundleOutput: string,
   bundleEncoding?: 'utf8' | 'utf16le' | 'ascii',
   dev?: boolean,
+  indexedRamBundle?: boolean,
   platform: string,
   sourcemapOutput?: string,
   sourcemapSourcesRoot?: string,

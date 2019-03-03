@@ -11,7 +11,7 @@
 
 const siteConfig = {
   title: 'Metro',
-  tagline: '\uD832\uDE87 The JavaScript bundler for React Native',
+  tagline: '\ud83d\ude87 The JavaScript bundler for React Native',
   url: 'https://facebook.github.io',
   baseUrl: '/metro/',
   projectName: 'metro',
@@ -28,7 +28,7 @@ const siteConfig = {
   ],
   headerIcon: 'img/metro.svg',
   footerIcon: 'img/metro.svg',
-  favicon: 'img/favicon/favicon.ico',
+  favicon: 'img/favicon.png',
   ogImage: 'img/opengraph.png',
   recruitingLink: 'https://crowdin.com/project/metro',
   algolia: {

@@ -32,6 +32,7 @@ import type {ConfigT} from '../configTypes.flow';
 
 const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   resolver: {
+    allowPnp: true,
     assetExts,
     platforms,
     sourceExts,
@@ -42,6 +43,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     hasteImplModulePath: undefined,
     blacklistRE: blacklist(),
     useWatchman: true,
+    virtualMapper: file => [file],
   },
 
   serializer: {
@@ -67,7 +69,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     assetPlugins: [],
     asyncRequireModulePath: 'metro/src/lib/bundle-modules/asyncRequire',
     assetRegistryPath: 'missing-asset-registry-path',
-    babelTransformerPath: 'metro/src/defaultTransformer',
+    babelTransformerPath: 'metro-babel-transformer',
     dynamicDepsInPackages: 'throwAtRuntime',
     enableBabelRCLookup: true,
     enableBabelRuntime: true,
@@ -116,6 +118,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   maxWorkers: getMaxWorkers(),
   resetCache: false,
   reporter: new TerminalReporter(new Terminal(process.stdout)),
+  visualizer: {presets: []},
 });
 
 async function getDefaultConfig(rootPath: ?string): Promise<ConfigT> {

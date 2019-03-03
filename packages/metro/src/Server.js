@@ -12,12 +12,13 @@
 const IncrementalBundler = require('./IncrementalBundler');
 const MultipartResponse = require('./Server/MultipartResponse');
 
+const baseJSBundle = require('./DeltaBundler/Serializers/baseJSBundle');
+const bundleToString = require('./lib/bundle-modules/DeltaClient/bundleToString');
 const deltaJSBundle = require('./DeltaBundler/Serializers/deltaJSBundle');
 const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('./DeltaBundler/Serializers/getAssets');
 const getGraphId = require('./lib/getGraphId');
 const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
-const plainJSBundle = require('./DeltaBundler/Serializers/plainJSBundle');
 const sourceMapObject = require('./DeltaBundler/Serializers/sourceMapObject');
 const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
 const splitBundleOptions = require('./lib/splitBundleOptions');
@@ -32,6 +33,7 @@ const serializeDeltaJSBundle = require('./DeltaBundler/Serializers/helpers/seria
 const symbolicate = require('./Server/symbolicate/symbolicate');
 const url = require('url');
 const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
+const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundError');
 
 const {getAsset} = require('./Assets');
 
@@ -40,11 +42,15 @@ import type {Reporter} from './lib/reporting';
 import type {GraphId} from './lib/getGraphId';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
 import type {BundleOptions, SplitBundleOptions} from './shared/types.flow';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {
+  ConfigT,
+  VisualizerConfigT,
+} from 'metro-config/src/configTypes.flow';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
 import type {RevisionId} from './IncrementalBundler';
+import type {Graph, Module} from './DeltaBundler/types.flow';
 
 const {
   Logger,
@@ -96,6 +102,7 @@ class Server {
   _platforms: Set<string>;
   _nextBundleBuildID: number;
   _bundler: IncrementalBundler;
+  _isEnded: boolean;
 
   constructor(config: ConfigT) {
     this._config = config;
@@ -109,6 +116,7 @@ class Server {
     this._logger = Logger;
     this._changeWatchers = [];
     this._platforms = new Set(this._config.resolver.platforms);
+    this._isEnded = false;
 
     // TODO(T34760917): These two properties should eventually be instantiated
     // elsewhere and passed as parameters, since they are also needed by
@@ -139,7 +147,10 @@ class Server {
   }
 
   end() {
-    this._bundler.end();
+    if (!this._isEnded) {
+      this._bundler.end();
+      this._isEnded = true;
+    }
   }
 
   getBundler(): IncrementalBundler {
@@ -166,22 +177,23 @@ class Server {
 
     const entryPoint = path.resolve(this._config.projectRoot, entryFile);
 
+    const bundle = baseJSBundle(entryPoint, prepend, graph, {
+      processModuleFilter: this._config.serializer.processModuleFilter,
+      createModuleId: this._createModuleId,
+      getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+      dev: transformOptions.dev,
+      projectRoot: this._config.projectRoot,
+      runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
+        path.relative(this._config.projectRoot, entryPoint),
+      ),
+      runModule: serializerOptions.runModule,
+      sourceMapUrl: serializerOptions.sourceMapUrl,
+      inlineSourceMap: serializerOptions.inlineSourceMap,
+    });
+
     return {
-      code: plainJSBundle(entryPoint, prepend, graph, {
-        processModuleFilter: this._config.serializer.processModuleFilter,
-        createModuleId: this._createModuleId,
-        getRunModuleStatement: this._config.serializer.getRunModuleStatement,
-        dev: transformOptions.dev,
-        projectRoot: this._config.projectRoot,
-        runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-          path.relative(this._config.projectRoot, entryPoint),
-        ),
-        runModule: serializerOptions.runModule,
-        sourceMapUrl: serializerOptions.sourceMapUrl,
-        inlineSourceMap: serializerOptions.inlineSourceMap,
-        embedDelta: false,
-      }),
-      map: sourceMapString(prepend, graph, {
+      code: bundleToString(bundle).code,
+      map: sourceMapString([...prepend, ...this._getSortedModules(graph)], {
         excludeSource: serializerOptions.excludeSource,
         processModuleFilter: this._config.serializer.processModuleFilter,
       }),
@@ -320,7 +332,7 @@ class Server {
         'Accept-Ranges': 'bytes',
         'Content-Length': chunksize.toString(),
         'Content-Range': `bytes ${dataStart}-${dataEnd}/${data.length}`,
-        'Content-Type': mime.lookup(path.basename(assetPath[1])),
+        'Content-Type': mime.lookup(path.basename(assetPath)),
       });
 
       return data.slice(dataStart, dataEnd + 1);
@@ -331,8 +343,12 @@ class Server {
 
   async _processSingleAssetRequest(req: IncomingMessage, res: ServerResponse) {
     const urlObj = url.parse(decodeURI(req.url), true);
-    /* $FlowFixMe: could be empty if the url is invalid */
-    const assetPath: string = urlObj.pathname.match(/^\/assets\/(.+)$/);
+    const assetPath =
+      urlObj && urlObj.pathname && urlObj.pathname.match(/^\/assets\/(.+)$/);
+
+    if (!assetPath) {
+      throw new Error('Could not extract asset path from URL');
+    }
 
     const processingAssetRequestLogEntry = log(
       createActionStartEntry({
@@ -345,6 +361,7 @@ class Server {
       const data = await getAsset(
         assetPath[1],
         this._config.projectRoot,
+        this._config.watchFolders,
         /* $FlowFixMe: query may be empty for invalid URLs */
         urlObj.query.platform,
       );
@@ -353,7 +370,7 @@ class Server {
       if (process.env.REACT_NATIVE_ENABLE_ASSET_CACHING === true) {
         res.setHeader('Cache-Control', 'max-age=31536000');
       }
-      res.end(this._rangeRequestMiddleware(req, res, data, assetPath));
+      res.end(this._rangeRequestMiddleware(req, res, data, assetPath[1]));
       process.nextTick(() => {
         log(createActionEndEntry(processingAssetRequestLogEntry));
       });
@@ -391,6 +408,8 @@ class Server {
       await this._processAssetsRequest(req, res);
     } else if (pathname.match(/\.delta$/)) {
       await this._processDeltaRequest(req, res);
+    } else if (pathname.match(/\.meta/)) {
+      await this._processMetadataRequest(req, res);
     } else if (pathname.match(/^\/onchange\/?$/)) {
       this._processOnChangeRequest(req, res);
     } else if (pathname.match(/^\/assets\//)) {
@@ -466,9 +485,6 @@ class Server {
         };
       }
 
-      /* $FlowFixMe(>=0.63.0 site=react_native_fb) This comment suppresses an
-       * error found when Flow v0.63 was deployed. To see the error delete this
-       * comment and run Flow. */
       this._reporter.update({
         buildID,
         bundleDetails: {
@@ -626,7 +642,8 @@ class Server {
       );
 
       return {
-        numModifiedFiles: delta.modified.size + delta.deleted.size,
+        numModifiedFiles:
+          delta.added.size + delta.modified.size + delta.deleted.size,
         nextRevId: revision.id,
         bundle,
       };
@@ -663,7 +680,6 @@ class Server {
     },
     build: async ({
       graphId,
-      embedDelta,
       entryFile,
       transformOptions,
       serializerOptions,
@@ -677,7 +693,11 @@ class Server {
             onProgress,
           }));
 
-      const options = {
+      const serializer =
+        this._config.serializer.customSerializer ||
+        ((...args) => bundleToString(baseJSBundle(...args)).code);
+
+      const bundle = serializer(entryFile, revision.prepend, revision.graph, {
         processModuleFilter: this._config.serializer.processModuleFilter,
         createModuleId: this._createModuleId,
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,
@@ -689,30 +709,12 @@ class Server {
         runModule: serializerOptions.runModule,
         sourceMapUrl: serializerOptions.sourceMapUrl,
         inlineSourceMap: serializerOptions.inlineSourceMap,
-      };
-
-      const serializerArguments = [
-        entryFile,
-        revision.prepend,
-        revision.graph,
-        // Putting the ternary inside of the Object.assign call would not yield
-        // the correct union type.
-        serializerOptions.embedDelta
-          ? Object.assign({}, options, {
-              embedDelta: true,
-              revisionId: revision.id,
-            })
-          : Object.assign({}, options, {embedDelta: false}),
-      ];
-      const possibleCustomSerializer = this._config.serializer.customSerializer;
-      const bundle = possibleCustomSerializer
-        ? possibleCustomSerializer(...serializerArguments)
-        : plainJSBundle(...serializerArguments);
+      });
 
       return {
         numModifiedFiles: delta.reset
-          ? delta.modified.size + revision.prepend.length
-          : delta.modified.size + delta.deleted.size,
+          ? delta.added.size + revision.prepend.length
+          : delta.added.size + delta.modified.size + delta.deleted.size,
         lastModifiedDate: revision.date,
         nextRevId: revision.id,
         bundle,
@@ -734,6 +736,7 @@ class Server {
           FILES_CHANGED_COUNT_HEADER,
           String(result.numModifiedFiles),
         );
+        mres.setHeader(DELTA_ID_HEADER, String(result.nextRevId));
         mres.setHeader('Content-Type', 'application/javascript');
         mres.setHeader('Last-Modified', result.lastModifiedDate.toUTCString());
         mres.setHeader(
@@ -744,6 +747,14 @@ class Server {
       }
     },
   });
+
+  // This function ensures that modules in source maps are sorted in the same
+  // order as in a plain JS bundle.
+  _getSortedModules(graph: Graph<>): $ReadOnlyArray<Module<>> {
+    return [...graph.dependencies.values()].sort(
+      (a, b) => this._createModuleId(a.path) - this._createModuleId(b.path),
+    );
+  }
 
   _processSourceMapRequest = this._createRequestProcessor({
     createStartEntry(context) {
@@ -780,7 +791,7 @@ class Server {
 
       const {prepend, graph} = revision;
 
-      return sourceMapString(prepend, graph, {
+      return sourceMapString([...prepend, ...this._getSortedModules(graph)], {
         excludeSource: serializerOptions.excludeSource,
         processModuleFilter: this._config.serializer.processModuleFilter,
       });
@@ -788,6 +799,63 @@ class Server {
     finish({mres, result}) {
       mres.setHeader('Content-Type', 'application/json');
       mres.end(result.toString());
+    },
+  });
+
+  _processMetadataRequest = this._createRequestProcessor({
+    createStartEntry(context) {
+      return {
+        action_name: 'Requesting bundle metadata',
+        bundle_url: context.req.url,
+        entry_point: context.entryFile,
+        bundler: 'delta',
+      };
+    },
+    createEndEntry(context) {
+      return {
+        bundler: 'delta',
+      };
+    },
+    build: async ({
+      entryFile,
+      transformOptions,
+      serializerOptions,
+      onProgress,
+      revisionId,
+    }) => {
+      if (revisionId == null) {
+        throw new Error(
+          'You must provide a `revisionId` query parameter to the metadata endpoint.',
+        );
+      }
+
+      let revision;
+      const revPromise = this._bundler.getRevision(revisionId);
+      if (revPromise == null) {
+        throw new RevisionNotFoundError(revisionId);
+      } else {
+        revision = await revPromise;
+      }
+
+      const base = baseJSBundle(entryFile, revision.prepend, revision.graph, {
+        processModuleFilter: this._config.serializer.processModuleFilter,
+        createModuleId: this._createModuleId,
+        getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+        dev: transformOptions.dev,
+        projectRoot: this._config.projectRoot,
+        runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
+          path.relative(this._config.projectRoot, entryFile),
+        ),
+        runModule: serializerOptions.runModule,
+        sourceMapUrl: serializerOptions.sourceMapUrl,
+        inlineSourceMap: serializerOptions.inlineSourceMap,
+      });
+
+      return bundleToString(base).metadata;
+    },
+    finish({mres, result}) {
+      mres.setHeader('Content-Type', 'application/json');
+      mres.end(JSON.stringify(result));
     },
   });
 
@@ -924,7 +992,7 @@ class Server {
 
     const {prepend, graph} = revision;
 
-    return sourceMapObject(prepend, graph, {
+    return sourceMapObject([...prepend, ...this._getSortedModules(graph)], {
       excludeSource: serializerOptions.excludeSource,
       processModuleFilter: this._config.serializer.processModuleFilter,
     });
@@ -934,8 +1002,16 @@ class Server {
     return (this._nextBundleBuildID++).toString(36);
   }
 
+  getPlatforms(): $ReadOnlyArray<string> {
+    return this._config.resolver.platforms;
+  }
+
   getWatchFolders(): $ReadOnlyArray<string> {
     return this._config.watchFolders;
+  }
+
+  getVisualizerConfig(): $ReadOnly<VisualizerConfigT> {
+    return this._config.visualizer;
   }
 
   static DEFAULT_GRAPH_OPTIONS = {
@@ -952,7 +1028,6 @@ class Server {
     onProgress: null,
     runModule: true,
     sourceMapUrl: null,
-    embedDelta: false,
   };
 }
 

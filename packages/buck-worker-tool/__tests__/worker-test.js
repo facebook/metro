@@ -411,7 +411,7 @@ describe('Buck worker:', () => {
         exit_code: 2,
       });
       expect(fs.readFileSync('/arbitrary/stderr', 'utf8')).toEqual(
-        'This worker does not have a command named `inexistent_command`.',
+        'This worker does not have a command named `inexistent_command`. Available commands are: transform',
       );
     });
 

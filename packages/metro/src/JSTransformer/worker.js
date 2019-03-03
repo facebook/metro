@@ -36,35 +36,8 @@ const {
 
 import type {TransformResultDependency} from 'metro/src/DeltaBundler';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
-import type {Ast, BabelSourceMap} from '@babel/core';
-import type {Plugins as BabelPlugins} from 'babel-core';
+import type {BabelSourceMap} from '@babel/core';
 import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
-
-type BabelTransformerOptions = $ReadOnly<{
-  customTransformOptions?: CustomTransformOptions,
-  dev: boolean,
-  enableBabelRCLookup?: boolean,
-  enableBabelRuntime: boolean,
-  experimentalImportSupport?: boolean,
-  hot: boolean,
-  inlineRequires: boolean,
-  minify: boolean,
-  platform: ?string,
-  projectRoot: string,
-  publicPath: string,
-}>;
-
-export type BabelTransformerArgs = $ReadOnly<{|
-  filename: string,
-  options: BabelTransformerOptions,
-  plugins?: BabelPlugins,
-  src: string,
-|}>;
-
-export type BabelTransformer = {|
-  transform: BabelTransformerArgs => {ast: Ast},
-  getCacheKey?: () => string,
-|};
 
 type MinifierConfig = $ReadOnly<{[string]: mixed}>;
 
@@ -92,13 +65,16 @@ export type JsTransformerConfig = $ReadOnly<{|
   publicPath: string,
 |}>;
 
-export type CustomTransformOptions = {[string]: mixed, __proto__: null};
+import type {CustomTransformOptions} from 'metro-babel-transformer';
+export type {CustomTransformOptions} from 'metro-babel-transformer';
 
 export type JsTransformOptions = $ReadOnly<{|
   customTransformOptions?: CustomTransformOptions,
   dev: boolean,
+  disableFlowStripTypesTransform?: boolean,
   experimentalImportSupport?: boolean,
   hot: boolean,
+  inlinePlatform: boolean,
   inlineRequires: boolean,
   minify: boolean,
   platform: ?string,
@@ -240,8 +216,9 @@ class JsTransformer {
 
     if (!options.dev) {
       plugins.push([constantFoldingPlugin, opts]);
-      plugins.push([inlinePlugin, opts]);
     }
+
+    plugins.push([inlinePlugin, opts]);
 
     ({ast} = transformFromAstSync(ast, '', {
       ast: true,

@@ -11,7 +11,11 @@
 
 import type {Ast} from '@babel/core';
 import type {BabelSourceMap} from '@babel/core';
-import type {FBSourceMap, MetroSourceMap} from 'metro-source-map';
+import type {
+  FBSourceMap,
+  MetroSourceMap,
+  FBSourceFunctionMap,
+} from 'metro-source-map';
 import type {TransformResultDependency} from 'metro/src/DeltaBundler';
 
 export type BuildResult = GraphResult;
@@ -29,6 +33,7 @@ export type Dependency = {|
 export type File = {|
   code: string,
   map: ?BabelSourceMap,
+  functionMap: ?FBSourceFunctionMap,
   path: string,
   type: CodeFileTypes,
   libraryIdx: ?number,
@@ -96,6 +101,7 @@ export type OutputFn<
   sourceMapPath?: ?string,
   bundleOrderFile?: ?string,
   enableIDInlining: boolean,
+  segmentID: number,
 |}) => OutputResult<M>;
 
 type OutputResult<M: FBSourceMap | MetroSourceMap> = {|
@@ -135,6 +141,7 @@ export type TransformVariants = {+[name: string]: {}};
 
 export type TransformedCodeFile = {|
   +file: string,
+  +functionMap: ?FBSourceFunctionMap,
   +hasteID: ?string,
   package?: PackageData,
   +transformed: TransformResults,

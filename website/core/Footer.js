@@ -1,4 +1,11 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @format
+ */
 
 'use strict';
 
@@ -12,8 +19,7 @@ const githubButton = (
     data-count-href="/facebook/metro/stargazers"
     data-count-api="/repos/facebook/metro#stargazers_count"
     data-count-aria-label="# stargazers on GitHub"
-    aria-label="Star this project on GitHub"
-  >
+    aria-label="Star this project on GitHub">
     Star
   </a>
 );
@@ -40,8 +46,7 @@ class Footer extends React.Component {
                 'docs/' +
                 this.props.language +
                 '/getting-started.html'
-              }
-            >
+              }>
               Getting Started
             </a>
             <a
@@ -50,8 +55,7 @@ class Footer extends React.Component {
                 'docs/' +
                 this.props.language +
                 '/api.html'
-              }
-            >
+              }>
               API Reference
             </a>
           </div>
@@ -59,8 +63,7 @@ class Footer extends React.Component {
             <h5>Community</h5>
             <a
               href="https://stackoverflow.com/questions/tagged/metrojs"
-              target="_blank"
-            >
+              target="_blank">
               Stack Overflow
             </a>
             <a href="https://twitter.com/MetroBundler" target="_blank">
@@ -78,8 +81,7 @@ class Footer extends React.Component {
         <a
           href="https://code.facebook.com/projects/"
           target="_blank"
-          className="fbOpenSource"
-        >
+          className="fbOpenSource">
           <img
             src={this.props.config.baseUrl + 'img/oss_logo.png'}
             alt="Facebook Open Source"

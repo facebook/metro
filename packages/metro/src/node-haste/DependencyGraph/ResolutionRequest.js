@@ -111,7 +111,7 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
   }
 }
 
-function getResolutionCacheKey(modulePath, depName) {
+function getResolutionCacheKey(modulePath: string, depName: string) {
   return `${path.resolve(modulePath)}:${depName}`;
 }
 

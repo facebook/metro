@@ -15,6 +15,7 @@
 const BundlePlots = require('./components/BundlePlots');
 const BundleRunForm = require('./components/BundleRunForm');
 const React = require('react');
+const WelcomeMessage = require('./components/WelcomeMessage');
 
 const handleAPIError = require('../utils/handleAPIError');
 
@@ -26,77 +27,120 @@ import type {
   BuildDetails,
 } from '../../middleware/metroHistory.js';
 import {message, Row, Col, Card, Tag, Icon} from 'antd';
+import type {VisualizerConfigT} from 'metro-config/src/configTypes.flow.js';
 import type {BundleOptions} from 'metro/src/shared/types.flow.js';
 
 type State = {
-  metroHistory: MetroHistory,
-  selectedBundleHash?: ?string,
-  showLoadingIndicator: boolean,
+  metroHistory: ?MetroHistory,
+  selectedBundleHash: ?string,
+  isLoadingData: boolean,
+  isBundling: boolean,
+  visualizerConfig: ?VisualizerConfigT,
+  platforms: $ReadOnlyArray<string>,
 };
 
 class DashboardApp extends React.Component<mixed, State> {
+  _bundleRunForm = React.createRef();
+
+  state = {
+    metroHistory: undefined,
+    selectedBundleHash: undefined,
+    isLoadingData: false,
+    isBundling: false,
+    visualizerConfig: undefined,
+    platforms: ['ios', 'android', 'windows', 'web'],
+  };
+
   componentDidMount() {
-    this.fetchBundles();
+    this.fetchData();
   }
 
-  fetchBundles() {
-    this.setState({showLoadingIndicator: true});
-    fetch('/visualizer/bundles')
-      .then(res => {
-        this.setState({showLoadingIndicator: false});
-        return handleAPIError(res);
+  fetchData() {
+    this.setState({isLoadingData: true});
+    return Promise.all([
+      fetch('/visualizer/bundles'),
+      fetch('/visualizer/platforms'),
+      fetch('/visualizer/config'),
+    ])
+      .then(responses => {
+        this.setState({isLoadingData: false});
+        return Promise.all(responses.map(res => handleAPIError(res).json()));
       })
-      .then(response => response.json())
-      .then(metroHistory => {
-        this.setState({metroHistory});
+      .then(([metroHistory, platforms, visualizerConfig]) => {
+        this.setState({metroHistory, platforms, visualizerConfig});
       })
       .catch(error => message.error(error.message));
   }
 
+  _handleReload = () => {
+    this.fetchData();
+  };
+
+  _handleBuildPreset = (entryPath, buildOptions) => {
+    const bundleRunForm = this._bundleRunForm.current;
+    if (bundleRunForm) {
+      bundleRunForm.build(entryPath, buildOptions);
+    }
+  };
+
   render() {
+    const {
+      metroHistory,
+      isLoadingData,
+      isBundling,
+      visualizerConfig,
+      platforms,
+    } = this.state;
+    const loadedEmptyHistory =
+      !isLoadingData && metroHistory && Object.keys(metroHistory).length === 0;
     return (
-      this.state && (
-        <div>
-          <Row type="flex" justify="center">
-            <img
-              src={'https://facebook.github.io/metro/img/metro.svg'}
-              className={logo}
-              alt="logo"
-            />
-          </Row>
+      <div>
+        <Row type="flex" justify="center">
+          <img
+            src={'https://facebook.github.io/metro/img/metro.svg'}
+            className={logo}
+            alt="logo"
+          />
+        </Row>
 
-          <Row type="flex" justify="center">
-            <Col span={16}>
-              <BundleRunForm
-                handleStartedBundling={() =>
-                  this.setState({showLoadingIndicator: true})
-                }
-                handleFinishedBundling={() => this.fetchBundles()}
-              />
-            </Col>
-          </Row>
+        <BundleRunForm
+          ref={this._bundleRunForm}
+          platforms={platforms}
+          handleStartedBundling={() => this.setState({isBundling: true})}
+          handleFinishedBundling={() => {
+            this.fetchData().then(() => this.setState({isBundling: false}));
+          }}
+        />
 
-          <Row type="flex" justify="center">
-            <Col span={16}>
-              {this.state.metroHistory &&
-                Object.keys(this.state.metroHistory).map(bundleHash => (
-                  <Link to={`/graph/${bundleHash}`} key={bundleHash}>
-                    <BundleCard
-                      onClick={() =>
-                        this.setState({selectedBundleHash: bundleHash})
-                      }
-                      bundleInfo={this.state.metroHistory[bundleHash]}
-                    />
-                  </Link>
-                ))}
-            </Col>
-          </Row>
+        {loadedEmptyHistory && !isBundling ? (
+          <WelcomeMessage
+            onReload={this._handleReload}
+            platforms={platforms}
+            presets={visualizerConfig && visualizerConfig.presets}
+            onBuildPreset={this._handleBuildPreset}
+          />
+        ) : null}
 
-          {this.state.showLoadingIndicator && (
-            <Icon type="loading" className={loadingIndicator} />
-          )}
-        </div>
-      )
+        <Row type="flex" justify="center" gutter={8}>
+          <Col span={16}>
+            {metroHistory &&
+              Object.keys(metroHistory).map(bundleHash => (
+                <Link to={`/graph/${bundleHash}`} key={bundleHash}>
+                  <BundleCard
+                    onClick={() =>
+                      this.setState({selectedBundleHash: bundleHash})
+                    }
+                    bundleInfo={metroHistory[bundleHash]}
+                  />
+                </Link>
+              ))}
+          </Col>
+        </Row>
+
+        {(isLoadingData || isBundling) && (
+          <Icon type="loading" className={loadingIndicator} />
+        )}
+      </div>
     );
   }
 }
@@ -119,7 +163,7 @@ const BundleCard = (props: {
           .map(
             info =>
               info.duration != null ? (
-                <span className={initalInfo} key="initial">
+                <span className={initialInfo} key="initial">
                   {info.duration} ms | {info.numModifiedFiles} files
                 </span>
               ) : null,
@@ -175,7 +219,7 @@ const logo = css`
   width: 80px;
 `;
 
-const initalInfo = css`
+const initialInfo = css`
   margin-left: 8px;
   font-size: 9pt;
   color: #aaa;
