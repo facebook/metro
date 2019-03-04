@@ -33,12 +33,20 @@ describe('getAsset', () => {
     mkdirp.sync('/root/imgs');
   });
 
+  it('should fail if the extension is not registerd', async () => {
+    writeImages({'b.png': 'b image', 'b@2x.png': 'b2 image'});
+
+    expect(getAssetStr('imgs/b.png', '/root', [], ['jpg'])).rejects.toThrow(
+      Error,
+    );
+  });
+
   it('should work for the simple case', () => {
     writeImages({'b.png': 'b image', 'b@2x.png': 'b2 image'});
 
     return Promise.all([
-      getAssetStr('imgs/b.png', '/root', []),
-      getAssetStr('imgs/b@1x.png', '/root', []),
+      getAssetStr('imgs/b.png', '/root', [], null, ['png']),
+      getAssetStr('imgs/b@1x.png', '/root', [], null, ['png']),
     ]).then(resp => resp.forEach(data => expect(data).toBe('b image')));
   });
 
@@ -52,11 +60,11 @@ describe('getAsset', () => {
 
     expect(
       await Promise.all([
-        getAssetStr('imgs/b.png', '/root', [], 'ios'),
-        getAssetStr('imgs/b.png', '/root', [], 'android'),
-        getAssetStr('imgs/c.png', '/root', [], 'android'),
-        getAssetStr('imgs/c.png', '/root', [], 'ios'),
-        getAssetStr('imgs/c.png', '/root', []),
+        getAssetStr('imgs/b.png', '/root', [], 'ios', ['png']),
+        getAssetStr('imgs/b.png', '/root', [], 'android', ['png']),
+        getAssetStr('imgs/c.png', '/root', [], 'android', ['png']),
+        getAssetStr('imgs/c.png', '/root', [], 'ios', ['png']),
+        getAssetStr('imgs/c.png', '/root', [], null, ['png']),
       ]),
     ).toEqual([
       'b ios image',
@@ -74,8 +82,8 @@ describe('getAsset', () => {
     });
 
     return Promise.all([
-      getAssetStr('imgs/b.jpg', '/root', []),
-      getAssetStr('imgs/b.png', '/root', []),
+      getAssetStr('imgs/b.jpg', '/root', [], null, ['jpg']),
+      getAssetStr('imgs/b.png', '/root', [], null, ['png']),
     ]).then(data => expect(data).toEqual(['jpeg image', 'png image']));
   });
 
@@ -87,7 +95,9 @@ describe('getAsset', () => {
       'b@4.5x.png': 'b4.5 image',
     });
 
-    expect(await getAssetStr('imgs/b@3x.png', '/root', [])).toBe('b4 image');
+    expect(await getAssetStr('imgs/b@3x.png', '/root', [], null, ['png'])).toBe(
+      'b4 image',
+    );
   });
 
   it('should pick the bigger one with platform ext', async () => {
@@ -104,8 +114,8 @@ describe('getAsset', () => {
 
     expect(
       await Promise.all([
-        getAssetStr('imgs/b@3x.png', '/root', []),
-        getAssetStr('imgs/b@3x.png', '/root', [], 'ios'),
+        getAssetStr('imgs/b@3x.png', '/root', [], null, ['png']),
+        getAssetStr('imgs/b@3x.png', '/root', [], 'ios', ['png']),
       ]),
     ).toEqual(['b4 image', 'b4 ios image']);
   });
@@ -118,7 +128,13 @@ describe('getAsset', () => {
     });
 
     expect(
-      await getAssetStr('../anotherfolder/b.png', '/root', ['/anotherfolder']),
+      await getAssetStr(
+        '../anotherfolder/b.png',
+        '/root',
+        ['/anotherfolder'],
+        null,
+        ['png'],
+      ),
     ).toBe('b image');
   });
 
@@ -130,7 +146,7 @@ describe('getAsset', () => {
     });
 
     await expect(
-      getAssetStr('../anotherfolder/b.png', '/root', []),
+      getAssetStr('../anotherfolder/b.png', '/root', [], null, ['png']),
     ).rejects.toBeInstanceOf(Error);
   });
 });
