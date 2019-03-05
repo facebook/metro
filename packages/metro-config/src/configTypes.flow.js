@@ -171,6 +171,7 @@ type ServerConfigT = {|
   enhanceMiddleware: (Middleware, Server) => Middleware,
   useGlobalHotkey: boolean,
   port: number,
+  runInspectorProxy: boolean,
 |};
 
 export type InputConfigT = $Shape<{|

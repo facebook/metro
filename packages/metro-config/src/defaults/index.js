@@ -64,6 +64,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     port: 8080,
     enableVisualizer: false,
     enhanceMiddleware: middleware => middleware,
+    runInspectorProxy: false,
   },
   transformer: {
     assetPlugins: [],

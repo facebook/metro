@@ -18,12 +18,13 @@ const attachWebsocketServer = require('./lib/attachWebsocketServer');
 const http = require('http');
 const https = require('https');
 const makeBuildCommand = require('./commands/build');
-const makeServeCommand = require('./commands/serve');
 const makeDependenciesCommand = require('./commands/dependencies');
+const makeServeCommand = require('./commands/serve');
 const outputBundle = require('./shared/output/bundle');
 
 const {readFile} = require('fs-extra');
 const {loadConfig, mergeConfig, getDefaultConfig} = require('metro-config');
+const {runInspectorProxy} = require('metro-inspector-proxy');
 
 import type {Graph} from './DeltaBundler';
 import type {CustomTransformOptions} from './JSTransformer/worker';
@@ -96,6 +97,7 @@ type RunServerOptions = {|
   secureKey?: string,
   secureCert?: string,
   hmrEnabled?: boolean,
+  runInspectorProxy?: boolean,
 |};
 
 exports.runServer = async (
@@ -137,6 +139,15 @@ exports.runServer = async (
     if (initializeVisualizerMiddleware) {
       serverApp.use('/visualizer', initializeVisualizerMiddleware(metroServer));
     }
+  }
+
+  if (config.server.runInspectorProxy) {
+    // Port number is hardcoded here now for a transition state.
+    // When Inspector Proxy will be ready to use we will change
+    // this to use the same port as Metro (this will require
+    // creating new InspectorProxy and attaching it to httpServer
+    // instead of creating new HTTP Server).
+    runInspectorProxy(8082);
   }
 
   let httpServer;
