@@ -25,6 +25,7 @@ import type {
   Resolution,
 } from 'metro-resolver';
 
+export type FollowFn = (filePath: string) => string;
 export type DirExistsFn = (filePath: string) => boolean;
 
 /**
@@ -54,6 +55,7 @@ export type ModuleishCache<TModule, TPackage> = {
 
 type Options<TModule, TPackage> = {|
   +allowPnp: boolean,
+  +follow: FollowFn,
   +dirExists: DirExistsFn,
   +doesFileExist: DoesFileExist,
   +extraNodeModules: ?Object,
@@ -89,7 +91,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
           const fromPackagePath =
             './' +
             path.relative(
-              path.dirname(fromPackage.path),
+              fromPackage.root,
               path.resolve(path.dirname(fromModule.path), modulePath),
             );
 
@@ -106,19 +108,19 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
               './' +
               path.relative(
                 path.dirname(fromModule.path),
-                path.resolve(path.dirname(fromPackage.path), redirectedPath),
+                path.resolve(fromPackage.root, redirectedPath),
               );
           }
 
           return redirectedPath;
         }
       } else {
-        const pck = path.isAbsolute(modulePath)
+        const pack = path.isAbsolute(modulePath)
           ? moduleCache.getModule(modulePath).getPackage()
           : fromModule.getPackage();
 
-        if (pck) {
-          return pck.redirectRequire(modulePath, this._options.mainFields);
+        if (pack) {
+          return pack.redirectRequire(modulePath, this._options.mainFields);
         }
       }
     } catch (err) {
@@ -144,11 +146,21 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
             this._redirectRequire(fromModule, modulePath),
           allowHaste,
           platform,
-          resolveHasteModule: name =>
-            this._options.moduleMap.getModule(name, platform, true),
-          resolveHastePackage: name =>
-            this._options.moduleMap.getPackage(name, platform, true),
-          getPackageMainPath: this._getPackageMainPath,
+          resolveHasteModule(name) {
+            return this.moduleMap.getModule(name, platform, true);
+          },
+          getPackageMainPath(packageJsonPath: string): string {
+            return this.moduleCache
+              .getPackage(packageJsonPath)
+              .getMain(this.mainFields);
+          },
+          redirectPackage(packagePath: string): string {
+            packagePath = this.follow(packagePath);
+            const packageJsonPath = path.join(packagePath, 'package.json');
+            return this.doesFileExist(packageJsonPath)
+              ? this.moduleCache.getPackage(packageJsonPath).root
+              : packagePath;
+          },
         },
         moduleName,
         platform,
@@ -170,18 +182,14 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         );
       }
       if (error instanceof Resolver.FailedToResolveNameError) {
-        const {dirPaths, extraPaths} = error;
-        const displayDirPaths = dirPaths
-          .filter(dirPath => this._options.dirExists(dirPath))
-          .concat(extraPaths);
-
-        const hint = displayDirPaths.length ? ' or in these directories:' : '';
+        const {modulePaths} = error;
+        const hint = modulePaths.length ? ' or at these locations:' : '';
         throw new UnableToResolveError(
           fromModule.path,
           moduleName,
           [
             `Module \`${moduleName}\` does not exist in the Haste module map${hint}`,
-            ...displayDirPaths.map(dirPath => `  ${path.dirname(dirPath)}`),
+            ...modulePaths.map(modulePath => `  ${path.dirname(modulePath)}`),
             '',
             'This might be related to https://github.com/facebook/react-native/issues/4968',
             'To resolve try the following:',
@@ -195,11 +203,6 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       throw error;
     }
   }
-
-  _getPackageMainPath = (packageJsonPath: string): string => {
-    const package_ = this._options.moduleCache.getPackage(packageJsonPath);
-    return package_.getMain(this._options.mainFields);
-  };
 
   /**
    * FIXME: get rid of this function and of the reliance on `TModule`

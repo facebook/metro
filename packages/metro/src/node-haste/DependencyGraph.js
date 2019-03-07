@@ -91,7 +91,7 @@ class DependencyGraph extends EventEmitter {
       resetCache: config.resetCache,
       rootDir: config.projectRoot,
       roots: config.watchFolders,
-      throwOnModuleCollision: true,
+      skipHastePackages: true,
       useWatchman: config.resolver.useWatchman,
       watch: true,
     });
@@ -118,9 +118,9 @@ class DependencyGraph extends EventEmitter {
   }
 
   _getClosestPackage(filePath: string): ?string {
-    const parsedPath = path.parse(filePath);
-    const root = parsedPath.root;
-    let dir = parsedPath.dir;
+    const {root} = path.parse(filePath);
+    // The `filePath` may be a directory.
+    let dir = filePath;
     do {
       const candidate = path.join(dir, 'package.json');
       if (this._hasteFS.exists(candidate)) {
@@ -153,6 +153,7 @@ class DependencyGraph extends EventEmitter {
       },
       doesFileExist: this._doesFileExist,
       extraNodeModules: this._config.resolver.extraNodeModules,
+      follow: filePath => this._hasteFS.follow(filePath),
       isAssetFile: filePath => this._helpers.isAssetFile(filePath),
       mainFields: this._config.resolver.resolverMainFields,
       moduleCache: this._moduleCache,

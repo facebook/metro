@@ -13,18 +13,22 @@
 const Module = require('./Module');
 const Package = require('./Package');
 
+import type {PackageContent} from './Package';
+
 type GetClosestPackageFn = (filePath: string) => ?string;
 
 class ModuleCache {
   _getClosestPackage: GetClosestPackageFn;
   _moduleCache: {[filePath: string]: Module, __proto__: null};
   _packageCache: {[filePath: string]: Package, __proto__: null};
+  _packagesById: {[id: string]: Package, __proto__: null};
   _packageModuleMap: WeakMap<Module, string>;
 
   constructor(options: {getClosestPackage: GetClosestPackageFn}) {
     this._getClosestPackage = options.getClosestPackage;
     this._moduleCache = Object.create(null);
     this._packageCache = Object.create(null);
+    this._packagesById = Object.create(null);
     this._packageModuleMap = new WeakMap();
   }
 
@@ -36,12 +40,17 @@ class ModuleCache {
   }
 
   getPackage(filePath: string): Package {
-    if (!this._packageCache[filePath]) {
-      this._packageCache[filePath] = new Package({
+    const cachedPackage = this._packageCache[filePath];
+    if (!cachedPackage) {
+      const newPackage = new Package({
         file: filePath,
       });
+      const packageId = getPackageId(newPackage.read());
+      return (this._packageCache[filePath] =
+        this._packagesById[packageId] ||
+        (this._packagesById[packageId] = newPackage));
     }
-    return this._packageCache[filePath];
+    return cachedPackage;
   }
 
   getPackageForModule(module: Module): ?Package {
@@ -59,8 +68,9 @@ class ModuleCache {
       return null;
     }
 
-    this._packageModuleMap.set(module, packagePath);
-    return this.getPackage(packagePath);
+    const pack = this.getPackage(packagePath);
+    this._packageModuleMap.set(module, pack.path);
+    return pack;
   }
 
   processFileChange(type: string, filePath: string) {
@@ -68,11 +78,20 @@ class ModuleCache {
       this._moduleCache[filePath].invalidate();
       delete this._moduleCache[filePath];
     }
-    if (this._packageCache[filePath]) {
-      this._packageCache[filePath].invalidate();
+    const pack = this._packageCache[filePath];
+    if (pack) {
+      if (pack.content) {
+        const packageId = getPackageId(pack.content);
+        delete this._packagesById[packageId];
+      }
+      pack.invalidate();
       delete this._packageCache[filePath];
     }
   }
+}
+
+function getPackageId(content: PackageContent) {
+  return content.name + '@' + content.version;
 }
 
 module.exports = ModuleCache;

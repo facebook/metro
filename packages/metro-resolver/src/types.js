@@ -48,6 +48,7 @@ export type FileCandidates =
  */
 export type DoesFileExist = (filePath: string) => boolean;
 export type IsAssetFile = (fileName: string) => boolean;
+export type FollowFn = (filePath: string) => string;
 
 /**
  * Given a directory path and the base asset name, return a list of all the
@@ -89,12 +90,6 @@ export type HasteContext = FileOrDirContext & {
    * a Haste module of that name. Ex. for `Foo` it may return `/smth/Foo.js`.
    */
   +resolveHasteModule: (name: string) => ?string,
-  /**
-   * Given a name, this should return the full path to the package manifest that
-   * provides a Haste package of that name. Ex. for `Foo` it may return
-   * `/smth/Foo/package.json`.
-   */
-  +resolveHastePackage: (name: string) => ?string,
 };
 
 export type ModulePathContext = FileOrDirContext & {
@@ -110,8 +105,9 @@ export type ResolutionContext = ModulePathContext &
     allowPnp: boolean,
     allowHaste: boolean,
     extraNodeModules: ?{[string]: string},
-    originModulePath: string,
+    redirectPackage: (packagePath: string) => string,
     resolveRequest?: ?CustomResolver,
+    follow: FollowFn,
   };
 
 export type CustomResolver = (

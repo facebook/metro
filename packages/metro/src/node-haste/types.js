@@ -13,6 +13,7 @@
 // TODO(cpojer): Create a jest-types repo.
 export type HasteFS = {
   exists(filePath: string): boolean,
+  follow(filePath: string): string,
   getAllFiles(): Array<string>,
   getFileIterator(): Iterator<string>,
   getModuleName(filePath: string): ?string,
