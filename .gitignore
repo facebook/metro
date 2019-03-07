@@ -11,3 +11,4 @@ website/i18n/*
 website/node_modules
 website/translated_docs
 .idea
+.vscode

@@ -116,6 +116,12 @@ router.use('/bundle.js', async (req, res, next) => {
     });
 });
 
+router.get('/config', async function(req, res) {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.write(JSON.stringify(metroServer.getVisualizerConfig()));
+  res.end();
+});
+
 async function getGraph(graphId: GraphId): Promise<Graph<>> {
   const status = "Getting last bundle's graph";
 

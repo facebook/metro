@@ -18,11 +18,13 @@ const attachWebsocketServer = require('./lib/attachWebsocketServer');
 const http = require('http');
 const https = require('https');
 const makeBuildCommand = require('./commands/build');
+const makeDependenciesCommand = require('./commands/dependencies');
 const makeServeCommand = require('./commands/serve');
 const outputBundle = require('./shared/output/bundle');
 
 const {readFile} = require('fs-extra');
 const {loadConfig, mergeConfig, getDefaultConfig} = require('metro-config');
+const {runInspectorProxy} = require('metro-inspector-proxy');
 
 import type {Graph} from './DeltaBundler';
 import type {CustomTransformOptions} from './JSTransformer/worker';
@@ -95,6 +97,7 @@ type RunServerOptions = {|
   secureKey?: string,
   secureCert?: string,
   hmrEnabled?: boolean,
+  runInspectorProxy?: boolean,
 |};
 
 exports.runServer = async (
@@ -138,6 +141,15 @@ exports.runServer = async (
     }
   }
 
+  if (config.server.runInspectorProxy) {
+    // Port number is hardcoded here now for a transition state.
+    // When Inspector Proxy will be ready to use we will change
+    // this to use the same port as Metro (this will require
+    // creating new InspectorProxy and attaching it to httpServer
+    // instead of creating new HTTP Server).
+    runInspectorProxy(8082);
+  }
+
   let httpServer;
 
   if (secure) {
@@ -157,13 +169,12 @@ exports.runServer = async (
     end();
   });
 
-  if (hmrEnabled) {
-    attachHmrServer(httpServer);
-  }
-
   return new Promise((resolve, reject) => {
     httpServer.listen(config.server.port, host, () => {
       onReady && onReady(httpServer);
+      if (hmrEnabled) {
+        attachHmrServer(httpServer);
+      }
       resolve(httpServer);
     });
 
@@ -319,9 +330,11 @@ exports.attachMetroCli = function(
     build = {},
     // $FlowFixMe TODO T26072405
     serve = {},
+    dependencies = {},
   }: {
     build: BuildCommandOptions,
     serve: ServeCommandOptions,
+    dependencies: any,
   } = {},
 ) {
   if (build) {
@@ -330,6 +343,10 @@ exports.attachMetroCli = function(
   }
   if (serve) {
     const {command, description, builder, handler} = makeServeCommand();
+    yargs.command(command, description, builder, handler);
+  }
+  if (dependencies) {
+    const {command, description, builder, handler} = makeDependenciesCommand();
     yargs.command(command, description, builder, handler);
   }
   return yargs;

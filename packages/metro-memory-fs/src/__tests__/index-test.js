@@ -697,6 +697,28 @@ describe('win32 support', () => {
   });
 });
 
+describe('promises', () => {
+  beforeEach(() => {
+    fs = new MemoryFs({cwd: () => '/current/working/dir'});
+  });
+
+  it('exists', () => {
+    expect(fs.promises).toBeDefined();
+  });
+
+  it('can write then read a file', async () => {
+    await fs.promises.writeFile('/foo.txt', 'test');
+
+    expect(await fs.promises.readFile('/foo.txt', 'utf8')).toEqual('test');
+  });
+
+  it('throws when trying to read inexistent file', async () => {
+    await expect(fs.promises.readFile('/foo.txt')).rejects.toEqual(
+      expect.objectContaining({code: 'ENOENT'}),
+    );
+  });
+});
+
 function expectFsError(code, handler) {
   try {
     handler();

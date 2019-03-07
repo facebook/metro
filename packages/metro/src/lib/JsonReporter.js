@@ -12,7 +12,7 @@
 
 const {Writable} = require('stream');
 
-class JsonReporter<TEvent: {}> {
+class JsonReporter<TEvent: {[string]: any}> {
   _stream: Writable;
 
   constructor(stream: Writable) {
@@ -24,27 +24,13 @@ class JsonReporter<TEvent: {}> {
    * (Perhaps we should switch in favor of plain object?)
    */
   update(event: TEvent) {
-    /* $FlowFixMe: fine to call on `undefined`. */
     if (Object.prototype.toString.call(event.error) === '[object Error]') {
-      event = {...event};
-      /* $FlowFixMe(>=0.70.0 site=react_native_fb) This comment suppresses an
-       * error found when Flow v0.70 was deployed. To see the error delete
-       * this comment and run Flow. */
-      event.error = {
-        /* $FlowFixMe(>=0.70.0 site=react_native_fb) This comment suppresses an
-         * error found when Flow v0.70 was deployed. To see the error delete
-         * this comment and run Flow. */
-        ...event.error,
-        /* $FlowFixMe(>=0.70.0 site=react_native_fb) This comment suppresses an
-         * error found when Flow v0.70 was deployed. To see the error delete
-         * this comment and run Flow. */
+      event = Object.assign(event, {
         message: event.error.message,
-        /* $FlowFixMe(>=0.70.0 site=react_native_fb) This comment suppresses an
-         * error found when Flow v0.70 was deployed. To see the error delete
-         * this comment and run Flow. */
         stack: event.error.stack,
-      };
+      });
     }
+
     this._stream.write(JSON.stringify(event) + '\n');
   }
 }

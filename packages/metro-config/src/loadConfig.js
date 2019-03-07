@@ -39,6 +39,7 @@ type YargArguments = {
   transformer?: string,
   'reset-cache'?: boolean,
   resetCache?: boolean,
+  runInspectorProxy?: boolean,
   verbose?: boolean,
 };
 
@@ -169,6 +170,10 @@ function overrideConfigWithArguments(
 
   if (argv.port != null) {
     output.server.port = Number(argv.port);
+  }
+
+  if (argv.runInspectorProxy != null) {
+    output.server.runInspectorProxy = Boolean(argv.runInspectorProxy);
   }
 
   if (argv.projectRoot != null) {

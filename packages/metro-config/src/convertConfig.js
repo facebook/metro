@@ -76,6 +76,7 @@ async function convertOldToNew({
     extraNodeModules,
     transformVariants,
     processModuleFilter,
+    virtualMapper,
   } = config;
 
   const defaultConfig = await getDefaultConfig(getProjectRoot());
@@ -111,6 +112,7 @@ async function convertOldToNew({
         ? getBlacklistRE()
         : defaultConfig.resolver.blacklistRE,
       useWatchman: true,
+      virtualMapper,
     },
     serializer: {
       customSerializer: defaultConfig.serializer.customSerializer,
@@ -130,6 +132,7 @@ async function convertOldToNew({
       port,
       enableVisualizer: false,
       enhanceMiddleware,
+      runInspectorProxy: false,
     },
     transformer: {
       assetPlugins: defaultConfig.transformer.assetPlugins,
@@ -160,6 +163,7 @@ async function convertOldToNew({
     transformerPath: defaultConfig.transformerPath,
     resetCache,
     maxWorkers,
+    visualizer: {presets: []},
   };
 }
 

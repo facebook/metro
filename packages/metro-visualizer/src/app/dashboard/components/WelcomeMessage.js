@@ -12,6 +12,7 @@
 
 'use strict';
 
+const PresetsSection = require('./PresetsSection');
 const React = require('react');
 
 const {css} = require('emotion');
@@ -22,9 +23,13 @@ const message = css`
 `;
 
 import {Row, Col} from 'antd';
+import type {Presets, OnBuildPresetHandler} from './PresetsSection';
 
 type Props = {|
   onReload: () => void,
+  onBuildPreset: OnBuildPresetHandler,
+  presets: ?Presets,
+  platforms: $ReadOnlyArray<string>,
 |};
 
 class WelcomeMessage extends React.Component<Props> {
@@ -34,16 +39,28 @@ class WelcomeMessage extends React.Component<Props> {
   };
 
   render() {
+    const {presets, platforms, onBuildPreset} = this.props;
+    const havePresets = !!(presets && presets.length);
     return (
-      <Row type="flex" justify="center">
-        <Col span={16} className={message}>
-          I don't see any bundles here. If you've started a build externally,{' '}
-          <a href="#" onClick={this._onReloadClick}>
-            reload this page
-          </a>{' '}
-          to see it.
-        </Col>
-      </Row>
+      <>
+        {havePresets ? (
+          <PresetsSection
+            presets={presets}
+            platforms={platforms}
+            onBuildPreset={onBuildPreset}
+          />
+        ) : null}
+        <Row type="flex" justify="center">
+          <Col span={16} className={message}>
+            {havePresets ? '' : "I don't see any bundles here. "}
+            If you've started a build externally,{' '}
+            <a href="#" onClick={this._onReloadClick}>
+              reload this page
+            </a>{' '}
+            to see it.
+          </Col>
+        </Row>
+      </>
     );
   }
 }

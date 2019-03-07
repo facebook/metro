@@ -433,10 +433,17 @@ function resolveAssetFiles(
   fileNameHint: string,
   platform: string | null,
 ): Result<AssetFileResolution, FileCandidates> {
-  const assetNames = resolveAsset(dirPath, fileNameHint, platform);
-  if (assetNames != null) {
-    const res = assetNames.map(assetName => path.join(dirPath, assetName));
-    return resolvedAs(res);
+  try {
+    const assetNames = resolveAsset(dirPath, fileNameHint, platform);
+
+    if (assetNames != null) {
+      const res = assetNames.map(assetName => path.join(dirPath, assetName));
+      return resolvedAs(res);
+    }
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return failedFor({type: 'asset', name: fileNameHint});
+    }
   }
   return failedFor({type: 'asset', name: fileNameHint});
 }

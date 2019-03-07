@@ -54,15 +54,22 @@ describe('HmrServer', () => {
 
     deltaBundlerMock = {
       listen: (graph, cb) => {
-        callbacks.set(graph, cb);
+        let graphCallbacks = callbacks.get(graph);
+        if (graphCallbacks == null) {
+          graphCallbacks = [cb];
+          callbacks.set(graph, graphCallbacks);
+        } else {
+          graphCallbacks.push(cb);
+        }
+        return () => graphCallbacks.splice(graphCallbacks.indexOf(cb), 1);
       },
     };
     getRevisionMock = jest
       .fn()
-      .mockReturnValue(Promise.resolve({graph: mockedGraph, id: 'XXX'}));
+      .mockReturnValue(Promise.resolve({graph: mockedGraph, id: 'rev0'}));
     getRevisionByGraphIdMock = jest
       .fn()
-      .mockReturnValue(Promise.resolve({graph: mockedGraph, id: 'XXX'}));
+      .mockReturnValue(Promise.resolve({graph: mockedGraph, id: 'rev0'}));
     incrementalBundlerMock = {
       getDeltaBundler() {
         return deltaBundlerMock;
@@ -121,6 +128,13 @@ describe('HmrServer', () => {
     await hmrServer.onClientConnect('/hot?revisionId=test-id', jest.fn());
 
     expect(getRevisionMock).toBeCalledWith('test-id');
+  });
+
+  it('should only listen to file changes once', async () => {
+    await hmrServer.onClientConnect('/hot?revisionId=test-id', jest.fn());
+    await hmrServer.onClientConnect('/hot?revisionId=test-id', jest.fn());
+
+    expect(callbacks.get(mockedGraph).length).toBe(1);
   });
 
   it('should send an error message when the graph cannot be found', async () => {
@@ -221,6 +235,69 @@ describe('HmrServer', () => {
     ]);
   });
 
+  it('should send the same update to all connected clients', async () => {
+    const sendMessage1 = jest.fn();
+    const sendMessage2 = jest.fn();
+
+    await hmrServer.onClientConnect(
+      '/hot?bundleEntry=EntryPoint.js&platform=ios',
+      sendMessage1,
+    );
+    await hmrServer.onClientConnect(
+      '/hot?bundleEntry=EntryPoint.js&platform=ios',
+      sendMessage2,
+    );
+
+    sendMessage1.mockReset();
+    sendMessage2.mockReset();
+
+    incrementalBundlerMock.updateGraph.mockResolvedValue({
+      revision: {
+        id: 'rev0',
+        graph: mockedGraph,
+      },
+      delta: {
+        added: new Map(),
+        modified: new Map([[hiModule.path, hiModule]]),
+        deleted: new Set(['/root/bye']),
+      },
+    });
+
+    const promise = Promise.all(callbacks.get(mockedGraph).map(cb => cb()));
+    jest.runAllTimers();
+    await promise;
+
+    const messages1 = sendMessage1.mock.calls.map(call => JSON.parse(call[0]));
+    const messages2 = sendMessage2.mock.calls.map(call => JSON.parse(call[0]));
+    expect(messages1).toMatchObject([
+      {
+        type: 'update-start',
+      },
+      {
+        type: 'update',
+        body: {
+          revisionId: 'rev0',
+          added: [],
+          modified: [
+            [
+              '/root/hi-id',
+              '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
+            ],
+          ],
+          deleted: ['/root/bye-id'],
+          addedSourceMappingURLs: [],
+          addedSourceURLs: [],
+          modifiedSourceURLs: ['/root/hi'],
+          modifiedSourceMappingURLs: [expect.anything()],
+        },
+      },
+      {
+        type: 'update-done',
+      },
+    ]);
+    expect(messages1).toEqual(messages2);
+  });
+
   it('should return the correctly formatted HMR message after a file change', async () => {
     const sendMessage = jest.fn();
 
@@ -243,7 +320,7 @@ describe('HmrServer', () => {
       },
     });
 
-    const promise = callbacks.get(mockedGraph)();
+    const promise = Promise.all(callbacks.get(mockedGraph).map(cb => cb()));
     jest.runAllTimers();
     await promise;
 
@@ -313,7 +390,7 @@ describe('HmrServer', () => {
       throw transformError;
     });
 
-    await callbacks.get(mockedGraph)();
+    await Promise.all(callbacks.get(mockedGraph).map(cb => cb()));
 
     const messages = sendMessage.mock.calls.map(call => JSON.parse(call[0]));
 

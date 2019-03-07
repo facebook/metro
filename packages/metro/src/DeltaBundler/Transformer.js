@@ -75,6 +75,7 @@ class Transformer {
       dev,
       experimentalImportSupport,
       hot,
+      inlinePlatform,
       inlineRequires,
       minify,
       platform,
@@ -103,6 +104,7 @@ class Transformer {
       dev,
       experimentalImportSupport,
       hot,
+      inlinePlatform,
       inlineRequires,
       minify,
       platform,
@@ -141,7 +143,7 @@ class Transformer {
   }
 }
 
-function verifyRootExists(root) {
+function verifyRootExists(root: string) {
   // Verify that the root exists.
   assert(fs.statSync(root).isDirectory(), 'Root has to be a valid directory');
 }

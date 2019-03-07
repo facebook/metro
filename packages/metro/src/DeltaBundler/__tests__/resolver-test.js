@@ -1209,6 +1209,24 @@ describe('traverseDependencies', function() {
             resolver.resolve(p('/root/index.js'), './asset2.png'),
           ).toThrow(UnableToResolveError);
         });
+
+        it('resolves assets from packages in node_modules', async () => {
+          setMockFileSystem({
+            folder: {'index.js': ''},
+            node_modules: {
+              foo: {
+                'package.json': JSON.stringify({name: 'foo'}),
+                'asset.png': '',
+              },
+            },
+          });
+
+          resolver = await createResolver();
+
+          expect(
+            resolver.resolve(p('/root/folder/index.js'), 'foo/asset.png'),
+          ).toBe(p('/root/node_modules/foo/asset.png'));
+        });
       });
 
       describe('global packages', () => {
@@ -1823,6 +1841,21 @@ describe('traverseDependencies', function() {
           expect(resolver.resolve(p('/root/folder/index.js'), 'foo')).toBe(
             p('/root/providesFoo/index-client.js'),
           );
+        });
+
+        it('resolves assets', async () => {
+          setMockFileSystem({
+            folder: {'index.js': ''},
+            providesFoo: {'asset.png': ''},
+          });
+
+          resolver = await createResolver({
+            resolver: {extraNodeModules: {foo: p('/root/providesFoo')}},
+          });
+
+          expect(
+            resolver.resolve(p('/root/folder/index.js'), 'foo/asset.png'),
+          ).toBe(p('/root/providesFoo/asset.png'));
         });
       });
 

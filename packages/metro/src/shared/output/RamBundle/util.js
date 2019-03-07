@@ -76,8 +76,8 @@ function combineSourceMapsAddingOffsets(
 function combineMaps(
   modules: $ReadOnlyArray<ModuleTransportLike>,
   offsets: ?Array<number>,
-  moduleGroups,
-  options,
+  moduleGroups: ?ModuleGroups,
+  options: ?CombineOptions,
 ) {
   const sections = [];
 

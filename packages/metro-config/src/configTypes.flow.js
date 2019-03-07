@@ -100,6 +100,7 @@ export type OldConfigT = {
   processModuleFilter: (modules: Module<>) => boolean,
   resolveRequest: ?CustomResolver,
   transformVariants: () => TransformVariants,
+  virtualMapper: (file: string) => Array<string>,
 };
 
 type ResolverConfigT = {|
@@ -114,6 +115,7 @@ type ResolverConfigT = {|
   resolveRequest: ?CustomResolver,
   sourceExts: $ReadOnlyArray<string>,
   useWatchman: boolean,
+  virtualMapper: (file: string) => Array<string>,
 |};
 
 type SerializerConfigT = {|
@@ -142,6 +144,16 @@ type TransformerConfigT = {|
   publicPath: string,
 |};
 
+export type VisualizerConfigT = {|
+  presets: $ReadOnlyArray<{|
+    entryPath: string,
+    name: string,
+    description: string,
+    featured?: boolean,
+    platforms?: $ReadOnlyArray<string>,
+  |}>,
+|};
+
 type MetalConfigT = {|
   cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
   cacheVersion: string,
@@ -159,6 +171,7 @@ type ServerConfigT = {|
   enhanceMiddleware: (Middleware, Server) => Middleware,
   useGlobalHotkey: boolean,
   port: number,
+  runInspectorProxy: boolean,
 |};
 
 export type InputConfigT = $Shape<{|
@@ -168,6 +181,7 @@ export type InputConfigT = $Shape<{|
     server: $Shape<ServerConfigT>,
     serializer: $Shape<SerializerConfigT>,
     transformer: $Shape<TransformerConfigT>,
+    visualizer: $Shape<VisualizerConfigT>,
   |}>,
 |}>;
 
@@ -178,6 +192,7 @@ export type IntermediateConfigT = {|
     server: ServerConfigT,
     serializer: SerializerConfigT,
     transformer: TransformerConfigT,
+    visualizer: VisualizerConfigT,
   |},
 |};
 
@@ -188,5 +203,6 @@ export type ConfigT = $ReadOnly<{|
     server: $ReadOnly<ServerConfigT>,
     serializer: $ReadOnly<SerializerConfigT>,
     transformer: $ReadOnly<TransformerConfigT>,
+    visualizer: $ReadOnly<VisualizerConfigT>,
   |}>,
 |}>;

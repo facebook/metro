@@ -43,6 +43,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     hasteImplModulePath: undefined,
     blacklistRE: blacklist(),
     useWatchman: true,
+    virtualMapper: file => [file],
   },
 
   serializer: {
@@ -63,6 +64,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     port: 8080,
     enableVisualizer: false,
     enhanceMiddleware: middleware => middleware,
+    runInspectorProxy: false,
   },
   transformer: {
     assetPlugins: [],
@@ -117,6 +119,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   maxWorkers: getMaxWorkers(),
   resetCache: false,
   reporter: new TerminalReporter(new Terminal(process.stdout)),
+  visualizer: {presets: []},
 });
 
 async function getDefaultConfig(rootPath: ?string): Promise<ConfigT> {

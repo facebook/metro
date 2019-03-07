@@ -11,14 +11,14 @@
 
 const {transformSync} = require('@babel/core');
 
-import type {Ast} from '@babel/core';
-import type {Plugins} from 'babel-core';
+import type {Ast, Plugins} from '@babel/core';
 
 export type CustomTransformOptions = {[string]: mixed, __proto__: null};
 
 type BabelTransformerOptions = $ReadOnly<{
   customTransformOptions?: CustomTransformOptions,
   dev: boolean,
+  disableFlowStripTypesTransform?: boolean,
   enableBabelRCLookup?: boolean,
   enableBabelRuntime: boolean,
   experimentalImportSupport?: boolean,
@@ -44,7 +44,9 @@ export type BabelTransformer = {|
 
 function transform({filename, options, plugins, src}: BabelTransformerArgs) {
   const OLD_BABEL_ENV = process.env.BABEL_ENV;
-  process.env.BABEL_ENV = options.dev ? 'development' : 'production';
+  process.env.BABEL_ENV = options.dev
+    ? 'development'
+    : process.env.BABEL_ENV || 'production';
 
   try {
     const {ast} = transformSync(src, {

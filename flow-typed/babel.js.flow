@@ -123,31 +123,6 @@ type VisitFn = <State>(path: Object, state: State) => any;
 type BabelTypes = {[key: string]: Function};
 type BabelVisitor = {};
 
-declare module 'babel-core' {
-  declare type Plugins = _Plugins;
-  declare type BabelSourceMap = _BabelSourceMap;
-  declare type Ast = BabelNode;
-  declare type TransformOptions = _TransformOptions;
-  declare var transform: TransformSync /*(
-    code: string,
-    options?: _TransformOptions,
-  ): TransformResult*/;
-  declare function traverse<State>(
-    ast: BabelNode,
-    visitor: BabelVisitor,
-    scope?: ?Object,
-    state?: State,
-    parentPath?: ?Object,
-  ): void;
-  declare var types: BabelTypes;
-  declare var transformFile: TransformFileSync;
-  declare var transformFromAst: TransformFromAstSync /*(
-    ast: BabelNode,
-    code?: ?string,
-    babelOptions?: _TransformOptions,
-  ): TransformResult*/;
-}
-
 type _BabelSourceMapSegment = {
   generated: {column: number, line: number},
   name?: string,
@@ -230,7 +205,7 @@ type TemplateOptions = Babylon7Options & {|
   preserveComments?: boolean,
 |};
 
-type Templatable = ({[tokenName: string]: string}) => BabelNode;
+type Templatable = ({[tokenName: string]: mixed}) => BabelNode;
 
 type TemplateFunc = (tpl: string, options?: TemplateOptions) => Templatable;
 

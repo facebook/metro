@@ -18,6 +18,9 @@ const https = require('https');
 const url = require('url');
 const zlib = require('zlib');
 
+import type {Agent as HttpAgent} from 'http';
+import type {Agent as HttpsAgent} from 'https';
+
 export type Options = {|
   endpoint: string,
   family?: 4 | 6,
@@ -42,8 +45,8 @@ class HttpStore<T> {
   _port: number;
   _path: string;
 
-  _getAgent: http$Agent;
-  _setAgent: http$Agent;
+  _getAgent: HttpAgent | HttpsAgent;
+  _setAgent: HttpAgent | HttpsAgent;
 
   constructor(options: Options) {
     const uri = url.parse(options.endpoint);

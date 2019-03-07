@@ -42,7 +42,10 @@ import type {Reporter} from './lib/reporting';
 import type {GraphId} from './lib/getGraphId';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
 import type {BundleOptions, SplitBundleOptions} from './shared/types.flow';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {
+  ConfigT,
+  VisualizerConfigT,
+} from 'metro-config/src/configTypes.flow';
 import type {MetroSourceMap} from 'metro-source-map';
 import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
@@ -99,6 +102,7 @@ class Server {
   _platforms: Set<string>;
   _nextBundleBuildID: number;
   _bundler: IncrementalBundler;
+  _isEnded: boolean;
 
   constructor(config: ConfigT) {
     this._config = config;
@@ -112,6 +116,7 @@ class Server {
     this._logger = Logger;
     this._changeWatchers = [];
     this._platforms = new Set(this._config.resolver.platforms);
+    this._isEnded = false;
 
     // TODO(T34760917): These two properties should eventually be instantiated
     // elsewhere and passed as parameters, since they are also needed by
@@ -142,7 +147,10 @@ class Server {
   }
 
   end() {
-    this._bundler.end();
+    if (!this._isEnded) {
+      this._bundler.end();
+      this._isEnded = true;
+    }
   }
 
   getBundler(): IncrementalBundler {
@@ -324,7 +332,7 @@ class Server {
         'Accept-Ranges': 'bytes',
         'Content-Length': chunksize.toString(),
         'Content-Range': `bytes ${dataStart}-${dataEnd}/${data.length}`,
-        'Content-Type': mime.lookup(path.basename(assetPath[1])),
+        'Content-Type': mime.lookup(path.basename(assetPath)),
       });
 
       return data.slice(dataStart, dataEnd + 1);
@@ -335,8 +343,12 @@ class Server {
 
   async _processSingleAssetRequest(req: IncomingMessage, res: ServerResponse) {
     const urlObj = url.parse(decodeURI(req.url), true);
-    /* $FlowFixMe: could be empty if the url is invalid */
-    const assetPath: string = urlObj.pathname.match(/^\/assets\/(.+)$/);
+    const assetPath =
+      urlObj && urlObj.pathname && urlObj.pathname.match(/^\/assets\/(.+)$/);
+
+    if (!assetPath) {
+      throw new Error('Could not extract asset path from URL');
+    }
 
     const processingAssetRequestLogEntry = log(
       createActionStartEntry({
@@ -352,13 +364,14 @@ class Server {
         this._config.watchFolders,
         /* $FlowFixMe: query may be empty for invalid URLs */
         urlObj.query.platform,
+        this._config.resolver.assetExts,
       );
       // Tell clients to cache this for 1 year.
       // This is safe as the asset url contains a hash of the asset.
       if (process.env.REACT_NATIVE_ENABLE_ASSET_CACHING === true) {
         res.setHeader('Cache-Control', 'max-age=31536000');
       }
-      res.end(this._rangeRequestMiddleware(req, res, data, assetPath));
+      res.end(this._rangeRequestMiddleware(req, res, data, assetPath[1]));
       process.nextTick(() => {
         log(createActionEndEntry(processingAssetRequestLogEntry));
       });
@@ -473,9 +486,6 @@ class Server {
         };
       }
 
-      /* $FlowFixMe(>=0.63.0 site=react_native_fb) This comment suppresses an
-       * error found when Flow v0.63 was deployed. To see the error delete this
-       * comment and run Flow. */
       this._reporter.update({
         buildID,
         bundleDetails: {
@@ -999,6 +1009,10 @@ class Server {
 
   getWatchFolders(): $ReadOnlyArray<string> {
     return this._config.watchFolders;
+  }
+
+  getVisualizerConfig(): $ReadOnly<VisualizerConfigT> {
+    return this._config.visualizer;
   }
 
   static DEFAULT_GRAPH_OPTIONS = {

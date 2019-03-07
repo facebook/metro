@@ -16,7 +16,7 @@ import type {Server as HttpsServer} from 'https';
 type WebsocketServiceInterface<T> = {
   +onClientConnect: (
     url: string,
-    sendFn: (data: string) => mixed,
+    sendFn: (data: string) => void,
   ) => Promise<?T>,
   +onClientDisconnect?: (client: T) => mixed,
   +onClientError?: (client: T, e: Error) => mixed,

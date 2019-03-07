@@ -19,7 +19,7 @@ export type GlobalCacheDisabledReason = 'too_many_errors' | 'too_many_misses';
 
 export type BundleDetails = {
   entryFile: string,
-  platform: string,
+  platform: ?string,
   dev: boolean,
   minify: boolean,
   bundleType: string,

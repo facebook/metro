@@ -37,10 +37,15 @@ exports.assetExts = [
   'wav',
   // Document formats
   'html',
+  'json',
   'pdf',
+  'yaml',
+  'yml',
   // Font formats
   'otf',
   'ttf',
+  // Archives (virtual files)
+  'zip',
 ];
 
 exports.sourceExts = ['js', 'json', 'ts', 'tsx'];

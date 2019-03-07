@@ -22,6 +22,10 @@ import type {Ast} from '@babel/core';
 opaque type Identifier = any;
 opaque type Path = any;
 
+type DepOptions = {|
+  +prefetchOnly: boolean,
+|};
+
 type InternalDependency<D> = {|
   +data: D,
   +name: string,
@@ -46,6 +50,7 @@ type State = {|
   dynamicRequires: DynamicRequiresBehavior,
   dependencyMapIdentifier: ?Identifier,
   keepRequireNames: boolean,
+  disableRequiresTransform: boolean,
 |};
 
 export type Options = {|
@@ -53,6 +58,7 @@ export type Options = {|
   +dynamicRequires: DynamicRequiresBehavior,
   +inlineableCalls: $ReadOnlyArray<string>,
   +keepRequireNames: boolean,
+  +disableRequiresTransform?: boolean,
 |};
 
 export type CollectedDependencies = {|
@@ -115,6 +121,7 @@ function collectDependencies(
     dependencyMapIdentifier: null,
     dynamicRequires: options.dynamicRequires,
     keepRequireNames: options.keepRequireNames,
+    disableRequiresTransform: !!options.disableRequiresTransform,
   };
 
   const visitor = {
@@ -139,6 +146,14 @@ function collectDependencies(
       if (state.dependencyCalls.has(name) && !path.scope.getBinding(name)) {
         visited.add(processRequireCall(path, state).node);
       }
+    },
+
+    ImportDeclaration(path: Path, state: State) {
+      const dep = getDependency(state, path.node.source.value, {
+        prefetchOnly: false,
+      });
+
+      dep.data.isAsync = false;
     },
 
     Program(path: Path, state: State) {
@@ -181,6 +196,13 @@ function processImportCall(
   }
 
   const dep = getDependency(state, name, options);
+  if (!options.prefetchOnly) {
+    delete dep.data.isPrefetchOnly;
+  }
+  if (state.disableRequiresTransform) {
+    return path;
+  }
+
   const ASYNC_REQUIRE_MODULE_PATH = state.asyncRequireModulePathStringLiteral;
   const MODULE_ID = types.memberExpression(
     state.dependencyMapIdentifier,
@@ -197,7 +219,6 @@ function processImportCall(
         MODULE_NAME,
       }),
     );
-    delete dep.data.isPrefetchOnly;
   } else {
     path.replaceWith(
       makeAsyncPrefetchTemplate({
@@ -231,11 +252,13 @@ function processRequireCall(path: Path, state: State): Path {
   dep.data.isAsync = false;
   delete dep.data.isPrefetchOnly;
 
+  if (state.disableRequiresTransform) {
+    return path;
+  }
+
   const moduleIDExpression = types.memberExpression(
     state.dependencyMapIdentifier,
-    types.numericLiteral(
-      getDependency(state, name, {prefetchOnly: false}).index,
-    ),
+    types.numericLiteral(dep.index),
     true,
   );
 
@@ -245,8 +268,6 @@ function processRequireCall(path: Path, state: State): Path {
 
   return path;
 }
-
-type DepOptions = $ReadOnly<{prefetchOnly: boolean}>;
 
 function getDependency(
   state: State,
@@ -259,6 +280,7 @@ function getDependency(
   if (!data) {
     index = state.dependency++;
     data = {isAsync: true};
+
     if (options.prefetchOnly) {
       data.isPrefetchOnly = true;
     }
@@ -283,6 +305,7 @@ function getModuleNameFromCallArgs(path: Path): ?string {
 
   return null;
 }
+collectDependencies.getModuleNameFromCallArgs = getModuleNameFromCallArgs;
 
 class InvalidRequireCallError extends Error {
   constructor({node}) {

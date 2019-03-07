@@ -19,6 +19,7 @@ const handleAPIError = require('../../utils/handleAPIError');
 const {css, cx} = require('emotion');
 
 import {message, Input, Select, Row, Col, Button} from 'antd';
+import type {RequestOptions} from 'metro/src/shared/types.flow.js';
 
 type Props = {
   handleStartedBundling: () => void,
@@ -117,6 +118,22 @@ class BundleRunForm extends React.Component<Props, State> {
       .then(handleAPIError)
       .then(res => this.props.handleFinishedBundling())
       .catch(error => message.error(error.message));
+  }
+
+  build(entryPath: string, buildOptions: $Shape<RequestOptions>) {
+    this.setState(
+      state => {
+        const {platform = state.platform, ...params} = buildOptions || {};
+        return {
+          entryPath,
+          platform,
+          options: Object.keys(params).filter(key => params[key]),
+        };
+      },
+      () => {
+        this._build();
+      },
+    );
   }
 
   render() {

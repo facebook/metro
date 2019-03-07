@@ -1,6 +1,6 @@
 {
   "name": "metro-babel-transformer",
-  "version": "0.50.0",
+  "version": "0.53.0",
   "description": "Base Babel transformer for Metro",
   "main": "src/index.js",
   "repository": {

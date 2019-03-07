@@ -41,7 +41,10 @@ module.exports = function(
   return signature;
 };
 
-function tryAsciiPromotion(buffer, encoding) {
+function tryAsciiPromotion(
+  buffer: Buffer,
+  encoding: 'ascii' | 'utf16le' | 'utf8',
+) {
   if (!isUTF8(encoding)) {
     return encoding;
   }
@@ -53,7 +56,10 @@ function tryAsciiPromotion(buffer, encoding) {
   return 'ascii';
 }
 
-function asBuffer(x, encoding): Buffer {
+function asBuffer(
+  x: Buffer | string,
+  encoding: 'ascii' | 'utf16le' | 'utf8',
+): Buffer {
   if (typeof x !== 'string') {
     return x;
   }

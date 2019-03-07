@@ -14,7 +14,6 @@
 /* eslint-disable no-bitwise */
 
 declare var __DEV__: boolean;
-declare var __NUM_MODULES__: mixed;
 
 type DependencyMap = Array<ModuleID>;
 type Exports = any;
@@ -70,10 +69,10 @@ const EMPTY = {};
 const {hasOwnProperty} = {};
 
 function clear() {
-  modules =
-    typeof __NUM_MODULES__ === 'number'
-      ? (Array(__NUM_MODULES__ | 0): Array<ModuleDefinition>)
-      : (Object.create(null): {[number]: ModuleDefinition, __proto__: null});
+  modules = (Object.create(null): {
+    [number]: ModuleDefinition,
+    __proto__: null,
+  });
 
   // We return modules here so that we can assign an initial value to modules
   // when defining it. Otherwise, we would have to do "let modules = null",
