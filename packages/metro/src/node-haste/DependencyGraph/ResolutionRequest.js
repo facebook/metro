@@ -68,7 +68,7 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
       return immediateResolution;
     }
 
-    const cacheResult = result => {
+    const cacheResult = (result: TModule) => {
       this._immediateResolutionCache[resHash] = result;
       return result;
     };
@@ -111,7 +111,7 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
   }
 }
 
-function getResolutionCacheKey(modulePath: string, depName: string) {
+function getResolutionCacheKey(modulePath: string, depName: string): string {
   return `${path.resolve(modulePath)}:${depName}`;
 }
 

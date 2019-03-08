@@ -75,7 +75,7 @@ module.exports = () => ({
           },
         });
       },
-      onProgress: (transformedFileCount, totalFileCount) => {
+      onProgress: (transformedFileCount: number, totalFileCount: number) => {
         updateReporter.update({
           buildID: '$',
           type: 'bundle_transform_progressed_throttled',

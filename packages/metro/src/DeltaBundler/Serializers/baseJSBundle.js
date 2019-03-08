@@ -14,7 +14,12 @@ const getAppendScripts = require('../../lib/getAppendScripts');
 const processModules = require('./helpers/processModules');
 
 import type {Bundle} from '../../lib/bundle-modules/types.flow';
-import type {Graph, Module, SerializerOptions} from '../types.flow';
+import type {
+  Graph,
+  MixedOutput,
+  Module,
+  SerializerOptions,
+} from '../types.flow';
 
 function baseJSBundle(
   entryPoint: string,
@@ -38,7 +43,8 @@ function baseJSBundle(
     .join('\n');
 
   const modules = [...graph.dependencies.values()].sort(
-    (a, b) => options.createModuleId(a.path) - options.createModuleId(b.path),
+    (a: Module<MixedOutput>, b: Module<MixedOutput>) =>
+      options.createModuleId(a.path) - options.createModuleId(b.path),
   );
 
   const postCode = processModules(

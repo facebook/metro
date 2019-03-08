@@ -15,8 +15,8 @@ function injectModules(
   modules: ModuleMap,
   sourceMappingURLs: $ReadOnlyArray<string>,
   sourceURLs: $ReadOnlyArray<string>,
-) {
-  modules.forEach(([id, code], i) => {
+): void {
+  modules.forEach(([id, code], i: number) => {
     // In JSC we need to inject from native for sourcemaps to work
     // (Safari doesn't support `sourceMappingURL` nor any variant when
     // evaluating code) but on Chrome we can simply use eval.
@@ -36,7 +36,7 @@ function injectModules(
   });
 }
 
-function injectUpdate(update: HmrUpdate) {
+function injectUpdate(update: HmrUpdate): void {
   injectModules(
     update.added,
     update.addedSourceMappingURLs,

@@ -10,7 +10,7 @@
 
 'use strict';
 
-function get() {
+function get(): null {
   return null;
 }
 

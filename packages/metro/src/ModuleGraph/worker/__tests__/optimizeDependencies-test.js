@@ -131,7 +131,7 @@ it('throws if an invalid require() call is encountered', () => {
   }
 });
 
-function astFromCode(code) {
+function astFromCode(code: string) {
   return babylon.parse(code, {
     plugins: ['dynamicImport'],
     sourceType: 'script',

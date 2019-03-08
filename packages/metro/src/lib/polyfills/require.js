@@ -68,7 +68,7 @@ var modules = clear();
 const EMPTY = {};
 const {hasOwnProperty} = {};
 
-function clear() {
+function clear(): {[number]: ModuleDefinition, __proto__: null} {
   modules = (Object.create(null): {
     [number]: ModuleDefinition,
     __proto__: null,
@@ -92,7 +92,7 @@ function define(
   factory: FactoryFn,
   moduleId: number,
   dependencyMap?: DependencyMap,
-) {
+): void {
   if (modules[moduleId] != null) {
     if (__DEV__) {
       // (We take `inverseDependencies` from `arguments` to avoid an unused
@@ -158,7 +158,7 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev) {
     if (initializingIndex !== -1) {
       const cycle = initializingModuleIds
         .slice(initializingIndex)
-        .map(id => modules[id].verboseName);
+        .map((id: number) => modules[id].verboseName);
       // We want to show A -> B -> A:
       cycle.push(cycle[0]);
       console.warn(
@@ -200,7 +200,7 @@ function metroImportDefault(moduleId: ModuleID | VerboseModuleNameForDev) {
 }
 metroRequire.importDefault = metroImportDefault;
 
-function metroImportAll(moduleId) {
+function metroImportAll(moduleId: ModuleID | VerboseModuleNameForDev | number) {
   if (__DEV__ && typeof moduleId === 'string') {
     const verboseName = moduleId;
     moduleId = verboseNamesToModuleIds[verboseName];
@@ -241,7 +241,7 @@ function metroImportAll(moduleId) {
 metroRequire.importAll = metroImportAll;
 
 let inGuard = false;
-function guardedLoadModule(moduleId: ModuleID, module) {
+function guardedLoadModule(moduleId: ModuleID, module: ModuleDefinition) {
   if (!inGuard && global.ErrorUtils) {
     inGuard = true;
     let returnValue;
@@ -262,20 +262,20 @@ const LOCAL_ID_MASK = ~0 >>> ID_MASK_SHIFT;
 
 function unpackModuleId(
   moduleId: ModuleID,
-): {segmentId: number, localId: number} {
+): {localId: number, segmentId: number} {
   const segmentId = moduleId >>> ID_MASK_SHIFT;
   const localId = moduleId & LOCAL_ID_MASK;
   return {segmentId, localId};
 }
 metroRequire.unpackModuleId = unpackModuleId;
 
-function packModuleId(value: {segmentId: number, localId: number}): ModuleID {
+function packModuleId(value: {localId: number, segmentId: number}): ModuleID {
   return (value.segmentId << ID_MASK_SHIFT) + value.localId;
 }
 metroRequire.packModuleId = packModuleId;
 
 const hooks = [];
-function registerHook(cb: (number, {}) => void) {
+function registerHook(cb: (number, {}) => void): {|release: () => void|} {
   const hook = {cb};
   hooks.push(hook);
   return {
@@ -293,11 +293,14 @@ metroRequire.registerHook = registerHook;
 
 const moduleDefinersBySegmentID = [];
 
-function registerSegment(segmentID, moduleDefiner) {
+function registerSegment(segmentID, moduleDefiner): void {
   moduleDefinersBySegmentID[segmentID] = moduleDefiner;
 }
 
-function loadModuleImplementation(moduleId, module) {
+function loadModuleImplementation(
+  moduleId: ModuleID,
+  module: ModuleDefinition,
+): Exports {
   if (!module && moduleDefinersBySegmentID.length > 0) {
     const {segmentId, localId} = unpackModuleId(moduleId);
     const definer = moduleDefinersBySegmentID[segmentId];
@@ -403,7 +406,7 @@ function loadModuleImplementation(moduleId, module) {
   }
 }
 
-function unknownModuleError(id) {
+function unknownModuleError(id: ModuleID): Error {
   let message = 'Requiring unknown module "' + id + '".';
   if (__DEV__) {
     message +=
@@ -413,7 +416,7 @@ function unknownModuleError(id) {
   return Error(message);
 }
 
-function moduleThrewError(id, error: any) {
+function moduleThrewError(id: ModuleID, error: any): Error {
   const displayName = (__DEV__ && modules[id] && modules[id].verboseName) || id;
   return Error(
     'Requiring module "' +
@@ -434,11 +437,11 @@ if (__DEV__) {
   var createHotReloadingObject = function() {
     const hot: HotModuleReloadingData = {
       acceptCallback: null,
-      accept: callback => {
+      accept: (callback: HotModuleReloadingCallback) => {
         hot.acceptCallback = callback;
       },
       disposeCallback: null,
-      dispose: callback => {
+      dispose: (callback: HotModuleReloadingCallback) => {
         hot.disposeCallback = callback;
       },
     };
@@ -446,16 +449,16 @@ if (__DEV__) {
   };
 
   const metroAcceptAll = function(
-    dependentModules,
-    inverseDependencies,
-    patchedModules,
+    dependentModules: Array<ModuleID>,
+    inverseDependencies: {[key: ModuleID]: Array<ModuleID>},
+    patchedModules: PatchedModules,
   ) {
     if (!dependentModules || dependentModules.length === 0) {
       return true;
     }
 
     const notAccepted = dependentModules.filter(
-      module =>
+      (module: ModuleID) =>
         !metroAccept(
           module,
           /*factory*/ undefined,

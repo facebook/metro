@@ -94,7 +94,11 @@ function create({
   const cachePromise = caches.open(bundleCacheName);
   const dbPromise = openDB(DEFAULT_DB_NAME);
 
-  const getBundle = async (bundleKey, revisionId, waitUntil) => {
+  const getBundle = async (
+    bundleKey: string,
+    revisionId: string,
+    waitUntil,
+  ) => {
     const cache = await cachePromise;
     const db = await dbPromise;
 
@@ -148,8 +152,8 @@ function create({
   };
 
   const registerBundle = (
-    bundleKey,
-    initialRevisionId,
+    bundleKey: string,
+    initialRevisionId: string,
     initialBundleRes,
     waitUntil,
   ) => {

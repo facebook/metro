@@ -15,7 +15,7 @@ const invariant = require('invariant');
 const path = require('path');
 
 import type {JsOutput} from '../../../JSTransformer/worker';
-import type {MixedOutput, Module} from '../../types.flow';
+import type {MixedOutput, Module, Dependency} from '../../types.flow';
 
 export type Options = {
   +createModuleId: string => number | string,
@@ -23,7 +23,7 @@ export type Options = {
   +projectRoot: string,
 };
 
-function wrapModule(module: Module<>, options: Options) {
+function wrapModule(module: Module<>, options: Options): string {
   const output = getJsOutput(module);
 
   if (output.type.startsWith('js/script')) {
@@ -33,7 +33,7 @@ function wrapModule(module: Module<>, options: Options) {
   const moduleId = options.createModuleId(module.path);
   const params = [
     moduleId,
-    Array.from(module.dependencies.values()).map(dependency => {
+    Array.from(module.dependencies.values()).map((dependency: Dependency) => {
       return options.createModuleId(dependency.absolutePath);
     }),
   ];

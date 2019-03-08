@@ -12,7 +12,7 @@
 
 const computeDelta = require('../computeDelta');
 
-function sortById([id1], [id2]) {
+function sortById([id1]: [number, mixed], [id2]: [number, mixed]): number {
   return id1 - id2;
 }
 

@@ -25,7 +25,7 @@ const {
 } = require('./util');
 
 import type {FBIndexMap} from 'metro-source-map';
-import type {OutputFn} from '../types.flow';
+import type {OutputFn, OutputResult} from '../types.flow';
 
 function asMultipleFilesRamBundle({
   filename,
@@ -33,7 +33,7 @@ function asMultipleFilesRamBundle({
   modules,
   requireCalls,
   preloadedModules,
-}) {
+}): OutputResult<FBIndexMap> {
   const idForPath = x => idsForPath(x).moduleId;
   const [startup, deferred] = partition(modules, preloadedModules);
   const startupModules = Array.from(concat(startup, requireCalls));

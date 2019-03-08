@@ -14,6 +14,8 @@
 const crc32 = (require('buffer-crc32'): {unsigned(Buffer): number});
 const serializeDeltaJSBundle = require('../serializeDeltaJSBundle');
 
+import type {Readable as stream$Readable} from 'stream';
+
 const baseBundle = {
   base: true,
   revisionId: 'arbitrary ID',
@@ -66,7 +68,8 @@ describe('binary stream serialization', () => {
     buffer = await serialized;
   });
 
-  const subBuffer = (offset, length) => buffer.slice(offset, offset + length);
+  const subBuffer = (offset: number, length: number) =>
+    buffer.slice(offset, offset + length);
 
   it('starts with the magic number', () => {
     expect(subBuffer(0, SIZEOF_UINT32)).toEqual(
@@ -163,7 +166,7 @@ describe('binary stream serialization', () => {
         Buffer.concat(
           deltaBundle.added
             .concat(deltaBundle.modified)
-            .concat(deltaBundle.deleted.map(id => [id, null]))
+            .concat(deltaBundle.deleted.map((id: number) => [id, null]))
             .map(binModule),
         ),
       );
@@ -171,9 +174,9 @@ describe('binary stream serialization', () => {
   });
 });
 
-function consumeStream(stream): Promise<Buffer> {
+function consumeStream(stream: stream$Readable): Promise<Buffer> {
   const chunks = [];
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve: (result: Buffer) => void, reject) => {
     stream
       .on('data', chunk => chunks.push(chunk))
       .on('error', reject)
@@ -181,13 +184,13 @@ function consumeStream(stream): Promise<Buffer> {
   });
 }
 
-function binUint32LE(value) {
+function binUint32LE(value: number): Buffer {
   const b = Buffer.alloc(SIZEOF_UINT32);
   b.writeUInt32LE(value, 0);
   return b;
 }
 
-function binString(value) {
+function binString(value: string): Buffer {
   const length = Buffer.byteLength(value);
   const buffer = Buffer.alloc(length + SIZEOF_UINT32); // extra space for size
   buffer.writeUInt32LE(length, 0);
@@ -195,7 +198,7 @@ function binString(value) {
   return buffer;
 }
 
-function binModule([id, code]: [number, ?string]) {
+function binModule([id, code]: [number, ?string]): Buffer {
   const idAndCodeBuffer = Buffer.concat([
     binUint32LE(id),
     code == null ? binUint32LE(EMPTY_STRING) : binString(code),
@@ -204,7 +207,7 @@ function binModule([id, code]: [number, ?string]) {
   return Buffer.concat([idAndCodeBuffer, crc32Buffer]);
 }
 
-function preOrPostSection(section) {
+function preOrPostSection(section: string): Buffer {
   const serialized = binString(section);
   return Buffer.concat([serialized, binUint32LE(crc32.unsigned(serialized))]);
 }

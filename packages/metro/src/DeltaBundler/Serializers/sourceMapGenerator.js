@@ -29,7 +29,7 @@ function sourceMapGenerator(
   const sourceMapInfos = modules
     .filter(isJsModule)
     .filter(options.processModuleFilter)
-    .map(module =>
+    .map((module: Module<>) =>
       getSourceMapInfo(module, {excludeSource: options.excludeSource}),
     );
   return fromRawMappings(sourceMapInfos);

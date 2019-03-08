@@ -104,7 +104,7 @@ export type OutputFn<
   segmentID: number,
 |}) => OutputResult<M>;
 
-type OutputResult<M: FBSourceMap | MetroSourceMap> = {|
+export type OutputResult<M: FBSourceMap | MetroSourceMap> = {|
   code: string | Buffer,
   extraFiles?: Iterable<[string, string | Buffer]>,
   map: M,

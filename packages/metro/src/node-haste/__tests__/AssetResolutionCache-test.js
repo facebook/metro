@@ -31,7 +31,8 @@ describe('AssetResolutionCache', () => {
     fileNames = [...MOCK_FILE_NAMES];
     cache = new AssetResolutionCache({
       assetExtensions: new Set(['png', 'jpg']),
-      getDirFiles: dirPath => (dirPath === '/assets' ? fileNames : []),
+      getDirFiles: (dirPath: string) =>
+        dirPath === '/assets' ? fileNames : [],
       platforms: new Set(['ios', 'android']),
     });
   });

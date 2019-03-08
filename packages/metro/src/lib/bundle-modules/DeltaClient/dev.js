@@ -80,8 +80,8 @@ function defaultGetHmrServerUrl(bundleUrl: string, revisionId: string): string {
   }/hot?revisionId=${revisionId}`;
 }
 
-function defaultOnUpdate(clientId: string, update: HmrUpdate) {
-  clients.get(clientId).then(client => {
+function defaultOnUpdate(clientId: string, update): void {
+  clients.get(clientId).then((client: ?Client) => {
     if (client != null) {
       client.postMessage({
         type: 'METRO_UPDATE',
@@ -91,8 +91,8 @@ function defaultOnUpdate(clientId: string, update: HmrUpdate) {
   });
 }
 
-function defaultOnUpdateStart(clientId: string) {
-  clients.get(clientId).then(client => {
+function defaultOnUpdateStart(clientId: string): void {
+  clients.get(clientId).then((client: ?Client) => {
     if (client != null) {
       client.postMessage({
         type: 'METRO_UPDATE_START',
@@ -101,8 +101,8 @@ function defaultOnUpdateStart(clientId: string) {
   });
 }
 
-function defaultOnUpdateError(clientId: string, error: FormattedError) {
-  clients.get(clientId).then(client => {
+function defaultOnUpdateError(clientId: string, error: FormattedError): void {
+  clients.get(clientId).then((client: ?Client) => {
     if (client != null) {
       client.postMessage({
         type: 'METRO_UPDATE_ERROR',
@@ -177,17 +177,17 @@ function create({
         rejectBundleRes(error);
         return;
       }
-      client.ids.forEach(clientId => onUpdateError(clientId, error));
+      client.ids.forEach((clientId: string) => onUpdateError(clientId, error));
     });
 
     wsClient.on('update-start', () => {
-      client.ids.forEach(clientId => onUpdateStart(clientId));
+      client.ids.forEach((clientId: string) => onUpdateStart(clientId));
     });
 
     wsClient.on('update', async update => {
       if (resolved) {
         // Only notify clients for later updates.
-        client.ids.forEach(clientId => onUpdate(clientId, update));
+        client.ids.forEach((clientId: string) => onUpdate(clientId, update));
       }
 
       let nextBundleRes;
@@ -245,7 +245,10 @@ function create({
     return client;
   };
 
-  async function getOrFetchBundleMetadata(bundleKey, revisionId) {
+  async function getOrFetchBundleMetadata(
+    bundleKey: string,
+    revisionId: string,
+  ): Promise<BundleMetadata> {
     const metadata = await getBundleMetadataFromDB(await dbPromise, revisionId);
     if (metadata != null) {
       return metadata;
@@ -253,7 +256,7 @@ function create({
     return await getBundleMetadata(bundleKey, revisionId);
   }
 
-  const getBundle = async (bundleKey, clientId) => {
+  const getBundle = async (bundleKey: string, clientId: string) => {
     let client = clients.get(bundleKey);
     if (client != null) {
       // There's already an update client running for this bundle URL.
@@ -298,7 +301,11 @@ function create({
     return bundleRes;
   };
 
-  const registerBundle = async (bundleKey, bundleRes, clientId) => {
+  const registerBundle = async (
+    bundleKey: string,
+    bundleRes,
+    clientId: string,
+  ) => {
     const cache = await cachePromise;
     // Since the user might not be aware of Response semantics, we should not
     // consume the provided response's body, but instead make clones of it.

@@ -52,7 +52,7 @@ export type BundleOptions = {
   createModuleIdFactory?: () => (path: string) => number,
 };
 
-type SerializerOptions = {|
+export type SerializerOptions = {|
   +sourceMapUrl: ?string,
   +runModule: boolean,
   +excludeSource: boolean,
@@ -80,6 +80,18 @@ export type ModuleTransportLike = {
   +name?: string,
   +sourcePath: string,
 };
+export type ModuleTransportLikeStrict = {|
+  +code: string,
+  +id: number,
+  +map: ?MetroSourceMapOrMappings,
+  +name?: string,
+  +sourcePath: string,
+|};
+export type RamModuleTransport = {|
+  ...ModuleTransportLikeStrict,
+  +source: string,
+  +type: string,
+|};
 
 export type OutputOptions = {
   bundleOutput: string,

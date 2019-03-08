@@ -140,13 +140,13 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         {
           ...this._options,
           originModulePath: fromModule.path,
-          redirectModulePath: modulePath =>
+          redirectModulePath: (modulePath: string) =>
             this._redirectRequire(fromModule, modulePath),
           allowHaste,
           platform,
-          resolveHasteModule: name =>
+          resolveHasteModule: (name: string) =>
             this._options.moduleMap.getModule(name, platform, true),
-          resolveHastePackage: name =>
+          resolveHastePackage: (name: string) =>
             this._options.moduleMap.getPackage(name, platform, true),
           getPackageMainPath: this._getPackageMainPath,
         },
@@ -170,9 +170,16 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         );
       }
       if (error instanceof Resolver.FailedToResolveNameError) {
-        const {dirPaths, extraPaths} = error;
+        const {
+          dirPaths,
+          extraPaths,
+        }: {
+          // $flowfixme these types are defined explicitly in FailedToResolveNameError but Flow refuses to recognize them here
+          dirPaths: $ReadOnlyArray<string>,
+          extraPaths: $ReadOnlyArray<string>,
+        } = error;
         const displayDirPaths = dirPaths
-          .filter(dirPath => this._options.dirExists(dirPath))
+          .filter((dirPath: string) => this._options.dirExists(dirPath))
           .concat(extraPaths);
 
         const hint = displayDirPaths.length ? ' or in these directories:' : '';
@@ -181,7 +188,9 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
           moduleName,
           [
             `Module \`${moduleName}\` does not exist in the Haste module map${hint}`,
-            ...displayDirPaths.map(dirPath => `  ${path.dirname(dirPath)}`),
+            ...displayDirPaths.map(
+              (dirPath: string) => `  ${path.dirname(dirPath)}`,
+            ),
             '',
             'This might be related to https://github.com/facebook/react-native/issues/4968',
             'To resolve try the following:',

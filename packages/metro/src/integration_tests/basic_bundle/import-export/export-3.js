@@ -14,6 +14,6 @@ export default 'export-3: DEFAULT';
 
 export const foo = 'export-3: FOO';
 
-export function myFunction() {
+export function myFunction(): string {
   return 'export-3: MY_FUNCTION';
 }

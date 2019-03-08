@@ -99,12 +99,12 @@ module.exports = class Package {
   }
 };
 
-function getMain(pkg) {
+function getMain(pkg: PackageData): string {
   return pkg.main || 'index';
 }
 
 // Copied from node-haste/Package.js
-function getReplacements(pkg) {
+function getReplacements(pkg: PackageData) {
   let rn = pkg['react-native'];
   let browser = pkg.browser;
   if (rn == null) {

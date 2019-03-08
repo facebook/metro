@@ -35,7 +35,7 @@ function getRevisionId(bundleRes: Response): string {
 }
 
 function createResponse(
-  contents: string | ?ReadableStream,
+  contents: ?string | ReadableStream,
   revisionId: string,
   headersEntries: Iterable<[string, string]> = new Map(),
 ): Response {

@@ -47,9 +47,9 @@ type ClientGroup = {|
   revisionId: RevisionId,
 |};
 
-function send(sendFns: Array<(string) => void>, message: HmrMessage) {
+function send(sendFns: Array<(string) => void>, message: HmrMessage): void {
   const strMessage = JSON.stringify(message);
-  sendFns.forEach(sendFn => sendFn(strMessage));
+  sendFns.forEach((sendFn: string => void) => sendFn(strMessage));
 }
 
 /**
@@ -193,7 +193,7 @@ class HmrServer<TClient: Client> {
       createActionStartEntry({action_name: 'Processing HMR change'}),
     );
 
-    const sendFns = [...group.clients].map(client => client.sendFn);
+    const sendFns = [...group.clients].map((client: Client) => client.sendFn);
 
     send(sendFns, {type: 'update-start'});
     const message = await this._prepareMessage(group);

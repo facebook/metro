@@ -17,7 +17,7 @@ import type {MetroSourceMap} from 'metro-source-map';
 function relativizeSourceMapInline(
   sourceMap: MetroSourceMap,
   sourcesRoot: string,
-) {
+): void {
   if (sourceMap.mappings === undefined) {
     for (let i = 0; i < sourceMap.sections.length; i++) {
       relativizeSourceMapInline(sourceMap.sections[i].map, sourcesRoot);

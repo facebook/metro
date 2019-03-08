@@ -103,7 +103,7 @@ describe('traverseDependencies', function() {
       };
     }
 
-    function p(posixPath) {
+    function p(posixPath: string): string {
       if (osPlatform === 'win32') {
         return path.win32.join('C:\\', ...posixPath.split('/'));
       }

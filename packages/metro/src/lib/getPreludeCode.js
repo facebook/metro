@@ -30,7 +30,7 @@ function getPreludeCode({
 
 const excluded = new Set(['__BUNDLE_START_TIME__', '__DEV__', 'process']);
 
-function formatExtraVars(extraVars: ?{[string]: mixed}) {
+function formatExtraVars(extraVars: ?{[string]: mixed}): Array<string> {
   const assignments = [];
 
   for (const key in extraVars) {
@@ -42,7 +42,7 @@ function formatExtraVars(extraVars: ?{[string]: mixed}) {
   return assignments;
 }
 
-function processEnv(nodeEnv: string) {
+function processEnv(nodeEnv: string): string {
   return `process.env=process.env||{};process.env.NODE_ENV=process.env.NODE_ENV||${JSON.stringify(
     nodeEnv,
   )};`;

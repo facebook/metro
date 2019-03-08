@@ -23,7 +23,7 @@ global.WebSocket = jest.fn(() => {
         mockSocket.onclose();
       }
     }),
-    mockEmit: (type, data) => {
+    mockEmit: (type: string, data) => {
       if (mockSocket) {
         if (type === 'error') {
           mockSocket.onerror(data);

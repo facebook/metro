@@ -17,7 +17,8 @@ const TEST_PLATFORMS = new Set(['ios', 'android']);
 
 describe('parsePlatformFilePath', function() {
   it('should get platform ext', function() {
-    const get = name => parsePlatformFilePath(name, TEST_PLATFORMS).platform;
+    const get = (name: string) =>
+      parsePlatformFilePath(name, TEST_PLATFORMS).platform;
     expect(get('a.js')).toBe(null);
     expect(get('a.ios.js')).toBe('ios');
     expect(get('a.android.js')).toBe('android');

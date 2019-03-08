@@ -58,7 +58,7 @@ it('wraps a module correctly', () => {
 });
 
 describe('safe renaming of require', () => {
-  ['let', 'const', 'var'].forEach(declKeyword => {
+  ['let', 'const', 'var'].forEach((declKeyword: string) => {
     describe('decl type = ' + declKeyword, () => {
       it('original name will always be renamed so local decl should be fine', () => {
         const dependencyMapName = '_dependencyMapName';
@@ -229,7 +229,7 @@ it('wraps a JSON file correctly', () => {
   );
 });
 
-function astFromCode(code) {
+function astFromCode(code: string) {
   return babylon.parse(code, {
     plugins: ['dynamicImport'],
     sourceType: 'script',

@@ -316,7 +316,7 @@ class TerminalReporter {
     if (lines.length >= 1 && lines[lines.length - 1] === '') {
       lines.splice(lines.length - 1, 1);
     }
-    lines.forEach(line => {
+    lines.forEach((line: string) => {
       this.terminal.log(`transform[${origin}]: ${line}`);
     });
   }
@@ -388,7 +388,7 @@ class TerminalReporter {
     }
   }
 
-  _getDepGraphStatusMessage(): ?string {
+  _getDepGraphStatusMessage(): null | string {
     if (!this._dependencyGraphHasLoaded) {
       return `${DEP_GRAPH_MESSAGE}...`;
     }
@@ -403,11 +403,12 @@ class TerminalReporter {
   _getStatusMessage(): string {
     return [this._getDepGraphStatusMessage()]
       .concat(
-        Array.from(this._activeBundles.entries()).map(([_, progress]) =>
-          this._getBundleStatusMessage(progress, 'in_progress'),
+        Array.from(this._activeBundles.entries()).map(
+          ([_, progress]: [string, BundleProgress]) =>
+            this._getBundleStatusMessage(progress, 'in_progress'),
         ),
       )
-      .filter(str => str != null)
+      .filter((str: null | string) => str != null)
       .join('\n');
   }
 

@@ -16,6 +16,7 @@ const {getModuleCodeAndMap, concat} = require('./util');
 const {createIndexMap} = require('metro-source-map');
 
 import type {OutputFn} from '../types.flow';
+import type {FBSourceMap, MetroSourceMap} from 'metro-source-map';
 
 function asPlainBundle({
   filename,
@@ -24,7 +25,11 @@ function asPlainBundle({
   requireCalls,
   sourceMapPath,
   enableIDInlining,
-}) {
+}): {|
+  code: string | Buffer,
+  extraFiles?: Iterable<[string, string | Buffer]>,
+  map: FBSourceMap | MetroSourceMap,
+|} {
   let code = '';
   let line = 0;
   const sections = [];

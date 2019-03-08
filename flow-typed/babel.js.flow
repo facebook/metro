@@ -113,7 +113,7 @@ type TransformResult = {
   map: ?_BabelSourceMap,
 };
 // https://github.com/babel/babel/blob/master/packages/babel-generator/src/buffer.js#L42
-type GeneratorResult = {
+export type GeneratorResult = {
   code: string,
   map: ?_BabelSourceMap,
   rawMappings: ?Array<_BabelSourceMapSegment>,

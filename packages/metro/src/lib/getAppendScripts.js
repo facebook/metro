@@ -36,7 +36,7 @@ function getAppendScripts<T: number | string>(
     const paths = [...options.runBeforeMainModule, entryPoint];
 
     for (const path of paths) {
-      if (modules.some(module => module.path === path)) {
+      if (modules.some((module: Module<>) => module.path === path)) {
         output.push({
           path: `require-${path}`,
           dependencies: new Map(),

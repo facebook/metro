@@ -17,10 +17,7 @@ import type {Bundle, BundleMetadata} from '../types.flow';
  */
 function bundleToString(
   bundle: Bundle,
-): {|
-  +code: string,
-  +metadata: BundleMetadata,
-|} {
+): {|+code: string, +metadata: BundleMetadata|} {
   let code = bundle.pre.length > 0 ? bundle.pre + '\n' : '';
   const modules = [];
 
@@ -28,7 +25,7 @@ function bundleToString(
     .slice()
     // The order of the modules needs to be deterministic in order for source
     // maps to work properly.
-    .sort((a, b) => a[0] - b[0]);
+    .sort((a: [number, string], b: [number, string]) => a[0] - b[0]);
 
   for (const [id, moduleCode] of sortedModules) {
     if (moduleCode.length > 0) {

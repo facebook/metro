@@ -24,14 +24,14 @@ describe('BatchProcessor', () => {
 
   it('aggregate items concurrently', async () => {
     const input = [...Array(9).keys()].slice(1);
-    const transform = e => e * 10;
+    const transform = (e: number) => e * 10;
     const batches = [];
     let concurrency = 0;
     let maxConcurrency = 0;
-    const bp = new BatchProcessor(
+    const bp = new BatchProcessor<number, number>(
       options,
-      items =>
-        new Promise(resolve => {
+      (items: Array<number>) =>
+        new Promise((resolve: (result?: Array<number>) => void) => {
           ++concurrency;
           expect(concurrency).toBeLessThanOrEqual(options.concurrency);
           maxConcurrency = Math.max(maxConcurrency, concurrency);
@@ -44,9 +44,9 @@ describe('BatchProcessor', () => {
     );
     const results = [];
     await Promise.all(
-      input.map(e =>
+      input.map((e: number) =>
         bp.queue(e).then(
-          res => results.push(res),
+          (res: number) => results.push(res),
           error =>
             process.nextTick(() => {
               throw error;
@@ -63,7 +63,7 @@ describe('BatchProcessor', () => {
     const error = new Error('oh noes');
     const bp = new BatchProcessor(
       options,
-      items =>
+      (items: Array<string>) =>
         new Promise((_, reject) => {
           setTimeout(reject.bind(null, error), 0);
         }),

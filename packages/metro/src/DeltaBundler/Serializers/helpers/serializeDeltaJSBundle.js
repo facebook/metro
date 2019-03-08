@@ -51,7 +51,7 @@ exports.toBinaryStream = (bundle: BundleVariant): Readable => {
 const MAGIC_NUMBER = Buffer.of(0xfb, 0xde, 0x17, 0xa5);
 const FORMAT_VERSION = [0x01, 0x00, 0x00];
 
-function* streamBundle(bundle: BundleVariant) {
+function* streamBundle(bundle: BundleVariant): Generator<Buffer, void, void> {
   yield MAGIC_NUMBER;
   yield Buffer.of(...FORMAT_VERSION, bundle.base ? 1 : 0);
 
@@ -81,7 +81,7 @@ function* streamBundle(bundle: BundleVariant) {
 
 const SIZEOF_UINT32 = 4;
 
-function str(value) {
+function str(value: string): Buffer {
   const size = Buffer.byteLength(value);
   const buffer = Buffer.allocUnsafe(size + SIZEOF_UINT32);
   buffer.writeUInt32LE(size, 0);
@@ -94,7 +94,7 @@ const ABSENT_BUFFER = [0xff, 0xff, 0xff, 0xff];
 const EMPTY_CRC32 = [0x00, 0x00, 0x00, 0x00];
 const EMPTY_PRE_OR_POST_SECTION = Buffer.of(...ABSENT_BUFFER, ...EMPTY_CRC32);
 
-function preOrPostSection(section) {
+function preOrPostSection(section: string): Buffer {
   if (section.length === 0) {
     return EMPTY_PRE_OR_POST_SECTION;
   }
@@ -110,7 +110,7 @@ function preOrPostSection(section) {
   return buffer;
 }
 
-function module(idAndCode) {
+function module(idAndCode: [number, string] | [number, null]): Buffer {
   const code = idAndCode[1];
   let buffer, length;
   if (code == null) {
@@ -127,7 +127,7 @@ function module(idAndCode) {
   return buffer;
 }
 
-function appendCRC32(buffer) {
+function appendCRC32(buffer: Buffer): void {
   const CRC32_OFFSET = buffer.length - SIZEOF_UINT32;
   buffer.writeUInt32LE(
     crc32.unsigned(buffer.slice(0, CRC32_OFFSET)),
