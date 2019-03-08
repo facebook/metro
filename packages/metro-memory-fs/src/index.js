@@ -581,7 +581,7 @@ class MemoryFs {
       } else {
         throw makeError('ENOENT', dirPath, 'cannot rm a file');
       }
-    } else if (node.entries.size) {
+    } else if (node.type === 'directory' && node.entries.size) {
       throw makeError('ENOTEMPTY', dirPath, 'directory not empty');
     }
     dirNode.entries.delete(basename);
