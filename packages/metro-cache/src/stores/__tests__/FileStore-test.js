@@ -41,6 +41,16 @@ describe('FileStore', () => {
     expect(fileStore.get(cache)).toEqual(null);
   });
 
+  it('writes into cache if folder is missing', () => {
+    const fileStore = new FileStore({root: '/root'});
+    const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
+    const data = Buffer.from([0xca, 0xc4, 0xe5]);
+
+    require('rimraf').sync('/root');
+    fileStore.set(cache, data);
+    expect(fileStore.get(cache)).toEqual(data);
+  });
+
   it('reads and writes binary data', () => {
     const fileStore = new FileStore({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
