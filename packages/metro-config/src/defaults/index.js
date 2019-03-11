@@ -65,6 +65,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     enableVisualizer: false,
     enhanceMiddleware: middleware => middleware,
     runInspectorProxy: false,
+    verifyConnections: false,
   },
   transformer: {
     assetPlugins: [],

@@ -172,6 +172,7 @@ type ServerConfigT = {|
   useGlobalHotkey: boolean,
   port: number,
   runInspectorProxy: boolean,
+  verifyConnections: boolean,
 |};
 
 export type InputConfigT = $Shape<{|
