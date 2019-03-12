@@ -33,6 +33,15 @@ exports[`symbolicating a stack trace with a function map 1`] = `
 "
 `;
 
+exports[`symbolicating a stack trace with a segmented RAM bundle map 1`] = `
+"/js/RKJSModules/segmented/biz.js:5:null
+/js/RKJSModules/segmented/glo.js:7:throwSmthInner
+/js/RKJSModules/bar.js:14:throwSmth
+/js/RKJSModules/bar.js:10:makeItThrowInner
+/js/RKJSModules/bar.js:5:makeItThrow
+"
+`;
+
 exports[`symbolicating an attribution file 1`] = `
 "{\\"functionId\\":1,\\"location\\":{\\"file\\":\\"thrower.js\\",\\"line\\":4,\\"column\\":11},\\"usage\\":[]}
 {\\"functionId\\":2,\\"location\\":{\\"file\\":\\"thrower.js\\",\\"line\\":14,\\"column\\":14},\\"usage\\":[]}
