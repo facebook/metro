@@ -52,7 +52,7 @@ exports.createWorker = (): Symbolicate => {
 function startupChild(socket: number): Promise<ChildProcess> {
   const child = fork(childPath);
   return new Promise(
-    (resolve: (result: ChildProcess) => void, reject): void => {
+    (resolve: (result: ChildProcess) => void, reject: mixed => void): void => {
       child.once('error', reject).once('message', () => {
         child.removeAllListeners();
         resolve(child);
@@ -62,16 +62,18 @@ function startupChild(socket: number): Promise<ChildProcess> {
   );
 }
 
-function connectAndSendJob(socket: number, data: string) {
-  const job = new Promise((resolve, reject) => {
-    debug('Connecting to worker');
-    const connection = net.createConnection(socket);
-    connection.setEncoding('utf8');
-    connection.on('error', reject);
-    connection.pipe(concat(resolve));
-    debug('Sending data to worker');
-    connection.end(data);
-  });
+function connectAndSendJob(socket: number, data: string): Promise<string> {
+  const job = new Promise(
+    (resolve: (result: string) => void, reject: mixed => void) => {
+      debug('Connecting to worker');
+      const connection = net.createConnection(socket);
+      connection.setEncoding('utf8');
+      connection.on('error', reject);
+      connection.pipe(concat(resolve));
+      debug('Sending data to worker');
+      connection.end(data);
+    },
+  );
   job.then(() => debug('Received response from worker'));
   return job;
 }

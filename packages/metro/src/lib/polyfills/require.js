@@ -134,7 +134,7 @@ function define(
   }
 }
 
-function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev) {
+function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
   if (__DEV__ && typeof moduleId === 'string') {
     const verboseName = moduleId;
     moduleId = verboseNamesToModuleIds[verboseName];
@@ -241,7 +241,10 @@ function metroImportAll(moduleId: ModuleID | VerboseModuleNameForDev | number) {
 metroRequire.importAll = metroImportAll;
 
 let inGuard = false;
-function guardedLoadModule(moduleId: ModuleID, module: ModuleDefinition) {
+function guardedLoadModule(
+  moduleId: ModuleID,
+  module: ModuleDefinition,
+): Exports {
   if (!inGuard && global.ErrorUtils) {
     inGuard = true;
     let returnValue;

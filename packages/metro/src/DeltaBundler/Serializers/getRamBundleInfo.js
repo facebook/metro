@@ -86,7 +86,7 @@ async function getRamBundleInfo(
   const startupModules = [];
   const lazyModules = [];
 
-  ramModules.forEach(module => {
+  ramModules.forEach((module: RamModuleTransport) => {
     if (preloadedModules.hasOwnProperty(module.sourcePath)) {
       startupModules.push(module);
       return;
@@ -108,7 +108,7 @@ async function getRamBundleInfo(
     (
       module: ModuleTransportLike,
       dependenciesByPath: Map<string, ModuleTransportLike>,
-    ) => {
+    ): Set<number> => {
       const deps = getTransitiveDependencies(module.sourcePath, graph);
       const output = new Set();
 

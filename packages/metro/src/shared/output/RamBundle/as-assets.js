@@ -96,7 +96,7 @@ function writeModuleFile(
   module: ModuleTransportLike,
   modulesDir: string,
   encoding: void | 'ascii' | 'utf16le' | 'utf8',
-) {
+): Promise<mixed> {
   const {code, id} = module;
   return writeFile(path.join(modulesDir, id + '.js'), code, encoding);
 }
@@ -105,14 +105,15 @@ function writeModules(
   modules: $ReadOnlyArray<ModuleTransportLike>,
   modulesDir: string,
   encoding: void | 'ascii' | 'utf16le' | 'utf8',
-) {
-  const writeFiles = modules.map((module: ModuleTransportLike) =>
-    writeModuleFile(module, modulesDir, encoding),
+): Promise<Array<mixed>> {
+  const writeFiles = modules.map(
+    (module: ModuleTransportLike): Promise<mixed> =>
+      writeModuleFile(module, modulesDir, encoding),
   );
   return Promise.all(writeFiles);
 }
 
-function writeMagicFlagFile(outputDir: string) {
+function writeMagicFlagFile(outputDir: string): Promise<mixed> {
   const buffer = Buffer.alloc(4);
   buffer.writeUInt32LE(MAGIC_RAM_BUNDLE_NUMBER, 0);
   return writeFile(path.join(outputDir, MAGIC_RAM_BUNDLE_FILENAME), buffer);

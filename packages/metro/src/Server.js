@@ -304,7 +304,7 @@ class Server {
       'Content-Type': 'application/json; charset=UTF-8',
     };
 
-    watchers.forEach(function(w) {
+    watchers.forEach(function(w: {req: IncomingMessage, res: ServerResponse}) {
       w.res.writeHead(205, headers);
       w.res.end(JSON.stringify({changed: true}));
     });

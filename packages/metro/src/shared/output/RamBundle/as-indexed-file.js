@@ -89,9 +89,12 @@ const fileHeader = Buffer.alloc(4);
 fileHeader.writeUInt32LE(MAGIC_UNBUNDLE_FILE_HEADER, 0);
 const nullByteBuffer: Buffer = Buffer.alloc(1).fill(0);
 
-function writeBuffers(stream: WriteStream, buffers: Array<Buffer>) {
+function writeBuffers(
+  stream: WriteStream,
+  buffers: Array<Buffer>,
+): Promise<void> {
   buffers.forEach((buffer: Buffer) => stream.write(buffer));
-  return new Promise((resolve: void => void, reject: mixed => mixed) => {
+  return new Promise((resolve: () => void, reject: mixed => mixed) => {
     stream.on('error', reject);
     stream.on('finish', () => resolve());
     stream.end();

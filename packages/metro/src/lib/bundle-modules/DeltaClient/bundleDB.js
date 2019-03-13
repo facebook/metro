@@ -22,21 +22,23 @@ type IDBFactory = $FlowIssue;
 type IDBDatabase = $FlowIssue;
 
 async function openDB(dbName: string): Promise<IDBDatabase> {
-  return await new Promise((resolve, reject) => {
-    const request = (self.indexedDB: IDBFactory).open(dbName, DB_VERSION);
+  return await new Promise(
+    (resolve: (result: IDBDatabase) => void, reject: mixed => void) => {
+      const request = (self.indexedDB: IDBFactory).open(dbName, DB_VERSION);
 
-    request.onerror = event => {
-      reject(request.error);
-    };
+      request.onerror = event => {
+        reject(request.error);
+      };
 
-    request.onsuccess = () => {
-      resolve(request.result);
-    };
+      request.onsuccess = () => {
+        resolve(request.result);
+      };
 
-    request.onupgradeneeded = () => {
-      request.result.createObjectStore('metadata', {keyPath: 'revisionId'});
-    };
-  });
+      request.onupgradeneeded = () => {
+        request.result.createObjectStore('metadata', {keyPath: 'revisionId'});
+      };
+    },
+  );
 }
 
 /**
@@ -46,22 +48,24 @@ async function getBundleMetadata(
   db: IDBDatabase,
   revisionId: string,
 ): Promise<?BundleMetadata> {
-  return await new Promise((resolve, reject) => {
-    const transaction = db.transaction(['metadata']);
-    transaction.onerror = () => {
-      reject(transaction.error);
-    };
+  return await new Promise(
+    (resolve: (result: ?BundleMetadata) => void, reject: mixed => void) => {
+      const transaction = db.transaction(['metadata']);
+      transaction.onerror = () => {
+        reject(transaction.error);
+      };
 
-    const objectStore = transaction.objectStore('metadata');
-    const request = objectStore.get(revisionId);
-    request.onsuccess = () => {
-      if (request.result != null) {
-        resolve(request.result.metadata);
-      } else {
-        resolve(null);
-      }
-    };
-  });
+      const objectStore = transaction.objectStore('metadata');
+      const request = objectStore.get(revisionId);
+      request.onsuccess = () => {
+        if (request.result != null) {
+          resolve(request.result.metadata);
+        } else {
+          resolve(null);
+        }
+      };
+    },
+  );
 }
 
 /**
@@ -72,7 +76,7 @@ async function setBundleMetadata(
   revisionId: string,
   metadata: BundleMetadata,
 ): Promise<void> {
-  await new Promise((resolve, reject) => {
+  await new Promise((resolve: () => void, reject: (error?: mixed) => void) => {
     const transaction = db.transaction(['metadata'], 'readwrite');
     transaction.oncomplete = () => {
       resolve();
@@ -97,7 +101,7 @@ async function removeBundleMetadata(
   db: IDBDatabase,
   revisionId: string,
 ): Promise<void> {
-  await new Promise((resolve, reject) => {
+  await new Promise((resolve: () => void, reject: (error?: mixed) => void) => {
     const transaction = db.transaction(['metadata'], 'readwrite');
     transaction.oncomplete = () => {
       resolve();

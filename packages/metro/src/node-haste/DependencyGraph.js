@@ -158,8 +158,11 @@ class DependencyGraph extends EventEmitter {
       moduleCache: this._moduleCache,
       moduleMap: this._moduleMap,
       preferNativePlatform: true,
-      resolveAsset: (dirPath: string, assetName: string, platform) =>
-        this._assetResolutionCache.resolve(dirPath, assetName, platform),
+      resolveAsset: (
+        dirPath: string,
+        assetName: string,
+        platform: null | string,
+      ) => this._assetResolutionCache.resolve(dirPath, assetName, platform),
       resolveRequest: this._config.resolver.resolveRequest,
       sourceExts: this._config.resolver.sourceExts,
     });

@@ -80,7 +80,7 @@ function defaultGetHmrServerUrl(bundleUrl: string, revisionId: string): string {
   }/hot?revisionId=${revisionId}`;
 }
 
-function defaultOnUpdate(clientId: string, update): void {
+function defaultOnUpdate(clientId: string, update: HmrUpdate): void {
   clients.get(clientId).then((client: ?Client) => {
     if (client != null) {
       client.postMessage({
@@ -151,10 +151,13 @@ function create({
     let rejectBundleRes;
     const client = {
       ids: new Set([clientId]),
-      bundleResPromise: new Promise((resolve, reject) => {
-        resolveBundleRes = resolve;
-        rejectBundleRes = reject;
-      }),
+      bundleResPromise: new Promise(
+        (resolve, reject: (error: mixed) => void) => {
+          // Note: the arg type will be a Resolve result in service-workers
+          resolveBundleRes = resolve;
+          rejectBundleRes = reject;
+        },
+      ),
     };
 
     clients.set(bundleKey, client);
@@ -190,7 +193,7 @@ function create({
         client.ids.forEach((clientId: string) => onUpdate(clientId, update));
       }
 
-      let nextBundleRes;
+      let nextBundleRes; // type: Response, built-in function for service worker
       if (revisionId === update.revisionId) {
         nextBundleRes = bundleRes;
       } else {

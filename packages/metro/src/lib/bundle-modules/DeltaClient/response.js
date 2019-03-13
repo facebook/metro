@@ -14,6 +14,8 @@
 
 declare var __DEV__: boolean;
 
+// Note: the type `Response` is a built-in object in a service worker...
+
 export type GetRevisionId = (bundleUrl: string, bundleRes: Response) => string;
 
 const REVISION_ID_HEADER = 'X-Metro-Delta-ID';

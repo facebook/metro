@@ -97,7 +97,7 @@ function create({
   const getBundle = async (
     bundleKey: string,
     revisionId: string,
-    waitUntil,
+    waitUntil: <T>(op: Promise<T>) => void,
   ) => {
     const cache = await cachePromise;
     const db = await dbPromise;
@@ -155,7 +155,7 @@ function create({
     bundleKey: string,
     initialRevisionId: string,
     initialBundleRes,
-    waitUntil,
+    waitUntil: <T>(op: Promise<T>) => void,
   ) => {
     const res = createResponse(
       initialBundleRes.clone().body,

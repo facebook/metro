@@ -33,7 +33,7 @@ function asPlainBundle({
   let code = '';
   let line = 0;
   const sections = [];
-  const modIdForPath = x => idsForPath(x).moduleId;
+  const modIdForPath = (x: {path: string}) => idsForPath(x).moduleId;
 
   for (const module of concat(modules, requireCalls)) {
     const {moduleCode, moduleMap} = getModuleCodeAndMap(module, modIdForPath, {

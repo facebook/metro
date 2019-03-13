@@ -54,7 +54,7 @@ module.exports = () => ({
     let server = null;
     let restarting = false;
 
-    async function restart() {
+    async function restart(): Promise<void> {
       if (restarting) {
         return;
       } else {
