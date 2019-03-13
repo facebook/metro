@@ -97,7 +97,6 @@ module.exports = new Set([
   'Platform',
   'processColor',
   'requireNativeComponent',
-  'takeSnapshot',
 
   // Prop Types
   'DeprecatedColorPropType',
