@@ -49,15 +49,29 @@ class FileStore<T> {
   }
 
   set(key: Buffer, value: T): void {
+    const filePath = this._getFilePath(key);
+    try {
+      this._set(filePath, value);
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        mkdirp.sync(path.dirname(filePath));
+        this._set(filePath, value);
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  _set(filePath: string, value: T): void {
     if (value instanceof Buffer) {
-      const fd = fs.openSync(this._getFilePath(key), 'w');
+      const fd = fs.openSync(filePath, 'w');
 
       fs.writeSync(fd, NULL_BYTE_BUFFER);
       fs.writeSync(fd, value);
 
       fs.closeSync(fd);
     } else {
-      fs.writeFileSync(this._getFilePath(key), JSON.stringify(value));
+      fs.writeFileSync(filePath, JSON.stringify(value));
     }
   }
 
