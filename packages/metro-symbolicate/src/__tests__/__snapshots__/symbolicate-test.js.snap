@@ -24,6 +24,15 @@ global thrower.js:1:null
 "
 `;
 
+exports[`symbolicating a stack trace ignoring a function map 1`] = `
+"/js/RKJSModules/segmented/biz.js:5:null
+/js/RKJSModules/segmented/glo.js:7:throwSmthInner
+/js/RKJSModules/bar.js:14:throwSmth
+/js/RKJSModules/bar.js:10:makeItThrowInner
+/js/RKJSModules/bar.js:5:makeItThrow
+"
+`;
+
 exports[`symbolicating a stack trace with a function map 1`] = `
 "/js/RKJSModules/segmented/biz.js:5:module.exports.throwSmthInner
 /js/RKJSModules/segmented/glo.js:7:module.exports.throwSmth
