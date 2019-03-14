@@ -111,6 +111,8 @@ describe('traverseDependencies', function() {
       return posixPath;
     }
 
+    const joinPath = osPlatform === 'win32' ? path.win32.join : path.posix.join;
+
     describe(osPlatform, () => {
       beforeEach(() => {
         jest.resetModules();
@@ -140,11 +142,14 @@ describe('traverseDependencies', function() {
         require('os').tmpdir = () => p('/tmp');
 
         fs = require('fs');
+
+        jest.spyOn(console, 'error');
       });
 
       afterEach(async () => {
         resolver && (await resolver.end());
         resolver = null;
+        console.error.mockRestore();
       });
 
       describe('relative paths', () => {
@@ -1367,15 +1372,19 @@ describe('traverseDependencies', function() {
           });
 
           await expect(createResolver()).rejects.toThrow(
+            'Duplicated files or mocks. Please check the console for more info',
+          );
+          expect(console.error).toHaveBeenCalledWith(
             [
-              'jest-haste-map: Haste module naming collision:',
-              '  Duplicate module name: aPackage',
-              `  Paths: ${p(
-                '/root/anotherPackage/package.json',
-              )} collides with ${p('/root/aPackage/package.json')}`,
+              'jest-haste-map: Haste module naming collision: aPackage',
+              '  The following files share their name; please adjust your hasteImpl:',
+              `    * ${joinPath('<rootDir>', 'aPackage', 'package.json')}`,
+              `    * ${joinPath(
+                '<rootDir>',
+                'anotherPackage',
+                'package.json',
+              )}`,
               '',
-              'This error is caused by `hasteImpl` returning the same ' +
-                'name for different files.',
             ].join('\n'),
           );
         });
@@ -1394,15 +1403,23 @@ describe('traverseDependencies', function() {
           });
 
           await expect(createResolver()).rejects.toThrow(
+            'Duplicated files or mocks. Please check the console for more info',
+          );
+          expect(console.error).toHaveBeenCalledWith(
             [
-              'jest-haste-map: Haste module naming collision:',
-              '  Duplicate module name: aPackage',
-              `  Paths: ${p(
-                '/root/aPackage.ios.js/package.json',
-              )} collides with ${p('/root/aPackage.android.js/package.json')}`,
+              'jest-haste-map: Haste module naming collision: aPackage',
+              '  The following files share their name; please adjust your hasteImpl:',
+              `    * ${joinPath(
+                '<rootDir>',
+                'aPackage.android.js',
+                'package.json',
+              )}`,
+              `    * ${joinPath(
+                '<rootDir>',
+                'aPackage.ios.js',
+                'package.json',
+              )}`,
               '',
-              'This error is caused by `hasteImpl` returning the same ' +
-                'name for different files.',
             ].join('\n'),
           );
         });
@@ -1575,15 +1592,15 @@ describe('traverseDependencies', function() {
           });
 
           await expect(createResolver(config)).rejects.toThrow(
+            'Duplicated files or mocks. Please check the console for more info',
+          );
+          expect(console.error).toHaveBeenCalledWith(
             [
-              'jest-haste-map: Haste module naming collision:',
-              '  Duplicate module name: hasteModule',
-              `  Paths: ${p('/root/anotherHasteModule.js')} collides with ${p(
-                '/root/hasteModule.js',
-              )}`,
+              'jest-haste-map: Haste module naming collision: hasteModule',
+              '  The following files share their name; please adjust your hasteImpl:',
+              `    * ${joinPath('<rootDir>', 'hasteModule.js')}`,
+              `    * ${joinPath('<rootDir>', 'anotherHasteModule.js')}`,
               '',
-              'This error is caused by `hasteImpl` returning the same ' +
-                'name for different files.',
             ].join('\n'),
           );
         });
@@ -1616,15 +1633,15 @@ describe('traverseDependencies', function() {
           });
 
           await expect(createResolver(config)).rejects.toThrow(
+            'Duplicated files or mocks. Please check the console for more info',
+          );
+          expect(console.error).toHaveBeenCalledWith(
             [
-              'jest-haste-map: Haste module naming collision:',
-              '  Duplicate module name: hasteModule',
-              `  Paths: ${p('/root/aPackage/package.json')} collides with ${p(
-                '/root/hasteModule.js',
-              )}`,
+              'jest-haste-map: Haste module naming collision: hasteModule',
+              '  The following files share their name; please adjust your hasteImpl:',
+              `    * ${joinPath('<rootDir>', 'hasteModule.js')}`,
+              `    * ${joinPath('<rootDir>', 'aPackage', 'package.json')}`,
               '',
-              'This error is caused by `hasteImpl` returning the same ' +
-                'name for different files.',
             ].join('\n'),
           );
         });
@@ -1678,15 +1695,15 @@ describe('traverseDependencies', function() {
           });
 
           await expect(createResolver(config)).rejects.toThrow(
+            'Duplicated files or mocks. Please check the console for more info',
+          );
+          expect(console.error).toHaveBeenCalledWith(
             [
-              'jest-haste-map: Haste module naming collision:',
-              '  Duplicate module name: hasteModule',
-              `  Paths: ${p('/root/hasteModule.invalid.js')} collides with ${p(
-                '/root/hasteModule.js',
-              )}`,
+              'jest-haste-map: Haste module naming collision: hasteModule',
+              '  The following files share their name; please adjust your hasteImpl:',
+              `    * ${joinPath('<rootDir>', 'hasteModule.js')}`,
+              `    * ${joinPath('<rootDir>', 'hasteModule.invalid.js')}`,
               '',
-              'This error is caused by `hasteImpl` returning the same ' +
-                'name for different files.',
             ].join('\n'),
           );
         });
