@@ -38,7 +38,7 @@
     "lerna": "2.4.0",
     "micromatch": "^2.3.11",
     "mkdirp": "^0.5.1",
-    "prettier": "1.13.6",
+    "prettier": "1.16.4",
     "pretty-format": "^23.4.1",
     "progress": "^2.0.0",
     "promise": "^7.1.1",

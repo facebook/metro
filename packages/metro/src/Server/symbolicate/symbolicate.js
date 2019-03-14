@@ -41,11 +41,10 @@ exports.createWorker = (): Symbolicate => {
     child
       .then(() => connectAndSendJob(socket, message(stack, sourceMaps)))
       .then(JSON.parse)
-      .then(
-        response =>
-          'error' in response
-            ? Promise.reject(new Error(response.error))
-            : response.result,
+      .then(response =>
+        'error' in response
+          ? Promise.reject(new Error(response.error))
+          : response.result,
       );
 };
 

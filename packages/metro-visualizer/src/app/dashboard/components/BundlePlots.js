@@ -55,8 +55,8 @@ class BundlePlots extends React.Component<Props, State> {
       y: build.duration,
     }));
 
-    const buildSizes = this.props.builds.map(
-      build => (build.bundleSize != null ? build.bundleSize : 0),
+    const buildSizes = this.props.builds.map(build =>
+      build.bundleSize != null ? build.bundleSize : 0,
     );
     const minSize = Math.min(...buildSizes);
     const sizeData = buildSizes.map((size, index) => ({

@@ -157,13 +157,12 @@ class BundleRunForm extends React.Component<Props, State> {
               mode="multiple"
               placeholder="Options..."
               value={this.state.options}>
-              {Object.entries(this.default_options).map(
-                ([option, value]) =>
-                  typeof value === 'boolean' ? (
-                    <Select.Option value={option} key={option}>
-                      {option}
-                    </Select.Option>
-                  ) : null,
+              {Object.entries(this.default_options).map(([option, value]) =>
+                typeof value === 'boolean' ? (
+                  <Select.Option value={option} key={option}>
+                    {option}
+                  </Select.Option>
+                ) : null,
               )}
             </Select>
           </Col>

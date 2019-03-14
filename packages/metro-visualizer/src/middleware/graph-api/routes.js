@@ -30,23 +30,23 @@ function initializeGraphRoutes(graph: Graph<>) {
 }
 
 /*
-* Get the whole dependency graph in a cytoscape format
-*
-* @response {CyGraph}
-*/
+ * Get the whole dependency graph in a cytoscape format
+ *
+ * @response {CyGraph}
+ */
 router.get('/', async function(req, res) {
   res.status(500).send('Unimplemented');
 });
 
 /*
-* Get basic information about the graph, including a list of all the modules
-* in the graph
-*
-* @response {Object} info
-* @response {String} info.entryPoints
-* @response {String} info.edgeCount
-* @response {String} info.nodeCount
-*/
+ * Get basic information about the graph, including a list of all the modules
+ * in the graph
+ *
+ * @response {Object} info
+ * @response {String} info.entryPoints
+ * @response {String} info.edgeCount
+ * @response {String} info.nodeCount
+ */
 router.get('/info', function(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.write(JSON.stringify(getGraphInfo(metroGraph)));
@@ -54,17 +54,17 @@ router.get('/info', function(req, res) {
 });
 
 /*
-* Get the cytoscape formatted dependency graph using a specific module as the
-* root.
-*
-* @params [:path] Path to the module to be used as root
-*
-* TODO @query {number} [depth = 0] How many levels to recursively expand dependencies
-* TODO @query {string} [segment] Filters expanded dependencies by segment
-* TODO @query {string} [directory] Filters expanded dependencies by directory
-*
-* @response {CyGraph}
-*/
+ * Get the cytoscape formatted dependency graph using a specific module as the
+ * root.
+ *
+ * @params [:path] Path to the module to be used as root
+ *
+ * TODO @query {number} [depth = 0] How many levels to recursively expand dependencies
+ * TODO @query {string} [segment] Filters expanded dependencies by segment
+ * TODO @query {string} [directory] Filters expanded dependencies by directory
+ *
+ * @response {CyGraph}
+ */
 router.get('/modules/:path(*)', function(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
@@ -83,22 +83,22 @@ router.get('/modules/:path(*)', function(req, res) {
 });
 
 /*
-* Get a list of all the directories in the graph
-*
-* @response {Array<string>}
-*/
+ * Get a list of all the directories in the graph
+ *
+ * @response {Array<string>}
+ */
 router.get('/directories', function(req, res) {
   res.status(500).send('Unimplemented');
 });
 
 /*
-* Get the cytoscape formatted dependency graph of all the modules within
-* a specific directory
-*
-* @params :path Path to the directory
-*
-* @response {CyGraph}
-*/
+ * Get the cytoscape formatted dependency graph of all the modules within
+ * a specific directory
+ *
+ * @params :path Path to the directory
+ *
+ * @response {CyGraph}
+ */
 router.get('/directories/:path(*)', function(req, res) {
   res.status(500).send('Unimplemented');
 });
