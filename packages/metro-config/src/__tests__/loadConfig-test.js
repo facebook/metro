@@ -147,7 +147,7 @@ describe('loadConfig', () => {
       ...defaultConfig,
       transformer: {
         ...defaultConfig.transformer,
-        getTransformOptions: true,
+        enableBabelRuntime: 1,
       },
     });
 

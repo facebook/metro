@@ -313,7 +313,10 @@ exports[`loadConfig validates config for resolver 1`] = `
         \\"mp3\\",
         \\"wav\\",
         \\"html\\",
+        \\"json\\",
         \\"pdf\\",
+        \\"yaml\\",
+        \\"yml\\",
         \\"otf\\",
         \\"ttf\\",
         \\"zip\\"
@@ -365,14 +368,14 @@ exports[`loadConfig validates config for server 1`] = `
 exports[`loadConfig validates config for transformer 1`] = `
 "● Validation Error:
 
-  Option \\"transformer.getTransformOptions\\" must be of type:
-    function
-  but instead received:
+  Option \\"transformer.enableBabelRuntime\\" must be of type:
     boolean
+  but instead received:
+    number
 
   Example:
   {
-    \\"getTransformOptions\\": function getTransformOptions() {}
+    \\"enableBabelRuntime\\": true
   }
 "
 `;
