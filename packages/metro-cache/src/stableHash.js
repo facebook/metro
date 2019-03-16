@@ -14,10 +14,15 @@ const canonicalize = require('metro-core/src/canonicalize');
 const crypto = require('crypto');
 
 function stableHash(value: mixed) {
-  return crypto
-    .createHash('md4')
-    .update(JSON.stringify(value, canonicalize))
-    .digest('buffer');
+  return (
+    crypto
+      .createHash('md4')
+      /* $FlowFixMe(>=0.95.0 site=react_native_fb) This comment suppresses an
+       * error found when Flow v0.95 was deployed. To see the error, delete this
+       * comment and run Flow. */
+      .update(JSON.stringify(value, canonicalize))
+      .digest('buffer')
+  );
 }
 
 module.exports = stableHash;
