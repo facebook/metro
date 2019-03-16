@@ -40,10 +40,10 @@ module.exports = ({
 
   // Add map of module id -> source to sourcemap
   const module_paths = [];
-  startupModules.forEach(m => {
+  startupModules.forEach((m: ModuleTransportLike) => {
     module_paths[m.id] = m.sourcePath;
   });
-  lazyModules.forEach(m => {
+  lazyModules.forEach((m: ModuleTransportLike) => {
     module_paths[m.id] = m.sourcePath;
   });
 

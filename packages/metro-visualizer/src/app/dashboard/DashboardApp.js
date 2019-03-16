@@ -160,13 +160,12 @@ const BundleCard = (props: {
         {Object.keys(props.bundleInfo.builds)
           .map(id => props.bundleInfo.builds[id])
           .filter(info => info.isInitial)
-          .map(
-            info =>
-              info.duration != null ? (
-                <span className={initialInfo} key="initial">
-                  {info.duration} ms | {info.numModifiedFiles} files
-                </span>
-              ) : null,
+          .map(info =>
+            info.duration != null ? (
+              <span className={initialInfo} key="initial">
+                {info.duration} ms | {info.numModifiedFiles} files
+              </span>
+            ) : null,
           )}
       </p>
 

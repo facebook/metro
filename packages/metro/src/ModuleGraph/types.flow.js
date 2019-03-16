@@ -91,9 +91,7 @@ export type PostProcessModules = (
   entryPoints: Array<string>,
 ) => $ReadOnlyArray<Module>;
 
-export type OutputFn<
-  M: FBSourceMap | MetroSourceMap = FBSourceMap | MetroSourceMap,
-> = ({|
+export type OutputFnArg = {|
   filename: string,
   idsForPath: IdsForPathFn,
   modules: Iterable<Module>,
@@ -102,9 +100,12 @@ export type OutputFn<
   bundleOrderFile?: ?string,
   enableIDInlining: boolean,
   segmentID: number,
-|}) => OutputResult<M>;
+|};
+export type OutputFn<
+  M: FBSourceMap | MetroSourceMap = FBSourceMap | MetroSourceMap,
+> = OutputFnArg => OutputResult<M>;
 
-type OutputResult<M: FBSourceMap | MetroSourceMap> = {|
+export type OutputResult<M: FBSourceMap | MetroSourceMap> = {|
   code: string | Buffer,
   extraFiles?: Iterable<[string, string | Buffer]>,
   map: M,

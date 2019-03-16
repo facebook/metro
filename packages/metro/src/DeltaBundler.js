@@ -47,7 +47,9 @@ class DeltaBundler<T = MixedOutput> {
   }
 
   end() {
-    this._deltaCalculators.forEach(deltaCalculator => deltaCalculator.end());
+    this._deltaCalculators.forEach((deltaCalculator: DeltaCalculator<T>) =>
+      deltaCalculator.end(),
+    );
     this._deltaCalculators = new Map();
   }
 

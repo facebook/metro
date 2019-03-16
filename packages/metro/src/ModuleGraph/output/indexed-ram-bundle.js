@@ -18,14 +18,9 @@ const {
   buildTableAndContents,
   createModuleGroups,
 } = require('../../shared/output/RamBundle/as-indexed-file');
-const {
-  concat,
-  getModuleCodeAndMap,
-  partition,
-  toModuleTransport,
-} = require('./util');
+const {getModuleCodeAndMap, partition, toModuleTransport} = require('./util');
 
-import type {OutputFn} from '../types.flow';
+import type {Module, OutputFn, OutputFnArg} from '../types.flow';
 import type {FBIndexMap} from 'metro-source-map';
 
 function asIndexedRamBundle({
@@ -35,11 +30,17 @@ function asIndexedRamBundle({
   preloadedModules,
   ramGroupHeads,
   requireCalls,
-}) {
-  const idForPath = x => idsForPath(x).moduleId;
+}): {|
+  code: string | Buffer,
+  extraFiles?: Iterable<[string, string | Buffer]>,
+  map: FBIndexMap,
+|} {
+  const idForPath = (x: {path: string}) => idsForPath(x).moduleId;
   const [startup, deferred] = partition(modules, preloadedModules);
-  const startupModules = Array.from(concat(startup, requireCalls));
-  const deferredModules = deferred.map(m => toModuleTransport(m, idsForPath));
+  const startupModules = [...startup, ...requireCalls];
+  const deferredModules = deferred.map((m: Module) =>
+    toModuleTransport(m, idsForPath),
+  );
   for (const m of deferredModules) {
     invariant(
       m.id >= 0,
@@ -57,7 +58,7 @@ function asIndexedRamBundle({
   const tableAndContents = buildTableAndContents(
     startupModules
       .map(
-        m =>
+        (m: Module) =>
           getModuleCodeAndMap(m, idForPath, {enableIDInlining: true})
             .moduleCode,
       )
@@ -73,12 +74,18 @@ function asIndexedRamBundle({
       fixWrapperOffset: false,
       lazyModules: deferredModules,
       moduleGroups,
-      startupModules: startupModules.map(m => toModuleTransport(m, idsForPath)),
+      startupModules: startupModules.map((m: Module) =>
+        toModuleTransport(m, idsForPath),
+      ),
     }),
   };
 }
 
-function* subtree(moduleTransport, moduleTransportsByPath, seen = new Set()) {
+function* subtree(
+  moduleTransport,
+  moduleTransportsByPath,
+  seen: Set<number> = new Set(),
+): Generator<number, void, void> {
   seen.add(moduleTransport.id);
   for (const {path} of moduleTransport.dependencies) {
     const dependency = moduleTransportsByPath.get(path);
@@ -93,7 +100,8 @@ function createBuilder(
   preloadedModules: Set<string>,
   ramGroupHeads: ?$ReadOnlyArray<string>,
 ): OutputFn<FBIndexMap> {
-  return x => asIndexedRamBundle({...x, preloadedModules, ramGroupHeads});
+  return (x: OutputFnArg) =>
+    asIndexedRamBundle({...x, preloadedModules, ramGroupHeads});
 }
 
 exports.createBuilder = createBuilder;

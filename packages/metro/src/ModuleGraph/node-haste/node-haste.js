@@ -61,7 +61,7 @@ const NULL_MODULE: Moduleish = {
 const createModuleMap = ({files, helpers, moduleCache, sourceExts}) => {
   const map = new Map();
 
-  files.forEach(filePath => {
+  files.forEach((filePath: string) => {
     if (helpers.isNodeModulesDir(filePath)) {
       return;
     }
@@ -116,7 +116,7 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     platform,
   } = options;
   const files = Object.keys(transformedFiles);
-  function getTransformedFile(path) {
+  function getTransformedFile(path: string): TransformedCodeFile {
     const result = transformedFiles[path];
     if (!result) {
       throw new Error(`"${path} does not exist`);
@@ -131,22 +131,22 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
 
   const hasteFS = new HasteFS(files);
   const moduleCache = new ModuleCache(
-    filePath => hasteFS.closest(filePath, 'package.json'),
+    (filePath: string) => hasteFS.closest(filePath, 'package.json'),
     getTransformedFile,
   );
 
   const filesByDirNameIndex = new FilesByDirNameIndex(files);
   const assetResolutionCache = new AssetResolutionCache({
     assetExtensions: new Set(assetExts),
-    getDirFiles: dirPath => filesByDirNameIndex.getAllFiles(dirPath),
+    getDirFiles: (dirPath: string) => filesByDirNameIndex.getAllFiles(dirPath),
     platforms,
   });
   const moduleResolver = new ModuleResolver({
     allowPnp,
-    dirExists: filePath => hasteFS.dirExists(filePath),
-    doesFileExist: filePath => hasteFS.exists(filePath),
+    dirExists: (filePath: string) => hasteFS.dirExists(filePath),
+    doesFileExist: (filePath: string) => hasteFS.exists(filePath),
     extraNodeModules,
-    isAssetFile: filePath => helpers.isAssetFile(filePath),
+    isAssetFile: (filePath: string) => helpers.isAssetFile(filePath),
     mainFields: options.mainFields,
     moduleCache,
     moduleMap: new ModuleMap({
@@ -156,13 +156,16 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
       rootDir: '',
     }),
     preferNativePlatform: true,
-    resolveAsset: (dirPath, assetName, platform) =>
-      assetResolutionCache.resolve(dirPath, assetName, platform),
+    resolveAsset: (
+      dirPath: string,
+      assetName: string,
+      platform: null | string,
+    ) => assetResolutionCache.resolve(dirPath, assetName, platform),
     resolveRequest: options.resolveRequest,
     sourceExts,
   });
 
-  return (id, sourcePath) => {
+  return (id: string, sourcePath: ?string) => {
     const from =
       sourcePath != null
         ? new Module(sourcePath, moduleCache, getTransformedFile(sourcePath))

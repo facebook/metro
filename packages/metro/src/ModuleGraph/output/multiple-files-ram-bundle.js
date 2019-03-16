@@ -17,15 +17,10 @@ const JS_MODULES = 'js-modules';
 const buildSourcemapWithMetadata = require('../../shared/output/RamBundle/buildSourcemapWithMetadata.js');
 const path = require('path');
 
-const {
-  concat,
-  getModuleCodeAndMap,
-  partition,
-  toModuleTransport,
-} = require('./util');
+const {getModuleCodeAndMap, partition, toModuleTransport} = require('./util');
 
 import type {FBIndexMap} from 'metro-source-map';
-import type {OutputFn} from '../types.flow';
+import type {Module, OutputFn, OutputResult} from '../types.flow';
 
 function asMultipleFilesRamBundle({
   filename,
@@ -33,17 +28,19 @@ function asMultipleFilesRamBundle({
   modules,
   requireCalls,
   preloadedModules,
-}) {
-  const idForPath = x => idsForPath(x).moduleId;
+}): OutputResult<FBIndexMap> {
+  const idForPath = (x: {path: string}) => idsForPath(x).moduleId;
   const [startup, deferred] = partition(modules, preloadedModules);
-  const startupModules = Array.from(concat(startup, requireCalls));
-  const deferredModules = deferred.map(m => toModuleTransport(m, idsForPath));
+  const startupModules = [...startup, ...requireCalls];
+  const deferredModules = deferred.map((m: Module) =>
+    toModuleTransport(m, idsForPath),
+  );
   const magicFileContents = Buffer.alloc(4);
 
   // Just concatenate all startup modules, one after the other.
   const code = startupModules
     .map(
-      m =>
+      (m: Module) =>
         getModuleCodeAndMap(m, idForPath, {enableIDInlining: true}).moduleCode,
     )
     .join('\n');
@@ -69,7 +66,9 @@ function asMultipleFilesRamBundle({
     fixWrapperOffset: false,
     lazyModules: deferredModules,
     moduleGroups: null,
-    startupModules: startupModules.map(m => toModuleTransport(m, idsForPath)),
+    startupModules: startupModules.map((m: Module) =>
+      toModuleTransport(m, idsForPath),
+    ),
   });
 
   return {code, extraFiles, map};

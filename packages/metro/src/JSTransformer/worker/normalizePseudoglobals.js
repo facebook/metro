@@ -67,7 +67,7 @@ function normalizePseudoglobals(ast: Ast): $ReadOnlyArray<string> {
       },
 
       exit(path: Path) {
-        reserved.forEach((shortName, i) => {
+        reserved.forEach((shortName: string, i: number) => {
           if (pseudoglobals[i] && shortName && body && params) {
             body.scope.rename(pseudoglobals[i], shortName);
           }
@@ -79,7 +79,7 @@ function normalizePseudoglobals(ast: Ast): $ReadOnlyArray<string> {
       path.scope.crawl();
 
       if (body && params && path.node !== body.node) {
-        reserved.forEach((shortName, i) => {
+        reserved.forEach((shortName: string, i: number) => {
           if (pseudoglobals[i] && shortName) {
             path.scope.rename(shortName, path.scope.generateUid(shortName));
           }

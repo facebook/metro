@@ -141,51 +141,50 @@ class GraphApp extends React.Component<Props, State> {
             }
           />
         )}
-        {this.state.modules &&
-          this.state.info && (
-            <div>
-              <Row
-                type="flex"
-                justify="center"
-                align="middle"
-                className={searchRow}>
-                <Col
-                  span={this.state.showPathSearch ? 14 : 12}
-                  className={searchCol}>
+        {this.state.modules && this.state.info && (
+          <div>
+            <Row
+              type="flex"
+              justify="center"
+              align="middle"
+              className={searchRow}>
+              <Col
+                span={this.state.showPathSearch ? 14 : 12}
+                className={searchCol}>
+                <SearchBar
+                  data={this.state.modules}
+                  onSelection={this.handleModuleSelection}
+                />
+                {this.state.showPathSearch && (
+                  <Icon
+                    type="arrow-right"
+                    style={{fontSize: 20, marginTop: 10}}
+                  />
+                )}
+                {this.state.showPathSearch && (
                   <SearchBar
                     data={this.state.modules}
-                    onSelection={this.handleModuleSelection}
+                    onSelection={this.handleSecondModuleSelection}
                   />
-                  {this.state.showPathSearch && (
-                    <Icon
-                      type="arrow-right"
-                      style={{fontSize: 20, marginTop: 10}}
-                    />
-                  )}
-                  {this.state.showPathSearch && (
-                    <SearchBar
-                      data={this.state.modules}
-                      onSelection={this.handleSecondModuleSelection}
-                    />
-                  )}
-                  <Button
-                    className={headerButton}
-                    type="default"
-                    size="large"
-                    onClick={this.togglePathSearch}
-                    icon={this.state.showPathSearch ? 'close' : 'share-alt'}
-                  />
-                </Col>
-              </Row>
-              <InfoDrawer data={this.state.selectedNodeData} />
-              <OptionsDrawer
-                options={this.state.graphOptions}
-                onOptionChange={this.handleOptionChange}
-                onFilterChange={this.handleFilterChange}
-                info={this.state.info}
-              />
-            </div>
-          )}
+                )}
+                <Button
+                  className={headerButton}
+                  type="default"
+                  size="large"
+                  onClick={this.togglePathSearch}
+                  icon={this.state.showPathSearch ? 'close' : 'share-alt'}
+                />
+              </Col>
+            </Row>
+            <InfoDrawer data={this.state.selectedNodeData} />
+            <OptionsDrawer
+              options={this.state.graphOptions}
+              onOptionChange={this.handleOptionChange}
+              onFilterChange={this.handleFilterChange}
+              info={this.state.info}
+            />
+          </div>
+        )}
 
         {this.state.showLoadingIndicator && (
           <Icon type="loading" className={loadingIndicator} />

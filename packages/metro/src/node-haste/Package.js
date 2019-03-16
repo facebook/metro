@@ -142,7 +142,7 @@ function getReplacements(
   mainFields: $ReadOnlyArray<string>,
 ): ?{[string]: string | false} {
   const replacements = mainFields
-    .map(name => {
+    .map((name: string) => {
       // If the field is a string, that doesn't mean we want to redirect the
       //  `main` file itself to anything else. See the spec.
       if (!pkg[name] || typeof pkg[name] === 'string') {

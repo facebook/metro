@@ -183,7 +183,7 @@ exports.toModuleTransport = (module: Module, idsForPath: IdsForPathFn) => {
   const {dependencies, file} = module;
   const {moduleCode, moduleMap} = getModuleCodeAndMap(
     module,
-    x => idsForPath(x).moduleId,
+    (x: {path: string}) => idsForPath(x).moduleId,
     {enableIDInlining: true},
   );
 

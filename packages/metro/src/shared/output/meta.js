@@ -13,20 +13,21 @@
 
 const crypto = require('crypto');
 
-const isUTF8 = encoding => /^utf-?8$/i.test(encoding);
+const isUTF8 = (encoding: 'ascii' | 'utf16le' | 'utf8') =>
+  /^utf-?8$/i.test(encoding);
 
-const constantFor = encoding =>
+const constantFor = (encoding: 'ascii' | 'utf16le' | 'utf8') =>
   /^ascii$/i.test(encoding)
     ? 1
     : isUTF8(encoding)
-      ? 2
-      : /^(?:utf-?16(?:le)?|ucs-?2)$/.test(encoding)
-        ? 3
-        : 0;
+    ? 2
+    : /^(?:utf-?16(?:le)?|ucs-?2)$/.test(encoding)
+    ? 3
+    : 0;
 
 module.exports = function(
   code: Buffer | string,
-  encoding: 'ascii' | 'utf8' | 'utf16le' = 'utf8',
+  encoding: 'ascii' | 'utf16le' | 'utf8' = 'utf8',
 ): Buffer {
   const buffer: Buffer = asBuffer(code, encoding);
   const hash = crypto.createHash('sha1');
@@ -44,7 +45,7 @@ module.exports = function(
 function tryAsciiPromotion(
   buffer: Buffer,
   encoding: 'ascii' | 'utf16le' | 'utf8',
-) {
+): 'ascii' | 'utf16le' | 'utf8' {
   if (!isUTF8(encoding)) {
     return encoding;
   }

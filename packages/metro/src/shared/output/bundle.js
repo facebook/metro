@@ -74,7 +74,7 @@ async function saveBundleAndMap(
   }
 
   // Wait until everything is written to disk.
-  await Promise.all(writeFns.map(cb => cb()));
+  await Promise.all(writeFns.map((cb: void => mixed) => cb()));
 }
 
 exports.build = buildBundle;

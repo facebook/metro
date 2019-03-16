@@ -334,7 +334,9 @@ describe('constant expressions', () => {
       'export default 1',
     ];
 
-    nonChanged.forEach(test => compare([constantFoldingPlugin], test, test));
+    nonChanged.forEach((test: string) =>
+      compare([constantFoldingPlugin], test, test),
+    );
   });
 
   it('will not throw on evaluate exception', () => {

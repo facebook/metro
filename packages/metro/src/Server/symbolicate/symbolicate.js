@@ -19,6 +19,7 @@ const {LazyPromise, LockingPromise} = require('./util');
 const {fork} = require('child_process');
 
 import type {MetroSourceMap} from 'metro-source-map';
+import type {ChildProcess} from 'child_process';
 
 export type Stack = Array<{file: string, lineNumber: number, column: number}>;
 export type Symbolicate = (
@@ -32,47 +33,53 @@ const childPath = require.resolve('./worker');
 exports.createWorker = (): Symbolicate => {
   // There are issues with named sockets on windows that cause the connection to
   // close too early so run the symbolicate server on a random localhost port.
-  const socket =
+  const socket: number =
     process.platform === 'win32' ? 34712 : xpipe.eq(temp.path(affixes));
   const child = new LockingPromise(new LazyPromise(() => startupChild(socket)));
 
-  return (stack, sourceMaps) =>
+  return (stack: Stack, sourceMaps: Iterable<[string, MetroSourceMap]>) =>
     child
       .then(() => connectAndSendJob(socket, message(stack, sourceMaps)))
       .then(JSON.parse)
-      .then(
-        response =>
-          'error' in response
-            ? Promise.reject(new Error(response.error))
-            : response.result,
+      .then(response =>
+        'error' in response
+          ? Promise.reject(new Error(response.error))
+          : response.result,
       );
 };
 
-function startupChild(socket) {
+function startupChild(socket: number): Promise<ChildProcess> {
   const child = fork(childPath);
-  return new Promise((resolve, reject) => {
-    child.once('error', reject).once('message', () => {
-      child.removeAllListeners();
-      resolve(child);
-    });
-    child.send(socket);
-  });
+  return new Promise(
+    (resolve: (result: ChildProcess) => void, reject: mixed => void): void => {
+      child.once('error', reject).once('message', () => {
+        child.removeAllListeners();
+        resolve(child);
+      });
+      child.send(socket);
+    },
+  );
 }
 
-function connectAndSendJob(socket, data) {
-  const job = new Promise((resolve, reject) => {
-    debug('Connecting to worker');
-    const connection = net.createConnection(socket);
-    connection.setEncoding('utf8');
-    connection.on('error', reject);
-    connection.pipe(concat(resolve));
-    debug('Sending data to worker');
-    connection.end(data);
-  });
+function connectAndSendJob(socket: number, data: string): Promise<string> {
+  const job = new Promise(
+    (resolve: (result: string) => void, reject: mixed => void) => {
+      debug('Connecting to worker');
+      const connection = net.createConnection(socket);
+      connection.setEncoding('utf8');
+      connection.on('error', reject);
+      connection.pipe(concat(resolve));
+      debug('Sending data to worker');
+      connection.end(data);
+    },
+  );
   job.then(() => debug('Received response from worker'));
   return job;
 }
 
-function message(stack, sourceMaps) {
+function message(
+  stack: Stack,
+  sourceMaps: Iterable<[string, MetroSourceMap]>,
+): string {
   return JSON.stringify({maps: Array.from(sourceMaps), stack});
 }

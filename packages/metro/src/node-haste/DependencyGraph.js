@@ -58,7 +58,7 @@ class DependencyGraph extends EventEmitter {
     this._config = config;
     this._assetResolutionCache = new AssetResolutionCache({
       assetExtensions: new Set(config.resolver.assetExts),
-      getDirFiles: dirPath => fs.readdirSync(dirPath),
+      getDirFiles: (dirPath: string) => fs.readdirSync(dirPath),
       platforms: new Set(config.resolver.platforms),
     });
     this._haste = haste;
@@ -145,7 +145,7 @@ class DependencyGraph extends EventEmitter {
   _createModuleResolver() {
     this._moduleResolver = new ModuleResolver({
       allowPnp: this._config.resolver.allowPnp,
-      dirExists: filePath => {
+      dirExists: (filePath: string) => {
         try {
           return fs.lstatSync(filePath).isDirectory();
         } catch (e) {}
@@ -153,13 +153,16 @@ class DependencyGraph extends EventEmitter {
       },
       doesFileExist: this._doesFileExist,
       extraNodeModules: this._config.resolver.extraNodeModules,
-      isAssetFile: filePath => this._helpers.isAssetFile(filePath),
+      isAssetFile: (filePath: string) => this._helpers.isAssetFile(filePath),
       mainFields: this._config.resolver.resolverMainFields,
       moduleCache: this._moduleCache,
       moduleMap: this._moduleMap,
       preferNativePlatform: true,
-      resolveAsset: (dirPath, assetName, platform) =>
-        this._assetResolutionCache.resolve(dirPath, assetName, platform),
+      resolveAsset: (
+        dirPath: string,
+        assetName: string,
+        platform: null | string,
+      ) => this._assetResolutionCache.resolve(dirPath, assetName, platform),
       resolveRequest: this._config.resolver.resolveRequest,
       sourceExts: this._config.resolver.sourceExts,
     });

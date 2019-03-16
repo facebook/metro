@@ -23,7 +23,7 @@ module.exports = function parseCustomTransformOptions(urlObj: {
   const customTransformOptions = Object.create(null);
   const query = nullthrows(urlObj.query);
 
-  Object.keys(query).forEach(key => {
+  Object.keys(query).forEach((key: string) => {
     if (key.startsWith(PREFIX)) {
       customTransformOptions[key.substr(PREFIX.length)] = query[key];
     }

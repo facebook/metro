@@ -21,8 +21,8 @@ function addParamsToDefineCall(
   ...paramsToAdd: Array<mixed>
 ): string {
   const index = code.lastIndexOf(')');
-  const params = paramsToAdd.map(
-    param => (param !== undefined ? JSON.stringify(param) : 'undefined'),
+  const params = paramsToAdd.map(param =>
+    param !== undefined ? JSON.stringify(param) : 'undefined',
   );
 
   return code.slice(0, index) + ',' + params.join(',') + code.slice(index);

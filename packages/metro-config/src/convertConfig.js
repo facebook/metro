@@ -132,6 +132,8 @@ async function convertOldToNew({
       port,
       enableVisualizer: false,
       enhanceMiddleware,
+      runInspectorProxy: false,
+      verifyConnections: false,
     },
     transformer: {
       assetPlugins: defaultConfig.transformer.assetPlugins,

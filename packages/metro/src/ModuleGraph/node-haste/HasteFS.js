@@ -12,6 +12,14 @@
 
 const {dirname, join, parse} = require('path');
 
+type pathParseResult = {
+  root: string,
+  dir: string,
+  base: string,
+  ext: string,
+  name: string,
+};
+
 module.exports = class HasteFS {
   directories: Set<string>;
   directoryEntries: Map<string, Array<string>>;
@@ -60,9 +68,9 @@ module.exports = class HasteFS {
   }
 };
 
-function buildDirectorySet(files) {
+function buildDirectorySet(files: Array<string>): Set<string> {
   const directories = new Set();
-  files.forEach(path => {
+  files.forEach((path: string) => {
     const parsedPath = parse(path);
     const root = parsedPath.root;
     let dir = parsedPath.dir;
@@ -74,7 +82,9 @@ function buildDirectorySet(files) {
   return directories;
 }
 
-function buildDirectoryEntries(files) {
+function buildDirectoryEntries(
+  files: Array<pathParseResult>,
+): Map<string, Array<string>> {
   const directoryEntries = new Map();
   files.forEach(({base, dir}) => {
     const entries = directoryEntries.get(dir);

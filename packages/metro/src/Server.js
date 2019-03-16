@@ -51,6 +51,11 @@ import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
 import type {RevisionId} from './IncrementalBundler';
 import type {Graph, Module} from './DeltaBundler/types.flow';
+import type {CacheStore} from 'metro-cache';
+import type {BundleVariant} from './lib/bundle-modules/types.flow';
+import type DependencyGraph from './node-haste/DependencyGraph';
+import type {MixedOutput, TransformResult} from './DeltaBundler/types.flow';
+import type {Stack} from './Server/symbolicate/symbolicate';
 
 const {
   Logger,
@@ -62,6 +67,15 @@ import type {
   ActionStartLogEntry,
   LogEntry,
 } from 'metro-core/src/Logger';
+
+export type SegmentLoadData = {[number]: [Array<number>, ?number]};
+export type BundleMetadata = {
+  hash: string,
+  otaBuildNumber: ?string,
+  mobileConfigs: Array<string>,
+  segmentHashes: Array<string>,
+  segmentLoadData: SegmentLoadData,
+};
 
 type ProcessStartContext = {|
   +mres: MultipartResponse,
@@ -78,7 +92,7 @@ type ProcessEndContext<T> = {|
   +result: T,
 |};
 
-function debounceAndBatch(fn, delay) {
+function debounceAndBatch(fn: () => void, delay: number): () => void {
   let timeout;
   return () => {
     clearTimeout(timeout);
@@ -108,7 +122,9 @@ class Server {
     this._config = config;
 
     if (this._config.resetCache) {
-      this._config.cacheStores.forEach(store => store.clear());
+      this._config.cacheStores.forEach((store: CacheStore<TransformResult<>>) =>
+        store.clear(),
+      );
       this._config.reporter.update({type: 'transform_cache_reset'});
     }
 
@@ -134,7 +150,7 @@ class Server {
     this._bundler
       .getBundler()
       .getDependencyGraph()
-      .then(dependencyGraph => {
+      .then((dependencyGraph: DependencyGraph) => {
         dependencyGraph.getWatcher().on('change', () => {
           // Make sure the file watcher event runs through the system before
           // we rebuild the bundles.
@@ -255,8 +271,8 @@ class Server {
   }
 
   async getOrderedDependencyPaths(options: {
-    +entryFile: string,
     +dev: boolean,
+    +entryFile: string,
     +minify: boolean,
     +platform: string,
   }): Promise<Array<string>> {
@@ -288,7 +304,7 @@ class Server {
       'Content-Type': 'application/json; charset=UTF-8',
     };
 
-    watchers.forEach(function(w) {
+    watchers.forEach(function(w: {req: IncomingMessage, res: ServerResponse}) {
       w.res.writeHead(205, headers);
       w.res.end(JSON.stringify({changed: true}));
     });
@@ -364,6 +380,7 @@ class Server {
         this._config.watchFolders,
         /* $FlowFixMe: query may be empty for invalid URLs */
         urlObj.query.platform,
+        this._config.resolver.assetExts,
       );
       // Tell clients to cache this for 1 year.
       // This is safe as the asset url contains a hash of the asset.
@@ -437,7 +454,7 @@ class Server {
     return async function requestProcessor(
       req: IncomingMessage,
       res: ServerResponse,
-    ) {
+    ): Promise<void> {
       const mres = MultipartResponse.wrap(req, res);
       const {revisionId, options: bundleOptions} = parseOptionsFromUrl(
         url.format({
@@ -470,7 +487,7 @@ class Server {
 
       let onProgress = null;
       if (this._config.reporter) {
-        onProgress = (transformedFileCount, totalFileCount) => {
+        onProgress = (transformedFileCount: number, totalFileCount: number) => {
           mres.writeChunk(
             {'Content-Type': 'application/json'},
             JSON.stringify({done: transformedFileCount, total: totalFileCount}),
@@ -565,7 +582,7 @@ class Server {
   }
 
   _processDeltaRequest = this._createRequestProcessor({
-    createStartEntry(context) {
+    createStartEntry(context: ProcessStartContext) {
       return {
         action_name: 'Requesting delta',
         bundle_url: context.req.url,
@@ -576,7 +593,13 @@ class Server {
         bundle_hash: context.graphId,
       };
     },
-    createEndEntry(context) {
+    createEndEntry(
+      context: ProcessEndContext<{|
+        bundle: BundleVariant,
+        nextRevId: RevisionId,
+        numModifiedFiles: number,
+      |}>,
+    ) {
       return {
         outdated_modules: context.result.numModifiedFiles,
       };
@@ -662,7 +685,7 @@ class Server {
   });
 
   _processBundleRequest = this._createRequestProcessor({
-    createStartEntry(context) {
+    createStartEntry(context: ProcessStartContext) {
       return {
         action_name: 'Requesting bundle',
         bundle_url: context.req.url,
@@ -673,7 +696,14 @@ class Server {
         bundle_hash: context.graphId,
       };
     },
-    createEndEntry(context) {
+    createEndEntry(
+      context: ProcessEndContext<{|
+        bundle: string,
+        lastModifiedDate: Date,
+        nextRevId: RevisionId,
+        numModifiedFiles: number,
+      |}>,
+    ) {
       return {
         outdated_modules: context.result.numModifiedFiles,
       };
@@ -752,12 +782,13 @@ class Server {
   // order as in a plain JS bundle.
   _getSortedModules(graph: Graph<>): $ReadOnlyArray<Module<>> {
     return [...graph.dependencies.values()].sort(
-      (a, b) => this._createModuleId(a.path) - this._createModuleId(b.path),
+      (a: Module<MixedOutput>, b: Module<MixedOutput>) =>
+        this._createModuleId(a.path) - this._createModuleId(b.path),
     );
   }
 
   _processSourceMapRequest = this._createRequestProcessor({
-    createStartEntry(context) {
+    createStartEntry(context: ProcessStartContext) {
       return {
         action_name: 'Requesting sourcemap',
         bundle_url: context.req.url,
@@ -765,7 +796,7 @@ class Server {
         bundler: 'delta',
       };
     },
-    createEndEntry(context) {
+    createEndEntry(context: ProcessEndContext<string>) {
       return {
         bundler: 'delta',
       };
@@ -803,7 +834,7 @@ class Server {
   });
 
   _processMetadataRequest = this._createRequestProcessor({
-    createStartEntry(context) {
+    createStartEntry(context: ProcessStartContext) {
       return {
         action_name: 'Requesting bundle metadata',
         bundle_url: context.req.url,
@@ -811,7 +842,7 @@ class Server {
         bundler: 'delta',
       };
     },
-    createEndEntry(context) {
+    createEndEntry(context: ProcessEndContext<BundleMetadata>) {
       return {
         bundler: 'delta',
       };
@@ -851,6 +882,7 @@ class Server {
         inlineSourceMap: serializerOptions.inlineSourceMap,
       });
 
+      // $FlowFixMe the return value of an async function is always a Promise
       return bundleToString(base).metadata;
     },
     finish({mres, result}) {
@@ -860,7 +892,7 @@ class Server {
   });
 
   _processAssetsRequest = this._createRequestProcessor({
-    createStartEntry(context) {
+    createStartEntry(context: ProcessStartContext) {
       return {
         action_name: 'Requesting assets',
         bundle_url: context.req.url,
@@ -868,7 +900,7 @@ class Server {
         bundler: 'delta',
       };
     },
-    createEndEntry(context) {
+    createEndEntry(context: ProcessEndContext<$ReadOnlyArray<AssetData>>) {
       return {
         bundler: 'delta',
       };
@@ -902,7 +934,7 @@ class Server {
     /* $FlowFixMe: where is `rowBody` defined? Is it added by
      * the `connect` framework? */
     Promise.resolve(req.rawBody)
-      .then(body => {
+      .then((body: string) => {
         const stack = JSON.parse(body).stack;
 
         // In case of multiple bundles / HMR, some stack frames can have
@@ -929,14 +961,14 @@ class Server {
         );
 
         debug('Getting source maps for symbolication');
-        return Promise.all(mapPromises).then(maps => {
+        return Promise.all(mapPromises).then((maps: Array<MetroSourceMap>) => {
           debug('Sending stacks and maps to symbolication worker');
           const urlsToMaps = zip(urls.values(), maps);
           return this._symbolicateInWorker(stack, urlsToMaps);
         });
       })
       .then(
-        stack => {
+        (stack: Stack) => {
           debug('Symbolication done');
           res.end(JSON.stringify({stack}));
           process.nextTick(() => {

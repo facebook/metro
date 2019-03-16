@@ -68,10 +68,10 @@ function hmrJSBundle(
   options: Options,
 ): {|
   +added: ModuleMap,
-  +modified: ModuleMap,
-  +deleted: $ReadOnlyArray<number>,
   +addedSourceMappingURLs: $ReadOnlyArray<string>,
   +addedSourceURLs: $ReadOnlyArray<string>,
+  +deleted: $ReadOnlyArray<number>,
+  +modified: ModuleMap,
   +modifiedSourceMappingURLs: $ReadOnlyArray<string>,
   +modifiedSourceURLs: $ReadOnlyArray<string>,
 |} {
@@ -89,7 +89,9 @@ function hmrJSBundle(
   return {
     added,
     modified,
-    deleted: [...delta.deleted].map(path => options.createModuleId(path)),
+    deleted: [...delta.deleted].map((path: string) =>
+      options.createModuleId(path),
+    ),
     addedSourceMappingURLs,
     addedSourceURLs,
     modifiedSourceMappingURLs,
@@ -111,7 +113,7 @@ function _prepareModule(
 
   // Transform the inverse dependency paths to ids.
   const inverseDependenciesById = Object.create(null);
-  Object.keys(inverseDependencies).forEach(path => {
+  Object.keys(inverseDependencies).forEach((path: string) => {
     inverseDependenciesById[options.createModuleId(path)] = inverseDependencies[
       path
     ].map(options.createModuleId);

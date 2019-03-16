@@ -10,15 +10,9 @@
 
 'use strict';
 
-/**
- * Runs new HTTP Server and attaches Inspector Proxy to it.
- */
-
-const connect = require('connect');
-const http = require('http');
 const yargs = require('yargs');
 
-const {InspectorProxy} = require('./index');
+const {runInspectorProxy} = require('./index');
 
 yargs.option('port', {
   alias: 'p',
@@ -27,11 +21,4 @@ yargs.option('port', {
   default: 8082,
 });
 
-const inspectorProxy = new InspectorProxy();
-const app = connect();
-app.use(inspectorProxy.processRequest.bind(inspectorProxy));
-
-const httpServer = http.createServer(app);
-httpServer.listen((yargs.argv.port: any), '127.0.0.1', () => {
-  inspectorProxy.addWebSocketListener(httpServer);
-});
+runInspectorProxy((yargs.argv.port: any));

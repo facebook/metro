@@ -55,6 +55,7 @@ afterAll(() => {
 
 const TESTFILE_MAP = resolve('testfile.js.map');
 const WITH_FUNCTION_MAP_MAP = resolve('with-function-map.js.map');
+const TESTFILE_RAM_MAP = resolve('testfile.ram.js.map');
 
 test('symbolicating a stack trace', async () =>
   await expect(
@@ -101,4 +102,17 @@ test('symbolicating with a cpuprofile', async () => {
 test('symbolicating a stack trace with a function map', async () =>
   await expect(
     execute([WITH_FUNCTION_MAP_MAP], read('with-function-map.stack')),
+  ).resolves.toMatchSnapshot());
+
+test('symbolicating a stack trace with a segmented RAM bundle map', async () =>
+  await expect(
+    execute([TESTFILE_RAM_MAP], read('testfile.ram.stack')),
+  ).resolves.toMatchSnapshot());
+
+test('symbolicating a stack trace ignoring a function map', async () =>
+  await expect(
+    execute(
+      ['--no-function-names', WITH_FUNCTION_MAP_MAP],
+      read('with-function-map.stack'),
+    ),
   ).resolves.toMatchSnapshot());

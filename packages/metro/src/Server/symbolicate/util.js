@@ -31,7 +31,8 @@ exports.LazyPromise = class LazyPromise<T> {
       configurable: true,
       enumerable: true,
       get: () => (this._promise = factory()),
-      set: value => Object.defineProperty(this, '_promise', {value}),
+      set: (value: PromiseLike<T>) =>
+        Object.defineProperty(this, '_promise', {value}),
     });
   }
 
@@ -42,7 +43,7 @@ exports.LazyPromise = class LazyPromise<T> {
     return this._promise.then(fulfilled, rejected);
   }
 
-  catch<U>(rejected?: (error: any) => ?Promise<U> | U): Promise<U> {
+  catch<U>(rejected?: (error: any) => ?(Promise<U> | U)): Promise<U> {
     return this._promise.catch(rejected);
   }
 };
@@ -73,9 +74,9 @@ exports.LockingPromise = class LockingPromise<T> {
     return this._gate.then(whenUnlocked, whenUnlocked);
   }
 
-  catch<U>(rejected?: (error: any) => ?Promise<U> | U): Promise<U> {
+  catch<U>(rejected?: (error: any) => ?(Promise<U> | U)): Promise<U> {
     return this._promise.catch(rejected);
   }
 };
 
-function empty() {}
+function empty(): void {}

@@ -40,10 +40,10 @@ describe('debounceAsyncQueue', () => {
   });
 
   it('queues calls that happen while the previous call is still executing', async () => {
-    let finishExecuting = result => {};
+    let finishExecuting = (result: string) => {};
     const fn = jest.fn(
       () =>
-        new Promise(resolve => {
+        new Promise((resolve: (result?: Promise<string>) => void) => {
           finishExecuting = resolve;
         }),
     );

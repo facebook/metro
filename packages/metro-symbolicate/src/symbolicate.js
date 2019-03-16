@@ -27,17 +27,36 @@ const fs = require('fs');
 const through2 = require('through2');
 
 const argv = process.argv.slice(2);
+
+function checkAndRemoveArg(arg) {
+  let value = false;
+  for (let idx = argv.indexOf(arg); idx !== -1; idx = argv.indexOf(arg)) {
+    argv.splice(idx, 1);
+    value = true;
+  }
+  return value;
+}
+
+const noFunctionNames = checkAndRemoveArg('--no-function-names');
+
 if (argv.length < 1 || argv.length > 4) {
   /* eslint no-path-concat: "off" */
 
   const usages = [
-    'Usage: ' + __filename + ' <source-map-file>',
-    '       ' + __filename + ' <source-map-file> <line> [column]',
-    '       ' + __filename + ' <source-map-file> <moduleId>.js <line> [column]',
-    '       ' + __filename + ' <source-map-file> <mapfile>.profmap',
+    'Usage: ' + __filename + ' <source-map-file> [--no-function-names]',
     '       ' +
       __filename +
-      ' <source-map-file> --attribution < attribution.jsonl  > symbolicated.jsonl',
+      ' <source-map-file> <line> [column] [--no-function-names]',
+    '       ' +
+      __filename +
+      ' <source-map-file> <moduleId>.js <line> [column] [--no-function-names]',
+    '       ' +
+      __filename +
+      ' <source-map-file> <mapfile>.profmap [--no-function-names]',
+    '       ' +
+      __filename +
+      ' <source-map-file> --attribution [--no-function-names] < attribution.jsonl ' +
+      ' > symbolicated.jsonl',
     '       ' + __filename + ' <source-map-file> <tracefile>.cpuprofile',
   ];
   console.error(usages.join('\n'));
@@ -47,7 +66,9 @@ if (argv.length < 1 || argv.length > 4) {
 // Read the source map.
 const sourceMapFileName = argv.shift();
 const content = fs.readFileSync(sourceMapFileName, 'utf8');
-const context = Symbolication.createContext(SourceMapConsumer, content);
+const context = Symbolication.createContext(SourceMapConsumer, content, {
+  nameSource: noFunctionNames ? 'identifier_names' : 'function_names',
+});
 
 if (argv.length === 0) {
   const read = stream => {

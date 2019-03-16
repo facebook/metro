@@ -23,6 +23,7 @@ import type {
   Module,
   SerializerOptions,
 } from '../types.flow';
+import type {MixedOutput} from '../types.flow';
 
 function deltaJSBundle(
   entryPoint: string,
@@ -47,7 +48,8 @@ function deltaJSBundle(
 
   if (delta.reset) {
     const modules = [...graph.dependencies.values()].sort(
-      (a, b) => options.createModuleId(a.path) - options.createModuleId(b.path),
+      (a: Module<MixedOutput>, b: Module<MixedOutput>) =>
+        options.createModuleId(a.path) - options.createModuleId(b.path),
     );
     const appendScripts = getAppendScripts(
       entryPoint,
@@ -61,12 +63,12 @@ function deltaJSBundle(
       pre: pre
         .filter(isJsModule)
         .filter(processModuleFilter)
-        .map(module => getJsOutput(module).data.code)
+        .map((module: Module<>) => getJsOutput(module).data.code)
         .join('\n'),
       post: appendScripts
         .filter(isJsModule)
         .filter(processModuleFilter)
-        .map(module => getJsOutput(module).data.code)
+        .map((module: Module<>) => getJsOutput(module).data.code)
         .join('\n'),
       modules: [...added],
     };
@@ -77,7 +79,9 @@ function deltaJSBundle(
     processOpts,
   ).map(([module, code]) => [options.createModuleId(module.path), code]);
 
-  const deleted = [...delta.deleted].map(path => options.createModuleId(path));
+  const deleted = [...delta.deleted].map((path: string) =>
+    options.createModuleId(path),
+  );
 
   return {
     base: false,

@@ -35,10 +35,7 @@ function getBoolOptionFromQuery(
 function parseOptionsFromUrl(
   reqUrl: string,
   platforms: Set<string>,
-): {|
-  revisionId: ?RevisionId,
-  options: BundleOptions,
-|} {
+): {|options: BundleOptions, revisionId: ?RevisionId|} {
   // `true` to parse the query param as an object.
   const urlObj = nullthrows(url.parse(reqUrl, true));
   const urlQuery = nullthrows(urlObj.query);
@@ -53,7 +50,7 @@ function parseOptionsFromUrl(
   const entryFileRelativeToProjectRoot = pathname
     .replace(/^(?:\.?\/)?/, './') // We want to produce a relative path to project root
     .split('.')
-    .filter((part, i) => {
+    .filter((part: string, i: number) => {
       if (part === 'delta' || part === 'map' || part === 'meta') {
         bundleType = part;
         return false;

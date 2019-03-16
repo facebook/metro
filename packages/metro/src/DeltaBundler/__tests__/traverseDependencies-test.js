@@ -29,29 +29,34 @@ let moduleBar;
 let moduleBaz;
 
 const Actions = {
-  modifyFile(path) {
+  modifyFile(path: string) {
     if (mockedDependencies.has(path)) {
       files.add(path);
     }
   },
 
-  moveFile(from, to) {
+  moveFile(from: string, to: string) {
     Actions.createFile(to);
     Actions.deleteFile(from);
   },
 
-  deleteFile(path) {
+  deleteFile(path: string) {
     mockedDependencies.delete(path);
   },
 
-  createFile(path) {
+  createFile(path: string) {
     mockedDependencies.add(path);
     mockedDependencyTree.set(path, []);
 
     return path;
   },
 
-  addDependency(path, dependencyPath, position, name = null) {
+  addDependency(
+    path: string,
+    dependencyPath: string,
+    position?: number,
+    name = null,
+  ) {
     const deps = mockedDependencyTree.get(path);
     name = name || dependencyPath.replace('/', '');
 
@@ -67,7 +72,7 @@ const Actions = {
     files.add(path);
   },
 
-  removeDependency(path, dependencyPath) {
+  removeDependency(path: string, dependencyPath: string) {
     const deps = mockedDependencyTree.get(path);
 
     const index = deps.findIndex(({path}) => path === dependencyPath);
@@ -103,13 +108,13 @@ beforeEach(async () => {
   mockedDependencyTree = new Map();
 
   dependencyGraph = {
-    getAbsolutePath(path) {
+    getAbsolutePath(path: string) {
       return '/' + path;
     },
-    getModuleForPath(path) {
+    getModuleForPath(path: string) {
       return Array.from(mockedDependencies).find(dep => dep.path === path);
     },
-    resolveDependency(module, relativePath) {
+    resolveDependency(module, relativePath: string) {
       const deps = mockedDependencyTree.get(module.path);
       const {dependency} = deps.filter(dep => dep.name === relativePath)[0];
 
@@ -560,7 +565,7 @@ describe('edge cases', () => {
   it('should traverse the dependency tree in a deterministic order', async () => {
     // Mocks the shallow dependency call, always resolving the module in
     // `slowPath` after the module in `fastPath`.
-    function mockShallowDependencies(slowPath, fastPath) {
+    function mockShallowDependencies(slowPath: string, fastPath: string) {
       let deferredSlow;
       let fastResolved = false;
 

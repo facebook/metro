@@ -16,7 +16,7 @@ const fs = require('fs');
  * Simple hasteImpl that parses @providesModule annotation from JS modules.
  */
 module.exports = {
-  getHasteName(filename) {
+  getHasteName(filename: string) {
     const matches = fs
       .readFileSync(filename, 'utf8')
       .match(/@providesModule ([^\n]+)/);

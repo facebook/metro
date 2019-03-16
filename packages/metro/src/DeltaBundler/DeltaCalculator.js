@@ -113,8 +113,8 @@ class DeltaCalculator<T> extends EventEmitter {
       // processed (since we haven't actually created any delta). If we do not
       // do so, asking for a delta after an error will produce an empty Delta,
       // which is not correct.
-      modifiedFiles.forEach(file => this._modifiedFiles.add(file));
-      deletedFiles.forEach(file => this._deletedFiles.add(file));
+      modifiedFiles.forEach((file: string) => this._modifiedFiles.add(file));
+      deletedFiles.forEach((file: string) => this._deletedFiles.add(file));
 
       // If after an error the number of modules has changed, we could be in
       // a weird state. As a safe net we clean the dependency modules to force
@@ -201,11 +201,11 @@ class DeltaCalculator<T> extends EventEmitter {
 
     // If a file has been deleted, we want to invalidate any other file that
     // depends on it, so we can process it and correctly return an error.
-    deletedFiles.forEach(filePath => {
+    deletedFiles.forEach((filePath: string) => {
       const module = this._graph.dependencies.get(filePath);
 
       if (module) {
-        module.inverseDependencies.forEach(path => {
+        module.inverseDependencies.forEach((path: string) => {
           // Only mark the inverse dependency as modified if it's not already
           // marked as deleted (in that case we can just ignore it).
           if (!deletedFiles.has(path)) {
@@ -216,8 +216,8 @@ class DeltaCalculator<T> extends EventEmitter {
     });
 
     // We only want to process files that are in the bundle.
-    const modifiedDependencies = Array.from(modifiedFiles).filter(filePath =>
-      this._graph.dependencies.has(filePath),
+    const modifiedDependencies = Array.from(modifiedFiles).filter(
+      (filePath: string) => this._graph.dependencies.has(filePath),
     );
 
     // No changes happened. Return empty delta.

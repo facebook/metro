@@ -62,7 +62,7 @@ function optimizeDependencies(
   return context.dependencies;
 }
 
-function isRequireCall(callee, requireNames) {
+function isRequireCall(callee, requireNames: Set<string>): boolean {
   return callee.type === 'Identifier' && requireNames.has(callee.name);
 }
 
@@ -108,7 +108,7 @@ function translateDependencyIndex(
   if (dep == null) {
     throw new Error(
       `${index} is not a known module index. Existing mappings: ${deps
-        .map((n, i) => `${i} => ${n.name}`)
+        .map((n: TransformResultDependency, i: number) => `${i} => ${n.name}`)
         .join(', ')}`,
     );
   }
@@ -118,7 +118,7 @@ function translateDependencyIndex(
 }
 
 class InvalidRequireCallError extends Error {
-  constructor(message) {
+  constructor(message: string) {
     super(message);
   }
 }

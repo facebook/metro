@@ -143,7 +143,7 @@ class Transformer {
   }
 }
 
-function verifyRootExists(root: string) {
+function verifyRootExists(root: string): void {
   // Verify that the root exists.
   assert(fs.statSync(root).isDirectory(), 'Root has to be a valid directory');
 }

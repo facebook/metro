@@ -21,8 +21,8 @@ const writeSourceMap = require('./write-sourcemap');
 const {joinModules} = require('./util');
 
 import type {RamBundleInfo} from '../../../DeltaBundler/Serializers/getRamBundleInfo';
+import type {ModuleTransportLike} from '../../../shared/types.flow';
 import type {OutputOptions} from '../../types.flow';
-
 // must not start with a dot, as that won't go into the apk
 const MAGIC_RAM_BUNDLE_FILENAME = 'UNBUNDLE';
 const MODULES_DIR = 'js-modules';
@@ -86,25 +86,34 @@ function saveAsAssets(
   }
 }
 
-function createDir(dirName) {
-  return new Promise((resolve, reject) =>
+function createDir(dirName: string): Promise<empty> {
+  return new Promise((resolve: void => void, reject: mixed => mixed) =>
     mkdirp(dirName, error => (error ? reject(error) : resolve())),
   );
 }
 
-function writeModuleFile(module, modulesDir, encoding) {
+function writeModuleFile(
+  module: ModuleTransportLike,
+  modulesDir: string,
+  encoding: void | 'ascii' | 'utf16le' | 'utf8',
+): Promise<mixed> {
   const {code, id} = module;
   return writeFile(path.join(modulesDir, id + '.js'), code, encoding);
 }
 
-function writeModules(modules, modulesDir, encoding) {
-  const writeFiles = modules.map(module =>
-    writeModuleFile(module, modulesDir, encoding),
+function writeModules(
+  modules: $ReadOnlyArray<ModuleTransportLike>,
+  modulesDir: string,
+  encoding: void | 'ascii' | 'utf16le' | 'utf8',
+): Promise<Array<mixed>> {
+  const writeFiles = modules.map(
+    (module: ModuleTransportLike): Promise<mixed> =>
+      writeModuleFile(module, modulesDir, encoding),
   );
   return Promise.all(writeFiles);
 }
 
-function writeMagicFlagFile(outputDir) {
+function writeMagicFlagFile(outputDir: string): Promise<mixed> {
   const buffer = Buffer.alloc(4);
   buffer.writeUInt32LE(MAGIC_RAM_BUNDLE_NUMBER, 0);
   return writeFile(path.join(outputDir, MAGIC_RAM_BUNDLE_FILENAME), buffer);

@@ -98,7 +98,7 @@ function buildParameters(
   ];
 }
 
-function renameRequires(ast: Object) {
+function renameRequires(ast: Object): string {
   let newRequireName = WRAP_NAME;
 
   traverse(ast, {

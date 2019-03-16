@@ -82,7 +82,7 @@ describe('wrapModule()', () => {
     // Just use a createModuleId that returns the same path.
     expect(
       wrapModule(myModule, {
-        createModuleId: path => path,
+        createModuleId: (path: string) => path,
         dev: false,
         projectRoot: '/root',
       }),

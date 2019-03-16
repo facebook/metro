@@ -108,10 +108,10 @@ exports.build = async function(
 exports.getOrderedDependencyPaths = async function(
   options: ConfigT,
   depOptions: {
-    +entryFile: string,
     +dev: boolean,
-    +platform: string,
+    +entryFile: string,
     +minify: boolean,
+    +platform: string,
   },
 ): Promise<Array<string>> {
   var server = createNonPersistentServer(options);

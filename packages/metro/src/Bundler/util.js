@@ -14,7 +14,7 @@ const template = require('@babel/template').default;
 const babelTypes = require('@babel/types');
 const babylon = require('@babel/parser');
 
-import type {AssetDataWithoutFiles} from '../Assets';
+import type {AssetDataFiltered, AssetDataWithoutFiles} from '../Assets';
 import type {ModuleTransportLike} from '../shared/types.flow';
 import type {Ast} from '@babel/core';
 
@@ -128,8 +128,8 @@ function generateRemoteAssetCodeFileAst(
         SCALE_ARRAY: t.arrayExpression(
           Object.keys(descriptor)
             .map(Number)
-            .sort((a, b) => a - b)
-            .map(scale => t.numericLiteral(scale)),
+            .sort((a: number, b: number) => a - b)
+            .map((scale: number) => t.numericLiteral(scale)),
         ),
       }),
     ]),
@@ -146,7 +146,10 @@ function isAssetTypeAnImage(type: string): boolean {
   );
 }
 
-function filterObject(object: AssetDataWithoutFiles, blacklist: Set<string>) {
+function filterObject(
+  object: AssetDataWithoutFiles,
+  blacklist: Set<string>,
+): AssetDataFiltered {
   const copied = Object.assign({}, object);
   for (const key of blacklist) {
     delete copied[key];
@@ -161,16 +164,16 @@ function createRamBundleGroups<T: ModuleTransportLike>(
 ): Map<number, Set<number>> {
   // build two maps that allow to lookup module data
   // by path or (numeric) module id;
-  const byPath = new Map();
-  const byId = new Map();
-  groupableModules.forEach(m => {
+  const byPath: Map<string, T> = new Map();
+  const byId: Map<number, string> = new Map();
+  groupableModules.forEach((m: T) => {
     byPath.set(m.sourcePath, m);
     byId.set(m.id, m.sourcePath);
   });
 
   // build a map of group root IDs to an array of module IDs in the group
   const result: Map<number, Set<number>> = new Map(
-    ramGroups.map(modulePath => {
+    ramGroups.map((modulePath: string) => {
       const root = byPath.get(modulePath);
       if (root == null) {
         throw Error(`Group root ${modulePath} is not part of the bundle`);
@@ -209,10 +212,10 @@ function createRamBundleGroups<T: ModuleTransportLike>(
   return result;
 }
 
-function* filter(
-  iterator: ArrayMap<number, number>,
-  predicate: ([number, Array<number>]) => boolean,
-) {
+function* filter<A: number, B: number>(
+  iterator: ArrayMap<A, B>,
+  predicate: ([A, Array<B>]) => boolean,
+): Generator<[A, Array<B>], void, void> {
   for (const value of iterator) {
     if (predicate(value)) {
       yield value;

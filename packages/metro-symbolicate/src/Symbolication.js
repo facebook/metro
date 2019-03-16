@@ -81,7 +81,16 @@ function getOriginalPositionFor(lineNumber, columnNumber, moduleIds, context) {
   return original;
 }
 
-function createContext(SourceMapConsumer, sourceMapContent) {
+function createContext(
+  SourceMapConsumer,
+  sourceMapContent,
+  options /*: {nameSource?: 'function_names' | 'identifier_names'} */ = {},
+) {
+  const useFunctionNames =
+    !options ||
+    !('nameSource' in options) ||
+    !options.nameSource ||
+    options.nameSource === 'function_names';
   var sourceMapJson = JSON.parse(sourceMapContent.replace(/^\)\]\}'/, ''));
   return {
     segments: Object.entries(sourceMapJson.x_facebook_segments || {}).reduce(
@@ -89,7 +98,9 @@ function createContext(SourceMapConsumer, sourceMapContent) {
         acc[key] = {
           consumer: new SourceMapConsumer(map),
           moduleOffsets: map.x_facebook_offsets || {},
-          sourceFunctionsConsumer: new SourceMetadataMapConsumer(map),
+          sourceFunctionsConsumer: useFunctionNames
+            ? new SourceMetadataMapConsumer(map)
+            : null,
         };
         return acc;
       },
@@ -97,7 +108,9 @@ function createContext(SourceMapConsumer, sourceMapContent) {
         '0': {
           consumer: new SourceMapConsumer(sourceMapJson),
           moduleOffsets: sourceMapJson.x_facebook_offsets || {},
-          sourceFunctionsConsumer: new SourceMetadataMapConsumer(sourceMapJson),
+          sourceFunctionsConsumer: useFunctionNames
+            ? new SourceMetadataMapConsumer(sourceMapJson)
+            : null,
         },
       },
     ),
@@ -110,12 +123,18 @@ function createContext(SourceMapConsumer, sourceMapContent) {
 //  IOS: foo@4:18131, Android: bar:4:18063
 // sample stack trace with module id:
 //  IOS: foo@123.js:4:18131, Android: bar:123.js:4:18063
+// sample stack trace without function name:
+//  123.js:4:18131
 // sample result:
 //  IOS: foo.js:57:foo, Android: bar.js:75:bar
 function symbolicate(stackTrace, context) {
   return stackTrace.replace(
     /(?:([^@: \n]+)(@|:))?(?:(?:([^@: \n]+):)?(\d+):(\d+)|\[native code\])/g,
     function(match, func, delimiter, fileName, line, column) {
+      if (delimiter === ':' && func && !fileName) {
+        fileName = func;
+        func = null;
+      }
       var original = getOriginalPositionFor(
         line,
         column,

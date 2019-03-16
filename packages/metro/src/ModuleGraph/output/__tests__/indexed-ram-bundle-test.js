@@ -17,6 +17,8 @@ const indexedRamBundle = require('../indexed-ram-bundle');
 
 const {getModuleCodeAndMap} = require('../util');
 
+import type {IndexMapSection} from 'metro-source-map';
+
 declare var describe: any;
 declare var expect: any;
 declare var it: (string, () => ?Promise<any>) => void;
@@ -41,7 +43,7 @@ beforeAll(() => {
   ];
   requireCall = makeModule('r', [], 'script', 'require(1);');
 
-  ids = new Map(modules.map(({file}, i) => [file.path, i]));
+  ids = new Map(modules.map(({file}, i: number) => [file.path, i]));
   ({code, map} = createRamBundle());
 });
 
@@ -68,7 +70,7 @@ it('contains the code after the offset table', () => {
   );
   expect(startupSection.toString()).toBe(requireCall.file.code);
 
-  table.forEach(([offset, length], i) => {
+  table.forEach(([offset, length], i: number) => {
     const moduleCode = code.slice(
       codeOffset + offset,
       codeOffset + offset + length - 1,
@@ -119,7 +121,7 @@ describe('Startup section optimization', () => {
       expect(table[idx]).toEqual(m === last ? undefined : [0, 0]);
     });
 
-    table.forEach(([offset, length], i) => {
+    table.forEach(([offset, length], i: number) => {
       if (offset !== 0 && length !== 0) {
         const moduleCode = code.slice(
           codeOffset + offset,
@@ -132,7 +134,7 @@ describe('Startup section optimization', () => {
 
   it('reflects additional sources in the startup section in the source map', () => {
     let line = preloaded.reduce(
-      (l, m) => l + countLines(m),
+      (l: number, m) => l + countLines(m),
       countLines(requireCall),
     );
 
@@ -182,8 +184,8 @@ describe('RAM groups / common sections', () => {
     const toplevelOffsets = [2, 5];
 
     maps
-      .map((groupMap, i) => [groups[i], groupMap])
-      .forEach(([group, groupMap], i) => {
+      .map((groupMap: IndexMapSection, i: number) => [groups[i], groupMap])
+      .forEach(([group, groupMap], i: number) => {
         const offsets = group.reduce(moduleLineOffsets, [])[0];
         expect(groupMap).toEqual({
           map: {
@@ -221,7 +223,7 @@ function createRamBundle(preloadedModules = new Set(), ramGroups) {
 }
 
 function makeModule(
-  name,
+  name: string,
   deps = [],
   type = 'module',
   moduleCode = `var ${name};`,
@@ -240,7 +242,7 @@ function makeModule(
   };
 }
 
-function makeModuleMap(name, path) {
+function makeModuleMap(name: string, path: string) {
   return {
     version: 3,
     mappings: '',
@@ -250,7 +252,7 @@ function makeModuleMap(name, path) {
   };
 }
 
-function makeModuleCode(moduleCode) {
+function makeModuleCode(moduleCode: string) {
   return `__d(() => {${moduleCode}})`;
 }
 
@@ -291,7 +293,7 @@ function getPath(module) {
 }
 
 const SIZEOF_INT32 = 4;
-function parseOffsetTable(buffer) {
+function parseOffsetTable(buffer: Buffer) {
   const n = buffer.readUInt32LE(SIZEOF_INT32);
   const startupSectionLength = buffer.readUInt32LE(SIZEOF_INT32 * 2);
   const baseOffset = SIZEOF_INT32 * 3;

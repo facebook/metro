@@ -66,7 +66,7 @@ function inlinePlugin(context: Context, options: Options) {
     isGlobalOrFlowDeclared(scope.getBinding(dev.name)) &&
     !t.isMemberExpression(parent);
 
-  function findProperty(objectExpression, key, fallback) {
+  function findProperty(objectExpression, key: string, fallback) {
     const property = objectExpression.properties.find(p => {
       if (t.isIdentifier(p.key) && p.key.name === key) {
         return true;
@@ -81,7 +81,7 @@ function inlinePlugin(context: Context, options: Options) {
     return property ? property.value : fallback();
   }
 
-  function hasStaticProperties(objectExpression) {
+  function hasStaticProperties(objectExpression): boolean {
     if (!t.isObjectExpression(objectExpression)) {
       return false;
     }

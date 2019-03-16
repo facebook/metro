@@ -19,7 +19,10 @@ const path = require('path');
 const {createRamBundleGroups} = require('../../Bundler/util');
 const {isJsModule, wrapModule} = require('./helpers/js');
 
-import type {ModuleTransportLike} from '../../shared/types.flow';
+import type {
+  ModuleTransportLike,
+  RamModuleTransport,
+} from '../../shared/types.flow';
 import type {Graph, Module, SerializerOptions} from '../types.flow';
 import type {GetTransformOptions} from 'metro-config/src/configTypes.flow.js';
 
@@ -43,27 +46,32 @@ async function getRamBundleInfo(
   graph: Graph<>,
   options: Options,
 ): Promise<RamBundleInfo> {
-  let modules = [...pre, ...graph.dependencies.values()];
+  let modules: $ReadOnlyArray<Module<>> = [
+    ...pre,
+    ...graph.dependencies.values(),
+  ];
   modules = modules.concat(getAppendScripts(entryPoint, modules, options));
 
-  modules.forEach(module => options.createModuleId(module.path));
+  modules.forEach((module: Module<>) => options.createModuleId(module.path));
 
-  const ramModules = modules
+  const ramModules: Array<RamModuleTransport> = modules
     .filter(isJsModule)
     .filter(options.processModuleFilter)
-    .map(module => ({
-      id: options.createModuleId(module.path),
-      code: wrapModule(module, options),
-      map: fullSourceMapObject([module], {
-        excludeSource: options.excludeSource,
-        processModuleFilter: options.processModuleFilter,
+    .map(
+      (module: Module<>): RamModuleTransport => ({
+        id: options.createModuleId(module.path),
+        code: wrapModule(module, options),
+        map: fullSourceMapObject([module], {
+          excludeSource: options.excludeSource,
+          processModuleFilter: options.processModuleFilter,
+        }),
+        name: path.basename(module.path),
+        sourcePath: module.path,
+        source: module.getSource().toString(),
+        type: nullthrows(module.output.find(({type}) => type.startsWith('js')))
+          .type,
       }),
-      name: path.basename(module.path),
-      sourcePath: module.path,
-      source: module.getSource().toString(),
-      type: nullthrows(module.output.find(({type}) => type.startsWith('js')))
-        .type,
-    }));
+    );
 
   const {preloadedModules, ramGroups} = await _getRamOptions(
     entryPoint,
@@ -71,14 +79,14 @@ async function getRamBundleInfo(
       dev: options.dev,
       platform: options.platform,
     },
-    filePath => getTransitiveDependencies(filePath, graph),
+    (filePath: string) => getTransitiveDependencies(filePath, graph),
     options.getTransformOptions,
   );
 
   const startupModules = [];
   const lazyModules = [];
 
-  ramModules.forEach(module => {
+  ramModules.forEach((module: RamModuleTransport) => {
     if (preloadedModules.hasOwnProperty(module.sourcePath)) {
       startupModules.push(module);
       return;
@@ -100,7 +108,7 @@ async function getRamBundleInfo(
     (
       module: ModuleTransportLike,
       dependenciesByPath: Map<string, ModuleTransportLike>,
-    ) => {
+    ): Set<number> => {
       const deps = getTransitiveDependencies(module.sourcePath, graph);
       const output = new Set();
 
@@ -133,10 +141,7 @@ async function _getRamOptions(
   options: {dev: boolean, platform: ?string},
   getDependencies: string => Iterable<string>,
   getTransformOptions: ?GetTransformOptions,
-): Promise<{|
-  +preloadedModules: {[string]: true},
-  +ramGroups: Array<string>,
-|}> {
+): Promise<{|+preloadedModules: {[string]: true}, +ramGroups: Array<string>|}> {
   if (getTransformOptions == null) {
     return {
       preloadedModules: {},
@@ -147,7 +152,7 @@ async function _getRamOptions(
   const {preloadedModules, ramGroups} = await getTransformOptions(
     [entryFile],
     {dev: options.dev, hot: true, platform: options.platform},
-    async x => Array.from(getDependencies),
+    async (x: string) => Array.from(getDependencies),
   );
 
   return {

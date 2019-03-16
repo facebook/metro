@@ -24,6 +24,7 @@ import type {
   ModuleTransportLike,
   OutputOptions,
 } from '../../types.flow';
+import type {WriteStream} from 'fs';
 
 const SIZEOF_UINT32 = 4;
 
@@ -88,9 +89,12 @@ const fileHeader = Buffer.alloc(4);
 fileHeader.writeUInt32LE(MAGIC_UNBUNDLE_FILE_HEADER, 0);
 const nullByteBuffer: Buffer = Buffer.alloc(1).fill(0);
 
-function writeBuffers(stream, buffers: Array<Buffer>) {
-  buffers.forEach(buffer => stream.write(buffer));
-  return new Promise((resolve, reject) => {
+function writeBuffers(
+  stream: WriteStream,
+  buffers: Array<Buffer>,
+): Promise<void> {
+  buffers.forEach((buffer: Buffer) => stream.write(buffer));
+  return new Promise((resolve: () => void, reject: mixed => mixed) => {
     stream.on('error', reject);
     stream.on('finish', () => resolve());
     stream.end();
@@ -100,7 +104,7 @@ function writeBuffers(stream, buffers: Array<Buffer>) {
 function nullTerminatedBuffer(
   contents: string,
   encoding: void | 'ascii' | 'utf16le' | 'utf8',
-) {
+): Buffer {
   return Buffer.concat([Buffer.from(contents, encoding), nullByteBuffer]);
 }
 
@@ -108,14 +112,14 @@ function moduleToBuffer(
   id: number,
   code: string,
   encoding: void | 'ascii' | 'utf16le' | 'utf8',
-) {
+): {|buffer: Buffer, id: number|} {
   return {
     id,
     buffer: nullTerminatedBuffer(code, encoding),
   };
 }
 
-function entryOffset(n: number) {
+function entryOffset(n: number): number {
   // 2: num_entries + startup_code_len
   // n * 2: each entry consists of two uint32s
   return (2 + n * 2) * SIZEOF_UINT32;
@@ -125,7 +129,7 @@ function buildModuleTable(
   startupCode: Buffer,
   moduleBuffers: Array<{buffer: Buffer, id: number}>,
   moduleGroups: ModuleGroups,
-) {
+): Buffer {
   // table format:
   // - num_entries:      uint_32  number of entries
   // - startup_code_len: uint_32  length of the startup section
@@ -136,7 +140,9 @@ function buildModuleTable(
   //  - module_length:   uint_32  length of the module code in bytes
 
   const moduleIds = [...moduleGroups.modulesById.keys()];
-  const maxId = moduleIds.reduce((max, id) => Math.max(max, id));
+  const maxId = moduleIds.reduce((max: number, id: number) =>
+    Math.max(max, id),
+  );
   const numEntries = maxId + 1;
   const table: Buffer = Buffer.alloc(entryOffset(numEntries)).fill(0);
 
@@ -150,9 +156,11 @@ function buildModuleTable(
   let codeOffset = startupCode.length;
   moduleBuffers.forEach(({id, buffer}) => {
     const group = moduleGroups.groups.get(id);
-    const idsInGroup = group ? [id].concat(Array.from(group)) : [id];
+    const idsInGroup: Array<number> = group
+      ? [id].concat(Array.from(group))
+      : [id];
 
-    idsInGroup.forEach(moduleId => {
+    idsInGroup.forEach((moduleId: number) => {
       const offset = entryOffset(moduleId);
       // module_offset
       table.writeUInt32LE(codeOffset, offset);
@@ -169,7 +177,7 @@ function groupCode(
   rootCode: string,
   moduleGroup: void | Set<number>,
   modulesById: Map<number, ModuleTransportLike>,
-) {
+): string {
   if (!moduleGroup || !moduleGroup.size) {
     return rootCode;
   }
@@ -187,7 +195,7 @@ function buildModuleBuffers(
   encoding: void | 'ascii' | 'utf16le' | 'utf8',
 ): Array<{buffer: Buffer, id: number}> {
   return modules
-    .filter(m => !moduleGroups.modulesInGroups.has(m.id))
+    .filter((m: ModuleTransportLike) => !moduleGroups.modulesInGroups.has(m.id))
     .map(({id, code}) =>
       moduleToBuffer(
         id,
@@ -228,12 +236,14 @@ function createModuleGroups(
 ): ModuleGroups {
   return {
     groups,
-    modulesById: new Map(modules.map(m => [m.id, m])),
+    modulesById: new Map(modules.map((m: ModuleTransportLike) => [m.id, m])),
     modulesInGroups: new Set(concat(groups.values())),
   };
 }
 
-function* concat(iterators: Iterator<Set<number>>) {
+function* concat(
+  iterators: Iterator<Set<number>>,
+): Generator<number, void, void> {
   for (const it of iterators) {
     yield* it;
   }

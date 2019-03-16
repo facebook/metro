@@ -570,6 +570,23 @@ class MemoryFs {
     dirNode.entries.set(basename, this._makeDir(mode));
   };
 
+  rmdirSync = (dirPath: string | Buffer): void => {
+    dirPath = pathStr(dirPath);
+    const {dirNode, node, basename} = this._resolve(dirPath);
+    if (node == null) {
+      throw makeError('ENOENT', dirPath, 'directory does not exist');
+    } else if (node.type === 'file') {
+      if (this._platform === 'posix') {
+        throw makeError('ENOTDIR', dirPath, 'cannot rm a file');
+      } else {
+        throw makeError('ENOENT', dirPath, 'cannot rm a file');
+      }
+    } else if (node.type === 'directory' && node.entries.size) {
+      throw makeError('ENOTEMPTY', dirPath, 'directory not empty');
+    }
+    dirNode.entries.delete(basename);
+  };
+
   symlinkSync = (
     target: string | Buffer,
     filePath: FilePath,
@@ -1092,8 +1109,8 @@ class Stats {
       node.type === 'file'
         ? node.content.length
         : node.type === 'symbolicLink'
-          ? node.target.length
-          : 0;
+        ? node.target.length
+        : 0;
     this.blocks = Math.ceil(this.size / 512);
     this.atimeMs = 1;
     this.mtimeMs = 1;

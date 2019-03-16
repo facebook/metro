@@ -23,6 +23,8 @@ const {isAssetTypeAnImage} = require('./Bundler/util');
 const readDir = denodeify(fs.readdir);
 const readFile = denodeify(fs.readFile);
 
+import type {AssetPath} from './node-haste/lib/AssetPaths';
+
 export type AssetInfo = {|
   +files: Array<string>,
   +hash: string,
@@ -42,6 +44,16 @@ export type AssetDataWithoutFiles = {
   +type: string,
   +width: ?number,
 };
+export type AssetDataFiltered = {
+  +__packager_asset: boolean,
+  +hash: string,
+  +height: ?number,
+  +httpServerLocation: string,
+  +name: string,
+  +scales: Array<number>,
+  +type: string,
+  +width: ?number,
+};
 
 export type AssetData = AssetDataWithoutFiles & {
   +files: Array<string>,
@@ -51,7 +63,7 @@ export type AssetDataPlugin = (
   assetData: AssetData,
 ) => AssetData | Promise<AssetData>;
 
-const hashFiles = denodeify(function hashFilesCb(files, hash, callback) {
+const hashFiles = denodeify(function hashFilesCb(files, hash, callback): void {
   if (!files.length) {
     callback(null);
     return;
@@ -59,7 +71,7 @@ const hashFiles = denodeify(function hashFilesCb(files, hash, callback) {
 
   const file = files.shift();
 
-  fs.readFile(file, (err, data) => {
+  fs.readFile(file, (err, data: Buffer) => {
     if (err) {
       callback(err);
       return;
@@ -74,17 +86,13 @@ function buildAssetMap(
   dir: string,
   files: $ReadOnlyArray<string>,
   platform: ?string,
-): Map<
-  string,
-  {|
-    files: Array<string>,
-    scales: Array<number>,
-  |},
-> {
+): Map<string, {|files: Array<string>, scales: Array<number>|}> {
   const platforms = new Set(platform != null ? [platform] : []);
-  const assets = files.map(file => AssetPaths.tryParse(file, platforms));
+  const assets = files.map((file: string) =>
+    AssetPaths.tryParse(file, platforms),
+  );
   const map = new Map();
-  assets.forEach(function(asset, i) {
+  assets.forEach(function(asset: ?AssetPath, i: number) {
     if (asset == null) {
       return;
     }
@@ -114,7 +122,7 @@ function buildAssetMap(
   return map;
 }
 
-function getAssetKey(assetName, platform) {
+function getAssetKey(assetName: string, platform: ?string): string {
   if (platform != null) {
     return `${assetName} : ${platform}`;
   } else {
@@ -125,10 +133,7 @@ function getAssetKey(assetName, platform) {
 async function getAbsoluteAssetRecord(
   assetPath: string,
   platform: ?string = null,
-): Promise<{|
-  files: Array<string>,
-  scales: Array<number>,
-|}> {
+): Promise<{|files: Array<string>, scales: Array<number>|}> {
   const filename = path.basename(assetPath);
   const dir = path.dirname(assetPath);
   const files = await readDir(dir);
@@ -265,6 +270,7 @@ async function getAsset(
   projectRoot: string,
   watchFolders: $ReadOnlyArray<string>,
   platform: ?string = null,
+  assetExts: $ReadOnlyArray<string>,
 ): Promise<Buffer> {
   const assetData = AssetPaths.parse(
     relativePath,
@@ -272,6 +278,12 @@ async function getAsset(
   );
 
   const absolutePath = path.resolve(projectRoot, relativePath);
+
+  if (!assetExts.includes(assetData.type)) {
+    throw new Error(
+      `'${relativePath}' cannot be loaded as its extension is not registered in assetExts`,
+    );
+  }
 
   if (!pathBelongsToRoots(absolutePath, [projectRoot, ...watchFolders])) {
     throw new Error(

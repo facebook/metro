@@ -83,7 +83,9 @@ class BatchProcessor<TItem, TResult> {
     while (this._queue.length > 0 && this._currentProcessCount < concurrency) {
       this._currentProcessCount++;
       const jobs = this._queue.splice(0, this._options.maximumItems);
-      this._processBatch(jobs.map(job => job.item)).then(
+      this._processBatch(
+        jobs.map((job: QueueItem<TItem, TResult>) => job.item),
+      ).then(
         this._onBatchResults.bind(this, jobs),
         this._onBatchError.bind(this, jobs),
       );
@@ -105,10 +107,15 @@ class BatchProcessor<TItem, TResult> {
   }
 
   queue(item: TItem): Promise<TResult> {
-    return new Promise((resolve, reject) => {
-      this._queue.push({item, resolve, reject});
-      this._processQueueOnceReady();
-    });
+    return new Promise(
+      (
+        resolve: (result: TResult) => mixed,
+        reject: (error: mixed) => mixed,
+      ) => {
+        this._queue.push({item, resolve, reject});
+        this._processQueueOnceReady();
+      },
+    );
   }
 }
 

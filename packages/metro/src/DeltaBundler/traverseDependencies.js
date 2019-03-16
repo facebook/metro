@@ -154,7 +154,7 @@ async function initialTraverseDependencies<T>(
   const internalOptions = getInternalOptions(options);
 
   await Promise.all(
-    graph.entryPoints.map(path =>
+    graph.entryPoints.map((path: string) =>
       traverseDependenciesForSingleFile(path, graph, delta, internalOptions),
     ),
   );
@@ -318,7 +318,7 @@ function resolveDependencies<T>(
   options: InternalOptions<T>,
 ): Map<string, Dependency> {
   return new Map(
-    dependencies.map(result => {
+    dependencies.map((result: TransformResultDependency) => {
       const relativePath = result.name;
 
       const dependency = {
@@ -335,10 +335,10 @@ function resolveDependencies<T>(
  * Re-traverse the dependency graph in DFS order to reorder the modules and
  * guarantee the same order between runs. This method mutates the passed graph.
  */
-function reorderGraph<T>(graph: Graph<T>) {
+function reorderGraph<T>(graph: Graph<T>): void {
   const orderedDependencies = new Map();
 
-  graph.entryPoints.forEach(entryPoint => {
+  graph.entryPoints.forEach((entryPoint: string) => {
     const mainModule = graph.dependencies.get(entryPoint);
 
     if (!mainModule) {
@@ -364,7 +364,7 @@ function reorderDependencies<T>(
     orderedDependencies.set(module.path, module);
   }
 
-  module.dependencies.forEach(dependency => {
+  module.dependencies.forEach((dependency: Dependency) => {
     const path = dependency.absolutePath;
     const childModule = graph.dependencies.get(path);
 

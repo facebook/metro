@@ -1,5 +1,5 @@
 {
-  "version": "0.53.0",
+  "version": "0.53.1",
   "name": "metro-metal",
   "description": "🚇 Metro base classes for module and graph manipulation",
   "main": "src/index.js",

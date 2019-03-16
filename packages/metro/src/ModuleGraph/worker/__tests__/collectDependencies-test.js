@@ -308,7 +308,7 @@ it('collects imports', () => {
   ]);
 });
 
-function astFromCode(code) {
+function astFromCode(code: string) {
   return babylon.parse(code, {
     plugins: ['dynamicImport', 'flow'],
     sourceType: 'module',

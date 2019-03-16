@@ -44,7 +44,7 @@ module.exports = function attachWebsocketServer<TClient: Object>({
   httpServer,
   websocketServer,
   path,
-}: HMROptions<TClient>) {
+}: HMROptions<TClient>): void {
   const WebSocketServer = require('ws').Server;
   const wss = new WebSocketServer({
     server: httpServer,

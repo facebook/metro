@@ -24,6 +24,8 @@ function createHash(str: string | Buffer): string {
     .digest('hex');
 }
 
-module.exports = function getKeyFromFiles(files: $ReadOnlyArray<string>) {
+module.exports = function getKeyFromFiles(
+  files: $ReadOnlyArray<string>,
+): string {
   return createHash(files.map(getKeyFromFile).join('$'));
 };

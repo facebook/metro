@@ -43,7 +43,7 @@ beforeAll(() => {
     makeModule('f'),
   ];
   requireCall = makeModule('r', [], 'script', 'require(1);');
-  ids = new Map(modules.map(({file}, i) => [file.path, i]));
+  ids = new Map(modules.map(({file}, i: number) => [file.path, i]));
   ({code, extraFiles, map} = createRamBundle());
 });
 
@@ -58,7 +58,7 @@ it('contains the startup code on the main file', () => {
 it('creates a source map', () => {
   let line = countLines(requireCall);
   expect(map.sections.slice(1)).toEqual(
-    modules.map(m => {
+    modules.map((m: Module) => {
       const section = {
         map: m.file.map || lineByLineMap(m.file.path),
         offset: {column: 0, line},
@@ -83,7 +83,7 @@ it('creates a magic file with the number', () => {
 it('bundles each file separately', () => {
   expect(extraFiles).toBeDefined();
 
-  modules.forEach((module, i) => {
+  modules.forEach((module: Module, i: number) => {
     // $FlowFixMe "extraFiles" is always defined at this point.
     expect(extraFiles.get(`js-modules/${i}.js`).toString()).toBe(
       getModuleCodeAndMap(modules[i], x => idsForPath(x).moduleId, {
@@ -93,7 +93,7 @@ it('bundles each file separately', () => {
   });
 });
 
-function createRamBundle(preloadedModules = new Set(), ramGroups) {
+function createRamBundle(preloadedModules = new Set(), ramGroups?) {
   const build = multipleFilesRamBundle.createBuilder(
     preloadedModules,
     ramGroups,
@@ -111,8 +111,8 @@ function createRamBundle(preloadedModules = new Set(), ramGroups) {
 }
 
 function makeModule(
-  name,
-  deps = [],
+  name: string,
+  deps: Array<string> = [],
   type = 'module',
   moduleCode = `var ${name};`,
 ): Module {
@@ -130,7 +130,7 @@ function makeModule(
   };
 }
 
-function makeModuleMap(name, path) {
+function makeModuleMap(name: string, path: string) {
   return {
     version: 3,
     mappings: '',
@@ -140,15 +140,15 @@ function makeModuleMap(name, path) {
   };
 }
 
-function makeModuleCode(moduleCode) {
+function makeModuleCode(moduleCode: string): string {
   return `__d(() => {${moduleCode}})`;
 }
 
-function makeModulePath(name) {
+function makeModulePath(name: string): string {
   return `/${name}.js`;
 }
 
-function makeDependency(name) {
+function makeDependency(name: string) {
   const path = makeModulePath(name);
   return {
     id: name,
@@ -158,7 +158,7 @@ function makeDependency(name) {
   };
 }
 
-function getId(path) {
+function getId(path: string): number {
   if (path === requireCall.file.path) {
     return -1;
   }
@@ -170,11 +170,19 @@ function getId(path) {
   return id;
 }
 
-function countLines(module) {
+function countLines(module: Module): number {
   return module.file.code.split('\n').length;
 }
 
-function lineByLineMap(file) {
+function lineByLineMap(
+  file: string,
+): {|
+  file: string,
+  mappings: string,
+  names: Array<empty>,
+  sources: Array<string>,
+  version: number,
+|} {
   return {
     file,
     mappings: '',

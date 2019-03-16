@@ -39,6 +39,6 @@ module.exports = class Module {
   }
 };
 
-function getName(path) {
+function getName(path: string): string {
   return path.replace(/^.*[\/\\]node_modules[\///]/, '');
 }

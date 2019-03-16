@@ -25,7 +25,7 @@ class Bundler {
     this._depGraphPromise = DependencyGraph.load(config);
 
     this._depGraphPromise
-      .then(dependencyGraph => {
+      .then((dependencyGraph: DependencyGraph) => {
         this._transformer = new Transformer(
           config,
           dependencyGraph.getSha1.bind(dependencyGraph),

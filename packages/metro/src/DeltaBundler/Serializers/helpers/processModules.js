@@ -31,7 +31,7 @@ function processModules(
   return [...modules]
     .filter(isJsModule)
     .filter(filter)
-    .map(module => [
+    .map((module: Module<>) => [
       module,
       wrapModule(module, {
         createModuleId,

@@ -17,7 +17,7 @@ declare var __DEV__: boolean;
 
 const injectUpdate = require('./injectUpdate');
 
-function registerServiceWorker(swUrl: string) {
+function registerServiceWorker(swUrl: string): void {
   const serviceWorker = navigator.serviceWorker;
 
   if (!serviceWorker) {
@@ -33,7 +33,7 @@ function registerServiceWorker(swUrl: string) {
 
     if (__DEV__) {
       registrationPromise.then(
-        registration => {
+        (registration: ServiceWorkerRegistration) => {
           console.info(
             'ServiceWorker registration successful with scope: ',
             registration.scope,

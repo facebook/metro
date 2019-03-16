@@ -14,7 +14,7 @@
 const getPreludeCode = require('../getPreludeCode');
 const vm = require('vm');
 
-['development', 'production'].forEach(mode => {
+['development', 'production'].forEach((mode: string) => {
   describe(`${mode} mode`, () => {
     const isDev = mode === 'development';
 

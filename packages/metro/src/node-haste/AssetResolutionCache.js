@@ -79,8 +79,11 @@ class AssetResolutionCache {
       return null;
     }
     return assets
-      .filter(asset => asset.platform == null || asset.platform === platform)
-      .map(asset => asset.fileName);
+      .filter(
+        (asset: AssetInfo) =>
+          asset.platform == null || asset.platform === platform,
+      )
+      .map((asset: AssetInfo) => asset.fileName);
   }
 
   /**

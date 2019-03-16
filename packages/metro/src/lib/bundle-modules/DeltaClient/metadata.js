@@ -20,8 +20,8 @@ export type GetBundleMetadata = (
 ) => Promise<BundleMetadata>;
 
 const fetchBundleMetadata: GetBundleMetadata = async (
-  bundleUrl,
-  revisionId,
+  bundleUrl: string,
+  revisionId: string,
 ) => {
   const url = new URL(bundleUrl);
   url.pathname = url.pathname.replace(/\.(bundle|js)$/, '.meta');

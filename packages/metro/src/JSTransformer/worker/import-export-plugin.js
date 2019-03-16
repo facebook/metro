@@ -323,7 +323,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
         exit(path: Path, state: State) {
           const body = path.node.body;
 
-          state.exportDefault.forEach(e => {
+          state.exportDefault.forEach((e: {local: string}) => {
             body.push(
               exportTemplate({
                 LOCAL: t.identifier(e.local),
@@ -332,7 +332,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
             );
           });
 
-          state.exportAll.forEach(e => {
+          state.exportAll.forEach((e: {file: string}) => {
             body.push(
               ...exportAllTemplate({
                 FILE: resolvePath(t.stringLiteral(e.file), state.opts.resolve),
@@ -342,7 +342,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
             );
           });
 
-          state.exportNamed.forEach(e => {
+          state.exportNamed.forEach((e: {local: string, remote: string}) => {
             body.push(
               exportTemplate({
                 LOCAL: t.identifier(e.local),

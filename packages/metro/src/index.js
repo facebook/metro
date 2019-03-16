@@ -18,12 +18,13 @@ const attachWebsocketServer = require('./lib/attachWebsocketServer');
 const http = require('http');
 const https = require('https');
 const makeBuildCommand = require('./commands/build');
-const makeServeCommand = require('./commands/serve');
 const makeDependenciesCommand = require('./commands/dependencies');
+const makeServeCommand = require('./commands/serve');
 const outputBundle = require('./shared/output/bundle');
 
 const {readFile} = require('fs-extra');
 const {loadConfig, mergeConfig, getDefaultConfig} = require('metro-config');
+const {runInspectorProxy} = require('metro-inspector-proxy');
 
 import type {Graph} from './DeltaBundler';
 import type {CustomTransformOptions} from './JSTransformer/worker';
@@ -96,6 +97,7 @@ type RunServerOptions = {|
   secureKey?: string,
   secureCert?: string,
   hmrEnabled?: boolean,
+  runInspectorProxy?: boolean,
 |};
 
 exports.runServer = async (
@@ -139,6 +141,15 @@ exports.runServer = async (
     }
   }
 
+  if (config.server.runInspectorProxy) {
+    // Port number is hardcoded here now for a transition state.
+    // When Inspector Proxy will be ready to use we will change
+    // this to use the same port as Metro (this will require
+    // creating new InspectorProxy and attaching it to httpServer
+    // instead of creating new HTTP Server).
+    runInspectorProxy(8082);
+  }
+
   let httpServer;
 
   if (secure) {
@@ -158,29 +169,34 @@ exports.runServer = async (
     end();
   });
 
-  return new Promise((resolve, reject) => {
-    httpServer.listen(config.server.port, host, () => {
-      onReady && onReady(httpServer);
-      if (hmrEnabled) {
-        attachHmrServer(httpServer);
-      }
-      resolve(httpServer);
-    });
+  return new Promise(
+    (
+      resolve: (result: HttpServer | HttpsServer) => void,
+      reject: mixed => mixed,
+    ) => {
+      httpServer.listen(config.server.port, host, () => {
+        onReady && onReady(httpServer);
+        if (hmrEnabled) {
+          attachHmrServer(httpServer);
+        }
+        resolve(httpServer);
+      });
 
-    // Disable any kind of automatic timeout behavior for incoming
-    // requests in case it takes the packager more than the default
-    // timeout of 120 seconds to respond to a request.
-    httpServer.timeout = 0;
+      // Disable any kind of automatic timeout behavior for incoming
+      // requests in case it takes the packager more than the default
+      // timeout of 120 seconds to respond to a request.
+      httpServer.timeout = 0;
 
-    httpServer.on('error', error => {
-      end();
-      reject(error);
-    });
+      httpServer.on('error', error => {
+        end();
+        reject(error);
+      });
 
-    httpServer.on('close', () => {
-      end();
-    });
-  });
+      httpServer.on('close', () => {
+        end();
+      });
+    },
+  );
 };
 
 type BuildGraphOptions = {|

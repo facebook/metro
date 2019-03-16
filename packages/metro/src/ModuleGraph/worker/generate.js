@@ -19,7 +19,7 @@ function generate(
   filename: string,
   sourceCode: string,
   compact: boolean,
-) {
+): GeneratorResult {
   const generated = babelGenerate(
     ast,
     {

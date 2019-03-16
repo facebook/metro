@@ -13,7 +13,12 @@ const invariant = require('invariant');
 
 import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
 import type {BabelSourceMap} from '@babel/core';
-import type {FBIndexMap, IndexMap, MetroSourceMap} from 'metro-source-map';
+import type {
+  FBIndexMap,
+  IndexMap,
+  IndexMapSection,
+  MetroSourceMap,
+} from 'metro-source-map';
 
 const newline = /\r\n?|\n|\u2028|\u2029/g;
 // fastest implementation
@@ -39,7 +44,7 @@ function lineToLineSourceMap(
   };
 }
 
-const wrapperEnd = wrappedCode => wrappedCode.indexOf('{') + 1;
+const wrapperEnd = (wrappedCode: string) => wrappedCode.indexOf('{') + 1;
 
 const Section = (line: number, column: number, map: MetroSourceMap) => ({
   map,
@@ -78,11 +83,11 @@ function combineMaps(
   offsets: ?Array<number>,
   moduleGroups: ?ModuleGroups,
   options: ?CombineOptions,
-) {
+): Array<IndexMapSection> {
   const sections = [];
 
   let line = 0;
-  modules.forEach(moduleTransport => {
+  modules.forEach((moduleTransport: ModuleTransportLike) => {
     const {code, id, name} = moduleTransport;
     let column = 0;
     let group;
@@ -101,9 +106,9 @@ function combineMaps(
         const otherModules: $ReadOnlyArray<ModuleTransportLike> = Array.from(
           group || [],
         )
-          .map(moduleId => modulesById.get(moduleId))
+          .map((moduleId: number) => modulesById.get(moduleId))
           .filter(Boolean); // needed to appease flow
-        otherModules.forEach(m => {
+        otherModules.forEach((m: ModuleTransportLike) => {
           groupLines += countLines(m.code);
         });
         map = combineSourceMaps([moduleTransport].concat(otherModules));
@@ -132,7 +137,7 @@ function combineMaps(
 }
 
 const joinModules = (modules: $ReadOnlyArray<{+code: string}>): string =>
-  modules.map(m => m.code).join('\n');
+  modules.map((m: {+code: string}) => m.code).join('\n');
 
 module.exports = {
   combineSourceMaps,

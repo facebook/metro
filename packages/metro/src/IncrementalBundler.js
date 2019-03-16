@@ -95,14 +95,14 @@ class IncrementalBundler {
       onProgress: null,
     },
   ): Promise<OutputGraph> {
-    const absoluteEntryFiles = entryFiles.map(entryFile =>
+    const absoluteEntryFiles = entryFiles.map((entryFile: string) =>
       path.resolve(this._config.projectRoot, entryFile),
     );
 
     await Promise.all(
       absoluteEntryFiles.map(
-        entryFile =>
-          new Promise((resolve, reject) => {
+        (entryFile: string) =>
+          new Promise((resolve: void => void, reject: mixed => mixed) => {
             // This should throw an error if the file doesn't exist.
             // Using this instead of fs.exists to account for SimLinks.
             fs.realpath(entryFile, err => {
