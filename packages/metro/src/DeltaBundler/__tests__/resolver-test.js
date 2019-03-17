@@ -1530,7 +1530,7 @@ describe('traverseDependencies', function() {
         });
       });
 
-      describe('hasteImpl config param', async () => {
+      describe('hasteImpl config param', () => {
         let config;
 
         beforeEach(() => {
@@ -1763,7 +1763,7 @@ describe('traverseDependencies', function() {
         });
       });
 
-      describe('extraNodeModules config param', async () => {
+      describe('extraNodeModules config param', () => {
         it('works when it points to folders or packages', async () => {
           setMockFileSystem({
             folder: {'index.js': ''},

@@ -101,7 +101,7 @@ describe('DeltaClient/dev', () => {
     WebSocketHMRClient.prototype.on.mockClear();
   });
 
-  describe('registerBundle', async () => {
+  describe('registerBundle', () => {
     it('sets up the HMR client', async () => {
       const deltaClient = DeltaClient.create();
       deltaClient.registerBundle(bundleUrl, response, 'client0');
