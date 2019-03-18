@@ -12,7 +12,9 @@
 
 const cosmiconfig = require('cosmiconfig');
 const getDefaultConfig = require('./defaults');
+const validConfig = require('./defaults/validConfig');
 
+const {validate} = require('jest-validate');
 const {dirname, resolve, join} = require('path');
 
 import type {ConfigT, InputConfigT} from './configTypes.flow';
@@ -231,8 +233,8 @@ function overrideConfigWithArguments(
  * @return {object}                         Configuration returned
  */
 async function loadConfig(
-  argv: YargArguments = {},
-  defaultConfigOverrides: InputConfigT = {},
+  argv?: YargArguments = {},
+  defaultConfigOverrides?: InputConfigT = {},
 ): Promise<ConfigT> {
   argv.config = overrideArgument(argv.config);
 
@@ -241,6 +243,11 @@ async function loadConfig(
     argv.cwd,
     defaultConfigOverrides,
   );
+
+  validate(configuration, {
+    exampleConfig: await validConfig(),
+    recursiveBlacklist: ['reporter'],
+  });
 
   // Override the configuration with cli parameters
   const configWithArgs = overrideConfigWithArguments(configuration, argv);

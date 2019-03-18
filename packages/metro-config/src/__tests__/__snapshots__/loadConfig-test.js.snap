@@ -5,7 +5,6 @@ Object {
   "cacheStores": Array [],
   "cacheVersion": "1.0",
   "maxWorkers": 2,
-  "metro": true,
   "projectRoot": "/",
   "reporter": null,
   "resetCache": false,
@@ -138,7 +137,6 @@ Object {
   "cacheStores": Array [],
   "cacheVersion": "1.0",
   "maxWorkers": 2,
-  "metro": true,
   "projectRoot": "/",
   "reporter": null,
   "resetCache": false,
@@ -264,4 +262,120 @@ Object {
     "/",
   ],
 }
+`;
+
+exports[`loadConfig validates config for projectRoot 1`] = `
+"● Validation Error:
+
+  Option \\"projectRoot\\" must be of type:
+    string
+  but instead received:
+    array
+
+  Example:
+  {
+    \\"projectRoot\\": \\"/path/to/project\\"
+  }
+"
+`;
+
+exports[`loadConfig validates config for resolver 1`] = `
+"● Validation Error:
+
+  Option \\"resolver\\" must be of type:
+    object
+  but instead received:
+    string
+
+  Example:
+  {
+    \\"resolver\\": {
+      \\"allowPnp\\": true,
+      \\"assetExts\\": [
+        \\"bmp\\",
+        \\"gif\\",
+        \\"jpg\\",
+        \\"jpeg\\",
+        \\"png\\",
+        \\"psd\\",
+        \\"svg\\",
+        \\"webp\\",
+        \\"m4v\\",
+        \\"mov\\",
+        \\"mp4\\",
+        \\"mpeg\\",
+        \\"mpg\\",
+        \\"webm\\",
+        \\"aac\\",
+        \\"aiff\\",
+        \\"caf\\",
+        \\"m4a\\",
+        \\"mp3\\",
+        \\"wav\\",
+        \\"html\\",
+        \\"json\\",
+        \\"pdf\\",
+        \\"yaml\\",
+        \\"yml\\",
+        \\"otf\\",
+        \\"ttf\\",
+        \\"zip\\"
+      ],
+      \\"platforms\\": [
+        \\"ios\\",
+        \\"android\\",
+        \\"windows\\",
+        \\"web\\"
+      ],
+      \\"sourceExts\\": [
+        \\"js\\",
+        \\"json\\",
+        \\"ts\\",
+        \\"tsx\\"
+      ],
+      \\"providesModuleNodeModules\\": [
+        \\"react-native\\",
+        \\"react-native-windows\\"
+      ],
+      \\"resolverMainFields\\": [
+        \\"browser\\",
+        \\"main\\"
+      ],
+      \\"extraNodeModules\\": {},
+      \\"hasteImplModulePath\\": \\"./path\\",
+      \\"blacklistRE\\": {},
+      \\"useWatchman\\": true
+    }
+  }
+"
+`;
+
+exports[`loadConfig validates config for server 1`] = `
+"● Validation Error:
+
+  Option \\"server.useGlobalHotkey\\" must be of type:
+    boolean
+  but instead received:
+    string
+
+  Example:
+  {
+    \\"useGlobalHotkey\\": true
+  }
+"
+`;
+
+exports[`loadConfig validates config for transformer 1`] = `
+"● Validation Error:
+
+  Option \\"transformer.enableBabelRuntime\\" must be of type:
+    boolean
+  but instead received:
+    number
+
+  Example:
+  {
+    \\"enableBabelRuntime\\": true
+  }
+"
 `;

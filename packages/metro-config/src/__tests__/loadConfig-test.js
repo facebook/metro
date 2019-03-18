@@ -17,6 +17,7 @@ const {loadConfig} = require('../loadConfig');
 const getDefaultConfig = require('../defaults');
 const cosmiconfig = require('cosmiconfig');
 const prettyFormat = require('pretty-format');
+const stripAnsi = require('strip-ansi');
 
 describe('loadConfig', () => {
   beforeEach(() => {
@@ -25,7 +26,6 @@ describe('loadConfig', () => {
 
   it('can load config objects', async () => {
     const config = {
-      metro: true,
       reporter: null,
       maxWorkers: 2,
       cacheStores: [],
@@ -63,7 +63,6 @@ describe('loadConfig', () => {
   it('can load the config with a path', async () => {
     const config = defaultConfig => ({
       ...defaultConfig,
-      metro: true,
       reporter: null,
       maxWorkers: 2,
       cacheStores: [],
@@ -90,5 +89,74 @@ describe('loadConfig', () => {
     };
 
     expect(prettyFormat(result)).toEqual(prettyFormat(defaultConfig));
+  });
+
+  it('validates config for resolver', async () => {
+    expect.assertions(1);
+    const config = defaultConfig => ({
+      ...defaultConfig,
+      resolver: 'test',
+    });
+
+    cosmiconfig.setResolvedConfig(config);
+
+    try {
+      await loadConfig({});
+    } catch (error) {
+      expect(stripAnsi(error.message)).toMatchSnapshot();
+    }
+  });
+
+  it('validates config for server', async () => {
+    expect.assertions(1);
+    const config = defaultConfig => ({
+      ...defaultConfig,
+      server: {
+        useGlobalHotkey: 'test',
+      },
+    });
+
+    cosmiconfig.setResolvedConfig(config);
+
+    try {
+      await loadConfig({});
+    } catch (error) {
+      expect(stripAnsi(error.message)).toMatchSnapshot();
+    }
+  });
+
+  it('validates config for projectRoot', async () => {
+    expect.assertions(1);
+    const config = defaultConfig => ({
+      ...defaultConfig,
+      projectRoot: ['test'],
+    });
+
+    cosmiconfig.setResolvedConfig(config);
+
+    try {
+      await loadConfig({});
+    } catch (error) {
+      expect(stripAnsi(error.message)).toMatchSnapshot();
+    }
+  });
+
+  it('validates config for transformer', async () => {
+    expect.assertions(1);
+    const config = defaultConfig => ({
+      ...defaultConfig,
+      transformer: {
+        ...defaultConfig.transformer,
+        enableBabelRuntime: 1,
+      },
+    });
+
+    cosmiconfig.setResolvedConfig(config);
+
+    try {
+      await loadConfig({});
+    } catch (error) {
+      expect(stripAnsi(error.message)).toMatchSnapshot();
+    }
   });
 });
