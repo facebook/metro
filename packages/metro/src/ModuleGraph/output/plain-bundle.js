@@ -13,7 +13,7 @@
 const meta = require('../../shared/output/meta');
 
 const {getModuleCodeAndMap, concat} = require('./util');
-const {createIndexMap} = require('metro-source-map');
+const {BundleBuilder} = require('metro-source-map');
 
 import type {OutputFn} from '../types.flow';
 import type {FBSourceMap, MetroSourceMap} from 'metro-source-map';
@@ -30,9 +30,7 @@ function asPlainBundle({
   extraFiles?: Iterable<[string, string | Buffer]>,
   map: FBSourceMap | MetroSourceMap,
 |} {
-  let code = '';
-  let line = 0;
-  const sections = [];
+  const builder = new BundleBuilder(filename);
   const modIdForPath = (x: {path: string}) => idsForPath(x).moduleId;
 
   for (const module of concat(modules, requireCalls)) {
@@ -40,31 +38,20 @@ function asPlainBundle({
       enableIDInlining,
     });
 
-    code += moduleCode + '\n';
-    if (moduleMap) {
-      sections.push({
-        map: moduleMap,
-        offset: {column: 0, line},
-      });
-    }
-    line += countLines(moduleCode);
+    builder.append(moduleCode + '\n', moduleMap);
   }
 
   if (sourceMapPath) {
-    code += `//# sourceMappingURL=${sourceMapPath}`;
+    builder.append(`//# sourceMappingURL=${sourceMapPath}`);
   }
 
+  const code = builder.getCode();
+  const map = builder.getMap();
   return {
     code,
     extraFiles: [[`${filename}.meta`, meta(code)]],
-    map: createIndexMap(filename, sections),
+    map,
   };
 }
 
 module.exports = (asPlainBundle: OutputFn<>);
-
-const reLine = /^/gm;
-function countLines(string: string): number {
-  //$FlowFixMe This regular expression always matches
-  return string.match(reLine).length;
-}

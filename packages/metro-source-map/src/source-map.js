@@ -13,6 +13,8 @@
 const Generator = require('./Generator');
 const SourceMap = require('source-map');
 
+const {createIndexMap, BundleBuilder} = require('./BundleBuilder');
+
 import type {BabelSourceMap} from '@babel/core';
 import type {BabelSourceMapSegment} from '@babel/generator';
 
@@ -176,18 +178,8 @@ function countLines(string) {
   return string.split('\n').length;
 }
 
-function createIndexMap(
-  file: string,
-  sections: Array<IndexMapSection>,
-): IndexMap {
-  return {
-    version: 3,
-    file,
-    sections,
-  };
-}
-
 module.exports = {
+  BundleBuilder,
   createIndexMap,
   fromRawMappings,
   toBabelSegments,
