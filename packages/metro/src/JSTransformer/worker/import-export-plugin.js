@@ -107,7 +107,7 @@ function resolvePath(node: {value: string}, resolve: boolean) {
 function importExportPlugin({types: t}: $FlowFixMe) {
   return {
     visitor: {
-      ExportAllDeclaration(path: Path, state: State) {
+      ExportAllDeclaration(path: Path, state: State): void {
         if (path.node.exportKind && path.node.exportKind !== 'value') {
           return;
         }
@@ -119,7 +119,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
         path.remove();
       },
 
-      ExportDefaultDeclaration(path: Path, state: State) {
+      ExportDefaultDeclaration(path: Path, state: State): void {
         if (path.node.exportKind && path.node.exportKind !== 'value') {
           return;
         }
@@ -145,7 +145,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
         path.remove();
       },
 
-      ExportNamedDeclaration(path: Path, state: State) {
+      ExportNamedDeclaration(path: Path, state: State): void {
         if (path.node.exportKind && path.node.exportKind !== 'value') {
           return;
         }
@@ -250,7 +250,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
         path.remove();
       },
 
-      ImportDeclaration(path: Path, state: State) {
+      ImportDeclaration(path: Path, state: State): void {
         if (path.node.importKind && path.node.importKind !== 'value') {
           return;
         }
@@ -311,7 +311,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
       },
 
       Program: {
-        enter(path: Path, state: State) {
+        enter(path: Path, state: State): void {
           state.exportAll = [];
           state.exportDefault = [];
           state.exportNamed = [];
@@ -320,7 +320,7 @@ function importExportPlugin({types: t}: $FlowFixMe) {
           state.importDefault = t.identifier(state.opts.importDefault);
         },
 
-        exit(path: Path, state: State) {
+        exit(path: Path, state: State): void {
           const body = path.node.body;
 
           state.exportDefault.forEach((e: {local: string}) => {

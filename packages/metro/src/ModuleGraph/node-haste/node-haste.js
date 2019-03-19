@@ -48,7 +48,7 @@ const GENERIC_PLATFORM = 'g';
 const PACKAGE_JSON = path.sep + 'package.json';
 const NULL_MODULE: Moduleish = {
   path: '/',
-  getPackage() {},
+  getPackage(): void {},
   isHaste() {
     throw new Error('not implemented');
   },
@@ -138,15 +138,16 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
   const filesByDirNameIndex = new FilesByDirNameIndex(files);
   const assetResolutionCache = new AssetResolutionCache({
     assetExtensions: new Set(assetExts),
-    getDirFiles: (dirPath: string) => filesByDirNameIndex.getAllFiles(dirPath),
+    getDirFiles: (dirPath: string): $ReadOnlyArray<string> =>
+      filesByDirNameIndex.getAllFiles(dirPath),
     platforms,
   });
   const moduleResolver = new ModuleResolver({
     allowPnp,
-    dirExists: (filePath: string) => hasteFS.dirExists(filePath),
-    doesFileExist: (filePath: string) => hasteFS.exists(filePath),
+    dirExists: (filePath: string): boolean => hasteFS.dirExists(filePath),
+    doesFileExist: (filePath: string): boolean => hasteFS.exists(filePath),
     extraNodeModules,
-    isAssetFile: (filePath: string) => helpers.isAssetFile(filePath),
+    isAssetFile: (filePath: string): boolean => helpers.isAssetFile(filePath),
     mainFields: options.mainFields,
     moduleCache,
     moduleMap: new ModuleMap({
@@ -160,7 +161,8 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
       dirPath: string,
       assetName: string,
       platform: null | string,
-    ) => assetResolutionCache.resolve(dirPath, assetName, platform),
+    ): ?$ReadOnlyArray<string> =>
+      assetResolutionCache.resolve(dirPath, assetName, platform),
     resolveRequest: options.resolveRequest,
     sourceExts,
   });

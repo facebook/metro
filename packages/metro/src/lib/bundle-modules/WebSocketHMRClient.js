@@ -26,7 +26,7 @@ class WebSocketHMRClient extends EventEmitter {
     this._url = url;
   }
 
-  enable() {
+  enable(): void {
     if (this._ws) {
       this.disable();
     }
@@ -69,7 +69,7 @@ class WebSocketHMRClient extends EventEmitter {
     };
   }
 
-  disable() {
+  disable(): void {
     if (this._ws) {
       this._ws.close();
       this._ws = undefined;

@@ -45,15 +45,15 @@ module.exports = class HasteFS {
     return null;
   }
 
-  dirExists(path: string) {
+  dirExists(path: string): boolean {
     return this.directories.has(path);
   }
 
-  exists(path: string) {
+  exists(path: string): boolean {
     return this.files.has(path);
   }
 
-  getAllFiles() {
+  getAllFiles(): Array<string> {
     return Array.from<string>(this.files.keys());
   }
 

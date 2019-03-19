@@ -23,7 +23,7 @@ function normalizePseudoglobals(ast: Ast): $ReadOnlyArray<string> {
 
   traverse(ast, {
     Program: {
-      enter(path: Path) {
+      enter(path: Path): void {
         params = path.get('body.0.expression.arguments.0.params');
         body = path.get('body.0.expression.arguments.0.body');
 
@@ -66,7 +66,7 @@ function normalizePseudoglobals(ast: Ast): $ReadOnlyArray<string> {
         }
       },
 
-      exit(path: Path) {
+      exit(path: Path): void {
         reserved.forEach((shortName: string, i: number) => {
           if (pseudoglobals[i] && shortName && body && params) {
             body.scope.rename(pseudoglobals[i], shortName);
@@ -75,7 +75,7 @@ function normalizePseudoglobals(ast: Ast): $ReadOnlyArray<string> {
       },
     },
 
-    Scope(path: Path) {
+    Scope(path: Path): void {
       path.scope.crawl();
 
       if (body && params && path.node !== body.node) {

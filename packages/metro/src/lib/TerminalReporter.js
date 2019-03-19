@@ -150,7 +150,7 @@ class TerminalReporter {
     }
   }
 
-  _logBundleBuildDone(buildID: string) {
+  _logBundleBuildDone(buildID: string): void {
     const progress = this._activeBundles.get(buildID);
     if (progress != null) {
       const msg = this._getBundleStatusMessage(
@@ -166,7 +166,7 @@ class TerminalReporter {
     }
   }
 
-  _logBundleBuildFailed(buildID: string) {
+  _logBundleBuildFailed(buildID: string): void {
     const progress = this._activeBundles.get(buildID);
     if (progress != null) {
       const msg = this._getBundleStatusMessage(progress, 'failed');
@@ -174,7 +174,7 @@ class TerminalReporter {
     }
   }
 
-  _logInitializing(port: ?number, projectRoots: $ReadOnlyArray<string>) {
+  _logInitializing(port: ?number, projectRoots: $ReadOnlyArray<string>): void {
     if (port) {
       this.terminal.log(
         formatBanner(
@@ -200,7 +200,7 @@ class TerminalReporter {
     );
   }
 
-  _logInitializingFailed(port: number, error: SnippetError) {
+  _logInitializingFailed(port: number, error: SnippetError): void {
     if (error.code === 'EADDRINUSE') {
       this.terminal.log(
         chalk.bgRed.bold(' ERROR '),
@@ -277,7 +277,7 @@ class TerminalReporter {
    * these are operational errors, not programming errors, and the stacktrace
    * is not actionable to end users.
    */
-  _logBundlingError(error: SnippetError) {
+  _logBundlingError(error: SnippetError): void {
     if (error instanceof AmbiguousModuleResolutionError) {
       const he = error.hasteError;
       const message =
@@ -307,11 +307,11 @@ class TerminalReporter {
     this._logBundlingErrorMessage(message);
   }
 
-  _logBundlingErrorMessage(message: string) {
+  _logBundlingErrorMessage(message: string): void {
     reporting.logError(this.terminal, 'bundling failed: %s', message);
   }
 
-  _logWorkerChunk(origin: 'stdout' | 'stderr', chunk: string) {
+  _logWorkerChunk(origin: 'stdout' | 'stderr', chunk: string): void {
     const lines = chunk.split('\n');
     if (lines.length >= 1 && lines[lines.length - 1] === '') {
       lines.splice(lines.length - 1, 1);
@@ -334,7 +334,7 @@ class TerminalReporter {
     buildID: string,
     transformedFileCount: number,
     totalFileCount: number,
-  }) {
+  }): void {
     const currentProgress = this._activeBundles.get(buildID);
     if (currentProgress == null) {
       return;
@@ -425,7 +425,7 @@ class TerminalReporter {
    * Single entry point for reporting events. That allows us to implement the
    * corresponding JSON reporter easily and have a consistent reporting.
    */
-  update(event: TerminalReportableEvent) {
+  update(event: TerminalReportableEvent): void {
     this._log(event);
     this._updateState(event);
     this.terminal.status(this._getStatusMessage());

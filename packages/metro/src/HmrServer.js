@@ -146,7 +146,7 @@ class HmrServer<TClient: Client> {
     } else {
       clientGroup = {
         clients: new Set([client]),
-        unlisten: () => unlisten(),
+        unlisten: (): void => unlisten(),
         revisionId: id,
       };
 
@@ -168,7 +168,7 @@ class HmrServer<TClient: Client> {
     return client;
   }
 
-  onClientError(client: TClient, e: Error) {
+  onClientError(client: TClient, e: Error): void {
     this._config.reporter.update({
       type: 'hmr_client_error',
       error: e,
@@ -176,7 +176,7 @@ class HmrServer<TClient: Client> {
     this.onClientDisconnect(client);
   }
 
-  onClientDisconnect(client: TClient) {
+  onClientDisconnect(client: TClient): void {
     const group = this._clientGroups.get(client.revisionId);
     if (group != null) {
       if (group.clients.size === 1) {
@@ -188,7 +188,7 @@ class HmrServer<TClient: Client> {
     }
   }
 
-  async _handleFileChange(group: ClientGroup) {
+  async _handleFileChange(group: ClientGroup): Promise<void> {
     const processingHmrChange = log(
       createActionStartEntry({action_name: 'Processing HMR change'}),
     );

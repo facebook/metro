@@ -23,7 +23,7 @@ class JsonReporter<TEvent: {[string]: any}> {
    * There is a special case for errors because they have non-enumerable fields.
    * (Perhaps we should switch in favor of plain object?)
    */
-  update(event: TEvent) {
+  update(event: TEvent): void {
     if (Object.prototype.toString.call(event.error) === '[object Error]') {
       event = Object.assign(event, {
         message: event.error.message,

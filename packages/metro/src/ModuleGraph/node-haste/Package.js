@@ -28,7 +28,7 @@ module.exports = class Package {
     this.type = 'Package';
   }
 
-  getMain() {
+  getMain(): string {
     // Copied from node-haste/Package.js
     const replacements = getReplacements(this.data);
     if (typeof replacements === 'string') {

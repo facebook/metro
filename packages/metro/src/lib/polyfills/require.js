@@ -53,6 +53,7 @@ type ModuleDefinition = {|
   verboseName?: string,
 |};
 type PatchedModules = {[ModuleID]: boolean};
+type ModuleList = {[number]: ModuleDefinition, __proto__: null};
 type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
 type VerboseModuleNameForDev = string;
 
@@ -68,11 +69,8 @@ var modules = clear();
 const EMPTY = {};
 const {hasOwnProperty} = {};
 
-function clear(): {[number]: ModuleDefinition, __proto__: null} {
-  modules = (Object.create(null): {
-    [number]: ModuleDefinition,
-    __proto__: null,
-  });
+function clear(): ModuleList {
+  modules = (Object.create(null): ModuleList);
 
   // We return modules here so that we can assign an initial value to modules
   // when defining it. Otherwise, we would have to do "let modules = null",
@@ -282,7 +280,7 @@ function registerHook(cb: (number, {}) => void): {|release: () => void|} {
   const hook = {cb};
   hooks.push(hook);
   return {
-    release: () => {
+    release: (): void => {
       for (let i = 0; i < hooks.length; ++i) {
         if (hooks[i] === hook) {
           hooks.splice(i, 1);
@@ -430,9 +428,12 @@ function moduleThrewError(id: ModuleID, error: any): Error {
 }
 
 if (__DEV__) {
-  metroRequire.Systrace = {beginEvent: () => {}, endEvent: () => {}};
+  metroRequire.Systrace = {
+    beginEvent: (): void => {},
+    endEvent: (): void => {},
+  };
 
-  metroRequire.getModules = () => {
+  metroRequire.getModules = (): ModuleList => {
     return modules;
   };
 
@@ -440,11 +441,11 @@ if (__DEV__) {
   var createHotReloadingObject = function() {
     const hot: HotModuleReloadingData = {
       acceptCallback: null,
-      accept: (callback: HotModuleReloadingCallback) => {
+      accept: (callback: HotModuleReloadingCallback): void => {
         hot.acceptCallback = callback;
       },
       disposeCallback: null,
-      dispose: (callback: HotModuleReloadingCallback) => {
+      dispose: (callback: HotModuleReloadingCallback): void => {
         hot.disposeCallback = callback;
       },
     };

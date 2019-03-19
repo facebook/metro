@@ -97,12 +97,12 @@ function inlinePlugin(context: Context, options: Options) {
 
   return {
     visitor: {
-      Identifier(path: Path, state: State) {
+      Identifier(path: Path, state: State): void {
         if (!state.opts.dev && isDev(path.node, path.parent, path.scope)) {
           path.replaceWith(t.booleanLiteral(state.opts.dev));
         }
       },
-      MemberExpression(path: Path, state: State) {
+      MemberExpression(path: Path, state: State): void {
         const node = path.node;
         const scope = path.scope;
         const opts = state.opts;
@@ -120,7 +120,7 @@ function inlinePlugin(context: Context, options: Options) {
           }
         }
       },
-      CallExpression(path: Path, state: State) {
+      CallExpression(path: Path, state: State): void {
         const node = path.node;
         const scope = path.scope;
         const arg = node.arguments[0];

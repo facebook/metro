@@ -47,7 +47,7 @@ class RamBundleParser {
     return this._buffer.readUInt32LE(pos * SIZEOF_UINT32);
   }
 
-  getStartupCode() {
+  getStartupCode(): string {
     const start = this._startOffset;
     const end = start + this._startupCodeLength - 1;
 

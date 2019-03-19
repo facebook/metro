@@ -36,7 +36,7 @@ class Bundler {
       });
   }
 
-  async end() {
+  async end(): Promise<void> {
     const dependencyGraph = await this._depGraphPromise;
 
     this._transformer.end();

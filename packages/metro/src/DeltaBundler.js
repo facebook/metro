@@ -46,7 +46,7 @@ class DeltaBundler<T = MixedOutput> {
     this._bundler = bundler;
   }
 
-  end() {
+  end(): void {
     this._deltaCalculators.forEach((deltaCalculator: DeltaCalculator<T>) =>
       deltaCalculator.end(),
     );
@@ -96,7 +96,7 @@ class DeltaBundler<T = MixedOutput> {
     };
   }
 
-  endGraph(graph: Graph<T>) {
+  endGraph(graph: Graph<T>): void {
     const deltaCalculator = this._deltaCalculators.get(graph);
 
     if (!deltaCalculator) {

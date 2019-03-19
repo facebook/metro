@@ -149,7 +149,7 @@ function logError(
  * A reporter that does nothing. Errors and warnings will be swallowed, that
  * is generally not what you want.
  */
-const nullReporter = {update() {}};
+const nullReporter = {update(): void {}};
 
 module.exports = {
   logWarning,

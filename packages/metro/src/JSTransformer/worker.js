@@ -310,10 +310,7 @@ class JsTransformer {
     source: string,
     map: Array<MetroSourceMapSegmentTuple>,
     reserved?: $ReadOnlyArray<string> = [],
-  ): Promise<{
-    code: string,
-    map: Array<MetroSourceMapSegmentTuple>,
-  }> {
+  ): Promise<{code: string, map: Array<MetroSourceMapSegmentTuple>}> {
     const sourceMap = fromRawMappings([
       {code, source, map, path: filename},
     ]).toMap(undefined, {});

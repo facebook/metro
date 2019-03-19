@@ -67,7 +67,7 @@ class IncrementalBundler {
     this._deltaBundler = new DeltaBundler(this._bundler);
   }
 
-  end() {
+  end(): void {
     this._deltaBundler.end();
     this._bundler.end();
   }
@@ -147,7 +147,7 @@ class IncrementalBundler {
     otherOptions?: OtherOptions = {
       onProgress: null,
     },
-  ): Promise<{|+prepend: $ReadOnlyArray<Module<>>, +graph: OutputGraph|}> {
+  ): Promise<{|+graph: OutputGraph, +prepend: $ReadOnlyArray<Module<>>|}> {
     const graph = await this.buildGraphForEntries(
       [entryFile],
       transformOptions,
@@ -184,7 +184,7 @@ class IncrementalBundler {
     otherOptions?: OtherOptions = {
       onProgress: null,
     },
-  ): Promise<{revision: GraphRevision, delta: DeltaResult<>}> {
+  ): Promise<{delta: DeltaResult<>, revision: GraphRevision}> {
     const graphId = getGraphId(entryFile, transformOptions);
     const revisionId = createRevisionId();
     const revisionPromise = (async () => {
@@ -222,7 +222,7 @@ class IncrementalBundler {
   async updateGraph(
     revision: GraphRevision,
     reset: boolean,
-  ): Promise<{revision: GraphRevision, delta: DeltaResult<>}> {
+  ): Promise<{delta: DeltaResult<>, revision: GraphRevision}> {
     const delta = await this._deltaBundler.getDelta(revision.graph, {reset});
 
     this._config.serializer.experimentalSerializerHook(revision.graph, delta);

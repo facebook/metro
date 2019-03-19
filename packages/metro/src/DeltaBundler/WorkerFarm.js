@@ -69,7 +69,7 @@ class WorkerFarm {
     }
   }
 
-  kill() {
+  kill(): void {
     if (this._worker && typeof this._worker.end === 'function') {
       this._worker.end();
     }
@@ -143,7 +143,7 @@ class WorkerFarm {
     return null;
   }
 
-  _formatGenericError(err, filename: string) {
+  _formatGenericError(err, filename: string): TransformError {
     const error = new TransformError(`${filename}: ${err.message}`);
 
     return Object.assign(error, {
@@ -155,7 +155,7 @@ class WorkerFarm {
     });
   }
 
-  _formatBabelError(err, filename: string) {
+  _formatBabelError(err, filename: string): TransformError {
     const error = new TransformError(
       `${err.type || 'Error'}${
         err.message.includes(filename) ? '' : ' in ' + filename

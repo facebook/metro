@@ -125,7 +125,7 @@ async function getRamBundleInfo(
   );
 
   return {
-    getDependencies: (filePath: string) =>
+    getDependencies: (filePath: string): Set<string> =>
       getTransitiveDependencies(filePath, graph),
     groups,
     lazyModules,

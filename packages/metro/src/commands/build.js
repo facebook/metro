@@ -28,7 +28,7 @@ module.exports = () => ({
   description:
     'Generates a JavaScript bundle containing the specified entrypoint and its descendants',
 
-  builder: (yargs: Yargs) => {
+  builder: (yargs: Yargs): void => {
     yargs.option('project-roots', {
       alias: 'P',
       type: 'string',
@@ -62,7 +62,7 @@ module.exports = () => ({
 
     await MetroApi.runBuild(config, {
       ...argv,
-      onBegin: () => {
+      onBegin: (): void => {
         updateReporter.update({
           buildID: '$',
           type: 'bundle_build_started',
@@ -75,7 +75,10 @@ module.exports = () => ({
           },
         });
       },
-      onProgress: (transformedFileCount: number, totalFileCount: number) => {
+      onProgress: (
+        transformedFileCount: number,
+        totalFileCount: number,
+      ): void => {
         updateReporter.update({
           buildID: '$',
           type: 'bundle_transform_progressed_throttled',
@@ -83,7 +86,7 @@ module.exports = () => ({
           totalFileCount,
         });
       },
-      onComplete: () => {
+      onComplete: (): void => {
         updateReporter.update({
           buildID: '$',
           type: 'bundle_build_done',

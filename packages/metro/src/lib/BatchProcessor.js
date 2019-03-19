@@ -54,7 +54,7 @@ class BatchProcessor<TItem, TResult> {
     (this: any)._processQueue = this._processQueue.bind(this);
   }
 
-  _onBatchFinished() {
+  _onBatchFinished(): void {
     this._currentProcessCount--;
     this._processQueueOnceReady();
   }
@@ -62,7 +62,7 @@ class BatchProcessor<TItem, TResult> {
   _onBatchResults(
     jobs: Array<QueueItem<TItem, TResult>>,
     results: Array<TResult>,
-  ) {
+  ): void {
     invariant(results.length === jobs.length, 'Not enough results returned.');
     for (let i = 0; i < jobs.length; ++i) {
       jobs[i].resolve(results[i]);
@@ -70,14 +70,14 @@ class BatchProcessor<TItem, TResult> {
     this._onBatchFinished();
   }
 
-  _onBatchError(jobs: Array<QueueItem<TItem, TResult>>, error: mixed) {
+  _onBatchError(jobs: Array<QueueItem<TItem, TResult>>, error: mixed): void {
     for (let i = 0; i < jobs.length; ++i) {
       jobs[i].reject(error);
     }
     this._onBatchFinished();
   }
 
-  _processQueue() {
+  _processQueue(): void {
     this._timeoutHandle = null;
     const {concurrency} = this._options;
     while (this._queue.length > 0 && this._currentProcessCount < concurrency) {
@@ -92,7 +92,7 @@ class BatchProcessor<TItem, TResult> {
     }
   }
 
-  _processQueueOnceReady() {
+  _processQueueOnceReady(): void {
     if (this._queue.length >= this._options.maximumItems) {
       clearTimeout(this._timeoutHandle);
       process.nextTick(this._processQueue);

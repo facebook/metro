@@ -35,7 +35,7 @@ function constantFoldingPlugin(context: {types: BabelTypes}) {
   };
 
   const FunctionDeclaration = {
-    exit(path: Object, state: Object) {
+    exit(path: Object, state: Object): void {
       const binding =
         path.node.id !== null && path.scope.getBinding(path.node.id.name);
 
@@ -47,7 +47,7 @@ function constantFoldingPlugin(context: {types: BabelTypes}) {
   };
 
   const FunctionExpression = {
-    exit(path: Object, state: Object) {
+    exit(path: Object, state: Object): void {
       const parentPath = path.parentPath;
 
       if (t.isVariableDeclarator(parentPath)) {
@@ -62,7 +62,7 @@ function constantFoldingPlugin(context: {types: BabelTypes}) {
   };
 
   const Conditional = {
-    exit(path: Object, state: Object) {
+    exit(path: Object, state: Object): void {
       const node = path.node;
       const result = evaluate(path.get('test'));
 
@@ -79,7 +79,7 @@ function constantFoldingPlugin(context: {types: BabelTypes}) {
   };
 
   const Expression = {
-    exit(path: Object) {
+    exit(path: Object): void {
       const result = evaluate(path);
 
       if (result.confident) {
@@ -90,7 +90,7 @@ function constantFoldingPlugin(context: {types: BabelTypes}) {
   };
 
   const LogicalExpression = {
-    exit(path: Object) {
+    exit(path: Object): void {
       const node = path.node;
       const result = evaluate(path.get('left'));
 
@@ -115,11 +115,11 @@ function constantFoldingPlugin(context: {types: BabelTypes}) {
   };
 
   const Program = {
-    enter(path: Object, state: Object) {
+    enter(path: Object, state: Object): void {
       state.stripped = false;
     },
 
-    exit(path: Object, state: Object) {
+    exit(path: Object, state: Object): void {
       path.traverse(
         {
           ArrowFunctionExpression: FunctionExpression,

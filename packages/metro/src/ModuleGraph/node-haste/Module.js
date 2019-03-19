@@ -12,6 +12,7 @@
 
 import type {TransformedCodeFile} from '../types.flow';
 import type ModuleCache from './ModuleCache';
+import type Package from './Package';
 
 module.exports = class Module {
   hasteID: ?string;
@@ -30,11 +31,11 @@ module.exports = class Module {
     this.path = path;
   }
 
-  getPackage() {
+  getPackage(): ?Package {
     return this.moduleCache.getPackageOf(this.path);
   }
 
-  isHaste() {
+  isHaste(): boolean {
     return Boolean(this.hasteID);
   }
 };

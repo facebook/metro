@@ -31,8 +31,19 @@ import type {CustomTransformOptions} from './JSTransformer/worker';
 import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
 import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
-import type {ConfigT, InputConfigT} from 'metro-config/src/configTypes.flow';
+import type {
+  ConfigT,
+  InputConfigT,
+  Middleware,
+} from 'metro-config/src/configTypes.flow';
 import typeof Yargs from 'yargs';
+
+type MetroMiddleWare = {|
+  attachHmrServer: (httpServer: HttpServer | HttpsServer) => void,
+  end: () => void,
+  metroServer: MetroServer,
+  middleware: Middleware,
+|};
 
 async function getConfig(config: InputConfigT): Promise<ConfigT> {
   const defaultConfig = await getDefaultConfig(config.projectRoot);
@@ -56,7 +67,9 @@ async function runMetro(config: InputConfigT): Promise<MetroServer> {
 exports.runMetro = runMetro;
 exports.loadConfig = loadConfig;
 
-exports.createConnectMiddleware = async function(config: ConfigT) {
+exports.createConnectMiddleware = async function(
+  config: ConfigT,
+): Promise<MetroMiddleWare> {
   const metroServer = await runMetro(config);
 
   let enhancedMiddleware = metroServer.processRequest;
@@ -70,7 +83,7 @@ exports.createConnectMiddleware = async function(config: ConfigT) {
   }
 
   return {
-    attachHmrServer(httpServer: HttpServer | HttpsServer) {
+    attachHmrServer(httpServer: HttpServer | HttpsServer): void {
       attachWebsocketServer({
         httpServer,
         path: '/hot',
@@ -83,7 +96,7 @@ exports.createConnectMiddleware = async function(config: ConfigT) {
     },
     metroServer,
     middleware: enhancedMiddleware,
-    end() {
+    end(): void {
       metroServer.end();
     },
   };
@@ -111,7 +124,7 @@ exports.runServer = async (
     secureCert,
     hmrEnabled = false,
   }: RunServerOptions,
-) => {
+): Promise<HttpServer | HttpsServer> => {
   // Lazy require
   const connect = require('connect');
 
@@ -248,7 +261,7 @@ exports.runBuild = async (
     sourceMap = false,
     sourceMapUrl,
   }: RunBuildOptions,
-) => {
+): Promise<{code: string, map: string}> => {
   const metroServer = await runMetro(config);
 
   try {
@@ -341,7 +354,7 @@ exports.attachMetroCli = function(
     serve: ServeCommandOptions,
     dependencies: any,
   } = {},
-) {
+): Yargs {
   if (build) {
     const {command, description, builder, handler} = makeBuildCommand();
     yargs.command(command, description, builder, handler);

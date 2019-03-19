@@ -132,13 +132,13 @@ class Transformer {
 
     return {
       ...data.result,
-      getSource() {
+      getSource(): Buffer {
         return fs.readFileSync(filePath);
       },
     };
   }
 
-  end() {
+  end(): void {
     this._workerFarm.kill();
   }
 }

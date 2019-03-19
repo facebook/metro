@@ -20,7 +20,7 @@ const path = require('path');
 const {getModuleCodeAndMap, partition, toModuleTransport} = require('./util');
 
 import type {FBIndexMap} from 'metro-source-map';
-import type {Module, OutputFn, OutputResult} from '../types.flow';
+import type {Module, OutputFn, OutputFnArg, OutputResult} from '../types.flow';
 
 function asMultipleFilesRamBundle({
   filename,
@@ -78,7 +78,8 @@ function createBuilder(
   preloadedModules: Set<string>,
   ramGroupHeads: ?$ReadOnlyArray<string>,
 ): OutputFn<FBIndexMap> {
-  return x => asMultipleFilesRamBundle({...x, preloadedModules, ramGroupHeads});
+  return (x: OutputFnArg) =>
+    asMultipleFilesRamBundle({...x, preloadedModules, ramGroupHeads});
 }
 
 exports.createBuilder = createBuilder;

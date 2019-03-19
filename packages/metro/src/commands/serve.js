@@ -24,7 +24,7 @@ module.exports = () => ({
   description:
     'Starts a Metro server on the given port, building bundles on the fly',
 
-  builder: (yargs: Yargs) => {
+  builder: (yargs: Yargs): void => {
     yargs.option('project-roots', {
       alias: 'P',
       type: 'string',

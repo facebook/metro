@@ -59,7 +59,7 @@ class DeltaCalculator<T> extends EventEmitter {
   /**
    * Stops listening for file changes and clears all the caches.
    */
-  end() {
+  end(): void {
     this._dependencyGraph
       .getWatcher()
       .removeListener('change', this._handleMultipleFileChanges);
