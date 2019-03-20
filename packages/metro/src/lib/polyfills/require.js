@@ -53,7 +53,7 @@ type ModuleDefinition = {|
   verboseName?: string,
 |};
 type PatchedModules = {[ModuleID]: boolean};
-type ModuleList = {[number]: ModuleDefinition, __proto__: null};
+type ModuleList = {[number]: ?ModuleDefinition, __proto__: null};
 type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
 type VerboseModuleNameForDev = string;
 
@@ -108,7 +108,8 @@ function define(
     // that are already loaded
     return;
   }
-  modules[moduleId] = {
+
+  const mod: ModuleDefinition = {
     dependencyMap,
     factory,
     hasError: false,
@@ -117,16 +118,19 @@ function define(
     isInitialized: false,
     publicModule: {exports: {}},
   };
+
+  modules[moduleId] = mod;
+
   if (__DEV__) {
     // HMR
-    modules[moduleId].hot = createHotReloadingObject();
+    mod.hot = createHotReloadingObject();
 
     // DEBUGGABLE MODULES NAMES
     // we take `verboseName` from `arguments` to avoid an unused named parameter
     // in `define` in production.
     const verboseName: string | void = arguments[3];
     if (verboseName) {
-      modules[moduleId].verboseName = verboseName;
+      mod.verboseName = verboseName;
       verboseNamesToModuleIds[verboseName] = moduleId;
     }
   }
@@ -156,7 +160,9 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
     if (initializingIndex !== -1) {
       const cycle = initializingModuleIds
         .slice(initializingIndex)
-        .map((id: number) => modules[id].verboseName);
+        .map((id: number) =>
+          modules[id] ? modules[id].verboseName : '[unknown]',
+        );
       // We want to show A -> B -> A:
       cycle.push(cycle[0]);
       console.warn(
@@ -194,6 +200,7 @@ function metroImportDefault(moduleId: ModuleID | VerboseModuleNameForDev) {
   const importedDefault =
     exports && exports.__esModule ? exports.default : exports;
 
+  // $FlowFixMe The metroRequire call above will throw if modules[id] is null
   return (modules[moduleIdReallyIsNumber].importedDefault = importedDefault);
 }
 metroRequire.importDefault = metroImportDefault;
@@ -234,6 +241,7 @@ function metroImportAll(moduleId: ModuleID | VerboseModuleNameForDev | number) {
     importedAll.default = exports;
   }
 
+  // $FlowFixMe The metroRequire call above will throw if modules[id] is null
   return (modules[moduleIdReallyIsNumber].importedAll = importedAll);
 }
 metroRequire.importAll = metroImportAll;
@@ -241,7 +249,7 @@ metroRequire.importAll = metroImportAll;
 let inGuard = false;
 function guardedLoadModule(
   moduleId: ModuleID,
-  module: ModuleDefinition,
+  module: ?ModuleDefinition,
 ): Exports {
   if (!inGuard && global.ErrorUtils) {
     inGuard = true;
@@ -300,7 +308,7 @@ function registerSegment(segmentID, moduleDefiner): void {
 
 function loadModuleImplementation(
   moduleId: ModuleID,
-  module: ModuleDefinition,
+  module: ?ModuleDefinition,
 ): Exports {
   if (!module && moduleDefinersBySegmentID.length > 0) {
     const {segmentId, localId} = unpackModuleId(moduleId);
@@ -503,6 +511,10 @@ if (__DEV__) {
     if (!mod && factory) {
       // New modules are going to be handled by the define() method.
       return true;
+    }
+
+    if (!mod) {
+      throw unknownModuleError(id);
     }
 
     const {hot} = mod;
