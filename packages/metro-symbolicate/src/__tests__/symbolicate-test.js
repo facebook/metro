@@ -67,6 +67,16 @@ test('symbolicating a single entry', async () =>
     'thrower.js:18:null\n',
   ));
 
+test('symbolicating a single entry with an out of range column', async () =>
+  await expect(execute([TESTFILE_MAP, '1', '1000000'])).resolves.toEqual(
+    'thrower.js:1:null\n',
+  ));
+
+test('symbolicating a single entry with out of range line', async () =>
+  await expect(execute([TESTFILE_MAP, '1000000', '161'])).resolves.toEqual(
+    'null:null:null\n',
+  ));
+
 test('symbolicating a sectioned source map', async () =>
   await expect(
     execute([resolve('testfile.sectioned.js.map'), '353.js', '1', '72']),
