@@ -413,36 +413,6 @@ describe('require', () => {
         'Unknown named module: "wrong.js"',
       );
     });
-
-    it('calls the hooks when module is required', () => {
-      createModuleSystem(moduleSystem, false);
-
-      const received = [];
-      const hook = moduleSystem.__r.registerHook((moduleId, module) => {
-        received.push([moduleId, module]);
-      });
-      createModule(
-        moduleSystem,
-        0,
-        'index.js',
-        (global, require, _1, _2, module) => {
-          module.exports = 'foo';
-        },
-      );
-      createModule(
-        moduleSystem,
-        1,
-        'bar.js',
-        (global, require, _1, _2, module) => {
-          module.exports = 'bar';
-        },
-      );
-
-      expect(moduleSystem.__r(0)).toEqual('foo');
-      hook.release();
-      expect(moduleSystem.__r(1)).toEqual('bar');
-      expect(received).toEqual([[0, {exports: 'foo', id: 0}]]);
-    });
   });
 
   describe('clearing require cache', () => {

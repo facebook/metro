@@ -283,23 +283,6 @@ function packModuleId(value: {localId: number, segmentId: number}): ModuleID {
 }
 metroRequire.packModuleId = packModuleId;
 
-const hooks = [];
-function registerHook(cb: (number, {}) => void): {|release: () => void|} {
-  const hook = {cb};
-  hooks.push(hook);
-  return {
-    release: (): void => {
-      for (let i = 0; i < hooks.length; ++i) {
-        if (hooks[i] === hook) {
-          hooks.splice(i, 1);
-          break;
-        }
-      }
-    },
-  };
-}
-metroRequire.registerHook = registerHook;
-
 const moduleDefinersBySegmentID = [];
 
 function registerSegment(segmentID, moduleDefiner): void {
@@ -366,12 +349,6 @@ function loadModuleImplementation(
       }
     }
     moduleObject.id = moduleId;
-
-    if (hooks.length > 0) {
-      for (let i = 0; i < hooks.length; ++i) {
-        hooks[i].cb(moduleId, moduleObject);
-      }
-    }
 
     // keep args in sync with with defineModuleCode in
     // metro/src/Resolver/index.js
