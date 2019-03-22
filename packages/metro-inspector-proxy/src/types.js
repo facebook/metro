@@ -59,7 +59,10 @@ export type GetPagesResponse = {
 };
 
 // Union type for all possible messages sent from device to Inspector Proxy.
-export type MessageFromDevice = GetPagesResponse | WrappedEvent;
+export type MessageFromDevice =
+  | GetPagesResponse
+  | WrappedEvent
+  | DisconnectRequest;
 
 // Union type for all possible messages sent from Inspector Proxy to device.
 export type MessageToDevice =
