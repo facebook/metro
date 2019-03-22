@@ -104,7 +104,7 @@ class SourceMetadataMapConsumer {
     line,
     column,
     source,
-  } /*: Position & {source: string} */) /*: ?string */ {
+  } /*: Position & {source: ?string} */) /*: ?string */ {
     if (source && line != null && column != null) {
       const mappings = this._getFunctionMappings(source);
       if (mappings) {
@@ -194,11 +194,14 @@ class SourceMetadataMapConsumer {
       const basicMap /*: FBBasicSourceMap */ = map;
       return (basicMap.x_facebook_sources || []).reduce(
         (acc, metadata, index) => {
-          const source = this._normalizeSource(
-            basicMap.sources[index],
-            basicMap,
-          );
-          acc[source] = metadata;
+          let source = basicMap.sources[index];
+          if (source != null) {
+            source = this._normalizeSource(
+              source,
+              basicMap,
+            );
+            acc[source] = metadata;
+          }
           return acc;
         },
         {},
