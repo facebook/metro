@@ -14,6 +14,7 @@ const {
   addModuleIdsToModuleWrapper,
   inlineModuleIds,
   createIdForPathFn,
+  getModuleCodeAndMap,
 } = require('../util');
 
 const {any} = jasmine;
@@ -150,5 +151,59 @@ describe('`createIdForPathFn`', () => {
     idForPath({path: '/other/file'});
     idForPath({path: 'and/another/file'});
     expect(idForPath({path})).toEqual(id);
+  });
+});
+
+describe('getModuleCodeAndMap', () => {
+  it('returns empty x_facebook_sources field when map has no sources', () => {
+    const {moduleMap} = getModuleCodeAndMap(
+      {
+        dependencies: [],
+        file: {
+          code: '__d(function(){});',
+          map: {
+            version: 3,
+            mappings: '',
+            names: [],
+            sources: [],
+          },
+          functionMap: {
+            mappings: '',
+            names: [],
+          },
+          path: 'path/to/file',
+          type: 'module',
+          libraryIdx: null,
+        },
+      },
+      () => 0,
+      {enableIDInlining: false},
+    );
+    expect(moduleMap.x_facebook_sources).toEqual([]);
+  });
+
+  it('omits x_facebook_sources field entirely when map is sectioned', () => {
+    const {moduleMap} = getModuleCodeAndMap(
+      {
+        dependencies: [],
+        file: {
+          code: '__d(function(){});',
+          map: {
+            version: 3,
+            sections: [],
+          },
+          functionMap: {
+            mappings: '',
+            names: [],
+          },
+          path: 'path/to/file',
+          type: 'module',
+          libraryIdx: null,
+        },
+      },
+      () => 0,
+      {enableIDInlining: false},
+    );
+    expect(moduleMap.x_facebook_sources).toEqual(undefined);
   });
 });

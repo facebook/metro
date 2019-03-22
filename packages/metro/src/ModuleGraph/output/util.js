@@ -114,8 +114,12 @@ function getModuleCodeAndMap(
   } else {
     ({moduleCode, moduleMap} = inlineModuleIds(module, idForPath));
   }
-  if (moduleMap) {
-    moduleMap = {...moduleMap, x_facebook_sources: [[module.file.functionMap]]};
+  if (moduleMap && moduleMap.sources) {
+    const x_facebook_sources = [];
+    if (moduleMap.sources.length >= 1) {
+      x_facebook_sources.push([module.file.functionMap]);
+    }
+    moduleMap = {...moduleMap, x_facebook_sources};
   }
   return {moduleCode, moduleMap};
 }
