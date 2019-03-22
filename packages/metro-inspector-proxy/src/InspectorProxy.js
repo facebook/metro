@@ -113,12 +113,13 @@ class InspectorProxy {
       debuggerUrl;
     return {
       id: `${deviceId}-${page.id}`,
-      description: page.title,
+      description: page.app,
       title: page.title,
       faviconUrl: 'https://reactjs.org/favicon.ico',
       devtoolsFrontendUrl,
       type: 'node',
       webSocketDebuggerUrl,
+      vm: page.vm,
     };
   }
 

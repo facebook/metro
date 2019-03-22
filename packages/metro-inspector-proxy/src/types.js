@@ -17,6 +17,7 @@ export type Page = {
   id: string,
   title: string,
   vm: string,
+  app: string,
 };
 
 // Chrome Debugger Protocol message/event passed between device and debugger.
