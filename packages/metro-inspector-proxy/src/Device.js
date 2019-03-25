@@ -129,10 +129,11 @@ class Device {
     if (message.event === 'getPages') {
       this._pages = message.payload;
     } else if (message.event === 'disconnect') {
-      // Device sends disconnect events only when page is reloaded.
+      // Device sends disconnect events only when page is reloaded or
+      // if debugger socket was disconnected.
       const pageId = message.payload.pageId;
       const debuggerSocket = this._debuggerSockets.get(pageId);
-      if (debuggerSocket) {
+      if (debuggerSocket && debuggerSocket.readyState == WS.OPEN) {
         // eslint-disable-next-line no-console
         console.log(chalk.green(`Page ${pageId} is reloading.`));
         debuggerSocket.send(JSON.stringify({method: 'reload'}));
