@@ -6,7 +6,7 @@
  *
  * @flow
  * @format
- * @emails  oncall+javascript_foundation
+ * @emails  oncall+metro_bundler
  */
 
 'use strict';
