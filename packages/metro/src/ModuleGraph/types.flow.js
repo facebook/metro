@@ -134,6 +134,7 @@ export type TransformResult = {|
   requireName: string,
   soundResources?: ?Array<string>,
   importNames?: {all: string, default: string},
+  isESModule?: true,
 |};
 
 export type TransformResults = {[string]: TransformResult};

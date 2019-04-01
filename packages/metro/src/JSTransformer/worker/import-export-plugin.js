@@ -27,6 +27,7 @@ type State = {
     importDefault: string,
     importAll: string,
     resolve: boolean,
+    out?: {isESModule: boolean},
   },
 };
 
@@ -357,6 +358,11 @@ function importExportPlugin({types: t}: $FlowFixMe) {
             state.exportNamed.length
           ) {
             body.unshift(esModuleExportTemplate());
+            if (state.opts.out) {
+              state.opts.out.isESModule = true;
+            }
+          } else if (state.opts.out) {
+            state.opts.out.isESModule = false;
           }
         },
       },
