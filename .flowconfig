@@ -18,4 +18,4 @@ suppress_comment=\\(.\\|\n\\)*\\$FlowExpectedError
 munge_underscores=true
 
 [version]
-^0.95.0
+^0.96.0
