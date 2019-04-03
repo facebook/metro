@@ -42,7 +42,7 @@ class InspectorProxy {
   // Internal counter for device IDs -- just gets incremented for each new device.
   _deviceCounter: number = 0;
 
-  // We store server's address with port (like '127.0.0.1:8082') to be able to build URLs
+  // We store server's address with port (like '127.0.0.1:8081') to be able to build URLs
   // (devtoolsFrontendUrl and webSocketDebuggerUrl) for page descriptions. These URLs are used
   // by debugger to know where to connect.
   _serverAddressWithPort: string = '';
