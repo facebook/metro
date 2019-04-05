@@ -18,6 +18,18 @@ const PAGES_POLLING_INTERVAL = 1000;
 
 const chalk = require('chalk');
 
+// Android's stock emulator and other emulators such as genymotion use a standard localhost alias.
+const EMULATOR_LOCALHOST_ADDRESSES: Array<string> = ['10.0.2.2', '10.0.3.2'];
+
+type DebuggerInfo = {
+  // Debugger web socket connection
+  socket: WS,
+
+  // If we replaced address (like '10.0.2.2') to localhost we need to store original
+  // address because Chrome uses URL or urlRegex params (instead of scriptId) to set breakpoints.
+  originalSourceURLAddress?: string,
+};
+
 /**
  * Device class represents single device connection to Inspector Proxy. Each device
  * can have multiple inspectable pages.
@@ -38,16 +50,16 @@ class Device {
   // Stores last list of device's pages.
   _pages: Array<Page>;
 
-  // Maps Page ID to debugger websocket connection for the pages that are currently
+  // Maps Page ID to debugger information for the pages that are currently
   // debugged.
-  _debuggerSockets: Map<string, WS>;
+  _debuggerConnections: Map<string, DebuggerInfo>;
 
   constructor(id: number, name: string, app: string, socket: WS) {
     this._id = id;
     this._name = name;
     this._app = app;
     this._pages = [];
-    this._debuggerSockets = new Map();
+    this._debuggerConnections = new Map();
     this._deviceSocket = socket;
     this._deviceSocket.on('message', (message: string) => {
       const parsedMessage = JSON.parse(message);
@@ -59,7 +71,7 @@ class Device {
     });
     this._deviceSocket.on('close', () => {
       // Device disconnected - close all debugger connections.
-      Array.from(this._debuggerSockets.values()).forEach((socket: WS) =>
+      Array.from(this._debuggerConnections.values()).forEach(({socket: WS}) =>
         socket.close(),
       );
     });
@@ -80,7 +92,10 @@ class Device {
   // 2. Forwards all messages from the debugger to device as wrappedEvent
   // 3. Sends disconnect event to device when debugger connection socket closes.
   handleDebuggerConnection(socket: WS, pageId: string) {
-    this._debuggerSockets.set(pageId, socket);
+    const debuggerInfo = {
+      socket,
+    };
+    this._debuggerConnections.set(pageId, debuggerInfo);
     // eslint-disable-next-line no-console
     console.log(
       `Got new debugger connection for page ${pageId} of ${this._name}`,
@@ -96,11 +111,14 @@ class Device {
     socket.on('message', (message: string) => {
       // eslint-disable-next-line no-console
       console.log(chalk.green('<- From debugger: ' + message));
+      const parsedMessage = JSON.parse(message);
+      this._processMessageFromDebugger(parsedMessage, debuggerInfo);
+
       this._sendMessageToDevice({
         event: 'wrappedEvent',
         payload: {
           pageId,
-          wrappedEvent: message,
+          wrappedEvent: JSON.stringify(parsedMessage),
         },
       });
     });
@@ -132,7 +150,8 @@ class Device {
       // Device sends disconnect events only when page is reloaded or
       // if debugger socket was disconnected.
       const pageId = message.payload.pageId;
-      const debuggerSocket = this._debuggerSockets.get(pageId);
+      const debuggerInfo = this._debuggerConnections.get(pageId);
+      const debuggerSocket = debuggerInfo ? debuggerInfo.socket : null;
       if (debuggerSocket && debuggerSocket.readyState == WS.OPEN) {
         // eslint-disable-next-line no-console
         console.log(chalk.green(`Page ${pageId} is reloading.`));
@@ -140,16 +159,24 @@ class Device {
       }
     } else if (message.event === 'wrappedEvent') {
       const pageId = message.payload.pageId;
-      const debuggerSocket = this._debuggerSockets.get(pageId);
+      const debuggerInfo = this._debuggerConnections.get(pageId);
+      if (debuggerInfo == null) {
+        return;
+      }
+
+      const debuggerSocket = debuggerInfo.socket;
       if (debuggerSocket == null) {
         // TODO(hypuk): Send error back to device?
         return;
       }
+
+      const parsedPayload = JSON.parse(message.payload.wrappedEvent);
+      this._processMessageFromDevice(parsedPayload, debuggerInfo);
+
+      const messageToSend = JSON.stringify(parsedPayload);
       // eslint-disable-next-line no-console
-      console.log(
-        chalk.green('-> To debugger: ' + message.payload.wrappedEvent),
-      );
-      debuggerSocket.send(message.payload.wrappedEvent);
+      console.log(chalk.green('-> To debugger: ' + messageToSend));
+      debuggerSocket.send(messageToSend);
     }
   }
 
@@ -169,6 +196,60 @@ class Device {
     Observable.interval(PAGES_POLLING_INTERVAL).subscribe(_ =>
       this._sendMessageToDevice({event: 'getPages'}),
     );
+  }
+
+  // Allows to make changes in incoming message from device.
+  // eslint-disable-next-line lint/no-unclear-flowtypes
+  _processMessageFromDevice(payload: Object, debuggerInfo: DebuggerInfo) {
+    // Replace Android addresses for scriptParsed event.
+    if (payload.method === 'Debugger.scriptParsed') {
+      const params = payload.params || {};
+      if ('sourceMapURL' in params) {
+        for (let i = 0; i < EMULATOR_LOCALHOST_ADDRESSES.length; ++i) {
+          const address = EMULATOR_LOCALHOST_ADDRESSES[i];
+          if (params.sourceMapURL.indexOf(address) >= 0) {
+            payload.params.sourceMapURL = params.sourceMapURL.replace(
+              address,
+              'localhost',
+            );
+            debuggerInfo.originalSourceURLAddress = address;
+          }
+        }
+      }
+      if ('url' in params) {
+        for (let i = 0; i < EMULATOR_LOCALHOST_ADDRESSES.length; ++i) {
+          const address = EMULATOR_LOCALHOST_ADDRESSES[i];
+          if (params.url.indexOf(address) >= 0) {
+            payload.params.url = params.url.replace(address, 'localhost');
+            debuggerInfo.originalSourceURLAddress = address;
+          }
+        }
+      }
+    }
+  }
+
+  // Allows to make changes in incoming messages from debugger.
+  // eslint-disable-next-line lint/no-unclear-flowtypes
+  _processMessageFromDebugger(payload: Object, debuggerInfo: DebuggerInfo) {
+    // If we replaced Android emulator's address to localhost we need to change it back.
+    if (
+      payload.method === 'Debugger.setBreakpointByUrl' &&
+      debuggerInfo.originalSourceURLAddress
+    ) {
+      const params = payload.params || {};
+      if ('url' in params) {
+        payload.params.url = params.url.replace(
+          'localhost',
+          debuggerInfo.originalSourceURLAddress,
+        );
+      }
+      if ('urlRegex' in params) {
+        payload.params.urlRegex = params.urlRegex.replace(
+          'localhost',
+          debuggerInfo.originalSourceURLAddress,
+        );
+      }
+    }
   }
 }
 
