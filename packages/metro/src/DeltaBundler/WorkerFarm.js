@@ -108,14 +108,6 @@ class WorkerFarm {
     exposedMethods: $ReadOnlyArray<string>,
     numWorkers: number,
   ) {
-    const execArgv = process.execArgv.slice();
-
-    // We swallow the first parameter if it's not an option (some things such as
-    // flow-node like to add themselves into the execArgv array)
-    if (execArgv.length > 0 && execArgv[0].charAt(0) !== '-') {
-      execArgv.shift();
-    }
-
     const env = {
       ...process.env,
       // Force color to print syntax highlighted code frames.
