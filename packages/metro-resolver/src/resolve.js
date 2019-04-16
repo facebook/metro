@@ -421,12 +421,16 @@ function isRelativeImport(filePath: string) {
 }
 
 function normalizePath(modulePath) {
+  const wasRelative = isRelativeImport(modulePath);
   if (path.sep === '/') {
     modulePath = path.normalize(modulePath);
   } else if (path.posix) {
     modulePath = path.posix.normalize(modulePath);
   }
-
+  // Ensure `normalize` cannot strip leading "./"
+  if (wasRelative && modulePath[0] !== '.') {
+    modulePath = './' + modulePath;
+  }
   return modulePath.replace(/\/$/, '');
 }
 
