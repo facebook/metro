@@ -91,22 +91,6 @@ describe('loadConfig', () => {
     expect(prettyFormat(result)).toEqual(prettyFormat(defaultConfig));
   });
 
-  it('validates config for resolver', async () => {
-    expect.assertions(1);
-    const config = defaultConfig => ({
-      ...defaultConfig,
-      resolver: 'test',
-    });
-
-    cosmiconfig.setResolvedConfig(config);
-
-    try {
-      await loadConfig({});
-    } catch (error) {
-      expect(stripAnsi(error.message)).toMatchSnapshot();
-    }
-  });
-
   it('validates config for server', async () => {
     expect.assertions(1);
     const config = defaultConfig => ({
@@ -130,25 +114,6 @@ describe('loadConfig', () => {
     const config = defaultConfig => ({
       ...defaultConfig,
       projectRoot: ['test'],
-    });
-
-    cosmiconfig.setResolvedConfig(config);
-
-    try {
-      await loadConfig({});
-    } catch (error) {
-      expect(stripAnsi(error.message)).toMatchSnapshot();
-    }
-  });
-
-  it('validates config for transformer', async () => {
-    expect.assertions(1);
-    const config = defaultConfig => ({
-      ...defaultConfig,
-      transformer: {
-        ...defaultConfig.transformer,
-        enableBabelRuntime: 1,
-      },
     });
 
     cosmiconfig.setResolvedConfig(config);

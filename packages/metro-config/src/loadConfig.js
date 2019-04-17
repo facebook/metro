@@ -246,7 +246,7 @@ async function loadConfig(
 
   validate(configuration, {
     exampleConfig: await validConfig(),
-    recursiveBlacklist: ['reporter'],
+    recursiveBlacklist: ['reporter', 'resolver', 'transformer'],
   });
 
   // Override the configuration with cli parameters
