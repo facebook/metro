@@ -93,6 +93,9 @@ const getPreset = (src, options) => {
       [
         require('@babel/plugin-transform-modules-commonjs'),
         {
+          // Use `module.foo = bar` instead of `Object.defineProperty(module, 'foo', ...)`.
+          // This prevents an issue with HMR and namespace re-export (`export * from 'foo'`).
+          loose: true,
           strict: false,
           strictMode: false, // prevent "use strict" injections
           lazy:
