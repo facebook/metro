@@ -172,7 +172,10 @@ const getPreset = (src, options) => {
       {
         test: isTypeScriptSource,
         plugins: [
-          [require('@babel/plugin-transform-typescript'), {isTSX: false}],
+          [
+            require('@babel/plugin-transform-typescript'),
+            {isTSX: options && options.forceIsTSX === true},
+          ],
         ],
       },
       {
