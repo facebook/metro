@@ -77,6 +77,7 @@ export type JsTransformOptions = $ReadOnly<{|
   inlinePlatform: boolean,
   inlineRequires: boolean,
   minify: boolean,
+  unstable_disableES6Transforms?: boolean,
   platform: ?string,
   type: Type,
 |}>;

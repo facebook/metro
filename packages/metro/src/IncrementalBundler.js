@@ -160,6 +160,8 @@ class IncrementalBundler {
       experimentalImportSupport: transformOptions.experimentalImportSupport,
       hot: transformOptions.hot,
       minify: transformOptions.minify,
+      unstable_disableES6Transforms:
+        transformOptions.unstable_disableES6Transforms,
       platform: transformOptions.platform,
     };
 

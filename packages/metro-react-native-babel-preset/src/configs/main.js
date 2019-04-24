@@ -79,6 +79,10 @@ const babelRuntime = [
   },
 ];
 
+function unstable_disableES6Transforms(options) {
+  return !!(options && options.unstable_disableES6Transforms);
+}
+
 const getPreset = (src, options) => {
   const isNull = src == null;
   const hasClass = isNull || src.indexOf('class') !== -1;
@@ -127,7 +131,10 @@ const getPreset = (src, options) => {
   if (hasForOf) {
     extraPlugins.push(es2015ForOf);
   }
-  if (hasForOf || src.indexOf('Symbol') !== -1) {
+  if (
+    !unstable_disableES6Transforms(options) &&
+    (hasForOf || src.indexOf('Symbol') !== -1)
+  ) {
     extraPlugins.push(symbolMember);
   }
   if (

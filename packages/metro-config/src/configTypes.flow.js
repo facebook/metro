@@ -45,6 +45,7 @@ type ExtraTransformOptions = {
   +transform: {|
     +experimentalImportSupport: boolean,
     +inlineRequires: {+blacklist: {[string]: true}} | boolean,
+    +unstable_disableES6Transforms?: boolean,
   |},
 };
 

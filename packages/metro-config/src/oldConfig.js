@@ -52,7 +52,11 @@ const DEFAULT = ({
   getSourceExts: () => [],
   getTransformModulePath: () => 'metro-babel-transformer',
   getTransformOptions: async () => ({
-    transform: {experimentalImportSupport: false, inlineRequires: false},
+    transform: {
+      experimentalImportSupport: false,
+      inlineRequires: false,
+      unstable_disableES6Transforms: false,
+    },
     preloadedModules: false,
     ramGroups: [],
   }),

@@ -25,6 +25,7 @@ type BabelTransformerOptions = $ReadOnly<{
   hot: boolean,
   inlineRequires: boolean,
   minify: boolean,
+  unstable_disableES6Transforms?: boolean,
   platform: ?string,
   projectRoot: string,
   publicPath: string,
