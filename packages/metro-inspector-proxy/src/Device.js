@@ -16,7 +16,7 @@ import WS from 'ws';
 
 const PAGES_POLLING_INTERVAL = 1000;
 
-const chalk = require('chalk');
+const debug = require('debug')('Metro:InspectorProxy');
 
 // Android's stock emulator and other emulators such as genymotion use a standard localhost alias.
 const EMULATOR_LOCALHOST_ADDRESSES: Array<string> = ['10.0.2.2', '10.0.3.2'];
@@ -64,8 +64,7 @@ class Device {
     this._deviceSocket.on('message', (message: string) => {
       const parsedMessage = JSON.parse(message);
       if (parsedMessage.event !== 'getPages') {
-        // eslint-disable-next-line no-console
-        console.log(chalk.yellow('<- From device: ' + message));
+        debug('<- From device: ' + message);
       }
       this._handleMessageFromDevice(parsedMessage);
     });
@@ -96,10 +95,7 @@ class Device {
       socket,
     };
     this._debuggerConnections.set(pageId, debuggerInfo);
-    // eslint-disable-next-line no-console
-    console.log(
-      `Got new debugger connection for page ${pageId} of ${this._name}`,
-    );
+    debug(`Got new debugger connection for page ${pageId} of ${this._name}`);
 
     this._sendMessageToDevice({
       event: 'connect',
@@ -109,8 +105,7 @@ class Device {
     });
 
     socket.on('message', (message: string) => {
-      // eslint-disable-next-line no-console
-      console.log(chalk.green('<- From debugger: ' + message));
+      debug('<- From debugger: ' + message);
       const parsedMessage = JSON.parse(message);
       this._processMessageFromDebugger(parsedMessage, debuggerInfo);
 
@@ -123,10 +118,7 @@ class Device {
       });
     });
     socket.on('close', () => {
-      // eslint-disable-next-line no-console
-      console.log(
-        `Debugger for page ${pageId} and ${this._name} disconnected.`,
-      );
+      debug(`Debugger for page ${pageId} and ${this._name} disconnected.`);
       this._sendMessageToDevice({
         event: 'disconnect',
         payload: {
@@ -153,8 +145,7 @@ class Device {
       const debuggerInfo = this._debuggerConnections.get(pageId);
       const debuggerSocket = debuggerInfo ? debuggerInfo.socket : null;
       if (debuggerSocket && debuggerSocket.readyState == WS.OPEN) {
-        // eslint-disable-next-line no-console
-        console.log(chalk.green(`Page ${pageId} is reloading.`));
+        debug(`Page ${pageId} is reloading.`);
         debuggerSocket.send(JSON.stringify({method: 'reload'}));
       }
     } else if (message.event === 'wrappedEvent') {
@@ -174,8 +165,7 @@ class Device {
       this._processMessageFromDevice(parsedPayload, debuggerInfo);
 
       const messageToSend = JSON.stringify(parsedPayload);
-      // eslint-disable-next-line no-console
-      console.log(chalk.green('-> To debugger: ' + messageToSend));
+      debug('-> To debugger: ' + messageToSend);
       debuggerSocket.send(messageToSend);
     }
   }
@@ -184,8 +174,7 @@ class Device {
   _sendMessageToDevice(message: MessageToDevice) {
     try {
       if (message.event !== 'getPages') {
-        // eslint-disable-next-line no-console
-        console.log(chalk.yellow('-> To device' + JSON.stringify(message)));
+        debug('-> To device' + JSON.stringify(message));
       }
       this._deviceSocket.send(JSON.stringify(message));
     } catch (error) {}

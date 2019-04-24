@@ -13,6 +13,7 @@
 const Device = require('./Device');
 const WS = require('ws');
 
+const debug = require('debug')('Metro:InspectorProxy');
 const url = require('url');
 
 import type {
@@ -165,13 +166,11 @@ class InspectorProxy {
           new Device(deviceId, deviceName, appName, socket),
         );
 
-        // eslint-disable-next-line no-console
-        console.log(`Got new connection: device=${deviceName}, app=${appName}`);
+        debug(`Got new connection: device=${deviceName}, app=${appName}`);
 
         socket.on('close', () => {
           this._devices.delete(deviceId);
-          // eslint-disable-next-line no-console
-          console.log(`Device ${deviceName} disconnected.`);
+          debug(`Device ${deviceName} disconnected.`);
         });
       } catch (e) {
         console.error('error', e);

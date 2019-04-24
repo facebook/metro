@@ -19,6 +19,7 @@
     "chalk": "^2.4.1",
     "chokidar": "^2.0.4",
     "codecov": "^2.2.0",
+    "debug": "^2.2.0",
     "eslint": "5.1.0",
     "eslint-config-fb-strict": "22.1.0",
     "eslint-plugin-babel": "^5.2.1",
