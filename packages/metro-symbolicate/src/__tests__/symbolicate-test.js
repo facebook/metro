@@ -95,6 +95,122 @@ test('symbolicating an attribution file', async () =>
     ),
   ).resolves.toMatchSnapshot());
 
+describe('symbolicating an attribution file specifying unmapped offsets', () => {
+  const attribute = async obj =>
+    (await execute(
+      [resolve('testfile.partial.js.map'), '--attribution'],
+      JSON.stringify(obj) + '\n',
+    ))
+      .split('\n')
+      .filter(Boolean)
+      .map(line => JSON.parse(line));
+
+  test('Lookup falls before all mappings with no non-null mapping in range', async () =>
+    await expect(
+      attribute({
+        functionId: 0,
+        location: {virtualOffset: 0, bytecodeSize: 5},
+        usage: [],
+      }),
+    ).resolves.toMatchInlineSnapshot(`
+                        Array [
+                          Object {
+                            "functionId": 0,
+                            "location": Object {
+                              "column": null,
+                              "file": null,
+                              "line": null,
+                            },
+                            "usage": Array [],
+                          },
+                        ]
+                    `));
+
+  test('Lookup finds a null mapping and falls back to a non-null mapping in range', async () =>
+    await expect(
+      attribute({
+        functionId: 1,
+        location: {virtualOffset: 5, bytecodeSize: 2},
+        usage: [],
+      }),
+    ).resolves.toMatchInlineSnapshot(`
+                        Array [
+                          Object {
+                            "functionId": 1,
+                            "location": Object {
+                              "column": 1,
+                              "file": "foo.js",
+                              "line": 2,
+                            },
+                            "usage": Array [],
+                          },
+                        ]
+                    `));
+
+  test('Lookup finds a null mapping with no bytecodeSize specified', async () =>
+    await expect(
+      attribute({
+        functionId: 1,
+        location: {virtualOffset: 5},
+        usage: [],
+      }),
+    ).resolves.toMatchInlineSnapshot(`
+                        Array [
+                          Object {
+                            "functionId": 1,
+                            "location": Object {
+                              "column": null,
+                              "file": null,
+                              "line": null,
+                            },
+                            "usage": Array [],
+                          },
+                        ]
+                    `));
+
+  test('Lookup finds a null mapping with no non-null mapping in range', async () =>
+    await expect(
+      attribute({
+        functionId: 2,
+        location: {virtualOffset: 11, bytecodeSize: 1},
+        usage: [],
+      }),
+    ).resolves.toMatchInlineSnapshot(`
+            Array [
+              Object {
+                "functionId": 2,
+                "location": Object {
+                  "column": null,
+                  "file": null,
+                  "line": null,
+                },
+                "usage": Array [],
+              },
+            ]
+          `));
+
+  test('Lookup finds the last mapping and it is null', async () =>
+    await expect(
+      attribute({
+        functionId: 3,
+        location: {virtualOffset: 17, bytecodeSize: 1},
+        usage: [],
+      }),
+    ).resolves.toMatchInlineSnapshot(`
+                        Array [
+                          Object {
+                            "functionId": 3,
+                            "location": Object {
+                              "column": null,
+                              "file": null,
+                              "line": null,
+                            },
+                            "usage": Array [],
+                          },
+                        ]
+                    `));
+});
+
 test('symbolicating with a cpuprofile', async () => {
   fs.copyFileSync(
     resolve('testfile.cpuprofile'),

@@ -194,6 +194,28 @@ function symbolicateAttribution(obj, context) {
   var column = loc.column || loc.virtualOffset;
   var file = loc.filename ? parseFileName(loc.filename) : UNKNOWN_MODULE_IDS;
   var original = getOriginalPositionFor(line, column, file, context);
+
+  const isBytecodeRange =
+    loc.bytecodeSize != null &&
+    loc.virtualOffset != null &&
+    !loc.column != null;
+
+  // Functions compiled from Metro-bundled modules will often have a little bit
+  // of unmapped wrapper code right at the beginning - which is where we query.
+  // Let's attribute them to where the inner module code originates instead.
+  // This loop is O(n*log(n)) in the size of the function, but we will generally
+  // either:
+  // 1. Find a non-null mapping within one or two iterations; or
+  // 2. Reach the end of the function without encountering mappings - this might
+  //    happen for function bodies that never throw (generally very short).
+  while (
+    isBytecodeRange &&
+    original.source == null &&
+    ++column < loc.virtualOffset + loc.bytecodeSize
+  ) {
+    original = getOriginalPositionFor(line, column, file, context);
+  }
+
   obj.location = {
     file: original.source,
     line: original.line,
