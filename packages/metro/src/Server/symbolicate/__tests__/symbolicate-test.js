@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @emails oncall+js_foundation
+ * @emails oncall+js_symbolication
  */
 'use strict';
 
