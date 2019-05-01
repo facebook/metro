@@ -50,6 +50,30 @@ function parseFileName(str) {
  * line and column, and optionally a module ID.
  */
 function getOriginalPositionFor(lineNumber, columnNumber, moduleIds, context) {
+  const position = getOriginalPositionDetailsFor(
+    lineNumber,
+    columnNumber,
+    moduleIds,
+    context,
+  );
+  if (position.functionName) {
+    position.name = position.functionName;
+  }
+  delete position.functionName;
+  return position;
+}
+
+/*
+ * An internal helper function similar to getOriginalPositionFor. This one
+ * returns both `name` and `functionName` fields so callers can distinguish the
+ * source of the name.
+ */
+function getOriginalPositionDetailsFor(
+  lineNumber,
+  columnNumber,
+  moduleIds,
+  context,
+) {
   var moduleLineOffset = 0;
   var metadata = context.segments[moduleIds.segmentId];
   const {localId} = moduleIds;
@@ -71,12 +95,10 @@ function getOriginalPositionFor(lineNumber, columnNumber, moduleIds, context) {
     column: Number(columnNumber),
   });
   if (metadata.sourceFunctionsConsumer) {
-    const functionName = metadata.sourceFunctionsConsumer.functionNameFor(
-      original,
-    );
-    if (functionName) {
-      return {...original, name: functionName};
-    }
+    original.functionName =
+      metadata.sourceFunctionsConsumer.functionNameFor(original) || null;
+  } else {
+    original.functionName = null;
   }
   return original;
 }
@@ -240,7 +262,8 @@ function symbolicateChromeTrace(traceFile, context) {
     let line;
     let column;
 
-    // Function entrypoint line/column; used for symbolicating function name.
+    // Function entrypoint line/column; used for symbolicating function name
+    // with legacy source maps (or when --no-function-names is set).
     let funcLine;
     let funcColumn;
 
@@ -270,30 +293,35 @@ function symbolicateChromeTrace(traceFile, context) {
     }
 
     // Symbolicate original file/line/column.
-    const addressOriginal = getOriginalPositionFor(
+    const addressOriginal = getOriginalPositionDetailsFor(
       line,
       column,
       UNKNOWN_MODULE_IDS,
       context,
     );
 
-    let frameName = entry.name;
-    // Symbolicate function name.
-    if (funcLine != null && funcColumn != null) {
-      const funcOriginal = getOriginalPositionFor(
-        funcLine,
-        funcColumn,
-        UNKNOWN_MODULE_IDS,
-        context,
-      );
-      if (funcOriginal.name != null) {
-        frameName = funcOriginal.name;
-      }
+    let frameName;
+    if (addressOriginal.functionName) {
+      frameName = addressOriginal.functionName;
     } else {
-      // No function line/column info.
-      console.warn(
-        'Warning: no function prolog line/column info; name may be wrong',
-      );
+      frameName = entry.name;
+      // Symbolicate function name.
+      if (funcLine != null && funcColumn != null) {
+        const funcOriginal = getOriginalPositionFor(
+          funcLine,
+          funcColumn,
+          UNKNOWN_MODULE_IDS,
+          context,
+        );
+        if (funcOriginal.name != null) {
+          frameName = funcOriginal.name;
+        }
+      } else {
+        // No function line/column info.
+        console.warn(
+          'Warning: no function prolog line/column info; name may be wrong',
+        );
+      }
     }
 
     // Output format is: funcName(file:line:column)

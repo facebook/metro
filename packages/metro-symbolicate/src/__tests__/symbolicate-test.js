@@ -222,7 +222,22 @@ test('symbolicating with a cpuprofile', async () => {
     resolve('testfile.temp.cpuprofile'),
   ]);
 
-  expect(read('testfile.temp.cpuprofile')).toMatchSnapshot();
+  expect(JSON.parse(read('testfile.temp.cpuprofile'))).toMatchSnapshot();
+});
+
+test('symbolicating with a cpuprofile ignoring a function map', async () => {
+  fs.copyFileSync(
+    resolve('testfile.cpuprofile'),
+    resolve('testfile.temp.cpuprofile'),
+  );
+
+  await execute([
+    '--no-function-names',
+    resolve('testfile.cpuprofile.map'),
+    resolve('testfile.temp.cpuprofile'),
+  ]);
+
+  expect(JSON.parse(read('testfile.temp.cpuprofile'))).toMatchSnapshot();
 });
 
 test('symbolicating a stack trace with a function map', async () =>
