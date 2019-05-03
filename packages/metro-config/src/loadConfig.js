@@ -105,6 +105,9 @@ function mergeConfig<T: InputConfigT>(
 ): T {
   // If the file is a plain object we merge the file with the default config,
   // for the function we don't do this since that's the responsibility of the user
+  /* $FlowFixMe(>=0.98.0 site=react_native_fb) This comment suppresses an error
+   * found when Flow v0.98 was deployed. To see the error delete this comment
+   * and run Flow. */
   return configs.reduce(
     (totalConfig, nextConfig) => ({
       ...totalConfig,
