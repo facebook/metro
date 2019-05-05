@@ -128,7 +128,7 @@ Enable the `metro-visualizer` middleware (available at `/visualizer`). This requ
 
 #### `runInspectorProxy`
 
-Type: `boolean`
+Type: `boolean` (default: `true`)
 
 Run Inspector Proxy server inside Metro to be able to inspect React Native code.
 

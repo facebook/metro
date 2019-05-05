@@ -132,7 +132,7 @@ async function convertOldToNew({
       port,
       enableVisualizer: false,
       enhanceMiddleware,
-      runInspectorProxy: false,
+      runInspectorProxy: true,
       verifyConnections: false,
     },
     transformer: {
