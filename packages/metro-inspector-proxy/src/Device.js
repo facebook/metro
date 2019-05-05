@@ -21,6 +21,10 @@ const debug = require('debug')('Metro:InspectorProxy');
 // Android's stock emulator and other emulators such as genymotion use a standard localhost alias.
 const EMULATOR_LOCALHOST_ADDRESSES: Array<string> = ['10.0.2.2', '10.0.3.2'];
 
+// Prefix for script URLs that are alphanumeric IDs. See comment in _processMessageFromDevice method for
+// more details.
+const FILE_PREFIX = 'file://';
+
 type DebuggerInfo = {
   // Debugger web socket connection
   socket: WS,
@@ -28,6 +32,8 @@ type DebuggerInfo = {
   // If we replaced address (like '10.0.2.2') to localhost we need to store original
   // address because Chrome uses URL or urlRegex params (instead of scriptId) to set breakpoints.
   originalSourceURLAddress?: string,
+
+  prependedFilePrefix: boolean,
 };
 
 /**
@@ -93,6 +99,7 @@ class Device {
   handleDebuggerConnection(socket: WS, pageId: string) {
     const debuggerInfo = {
       socket,
+      prependedFilePrefix: false,
     };
     this._debuggerConnections.set(pageId, debuggerInfo);
     debug(`Got new debugger connection for page ${pageId} of ${this._name}`);
@@ -213,6 +220,15 @@ class Device {
             debuggerInfo.originalSourceURLAddress = address;
           }
         }
+
+        // Chrome doesn't download source maps if URL param is not a valid
+        // URL. Some frameworks pass alphanumeric script ID instead of URL which causes
+        // Chrome to not download source maps. In this case we want to prepend script ID
+        // with 'file://' prefix.
+        if (payload.params.url.match(/^[0-9a-z]+$/)) {
+          payload.params.url = FILE_PREFIX + payload.params.url;
+          debuggerInfo.prependedFilePrefix = true;
+        }
       }
     }
   }
@@ -231,6 +247,14 @@ class Device {
           'localhost',
           debuggerInfo.originalSourceURLAddress,
         );
+
+        if (
+          payload.params.url.startsWith(FILE_PREFIX) &&
+          debuggerInfo.prependedFilePrefix
+        ) {
+          // Remove fake URL prefix if we modified URL in _processMessageFromDevice.
+          payload.params.url = payload.params.url.slice(FILE_PREFIX.length);
+        }
       }
       if ('urlRegex' in params) {
         payload.params.urlRegex = params.urlRegex.replace(
