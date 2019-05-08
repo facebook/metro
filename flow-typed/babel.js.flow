@@ -245,6 +245,8 @@ export type TransformFromAstSync = (
   options?: BabelCoreOptions,
 ) => Transform7Result;
 
+type ParseCallback = (Error => void) | ((void, BabelNode) => void);
+
 // Use the sync versions if you expect a result
 type void_DO_NOT_USE_SYNC = void;
 
@@ -287,6 +289,17 @@ declare module '@babel/core' {
   declare var transformFromAstSync: TransformFromAstSync;
 
   declare function buildExternalHelpers(Array<string>): string;
+
+  // Note: DO NOT USE WITHOUT CALLBACK. Use parseSync instead.
+  declare function parse(
+    code: string,
+    options: BabelCoreOptions,
+    callback: ParseCallback,
+  ): void_DO_NOT_USE_SYNC;
+  declare function parseSync(
+    code: string,
+    options?: BabelCoreOptions,
+  ): BabelNode;
 }
 
 // https://github.com/babel/babel/tree/master/packages/babel-generator
