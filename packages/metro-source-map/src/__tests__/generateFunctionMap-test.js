@@ -54,112 +54,112 @@ function parent2() {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-parent from 3:0
-child from 4:2
-parent from 5:3
-<anonymous> from 6:0
-parent from 6:7
-<global> from 6:8
-parent2 from 7:0
-<global> from 8:1
-"
-`);
+      "
+      <global> from 1:0
+      parent from 3:0
+      child from 4:2
+      parent from 5:3
+      <anonymous> from 6:0
+      parent from 6:7
+      <global> from 6:8
+      parent2 from 7:0
+      <global> from 8:1
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;ACE;ECC;GDC;AEC,OF,CD;AIC;CJC",
-  "names": Array [
-    "<global>",
-    "parent",
-    "child",
-    "<anonymous>",
-    "parent2",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;ACE;ECC;GDC;AEC,OF,CD;AIC;CJC",
+        "names": Array [
+          "<global>",
+          "parent",
+          "child",
+          "<anonymous>",
+          "parent2",
+        ],
+      }
+    `);
   });
 
   it('two consecutive functions', () => {
     const ast = getAst('function a(){}function b(){}');
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-a from 1:0
-b from 1:14
-"
-`);
+      "
+      a from 1:0
+      b from 1:14
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA,cC",
-  "names": Array [
-    "a",
-    "b",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA,cC",
+        "names": Array [
+          "a",
+          "b",
+        ],
+      }
+    `);
   });
 
   it('two consecutive functions with a gap', () => {
     const ast = getAst('function a(){} function b(){}');
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-a from 1:0
-<global> from 1:14
-b from 1:15
-"
-`);
+      "
+      a from 1:0
+      <global> from 1:14
+      b from 1:15
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA,cC,CC",
-  "names": Array [
-    "a",
-    "<global>",
-    "b",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA,cC,CC",
+        "names": Array [
+          "a",
+          "<global>",
+          "b",
+        ],
+      }
+    `);
   });
 
   it('leading code in global', () => {
     const ast = getAst('++x; () => {}');
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-<anonymous> from 1:5
-"
-`);
+      "
+      <global> from 1:0
+      <anonymous> from 1:5
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA,KC",
-  "names": Array [
-    "<global>",
-    "<anonymous>",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA,KC",
+        "names": Array [
+          "<global>",
+          "<anonymous>",
+        ],
+      }
+    `);
   });
 
   it('trailing code in global', () => {
     const ast = getAst('() => {}; ++x');
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<anonymous> from 1:0
-<global> from 1:8
-"
-`);
+      "
+      <anonymous> from 1:0
+      <global> from 1:8
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA,QC",
-  "names": Array [
-    "<anonymous>",
-    "<global>",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA,QC",
+        "names": Array [
+          "<anonymous>",
+          "<global>",
+        ],
+      }
+    `);
   });
 
   it('object method', () => {
@@ -172,21 +172,21 @@ Object {
     )`);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-m from 3:8
-<global> from 5:9
-"
-`);
+      "
+      <global> from 1:0
+      m from 3:8
+      <global> from 5:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;QCE;SDE",
-  "names": Array [
-    "<global>",
-    "m",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;QCE;SDE",
+        "names": Array [
+          "<global>",
+          "m",
+        ],
+      }
+    `);
   });
 
   it('object setter', () => {
@@ -199,21 +199,21 @@ Object {
     )`);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-set__m from 3:8
-<global> from 5:9
-"
-`);
+      "
+      <global> from 1:0
+      set__m from 3:8
+      <global> from 5:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;QCE;SDE",
-  "names": Array [
-    "<global>",
-    "set__m",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;QCE;SDE",
+        "names": Array [
+          "<global>",
+          "set__m",
+        ],
+      }
+    `);
   });
 
   it('object getter', () => {
@@ -226,21 +226,21 @@ Object {
     )`);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-get__m from 3:8
-<global> from 5:9
-"
-`);
+      "
+      <global> from 1:0
+      get__m from 3:8
+      <global> from 5:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;QCE;SDE",
-  "names": Array [
-    "<global>",
-    "get__m",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;QCE;SDE",
+        "names": Array [
+          "<global>",
+          "get__m",
+        ],
+      }
+    `);
   });
 
   it('object property', () => {
@@ -253,21 +253,21 @@ Object {
     )`);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-m from 3:11
-<global> from 5:9
-"
-`);
+      "
+      <global> from 1:0
+      m from 3:11
+      <global> from 5:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;WCE;SDE",
-  "names": Array [
-    "<global>",
-    "m",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;WCE;SDE",
+        "names": Array [
+          "<global>",
+          "m",
+        ],
+      }
+    `);
   });
 
   it('class method', () => {
@@ -280,21 +280,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-C#m from 3:8
-<global> from 5:9
-"
-`);
+      "
+      <global> from 1:0
+      C#m from 3:8
+      <global> from 5:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;QCE;SDE",
-  "names": Array [
-    "<global>",
-    "C#m",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;QCE;SDE",
+        "names": Array [
+          "<global>",
+          "C#m",
+        ],
+      }
+    `);
   });
 
   it('class setter', () => {
@@ -307,21 +307,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-C#set__m from 3:8
-<global> from 5:9
-"
-`);
+      "
+      <global> from 1:0
+      C#set__m from 3:8
+      <global> from 5:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;QCE;SDE",
-  "names": Array [
-    "<global>",
-    "C#set__m",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;QCE;SDE",
+        "names": Array [
+          "<global>",
+          "C#set__m",
+        ],
+      }
+    `);
   });
 
   it('class getter', () => {
@@ -334,21 +334,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-C#get__m from 3:8
-<global> from 5:9
-"
-`);
+      "
+      <global> from 1:0
+      C#get__m from 3:8
+      <global> from 5:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;QCE;SDE",
-  "names": Array [
-    "<global>",
-    "C#get__m",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;QCE;SDE",
+        "names": Array [
+          "<global>",
+          "C#get__m",
+        ],
+      }
+    `);
   });
 
   it('class property', () => {
@@ -361,21 +361,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-C#m from 3:12
-<global> from 5:9
-"
-`);
+      "
+      <global> from 1:0
+      C#m from 3:12
+      <global> from 5:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;YCE;SDE",
-  "names": Array [
-    "<global>",
-    "C#m",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;YCE;SDE",
+        "names": Array [
+          "<global>",
+          "C#m",
+        ],
+      }
+    `);
   });
 
   it('class static method', () => {
@@ -388,21 +388,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-C.m from 3:8
-<global> from 5:9
-"
-`);
+      "
+      <global> from 1:0
+      C.m from 3:8
+      <global> from 5:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;QCE;SDE",
-  "names": Array [
-    "<global>",
-    "C.m",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;QCE;SDE",
+        "names": Array [
+          "<global>",
+          "C.m",
+        ],
+      }
+    `);
   });
 
   it('class static setter', () => {
@@ -415,21 +415,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-C.set__m from 3:8
-<global> from 5:9
-"
-`);
+      "
+      <global> from 1:0
+      C.set__m from 3:8
+      <global> from 5:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;QCE;SDE",
-  "names": Array [
-    "<global>",
-    "C.set__m",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;QCE;SDE",
+        "names": Array [
+          "<global>",
+          "C.set__m",
+        ],
+      }
+    `);
   });
 
   it('class static getter', () => {
@@ -442,21 +442,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-C.get__m from 3:8
-<global> from 5:9
-"
-`);
+      "
+      <global> from 1:0
+      C.get__m from 3:8
+      <global> from 5:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;QCE;SDE",
-  "names": Array [
-    "<global>",
-    "C.get__m",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;QCE;SDE",
+        "names": Array [
+          "<global>",
+          "C.get__m",
+        ],
+      }
+    `);
   });
 
   it('class static property', () => {
@@ -469,21 +469,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-C.m from 3:19
-<global> from 5:9
-"
-`);
+      "
+      <global> from 1:0
+      C.m from 3:19
+      <global> from 5:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;mBCE;SDE",
-  "names": Array [
-    "<global>",
-    "C.m",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;mBCE;SDE",
+        "names": Array [
+          "<global>",
+          "C.m",
+        ],
+      }
+    `);
   });
 
   it('method of anonymous class', () => {
@@ -496,21 +496,21 @@ Object {
     )`);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-m from 3:8
-<global> from 5:9
-"
-`);
+      "
+      <global> from 1:0
+      m from 3:8
+      <global> from 5:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;QCE;SDE",
-  "names": Array [
-    "<global>",
-    "m",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;QCE;SDE",
+        "names": Array [
+          "<global>",
+          "m",
+        ],
+      }
+    `);
   });
 
   it('method of anonymous class with inferred name', () => {
@@ -523,21 +523,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-C#m from 3:8
-<global> from 5:9
-"
-`);
+      "
+      <global> from 1:0
+      C#m from 3:8
+      <global> from 5:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;QCE;SDE",
-  "names": Array [
-    "<global>",
-    "C#m",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;QCE;SDE",
+        "names": Array [
+          "<global>",
+          "C#m",
+        ],
+      }
+    `);
   });
 
   it('method of object with inferred name', () => {
@@ -550,21 +550,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-obj.m from 3:8
-<global> from 5:9
-"
-`);
+      "
+      <global> from 1:0
+      obj.m from 3:8
+      <global> from 5:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;QCE;SDE",
-  "names": Array [
-    "<global>",
-    "obj.m",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;QCE;SDE",
+        "names": Array [
+          "<global>",
+          "obj.m",
+        ],
+      }
+    `);
   });
 
   it('method of object with nested inferred names', () => {
@@ -579,21 +579,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-obj.obj2.m from 4:10
-<global> from 6:11
-"
-`);
+      "
+      <global> from 1:0
+      obj.obj2.m from 4:10
+      <global> from 6:11
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;UCG;WDE",
-  "names": Array [
-    "<global>",
-    "obj.obj2.m",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;UCG;WDE",
+        "names": Array [
+          "<global>",
+          "obj.obj2.m",
+        ],
+      }
+    `);
   });
 
   it('setter method of object with inferred name', () => {
@@ -606,21 +606,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-obj.set__m from 3:8
-<global> from 5:9
-"
-`);
+      "
+      <global> from 1:0
+      obj.set__m from 3:8
+      <global> from 5:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;QCE;SDE",
-  "names": Array [
-    "<global>",
-    "obj.set__m",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;QCE;SDE",
+        "names": Array [
+          "<global>",
+          "obj.set__m",
+        ],
+      }
+    `);
   });
 
   it('method with well-known symbol as key', () => {
@@ -633,21 +633,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-C#@@iterator from 3:8
-<global> from 5:9
-"
-`);
+      "
+      <global> from 1:0
+      C#@@iterator from 3:8
+      <global> from 5:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;QCE;SDE",
-  "names": Array [
-    "<global>",
-    "C#@@iterator",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;QCE;SDE",
+        "names": Array [
+          "<global>",
+          "C#@@iterator",
+        ],
+      }
+    `);
   });
 
   it('method with computed property as key', () => {
@@ -661,21 +661,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-C#foo.bar from 3:8
-<global> from 5:9
-"
-`);
+      "
+      <global> from 1:0
+      C#foo.bar from 3:8
+      <global> from 5:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;QCE;SDE",
-  "names": Array [
-    "<global>",
-    "C#foo.bar",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;QCE;SDE",
+        "names": Array [
+          "<global>",
+          "C#foo.bar",
+        ],
+      }
+    `);
   });
 
   it('derive name from member expression', () => {
@@ -684,21 +684,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-module.exports from 2:23
-<global> from 2:36
-"
-`);
+      "
+      <global> from 1:0
+      module.exports from 2:23
+      <global> from 2:36
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;uBCC,aD",
-  "names": Array [
-    "<global>",
-    "module.exports",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;uBCC,aD",
+        "names": Array [
+          "<global>",
+          "module.exports",
+        ],
+      }
+    `);
   });
 
   it('derive name from partial member expression', () => {
@@ -707,21 +707,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-foo.bar from 2:34
-<global> from 2:47
-"
-`);
+      "
+      <global> from 1:0
+      foo.bar from 2:34
+      <global> from 2:47
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;kCCC,aD",
-  "names": Array [
-    "<global>",
-    "foo.bar",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;kCCC,aD",
+        "names": Array [
+          "<global>",
+          "foo.bar",
+        ],
+      }
+    `);
   });
 
   it('chained class and object name inference', () => {
@@ -734,21 +734,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-a.b.c from 4:21
-<global> from 4:35
-"
-`);
+      "
+      <global> from 1:0
+      a.b.c from 4:21
+      <global> from 4:35
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;qBCG,cD",
-  "names": Array [
-    "<global>",
-    "a.b.c",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;qBCG,cD",
+        "names": Array [
+          "<global>",
+          "a.b.c",
+        ],
+      }
+    `);
   });
 
   it('callback', () => {
@@ -757,21 +757,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-useEffect$argument_0 from 2:16
-<global> from 2:24
-"
-`);
+      "
+      <global> from 1:0
+      useEffect$argument_0 from 2:16
+      <global> from 2:24
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;gBCC,QD",
-  "names": Array [
-    "<global>",
-    "useEffect$argument_0",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;gBCC,QD",
+        "names": Array [
+          "<global>",
+          "useEffect$argument_0",
+        ],
+      }
+    `);
   });
 
   it('thenable', () => {
@@ -780,21 +780,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-foo.then$argument_0 from 2:20
-<global> from 2:28
-"
-`);
+      "
+      <global> from 1:0
+      foo.then$argument_0 from 2:20
+      <global> from 2:28
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;oBCC,QD",
-  "names": Array [
-    "<global>",
-    "foo.then$argument_0",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;oBCC,QD",
+        "names": Array [
+          "<global>",
+          "foo.then$argument_0",
+        ],
+      }
+    `);
   });
 
   it('dynamic import handler', () => {
@@ -803,21 +803,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-import.then$argument_0 from 2:25
-<global> from 2:33
-"
-`);
+      "
+      <global> from 1:0
+      import.then$argument_0 from 2:25
+      <global> from 2:33
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;yBCC,QD",
-  "names": Array [
-    "<global>",
-    "import.then$argument_0",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;yBCC,QD",
+        "names": Array [
+          "<global>",
+          "import.then$argument_0",
+        ],
+      }
+    `);
   });
 
   it('JSX prop', () => {
@@ -826,21 +826,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-Button.props.onClick from 2:23
-<global> from 2:31
-"
-`);
+      "
+      <global> from 1:0
+      Button.props.onClick from 2:23
+      <global> from 2:31
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;uBCC,QD",
-  "names": Array [
-    "<global>",
-    "Button.props.onClick",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;uBCC,QD",
+        "names": Array [
+          "<global>",
+          "Button.props.onClick",
+        ],
+      }
+    `);
   });
 
   it('JSX spread prop is anonymous', () => {
@@ -850,21 +850,21 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-<anonymous> from 2:19
-<global> from 2:27
-"
-`);
+      "
+      <global> from 1:0
+      <anonymous> from 2:19
+      <global> from 2:27
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;mBCC,QD",
-  "names": Array [
-    "<global>",
-    "<anonymous>",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;mBCC,QD",
+        "names": Array [
+          "<global>",
+          "<anonymous>",
+        ],
+      }
+    `);
   });
 
   it('JSX child', () => {
@@ -873,79 +873,75 @@ Object {
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-Button.props.children from 2:15
-<global> from 2:23
-"
-`);
+      "
+      <global> from 1:0
+      Button.props.children from 2:15
+      <global> from 2:23
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA;eCC,QD",
-  "names": Array [
-    "<global>",
-    "Button.props.children",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA;eCC,QD",
+        "names": Array [
+          "<global>",
+          "Button.props.children",
+        ],
+      }
+    `);
   });
 
   it('empty program', () => {
     const ast = getAst('');
 
-    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-
-"
-`);
+    expect(generateCompactRawMappings(ast).trim()).toBe('');
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "",
-  "names": Array [],
-}
-`);
+      Object {
+        "mappings": "",
+        "names": Array [],
+      }
+    `);
   });
 
   it('IIFE is anonymous', () => {
     const ast = getAst('(() => {})()');
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-<anonymous> from 1:1
-<global> from 1:9
-"
-`);
+      "
+      <global> from 1:0
+      <anonymous> from 1:1
+      <global> from 1:9
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA,CC,QD",
-  "names": Array [
-    "<global>",
-    "<anonymous>",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA,CC,QD",
+        "names": Array [
+          "<global>",
+          "<anonymous>",
+        ],
+      }
+    `);
   });
 
   it('IIFE assigned to a variable is anonymous', () => {
     const ast = getAst('const value = (() => {})()');
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
-"
-<global> from 1:0
-<anonymous> from 1:15
-<global> from 1:23
-"
-`);
+      "
+      <global> from 1:0
+      <anonymous> from 1:15
+      <global> from 1:23
+      "
+    `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAA,eC,QD",
-  "names": Array [
-    "<global>",
-    "<anonymous>",
-  ],
-}
-`);
+      Object {
+        "mappings": "AAA,eC,QD",
+        "names": Array [
+          "<global>",
+          "<anonymous>",
+        ],
+      }
+    `);
   });
 
   it('round trip encoding/decoding and lookup', () => {
