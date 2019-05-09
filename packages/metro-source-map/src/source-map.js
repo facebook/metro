@@ -14,6 +14,7 @@ const Generator = require('./Generator');
 const SourceMap = require('source-map');
 
 const {createIndexMap, BundleBuilder} = require('./BundleBuilder');
+const {generateFunctionMap} = require('./generateFunctionMap');
 
 import type {BabelSourceMap} from '@babel/core';
 import type {BabelSourceMapSegment} from '@babel/generator';
@@ -181,6 +182,7 @@ function countLines(string) {
 module.exports = {
   BundleBuilder,
   createIndexMap,
+  generateFunctionMap,
   fromRawMappings,
   toBabelSegments,
   toSegmentTuple,
