@@ -99,6 +99,7 @@ function forEachMapping(ast: Ast, pushMapping: RangeMapping => void) {
 }
 
 const ANONYMOUS_NAME = '<anonymous>';
+const CALLEES_TO_SKIP = ['Object.freeze'];
 
 /**
  * Derive a contextual name for the given AST node (Function, Program, Class or
@@ -118,7 +119,7 @@ function getNameForPath(path: Path): string {
   let kind = '';
   if (t.isObjectMethod(node) || t.isClassMethod(node)) {
     id = node.key;
-    if (node.kind !== 'method') {
+    if (node.kind !== 'method' && node.kind !== 'constructor') {
       kind = node.kind;
     }
     propertyPath = path;
@@ -154,11 +155,15 @@ function getNameForPath(path: Path): string {
   let name = getNameFromId(id);
 
   if (name == null) {
-    if (t.isCallExpression(parent)) {
+    if (t.isCallExpression(parent) || t.isNewExpression(parent)) {
       // foo(function () {})
       const argIndex = parent.arguments.indexOf(node);
       if (argIndex !== -1) {
         const calleeName = getNameFromId(parent.callee);
+        // var f = Object.freeze(function () {})
+        if (CALLEES_TO_SKIP.indexOf(calleeName) !== -1) {
+          return getNameForPath(parentPath);
+        }
         if (calleeName) {
           return `${calleeName}$argument_${argIndex}`;
         }
@@ -198,12 +203,36 @@ function isAnyIdentifier(node: Ast): boolean {
 }
 
 function getNameFromId(id: Ast): ?string {
-  if (!id) {
+  const parts = getNamePartsFromId(id);
+
+  if (!parts.length) {
     return null;
   }
+  if (parts.length > 5) {
+    return (
+      parts[0] +
+      '.' +
+      parts[1] +
+      '...' +
+      parts[parts.length - 2] +
+      '.' +
+      parts[parts.length - 1]
+    );
+  }
+  return parts.join('.');
+}
 
-  if (t.isCallExpression(id)) {
-    return getNameFromId(id.callee);
+function getNamePartsFromId(id: Ast): $ReadOnlyArray<string> {
+  if (!id) {
+    return [];
+  }
+
+  if (t.isCallExpression(id) || t.isNewExpression(id)) {
+    return getNamePartsFromId(id.callee);
+  }
+
+  if (t.isTypeCastExpression(id)) {
+    return getNamePartsFromId(id.expression);
   }
 
   let name;
@@ -221,7 +250,7 @@ function getNameFromId(id: Ast): ?string {
   }
 
   if (name != null) {
-    return t.toBindingIdentifierName(name);
+    return [t.toBindingIdentifierName(name)];
   }
 
   if (t.isImport(id)) {
@@ -229,7 +258,7 @@ function getNameFromId(id: Ast): ?string {
   }
 
   if (name != null) {
-    return name;
+    return [name];
   }
 
   if (isAnyMemberExpression(id)) {
@@ -243,19 +272,19 @@ function getNameFromId(id: Ast): ?string {
         name = '@@' + propertyName;
       }
     } else {
-      const propertyName = getNameFromId(id.property);
-      if (propertyName) {
-        const objectName = getNameFromId(id.object);
-        if (objectName) {
-          name = `${objectName}.${propertyName}`;
+      const propertyName = getNamePartsFromId(id.property);
+      if (propertyName.length) {
+        const objectName = getNamePartsFromId(id.object);
+        if (objectName.length) {
+          return [...objectName, ...propertyName];
         } else {
-          name = propertyName;
+          return propertyName;
         }
       }
     }
   }
 
-  return name;
+  return name ? [name] : [];
 }
 
 /**

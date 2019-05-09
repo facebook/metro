@@ -22,7 +22,7 @@ const {
 
 function getAst(source) {
   return parse(source, {
-    plugins: ['classProperties', 'dynamicImport', 'jsx'],
+    plugins: ['classProperties', 'dynamicImport', 'jsx', 'flow'],
   });
 }
 
@@ -292,6 +292,33 @@ function parent2() {
         "names": Array [
           "<global>",
           "C#m",
+        ],
+      }
+    `);
+  });
+
+  it('class constructor', () => {
+    const ast = getAst(`
+      class C {
+        constructor() {
+          ++x;
+        }
+      }
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      C#constructor from 3:8
+      <global> from 5:9
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;QCE;SDE",
+        "names": Array [
+          "<global>",
+          "C#constructor",
         ],
       }
     `);
@@ -939,6 +966,98 @@ function parent2() {
         "names": Array [
           "<global>",
           "<anonymous>",
+        ],
+      }
+    `);
+  });
+
+  it('derive name from new expression', () => {
+    const ast = getAst('new Foo(() => {});');
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      Foo$argument_0 from 1:8
+      <global> from 1:16
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA,QC,QD",
+        "names": Array [
+          "<global>",
+          "Foo$argument_0",
+        ],
+      }
+    `);
+  });
+
+  it('collapses call chains', () => {
+    const ast = getAst(
+      'factory().setOne().setTwo().setThree().setFour().setFive(() => {})',
+    );
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      factory.setOne...setFour.setFive$argument_0 from 1:57
+      <global> from 1:65
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA,yDC,QD",
+        "names": Array [
+          "<global>",
+          "factory.setOne...setFour.setFive$argument_0",
+        ],
+      }
+    `);
+  });
+
+  it('derive name from member of typecast', () => {
+    const ast = getAst(`
+      (foo : T).bar = () => {}
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      foo.bar from 2:22
+      <global> from 2:30
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;sBCC,QD",
+        "names": Array [
+          "<global>",
+          "foo.bar",
+        ],
+      }
+    `);
+  });
+
+  it('skip Object.freeze when inferring object name', () => {
+    const ast = getAst(`
+      var a = Object.freeze({
+        b: () => {}
+      })
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      a.b from 3:11
+      <global> from 3:19
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;WCE,QD",
+        "names": Array [
+          "<global>",
+          "a.b",
         ],
       }
     `);
