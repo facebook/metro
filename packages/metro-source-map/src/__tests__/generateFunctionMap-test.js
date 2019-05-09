@@ -27,8 +27,8 @@ function getAst(source) {
 }
 
 // A test helper for compact, readable snapshots
-function generateCompactRawMappings(ast) {
-  const mappings = generateFunctionMappingsArray(ast);
+function generateCompactRawMappings(ast, context) {
+  const mappings = generateFunctionMappingsArray(ast, context);
   return (
     '\n' +
     mappings
@@ -1058,6 +1058,71 @@ function parent2() {
         "names": Array [
           "<global>",
           "a.b",
+        ],
+      }
+    `);
+  });
+
+  it('omit parent class name when it matches filename', () => {
+    const ast = getAst('class FooBar { baz() {} }');
+    const context = {filename: 'FooBar.ios.js'};
+
+    expect(generateCompactRawMappings(ast, context)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      baz from 1:15
+      <global> from 1:23
+      "
+    `);
+    expect(generateFunctionMap(ast, context)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA,eC,QD",
+        "names": Array [
+          "<global>",
+          "baz",
+        ],
+      }
+    `);
+  });
+
+  it('do not omit parent class name when it only partially matches filename', () => {
+    const ast = getAst('class FooBarItem { baz() {} }');
+    const context = {filename: 'FooBar.ios.js'};
+
+    expect(generateCompactRawMappings(ast, context)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      FooBarItem#baz from 1:19
+      <global> from 1:27
+      "
+    `);
+    expect(generateFunctionMap(ast, context)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA,mBC,QD",
+        "names": Array [
+          "<global>",
+          "FooBarItem#baz",
+        ],
+      }
+    `);
+  });
+
+  it('derive name from simple assignment even if it matches the filename', () => {
+    const ast = getAst('var FooBar = () => {}');
+    const context = {filename: 'FooBar.ios.js'};
+
+    expect(generateCompactRawMappings(ast, context)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      FooBar from 1:13
+      "
+    `);
+    expect(generateFunctionMap(ast, context)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA,aC",
+        "names": Array [
+          "<global>",
+          "FooBar",
         ],
       }
     `);

@@ -12,6 +12,7 @@
 
 const B64Builder = require('./B64Builder');
 
+const fsPath = require('path');
 const t = require('@babel/types');
 
 import type {FBSourceFunctionMap} from './source-map';
@@ -20,6 +21,7 @@ import traverse from '@babel/traverse';
 import type {Path} from '@babel/traverse';
 type Position = {line: number, column: number};
 type RangeMapping = {name: string, start: Position};
+type Context = {filename?: string};
 
 /**
  * Generate a map of source positions to function names. The names are meant to
@@ -29,9 +31,9 @@ type RangeMapping = {name: string, start: Position};
  * The output is encoded for use in a source map. For details about the format,
  * see MappingEncoder below.
  */
-function generateFunctionMap(ast: Ast): FBSourceFunctionMap {
+function generateFunctionMap(ast: Ast, context?: Context): FBSourceFunctionMap {
   const encoder = new MappingEncoder();
-  forEachMapping(ast, mapping => encoder.push(mapping));
+  forEachMapping(ast, context, mapping => encoder.push(mapping));
   return encoder.getResult();
 }
 
@@ -41,9 +43,12 @@ function generateFunctionMap(ast: Ast): FBSourceFunctionMap {
  *
  * Lines are 1-based and columns are 0-based.
  */
-function generateFunctionMappingsArray(ast: Ast): $ReadOnlyArray<RangeMapping> {
+function generateFunctionMappingsArray(
+  ast: Ast,
+  context?: Context,
+): $ReadOnlyArray<RangeMapping> {
   const mappings = [];
-  forEachMapping(ast, mapping => {
+  forEachMapping(ast, context, mapping => {
     mappings.push(mapping);
   });
   return mappings;
@@ -53,7 +58,11 @@ function generateFunctionMappingsArray(ast: Ast): $ReadOnlyArray<RangeMapping> {
  * Traverses a Babel AST and calls the supplied callback with function name
  * mappings, one at a time.
  */
-function forEachMapping(ast: Ast, pushMapping: RangeMapping => void) {
+function forEachMapping(
+  ast: Ast,
+  context: ?Context,
+  pushMapping: RangeMapping => void,
+) {
   const nameStack = [];
   let tailPos = {line: 1, column: 0};
   let tailName = null;
@@ -86,10 +95,22 @@ function forEachMapping(ast: Ast, pushMapping: RangeMapping => void) {
     }
   }
 
+  if (!context) {
+    context = {};
+  }
+
+  const basename = context.filename
+    ? fsPath.basename(context.filename).replace(/\..+$/, '')
+    : null;
+
   traverse(ast, {
     'Function|Program': {
       enter(path) {
-        pushFrame(getNameForPath(path), path.node.loc);
+        let name = getNameForPath(path);
+        if (basename) {
+          name = removeNamePrefix(name, basename);
+        }
+        pushFrame(name, path.node.loc);
       },
       exit(path) {
         popFrame();
@@ -285,6 +306,27 @@ function getNamePartsFromId(id: Ast): $ReadOnlyArray<string> {
   }
 
   return name ? [name] : [];
+}
+
+const DELIMITER_START_RE = /^[^A-Za-z0-9_$@]+/;
+
+/**
+ * Strip the given prefix from `name`, if it occurs there, plus any delimiter
+ * characters that follow (of which at least one is required). If an empty
+ * string would be returned, return the original name instead.
+ */
+function removeNamePrefix(name: string, namePrefix: string): string {
+  if (!namePrefix.length || !name.startsWith(namePrefix)) {
+    return name;
+  }
+
+  const shortenedName = name.substr(namePrefix.length);
+  const [delimiterMatch] = shortenedName.match(DELIMITER_START_RE) || [];
+  if (delimiterMatch) {
+    return shortenedName.substr(delimiterMatch.length) || name;
+  }
+
+  return name;
 }
 
 /**
