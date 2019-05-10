@@ -74,6 +74,12 @@ exports[`symbolicating an attribution file 1`] = `
 "
 `;
 
+exports[`symbolicating an attribution file with 1-based column output 1`] = `
+"{\\"functionId\\":1,\\"location\\":{\\"file\\":\\"thrower.js\\",\\"line\\":4,\\"column\\":12},\\"usage\\":[]}
+{\\"functionId\\":2,\\"location\\":{\\"file\\":\\"thrower.js\\",\\"line\\":14,\\"column\\":15},\\"usage\\":[]}
+"
+`;
+
 exports[`symbolicating with a cpuprofile 1`] = `
 Object {
   "stackFrames": Object {

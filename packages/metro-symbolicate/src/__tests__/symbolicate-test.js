@@ -72,6 +72,21 @@ test('symbolicating a single entry', async () =>
     'thrower.js:18:null\n',
   ));
 
+test('symbolicating a single entry with 0-based line output', async () =>
+  await expect(
+    execute([TESTFILE_MAP, '1', '161', '--output-line-start', '0']),
+  ).resolves.toEqual('thrower.js:17:null\n'));
+
+test('symbolicating a single entry with 1-based column input', async () =>
+  await expect(
+    execute([TESTFILE_MAP, '1', '161', '--input-column-start', '1']),
+  ).resolves.toEqual('thrower.js:18:Error\n'));
+
+test('symbolicating a single entry with 0-based line input', async () =>
+  await expect(
+    execute([TESTFILE_MAP, '0', '161', '--input-line-start', '0']),
+  ).resolves.toEqual('thrower.js:18:null\n'));
+
 test('symbolicating a single entry with an out of range column', async () =>
   await expect(execute([TESTFILE_MAP, '1', '1000000'])).resolves.toEqual(
     'thrower.js:1:null\n',
@@ -96,6 +111,14 @@ test('symbolicating an attribution file', async () =>
   await expect(
     execute(
       [TESTFILE_MAP, '--attribution'],
+      read('testfile.attribution.input'),
+    ),
+  ).resolves.toMatchSnapshot());
+
+test('symbolicating an attribution file with 1-based column output', async () =>
+  await expect(
+    execute(
+      [TESTFILE_MAP, '--attribution', '--output-column-start', '1'],
       read('testfile.attribution.input'),
     ),
   ).resolves.toMatchSnapshot());

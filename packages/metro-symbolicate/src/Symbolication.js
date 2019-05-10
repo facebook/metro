@@ -74,6 +74,14 @@ function getOriginalPositionDetailsFor(
   moduleIds,
   context,
 ) {
+  // Adjust arguments to source-map's input coordinates
+  lineNumber =
+    lineNumber != null ? lineNumber - context.inputLineStart + 1 : lineNumber;
+  columnNumber =
+    columnNumber != null
+      ? columnNumber - context.inputColumnStart + 0
+      : columnNumber;
+
   var moduleLineOffset = 0;
   var metadata = context.segments[moduleIds.segmentId];
   const {localId} = moduleIds;
@@ -100,14 +108,48 @@ function getOriginalPositionDetailsFor(
   } else {
     original.functionName = null;
   }
-  return original;
+  return {
+    ...original,
+    line:
+      original.line != null
+        ? original.line - 1 + context.outputLineStart
+        : original.line,
+    column:
+      original.column != null
+        ? original.column - 0 + context.outputColumnStart
+        : original.column,
+  };
 }
 
 function createContext(
   SourceMapConsumer,
   sourceMapContent,
-  options /*: {nameSource?: 'function_names' | 'identifier_names'} */ = {},
+  options /*: {
+    nameSource?: 'function_names' | 'identifier_names',
+    inputLineStart?: number,
+    inputColumnStart?: number,
+    outputLineStart?: number,
+    outputColumnStart?: number,
+  } */ = {},
 ) {
+  const context = {
+    inputLineStart: 1,
+    inputColumnStart: 0,
+    outputLineStart: 1,
+    outputColumnStart: 0,
+  };
+  if (options) {
+    for (const option of [
+      'inputLineStart',
+      'inputColumnStart',
+      'outputLineStart',
+      'outputColumnStart',
+    ]) {
+      if (options[option] != null) {
+        context[option] = options[option];
+      }
+    }
+  }
   const useFunctionNames =
     !options ||
     !('nameSource' in options) ||
@@ -115,6 +157,7 @@ function createContext(
     options.nameSource === 'function_names';
   var sourceMapJson = JSON.parse(sourceMapContent.replace(/^\)\]\}'/, ''));
   return {
+    ...context,
     segments: Object.entries(sourceMapJson.x_facebook_segments || {}).reduce(
       (acc, [key, map]) => {
         acc[key] = {
@@ -193,7 +236,7 @@ function symbolicateProfilerMap(mapFile, context) {
       }
 
       var original = getOriginalPositionFor(
-        1,
+        context.inputLineStart,
         offset,
         UNKNOWN_MODULE_IDS,
         context,
@@ -212,8 +255,8 @@ function symbolicateProfilerMap(mapFile, context) {
 
 function symbolicateAttribution(obj, context) {
   var loc = obj.location;
-  var line = loc.line || 1;
-  var column = loc.column || loc.virtualOffset;
+  var line = loc.line != null ? loc.line : context.inputLineStart;
+  var column = loc.column != null ? loc.column : loc.virtualOffset;
   var file = loc.filename ? parseFileName(loc.filename) : UNKNOWN_MODULE_IDS;
   var original = getOriginalPositionFor(line, column, file, context);
 
@@ -273,9 +316,9 @@ function symbolicateChromeTrace(traceFile, context) {
       const offsetInFunction = parseInt(entry.offset, 10);
       // Main bundle always use hard-coded line value 1.
       // TODO: support multiple bundle/module.
-      line = 1;
+      line = context.inputLineStart;
       column = funcVirtAddr + offsetInFunction;
-      funcLine = 1;
+      funcLine = context.inputLineStart;
       funcColumn = funcVirtAddr;
     } else if (entry.line != null && entry.column != null) {
       // For hbc bundle with debug info, name field may already have source

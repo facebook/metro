@@ -28,36 +28,57 @@ const through2 = require('through2');
 
 const argv = process.argv.slice(2);
 
-function checkAndRemoveArg(arg) {
-  let value = false;
+function checkAndRemoveArg(arg, valuesPerArg = 0) {
+  let values = null;
   for (let idx = argv.indexOf(arg); idx !== -1; idx = argv.indexOf(arg)) {
     argv.splice(idx, 1);
-    value = true;
+    values = (values || []);
+    values.push(argv.splice(idx, valuesPerArg));
   }
-  return value;
+  return values;
+}
+
+function checkAndRemoveArgWithValue(arg) {
+  const values = checkAndRemoveArg(arg, 1);
+  return values ? values[0][0] : null;
 }
 
 const noFunctionNames = checkAndRemoveArg('--no-function-names');
+const inputLineStart = Number.parseInt(
+  checkAndRemoveArgWithValue('--input-line-start') || '1',
+  10,
+);
+const inputColumnStart = Number.parseInt(
+  checkAndRemoveArgWithValue('--input-column-start') || '0',
+  10,
+);
+const outputLineStart = Number.parseInt(
+  checkAndRemoveArgWithValue('--output-line-start') || '1',
+  10,
+);
+const outputColumnStart = Number.parseInt(
+  checkAndRemoveArgWithValue('--output-column-start') || '0',
+  10,
+);
 
 if (argv.length < 1 || argv.length > 4) {
   /* eslint no-path-concat: "off" */
 
   const usages = [
-    'Usage: ' + __filename + ' <source-map-file> [--no-function-names]',
-    '       ' +
-      __filename +
-      ' <source-map-file> <line> [column] [--no-function-names]',
-    '       ' +
-      __filename +
-      ' <source-map-file> <moduleId>.js <line> [column] [--no-function-names]',
-    '       ' +
-      __filename +
-      ' <source-map-file> <mapfile>.profmap [--no-function-names]',
-    '       ' +
-      __filename +
-      ' <source-map-file> --attribution [--no-function-names] < attribution.jsonl ' +
+    'Usage: ' + __filename + ' <source-map-file>',
+    '       ' + __filename + ' <source-map-file> <line> [column]',
+    '       ' + __filename + ' <source-map-file> <moduleId>.js <line> [column]',
+    '       ' + __filename + ' <source-map-file> <mapfile>.profmap',
+    '       ' + __filename +
+      ' <source-map-file> --attribution < attribution.jsonl ' +
       ' > symbolicated.jsonl',
     '       ' + __filename + ' <source-map-file> <tracefile>.cpuprofile',
+    ' Optional flags:',
+    '  --no-function-names',
+    '  --input-line-start <line> (default: 1)',
+    '  --input-column-start <column> (default: 0)',
+    '  --output-line-start <line> (default: 1)',
+    '  --output-column-start <column> (default: 0)',
   ];
   console.error(usages.join('\n'));
   process.exit(1);
@@ -68,6 +89,10 @@ const sourceMapFileName = argv.shift();
 const content = fs.readFileSync(sourceMapFileName, 'utf8');
 const context = Symbolication.createContext(SourceMapConsumer, content, {
   nameSource: noFunctionNames ? 'identifier_names' : 'function_names',
+  inputLineStart,
+  inputColumnStart,
+  outputLineStart,
+  outputColumnStart,
 });
 
 if (argv.length === 0) {
