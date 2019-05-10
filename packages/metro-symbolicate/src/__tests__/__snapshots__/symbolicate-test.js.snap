@@ -33,6 +33,23 @@ exports[`symbolicating a stack trace ignoring a function map 1`] = `
 "
 `;
 
+exports[`symbolicating a stack trace in Node format 1`] = `
+"TypeError: undefined is not a function
+    at throws6 thrower.js:18:null)
+    at thrower.js:30:arg
+    at forEach (null:null:null)
+    at o thrower.js:30:arguments)
+    at throws4 thrower.js:35:this)
+    at eval (eval at thrower.js:30:forEach)
+    at t thrower.js:27:null)
+    at throws2 thrower.js:39:throws3)
+    at throws1 thrower.js:44:throws2)
+    at throws0 thrower.js:49:throws1)
+    at thrower.js:53:throws0
+    at global code thrower.js:1:null)
+"
+`;
+
 exports[`symbolicating a stack trace with a function map 1`] = `
 "/js/RKJSModules/segmented/biz.js:5:module.exports.throwSmthInner
 /js/RKJSModules/segmented/glo.js:7:module.exports.throwSmth

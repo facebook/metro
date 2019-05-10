@@ -62,6 +62,11 @@ test('symbolicating a stack trace', async () =>
     execute([TESTFILE_MAP], read('testfile.stack')),
   ).resolves.toMatchSnapshot());
 
+test('symbolicating a stack trace in Node format', async () =>
+  await expect(
+    execute([TESTFILE_MAP], read('testfile.node.stack')),
+  ).resolves.toMatchSnapshot());
+
 test('symbolicating a single entry', async () =>
   await expect(execute([TESTFILE_MAP, '1', '161'])).resolves.toEqual(
     'thrower.js:18:null\n',
