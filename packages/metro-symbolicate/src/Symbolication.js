@@ -151,7 +151,7 @@ function createContext(
 //  IOS: foo.js:57:foo, Android: bar.js:75:bar
 function symbolicate(stackTrace, context) {
   return stackTrace.replace(
-    /(?:([^@: \n]+)(@|:))?(?:(?:([^@: \n]+):)?(\d+):(\d+)|\[native code\])/g,
+    /(?:([^@: \n(]+)(@|:))?(?:(?:([^@: \n(]+):)?(\d+):(\d+)|\[native code\])/g,
     function(match, func, delimiter, fileName, line, column) {
       if (delimiter === ':' && func && !fileName) {
         fileName = func;
