@@ -34,7 +34,7 @@ type FBExtensions = {
   x_facebook_sources?: FBSourcesArray,
 };
 
-export type FBSourcesArray = $ReadOnlyArray<FBSourceMetadata>;
+export type FBSourcesArray = $ReadOnlyArray<?FBSourceMetadata>;
 export type FBSourceMetadata = [?FBSourceFunctionMap];
 export type FBSourceFunctionMap = {|
   +names: $ReadOnlyArray<string>,

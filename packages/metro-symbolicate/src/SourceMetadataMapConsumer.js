@@ -58,7 +58,7 @@ const METADATA_FIELD_FUNCTIONS = 0;
 type Position = {+line: number, +column: number};
 type FunctionMapping = {+line: number, +column: number, +name: string};
 type SourceNameNormalizer = (string, BabelSourceMap) => string;
-type MetadataMap = {[source: string]: FBSourceMetadata};
+type MetadataMap = {[source: string]: ?FBSourceMetadata};
 */
 
 /**
@@ -159,7 +159,7 @@ class SourceMetadataMapConsumer {
     let parsedFunctionMap = null;
     const metadataBySource = this._getMetadataBySource();
     if (Object.prototype.hasOwnProperty.call(metadataBySource, source)) {
-      const metadata = metadataBySource[source];
+      const metadata = metadataBySource[source] || [];
       parsedFunctionMap = decodeFunctionMap(metadata[METADATA_FIELD_FUNCTIONS]);
     }
     this._decodedFunctionMapCache.set(source, parsedFunctionMap);
