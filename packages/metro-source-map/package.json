@@ -1,5 +1,5 @@
 {
-  "version": "0.54.0",
+  "version": "0.54.1",
   "name": "metro-source-map",
   "description": "🚇 Source map generator for Metro.",
   "main": "src/source-map.js",
@@ -19,6 +19,6 @@
   "license": "MIT",
   "devDependencies": {
     "@babel/parser": "^7.0.0",
-    "metro-symbolicate": "0.54.0"
+    "metro-symbolicate": "0.54.1"
   }
 }

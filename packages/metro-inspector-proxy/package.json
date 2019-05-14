@@ -1,6 +1,6 @@
 {
   "name": "metro-inspector-proxy",
-  "version": "0.54.0",
+  "version": "0.54.1",
   "description": "metro-inspector-proxy",
   "main": "src/index.js",
   "bin": "src/cli.js",
