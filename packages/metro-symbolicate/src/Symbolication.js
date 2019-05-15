@@ -82,6 +82,10 @@ function getOriginalPositionDetailsFor(
       ? columnNumber - context.inputColumnStart + 0
       : columnNumber;
 
+  if (!moduleIds) {
+    moduleIds = UNKNOWN_MODULE_IDS;
+  }
+
   var moduleLineOffset = 0;
   var metadata = context.segments[moduleIds.segmentId];
   const {localId} = moduleIds;
@@ -155,7 +159,10 @@ function createContext(
     !('nameSource' in options) ||
     !options.nameSource ||
     options.nameSource === 'function_names';
-  var sourceMapJson = JSON.parse(sourceMapContent.replace(/^\)\]\}'/, ''));
+  const sourceMapJson =
+    typeof sourceMapContent === 'string'
+      ? JSON.parse(sourceMapContent.replace(/^\)\]\}'/, ''))
+      : sourceMapContent;
   return {
     ...context,
     segments: Object.entries(sourceMapJson.x_facebook_segments || {}).reduce(
