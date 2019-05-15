@@ -33,11 +33,13 @@ const {
   toBabelSegments,
   toSegmentTuple,
 } = require('metro-source-map');
-
 import type {TransformResultDependency} from 'metro/src/DeltaBundler';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
 import type {BabelSourceMap} from '@babel/core';
-import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
+import type {
+  FBSourceFunctionMap,
+  MetroSourceMapSegmentTuple,
+} from 'metro-source-map';
 
 type MinifierConfig = $ReadOnly<{[string]: mixed}>;
 
@@ -86,6 +88,7 @@ export type JsOutput = $ReadOnly<{|
   data: $ReadOnly<{|
     code: string,
     map: Array<MetroSourceMapSegmentTuple>,
+    functionMap: ?FBSourceFunctionMap,
   |}>,
   type: string,
 |}>;
@@ -145,7 +148,10 @@ class JsTransformer {
         ({map, code} = await this._minifyCode(filename, code, sourceCode, map));
       }
 
-      return {dependencies: [], output: [{data: {code, map}, type}]};
+      return {
+        dependencies: [],
+        output: [{data: {code, map, functionMap: null}, type}],
+      };
     }
 
     // $FlowFixMe TODO t26372934 Plugin system
@@ -171,11 +177,14 @@ class JsTransformer {
 
     const transformResult =
       type === 'js/module/asset'
-        ? await assetTransformer.transform(
-            transformerArgs,
-            this._config.assetRegistryPath,
-            this._config.assetPlugins,
-          )
+        ? {
+            ...(await assetTransformer.transform(
+              transformerArgs,
+              this._config.assetRegistryPath,
+              this._config.assetPlugins,
+            )),
+            functionMap: null,
+          }
         : await transformer.transform(transformerArgs);
 
     // Transformers can ouptut null ASTs (if they ignore the file). In that case
@@ -302,7 +311,9 @@ class JsTransformer {
       ));
     }
 
-    return {dependencies, output: [{data: {code, map}, type}]};
+    const {functionMap} = transformResult;
+
+    return {dependencies, output: [{data: {code, map, functionMap}, type}]};
   }
 
   async _minifyCode(
@@ -313,7 +324,7 @@ class JsTransformer {
     reserved?: $ReadOnlyArray<string> = [],
   ): Promise<{code: string, map: Array<MetroSourceMapSegmentTuple>}> {
     const sourceMap = fromRawMappings([
-      {code, source, map, path: filename},
+      {code, source, map, functionMap: null, path: filename},
     ]).toMap(undefined, {});
 
     const minify = getMinifier(this._config.minifierPath);

@@ -37,6 +37,22 @@ it('adds file name and source code when starting a file', () => {
   );
 });
 
+it('adds function map when starting a file', () => {
+  const file1 = 'just/a/file';
+  const file2 = 'another/file';
+  const source1 = 'var a = 1;';
+  const source2 = 'var a = 2;';
+
+  generator.startFile(file1, source1);
+  generator.startFile(file2, source2, {names: ['<global>'], mappings: 'AAA'});
+
+  expect(generator.toMap()).toEqual(
+    objectContaining({
+      x_facebook_sources: [null, [{names: ['<global>'], mappings: 'AAA'}]],
+    }),
+  );
+});
+
 it('throws when adding a mapping without starting a file', () => {
   expect(() => generator.addSimpleMapping(1, 2)).toThrow();
 });

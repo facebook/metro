@@ -19,6 +19,12 @@ Array [
     TypeScript: TypeScript
   };
 });",
+      "functionMap": Object {
+        "mappings": "AAA",
+        "names": Array [
+          "<global>",
+        ],
+      },
       "map": Array [
         Array [
           2,

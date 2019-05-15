@@ -56,6 +56,7 @@ describe('build map from raw mappings', () => {
     const input = [
       {
         code: lines(11),
+        functionMap: {names: ['<global>'], mappings: 'AAA'},
         map: [
           [1, 2],
           [3, 4, 5, 6, 'apples'],
@@ -67,12 +68,14 @@ describe('build map from raw mappings', () => {
       },
       {
         code: lines(3),
+        functionMap: {names: ['<global>'], mappings: 'AAA'},
         map: [[1, 2], [3, 4, 15, 16, 'bananas']],
         source: 'code2',
         path: 'path2',
       },
       {
         code: lines(23),
+        functionMap: null,
         map: [
           [11, 12],
           [13, 14, 15, 16, 'bananas'],
@@ -90,6 +93,11 @@ describe('build map from raw mappings', () => {
       names: ['apples', 'pears', 'bananas'],
       sources: ['path1', 'path2', 'path3'],
       sourcesContent: ['code1', 'code2', 'code3'],
+      x_facebook_sources: [
+        [{names: ['<global>'], mappings: 'AAA'}],
+        [{names: ['<global>'], mappings: 'AAA'}],
+        null,
+      ],
       version: 3,
     });
   });
@@ -111,6 +119,7 @@ describe('build map from raw mappings', () => {
     const input = [
       {
         code: lines(11),
+        functionMap: null,
         map: [
           [1, 2],
           [3, 4, 5, 6, 'apples'],
@@ -122,12 +131,14 @@ describe('build map from raw mappings', () => {
       },
       {
         code: lines(3),
+        functionMap: null,
         map: [[1, 2], [3, 4, 15, 16, 'bananas']],
         source: 'code2',
         path: 'path2',
       },
       {
         code: lines(23),
+        functionMap: null,
         map: [
           [11, 12],
           [13, 14, 15, 16, 'bananas'],

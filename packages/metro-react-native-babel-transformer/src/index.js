@@ -17,7 +17,8 @@ const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires'
 const makeHMRConfig = require('metro-react-native-babel-preset/src/configs/hmr');
 const path = require('path');
 
-const {transformSync} = require('@babel/core');
+const {parseSync, transformFromAstSync} = require('@babel/core');
+const {generateFunctionMap} = require('metro-source-map');
 
 import type {Plugins as BabelPlugins} from '@babel/core';
 import type {
@@ -146,21 +147,23 @@ function transform({filename, options, src, plugins}: BabelTransformerArgs) {
     : process.env.BABEL_ENV || 'production';
 
   try {
-    const babelConfig = buildBabelConfig(filename, options, plugins);
-    const result = transformSync(src, {
+    const babelConfig = {
       // ES modules require sourceType='module' but OSS may not always want that
       sourceType: 'unambiguous',
-      ...babelConfig,
+      ...buildBabelConfig(filename, options, plugins),
       caller: {name: 'metro', platform: options.platform},
       ast: true,
-    });
+    };
+    const sourceAst = parseSync(src, babelConfig);
+    const result = transformFromAstSync(sourceAst, src, babelConfig);
+    const functionMap = generateFunctionMap(sourceAst, {filename});
 
-    // The result from `transformSync` can be null (if the file is ignored)
+    // The result from `transformFromAstSync` can be null (if the file is ignored)
     if (!result) {
-      return {ast: null};
+      return {ast: null, functionMap};
     }
 
-    return {ast: result.ast};
+    return {ast: result.ast, functionMap};
   } finally {
     process.env.BABEL_ENV = OLD_BABEL_ENV;
   }

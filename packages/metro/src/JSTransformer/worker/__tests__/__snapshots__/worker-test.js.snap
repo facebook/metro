@@ -122,6 +122,15 @@ Array [
 ]
 `;
 
+exports[`code transformation worker: transforms a module with dependencies 2`] = `
+Object {
+  "mappings": "AAA",
+  "names": Array [
+    "<global>",
+  ],
+}
+`;
+
 exports[`code transformation worker: transforms a simple module 1`] = `
 Array [
   Array [
@@ -164,6 +173,15 @@ Array [
     0,
   ],
 ]
+`;
+
+exports[`code transformation worker: transforms a simple module 2`] = `
+Object {
+  "mappings": "AAA",
+  "names": Array [
+    "<global>",
+  ],
+}
 `;
 
 exports[`code transformation worker: transforms a simple script 1`] = `
@@ -210,6 +228,15 @@ Array [
 ]
 `;
 
+exports[`code transformation worker: transforms a simple script 2`] = `
+Object {
+  "mappings": "AAA",
+  "names": Array [
+    "<global>",
+  ],
+}
+`;
+
 exports[`code transformation worker: transforms an es module with regenerator 1`] = `
 "__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0], \\"@babel/runtime/helpers/interopRequireDefault\\");
@@ -235,6 +262,16 @@ exports[`code transformation worker: transforms an es module with regenerator 1`
 });"
 `;
 
+exports[`code transformation worker: transforms an es module with regenerator 2`] = `
+Object {
+  "mappings": "AAA,OC",
+  "names": Array [
+    "<global>",
+    "test",
+  ],
+}
+`;
+
 exports[`code transformation worker: transforms import/export syntax when experimental flag is on 1`] = `
 Array [
   Array [
@@ -249,4 +286,13 @@ Array [
     7,
   ],
 ]
+`;
+
+exports[`code transformation worker: transforms import/export syntax when experimental flag is on 2`] = `
+Object {
+  "mappings": "AAA",
+  "names": Array [
+    "<global>",
+  ],
+}
 `;

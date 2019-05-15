@@ -60,7 +60,7 @@ it('creates a source map', () => {
   expect(map.sections.slice(1)).toEqual(
     modules.map((m: Module) => {
       const section = {
-        map: m.file.map || lineByLineMap(m.file.path),
+        map: expectedMap(m) || lineByLineMap(m.file.path),
         offset: {column: 0, line},
       };
       line += countLines(m);
@@ -86,9 +86,7 @@ it('bundles each file separately', () => {
   modules.forEach((module: Module, i: number) => {
     // $FlowFixMe "extraFiles" is always defined at this point.
     expect(extraFiles.get(`js-modules/${i}.js`).toString()).toBe(
-      getModuleCodeAndMap(modules[i], x => idsForPath(x).moduleId, {
-        enableIDInlining: true,
-      }).moduleCode,
+      expectedCode(modules[i]),
     );
   });
 });
@@ -122,7 +120,8 @@ function makeModule(
     file: {
       code: type === 'module' ? makeModuleCode(moduleCode) : moduleCode,
       map: type !== 'module' ? null : makeModuleMap(name, path),
-      functionMap: null,
+      functionMap:
+        type !== 'module' ? null : {names: ['<global>'], mappings: 'AAA'},
       path,
       type,
       libraryIdx: null,
@@ -156,6 +155,20 @@ function makeDependency(name: string) {
     isPrefetchOnly: false,
     path,
   };
+}
+
+function expectedCodeAndMap(module) {
+  return getModuleCodeAndMap(module, x => idsForPath(x).moduleId, {
+    enableIDInlining: true,
+  });
+}
+
+function expectedCode(module) {
+  return expectedCodeAndMap(module).moduleCode;
+}
+
+function expectedMap(module) {
+  return expectedCodeAndMap(module).moduleMap;
 }
 
 function getId(path: string): number {

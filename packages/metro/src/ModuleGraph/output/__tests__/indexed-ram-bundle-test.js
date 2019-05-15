@@ -84,7 +84,7 @@ it('creates a source map', () => {
   expect(map.sections.slice(1)).toEqual(
     modules.map(m => {
       const section = {
-        map: m.file.map || lineByLineMap(m.file.path),
+        map: expectedMap(m) || lineByLineMap(m.file.path),
         offset: {column: 0, line},
       };
       line += countLines(m);
@@ -143,7 +143,7 @@ describe('Startup section optimization', () => {
     expect(map.sections.slice(1)).toEqual(
       modules.filter(not(Set.prototype.has), new Set(preloaded)).map(m => {
         const section = {
-          map: m.file.map || lineByLineMap(m.file.path),
+          map: expectedMap(m) || lineByLineMap(m.file.path),
           offset: {column: 0, line},
         };
         line += countLines(m);
@@ -191,7 +191,7 @@ describe('RAM groups / common sections', () => {
           map: {
             version: 3,
             sections: group.map((module, j) => ({
-              map: module.file.map,
+              map: expectedMap(module),
               offset: {line: offsets[j], column: 0},
             })),
           },
@@ -234,7 +234,8 @@ function makeModule(
     file: {
       code: type === 'module' ? makeModuleCode(moduleCode) : moduleCode,
       map: type !== 'module' ? null : makeModuleMap(name, path),
-      functionMap: null,
+      functionMap:
+        type !== 'module' ? null : {names: ['<global>'], mappings: 'AAA'},
       path,
       type,
       libraryIdx: null,
@@ -270,10 +271,18 @@ function makeDependency(name) {
   };
 }
 
-function expectedCode(module) {
+function expectedCodeAndMap(module) {
   return getModuleCodeAndMap(module, x => idsForPath(x).moduleId, {
     enableIDInlining: true,
-  }).moduleCode;
+  });
+}
+
+function expectedCode(module) {
+  return expectedCodeAndMap(module).moduleCode;
+}
+
+function expectedMap(module) {
+  return expectedCodeAndMap(module).moduleMap;
 }
 
 function getId(path) {

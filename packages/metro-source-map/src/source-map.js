@@ -68,6 +68,7 @@ export type FBSourceMap = FBIndexMap | (BabelSourceMap & FBExtensions);
 function fromRawMappings(
   modules: $ReadOnlyArray<{
     +map: ?Array<MetroSourceMapSegmentTuple>,
+    +functionMap: ?FBSourceFunctionMap,
     +path: string,
     +source: string,
     +code: string,
@@ -140,7 +141,7 @@ function toSegmentTuple(
 }
 
 function addMappingsForFile(generator, mappings, module, carryOver) {
-  generator.startFile(module.path, module.source);
+  generator.startFile(module.path, module.source, module.functionMap);
 
   for (let i = 0, n = mappings.length; i < n; ++i) {
     addMapping(generator, mappings[i], carryOver);

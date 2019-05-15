@@ -9,9 +9,11 @@
  */
 'use strict';
 
-const {transformSync} = require('@babel/core');
+const {parseSync, transformFromAstSync} = require('@babel/core');
+const {generateFunctionMap} = require('metro-source-map');
 
 import type {Ast, Plugins} from '@babel/core';
+import type {FBSourceFunctionMap} from 'metro-source-map';
 
 export type CustomTransformOptions = {[string]: mixed, __proto__: null};
 
@@ -39,7 +41,10 @@ export type BabelTransformerArgs = $ReadOnly<{|
 |}>;
 
 export type BabelTransformer = {|
-  transform: BabelTransformerArgs => {ast: Ast},
+  transform: BabelTransformerArgs => {
+    ast: Ast,
+    functionMap: ?FBSourceFunctionMap,
+  },
   getCacheKey?: () => string,
 |};
 
@@ -50,7 +55,7 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
     : process.env.BABEL_ENV || 'production';
 
   try {
-    const {ast} = transformSync(src, {
+    const babelConfig = {
       caller: {name: 'metro', platform: options.platform},
       ast: true,
       babelrc: options.enableBabelRCLookup,
@@ -59,9 +64,12 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
       filename,
       plugins,
       sourceType: 'module',
-    });
+    };
+    const sourceAst = parseSync(src, babelConfig);
+    const {ast} = transformFromAstSync(sourceAst, src, babelConfig);
+    const functionMap = generateFunctionMap(sourceAst, {filename});
 
-    return {ast};
+    return {ast, functionMap};
   } finally {
     process.env.BABEL_ENV = OLD_BABEL_ENV;
   }

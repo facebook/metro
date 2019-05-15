@@ -83,6 +83,7 @@ describe('code transformation worker:', () => {
       ].join('\n'),
     );
     expect(result.output[0].data.map).toMatchSnapshot();
+    expect(result.output[0].data.functionMap).toMatchSnapshot();
     expect(result.dependencies).toEqual([]);
   });
 
@@ -101,6 +102,7 @@ describe('code transformation worker:', () => {
       [HEADER_DEV, '  arbitrary(code);', '});'].join('\n'),
     );
     expect(result.output[0].data.map).toMatchSnapshot();
+    expect(result.output[0].data.functionMap).toMatchSnapshot();
     expect(result.dependencies).toEqual([]);
   });
 
@@ -137,6 +139,7 @@ describe('code transformation worker:', () => {
       ].join('\n'),
     );
     expect(result.output[0].data.map).toMatchSnapshot();
+    expect(result.output[0].data.functionMap).toMatchSnapshot();
     expect(result.dependencies).toEqual([
       {
         data: {isAsync: false},
@@ -161,6 +164,7 @@ describe('code transformation worker:', () => {
     expect(result.output[0].type).toBe('js/module');
     expect(result.output[0].data.code).toMatchSnapshot();
     expect(result.output[0].data.map).toHaveLength(13);
+    expect(result.output[0].data.functionMap).toMatchSnapshot();
     expect(result.dependencies).toEqual([
       {
         data: {isAsync: false},
@@ -193,6 +197,7 @@ describe('code transformation worker:', () => {
       ].join('\n'),
     );
     expect(result.output[0].data.map).toMatchSnapshot();
+    expect(result.output[0].data.functionMap).toMatchSnapshot();
     expect(result.dependencies).toEqual([
       {
         data: {
