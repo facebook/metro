@@ -13,6 +13,8 @@
 // NO FANCY FEATURES, E.G. DESTRUCTURING, PLEASE!
 
 const SourceMapConsumer = require('source-map').SourceMapConsumer;
+const Symbolication = require('metro-symbolicate/src/Symbolication');
+
 const concat = require('concat-stream');
 const net = require('net');
 
@@ -39,29 +41,32 @@ function symbolicate(connection, data) {
 }
 
 function symbolicateStack(data) {
-  const consumers = new Map(data.maps.map(mapToConsumer));
+  const contexts = new Map(data.maps.map(mapToContext));
   return {
-    result: data.stack.map(frame => mapFrame(frame, consumers)),
+    result: data.stack.map(frame => mapFrame(frame, contexts)),
   };
 }
 
-function mapFrame(frame, consumers) {
+function mapFrame(frame, contexts) {
   const sourceUrl = frame.file;
-  const consumer = consumers.get(sourceUrl);
-  if (consumer == null) {
+  const context = contexts.get(sourceUrl);
+  if (context == null) {
     return frame;
   }
-  const original = consumer.originalPositionFor({
-    line: frame.lineNumber,
-    column: frame.column,
-  });
-  if (!original) {
+  const original = Symbolication.getOriginalPositionFor(
+    frame.lineNumber,
+    frame.column,
+    null, // No module IDs in DEV
+    context,
+  );
+  if (!original || !original.source) {
     return frame;
   }
   return Object.assign({}, frame, {
     file: original.source,
     lineNumber: original.line,
     column: original.column,
+    methodName: original.name || frame.methodName,
   });
 }
 
@@ -71,8 +76,8 @@ function makeErrorMessage(error) {
   });
 }
 
-function mapToConsumer(tuple) {
-  tuple[1] = new SourceMapConsumer(tuple[1]);
+function mapToContext(tuple) {
+  tuple[1] = Symbolication.createContext(SourceMapConsumer, tuple[1]);
   return tuple;
 }
 

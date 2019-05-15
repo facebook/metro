@@ -24,16 +24,36 @@ beforeEach(() => {
 it('symbolicates stack frames', () => {
   const mappings = [
     {
-      from: {file: 'bundle1.js', lineNumber: 1, column: 2},
-      to: {file: 'apples.js', lineNumber: 12, column: 34},
+      from: {
+        file: 'bundle1.js',
+        lineNumber: 1,
+        column: 2,
+        methodName: 'global_bundle',
+      },
+      to: {file: 'apples.js', lineNumber: 12, column: 34, methodName: null},
     },
     {
-      from: {file: 'bundle2.js', lineNumber: 3, column: 4},
-      to: {file: 'bananas.js', lineNumber: 56, column: 78},
+      from: {
+        file: 'bundle2.js',
+        lineNumber: 3,
+        column: 4,
+        methodName: 'global_bundle',
+      },
+      to: {file: 'bananas.js', lineNumber: 56, column: 78, methodName: 'foo'},
     },
     {
-      from: {file: 'bundle1.js', lineNumber: 5, column: 6},
-      to: {file: 'clementines.js', lineNumber: 90, column: 12},
+      from: {
+        file: 'bundle1.js',
+        lineNumber: 5,
+        column: 6,
+        methodName: 'global_bundle',
+      },
+      to: {
+        file: 'clementines.js',
+        lineNumber: 90,
+        column: 12,
+        methodName: 'bar',
+      },
     },
   ];
 
@@ -54,6 +74,7 @@ it('ignores stack frames without corresponding map', () => {
     file: 'arbitrary.js',
     lineNumber: 123,
     column: 456,
+    methodName: null,
   };
 
   return symbolicate(
@@ -69,6 +90,7 @@ it('ignores `/debuggerWorker.js` stack frames', () => {
     file: 'http://localhost:8081/debuggerWorker.js',
     lineNumber: 123,
     column: 456,
+    methodName: null,
   };
 
   return symbolicate(connection, makeData([frame])).then(() =>
@@ -82,7 +104,8 @@ function makeData(stack, maps = []) {
 
 function sourceMap(file, mappings) {
   const g = new SourceMapGenerator();
-  g.startFile(file, null);
+  const globalMethodName = 'global_' + file.replace(/[^A-Za-z]/g, '');
+  g.startFile(file, null, {names: [globalMethodName], mappings: 'AAA'});
   mappings.forEach(({from, to}) =>
     g.addSourceMapping(to.lineNumber, to.column, from.lineNumber, from.column),
   );

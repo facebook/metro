@@ -21,7 +21,12 @@ const {fork} = require('child_process');
 import type {MetroSourceMap} from 'metro-source-map';
 import type {ChildProcess} from 'child_process';
 
-export type Stack = Array<{file: string, lineNumber: number, column: number}>;
+export type Stack = Array<{
+  file: string,
+  lineNumber: number,
+  column: number,
+  methodName: ?string,
+}>;
 export type Symbolicate = (
   Stack,
   Iterable<[string, MetroSourceMap]>,
