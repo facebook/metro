@@ -80,7 +80,6 @@ module.exports = new Set([
   'LayoutAnimation',
   'Linking',
   'NativeEventEmitter',
-  'NetInfo',
   'PanResponder',
   'PermissionsAndroid',
   'PixelRatio',
