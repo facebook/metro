@@ -293,10 +293,16 @@ class TerminalReporter {
       return;
     }
 
-    let message =
-      error.snippet == null && error.stack != null
-        ? error.stack
-        : error.message;
+    let {message} = error;
+
+    // Do not log the stack trace for SyntaxError (because it will always be in
+    // the parser, which is not helpful).
+    if (!(error instanceof SyntaxError)) {
+      if (error.snippet == null && error.stack != null) {
+        message = error.stack;
+      }
+    }
+
     if (error.filename && !message.includes(error.filename)) {
       message += ` [${error.filename}]`;
     }
