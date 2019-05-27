@@ -93,7 +93,12 @@ class AssetResolutionCache {
    */
   _findAssets = (dirPath: string) => {
     const results = new Map();
-    const fileNames = this._opts.getDirFiles(dirPath);
+    let fileNames;
+    try {
+      fileNames = this._opts.getDirFiles(dirPath);
+    } catch (err) {
+      return results;
+    }
     for (let i = 0; i < fileNames.length; ++i) {
       const fileName = fileNames[i];
       const assetData = AssetPaths.tryParse(fileName, this._opts.platforms);
