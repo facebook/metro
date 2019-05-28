@@ -47,7 +47,6 @@ module.exports = new Set([
   'SwipeableListView',
   'Text',
   'TextInput',
-  'ToolbarAndroid',
   'Touchable',
   'TouchableHighlight',
   'TouchableNativeFeedback',
