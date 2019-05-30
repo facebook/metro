@@ -71,7 +71,6 @@ module.exports = new Set([
   'Easing',
   'ReactNative',
   'I18nManager',
-  'ImagePickerIOS',
   'InteractionManager',
   'Keyboard',
   'LayoutAnimation',
