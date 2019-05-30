@@ -743,4 +743,669 @@ describe('require', () => {
       }
     });
   });
+
+  describe('hot reloading', () => {
+    it('is disabled in production', () => {
+      createModuleSystem(moduleSystem, false);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          expect(module.hot).toBe(undefined);
+        },
+      );
+      expect.assertions(1);
+      moduleSystem.__r(0);
+    });
+
+    it('re-runs accepted modules', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init FooV1');
+          require(1);
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+          // This module accepts itself:
+          module.hot.accept(() => {});
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init FooV1', 'init BarV1']);
+      log = [];
+
+      // We only edited Bar, and it accepted.
+      // So we expect it to re-run alone.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+          module.hot.accept(() => {});
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV2']);
+      log = [];
+
+      // We only edited Bar, and it accepted.
+      // So we expect it to re-run alone.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+          module.hot.accept(() => {});
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV3']);
+      log = [];
+    });
+
+    it('propagates a hot update to closest accepted module', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init FooV1');
+          require(1);
+          // This module accepts itself:
+          module.hot.accept(() => {});
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init FooV1', 'init BarV1']);
+      log = [];
+
+      // We edited Bar, but it doesn't accept.
+      // So we expect it to re-run together with Foo which does.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV2', 'init FooV1']);
+      log = [];
+
+      // We edited Bar, but it doesn't accept.
+      // So we expect it to re-run together with Foo which does.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV3', 'init FooV1']);
+      log = [];
+
+      // We edited Bar so that it accepts itself.
+      // Now there's no need to re-run Foo.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+          // Now accepts:
+          module.hot.accept(() => {});
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV3']);
+      log = [];
+    });
+
+    it('propagates hot update to all inverse dependencies', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+
+      // This is the module graph:
+      //        MiddleA*
+      //     /            \
+      // Root* - MiddleB*  - Leaf
+      //     \
+      //        MiddleC
+      //
+      // * - accepts update
+      //
+      // We expect that editing Leaf will propagate to
+      // MiddleA and MiddleB both of which can handle updates.
+
+      createModule(
+        moduleSystem,
+        0,
+        'root.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init RootV1');
+          require(1);
+          require(2);
+          require(3);
+          module.hot.accept(() => {});
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'middleA.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init MiddleAV1');
+          require(4); // Import leaf
+          module.hot.accept(() => {});
+        },
+      );
+      createModule(
+        moduleSystem,
+        2,
+        'middleB.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init MiddleBV1');
+          require(4); // Import leaf
+          module.hot.accept(() => {});
+        },
+      );
+      createModule(
+        moduleSystem,
+        3,
+        'middleC.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init MiddleCV1');
+          // This one doesn't import leaf and also
+          // doesn't accept updates.
+        },
+      );
+      createModule(
+        moduleSystem,
+        4,
+        'leaf.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init LeafV1');
+          // Doesn't accept its own updates; they will propagate.
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual([
+        'init RootV1',
+        'init MiddleAV1',
+        'init LeafV1',
+        'init MiddleBV1',
+        'init MiddleCV1',
+      ]);
+      log = [];
+
+      // We edited Leaf, but it doesn't accept.
+      // So we expect it to re-run together with MiddleA and MiddleB which do.
+      moduleSystem.__accept(
+        4,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init LeafV2');
+        },
+        [],
+        // Inverse dependency map.
+        {
+          4: [2, 1],
+          3: [0],
+          2: [0],
+          1: [0],
+          0: [],
+        },
+        undefined,
+      );
+      expect(log).toEqual(['init LeafV2', 'init MiddleBV1', 'init MiddleAV1']);
+      log = [];
+
+      // Let's try the same one more time.
+      moduleSystem.__accept(
+        4,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init LeafV2');
+        },
+        [],
+        // Inverse dependency map.
+        {
+          4: [2, 1],
+          3: [0],
+          2: [0],
+          1: [0],
+          0: [],
+        },
+        undefined,
+      );
+      expect(log).toEqual(['init LeafV2', 'init MiddleBV1', 'init MiddleAV1']);
+      log = [];
+
+      // Now edit MiddleB. It should accept and re-run alone.
+      moduleSystem.__accept(
+        2,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init MiddleBV2');
+          require(4);
+          module.hot.accept(() => {});
+        },
+        [],
+        // Inverse dependency map.
+        {
+          4: [2, 1],
+          3: [0],
+          2: [0],
+          1: [0],
+          0: [],
+        },
+        undefined,
+      );
+      expect(log).toEqual(['init MiddleBV2']);
+      log = [];
+
+      // Finally, edit MiddleC. It didn't accept so it should bubble to Root.
+      moduleSystem.__accept(
+        3,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init MiddleCV2');
+        },
+        [],
+        // Inverse dependency map.
+        {
+          4: [2, 1],
+          3: [0],
+          2: [0],
+          1: [0],
+          0: [],
+        },
+        undefined,
+      );
+      expect(log).toEqual(['init MiddleCV2', 'init RootV1']);
+      log = [];
+    });
+
+    it('provides fresh value for module.exports in parents', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          const BarValue = require(1);
+          log.push('init FooV1 with BarValue = ' + BarValue);
+          // This module accepts itself:
+          module.hot.accept(() => {});
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+          module.exports = 1;
+          // This module will propagate to the parent.
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init BarV1', 'init FooV1 with BarValue = 1']);
+      log = [];
+
+      // We edited Bar, but it doesn't accept.
+      // So we expect it to re-run together with Foo which does.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+          module.exports = 2;
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV2', 'init FooV1 with BarValue = 2']);
+      log = [];
+
+      // Let's try this again.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+          module.exports = 3;
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV3', 'init FooV1 with BarValue = 3']);
+      log = [];
+
+      // Now let's edit the parent which accepts itself.
+      moduleSystem.__accept(
+        0,
+        (global, require, importDefault, importAll, module, exports) => {
+          const BarValue = require(1);
+          log.push('init FooV2 with BarValue = ' + BarValue);
+          module.hot.accept(() => {});
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      // It should see a fresh version of the child.
+      expect(log).toEqual(['init FooV2 with BarValue = 3']);
+      log = [];
+
+      // Verify editing the child didn't break after parent update.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV4');
+          module.exports = 4;
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV4', 'init FooV2 with BarValue = 4']);
+      log = [];
+    });
+
+    it('provides fresh value for exports.* in parents', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          const BarValue = require(1).value;
+          log.push('init FooV1 with BarValue = ' + BarValue);
+          // This module accepts itself:
+          module.hot.accept(() => {});
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+          exports.value = 1;
+          // This module will propagate to the parent.
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init BarV1', 'init FooV1 with BarValue = 1']);
+      log = [];
+
+      // We edited Bar, but it doesn't accept.
+      // So we expect it to re-run together with Foo which does.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+          exports.value = 2;
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV2', 'init FooV1 with BarValue = 2']);
+      log = [];
+
+      // Let's try this again.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+          exports.value = 3;
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV3', 'init FooV1 with BarValue = 3']);
+      log = [];
+
+      // Now let's edit the parent which accepts itself.
+      moduleSystem.__accept(
+        0,
+        (global, require, importDefault, importAll, module, exports) => {
+          const BarValue = require(1).value;
+          log.push('init FooV2 with BarValue = ' + BarValue);
+          module.hot.accept(() => {});
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      // It should see a fresh version of the child.
+      expect(log).toEqual(['init FooV2 with BarValue = 3']);
+      log = [];
+
+      // Verify editing the child didn't break after parent update.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV4');
+          exports.value = 4;
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV4', 'init FooV2 with BarValue = 4']);
+      log = [];
+    });
+
+    it('provides fresh value for ES6 named import in parents', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          const BarValue = importAll(1).value;
+          log.push('init FooV1 with BarValue = ' + BarValue);
+          // This module accepts itself:
+          module.hot.accept(() => {});
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+          exports.__esModule = true;
+          exports.value = 1;
+          // This module will propagate to the parent.
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init BarV1', 'init FooV1 with BarValue = 1']);
+      log = [];
+
+      // We edited Bar, but it doesn't accept.
+      // So we expect it to re-run together with Foo which does.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+          exports.__esModule = true;
+          exports.value = 2;
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV2', 'init FooV1 with BarValue = 2']);
+      log = [];
+
+      // Let's try this again.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+          exports.__esModule = true;
+          exports.value = 3;
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV3', 'init FooV1 with BarValue = 3']);
+      log = [];
+
+      // Now let's edit the parent which accepts itself.
+      moduleSystem.__accept(
+        0,
+        (global, require, importDefault, importAll, module, exports) => {
+          const BarValue = importAll(1).value;
+          log.push('init FooV2 with BarValue = ' + BarValue);
+          module.hot.accept(() => {});
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      // It should see a fresh version of the child.
+      expect(log).toEqual(['init FooV2 with BarValue = 3']);
+      log = [];
+
+      // Verify editing the child didn't break after parent update.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV4');
+          exports.__esModule = true;
+          exports.value = 4;
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV4', 'init FooV2 with BarValue = 4']);
+      log = [];
+    });
+
+    it('provides fresh value for ES6 default import in parents', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          const BarValue = importDefault(1);
+          log.push('init FooV1 with BarValue = ' + BarValue);
+          // This module accepts itself:
+          module.hot.accept(() => {});
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+          exports.__esModule = true;
+          exports.default = 1;
+          // This module will propagate to the parent.
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init BarV1', 'init FooV1 with BarValue = 1']);
+      log = [];
+
+      // We edited Bar, but it doesn't accept.
+      // So we expect it to re-run together with Foo which does.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+          exports.__esModule = true;
+          exports.default = 2;
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV2', 'init FooV1 with BarValue = 2']);
+      log = [];
+
+      // Let's try this again.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+          exports.__esModule = true;
+          exports.default = 3;
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV3', 'init FooV1 with BarValue = 3']);
+      log = [];
+
+      // Now let's edit the parent which accepts itself.
+      moduleSystem.__accept(
+        0,
+        (global, require, importDefault, importAll, module, exports) => {
+          const BarValue = importDefault(1);
+          log.push('init FooV2 with BarValue = ' + BarValue);
+          module.hot.accept(() => {});
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      // It should see a fresh version of the child.
+      expect(log).toEqual(['init FooV2 with BarValue = 3']);
+      log = [];
+
+      // Verify editing the child didn't break after parent update.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV4');
+          exports.__esModule = true;
+          exports.default = 4;
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV4', 'init FooV2 with BarValue = 4']);
+      log = [];
+    });
+  });
 });

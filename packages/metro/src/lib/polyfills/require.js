@@ -522,6 +522,8 @@ if (__DEV__) {
       mod.dependencyMap = dependencyMap;
     }
     mod.hasError = false;
+    mod.importedAll = EMPTY;
+    mod.importedDefault = EMPTY;
     mod.isInitialized = false;
     metroRequire(id);
 
