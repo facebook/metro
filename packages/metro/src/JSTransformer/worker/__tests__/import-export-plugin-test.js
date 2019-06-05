@@ -180,3 +180,19 @@ it('enables module exporting when something is exported', () => {
 
   compare([importExportPlugin], code, expected, opts);
 });
+
+it('supports `import {default as LocalName}`', () => {
+  const code = `
+    import {
+      Platform,
+      default as ReactNative,
+    } from 'react-native';
+  `;
+
+  const expected = `
+    var Platform = require('react-native').Platform;
+    var ReactNative = _$$_IMPORT_DEFAULT('react-native');
+  `;
+
+  compare([importExportPlugin], code, expected, opts);
+});

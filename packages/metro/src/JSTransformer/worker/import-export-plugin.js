@@ -296,13 +296,23 @@ function importExportPlugin({types: t}: $FlowFixMe) {
                 break;
 
               case 'ImportSpecifier':
-                anchor.insertBefore(
-                  importNamedTemplate({
-                    FILE: resolvePath(file, state.opts.resolve),
-                    LOCAL: local,
-                    REMOTE: imported,
-                  }),
-                );
+                if (imported.name === 'default') {
+                  anchor.insertBefore(
+                    importTemplate({
+                      IMPORT: state.importDefault,
+                      FILE: resolvePath(file, state.opts.resolve),
+                      LOCAL: local,
+                    }),
+                  );
+                } else {
+                  anchor.insertBefore(
+                    importNamedTemplate({
+                      FILE: resolvePath(file, state.opts.resolve),
+                      LOCAL: local,
+                      REMOTE: imported,
+                    }),
+                  );
+                }
                 break;
 
               default:
