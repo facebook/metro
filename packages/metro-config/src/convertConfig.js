@@ -55,7 +55,6 @@ async function convertOldToNew({
     resolveRequest,
     getAssetExts,
     getPlatforms,
-    getProvidesModuleNodeModules,
     getResolverMainFields,
     getSourceExts,
     hasteImplModulePath,
@@ -90,11 +89,6 @@ async function convertOldToNew({
   const platforms =
     (getPlatforms && getPlatforms()) || defaultConfig.resolver.platforms;
 
-  const providesModuleNodeModules =
-    typeof getProvidesModuleNodeModules === 'function'
-      ? getProvidesModuleNodeModules()
-      : defaultConfig.resolver.providesModuleNodeModules;
-
   const watchFolders = getWatchFolders();
 
   return {
@@ -102,7 +96,6 @@ async function convertOldToNew({
       allowPnp,
       assetExts,
       platforms,
-      providesModuleNodeModules,
       resolverMainFields: getResolverMainFields(),
       sourceExts,
       hasteImplModulePath,

@@ -18,7 +18,6 @@ const os = require('os');
 const path = require('path');
 
 const {
-  providesModuleNodeModules,
   assetExts,
   sourceExts,
   platforms,
@@ -36,7 +35,6 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     assetExts,
     platforms,
     sourceExts,
-    providesModuleNodeModules: providesModuleNodeModules.slice(),
     resolverMainFields: ['browser', 'main'],
     extraNodeModules: {},
     resolveRequest: null,

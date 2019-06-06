@@ -69,10 +69,9 @@ if (argv.length < 1 || argv.length > 4) {
     '       ' + __filename + ' <source-map-file> <line> [column]',
     '       ' + __filename + ' <source-map-file> <moduleId>.js <line> [column]',
     '       ' + __filename + ' <source-map-file> <mapfile>.profmap',
-    '       ',
-    __filename,
-    ' <source-map-file> --attribution < attribution.jsonl ',
-    ' > symbolicated.jsonl',
+    '       ' +
+      __filename +
+      ' <source-map-file> --attribution < in.jsonl > out.jsonl',
     '       ' + __filename + ' <source-map-file> <tracefile>.cpuprofile',
     ' Optional flags:',
     '  --no-function-names',

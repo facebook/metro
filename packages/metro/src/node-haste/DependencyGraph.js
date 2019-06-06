@@ -66,7 +66,6 @@ class DependencyGraph extends EventEmitter {
     this._moduleMap = initialModuleMap;
     this._helpers = new DependencyGraphHelpers({
       assetExts: config.resolver.assetExts,
-      providesModuleNodeModules: config.resolver.providesModuleNodeModules,
     });
     this._haste.on('change', this._onHasteChange.bind(this));
     this._moduleCache = this._createModuleCache();
@@ -86,7 +85,6 @@ class DependencyGraph extends EventEmitter {
       mocksPattern: '',
       name: 'metro-' + JEST_HASTE_MAP_CACHE_BREAKER,
       platforms: config.resolver.platforms,
-      providesModuleNodeModules: config.resolver.providesModuleNodeModules,
       retainAllFiles: true,
       resetCache: config.resetCache,
       rootDir: config.projectRoot,

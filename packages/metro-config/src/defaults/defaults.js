@@ -54,8 +54,6 @@ exports.moduleSystem = require.resolve('metro/src/lib/polyfills/require.js');
 
 exports.platforms = ['ios', 'android', 'windows', 'web'];
 
-exports.providesModuleNodeModules = ['react-native', 'react-native-windows'];
-
 exports.DEFAULT_METRO_MINIFIER_PATH = 'metro-minify-uglify';
 
 exports.defaultCreateModuleIdFactory = defaultCreateModuleIdFactory;

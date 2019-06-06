@@ -16,7 +16,6 @@ const path = require('path');
 const {
   defaultCreateModuleIdFactory,
   platforms,
-  providesModuleNodeModules,
 } = require('./defaults/defaults');
 const {FileStore} = require('metro-cache');
 
@@ -46,7 +45,6 @@ const DEFAULT = ({
   // node_modules/metro/
   getProjectRoot: () => path.resolve(__dirname, '../../..'),
   getWatchFolders: () => [],
-  getProvidesModuleNodeModules: () => providesModuleNodeModules.slice(),
   getRunModuleStatement: (moduleId: number | string) =>
     `__r(${JSON.stringify(moduleId)});`,
   getSourceExts: () => [],

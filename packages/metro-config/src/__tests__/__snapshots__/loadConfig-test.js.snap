@@ -49,10 +49,6 @@ Object {
       "windows",
       "web",
     ],
-    "providesModuleNodeModules": Array [
-      "react-native",
-      "react-native-windows",
-    ],
     "resolveRequest": null,
     "resolverMainFields": Array [
       "browser",
@@ -180,10 +176,6 @@ Object {
       "android",
       "windows",
       "web",
-    ],
-    "providesModuleNodeModules": Array [
-      "react-native",
-      "react-native-windows",
     ],
     "resolveRequest": null,
     "resolverMainFields": Array [

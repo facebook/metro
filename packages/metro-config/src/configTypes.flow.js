@@ -86,7 +86,6 @@ export type OldConfigT = {
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   getProjectRoots: ?() => Array<string>, // @deprecated
   getProjectRoot: () => string,
-  getProvidesModuleNodeModules?: () => Array<string>,
   getResolverMainFields: () => $ReadOnlyArray<string>,
   getRunModuleStatement: (number | string) => string,
   getSourceExts: () => Array<string>,
@@ -111,7 +110,6 @@ type ResolverConfigT = {|
   extraNodeModules: {[name: string]: string},
   hasteImplModulePath: ?string,
   platforms: $ReadOnlyArray<string>,
-  providesModuleNodeModules: $ReadOnlyArray<string>,
   resolverMainFields: $ReadOnlyArray<string>,
   resolveRequest: ?CustomResolver,
   sourceExts: $ReadOnlyArray<string>,

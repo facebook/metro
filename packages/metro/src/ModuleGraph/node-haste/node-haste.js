@@ -126,7 +126,6 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
 
   const helpers = new DependencyGraphHelpers({
     assetExts,
-    providesModuleNodeModules: defaults.providesModuleNodeModules,
   });
 
   const hasteFS = new HasteFS(files);

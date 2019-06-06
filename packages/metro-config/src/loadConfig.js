@@ -35,7 +35,6 @@ type YargArguments = {
   assetExts?: Array<string>,
   sourceExts?: Array<string>,
   platforms?: Array<string>,
-  providesModuleNodeModules?: Array<string>,
   'max-workers'?: string | number,
   maxWorkers?: string | number,
   transformer?: string,
@@ -199,10 +198,6 @@ function overrideConfigWithArguments(
 
   if (argv.platforms != null) {
     output.resolver.platforms = argv.platforms;
-  }
-
-  if (argv.providesModuleNodeModules != null) {
-    output.resolver.providesModuleNodeModules = argv.providesModuleNodeModules;
   }
 
   if (argv['max-workers'] != null || argv.maxWorkers != null) {

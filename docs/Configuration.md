@@ -268,13 +268,6 @@ Type: `Array<string>`
 
 Additional platforms to look out for, For example, if you want to add a "custom" platform, and use modules ending in .custom.js, you would return ['custom'] here.
 
-#### `providesModuleNodeModules`
-
-Type: `Array<string>`
-
-Specify any additional node modules that should be processed for providesModule declarations.
-
-
 ### Serializer Options
 
 #### `getRunModuleStatement`
@@ -323,7 +316,7 @@ Using the `metro-config` package it is possible to merge multiple configurations
 | `mergeConfig(...configs): MergedConfig` | Returns the merged configuration of two or more configuration objects. |
 
 > **Note:** Arrays and function based config parameters do not deeply merge and will instead override any pre-existing config parameters.
-> This allows overriding and removing default config parameters such as `platforms`, `providesModuleNodeModules` or `getModulesRunBeforeMainModule` that may not be required in your environment.
+> This allows overriding and removing default config parameters such as `platforms` or `getModulesRunBeforeMainModule` that may not be required in your environment.
 
 #### Merging Example
 
