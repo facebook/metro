@@ -32,7 +32,7 @@ function checkAndRemoveArg(arg, valuesPerArg = 0) {
   let values = null;
   for (let idx = argv.indexOf(arg); idx !== -1; idx = argv.indexOf(arg)) {
     argv.splice(idx, 1);
-    values = (values || []);
+    values = values || [];
     values.push(argv.splice(idx, valuesPerArg));
   }
   return values;
@@ -69,9 +69,10 @@ if (argv.length < 1 || argv.length > 4) {
     '       ' + __filename + ' <source-map-file> <line> [column]',
     '       ' + __filename + ' <source-map-file> <moduleId>.js <line> [column]',
     '       ' + __filename + ' <source-map-file> <mapfile>.profmap',
-    '       ' + __filename +
-      ' <source-map-file> --attribution < attribution.jsonl ' +
-      ' > symbolicated.jsonl',
+    '       ',
+    __filename,
+    ' <source-map-file> --attribution < attribution.jsonl ',
+    ' > symbolicated.jsonl',
     '       ' + __filename + ' <source-map-file> <tracefile>.cpuprofile',
     ' Optional flags:',
     '  --no-function-names',
