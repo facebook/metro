@@ -53,7 +53,6 @@ type ModuleDefinition = {|
   publicModule: Module,
   verboseName?: string,
 |};
-type PatchedModules = {[ModuleID]: boolean};
 type ModuleList = {[number]: ?ModuleDefinition, __proto__: null};
 type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
 type VerboseModuleNameForDev = string;
@@ -322,7 +321,7 @@ function loadModuleImplementation(
   // replaced so that they use numeric module IDs.
   // The systrace module will expose itself on the metroRequire function so that
   // it can be used here.
-  // TODO(davidaurelio) Scan polyfills for dependencies, too (t9759686)
+  // TODO(t9759686) Scan polyfills for dependencies, too
   if (__DEV__) {
     var {Systrace} = metroRequire;
   }
@@ -440,70 +439,119 @@ if (__DEV__) {
     return hot;
   };
 
-  const metroAcceptAll = function(
-    dependentModules: Array<ModuleID>,
-    inverseDependencies: {[key: ModuleID]: Array<ModuleID>},
-    patchedModules: PatchedModules,
-  ) {
-    if (!dependentModules || dependentModules.length === 0) {
-      return true;
-    }
-
-    const notAccepted = dependentModules.filter(
-      (module: ModuleID) =>
-        !metroAccept(
-          module,
-          /*factory*/ undefined,
-          /*dependencyMap*/ undefined,
-          inverseDependencies,
-          patchedModules,
-        ),
-    );
-
-    const parents = [];
-    for (let i = 0; i < notAccepted.length; i++) {
-      // if the module has no parents then the change cannot be hot loaded
-      if (inverseDependencies[notAccepted[i]].length === 0) {
-        return false;
-      }
-
-      parents.push.apply(parents, inverseDependencies[notAccepted[i]]);
-    }
-
-    return parents.length == 0;
-  };
-
-  const metroAccept = function(
+  const metroHotUpdateModule = function(
     id: ModuleID,
     factory?: FactoryFn,
     dependencyMap?: DependencyMap,
     inverseDependencies: {[key: ModuleID]: Array<ModuleID>},
-    patchedModules: PatchedModules = {},
   ) {
-    if (id in patchedModules) {
-      // Do not patch the same module more that once during an update.
-      return true;
-    }
-    patchedModules[id] = true;
-
     const mod = modules[id];
-
-    if (!mod && factory) {
-      // New modules are going to be handled by the define() method.
-      return true;
-    }
-
     if (!mod) {
+      if (factory) {
+        // New modules are going to be handled by the define() method.
+        return true;
+      }
       throw unknownModuleError(id);
     }
 
     const {hot} = mod;
     if (!hot) {
-      console.warn(
+      throw new Error(
+        'Cannot accept module because the Hot Module Replacement ' +
+          'API was not installed.',
+      );
+    }
+
+    // Run just the edited module first. We want to do it now because
+    // we want to know whether its latest version has self-accepted or not.
+    // However, we'll be more cautious before running the parent modules below.
+    runUpdatedModule(id, factory, dependencyMap);
+
+    const pendingModuleIDs = [id];
+    const updatedModuleIDs = [];
+    const seenModuleIDs = new Set();
+
+    // In this loop, we will traverse the dependency tree upwards from the
+    // changed module. Updates "bubble" up to the closest accepted parent.
+    //
+    // If we reach the module root and nothing along the way accepted the update,
+    // we know hot reload is going to fail. In that case we return false.
+    //
+    // The main purpose of this loop is to figure out whether it's safe to apply
+    // a hot update. It is only safe when the update was accepted somewhere
+    // along the way upwards for each of its parent dependency module chains.
+    //
+    // If we didn't have this check, we'd risk re-evaluating modules that
+    // have side effects and lead to confusing and meaningless crashes.
+
+    while (pendingModuleIDs.length > 0) {
+      const pendingID = pendingModuleIDs.pop();
+      // Don't process twice if we have a cycle.
+      if (seenModuleIDs.has(pendingID)) {
+        continue;
+      }
+      seenModuleIDs.add(pendingID);
+
+      // If the module accepts itself, no need to bubble.
+      // We can stop worrying about this module chain and pick the next one.
+      const pendingModule = modules[pendingID];
+      if (pendingModule != null) {
+        const pendingHot = pendingModule.hot;
+        if (pendingHot == null) {
+          throw new Error(
+            'Cannot accept module because the Hot Module Replacement ' +
+              'API was not installed.',
+          );
+        }
+        if (pendingHot._didAccept) {
+          updatedModuleIDs.push(pendingID);
+          continue;
+        }
+      }
+
+      // If we bubble through the roof, there is no way to do a hot update.
+      // Bail out altogether. This is the failure case.
+      const parentIDs = inverseDependencies[pendingID];
+      if (parentIDs.length === 0) {
+        // Reload the app because the hot reload can't succeed.
+        // This should work both on web and React Native.
+        reloadApp();
+        return false;
+      }
+
+      // This module didn't accept but maybe all its parents did?
+      // Put them all in the queue to run the same set of checks.
+      updatedModuleIDs.push(pendingID);
+      parentIDs.forEach(parentID => pendingModuleIDs.push(parentID));
+    }
+
+    // If we reached here, it is likely that hot reload will be successful.
+    // Run the actual factories. Skip the edited module because it already ran.
+    updatedModuleIDs.forEach(updatedID => {
+      if (updatedID !== id) {
+        runUpdatedModule(updatedID);
+      }
+    });
+
+    return true;
+  };
+
+  const runUpdatedModule = function(
+    id: ModuleID,
+    factory?: FactoryFn,
+    dependencyMap?: DependencyMap,
+  ) {
+    const mod = modules[id];
+    if (mod == null) {
+      throw new Error('Expected to find the module.');
+    }
+
+    const {hot} = mod;
+    if (!hot) {
+      throw new Error(
         'Cannot accept module because Hot Module Replacement ' +
           'API was not installed.',
       );
-      return false;
     }
 
     if (hot._disposeCallback) {
@@ -517,7 +565,6 @@ if (__DEV__) {
       }
     }
 
-    // replace and initialize factory
     if (factory) {
       mod.factory = factory;
     }
@@ -530,34 +577,45 @@ if (__DEV__) {
     mod.importedDefault = EMPTY;
     mod.isInitialized = false;
     mod.publicModule.exports = {};
+    hot._didAccept = false;
+    hot._acceptCallback = null;
+    hot._disposeCallback = null;
     metroRequire(id);
 
-    if (hot._didAccept) {
-      if (hot._acceptCallback) {
-        try {
-          hot._acceptCallback();
-        } catch (error) {
-          console.error(
-            `Error while calling accept handler for module ${id}: `,
-            error,
-          );
-        }
+    if (hot._acceptCallback) {
+      try {
+        hot._acceptCallback();
+      } catch (error) {
+        console.error(
+          `Error while calling accept handler for module ${id}: `,
+          error,
+        );
       }
-      return true;
     }
-
-    // need to have inverseDependencies to bubble up accept
-    if (!inverseDependencies) {
-      throw new Error('Undefined `inverseDependencies`');
-    }
-
-    // accept parent modules recursively up until all siblings are accepted
-    return metroAcceptAll(
-      inverseDependencies[id],
-      inverseDependencies,
-      patchedModules,
-    );
   };
 
-  global.__accept = metroAccept;
+  const reloadApp = () => {
+    /* global window */
+    if (
+      typeof window !== 'undefined' &&
+      window.location != null &&
+      typeof window.location.reload === 'function'
+    ) {
+      window.location.reload();
+    } else {
+      // Note: the way we attach reload() is a hack because we can't
+      // use a real require in this file.
+      // TODO(t9759686) Scan polyfills for dependencies, too
+      const {reload} = metroRequire;
+      if (typeof reload === 'function') {
+        reload();
+      } else {
+        console.warn(
+          'Could not reload the application after an unsuccessful hot update.',
+        );
+      }
+    }
+  };
+
+  global.__accept = metroHotUpdateModule;
 }

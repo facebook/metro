@@ -982,7 +982,7 @@ describe('require', () => {
         },
         undefined,
       );
-      expect(log).toEqual(['init LeafV2', 'init MiddleBV1', 'init MiddleAV1']);
+      expect(log).toEqual(['init LeafV2', 'init MiddleAV1', 'init MiddleBV1']);
       log = [];
 
       // Let's try the same one more time.
@@ -1002,7 +1002,7 @@ describe('require', () => {
         },
         undefined,
       );
-      expect(log).toEqual(['init LeafV2', 'init MiddleBV1', 'init MiddleAV1']);
+      expect(log).toEqual(['init LeafV2', 'init MiddleAV1', 'init MiddleBV1']);
       log = [];
 
       // Now edit MiddleB. It should accept and re-run alone.
@@ -1734,6 +1734,209 @@ describe('require', () => {
         'init BarV3',
         'init FooV2 with BarExports = {"e":5,"f":6}',
       ]);
+      log = [];
+    });
+
+    it('bails out if update bubbles to the root via the only path', () => {
+      let log = [];
+
+      createModuleSystem(moduleSystem, true);
+      const reload = jest.fn();
+      moduleSystem.__r.reload = reload;
+
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init FooV1');
+          require(1);
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init FooV1', 'init BarV1']);
+      log = [];
+
+      // Neither Bar nor Foo accepted, so update reached the root.
+      const didAccept = moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      // We will re-run the Bar factory because there is a chance it
+      // might have self-accepted. However, after we know it didn't,
+      // we stop the process because we know the update will bubble
+      // through the root. This means it would be unsafe to apply,
+      // as no module above would be able to handle it.
+      expect(log).toEqual(['init BarV2']);
+      expect(didAccept).toBe(false);
+      expect(reload.mock.calls.length).toBe(1);
+      log = [];
+    });
+
+    it('bails out if the update bubbles to the root via one of the paths', () => {
+      let log = [];
+
+      createModuleSystem(moduleSystem, true);
+      const reload = jest.fn();
+      moduleSystem.__r.reload = reload;
+
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init FooV1');
+          require(1);
+          require(2);
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+          require(3);
+          module.hot.accept(); // Accepts itself
+        },
+      );
+      createModule(
+        moduleSystem,
+        2,
+        'baz.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BazV1');
+          require(3);
+          // This one doesn't accept itself, causing updates to Qux
+          // to bubble through the root.
+        },
+      );
+      createModule(
+        moduleSystem,
+        3,
+        'qux.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init QuxV1');
+          // Doesn't accept itself, and only one its parent path accepts.
+        },
+      );
+
+      moduleSystem.__r(0);
+      expect(log).toEqual([
+        'init FooV1',
+        'init BarV1',
+        'init QuxV1',
+        'init BazV1',
+      ]);
+      log = [];
+
+      // Edit Bar. It should self-accept.
+      let didAccept = moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+          require(3);
+          module.hot.accept(); // Accepts itself
+        },
+        [],
+        {3: [1, 2], 2: [0], 1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV2']);
+      expect(didAccept).toBe(true);
+      expect(reload.mock.calls.length).toBe(0);
+      log = [];
+
+      // Edit Qux. It should bubble. Baz accepts the update, Bar won't.
+      // So this update should not even attempt to run those factories
+      // because we know we'd bubble through the root if we tried.
+      didAccept = moduleSystem.__accept(
+        3,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init QuxV2');
+          // Doesn't accept itself, and only one its parent path accepts.
+        },
+        [],
+        {3: [1, 2], 2: [0], 1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init QuxV2']);
+      expect(didAccept).toBe(false);
+      expect(reload.mock.calls.length).toBe(1);
+      log = [];
+    });
+
+    it('propagates a module that stops accepting in next version', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init FooV1');
+          require(1);
+          module.hot.accept(); // Accept in parent
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+          module.hot.accept(); // Accept in child
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init FooV1', 'init BarV1']);
+      log = [];
+
+      // Now let's change the child to *not* accept itself.
+      // We'll expect that now the parent will handle the evaluation.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      // We will re-run the Bar factory because there is a chance it
+      // might have self-accepted. However, after we know it didn't,
+      // we stop the process because we know the update will bubble
+      // through the root. This means it would be unsafe to apply,
+      // as no module above would be able to handle it.
+      expect(log).toEqual(['init BarV2', 'init FooV1']);
+      log = [];
+
+      // Change it back so that the child accepts itself.
+      // Now there's no need to re-run the parent.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+          module.hot.accept();
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV2']);
       log = [];
     });
   });
