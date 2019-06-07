@@ -1452,5 +1452,289 @@ describe('require', () => {
       expect(log).toEqual(['dispose V1', 'accept V2']);
       log = [];
     });
+
+    it('can continue hot updates after module-level errors with module.exports', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init FooV1');
+          require(1);
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          module.exports = 'V1';
+          log.push('init BarV1');
+          // This module accepts itself:
+          module.hot.accept();
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init FooV1', 'init BarV1']);
+      log = [];
+
+      // We only edited Bar, and it accepted.
+      // So we expect it to re-run alone.
+      expect(() => {
+        moduleSystem.__accept(
+          1,
+          (global, require, importDefault, importAll, module, exports) => {
+            log.push('init BarV2');
+            throw new Error('init error during BarV2');
+          },
+          [],
+          {1: [0], 0: []},
+          undefined,
+        );
+      }).toThrow('init error during BarV2');
+      expect(log).toEqual(['init BarV2']);
+      log = [];
+
+      // We can't use it yet.
+      expect(() => moduleSystem.__r(1)).toThrow('init error during BarV2');
+
+      // Let's make another error.
+      expect(() => {
+        moduleSystem.__accept(
+          1,
+          (global, require, importDefault, importAll, module, exports) => {
+            log.push('init BarV3');
+            throw new Error('init error during BarV3');
+          },
+          [],
+          {1: [0], 0: []},
+          undefined,
+        );
+      }).toThrow('init error during BarV3');
+      expect(log).toEqual(['init BarV3']);
+      log = [];
+
+      // We can't use it yet.
+      expect(() => moduleSystem.__r(1)).toThrow('init error during BarV3');
+
+      // Finally, let's fix the code.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          module.exports = 'V3';
+          log.push('init BarV3');
+          // This module accepts itself:
+          module.hot.accept();
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV3']);
+      log = [];
+
+      // We should now see the "new" exports.
+      expect(moduleSystem.__r(1)).toBe('V3');
+    });
+
+    it('can continue hot updates after module-level errors with ES6 exports', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init FooV1');
+          importDefault(1);
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          exports.__esModule = true;
+          exports.default = 'V1';
+          log.push('init BarV1');
+          // This module accepts itself:
+          module.hot.accept();
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init FooV1', 'init BarV1']);
+      log = [];
+
+      // We only edited Bar, and it accepted.
+      // So we expect it to re-run alone.
+      expect(() => {
+        moduleSystem.__accept(
+          1,
+          (global, require, importDefault, importAll, module, exports) => {
+            log.push('init BarV2');
+            throw new Error('init error during BarV2');
+          },
+          [],
+          {1: [0], 0: []},
+          undefined,
+        );
+      }).toThrow('init error during BarV2');
+      expect(log).toEqual(['init BarV2']);
+      log = [];
+
+      // We can't use it yet.
+      expect(() => moduleSystem.__r.importDefault(1)).toThrow(
+        'init error during BarV2',
+      );
+
+      // Let's make another error.
+      expect(() => {
+        moduleSystem.__accept(
+          1,
+          (global, require, importDefault, importAll, module, exports) => {
+            log.push('init BarV3');
+            throw new Error('init error during BarV3');
+          },
+          [],
+          {1: [0], 0: []},
+          undefined,
+        );
+      }).toThrow('init error during BarV3');
+      expect(log).toEqual(['init BarV3']);
+      log = [];
+
+      // We can't use it yet.
+      expect(() => moduleSystem.__r.importDefault(1)).toThrow(
+        'init error during BarV3',
+      );
+
+      // Finally, let's fix the code.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          exports.__esModule = true;
+          exports.default = 'V3';
+          log.push('init BarV3');
+          // This module accepts itself:
+          module.hot.accept();
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV3']);
+      log = [];
+
+      // We should now see the "new" exports.
+      expect(moduleSystem.__r.importDefault(1)).toBe('V3');
+    });
+
+    it('does not accumulate stale exports over time', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          const BarExports = require(1);
+          log.push(
+            'init FooV1 with BarExports = ' + JSON.stringify(BarExports),
+          );
+          // This module accepts itself:
+          module.hot.accept();
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+          exports.a = 1;
+          exports.b = 2;
+          // This module will propagate to the parent.
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual([
+        'init BarV1',
+        'init FooV1 with BarExports = {"a":1,"b":2}',
+      ]);
+      log = [];
+
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+          // These are completely different exports:
+          exports.c = 3;
+          exports.d = 4;
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      // Make sure we don't see {a, b} anymore.
+      expect(log).toEqual([
+        'init BarV2',
+        'init FooV1 with BarExports = {"c":3,"d":4}',
+      ]);
+      log = [];
+
+      // Also edit the parent and verify the same again.
+      moduleSystem.__accept(
+        0,
+        (global, require, importDefault, importAll, module, exports) => {
+          const BarExports = require(1);
+          log.push(
+            'init FooV2 with BarExports = ' + JSON.stringify(BarExports),
+          );
+          // This module accepts itself:
+          module.hot.accept();
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init FooV2 with BarExports = {"c":3,"d":4}']);
+      log = [];
+
+      // Temporarily crash the child.
+      expect(() => {
+        moduleSystem.__accept(
+          1,
+          (global, require, importDefault, importAll, module, exports) => {
+            throw new Error('oh no');
+          },
+          [],
+          {1: [0], 0: []},
+          undefined,
+        );
+      }).toThrow('oh no');
+      expect(log).toEqual([]);
+      log = [];
+
+      // Try one last time to edit the child.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+          // These are completely different exports:
+          exports.e = 5;
+          exports.f = 6;
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual([
+        'init BarV3',
+        'init FooV2 with BarExports = {"e":5,"f":6}',
+      ]);
+      log = [];
+    });
   });
 });

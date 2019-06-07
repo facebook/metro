@@ -525,9 +525,11 @@ if (__DEV__) {
       mod.dependencyMap = dependencyMap;
     }
     mod.hasError = false;
+    mod.error = undefined;
     mod.importedAll = EMPTY;
     mod.importedDefault = EMPTY;
     mod.isInitialized = false;
+    mod.publicModule.exports = {};
     metroRequire(id);
 
     if (hot._didAccept) {
