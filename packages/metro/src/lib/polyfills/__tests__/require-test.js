@@ -778,7 +778,7 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init BarV1');
           // This module accepts itself:
-          module.hot.accept(() => {});
+          module.hot.accept();
         },
       );
       moduleSystem.__r(0);
@@ -791,7 +791,7 @@ describe('require', () => {
         1,
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init BarV2');
-          module.hot.accept(() => {});
+          module.hot.accept();
         },
         [],
         {1: [0], 0: []},
@@ -806,7 +806,7 @@ describe('require', () => {
         1,
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init BarV3');
-          module.hot.accept(() => {});
+          module.hot.accept();
         },
         [],
         {1: [0], 0: []},
@@ -827,7 +827,7 @@ describe('require', () => {
           log.push('init FooV1');
           require(1);
           // This module accepts itself:
-          module.hot.accept(() => {});
+          module.hot.accept();
         },
       );
       createModule(
@@ -877,7 +877,7 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init BarV3');
           // Now accepts:
-          module.hot.accept(() => {});
+          module.hot.accept();
         },
         [],
         {1: [0], 0: []},
@@ -912,7 +912,7 @@ describe('require', () => {
           require(1);
           require(2);
           require(3);
-          module.hot.accept(() => {});
+          module.hot.accept();
         },
       );
       createModule(
@@ -922,7 +922,7 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init MiddleAV1');
           require(4); // Import leaf
-          module.hot.accept(() => {});
+          module.hot.accept();
         },
       );
       createModule(
@@ -932,7 +932,7 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init MiddleBV1');
           require(4); // Import leaf
-          module.hot.accept(() => {});
+          module.hot.accept();
         },
       );
       createModule(
@@ -1011,7 +1011,7 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init MiddleBV2');
           require(4);
-          module.hot.accept(() => {});
+          module.hot.accept();
         },
         [],
         // Inverse dependency map.
@@ -1059,7 +1059,7 @@ describe('require', () => {
           const BarValue = require(1);
           log.push('init FooV1 with BarValue = ' + BarValue);
           // This module accepts itself:
-          module.hot.accept(() => {});
+          module.hot.accept();
         },
       );
       createModule(
@@ -1111,7 +1111,7 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           const BarValue = require(1);
           log.push('init FooV2 with BarValue = ' + BarValue);
-          module.hot.accept(() => {});
+          module.hot.accept();
         },
         [],
         {1: [0], 0: []},
@@ -1147,7 +1147,7 @@ describe('require', () => {
           const BarValue = require(1).value;
           log.push('init FooV1 with BarValue = ' + BarValue);
           // This module accepts itself:
-          module.hot.accept(() => {});
+          module.hot.accept();
         },
       );
       createModule(
@@ -1199,7 +1199,7 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           const BarValue = require(1).value;
           log.push('init FooV2 with BarValue = ' + BarValue);
-          module.hot.accept(() => {});
+          module.hot.accept();
         },
         [],
         {1: [0], 0: []},
@@ -1235,7 +1235,7 @@ describe('require', () => {
           const BarValue = importAll(1).value;
           log.push('init FooV1 with BarValue = ' + BarValue);
           // This module accepts itself:
-          module.hot.accept(() => {});
+          module.hot.accept();
         },
       );
       createModule(
@@ -1290,7 +1290,7 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           const BarValue = importAll(1).value;
           log.push('init FooV2 with BarValue = ' + BarValue);
-          module.hot.accept(() => {});
+          module.hot.accept();
         },
         [],
         {1: [0], 0: []},
@@ -1327,7 +1327,7 @@ describe('require', () => {
           const BarValue = importDefault(1);
           log.push('init FooV1 with BarValue = ' + BarValue);
           // This module accepts itself:
-          module.hot.accept(() => {});
+          module.hot.accept();
         },
       );
       createModule(
@@ -1382,7 +1382,7 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           const BarValue = importDefault(1);
           log.push('init FooV2 with BarValue = ' + BarValue);
-          module.hot.accept(() => {});
+          module.hot.accept();
         },
         [],
         {1: [0], 0: []},
@@ -1405,6 +1405,51 @@ describe('require', () => {
         undefined,
       );
       expect(log).toEqual(['init BarV4', 'init FooV2 with BarValue = 4']);
+      log = [];
+    });
+
+    it('runs custom accept and dispose handlers', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          module.hot.accept(() => {
+            log.push('accept V1');
+          });
+          module.hot.dispose(() => {
+            log.push('dispose V1');
+          });
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual([]);
+      log = [];
+
+      moduleSystem.__accept(
+        0,
+        (global, require, importDefault, importAll, module, exports) => {
+          module.hot.accept(() => {
+            log.push('accept V2');
+          });
+          module.hot.dispose(() => {
+            log.push('dispose V2');
+          });
+        },
+        [],
+        {0: []},
+        undefined,
+      );
+
+      // TODO: this is existing behavior but it deviates from webpack.
+      // In webpack, the "accept" callback only fires on errors in module init.
+      // This is because otherwise you might as well put your code directly
+      // into the module initialization path.
+      // We might want to either align with webpack or intentionally deviate
+      // but for now let's test the existing behavior.
+      expect(log).toEqual(['dispose V1', 'accept V2']);
       log = [];
     });
   });

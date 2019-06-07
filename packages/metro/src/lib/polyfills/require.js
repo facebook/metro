@@ -28,9 +28,10 @@ type FactoryFn = (
 ) => void;
 type HotModuleReloadingCallback = () => void;
 type HotModuleReloadingData = {|
-  acceptCallback: ?HotModuleReloadingCallback,
+  _acceptCallback: ?HotModuleReloadingCallback,
+  _disposeCallback: ?HotModuleReloadingCallback,
+  _didAccept: boolean,
   accept: (callback: HotModuleReloadingCallback) => void,
-  disposeCallback: ?HotModuleReloadingCallback,
   dispose: (callback: HotModuleReloadingCallback) => void,
 |};
 type ModuleID = number;
@@ -425,13 +426,15 @@ if (__DEV__) {
   // HOT MODULE RELOADING
   var createHotReloadingObject = function() {
     const hot: HotModuleReloadingData = {
-      acceptCallback: null,
+      _acceptCallback: null,
+      _disposeCallback: null,
+      _didAccept: false,
       accept: (callback: HotModuleReloadingCallback): void => {
-        hot.acceptCallback = callback;
+        hot._didAccept = true;
+        hot._acceptCallback = callback;
       },
-      disposeCallback: null,
       dispose: (callback: HotModuleReloadingCallback): void => {
-        hot.disposeCallback = callback;
+        hot._disposeCallback = callback;
       },
     };
     return hot;
@@ -503,9 +506,9 @@ if (__DEV__) {
       return false;
     }
 
-    if (hot.disposeCallback) {
+    if (hot._disposeCallback) {
       try {
-        hot.disposeCallback();
+        hot._disposeCallback();
       } catch (error) {
         console.error(
           `Error while calling dispose handler for module ${id}: `,
@@ -527,16 +530,18 @@ if (__DEV__) {
     mod.isInitialized = false;
     metroRequire(id);
 
-    if (hot.acceptCallback) {
-      try {
-        hot.acceptCallback();
-        return true;
-      } catch (error) {
-        console.error(
-          `Error while calling accept handler for module ${id}: `,
-          error,
-        );
+    if (hot._didAccept) {
+      if (hot._acceptCallback) {
+        try {
+          hot._acceptCallback();
+        } catch (error) {
+          console.error(
+            `Error while calling accept handler for module ${id}: `,
+            error,
+          );
+        }
       }
+      return true;
     }
 
     // need to have inverseDependencies to bubble up accept
