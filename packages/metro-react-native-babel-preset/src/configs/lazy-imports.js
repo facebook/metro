@@ -49,9 +49,7 @@ module.exports = new Set([
   'TouchableOpacity',
   'TouchableWithoutFeedback',
   'View',
-  'ViewPagerAndroid',
   'VirtualizedList',
-  'WebView',
 
   // APIs
   'ActionSheetIOS',
