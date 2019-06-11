@@ -24,7 +24,6 @@ module.exports = new Set([
   'FlatList',
   'Image',
   'ImageBackground',
-  'ImageEditor',
   'InputAccessoryView',
   'KeyboardAvoidingView',
   'MaskedViewIOS',
