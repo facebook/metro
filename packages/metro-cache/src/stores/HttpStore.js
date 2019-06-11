@@ -86,6 +86,9 @@ class HttpStore<T> {
         timeout: this._timeout,
       };
 
+      /* $FlowFixMe(>=0.101.0 site=react_native_fb) This comment suppresses an
+       * error found when Flow v0.101 was deployed. To see the error, delete
+       * this comment and run Flow. */
       const req = this._module.request(options, res => {
         const code = res.statusCode;
         const data = [];
@@ -150,6 +153,9 @@ class HttpStore<T> {
         timeout: this._timeout,
       };
 
+      /* $FlowFixMe(>=0.101.0 site=react_native_fb) This comment suppresses an
+       * error found when Flow v0.101 was deployed. To see the error, delete
+       * this comment and run Flow. */
       const req = this._module.request(options, res => {
         res.on('error', err => {
           reject(err);
