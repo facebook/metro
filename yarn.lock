@@ -7210,6 +7210,11 @@ react-proxy@^1.1.7:
     lodash "^4.6.1"
     react-deep-force-update "^1.0.0"
 
+react-refresh@0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/react-refresh/-/react-refresh-0.0.3.tgz#977bcc5c2235d3ee94ded83e5fa5ca8fc591c6a8"
+  integrity sha512-m6VDuLteHYjnnQlEK21LDovkyBY7VS3tqArwHMAnmF7WzBbIw135OiG4IDkUnxI2Og+vbUaF+EqQc9V5DHQ8gg==
+
 react-router-dom@^4.2.2:
   version "4.3.1"
   resolved "https://registry.yarnpkg.com/react-router-dom/-/react-router-dom-4.3.1.tgz#4c2619fc24c4fa87c9fd18f4fb4a43fe63fbd5c6"
