@@ -17,9 +17,9 @@ yarn add --dev metro metro-core
 
 ## 运行 `metro`
 
-可以使用[命令行](./CLI.md)运行Metro，也可以通过手动编码方式
+可以使用[脚手架](./CLI.md)运行Metro，也可以通过手动编码
 
-### 手动编码方式运行
+### 手动编码运行
 
 首先引入Metro模块:
 
@@ -71,7 +71,7 @@ app.listen(8081);
 
 ### 方法 `runServer(Config, Options)`
 
-基于给定的config和options开启一个服务并返回，我们推荐使用`runMetro`代替`runServer`, `runMetro`内部其实已经调用`runServer`方法
+基于给定的config和options开启一个服务并返回该服务，我们推荐使用`runMetro`代替`runServer`, `runMetro`内部其实已经调用`runServer`方法
 
 #### Options
 
@@ -84,47 +84,48 @@ app.listen(8081);
 
 ### 方法 `runBuild(Config, Options)`
 
-基于指定的config和options构建Bundle文件并且返回一个被Promise包裹的对象，该对象有code和map两个属性。
+基于指定的config、options和一组特定于bundle本身的option构建Bundle文件，返回值是一个被Promise包裹的对象，该对象有`code`和`map`两个属性
 
 #### Options
 
-* `dev (boolean)`: 生成构建的开发版本 (`process.env.NODE_ENV = 'development'`)
-* `entry (string)`: bundle的入口文件
-* `onBegin (Function)`: 开始构建是调用
+* `dev (boolean)`: 指定构建开发版本还是生产版本，在产物.bundle的`process.env.NODE_ENV = 'development'`处体现
+* `entry (string)`: 指定此次打包的入口文件
+* `onBegin (Function)`: 开始构建时调用
 * `onComplete (Function)`: 构建结束时调用
 * `onProgress (Function)`: 构建过程中调用，有两个参数来表示构建进度
-* `minify (boolean)`: 是否应该压缩bundle
+* `minify (boolean)`: 是否压缩bundle
 * `out (string)`: bundle的输出路径
-* `platform ('web' | 'android' | 'ios')`: 在哪个平台下打包
-* `sourceMap (boolean)`: 是否生成对应source map文件
-* `sourceMapUrl (string)`: 存错sourceMap的url,它默认为与包相同的URL，但将扩展名从`.bundle`更改为`.map`。当‘inlineSourceMap’是‘true’时，此属性无效(译者注：表示没看懂)。
+* `platform ('web' | 'android' | 'ios')`: 指定平台
+* `sourceMap (boolean)`: 在跟out同级目录生成source map文件，并在bundle文件的最后一行指定map文件的路径或者完整map文件的base64内容，例如：`//# sourceMappingURL=./bundle.map`
+* `sourceMapUrl (string)`: 在bundle文件的最后一行指定source map文件的路径
 
 ## 可用选项
 
 ### Configuration
 
-有关配置选项的详细信息，请移步[Configuring Metro](./Configuration.md)
+有关config选项的详细信息，请移步[Configuring Metro](./Configuration.md)
 
 ## URL和bundle请求
 
-打包服务可以生成assets、bundles、source map三种类型的资源
+打包服务可以生成assets(译者注：资源文件)、bundles、source map三种类型的资源
 
 ### Assets
 
-In order to request an asset, you can freely use the `require` method as if it was another JS file. The server will treat this specific `require` calls  and make them return the path to that file. When an asset is requested (an asset is recognized by its extension, which has to be on the `assetExts` array) it is generally served as-is.
+你可以像引用js文件一样使用`require`方法去引用Asset文件，服务器会处理这种特殊引用并让它们返回到指定路径，当一个资源被请求时(资源通过扩展名识别，它必须在`assetExts`数组上)，它通常被当做类js文件
 
-However, the server is also able to serve specific assets depending on the platform and on the requested size (in the case of images). The way you specify the platform is via the dotted suffix (e.g. `.ios`) and the resolution via the at suffix (e.g. `@2x`). This is transparently handled for you when using `require`.
+但是，服务器还能够根据平台和请求的大小(指图片)提供特定的资产。您指定平台的方式是通过点后缀(例如.ios)和通过@后缀(例如@2x)的解析，你使用`require`时，会显式的处理。
 
 ### Bundle
 
-Any JS file can be used as the root for a bundle request. The file will be looked in the `projectRoot`. All files that are required by the root will be recursively included. In order to request a bundle, just change the extension from `.js` to `.bundle`. Options for building the bundle are passed as query parameters (all optional).
+bundle请求时，任何JS文件都可以作为bundle的根，该文件将在`Projectroot`中查找，根目录所有文件都将递归地包含在内，为了请求包，只需将扩展名从`.js`更改为`.bundle`，构建包的选项作为查询参数传递(都是可选的)。
 
-* `dev`: build the bundle in development mode or not. Maps 1:1 to the `dev` setting of the bundles. Pass `true` or `false` as strings into the URL.
-* `platform`: platform requesting the bundle. Can be `ios` or `android`. Maps 1:1 to the `platform` setting of the bundles.
-* `minify`: whether code should be minified or not. Maps 1:1 to the `minify` setting of the bundles. Pass `true` or `false` as strings into the URL.
-* `excludeSource`: whether sources should be included in the source map or not. Pass `true` or `false` as strings into the URL.
 
-For instance, requesting `http://localhost:8081/foo/bar/baz.bundle?dev=true&platform=ios` will create a bundle out of `foo/bar/baz.js` for iOS in development mode.
+* `dev`: 在开发模式下构建包。映射1：1到包的“发展”设置。将‘true’或‘false’作为字符串传递到URL中
+* `platform`: 请求捆绑的平台。可以是iOS或Android。地图1:1的平台设置的捆绑
+* `minify`: 是否应该缩小代码。映射1：1到捆绑包的“minify”设置。将‘true’或‘false’作为字符串传递到URL中。
+* `excludeSource`: 来源是否应该包含在源地图中。将“true”或“false”作为字符串输入到url中
+
+比如, 请求 `http://localhost:8081/foo/bar/baz.bundle?dev=true&platform=ios` 将为iOS在开发模式创建一个bundle并输出到 `foo/bar/baz.js`
 
 ### Source maps
 
