@@ -3,35 +3,35 @@ id: getting-started
 title: Getting Started
 ---
 
-Install Metro using [`npm`](https://www.npmjs.com/):
+使用[`npm`](https://www.npmjs.com/)安装Metro:
 
 ```
 npm install --save-dev metro metro-core
 ```
 
-Or via [`yarn`](https://yarnpkg.com/):
+或者使用 [`yarn`](https://yarnpkg.com/):
 
 ```
 yarn add --dev metro metro-core
 ```
 
-## Running `metro`
+## 运行 `metro`
 
-You can run Metro by either running the [CLI](./CLI.md) or by calling it programmatically.
+可以使用[命令行](./CLI.md)运行Metro，也可以通过手动编码方式
 
-### Running Programatically
+### 手动编码方式运行
 
-First, require the module by doing:
+首先引入Metro模块:
 
 ```js
 const Metro = require('metro');
 ```
 
-Within the object returned, several main methods are given:
+返回的Metro对象中，有如下几个重要的方法
 
-### Method `runMetro(config)`
+### 方法 `runMetro(config)`
 
-Given the config, a `metro-server` will be returned. You can then hook this into a proper HTTP(S) server by using its `processRequest` method:
+传入参数config，将会返回一个metro-server(译者注：被Promise包裹的metro-server)，你可以将它的processRequest方法作为hook连接到合适的HTTP(S)服务器上。
 
 ```js
 'use strict';
@@ -40,18 +40,14 @@ const http = require('http');
 const Metro = require('metro');
 
 // We first load the config from the file system
-Metro.loadConfig().then(config => {
-  const metroBundlerServer = Metro.runMetro(config);
-
+Metro.loadConfig().then(config => Metro.runMetro(config)).then((metroBundlerServer) => {
   const httpServer = http.createServer(
     metroBundlerServer.processRequest.bind(metroBundlerServer),
   );
-
-  httpServer.listen(8081);
+  httpServer.listen(8888);
 });
 ```
-
-In order to be also compatible with Express apps, processRequest will also call its third parameter when the request could not be handled by Metro bundler. This allows you to integrate the server with your existing server, or to extend a new one:
+为了兼容Express App，当请求不能够被Metro bundler处理时processRequest将调用第三个参数，这允许你将metro-server和已经存在的服务器做合并或者扩展一个新的。
 
 ```js
 const httpServer = http.createServer((req, res) => {
@@ -60,8 +56,7 @@ const httpServer = http.createServer((req, res) => {
   });
 });
 ```
-
-If you are using [Express](http://expressjs.com/), you can just pass `processRequest` as a middleware:
+如果你使用[Express](http://expressjs.com/)，那刚好可以将processRequest作为Express的中间件
 
 ```js
 const express = require('express');
@@ -74,48 +69,45 @@ app.use(
 app.listen(8081);
 ```
 
-### Method `runServer(Config, Options)`
+### 方法 `runServer(Config, Options)`
 
-Starts a development server based on the given configuration and options. Returns the server.
-We recommend using `runMetro` instead of `runServer`, `runMetro` calls this function.
-
-#### Options
-
-* `host (string)`: Where to host the server on.
-* `onReady (Function)`: Called when the server is ready to serve requests.
-* `secure (boolean)`: Whether the server should run on `https` instead of `http`.
-* `secureKey (string)`: The key to use for `https` when `secure` is on.
-* `secureCert (string)`: The cert to use for `https` when `secure` is on.
-* `hmrEnabled (boolean)`: Whether Hot Module Replacement is turned on.
-
-### Method `runBuild(Config, Options)`
-
-Given a configuration and a set of options that you would typically pass to a server, plus a set of options specific to the bundle itself, a bundle will be built. The return value is a Promise that resolves to an object with two properties, `code` and `map`. This is useful at build time.
+基于给定的config和options开启一个服务并返回，我们推荐使用`runMetro`代替`runServer`, `runMetro`内部其实已经调用`runServer`方法
 
 #### Options
 
-<!-- TODO(ives): Decide whether we need to show this to the user  * `output (boolean)` -->
+* `host (string)`: 在哪里托管服务器
+* `onReady (Function)`: 当服务器准备好处理请求时调用
+* `secure (boolean)`:   该服务器基于`https`还是`http`
+* `secureKey (string)`: `https`协议下使用的secureKey
+* `secureCert (string)`: `https`协议下使用的证书
+* `hmrEnabled (boolean)`: 是否打开Hot Module Replacement
 
-* `dev (boolean)`: Create a development version of the build (`process.env.NODE_ENV = 'development'`).
-* `entry (string)`: Pointing to the entry file to bundle.
-* `onBegin (Function)`: Called when the bundling starts.
-* `onComplete (Function)`: Called when the bundling finishes.
-* `onProgress (Function)`: Called during the bundle, every time there's new information available about the module count/progress.
-* `minify (boolean)`: Whether Metro should minify the bundle.
-* `out (string)`: Path to the output bundle.
-* `platform ('web' | 'android' | 'ios')`: Which platform to bundle for if a list of platforms is provided.
-* `sourceMap (boolean)`: Whether Metro should generate source maps.
-* `sourceMapUrl (string)`: URL where the source map can be found. It defaults to the same same URL as the bundle, but changing the extension from `.bundle` to `.map`. When `inlineSourceMap` is `true`, this property has no effect.
+### 方法 `runBuild(Config, Options)`
 
-## Available options
+基于指定的config和options构建Bundle文件并且返回一个被Promise包裹的对象，该对象有code和map两个属性。
+
+#### Options
+
+* `dev (boolean)`: 生成构建的开发版本 (`process.env.NODE_ENV = 'development'`)
+* `entry (string)`: bundle的入口文件
+* `onBegin (Function)`: 开始构建是调用
+* `onComplete (Function)`: 构建结束时调用
+* `onProgress (Function)`: 构建过程中调用，有两个参数来表示构建进度
+* `minify (boolean)`: 是否应该压缩bundle
+* `out (string)`: bundle的输出路径
+* `platform ('web' | 'android' | 'ios')`: 在哪个平台下打包
+* `sourceMap (boolean)`: 是否生成对应source map文件
+* `sourceMapUrl (string)`: 存错sourceMap的url,它默认为与包相同的URL，但将扩展名从`.bundle`更改为`.map`。当‘inlineSourceMap’是‘true’时，此属性无效(译者注：表示没看懂)。
+
+## 可用选项
 
 ### Configuration
 
-Check [Configuring Metro](./Configuration.md) for details on configuration options.
+有关配置选项的详细信息，请移步[Configuring Metro](./Configuration.md)
 
-## URL and bundle request
+## URL和bundle请求
 
-The server has the ability to serve assets, bundles and source maps for those bundles.
+打包服务可以生成assets、bundles、source map三种类型的资源
 
 ### Assets
 
