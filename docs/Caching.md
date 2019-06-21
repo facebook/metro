@@ -3,19 +3,20 @@ id: caching
 title: Caching
 ---
 
-Metro has a multi-layered cache: you can set up multiple caches to be used by Metro instead of one. This has several advantages, on this page we will explain how the caches work.
+Metro的多个缓存机制，可以给我们带来很多方便，下面我们将解释一下缓存是如何工作的。
 
-## Why Cache?
+## 为什么要缓存?
 
-Caches give big performance benefits, they can increase the speed of a bundler with more than tenfold. However, many systems use a non-persistent cache. With Metro we have a more sophisticated way of caching with a layer system. For example, we can store the cache on a server. Because of this all bundlers connected to the same server can use the shared cache. As a result the initial build time for CI servers and local development become significantly lower.
 
-We want to store caches in multiple places as to always have a cache to fallback to. That's why there is a multi-layered cache system.
+缓存可以带来很大的性能提升，它将打包的速度提高十倍以上，然后很多系统使用的是非持久化缓存。使用Metro可以进行更加复杂的缓存方式。比如我们可以将缓存存储在服务器上，这样的话，所有的打包器都可以使用共享缓存，因此打包脚本和本地开发的初始构建时间将显著降低。
 
-## Cache Fetching & Saving
+我们希望将缓存存储在多个位置，以便做缓存的回退，这就是为什么设计成多缓存系统的原因
 
-There is an ordering mechanism to determine which cache to use. For retrieving a cache we go through the caches from _top to bottom_ until we find a result, for saving a cache we do the same until we find a store that has the cache.
+## 缓存的提取和保存
 
-Let's say you have two cache stores: one on a server and one on your local file system. You would specify that in this way:
+有一种排序机制来确定使用哪个缓存，为了检索缓存，我们将从top往bottom查找，直到找到结果为止。保存缓存同理，直到找到具有缓存的存储
+
+假设你有两个缓存存储：一个在服务器上，另一个在本地文件系统上。你可以用这种方式指定：
 
 ```js
 const config = {
@@ -25,5 +26,4 @@ const config = {
   ]
 }
 ```
-
-Metro will first look into the `FileStore` when we retrieve a cache. If it can't find the cache there it will check `NetworkStore`, and so on. Finally if there's no cache there it will generate a new cache itself. As soon as the cache has been generated, Metro will go again from top to bottom to store the cache in _all_ stores. This also happens if a cache is found. For example, if Metro finds a cache in the `NetworkStore` it will store it in `FileStore` as well.
+当我们检索缓存时，Metro将首先查看`FileStore`，如果在那里找不到缓存，它将去`NetworkStore`查找，以此类推。如果都没有，它将自己生成一个新的缓存，一但生成缓存，Metro将再次从上到下将缓存存储在all stores中，如果找到缓存，同样如此。比如：如果Metro在`NetworkStore`中找到一个缓存文件，它也会将它存储在`FileStore`中

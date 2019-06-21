@@ -11,37 +11,36 @@ title: Configuring Metro
 
 你也可以自定义一个配置文件，在执行bundle脚本时使用`--config <path/to/config>`来指定配置文件路径
 
-## 配置文件结构
+## 配置结构
 
-The configuration is based on [our concepts](./Concepts.md), which means that for every module we have a separate config option. A common configuration structure in Metro looks like this:
+配置基于[concepts](./Concepts.md)，每个步骤都有一个单独的配置项，Metro中常见的配置结构如下：
 
 ```js
 module.exports = {
   resolver: {
-    /* resolver options */
+    /* 分解配置 */
   },
   transformer: {
-    /* transformer options */
+    /* 转化配置 */
   },
   serializer: {
-    /* serializer options */
+    /* 序列化配置 */
   },
   server: {
-    /* server options */
+    /* 服务配置 */
   }
 
-  /* general options */
+  /* 通用配置 */
 };
 ```
 
-### General Options
-
+### 通用配置
 
 #### `cacheStores`
 
 Type: `Array<CacheStore<TransformResult<>>`
 
-List where we store our [caches](./Caching.md).
+列出我们存放[缓存](./Caching.md)的地方
 
 #### `cacheVersion`
 
