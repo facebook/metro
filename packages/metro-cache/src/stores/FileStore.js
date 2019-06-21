@@ -40,7 +40,7 @@ class FileStore<T> {
         return JSON.parse(data.toString('utf8'));
       }
     } catch (err) {
-      if (err.code === 'ENOENT') {
+      if (err.code === 'ENOENT' || err instanceof SyntaxError) {
         return null;
       }
 
