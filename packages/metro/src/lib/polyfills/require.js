@@ -31,8 +31,8 @@ type HotModuleReloadingData = {|
   _acceptCallback: ?HotModuleReloadingCallback,
   _disposeCallback: ?HotModuleReloadingCallback,
   _didAccept: boolean,
-  accept: (callback: HotModuleReloadingCallback) => void,
-  dispose: (callback: HotModuleReloadingCallback) => void,
+  accept: (callback?: HotModuleReloadingCallback) => void,
+  dispose: (callback?: HotModuleReloadingCallback) => void,
 |};
 type ModuleID = number;
 type Module = {
@@ -68,6 +68,11 @@ var modules = clear();
 // additional stuff (e.g. Array.from).
 const EMPTY = {};
 const {hasOwnProperty} = {};
+
+if (__DEV__) {
+  var RefreshRegNoop = () => {};
+  var RefreshSigNoop = () => type => type;
+}
 
 function clear(): ModuleList {
   modules = (Object.create(null): ModuleList);
@@ -323,7 +328,7 @@ function loadModuleImplementation(
   // it can be used here.
   // TODO(t9759686) Scan polyfills for dependencies, too
   if (__DEV__) {
-    var {Systrace} = metroRequire;
+    var {Systrace, Refresh} = metroRequire;
   }
 
   // We must optimistically mark module as initialized before running the
@@ -346,6 +351,18 @@ function loadModuleImplementation(
     if (__DEV__) {
       if (module.hot) {
         moduleObject.hot = module.hot;
+
+        if (Refresh != null) {
+          const RefreshRuntime = Refresh;
+          global.$RefreshReg$ = (type, id) => {
+            RefreshRuntime.register(type, moduleId + ' ' + id);
+          };
+          global.$RefreshSig$ =
+            RefreshRuntime.createSignatureFunctionForTransform;
+        } else {
+          global.$RefreshReg$ = RefreshRegNoop;
+          global.$RefreshSig$ = RefreshSigNoop;
+        }
       }
     }
     moduleObject.id = moduleId;
@@ -373,7 +390,28 @@ function loadModuleImplementation(
     if (__DEV__) {
       // $FlowFixMe: we know that __DEV__ is const and `Systrace` exists
       Systrace.endEvent();
+
+      if (module.hot != null) {
+        const hot = module.hot;
+
+        global.$RefreshReg$ = RefreshRegNoop;
+        global.$RefreshSig$ = RefreshSigNoop;
+        if (Refresh != null) {
+          const isRefreshBoundary = registerExportsForReactRefresh(
+            Refresh,
+            moduleObject.exports,
+            moduleId,
+          );
+          if (isRefreshBoundary) {
+            hot.accept();
+          }
+          // Otherwise, the update will propagate to parent modules
+          // which will go through the same kind of test. If an update
+          // bubbles up to the root, we'll force a hard reload.
+        }
+      }
     }
+
     return moduleObject.exports;
   } catch (e) {
     module.hasError = true;
@@ -428,11 +466,11 @@ if (__DEV__) {
       _acceptCallback: null,
       _disposeCallback: null,
       _didAccept: false,
-      accept: (callback: HotModuleReloadingCallback): void => {
+      accept: (callback?: HotModuleReloadingCallback): void => {
         hot._didAccept = true;
         hot._acceptCallback = callback;
       },
-      dispose: (callback: HotModuleReloadingCallback): void => {
+      dispose: (callback?: HotModuleReloadingCallback): void => {
         hot._disposeCallback = callback;
       },
     };
@@ -515,7 +553,7 @@ if (__DEV__) {
       if (parentIDs.length === 0) {
         // Reload the app because the hot reload can't succeed.
         // This should work both on web and React Native.
-        reloadApp();
+        performFullRefresh();
         return false;
       }
 
@@ -533,6 +571,10 @@ if (__DEV__) {
       }
     });
 
+    const {Refresh} = metroRequire;
+    if (Refresh != null) {
+      Refresh.performReactRefresh();
+    }
     return true;
   };
 
@@ -594,7 +636,7 @@ if (__DEV__) {
     }
   };
 
-  const reloadApp = () => {
+  const performFullRefresh = () => {
     /* global window */
     if (
       typeof window !== 'undefined' &&
@@ -603,18 +645,54 @@ if (__DEV__) {
     ) {
       window.location.reload();
     } else {
-      // Note: the way we attach reload() is a hack because we can't
-      // use a real require in this file.
-      // TODO(t9759686) Scan polyfills for dependencies, too
-      const {reload} = metroRequire;
-      if (typeof reload === 'function') {
-        reload();
+      // This is attached in setUpDeveloperTools.
+      const {Refresh} = metroRequire;
+      if (Refresh != null) {
+        Refresh.performFullRefresh();
       } else {
         console.warn(
           'Could not reload the application after an unsuccessful hot update.',
         );
       }
     }
+  };
+
+  var registerExportsForReactRefresh = (
+    Refresh,
+    moduleExports,
+    moduleID,
+  ): boolean => {
+    Refresh.register(moduleExports, moduleID + ' %exports%');
+    if (Refresh.isLikelyComponentType(moduleExports)) {
+      return true;
+    }
+
+    if (moduleExports == null || typeof moduleExports !== 'object') {
+      return false;
+    }
+
+    let hasExports = false;
+    let areAllExportsComponents = true;
+    for (const key in moduleExports) {
+      const desc = Object.getOwnPropertyDescriptor(moduleExports, key);
+      if (desc && desc.get) {
+        // Don't invoke getters as they may have side effects.
+        continue;
+      }
+      hasExports = true;
+
+      const exportValue = moduleExports[key];
+      const typeID = moduleID + ' %exports% ' + key;
+      Refresh.register(exportValue, typeID);
+      if (!Refresh.isLikelyComponentType(exportValue)) {
+        areAllExportsComponents = false;
+      }
+    }
+    // We only "stop" updates at modules that export components.
+    // If you export something else, we might need to propagate it to
+    // a component above in the import tree that uses it.
+    const isRefreshBoundary = hasExports && areAllExportsComponents;
+    return isRefreshBoundary;
   };
 
   global.__accept = metroHotUpdateModule;

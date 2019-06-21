@@ -1742,7 +1742,14 @@ describe('require', () => {
 
       createModuleSystem(moduleSystem, true);
       const reload = jest.fn();
-      moduleSystem.__r.reload = reload;
+      moduleSystem.__r.Refresh = {
+        performFullRefresh: reload,
+        register() {},
+        isLikelyComponentType() {
+          return false;
+        },
+        performReactRefresh() {},
+      };
 
       createModule(
         moduleSystem,
@@ -1791,7 +1798,14 @@ describe('require', () => {
 
       createModuleSystem(moduleSystem, true);
       const reload = jest.fn();
-      moduleSystem.__r.reload = reload;
+      moduleSystem.__r.Refresh = {
+        performFullRefresh: reload,
+        register() {},
+        isLikelyComponentType() {
+          return false;
+        },
+        performReactRefresh() {},
+      };
 
       createModule(
         moduleSystem,
