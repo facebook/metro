@@ -3,15 +3,15 @@ id: configuration
 title: Configuring Metro
 ---
 
-A Metro config can be created in these three ways (ordered by priority):
+有如下三种方式配置Metro(按照优先级排序):
 
 1.  `metro.config.js`
 2.  `metro.config.json`
-3.  The `metro` field in `package.json`
+3.  `package.json`中的`metro`字段
 
-You can also give a custom file to the configuration by specifying `--config <path/to/config>` when calling the CLI.
+你也可以自定义一个配置文件，在执行bundle脚本时使用`--config <path/to/config>`来指定配置文件路径
 
-## Configuration Structure
+## 配置文件结构
 
 The configuration is based on [our concepts](./Concepts.md), which means that for every module we have a separate config option. A common configuration structure in Metro looks like this:
 
