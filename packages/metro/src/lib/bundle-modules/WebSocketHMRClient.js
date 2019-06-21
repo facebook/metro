@@ -47,6 +47,10 @@ class WebSocketHMRClient extends EventEmitter {
       const data: HmrMessage = JSON.parse(message.data);
 
       switch (data.type) {
+        case 'connection-done':
+          this.emit('connection-done');
+          break;
+
         case 'update-start':
           this.emit('update-start');
           break;

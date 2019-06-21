@@ -232,6 +232,9 @@ describe('HmrServer', () => {
       {
         type: 'update-done',
       },
+      {
+        type: 'connection-done',
+      },
     ]);
   });
 

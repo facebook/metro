@@ -164,6 +164,7 @@ class HmrServer<TClient: Client> {
     }
 
     await this._handleFileChange(clientGroup);
+    send([sendFn], {type: 'connection-done'});
 
     return client;
   }

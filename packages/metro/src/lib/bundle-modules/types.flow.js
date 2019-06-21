@@ -61,6 +61,9 @@ export type HmrErrorMessage = {|
 
 export type HmrMessage =
   | {|
+      +type: 'connection-done',
+    |}
+  | {|
       +type: 'update-start',
     |}
   | {|
