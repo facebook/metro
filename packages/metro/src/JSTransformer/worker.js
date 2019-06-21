@@ -264,7 +264,10 @@ class JsTransformer {
           inlineableCalls: [importDefault, importAll],
           keepRequireNames: options.dev,
         };
-        ({dependencies, dependencyMapName} = collectDependencies(ast, opts));
+        ({ast, dependencies, dependencyMapName} = collectDependencies(
+          ast,
+          opts,
+        ));
       } catch (error) {
         if (error instanceof collectDependencies.InvalidRequireCallError) {
           throw new InvalidRequireCallError(error, filename);
