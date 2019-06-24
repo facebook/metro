@@ -349,20 +349,18 @@ function loadModuleImplementation(
     const moduleObject: Module = module.publicModule;
 
     if (__DEV__) {
-      if (module.hot) {
-        moduleObject.hot = module.hot;
+      moduleObject.hot = module.hot;
 
-        if (Refresh != null) {
-          const RefreshRuntime = Refresh;
-          global.$RefreshReg$ = (type, id) => {
-            RefreshRuntime.register(type, moduleId + ' ' + id);
-          };
-          global.$RefreshSig$ =
-            RefreshRuntime.createSignatureFunctionForTransform;
-        } else {
-          global.$RefreshReg$ = RefreshRegNoop;
-          global.$RefreshSig$ = RefreshSigNoop;
-        }
+      if (Refresh != null) {
+        const RefreshRuntime = Refresh;
+        global.$RefreshReg$ = (type, id) => {
+          RefreshRuntime.register(type, moduleId + ' ' + id);
+        };
+        global.$RefreshSig$ =
+          RefreshRuntime.createSignatureFunctionForTransform;
+      } else {
+        global.$RefreshReg$ = RefreshRegNoop;
+        global.$RefreshSig$ = RefreshSigNoop;
       }
     }
     moduleObject.id = moduleId;
@@ -391,24 +389,25 @@ function loadModuleImplementation(
       // $FlowFixMe: we know that __DEV__ is const and `Systrace` exists
       Systrace.endEvent();
 
-      if (module.hot != null) {
-        const hot = module.hot;
+      const hot = module.hot;
+      if (hot == null) {
+        throw new Error('Expected module.hot to always exist in DEV.');
+      }
 
-        global.$RefreshReg$ = RefreshRegNoop;
-        global.$RefreshSig$ = RefreshSigNoop;
-        if (Refresh != null) {
-          const isRefreshBoundary = registerExportsForReactRefresh(
-            Refresh,
-            moduleObject.exports,
-            moduleId,
-          );
-          if (isRefreshBoundary) {
-            hot.accept();
-          }
-          // Otherwise, the update will propagate to parent modules
-          // which will go through the same kind of test. If an update
-          // bubbles up to the root, we'll force a hard reload.
+      global.$RefreshReg$ = RefreshRegNoop;
+      global.$RefreshSig$ = RefreshSigNoop;
+      if (Refresh != null) {
+        const isRefreshBoundary = registerExportsForReactRefresh(
+          Refresh,
+          moduleObject.exports,
+          moduleId,
+        );
+        if (isRefreshBoundary) {
+          hot.accept();
         }
+        // Otherwise, the update will propagate to parent modules
+        // which will go through the same kind of test. If an update
+        // bubbles up to the root, we'll force a hard reload.
       }
     }
 
