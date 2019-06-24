@@ -477,6 +477,8 @@ if (__DEV__) {
     return hot;
   };
 
+  let reactRefreshTimeout = null;
+
   const metroHotUpdateModule = function(
     id: ModuleID,
     factory?: FactoryFn,
@@ -487,7 +489,7 @@ if (__DEV__) {
     if (!mod) {
       if (factory) {
         // New modules are going to be handled by the define() method.
-        return true;
+        return;
       }
       throw unknownModuleError(id);
     }
@@ -554,7 +556,7 @@ if (__DEV__) {
         // Reload the app because the hot reload can't succeed.
         // This should work both on web and React Native.
         performFullRefresh();
-        return false;
+        return;
       }
 
       // This module didn't accept but maybe all its parents did?
@@ -573,9 +575,16 @@ if (__DEV__) {
 
     const {Refresh} = metroRequire;
     if (Refresh != null) {
-      Refresh.performReactRefresh();
+      // Debounce a little in case there's multiple updates queued up.
+      // This is also useful because __accept may be called multiple times.
+      if (reactRefreshTimeout == null) {
+        reactRefreshTimeout = setTimeout(() => {
+          reactRefreshTimeout = null;
+          // Update React components.
+          Refresh.performReactRefresh();
+        }, 30);
+      }
     }
-    return true;
   };
 
   const runUpdatedModule = function(

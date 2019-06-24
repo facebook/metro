@@ -1773,7 +1773,7 @@ describe('require', () => {
       log = [];
 
       // Neither Bar nor Foo accepted, so update reached the root.
-      const didAccept = moduleSystem.__accept(
+      moduleSystem.__accept(
         1,
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init BarV2');
@@ -1788,7 +1788,6 @@ describe('require', () => {
       // through the root. This means it would be unsafe to apply,
       // as no module above would be able to handle it.
       expect(log).toEqual(['init BarV2']);
-      expect(didAccept).toBe(false);
       expect(reload.mock.calls.length).toBe(1);
       log = [];
     });
@@ -1858,7 +1857,7 @@ describe('require', () => {
       log = [];
 
       // Edit Bar. It should self-accept.
-      let didAccept = moduleSystem.__accept(
+      moduleSystem.__accept(
         1,
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init BarV2');
@@ -1870,14 +1869,13 @@ describe('require', () => {
         undefined,
       );
       expect(log).toEqual(['init BarV2']);
-      expect(didAccept).toBe(true);
       expect(reload.mock.calls.length).toBe(0);
       log = [];
 
       // Edit Qux. It should bubble. Baz accepts the update, Bar won't.
       // So this update should not even attempt to run those factories
       // because we know we'd bubble through the root if we tried.
-      didAccept = moduleSystem.__accept(
+      moduleSystem.__accept(
         3,
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init QuxV2');
@@ -1888,7 +1886,6 @@ describe('require', () => {
         undefined,
       );
       expect(log).toEqual(['init QuxV2']);
-      expect(didAccept).toBe(false);
       expect(reload.mock.calls.length).toBe(1);
       log = [];
     });
