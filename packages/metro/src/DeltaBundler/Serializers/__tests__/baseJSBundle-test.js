@@ -229,3 +229,46 @@ it('should add an inline source map to a very simple bundle', () => {
     version: 3,
   });
 });
+
+it('does not add polyfills when `modulesOnly` is used', () => {
+  expect(
+    baseJSBundle(
+      '/root/foo',
+      [polyfill],
+      {
+        dependencies: new Map([
+          ['/root/foo', fooModule],
+          ['/root/bar', barModule],
+        ]),
+        entryPoints: ['foo'],
+      },
+      {
+        processModuleFilter: () => true,
+        createModuleId: filePath => path.basename(filePath),
+        dev: true,
+        getRunModuleStatement,
+        modulesOnly: true,
+        projectRoot: '/root',
+        runBeforeMainModule: [],
+        runModule: true,
+        sourceMapUrl: 'http://localhost/bundle.map',
+      },
+    ),
+  ).toMatchInlineSnapshot(`
+Object {
+  "modules": Array [
+    Array [
+      "foo",
+      "__d(function() {/* code for foo */},\\"foo\\",[\\"bar\\"],\\"foo\\");",
+    ],
+    Array [
+      "bar",
+      "__d(function() {/* code for bar */},\\"bar\\",[],\\"bar\\");",
+    ],
+  ],
+  "post": "require(\\"foo\\");
+//# sourceMappingURL=http://localhost/bundle.map",
+  "pre": "",
+}
+`);
+});

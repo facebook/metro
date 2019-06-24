@@ -45,6 +45,7 @@ export type BundleOptions = {
   +hot: boolean,
   +inlineSourceMap: boolean,
   minify: boolean,
+  +modulesOnly: boolean,
   onProgress: ?(doneCont: number, totalCount: number) => mixed,
   +platform: ?string,
   +runModule: boolean,
@@ -57,6 +58,7 @@ export type SerializerOptions = {|
   +runModule: boolean,
   +excludeSource: boolean,
   +inlineSourceMap: boolean,
+  +modulesOnly: boolean,
 |};
 
 // Stricter representation of BundleOptions.

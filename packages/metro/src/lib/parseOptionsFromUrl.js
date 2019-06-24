@@ -86,6 +86,7 @@ function parseOptionsFromUrl(
     false,
   );
   const runModule = getBoolOptionFromQuery(urlQuery, 'runModule', true);
+  const modulesOnly = getBoolOptionFromQuery(urlQuery, 'modulesOnly', false);
 
   const customTransformOptions = parseCustomTransformOptions(urlObj);
 
@@ -96,6 +97,7 @@ function parseOptionsFromUrl(
       dev,
       hot: true,
       minify,
+      modulesOnly,
       platform,
       onProgress: null,
       entryFile: entryFileRelativeToProjectRoot,

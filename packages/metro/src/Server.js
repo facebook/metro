@@ -199,6 +199,7 @@ class Server {
       getRunModuleStatement: this._config.serializer.getRunModuleStatement,
       dev: transformOptions.dev,
       projectRoot: this._config.projectRoot,
+      modulesOnly: serializerOptions.modulesOnly,
       runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
         path.relative(this._config.projectRoot, entryPoint),
       ),
@@ -241,6 +242,7 @@ class Server {
       getTransformOptions: this._config.transformer.getTransformOptions,
       platform: transformOptions.platform,
       projectRoot: this._config.projectRoot,
+      modulesOnly: serializerOptions.modulesOnly,
       runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
         path.relative(this._config.projectRoot, entryPoint),
       ),
@@ -655,6 +657,7 @@ class Server {
           dev: transformOptions.dev,
           getRunModuleStatement: this._config.serializer.getRunModuleStatement,
           projectRoot: this._config.projectRoot,
+          modulesOnly: serializerOptions.modulesOnly,
           runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
             path.relative(this._config.projectRoot, entryFile),
           ),
@@ -733,6 +736,7 @@ class Server {
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,
         dev: transformOptions.dev,
         projectRoot: this._config.projectRoot,
+        modulesOnly: serializerOptions.modulesOnly,
         runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
           path.relative(this._config.projectRoot, entryFile),
         ),
@@ -874,6 +878,7 @@ class Server {
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,
         dev: transformOptions.dev,
         projectRoot: this._config.projectRoot,
+        modulesOnly: serializerOptions.modulesOnly,
         runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
           path.relative(this._config.projectRoot, entryFile),
         ),
@@ -1057,6 +1062,7 @@ class Server {
     ...Server.DEFAULT_GRAPH_OPTIONS,
     excludeSource: false,
     inlineSourceMap: false,
+    modulesOnly: false,
     onProgress: null,
     runModule: true,
     sourceMapUrl: null,

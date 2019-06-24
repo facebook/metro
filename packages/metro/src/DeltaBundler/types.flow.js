@@ -85,13 +85,14 @@ export type DeltaResult<T = MixedOutput> = {|
 |};
 
 export type SerializerOptions = {|
-  +processModuleFilter: (module: Module<>) => boolean,
   +createModuleId: string => number,
   +dev: boolean,
   +getRunModuleStatement: (number | string) => string,
+  +inlineSourceMap: ?boolean,
+  +modulesOnly: boolean,
+  +processModuleFilter: (module: Module<>) => boolean,
   +projectRoot: string,
   +runBeforeMainModule: $ReadOnlyArray<string>,
   +runModule: boolean,
   +sourceMapUrl: ?string,
-  +inlineSourceMap: ?boolean,
 |};

@@ -38,6 +38,11 @@ function baseJSBundle(
     projectRoot: options.projectRoot,
   };
 
+  // Do not prepend polyfills or the require runtime when only modules are requested
+  if (options.modulesOnly) {
+    preModules = [];
+  }
+
   const preCode = processModules(preModules, processModulesOptions)
     .map(([_, code]) => code)
     .join('\n');
