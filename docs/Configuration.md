@@ -18,7 +18,7 @@ title: Configuring Metro
 ```js
 module.exports = {
   resolver: {
-    /* 分解配置 */
+    /* 解析配置 */
   },
   transformer: {
     /* 转化配置 */
@@ -27,7 +27,7 @@ module.exports = {
     /* 序列化配置 */
   },
   server: {
-    /* 服务配置 */
+    /* 服务器配置 */
   }
 
   /* 通用配置 */
@@ -46,43 +46,43 @@ Type: `Array<CacheStore<TransformResult<>>`
 
 Type: `string`
 
-Can be used to generate a key that will invalidate the whole metro cache.
+可用于生成一个将整个Metro缓存失效的key
 
 #### `projectRoot`
 
 Type: `string`
 
-The root folder of your project.
+项目根目录
 
 #### `watchFolders`
 
 Type: `Array<string>`
 
-Specify any additional (to projectRoot) watch folders, this is used to know which files to watch.
+指定要监视的根目录文件夹
 
 #### `transformerPath`
 
 Type: `string`
 
-The path to the transformer to use.
+要使用转换器模块所在的路径
 
 #### `watch`
 
 Type: `boolean`
 
-Whether we should watch for all files.
+是否监视所有的文件
 
 #### `reporter`
 
 Type: `{update: () => void}`
 
-Used to report the status of the bundler during the bundling process.
+打包过程中用于记录打包状态
 
 #### `resetCache`
 
 Type: `boolean`
 
-Whether we should reset the cache when starting the build.
+就是构建时是否重置缓存
 
 #### `stickyWorkers`
 
@@ -94,42 +94,41 @@ Control whether the created workers should stick based on filename or not.
 
 Type: `number`
 
-The number of workers we should parallelize the transformer on.
+转化时可以并行的最大值
 
+### 服务器配置
 
-### Server Options
-
-These options are used when Metro serves the content.
+Metro服务器所使用的配置
 
 #### `port`
 
 Type: `number`
 
-Which port to listen on.
+指定监听的端口号
 
 #### `useGlobalHotkey`
 
 Type: `boolean`
 
-Whether we should enable CMD+R hotkey for refreshing the bundle.
+是否启用`CMD+R`热键来刷新bundle
 
 #### `enhanceMiddleware`
 
 Type: `(Middleware, Server) => Middleware`
 
-The possibility to add custom middleware to the server response chain.
+将自定义中间件添加到Metro服务器的响应链
 
 #### `enableVisualizer`
 
 Type: `boolean`
 
-Enable the `metro-visualizer` middleware (available at `/visualizer`). This requires the `metro-visualizer` package to be installed in your project.
+启用`metro-visualizer`中间件（可从`/visualizer`获得）。这需要在您的项目中安装`metro-visualizer`(译者注：有问题)
 
 #### `runInspectorProxy`
 
 Type: `boolean` (default: `true`)
 
-Run Inspector Proxy server inside Metro to be able to inspect React Native code.
+在Metro中运行Inspector代理服务器，以便能够检查React Native代码。
 
 
 ### Transformer Options
@@ -138,186 +137,185 @@ Run Inspector Proxy server inside Metro to be able to inspect React Native code.
 
 Type: `string`
 
-What module to use for handling async requires.
+指定处理异步的模块
 
 #### `babelTransformerPath`
 
 Type: `string`
 
-Use a custom babel transformer (only relevant when using the default transformerPath).
+指定一个自定义的转换器(only relevant when using the default transformerPath)
 
 #### `dynamicDepsInPackages`
 
 Type: `string` (`throwAtRuntime` or `reject`)
 
 What should happen when a dynamic dependency is found.
+当发现一个动态的依赖库时应该怎么处理
 
 #### `enableBabelRCLookup`
 
 Type: `boolean` (default: `true`)
 
-Whether we should use the `.babelrc` config file.
+是否使用`.babelrc`配置文件
 
 #### `enableBabelRuntime`
 
 Type: `boolean` (default: `true`)
 
-Whether the transformer should use the `@babel/transform/runtime` plugin.
+转换器是否使用`@babel/transform/runtime`插件
 
 #### `getTransformOptions`
 
 Type: `GetTransformOptions`
 
-Get the transform options.
+获取转换器默认选项
 
 #### `postMinifyProcess`
 
 Type: `PostMinifyProcess`
 
-What happens after minification.
+压缩之后要做什么事情
 
 #### `minifierPath`
 
 Type: `string`
 
-Path to the minifier that minifies the code after transformation.
+指定转换后混淆器的路径
 
 #### `minifierConfig`
 
 Type: `{[key: string]: mixed}`
 
-Configuration object that will be passed to the minifier (it should be serializable).
+代码混淆配置
 
 #### `optimizationSizeLimit`
 
 Type: `number`
 
-Define a threshold (in bytes) to disable some expensive optimizations for big files.
+为大文件定义一个阈值(以字节为单位)以禁用一些昂贵的优化
 
-#### React Native Only
+#### 仅支持React Native
 
 #### `assetPlugins`
 
 Type: `Array<string>`
 
-List of modules to call to modify Asset data
+可以修改Asset数字的模块列表
 
 #### `assetRegistryPath`
 
 Type: `string`
 
-Where to fetch the assets from.
+在哪里获取资源文件
 
 
-### Resolver Options
+### 解析器选项
 
 #### `assetExts`
 
 Type: `Array<string>`
 
-An array of asset extensions to include in the bundle. For example, if you would give `['ttf']` you would be able to include `.ttf` files in the bundle.
+可以包含在bundle中的asset后缀列表。例如，如果你想在bundle中包含`['ttf']`类型的asset，该列表就包含这个后缀
 
 #### `sourceExts`
 
 Type: `Array<string>`
 
-An array of source extensions to include in the bundle. For example, if you would give `['ts']` you would be able to include `.ts` files in the bundle.
+可以包含在bundle中的source后缀列表。例如，如果你想在bundle中包含`['ts']`类型的source，该列表就包含这个后缀
 
 #### `resolverMainFields`
 
 Type: `Array<string>`
 
-Specify the fields in package.json files that will be used by the module resolver to do redirections when requiring certain packages. For example, using `['browser', 'main']` will use the `browser` field if it exists and will default to `main` if it doesn't.
+Specify the fields in package.json files that will be used by the module resolver to do redirections when requiring certain packages. For example, using `['browser', 'main']` will use the `browser` field if it exists and will default to `main` if it doesn't.(译者注：不怎么理解，提供两个链接[package.json文件说明](https://javascript.ruanyifeng.com/nodejs/packagejson.html))和[RN的require过程](https://zhuanlan.zhihu.com/p/41689115)
 
 #### `extraNodeModules`
 
 Type: `{[name:string]:string}`
 
-Which other `node_modules` to include besides the ones relative to the project directory. This is keyed by dependency name.
+配置旨在为当前项目提供额外引入的模块，配置格式为[{ 模块名 : 路径 }]
 
 #### `resolveRequest`
 
 Type: `?CustomResolver`
 
-An optional function used to resolve requests. Ignored when the request can be resolved through Haste.
+该配置可以为null，可以通过该函数来决定是否忽略此次解析，
 
 #### `useWatchman`
 
 Type: `boolean`
 
-If set to `false`, it'll prevent Metro from using watchman (even if it's installed)
-
-These options are only useful with React Native projects.
+如果设置为`false`, 将禁止Metro使用watchman，即使它被安装。 该配置仅仅对RN项目有用
 
 #### `blacklistRE`
 
 Type: `RegExp`
 
-A RegEx defining which paths to ignore.
+通过正则指定打包的黑名单
 
 #### `hasteImplModulePath`
 
 Type: `string`
 
-The path to the haste resolver.
+指定haste resolver(译者注：我也不知道是什么鬼)
 
 #### `platforms`
 
 Type: `Array<string>`
 
-Additional platforms to look out for, For example, if you want to add a "custom" platform, and use modules ending in .custom.js, you would return ['custom'] here.
+需要注意的其他平台，例如，如果你想在这里添加"custom"平台并且模块使用`.custom.js`结尾，应该在这里加上`custom`
 
-### Serializer Options
+### 序列化选项
 
 #### `getRunModuleStatement`
 
 Type: `(number` &#x7c; `string) => string`
 
-Specify the format of the initial require statements that are appended at the end of the bundle. By default is `__r(${moduleId});`.
+指定附加在包末尾的出事require语句的格式，默认情况下是`__r(${moduleId});`
 
 #### `createModuleIdFactory`
 
 Type: `() => (path: string) => number`
 
-Used to generate the module id for `require` statements.
+用于为`require`语句生成模块id
 
 #### `getPolyfills`
 
 Type: `({platform: ?string}) => $ReadOnlyArray<string>`
 
-An optional list of polyfills to include in the bundle. The list defaults to a set of common polyfills for Number, String, Array, Object...
+要包含在包中的可选Polyfill列表，默认有一些常用的Polyfill，比如Number,String,Array,Object....
 
 #### `postProcessBundleSourcemap`
 
 Type: `PostProcessBundleSourcemap`
 
-An optional function that can modify the code and source map of the bundle before it is written. Applied once for the entire bundle.
+该函数可以在bundle和sourcemap写入文件之前，修改内容，适用于整个bundle包
 
 #### `getModulesRunBeforeMainModule`
 
 Type: `(entryFilePath: string) => Array<string>`
 
-An array of modules to be required before the entry point. It should contain the absolute path of each module. Note that this will add the additional require statements only if the passed modules are already included as part of the bundle.
+指定在主模块前运行的一些模块，应该包含每个模块的绝对路径。 另外，当这些模块已经作为bundle的一部分时，才会加载其他的reqire语句
 
 #### `processModuleFilter`
 
 Type: `(module: Array<Module>) => boolean`
 
-A filter function to discard specific modules from the output.
+过滤掉特定模块
 
 
-## Merging Configurations
+## metro-config的合并
 
-Using the `metro-config` package it is possible to merge multiple configurations together.
+使用`metro-config`，可以将多个配置文件合并在一起
 
 | Method                                  | Description                                                            |
 | --------------------------------------- | ---------------------------------------------------------------------- |
-| `mergeConfig(...configs): MergedConfig` | Returns the merged configuration of two or more configuration objects. |
+| `mergeConfig(...configs): MergedConfig` | 返回两个或多个配置对象的合并配置 |
 
-> **Note:** Arrays and function based config parameters do not deeply merge and will instead override any pre-existing config parameters.
-> This allows overriding and removing default config parameters such as `platforms` or `getModulesRunBeforeMainModule` that may not be required in your environment.
+> **注意:** 基于数组和基于函数的配置参数不会深度合并，而是覆盖任何预先存在的配置参数
+> 允许覆盖和删除在您的环境中可能不需要的默认配置参数，例如`platforms`或`getModulesRunBeforeMainModule`
 
-#### Merging Example
+#### 举个栗子
 
 ```js
 // metro.config.js
