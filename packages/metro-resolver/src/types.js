@@ -39,7 +39,7 @@ export type FileCandidates =
   // example `/js/foo.ios.js`, `/js/foo.js`, etc. for a single prefix '/js/foo'.
   | {|
       +type: 'sourceFile',
-      +filePathPrefix: string,
+      filePathPrefix: string,
       +candidateExts: $ReadOnlyArray<string>,
     |};
 

@@ -156,6 +156,7 @@ class DependencyGraph extends EventEmitter {
       moduleCache: this._moduleCache,
       moduleMap: this._moduleMap,
       preferNativePlatform: true,
+      projectRoot: this._config.projectRoot,
       resolveAsset: (
         dirPath: string,
         assetName: string,

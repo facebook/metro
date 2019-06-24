@@ -434,8 +434,8 @@ function unknownModuleError(id: ModuleID): Error {
   let message = 'Requiring unknown module "' + id + '".';
   if (__DEV__) {
     message +=
-      'If you are sure the module is there, try restarting Metro Bundler. ' +
-      'You may also want to run `yarn`, or `npm install` (depending on your environment).';
+      ' If you are sure the module exists, try restarting Metro. ' +
+      'You may also want to run `yarn` or `npm install`.';
   }
   return Error(message);
 }

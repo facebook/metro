@@ -156,6 +156,7 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
       rootDir: '',
     }),
     preferNativePlatform: true,
+    projectRoot: '',
     resolveAsset: (
       dirPath: string,
       assetName: string,
