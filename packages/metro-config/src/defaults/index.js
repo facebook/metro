@@ -31,7 +31,6 @@ import type {ConfigT} from '../configTypes.flow';
 
 const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   resolver: {
-    allowPnp: true,
     assetExts,
     platforms,
     sourceExts,

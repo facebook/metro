@@ -54,7 +54,6 @@ const CONTEXT: ResolutionContext = (() => {
   );
   return {
     allowHaste: true,
-    allowPnp: false,
     doesFileExist: filePath => fileSet.has(filePath),
     extraNodeModules: null,
     getPackageMainPath: dirPath => path.join(path.dirname(dirPath), 'main'),
