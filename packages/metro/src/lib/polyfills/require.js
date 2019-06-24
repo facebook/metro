@@ -503,7 +503,12 @@ if (__DEV__) {
     // Run just the edited module first. We want to do it now because
     // we want to know whether its latest version has self-accepted or not.
     // However, we'll be more cautious before running the parent modules below.
-    runUpdatedModule(id, factory, dependencyMap);
+    const didError = runUpdatedModule(id, factory, dependencyMap);
+    if (didError) {
+      // The user was shown a redbox about module initialization.
+      // There's nothing for us to do here until it's fixed.
+      return;
+    }
 
     const pendingModuleIDs = [id];
     const updatedModuleIDs = [];
@@ -564,11 +569,17 @@ if (__DEV__) {
 
     // If we reached here, it is likely that hot reload will be successful.
     // Run the actual factories. Skip the edited module because it already ran.
-    updatedModuleIDs.forEach(updatedID => {
+    for (let i = 0; i < updatedModuleIDs.length; i++) {
+      const updatedID = updatedModuleIDs[i];
       if (updatedID !== id) {
-        runUpdatedModule(updatedID);
+        const didError = runUpdatedModule(updatedID);
+        if (didError) {
+          // The user was shown a redbox about module initialization.
+          // There's nothing for us to do here until it's fixed.
+          return;
+        }
       }
-    });
+    }
 
     const {Refresh} = metroRequire;
     if (Refresh != null) {
@@ -588,7 +599,7 @@ if (__DEV__) {
     id: ModuleID,
     factory?: FactoryFn,
     dependencyMap?: DependencyMap,
-  ) {
+  ): boolean {
     const mod = modules[id];
     if (mod == null) {
       throw new Error('[Refresh] Expected to find the module.');
@@ -621,11 +632,27 @@ if (__DEV__) {
     mod.importedAll = EMPTY;
     mod.importedDefault = EMPTY;
     mod.isInitialized = false;
+    const prevExports = mod.publicModule.exports;
     mod.publicModule.exports = {};
     hot._didAccept = false;
     hot._acceptCallback = null;
     hot._disposeCallback = null;
     metroRequire(id);
+
+    if (mod.hasError) {
+      // This error has already been reported via a redbox.
+      // We know it's likely a typo or some mistake that was just introduced.
+      // Our goal now is to keep the rest of the application working so that by
+      // the time user fixes the error, the app isn't completely destroyed
+      // underneath the redbox. So we'll revert the module object to the last
+      // successful export and stop propagating this update.
+      mod.hasError = false;
+      mod.isInitialized = true;
+      mod.error = null;
+      mod.publicModule.exports = prevExports;
+      // We errored. Stop the update.
+      return true;
+    }
 
     if (hot._acceptCallback) {
       try {
@@ -637,6 +664,8 @@ if (__DEV__) {
         );
       }
     }
+    // No error.
+    return false;
   };
 
   const performFullRefresh = () => {

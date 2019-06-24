@@ -1453,7 +1453,122 @@ describe('require', () => {
       log = [];
     });
 
+    it('stops update propagation after module-level errors', () => {
+      let redboxErrors = [];
+      moduleSystem.ErrorUtils = {
+        reportFatalError(e) {
+          redboxErrors.push(e);
+        },
+      };
+
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init FooV1');
+          require(1);
+          module.hot.accept(); // This module accepts itself.
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          module.exports = 'V1';
+          log.push('init BarV1');
+          // This module normally propagates to the parent.
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init FooV1', 'init BarV1']);
+      expect(redboxErrors).toHaveLength(0);
+      log = [];
+      redboxErrors = [];
+
+      // We only edited Bar.
+      // Normally it would propagate to the parent.
+      // But the error should stop the propagation early.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          module.exports = 'V2';
+          log.push('init BarV2');
+          throw new Error('init error during BarV2');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+
+      expect(log).toEqual(['init BarV2']); // No 'init FooV1'
+      expect(redboxErrors).toHaveLength(1);
+      expect(redboxErrors[0].message).toBe('init error during BarV2');
+      log = [];
+      redboxErrors = [];
+
+      // Because of the failure, we keep seeing the previous export.
+      expect(moduleSystem.__r(1)).toBe('V1');
+      expect(log).toHaveLength(0);
+      expect(redboxErrors).toHaveLength(0);
+
+      // Let's make another error.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+          throw new Error('init error during BarV3');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+
+      expect(log).toEqual(['init BarV3']);
+      expect(redboxErrors).toHaveLength(1);
+      expect(redboxErrors[0].message).toBe('init error during BarV3');
+      log = [];
+      redboxErrors = [];
+
+      // Because of the failure, we keep seeing the last successful export.
+      expect(moduleSystem.__r(1)).toBe('V1');
+      expect(log).toHaveLength(0);
+      expect(redboxErrors).toHaveLength(0);
+
+      // Finally, let's fix the code.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          module.exports = 'V3';
+          log.push('init BarV3');
+          // This module propagates to the parent.
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV3', 'init FooV1']); // Includes the parent.
+      expect(redboxErrors).toHaveLength(0);
+      log = [];
+      redboxErrors = [];
+
+      // We should now see the "new" exports.
+      expect(moduleSystem.__r(1)).toBe('V3');
+      expect(log).toHaveLength(0);
+      expect(redboxErrors).toHaveLength(0);
+    });
+
     it('can continue hot updates after module-level errors with module.exports', () => {
+      let redboxErrors = [];
+      moduleSystem.ErrorUtils = {
+        reportFatalError(e) {
+          redboxErrors.push(e);
+        },
+      };
+
       let log = [];
       createModuleSystem(moduleSystem, true);
       createModule(
@@ -1478,46 +1593,57 @@ describe('require', () => {
       );
       moduleSystem.__r(0);
       expect(log).toEqual(['init FooV1', 'init BarV1']);
+      expect(redboxErrors).toHaveLength(0);
       log = [];
+      redboxErrors = [];
 
       // We only edited Bar, and it accepted.
       // So we expect it to re-run alone.
-      expect(() => {
-        moduleSystem.__accept(
-          1,
-          (global, require, importDefault, importAll, module, exports) => {
-            log.push('init BarV2');
-            throw new Error('init error during BarV2');
-          },
-          [],
-          {1: [0], 0: []},
-          undefined,
-        );
-      }).toThrow('init error during BarV2');
-      expect(log).toEqual(['init BarV2']);
-      log = [];
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          module.exports = 'V2';
+          log.push('init BarV2');
+          throw new Error('init error during BarV2');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
 
-      // We can't use it yet.
-      expect(() => moduleSystem.__r(1)).toThrow('init error during BarV2');
+      expect(log).toEqual(['init BarV2']);
+      expect(redboxErrors).toHaveLength(1);
+      expect(redboxErrors[0].message).toBe('init error during BarV2');
+      log = [];
+      redboxErrors = [];
+
+      // Because of the failure, we keep seeing the previous export.
+      expect(moduleSystem.__r(1)).toBe('V1');
+      expect(log).toHaveLength(0);
+      expect(redboxErrors).toHaveLength(0);
 
       // Let's make another error.
-      expect(() => {
-        moduleSystem.__accept(
-          1,
-          (global, require, importDefault, importAll, module, exports) => {
-            log.push('init BarV3');
-            throw new Error('init error during BarV3');
-          },
-          [],
-          {1: [0], 0: []},
-          undefined,
-        );
-      }).toThrow('init error during BarV3');
-      expect(log).toEqual(['init BarV3']);
-      log = [];
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+          throw new Error('init error during BarV3');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
 
-      // We can't use it yet.
-      expect(() => moduleSystem.__r(1)).toThrow('init error during BarV3');
+      expect(log).toEqual(['init BarV3']);
+      expect(redboxErrors).toHaveLength(1);
+      expect(redboxErrors[0].message).toBe('init error during BarV3');
+      log = [];
+      redboxErrors = [];
+
+      // Because of the failure, we keep seeing the last successful export.
+      expect(moduleSystem.__r(1)).toBe('V1');
+      expect(log).toHaveLength(0);
+      expect(redboxErrors).toHaveLength(0);
 
       // Finally, let's fix the code.
       moduleSystem.__accept(
@@ -1533,13 +1659,24 @@ describe('require', () => {
         undefined,
       );
       expect(log).toEqual(['init BarV3']);
+      expect(redboxErrors).toHaveLength(0);
       log = [];
+      redboxErrors = [];
 
       // We should now see the "new" exports.
       expect(moduleSystem.__r(1)).toBe('V3');
+      expect(log).toHaveLength(0);
+      expect(redboxErrors).toHaveLength(0);
     });
 
     it('can continue hot updates after module-level errors with ES6 exports', () => {
+      let redboxErrors = [];
+      moduleSystem.ErrorUtils = {
+        reportFatalError(e) {
+          redboxErrors.push(e);
+        },
+      };
+
       let log = [];
       createModuleSystem(moduleSystem, true);
       createModule(
@@ -1565,50 +1702,58 @@ describe('require', () => {
       );
       moduleSystem.__r(0);
       expect(log).toEqual(['init FooV1', 'init BarV1']);
+      expect(redboxErrors).toHaveLength(0);
       log = [];
+      redboxErrors = [];
 
       // We only edited Bar, and it accepted.
       // So we expect it to re-run alone.
-      expect(() => {
-        moduleSystem.__accept(
-          1,
-          (global, require, importDefault, importAll, module, exports) => {
-            log.push('init BarV2');
-            throw new Error('init error during BarV2');
-          },
-          [],
-          {1: [0], 0: []},
-          undefined,
-        );
-      }).toThrow('init error during BarV2');
-      expect(log).toEqual(['init BarV2']);
-      log = [];
-
-      // We can't use it yet.
-      expect(() => moduleSystem.__r.importDefault(1)).toThrow(
-        'init error during BarV2',
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          exports.__esModule = true;
+          exports.default = 'V2';
+          log.push('init BarV2');
+          throw new Error('init error during BarV2');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
       );
+
+      expect(log).toEqual(['init BarV2']);
+      expect(redboxErrors).toHaveLength(1);
+      expect(redboxErrors[0].message).toBe('init error during BarV2');
+      log = [];
+      redboxErrors = [];
+
+      // Because of the failure, we keep seeing the previous export.
+      expect(moduleSystem.__r.importDefault(1)).toBe('V1');
+      expect(log).toHaveLength(0);
+      expect(redboxErrors).toHaveLength(0);
 
       // Let's make another error.
-      expect(() => {
-        moduleSystem.__accept(
-          1,
-          (global, require, importDefault, importAll, module, exports) => {
-            log.push('init BarV3');
-            throw new Error('init error during BarV3');
-          },
-          [],
-          {1: [0], 0: []},
-          undefined,
-        );
-      }).toThrow('init error during BarV3');
-      expect(log).toEqual(['init BarV3']);
-      log = [];
-
-      // We can't use it yet.
-      expect(() => moduleSystem.__r.importDefault(1)).toThrow(
-        'init error during BarV3',
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+          throw new Error('init error during BarV3');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
       );
+
+      expect(log).toEqual(['init BarV3']);
+      expect(redboxErrors).toHaveLength(1);
+      expect(redboxErrors[0].message).toBe('init error during BarV3');
+      log = [];
+      redboxErrors = [];
+
+      // Because of the failure, we keep seeing the last successful export.
+      expect(moduleSystem.__r.importDefault(1)).toBe('V1');
+      expect(log).toHaveLength(0);
+      expect(redboxErrors).toHaveLength(0);
 
       // Finally, let's fix the code.
       moduleSystem.__accept(
@@ -1625,10 +1770,14 @@ describe('require', () => {
         undefined,
       );
       expect(log).toEqual(['init BarV3']);
+      expect(redboxErrors).toHaveLength(0);
       log = [];
+      redboxErrors = [];
 
       // We should now see the "new" exports.
       expect(moduleSystem.__r.importDefault(1)).toBe('V3');
+      expect(log).toHaveLength(0);
+      expect(redboxErrors).toHaveLength(0);
     });
 
     it('does not accumulate stale exports over time', () => {
