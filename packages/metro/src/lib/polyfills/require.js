@@ -391,7 +391,9 @@ function loadModuleImplementation(
 
       const hot = module.hot;
       if (hot == null) {
-        throw new Error('Expected module.hot to always exist in DEV.');
+        throw new Error(
+          '[Refresh] Expected module.hot to always exist in DEV.',
+        );
       }
 
       global.$RefreshReg$ = RefreshRegNoop;
@@ -495,10 +497,7 @@ if (__DEV__) {
 
     const {hot} = mod;
     if (!hot) {
-      throw new Error(
-        'Cannot accept module because the Hot Module Replacement ' +
-          'API was not installed.',
-      );
+      throw new Error('[Refresh] Expected module.hot to always exist in DEV.');
     }
 
     // Run just the edited module first. We want to do it now because
@@ -538,8 +537,7 @@ if (__DEV__) {
         const pendingHot = pendingModule.hot;
         if (pendingHot == null) {
           throw new Error(
-            'Cannot accept module because the Hot Module Replacement ' +
-              'API was not installed.',
+            '[Refresh] Expected module.hot to always exist in DEV.',
           );
         }
         if (pendingHot._didAccept) {
@@ -593,15 +591,12 @@ if (__DEV__) {
   ) {
     const mod = modules[id];
     if (mod == null) {
-      throw new Error('Expected to find the module.');
+      throw new Error('[Refresh] Expected to find the module.');
     }
 
     const {hot} = mod;
     if (!hot) {
-      throw new Error(
-        'Cannot accept module because Hot Module Replacement ' +
-          'API was not installed.',
-      );
+      throw new Error('[Refresh] Expected module.hot to always exist in DEV.');
     }
 
     if (hot._disposeCallback) {
@@ -658,9 +653,7 @@ if (__DEV__) {
       if (Refresh != null) {
         Refresh.performFullRefresh();
       } else {
-        console.warn(
-          'Could not reload the application after an unsuccessful hot update.',
-        );
+        console.warn('Could not reload the application after an edit.');
       }
     }
   };
