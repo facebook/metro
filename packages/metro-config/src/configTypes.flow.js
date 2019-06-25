@@ -154,7 +154,7 @@ export type VisualizerConfigT = {|
 type MetalConfigT = {|
   cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
   cacheVersion: string,
-  hasteMapCacheDirectory: string,
+  hasteMapCacheDirectory?: string,
   maxWorkers: number,
   projectRoot: string,
   stickyWorkers: boolean,
