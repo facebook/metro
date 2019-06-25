@@ -70,8 +70,8 @@ const EMPTY = {};
 const {hasOwnProperty} = {};
 
 if (__DEV__) {
-  var RefreshRegNoop = () => {};
-  var RefreshSigNoop = () => type => type;
+  global.$RefreshReg$ = () => {};
+  global.$RefreshSig$ = () => type => type;
 }
 
 function clear(): ModuleList {
@@ -351,6 +351,8 @@ function loadModuleImplementation(
     if (__DEV__) {
       moduleObject.hot = module.hot;
 
+      var prevRefreshReg = global.$RefreshReg$;
+      var prevRefreshSig = global.$RefreshSig$;
       if (Refresh != null) {
         const RefreshRuntime = Refresh;
         global.$RefreshReg$ = (type, id) => {
@@ -358,9 +360,6 @@ function loadModuleImplementation(
         };
         global.$RefreshSig$ =
           RefreshRuntime.createSignatureFunctionForTransform;
-      } else {
-        global.$RefreshReg$ = RefreshRegNoop;
-        global.$RefreshSig$ = RefreshSigNoop;
       }
     }
     moduleObject.id = moduleId;
@@ -396,8 +395,6 @@ function loadModuleImplementation(
         );
       }
 
-      global.$RefreshReg$ = RefreshRegNoop;
-      global.$RefreshSig$ = RefreshSigNoop;
       if (Refresh != null) {
         const isRefreshBoundary = registerExportsForReactRefresh(
           Refresh,
@@ -427,6 +424,8 @@ function loadModuleImplementation(
           'initializingModuleIds is corrupt; something is terribly wrong',
         );
       }
+      global.$RefreshReg$ = prevRefreshReg;
+      global.$RefreshSig$ = prevRefreshSig;
     }
   }
 }
