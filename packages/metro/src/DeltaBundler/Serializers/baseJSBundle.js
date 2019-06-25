@@ -53,14 +53,21 @@ function baseJSBundle(
   );
 
   const postCode = processModules(
-    getAppendScripts(entryPoint, [...preModules, ...modules], {
-      createModuleId: options.createModuleId,
-      getRunModuleStatement: options.getRunModuleStatement,
-      runBeforeMainModule: options.runBeforeMainModule,
-      runModule: options.runModule,
-      sourceMapUrl: options.sourceMapUrl,
-      inlineSourceMap: options.inlineSourceMap,
-    }),
+    getAppendScripts(
+      entryPoint,
+      [...preModules, ...modules],
+      graph.importBundleNames,
+      {
+        asyncRequireModulePath: options.asyncRequireModulePath,
+        createModuleId: options.createModuleId,
+        getRunModuleStatement: options.getRunModuleStatement,
+        inlineSourceMap: options.inlineSourceMap,
+        projectRoot: options.projectRoot,
+        runBeforeMainModule: options.runBeforeMainModule,
+        runModule: options.runModule,
+        sourceMapUrl: options.sourceMapUrl,
+      },
+    ),
     processModulesOptions,
   )
     .map(([_, code]) => code)

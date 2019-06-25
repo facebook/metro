@@ -152,6 +152,7 @@ const dummyMetroGraph: Graph<> = {
     ],
   ]),
   entryPoints: ['foo'],
+  importBundleNames: new Set(),
 };
 
 module.exports = dummyMetroGraph;

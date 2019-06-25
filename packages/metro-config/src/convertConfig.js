@@ -134,6 +134,7 @@ async function convertOldToNew({
       dynamicDepsInPackages,
       enableBabelRCLookup: getEnableBabelRCLookup(),
       enableBabelRuntime: true,
+      experimentalImportBundleSupport: false,
       getTransformOptions,
       minifierConfig: defaultConfig.transformer.minifierConfig,
       minifierPath: minifierPath || defaultConfig.transformer.minifierPath,

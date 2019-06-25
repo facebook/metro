@@ -139,6 +139,7 @@ type TransformerConfigT = {|
   transformVariants: TransformVariants,
   workerPath: string,
   publicPath: string,
+  experimentalImportBundleSupport: boolean,
 |};
 
 export type VisualizerConfigT = {|

@@ -72,6 +72,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     dynamicDepsInPackages: 'throwAtRuntime',
     enableBabelRCLookup: true,
     enableBabelRuntime: true,
+    experimentalImportBundleSupport: false,
     getTransformOptions: async () => ({
       transform: {
         experimentalImportSupport: false,

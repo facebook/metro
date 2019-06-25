@@ -194,6 +194,7 @@ class Server {
     const entryPoint = path.resolve(this._config.projectRoot, entryFile);
 
     const bundle = baseJSBundle(entryPoint, prepend, graph, {
+      asyncRequireModulePath: this._config.transformer.asyncRequireModulePath,
       processModuleFilter: this._config.serializer.processModuleFilter,
       createModuleId: this._createModuleId,
       getRunModuleStatement: this._config.serializer.getRunModuleStatement,
@@ -234,6 +235,7 @@ class Server {
     const entryPoint = path.resolve(this._config.projectRoot, entryFile);
 
     return await getRamBundleInfo(entryPoint, prepend, graph, {
+      asyncRequireModulePath: this._config.transformer.asyncRequireModulePath,
       processModuleFilter: this._config.serializer.processModuleFilter,
       createModuleId: this._createModuleId,
       dev: transformOptions.dev,
@@ -652,6 +654,8 @@ class Server {
         revision.id,
         revision.graph,
         {
+          asyncRequireModulePath: this._config.transformer
+            .asyncRequireModulePath,
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
           dev: transformOptions.dev,
@@ -731,6 +735,7 @@ class Server {
         ((...args) => bundleToString(baseJSBundle(...args)).code);
 
       const bundle = serializer(entryFile, revision.prepend, revision.graph, {
+        asyncRequireModulePath: this._config.transformer.asyncRequireModulePath,
         processModuleFilter: this._config.serializer.processModuleFilter,
         createModuleId: this._createModuleId,
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,
@@ -873,6 +878,7 @@ class Server {
       }
 
       const base = baseJSBundle(entryFile, revision.prepend, revision.graph, {
+        asyncRequireModulePath: this._config.transformer.asyncRequireModulePath,
         processModuleFilter: this._config.serializer.processModuleFilter,
         createModuleId: this._createModuleId,
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,

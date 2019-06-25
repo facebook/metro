@@ -39,21 +39,24 @@ type Delta = $ReadOnly<{|
 |}>;
 
 type InternalOptions<T> = $ReadOnly<{|
-  resolve: $PropertyType<Options<T>, 'resolve'>,
-  transform: $PropertyType<Options<T>, 'transform'>,
+  experimentalImportBundleSupport: boolean,
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
+  resolve: $PropertyType<Options<T>, 'resolve'>,
+  transform: $PropertyType<Options<T>, 'transform'>,
 |}>;
 
 function getInternalOptions<T>({
   transform,
   resolve,
   onProgress,
+  experimentalImportBundleSupport,
 }: Options<T>): InternalOptions<T> {
   let numProcessed = 0;
   let total = 0;
 
   return {
+    experimentalImportBundleSupport,
     transform,
     resolve,
     onDependencyAdd: () => onProgress && onProgress(numProcessed, ++total),
@@ -229,7 +232,12 @@ async function processModule<T>(
   const promises = [];
 
   for (const [relativePath, dependency] of currentDependencies) {
-    if (!previousDependencies.has(relativePath)) {
+    if (
+      options.experimentalImportBundleSupport &&
+      dependency.data.data.isAsync
+    ) {
+      graph.importBundleNames.add(dependency.absolutePath);
+    } else if (!previousDependencies.has(relativePath)) {
       promises.push(
         addDependency(module, dependency.absolutePath, graph, delta, options),
       );
@@ -369,7 +377,11 @@ function reorderDependencies<T>(
     const childModule = graph.dependencies.get(path);
 
     if (!childModule) {
-      throw new ReferenceError('Module not registered in graph: ' + path);
+      if (dependency.data.data.isAsync) {
+        return;
+      } else {
+        throw new ReferenceError('Module not registered in graph: ' + path);
+      }
     }
 
     reorderDependencies(graph, childModule, orderedDependencies);

@@ -62,6 +62,7 @@ it('should generate a very simple bundle', () => {
           ['/root/bar', barModule],
         ]),
         entryPoints: ['foo'],
+        importBundleNames: new Set(),
       },
       {
         processModuleFilter: () => true,
@@ -75,22 +76,22 @@ it('should generate a very simple bundle', () => {
       },
     ),
   ).toMatchInlineSnapshot(`
-Object {
-  "modules": Array [
-    Array [
-      "foo",
-      "__d(function() {/* code for foo */},\\"foo\\",[\\"bar\\"],\\"foo\\");",
-    ],
-    Array [
-      "bar",
-      "__d(function() {/* code for bar */},\\"bar\\",[],\\"bar\\");",
-    ],
-  ],
-  "post": "require(\\"foo\\");
-//# sourceMappingURL=http://localhost/bundle.map",
-  "pre": "__d(function() {/* code for polyfill */});",
-}
-`);
+    Object {
+      "modules": Array [
+        Array [
+          "foo",
+          "__d(function() {/* code for foo */},\\"foo\\",[\\"bar\\"],\\"foo\\");",
+        ],
+        Array [
+          "bar",
+          "__d(function() {/* code for bar */},\\"bar\\",[],\\"bar\\");",
+        ],
+      ],
+      "post": "require(\\"foo\\");
+    //# sourceMappingURL=http://localhost/bundle.map",
+      "pre": "__d(function() {/* code for polyfill */});",
+    }
+  `);
 });
 
 it('should add runBeforeMainModule statements if found in the graph', () => {
@@ -104,6 +105,7 @@ it('should add runBeforeMainModule statements if found in the graph', () => {
           ['/root/bar', barModule],
         ]),
         entryPoints: ['/root/foo'],
+        importBundleNames: new Set(),
       },
       {
         processModuleFilter: () => true,
@@ -117,10 +119,10 @@ it('should add runBeforeMainModule statements if found in the graph', () => {
       },
     ).post,
   ).toMatchInlineSnapshot(`
-"require(\\"bar\\");
-require(\\"foo\\");
-//# sourceMappingURL=http://localhost/bundle.map"
-`);
+    "require(\\"bar\\");
+    require(\\"foo\\");
+    //# sourceMappingURL=http://localhost/bundle.map"
+  `);
 });
 
 it('should handle numeric module ids', () => {
@@ -134,6 +136,7 @@ it('should handle numeric module ids', () => {
           ['/root/bar', barModule],
         ]),
         entryPoints: ['/root/foo'],
+        importBundleNames: new Set(),
       },
       {
         processModuleFilter: () => true,
@@ -147,17 +150,17 @@ it('should handle numeric module ids', () => {
       },
     ).modules,
   ).toMatchInlineSnapshot(`
-Array [
-  Array [
-    0,
-    "__d(function() {/* code for foo */},0,[1],\\"foo\\");",
-  ],
-  Array [
-    1,
-    "__d(function() {/* code for bar */},1,[],\\"bar\\");",
-  ],
-]
-`);
+    Array [
+      Array [
+        0,
+        "__d(function() {/* code for foo */},0,[1],\\"foo\\");",
+      ],
+      Array [
+        1,
+        "__d(function() {/* code for bar */},1,[],\\"bar\\");",
+      ],
+    ]
+  `);
 });
 
 it('outputs custom runModule statements', () => {
@@ -171,6 +174,7 @@ it('outputs custom runModule statements', () => {
           ['/root/bar', barModule],
         ]),
         entryPoints: ['/root/foo'],
+        importBundleNames: new Set(),
       },
       {
         processModuleFilter: () => true,
@@ -184,9 +188,9 @@ it('outputs custom runModule statements', () => {
       },
     ).post,
   ).toMatchInlineSnapshot(`
-"export default require(\\"bar\\").default;
-export default require(\\"foo\\").default;"
-`);
+    "export default require(\\"bar\\").default;
+    export default require(\\"foo\\").default;"
+  `);
 });
 
 it('should add an inline source map to a very simple bundle', () => {
@@ -199,6 +203,7 @@ it('should add an inline source map to a very simple bundle', () => {
         ['/root/bar', barModule],
       ]),
       entryPoints: ['foo'],
+      importBundleNames: new Set(),
     },
     {
       processModuleFilter: () => true,
@@ -241,6 +246,7 @@ it('does not add polyfills when `modulesOnly` is used', () => {
           ['/root/bar', barModule],
         ]),
         entryPoints: ['foo'],
+        importBundleNames: new Set(),
       },
       {
         processModuleFilter: () => true,
@@ -255,20 +261,65 @@ it('does not add polyfills when `modulesOnly` is used', () => {
       },
     ),
   ).toMatchInlineSnapshot(`
-Object {
-  "modules": Array [
-    Array [
-      "foo",
-      "__d(function() {/* code for foo */},\\"foo\\",[\\"bar\\"],\\"foo\\");",
-    ],
-    Array [
-      "bar",
-      "__d(function() {/* code for bar */},\\"bar\\",[],\\"bar\\");",
-    ],
-  ],
-  "post": "require(\\"foo\\");
-//# sourceMappingURL=http://localhost/bundle.map",
-  "pre": "",
-}
-`);
+    Object {
+      "modules": Array [
+        Array [
+          "foo",
+          "__d(function() {/* code for foo */},\\"foo\\",[\\"bar\\"],\\"foo\\");",
+        ],
+        Array [
+          "bar",
+          "__d(function() {/* code for bar */},\\"bar\\",[],\\"bar\\");",
+        ],
+      ],
+      "post": "require(\\"foo\\");
+    //# sourceMappingURL=http://localhost/bundle.map",
+      "pre": "",
+    }
+  `);
+});
+
+it('adds lazy imports at the end of a bundle', () => {
+  expect(
+    baseJSBundle(
+      '/root/foo',
+      [polyfill],
+      {
+        dependencies: new Map([
+          ['/root/foo', fooModule],
+          ['/root/bar', barModule],
+        ]),
+        entryPoints: ['foo'],
+        importBundleNames: new Set(['/path/to/async/module.js']),
+      },
+      {
+        asyncRequireModulePath: '/asyncRequire.js',
+        processModuleFilter: () => true,
+        createModuleId: filePath => path.basename(filePath),
+        dev: true,
+        getRunModuleStatement,
+        projectRoot: '/root',
+        runBeforeMainModule: [],
+        runModule: true,
+        sourceMapUrl: 'http://localhost/bundle.map',
+      },
+    ),
+  ).toMatchInlineSnapshot(`
+    Object {
+      "modules": Array [
+        Array [
+          "foo",
+          "__d(function() {/* code for foo */},\\"foo\\",[\\"bar\\"],\\"foo\\");",
+        ],
+        Array [
+          "bar",
+          "__d(function() {/* code for bar */},\\"bar\\",[],\\"bar\\");",
+        ],
+      ],
+      "post": "(function(){var $$=require(\\"asyncRequire.js\\");$$.addImportBundleNames({\\"module.js\\":\\"../path/to/async/module.bundle\\"})})();
+    require(\\"foo\\");
+    //# sourceMappingURL=http://localhost/bundle.map",
+      "pre": "__d(function() {/* code for polyfill */});",
+    }
+  `);
 });

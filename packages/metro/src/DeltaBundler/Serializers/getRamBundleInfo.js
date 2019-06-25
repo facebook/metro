@@ -50,7 +50,9 @@ async function getRamBundleInfo(
     ...pre,
     ...graph.dependencies.values(),
   ];
-  modules = modules.concat(getAppendScripts(entryPoint, modules, options));
+  modules = modules.concat(
+    getAppendScripts(entryPoint, modules, graph.importBundleNames, options),
+  );
 
   modules.forEach((module: Module<>) => options.createModuleId(module.path));
 

@@ -153,6 +153,7 @@ describe('processRequest', () => {
       const graph = {
         entryPoints: ['/root/mybundle.js'],
         dependencies,
+        importBundleNames: new Set(),
       };
       currentGraphs.add(graph);
 
@@ -392,9 +393,10 @@ describe('processRequest', () => {
     expect(DeltaBundler.prototype.buildGraph).toBeCalledWith(
       ['/root/index.js'],
       {
+        experimentalImportBundleSupport: false,
+        onProgress: expect.any(Function),
         resolve: expect.any(Function),
         transform: expect.any(Function),
-        onProgress: expect.any(Function),
       },
     );
   });
@@ -710,9 +712,10 @@ describe('processRequest', () => {
       expect(DeltaBundler.prototype.buildGraph).toBeCalledWith(
         ['/root/foo file'],
         {
+          experimentalImportBundleSupport: false,
+          onProgress: null,
           resolve: expect.any(Function),
           transform: expect.any(Function),
-          onProgress: null,
         },
       );
     });

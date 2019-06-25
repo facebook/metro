@@ -38,6 +38,7 @@ const graph = {
     createModule('bar', []),
   ]),
   entryPoints: ['/root/entrypoint.js'],
+  importBundleNames: new Set(),
 };
 
 const options = {

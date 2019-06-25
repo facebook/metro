@@ -129,6 +129,8 @@ class IncrementalBundler {
         transformOptions,
       ),
       onProgress: otherOptions.onProgress,
+      experimentalImportBundleSupport: this._config.transformer
+        .experimentalImportBundleSupport,
     });
 
     this._config.serializer.experimentalSerializerHook(graph, {
