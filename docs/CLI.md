@@ -7,7 +7,7 @@ title: Metro CLI Options
 
 ## `build <entry>`
 
-生成一个js bundle包，包内指定的入口文件及其该文件依赖的所有内容
+生成一个js bundle包，包括指定的入口文件及其该文件依赖的所有内容
 
 ### Options
 
@@ -18,11 +18,11 @@ title: Metro CLI Options
 
 ## `serve`
 
-通过指定的端口，开启一个用于云端打包的Metro服务器
+通过指定的端口，开启一个用于云端打包的Metro server
 
 ## `get-dependencies`
 
-依赖列表
+获取依赖列表
 
 ### Options
 

@@ -21,7 +21,7 @@ module.exports = {
     /* 解析配置 */
   },
   transformer: {
-    /* 转化配置 */
+    /* 转换配置 */
   },
   serializer: {
     /* 序列化配置 */
@@ -88,13 +88,13 @@ Type: `boolean`
 
 Type: `boolean`
 
-Control whether the created workers should stick based on filename or not.
+是否基于文件名创建workers
 
 #### `maxWorkers`
 
 Type: `number`
 
-转化时可以并行的最大值
+转换时可以并行的最大值
 
 ### 服务器配置
 
@@ -122,7 +122,7 @@ Type: `(Middleware, Server) => Middleware`
 
 Type: `boolean`
 
-启用`metro-visualizer`中间件（可从`/visualizer`获得）。这需要在您的项目中安装`metro-visualizer`(译者注：有问题)
+启用`metro-visualizer`中间件（可从`/visualizer`获得）。这需要在您的项目中安装`metro-visualizer`(译者注：这个库有问题)
 
 #### `runInspectorProxy`
 
@@ -149,7 +149,6 @@ Type: `string`
 
 Type: `string` (`throwAtRuntime` or `reject`)
 
-What should happen when a dynamic dependency is found.
 当发现一个动态的依赖库时应该怎么处理
 
 #### `enableBabelRCLookup`
@@ -200,7 +199,7 @@ Type: `number`
 
 Type: `Array<string>`
 
-可以修改Asset数字的模块列表
+可以修改Asset资源的模块列表
 
 #### `assetRegistryPath`
 
@@ -208,32 +207,31 @@ Type: `string`
 
 在哪里获取资源文件
 
-
 ### 解析器选项
 
 #### `assetExts`
 
 Type: `Array<string>`
 
-可以包含在bundle中的asset后缀列表。例如，如果你想在bundle中包含`['ttf']`类型的asset，该列表就包含这个后缀
+可以包含在bundle中的Asset扩展名列表。例如，如果你想在bundle中包含`['ttf']`类型的asset，该列表就包含这个扩展名
 
 #### `sourceExts`
 
 Type: `Array<string>`
 
-可以包含在bundle中的source后缀列表。例如，如果你想在bundle中包含`['ts']`类型的source，该列表就包含这个后缀
+可以包含在bundle中的source扩展名列表。例如，如果你想在bundle中包含`['ts']`类型的source，该列表就包含这个扩展名
 
 #### `resolverMainFields`
 
 Type: `Array<string>`
 
-Specify the fields in package.json files that will be used by the module resolver to do redirections when requiring certain packages. For example, using `['browser', 'main']` will use the `browser` field if it exists and will default to `main` if it doesn't.(译者注：不怎么理解，提供两个链接[package.json文件说明](https://javascript.ruanyifeng.com/nodejs/packagejson.html))和[RN的require过程](https://zhuanlan.zhihu.com/p/41689115)
+Specify the fields in package.json files that will be used by the module resolver to do redirections when requiring certain packages. For example, using `['browser', 'main']` will use the `browser` field if it exists and will default to `main` if it doesn't.(译者注：不理解，提供两个链接[package.json文件说明](https://javascript.ruanyifeng.com/nodejs/packagejson.html))和[RN的require过程](https://zhuanlan.zhihu.com/p/41689115)
 
 #### `extraNodeModules`
 
 Type: `{[name:string]:string}`
 
-配置旨在为当前项目提供额外引入的模块，配置格式为[{ 模块名 : 路径 }]
+当前项目提供额外引入的模块，配置格式为[{ 模块名 : 路径 }]
 
 #### `resolveRequest`
 
@@ -295,7 +293,7 @@ Type: `PostProcessBundleSourcemap`
 
 Type: `(entryFilePath: string) => Array<string>`
 
-指定在主模块前运行的一些模块，应该包含每个模块的绝对路径。 另外，当这些模块已经作为bundle的一部分时，才会加载其他的reqire语句
+在引用主模块前要引用的一些模块(要指定每个模块的绝对路径)，另外，当这些模块已经作为bundle的一部分时，才会加载其他的reqire语句
 
 #### `processModuleFilter`
 
@@ -303,10 +301,9 @@ Type: `(module: Array<Module>) => boolean`
 
 过滤掉特定模块
 
-
 ## metro-config的合并
 
-使用`metro-config`，可以将多个配置文件合并在一起。(译者注：并不是用于做bundle包的拆分，**猜测**用于将默认配置和自定义的配置合在一块，这样可以避免自定义设置里重复写一些默认的配置)
+使用`metro-config`，可以将多个配置文件合并在一起。(译者注：并不是用于做bundle包的拆分，**猜测**用于将默认配置和自定义的配置合在一块，这样可以避免自定义配置里重复写一些默认的配置)
 
 | Method                                  | Description                                                            |
 | --------------------------------------- | ---------------------------------------------------------------------- |

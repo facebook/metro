@@ -32,36 +32,36 @@ title: API
     });
     ```
 
-## 参考
+## 引用
 
-下面公开的所有方法都接受一个额外的`config`选项。该对象应该是您的`metro.config.js`文件公开的[Metro配置]（CLI.md） - 您可以使用`Metro.loadConfig`获取默认的配置
+下面开放的所有方法都接受一个额外的`config`选项。改对象是由`metro.config.js`导出([Metro配置](./CLI.md)), 你也可以直接使用`Metro.loadConfig`获取默认的配置
 
 ### `loadConfig(<options>)`
 
-**基本选项:** `config`, `cwd`
+**Basic options:** `config`, `cwd`
 
-加载Metro配置，可以从选项中的`config`指定，也可以从`cwd`遍历目录层次结构到根目录，直到找到文件（默认为`metro.config.js`）。返回的配置将已标准化并与Metro的默认值合并
+加载Metro配置，可以从选项中的`config`指定，也可以从当前工作目录遍历层次结构到根目录，直到找到Metro配置文件(默认为`metro.config.js`)。返回的配置将与Metro的默认值合并
 
 ### `async runMetro(config)`
 
-根据配置创建Metro服务器并将其返回。您可以将其用作现有服务器中的中间件
+根据配置创建Metro服务器并将其返回。您可以将其的processRequest用作现有服务器中的中间件
 
 ### `async runBuild(config, <options>)`
 
-**要求选项:** `entry`, `out`
+**Required options:** `entry`, `out`
 
-**基础选项:** `dev`, `optimize`, `platform`, `sourceMap`, `sourceMapUrl`
+**Basic options:** `dev`, `optimize`, `platform`, `sourceMap`, `sourceMapUrl`
 
-为给定的`platform`捆绑`entry`，并将其保存到位置`out`。如果设置了`sourceMap`，也会生成源映射。sourceMap将内联，除非还定义了`sourceMapUrl`。在后一种情况下，将使用`sourceMapUrl`参数的基名生成一个新文件。
+基于给定的config和options开启一个服务并返回该服务
 
 ### `async runServer(config, <options>)`
 
-**基础选项:** `host`, `port`, `secure`, `secureKey`, `secureCert`, `hmrEnabled`
+**Basic options:** `host`, `port`, `secure`, `secureKey`, `secureCert`, `hmrEnabled`
 
-启动完整的Metro HTTP服务器。它将侦听指定的`host：port`，然后可以查询以检索各个入口点的bundle。如果存在“secure”系列选项，则服务器将通过HTTPS公开。如果设置了`hmrEnabled`，服务器还将公开websocket服务器并将HMR客户端注入生成的bundle中
+基于给定的config和options开启一个服务并返回该服务，我们推荐使用`runMetro`代替`runServer`, `runMetro`内部其实已经调用`runServer`方法
 
 ### `createConnectMiddleware(config, <options>)`
 
-**基础选项:** `port`
+**Basic options:** `port`
 
 不是创建完整的服务器，而是创建一个Connect中间件来响应bundle请求。然后可以将此中间件插入您自己的服务器。 `port`参数是可选的，仅用于记录目的。

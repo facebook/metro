@@ -31,7 +31,7 @@ const Metro = require('metro');
 
 ### 方法 `runMetro(config)`
 
-传入参数config，将会返回一个metro-server(译者注：被Promise包裹的metro-server)，你可以将它的processRequest方法作为hook连接到合适的HTTP(S)服务器上。
+传入参数config，将会返回一个metro-server(译者注：被Promise包裹的metro-server)，你可以将它的processRequest方法作为hook链接到合适的HTTP(S)服务器上。
 
 ```js
 'use strict';
@@ -84,11 +84,11 @@ app.listen(8081);
 
 ### 方法 `runBuild(Config, Options)`
 
-基于指定的config、options和一组特定于bundle本身的option构建Bundle文件，返回值是一个被Promise包裹的对象，该对象有`code`和`map`两个属性
+基于指定的config、options及一些默认的option构建Bundle文件，返回值是一个被Promise包裹的对象，该对象有`code`和`map`两个属性(译者注：code就是bundle中的内容，map就是source map的内容)。
 
 #### Options
 
-* `dev (boolean)`: 指定构建开发版本还是生产版本，在产物.bundle的`process.env.NODE_ENV = 'development'`处体现
+* `dev (boolean)`: 指定构建开发版本还是生产版本，在bundle文件的`process.env.NODE_ENV = 'development'`处体现
 * `entry (string)`: 指定此次打包的入口文件
 * `onBegin (Function)`: 开始构建时调用
 * `onComplete (Function)`: 构建结束时调用
@@ -107,29 +107,29 @@ app.listen(8081);
 
 ## URL和bundle请求
 
-打包服务可以生成assets(译者注：资源文件)、bundles、source map三种类型的资源
+
+`Metro server`可以处理Assets、bundles、source map三种类型的资源
 
 ### Assets
 
-你可以像引用js文件一样使用`require`方法去引用Asset文件，服务器会处理这种特殊引用并让它们返回到指定路径，当一个资源被请求时(资源通过扩展名识别，它必须在`assetExts`数组上)，它通常被当做类js文件
+为了获取Assets资源，你可以像引用js文件一样使用`require`方法去引用Asset文件，服务器会处理这种特殊引用并返回该Asset资源的路径，当一个资源被请求时(资源通过扩展名识别，它必须在`assetExts`数组上)，一般都是这样处理
 
-但是，服务器还能够根据平台和请求的大小(指图片)提供特定的资产。您指定平台的方式是通过点后缀(例如.ios)和通过@后缀(例如@2x)的解析，你使用`require`时，会显式的处理。
+除此之外，服务器还能够根据平台和请求的大小(指图片)提供特定的Asset。比如通过点后缀(例如.ios)来加载指定平台的代码，通过@后缀(例如@2x)来根据平台加载不同的图片
 
 ### Bundle
 
-bundle请求时，任何JS文件都可以作为bundle的根，该文件将在`Projectroot`中查找，根目录所有文件都将递归地包含在内，为了请求包，只需将扩展名从`.js`更改为`.bundle`，构建包的选项作为查询参数传递(都是可选的)。
+Bundle请求时，将在`Projectroot`中寻找Bundle的入口文件，跟入口文件相关的所有文件都将包含在改bundle中。打包时会自动将bundle文件的后缀由`.js`更改为`.bundle`。下面是部分构建参数:
 
+* `dev`: 指定打包环境。
+* `platform`: 指定打包平台
+* `minify`: 是否压缩代码
+* `excludeSource`: source map中是否包含源代码(译者注：经测试false为有，ture没有)
 
-* `dev`: 在开发模式下构建包。映射1：1到包的“发展”设置。将‘true’或‘false’作为字符串传递到URL中
-* `platform`: 请求捆绑的平台。可以是iOS或Android。地图1:1的平台设置的捆绑
-* `minify`: 是否应该缩小代码。映射1：1到捆绑包的“minify”设置。将‘true’或‘false’作为字符串传递到URL中。
-* `excludeSource`: 来源是否应该包含在源地图中。将“true”或“false”作为字符串输入到url中
-
-比如, 请求 `http://localhost:8081/foo/bar/baz.bundle?dev=true&platform=ios` 将为iOS在开发模式创建一个bundle并输出到 `foo/bar/baz.js`
+比如, 请求 `http://localhost:8081/foo/bar/baz.bundle?dev=true&platform=ios` 将基于`foo/bar/baz.js`在开发环境下为iOS创建一个bundle
 
 ### Source maps
 
-在打包的时候为每个bundle创建一个source map文件
+在使用`http://localhost:8081/index.map?dev=true&platform=ios`打包的同时，也通过`http://localhost:8081/index.map?dev=true&platform=ios`为每个bundle创建一个source map文件
 
 ## JavaScript transformer
 
@@ -138,7 +138,7 @@ js转换器是操作js代码的地方，在调用Babel时使用，它导出有�
 
 ### Method `transform(module)`
 
-强制将指定模块(module对象包含路径、代码等信息)转化为AST，默认的转换器仅能将代码转化为AST,以此来完成最低限度的工作
+强制将指定module(包含路径、代码等信息)转化为AST，默认的转换器仅能将代码转化为AST,以此来完成最低限度的工作
 
 ```js
 const babylon = require('@babel/parser');
@@ -163,4 +163,4 @@ module.exports.transform = file => {
 
 ### Method `getCacheKey()`
 
-返回转换器cache key的可选方法。当使用不同的转换器时，这允许将转换后的文件正确地绑定到转换它的转换器。该方法的结果必须是`string`。
+返回转换器cache key的可选方法。当使用不同的转换器时，这允许将转换后的文件正确地绑定到转换它的转换器。该方法的结果必须是`string`(译者注：没看懂)。

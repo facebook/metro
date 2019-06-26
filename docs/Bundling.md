@@ -5,22 +5,20 @@ title: Bundling
 
 When bundling, each of the modules gets assigned a numeric id, meaning no dynamic requires are supported. Requires are changed by its numeric version, and modules are stored in different possible formats. Three different formats of bundling are supported:
 
-打包的时候，每个模块都会分配一个数字id，xxx
+打包时，每个模块都会分配一个数字id做为该模块的唯一id，Requires are changed by its numeric version。Bundle支持如下三种格式：
 
 ## Plain bundle
 
-这是标准的Bundle格式。在此格式中，所有文件都使用函数调用包装，然后添加到全局文件中。这对于期望仅使用JS的包（例如浏览器）的环境非常有用。只需要带有`.bundle`扩展名的入口点就可以触发它的构建
-This is the standard bundling format. In this format, all files are wrapped with a function call, then added to the global file. This is useful for environments that expect a JS only bundle (e.g. a browser). Just requiring the entry point with the `.bundle` extension should trigger a build of it.
+这是标准的Bundle格式。这个js bundle文件里其实存的是一个自执行函数,参数是一个数组，包含我们所有的模块。这对于期望仅使用JS的包（例如浏览器）的环境非常有用。只需要将`http://localhost:8081/index.js?dev=true&platform=web`中入口文件的的后缀换成`.bundle`就可以触发它的构建
 
 ## Indexed RAM bundle
 
 此格式将包打成二级制文件，主要包括以下几部分(所有数据均以Little Endian表示)
 
 * 一组数字: 值为`0xFB0BD1E5`, 它是`uint32`类型并且放在文件的开头，用于做文件的验证
-* 一个偏移表： 一系列带有标题的`unit32`序列对
+* 一个偏移表： 带有标题和一系列的`unit32`序列对
     * 标题：有两个`uint32`类型的值，分别指表的长度和startup code的长度
     * 序列对： 代表文件中的偏移量和code module的长度(以字节为单位)
-* 每个模块：
 * 对于每个模块以空字节(`\0`)结尾
 
 ```
