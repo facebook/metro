@@ -129,15 +129,16 @@ bundle请求时，任何JS文件都可以作为bundle的根，该文件将在`Pr
 
 ### Source maps
 
-Source maps are built for each bundle by using the same URL as the bundle (thus, the same as the JS file acting as a root). This will only work when `inlineSourceMap` is set to `false`. All options you passed to the bundle will be added to the source map URL; otherwise, they wouldn't match.
+在打包的时候为每个bundle创建一个source map文件
 
 ## JavaScript transformer
 
-The JavaScript transformer (`babelTransformerPath`) is the place where JS code will be manipulated; useful for calling Babel. The transformer can export two methods:
+js转换器是操作js代码的地方，在调用Babel时使用，它导出有两个方法：
+
 
 ### Method `transform(module)`
 
-Mandatory method that will transform code. The object received has information about the module being transformed (e.g its path, code...) and the returned object has to contain an `ast` key that is the AST representation of the transformed code. The default shipped transformer does the bare minimum amount of work by just parsing the code to AST:
+强制将指定模块(module对象包含路径、代码等信息)转化为AST，默认的转换器仅能将代码转化为AST,以此来完成最低限度的工作
 
 ```js
 const babylon = require('@babel/parser');
@@ -148,8 +149,7 @@ module.exports.transform = (file: {filename: string, src: string}) => {
   return {ast};
 };
 ```
-
-If you would like to plug-in babel, you can simply do that by passing the code to it:
+如果你想使用Babel插件，你可以将代码传递给他来完成
 
 ```js
 const {transformSync} = require('@babel/core');
@@ -163,4 +163,4 @@ module.exports.transform = file => {
 
 ### Method `getCacheKey()`
 
-Optional method that returns the cache key of the transformer. When using different transformers, this allows to correctly tie a transformed file to the transformer that converted it. The result of the method has to be a `string`.
+返回转换器cache key的可选方法。当使用不同的转换器时，这允许将转换后的文件正确地绑定到转换它的转换器。该方法的结果必须是`string`。
