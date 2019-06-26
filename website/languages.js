@@ -176,7 +176,7 @@ const languages = [
     tag: 'vi',
   },
   {
-    enabled: false,
+    enabled: true,
     name: '简体中文',
     tag: 'zh-Hans',
   },
