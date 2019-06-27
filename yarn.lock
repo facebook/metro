@@ -7197,10 +7197,10 @@ react-motion@^0.5.2:
     prop-types "^15.5.8"
     raf "^3.1.0"
 
-react-refresh@0.0.8:
-  version "0.0.8"
-  resolved "https://registry.yarnpkg.com/react-refresh/-/react-refresh-0.0.8.tgz#ee1083f08d32c99b52018660b7ba0242369359c8"
-  integrity sha512-Xs0garuWQugSMGq382tKn0dG5sIouCzxNb8I4I9A9A3ebRq+6Qgg+puDbFITe10s0vigIq5fm3m2j3oDRhkbnQ==
+react-refresh@0.0.9:
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/react-refresh/-/react-refresh-0.0.9.tgz#d49e3797c3ed2e1aa853d204f81f4cc1aae92a2c"
+  integrity sha512-aqOaUN3V0DwVDwlCtDF+898+/AnjfRPqOQ0na+3zRysSdSa37OuPcTu0x5GG9I/Hkj6hkVHJVtidPRMYRO/eLQ==
 
 react-router-dom@^4.2.2:
   version "4.3.1"
