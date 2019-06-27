@@ -3,26 +3,26 @@ id: concepts
 title: Concepts
 ---
 
-Metro is a JavaScript bundler. It takes in options, an entry file, and gives you a JavaScript file including all JavaScript files back.
+Metro是一个JavaScript打包器，给它一些options和入口文件，将返回一个包含入口文件及其所有依赖的js bundle文件
 
-Metro has three separate stages in its bundling process:
+Metro在打包过程中有如下三个阶段：
 
-1. Resolution
-2. Transformation
-3. Serialization
+1. 解析
+2. 转换
+3. 序列化
 
-### Resolution
+### 解析
 
-Metro needs to build a graph of all the modules that are required from the entry point. To find which file is required from another file Metro uses a resolver. In reality this stage happens in parallel with the transformation stage.
+Metro通过`resovler`把文件之间的互相引用转化成一个个单独的模块，最后得到一个包含所有模块的图表。实际上这个阶段和转换阶段是在同时进行
 
-### Transformation
+### 转换
 
-All modules go through a transformer. A transformer is responsible for converting (transpiling) a module to a format that is understandable by the target platform (eg. React Native). Transformation of modules happens in parallel based on the amount of cores that you have.
+所有的模块都将通过装换器转化成目标平台(比如：React Native)可以识别的模块，另外模块的转换将基于`maxWorkers`指定的数量并行进行
 
 ### Serialization
 
-As soon as all the modules have been transformed they will be serialized. A serializer combines the modules to generate one or multiple bundles. A bundle is literally a bundle of modules combined into a single JavaScript file.
+一旦所有的模块被转换完成，它们将把跟入口文件相关的模块组合起来生成一个或者多个js文件，该文件就是我们最终想要的包
 
 ## Modules
 
-Metro has been split out into multiple modules corresponding to every step in the flow, each with their own responsibility. This means that we have a resolver, transformer, and serializer. These modules can be swapped out depending on your needs.
+Metro已经被拆分成三个模块，分别对应上面的解析阶段、转换阶段、序列化阶段。这三个模块可以根据你的需要换成其他类似的模块，比如可以用Babel来代替默认的转换模块

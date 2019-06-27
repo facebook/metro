@@ -3,35 +3,35 @@ id: getting-started
 title: Getting Started
 ---
 
-Install Metro using [`npm`](https://www.npmjs.com/):
+使用[`npm`](https://www.npmjs.com/)安装Metro:
 
 ```
 npm install --save-dev metro metro-core
 ```
 
-Or via [`yarn`](https://yarnpkg.com/):
+或者使用 [`yarn`](https://yarnpkg.com/):
 
 ```
 yarn add --dev metro metro-core
 ```
 
-## Running `metro`
+## 运行 `metro`
 
-You can run Metro by either running the [CLI](./CLI.md) or by calling it programmatically.
+可以使用[脚手架](./CLI.md)运行Metro，也可以通过手动编码
 
-### Running Programatically
+### 手动编码运行
 
-First, require the module by doing:
+首先引入Metro模块:
 
 ```js
 const Metro = require('metro');
 ```
 
-Within the object returned, several main methods are given:
+返回的Metro对象中，有如下几个重要的方法
 
-### Method `runMetro(config)`
+### 方法 `runMetro(config)`
 
-Given the config, a `metro-server` will be returned. You can then hook this into a proper HTTP(S) server by using its `processRequest` method:
+传入参数config，将会返回一个metro-server(译者注：被Promise包裹的metro-server)，你可以将它的processRequest方法作为hook链接到合适的HTTP(S)服务器上。
 
 ```js
 'use strict';
@@ -40,18 +40,14 @@ const http = require('http');
 const Metro = require('metro');
 
 // We first load the config from the file system
-Metro.loadConfig().then(config => {
-  const metroBundlerServer = Metro.runMetro(config);
-
+Metro.loadConfig().then(config => Metro.runMetro(config)).then((metroBundlerServer) => {
   const httpServer = http.createServer(
     metroBundlerServer.processRequest.bind(metroBundlerServer),
   );
-
-  httpServer.listen(8081);
+  httpServer.listen(8888);
 });
 ```
-
-In order to be also compatible with Express apps, processRequest will also call its third parameter when the request could not be handled by Metro bundler. This allows you to integrate the server with your existing server, or to extend a new one:
+为了兼容Express App，当请求不能够被Metro bundler处理时processRequest将调用第三个参数，这允许你将metro-server和已经存在的服务器做合并或者扩展一个新的。
 
 ```js
 const httpServer = http.createServer((req, res) => {
@@ -60,8 +56,7 @@ const httpServer = http.createServer((req, res) => {
   });
 });
 ```
-
-If you are using [Express](http://expressjs.com/), you can just pass `processRequest` as a middleware:
+如果你使用[Express](http://expressjs.com/)，那刚好可以将processRequest作为Express的中间件
 
 ```js
 const express = require('express');
@@ -74,77 +69,76 @@ app.use(
 app.listen(8081);
 ```
 
-### Method `runServer(Config, Options)`
+### 方法 `runServer(Config, Options)`
 
-Starts a development server based on the given configuration and options. Returns the server.
-We recommend using `runMetro` instead of `runServer`, `runMetro` calls this function.
-
-#### Options
-
-* `host (string)`: Where to host the server on.
-* `onReady (Function)`: Called when the server is ready to serve requests.
-* `secure (boolean)`: Whether the server should run on `https` instead of `http`.
-* `secureKey (string)`: The key to use for `https` when `secure` is on.
-* `secureCert (string)`: The cert to use for `https` when `secure` is on.
-* `hmrEnabled (boolean)`: Whether Hot Module Replacement is turned on.
-
-### Method `runBuild(Config, Options)`
-
-Given a configuration and a set of options that you would typically pass to a server, plus a set of options specific to the bundle itself, a bundle will be built. The return value is a Promise that resolves to an object with two properties, `code` and `map`. This is useful at build time.
+基于给定的config和options开启一个服务并返回该服务，我们推荐使用`runMetro`代替`runServer`, `runMetro`内部其实已经调用`runServer`方法
 
 #### Options
 
-<!-- TODO(ives): Decide whether we need to show this to the user  * `output (boolean)` -->
+* `host (string)`: 在哪里托管服务器
+* `onReady (Function)`: 当服务器准备好处理请求时调用
+* `secure (boolean)`:   该服务器基于`https`还是`http`
+* `secureKey (string)`: `https`协议下使用的secureKey
+* `secureCert (string)`: `https`协议下使用的证书
+* `hmrEnabled (boolean)`: 是否打开Hot Module Replacement
 
-* `dev (boolean)`: Create a development version of the build (`process.env.NODE_ENV = 'development'`).
-* `entry (string)`: Pointing to the entry file to bundle.
-* `onBegin (Function)`: Called when the bundling starts.
-* `onComplete (Function)`: Called when the bundling finishes.
-* `onProgress (Function)`: Called during the bundle, every time there's new information available about the module count/progress.
-* `minify (boolean)`: Whether Metro should minify the bundle.
-* `out (string)`: Path to the output bundle.
-* `platform ('web' | 'android' | 'ios')`: Which platform to bundle for if a list of platforms is provided.
-* `sourceMap (boolean)`: Whether Metro should generate source maps.
-* `sourceMapUrl (string)`: URL where the source map can be found. It defaults to the same same URL as the bundle, but changing the extension from `.bundle` to `.map`. When `inlineSourceMap` is `true`, this property has no effect.
+### 方法 `runBuild(Config, Options)`
 
-## Available options
+基于指定的config、options及一些默认的option构建Bundle文件，返回值是一个被Promise包裹的对象，该对象有`code`和`map`两个属性(译者注：code就是bundle中的内容，map就是source map的内容)。
+
+#### Options
+
+* `dev (boolean)`: 指定构建开发版本还是生产版本，在bundle文件的`process.env.NODE_ENV = 'development'`处体现
+* `entry (string)`: 指定此次打包的入口文件
+* `onBegin (Function)`: 开始构建时调用
+* `onComplete (Function)`: 构建结束时调用
+* `onProgress (Function)`: 构建过程中调用，有两个参数来表示构建进度
+* `minify (boolean)`: 是否压缩bundle
+* `out (string)`: bundle的输出路径
+* `platform ('web' | 'android' | 'ios')`: 指定平台
+* `sourceMap (boolean)`: 在跟out同级目录生成source map文件，并在bundle文件的最后一行指定map文件的路径或者完整map文件的base64内容，例如：`//# sourceMappingURL=./bundle.map`
+* `sourceMapUrl (string)`: 在bundle文件的最后一行指定source map文件的路径
+
+## 可用选项
 
 ### Configuration
 
-Check [Configuring Metro](./Configuration.md) for details on configuration options.
+有关config选项的详细信息，请移步[Configuring Metro](./Configuration.md)
 
-## URL and bundle request
+## URL和bundle请求
 
-The server has the ability to serve assets, bundles and source maps for those bundles.
+
+`Metro server`可以处理Assets、bundles、source map三种类型的资源
 
 ### Assets
 
-In order to request an asset, you can freely use the `require` method as if it was another JS file. The server will treat this specific `require` calls  and make them return the path to that file. When an asset is requested (an asset is recognized by its extension, which has to be on the `assetExts` array) it is generally served as-is.
+为了获取Assets资源，你可以像引用js文件一样使用`require`方法去引用Asset文件，服务器会处理这种特殊引用并返回该Asset资源的路径，当一个资源被请求时(资源通过扩展名识别，它必须在`assetExts`数组上)，一般都是这样处理
 
-However, the server is also able to serve specific assets depending on the platform and on the requested size (in the case of images). The way you specify the platform is via the dotted suffix (e.g. `.ios`) and the resolution via the at suffix (e.g. `@2x`). This is transparently handled for you when using `require`.
+除此之外，服务器还能够根据平台和请求的大小(指图片)提供特定的Asset。比如通过点后缀(例如.ios)来加载指定平台的代码，通过@后缀(例如@2x)来根据平台加载不同的图片
 
 ### Bundle
 
-Any JS file can be used as the root for a bundle request. The file will be looked in the `projectRoot`. All files that are required by the root will be recursively included. In order to request a bundle, just change the extension from `.js` to `.bundle`. Options for building the bundle are passed as query parameters (all optional).
+Bundle请求时，将在`Projectroot`中寻找Bundle的入口文件，跟入口文件相关的所有文件都将包含在改bundle中。打包时会自动将bundle文件的后缀由`.js`更改为`.bundle`。下面是部分构建参数:
 
-* `dev`: build the bundle in development mode or not. Maps 1:1 to the `dev` setting of the bundles. Pass `true` or `false` as strings into the URL.
-* `platform`: platform requesting the bundle. Can be `ios` or `android`. Maps 1:1 to the `platform` setting of the bundles.
-* `minify`: whether code should be minified or not. Maps 1:1 to the `minify` setting of the bundles. Pass `true` or `false` as strings into the URL.
-* `excludeSource`: whether sources should be included in the source map or not. Pass `true` or `false` as strings into the URL.
+* `dev`: 指定打包环境。
+* `platform`: 指定打包平台
+* `minify`: 是否压缩代码
+* `excludeSource`: source map中是否包含源代码(译者注：经测试false为有，ture没有)
 
-For instance, requesting `http://localhost:8081/foo/bar/baz.bundle?dev=true&platform=ios` will create a bundle out of `foo/bar/baz.js` for iOS in development mode.
+比如, 请求 `http://localhost:8081/foo/bar/baz.bundle?dev=true&platform=ios` 将基于`foo/bar/baz.js`在开发环境下为iOS创建一个bundle
 
 ### Source maps
 
-Source maps are built for each bundle by using the same URL as the bundle (thus, the same as the JS file acting as a root). This will only work when `inlineSourceMap` is set to `false`. All options you passed to the bundle will be added to the source map URL; otherwise, they wouldn't match.
+在使用`http://localhost:8081/index.map?dev=true&platform=ios`打包的同时，也通过`http://localhost:8081/index.map?dev=true&platform=ios`为每个bundle创建一个source map文件
 
 ## JavaScript transformer
 
-The JavaScript transformer (`babelTransformerPath`) is the place where JS code will be manipulated; useful for calling Babel. The transformer can export two methods:
+js转换器是操作js代码的地方，在调用Babel时使用，它导出有两个方法：
+
 
 ### Method `transform(module)`
 
-Mandatory method that will transform code. The object received has information about the module being transformed (e.g its path, code...) and the returned object has to contain an `ast` key that is the AST representation of the transformed code. The default shipped transformer does the bare minimum amount of work by just parsing the code to AST:
+强制将指定module(包含路径、代码等信息)转化为AST，默认的转换器仅能将代码转化为AST,以此来完成最低限度的工作
 
 ```js
 const babylon = require('@babel/parser');
@@ -155,8 +149,7 @@ module.exports.transform = (file: {filename: string, src: string}) => {
   return {ast};
 };
 ```
-
-If you would like to plug-in babel, you can simply do that by passing the code to it:
+如果你想使用Babel插件，你可以将代码传递给他来完成
 
 ```js
 const {transformSync} = require('@babel/core');
@@ -170,4 +163,4 @@ module.exports.transform = file => {
 
 ### Method `getCacheKey()`
 
-Optional method that returns the cache key of the transformer. When using different transformers, this allows to correctly tie a transformed file to the transformer that converted it. The result of the method has to be a `string`.
+返回转换器cache key的可选方法。当使用不同的转换器时，这允许将转换后的文件正确地绑定到转换它的转换器。该方法的结果必须是`string`(译者注：没看懂)。

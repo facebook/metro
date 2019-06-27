@@ -9,9 +9,9 @@ title: API
 
 ---
 
-## Quick Start
+## 快速开始
 
-  - Compile a file
+  - 打包bundle
 
     ```
     const config = await Metro.loadConfig();
@@ -22,7 +22,7 @@ title: API
     });
     ```
 
-  - Run a server & watch the filesystem for changes
+  - 启动一个bundle服务，并观察文件的改变
 
     ```
     const config = await Metro.loadConfig();
@@ -32,19 +32,19 @@ title: API
     });
     ```
 
-## Reference
+## 引用
 
-All functions exposed below accept an additional `config` option. This object should be the [Metro configuration](CLI.md) exposed by your `metro.config.js` file - you can obtain it using `Metro.loadConfig`.
+下面开放的所有方法都接受一个额外的`config`选项。改对象是由`metro.config.js`导出([Metro配置](./CLI.md)), 你也可以直接使用`Metro.loadConfig`获取默认的配置
 
 ### `loadConfig(<options>)`
 
 **Basic options:** `config`, `cwd`
 
-Load the Metro configuration, either from `config` in options if specified, or by traversing the directory hierarchy from `cwd` to the root until it finds a file (by default `metro.config.js`). The returned configuration will have been normalized and merged with Metro's default values.
+加载Metro配置，可以从选项中的`config`指定，也可以从当前工作目录遍历层次结构到根目录，直到找到Metro配置文件(默认为`metro.config.js`)。返回的配置将与Metro的默认值合并
 
 ### `async runMetro(config)`
 
-Creates a Metro server based on the config and returns it. You can use this as a middleware in your existing server.
+根据配置创建Metro服务器并将其返回。您可以将其的processRequest用作现有服务器中的中间件
 
 ### `async runBuild(config, <options>)`
 
@@ -52,16 +52,16 @@ Creates a Metro server based on the config and returns it. You can use this as a
 
 **Basic options:** `dev`, `optimize`, `platform`, `sourceMap`, `sourceMapUrl`
 
-Bundles `entry` for the given `platform`, and saves it to location `out`. If `sourceMap` is set, also generates a source map. The source map will be inlined, unless `sourceMapUrl` is also defined. In the latter case, a new file will be generated with the basename of the `sourceMapUrl` parameter.
+基于给定的config和options开启一个服务并返回该服务
 
 ### `async runServer(config, <options>)`
 
 **Basic options:** `host`, `port`, `secure`, `secureKey`, `secureCert`, `hmrEnabled`
 
-Starts a full Metro HTTP server. It will listen on the specified `host:port`, and can then be queried to retrieve bundles for various entry points. If the `secure` family of options are present, the server will be exposed over HTTPS. If `hmrEnabled` is set, the server will also expose a websocket server and inject the HMR client into the generated bundles.
+基于给定的config和options开启一个服务并返回该服务，我们推荐使用`runMetro`代替`runServer`, `runMetro`内部其实已经调用`runServer`方法
 
 ### `createConnectMiddleware(config, <options>)`
 
 **Basic options:** `port`
 
-Instead of creating the full server, creates a Connect middleware that answers to bundle requests. This middleware can then be plugged into your own servers. The `port` parameter is optional and only used for logging purposes.
+不是创建完整的服务器，而是创建一个Connect中间件来响应bundle请求。然后可以将此中间件插入您自己的服务器。 `port`参数是可选的，仅用于记录目的。

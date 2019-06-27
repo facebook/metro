@@ -3,36 +3,35 @@ id: cli
 title: Metro CLI Options
 ---
 
-The `metro` command line runner has a number of useful options. You can run `metro
---help` to view all available options. Here is a brief overview:
+`Metro`脚手架有很多有用的选项，可以通过`metro --help`查看所有可用选项，下面是简要概述
 
 ## `build <entry>`
 
-Generates a JavaScript bundle containing the specified entrypoint and its descendants.
+生成一个js bundle包，包括指定的入口文件及其该文件依赖的所有内容
 
 ### Options
 
 | Option   | Description    |
 |----------|----------|
-| `out`    | Location of the output      |
+| `out`    | 文件输出位置      |
 
 
 ## `serve`
 
-Starts a Metro server on the given port, building bundles on the fly.
+通过指定的端口，开启一个用于云端打包的Metro server
 
 ## `get-dependencies`
 
-Lists dependencies.
+获取依赖列表
 
 ### Options
 
 | Option | Description |
 |---|---|
-| `entry-file` | Absolute path to the root JS file |
-| `output` | File name where to store the output, ex. /tmp/dependencies.txt |
-| `platform` | The platform extension used for selecting modules |
-| `transformer` | Specify a custom transformer to be used |
-| `max-workers` | Specifies the maximum number of workers the worker-pool will spawn for transforming files. This defaults to the number of the cores available on your machine. |
-| `dev` | If false, skip all dev-only code path |
-| `verbose` | Enables logging |
+| `entry-file` | 入口文件的绝对路径 |
+| `output` | 输出文件的名字, ex. /tmp/dependencies.txt |
+| `platform` | 选择打包平台 |
+| `transformer` | 指定要使用的自定义转换器 |
+| `max-workers` | 转化时可以并行的最大值. 默认为计算机的可用核心数 |
+| `dev` | 如果为false，则跳过所有dev-only代码路径 |
+| `verbose` | 启用日志记录 |
