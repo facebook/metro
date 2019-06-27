@@ -10,7 +10,10 @@
 
 'use strict';
 
-const sourceMapGenerator = require('./sourceMapGenerator');
+const {
+  sourceMapGenerator,
+  sourceMapGeneratorNonBlocking,
+} = require('./sourceMapGenerator');
 
 import type {Module} from '../types.flow';
 import type {BabelSourceMap} from '@babel/core';
@@ -22,9 +25,26 @@ function sourceMapObject(
     +processModuleFilter: (module: Module<>) => boolean,
   |},
 ): BabelSourceMap {
-  return sourceMapGenerator(modules, options).toMap(undefined, {
+  const generator = sourceMapGenerator(modules, options);
+  return generator.toMap(undefined, {
     excludeSource: options.excludeSource,
   });
 }
 
-module.exports = sourceMapObject;
+async function sourceMapObjectNonBlocking(
+  modules: $ReadOnlyArray<Module<>>,
+  options: {|
+    +excludeSource: boolean,
+    +processModuleFilter: (module: Module<>) => boolean,
+  |},
+): Promise<BabelSourceMap> {
+  const generator = await sourceMapGeneratorNonBlocking(modules, options);
+  return generator.toMap(undefined, {
+    excludeSource: options.excludeSource,
+  });
+}
+
+module.exports = {
+  sourceMapObject,
+  sourceMapObjectNonBlocking,
+};

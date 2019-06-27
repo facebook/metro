@@ -19,7 +19,6 @@ const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('./DeltaBundler/Serializers/getAssets');
 const getGraphId = require('./lib/getGraphId');
 const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
-const sourceMapObject = require('./DeltaBundler/Serializers/sourceMapObject');
 const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
 const splitBundleOptions = require('./lib/splitBundleOptions');
 const debug = require('debug')('Metro:Server');
@@ -36,6 +35,9 @@ const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundErro
 const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundError');
 
 const {getAsset} = require('./Assets');
+const {
+  sourceMapObjectNonBlocking,
+} = require('./DeltaBundler/Serializers/sourceMapObject');
 
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from './lib/reporting';
@@ -1035,10 +1037,15 @@ class Server {
 
     const {prepend, graph} = revision;
 
-    return sourceMapObject([...prepend, ...this._getSortedModules(graph)], {
-      excludeSource: serializerOptions.excludeSource,
-      processModuleFilter: this._config.serializer.processModuleFilter,
-    });
+    // This is a non-blocking version to avoid stalling the server.
+    // TODO(T46510351): move all of this to a worker.
+    return sourceMapObjectNonBlocking(
+      [...prepend, ...this._getSortedModules(graph)],
+      {
+        excludeSource: serializerOptions.excludeSource,
+        processModuleFilter: this._config.serializer.processModuleFilter,
+      },
+    );
   }
 
   getNewBuildID(): string {

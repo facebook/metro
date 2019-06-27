@@ -58,6 +58,67 @@ export type MetroSourceMap = IndexMap | BabelSourceMap;
 export type FBBasicSourceMap = BabelSourceMap & FBExtensions;
 export type FBSourceMap = FBIndexMap | (BabelSourceMap & FBExtensions);
 
+function fromRawMappingsImpl(
+  isBlocking: boolean,
+  onDone: Generator => void,
+  modules: $ReadOnlyArray<{
+    +map: ?Array<MetroSourceMapSegmentTuple>,
+    +functionMap: ?FBSourceFunctionMap,
+    +path: string,
+    +source: string,
+    +code: string,
+  }>,
+  offsetLines: number,
+): void {
+  const modulesToProcess = modules.slice();
+  const generator = new Generator();
+  let carryOver = offsetLines;
+
+  function processNextModule() {
+    if (modulesToProcess.length === 0) {
+      return true;
+    }
+
+    const mod = modulesToProcess.shift();
+    const {code, map} = mod;
+    if (Array.isArray(map)) {
+      addMappingsForFile(generator, map, mod, carryOver);
+    } else if (map != null) {
+      throw new Error(
+        `Unexpected module with full source map found: ${mod.path}`,
+      );
+    }
+    carryOver = carryOver + countLines(code);
+    return false;
+  }
+
+  function workLoop() {
+    const time = process.hrtime();
+    while (true) {
+      const isDone = processNextModule();
+      if (isDone) {
+        onDone(generator);
+        break;
+      }
+      if (!isBlocking) {
+        // Keep the loop running but try to avoid blocking
+        // for too long because this is not in a worker yet.
+        const diff = process.hrtime(time);
+        const NS_IN_MS = 1000000;
+        if (diff[1] > 50 * NS_IN_MS) {
+          // We've blocked for more than 50ms.
+          // This code currently runs on the main thread,
+          // so let's give Metro an opportunity to handle requests.
+          setImmediate(workLoop);
+          break;
+        }
+      }
+    }
+  }
+
+  workLoop();
+}
+
 /**
  * Creates a source map from modules with "raw mappings", i.e. an array of
  * tuples with either 2, 4, or 5 elements:
@@ -75,25 +136,34 @@ function fromRawMappings(
   }>,
   offsetLines: number = 0,
 ): Generator {
-  const generator = new Generator();
-  let carryOver = offsetLines;
-
-  for (var j = 0, o = modules.length; j < o; ++j) {
-    var module = modules[j];
-    var {code, map} = module;
-
-    if (Array.isArray(map)) {
-      addMappingsForFile(generator, map, module, carryOver);
-    } else if (map != null) {
-      throw new Error(
-        `Unexpected module with full source map found: ${module.path}`,
-      );
-    }
-
-    carryOver = carryOver + countLines(code);
+  let generator: void | Generator;
+  fromRawMappingsImpl(
+    true,
+    g => {
+      generator = g;
+    },
+    modules,
+    offsetLines,
+  );
+  if (generator == null) {
+    throw new Error('Expected fromRawMappingsImpl() to finish synchronously.');
   }
-
   return generator;
+}
+
+async function fromRawMappingsNonBlocking(
+  modules: $ReadOnlyArray<{
+    +map: ?Array<MetroSourceMapSegmentTuple>,
+    +functionMap: ?FBSourceFunctionMap,
+    +path: string,
+    +source: string,
+    +code: string,
+  }>,
+  offsetLines: number = 0,
+): Promise<Generator> {
+  return new Promise(resolve => {
+    fromRawMappingsImpl(false, resolve, modules, offsetLines);
+  });
 }
 
 /**
@@ -185,6 +255,7 @@ module.exports = {
   createIndexMap,
   generateFunctionMap,
   fromRawMappings,
+  fromRawMappingsNonBlocking,
   toBabelSegments,
   toSegmentTuple,
 };

@@ -10,7 +10,6 @@
 
 'use strict';
 
-const fullSourceMapObject = require('./sourceMapObject');
 const getAppendScripts = require('../../lib/getAppendScripts');
 const getTransitiveDependencies = require('./helpers/getTransitiveDependencies');
 const nullthrows = require('nullthrows');
@@ -18,6 +17,7 @@ const path = require('path');
 
 const {createRamBundleGroups} = require('../../Bundler/util');
 const {isJsModule, wrapModule} = require('./helpers/js');
+const {sourceMapObject} = require('./sourceMapObject');
 
 import type {
   ModuleTransportLike,
@@ -63,7 +63,7 @@ async function getRamBundleInfo(
       (module: Module<>): RamModuleTransport => ({
         id: options.createModuleId(module.path),
         code: wrapModule(module, options),
-        map: fullSourceMapObject([module], {
+        map: sourceMapObject([module], {
           excludeSource: options.excludeSource,
           processModuleFilter: options.processModuleFilter,
         }),

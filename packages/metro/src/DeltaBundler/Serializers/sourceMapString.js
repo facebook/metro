@@ -10,7 +10,7 @@
 
 'use strict';
 
-const sourceMapGenerator = require('./sourceMapGenerator');
+const {sourceMapGenerator} = require('./sourceMapGenerator');
 
 import type {Module} from '../types.flow';
 
