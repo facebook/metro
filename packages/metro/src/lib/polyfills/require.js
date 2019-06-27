@@ -388,25 +388,8 @@ function loadModuleImplementation(
       // $FlowFixMe: we know that __DEV__ is const and `Systrace` exists
       Systrace.endEvent();
 
-      const hot = module.hot;
-      if (hot == null) {
-        throw new Error(
-          '[Refresh] Expected module.hot to always exist in DEV.',
-        );
-      }
-
       if (Refresh != null) {
-        const isRefreshBoundary = registerExportsForReactRefresh(
-          Refresh,
-          moduleObject.exports,
-          moduleId,
-        );
-        if (isRefreshBoundary) {
-          hot.accept();
-        }
-        // Otherwise, the update will propagate to parent modules
-        // which will go through the same kind of test. If an update
-        // bubbles up to the root, we'll force a hard reload.
+        registerExportsForReactRefresh(Refresh, moduleObject.exports, moduleId);
       }
     }
 
@@ -494,24 +477,11 @@ if (__DEV__) {
       throw unknownModuleError(id);
     }
 
-    const {hot} = mod;
-    if (!hot) {
-      throw new Error('[Refresh] Expected module.hot to always exist in DEV.');
-    }
-
-    // Run just the edited module first. We want to do it now because
-    // we want to know whether its latest version has self-accepted or not.
-    // However, we'll be more cautious before running the parent modules below.
-    const didError = runUpdatedModule(id, factory, dependencyMap);
-    if (didError) {
-      // The user was shown a redbox about module initialization.
-      // There's nothing for us to do here until it's fixed.
-      return;
-    }
-
+    const {Refresh} = metroRequire;
     const pendingModuleIDs = [id];
     const updatedModuleIDs = [];
     const seenModuleIDs = new Set();
+    const refreshBoundaryIDs = new Set();
 
     // In this loop, we will traverse the dependency tree upwards from the
     // changed module. Updates "bubble" up to the closest accepted parent.
@@ -544,7 +514,20 @@ if (__DEV__) {
             '[Refresh] Expected module.hot to always exist in DEV.',
           );
         }
-        if (pendingHot._didAccept) {
+        // A module can be accepted manually from within itself.
+        let canAccept = pendingHot._didAccept;
+        if (!canAccept && Refresh != null) {
+          // Or React Refresh may mark it accepted based on exports.
+          const isBoundary = isReactRefreshBoundary(
+            Refresh,
+            pendingModule.publicModule.exports,
+          );
+          if (isBoundary) {
+            canAccept = true;
+            refreshBoundaryIDs.add(pendingID);
+          }
+        }
+        if (canAccept) {
           updatedModuleIDs.push(pendingID);
           continue;
         }
@@ -567,20 +550,86 @@ if (__DEV__) {
     }
 
     // If we reached here, it is likely that hot reload will be successful.
-    // Run the actual factories. Skip the edited module because it already ran.
+    // Run the actual factories.
+    seenModuleIDs.clear();
     for (let i = 0; i < updatedModuleIDs.length; i++) {
+      // Don't process twice if we have a cycle.
       const updatedID = updatedModuleIDs[i];
-      if (updatedID !== id) {
-        const didError = runUpdatedModule(updatedID);
-        if (didError) {
-          // The user was shown a redbox about module initialization.
-          // There's nothing for us to do here until it's fixed.
-          return;
+      if (seenModuleIDs.has(updatedID)) {
+        continue;
+      }
+      seenModuleIDs.add(updatedID);
+
+      const mod = modules[updatedID];
+      if (mod == null) {
+        throw new Error('[Refresh] Expected to find the updated module.');
+      }
+      const prevExports = mod.publicModule.exports;
+      const didError = runUpdatedModule(
+        updatedID,
+        updatedID === id ? factory : undefined,
+        updatedID === id ? dependencyMap : undefined,
+      );
+      const nextExports = mod.publicModule.exports;
+
+      if (didError) {
+        // The user was shown a redbox about module initialization.
+        // There's nothing for us to do here until it's fixed.
+        return;
+      }
+
+      if (refreshBoundaryIDs.has(updatedID)) {
+        // Since we just executed the code for it, it's possible
+        // that the new exports make it ineligible for being a boundary.
+        const isNoLongerABoundary = !isReactRefreshBoundary(
+          Refresh,
+          nextExports,
+        );
+        // It can also become ineligible if its exports are incompatible
+        // with the previous exports.
+        // For example, if you add/remove/change exports, we'll want
+        // to re-execute the importing modules, and force those components
+        // to re-render. Similarly, if you convert a class component
+        // to a function, we want to invalidate the boundary.
+        const didInvalidate = shouldInvalidateReactRefreshBoundary(
+          Refresh,
+          prevExports,
+          nextExports,
+        );
+        if (isNoLongerABoundary || didInvalidate) {
+          // We'll be conservative. The only case in which we won't do a full
+          // reload is if all parent modules are also refresh boundaries.
+          // In that case we'll add them to the current queue.
+          const parentIDs = inverseDependencies[updatedID];
+          if (parentIDs.length === 0) {
+            // Looks like we bubbled to the root. Can't recover from that.
+            performFullRefresh();
+            return;
+          }
+          // Schedule all parent refresh boundaries to re-run in this loop.
+          for (let j = 0; j < parentIDs.length; j++) {
+            const parentID = parentIDs[j];
+            const parentMod = modules[parentID];
+            if (parentMod == null) {
+              throw new Error('[Refresh] Expected to find parent module.');
+            }
+            const canAcceptParent = isReactRefreshBoundary(
+              Refresh,
+              parentMod.publicModule.exports,
+            );
+            if (canAcceptParent) {
+              // All parents will have to re-run too.
+              refreshBoundaryIDs.add(parentID);
+              updatedModuleIDs.push(parentID);
+            } else {
+              performFullRefresh();
+              return;
+            }
+          }
         }
       }
     }
 
-    const {Refresh} = metroRequire;
     if (Refresh != null) {
       // Debounce a little in case there's multiple updates queued up.
       // This is also useful because __accept may be called multiple times.
@@ -686,42 +735,94 @@ if (__DEV__) {
     }
   };
 
-  var registerExportsForReactRefresh = (
-    Refresh,
-    moduleExports,
-    moduleID,
-  ): boolean => {
-    Refresh.register(moduleExports, moduleID + ' %exports%');
+  // Modules that only export components become React Refresh boundaries.
+  var isReactRefreshBoundary = function(Refresh, moduleExports): boolean {
     if (Refresh.isLikelyComponentType(moduleExports)) {
       return true;
     }
-
     if (moduleExports == null || typeof moduleExports !== 'object') {
+      // Exit if we can't iterate over exports.
       return false;
     }
-
     let hasExports = false;
     let areAllExportsComponents = true;
+    for (const key in moduleExports) {
+      hasExports = true;
+      if (key === '__esModule') {
+        continue;
+      }
+      const desc = Object.getOwnPropertyDescriptor(moduleExports, key);
+      if (desc && desc.get) {
+        // Don't invoke getters as they may have side effects.
+        return false;
+      }
+      const exportValue = moduleExports[key];
+      if (!Refresh.isLikelyComponentType(exportValue)) {
+        areAllExportsComponents = false;
+      }
+    }
+    return hasExports && areAllExportsComponents;
+  };
+
+  var shouldInvalidateReactRefreshBoundary = (
+    Refresh,
+    prevExports,
+    nextExports,
+  ) => {
+    const prevSignature = getRefreshBoundarySignature(Refresh, prevExports);
+    const nextSignature = getRefreshBoundarySignature(Refresh, nextExports);
+    if (prevSignature.length !== nextSignature.length) {
+      return true;
+    }
+    for (let i = 0; i < nextSignature.length; i++) {
+      if (prevSignature[i] !== nextSignature[i]) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // When this signature changes, it's unsafe to stop at this refresh boundary.
+  var getRefreshBoundarySignature = (Refresh, moduleExports): Array<mixed> => {
+    const signature = [];
+    signature.push(Refresh.getFamilyByType(moduleExports));
+    if (moduleExports == null || typeof moduleExports !== 'object') {
+      // Exit if we can't iterate over exports.
+      // (This is important for legacy environments.)
+      return signature;
+    }
+    for (const key in moduleExports) {
+      if (key === '__esModule') {
+        continue;
+      }
+      const desc = Object.getOwnPropertyDescriptor(moduleExports, key);
+      if (desc && desc.get) {
+        continue;
+      }
+      const exportValue = moduleExports[key];
+      signature.push(key);
+      signature.push(Refresh.getFamilyByType(exportValue));
+    }
+    return signature;
+  };
+
+  var registerExportsForReactRefresh = (Refresh, moduleExports, moduleID) => {
+    Refresh.register(moduleExports, moduleID + ' %exports%');
+    if (moduleExports == null || typeof moduleExports !== 'object') {
+      // Exit if we can't iterate over exports.
+      // (This is important for legacy environments.)
+      return;
+    }
     for (const key in moduleExports) {
       const desc = Object.getOwnPropertyDescriptor(moduleExports, key);
       if (desc && desc.get) {
         // Don't invoke getters as they may have side effects.
         continue;
       }
-      hasExports = true;
-
       const exportValue = moduleExports[key];
       const typeID = moduleID + ' %exports% ' + key;
       Refresh.register(exportValue, typeID);
-      if (!Refresh.isLikelyComponentType(exportValue)) {
-        areAllExportsComponents = false;
-      }
     }
-    // We only "stop" updates at modules that export components.
-    // If you export something else, we might need to propagate it to
-    // a component above in the import tree that uses it.
-    const isRefreshBoundary = hasExports && areAllExportsComponents;
-    return isRefreshBoundary;
   };
 
   global.__accept = metroHotUpdateModule;
