@@ -464,8 +464,8 @@ if (__DEV__) {
 
   const metroHotUpdateModule = function(
     id: ModuleID,
-    factory?: FactoryFn,
-    dependencyMap?: DependencyMap,
+    factory: FactoryFn,
+    dependencyMap: DependencyMap,
     inverseDependencies: {[key: ModuleID]: Array<ModuleID>},
   ) {
     const mod = modules[id];
@@ -475,6 +475,14 @@ if (__DEV__) {
         return;
       }
       throw unknownModuleError(id);
+    }
+
+    if (!mod.hasError && !mod.isInitialized) {
+      // The module hasn't actually been executed yet,
+      // so we can always safely replace it.
+      mod.factory = factory;
+      mod.dependencyMap = dependencyMap;
+      return;
     }
 
     const {Refresh} = metroRequire;

@@ -2277,5 +2277,54 @@ describe('require', () => {
       // Therefore, we do a full reload.
       expect(Refresh.performFullRefresh).toHaveBeenCalled();
     });
+
+    it('can replace a module before it is loaded', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      const Refresh = createReactRefreshMock(moduleSystem);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init FooV1');
+          exports.loadBar = function() {
+            require(1);
+          };
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init FooV1']);
+      log = [];
+
+      // Replace Bar before it's loaded.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+        },
+        [],
+        {1: [], 0: []},
+        undefined,
+      );
+      expect(log).toEqual([]);
+      log = [];
+
+      // Now force Bar to load. It should use the latest version.
+      moduleSystem.__r(0).loadBar();
+      expect(log).toEqual(['init BarV2']);
+      log = [];
+      jest.runAllTimers();
+      expect(Refresh.performReactRefresh).not.toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
+    });
   });
 });
