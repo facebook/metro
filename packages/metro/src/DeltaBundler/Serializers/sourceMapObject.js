@@ -16,7 +16,7 @@ const {
 } = require('./sourceMapGenerator');
 
 import type {Module} from '../types.flow';
-import type {BabelSourceMap} from '@babel/core';
+import type {MixedSourceMap} from 'metro-source-map';
 
 function sourceMapObject(
   modules: $ReadOnlyArray<Module<>>,
@@ -24,7 +24,7 @@ function sourceMapObject(
     +excludeSource: boolean,
     +processModuleFilter: (module: Module<>) => boolean,
   |},
-): BabelSourceMap {
+): MixedSourceMap {
   const generator = sourceMapGenerator(modules, options);
   return generator.toMap(undefined, {
     excludeSource: options.excludeSource,
@@ -37,7 +37,7 @@ async function sourceMapObjectNonBlocking(
     +excludeSource: boolean,
     +processModuleFilter: (module: Module<>) => boolean,
   |},
-): Promise<BabelSourceMap> {
+): Promise<MixedSourceMap> {
   const generator = await sourceMapGeneratorNonBlocking(modules, options);
   return generator.toMap(undefined, {
     excludeSource: options.excludeSource,

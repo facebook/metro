@@ -12,12 +12,13 @@
 
 const path = require('path');
 
-import type {MetroSourceMap} from 'metro-source-map';
+import type {MixedSourceMap} from 'metro-source-map';
 
 function relativizeSourceMapInline(
-  sourceMap: MetroSourceMap,
+  sourceMap: MixedSourceMap,
   sourcesRoot: string,
 ): void {
+  // eslint-disable-next-line lint/strictly-null
   if (sourceMap.mappings === undefined) {
     for (let i = 0; i < sourceMap.sections.length; i++) {
       relativizeSourceMapInline(sourceMap.sections[i].map, sourcesRoot);

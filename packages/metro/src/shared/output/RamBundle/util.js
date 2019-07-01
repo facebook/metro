@@ -12,12 +12,11 @@
 const invariant = require('invariant');
 
 import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
-import type {BabelSourceMap} from '@babel/core';
 import type {
-  FBIndexMap,
   IndexMap,
   IndexMapSection,
-  MetroSourceMap,
+  MixedSourceMap,
+  BasicSourceMap,
 } from 'metro-source-map';
 
 const newline = /\r\n?|\n|\u2028|\u2029/g;
@@ -27,7 +26,7 @@ const countLines = (string: string) => (string.match(newline) || []).length + 1;
 function lineToLineSourceMap(
   source: string,
   filename: string = '',
-): BabelSourceMap {
+): BasicSourceMap {
   // The first line mapping in our package is the base64vlq code for zeros (A).
   const firstLine = 'AAAA;';
 
@@ -46,7 +45,7 @@ function lineToLineSourceMap(
 
 const wrapperEnd = (wrappedCode: string) => wrappedCode.indexOf('{') + 1;
 
-const Section = (line: number, column: number, map: MetroSourceMap) => ({
+const Section = (line: number, column: number, map: MixedSourceMap) => ({
   map,
   offset: {line, column},
 });
@@ -67,7 +66,7 @@ function combineSourceMapsAddingOffsets(
   x_metro_module_paths: Array<string>,
   moduleGroups?: ?ModuleGroups,
   options?: ?CombineOptions,
-): FBIndexMap {
+): IndexMap {
   const x_facebook_offsets = [];
   const sections = combineMaps(
     modules,

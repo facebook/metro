@@ -10,11 +10,10 @@
 'use strict';
 
 import type {Ast} from '@babel/core';
-import type {BabelSourceMap} from '@babel/core';
 import type {
-  FBSourceMap,
-  MetroSourceMap,
+  MixedSourceMap,
   FBSourceFunctionMap,
+  BasicSourceMap,
 } from 'metro-source-map';
 import type {TransformResultDependency} from 'metro/src/DeltaBundler';
 
@@ -32,7 +31,7 @@ export type Dependency = {|
 
 export type File = {|
   code: string,
-  map: ?BabelSourceMap,
+  map: ?BasicSourceMap,
   functionMap: ?FBSourceFunctionMap,
   path: string,
   type: CodeFileTypes,
@@ -102,10 +101,10 @@ export type OutputFnArg = {|
   segmentID: number,
 |};
 export type OutputFn<
-  M: FBSourceMap | MetroSourceMap = FBSourceMap | MetroSourceMap,
+  M: MixedSourceMap = MixedSourceMap,
 > = OutputFnArg => OutputResult<M>;
 
-export type OutputResult<M: FBSourceMap | MetroSourceMap> = {|
+export type OutputResult<M: MixedSourceMap> = {|
   code: string | Buffer,
   extraFiles?: Iterable<[string, string | Buffer]>,
   map: M,
@@ -123,14 +122,14 @@ export type ResolveFn = (id: string, source: ?string) => string;
 export type TransformerResult = {|
   ast: ?Ast,
   code: string,
-  map: ?BabelSourceMap,
+  map: ?BasicSourceMap,
 |};
 
 export type TransformResult = {|
   code: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   dependencyMapName?: string,
-  map: ?BabelSourceMap,
+  map: ?BasicSourceMap,
   requireName: string,
   soundResources?: ?Array<string>,
   importNames?: {all: string, default: string},

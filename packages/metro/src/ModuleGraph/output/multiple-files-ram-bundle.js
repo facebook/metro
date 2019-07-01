@@ -19,7 +19,7 @@ const path = require('path');
 
 const {getModuleCodeAndMap, partition, toModuleTransport} = require('./util');
 
-import type {FBIndexMap} from 'metro-source-map';
+import type {IndexMap} from 'metro-source-map';
 import type {Module, OutputFn, OutputFnArg, OutputResult} from '../types.flow';
 
 function asMultipleFilesRamBundle({
@@ -28,7 +28,7 @@ function asMultipleFilesRamBundle({
   modules,
   requireCalls,
   preloadedModules,
-}): OutputResult<FBIndexMap> {
+}): OutputResult<IndexMap> {
   const idForPath = (x: {path: string}) => idsForPath(x).moduleId;
   const [startup, deferred] = partition(modules, preloadedModules);
   const startupModules = [...startup, ...requireCalls];
@@ -77,7 +77,7 @@ function asMultipleFilesRamBundle({
 function createBuilder(
   preloadedModules: Set<string>,
   ramGroupHeads: ?$ReadOnlyArray<string>,
-): OutputFn<FBIndexMap> {
+): OutputFn<IndexMap> {
   return (x: OutputFnArg) =>
     asMultipleFilesRamBundle({...x, preloadedModules, ramGroupHeads});
 }

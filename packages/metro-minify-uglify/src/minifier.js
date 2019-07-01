@@ -12,7 +12,7 @@
 
 const uglify = require('uglify-es');
 
-import type {BabelSourceMap} from '@babel/core';
+import type {BasicSourceMap} from 'metro-source-map';
 import type {
   MinifierResult,
   MinifierOptions,
@@ -25,10 +25,9 @@ function minifier(options: MinifierOptions): MinifierResult {
     return {code: result.code};
   }
 
-  const map: BabelSourceMap = JSON.parse(result.map);
-  map.sources = [options.filename];
+  const map: BasicSourceMap = JSON.parse(result.map);
 
-  return {code: result.code, map};
+  return {code: result.code, map: {...map, sources: [options.filename]}};
 }
 
 function minify({

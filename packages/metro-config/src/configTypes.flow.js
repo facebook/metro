@@ -10,11 +10,10 @@
 
 'use strict';
 
-import type {BabelSourceMap} from '@babel/core';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
 import type {CustomResolver} from 'metro-resolver';
-import type {MetroSourceMap} from 'metro-source-map';
+import type {BasicSourceMap, MixedSourceMap} from 'metro-source-map';
 import type {
   DeltaResult,
   Graph,
@@ -30,14 +29,14 @@ import type {Reporter} from 'metro/src/lib/reporting';
 
 export type PostMinifyProcess = ({
   code: string,
-  map: ?BabelSourceMap,
-}) => {code: string, map: ?BabelSourceMap};
+  map: ?BasicSourceMap,
+}) => {code: string, map: ?BasicSourceMap};
 
 export type PostProcessBundleSourcemap = ({
   code: Buffer | string,
-  map: MetroSourceMap,
+  map: MixedSourceMap,
   outFileName: string,
-}) => {code: Buffer | string, map: MetroSourceMap | string};
+}) => {code: Buffer | string, map: MixedSourceMap | string};
 
 type ExtraTransformOptions = {
   +preloadedModules: {[path: string]: true} | false,

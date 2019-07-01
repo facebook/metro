@@ -12,8 +12,11 @@
 
 const B64Builder = require('./B64Builder');
 
-import type {FBSourceMetadata, FBSourceFunctionMap} from './source-map';
-import type {BabelSourceMap} from '@babel/core';
+import type {
+  BasicSourceMap,
+  FBSourceMetadata,
+  FBSourceFunctionMap,
+} from './source-map';
 
 /**
  * Generates a source map from raw mappings.
@@ -151,7 +154,7 @@ class Generator {
   /**
    * Return the source map as object.
    */
-  toMap(file?: string, options?: {excludeSource?: boolean}): BabelSourceMap {
+  toMap(file?: string, options?: {excludeSource?: boolean}): BasicSourceMap {
     let content, sourcesMetadata;
 
     if (options && options.excludeSource) {

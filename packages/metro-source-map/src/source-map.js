@@ -16,7 +16,6 @@ const SourceMap = require('source-map');
 const {createIndexMap, BundleBuilder} = require('./BundleBuilder');
 const {generateFunctionMap} = require('./generateFunctionMap');
 
-import type {BabelSourceMap} from '@babel/core';
 import type {BabelSourceMapSegment} from '@babel/generator';
 
 type GeneratedCodeMapping = [number, number];
@@ -28,12 +27,6 @@ export type MetroSourceMapSegmentTuple =
   | SourceMapping
   | GeneratedCodeMapping;
 
-type FBExtensions = {
-  x_facebook_offsets: Array<number>,
-  x_metro_module_paths: Array<string>,
-  x_facebook_sources?: FBSourcesArray,
-};
-
 export type FBSourcesArray = $ReadOnlyArray<?FBSourceMetadata>;
 export type FBSourceMetadata = [?FBSourceFunctionMap];
 export type FBSourceFunctionMap = {|
@@ -41,22 +34,35 @@ export type FBSourceFunctionMap = {|
   +mappings: string,
 |};
 
+export type BasicSourceMap = {|
+  +file?: string,
+  +mappings: string,
+  +names: Array<string>,
+  +sourceRoot?: string,
+  +sources: Array<string>,
+  +sourcesContent?: Array<?string>,
+  +version: number,
+  +x_facebook_offsets?: Array<number>,
+  +x_metro_module_paths?: Array<string>,
+  +x_facebook_sources?: FBSourcesArray,
+|};
+
 export type IndexMapSection = {
-  map: MetroSourceMap,
+  map: IndexMap | BasicSourceMap,
   offset: {line: number, column: number},
 };
 
-export type IndexMap = {
-  file?: string,
-  mappings?: void, // avoids SourceMap being a disjoint union
-  sections: Array<IndexMapSection>,
-  version: number,
-};
+export type IndexMap = {|
+  +file?: string,
+  +mappings?: void, // avoids SourceMap being a disjoint union
+  +sections: Array<IndexMapSection>,
+  +version: number,
+  +x_facebook_offsets?: Array<number>,
+  +x_metro_module_paths?: Array<string>,
+  +x_facebook_sources?: FBSourcesArray,
+|};
 
-export type FBIndexMap = IndexMap & FBExtensions;
-export type MetroSourceMap = IndexMap | BabelSourceMap;
-export type FBBasicSourceMap = BabelSourceMap & FBExtensions;
-export type FBSourceMap = FBIndexMap | (BabelSourceMap & FBExtensions);
+export type MixedSourceMap = IndexMap | BasicSourceMap;
 
 function fromRawMappingsImpl(
   isBlocking: boolean,
@@ -171,7 +177,7 @@ async function fromRawMappingsNonBlocking(
  * used across the bundler.
  */
 function toBabelSegments(
-  sourceMap: BabelSourceMap,
+  sourceMap: BasicSourceMap,
 ): Array<BabelSourceMapSegment> {
   const rawMappings = [];
 

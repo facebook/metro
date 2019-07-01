@@ -35,8 +35,8 @@ const {
 } = require('metro-source-map');
 import type {TransformResultDependency} from 'metro/src/DeltaBundler';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
-import type {BabelSourceMap} from '@babel/core';
 import type {
+  BasicSourceMap,
   FBSourceFunctionMap,
   MetroSourceMapSegmentTuple,
 } from 'metro-source-map';
@@ -45,7 +45,7 @@ type MinifierConfig = $ReadOnly<{[string]: mixed}>;
 
 export type MinifierOptions = {
   code: string,
-  map: ?BabelSourceMap,
+  map: ?BasicSourceMap,
   filename: string,
   reserved: $ReadOnlyArray<string>,
   config: MinifierConfig,

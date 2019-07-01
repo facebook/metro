@@ -48,7 +48,7 @@ import type {
   ConfigT,
   VisualizerConfigT,
 } from 'metro-config/src/configTypes.flow';
-import type {MetroSourceMap} from 'metro-source-map';
+import type {MixedSourceMap} from 'metro-source-map';
 import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
 import type {RevisionId} from './IncrementalBundler';
@@ -974,7 +974,7 @@ class Server {
         );
 
         debug('Getting source maps for symbolication');
-        return Promise.all(mapPromises).then((maps: Array<MetroSourceMap>) => {
+        return Promise.all(mapPromises).then((maps: Array<MixedSourceMap>) => {
           debug('Sending stacks and maps to symbolication worker');
           const urlsToMaps = zip(urls.values(), maps);
           return this._symbolicateInWorker(stack, urlsToMaps);
@@ -996,7 +996,7 @@ class Server {
       );
   }
 
-  async _sourceMapForURL(reqUrl: string): Promise<MetroSourceMap> {
+  async _sourceMapForURL(reqUrl: string): Promise<MixedSourceMap> {
     const {options} = parseOptionsFromUrl(
       reqUrl,
       new Set(this._config.resolver.platforms),

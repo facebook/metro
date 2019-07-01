@@ -17,14 +17,12 @@ const util = require('source-map/lib/util');
 const vlq = require('vlq');
 
 /*::
-import type {BabelSourceMap} from '@babel/core';
 import type {
-  MetroSourceMap,
-  FBSourceMap,
+  MixedSourceMap,
   FBSourcesArray,
   FBSourceFunctionMap,
   FBSourceMetadata,
-  FBBasicSourceMap,
+  BasicSourceMap,
   IndexMap,
 } from 'metro-source-map';
 */
@@ -32,7 +30,7 @@ import type {
 // Extracted from source-map@0.5.6's SourceMapConsumer
 function normalizeSource(
   source /*: string */,
-  map /*: BabelSourceMap */,
+  map /*: {+sourceRoot?: ?string} */,
 ) /*: string */ {
   const {sourceRoot} = map;
   source = String(source);
@@ -57,7 +55,7 @@ const METADATA_FIELD_FUNCTIONS = 0;
 /*::
 type Position = {+line: number, +column: number};
 type FunctionMapping = {+line: number, +column: number, +name: string};
-type SourceNameNormalizer = (string, BabelSourceMap) => string;
+type SourceNameNormalizer = (string, {+sourceRoot?: ?string}) => string;
 type MetadataMap = {[source: string]: ?FBSourceMetadata};
 */
 
@@ -77,7 +75,7 @@ type MetadataMap = {[source: string]: ?FBSourceMetadata};
  */
 class SourceMetadataMapConsumer {
   constructor(
-    map /*: MetroSourceMap | FBSourceMap */,
+    map /*: MixedSourceMap */,
     normalizeSourceFn /*: SourceNameNormalizer */ = normalizeSource,
   ) {
     this._sourceMap = map;
@@ -86,7 +84,7 @@ class SourceMetadataMapConsumer {
   }
 
   /*::
-  _sourceMap: MetroSourceMap | FBSourceMap;
+  _sourceMap: MixedSourceMap;
   _decodedFunctionMapCache: Map<string, ?$ReadOnlyArray<FunctionMapping>>;
   _normalizeSource: SourceNameNormalizer;
   _metadataBySource: ?MetadataMap;
@@ -176,7 +174,7 @@ class SourceMetadataMapConsumer {
    * metadata from the last occurrence of any given source.
    */
   _getMetadataObjectsBySourceNames(
-    map /*: MetroSourceMap | FBSourceMap */,
+    map /*: MixedSourceMap */,
   ) /*: MetadataMap */ {
     // eslint-disable-next-line lint/strictly-null
     if (map.mappings === undefined) {
@@ -190,8 +188,7 @@ class SourceMetadataMapConsumer {
     }
 
     if ('x_facebook_sources' in map) {
-      // $FlowFixMe TODO T40268235 Augmented source maps are hard to type
-      const basicMap /*: FBBasicSourceMap */ = map;
+      const basicMap /*: BasicSourceMap */ = map;
       return (basicMap.x_facebook_sources || []).reduce(
         (acc, metadata, index) => {
           let source = basicMap.sources[index];

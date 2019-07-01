@@ -8,15 +8,15 @@
  * @format
  */
 
-type _BabelSourceMap = {
-  file?: string,
-  mappings: string,
-  names: Array<string>,
-  sourceRoot?: string,
-  sources: Array<string>,
-  sourcesContent?: Array<?string>,
-  version: number,
-};
+type _BabelSourceMap = {|
+  +file?: string,
+  +mappings: string,
+  +names: Array<string>,
+  +sourceRoot?: string,
+  +sources: Array<string>,
+  +sourcesContent?: Array<?string>,
+  +version: number,
+|};
 
 // based on babylon v6.13.1
 type BabylonOptions = {
@@ -125,9 +125,9 @@ type BabelVisitor = {};
 
 type _BabelSourceMapSegment = {
   generated: {column: number, line: number},
-  name?: string,
+  name?: ?string,
   original?: {column: number, line: number},
-  source?: string,
+  source?: ?string,
 };
 
 // #############################################

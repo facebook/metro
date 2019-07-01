@@ -18,7 +18,7 @@ const xpipe = require('xpipe');
 const {LazyPromise, LockingPromise} = require('./util');
 const {fork} = require('child_process');
 
-import type {MetroSourceMap} from 'metro-source-map';
+import type {MixedSourceMap} from 'metro-source-map';
 import type {ChildProcess} from 'child_process';
 
 export type Stack = Array<{
@@ -29,7 +29,7 @@ export type Stack = Array<{
 }>;
 export type Symbolicate = (
   Stack,
-  Iterable<[string, MetroSourceMap]>,
+  Iterable<[string, MixedSourceMap]>,
 ) => Promise<Stack>;
 
 const affixes = {prefix: 'metro-symbolicate', suffix: '.sock'};
@@ -42,7 +42,7 @@ exports.createWorker = (): Symbolicate => {
     process.platform === 'win32' ? 34712 : xpipe.eq(temp.path(affixes));
   const child = new LockingPromise(new LazyPromise(() => startupChild(socket)));
 
-  return (stack: Stack, sourceMaps: Iterable<[string, MetroSourceMap]>) =>
+  return (stack: Stack, sourceMaps: Iterable<[string, MixedSourceMap]>) =>
     child
       .then(() => connectAndSendJob(socket, message(stack, sourceMaps)))
       .then(JSON.parse)
@@ -84,7 +84,7 @@ function connectAndSendJob(socket: number, data: string): Promise<string> {
 
 function message(
   stack: Stack,
-  sourceMaps: Iterable<[string, MetroSourceMap]>,
+  sourceMaps: Iterable<[string, MixedSourceMap]>,
 ): string {
   return JSON.stringify({maps: Array.from(sourceMaps), stack});
 }
