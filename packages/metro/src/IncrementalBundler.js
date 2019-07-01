@@ -208,19 +208,25 @@ class IncrementalBundler {
 
     this._revisionsById.set(revisionId, revisionPromise);
     this._revisionsByGraphId.set(graphId, revisionPromise);
-    const revision = await revisionPromise;
-
-    const delta = {
-      added: revision.graph.dependencies,
-      modified: new Map(),
-      deleted: new Set(),
-      reset: true,
-    };
-
-    return {
-      revision,
-      delta,
-    };
+    try {
+      const revision = await revisionPromise;
+      const delta = {
+        added: revision.graph.dependencies,
+        modified: new Map(),
+        deleted: new Set(),
+        reset: true,
+      };
+      return {
+        revision,
+        delta,
+      };
+    } catch (err) {
+      // Evict a bad revision from the cache since otherwise
+      // we'll keep getting it even after the build is fixed.
+      this._revisionsById.delete(revisionId);
+      this._revisionsByGraphId.delete(graphId);
+      throw err;
+    }
   }
 
   async updateGraph(
