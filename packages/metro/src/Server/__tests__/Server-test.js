@@ -532,6 +532,10 @@ describe('processRequest', () => {
         expect(() => JSON.parse(response.body)).not.toThrow();
         const body = JSON.parse(response.body);
         expect(body).toMatchObject({
+          // CAUTION -- these *exact* field names are important because
+          // they are being parsed by DebugServerException.java on Android.
+          // DO NOT change them without also ensuring that a transform error
+          // still shows a meaningful message on the initial bundle load.
           type: 'TransformError',
           message: 'test syntax error',
         });
