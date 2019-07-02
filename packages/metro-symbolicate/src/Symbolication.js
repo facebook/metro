@@ -126,13 +126,13 @@ function getOriginalPositionDetailsFor(
 function createContext(
   SourceMapConsumer,
   sourceMapContent,
-  options /*: {
+  options: {
     nameSource?: 'function_names' | 'identifier_names',
     inputLineStart?: number,
     inputColumnStart?: number,
     outputLineStart?: number,
     outputColumnStart?: number,
-  } */ = {},
+  } = {},
 ) {
   const context = {
     inputLineStart: 1,
