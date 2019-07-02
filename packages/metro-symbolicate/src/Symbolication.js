@@ -9,8 +9,6 @@
 
 'use strict';
 
-/* eslint-disable no-console */
-
 const SourceMetadataMapConsumer = require('./SourceMetadataMapConsumer');
 
 const fs = require('fs');
@@ -299,14 +297,13 @@ function symbolicateAttribution(obj, context) {
 // Each frame in it has three fields: name, funcVirtAddr(optional), offset(optional).
 // funcVirtAddr and offset are only available if trace is generated from
 // hbc bundle without debug info.
-function symbolicateChromeTrace(traceFile, context) {
+function symbolicateChromeTrace(traceFile, {stdout, stderr}, context) {
   const contentJson = JSON.parse(fs.readFileSync(traceFile, 'utf8'));
   if (contentJson.stackFrames == null) {
-    console.error('Unable to locate `stackFrames` section in trace.');
-    process.exit(1);
+    throw new Error('Unable to locate `stackFrames` section in trace.');
   }
-  console.log(
-    'Processing ' + Object.keys(contentJson.stackFrames).length + ' frames',
+  stdout.write(
+    'Processing ' + Object.keys(contentJson.stackFrames).length + ' frames\n',
   );
   Object.values(contentJson.stackFrames).forEach(function(entry) {
     let line;
@@ -368,8 +365,8 @@ function symbolicateChromeTrace(traceFile, context) {
         }
       } else {
         // No function line/column info.
-        console.warn(
-          'Warning: no function prolog line/column info; name may be wrong',
+        (stderr || stdout).write(
+          'Warning: no function prolog line/column info; name may be wrong\n',
         );
       }
     }
@@ -380,7 +377,7 @@ function symbolicateChromeTrace(traceFile, context) {
     }:${addressOriginal.column})`;
     entry.name = frameName + sourceLocation;
   });
-  console.log('Writing to ' + traceFile);
+  stdout.write('Writing to ' + traceFile + '\n');
   fs.writeFileSync(traceFile, JSON.stringify(contentJson));
 }
 
