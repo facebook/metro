@@ -257,6 +257,43 @@ it('should retry to traverse the dependencies as it was after getting an error',
   ).rejects.toBeInstanceOf(Error);
 });
 
+it('should retry traversing dependencies after a transform error', async () => {
+  function BadError() {}
+
+  const localOptions = {
+    ...options,
+    transform(path) {
+      if (path === '/bad') {
+        throw new BadError();
+      }
+      return options.transform.apply(this, arguments);
+    },
+  };
+
+  await initialTraverseDependencies(graph, localOptions);
+
+  Actions.createFile('/bad');
+  Actions.addDependency('/foo', '/bad');
+
+  await expect(
+    traverseDependencies(['/foo'], graph, localOptions),
+  ).rejects.toBeInstanceOf(BadError);
+
+  // Repeated attempt should give the same error.
+  await expect(
+    traverseDependencies(['/foo'], graph, localOptions),
+  ).rejects.toBeInstanceOf(BadError);
+
+  // Finally, pass normal `options` that don't reject the '/bad' module:
+  expect(
+    getPaths(await traverseDependencies([...files], graph, options)),
+  ).toEqual({
+    added: new Set(['/bad']),
+    modified: new Set(['/foo']),
+    deleted: new Set(),
+  });
+});
+
 describe('Progress updates', () => {
   it('calls back for each finished module', async () => {
     const onProgress = jest.fn();

@@ -244,8 +244,14 @@ async function processModule<T>(
     }
   }
 
-  await Promise.all(promises);
-
+  try {
+    await Promise.all(promises);
+  } catch (err) {
+    // If there is an error, restore the previous dependency list.
+    // This ensures we don't skip over them during the next traversal attempt.
+    module.dependencies = previousDependencies;
+    throw err;
+  }
   return module;
 }
 
