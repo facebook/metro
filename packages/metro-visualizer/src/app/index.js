@@ -19,6 +19,7 @@ const ReactDOM = require('react-dom');
 
 const nullthrows = require('nullthrows');
 
+// flowlint-next-line untyped-import:off
 const {HashRouter, Route} = require('react-router-dom');
 
 ReactDOM.render(
