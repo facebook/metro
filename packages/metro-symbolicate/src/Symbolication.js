@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
+ * @flow
  * @format
  */
 
@@ -13,7 +14,38 @@ const SourceMetadataMapConsumer = require('./SourceMetadataMapConsumer');
 
 const fs = require('fs');
 
-const UNKNOWN_MODULE_IDS = {
+import type {MixedSourceMap} from 'metro-source-map';
+// flowlint-next-line untyped-type-import:off
+import {typeof SourceMapConsumer} from 'source-map';
+
+type ModuleIds = {
+  segmentId: number,
+  localId: ?number,
+};
+
+type SymbolicationContext = {|
+  +inputLineStart: number,
+  +inputColumnStart: number,
+  +outputLineStart: number,
+  +outputColumnStart: number,
+  +segments: {
+    +[id: string]: {|
+      +consumer: SourceMapConsumer,
+      +moduleOffsets: $ReadOnlyArray<number>,
+      +sourceFunctionsConsumer: ?SourceMetadataMapConsumer,
+    |},
+  },
+|};
+
+// TODO (T46584006): Write the real types for these.
+// eslint-disable-next-line lint/no-unclear-flowtypes
+type SizeAttributionMap = Object;
+// eslint-disable-next-line lint/no-unclear-flowtypes
+type ChromeTrace = Object;
+// eslint-disable-next-line lint/no-unclear-flowtypes
+type ChromeTraceEntry = Object;
+
+const UNKNOWN_MODULE_IDS: ModuleIds = {
   segmentId: 0,
   localId: undefined,
 };
@@ -28,7 +60,7 @@ const UNKNOWN_MODULE_IDS = {
  * bundle, named either `seg-3.js` for segment #3 for example, or `seg-3_5.js`
  * for module #5 of segment #3 of a segmented RAM bundle.
  */
-function parseFileName(str) {
+function parseFileName(str: string): ModuleIds {
   const modMatch = str.match(/^(\d+).js$/);
   if (modMatch != null) {
     return {segmentId: 0, localId: Number(modMatch[1])};
@@ -37,7 +69,7 @@ function parseFileName(str) {
   if (segMatch != null) {
     return {
       segmentId: Number(segMatch[1]),
-      localId: segMatch[2] && Number(segMatch[2]),
+      localId: segMatch[2] ? Number(segMatch[2]) : null,
     };
   }
   return UNKNOWN_MODULE_IDS;
@@ -47,18 +79,29 @@ function parseFileName(str) {
  * A helper function to return a mapping {line, column} object for a given input
  * line and column, and optionally a module ID.
  */
-function getOriginalPositionFor(lineNumber, columnNumber, moduleIds, context) {
+function getOriginalPositionFor(
+  lineNumber: ?number,
+  columnNumber: ?number,
+  moduleIds: ?ModuleIds,
+  context: SymbolicationContext,
+): {|
+  line: ?number,
+  column: ?number,
+  source: ?string,
+  name: ?string,
+|} {
   const position = getOriginalPositionDetailsFor(
     lineNumber,
     columnNumber,
     moduleIds,
     context,
   );
-  if (position.functionName) {
-    position.name = position.functionName;
-  }
-  delete position.functionName;
-  return position;
+  return {
+    line: position.line,
+    column: position.column,
+    source: position.source,
+    name: position.functionName ? position.functionName : position.name,
+  };
 }
 
 /*
@@ -67,11 +110,17 @@ function getOriginalPositionFor(lineNumber, columnNumber, moduleIds, context) {
  * source of the name.
  */
 function getOriginalPositionDetailsFor(
-  lineNumber,
-  columnNumber,
-  moduleIds,
-  context,
-) {
+  lineNumber: ?number,
+  columnNumber: ?number,
+  moduleIds: ?ModuleIds,
+  context: SymbolicationContext,
+): {|
+  line: ?number,
+  column: ?number,
+  source: ?string,
+  name: ?string,
+  functionName: ?string,
+|} {
   // Adjust arguments to source-map's input coordinates
   lineNumber =
     lineNumber != null ? lineNumber - context.inputLineStart + 1 : lineNumber;
@@ -85,7 +134,7 @@ function getOriginalPositionDetailsFor(
   }
 
   var moduleLineOffset = 0;
-  var metadata = context.segments[moduleIds.segmentId];
+  var metadata = context.segments[moduleIds.segmentId + ''];
   const {localId} = moduleIds;
   if (localId != null) {
     const {moduleOffsets} = metadata;
@@ -124,8 +173,8 @@ function getOriginalPositionDetailsFor(
 }
 
 function createContext(
-  SourceMapConsumer,
-  sourceMapContent,
+  SourceMapConsumer: SourceMapConsumer,
+  sourceMapContent: string | MixedSourceMap,
   options: {
     nameSource?: 'function_names' | 'identifier_names',
     inputLineStart?: number,
@@ -133,7 +182,7 @@ function createContext(
     outputLineStart?: number,
     outputColumnStart?: number,
   } = {},
-) {
+): SymbolicationContext {
   const context = {
     inputLineStart: 1,
     inputColumnStart: 0,
@@ -157,33 +206,34 @@ function createContext(
     !('nameSource' in options) ||
     !options.nameSource ||
     options.nameSource === 'function_names';
-  const sourceMapJson =
+  const sourceMapJson: MixedSourceMap =
     typeof sourceMapContent === 'string'
       ? JSON.parse(sourceMapContent.replace(/^\)\]\}'/, ''))
       : sourceMapContent;
+  const segments = {
+    '0': {
+      consumer: new SourceMapConsumer(sourceMapJson),
+      moduleOffsets: sourceMapJson.x_facebook_offsets || [],
+      sourceFunctionsConsumer: useFunctionNames
+        ? new SourceMetadataMapConsumer(sourceMapJson)
+        : null,
+    },
+  };
+  if (sourceMapJson.x_facebook_segments) {
+    for (const key of Object.keys(sourceMapJson.x_facebook_segments)) {
+      const map = sourceMapJson.x_facebook_segments[key];
+      segments[key] = {
+        consumer: new SourceMapConsumer(map),
+        moduleOffsets: map.x_facebook_offsets || [],
+        sourceFunctionsConsumer: useFunctionNames
+          ? new SourceMetadataMapConsumer(map)
+          : null,
+      };
+    }
+  }
   return {
     ...context,
-    segments: Object.entries(sourceMapJson.x_facebook_segments || {}).reduce(
-      (acc, [key, map]) => {
-        acc[key] = {
-          consumer: new SourceMapConsumer(map),
-          moduleOffsets: map.x_facebook_offsets || {},
-          sourceFunctionsConsumer: useFunctionNames
-            ? new SourceMetadataMapConsumer(map)
-            : null,
-        };
-        return acc;
-      },
-      {
-        '0': {
-          consumer: new SourceMapConsumer(sourceMapJson),
-          moduleOffsets: sourceMapJson.x_facebook_offsets || {},
-          sourceFunctionsConsumer: useFunctionNames
-            ? new SourceMetadataMapConsumer(sourceMapJson)
-            : null,
-        },
-      },
-    ),
+    segments,
   };
 }
 
@@ -197,7 +247,10 @@ function createContext(
 //  123.js:4:18131
 // sample result:
 //  IOS: foo.js:57:foo, Android: bar.js:75:bar
-function symbolicate(stackTrace, context) {
+function symbolicate(
+  stackTrace: string,
+  context: SymbolicationContext,
+): string {
   return stackTrace.replace(
     /(?:([^@: \n(]+)(@|:))?(?:(?:([^@: \n(]+):)?(\d+):(\d+)|\[native code\])/g,
     function(match, func, delimiter, fileName, line, column) {
@@ -211,7 +264,13 @@ function symbolicate(stackTrace, context) {
         parseFileName(fileName || ''),
         context,
       );
-      return original.source + ':' + original.line + ':' + original.name;
+      return (
+        (original.source ?? 'null') +
+        ':' +
+        (original.line ?? 'null') +
+        ':' +
+        (original.name ?? 'null')
+      );
     },
   );
 }
@@ -225,7 +284,10 @@ function symbolicate(stackTrace, context) {
 // JS_0162_xxxxxxxxxxxxxxxxxxxxxx (unknown) 50818
 // JS_0163_xxxxxxxxxxxxxxxxxxxxxx value 108267
 
-function symbolicateProfilerMap(mapFile, context) {
+function symbolicateProfilerMap(
+  mapFile: string,
+  context: SymbolicationContext,
+): string {
   return fs
     .readFileSync(mapFile, 'utf8')
     .split('\n')
@@ -258,7 +320,10 @@ function symbolicateProfilerMap(mapFile, context) {
     .join('\n');
 }
 
-function symbolicateAttribution(obj, context) {
+function symbolicateAttribution(
+  obj: SizeAttributionMap,
+  context: SymbolicationContext,
+): SizeAttributionMap {
   var loc = obj.location;
   var line = loc.line != null ? loc.line : context.inputLineStart;
   var column = loc.column != null ? loc.column : loc.virtualOffset;
@@ -297,15 +362,23 @@ function symbolicateAttribution(obj, context) {
 // Each frame in it has three fields: name, funcVirtAddr(optional), offset(optional).
 // funcVirtAddr and offset are only available if trace is generated from
 // hbc bundle without debug info.
-function symbolicateChromeTrace(traceFile, {stdout, stderr}, context) {
-  const contentJson = JSON.parse(fs.readFileSync(traceFile, 'utf8'));
+function symbolicateChromeTrace(
+  traceFile: string,
+  {stdout, stderr}: {stdout: stream$Writable, stderr: stream$Writable},
+  context: SymbolicationContext,
+): void {
+  const contentJson: ChromeTrace = JSON.parse(
+    fs.readFileSync(traceFile, 'utf8'),
+  );
   if (contentJson.stackFrames == null) {
     throw new Error('Unable to locate `stackFrames` section in trace.');
   }
   stdout.write(
     'Processing ' + Object.keys(contentJson.stackFrames).length + ' frames\n',
   );
-  Object.values(contentJson.stackFrames).forEach(function(entry) {
+  Object.values(contentJson.stackFrames).forEach(function(
+    entry: ChromeTraceEntry,
+  ) {
     let line;
     let column;
 
@@ -372,10 +445,16 @@ function symbolicateChromeTrace(traceFile, {stdout, stderr}, context) {
     }
 
     // Output format is: funcName(file:line:column)
-    const sourceLocation = `(${addressOriginal.source}:${
-      addressOriginal.line
-    }:${addressOriginal.column})`;
-    entry.name = frameName + sourceLocation;
+    entry.name = [
+      frameName,
+      '(',
+      [
+        addressOriginal.source ?? 'null',
+        addressOriginal.line ?? 'null',
+        addressOriginal.column ?? 'null',
+      ].join(':'),
+      ')',
+    ].join('');
   });
   stdout.write('Writing to ' + traceFile + '\n');
   fs.writeFileSync(traceFile, JSON.stringify(contentJson));

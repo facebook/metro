@@ -34,6 +34,10 @@ export type FBSourceFunctionMap = {|
   +mappings: string,
 |};
 
+export type FBSegmentMap = {
+  [id: string]: MixedSourceMap,
+};
+
 export type BasicSourceMap = {|
   +file?: string,
   +mappings: string,
@@ -45,6 +49,7 @@ export type BasicSourceMap = {|
   +x_facebook_offsets?: Array<number>,
   +x_metro_module_paths?: Array<string>,
   +x_facebook_sources?: FBSourcesArray,
+  +x_facebook_segments?: FBSegmentMap,
 |};
 
 export type IndexMapSection = {
@@ -60,6 +65,7 @@ export type IndexMap = {|
   +x_facebook_offsets?: Array<number>,
   +x_metro_module_paths?: Array<string>,
   +x_facebook_sources?: FBSourcesArray,
+  +x_facebook_segments?: FBSegmentMap,
 |};
 
 export type MixedSourceMap = IndexMap | BasicSourceMap;

@@ -15,21 +15,33 @@
  *
  * See https://our.intern.facebook.com/intern/dex/symbolicating-javascript-stack-traces-for-react-native/
  *
+ * @flow strict-local
  * @format
  */
 
 'use strict';
 
+// flowlint-next-line untyped-import:off
 const SourceMapConsumer = require('source-map').SourceMapConsumer;
 const Symbolication = require('./Symbolication.js');
 
 const fs = require('fs');
+// flowlint-next-line untyped-import:off
 const through2 = require('through2');
 
 async function main(
-  argv = process.argv.slice(2),
-  {stdin, stderr, stdout} = process,
+  argvInput: Array<string> = process.argv.slice(2),
+  {
+    stdin,
+    stderr,
+    stdout,
+  }: {
+    stdin: stream$Readable | tty$ReadStream,
+    stderr: stream$Writable,
+    stdout: stream$Writable,
+  } = process,
 ) {
+  const argv = argvInput.slice();
   function checkAndRemoveArg(arg, valuesPerArg = 0) {
     let values = null;
     for (let idx = argv.indexOf(arg); idx !== -1; idx = argv.indexOf(arg)) {
@@ -45,8 +57,6 @@ async function main(
     return values ? values[0][0] : null;
   }
   try {
-    argv = argv.slice();
-
     const noFunctionNames = checkAndRemoveArg('--no-function-names');
     const inputLineStart = Number.parseInt(
       checkAndRemoveArgWithValue('--input-line-start') || '1',
@@ -147,13 +157,17 @@ async function main(
       const lineNumber = argv.shift();
       const columnNumber = argv.shift() || 0;
       const original = Symbolication.getOriginalPositionFor(
-        lineNumber,
-        columnNumber,
+        +lineNumber,
+        +columnNumber,
         moduleIds,
         context,
       );
       stdout.write(
-        original.source + ':' + original.line + ':' + original.name + '\n',
+        [
+          original.source ?? 'null',
+          original.line ?? 'null',
+          original.name ?? 'null',
+        ].join(':') + '\n',
       );
     }
   } catch (error) {
@@ -166,7 +180,7 @@ async function main(
 function readAll(stream) {
   return new Promise(resolve => {
     let data = '';
-    if (stream.isTTY) {
+    if (stream.isTTY === true) {
       resolve(data);
       return;
     }
@@ -174,8 +188,9 @@ function readAll(stream) {
     stream.setEncoding('utf8');
     stream.on('readable', () => {
       let chunk;
+      // flowlint-next-line sketchy-null-string:off
       while ((chunk = stream.read())) {
-        data += chunk;
+        data += chunk.toString();
       }
     });
     stream.on('end', () => {
