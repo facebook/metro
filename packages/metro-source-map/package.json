@@ -14,7 +14,10 @@
   "dependencies": {
     "@babel/traverse": "^7.0.0",
     "@babel/types": "^7.0.0",
-    "source-map": "^0.5.6"
+    "invariant": "^2.2.4",
+    "ob1": "0.54.1",
+    "source-map": "^0.5.6",
+    "vlq": "^1.0.0"
   },
   "license": "MIT",
   "devDependencies": {

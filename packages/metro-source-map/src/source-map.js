@@ -10,8 +10,15 @@
 
 'use strict';
 
+const Consumer = require('./Consumer');
 const Generator = require('./Generator');
 const SourceMap = require('source-map');
+
+import type {IConsumer} from './Consumer/types.flow';
+export type {IConsumer};
+
+// We need to export this for `metro-symbolicate`
+const normalizeSourcePath = require('./Consumer/normalizeSourcePath');
 
 const {createIndexMap, BundleBuilder} = require('./BundleBuilder');
 const {generateFunctionMap} = require('./generateFunctionMap');
@@ -264,10 +271,12 @@ function countLines(string) {
 
 module.exports = {
   BundleBuilder,
+  Consumer,
   createIndexMap,
   generateFunctionMap,
   fromRawMappings,
   fromRawMappingsNonBlocking,
+  normalizeSourcePath,
   toBabelSegments,
   toSegmentTuple,
 };

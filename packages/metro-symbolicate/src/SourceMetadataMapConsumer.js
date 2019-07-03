@@ -10,8 +10,9 @@
 
 'use strict';
 
-const util = require('source-map/lib/util');
 const vlq = require('vlq');
+
+const {normalizeSourcePath} = require('metro-source-map');
 
 import type {
   MixedSourceMap,
@@ -21,26 +22,6 @@ import type {
   BasicSourceMap,
   IndexMap,
 } from 'metro-source-map';
-
-// Extracted from source-map@0.5.6's SourceMapConsumer
-function normalizeSource(source: string, map: {+sourceRoot?: ?string}): string {
-  const {sourceRoot} = map;
-  source = String(source);
-  // Some source maps produce relative source paths like "./foo.js" instead of
-  // "foo.js".  Normalize these first so that future comparisons will succeed.
-  // See bugzil.la/1090768.
-  source = util.normalize(source);
-  // Always ensure that absolute sources are internally stored relative to
-  // the source root, if the source root is absolute. Not doing this would
-  // be particularly problematic when the source root is a prefix of the
-  // source (valid, but why??). See github issue #199 and bugzil.la/1188982.
-  source =
-    sourceRoot && util.isAbsolute(sourceRoot) && util.isAbsolute(source)
-      ? util.relative(sourceRoot, source)
-      : source;
-
-  return source;
-}
 
 const METADATA_FIELD_FUNCTIONS = 0;
 
@@ -66,7 +47,7 @@ type MetadataMap = {[source: string]: ?FBSourceMetadata};
 class SourceMetadataMapConsumer {
   constructor(
     map: MixedSourceMap,
-    normalizeSourceFn: SourceNameNormalizer = normalizeSource,
+    normalizeSourceFn: SourceNameNormalizer = normalizeSourcePath,
   ) {
     this._sourceMap = map;
     this._decodedFunctionMapCache = new Map();
@@ -90,7 +71,7 @@ class SourceMetadataMapConsumer {
     line,
     column,
     source,
-  }: Position & {source: ?string}): ?string {
+  }: Position & {+source: ?string}): ?string {
     if (source && line != null && column != null) {
       const mappings = this._getFunctionMappings(source);
       if (mappings) {
