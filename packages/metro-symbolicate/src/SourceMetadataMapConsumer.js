@@ -95,7 +95,7 @@ class SourceMetadataMapConsumer {
     const metadataBySource = this._getMetadataBySource();
     const encoded = [];
     for (const source of sources) {
-      encoded.push(metadataBySource[source]);
+      encoded.push(metadataBySource[source] || null);
     }
     return encoded;
   }

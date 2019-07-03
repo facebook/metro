@@ -54,7 +54,7 @@ describe('SourceMetadataMapConsumer', () => {
           names: [],
         },
       ],
-      undefined,
+      null,
     ]);
   });
 

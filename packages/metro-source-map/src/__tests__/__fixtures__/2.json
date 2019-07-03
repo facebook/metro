@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "file": "foo.minified.js",
+  "sources": ["foo.js"],
+  "names": ["Greeter", "name", "this", "prototype", "greet", "console", "log"],
+  "mappings": "AAAA,GAAIA,SAAU,WACV,QAASA,SAAQC,MACbC,KAAKD,KAAOA,KAEhBD,QAAQG,UAAUC,MAAQ,WACtBC,QAAQC,IAAI,SAAWJ,KAAKD,KAAO,KAEvC,OAAOD"
+}

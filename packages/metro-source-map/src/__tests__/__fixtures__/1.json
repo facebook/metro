@@ -1,0 +1,8 @@
+{
+  "version": 3,
+  "file": "foo.js",
+  "sourceRoot": "",
+  "sources": ["foo.ts"],
+  "names": ["Greeter", "Greeter.constructor", "Greeter.greet"],
+  "mappings": "AAAA,IAAM,OAAO;IAGTA,SAHEA,OAAOA,CAGGA,IAAIA;QACZC,IAAIA,CAACA,IAAIA,GAAGA,IAAIA,CAACA;IACrBA,CAACA;IAEDD,uBAAKA,GAALA;QACIE,OAAOA,CAACA,GAAGA,CAACA,QAAQA,GAAIA,IAAIA,CAACA,IAAIA,GAAGA,GAAGA,CAACA,CAACA;IAC7CA,CAACA;IACLF,cAACA;AAADA,CAACA,AAVD,IAUC"
+}

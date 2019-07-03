@@ -20,6 +20,7 @@ export type {IConsumer};
 // We need to export this for `metro-symbolicate`
 const normalizeSourcePath = require('./Consumer/normalizeSourcePath');
 
+const composeSourceMaps = require('./composeSourceMaps');
 const {createIndexMap, BundleBuilder} = require('./BundleBuilder');
 const {generateFunctionMap} = require('./generateFunctionMap');
 
@@ -271,6 +272,7 @@ function countLines(string) {
 
 module.exports = {
   BundleBuilder,
+  composeSourceMaps,
   Consumer,
   createIndexMap,
   generateFunctionMap,
