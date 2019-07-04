@@ -20,6 +20,7 @@ const {fork} = require('child_process');
 
 import type {MixedSourceMap} from 'metro-source-map';
 import type {ChildProcess} from 'child_process';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 export type Stack = Array<{
   file: string,
@@ -33,14 +34,16 @@ export type Symbolicate = (
 ) => Promise<Stack>;
 
 const affixes = {prefix: 'metro-symbolicate', suffix: '.sock'};
-const childPath = require.resolve('./worker');
 
-exports.createWorker = (): Symbolicate => {
+exports.createWorker = (config: ConfigT): Symbolicate => {
   // There are issues with named sockets on windows that cause the connection to
   // close too early so run the symbolicate server on a random localhost port.
   const socket: number =
     process.platform === 'win32' ? 34712 : xpipe.eq(temp.path(affixes));
-  const child = new LockingPromise(new LazyPromise(() => startupChild(socket)));
+  const childPath = require.resolve(config.symbolicator.workerPath);
+  const child = new LockingPromise(
+    new LazyPromise(() => startupChild(socket, childPath)),
+  );
 
   return (stack: Stack, sourceMaps: Iterable<[string, MixedSourceMap]>) =>
     child
@@ -53,7 +56,10 @@ exports.createWorker = (): Symbolicate => {
       );
 };
 
-function startupChild(socket: number): Promise<ChildProcess> {
+function startupChild(
+  socket: number,
+  childPath: string,
+): Promise<ChildProcess> {
   const child = fork(childPath);
   return new Promise(
     (resolve: (result: ChildProcess) => void, reject: mixed => void): void => {

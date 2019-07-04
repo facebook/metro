@@ -126,6 +126,7 @@ async function convertOldToNew({
       runInspectorProxy: true,
       verifyConnections: false,
     },
+    symbolicator: defaultConfig.symbolicator,
     transformer: {
       assetPlugins: defaultConfig.transformer.assetPlugins,
       assetRegistryPath,

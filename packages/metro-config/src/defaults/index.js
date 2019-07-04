@@ -64,6 +64,11 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     runInspectorProxy: true,
     verifyConnections: false,
   },
+
+  symbolicator: {
+    workerPath: 'metro/src/Server/symbolicate/worker',
+  },
+
   transformer: {
     assetPlugins: [],
     asyncRequireModulePath: 'metro/src/lib/bundle-modules/asyncRequire',

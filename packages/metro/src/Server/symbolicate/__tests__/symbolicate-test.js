@@ -14,6 +14,7 @@ jest.mock('child_process').mock('net');
 const EventEmitter = require('events');
 const {Readable} = require('stream');
 const {createWorker} = require('../symbolicate');
+const {getDefaultValues} = require('metro-config/src/defaults');
 
 let childProcess, socketResponse, socket, worker;
 
@@ -33,7 +34,7 @@ beforeEach(() => {
   });
   require('net').createConnection.mockImplementation(() => socket);
 
-  worker = createWorker();
+  worker = createWorker(getDefaultValues());
 });
 
 it('sends a socket path to the child process', () => {

@@ -160,7 +160,7 @@ class Server {
         });
       });
 
-    this._symbolicateInWorker = symbolicate.createWorker();
+    this._symbolicateInWorker = symbolicate.createWorker(this._config);
     this._nextBundleBuildID = 1;
   }
 

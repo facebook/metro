@@ -82,6 +82,9 @@ Object {
     "verifyConnections": false,
   },
   "stickyWorkers": true,
+  "symbolicator": Object {
+    "workerPath": "metro/src/Server/symbolicate/worker",
+  },
   "transformer": Object {
     "assetPlugins": Array [],
     "assetRegistryPath": "missing-asset-registry-path",
@@ -210,6 +213,9 @@ Object {
     "verifyConnections": false,
   },
   "stickyWorkers": true,
+  "symbolicator": Object {
+    "workerPath": "metro/src/Server/symbolicate/worker",
+  },
   "transformer": Object {
     "assetPlugins": Array [],
     "assetRegistryPath": "missing-asset-registry-path",

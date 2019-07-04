@@ -172,12 +172,17 @@ type ServerConfigT = {|
   verifyConnections: boolean,
 |};
 
+type SymbolicatorConfigT = {|
+  workerPath: string,
+|};
+
 export type InputConfigT = $Shape<{|
   ...MetalConfigT,
   ...$ReadOnly<{|
     resolver: $Shape<ResolverConfigT>,
     server: $Shape<ServerConfigT>,
     serializer: $Shape<SerializerConfigT>,
+    symbolicator: $Shape<SymbolicatorConfigT>,
     transformer: $Shape<TransformerConfigT>,
     visualizer: $Shape<VisualizerConfigT>,
   |}>,
@@ -189,6 +194,7 @@ export type IntermediateConfigT = {|
     resolver: ResolverConfigT,
     server: ServerConfigT,
     serializer: SerializerConfigT,
+    symbolicator: SymbolicatorConfigT,
     transformer: TransformerConfigT,
     visualizer: VisualizerConfigT,
   |},
@@ -200,6 +206,7 @@ export type ConfigT = $ReadOnly<{|
     resolver: $ReadOnly<ResolverConfigT>,
     server: $ReadOnly<ServerConfigT>,
     serializer: $ReadOnly<SerializerConfigT>,
+    symbolicator: $ReadOnly<SymbolicatorConfigT>,
     transformer: $ReadOnly<TransformerConfigT>,
     visualizer: $ReadOnly<VisualizerConfigT>,
   |}>,
