@@ -26,15 +26,6 @@ describe('parseOptionsFromUrl', () => {
     },
   );
 
-  it('removes extraneous options from the pathname', () => {
-    expect(
-      parseOptionsFromUrl(
-        'http://localhost/my/bundle.bundle.includeRequire.runModule.assets',
-        new Set([]),
-      ).options,
-    ).toMatchObject({entryFile: './my/bundle'});
-  });
-
   it('retrieves the platform from the query parameters', () => {
     expect(
       parseOptionsFromUrl(
