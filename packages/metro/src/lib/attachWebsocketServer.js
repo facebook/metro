@@ -20,7 +20,11 @@ type WebsocketServiceInterface<T> = {
   ) => Promise<?T>,
   +onClientDisconnect?: (client: T) => mixed,
   +onClientError?: (client: T, e: Error) => mixed,
-  +onClientMessage?: (client: T, message: string) => mixed,
+  +onClientMessage?: (
+    client: T,
+    message: string,
+    sendFn: (data: string) => void,
+  ) => mixed,
 };
 
 type HMROptions<TClient> = {
@@ -80,7 +84,7 @@ module.exports = function attachWebsocketServer<TClient: Object>({
 
     ws.on('message', message => {
       websocketServer.onClientMessage &&
-        websocketServer.onClientMessage(client, message);
+        websocketServer.onClientMessage(client, message, sendFn);
     });
   });
 };
