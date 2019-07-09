@@ -38,7 +38,8 @@ module.exports = function parseOptionsFromUrl(
   const parsedURL = nullthrows(url.parse(requestUrl, true)); // `true` to parse the query param as an object.
   const query = nullthrows(parsedURL.query);
   const pathname =
-    parsedURL.pathname != null ? decodeURIComponent(parsedURL.pathname) : '';
+    query.bundleEntry ||
+    (parsedURL.pathname != null ? decodeURIComponent(parsedURL.pathname) : '');
   const platform =
     query.platform || parsePlatformFilePath(pathname, platforms).platform;
   const revisionId = query.revisionId || query.deltaBundleId || null;

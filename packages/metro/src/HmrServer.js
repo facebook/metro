@@ -79,23 +79,36 @@ class HmrServer<TClient: Client> {
   }
 
   async onClientConnect(
-    clientUrl: string,
+    requestUrl: string,
     sendFn: (data: string) => void,
   ): Promise<?Client> {
-    const urlObj = nullthrows(url.parse(clientUrl, true));
-    const query = nullthrows(urlObj.query);
+    return this._registerEntryPoint(requestUrl, sendFn);
+  }
+
+  async _registerEntryPoint(
+    requestUrl: string,
+    sendFn: (data: string) => void,
+  ): Promise<?Client> {
+    const parsedUrl = nullthrows(url.parse(requestUrl, true));
+    const query = nullthrows(parsedUrl.query);
 
     let revPromise;
-    if (query.bundleEntry != null) {
-      // TODO(T34760695): Deprecate
-      urlObj.pathname = query.bundleEntry.replace(/\.js$/, '.bundle');
-      delete query.bundleEntry;
+    if (query.revisionId) {
+      const revisionId = query.revisionId;
+      revPromise = this._bundler.getRevision(revisionId);
 
+      if (!revPromise) {
+        send([sendFn], {
+          type: 'error',
+          body: formatBundlingError(new RevisionNotFoundError(revisionId)),
+        });
+        return null;
+      }
+    } else if (query.bundleEntry != null) {
       const {options} = parseOptionsFromUrl(
-        url.format(urlObj),
+        url.format(parsedUrl),
         new Set(this._config.resolver.platforms),
       );
-
       const {entryFile, transformOptions} = splitBundleOptions(options);
 
       /**
@@ -107,7 +120,7 @@ class HmrServer<TClient: Client> {
         transformOptions.platform,
       );
       const resolvedEntryFilePath = resolutionFn(
-        `${this._config.projectRoot}/.`,
+        this._config.projectRoot + '/.',
         entryFile,
       );
       const graphId = getGraphId(resolvedEntryFilePath, transformOptions);
@@ -120,21 +133,9 @@ class HmrServer<TClient: Client> {
         });
         return null;
       }
-    } else {
-      const revisionId = query.revisionId;
-      revPromise = this._bundler.getRevision(revisionId);
-
-      if (!revPromise) {
-        send([sendFn], {
-          type: 'error',
-          body: formatBundlingError(new RevisionNotFoundError(revisionId)),
-        });
-        return null;
-      }
     }
 
-    const {graph, id} = await revPromise;
-
+    const {graph, id} = await nullthrows(revPromise);
     const client = {
       sendFn,
       revisionId: id,
