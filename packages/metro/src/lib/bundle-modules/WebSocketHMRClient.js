@@ -28,7 +28,7 @@ class WebSocketHMRClient extends EventEmitter {
 
   enable(): void {
     if (this._ws) {
-      this.disable();
+      throw new Error('[WebSocketHMRClient] Cannot call enable() twice.');
     }
 
     // Access the global WebSocket object only after enabling the client,
@@ -74,10 +74,12 @@ class WebSocketHMRClient extends EventEmitter {
   }
 
   disable(): void {
-    if (this._ws) {
-      this._ws.close();
-      this._ws = undefined;
+    if (!this._ws) {
+      throw new Error(
+        '[WebSocketHMRClient] Cannot call disable() before calling enable().',
+      );
     }
+    this._ws.close();
   }
 }
 

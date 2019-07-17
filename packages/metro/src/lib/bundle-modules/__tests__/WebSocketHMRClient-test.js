@@ -41,6 +41,10 @@ beforeEach(() => (mockSocket = null));
 test('connects to a WebSocket and listens to messages', () => {
   const client = new WebSocketHMRClient('wss://banana.com/phone');
 
+  expect(() => client.disable()).toThrowError(
+    'Cannot call disable() before calling enable()',
+  );
+
   const mockError = {
     message: 'An error occurred.',
   };
@@ -72,4 +76,9 @@ test('connects to a WebSocket and listens to messages', () => {
   client.disable();
   expect(mockSocket.close).toBeCalled();
   expect(mockCloseCallback).toBeCalled();
+
+  // Disabling twice shouldn't throw.
+  client.disable();
+
+  expect(() => client.enable()).toThrowError('Cannot call enable() twice');
 });
