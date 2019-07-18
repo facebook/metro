@@ -31,6 +31,7 @@ const {
 import type {RevisionId} from './IncrementalBundler';
 import type {
   HmrMessage,
+  HmrClientMessage,
   HmrUpdateMessage,
   HmrErrorMessage,
 } from './lib/bundle-modules/types.flow';
@@ -38,7 +39,7 @@ import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 type Client = {|
   +sendFn: string => void,
-  revisionId: RevisionId,
+  revisionIds: Array<RevisionId>,
 |};
 
 type ClientGroup = {|
@@ -81,14 +82,18 @@ class HmrServer<TClient: Client> {
   async onClientConnect(
     requestUrl: string,
     sendFn: (data: string) => void,
-  ): Promise<?Client> {
-    return this._registerEntryPoint(requestUrl, sendFn);
+  ): Promise<Client> {
+    return {
+      sendFn,
+      revisionIds: [],
+    };
   }
 
   async _registerEntryPoint(
+    client: Client,
     requestUrl: string,
     sendFn: (data: string) => void,
-  ): Promise<?Client> {
+  ): Promise<void> {
     const parsedUrl = nullthrows(url.parse(requestUrl, true));
     const query = nullthrows(parsedUrl.query);
 
@@ -102,7 +107,7 @@ class HmrServer<TClient: Client> {
           type: 'error',
           body: formatBundlingError(new RevisionNotFoundError(revisionId)),
         });
-        return null;
+        return;
       }
     } else if (query.bundleEntry != null) {
       const {options} = parseOptionsFromUrl(
@@ -131,15 +136,14 @@ class HmrServer<TClient: Client> {
           type: 'error',
           body: formatBundlingError(new GraphNotFoundError(graphId)),
         });
-        return null;
+        return;
       }
+    } else {
+      return;
     }
 
-    const {graph, id} = await nullthrows(revPromise);
-    const client = {
-      sendFn,
-      revisionId: id,
-    };
+    const {graph, id} = await revPromise;
+    client.revisionIds.push(id);
 
     let clientGroup = this._clientGroups.get(id);
     if (clientGroup != null) {
@@ -165,9 +169,37 @@ class HmrServer<TClient: Client> {
     }
 
     await this._handleFileChange(clientGroup);
-    send([sendFn], {type: 'connection-done'});
+    send([sendFn], {type: 'bundle-registered'});
+  }
 
-    return client;
+  async onClientMessage(
+    client: TClient,
+    message: string,
+    sendFn: (data: string) => void,
+  ): Promise<void> {
+    let data: HmrClientMessage;
+    try {
+      data = JSON.parse(message);
+    } catch (error) {
+      send([sendFn], {
+        type: 'error',
+        body: formatBundlingError(error),
+      });
+      return Promise.resolve();
+    }
+    if (data && data.type) {
+      switch (data.type) {
+        case 'register-entrypoints':
+          return Promise.all(
+            data.entryPoints.map(entryPoint =>
+              this._registerEntryPoint(client, entryPoint, sendFn),
+            ),
+          );
+        default:
+          break;
+      }
+    }
+    return Promise.resolve();
   }
 
   onClientError(client: TClient, e: Error): void {
@@ -179,15 +211,17 @@ class HmrServer<TClient: Client> {
   }
 
   onClientDisconnect(client: TClient): void {
-    const group = this._clientGroups.get(client.revisionId);
-    if (group != null) {
-      if (group.clients.size === 1) {
-        this._clientGroups.delete(client.revisionId);
-        group.unlisten();
-      } else {
-        group.clients.delete(client);
+    client.revisionIds.forEach(revisionId => {
+      const group = this._clientGroups.get(revisionId);
+      if (group != null) {
+        if (group.clients.size === 1) {
+          this._clientGroups.delete(revisionId);
+          group.unlisten();
+        } else {
+          group.clients.delete(client);
+        }
       }
-    }
+    });
   }
 
   async _handleFileChange(group: ClientGroup): Promise<void> {
@@ -216,7 +250,6 @@ class HmrServer<TClient: Client> {
   ): Promise<HmrUpdateMessage | HmrErrorMessage> {
     try {
       const revPromise = this._bundler.getRevision(group.revisionId);
-
       if (!revPromise) {
         return {
           type: 'error',
@@ -234,7 +267,10 @@ class HmrServer<TClient: Client> {
       this._clientGroups.delete(group.revisionId);
       group.revisionId = revision.id;
       for (const client of group.clients) {
-        client.revisionId = revision.id;
+        client.revisionIds = client.revisionIds.filter(
+          revisionId => revisionId !== group.revisionId,
+        );
+        client.revisionIds.push(revision.id);
       }
       this._clientGroups.set(group.revisionId, group);
 

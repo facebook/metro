@@ -59,9 +59,14 @@ export type HmrErrorMessage = {|
   +body: FormattedError,
 |};
 
+export type HmrClientMessage = {|
+  +type: 'register-entrypoints',
+  +entryPoints: Array<string>,
+|};
+
 export type HmrMessage =
   | {|
-      +type: 'connection-done',
+      +type: 'bundle-registered',
     |}
   | {|
       +type: 'update-start',

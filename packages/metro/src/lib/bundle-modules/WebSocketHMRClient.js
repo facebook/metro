@@ -20,6 +20,8 @@ import type {HmrMessage} from './types.flow';
 class WebSocketHMRClient extends EventEmitter {
   _ws: ?WebSocket;
   _url: string;
+  _queue: Array<string> = [];
+  _isOpen: boolean = false;
 
   constructor(url: string) {
     super();
@@ -35,20 +37,23 @@ class WebSocketHMRClient extends EventEmitter {
     // since some polyfills do the initialization lazily.
     this._ws = new global.WebSocket(this._url);
     this._ws.onopen = () => {
+      this._isOpen = true;
       this.emit('open');
+      this._flushQueue();
     };
     this._ws.onerror = error => {
       this.emit('connection-error', error);
     };
     this._ws.onclose = () => {
+      this._isOpen = false;
       this.emit('close');
     };
     this._ws.onmessage = message => {
       const data: HmrMessage = JSON.parse(message.data);
 
       switch (data.type) {
-        case 'connection-done':
-          this.emit('connection-done');
+        case 'bundle-registered':
+          this.emit('bundle-registered');
           break;
 
         case 'update-start':
@@ -80,6 +85,19 @@ class WebSocketHMRClient extends EventEmitter {
       );
     }
     this._ws.close();
+  }
+
+  send(message: string): void {
+    if (this._ws && this._isOpen) {
+      this._ws.send(message);
+    } else {
+      this._queue.push(message);
+    }
+  }
+
+  _flushQueue(): void {
+    this._queue.forEach(message => this.send(message));
+    this._queue.length = 0;
   }
 }
 
