@@ -51,7 +51,7 @@ class WebSocketHMRClient extends EventEmitter {
           break;
 
         case 'update-start':
-          this.emit('update-start');
+          this.emit('update-start', data.body);
           break;
 
         case 'update':

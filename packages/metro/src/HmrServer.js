@@ -159,18 +159,18 @@ class HmrServer<TClient: Client> {
 
       this._clientGroups.set(id, clientGroup);
 
-      const unlisten = this._bundler
-        .getDeltaBundler()
-        .listen(
-          graph,
-          debounceAsyncQueue(
-            this._handleFileChange.bind(this, clientGroup),
-            50,
-          ),
-        );
+      const unlisten = this._bundler.getDeltaBundler().listen(
+        graph,
+        debounceAsyncQueue(
+          this._handleFileChange.bind(this, clientGroup, {
+            isInitialUpdate: false,
+          }),
+          50,
+        ),
+      );
     }
 
-    await this._handleFileChange(clientGroup);
+    await this._handleFileChange(clientGroup, {isInitialUpdate: true});
     send([sendFn], {type: 'bundle-registered'});
   }
 
@@ -229,7 +229,10 @@ class HmrServer<TClient: Client> {
     });
   }
 
-  async _handleFileChange(group: ClientGroup): Promise<void> {
+  async _handleFileChange(
+    group: ClientGroup,
+    options: {|isInitialUpdate: boolean|},
+  ): Promise<void> {
     const optedIntoHMR = [...group.clients].some(
       (client: Client) => client.optedIntoHMR,
     );
@@ -249,7 +252,10 @@ class HmrServer<TClient: Client> {
 
     const sendFns = [...group.clients].map((client: Client) => client.sendFn);
 
-    send(sendFns, {type: 'update-start'});
+    send(sendFns, {
+      type: 'update-start',
+      body: options,
+    });
     const message = await this._prepareMessage(group);
     send(sendFns, message);
     send(sendFns, {type: 'update-done'});

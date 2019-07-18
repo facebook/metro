@@ -74,6 +74,9 @@ export type HmrMessage =
     |}
   | {|
       +type: 'update-start',
+      +body: {|
+        +isInitialUpdate: boolean,
+      |},
     |}
   | {|
       +type: 'update-done',
