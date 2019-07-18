@@ -40,6 +40,7 @@ import type {ConfigT} from 'metro-config/src/configTypes.flow';
 type Client = {|
   +sendFn: string => void,
   revisionIds: Array<RevisionId>,
+  optedIntoHMR: boolean,
 |};
 
 type ClientGroup = {|
@@ -86,6 +87,7 @@ class HmrServer<TClient: Client> {
     return {
       sendFn,
       revisionIds: [],
+      optedIntoHMR: false,
     };
   }
 
@@ -195,6 +197,9 @@ class HmrServer<TClient: Client> {
               this._registerEntryPoint(client, entryPoint, sendFn),
             ),
           );
+        case 'log-opt-in':
+          client.optedIntoHMR = true;
+          break;
         default:
           break;
       }
@@ -225,8 +230,21 @@ class HmrServer<TClient: Client> {
   }
 
   async _handleFileChange(group: ClientGroup): Promise<void> {
+    const optedIntoHMR = [...group.clients].some(
+      (client: Client) => client.optedIntoHMR,
+    );
     const processingHmrChange = log(
-      createActionStartEntry({action_name: 'Processing HMR change'}),
+      createActionStartEntry({
+        // Even when HMR is disabled on the client, this function still
+        // runs so we can stash updates while it's off and apply them later.
+        // However, this would mess up our internal analytics because we track
+        // HMR as being used even for people who have it disabled.
+        // As a workaround, we use a different event name for clients
+        // that didn't explicitly opt into HMR.
+        action_name: optedIntoHMR
+          ? 'Processing HMR change'
+          : 'Processing HMR change (no client opt-in)',
+      }),
     );
 
     const sendFns = [...group.clients].map((client: Client) => client.sendFn);

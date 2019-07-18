@@ -59,10 +59,14 @@ export type HmrErrorMessage = {|
   +body: FormattedError,
 |};
 
-export type HmrClientMessage = {|
-  +type: 'register-entrypoints',
-  +entryPoints: Array<string>,
-|};
+export type HmrClientMessage =
+  | {|
+      +type: 'register-entrypoints',
+      +entryPoints: Array<string>,
+    |}
+  | {|
+      +type: 'log-opt-in',
+    |};
 
 export type HmrMessage =
   | {|
