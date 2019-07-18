@@ -252,8 +252,6 @@ function create({
       }
     });
 
-    wsClient.enable();
-
     return client;
   };
 

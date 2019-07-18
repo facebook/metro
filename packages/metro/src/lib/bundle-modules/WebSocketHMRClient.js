@@ -13,31 +13,25 @@ const EventEmitter = require('eventemitter3');
 
 import type {HmrMessage} from './types.flow';
 
+type SocketState = 'opening' | 'open' | 'closed';
+
 /**
  * The Hot Module Reloading Client connects to Metro via WebSocket, to receive
  * updates from it and propagate them to the runtime to reflect the changes.
  */
 class WebSocketHMRClient extends EventEmitter {
-  _ws: ?WebSocket;
-  _url: string;
+  _ws: WebSocket;
   _queue: Array<string> = [];
-  _isOpen: boolean = false;
+  _state: SocketState = 'opening';
 
   constructor(url: string) {
     super();
-    this._url = url;
-  }
-
-  enable(): void {
-    if (this._ws) {
-      throw new Error('[WebSocketHMRClient] Cannot call enable() twice.');
-    }
 
     // Access the global WebSocket object only after enabling the client,
     // since some polyfills do the initialization lazily.
-    this._ws = new global.WebSocket(this._url);
+    this._ws = new global.WebSocket(url);
     this._ws.onopen = () => {
-      this._isOpen = true;
+      this._state = 'open';
       this.emit('open');
       this._flushQueue();
     };
@@ -45,7 +39,7 @@ class WebSocketHMRClient extends EventEmitter {
       this.emit('connection-error', error);
     };
     this._ws.onclose = () => {
-      this._isOpen = false;
+      this._state = 'closed';
       this.emit('close');
     };
     this._ws.onmessage = message => {
@@ -78,20 +72,23 @@ class WebSocketHMRClient extends EventEmitter {
     };
   }
 
-  disable(): void {
-    if (!this._ws) {
-      throw new Error(
-        '[WebSocketHMRClient] Cannot call disable() before calling enable().',
-      );
-    }
+  close(): void {
     this._ws.close();
   }
 
   send(message: string): void {
-    if (this._ws && this._isOpen) {
-      this._ws.send(message);
-    } else {
-      this._queue.push(message);
+    switch (this._state) {
+      case 'opening':
+        this._queue.push(message);
+        break;
+      case 'open':
+        this._ws.send(message);
+        break;
+      case 'closed':
+        // Ignore.
+        break;
+      default:
+        throw new Error('[WebSocketHMRClient] Unknown state: ' + this._state);
     }
   }
 
