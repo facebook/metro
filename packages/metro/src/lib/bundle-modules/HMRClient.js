@@ -16,22 +16,40 @@ const injectUpdate = require('./injectUpdate');
 import type {HmrUpdate} from './types.flow';
 
 class HMRClient extends WebSocketHMRClient {
-  shouldApplyUpdates: boolean = true;
-  outdatedModules: Set<number> = new Set();
+  _isEnabled: boolean = false;
+  _pendingUpdates: Array<HmrUpdate> = [];
 
   constructor(url: string) {
     super(url);
 
     this.on('update', (update: HmrUpdate) => {
-      if (this.shouldApplyUpdates) {
+      if (this._isEnabled) {
         injectUpdate(update);
       } else {
-        // Remember if there were edits while Fast Refresh is off.
-        // We'll want to warn about those modules if you turn it on.
-        update.added.forEach(([id]) => this.outdatedModules.add(id));
-        update.modified.forEach(([id]) => this.outdatedModules.add(id));
+        // TODO: this is inefficient because we retain
+        // past versions even for the files we've edited more than once.
+        this._pendingUpdates.push(update);
       }
     });
+  }
+
+  enable() {
+    this._isEnabled = true;
+    const pendingUpdates = this._pendingUpdates;
+    this._pendingUpdates = [];
+    pendingUpdates.forEach(update => injectUpdate(update));
+  }
+
+  disable() {
+    this._isEnabled = false;
+  }
+
+  isEnabled() {
+    return this._isEnabled;
+  }
+
+  hasPendingUpdates() {
+    return this._pendingUpdates.length > 0;
   }
 }
 
