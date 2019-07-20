@@ -39,7 +39,6 @@ async function convertOldToNew({
   resetCache = false,
   maxWorkers = getMaxWorkers(),
   minifierPath,
-  // $FlowFixMe TODO t0 https://github.com/facebook/flow/issues/183
   port = null,
   reporter = new TerminalReporter(new Terminal(process.stdout)),
 }: PublicMetroOptions): Promise<ConfigT> {
