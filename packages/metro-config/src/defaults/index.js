@@ -31,7 +31,6 @@ import type {ConfigT} from '../configTypes.flow';
 
 const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   resolver: {
-    allowPnp: true,
     assetExts,
     platforms,
     sourceExts,
@@ -65,6 +64,11 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     runInspectorProxy: true,
     verifyConnections: false,
   },
+
+  symbolicator: {
+    workerPath: 'metro/src/Server/symbolicate/worker',
+  },
+
   transformer: {
     assetPlugins: [],
     asyncRequireModulePath: 'metro/src/lib/bundle-modules/asyncRequire',
@@ -73,6 +77,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     dynamicDepsInPackages: 'throwAtRuntime',
     enableBabelRCLookup: true,
     enableBabelRuntime: true,
+    experimentalImportBundleSupport: false,
     getTransformOptions: async () => ({
       transform: {
         experimentalImportSupport: false,

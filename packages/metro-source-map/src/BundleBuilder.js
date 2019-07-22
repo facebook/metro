@@ -10,7 +10,7 @@
 
 'use strict';
 
-import type {IndexMap, IndexMapSection, MetroSourceMap} from './source-map';
+import type {IndexMap, IndexMapSection, MixedSourceMap} from './source-map';
 
 const EMPTY_MAP = {
   version: 3,
@@ -50,7 +50,7 @@ class BundleBuilder {
     this._afterMappedContent = false;
   }
 
-  _pushMapSection(map: MetroSourceMap) {
+  _pushMapSection(map: MixedSourceMap) {
     this._sections.push({
       map,
       offset: {column: this._column, line: this._line},
@@ -64,7 +64,7 @@ class BundleBuilder {
     }
   }
 
-  append(code: string, map: ?MetroSourceMap): this {
+  append(code: string, map: ?MixedSourceMap): this {
     if (!code.length) {
       return this;
     }
@@ -86,7 +86,7 @@ class BundleBuilder {
     return this;
   }
 
-  getMap(): MetroSourceMap {
+  getMap(): MixedSourceMap {
     this._endMappedContent();
     return createIndexMap(this._file, this._sections);
   }

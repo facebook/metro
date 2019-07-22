@@ -39,12 +39,10 @@ async function convertOldToNew({
   resetCache = false,
   maxWorkers = getMaxWorkers(),
   minifierPath,
-  // $FlowFixMe TODO t0 https://github.com/facebook/flow/issues/183
   port = null,
   reporter = new TerminalReporter(new Terminal(process.stdout)),
 }: PublicMetroOptions): Promise<ConfigT> {
   const {
-    allowPnp,
     getBlacklistRE,
     cacheStores,
     createModuleIdFactory,
@@ -93,7 +91,6 @@ async function convertOldToNew({
 
   return {
     resolver: {
-      allowPnp,
       assetExts,
       platforms,
       resolverMainFields: getResolverMainFields(),
@@ -128,6 +125,7 @@ async function convertOldToNew({
       runInspectorProxy: true,
       verifyConnections: false,
     },
+    symbolicator: defaultConfig.symbolicator,
     transformer: {
       assetPlugins: defaultConfig.transformer.assetPlugins,
       assetRegistryPath,
@@ -136,6 +134,7 @@ async function convertOldToNew({
       dynamicDepsInPackages,
       enableBabelRCLookup: getEnableBabelRCLookup(),
       enableBabelRuntime: true,
+      experimentalImportBundleSupport: false,
       getTransformOptions,
       minifierConfig: defaultConfig.transformer.minifierConfig,
       minifierPath: minifierPath || defaultConfig.transformer.minifierPath,

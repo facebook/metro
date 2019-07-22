@@ -10,7 +10,7 @@
  */
 'use strict';
 
-import type {BabelSourceMap} from '@babel/core';
+import type {BasicSourceMap} from 'metro-source-map';
 
 jest.mock('uglify-es', () => ({
   minify: jest.fn(code => {
@@ -24,7 +24,7 @@ jest.mock('uglify-es', () => ({
 const minify = require('..');
 const {objectContaining} = jasmine;
 
-function getFakeMap(): BabelSourceMap {
+function getFakeMap(): BasicSourceMap {
   return {
     version: 3,
     sources: ['?'],
@@ -44,7 +44,7 @@ const baseOptions = {
 describe('Minification:', () => {
   const filename = '/arbitrary/file.js';
   const code = 'arbitrary(code)';
-  let map: BabelSourceMap;
+  let map: BasicSourceMap;
   let uglify;
 
   beforeEach(() => {

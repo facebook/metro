@@ -1,6 +1,0 @@
-{
-  "factoryMethods": ["createClass", "factory"],
-  "transforms": [{
-    "transform": "transform-lib"
-  }]
-}

@@ -1,0 +1,8 @@
+{
+  "version": 3,
+  "sources": ["foo.ts"],
+  "x_facebook_sources": [null],
+  "names": ["Greeter", "Greeter.constructor", "Greeter.greet"],
+  "mappings": "AAAA,GAAM,SAAO,WAGTA,QAHEA,SAGUA,MACRC,KAAKA,KAAOA,KAGhBD,QAAAA,UAAAA,MAAAA,WACIE,QAAQA,IAAIA,SAAYA,KAAKA,KAAOA,KAE5CF,OAAAA",
+  "file": "foo.minified.js"
+}

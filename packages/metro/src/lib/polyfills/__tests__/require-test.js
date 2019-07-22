@@ -44,6 +44,35 @@ describe('require', () => {
     moduleSystemCode,
   );
 
+  function createReactRefreshMock(moduleSystem) {
+    const familiesByID = new Map();
+    const familiesByType = new Map();
+    const Refresh = {
+      register(id, type) {
+        if (familiesByType.has(type)) {
+          return;
+        }
+        let family = familiesByID.get(id);
+        if (!family) {
+          family = {id};
+          familiesByID.set(id, family);
+        }
+        familiesByType.set(type, family);
+      },
+      // A simplified version of the logic in react-refresh/runtime.
+      isLikelyComponentType(type) {
+        return typeof type === 'function' && /^[A-Z]/.test(type.name);
+      },
+      getFamilyByType(type) {
+        return familiesByType.get(type);
+      },
+      performReactRefresh: jest.fn(),
+      performFullRefresh: jest.fn(),
+    };
+    moduleSystem.__r.Refresh = Refresh;
+    return Refresh;
+  }
+
   let moduleSystem;
 
   beforeEach(() => {
@@ -759,9 +788,114 @@ describe('require', () => {
       moduleSystem.__r(0);
     });
 
+    // This tests the legacy module.hot.accept API.
+    // We don't use it for Fast Refresh but there might be external consumers.
+    it('propagates a hot update to closest accepted module for legacy API', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init FooV1');
+          require(1);
+          // This module accepts itself:
+          module.hot.accept();
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init FooV1', 'init BarV1']);
+      log = [];
+
+      // We edited Bar, but it doesn't accept.
+      // So we expect it to re-run together with Foo which does.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV2', 'init FooV1']);
+      log = [];
+
+      // We edited Bar, but it doesn't accept.
+      // So we expect it to re-run together with Foo which does.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV3', 'init FooV1']);
+      log = [];
+    });
+
+    // This tests the legacy module.hot.accept API.
+    // We don't use it for Fast Refresh but there might be external consumers.
+    it('runs custom accept and dispose handlers for the legacy API', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          module.hot.accept(() => {
+            log.push('accept V1');
+          });
+          module.hot.dispose(() => {
+            log.push('dispose V1');
+          });
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual([]);
+      log = [];
+
+      moduleSystem.__accept(
+        0,
+        (global, require, importDefault, importAll, module, exports) => {
+          module.hot.accept(() => {
+            log.push('accept V2');
+          });
+          module.hot.dispose(() => {
+            log.push('dispose V2');
+          });
+        },
+        [],
+        {0: []},
+        undefined,
+      );
+
+      // TODO: this is existing behavior but it deviates from webpack.
+      // In webpack, the "accept" callback only fires on errors in module init.
+      // This is because otherwise you might as well put your code directly
+      // into the module initialization path.
+      // We might want to either align with webpack or intentionally deviate
+      // but for now let's test the existing behavior.
+      expect(log).toEqual(['dispose V1', 'accept V2']);
+      log = [];
+    });
+
     it('re-runs accepted modules', () => {
       let log = [];
       createModuleSystem(moduleSystem, true);
+      const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
         0,
@@ -777,8 +911,8 @@ describe('require', () => {
         'bar.js',
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init BarV1');
-          // This module accepts itself:
-          module.hot.accept(() => {});
+          // This module exports a component:
+          module.exports = function Bar() {};
         },
       );
       moduleSystem.__r(0);
@@ -791,7 +925,7 @@ describe('require', () => {
         1,
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init BarV2');
-          module.hot.accept(() => {});
+          module.exports = function Bar() {};
         },
         [],
         {1: [0], 0: []},
@@ -806,7 +940,7 @@ describe('require', () => {
         1,
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init BarV3');
-          module.hot.accept(() => {});
+          module.exports = function Bar() {};
         },
         [],
         {1: [0], 0: []},
@@ -814,11 +948,15 @@ describe('require', () => {
       );
       expect(log).toEqual(['init BarV3']);
       log = [];
+      jest.runAllTimers();
+      expect(Refresh.performReactRefresh).toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
     });
 
     it('propagates a hot update to closest accepted module', () => {
       let log = [];
       createModuleSystem(moduleSystem, true);
+      const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
         0,
@@ -826,8 +964,8 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init FooV1');
           require(1);
-          // This module accepts itself:
-          module.hot.accept(() => {});
+          // Exporting a component marks it as auto-accepting.
+          module.exports = function Foo() {};
         },
       );
       createModule(
@@ -871,25 +1009,43 @@ describe('require', () => {
       log = [];
 
       // We edited Bar so that it accepts itself.
-      // Now there's no need to re-run Foo.
+      // We still re-run Foo because the exports of Bar changed.
       moduleSystem.__accept(
         1,
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init BarV3');
-          // Now accepts:
-          module.hot.accept(() => {});
+          // Exporting a component marks it as auto-accepting.
+          module.exports = function Bar() {};
         },
         [],
         {1: [0], 0: []},
         undefined,
       );
-      expect(log).toEqual(['init BarV3']);
+      expect(log).toEqual(['init BarV3', 'init FooV1']);
       log = [];
+
+      // Further edits to Bar don't re-run Foo.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV4');
+          module.exports = function Bar() {};
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV4']);
+      log = [];
+      jest.runAllTimers();
+      expect(Refresh.performReactRefresh).toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
     });
 
     it('propagates hot update to all inverse dependencies', () => {
       let log = [];
       createModuleSystem(moduleSystem, true);
+      const Refresh = createReactRefreshMock(moduleSystem);
 
       // This is the module graph:
       //        MiddleA*
@@ -912,7 +1068,7 @@ describe('require', () => {
           require(1);
           require(2);
           require(3);
-          module.hot.accept(() => {});
+          module.exports = function Root() {};
         },
       );
       createModule(
@@ -922,7 +1078,7 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init MiddleAV1');
           require(4); // Import leaf
-          module.hot.accept(() => {});
+          module.exports = function MiddleA() {};
         },
       );
       createModule(
@@ -932,7 +1088,7 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init MiddleBV1');
           require(4); // Import leaf
-          module.hot.accept(() => {});
+          module.exports = function MiddleB() {};
         },
       );
       createModule(
@@ -942,7 +1098,8 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init MiddleCV1');
           // This one doesn't import leaf and also
-          // doesn't accept updates.
+          // doesn't export a component (so it doesn't accept updates).
+          module.exports = {};
         },
       );
       createModule(
@@ -952,6 +1109,7 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init LeafV1');
           // Doesn't accept its own updates; they will propagate.
+          module.exports = {};
         },
       );
       moduleSystem.__r(0);
@@ -970,6 +1128,7 @@ describe('require', () => {
         4,
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init LeafV2');
+          module.exports = {};
         },
         [],
         // Inverse dependency map.
@@ -982,7 +1141,7 @@ describe('require', () => {
         },
         undefined,
       );
-      expect(log).toEqual(['init LeafV2', 'init MiddleBV1', 'init MiddleAV1']);
+      expect(log).toEqual(['init LeafV2', 'init MiddleAV1', 'init MiddleBV1']);
       log = [];
 
       // Let's try the same one more time.
@@ -990,6 +1149,7 @@ describe('require', () => {
         4,
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init LeafV2');
+          module.exports = {};
         },
         [],
         // Inverse dependency map.
@@ -1002,7 +1162,7 @@ describe('require', () => {
         },
         undefined,
       );
-      expect(log).toEqual(['init LeafV2', 'init MiddleBV1', 'init MiddleAV1']);
+      expect(log).toEqual(['init LeafV2', 'init MiddleAV1', 'init MiddleBV1']);
       log = [];
 
       // Now edit MiddleB. It should accept and re-run alone.
@@ -1011,7 +1171,7 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init MiddleBV2');
           require(4);
-          module.hot.accept(() => {});
+          module.exports = function MiddleB() {};
         },
         [],
         // Inverse dependency map.
@@ -1032,6 +1192,7 @@ describe('require', () => {
         3,
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init MiddleCV2');
+          module.exports = {};
         },
         [],
         // Inverse dependency map.
@@ -1046,11 +1207,15 @@ describe('require', () => {
       );
       expect(log).toEqual(['init MiddleCV2', 'init RootV1']);
       log = [];
+      jest.runAllTimers();
+      expect(Refresh.performReactRefresh).toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
     });
 
     it('provides fresh value for module.exports in parents', () => {
       let log = [];
       createModuleSystem(moduleSystem, true);
+      const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
         0,
@@ -1059,7 +1224,7 @@ describe('require', () => {
           const BarValue = require(1);
           log.push('init FooV1 with BarValue = ' + BarValue);
           // This module accepts itself:
-          module.hot.accept(() => {});
+          module.exports = function Foo() {};
         },
       );
       createModule(
@@ -1111,7 +1276,7 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           const BarValue = require(1);
           log.push('init FooV2 with BarValue = ' + BarValue);
-          module.hot.accept(() => {});
+          module.exports = function Foo() {};
         },
         [],
         {1: [0], 0: []},
@@ -1134,11 +1299,15 @@ describe('require', () => {
       );
       expect(log).toEqual(['init BarV4', 'init FooV2 with BarValue = 4']);
       log = [];
+      jest.runAllTimers();
+      expect(Refresh.performReactRefresh).toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
     });
 
     it('provides fresh value for exports.* in parents', () => {
       let log = [];
       createModuleSystem(moduleSystem, true);
+      const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
         0,
@@ -1147,7 +1316,7 @@ describe('require', () => {
           const BarValue = require(1).value;
           log.push('init FooV1 with BarValue = ' + BarValue);
           // This module accepts itself:
-          module.hot.accept(() => {});
+          exports.Bar = function Bar() {};
         },
       );
       createModule(
@@ -1199,7 +1368,7 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           const BarValue = require(1).value;
           log.push('init FooV2 with BarValue = ' + BarValue);
-          module.hot.accept(() => {});
+          exports.Bar = function Bar() {};
         },
         [],
         {1: [0], 0: []},
@@ -1222,11 +1391,15 @@ describe('require', () => {
       );
       expect(log).toEqual(['init BarV4', 'init FooV2 with BarValue = 4']);
       log = [];
+      jest.runAllTimers();
+      expect(Refresh.performReactRefresh).toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
     });
 
     it('provides fresh value for ES6 named import in parents', () => {
       let log = [];
       createModuleSystem(moduleSystem, true);
+      const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
         0,
@@ -1235,7 +1408,8 @@ describe('require', () => {
           const BarValue = importAll(1).value;
           log.push('init FooV1 with BarValue = ' + BarValue);
           // This module accepts itself:
-          module.hot.accept(() => {});
+          exports.__esModule = true;
+          exports.Foo = function Foo() {};
         },
       );
       createModule(
@@ -1290,7 +1464,8 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           const BarValue = importAll(1).value;
           log.push('init FooV2 with BarValue = ' + BarValue);
-          module.hot.accept(() => {});
+          exports.__esModule = true;
+          exports.Foo = function Foo() {};
         },
         [],
         {1: [0], 0: []},
@@ -1314,11 +1489,15 @@ describe('require', () => {
       );
       expect(log).toEqual(['init BarV4', 'init FooV2 with BarValue = 4']);
       log = [];
+      jest.runAllTimers();
+      expect(Refresh.performReactRefresh).toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
     });
 
     it('provides fresh value for ES6 default import in parents', () => {
       let log = [];
       createModuleSystem(moduleSystem, true);
+      const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
         0,
@@ -1327,7 +1506,8 @@ describe('require', () => {
           const BarValue = importDefault(1);
           log.push('init FooV1 with BarValue = ' + BarValue);
           // This module accepts itself:
-          module.hot.accept(() => {});
+          exports.__esModule = true;
+          exports.default = function Foo() {};
         },
       );
       createModule(
@@ -1382,7 +1562,8 @@ describe('require', () => {
         (global, require, importDefault, importAll, module, exports) => {
           const BarValue = importDefault(1);
           log.push('init FooV2 with BarValue = ' + BarValue);
-          module.hot.accept(() => {});
+          exports.__esModule = true;
+          exports.default = function Foo() {};
         },
         [],
         {1: [0], 0: []},
@@ -1406,6 +1587,744 @@ describe('require', () => {
       );
       expect(log).toEqual(['init BarV4', 'init FooV2 with BarValue = 4']);
       log = [];
+      jest.runAllTimers();
+      expect(Refresh.performReactRefresh).toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
+    });
+
+    it('stops update propagation after module-level errors', () => {
+      let redboxErrors = [];
+      moduleSystem.ErrorUtils = {
+        reportFatalError(e) {
+          redboxErrors.push(e);
+        },
+      };
+
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      const Refresh = createReactRefreshMock(moduleSystem);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init FooV1');
+          require(1);
+          module.exports = function Foo() {};
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          module.exports = 'V1';
+          log.push('init BarV1');
+          // This module normally propagates to the parent.
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init FooV1', 'init BarV1']);
+      expect(redboxErrors).toHaveLength(0);
+      log = [];
+      redboxErrors = [];
+
+      // We only edited Bar.
+      // Normally it would propagate to the parent.
+      // But the error should stop the propagation early.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          module.exports = 'V2';
+          log.push('init BarV2');
+          throw new Error('init error during BarV2');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+
+      expect(log).toEqual(['init BarV2']); // No 'init FooV1'
+      expect(redboxErrors).toHaveLength(1);
+      expect(redboxErrors[0].message).toBe('init error during BarV2');
+      log = [];
+      redboxErrors = [];
+
+      // Because of the failure, we keep seeing the previous export.
+      expect(moduleSystem.__r(1)).toBe('V1');
+      expect(log).toHaveLength(0);
+      expect(redboxErrors).toHaveLength(0);
+
+      // Let's make another error.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+          throw new Error('init error during BarV3');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+
+      expect(log).toEqual(['init BarV3']);
+      expect(redboxErrors).toHaveLength(1);
+      expect(redboxErrors[0].message).toBe('init error during BarV3');
+      log = [];
+      redboxErrors = [];
+
+      // Because of the failure, we keep seeing the last successful export.
+      expect(moduleSystem.__r(1)).toBe('V1');
+      expect(log).toHaveLength(0);
+      expect(redboxErrors).toHaveLength(0);
+
+      // Finally, let's fix the code.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          module.exports = 'V3';
+          log.push('init BarV3');
+          // This module propagates to the parent.
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV3', 'init FooV1']); // Includes the parent.
+      expect(redboxErrors).toHaveLength(0);
+      log = [];
+      redboxErrors = [];
+
+      // We should now see the "new" exports.
+      expect(moduleSystem.__r(1)).toBe('V3');
+      expect(log).toHaveLength(0);
+      expect(redboxErrors).toHaveLength(0);
+
+      jest.runAllTimers();
+      expect(Refresh.performReactRefresh).toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
+    });
+
+    it('can continue hot updates after module-level errors with module.exports', () => {
+      let redboxErrors = [];
+      moduleSystem.ErrorUtils = {
+        reportFatalError(e) {
+          redboxErrors.push(e);
+        },
+      };
+
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      const Refresh = createReactRefreshMock(moduleSystem);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init FooV1');
+          require(1);
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+          // This module accepts itself:
+          module.exports = function BarV1() {};
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init FooV1', 'init BarV1']);
+      expect(redboxErrors).toHaveLength(0);
+      log = [];
+      redboxErrors = [];
+
+      // We only edited Bar, and it accepted.
+      // So we expect it to re-run alone.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          module.exports = function BarV2() {};
+          log.push('init BarV2');
+          throw new Error('init error during BarV2');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+
+      expect(log).toEqual(['init BarV2']);
+      expect(redboxErrors).toHaveLength(1);
+      expect(redboxErrors[0].message).toBe('init error during BarV2');
+      log = [];
+      redboxErrors = [];
+
+      // Because of the failure, we keep seeing the previous export.
+      expect(moduleSystem.__r(1).name).toBe('BarV1');
+      expect(log).toHaveLength(0);
+      expect(redboxErrors).toHaveLength(0);
+
+      // Let's make another error.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+          throw new Error('init error during BarV3');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+
+      expect(log).toEqual(['init BarV3']);
+      expect(redboxErrors).toHaveLength(1);
+      expect(redboxErrors[0].message).toBe('init error during BarV3');
+      log = [];
+      redboxErrors = [];
+
+      // Because of the failure, we keep seeing the last successful export.
+      expect(moduleSystem.__r(1).name).toBe('BarV1');
+      expect(log).toHaveLength(0);
+      expect(redboxErrors).toHaveLength(0);
+
+      // Finally, let's fix the code.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+          // This module accepts itself:
+          module.exports = function BarV3() {};
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV3']);
+      expect(redboxErrors).toHaveLength(0);
+      log = [];
+      redboxErrors = [];
+
+      // We should now see the "new" exports.
+      expect(moduleSystem.__r(1).name).toBe('BarV3');
+      expect(log).toHaveLength(0);
+      expect(redboxErrors).toHaveLength(0);
+
+      jest.runAllTimers();
+      expect(Refresh.performReactRefresh).toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
+    });
+
+    it('can continue hot updates after module-level errors with ES6 exports', () => {
+      let redboxErrors = [];
+      moduleSystem.ErrorUtils = {
+        reportFatalError(e) {
+          redboxErrors.push(e);
+        },
+      };
+
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      const Refresh = createReactRefreshMock(moduleSystem);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init FooV1');
+          importDefault(1);
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+          // This module accepts itself:
+          exports.__esModule = true;
+          exports.default = function BarV1() {};
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init FooV1', 'init BarV1']);
+      expect(redboxErrors).toHaveLength(0);
+      log = [];
+      redboxErrors = [];
+
+      // We only edited Bar, and it accepted.
+      // So we expect it to re-run alone.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          exports.default = function BarV2() {};
+          log.push('init BarV2');
+          throw new Error('init error during BarV2');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+
+      expect(log).toEqual(['init BarV2']);
+      expect(redboxErrors).toHaveLength(1);
+      expect(redboxErrors[0].message).toBe('init error during BarV2');
+      log = [];
+      redboxErrors = [];
+
+      // Because of the failure, we keep seeing the previous export.
+      expect(moduleSystem.__r.importDefault(1).name).toBe('BarV1');
+      expect(log).toHaveLength(0);
+      expect(redboxErrors).toHaveLength(0);
+
+      // Let's make another error.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+          throw new Error('init error during BarV3');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+
+      expect(log).toEqual(['init BarV3']);
+      expect(redboxErrors).toHaveLength(1);
+      expect(redboxErrors[0].message).toBe('init error during BarV3');
+      log = [];
+      redboxErrors = [];
+
+      // Because of the failure, we keep seeing the last successful export.
+      expect(moduleSystem.__r.importDefault(1).name).toBe('BarV1');
+      expect(log).toHaveLength(0);
+      expect(redboxErrors).toHaveLength(0);
+
+      // Finally, let's fix the code.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+          // This module accepts itself:
+          exports.__esModule = true;
+          exports.default = function BarV3() {};
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV3']);
+      expect(redboxErrors).toHaveLength(0);
+      log = [];
+      redboxErrors = [];
+
+      // We should now see the "new" exports.
+      expect(moduleSystem.__r.importDefault(1).name).toBe('BarV3');
+      expect(log).toHaveLength(0);
+      expect(redboxErrors).toHaveLength(0);
+
+      jest.runAllTimers();
+      expect(Refresh.performReactRefresh).toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
+    });
+
+    it('does not accumulate stale exports over time', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      const Refresh = createReactRefreshMock(moduleSystem);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          const BarExports = require(1);
+          log.push(
+            'init FooV1 with BarExports = ' + JSON.stringify(BarExports),
+          );
+          // This module accepts itself:
+          module.exports = function Foo() {};
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+          exports.a = 1;
+          exports.b = 2;
+          // This module will propagate to the parent.
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual([
+        'init BarV1',
+        'init FooV1 with BarExports = {"a":1,"b":2}',
+      ]);
+      log = [];
+
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+          // These are completely different exports:
+          exports.c = 3;
+          exports.d = 4;
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      // Make sure we don't see {a, b} anymore.
+      expect(log).toEqual([
+        'init BarV2',
+        'init FooV1 with BarExports = {"c":3,"d":4}',
+      ]);
+      log = [];
+
+      // Also edit the parent and verify the same again.
+      moduleSystem.__accept(
+        0,
+        (global, require, importDefault, importAll, module, exports) => {
+          const BarExports = require(1);
+          log.push(
+            'init FooV2 with BarExports = ' + JSON.stringify(BarExports),
+          );
+          // This module accepts itself:
+          module.exports = function Foo() {};
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init FooV2 with BarExports = {"c":3,"d":4}']);
+      log = [];
+
+      // Temporarily crash the child.
+      expect(() => {
+        moduleSystem.__accept(
+          1,
+          (global, require, importDefault, importAll, module, exports) => {
+            throw new Error('oh no');
+          },
+          [],
+          {1: [0], 0: []},
+          undefined,
+        );
+      }).toThrow('oh no');
+      expect(log).toEqual([]);
+      log = [];
+
+      // Try one last time to edit the child.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+          // These are completely different exports:
+          exports.e = 5;
+          exports.f = 6;
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual([
+        'init BarV3',
+        'init FooV2 with BarExports = {"e":5,"f":6}',
+      ]);
+      log = [];
+      jest.runAllTimers();
+      expect(Refresh.performReactRefresh).toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
+    });
+
+    it('bails out if update bubbles to the root via the only path', () => {
+      let log = [];
+
+      createModuleSystem(moduleSystem, true);
+      const Refresh = createReactRefreshMock(moduleSystem);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init FooV1');
+          require(1);
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init FooV1', 'init BarV1']);
+      log = [];
+
+      // Neither Bar nor Foo accepted, so update reached the root.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      // We know that neither of them accepted, so we don't re-run them.
+      expect(log).toEqual([]);
+      log = [];
+      jest.runAllTimers();
+
+      // Expect full refresh.
+      expect(Refresh.performReactRefresh).not.toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).toHaveBeenCalled();
+    });
+
+    it('bails out if the update bubbles to the root via one of the paths', () => {
+      let log = [];
+
+      createModuleSystem(moduleSystem, true);
+      const Refresh = createReactRefreshMock(moduleSystem);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init FooV1');
+          require(1);
+          require(2);
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+          require(3);
+          module.exports = function Bar() {}; // Accepts itself
+        },
+      );
+      createModule(
+        moduleSystem,
+        2,
+        'baz.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BazV1');
+          require(3);
+          // This one doesn't accept itself, causing updates to Qux
+          // to bubble through the root.
+        },
+      );
+      createModule(
+        moduleSystem,
+        3,
+        'qux.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init QuxV1');
+          // Doesn't accept itself, and only one its parent path accepts.
+        },
+      );
+
+      moduleSystem.__r(0);
+      expect(log).toEqual([
+        'init FooV1',
+        'init BarV1',
+        'init QuxV1',
+        'init BazV1',
+      ]);
+      log = [];
+
+      // Edit Bar. It should self-accept.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+          require(3);
+          module.exports = function Bar() {}; // Accepts itself
+        },
+        [],
+        {3: [1, 2], 2: [0], 1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV2']);
+      expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
+      log = [];
+
+      // Edit Qux. It should bubble. Baz accepts the update, Bar won't.
+      // So this update should not even attempt to run those factories
+      // because we know we'd bubble through the root if we tried.
+      moduleSystem.__accept(
+        3,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init QuxV2');
+          // Doesn't accept itself, and only one its parent path accepts.
+        },
+        [],
+        {3: [1, 2], 2: [0], 1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual([]);
+      log = [];
+
+      // Expect full refresh.
+      expect(Refresh.performReactRefresh).not.toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).toHaveBeenCalled();
+    });
+
+    it('propagates a module that stops accepting in next version', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      const Refresh = createReactRefreshMock(moduleSystem);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init FooV1');
+          require(1);
+          module.exports = function Foo() {}; // Accept in parent
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+          module.exports = function Bar() {}; // Accept in child
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init FooV1', 'init BarV1']);
+      log = [];
+
+      // Now let's change the child to *not* accept itself.
+      // We'll expect that now the parent will handle the evaluation.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      // We re-run Bar and expect to stop there. However,
+      // it didn't export a component, so we go higher.
+      // We stop at Foo which currently _does_ export a component.
+      expect(log).toEqual(['init BarV2', 'init FooV1']);
+      log = [];
+
+      // Change it back so that the child accepts itself.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+          module.exports = function Bar() {};
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      // Since the export list changed, we have to re-run both the parent
+      // and the child.
+      expect(log).toEqual(['init BarV2', 'init FooV1']);
+      log = [];
+      jest.runAllTimers();
+      expect(Refresh.performReactRefresh).toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
+
+      // Bit editing the child alone now doesn't reevaluate the parent.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV3');
+          module.exports = function Bar() {};
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      expect(log).toEqual(['init BarV3']);
+      log = [];
+      jest.runAllTimers();
+
+      // Finally, edit the parent in a way that changes the export.
+      // It would still be accepted on its own -- but it's incompatible
+      // with the past version which didn't have two exports.
+      moduleSystem.__accept(
+        0,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init FooV2');
+          exports.Foo = function Foo() {};
+          exports.FooFoo = function FooFoo() {};
+        },
+        [],
+        {1: [0], 0: []},
+        undefined,
+      );
+      // We thought it would get accepted, but a change in exports means
+      // we would have to evaluate the parents too. However, it's a root.
+      expect(log).toEqual(['init FooV2']);
+      log = [];
+      jest.runAllTimers();
+      // Therefore, we do a full reload.
+      expect(Refresh.performFullRefresh).toHaveBeenCalled();
+    });
+
+    it('can replace a module before it is loaded', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      const Refresh = createReactRefreshMock(moduleSystem);
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init FooV1');
+          exports.loadBar = function() {
+            require(1);
+          };
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV1');
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual(['init FooV1']);
+      log = [];
+
+      // Replace Bar before it's loaded.
+      moduleSystem.__accept(
+        1,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init BarV2');
+        },
+        [],
+        {1: [], 0: []},
+        undefined,
+      );
+      expect(log).toEqual([]);
+      log = [];
+
+      // Now force Bar to load. It should use the latest version.
+      moduleSystem.__r(0).loadBar();
+      expect(log).toEqual(['init BarV2']);
+      log = [];
+      jest.runAllTimers();
+      expect(Refresh.performReactRefresh).not.toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
     });
   });
 });

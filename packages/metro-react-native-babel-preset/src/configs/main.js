@@ -112,9 +112,11 @@ const getPreset = (src, options) => {
   if (hasClass) {
     extraPlugins.push(es2015Classes);
   }
-  if (isNull || src.indexOf('=>') !== -1) {
-    extraPlugins.push(es2015ArrowFunctions);
-  }
+
+  // TODO(gaearon): put this back into '=>' indexOf bailout
+  // and patch react-refresh to not depend on this transform.
+  extraPlugins.push(es2015ArrowFunctions);
+
   if (isNull || hasClass || src.indexOf('...') !== -1) {
     extraPlugins.push(es2015Spread);
     extraPlugins.push(objectRestSpread);

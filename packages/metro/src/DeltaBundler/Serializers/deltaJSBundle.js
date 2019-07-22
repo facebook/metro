@@ -54,6 +54,7 @@ function deltaJSBundle(
     const appendScripts = getAppendScripts(
       entryPoint,
       [...pre, ...modules],
+      graph.importBundleNames,
       options,
     );
 

@@ -1,7 +1,0 @@
-{
-  "transforms": [{
-    "transform": "transform-lib",
-    "locals": ["module", "exports"],
-    "imports": []
-  }]
-}

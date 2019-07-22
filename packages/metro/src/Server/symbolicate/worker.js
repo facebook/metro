@@ -9,9 +9,6 @@
 
 'use strict';
 
-// RUNS UNTRANSFORMED IN NODE >= v4
-// NO FANCY FEATURES, E.G. DESTRUCTURING, PLEASE!
-
 const SourceMapConsumer = require('source-map').SourceMapConsumer;
 const Symbolication = require('metro-symbolicate/src/Symbolication');
 

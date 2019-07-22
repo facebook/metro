@@ -12,25 +12,57 @@
 
 const getInlineSourceMappingURL = require('../DeltaBundler/Serializers/helpers/getInlineSourceMappingURL');
 const nullthrows = require('nullthrows');
+const path = require('path');
 const sourceMapString = require('../DeltaBundler/Serializers/sourceMapString');
 
 import type {Module} from '../DeltaBundler';
 
 type Options<T: number | string> = {
+  +asyncRequireModulePath: string,
   +createModuleId: string => T,
   +getRunModuleStatement: T => string,
+  +inlineSourceMap: ?boolean,
+  +projectRoot: string,
   +runBeforeMainModule: $ReadOnlyArray<string>,
   +runModule: boolean,
   +sourceMapUrl: ?string,
-  +inlineSourceMap: ?boolean,
 };
 
 function getAppendScripts<T: number | string>(
   entryPoint: string,
   modules: $ReadOnlyArray<Module<>>,
+  importBundleNames: Set<string>,
   options: Options<T>,
 ): $ReadOnlyArray<Module<>> {
   const output = [];
+
+  if (importBundleNames.size) {
+    const importBundleNamesObject = Object.create(null);
+    importBundleNames.forEach(absolutePath => {
+      const bundlePath = path.relative(options.projectRoot, absolutePath);
+      importBundleNamesObject[options.createModuleId(absolutePath)] =
+        bundlePath.slice(0, -path.extname(bundlePath).length) + '.bundle';
+    });
+    output.push({
+      path: '$$importBundleNames',
+      dependencies: new Map(),
+      getSource: (): Buffer => Buffer.from(''),
+      inverseDependencies: new Set(),
+      output: [
+        {
+          type: 'js/script/virtual',
+          data: {
+            code: `(function(){var $$=${options.getRunModuleStatement(
+              options.createModuleId(options.asyncRequireModulePath),
+            )}$$.addImportBundleNames(${String(
+              JSON.stringify(importBundleNamesObject),
+            )})})();`,
+            map: [],
+          },
+        },
+      ],
+    });
+  }
 
   if (options.runModule) {
     const paths = [...options.runBeforeMainModule, entryPoint];

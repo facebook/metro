@@ -22,7 +22,6 @@ const {FileStore} = require('metro-cache');
 import type {OldConfigT as ConfigT} from './configTypes.flow.js';
 
 const DEFAULT = ({
-  allowPnp: true,
   assetRegistryPath: 'missing-asset-registry-path',
   enhanceMiddleware: middleware => middleware,
   extraNodeModules: {},

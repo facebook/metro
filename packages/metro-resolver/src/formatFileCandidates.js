@@ -16,7 +16,9 @@ function formatFileCandidates(candidates: FileCandidates): string {
   if (candidates.type === 'asset') {
     return candidates.name;
   }
-  return `${candidates.filePathPrefix}(${candidates.candidateExts.join('|')})`;
+  return `${candidates.filePathPrefix}(${candidates.candidateExts
+    .filter(Boolean)
+    .join('|')})`;
 }
 
 module.exports = formatFileCandidates;

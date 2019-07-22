@@ -39,7 +39,11 @@ global.WebSocket = jest.fn(() => {
 beforeEach(() => (mockSocket = null));
 
 test('connects to a WebSocket and listens to messages', () => {
+  expect(mockSocket).toBeNull();
   const client = new WebSocketHMRClient('wss://banana.com/phone');
+  if (!mockSocket) {
+    throw new Error('mockSocket was not set when opening the connection.');
+  }
 
   const mockError = {
     message: 'An error occurred.',
@@ -48,14 +52,9 @@ test('connects to a WebSocket and listens to messages', () => {
   const mockUpdateStartCallback = jest.fn();
   const mockCloseCallback = jest.fn();
 
-  expect(mockSocket).toBeNull();
   client.on('connection-error', mockErrorCallback);
   client.on('update-start', mockUpdateStartCallback);
   client.on('close', mockCloseCallback);
-  client.enable();
-  if (!mockSocket) {
-    throw new Error('mockSocket was not set when opening the connection.');
-  }
 
   mockSocket.mockEmit('message', {
     data: JSON.stringify({
@@ -69,7 +68,10 @@ test('connects to a WebSocket and listens to messages', () => {
   expect(mockErrorCallback).toBeCalled();
 
   expect(mockSocket.close).not.toBeCalled();
-  client.disable();
+  client.close();
   expect(mockSocket.close).toBeCalled();
   expect(mockCloseCallback).toBeCalled();
+
+  // Closing twice shouldn't throw.
+  client.close();
 });

@@ -15,9 +15,9 @@ import type {
   MinifierOptions,
 } from '../JSTransformer/worker';
 import type {TransformInputOptions} from '../lib/transformHelpers';
-import type {BabelSourceMap} from '@babel/core';
 import type {
-  MetroSourceMap,
+  BasicSourceMap,
+  MixedSourceMap,
   MetroSourceMapSegmentTuple,
 } from 'metro-source-map';
 
@@ -33,7 +33,7 @@ type BundleType =
   | 'graph';
 
 type MetroSourceMapOrMappings =
-  | MetroSourceMap
+  | MixedSourceMap
   | Array<MetroSourceMapSegmentTuple>;
 
 export type BundleOptions = {
@@ -45,6 +45,7 @@ export type BundleOptions = {
   +hot: boolean,
   +inlineSourceMap: boolean,
   minify: boolean,
+  +modulesOnly: boolean,
   onProgress: ?(doneCont: number, totalCount: number) => mixed,
   +platform: ?string,
   +runModule: boolean,
@@ -57,6 +58,7 @@ export type SerializerOptions = {|
   +runModule: boolean,
   +excludeSource: boolean,
   +inlineSourceMap: boolean,
+  +modulesOnly: boolean,
 |};
 
 // Stricter representation of BundleOptions.
@@ -119,7 +121,7 @@ export type {MinifierOptions};
 
 export type MinifierResult = {
   code: string,
-  map?: BabelSourceMap,
+  map?: BasicSourceMap,
 };
 
 export type MetroMinifier = MinifierOptions => MinifierResult;

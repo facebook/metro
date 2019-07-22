@@ -10,13 +10,20 @@
 
 'use strict';
 
+const Consumer = require('./Consumer');
 const Generator = require('./Generator');
 const SourceMap = require('source-map');
 
+import type {IConsumer} from './Consumer/types.flow';
+export type {IConsumer};
+
+// We need to export this for `metro-symbolicate`
+const normalizeSourcePath = require('./Consumer/normalizeSourcePath');
+
+const composeSourceMaps = require('./composeSourceMaps');
 const {createIndexMap, BundleBuilder} = require('./BundleBuilder');
 const {generateFunctionMap} = require('./generateFunctionMap');
 
-import type {BabelSourceMap} from '@babel/core';
 import type {BabelSourceMapSegment} from '@babel/generator';
 
 type GeneratedCodeMapping = [number, number];
@@ -28,12 +35,6 @@ export type MetroSourceMapSegmentTuple =
   | SourceMapping
   | GeneratedCodeMapping;
 
-type FBExtensions = {
-  x_facebook_offsets: Array<number>,
-  x_metro_module_paths: Array<string>,
-  x_facebook_sources?: FBSourcesArray,
-};
-
 export type FBSourcesArray = $ReadOnlyArray<?FBSourceMetadata>;
 export type FBSourceMetadata = [?FBSourceFunctionMap];
 export type FBSourceFunctionMap = {|
@@ -41,22 +42,102 @@ export type FBSourceFunctionMap = {|
   +mappings: string,
 |};
 
+export type FBSegmentMap = {
+  [id: string]: MixedSourceMap,
+};
+
+export type BasicSourceMap = {|
+  +file?: string,
+  +mappings: string,
+  +names: Array<string>,
+  +sourceRoot?: string,
+  +sources: Array<string>,
+  +sourcesContent?: Array<?string>,
+  +version: number,
+  +x_facebook_offsets?: Array<number>,
+  +x_metro_module_paths?: Array<string>,
+  +x_facebook_sources?: FBSourcesArray,
+  +x_facebook_segments?: FBSegmentMap,
+|};
+
 export type IndexMapSection = {
-  map: MetroSourceMap,
+  map: IndexMap | BasicSourceMap,
   offset: {line: number, column: number},
 };
 
-export type IndexMap = {
-  file?: string,
-  mappings?: void, // avoids SourceMap being a disjoint union
-  sections: Array<IndexMapSection>,
-  version: number,
-};
+export type IndexMap = {|
+  +file?: string,
+  +mappings?: void, // avoids SourceMap being a disjoint union
+  +sections: Array<IndexMapSection>,
+  +version: number,
+  +x_facebook_offsets?: Array<number>,
+  +x_metro_module_paths?: Array<string>,
+  +x_facebook_sources?: FBSourcesArray,
+  +x_facebook_segments?: FBSegmentMap,
+|};
 
-export type FBIndexMap = IndexMap & FBExtensions;
-export type MetroSourceMap = IndexMap | BabelSourceMap;
-export type FBBasicSourceMap = BabelSourceMap & FBExtensions;
-export type FBSourceMap = FBIndexMap | (BabelSourceMap & FBExtensions);
+export type MixedSourceMap = IndexMap | BasicSourceMap;
+
+function fromRawMappingsImpl(
+  isBlocking: boolean,
+  onDone: Generator => void,
+  modules: $ReadOnlyArray<{
+    +map: ?Array<MetroSourceMapSegmentTuple>,
+    +functionMap: ?FBSourceFunctionMap,
+    +path: string,
+    +source: string,
+    +code: string,
+  }>,
+  offsetLines: number,
+): void {
+  const modulesToProcess = modules.slice();
+  const generator = new Generator();
+  let carryOver = offsetLines;
+
+  function processNextModule() {
+    if (modulesToProcess.length === 0) {
+      return true;
+    }
+
+    const mod = modulesToProcess.shift();
+    const {code, map} = mod;
+    if (Array.isArray(map)) {
+      addMappingsForFile(generator, map, mod, carryOver);
+    } else if (map != null) {
+      throw new Error(
+        `Unexpected module with full source map found: ${mod.path}`,
+      );
+    }
+    carryOver = carryOver + countLines(code);
+    return false;
+  }
+
+  function workLoop() {
+    const time = process.hrtime();
+    while (true) {
+      const isDone = processNextModule();
+      if (isDone) {
+        onDone(generator);
+        break;
+      }
+      if (!isBlocking) {
+        // Keep the loop running but try to avoid blocking
+        // for too long because this is not in a worker yet.
+        const diff = process.hrtime(time);
+        const NS_IN_MS = 1000000;
+        if (diff[1] > 50 * NS_IN_MS) {
+          // We've blocked for more than 50ms.
+          // This code currently runs on the main thread,
+          // so let's give Metro an opportunity to handle requests.
+          setImmediate(workLoop);
+          break;
+        }
+      }
+    }
+  }
+
+  workLoop();
+}
 
 /**
  * Creates a source map from modules with "raw mappings", i.e. an array of
@@ -75,25 +156,34 @@ function fromRawMappings(
   }>,
   offsetLines: number = 0,
 ): Generator {
-  const generator = new Generator();
-  let carryOver = offsetLines;
-
-  for (var j = 0, o = modules.length; j < o; ++j) {
-    var module = modules[j];
-    var {code, map} = module;
-
-    if (Array.isArray(map)) {
-      addMappingsForFile(generator, map, module, carryOver);
-    } else if (map != null) {
-      throw new Error(
-        `Unexpected module with full source map found: ${module.path}`,
-      );
-    }
-
-    carryOver = carryOver + countLines(code);
+  let generator: void | Generator;
+  fromRawMappingsImpl(
+    true,
+    g => {
+      generator = g;
+    },
+    modules,
+    offsetLines,
+  );
+  if (generator == null) {
+    throw new Error('Expected fromRawMappingsImpl() to finish synchronously.');
   }
-
   return generator;
+}
+
+async function fromRawMappingsNonBlocking(
+  modules: $ReadOnlyArray<{
+    +map: ?Array<MetroSourceMapSegmentTuple>,
+    +functionMap: ?FBSourceFunctionMap,
+    +path: string,
+    +source: string,
+    +code: string,
+  }>,
+  offsetLines: number = 0,
+): Promise<Generator> {
+  return new Promise(resolve => {
+    fromRawMappingsImpl(false, resolve, modules, offsetLines);
+  });
 }
 
 /**
@@ -101,7 +191,7 @@ function fromRawMappings(
  * used across the bundler.
  */
 function toBabelSegments(
-  sourceMap: BabelSourceMap,
+  sourceMap: BasicSourceMap,
 ): Array<BabelSourceMapSegment> {
   const rawMappings = [];
 
@@ -182,9 +272,13 @@ function countLines(string) {
 
 module.exports = {
   BundleBuilder,
+  composeSourceMaps,
+  Consumer,
   createIndexMap,
   generateFunctionMap,
   fromRawMappings,
+  fromRawMappingsNonBlocking,
+  normalizeSourcePath,
   toBabelSegments,
   toSegmentTuple,
 };

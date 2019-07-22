@@ -15,161 +15,198 @@
  *
  * See https://our.intern.facebook.com/intern/dex/symbolicating-javascript-stack-traces-for-react-native/
  *
+ * @flow strict-local
  * @format
  */
 
 'use strict';
 
+// flowlint-next-line untyped-import:off
 const SourceMapConsumer = require('source-map').SourceMapConsumer;
 const Symbolication = require('./Symbolication.js');
 
 const fs = require('fs');
+// flowlint-next-line untyped-import:off
 const through2 = require('through2');
 
-const argv = process.argv.slice(2);
-
-function checkAndRemoveArg(arg, valuesPerArg = 0) {
-  let values = null;
-  for (let idx = argv.indexOf(arg); idx !== -1; idx = argv.indexOf(arg)) {
-    argv.splice(idx, 1);
-    values = values || [];
-    values.push(argv.splice(idx, valuesPerArg));
+async function main(
+  argvInput: Array<string> = process.argv.slice(2),
+  {
+    stdin,
+    stderr,
+    stdout,
+  }: {
+    stdin: stream$Readable | tty$ReadStream,
+    stderr: stream$Writable,
+    stdout: stream$Writable,
+  } = process,
+) {
+  const argv = argvInput.slice();
+  function checkAndRemoveArg(arg, valuesPerArg = 0) {
+    let values = null;
+    for (let idx = argv.indexOf(arg); idx !== -1; idx = argv.indexOf(arg)) {
+      argv.splice(idx, 1);
+      values = values || [];
+      values.push(argv.splice(idx, valuesPerArg));
+    }
+    return values;
   }
-  return values;
-}
 
-function checkAndRemoveArgWithValue(arg) {
-  const values = checkAndRemoveArg(arg, 1);
-  return values ? values[0][0] : null;
-}
+  function checkAndRemoveArgWithValue(arg) {
+    const values = checkAndRemoveArg(arg, 1);
+    return values ? values[0][0] : null;
+  }
+  try {
+    const noFunctionNames = checkAndRemoveArg('--no-function-names');
+    const inputLineStart = Number.parseInt(
+      checkAndRemoveArgWithValue('--input-line-start') || '1',
+      10,
+    );
+    const inputColumnStart = Number.parseInt(
+      checkAndRemoveArgWithValue('--input-column-start') || '0',
+      10,
+    );
+    const outputLineStart = Number.parseInt(
+      checkAndRemoveArgWithValue('--output-line-start') || '1',
+      10,
+    );
+    const outputColumnStart = Number.parseInt(
+      checkAndRemoveArgWithValue('--output-column-start') || '0',
+      10,
+    );
 
-const noFunctionNames = checkAndRemoveArg('--no-function-names');
-const inputLineStart = Number.parseInt(
-  checkAndRemoveArgWithValue('--input-line-start') || '1',
-  10,
-);
-const inputColumnStart = Number.parseInt(
-  checkAndRemoveArgWithValue('--input-column-start') || '0',
-  10,
-);
-const outputLineStart = Number.parseInt(
-  checkAndRemoveArgWithValue('--output-line-start') || '1',
-  10,
-);
-const outputColumnStart = Number.parseInt(
-  checkAndRemoveArgWithValue('--output-column-start') || '0',
-  10,
-);
+    if (argv.length < 1 || argv.length > 4) {
+      /* eslint no-path-concat: "off" */
 
-if (argv.length < 1 || argv.length > 4) {
-  /* eslint no-path-concat: "off" */
+      const usages = [
+        'Usage: ' + __filename + ' <source-map-file>',
+        '       ' + __filename + ' <source-map-file> <line> [column]',
+        '       ' +
+          __filename +
+          ' <source-map-file> <moduleId>.js <line> [column]',
+        '       ' + __filename + ' <source-map-file> <mapfile>.profmap',
+        '       ' +
+          __filename +
+          ' <source-map-file> --attribution < in.jsonl > out.jsonl',
+        '       ' + __filename + ' <source-map-file> <tracefile>.cpuprofile',
+        ' Optional flags:',
+        '  --no-function-names',
+        '  --input-line-start <line> (default: 1)',
+        '  --input-column-start <column> (default: 0)',
+        '  --output-line-start <line> (default: 1)',
+        '  --output-column-start <column> (default: 0)',
+      ];
+      console.error(usages.join('\n'));
+      return 1;
+    }
 
-  const usages = [
-    'Usage: ' + __filename + ' <source-map-file>',
-    '       ' + __filename + ' <source-map-file> <line> [column]',
-    '       ' + __filename + ' <source-map-file> <moduleId>.js <line> [column]',
-    '       ' + __filename + ' <source-map-file> <mapfile>.profmap',
-    '       ' +
-      __filename +
-      ' <source-map-file> --attribution < in.jsonl > out.jsonl',
-    '       ' + __filename + ' <source-map-file> <tracefile>.cpuprofile',
-    ' Optional flags:',
-    '  --no-function-names',
-    '  --input-line-start <line> (default: 1)',
-    '  --input-column-start <column> (default: 0)',
-    '  --output-line-start <line> (default: 1)',
-    '  --output-column-start <column> (default: 0)',
-  ];
-  console.error(usages.join('\n'));
-  process.exit(1);
-}
-
-// Read the source map.
-const sourceMapFileName = argv.shift();
-const content = fs.readFileSync(sourceMapFileName, 'utf8');
-const context = Symbolication.createContext(SourceMapConsumer, content, {
-  nameSource: noFunctionNames ? 'identifier_names' : 'function_names',
-  inputLineStart,
-  inputColumnStart,
-  outputLineStart,
-  outputColumnStart,
-});
-
-if (argv.length === 0) {
-  const read = stream => {
-    return new Promise(resolve => {
-      let data = '';
-      if (stream.isTTY) {
-        resolve(data);
-        return;
-      }
-
-      stream.setEncoding('utf8');
-      stream.on('readable', () => {
-        let chunk;
-        while ((chunk = stream.read())) {
-          data += chunk;
-        }
-      });
-      stream.on('end', () => {
-        resolve(data);
-      });
+    // Read the source map.
+    const sourceMapFileName = argv.shift();
+    const content = fs.readFileSync(sourceMapFileName, 'utf8');
+    const context = Symbolication.createContext(SourceMapConsumer, content, {
+      nameSource: noFunctionNames ? 'identifier_names' : 'function_names',
+      inputLineStart,
+      inputColumnStart,
+      outputLineStart,
+      outputColumnStart,
     });
-  };
-
-  (async () => {
-    const stackTrace = await read(process.stdin);
-    process.stdout.write(Symbolication.symbolicate(stackTrace, context));
-  })().catch(error => {
-    console.error(error);
-  });
-} else if (argv[0].endsWith('.profmap')) {
-  process.stdout.write(Symbolication.symbolicateProfilerMap(argv[0], context));
-} else if (argv[0] === '--attribution') {
-  let buffer = '';
-  process.stdin
-    .pipe(
-      through2(function(data, enc, callback) {
-        // Take arbitrary strings, output single lines
-        buffer += data;
-        const lines = buffer.split('\n');
-        for (let i = 0, e = lines.length - 1; i < e; i++) {
-          this.push(lines[i]);
-        }
-        buffer = lines[lines.length - 1];
-        callback();
-      }),
-    )
-    .pipe(
-      through2.obj(function(data, enc, callback) {
-        // This is JSONL, so each line is a separate JSON object
-        const obj = JSON.parse(data);
-        Symbolication.symbolicateAttribution(obj, context);
-        this.push(JSON.stringify(obj) + '\n');
-        callback();
-      }),
-    )
-    .pipe(process.stdout);
-} else if (argv[0].endsWith('.cpuprofile')) {
-  Symbolication.symbolicateChromeTrace(argv[0], context);
-} else {
-  // read-from-argv form.
-  let moduleIds;
-  if (argv[0].endsWith('.js')) {
-    moduleIds = Symbolication.parseFileName(argv[0]);
-    argv.shift();
-  } else {
-    moduleIds = {segmentId: 0, localId: undefined};
+    if (argv.length === 0) {
+      const stackTrace = await readAll(stdin);
+      stdout.write(Symbolication.symbolicate(stackTrace, context));
+    } else if (argv[0].endsWith('.profmap')) {
+      stdout.write(Symbolication.symbolicateProfilerMap(argv[0], context));
+    } else if (argv[0] === '--attribution') {
+      let buffer = '';
+      await waitForStream(
+        stdin
+          .pipe(
+            through2(function(data, enc, callback) {
+              // Take arbitrary strings, output single lines
+              buffer += data;
+              const lines = buffer.split('\n');
+              for (let i = 0, e = lines.length - 1; i < e; i++) {
+                this.push(lines[i]);
+              }
+              buffer = lines[lines.length - 1];
+              callback();
+            }),
+          )
+          .pipe(
+            through2.obj(function(data, enc, callback) {
+              // This is JSONL, so each line is a separate JSON object
+              const obj = JSON.parse(data);
+              Symbolication.symbolicateAttribution(obj, context);
+              this.push(JSON.stringify(obj) + '\n');
+              callback();
+            }),
+          )
+          .pipe(stdout),
+      );
+    } else if (argv[0].endsWith('.cpuprofile')) {
+      // NOTE: synchronous
+      Symbolication.symbolicateChromeTrace(argv[0], {stdout, stderr}, context);
+    } else {
+      // read-from-argv form.
+      let moduleIds;
+      if (argv[0].endsWith('.js')) {
+        moduleIds = Symbolication.parseFileName(argv[0]);
+        argv.shift();
+      } else {
+        moduleIds = {segmentId: 0, localId: undefined};
+      }
+      const lineNumber = argv.shift();
+      const columnNumber = argv.shift() || 0;
+      const original = Symbolication.getOriginalPositionFor(
+        +lineNumber,
+        +columnNumber,
+        moduleIds,
+        context,
+      );
+      stdout.write(
+        [
+          original.source ?? 'null',
+          original.line ?? 'null',
+          original.name ?? 'null',
+        ].join(':') + '\n',
+      );
+    }
+  } catch (error) {
+    stderr.write(error + '\n');
+    return 1;
   }
-  const lineNumber = argv.shift();
-  const columnNumber = argv.shift() || 0;
-  const original = Symbolication.getOriginalPositionFor(
-    lineNumber,
-    columnNumber,
-    moduleIds,
-    context,
-  );
-  process.stdout.write(
-    original.source + ':' + original.line + ':' + original.name + '\n',
-  );
+  return 0;
 }
+
+function readAll(stream) {
+  return new Promise(resolve => {
+    let data = '';
+    if (stream.isTTY === true) {
+      resolve(data);
+      return;
+    }
+
+    stream.setEncoding('utf8');
+    stream.on('readable', () => {
+      let chunk;
+      // flowlint-next-line sketchy-null-string:off
+      while ((chunk = stream.read())) {
+        data += chunk.toString();
+      }
+    });
+    stream.on('end', () => {
+      resolve(data);
+    });
+  });
+}
+
+function waitForStream(stream) {
+  return new Promise(resolve => {
+    stream.on('finish', resolve);
+  });
+}
+
+if (require.main === module) {
+  main().then(code => process.exit(code));
+}
+
+module.exports = main;

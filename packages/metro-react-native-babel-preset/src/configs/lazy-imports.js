@@ -24,8 +24,6 @@ module.exports = new Set([
   'FlatList',
   'Image',
   'ImageBackground',
-  'ImageEditor',
-  'ImageStore',
   'InputAccessoryView',
   'KeyboardAvoidingView',
   'MaskedViewIOS',
@@ -51,9 +49,7 @@ module.exports = new Set([
   'TouchableOpacity',
   'TouchableWithoutFeedback',
   'View',
-  'ViewPagerAndroid',
   'VirtualizedList',
-  'WebView',
 
   // APIs
   'ActionSheetIOS',

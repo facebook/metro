@@ -21,7 +21,7 @@ const {
 const {getModuleCodeAndMap, partition, toModuleTransport} = require('./util');
 
 import type {Module, OutputFn, OutputFnArg} from '../types.flow';
-import type {FBIndexMap} from 'metro-source-map';
+import type {IndexMap} from 'metro-source-map';
 
 function asIndexedRamBundle({
   filename,
@@ -33,7 +33,7 @@ function asIndexedRamBundle({
 }): {|
   code: string | Buffer,
   extraFiles?: Iterable<[string, string | Buffer]>,
-  map: FBIndexMap,
+  map: IndexMap,
 |} {
   const idForPath = (x: {path: string}) => idsForPath(x).moduleId;
   const [startup, deferred] = partition(modules, preloadedModules);
@@ -99,7 +99,7 @@ function* subtree(
 function createBuilder(
   preloadedModules: Set<string>,
   ramGroupHeads: ?$ReadOnlyArray<string>,
-): OutputFn<FBIndexMap> {
+): OutputFn<IndexMap> {
   return (x: OutputFnArg) =>
     asIndexedRamBundle({...x, preloadedModules, ramGroupHeads});
 }

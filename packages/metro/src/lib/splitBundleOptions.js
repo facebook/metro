@@ -27,10 +27,11 @@ function splitBundleOptions(options: BundleOptions): SplitBundleOptions {
       type: 'module',
     },
     serializerOptions: {
-      sourceMapUrl: options.sourceMapUrl,
-      runModule: options.runModule,
       excludeSource: options.excludeSource,
       inlineSourceMap: options.inlineSourceMap,
+      modulesOnly: options.modulesOnly,
+      runModule: options.runModule,
+      sourceMapUrl: options.sourceMapUrl,
     },
     onProgress: options.onProgress,
   };

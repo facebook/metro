@@ -9,7 +9,6 @@ Object {
   "reporter": null,
   "resetCache": false,
   "resolver": Object {
-    "allowPnp": true,
     "assetExts": Array [
       "bmp",
       "gif",
@@ -83,6 +82,9 @@ Object {
     "verifyConnections": false,
   },
   "stickyWorkers": true,
+  "symbolicator": Object {
+    "workerPath": "metro/src/Server/symbolicate/worker",
+  },
   "transformer": Object {
     "assetPlugins": Array [],
     "assetRegistryPath": "missing-asset-registry-path",
@@ -91,6 +93,7 @@ Object {
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,
+    "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "minifierConfig": Object {
       "compress": Object {
@@ -137,7 +140,6 @@ Object {
   "reporter": null,
   "resetCache": false,
   "resolver": Object {
-    "allowPnp": true,
     "assetExts": Array [
       "bmp",
       "gif",
@@ -211,6 +213,9 @@ Object {
     "verifyConnections": false,
   },
   "stickyWorkers": true,
+  "symbolicator": Object {
+    "workerPath": "metro/src/Server/symbolicate/worker",
+  },
   "transformer": Object {
     "assetPlugins": Array [],
     "assetRegistryPath": "missing-asset-registry-path",
@@ -219,6 +224,7 @@ Object {
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,
+    "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "minifierConfig": Object {
       "compress": Object {

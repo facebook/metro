@@ -130,11 +130,18 @@ function buildBabelConfig(filename, options, plugins?: BabelPlugins = []) {
   config.plugins = extraPlugins.concat(config.plugins, plugins);
 
   if (options.dev && options.hot) {
-    const hmrConfig = makeHMRConfig(
-      options,
-      path.resolve(options.projectRoot, filename),
-    );
-    config = Object.assign({}, config, hmrConfig);
+    // Note: this intentionally doesn't include the path separator because
+    // I'm not sure which one it should use on Windows, and false positives
+    // are unlikely anyway. If you later decide to include the separator,
+    // don't forget that the string usually *starts* with "node_modules" so
+    // the first one often won't be there.
+    const mayContainEditableReactComponents =
+      filename.indexOf('node_modules') === -1;
+
+    if (mayContainEditableReactComponents) {
+      const hmrConfig = makeHMRConfig();
+      config = Object.assign({}, config, hmrConfig);
+    }
   }
 
   return Object.assign({}, babelRC, config);

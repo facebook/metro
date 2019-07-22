@@ -8,34 +8,8 @@
  */
 'use strict';
 
-var path = require('path');
-var hmrTransform = 'react-transform-hmr/lib/index.js';
-var transformPath = require.resolve(hmrTransform);
-
-module.exports = function(options, filename) {
-  var transform = filename
-    ? './' + path.relative(path.dirname(filename), transformPath) // packager can't handle absolute paths
-    : hmrTransform;
-
-  // Fix the module path to use '/' on Windows.
-  if (path.sep === '\\') {
-    transform = transform.replace(/\\/g, '/');
-  }
-
+module.exports = function() {
   return {
-    plugins: [
-      [
-        require('metro-babel7-plugin-react-transform'),
-        {
-          transforms: [
-            {
-              transform,
-              imports: ['react'],
-              locals: ['module'],
-            },
-          ],
-        },
-      ],
-    ],
+    plugins: [require('react-refresh/babel')],
   };
 };

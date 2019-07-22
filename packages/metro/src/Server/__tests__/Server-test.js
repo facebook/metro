@@ -153,6 +153,7 @@ describe('processRequest', () => {
       const graph = {
         entryPoints: ['/root/mybundle.js'],
         dependencies,
+        importBundleNames: new Set(),
       };
       currentGraphs.add(graph);
 
@@ -392,9 +393,10 @@ describe('processRequest', () => {
     expect(DeltaBundler.prototype.buildGraph).toBeCalledWith(
       ['/root/index.js'],
       {
+        experimentalImportBundleSupport: false,
+        onProgress: expect.any(Function),
         resolve: expect.any(Function),
         transform: expect.any(Function),
-        onProgress: expect.any(Function),
       },
     );
   });
@@ -530,6 +532,10 @@ describe('processRequest', () => {
         expect(() => JSON.parse(response.body)).not.toThrow();
         const body = JSON.parse(response.body);
         expect(body).toMatchObject({
+          // CAUTION -- these *exact* field names are important because
+          // they are being parsed by DebugServerException.java on Android.
+          // DO NOT change them without also ensuring that a transform error
+          // still shows a meaningful message on the initial bundle load.
           type: 'TransformError',
           message: 'test syntax error',
         });
@@ -710,9 +716,10 @@ describe('processRequest', () => {
       expect(DeltaBundler.prototype.buildGraph).toBeCalledWith(
         ['/root/foo file'],
         {
+          experimentalImportBundleSupport: false,
+          onProgress: null,
           resolve: expect.any(Function),
           transform: expect.any(Function),
-          onProgress: null,
         },
       );
     });

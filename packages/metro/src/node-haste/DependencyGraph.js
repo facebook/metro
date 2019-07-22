@@ -142,7 +142,6 @@ class DependencyGraph extends EventEmitter {
 
   _createModuleResolver() {
     this._moduleResolver = new ModuleResolver({
-      allowPnp: this._config.resolver.allowPnp,
       dirExists: (filePath: string) => {
         try {
           return fs.lstatSync(filePath).isDirectory();
@@ -156,6 +155,7 @@ class DependencyGraph extends EventEmitter {
       moduleCache: this._moduleCache,
       moduleMap: this._moduleMap,
       preferNativePlatform: true,
+      projectRoot: this._config.projectRoot,
       resolveAsset: (
         dirPath: string,
         assetName: string,

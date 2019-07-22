@@ -19,7 +19,6 @@ const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('./DeltaBundler/Serializers/getAssets');
 const getGraphId = require('./lib/getGraphId');
 const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
-const sourceMapObject = require('./DeltaBundler/Serializers/sourceMapObject');
 const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
 const splitBundleOptions = require('./lib/splitBundleOptions');
 const debug = require('debug')('Metro:Server');
@@ -36,6 +35,9 @@ const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundErro
 const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundError');
 
 const {getAsset} = require('./Assets');
+const {
+  sourceMapObjectNonBlocking,
+} = require('./DeltaBundler/Serializers/sourceMapObject');
 
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from './lib/reporting';
@@ -46,7 +48,7 @@ import type {
   ConfigT,
   VisualizerConfigT,
 } from 'metro-config/src/configTypes.flow';
-import type {MetroSourceMap} from 'metro-source-map';
+import type {MixedSourceMap} from 'metro-source-map';
 import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
 import type {RevisionId} from './IncrementalBundler';
@@ -158,7 +160,7 @@ class Server {
         });
       });
 
-    this._symbolicateInWorker = symbolicate.createWorker();
+    this._symbolicateInWorker = symbolicate.createWorker(this._config);
     this._nextBundleBuildID = 1;
   }
 
@@ -194,11 +196,13 @@ class Server {
     const entryPoint = path.resolve(this._config.projectRoot, entryFile);
 
     const bundle = baseJSBundle(entryPoint, prepend, graph, {
+      asyncRequireModulePath: this._config.transformer.asyncRequireModulePath,
       processModuleFilter: this._config.serializer.processModuleFilter,
       createModuleId: this._createModuleId,
       getRunModuleStatement: this._config.serializer.getRunModuleStatement,
       dev: transformOptions.dev,
       projectRoot: this._config.projectRoot,
+      modulesOnly: serializerOptions.modulesOnly,
       runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
         path.relative(this._config.projectRoot, entryPoint),
       ),
@@ -233,6 +237,7 @@ class Server {
     const entryPoint = path.resolve(this._config.projectRoot, entryFile);
 
     return await getRamBundleInfo(entryPoint, prepend, graph, {
+      asyncRequireModulePath: this._config.transformer.asyncRequireModulePath,
       processModuleFilter: this._config.serializer.processModuleFilter,
       createModuleId: this._createModuleId,
       dev: transformOptions.dev,
@@ -241,6 +246,7 @@ class Server {
       getTransformOptions: this._config.transformer.getTransformOptions,
       platform: transformOptions.platform,
       projectRoot: this._config.projectRoot,
+      modulesOnly: serializerOptions.modulesOnly,
       runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
         path.relative(this._config.projectRoot, entryPoint),
       ),
@@ -650,11 +656,14 @@ class Server {
         revision.id,
         revision.graph,
         {
+          asyncRequireModulePath: this._config.transformer
+            .asyncRequireModulePath,
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
           dev: transformOptions.dev,
           getRunModuleStatement: this._config.serializer.getRunModuleStatement,
           projectRoot: this._config.projectRoot,
+          modulesOnly: serializerOptions.modulesOnly,
           runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
             path.relative(this._config.projectRoot, entryFile),
           ),
@@ -728,11 +737,13 @@ class Server {
         ((...args) => bundleToString(baseJSBundle(...args)).code);
 
       const bundle = serializer(entryFile, revision.prepend, revision.graph, {
+        asyncRequireModulePath: this._config.transformer.asyncRequireModulePath,
         processModuleFilter: this._config.serializer.processModuleFilter,
         createModuleId: this._createModuleId,
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,
         dev: transformOptions.dev,
         projectRoot: this._config.projectRoot,
+        modulesOnly: serializerOptions.modulesOnly,
         runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
           path.relative(this._config.projectRoot, entryFile),
         ),
@@ -869,11 +880,13 @@ class Server {
       }
 
       const base = baseJSBundle(entryFile, revision.prepend, revision.graph, {
+        asyncRequireModulePath: this._config.transformer.asyncRequireModulePath,
         processModuleFilter: this._config.serializer.processModuleFilter,
         createModuleId: this._createModuleId,
         getRunModuleStatement: this._config.serializer.getRunModuleStatement,
         dev: transformOptions.dev,
         projectRoot: this._config.projectRoot,
+        modulesOnly: serializerOptions.modulesOnly,
         runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
           path.relative(this._config.projectRoot, entryFile),
         ),
@@ -961,7 +974,7 @@ class Server {
         );
 
         debug('Getting source maps for symbolication');
-        return Promise.all(mapPromises).then((maps: Array<MetroSourceMap>) => {
+        return Promise.all(mapPromises).then((maps: Array<MixedSourceMap>) => {
           debug('Sending stacks and maps to symbolication worker');
           const urlsToMaps = zip(urls.values(), maps);
           return this._symbolicateInWorker(stack, urlsToMaps);
@@ -983,7 +996,7 @@ class Server {
       );
   }
 
-  async _sourceMapForURL(reqUrl: string): Promise<MetroSourceMap> {
+  async _sourceMapForURL(reqUrl: string): Promise<MixedSourceMap> {
     const {options} = parseOptionsFromUrl(
       reqUrl,
       new Set(this._config.resolver.platforms),
@@ -1024,10 +1037,15 @@ class Server {
 
     const {prepend, graph} = revision;
 
-    return sourceMapObject([...prepend, ...this._getSortedModules(graph)], {
-      excludeSource: serializerOptions.excludeSource,
-      processModuleFilter: this._config.serializer.processModuleFilter,
-    });
+    // This is a non-blocking version to avoid stalling the server.
+    // TODO(T46510351): move all of this to a worker.
+    return sourceMapObjectNonBlocking(
+      [...prepend, ...this._getSortedModules(graph)],
+      {
+        excludeSource: serializerOptions.excludeSource,
+        processModuleFilter: this._config.serializer.processModuleFilter,
+      },
+    );
   }
 
   getNewBuildID(): string {
@@ -1057,6 +1075,7 @@ class Server {
     ...Server.DEFAULT_GRAPH_OPTIONS,
     excludeSource: false,
     inlineSourceMap: false,
+    modulesOnly: false,
     onProgress: null,
     runModule: true,
     sourceMapUrl: null,

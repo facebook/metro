@@ -19,7 +19,7 @@ const virtualModule = require('../module').virtual;
 const {transformSync} = require('@babel/core');
 
 import type {IdsForPathFn, Module} from '../types.flow';
-import type {BabelSourceMap} from '@babel/core';
+import type {BasicSourceMap} from 'metro-source-map';
 
 // Transformed modules have the form
 //   __d(function(require, module, global, exports, dependencyMap) {
@@ -56,7 +56,7 @@ function inlineModuleIds(
   idForPath: ({path: string}) => number,
 ): {
   moduleCode: string,
-  moduleMap: ?BabelSourceMap,
+  moduleMap: ?BasicSourceMap,
 } {
   const {dependencies, file} = module;
   const {code, map, path} = file;

@@ -12,40 +12,39 @@
 
 const fs = require('fs');
 const path = require('path');
-const {spawn} = require('child_process');
+const symbolicate = require('../symbolicate');
 
+const {PassThrough} = require('stream');
 const resolve = fileName => path.resolve(__dirname, '__fixtures__', fileName);
 const read = fileName => fs.readFileSync(resolve(fileName), 'utf8');
 
-const execute = (args: Array<string>, stdin: string): Promise<string> =>
-  new Promise((resolvePromise, reject) => {
-    const stdout = [];
-    const output = ['Process failed with the following output:\n======\n'];
-    const child = spawn(process.execPath, [
-      ...process.execArgv,
-      path.join(__dirname, '..', 'symbolicate.js'),
-      ...args,
-    ]);
-    child.stdout.on('data', data => {
-      output.push(data);
-      stdout.push(data);
-    });
-    child.stderr.on('data', data => {
-      output.push(data);
-    });
-    child.on('close', (code, signal) => {
-      if (code !== 0 || signal != null) {
-        output.push('======\n');
-        reject(new Error(output.join('')));
-        return;
-      }
-      resolvePromise(stdout.join(''));
-    });
-    if (stdin) {
-      child.stdin.write(stdin);
-      child.stdin.end();
-    }
+const execute = async (args: Array<string>, stdin: string): Promise<string> => {
+  const streams = {
+    stdin: new PassThrough(),
+    stdout: new PassThrough(),
+    stderr: new PassThrough(),
+  };
+  const stdout = [];
+  const output = ['Process failed with the following output:\n======\n'];
+  streams.stdout.on('data', data => {
+    output.push(data);
+    stdout.push(data);
   });
+  streams.stderr.on('data', data => {
+    output.push(data);
+  });
+  if (stdin) {
+    streams.stdin.write(stdin);
+    streams.stdin.end();
+  }
+  const code = await symbolicate(args, streams);
+
+  if (code !== 0) {
+    output.push('======\n');
+    throw new Error(output.join(''));
+  }
+  return stdout.join('');
+};
 
 afterAll(() => {
   try {

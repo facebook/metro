@@ -68,6 +68,8 @@ async function calcTransformerOptions(
         minify: false,
       }),
       onProgress: null,
+      experimentalImportBundleSupport:
+        config.transformer.experimentalImportBundleSupport,
     });
 
     return Array.from(dependencies.keys());

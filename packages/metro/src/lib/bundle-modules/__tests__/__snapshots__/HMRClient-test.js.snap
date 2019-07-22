@@ -1,0 +1,173 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`can add and delete a module in a batch 1`] = `
+"
+/*** begin A (add 1 and 2) ***/
+/*** end A (add 1 and 2) ***/
+
+
+/*** begin B (delete 2) ***/
+/*** end B (delete 2) ***/
+
+
+/* 1.js */
+  function 1_A() {}
+//# sourceMappingURL=1_A.js.map"
+`;
+
+exports[`can apply updates individually and in a batch: 1: run updates as they arrive 1`] = `
+"
+/*** begin A (add 1, 2, and 3) ***/
+/* 1.js */
+  function 1_A() {}
+//# sourceMappingURL=1_A.js.map
+/* 2.js */
+  function 2_A() {}
+//# sourceMappingURL=2_A.js.map
+/* 3.js */
+  function 3_A() {}
+//# sourceMappingURL=3_A.js.map
+/*** end A (add 1, 2, and 3) ***/
+
+
+/*** begin B (add 4, edit 3 and 1) ***/
+/* 4.js */
+  function 4_B() {}
+//# sourceMappingURL=4_B.js.map
+/* 3.js */
+  function 3_B() {}
+//# sourceMappingURL=3_B.js.map
+/* 1.js */
+  function 1_B() {}
+//# sourceMappingURL=1_B.js.map
+/*** end B (add 4, edit 3 and 1) ***/
+
+
+/*** begin C (edit 2, delete 3) ***/
+/* 2.js */
+  function 2_C() {}
+//# sourceMappingURL=2_C.js.map
+/*** end C (edit 2, delete 3) ***/
+
+
+/*** begin D (delete 1, add 3) ***/
+/* 3.js */
+  function 3_D() {}
+//# sourceMappingURL=3_D.js.map
+/*** end D (delete 1, add 3) ***/
+
+
+/*** begin E (edit 2 and 3) ***/
+/* 2.js */
+  function 2_E() {}
+//# sourceMappingURL=2_E.js.map
+/* 3.js */
+  function 3_E() {}
+//# sourceMappingURL=3_E.js.map
+/*** end E (edit 2 and 3) ***/
+
+"
+`;
+
+exports[`can apply updates individually and in a batch: 2: ignore updates 1`] = `
+"
+/*** begin A (add 1, 2, and 3) ***/
+/*** end A (add 1, 2, and 3) ***/
+
+
+/*** begin B (add 4, edit 3 and 1) ***/
+/*** end B (add 4, edit 3 and 1) ***/
+
+
+/*** begin C (edit 2, delete 3) ***/
+/*** end C (edit 2, delete 3) ***/
+
+
+/*** begin D (delete 1, add 3) ***/
+/*** end D (delete 1, add 3) ***/
+
+
+/*** begin E (edit 2 and 3) ***/
+/*** end E (edit 2 and 3) ***/
+
+"
+`;
+
+exports[`can apply updates individually and in a batch: 3: apply updates in a batch 1`] = `
+"
+/* 2.js */
+  function 2_E() {}
+//# sourceMappingURL=2_E.js.map
+/* 4.js */
+  function 4_B() {}
+//# sourceMappingURL=4_B.js.map
+/* 3.js */
+  function 3_E() {}
+//# sourceMappingURL=3_E.js.map"
+`;
+
+exports[`can delete and re-add a module in a batch 1`] = `
+"
+/*** begin A (delete 2) ***/
+/*** end A (delete 2) ***/
+
+
+/*** begin B (add 1 and 2) ***/
+/*** end B (add 1 and 2) ***/
+
+
+/* 1.js */
+  function 1_B() {}
+//# sourceMappingURL=1_B.js.map
+/* 2.js */
+  function 2_B() {}
+//# sourceMappingURL=2_B.js.map"
+`;
+
+exports[`can enable and disable the client to batch updates 1`] = `
+"
+/*** begin A (add 1, 2, and 3) ***/
+/* 1.js */
+  function 1_A() {}
+//# sourceMappingURL=1_A.js.map
+/* 2.js */
+  function 2_A() {}
+//# sourceMappingURL=2_A.js.map
+/* 3.js */
+  function 3_A() {}
+//# sourceMappingURL=3_A.js.map
+/*** end A (add 1, 2, and 3) ***/
+
+
+/*** begin B (add 4, edit 3 and 1) ***/
+/*** end B (add 4, edit 3 and 1) ***/
+
+
+/*** begin C (edit 2, delete 3) ***/
+/*** end C (edit 2, delete 3) ***/
+
+
+/* 4.js */
+  function 4_B() {}
+//# sourceMappingURL=4_B.js.map
+/* 1.js */
+  function 1_B() {}
+//# sourceMappingURL=1_B.js.map
+/* 2.js */
+  function 2_C() {}
+//# sourceMappingURL=2_C.js.map
+/*** begin D (delete 1, add 3) ***/
+/*** end D (delete 1, add 3) ***/
+
+
+/*** begin E (edit 2 and 3) ***/
+/*** end E (edit 2 and 3) ***/
+
+
+/* 3.js */
+  function 3_E() {}
+//# sourceMappingURL=3_E.js.map
+/* 2.js */
+  function 2_E() {}
+//# sourceMappingURL=2_E.js.map"
+`;

@@ -68,6 +68,7 @@ export type Options = {|
 |};
 
 export type CollectedDependencies = {|
+  +ast: Ast,
   +dependencyMapName: string,
   +dependencies: $ReadOnlyArray<Dependency>,
 |};
@@ -185,6 +186,7 @@ function collectDependencies(
   }
 
   return {
+    ast,
     dependencies,
     dependencyMapName: nullthrows(state.dependencyMapIdentifier).name,
   };

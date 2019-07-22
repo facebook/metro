@@ -90,9 +90,7 @@ function formatBundlingError(error: CustomError): FormattedError {
     return {
       type: 'InternalError',
       errors: [],
-      message:
-        'Metro Bundler has encountered an internal error, ' +
-        'please check your terminal error output for more details',
+      message: 'Metro Bundler has encountered an error: ' + error.message,
     };
   }
 }

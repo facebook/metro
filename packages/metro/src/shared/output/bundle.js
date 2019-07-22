@@ -16,7 +16,7 @@ const relativizeSourceMapInline = require('../../lib/relativizeSourceMap');
 const writeFile = require('./writeFile');
 
 import type {OutputOptions, RequestOptions} from '../types.flow';
-import type {MetroSourceMap} from 'metro-source-map';
+import type {MixedSourceMap} from 'metro-source-map';
 
 function buildBundle(
   packagerClient: Server,
@@ -33,7 +33,7 @@ function relativateSerializedMap(
   map: string,
   sourceMapSourcesRoot: string,
 ): string {
-  const sourceMap = (JSON.parse(map): MetroSourceMap);
+  const sourceMap = (JSON.parse(map): MixedSourceMap);
   relativizeSourceMapInline(sourceMap, sourceMapSourcesRoot);
   return JSON.stringify(sourceMap);
 }

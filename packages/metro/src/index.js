@@ -350,9 +350,7 @@ type ServeCommandOptions = {||} | null;
 exports.attachMetroCli = function(
   yargs: Yargs,
   {
-    // $FlowFixMe TODO T26072405
     build = {},
-    // $FlowFixMe TODO T26072405
     serve = {},
     dependencies = {},
   }: {

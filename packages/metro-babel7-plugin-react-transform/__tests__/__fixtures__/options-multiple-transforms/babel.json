@@ -1,7 +1,0 @@
-{
-  "transforms": [{
-    "transform": "transform-one"
-  }, {
-    "transform": "transform-two"
-  }]
-}

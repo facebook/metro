@@ -35,8 +35,8 @@ const {
 } = require('metro-source-map');
 import type {TransformResultDependency} from 'metro/src/DeltaBundler';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
-import type {BabelSourceMap} from '@babel/core';
 import type {
+  BasicSourceMap,
   FBSourceFunctionMap,
   MetroSourceMapSegmentTuple,
 } from 'metro-source-map';
@@ -45,7 +45,7 @@ type MinifierConfig = $ReadOnly<{[string]: mixed}>;
 
 export type MinifierOptions = {
   code: string,
-  map: ?BabelSourceMap,
+  map: ?BasicSourceMap,
   filename: string,
   reserved: $ReadOnlyArray<string>,
   config: MinifierConfig,
@@ -61,6 +61,7 @@ export type JsTransformerConfig = $ReadOnly<{|
   dynamicDepsInPackages: DynamicRequiresBehavior,
   enableBabelRCLookup: boolean,
   enableBabelRuntime: boolean,
+  experimentalImportBundleSupport: boolean,
   minifierConfig: MinifierConfig,
   minifierPath: string,
   optimizationSizeLimit: number,
@@ -264,7 +265,10 @@ class JsTransformer {
           inlineableCalls: [importDefault, importAll],
           keepRequireNames: options.dev,
         };
-        ({dependencies, dependencyMapName} = collectDependencies(ast, opts));
+        ({ast, dependencies, dependencyMapName} = collectDependencies(
+          ast,
+          opts,
+        ));
       } catch (error) {
         if (error instanceof collectDependencies.InvalidRequireCallError) {
           throw new InvalidRequireCallError(error, filename);

@@ -39,21 +39,24 @@ type Delta = $ReadOnly<{|
 |}>;
 
 type InternalOptions<T> = $ReadOnly<{|
-  resolve: $PropertyType<Options<T>, 'resolve'>,
-  transform: $PropertyType<Options<T>, 'transform'>,
+  experimentalImportBundleSupport: boolean,
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
+  resolve: $PropertyType<Options<T>, 'resolve'>,
+  transform: $PropertyType<Options<T>, 'transform'>,
 |}>;
 
 function getInternalOptions<T>({
   transform,
   resolve,
   onProgress,
+  experimentalImportBundleSupport,
 }: Options<T>): InternalOptions<T> {
   let numProcessed = 0;
   let total = 0;
 
   return {
+    experimentalImportBundleSupport,
     transform,
     resolve,
     onDependencyAdd: () => onProgress && onProgress(numProcessed, ++total),
@@ -229,15 +232,26 @@ async function processModule<T>(
   const promises = [];
 
   for (const [relativePath, dependency] of currentDependencies) {
-    if (!previousDependencies.has(relativePath)) {
+    if (
+      options.experimentalImportBundleSupport &&
+      dependency.data.data.isAsync
+    ) {
+      graph.importBundleNames.add(dependency.absolutePath);
+    } else if (!previousDependencies.has(relativePath)) {
       promises.push(
         addDependency(module, dependency.absolutePath, graph, delta, options),
       );
     }
   }
 
-  await Promise.all(promises);
-
+  try {
+    await Promise.all(promises);
+  } catch (err) {
+    // If there is an error, restore the previous dependency list.
+    // This ensures we don't skip over them during the next traversal attempt.
+    module.dependencies = previousDependencies;
+    throw err;
+  }
   return module;
 }
 
@@ -369,7 +383,11 @@ function reorderDependencies<T>(
     const childModule = graph.dependencies.get(path);
 
     if (!childModule) {
-      throw new ReferenceError('Module not registered in graph: ' + path);
+      if (dependency.data.data.isAsync) {
+        return;
+      } else {
+        throw new ReferenceError('Module not registered in graph: ' + path);
+      }
     }
 
     reorderDependencies(graph, childModule, orderedDependencies);
