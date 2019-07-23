@@ -256,7 +256,7 @@ class HmrServer<TClient: Client> {
       type: 'update-start',
       body: options,
     });
-    const message = await this._prepareMessage(group);
+    const message = await this._prepareMessage(group, options);
     send(sendFns, message);
     send(sendFns, {type: 'update-done'});
 
@@ -271,6 +271,7 @@ class HmrServer<TClient: Client> {
 
   async _prepareMessage(
     group: ClientGroup,
+    options: {|isInitialUpdate: boolean|},
   ): Promise<HmrUpdateMessage | HmrErrorMessage> {
     try {
       const revPromise = this._bundler.getRevision(group.revisionId);
@@ -307,6 +308,7 @@ class HmrServer<TClient: Client> {
         type: 'update',
         body: {
           revisionId: revision.id,
+          isInitialUpdate: options.isInitialUpdate,
           ...hmrUpdate,
         },
       };

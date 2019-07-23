@@ -79,6 +79,7 @@ function sendUpdate(update: HmrUpdate) {
 test('can apply updates individually and in a batch', () => {
   const updates: Array<HmrUpdate> = [
     {
+      isInitialUpdate: true,
       revisionId: 'A (add 1, 2, and 3)',
       added: [
         [1, 'function 1_A() {}'],
@@ -93,6 +94,7 @@ test('can apply updates individually and in a batch', () => {
       deleted: [],
     },
     {
+      isInitialUpdate: false,
       revisionId: 'B (add 4, edit 3 and 1)',
       added: [[4, 'function 4_B() {}']],
       addedSourceMappingURLs: ['4_B.js.map'],
@@ -103,6 +105,7 @@ test('can apply updates individually and in a batch', () => {
       deleted: [],
     },
     {
+      isInitialUpdate: false,
       revisionId: 'C (edit 2, delete 3)',
       added: [],
       addedSourceMappingURLs: [],
@@ -113,6 +116,7 @@ test('can apply updates individually and in a batch', () => {
       deleted: [3],
     },
     {
+      isInitialUpdate: false,
       revisionId: 'D (delete 1, add 3)',
       added: [[3, 'function 3_D() {}']],
       addedSourceMappingURLs: ['3_D.js.map'],
@@ -123,6 +127,7 @@ test('can apply updates individually and in a batch', () => {
       deleted: [1],
     },
     {
+      isInitialUpdate: false,
       revisionId: 'E (edit 2 and 3)',
       added: [],
       addedSourceMappingURLs: [],
@@ -158,6 +163,7 @@ test('can apply updates individually and in a batch', () => {
 test('can add and delete a module in a batch', () => {
   const updates: Array<HmrUpdate> = [
     {
+      isInitialUpdate: true,
       revisionId: 'A (add 1 and 2)',
       added: [[1, 'function 1_A() {}'], [2, 'function 2_A() {}']],
       addedSourceMappingURLs: ['1_A.js.map', '2_A.js.map'],
@@ -168,6 +174,7 @@ test('can add and delete a module in a batch', () => {
       deleted: [],
     },
     {
+      isInitialUpdate: false,
       revisionId: 'B (delete 2)',
       added: [],
       addedSourceMappingURLs: [],
@@ -189,6 +196,7 @@ test('can add and delete a module in a batch', () => {
 test('can delete and re-add a module in a batch', () => {
   const updates: Array<HmrUpdate> = [
     {
+      isInitialUpdate: false,
       revisionId: 'A (delete 2)',
       added: [],
       addedSourceMappingURLs: [],
@@ -199,6 +207,7 @@ test('can delete and re-add a module in a batch', () => {
       deleted: [2],
     },
     {
+      isInitialUpdate: false,
       revisionId: 'B (add 1 and 2)',
       added: [[1, 'function 1_B() {}'], [2, 'function 2_B() {}']],
       addedSourceMappingURLs: ['1_B.js.map', '2_B.js.map'],
@@ -219,6 +228,7 @@ test('can delete and re-add a module in a batch', () => {
 test('can enable and disable the client to batch updates', () => {
   const updates: Array<HmrUpdate> = [
     {
+      isInitialUpdate: true,
       revisionId: 'A (add 1, 2, and 3)',
       added: [
         [1, 'function 1_A() {}'],
@@ -233,6 +243,7 @@ test('can enable and disable the client to batch updates', () => {
       deleted: [],
     },
     {
+      isInitialUpdate: false,
       revisionId: 'B (add 4, edit 3 and 1)',
       added: [[4, 'function 4_B() {}']],
       addedSourceMappingURLs: ['4_B.js.map'],
@@ -243,6 +254,7 @@ test('can enable and disable the client to batch updates', () => {
       deleted: [],
     },
     {
+      isInitialUpdate: false,
       revisionId: 'C (edit 2, delete 3)',
       added: [],
       addedSourceMappingURLs: [],
@@ -253,6 +265,7 @@ test('can enable and disable the client to batch updates', () => {
       deleted: [3],
     },
     {
+      isInitialUpdate: false,
       revisionId: 'D (delete 1, add 3)',
       added: [[3, 'function 3_D() {}']],
       addedSourceMappingURLs: ['3_D.js.map'],
@@ -263,6 +276,7 @@ test('can enable and disable the client to batch updates', () => {
       deleted: [1],
     },
     {
+      isInitialUpdate: false,
       revisionId: 'E (edit 2 and 3)',
       added: [],
       addedSourceMappingURLs: [],

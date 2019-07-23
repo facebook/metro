@@ -42,6 +42,7 @@ export type FormattedError = {|
 
 export type HmrUpdate = {|
   ...DeltaBundle,
+  +isInitialUpdate: boolean,
   +revisionId: string,
   +addedSourceMappingURLs: $ReadOnlyArray<string>,
   +addedSourceURLs: $ReadOnlyArray<string>,

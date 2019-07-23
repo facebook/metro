@@ -95,6 +95,7 @@ function mergeUpdates(base: HmrUpdate, next: HmrUpdate): HmrUpdate {
   // Now reconstruct a unified update from our in-memory maps and sets.
   // Applying it should be equivalent to applying both of them individually.
   const result = {
+    isInitialUpdate: next.isInitialUpdate,
     revisionId: next.revisionId,
     added: [],
     addedSourceMappingURLs: [],
