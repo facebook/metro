@@ -230,6 +230,7 @@ describe('processRequest', () => {
         '__d(function() {foo();},1,[],"foo.js");',
         'require(0);',
         '//# sourceMappingURL=//localhost:8081/mybundle.map?runModule=true',
+        '//# sourceURL=http://localhost:8081/mybundle.bundle?runModule=true',
       ].join('\n'),
     );
   });
@@ -243,6 +244,7 @@ describe('processRequest', () => {
         '__d(function() {entry();},0,[1],"mybundle.js");',
         '__d(function() {foo();},1,[],"foo.js");',
         '//# sourceMappingURL=//localhost:8081/mybundle.map?runModule=false',
+        '//# sourceURL=http://localhost:8081/mybundle.bundle?runModule=false',
       ].join('\n'),
     );
   });
@@ -435,8 +437,10 @@ describe('processRequest', () => {
         base: true,
         revisionId: 'XXXXX-0',
         pre: 'function () {require();}',
-        post:
+        post: [
           '//# sourceMappingURL=http://localhost:8081/index.map?platform=ios',
+          '//# sourceURL=http://localhost:8081/index.delta?platform=ios',
+        ].join('\n'),
         modules: [
           [0, '__d(function() {entry();},0,[1],"mybundle.js");'],
           [1, '__d(function() {foo();},1,[],"foo.js");'],

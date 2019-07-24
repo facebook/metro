@@ -68,6 +68,7 @@ module.exports = function parseOptionsFromUrl(
           platform != null && platform.match(/^(android|ios)$/) ? 'http' : '',
         pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
       }),
+      sourceUrl: requestUrl,
     },
   };
 };

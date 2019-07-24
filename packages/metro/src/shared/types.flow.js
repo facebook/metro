@@ -50,11 +50,13 @@ export type BundleOptions = {
   +platform: ?string,
   +runModule: boolean,
   sourceMapUrl: ?string,
+  sourceUrl: ?string,
   createModuleIdFactory?: () => (path: string) => number,
 };
 
 export type SerializerOptions = {|
   +sourceMapUrl: ?string,
+  +sourceUrl: ?string,
   +runModule: boolean,
   +excludeSource: boolean,
   +inlineSourceMap: boolean,

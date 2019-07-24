@@ -26,6 +26,7 @@ type Options<T: number | string> = {
   +runBeforeMainModule: $ReadOnlyArray<string>,
   +runModule: boolean,
   +sourceMapUrl: ?string,
+  +sourceUrl: ?string,
 };
 
 function getAppendScripts<T: number | string>(
@@ -110,6 +111,24 @@ function getAppendScripts<T: number | string>(
           type: 'js/script/virtual',
           data: {
             code: `//# sourceMappingURL=${sourceMappingURL}`,
+            map: [],
+          },
+        },
+      ],
+    });
+  }
+
+  if (options.sourceUrl) {
+    output.push({
+      path: 'source-url',
+      dependencies: new Map(),
+      getSource: (): Buffer => Buffer.from(''),
+      inverseDependencies: new Set(),
+      output: [
+        {
+          type: 'js/script/virtual',
+          data: {
+            code: `//# sourceURL=${options.sourceUrl}`,
             map: [],
           },
         },

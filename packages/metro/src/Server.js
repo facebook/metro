@@ -208,6 +208,7 @@ class Server {
       ),
       runModule: serializerOptions.runModule,
       sourceMapUrl: serializerOptions.sourceMapUrl,
+      sourceUrl: serializerOptions.sourceMapUrl,
       inlineSourceMap: serializerOptions.inlineSourceMap,
     });
 
@@ -252,6 +253,7 @@ class Server {
       ),
       runModule: serializerOptions.runModule,
       sourceMapUrl: serializerOptions.sourceMapUrl,
+      sourceUrl: serializerOptions.sourceUrl,
       inlineSourceMap: serializerOptions.inlineSourceMap,
     });
   }
@@ -669,6 +671,7 @@ class Server {
           ),
           runModule: serializerOptions.runModule,
           sourceMapUrl: serializerOptions.sourceMapUrl,
+          sourceUrl: serializerOptions.sourceUrl,
           inlineSourceMap: serializerOptions.inlineSourceMap,
         },
       );
@@ -749,6 +752,7 @@ class Server {
         ),
         runModule: serializerOptions.runModule,
         sourceMapUrl: serializerOptions.sourceMapUrl,
+        sourceUrl: serializerOptions.sourceUrl,
         inlineSourceMap: serializerOptions.inlineSourceMap,
       });
 
@@ -895,6 +899,7 @@ class Server {
         ),
         runModule: serializerOptions.runModule,
         sourceMapUrl: serializerOptions.sourceMapUrl,
+        sourceUrl: serializerOptions.sourceUrl,
         inlineSourceMap: serializerOptions.inlineSourceMap,
       });
 
@@ -1085,6 +1090,7 @@ class Server {
     onProgress: null,
     runModule: true,
     sourceMapUrl: null,
+    sourceUrl: null,
   };
 }
 

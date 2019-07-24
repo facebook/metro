@@ -66,6 +66,7 @@ function baseJSBundle(
         runBeforeMainModule: options.runBeforeMainModule,
         runModule: options.runModule,
         sourceMapUrl: options.sourceMapUrl,
+        sourceUrl: options.sourceUrl,
       },
     ),
     processModulesOptions,

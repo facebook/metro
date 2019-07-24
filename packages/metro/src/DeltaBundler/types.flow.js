@@ -98,4 +98,5 @@ export type SerializerOptions = {|
   +runBeforeMainModule: $ReadOnlyArray<string>,
   +runModule: boolean,
   +sourceMapUrl: ?string,
+  +sourceUrl: ?string,
 |};

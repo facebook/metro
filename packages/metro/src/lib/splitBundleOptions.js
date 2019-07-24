@@ -32,6 +32,7 @@ function splitBundleOptions(options: BundleOptions): SplitBundleOptions {
       modulesOnly: options.modulesOnly,
       runModule: options.runModule,
       sourceMapUrl: options.sourceMapUrl,
+      sourceUrl: options.sourceUrl,
     },
     onProgress: options.onProgress,
   };
