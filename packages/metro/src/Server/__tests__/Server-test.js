@@ -344,6 +344,18 @@ describe('processRequest', () => {
     });
   });
 
+  it('source map request respects modulesOnly option', async () => {
+    const response = await makeRequest('mybundle.map?modulesOnly=true');
+
+    expect(JSON.parse(response.body)).toEqual({
+      version: 3,
+      sources: ['/root/mybundle.js', '/root/foo.js'],
+      sourcesContent: ['code-mybundle', 'code-foo'],
+      names: [],
+      mappings: '',
+    });
+  });
+
   it('does not rebuild the graph when requesting the sourcemaps after having requested the same bundle', async () => {
     expect((await makeRequest('mybundle.bundle?platform=ios')).statusCode).toBe(
       200,
@@ -748,11 +760,68 @@ describe('processRequest', () => {
           column: 4,
         },
       ];
+      const sourceMaps = [
+        [
+          'http://foo.bundle?platform=ios',
+          {
+            version: 3,
+            sources: ['require-js', '/root/mybundle.js', '/root/foo.js'],
+            sourcesContent: ['code-require', 'code-mybundle', 'code-foo'],
+            names: [],
+            mappings: '',
+          },
+        ],
+      ];
       const body = JSON.stringify({stack: inputStack});
 
-      expect.assertions(2);
-      symbolicationWorker.mockImplementation(stack => {
+      expect.assertions(3);
+      symbolicationWorker.mockImplementation((stack, maps) => {
         expect(stack).toEqual(inputStack);
+        expect([...maps]).toEqual(sourceMaps);
+        return outputStack;
+      });
+
+      return makeRequest('/symbolicate', {
+        rawBody: body,
+      }).then(response =>
+        expect(JSON.parse(response.body)).toEqual({stack: outputStack}),
+      );
+    });
+
+    it('should support modulesOnly option', () => {
+      const inputStack = [
+        {
+          file: 'http://foo.bundle?platform=ios&modulesOnly=true',
+          lineNumber: 2100,
+          column: 44,
+          customPropShouldBeLeftUnchanged: 'foo',
+        },
+      ];
+      const outputStack = [
+        {
+          source: 'foo.js',
+          line: 21,
+          column: 4,
+        },
+      ];
+      const sourceMaps = [
+        [
+          'http://foo.bundle?platform=ios&modulesOnly=true',
+          {
+            version: 3,
+            sources: ['/root/mybundle.js', '/root/foo.js'],
+            sourcesContent: ['code-mybundle', 'code-foo'],
+            names: [],
+            mappings: '',
+          },
+        ],
+      ];
+      const body = JSON.stringify({stack: inputStack});
+
+      expect.assertions(3);
+      symbolicationWorker.mockImplementation((stack, maps) => {
+        expect(stack).toEqual(inputStack);
+        expect([...maps]).toEqual(sourceMaps);
         return outputStack;
       });
 

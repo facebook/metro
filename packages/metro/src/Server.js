@@ -831,7 +831,10 @@ class Server {
         revision = await revPromise;
       }
 
-      const {prepend, graph} = revision;
+      let {prepend, graph} = revision;
+      if (serializerOptions.modulesOnly) {
+        prepend = [];
+      }
 
       return sourceMapString([...prepend, ...this._getSortedModules(graph)], {
         excludeSource: serializerOptions.excludeSource,
@@ -1035,7 +1038,10 @@ class Server {
       revision = await revPromise;
     }
 
-    const {prepend, graph} = revision;
+    let {prepend, graph} = revision;
+    if (serializerOptions.modulesOnly) {
+      prepend = [];
+    }
 
     // This is a non-blocking version to avoid stalling the server.
     // TODO(T46510351): move all of this to a worker.
