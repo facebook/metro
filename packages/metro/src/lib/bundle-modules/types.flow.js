@@ -66,6 +66,19 @@ export type HmrClientMessage =
       +entryPoints: Array<string>,
     |}
   | {|
+      +type: 'log',
+      +level:
+        | 'trace'
+        | 'info'
+        | 'warn'
+        | 'log'
+        | 'group'
+        | 'groupCollapsed'
+        | 'groupEnd'
+        | 'debug',
+      +data: Array<mixed>,
+    |}
+  | {|
       +type: 'log-opt-in',
     |};
 
