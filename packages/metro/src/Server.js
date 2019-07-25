@@ -208,7 +208,7 @@ class Server {
       ),
       runModule: serializerOptions.runModule,
       sourceMapUrl: serializerOptions.sourceMapUrl,
-      sourceUrl: serializerOptions.sourceMapUrl,
+      sourceUrl: serializerOptions.sourceUrl,
       inlineSourceMap: serializerOptions.inlineSourceMap,
     });
 
