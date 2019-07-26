@@ -22,16 +22,20 @@ import type {MixedSourceMap} from 'metro-source-map';
 import type {ChildProcess} from 'child_process';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
-export type Stack = Array<{
-  file: string,
-  lineNumber: number,
-  column: number,
-  methodName: ?string,
-}>;
+export type StackFrameInput = {
+  +file: string,
+  +lineNumber: number,
+  +column: number,
+  +methodName: ?string,
+};
+export type StackFrameOutput = {
+  ...StackFrameInput,
+  +collapse: boolean,
+};
 export type Symbolicate = (
-  Stack,
+  $ReadOnlyArray<StackFrameInput>,
   Iterable<[string, MixedSourceMap]>,
-) => Promise<Stack>;
+) => Promise<$ReadOnlyArray<StackFrameOutput>>;
 
 const affixes = {prefix: 'metro-symbolicate', suffix: '.sock'};
 
@@ -45,7 +49,10 @@ exports.createWorker = (config: ConfigT): Symbolicate => {
     new LazyPromise(() => startupChild(socket, childPath)),
   );
 
-  return (stack: Stack, sourceMaps: Iterable<[string, MixedSourceMap]>) =>
+  return (
+    stack: $ReadOnlyArray<StackFrameInput>,
+    sourceMaps: Iterable<[string, MixedSourceMap]>,
+  ) =>
     child
       .then(() => connectAndSendJob(socket, message(stack, sourceMaps)))
       .then(JSON.parse)
@@ -53,8 +60,22 @@ exports.createWorker = (config: ConfigT): Symbolicate => {
         'error' in response
           ? Promise.reject(new Error(response.error))
           : response.result,
-      );
+      )
+      .then(frames => annotateFrames(frames, config));
 };
+
+function annotateFrames(
+  frames: $ReadOnlyArray<StackFrameInput>,
+  config: ConfigT,
+): Promise<$ReadOnlyArray<StackFrameOutput>> {
+  return Promise.all(
+    frames.map(async frame => {
+      const customizations =
+        (await config.symbolicator.customizeFrame(frame)) || {};
+      return {...frame, collapse: false, ...customizations};
+    }),
+  );
+}
 
 function startupChild(
   socket: number,
@@ -89,7 +110,7 @@ function connectAndSendJob(socket: number, data: string): Promise<string> {
 }
 
 function message(
-  stack: Stack,
+  stack: $ReadOnlyArray<StackFrameInput>,
   sourceMaps: Iterable<[string, MixedSourceMap]>,
 ): string {
   return JSON.stringify({maps: Array.from(sourceMaps), stack});

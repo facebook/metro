@@ -762,6 +762,7 @@ describe('processRequest', () => {
           source: 'foo.js',
           line: 21,
           column: 4,
+          collapse: false,
         },
       ];
       const sourceMaps = [
@@ -806,6 +807,7 @@ describe('processRequest', () => {
           source: 'foo.js',
           line: 21,
           column: 4,
+          collapse: false,
         },
       ];
       const sourceMaps = [
