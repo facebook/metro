@@ -57,7 +57,7 @@ import type {CacheStore} from 'metro-cache';
 import type {BundleVariant} from './lib/bundle-modules/types.flow';
 import type DependencyGraph from './node-haste/DependencyGraph';
 import type {MixedOutput, TransformResult} from './DeltaBundler/types.flow';
-import type {Stack} from './Server/symbolicate/symbolicate';
+import type {StackFrameOutput} from './Server/symbolicate/symbolicate';
 
 const {
   Logger,
@@ -989,7 +989,7 @@ class Server {
         });
       })
       .then(
-        (stack: Stack) => {
+        (stack: $ReadOnlyArray<StackFrameOutput>) => {
           debug('Symbolication done');
           res.end(JSON.stringify({stack}));
           process.nextTick(() => {

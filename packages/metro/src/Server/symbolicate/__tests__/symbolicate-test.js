@@ -18,9 +18,10 @@ const {getDefaultValues} = require('metro-config/src/defaults');
 
 let childProcess, socketResponse, socket, worker;
 
-beforeEach(() => {
+function setupWithConfig(config) {
+  jest.restoreAllMocks();
   childProcess = Object.assign(new EventEmitter(), {send: jest.fn()});
-  require('child_process').fork.mockReturnValueOnce(childProcess);
+  require('child_process').fork.mockReturnValue(childProcess);
   setupCommunication();
 
   socketResponse = '{"error": "no fake socket response set"}';
@@ -34,11 +35,15 @@ beforeEach(() => {
   });
   require('net').createConnection.mockImplementation(() => socket);
 
-  worker = createWorker(getDefaultValues());
+  worker = createWorker(config);
+}
+
+beforeEach(() => {
+  setupWithConfig(getDefaultValues());
 });
 
 it('sends a socket path to the child process', () => {
-  socketResponse = '{}';
+  socketResponse = '{"result": []}';
   return worker([], fakeSourceMaps()).then(() =>
     expect(childProcess.send).toBeCalledWith(expect.any(String)),
   );
@@ -61,22 +66,24 @@ it('fails if the socket connection emits an error', () => {
 });
 
 it('sends the passed in stack and maps over the socket', () => {
-  socketResponse = '{}';
-  const stack = ['the', 'stack'];
+  socketResponse = '{"result": []}';
+  const stack = [{file: 'minified', line: 1, column: 1}];
   return worker(stack, fakeSourceMaps()).then(() =>
     expect(socket.end).toBeCalledWith(
       JSON.stringify({
         maps: Array.from(fakeSourceMaps()),
-        stack,
+        stack: [{file: 'minified', line: 1, column: 1}],
       }),
     ),
   );
 });
 
 it('resolves to the `result` property of the message returned over the socket', () => {
-  socketResponse = '{"result": {"the": "result"}}';
+  socketResponse = '{"result": [{"file": "a", "line": 1, "column": 1}]}';
   return worker([], fakeSourceMaps()).then(response =>
-    expect(response).toEqual({the: 'result'}),
+    expect(response).toEqual([
+      {file: 'a', line: 1, column: 1, collapse: false},
+    ]),
   );
 });
 
@@ -96,6 +103,66 @@ it('rejects if the socket response cannot be parsed as JSON', () => {
   return worker([], fakeSourceMaps()).catch(error =>
     expect(error).toBeInstanceOf(SyntaxError),
   );
+});
+
+describe('customizeFrame', () => {
+  it('allows customizing frames with customizeFrame', () => {
+    const defaults = getDefaultValues();
+    setupWithConfig({
+      ...defaults,
+      symbolicator: {
+        ...defaults.symbolicator,
+        customizeFrame: ({file, line, column, methodName}) => ({
+          collapse:
+            file === 'a' &&
+            line === 1 &&
+            column === 1 &&
+            methodName === 'method',
+        }),
+      },
+    });
+    socketResponse = JSON.stringify({
+      result: [
+        {file: 'a', line: 1, column: 1, methodName: 'method'},
+        {file: 'b', line: 1, column: 1, methodName: 'method'},
+      ],
+    });
+    return worker([], fakeSourceMaps()).then(response =>
+      expect(response).toEqual([
+        {file: 'a', line: 1, column: 1, methodName: 'method', collapse: true},
+        {file: 'b', line: 1, column: 1, methodName: 'method', collapse: false},
+      ]),
+    );
+  });
+
+  it('can be an async function', () => {
+    const defaults = getDefaultValues();
+    setupWithConfig({
+      ...defaults,
+      symbolicator: {
+        ...defaults.symbolicator,
+        customizeFrame: async ({file, line, column, methodName}) => ({
+          collapse:
+            file === 'a' &&
+            line === 1 &&
+            column === 1 &&
+            methodName === 'method',
+        }),
+      },
+    });
+    socketResponse = JSON.stringify({
+      result: [
+        {file: 'a', line: 1, column: 1, methodName: 'method'},
+        {file: 'b', line: 1, column: 1, methodName: 'method'},
+      ],
+    });
+    return worker([], fakeSourceMaps()).then(response =>
+      expect(response).toEqual([
+        {file: 'a', line: 1, column: 1, methodName: 'method', collapse: true},
+        {file: 'b', line: 1, column: 1, methodName: 'method', collapse: false},
+      ]),
+    );
+  });
 });
 
 function setupCommunication() {

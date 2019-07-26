@@ -66,6 +66,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   },
 
   symbolicator: {
+    customizeFrame: () => {},
     workerPath: 'metro/src/Server/symbolicate/worker',
   },
 
