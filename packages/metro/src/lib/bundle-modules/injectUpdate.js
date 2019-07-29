@@ -16,23 +16,26 @@ function injectModules(
   sourceMappingURLs: $ReadOnlyArray<string>,
   sourceURLs: $ReadOnlyArray<string>,
 ): void {
-  modules.forEach(([id, code], i: number) => {
-    // In JSC we need to inject from native for sourcemaps to work
-    // (Safari doesn't support `sourceMappingURL` nor any variant when
-    // evaluating code) but on Chrome we can simply use eval.
-    const injectFunction =
-      typeof global.nativeInjectHMRUpdate === 'function'
-        ? global.nativeInjectHMRUpdate
-        : eval; // eslint-disable-line no-eval
-
+  modules.forEach(([id, source], i: number) => {
     // Fool regular expressions trying to remove sourceMappingURL comments from
     // source files, which would incorrectly detect and remove the inlined
     // version.
-    const pragma = 'sourceMappingURL';
-    injectFunction(
-      code + `\n//# ${pragma}=${sourceMappingURLs[i]}`,
-      sourceURLs[i],
-    );
+    const sourceMappingURL = 'sourceMappingURL';
+    const sourceURL = 'sourceURL';
+    const code =
+      source +
+      `\n//# ${sourceMappingURL}=${sourceMappingURLs[i]}\n//# ${sourceURL}=${
+        sourceURLs[i]
+      }`;
+
+    // Some engines do not support `sourceURL` as a comment. We expose a
+    // `globalEvalWithSourceUrl` function to handle updates in that case.
+    if (global.globalEvalWithSourceUrl) {
+      global.globalEvalWithSourceUrl(code, sourceURLs[i]);
+    } else {
+      // eslint-disable-next-line no-eval
+      eval(code);
+    }
   });
 }
 

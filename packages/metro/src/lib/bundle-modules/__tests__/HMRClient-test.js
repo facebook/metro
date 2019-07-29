@@ -19,7 +19,7 @@ let evaledCode = '';
 
 beforeEach(() => {
   evaledCode = '';
-  global.nativeInjectHMRUpdate = (code, sourceURL) => {
+  global.globalEvalWithSourceUrl = (code, sourceURL) => {
     evaledCode += '\n/* ' + sourceURL + ' */\n  ' + code;
   };
   global.WebSocket = jest.fn(() => {
@@ -48,7 +48,7 @@ beforeEach(() => {
 
 afterEach(() => {
   delete global.WebSocket;
-  delete global.nativeInjectHMRUpdate;
+  delete global.globalEvalWithSourceUrl;
 });
 
 function sendUpdate(update: HmrUpdate) {
