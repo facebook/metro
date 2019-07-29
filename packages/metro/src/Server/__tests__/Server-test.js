@@ -55,23 +55,6 @@ describe('processRequest', () => {
     getPrependedScripts = require('../../lib/getPrependedScripts');
     transformHelpers = require('../../lib/transformHelpers');
     DeltaBundler = require('../../DeltaBundler');
-
-    // Force the symbolication worker to run in-process
-    jest
-      .spyOn(
-        require('../symbolicate/symbolicate').private_workerInterface,
-        'startupChild',
-      )
-      .mockImplementation(() => Promise.resolve({}));
-    jest
-      .spyOn(
-        require('../symbolicate/symbolicate').private_workerInterface,
-        'connectAndSendJob',
-      )
-      .mockImplementation((socket, data) => {
-        const {symbolicate} = require('../symbolicate/worker');
-        return new Promise(resolve => symbolicate({end: resolve}, data));
-      });
   });
 
   let server;
@@ -141,6 +124,7 @@ describe('processRequest', () => {
               type: 'js/module',
               data: {
                 code: '__d(function() {entry();});',
+                lineCount: 1,
                 map: [[1, 16, 1, 0]],
               },
             },
@@ -158,6 +142,7 @@ describe('processRequest', () => {
               type: 'js/module',
               data: {
                 code: '__d(function() {foo();});',
+                lineCount: 1,
                 map: [[1, 16, 1, 0]],
                 functionMap: {names: ['<global>'], mappings: 'AAA'},
               },
@@ -204,6 +189,7 @@ describe('processRequest', () => {
               type: 'js/script',
               data: {
                 code: 'function () {require();}',
+                lineCount: 1,
                 map: [],
               },
             },
@@ -502,6 +488,7 @@ describe('processRequest', () => {
                     type: 'js/module',
                     data: {
                       code: '__d(function() {modified();});',
+                      lineCount: 1,
                     },
                   },
                 ],
@@ -550,6 +537,7 @@ describe('processRequest', () => {
                     type: 'js/module',
                     data: {
                       code: '__d(function() {modified();});',
+                      lineCount: 1,
                     },
                   },
                 ],

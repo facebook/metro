@@ -148,6 +148,7 @@ beforeEach(async () => {
           {
             data: {
               code: '// code',
+              lineCount: 1,
               map: [],
             },
             type: 'js/module',

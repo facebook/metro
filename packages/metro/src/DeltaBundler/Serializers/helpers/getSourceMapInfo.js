@@ -29,6 +29,7 @@ function getSourceMapInfo(
   +code: string,
   +path: string,
   +source: string,
+  +lineCount: number,
 |} {
   return {
     ...getJsOutput(module).data,

@@ -27,6 +27,7 @@ const normalizePseudoglobals = require('./worker/normalizePseudoglobals');
 const {transformFromAstSync} = require('@babel/core');
 const {stableHash} = require('metro-cache');
 const types = require('@babel/types');
+const countLines = require('../lib/countLines');
 
 const {
   fromRawMappings,
@@ -88,6 +89,7 @@ export type JsTransformOptions = $ReadOnly<{|
 export type JsOutput = $ReadOnly<{|
   data: $ReadOnly<{|
     code: string,
+    lineCount: number,
     map: Array<MetroSourceMapSegmentTuple>,
     functionMap: ?FBSourceFunctionMap,
   |}>,
@@ -151,7 +153,12 @@ class JsTransformer {
 
       return {
         dependencies: [],
-        output: [{data: {code, map, functionMap: null}, type}],
+        output: [
+          {
+            data: {code, lineCount: countLines(code), map, functionMap: null},
+            type,
+          },
+        ],
       };
     }
 
@@ -317,7 +324,12 @@ class JsTransformer {
 
     const {functionMap} = transformResult;
 
-    return {dependencies, output: [{data: {code, map, functionMap}, type}]};
+    return {
+      dependencies,
+      output: [
+        {data: {code, lineCount: countLines(code), map, functionMap}, type},
+      ],
+    };
   }
 
   async _minifyCode(

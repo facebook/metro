@@ -19,6 +19,7 @@ Object {
         Object {
           "data": Object {
             "code": "// code",
+            "lineCount": 1,
             "map": Array [],
           },
           "type": "js/module",
@@ -51,6 +52,7 @@ Object {
         Object {
           "data": Object {
             "code": "// code",
+            "lineCount": 1,
             "map": Array [],
           },
           "type": "js/module",
@@ -68,6 +70,7 @@ Object {
         Object {
           "data": Object {
             "code": "// code",
+            "lineCount": 1,
             "map": Array [],
           },
           "type": "js/module",
@@ -85,6 +88,7 @@ Object {
         Object {
           "data": Object {
             "code": "// code",
+            "lineCount": 1,
             "map": Array [],
           },
           "type": "js/module",

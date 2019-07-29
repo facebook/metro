@@ -24,7 +24,9 @@ function createModule(name, dependencies, type = 'js/module') {
           {absolutePath: `/root/${dep}.js`, data: {isAsync: false, name: dep}},
         ]),
       ),
-      output: [{type, data: {code: `__d(function() {${name}()});`}}],
+      output: [
+        {type, data: {code: `__d(function() {${name}()});`, lineCount: 1}},
+      ],
     },
   ];
 }

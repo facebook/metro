@@ -20,6 +20,7 @@ const polyfill = {
       type: 'js/script',
       data: {
         code: '__d(function() {/* code for polyfill */});',
+        lineCount: 1,
         map: [],
       },
     },
@@ -35,6 +36,7 @@ const fooModule = {
       type: 'js/module',
       data: {
         code: '__d(function() {/* code for foo */});',
+        lineCount: 1,
         map: [],
         functionMap: {names: ['<global>'], mappings: 'AAA'},
       },
@@ -51,6 +53,7 @@ const barModule = {
       type: 'js/module',
       data: {
         code: '__d(function() {/* code for bar */});',
+        lineCount: 1,
         map: [],
       },
     },
@@ -105,6 +108,7 @@ it('should not include the source of an asset', () => {
         type: 'js/module/asset',
         data: {
           code: '__d(function() {/* code for bar */});',
+          lineCount: 1,
           map: [],
         },
       },

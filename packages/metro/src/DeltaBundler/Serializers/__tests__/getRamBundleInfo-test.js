@@ -24,7 +24,9 @@ function createModule(name, dependencies, type = 'js/module') {
         ]),
       ),
       getSource: () => Buffer.from(`source of ${name}`),
-      output: [{type, data: {code: `__d(function() {${name}()});`}}],
+      output: [
+        {type, data: {code: `__d(function() {${name}()});`, lineCount: 1}},
+      ],
     },
   ];
 }

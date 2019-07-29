@@ -29,16 +29,17 @@ const transformHelpers = require('./lib/transformHelpers');
 const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
 const path = require('path');
 const serializeDeltaJSBundle = require('./DeltaBundler/Serializers/helpers/serializeDeltaJSBundle');
-const symbolicate = require('./Server/symbolicate/symbolicate');
+const symbolicate = require('./Server/symbolicate');
 const url = require('url');
 const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
 const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundError');
 
 const {getAsset} = require('./Assets');
 const {
-  sourceMapObjectNonBlocking,
-} = require('./DeltaBundler/Serializers/sourceMapObject');
+  getExplodedSourceMap,
+} = require('./DeltaBundler/Serializers/getExplodedSourceMap');
 
+import type {ExplodedSourceMap} from './DeltaBundler/Serializers/getExplodedSourceMap';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from './lib/reporting';
 import type {GraphId} from './lib/getGraphId';
@@ -48,8 +49,6 @@ import type {
   ConfigT,
   VisualizerConfigT,
 } from 'metro-config/src/configTypes.flow';
-import type {MixedSourceMap} from 'metro-source-map';
-import type {Symbolicate} from './Server/symbolicate/symbolicate';
 import type {AssetData} from './Assets';
 import type {RevisionId} from './IncrementalBundler';
 import type {Graph, Module} from './DeltaBundler/types.flow';
@@ -57,7 +56,7 @@ import type {CacheStore} from 'metro-cache';
 import type {BundleVariant} from './lib/bundle-modules/types.flow';
 import type DependencyGraph from './node-haste/DependencyGraph';
 import type {MixedOutput, TransformResult} from './DeltaBundler/types.flow';
-import type {StackFrameOutput} from './Server/symbolicate/symbolicate';
+import type {StackFrameOutput} from './Server/symbolicate';
 
 const {
   Logger,
@@ -114,7 +113,6 @@ class Server {
   _createModuleId: (path: string) => number;
   _reporter: Reporter;
   _logger: typeof Logger;
-  _symbolicateInWorker: Symbolicate;
   _platforms: Set<string>;
   _nextBundleBuildID: number;
   _bundler: IncrementalBundler;
@@ -160,7 +158,6 @@ class Server {
         });
       });
 
-    this._symbolicateInWorker = symbolicate.createWorker(this._config);
     this._nextBundleBuildID = 1;
   }
 
@@ -977,15 +974,15 @@ class Server {
         });
 
         const mapPromises = Array.from(urls.values()).map(
-          this._sourceMapForURL,
+          this._explodedSourceMapForURL,
           this,
         );
 
         debug('Getting source maps for symbolication');
-        return Promise.all(mapPromises).then((maps: Array<MixedSourceMap>) => {
-          debug('Sending stacks and maps to symbolication worker');
+        return Promise.all(mapPromises).then(maps => {
+          debug('Performing fast symbolication');
           const urlsToMaps = zip(urls.values(), maps);
-          return this._symbolicateInWorker(stack, urlsToMaps);
+          return symbolicate(stack, urlsToMaps, this._config);
         });
       })
       .then(
@@ -1004,7 +1001,7 @@ class Server {
       );
   }
 
-  async _sourceMapForURL(reqUrl: string): Promise<MixedSourceMap> {
+  async _explodedSourceMapForURL(reqUrl: string): Promise<ExplodedSourceMap> {
     const {options} = parseOptionsFromUrl(
       reqUrl,
       new Set(this._config.resolver.platforms),
@@ -1048,12 +1045,9 @@ class Server {
       prepend = [];
     }
 
-    // This is a non-blocking version to avoid stalling the server.
-    // TODO(T46510351): move all of this to a worker.
-    return sourceMapObjectNonBlocking(
+    return getExplodedSourceMap(
       [...prepend, ...this._getSortedModules(graph)],
       {
-        excludeSource: serializerOptions.excludeSource,
         processModuleFilter: this._config.serializer.processModuleFilter,
       },
     );

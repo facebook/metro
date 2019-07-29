@@ -18,7 +18,7 @@ const polyfill = {
   output: [
     {
       type: 'js/script',
-      data: {code: '__d(function() {/* code for polyfill */});'},
+      data: {code: '__d(function() {/* code for polyfill */});', lineCount: 1},
     },
   ],
   getSource: () => Buffer.from('polyfill-source'),
@@ -30,7 +30,11 @@ const fooModule = {
   output: [
     {
       type: 'js/module',
-      data: {code: '__d(function() {/* code for foo */});', map: []},
+      data: {
+        code: '__d(function() {/* code for foo */});',
+        map: [],
+        lineCount: 1,
+      },
     },
   ],
   getSource: () => Buffer.from('foo-source'),
@@ -42,7 +46,11 @@ const barModule = {
   output: [
     {
       type: 'js/module',
-      data: {code: '__d(function() {/* code for bar */});', map: []},
+      data: {
+        code: '__d(function() {/* code for bar */});',
+        map: [],
+        lineCount: 1,
+      },
     },
   ],
   getSource: () => Buffer.from('bar-source'),

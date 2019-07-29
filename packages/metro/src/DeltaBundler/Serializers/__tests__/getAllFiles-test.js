@@ -27,16 +27,70 @@ describe('getOrderedDependencyPaths', () => {
   it('Should return all module dependencies correctly', async () => {
     const graph = {
       dependencies: new Map([
-        [1, {path: '/tmp/1.js', output: [{type: 'js/module'}]}],
-        [2, {path: '/tmp/2.js', output: [{type: 'js/module'}]}],
-        [3, {path: '/tmp/3.js', output: [{type: 'js/module'}]}],
-        [4, {path: '/tmp/4.js', output: [{type: 'js/module'}]}],
+        [
+          1,
+          {
+            path: '/tmp/1.js',
+            output: [
+              {
+                type: 'js/module',
+                data: {code: '//', lineCount: 1, map: [], functionMap: null},
+              },
+            ],
+          },
+        ],
+        [
+          2,
+          {
+            path: '/tmp/2.js',
+            output: [
+              {
+                type: 'js/module',
+                data: {code: '//', lineCount: 1, map: [], functionMap: null},
+              },
+            ],
+          },
+        ],
+        [
+          3,
+          {
+            path: '/tmp/3.js',
+            output: [
+              {
+                type: 'js/module',
+                data: {code: '//', lineCount: 1, map: [], functionMap: null},
+              },
+            ],
+          },
+        ],
+        [
+          4,
+          {
+            path: '/tmp/4.js',
+            output: [
+              {
+                type: 'js/module',
+                data: {code: '//', lineCount: 1, map: [], functionMap: null},
+              },
+            ],
+          },
+        ],
       ]),
     };
 
     expect(
       await getAllFiles(
-        [{path: '/tmp/0.js', output: [{type: 'js/module'}]}],
+        [
+          {
+            path: '/tmp/0.js',
+            output: [
+              {
+                type: 'js/module',
+                data: {code: '//', lineCount: 1, map: [], functionMap: null},
+              },
+            ],
+          },
+        ],
         graph,
         {
           processModuleFilter: () => true,
@@ -54,11 +108,66 @@ describe('getOrderedDependencyPaths', () => {
   it('Should add assets data dependencies correctly', async () => {
     const graph = {
       dependencies: new Map([
-        [1, {path: '/tmp/1.js', output: [{type: 'js/module'}]}],
-        [2, {path: '/tmp/2.png', output: [{type: 'js/module/asset'}]}],
-        [3, {path: '/tmp/3.js', output: [{type: 'js/module'}]}],
-        [4, {path: '/tmp/4.png', output: [{type: 'js/module/asset'}]}],
-        [5, {path: '/tmp/5.js', output: [{type: 'js/module'}]}],
+        [
+          1,
+          {
+            path: '/tmp/1.js',
+            output: [
+              {
+                type: 'js/module',
+                data: {code: '//', lineCount: 1, map: [], functionMap: null},
+              },
+            ],
+          },
+        ],
+        [
+          2,
+          {
+            path: '/tmp/2.png',
+            output: [
+              {
+                type: 'js/module/asset',
+                data: {code: '//', lineCount: 1, map: [], functionMap: null},
+              },
+            ],
+          },
+        ],
+        [
+          3,
+          {
+            path: '/tmp/3.js',
+            output: [
+              {
+                type: 'js/module',
+                data: {code: '//', lineCount: 1, map: [], functionMap: null},
+              },
+            ],
+          },
+        ],
+        [
+          4,
+          {
+            path: '/tmp/4.png',
+            output: [
+              {
+                type: 'js/module/asset',
+                data: {code: '//', lineCount: 1, map: [], functionMap: null},
+              },
+            ],
+          },
+        ],
+        [
+          5,
+          {
+            path: '/tmp/5.js',
+            output: [
+              {
+                type: 'js/module',
+                data: {code: '//', lineCount: 1, map: [], functionMap: null},
+              },
+            ],
+          },
+        ],
       ]),
     };
 

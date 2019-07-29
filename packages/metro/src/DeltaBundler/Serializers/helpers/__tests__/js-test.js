@@ -36,6 +36,7 @@ beforeEach(() => {
       {
         data: {
           code: '__d(function() { console.log("foo") });',
+          lineCount: 1,
           map: [],
         },
 

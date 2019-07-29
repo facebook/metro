@@ -57,7 +57,16 @@ function getJsOutput(module: Module<>): JsOutput {
     } JS outputs.`,
   );
 
-  return (jsModules[0]: any);
+  const jsOutput = (jsModules[0]: any);
+
+  invariant(
+    Number.isFinite(jsOutput.data.lineCount),
+    `JS output must populate lineCount, but ${module.path} has ${
+      jsOutput.type
+    } output with lineCount '${jsOutput.data.lineCount}'`,
+  );
+
+  return jsOutput;
 }
 
 function isJsModule(module: Module<>): boolean {

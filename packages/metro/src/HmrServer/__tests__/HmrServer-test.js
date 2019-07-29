@@ -41,6 +41,7 @@ describe('HmrServer', () => {
         data: {
           map: [],
           code: '__d(function() { alert("hi"); });',
+          lineCount: 1,
         },
       },
     ],
