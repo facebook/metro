@@ -39,14 +39,21 @@ export type Symbolicate = (
 
 const affixes = {prefix: 'metro-symbolicate', suffix: '.sock'};
 
-exports.createWorker = (config: ConfigT): Symbolicate => {
+function createWorker(
+  config: ConfigT,
+  // for testing only
+  workerInterface: {
+    +startupChild: (socket: number, childPath: string) => Promise<ChildProcess>,
+    +connectAndSendJob: (socket: number, data: string) => Promise<string>,
+  } = module.exports.private_workerInterface,
+): Symbolicate {
   // There are issues with named sockets on windows that cause the connection to
   // close too early so run the symbolicate server on a random localhost port.
   const socket: number =
     process.platform === 'win32' ? 34712 : xpipe.eq(temp.path(affixes));
   const childPath = require.resolve(config.symbolicator.workerPath);
   const child = new LockingPromise(
-    new LazyPromise(() => startupChild(socket, childPath)),
+    new LazyPromise(() => workerInterface.startupChild(socket, childPath)),
   );
 
   return (
@@ -54,7 +61,9 @@ exports.createWorker = (config: ConfigT): Symbolicate => {
     sourceMaps: Iterable<[string, MixedSourceMap]>,
   ) =>
     child
-      .then(() => connectAndSendJob(socket, message(stack, sourceMaps)))
+      .then(() =>
+        workerInterface.connectAndSendJob(socket, message(stack, sourceMaps)),
+      )
       .then(JSON.parse)
       .then(response =>
         'error' in response
@@ -62,7 +71,7 @@ exports.createWorker = (config: ConfigT): Symbolicate => {
           : response.result,
       )
       .then(frames => annotateFrames(frames, config));
-};
+}
 
 function annotateFrames(
   frames: $ReadOnlyArray<StackFrameInput>,
@@ -115,3 +124,8 @@ function message(
 ): string {
   return JSON.stringify({maps: Array.from(sourceMaps), stack});
 }
+
+module.exports = {
+  createWorker,
+  private_workerInterface: {connectAndSendJob, startupChild},
+};

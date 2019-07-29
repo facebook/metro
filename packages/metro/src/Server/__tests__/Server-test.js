@@ -20,9 +20,6 @@ jest
   .mock('jest-worker', () => ({}))
   .mock('crypto')
   .mock('fs')
-  .mock('../symbolicate/symbolicate', () => ({
-    createWorker: jest.fn().mockReturnValue(jest.fn()),
-  }))
   .mock('../../Bundler')
   .mock('../../DeltaBundler')
   .mock('../../Assets')
@@ -42,7 +39,6 @@ describe('processRequest', () => {
   let getAsset;
   let getPrependedScripts;
   let transformHelpers;
-  let symbolicate;
   let DeltaBundler;
 
   beforeEach(() => {
@@ -58,8 +54,24 @@ describe('processRequest', () => {
     getAsset = require('../../Assets').getAsset;
     getPrependedScripts = require('../../lib/getPrependedScripts');
     transformHelpers = require('../../lib/transformHelpers');
-    symbolicate = require('../symbolicate/symbolicate');
     DeltaBundler = require('../../DeltaBundler');
+
+    // Force the symbolication worker to run in-process
+    jest
+      .spyOn(
+        require('../symbolicate/symbolicate').private_workerInterface,
+        'startupChild',
+      )
+      .mockImplementation(() => Promise.resolve({}));
+    jest
+      .spyOn(
+        require('../symbolicate/symbolicate').private_workerInterface,
+        'connectAndSendJob',
+      )
+      .mockImplementation((socket, data) => {
+        const {symbolicate} = require('../symbolicate/worker');
+        return new Promise(resolve => symbolicate({end: resolve}, data));
+      });
   });
 
   let server;
@@ -74,6 +86,12 @@ describe('processRequest', () => {
   options.reporter = require('../../lib/reporting').nullReporter;
   options.serializer.polyfillModuleNames = null;
   options.serializer.getModulesRunBeforeMainModule = () => ['InitializeCore'];
+  options.symbolicator.customizeFrame = ({file}) => {
+    if (file === '/root/foo.js') {
+      return {collapse: true};
+    }
+    return null;
+  };
 
   const makeRequest = (requrl, reqOptions) =>
     new Promise((resolve, reject) =>
@@ -123,7 +141,7 @@ describe('processRequest', () => {
               type: 'js/module',
               data: {
                 code: '__d(function() {entry();});',
-                map: [],
+                map: [[1, 16, 1, 0]],
               },
             },
           ],
@@ -140,7 +158,8 @@ describe('processRequest', () => {
               type: 'js/module',
               data: {
                 code: '__d(function() {foo();});',
-                map: [],
+                map: [[1, 16, 1, 0]],
+                functionMap: {names: ['<global>'], mappings: 'AAA'},
               },
             },
           ],
@@ -342,7 +361,17 @@ describe('processRequest', () => {
       sources: ['require-js', '/root/mybundle.js', '/root/foo.js'],
       sourcesContent: ['code-require', 'code-mybundle', 'code-foo'],
       names: [],
-      mappings: '',
+      mappings: ';gBCAA;gBCAA',
+      x_facebook_sources: [
+        null,
+        null,
+        [
+          {
+            mappings: 'AAA',
+            names: ['<global>'],
+          },
+        ],
+      ],
     });
   });
 
@@ -354,7 +383,16 @@ describe('processRequest', () => {
       sources: ['/root/mybundle.js', '/root/foo.js'],
       sourcesContent: ['code-mybundle', 'code-foo'],
       names: [],
-      mappings: '',
+      mappings: 'gBAAA;gBCAA',
+      x_facebook_sources: [
+        null,
+        [
+          {
+            mappings: 'AAA',
+            names: ['<global>'],
+          },
+        ],
+      ],
     });
   });
 
@@ -462,7 +500,9 @@ describe('processRequest', () => {
                 output: [
                   {
                     type: 'js/module',
-                    data: {code: '__d(function() {modified();});'},
+                    data: {
+                      code: '__d(function() {modified();});',
+                    },
                   },
                 ],
                 dependencies: new Map(),
@@ -508,7 +548,9 @@ describe('processRequest', () => {
                 output: [
                   {
                     type: 'js/module',
-                    data: {code: '__d(function() {modified();});'},
+                    data: {
+                      code: '__d(function() {modified();});',
+                    },
                   },
                 ],
                 dependencies: new Map(),
@@ -742,117 +784,154 @@ describe('processRequest', () => {
   });
 
   describe('/symbolicate endpoint', () => {
-    let symbolicationWorker;
-    beforeEach(() => {
-      symbolicationWorker = symbolicate.createWorker();
-      symbolicationWorker.mockReset();
-    });
-
-    it('should symbolicate given stack trace', () => {
-      const inputStack = [
-        {
-          file: 'http://foo.bundle?platform=ios',
-          lineNumber: 2100,
-          column: 44,
-          customPropShouldBeLeftUnchanged: 'foo',
-        },
-      ];
-      const outputStack = [
-        {
-          source: 'foo.js',
-          line: 21,
-          column: 4,
-          collapse: false,
-        },
-      ];
-      const sourceMaps = [
-        [
-          'http://foo.bundle?platform=ios',
-          {
-            version: 3,
-            sources: ['require-js', '/root/mybundle.js', '/root/foo.js'],
-            sourcesContent: ['code-require', 'code-mybundle', 'code-foo'],
-            names: [],
-            mappings: '',
-          },
-        ],
-      ];
-      const body = JSON.stringify({stack: inputStack});
-
-      expect.assertions(3);
-      symbolicationWorker.mockImplementation((stack, maps) => {
-        expect(stack).toEqual(inputStack);
-        expect([...maps]).toEqual(sourceMaps);
-        return outputStack;
+    it('should symbolicate given stack trace', async () => {
+      const response = await makeRequest('/symbolicate', {
+        rawBody: JSON.stringify({
+          stack: [
+            {
+              file: 'http://localhost:8081/mybundle.bundle?runModule=true',
+              lineNumber: 2,
+              column: 18,
+              customPropShouldBeLeftUnchanged: 'foo',
+              methodName: 'clientSideMethodName',
+            },
+          ],
+        }),
       });
 
-      return makeRequest('/symbolicate', {
-        rawBody: body,
-      }).then(response =>
-        expect(JSON.parse(response.body)).toEqual({stack: outputStack}),
-      );
+      expect(JSON.parse(response.body)).toMatchInlineSnapshot(`
+        Object {
+          "stack": Array [
+            Object {
+              "collapse": false,
+              "column": 0,
+              "customPropShouldBeLeftUnchanged": "foo",
+              "file": "/root/mybundle.js",
+              "lineNumber": 1,
+              "methodName": "clientSideMethodName",
+            },
+          ],
+        }
+      `);
     });
 
-    it('should support modulesOnly option', () => {
-      const inputStack = [
-        {
-          file: 'http://foo.bundle?platform=ios&modulesOnly=true',
-          lineNumber: 2100,
-          column: 44,
-          customPropShouldBeLeftUnchanged: 'foo',
-        },
-      ];
-      const outputStack = [
-        {
-          source: 'foo.js',
-          line: 21,
-          column: 4,
-          collapse: false,
-        },
-      ];
-      const sourceMaps = [
-        [
-          'http://foo.bundle?platform=ios&modulesOnly=true',
-          {
-            version: 3,
-            sources: ['/root/mybundle.js', '/root/foo.js'],
-            sourcesContent: ['code-mybundle', 'code-foo'],
-            names: [],
-            mappings: '',
-          },
-        ],
-      ];
-      const body = JSON.stringify({stack: inputStack});
-
-      expect.assertions(3);
-      symbolicationWorker.mockImplementation((stack, maps) => {
-        expect(stack).toEqual(inputStack);
-        expect([...maps]).toEqual(sourceMaps);
-        return outputStack;
+    it('should support modulesOnly option', async () => {
+      const response = await makeRequest('/symbolicate', {
+        rawBody: JSON.stringify({
+          stack: [
+            {
+              file:
+                'http://localhost:8081/mybundle.bundle?runModule=true&modulesOnly=true',
+              lineNumber: 2,
+              column: 16,
+            },
+          ],
+        }),
       });
 
-      return makeRequest('/symbolicate', {
-        rawBody: body,
-      }).then(response =>
-        expect(JSON.parse(response.body)).toEqual({stack: outputStack}),
-      );
+      expect(JSON.parse(response.body)).toMatchObject({
+        stack: [
+          expect.objectContaining({
+            column: 0,
+            file: '/root/foo.js',
+            lineNumber: 1,
+          }),
+        ],
+      });
+    });
+
+    it('should symbolicate function name if available', async () => {
+      const response = await makeRequest('/symbolicate', {
+        rawBody: JSON.stringify({
+          stack: [
+            {
+              file: 'http://localhost:8081/mybundle.bundle?runModule=true',
+              lineNumber: 3,
+              column: 18,
+            },
+          ],
+        }),
+      });
+
+      expect(JSON.parse(response.body)).toMatchObject({
+        stack: [
+          expect.objectContaining({
+            methodName: '<global>',
+          }),
+        ],
+      });
+    });
+
+    it('should collapse frames as specified in customizeFrame', async () => {
+      // NOTE: See implementation of symbolicator.customizeFrame above.
+
+      const response = await makeRequest('/symbolicate', {
+        rawBody: JSON.stringify({
+          stack: [
+            {
+              file: 'http://localhost:8081/mybundle.bundle?runModule=true',
+              lineNumber: 3,
+              column: 18,
+            },
+          ],
+        }),
+      });
+
+      expect(JSON.parse(response.body)).toMatchObject({
+        stack: [
+          expect.objectContaining({
+            file: '/root/foo.js',
+            collapse: true,
+          }),
+        ],
+      });
+    });
+
+    it('should leave original file and position when cannot symbolicate', async () => {
+      const response = await makeRequest('/symbolicate', {
+        rawBody: JSON.stringify({
+          stack: [
+            {
+              file: 'http://localhost:8081/mybundle.bundle?runModule=true',
+              lineNumber: 200,
+              column: 18,
+              customPropShouldBeLeftUnchanged: 'foo',
+              methodName: 'clientSideMethodName',
+            },
+          ],
+        }),
+      });
+
+      expect(JSON.parse(response.body)).toMatchInlineSnapshot(`
+        Object {
+          "stack": Array [
+            Object {
+              "collapse": false,
+              "column": 18,
+              "customPropShouldBeLeftUnchanged": "foo",
+              "file": "http://localhost:8081/mybundle.bundle?runModule=true",
+              "lineNumber": 200,
+              "methodName": "clientSideMethodName",
+            },
+          ],
+        }
+      `);
     });
   });
 
   describe('/symbolicate handles errors', () => {
-    it('should symbolicate given stack trace', () => {
+    it('should symbolicate given stack trace', async () => {
       const body = 'clearly-not-json';
       console.error = jest.fn();
 
-      return makeRequest('/symbolicate', {
+      const response = await makeRequest('/symbolicate', {
         rawBody: body,
-      }).then(response => {
-        expect(response.statusCode).toEqual(500);
-        expect(JSON.parse(response.body)).toEqual({
-          error: expect.any(String),
-        });
-        expect(console.error).toBeCalled();
       });
+      expect(response.statusCode).toEqual(500);
+      expect(JSON.parse(response.body)).toEqual({
+        error: expect.any(String),
+      });
+      expect(console.error).toBeCalled();
     });
   });
 
