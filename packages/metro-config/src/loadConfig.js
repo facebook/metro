@@ -128,6 +128,10 @@ function mergeConfig<T: InputConfigT>(
         ...totalConfig.server,
         ...(nextConfig.server || {}),
       },
+      symbolicator: {
+        ...totalConfig.symbolicator,
+        ...(nextConfig.symbolicator || {}),
+      },
     }),
     defaultConfig,
   );
