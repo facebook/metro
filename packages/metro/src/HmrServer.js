@@ -38,16 +38,20 @@ import type {
 } from './lib/bundle-modules/types.flow';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
+type $ReturnType<F> = $Call<<A, R>((...A) => R) => R, F>;
+export type EntryPointURL = $ReturnType<typeof url.parse>;
+
 type Client = {|
-  +sendFn: string => void,
-  revisionIds: Array<RevisionId>,
   optedIntoHMR: boolean,
+  revisionIds: Array<RevisionId>,
+  +sendFn: string => void,
 |};
 
 type ClientGroup = {|
   +clients: Set<Client>,
-  +unlisten: () => void,
+  clientUrl: EntryPointURL,
   revisionId: RevisionId,
+  +unlisten: () => void,
 |};
 
 function send(sendFns: Array<(string) => void>, message: HmrMessage): void {
@@ -97,8 +101,8 @@ class HmrServer<TClient: Client> {
     requestUrl: string,
     sendFn: (data: string) => void,
   ): Promise<void> {
-    const parsedUrl = nullthrows(url.parse(requestUrl, true));
-    const query = nullthrows(parsedUrl.query);
+    const clientUrl = nullthrows(url.parse(requestUrl, true));
+    const query = nullthrows(clientUrl.query);
 
     let revPromise;
     if (query.revisionId) {
@@ -114,7 +118,7 @@ class HmrServer<TClient: Client> {
       }
     } else if (query.bundleEntry != null) {
       const {options} = parseOptionsFromUrl(
-        url.format(parsedUrl),
+        requestUrl,
         new Set(this._config.resolver.platforms),
       );
       const {entryFile, transformOptions} = splitBundleOptions(options);
@@ -152,10 +156,24 @@ class HmrServer<TClient: Client> {
     if (clientGroup != null) {
       clientGroup.clients.add(client);
     } else {
+      // Prepare the clientUrl to be used as sourceUrl in HMR updates.
+      clientUrl.protocol = 'http';
+      const {platform, dev, minify, modulesOnly, runModule} =
+        clientUrl.query || {};
+      clientUrl.query = {
+        platform,
+        dev: dev || 'true',
+        minify: minify || 'false',
+        modulesOnly: modulesOnly || 'true',
+        runModule: runModule || 'false',
+      };
+      clientUrl.search = '';
+
       clientGroup = {
         clients: new Set([client]),
-        unlisten: (): void => unlisten(),
+        clientUrl,
         revisionId: id,
+        unlisten: (): void => unlisten(),
       };
 
       this._clientGroups.set(id, clientGroup);
@@ -306,6 +324,7 @@ class HmrServer<TClient: Client> {
       const hmrUpdate = hmrJSBundle(delta, revision.graph, {
         createModuleId: this._createModuleId,
         projectRoot: this._config.projectRoot,
+        clientUrl: group.clientUrl,
       });
 
       return {

@@ -108,13 +108,17 @@ describe('HmrServer', () => {
       },
     });
 
-    connect = async (url, sendFn) => {
-      const client = await hmrServer.onClientConnect(url, sendFn || jest.fn());
+    connect = async (relativeUrl, sendFn) => {
+      relativeUrl = 'ws://localhost/' + relativeUrl;
+      const client = await hmrServer.onClientConnect(
+        relativeUrl,
+        sendFn || jest.fn(),
+      );
       await message(
         client,
         {
           type: 'register-entrypoints',
-          entryPoints: [url],
+          entryPoints: [relativeUrl],
         },
         sendFn,
       );
@@ -158,7 +162,7 @@ describe('HmrServer', () => {
     );
     await message(client, {
       type: 'register-entrypoints',
-      entryPoints: ['/hot?revisionId=test-id'],
+      entryPoints: ['http://localhost/hot?revisionId=test-id'],
     });
 
     expect(callbacks.get(mockedGraph).length).toBe(1);
@@ -250,7 +254,9 @@ describe('HmrServer', () => {
           deleted: ['/root/bye-id'],
           addedSourceMappingURLs: [],
           addedSourceURLs: [],
-          modifiedSourceURLs: ['/root/hi'],
+          modifiedSourceURLs: [
+            'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false',
+          ],
           modifiedSourceMappingURLs: [expect.anything()],
         },
       },
@@ -280,7 +286,9 @@ describe('HmrServer', () => {
       client,
       {
         type: 'register-entrypoints',
-        entryPoints: ['/hot?bundleEntry=EntryPoint.js&platform=ios'],
+        entryPoints: [
+          'http://localhost/hot?bundleEntry=EntryPoint.js&platform=ios',
+        ],
       },
       sendMessage1,
     );
@@ -288,7 +296,9 @@ describe('HmrServer', () => {
       client2,
       {
         type: 'register-entrypoints',
-        entryPoints: ['/hot?bundleEntry=EntryPoint.js&platform=ios'],
+        entryPoints: [
+          'http://localhost/hot?bundleEntry=EntryPoint.js&platform=ios',
+        ],
       },
       sendMessage2,
     );
@@ -333,7 +343,9 @@ describe('HmrServer', () => {
           deleted: ['/root/bye-id'],
           addedSourceMappingURLs: [],
           addedSourceURLs: [],
-          modifiedSourceURLs: ['/root/hi'],
+          modifiedSourceURLs: [
+            'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false',
+          ],
           modifiedSourceMappingURLs: [expect.anything()],
         },
       },
@@ -388,7 +400,9 @@ describe('HmrServer', () => {
             ],
           ],
           deleted: ['/root/bye-id'],
-          modifiedSourceURLs: ['/root/hi'],
+          modifiedSourceURLs: [
+            'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false',
+          ],
         },
       },
       {

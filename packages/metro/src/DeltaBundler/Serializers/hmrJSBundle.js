@@ -13,14 +13,18 @@
 const addParamsToDefineCall = require('../../lib/addParamsToDefineCall');
 const getInlineSourceMappingURL = require('./helpers/getInlineSourceMappingURL');
 const getSourceMapInfo = require('./helpers/getSourceMapInfo');
+const path = require('path');
+const url = require('url');
 
 const {isJsModule, wrapModule} = require('./helpers/js');
 const {fromRawMappings} = require('metro-source-map');
 
+import type {EntryPointURL} from '../../HmrServer';
 import type {ModuleMap} from '../../lib/bundle-modules/types.flow';
 import type {DeltaResult, Graph, Module} from '../types.flow';
 
 type Options = {
+  +clientUrl: EntryPointURL,
   +createModuleId: string => number,
   +projectRoot: string,
 };
@@ -53,7 +57,17 @@ function generateModules(
           }),
         ),
       );
-      sourceURLs.push(mapInfo.path);
+
+      // Construct a bundle URL for this specific module
+      options.clientUrl.pathname = path.relative(
+        options.projectRoot,
+        path.join(
+          path.dirname(mapInfo.path),
+          path.basename(mapInfo.path, path.extname(mapInfo.path)) + '.bundle',
+        ),
+      );
+
+      sourceURLs.push(url.format(options.clientUrl));
 
       modules.push([options.createModuleId(module.path), code]);
     }
