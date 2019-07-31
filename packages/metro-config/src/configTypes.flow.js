@@ -174,9 +174,9 @@ type ServerConfigT = {|
 
 type SymbolicatorConfigT = {|
   customizeFrame: ({
-    +file: string,
-    +lineNumber: number,
-    +column: number,
+    +file: ?string,
+    +lineNumber: ?number,
+    +column: ?number,
     +methodName: ?string,
   }) => ?{|+collapse?: boolean|} | Promise<?{|+collapse?: boolean|}>,
   workerPath: string,
