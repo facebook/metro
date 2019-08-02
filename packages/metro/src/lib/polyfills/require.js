@@ -262,6 +262,7 @@ function guardedLoadModule(
     try {
       returnValue = loadModuleImplementation(moduleId, module);
     } catch (e) {
+      // TODO: (moti) T48204692 Type this use of ErrorUtils.
       global.ErrorUtils.reportFatalError(e);
     }
     inGuard = false;
