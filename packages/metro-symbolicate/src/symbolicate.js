@@ -102,19 +102,33 @@ async function main(
 
     // Read the source map.
     const sourceMapFileName = argv.shift();
-    const content = fs.readFileSync(sourceMapFileName, 'utf8');
-    const context = Symbolication.createContext(SourceMapConsumer, content, {
+    const options = {
       nameSource: noFunctionNames ? 'identifier_names' : 'function_names',
       inputLineStart,
       inputColumnStart,
       outputLineStart,
       outputColumnStart,
-    });
+    };
+    let context;
+    if (fs.lstatSync(sourceMapFileName).isDirectory()) {
+      context = Symbolication.unstable_createDirectoryContext(
+        SourceMapConsumer,
+        sourceMapFileName,
+        options,
+      );
+    } else {
+      const content = fs.readFileSync(sourceMapFileName, 'utf8');
+      context = Symbolication.createContext(
+        SourceMapConsumer,
+        content,
+        options,
+      );
+    }
     if (argv.length === 0) {
       const stackTrace = await readAll(stdin);
-      stdout.write(Symbolication.symbolicate(stackTrace, context));
+      stdout.write(context.symbolicate(stackTrace));
     } else if (argv[0].endsWith('.profmap')) {
-      stdout.write(Symbolication.symbolicateProfilerMap(argv[0], context));
+      stdout.write(context.symbolicateProfilerMap(argv[0]));
     } else if (argv[0] === '--attribution') {
       let buffer = '';
       await waitForStream(
@@ -135,7 +149,7 @@ async function main(
             through2.obj(function(data, enc, callback) {
               // This is JSONL, so each line is a separate JSON object
               const obj = JSON.parse(data);
-              Symbolication.symbolicateAttribution(obj, context);
+              context.symbolicateAttribution(obj);
               this.push(JSON.stringify(obj) + '\n');
               callback();
             }),
@@ -144,23 +158,23 @@ async function main(
       );
     } else if (argv[0].endsWith('.cpuprofile')) {
       // NOTE: synchronous
-      Symbolication.symbolicateChromeTrace(argv[0], {stdout, stderr}, context);
+      context.symbolicateChromeTrace(argv[0], {stdout, stderr});
     } else {
       // read-from-argv form.
       let moduleIds;
       if (argv[0].endsWith('.js')) {
-        moduleIds = Symbolication.parseFileName(argv[0]);
+        moduleIds = context.parseFileName(argv[0]);
         argv.shift();
       } else {
-        moduleIds = {segmentId: 0, localId: undefined};
+        moduleIds = null;
       }
       const lineNumber = argv.shift();
       const columnNumber = argv.shift() || 0;
-      const original = Symbolication.getOriginalPositionFor(
+      const original = context.getOriginalPositionFor(
         +lineNumber,
         +columnNumber,
+        // $FlowFixMe context is a union here and so this parameter is a union
         moduleIds,
-        context,
       );
       stdout.write(
         [
