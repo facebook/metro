@@ -12,9 +12,18 @@ Generates a JavaScript bundle containing the specified entrypoint and its descen
 
 ### Options
 
-| Option   | Description    |
-|----------|----------|
-| `out`    | Location of the output      |
+| Option   | Alias    | Description    | Value |
+|----------|----------|----------|----------|
+| `out`    | `O` | File name where to store the output | String |
+| `platform` | `p` | Which platform to bundle for | `web` \| `android` \| `ios` |
+| `minify` | `z` | Whether Metro should minify the bundle | Boolean |
+| `dev` | `g` | Create a development version of the build (`process.env.NODE_ENV = 'development'`) | Boolean |
+| `config` | `c` | Location of the `metro.config.js` to use | String |
+| `max-workers` | `j` | The number of workers Metro should parallelize the transformer on | Number |
+| `project-roots` | `P` | The root folder of your project | Array |
+| `source-map` |  | Whether Metro should generate source maps | Boolean |
+| `source-map-url` |  | URL where the source map can be found | String |
+| `legacy-bundler` |  | Whether Metro should use the legacy bundler | Boolean |
 
 
 ## `serve`
