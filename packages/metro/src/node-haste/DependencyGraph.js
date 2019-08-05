@@ -74,6 +74,7 @@ class DependencyGraph extends EventEmitter {
 
   static _createHaste(config: ConfigT): JestHasteMap {
     return new JestHasteMap({
+      cacheDirectory: config.hasteMapCacheDirectory,
       computeDependencies: false,
       computeSha1: true,
       extensions: config.resolver.sourceExts.concat(config.resolver.assetExts),
