@@ -31,7 +31,7 @@ The goal of this project is to provide a suite of analysis tools for bundle size
     };
     ```
 
-3. Run `metro` and point your browser to http://localhost:8080/visualizer.
+3. Run `metro` and point your browser to http://localhost:8081/visualizer.
 
 ## Overview
 
