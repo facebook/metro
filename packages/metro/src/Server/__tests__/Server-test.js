@@ -104,65 +104,66 @@ describe('processRequest', () => {
   let changeHandler;
 
   beforeEach(() => {
-    dependencies = new Map([
-      [
-        '/root/mybundle.js',
-        {
-          path: '/root/mybundle.js',
-          dependencies: new Map([
-            [
-              'foo',
+    const currentGraphs = new Set();
+    DeltaBundler.prototype.buildGraph.mockImplementation(
+      async (entryPoints, options) => {
+        dependencies = new Map([
+          [
+            '/root/mybundle.js',
+            {
+              path: '/root/mybundle.js',
+              dependencies: new Map([
+                [
+                  'foo',
+                  {
+                    absolutePath: '/root/foo.js',
+                    data: {isAsync: false, name: 'foo'},
+                  },
+                ],
+              ]),
+              getSource: () => Buffer.from('code-mybundle'),
+              output: [
+                {
+                  type: 'js/module',
+                  data: {
+                    code: '__d(function() {entry();});',
+                    lineCount: 1,
+                    map: [[1, 16, 1, 0]],
+                  },
+                },
+              ],
+            },
+          ],
+        ]);
+        if (!options.shallow) {
+          dependencies.set('/root/foo.js', {
+            path: '/root/foo.js',
+            dependencies: new Map(),
+            getSource: () => Buffer.from('code-foo'),
+            output: [
               {
-                absolutePath: '/root/foo.js',
-                data: {isAsync: false, name: 'foo'},
+                type: 'js/module',
+                data: {
+                  code: '__d(function() {foo();});',
+                  lineCount: 1,
+                  map: [[1, 16, 1, 0]],
+                  functionMap: {names: ['<global>'], mappings: 'AAA'},
+                },
               },
             ],
-          ]),
-          getSource: () => Buffer.from('code-mybundle'),
-          output: [
-            {
-              type: 'js/module',
-              data: {
-                code: '__d(function() {entry();});',
-                lineCount: 1,
-                map: [[1, 16, 1, 0]],
-              },
-            },
-          ],
-        },
-      ],
-      [
-        '/root/foo.js',
-        {
-          path: '/root/foo.js',
-          dependencies: new Map(),
-          getSource: () => Buffer.from('code-foo'),
-          output: [
-            {
-              type: 'js/module',
-              data: {
-                code: '__d(function() {foo();});',
-                lineCount: 1,
-                map: [[1, 16, 1, 0]],
-                functionMap: {names: ['<global>'], mappings: 'AAA'},
-              },
-            },
-          ],
-        },
-      ],
-    ]);
+          });
+        }
 
-    const currentGraphs = new Set();
-    DeltaBundler.prototype.buildGraph.mockImplementation(async () => {
-      const graph = {
-        entryPoints: ['/root/mybundle.js'],
-        dependencies,
-        importBundleNames: new Set(),
-      };
-      currentGraphs.add(graph);
+        const graph = {
+          entryPoints: ['/root/mybundle.js'],
+          dependencies,
+          importBundleNames: new Set(),
+        };
+        currentGraphs.add(graph);
 
-      return graph;
-    });
+        return graph;
+      },
+    );
     DeltaBundler.prototype.getDelta.mockImplementation(
       async (graph, {reset}) => {
         if (!currentGraphs.has(graph)) {
@@ -339,6 +340,37 @@ describe('processRequest', () => {
     });
   });
 
+  it('supports the `modulesOnly` option', async () => {
+    const response = await makeRequest(
+      'mybundle.bundle?modulesOnly=true&runModule=false',
+      null,
+    );
+
+    expect(response.body).toEqual(
+      [
+        '__d(function() {entry();},0,[1],"mybundle.js");',
+        '__d(function() {foo();},1,[],"foo.js");',
+        '//# sourceMappingURL=//localhost:8081/mybundle.map?modulesOnly=true&runModule=false',
+        '//# sourceURL=http://localhost:8081/mybundle.bundle?modulesOnly=true&runModule=false',
+      ].join('\n'),
+    );
+  });
+
+  it('supports the `shallow` option', async () => {
+    const response = await makeRequest(
+      'mybundle.bundle?shallow=true&modulesOnly=true&runModule=false',
+      null,
+    );
+
+    expect(response.body).toEqual(
+      [
+        '__d(function() {entry();},0,[1],"mybundle.js");',
+        '//# sourceMappingURL=//localhost:8081/mybundle.map?shallow=true&modulesOnly=true&runModule=false',
+        '//# sourceURL=http://localhost:8081/mybundle.bundle?shallow=true&modulesOnly=true&runModule=false',
+      ].join('\n'),
+    );
+  });
+
   it('returns sourcemap on request of *.map', async () => {
     const response = await makeRequest('mybundle.map');
 
@@ -361,7 +393,7 @@ describe('processRequest', () => {
     });
   });
 
-  it('source map request respects modulesOnly option', async () => {
+  it('source map request respects `modulesOnly` option', async () => {
     const response = await makeRequest('mybundle.map?modulesOnly=true');
 
     expect(JSON.parse(response.body)).toEqual({
@@ -434,6 +466,7 @@ describe('processRequest', () => {
         experimentalImportBundleSupport: false,
         onProgress: expect.any(Function),
         resolve: expect.any(Function),
+        shallow: false,
         transform: expect.any(Function),
       },
     );
@@ -520,6 +553,7 @@ describe('processRequest', () => {
 
       expect(DeltaBundler.prototype.getDelta.mock.calls[0][1]).toEqual({
         reset: false,
+        shallow: false,
       });
     });
 
@@ -559,9 +593,11 @@ describe('processRequest', () => {
 
       expect(DeltaBundler.prototype.getDelta.mock.calls[0][1]).toEqual({
         reset: false,
+        shallow: false,
       });
       expect(DeltaBundler.prototype.getDelta.mock.calls[1][1]).toEqual({
         reset: true,
+        shallow: false,
       });
     });
 
@@ -608,6 +644,7 @@ describe('processRequest', () => {
       expect(DeltaBundler.prototype.getDelta.mock.calls.length).toBe(1);
       expect(DeltaBundler.prototype.getDelta.mock.calls[0][1]).toEqual({
         reset: true,
+        shallow: false,
       });
     });
   });
@@ -765,6 +802,7 @@ describe('processRequest', () => {
           experimentalImportBundleSupport: false,
           onProgress: null,
           resolve: expect.any(Function),
+          shallow: false,
           transform: expect.any(Function),
         },
       );
@@ -803,7 +841,7 @@ describe('processRequest', () => {
       `);
     });
 
-    it('should support modulesOnly option', async () => {
+    it('supports the `modulesOnly` option', async () => {
       const response = await makeRequest('/symbolicate', {
         rawBody: JSON.stringify({
           stack: [
@@ -826,6 +864,38 @@ describe('processRequest', () => {
           }),
         ],
       });
+    });
+
+    it('supports the `shallow` option', async () => {
+      const response = await makeRequest('/symbolicate', {
+        rawBody: JSON.stringify({
+          stack: [
+            {
+              file:
+                'http://localhost:8081/mybundle.bundle?runModule=true&shallow=true',
+              lineNumber: 2,
+              column: 18,
+              customPropShouldBeLeftUnchanged: 'foo',
+              methodName: 'clientSideMethodName',
+            },
+          ],
+        }),
+      });
+
+      expect(JSON.parse(response.body)).toMatchInlineSnapshot(`
+        Object {
+          "stack": Array [
+            Object {
+              "collapse": false,
+              "column": 0,
+              "customPropShouldBeLeftUnchanged": "foo",
+              "file": "/root/mybundle.js",
+              "lineNumber": 1,
+              "methodName": "clientSideMethodName",
+            },
+          ],
+        }
+      `);
     });
 
     it('should symbolicate function name if available', async () => {

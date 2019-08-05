@@ -104,6 +104,9 @@ describe('HmrServer', () => {
       reporter: {
         update: jest.fn(),
       },
+      transformer: {
+        experimentalImportBundleSupport: false,
+      },
       resolver: {
         platforms: [],
       },
@@ -139,14 +142,21 @@ describe('HmrServer', () => {
     await connect('/hot?bundleEntry=EntryPoint.js&platform=ios');
 
     expect(getRevisionByGraphIdMock).toBeCalledWith(
-      getGraphId('/root/EntryPoint.js', {
-        hot: true,
-        dev: true,
-        minify: false,
-        platform: 'ios',
-        customTransformOptions: {},
-        type: 'module',
-      }),
+      getGraphId(
+        '/root/EntryPoint.js',
+        {
+          hot: true,
+          dev: true,
+          minify: false,
+          platform: 'ios',
+          customTransformOptions: {},
+          type: 'module',
+        },
+        {
+          shallow: false,
+          experimentalImportBundleSupport: false,
+        },
+      ),
     );
   });
 
@@ -178,14 +188,21 @@ describe('HmrServer', () => {
       sendMessage,
     );
 
-    const expectedMessage = `The graph \`${getGraphId('/root/EntryPoint.js', {
-      hot: true,
-      dev: true,
-      minify: false,
-      platform: 'ios',
-      customTransformOptions: {},
-      type: 'module',
-    })}\` was not found.`;
+    const expectedMessage = `The graph \`${getGraphId(
+      '/root/EntryPoint.js',
+      {
+        hot: true,
+        dev: true,
+        minify: false,
+        platform: 'ios',
+        customTransformOptions: {},
+        type: 'module',
+      },
+      {
+        shallow: false,
+        experimentalImportBundleSupport: false,
+      },
+    )}\` was not found.`;
 
     const sentErrorMessage = JSON.parse(sendMessage.mock.calls[0][0]);
     expect(sentErrorMessage).toMatchObject({type: 'error'});
@@ -256,7 +273,7 @@ describe('HmrServer', () => {
           addedSourceMappingURLs: [],
           addedSourceURLs: [],
           modifiedSourceURLs: [
-            'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false',
+            'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
           ],
           modifiedSourceMappingURLs: [expect.anything()],
         },
@@ -345,7 +362,7 @@ describe('HmrServer', () => {
           addedSourceMappingURLs: [],
           addedSourceURLs: [],
           modifiedSourceURLs: [
-            'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false',
+            'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
           ],
           modifiedSourceMappingURLs: [expect.anything()],
         },
@@ -402,7 +419,7 @@ describe('HmrServer', () => {
           ],
           deleted: ['/root/bye-id'],
           modifiedSourceURLs: [
-            'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false',
+            'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
           ],
         },
       },

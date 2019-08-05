@@ -70,6 +70,7 @@ async function calcTransformerOptions(
       onProgress: null,
       experimentalImportBundleSupport:
         config.transformer.experimentalImportBundleSupport,
+      shallow: false,
     });
 
     return Array.from(dependencies.keys());

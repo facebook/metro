@@ -61,7 +61,7 @@ class DeltaBundler<T = MixedOutput> {
 
     const deltaCalculator = new DeltaCalculator(entryPoints, depGraph, options);
 
-    await deltaCalculator.getDelta({reset: true});
+    await deltaCalculator.getDelta({reset: true, shallow: options.shallow});
     const graph = deltaCalculator.getGraph();
 
     this._deltaCalculators.set(graph, deltaCalculator);
@@ -71,7 +71,7 @@ class DeltaBundler<T = MixedOutput> {
 
   async getDelta(
     graph: Graph<T>,
-    {reset}: {reset: boolean},
+    {reset, shallow}: {reset: boolean, shallow: boolean},
   ): Promise<DeltaResult<T>> {
     const deltaCalculator = this._deltaCalculators.get(graph);
 
@@ -79,7 +79,7 @@ class DeltaBundler<T = MixedOutput> {
       throw new Error('Graph not found');
     }
 
-    return await deltaCalculator.getDelta({reset});
+    return await deltaCalculator.getDelta({reset, shallow});
   }
 
   listen(graph: Graph<T>, callback: () => mixed): () => void {

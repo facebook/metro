@@ -49,6 +49,7 @@ export type BundleOptions = {
   onProgress: ?(doneCont: number, totalCount: number) => mixed,
   +platform: ?string,
   +runModule: boolean,
+  +shallow: boolean,
   sourceMapUrl: ?string,
   sourceUrl: ?string,
   createModuleIdFactory?: () => (path: string) => number,
@@ -63,11 +64,16 @@ export type SerializerOptions = {|
   +modulesOnly: boolean,
 |};
 
+export type GraphOptions = {|
+  +shallow: boolean,
+|};
+
 // Stricter representation of BundleOptions.
 export type SplitBundleOptions = {|
   +entryFile: string,
   +transformOptions: TransformInputOptions,
   +serializerOptions: SerializerOptions,
+  +graphOptions: GraphOptions,
   +onProgress: $PropertyType<DeltaBundlerOptions<>, 'onProgress'>,
 |};
 

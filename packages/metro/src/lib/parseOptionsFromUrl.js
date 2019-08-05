@@ -58,6 +58,7 @@ module.exports = function parseOptionsFromUrl(
       onProgress: null,
       platform,
       runModule: getBoolean(query, 'runModule', true),
+      shallow: getBoolean(query, 'shallow', false),
       sourceMapUrl: url.format({
         ...parsedURL,
         // The Chrome Debugger loads bundles via Blob urls, whose
