@@ -640,7 +640,7 @@ if (__DEV__) {
     }
 
     if (Refresh != null) {
-      // Debounce a little in case there's multiple updates queued up.
+      // Debounce a little in case there are multiple updates queued up.
       // This is also useful because __accept may be called multiple times.
       if (reactRefreshTimeout == null) {
         reactRefreshTimeout = setTimeout(() => {
