@@ -266,7 +266,9 @@ describe('HmrServer', () => {
           modified: [
             [
               '/root/hi-id',
-              '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
+              '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});\n' +
+                '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
+                '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
             ],
           ],
           deleted: ['/root/bye-id'],
@@ -275,7 +277,9 @@ describe('HmrServer', () => {
           modifiedSourceURLs: [
             'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
           ],
-          modifiedSourceMappingURLs: [expect.anything()],
+          modifiedSourceMappingURLs: [
+            'http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+          ],
         },
       },
       {
@@ -355,7 +359,9 @@ describe('HmrServer', () => {
           modified: [
             [
               '/root/hi-id',
-              '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
+              '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});\n' +
+                '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
+                '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
             ],
           ],
           deleted: ['/root/bye-id'],
@@ -364,7 +370,9 @@ describe('HmrServer', () => {
           modifiedSourceURLs: [
             'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
           ],
-          modifiedSourceMappingURLs: [expect.anything()],
+          modifiedSourceMappingURLs: [
+            'http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+          ],
         },
       },
       {
@@ -414,7 +422,9 @@ describe('HmrServer', () => {
           modified: [
             [
               '/root/hi-id',
-              '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
+              '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});\n' +
+                '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
+                '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
             ],
           ],
           deleted: ['/root/bye-id'],
@@ -427,26 +437,6 @@ describe('HmrServer', () => {
         type: 'update-done',
       },
     ]);
-
-    const modifiedSourceMappingURL =
-      messages[1].body.modifiedSourceMappingURLs[0];
-
-    expect(
-      JSON.parse(
-        Buffer.from(
-          modifiedSourceMappingURL.slice(
-            modifiedSourceMappingURL.indexOf('base64') + 7,
-          ),
-          'base64',
-        ).toString(),
-      ),
-    ).toEqual({
-      mappings: '',
-      names: [],
-      sources: ['/root/hi'],
-      sourcesContent: [hiModule.getSource()],
-      version: 3,
-    });
   });
 
   it('should return error messages when there is a transform error', async () => {

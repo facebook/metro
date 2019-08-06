@@ -16,18 +16,7 @@ function injectModules(
   sourceMappingURLs: $ReadOnlyArray<string>,
   sourceURLs: $ReadOnlyArray<string>,
 ): void {
-  modules.forEach(([id, source], i: number) => {
-    // Fool regular expressions trying to remove sourceMappingURL comments from
-    // source files, which would incorrectly detect and remove the inlined
-    // version.
-    const sourceMappingURL = 'sourceMappingURL';
-    const sourceURL = 'sourceURL';
-    const code =
-      source +
-      `\n//# ${sourceMappingURL}=${sourceMappingURLs[i]}\n//# ${sourceURL}=${
-        sourceURLs[i]
-      }`;
-
+  modules.forEach(([id, code], i: number) => {
     // Some engines do not support `sourceURL` as a comment. We expose a
     // `globalEvalWithSourceUrl` function to handle updates in that case.
     if (global.globalEvalWithSourceUrl) {
