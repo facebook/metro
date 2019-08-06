@@ -104,7 +104,7 @@ function forEachMapping(
     : null;
 
   traverse(ast, {
-    'Function|Program': {
+    'Function|Program|Class': {
       enter(path) {
         let name = getNameForPath(path);
         if (basename) {
