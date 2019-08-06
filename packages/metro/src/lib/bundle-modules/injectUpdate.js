@@ -9,14 +9,11 @@
  */
 'use strict';
 
-import type {HmrUpdate, ModuleMap} from './types.flow';
+import type {HmrUpdate} from './types.flow';
 
-function injectModules(
-  modules: ModuleMap,
-  sourceMappingURLs: $ReadOnlyArray<string>,
-  sourceURLs: $ReadOnlyArray<string>,
-): void {
-  modules.forEach(([id, code], i: number) => {
+function injectUpdate(update: HmrUpdate): void {
+  const sourceURLs = [...update.addedSourceURLs, ...update.modifiedSourceURLs];
+  [...update.added, ...update.modified].forEach(([id, code], i: number) => {
     // Some engines do not support `sourceURL` as a comment. We expose a
     // `globalEvalWithSourceUrl` function to handle updates in that case.
     if (global.globalEvalWithSourceUrl) {
@@ -26,19 +23,6 @@ function injectModules(
       eval(code);
     }
   });
-}
-
-function injectUpdate(update: HmrUpdate): void {
-  injectModules(
-    update.added,
-    update.addedSourceMappingURLs,
-    update.addedSourceURLs,
-  );
-  injectModules(
-    update.modified,
-    update.modifiedSourceMappingURLs,
-    update.modifiedSourceURLs,
-  );
 }
 
 module.exports = injectUpdate;
