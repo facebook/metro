@@ -11,18 +11,20 @@
 
 import type {HmrUpdate} from './types.flow';
 
+const inject = ({module: [id, code], sourceURL}) => {
+  // Some engines do not support `sourceURL` as a comment. We expose a
+  // `globalEvalWithSourceUrl` function to handle updates in that case.
+  if (global.globalEvalWithSourceUrl) {
+    global.globalEvalWithSourceUrl(code, sourceURL);
+  } else {
+    // eslint-disable-next-line no-eval
+    eval(code);
+  }
+};
+
 function injectUpdate(update: HmrUpdate): void {
-  const sourceURLs = [...update.addedSourceURLs, ...update.modifiedSourceURLs];
-  [...update.added, ...update.modified].forEach(([id, code], i: number) => {
-    // Some engines do not support `sourceURL` as a comment. We expose a
-    // `globalEvalWithSourceUrl` function to handle updates in that case.
-    if (global.globalEvalWithSourceUrl) {
-      global.globalEvalWithSourceUrl(code, sourceURLs[i]);
-    } else {
-      // eslint-disable-next-line no-eval
-      eval(code);
-    }
-  });
+  update.added.forEach(inject);
+  update.modified.forEach(inject);
 }
 
 module.exports = injectUpdate;

@@ -264,22 +264,20 @@ describe('HmrServer', () => {
           revisionId: 'rev0',
           added: [],
           modified: [
-            [
-              '/root/hi-id',
-              '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});\n' +
-                '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
-                '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
-            ],
+            {
+              module: [
+                '/root/hi-id',
+                '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});\n' +
+                  '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
+                  '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
+              ],
+              sourceMappingURL:
+                'http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+              sourceURL:
+                'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+            },
           ],
           deleted: ['/root/bye-id'],
-          addedSourceMappingURLs: [],
-          addedSourceURLs: [],
-          modifiedSourceURLs: [
-            'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
-          ],
-          modifiedSourceMappingURLs: [
-            'http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
-          ],
         },
       },
       {
@@ -357,22 +355,21 @@ describe('HmrServer', () => {
           revisionId: 'rev0',
           added: [],
           modified: [
-            [
-              '/root/hi-id',
-              '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});\n' +
-                '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
-                '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
-            ],
+            {
+              module: [
+                '/root/hi-id',
+                '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});\n' +
+                  '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
+                  '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
+              ],
+
+              sourceURL:
+                'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+              sourceMappingURL:
+                'http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+            },
           ],
           deleted: ['/root/bye-id'],
-          addedSourceMappingURLs: [],
-          addedSourceURLs: [],
-          modifiedSourceURLs: [
-            'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
-          ],
-          modifiedSourceMappingURLs: [
-            'http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
-          ],
         },
       },
       {
@@ -420,17 +417,18 @@ describe('HmrServer', () => {
           revisionId: 'rev1',
           added: [],
           modified: [
-            [
-              '/root/hi-id',
-              '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});\n' +
-                '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
-                '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
-            ],
+            {
+              module: [
+                '/root/hi-id',
+                '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});\n' +
+                  '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
+                  '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
+              ],
+              sourceURL:
+                'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+            },
           ],
           deleted: ['/root/bye-id'],
-          modifiedSourceURLs: [
-            'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
-          ],
         },
       },
       {
