@@ -228,7 +228,7 @@ class SymbolicationContext<ModuleIdsT> {
           funcColumn = funcVirtAddr;
         } else if (entry.line != null && entry.column != null) {
           // For hbc bundle with debug info, name field may already have source
-          // information for the bundle; we still can use babel/metro/prepack
+          // information for the bundle; we still can use the Metro
           // source map to symbolicate the bundle frame addresses further to its
           // original source code.
           line = entry.line;
