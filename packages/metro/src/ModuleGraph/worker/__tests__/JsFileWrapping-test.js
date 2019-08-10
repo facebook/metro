@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+javascript_foundation
+ * @emails oncall+metro_bundler
  * @flow
  * @format
  */
@@ -188,9 +188,11 @@ it('wraps a polyfill correctly', () => {
         if (something) {
           console.log('foo');
         }
-      })(typeof global !== 'undefined' ?
-        global :
-        typeof window !== 'undefined' ? window : this);`),
+      })(typeof globalThis !== 'undefined' ?
+          globalThis :
+          typeof global !== 'undefined' ?
+          global :
+          typeof window !== 'undefined' ? window : this);`),
   );
 });
 

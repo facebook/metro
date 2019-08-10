@@ -10,7 +10,14 @@
 
 'use strict';
 
-import type {IndexMap, IndexMapSection, MetroSourceMap} from './source-map';
+import type {IndexMap, IndexMapSection, MixedSourceMap} from './source-map';
+
+const EMPTY_MAP = {
+  version: 3,
+  sources: [],
+  names: [],
+  mappings: 'A',
+};
 
 /**
  * Builds a source-mapped bundle by concatenating strings and their
@@ -32,6 +39,7 @@ class BundleBuilder {
   _line: number;
   _column: number;
   _code: string;
+  _afterMappedContent: boolean;
 
   constructor(file: string) {
     this._file = file;
@@ -39,16 +47,35 @@ class BundleBuilder {
     this._line = 0;
     this._column = 0;
     this._code = '';
+    this._afterMappedContent = false;
   }
 
-  append(code: string, map: ?MetroSourceMap): this {
+  _pushMapSection(map: MixedSourceMap) {
+    this._sections.push({
+      map,
+      offset: {column: this._column, line: this._line},
+    });
+  }
+
+  _endMappedContent() {
+    if (this._afterMappedContent) {
+      this._pushMapSection(EMPTY_MAP);
+      this._afterMappedContent = false;
+    }
+  }
+
+  append(code: string, map: ?MixedSourceMap): this {
+    if (!code.length) {
+      return this;
+    }
     const {lineBreaks, lastLineColumns} = measureString(code);
     if (map) {
-      this._sections.push({
-        map,
-        offset: {column: this._column, line: this._line},
-      });
+      this._pushMapSection(map);
+      this._afterMappedContent = true;
+    } else {
+      this._endMappedContent();
     }
+    this._afterMappedContent = !!map;
     this._line = this._line + lineBreaks;
     if (lineBreaks > 0) {
       this._column = lastLineColumns;
@@ -59,7 +86,8 @@ class BundleBuilder {
     return this;
   }
 
-  getMap(): MetroSourceMap {
+  getMap(): MixedSourceMap {
+    this._endMappedContent();
     return createIndexMap(this._file, this._sections);
   }
 

@@ -11,16 +11,17 @@
 'use strict';
 
 const addParamsToDefineCall = require('../../lib/addParamsToDefineCall');
-const getInlineSourceMappingURL = require('./helpers/getInlineSourceMappingURL');
-const getSourceMapInfo = require('./helpers/getSourceMapInfo');
+const path = require('path');
+const url = require('url');
 
 const {isJsModule, wrapModule} = require('./helpers/js');
-const {fromRawMappings} = require('metro-source-map');
 
-import type {ModuleMap} from '../../lib/bundle-modules/types.flow';
+import type {EntryPointURL} from '../../HmrServer';
+import type {HmrModule} from '../../lib/bundle-modules/types.flow';
 import type {DeltaResult, Graph, Module} from '../types.flow';
 
 type Options = {
+  +clientUrl: EntryPointURL,
   +createModuleId: string => number,
   +projectRoot: string,
 };
@@ -29,77 +30,44 @@ function generateModules(
   sourceModules: Iterable<Module<>>,
   graph: Graph<>,
   options: Options,
-): {|
-  +modules: ModuleMap,
-  +sourceMappingURLs: $ReadOnlyArray<string>,
-  +sourceURLs: $ReadOnlyArray<string>,
-|} {
+): $ReadOnlyArray<HmrModule> {
   const modules = [];
-  const sourceMappingURLs = [];
-  const sourceURLs = [];
 
   for (const module of sourceModules) {
     if (isJsModule(module)) {
-      const code = _prepareModule(module, graph, options);
+      // Construct a bundle URL for this specific module only
+      const getURL = extension => {
+        options.clientUrl.pathname = path.relative(
+          options.projectRoot,
+          path.join(
+            path.dirname(module.path),
+            path.basename(module.path, path.extname(module.path)) +
+              '.' +
+              extension,
+          ),
+        );
+        return url.format(options.clientUrl);
+      };
 
-      const mapInfo = getSourceMapInfo(module, {
-        excludeSource: false,
+      const sourceMappingURL = getURL('map');
+      const sourceURL = getURL('bundle');
+      const code =
+        prepareModule(module, graph, options) +
+        `\n//# sourceMappingURL=${sourceMappingURL}\n` +
+        `//# sourceURL=${sourceURL}\n`;
+
+      modules.push({
+        module: [options.createModuleId(module.path), code],
+        sourceMappingURL,
+        sourceURL,
       });
-
-      sourceMappingURLs.push(
-        getInlineSourceMappingURL(
-          fromRawMappings([mapInfo]).toString(undefined, {
-            excludeSource: false,
-          }),
-        ),
-      );
-      sourceURLs.push(mapInfo.path);
-
-      modules.push([options.createModuleId(module.path), code]);
     }
   }
 
-  return {modules, sourceMappingURLs, sourceURLs};
+  return modules;
 }
 
-function hmrJSBundle(
-  delta: DeltaResult<>,
-  graph: Graph<>,
-  options: Options,
-): {|
-  +added: ModuleMap,
-  +addedSourceMappingURLs: $ReadOnlyArray<string>,
-  +addedSourceURLs: $ReadOnlyArray<string>,
-  +deleted: $ReadOnlyArray<number>,
-  +modified: ModuleMap,
-  +modifiedSourceMappingURLs: $ReadOnlyArray<string>,
-  +modifiedSourceURLs: $ReadOnlyArray<string>,
-|} {
-  const {
-    modules: added,
-    sourceMappingURLs: addedSourceMappingURLs,
-    sourceURLs: addedSourceURLs,
-  } = generateModules(delta.added.values(), graph, options);
-  const {
-    modules: modified,
-    sourceMappingURLs: modifiedSourceMappingURLs,
-    sourceURLs: modifiedSourceURLs,
-  } = generateModules(delta.modified.values(), graph, options);
-
-  return {
-    added,
-    modified,
-    deleted: [...delta.deleted].map((path: string) =>
-      options.createModuleId(path),
-    ),
-    addedSourceMappingURLs,
-    addedSourceURLs,
-    modifiedSourceMappingURLs,
-    modifiedSourceURLs,
-  };
-}
-
-function _prepareModule(
+function prepareModule(
   module: Module<>,
   graph: Graph<>,
   options: Options,
@@ -109,8 +77,7 @@ function _prepareModule(
     dev: true,
   });
 
-  const inverseDependencies = _getInverseDependencies(module.path, graph);
-
+  const inverseDependencies = getInverseDependencies(module.path, graph);
   // Transform the inverse dependency paths to ids.
   const inverseDependenciesById = Object.create(null);
   Object.keys(inverseDependencies).forEach((path: string) => {
@@ -118,7 +85,6 @@ function _prepareModule(
       path
     ].map(options.createModuleId);
   });
-
   return addParamsToDefineCall(code, inverseDependenciesById);
 }
 
@@ -128,7 +94,7 @@ function _prepareModule(
  * add the needed inverseDependencies for each changed module (we do this by
  * traversing upwards the dependency graph).
  */
-function _getInverseDependencies(
+function getInverseDependencies(
   path: string,
   graph: Graph<>,
   inverseDependencies: {[key: string]: Array<string>} = {},
@@ -144,14 +110,30 @@ function _getInverseDependencies(
   }
 
   inverseDependencies[path] = [];
-
   for (const inverse of module.inverseDependencies) {
     inverseDependencies[path].push(inverse);
-
-    _getInverseDependencies(inverse, graph, inverseDependencies);
+    getInverseDependencies(inverse, graph, inverseDependencies);
   }
 
   return inverseDependencies;
+}
+
+function hmrJSBundle(
+  delta: DeltaResult<>,
+  graph: Graph<>,
+  options: Options,
+): {|
+  +added: $ReadOnlyArray<HmrModule>,
+  +deleted: $ReadOnlyArray<number>,
+  +modified: $ReadOnlyArray<HmrModule>,
+|} {
+  return {
+    added: generateModules(delta.added.values(), graph, options),
+    modified: generateModules(delta.modified.values(), graph, options),
+    deleted: [...delta.deleted].map((path: string) =>
+      options.createModuleId(path),
+    ),
+  };
 }
 
 module.exports = hmrJSBundle;

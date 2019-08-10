@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @emails oncall+js_foundation
+ * @emails oncall+js_symbolication
  * @flow strict-local
  */
 
@@ -110,6 +110,18 @@ Object {
         "line": 0,
       },
     },
+    Object {
+      "map": Object {
+        "mappings": "A",
+        "names": Array [],
+        "sources": Array [],
+        "version": 3,
+      },
+      "offset": Object {
+        "column": 6,
+        "line": 0,
+      },
+    },
   ],
   "version": 3,
 }
@@ -159,6 +171,18 @@ Object {
         "line": 1,
       },
     },
+    Object {
+      "map": Object {
+        "mappings": "A",
+        "names": Array [],
+        "sources": Array [],
+        "version": 3,
+      },
+      "offset": Object {
+        "column": 0,
+        "line": 2,
+      },
+    },
   ],
   "version": 3,
 }
@@ -189,6 +213,18 @@ Object {
         "line": 0,
       },
     },
+    Object {
+      "map": Object {
+        "mappings": "A",
+        "names": Array [],
+        "sources": Array [],
+        "version": 3,
+      },
+      "offset": Object {
+        "column": 0,
+        "line": 1,
+      },
+    },
   ],
   "version": 3,
 }
@@ -216,6 +252,18 @@ Object {
       },
       "offset": Object {
         "column": 0,
+        "line": 2,
+      },
+    },
+    Object {
+      "map": Object {
+        "mappings": "A",
+        "names": Array [],
+        "sources": Array [],
+        "version": 3,
+      },
+      "offset": Object {
+        "column": 3,
         "line": 2,
       },
     },
@@ -249,6 +297,18 @@ Object {
         "line": 2,
       },
     },
+    Object {
+      "map": Object {
+        "mappings": "A",
+        "names": Array [],
+        "sources": Array [],
+        "version": 3,
+      },
+      "offset": Object {
+        "column": 3,
+        "line": 2,
+      },
+    },
   ],
   "version": 3,
 }
@@ -276,6 +336,18 @@ Object {
       },
       "offset": Object {
         "column": 0,
+        "line": 2,
+      },
+    },
+    Object {
+      "map": Object {
+        "mappings": "A",
+        "names": Array [],
+        "sources": Array [],
+        "version": 3,
+      },
+      "offset": Object {
+        "column": 3,
         "line": 2,
       },
     },
@@ -319,6 +391,18 @@ Object {
     },
     Object {
       "map": Object {
+        "mappings": "A",
+        "names": Array [],
+        "sources": Array [],
+        "version": 3,
+      },
+      "offset": Object {
+        "column": 0,
+        "line": 1,
+      },
+    },
+    Object {
+      "map": Object {
         "mappings": "A,C",
         "names": Array [],
         "sources": Array [],
@@ -329,10 +413,85 @@ Object {
         "line": 2,
       },
     },
+    Object {
+      "map": Object {
+        "mappings": "A",
+        "names": Array [],
+        "sources": Array [],
+        "version": 3,
+      },
+      "offset": Object {
+        "column": 0,
+        "line": 3,
+      },
+    },
   ],
   "version": 3,
 }
 `);
+  });
+
+  it('mapped, unmapped', () => {
+    builder
+      .append('abc\n', {
+        version: 3,
+        mappings: 'A',
+        names: [],
+        sources: [],
+      })
+      .append('def\n');
+    expect(builder.getCode()).toBe('abc\ndef\n');
+    expect(builder.getMap()).toMatchInlineSnapshot(`
+Object {
+  "file": "bundle.js",
+  "sections": Array [
+    Object {
+      "map": Object {
+        "mappings": "A",
+        "names": Array [],
+        "sources": Array [],
+        "version": 3,
+      },
+      "offset": Object {
+        "column": 0,
+        "line": 0,
+      },
+    },
+    Object {
+      "map": Object {
+        "mappings": "A",
+        "names": Array [],
+        "sources": Array [],
+        "version": 3,
+      },
+      "offset": Object {
+        "column": 0,
+        "line": 1,
+      },
+    },
+  ],
+  "version": 3,
+}
+`);
+  });
+
+  it('getMap is idempotent', () => {
+    const abcMap = {
+      version: 3,
+      mappings: 'A',
+      names: [],
+      sources: [],
+    };
+
+    const builderBase = new BundleBuilder('bundle.js');
+
+    builderBase.append('abc\n', abcMap);
+    builder.append('abc\n', abcMap);
+
+    // Call getMap an extra time on one of the builders
+    builder.getMap();
+
+    expect(builder.getMap()).toEqual(builderBase.getMap());
   });
 
   it('mapped, unmapped, partially mapped', () => {
@@ -369,6 +528,18 @@ Object {
     },
     Object {
       "map": Object {
+        "mappings": "A",
+        "names": Array [],
+        "sources": Array [],
+        "version": 3,
+      },
+      "offset": Object {
+        "column": 0,
+        "line": 1,
+      },
+    },
+    Object {
+      "map": Object {
         "mappings": "C",
         "names": Array [],
         "sources": Array [],
@@ -377,6 +548,18 @@ Object {
       "offset": Object {
         "column": 0,
         "line": 2,
+      },
+    },
+    Object {
+      "map": Object {
+        "mappings": "A",
+        "names": Array [],
+        "sources": Array [],
+        "version": 3,
+      },
+      "offset": Object {
+        "column": 0,
+        "line": 3,
       },
     },
   ],

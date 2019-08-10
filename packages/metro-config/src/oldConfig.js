@@ -16,14 +16,12 @@ const path = require('path');
 const {
   defaultCreateModuleIdFactory,
   platforms,
-  providesModuleNodeModules,
 } = require('./defaults/defaults');
 const {FileStore} = require('metro-cache');
 
 import type {OldConfigT as ConfigT} from './configTypes.flow.js';
 
 const DEFAULT = ({
-  allowPnp: true,
   assetRegistryPath: 'missing-asset-registry-path',
   enhanceMiddleware: middleware => middleware,
   extraNodeModules: {},
@@ -46,13 +44,16 @@ const DEFAULT = ({
   // node_modules/metro/
   getProjectRoot: () => path.resolve(__dirname, '../../..'),
   getWatchFolders: () => [],
-  getProvidesModuleNodeModules: () => providesModuleNodeModules.slice(),
   getRunModuleStatement: (moduleId: number | string) =>
     `__r(${JSON.stringify(moduleId)});`,
   getSourceExts: () => [],
   getTransformModulePath: () => 'metro-babel-transformer',
   getTransformOptions: async () => ({
-    transform: {experimentalImportSupport: false, inlineRequires: false},
+    transform: {
+      experimentalImportSupport: false,
+      inlineRequires: false,
+      unstable_disableES6Transforms: false,
+    },
     preloadedModules: false,
     ramGroups: [],
   }),

@@ -31,8 +31,8 @@ class PackageResolutionError extends Error {
         'this package itself specifies ' +
         'a `main` module field that could not be resolved (' +
         `\`${perr.mainPrefixPath}\`. Indeed, none of these files exist:\n\n` +
-        `  * \`${formatFileCandidates(perr.fileCandidates)}\`\n` +
-        `  * \`${formatFileCandidates(perr.indexCandidates)}\``,
+        `  * ${formatFileCandidates(perr.fileCandidates)}\n` +
+        `  * ${formatFileCandidates(perr.indexCandidates)}`,
     );
     Object.assign(this, opts);
   }

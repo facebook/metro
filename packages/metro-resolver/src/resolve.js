@@ -16,7 +16,6 @@ const InvalidPackageError = require('./InvalidPackageError');
 
 const formatFileCandidates = require('./formatFileCandidates');
 const isAbsolutePath = require('absolute-path');
-const makePnpResolver = require('./makePnpResolver');
 const path = require('path');
 
 import type {
@@ -40,14 +39,7 @@ function resolve(
   moduleName: string,
   platform: string | null,
 ): Resolution {
-  let resolveRequest = context.resolveRequest;
-
-  if (!resolveRequest && context.allowPnp && process.versions.pnp) {
-    // $FlowFixMe `pnpapi` is a builtin under PnP environments
-    const pnp = require('pnpapi');
-    resolveRequest = makePnpResolver(pnp);
-  }
-
+  const resolveRequest = context.resolveRequest;
   if (
     !resolveRequest &&
     (isRelativeImport(moduleName) || isAbsolutePath(moduleName))

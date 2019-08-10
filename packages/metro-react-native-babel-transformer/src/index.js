@@ -17,7 +17,8 @@ const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires'
 const makeHMRConfig = require('metro-react-native-babel-preset/src/configs/hmr');
 const path = require('path');
 
-const {transformSync} = require('@babel/core');
+const {parseSync, transformFromAstSync} = require('@babel/core');
+const {generateFunctionMap} = require('metro-source-map');
 
 import type {Plugins as BabelPlugins} from '@babel/core';
 import type {
@@ -129,11 +130,18 @@ function buildBabelConfig(filename, options, plugins?: BabelPlugins = []) {
   config.plugins = extraPlugins.concat(config.plugins, plugins);
 
   if (options.dev && options.hot) {
-    const hmrConfig = makeHMRConfig(
-      options,
-      path.resolve(options.projectRoot, filename),
-    );
-    config = Object.assign({}, config, hmrConfig);
+    // Note: this intentionally doesn't include the path separator because
+    // I'm not sure which one it should use on Windows, and false positives
+    // are unlikely anyway. If you later decide to include the separator,
+    // don't forget that the string usually *starts* with "node_modules" so
+    // the first one often won't be there.
+    const mayContainEditableReactComponents =
+      filename.indexOf('node_modules') === -1;
+
+    if (mayContainEditableReactComponents) {
+      const hmrConfig = makeHMRConfig();
+      config = Object.assign({}, config, hmrConfig);
+    }
   }
 
   return Object.assign({}, babelRC, config);
@@ -146,21 +154,23 @@ function transform({filename, options, src, plugins}: BabelTransformerArgs) {
     : process.env.BABEL_ENV || 'production';
 
   try {
-    const babelConfig = buildBabelConfig(filename, options, plugins);
-    const result = transformSync(src, {
+    const babelConfig = {
       // ES modules require sourceType='module' but OSS may not always want that
       sourceType: 'unambiguous',
-      ...babelConfig,
+      ...buildBabelConfig(filename, options, plugins),
       caller: {name: 'metro', platform: options.platform},
       ast: true,
-    });
+    };
+    const sourceAst = parseSync(src, babelConfig);
+    const result = transformFromAstSync(sourceAst, src, babelConfig);
+    const functionMap = generateFunctionMap(sourceAst, {filename});
 
-    // The result from `transformSync` can be null (if the file is ignored)
+    // The result from `transformFromAstSync` can be null (if the file is ignored)
     if (!result) {
-      return {ast: null};
+      return {ast: null, functionMap};
     }
 
-    return {ast: result.ast};
+    return {ast: result.ast, functionMap};
   } finally {
     process.env.BABEL_ENV = OLD_BABEL_ENV;
   }

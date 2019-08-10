@@ -10,6 +10,7 @@
 
 'use strict';
 
+const countLines = require('./countLines');
 const defaults = require('metro-config/src/defaults/defaults');
 const getPreludeCode = require('./getPreludeCode');
 const transformHelpers = require('./transformHelpers');
@@ -56,6 +57,9 @@ async function getPrependedScripts(
         transformOptions,
       ),
       onProgress: null,
+      experimentalImportBundleSupport:
+        config.transformer.experimentalImportBundleSupport,
+      shallow: false,
     },
   );
 
@@ -76,6 +80,7 @@ function _getPrelude({dev}: {dev: boolean}): Module<> {
         type: 'js/script/virtual',
         data: {
           code,
+          lineCount: countLines(code),
           map: [],
         },
       },

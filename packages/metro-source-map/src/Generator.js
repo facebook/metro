@@ -12,7 +12,11 @@
 
 const B64Builder = require('./B64Builder');
 
-import type {BabelSourceMap} from '@babel/core';
+import type {
+  BasicSourceMap,
+  FBSourceMetadata,
+  FBSourceFunctionMap,
+} from './source-map';
 
 /**
  * Generates a source map from raw mappings.
@@ -39,6 +43,7 @@ class Generator {
   source: number;
   sources: Array<string>;
   sourcesContent: Array<?string>;
+  x_facebook_sources: Array<?FBSourceMetadata>;
 
   constructor() {
     this.builder = new B64Builder();
@@ -54,14 +59,16 @@ class Generator {
     this.source = -1;
     this.sources = [];
     this.sourcesContent = [];
+    this.x_facebook_sources = [];
   }
 
   /**
    * Mark the beginning of a new source file.
    */
-  startFile(file: string, code: string) {
+  startFile(file: string, code: string, functionMap: ?FBSourceFunctionMap) {
     this.source = this.sources.push(file) - 1;
     this.sourcesContent.push(code);
+    this.x_facebook_sources.push(functionMap ? [functionMap] : null);
   }
 
   /**
@@ -147,8 +154,8 @@ class Generator {
   /**
    * Return the source map as object.
    */
-  toMap(file?: string, options?: {excludeSource?: boolean}): BabelSourceMap {
-    let content;
+  toMap(file?: string, options?: {excludeSource?: boolean}): BasicSourceMap {
+    let content, sourcesMetadata;
 
     if (options && options.excludeSource) {
       content = {};
@@ -156,11 +163,20 @@ class Generator {
       content = {sourcesContent: this.sourcesContent.slice()};
     }
 
+    if (this.hasSourcesMetadata()) {
+      sourcesMetadata = {
+        x_facebook_sources: JSON.parse(JSON.stringify(this.x_facebook_sources)),
+      };
+    } else {
+      sourcesMetadata = {};
+    }
+
     return {
       version: 3,
       file,
       sources: this.sources.slice(),
       ...content,
+      ...sourcesMetadata,
       names: this.names.items(),
       mappings: this.builder.toString(),
     };
@@ -172,12 +188,20 @@ class Generator {
    * This is ~2.5x faster than calling `JSON.stringify(generator.toMap())`
    */
   toString(file?: string, options?: {excludeSource?: boolean}): string {
-    let content;
+    let content, sourcesMetadata;
 
     if (options && options.excludeSource) {
       content = '';
     } else {
       content = `"sourcesContent":${JSON.stringify(this.sourcesContent)},`;
+    }
+
+    if (this.hasSourcesMetadata()) {
+      sourcesMetadata = `"x_facebook_sources":${JSON.stringify(
+        this.x_facebook_sources,
+      )},`;
+    } else {
+      sourcesMetadata = '';
     }
 
     return (
@@ -186,9 +210,20 @@ class Generator {
       (file ? `"file":${JSON.stringify(file)},` : '') +
       `"sources":${JSON.stringify(this.sources)},` +
       content +
+      sourcesMetadata +
       `"names":${JSON.stringify(this.names.items())},` +
       `"mappings":"${this.builder.toString()}"` +
       '}'
+    );
+  }
+
+  /**
+   * Determine whether we need to write the `x_facebook_sources` field.
+   * If the metadata is all `null`s, we can omit the field entirely.
+   */
+  hasSourcesMetadata(): boolean {
+    return this.x_facebook_sources.some(
+      metadata => metadata != null && metadata.some(value => value != null),
     );
   }
 }

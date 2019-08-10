@@ -13,6 +13,7 @@
 const nullthrows = require('nullthrows');
 const parseCustomTransformOptions = require('./parseCustomTransformOptions');
 const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
+const path = require('path');
 const url = require('url');
 
 const {revisionIdFromString} = require('../IncrementalBundler');
@@ -20,101 +21,55 @@ const {revisionIdFromString} = require('../IncrementalBundler');
 import type {RevisionId} from '../IncrementalBundler';
 import type {BundleOptions} from '../shared/types.flow';
 
-function getBoolOptionFromQuery(
-  query: {[string]: string},
-  opt: string,
-  defaultVal: boolean,
-): boolean {
-  if (query[opt] == null) {
-    return defaultVal;
-  }
+const getBoolean = (query, opt, defaultVal) =>
+  query[opt] == null ? defaultVal : query[opt] === 'true' || query[opt] === '1';
 
-  return query[opt] === 'true' || query[opt] === '1';
-}
+const getBundleType = bundleName => {
+  const bundleType = path.extname(bundleName).substr(1);
+  return bundleType === 'delta' || bundleType === 'map' || bundleType === 'meta'
+    ? bundleType
+    : 'bundle';
+};
 
-function parseOptionsFromUrl(
-  reqUrl: string,
+module.exports = function parseOptionsFromUrl(
+  requestUrl: string,
   platforms: Set<string>,
 ): {|options: BundleOptions, revisionId: ?RevisionId|} {
-  // `true` to parse the query param as an object.
-  const urlObj = nullthrows(url.parse(reqUrl, true));
-  const urlQuery = nullthrows(urlObj.query);
-
+  const parsedURL = nullthrows(url.parse(requestUrl, true)); // `true` to parse the query param as an object.
+  const query = nullthrows(parsedURL.query);
   const pathname =
-    urlObj.pathname != null ? decodeURIComponent(urlObj.pathname) : '';
-
-  let bundleType = 'bundle';
-
-  // Backwards compatibility. Options used to be as added as '.' to the
-  // entry module name. We can safely remove these options.
-  const entryFileRelativeToProjectRoot = pathname
-    .replace(/^(?:\.?\/)?/, './') // We want to produce a relative path to project root
-    .split('.')
-    .filter((part: string, i: number) => {
-      if (part === 'delta' || part === 'map' || part === 'meta') {
-        bundleType = part;
-        return false;
-      }
-      if (
-        part === 'includeRequire' ||
-        part === 'runModule' ||
-        part === 'bundle' ||
-        part === 'assets'
-      ) {
-        return false;
-      }
-      return true;
-    })
-    .join('.');
-
-  // try to get the platform from the url
+    query.bundleEntry ||
+    (parsedURL.pathname != null ? decodeURIComponent(parsedURL.pathname) : '');
   const platform =
-    urlQuery.platform || parsePlatformFilePath(pathname, platforms).platform;
-
-  const revisionId = urlQuery.revisionId || urlQuery.deltaBundleId || null;
-
-  const dev = getBoolOptionFromQuery(urlQuery, 'dev', true);
-  const minify = getBoolOptionFromQuery(urlQuery, 'minify', false);
-  const excludeSource = getBoolOptionFromQuery(
-    urlQuery,
-    'excludeSource',
-    false,
-  );
-  const inlineSourceMap = getBoolOptionFromQuery(
-    urlQuery,
-    'inlineSourceMap',
-    false,
-  );
-  const runModule = getBoolOptionFromQuery(urlQuery, 'runModule', true);
-
-  const customTransformOptions = parseCustomTransformOptions(urlObj);
-
+    query.platform || parsePlatformFilePath(pathname, platforms).platform;
+  const revisionId = query.revisionId || query.deltaBundleId || null;
   return {
     revisionId: revisionId != null ? revisionIdFromString(revisionId) : null,
     options: {
-      customTransformOptions,
-      dev,
+      bundleType: getBundleType(pathname),
+      customTransformOptions: parseCustomTransformOptions(parsedURL),
+      dev: getBoolean(query, 'dev', true),
+      entryFile: pathname.replace(/^(?:\.?\/)?/, './').replace(/\.[^/.]+$/, ''),
+      excludeSource: getBoolean(query, 'excludeSource', false),
       hot: true,
-      minify,
-      platform,
+      inlineSourceMap: getBoolean(query, 'inlineSourceMap', false),
+      minify: getBoolean(query, 'minify', false),
+      modulesOnly: getBoolean(query, 'modulesOnly', false),
       onProgress: null,
-      entryFile: entryFileRelativeToProjectRoot,
-      bundleType,
+      platform,
+      runModule: getBoolean(query, 'runModule', true),
+      shallow: getBoolean(query, 'shallow', false),
       sourceMapUrl: url.format({
-        ...urlObj,
-        // The remote chrome debugger loads bundles via Blob urls, whose
+        ...parsedURL,
+        // The Chrome Debugger loads bundles via Blob urls, whose
         // protocol is blob:http. This breaks loading source maps through
         // protocol-relative URLs, which is why we must force the HTTP protocol
-        // when loading the bundle for either iOS or Android.
+        // when loading the bundle for either Android or iOS.
         protocol:
           platform != null && platform.match(/^(android|ios)$/) ? 'http' : '',
         pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
       }),
-      runModule,
-      excludeSource,
-      inlineSourceMap,
+      sourceUrl: requestUrl,
     },
   };
-}
-
-module.exports = parseOptionsFromUrl;
+};

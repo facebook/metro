@@ -293,10 +293,16 @@ class TerminalReporter {
       return;
     }
 
-    let message =
-      error.snippet == null && error.stack != null
-        ? error.stack
-        : error.message;
+    let {message} = error;
+
+    // Do not log the stack trace for SyntaxError (because it will always be in
+    // the parser, which is not helpful).
+    if (!(error instanceof SyntaxError)) {
+      if (error.snippet == null && error.stack != null) {
+        message = error.stack;
+      }
+    }
+
     if (error.filename && !message.includes(error.filename)) {
       message += ` [${error.filename}]`;
     }
@@ -370,6 +376,9 @@ class TerminalReporter {
         break;
       case 'bundle_transform_progressed':
         if (event.totalFileCount === event.transformedFileCount) {
+          /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses
+           * an error found when Flow v0.99 was deployed. To see the error,
+           * delete this comment and run Flow. */
           this._scheduleUpdateBundleProgress.cancel();
           this._updateBundleProgress(event);
         } else {

@@ -1,5 +1,12 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`directory context symbolicating a stack trace 1`] = `
+"/js/react-native-github/Libraries/BatchedBridge/BatchedBridge.js:23:Object
+/js/react-native-github/Libraries/BatchedBridge/MessageQueue.js:89:null
+fileThatDoesntExist.js:10:null
+"
+`;
+
 exports[`symbolicating a profiler map 1`] = `
 "JS_0000_xxxxxxxxxxxxxxxxxxxxxx throws0::thrower.js:48:11
 JS_0001_xxxxxxxxxxxxxxxxxxxxxx throws6::thrower.js:35:38
@@ -33,6 +40,23 @@ exports[`symbolicating a stack trace ignoring a function map 1`] = `
 "
 `;
 
+exports[`symbolicating a stack trace in Node format 1`] = `
+"TypeError: undefined is not a function
+    at throws6 (thrower.js:18:null)
+    at thrower.js:30:arg
+    at forEach (null:null:null)
+    at o (thrower.js:30:arguments)
+    at throws4 (thrower.js:35:this)
+    at eval (eval at thrower.js:30:forEach)
+    at t (thrower.js:27:null)
+    at throws2 (thrower.js:39:throws3)
+    at throws1 (thrower.js:44:throws2)
+    at throws0 (thrower.js:49:throws1)
+    at thrower.js:53:throws0
+    at global code (thrower.js:1:null)
+"
+`;
+
 exports[`symbolicating a stack trace with a function map 1`] = `
 "/js/RKJSModules/segmented/biz.js:5:module.exports.throwSmthInner
 /js/RKJSModules/segmented/glo.js:7:module.exports.throwSmth
@@ -57,4 +81,98 @@ exports[`symbolicating an attribution file 1`] = `
 "
 `;
 
-exports[`symbolicating with a cpuprofile 1`] = `"{\\"stackFrames\\":{\\"1\\":{\\"funcVirtAddr\\":\\"0\\",\\"offset\\":\\"0\\",\\"name\\":\\"global+0(temp/bench.js:2:1)\\",\\"category\\":\\"JavaScript\\"},\\"2\\":{\\"funcVirtAddr\\":\\"0\\",\\"offset\\":\\"55\\",\\"name\\":\\"global+55(temp/bench.js:21:11)\\",\\"category\\":\\"JavaScript\\"},\\"3\\":{\\"funcVirtAddr\\":\\"67\\",\\"offset\\":\\"16\\",\\"name\\":\\"entryPoint+16(temp/bench.js:3:9)\\",\\"category\\":\\"JavaScript\\",\\"parent\\":2},\\"4\\":{\\"funcVirtAddr\\":\\"89\\",\\"offset\\":\\"0\\",\\"name\\":\\"helper+0(temp/bench.js:6:19)\\",\\"category\\":\\"JavaScript\\",\\"parent\\":3},\\"5\\":{\\"funcVirtAddr\\":\\"89\\",\\"offset\\":\\"146\\",\\"name\\":\\"helper+146(temp/bench.js:14:20)\\",\\"category\\":\\"JavaScript\\",\\"parent\\":3},\\"6\\":{\\"name\\":\\"[Native]4367295792\\",\\"category\\":\\"Native\\",\\"parent\\":5}}}"`;
+exports[`symbolicating an attribution file with 1-based column output 1`] = `
+"{\\"functionId\\":1,\\"location\\":{\\"file\\":\\"thrower.js\\",\\"line\\":4,\\"column\\":12},\\"usage\\":[]}
+{\\"functionId\\":2,\\"location\\":{\\"file\\":\\"thrower.js\\",\\"line\\":14,\\"column\\":15},\\"usage\\":[]}
+"
+`;
+
+exports[`symbolicating with a cpuprofile 1`] = `
+Object {
+  "stackFrames": Object {
+    "1": Object {
+      "category": "JavaScript",
+      "funcVirtAddr": "0",
+      "name": "<global>(temp/bench.js:2:1)",
+      "offset": "0",
+    },
+    "2": Object {
+      "category": "JavaScript",
+      "funcVirtAddr": "0",
+      "name": "<global>(temp/bench.js:21:11)",
+      "offset": "55",
+    },
+    "3": Object {
+      "category": "JavaScript",
+      "funcVirtAddr": "67",
+      "name": "entryPoint(temp/bench.js:3:9)",
+      "offset": "16",
+      "parent": 2,
+    },
+    "4": Object {
+      "category": "JavaScript",
+      "funcVirtAddr": "89",
+      "name": "helper(temp/bench.js:6:19)",
+      "offset": "0",
+      "parent": 3,
+    },
+    "5": Object {
+      "category": "JavaScript",
+      "funcVirtAddr": "89",
+      "name": "helper(temp/bench.js:14:20)",
+      "offset": "146",
+      "parent": 3,
+    },
+    "6": Object {
+      "category": "Native",
+      "name": "[Native]4367295792",
+      "parent": 5,
+    },
+  },
+}
+`;
+
+exports[`symbolicating with a cpuprofile ignoring a function map 1`] = `
+Object {
+  "stackFrames": Object {
+    "1": Object {
+      "category": "JavaScript",
+      "funcVirtAddr": "0",
+      "name": "global+0(temp/bench.js:2:1)",
+      "offset": "0",
+    },
+    "2": Object {
+      "category": "JavaScript",
+      "funcVirtAddr": "0",
+      "name": "global+55(temp/bench.js:21:11)",
+      "offset": "55",
+    },
+    "3": Object {
+      "category": "JavaScript",
+      "funcVirtAddr": "67",
+      "name": "entryPoint+16(temp/bench.js:3:9)",
+      "offset": "16",
+      "parent": 2,
+    },
+    "4": Object {
+      "category": "JavaScript",
+      "funcVirtAddr": "89",
+      "name": "helper+0(temp/bench.js:6:19)",
+      "offset": "0",
+      "parent": 3,
+    },
+    "5": Object {
+      "category": "JavaScript",
+      "funcVirtAddr": "89",
+      "name": "helper+146(temp/bench.js:14:20)",
+      "offset": "146",
+      "parent": 3,
+    },
+    "6": Object {
+      "category": "Native",
+      "name": "[Native]4367295792",
+      "parent": 5,
+    },
+  },
+}
+`;

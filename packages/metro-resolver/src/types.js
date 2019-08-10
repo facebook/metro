@@ -39,7 +39,7 @@ export type FileCandidates =
   // example `/js/foo.ios.js`, `/js/foo.js`, etc. for a single prefix '/js/foo'.
   | {|
       +type: 'sourceFile',
-      +filePathPrefix: string,
+      filePathPrefix: string,
       +candidateExts: $ReadOnlyArray<string>,
     |};
 
@@ -107,7 +107,6 @@ export type ModulePathContext = FileOrDirContext & {
 
 export type ResolutionContext = ModulePathContext &
   HasteContext & {
-    allowPnp: boolean,
     allowHaste: boolean,
     extraNodeModules: ?{[string]: string},
     originModulePath: string,

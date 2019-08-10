@@ -10,6 +10,9 @@
 
 'use strict';
 
+/* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an error
+ * found when Flow v0.99 was deployed. To see the error, delete this comment
+ * and run Flow. */
 const template = require('@babel/template').default;
 
 import type {Ast} from '@babel/core';
@@ -27,6 +30,7 @@ type State = {
     importDefault: string,
     importAll: string,
     resolve: boolean,
+    out?: {isESModule: boolean},
   },
 };
 
@@ -292,13 +296,23 @@ function importExportPlugin({types: t}: $FlowFixMe) {
                 break;
 
               case 'ImportSpecifier':
-                anchor.insertBefore(
-                  importNamedTemplate({
-                    FILE: resolvePath(file, state.opts.resolve),
-                    LOCAL: local,
-                    REMOTE: imported,
-                  }),
-                );
+                if (imported.name === 'default') {
+                  anchor.insertBefore(
+                    importTemplate({
+                      IMPORT: state.importDefault,
+                      FILE: resolvePath(file, state.opts.resolve),
+                      LOCAL: local,
+                    }),
+                  );
+                } else {
+                  anchor.insertBefore(
+                    importNamedTemplate({
+                      FILE: resolvePath(file, state.opts.resolve),
+                      LOCAL: local,
+                      REMOTE: imported,
+                    }),
+                  );
+                }
                 break;
 
               default:
@@ -357,6 +371,11 @@ function importExportPlugin({types: t}: $FlowFixMe) {
             state.exportNamed.length
           ) {
             body.unshift(esModuleExportTemplate());
+            if (state.opts.out) {
+              state.opts.out.isESModule = true;
+            }
+          } else if (state.opts.out) {
+            state.opts.out.isESModule = false;
           }
         },
       },

@@ -18,7 +18,6 @@ const os = require('os');
 const path = require('path');
 
 const {
-  providesModuleNodeModules,
   assetExts,
   sourceExts,
   platforms,
@@ -32,11 +31,9 @@ import type {ConfigT} from '../configTypes.flow';
 
 const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   resolver: {
-    allowPnp: true,
     assetExts,
     platforms,
     sourceExts,
-    providesModuleNodeModules: providesModuleNodeModules.slice(),
     resolverMainFields: ['browser', 'main'],
     extraNodeModules: {},
     resolveRequest: null,
@@ -64,9 +61,15 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     port: 8080,
     enableVisualizer: false,
     enhanceMiddleware: middleware => middleware,
-    runInspectorProxy: false,
+    runInspectorProxy: true,
     verifyConnections: false,
   },
+
+  symbolicator: {
+    customizeFrame: () => {},
+    workerPath: 'metro/src/Server/symbolicate/worker',
+  },
+
   transformer: {
     assetPlugins: [],
     asyncRequireModulePath: 'metro/src/lib/bundle-modules/asyncRequire',
@@ -75,8 +78,13 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     dynamicDepsInPackages: 'throwAtRuntime',
     enableBabelRCLookup: true,
     enableBabelRuntime: true,
+    experimentalImportBundleSupport: false,
     getTransformOptions: async () => ({
-      transform: {experimentalImportSupport: false, inlineRequires: false},
+      transform: {
+        experimentalImportSupport: false,
+        inlineRequires: false,
+        unstable_disableES6Transforms: false,
+      },
       preloadedModules: false,
       ramGroups: [],
     }),

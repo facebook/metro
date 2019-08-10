@@ -16,7 +16,7 @@ const {getModuleCodeAndMap, concat} = require('./util');
 const {BundleBuilder} = require('metro-source-map');
 
 import type {OutputFn} from '../types.flow';
-import type {FBSourceMap, MetroSourceMap} from 'metro-source-map';
+import type {MixedSourceMap} from 'metro-source-map';
 
 function asPlainBundle({
   filename,
@@ -28,7 +28,7 @@ function asPlainBundle({
 }): {|
   code: string | Buffer,
   extraFiles?: Iterable<[string, string | Buffer]>,
-  map: FBSourceMap | MetroSourceMap,
+  map: MixedSourceMap,
 |} {
   const builder = new BundleBuilder(filename);
   const modIdForPath = (x: {path: string}) => idsForPath(x).moduleId;

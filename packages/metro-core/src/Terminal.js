@@ -172,6 +172,9 @@ class Terminal {
     // Useful if you're going to start calling console.log/console.error directly
     // again; otherwise you could end up with mangled output when the queued
     // update starts writing to stream after a delay.
+    /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.99 was deployed. To see the error, delete this
+     * comment and run Flow. */
     this._scheduleUpdate.flush();
   }
 }

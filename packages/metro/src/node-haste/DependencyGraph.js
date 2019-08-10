@@ -66,7 +66,6 @@ class DependencyGraph extends EventEmitter {
     this._moduleMap = initialModuleMap;
     this._helpers = new DependencyGraphHelpers({
       assetExts: config.resolver.assetExts,
-      providesModuleNodeModules: config.resolver.providesModuleNodeModules,
     });
     this._haste.on('change', this._onHasteChange.bind(this));
     this._moduleCache = this._createModuleCache();
@@ -75,6 +74,7 @@ class DependencyGraph extends EventEmitter {
 
   static _createHaste(config: ConfigT): JestHasteMap {
     return new JestHasteMap({
+      cacheDirectory: config.hasteMapCacheDirectory,
       computeDependencies: false,
       computeSha1: true,
       extensions: config.resolver.sourceExts.concat(config.resolver.assetExts),
@@ -86,7 +86,6 @@ class DependencyGraph extends EventEmitter {
       mocksPattern: '',
       name: 'metro-' + JEST_HASTE_MAP_CACHE_BREAKER,
       platforms: config.resolver.platforms,
-      providesModuleNodeModules: config.resolver.providesModuleNodeModules,
       retainAllFiles: true,
       resetCache: config.resetCache,
       rootDir: config.projectRoot,
@@ -144,7 +143,6 @@ class DependencyGraph extends EventEmitter {
 
   _createModuleResolver() {
     this._moduleResolver = new ModuleResolver({
-      allowPnp: this._config.resolver.allowPnp,
       dirExists: (filePath: string) => {
         try {
           return fs.lstatSync(filePath).isDirectory();
@@ -158,6 +156,7 @@ class DependencyGraph extends EventEmitter {
       moduleCache: this._moduleCache,
       moduleMap: this._moduleMap,
       preferNativePlatform: true,
+      projectRoot: this._config.projectRoot,
       resolveAsset: (
         dirPath: string,
         assetName: string,

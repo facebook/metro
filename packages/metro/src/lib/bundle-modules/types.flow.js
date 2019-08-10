@@ -40,13 +40,18 @@ export type FormattedError = {|
   +errors: Array<{description: string}>,
 |};
 
+export type HmrModule = {|
+  +module: [number, string],
+  +sourceMappingURL: string,
+  +sourceURL: string,
+|};
+
 export type HmrUpdate = {|
-  ...DeltaBundle,
+  +added: $ReadOnlyArray<HmrModule>,
+  +deleted: $ReadOnlyArray<number>,
+  +isInitialUpdate: boolean,
+  +modified: $ReadOnlyArray<HmrModule>,
   +revisionId: string,
-  +addedSourceMappingURLs: $ReadOnlyArray<string>,
-  +addedSourceURLs: $ReadOnlyArray<string>,
-  +modifiedSourceMappingURLs: $ReadOnlyArray<string>,
-  +modifiedSourceURLs: $ReadOnlyArray<string>,
 |};
 
 export type HmrUpdateMessage = {|
@@ -59,9 +64,37 @@ export type HmrErrorMessage = {|
   +body: FormattedError,
 |};
 
+export type HmrClientMessage =
+  | {|
+      +type: 'register-entrypoints',
+      +entryPoints: Array<string>,
+    |}
+  | {|
+      +type: 'log',
+      +level:
+        | 'trace'
+        | 'info'
+        | 'warn'
+        | 'log'
+        | 'group'
+        | 'groupCollapsed'
+        | 'groupEnd'
+        | 'debug',
+      +data: Array<mixed>,
+    |}
+  | {|
+      +type: 'log-opt-in',
+    |};
+
 export type HmrMessage =
   | {|
+      +type: 'bundle-registered',
+    |}
+  | {|
       +type: 'update-start',
+      +body: {|
+        +isInitialUpdate: boolean,
+      |},
     |}
   | {|
       +type: 'update-done',

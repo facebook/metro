@@ -13,6 +13,7 @@
 const Device = require('./Device');
 const WS = require('ws');
 
+const debug = require('debug')('Metro:InspectorProxy');
 const url = require('url');
 
 import type {
@@ -42,7 +43,7 @@ class InspectorProxy {
   // Internal counter for device IDs -- just gets incremented for each new device.
   _deviceCounter: number = 0;
 
-  // We store server's address with port (like '127.0.0.1:8082') to be able to build URLs
+  // We store server's address with port (like '127.0.0.1:8081') to be able to build URLs
   // (devtoolsFrontendUrl and webSocketDebuggerUrl) for page descriptions. These URLs are used
   // by debugger to know where to connect.
   _serverAddressWithPort: string = '';
@@ -91,8 +92,12 @@ class InspectorProxy {
 
   // Adds websocket listeners to the provided HTTP/HTTPS server.
   addWebSocketListener(server: HttpServer | HttpsServer) {
-    this._serverAddressWithPort =
-      server.address().address + ':' + server.address().port;
+    const {address, port} = server.address();
+    if (server.address().family === 'IPv6') {
+      this._serverAddressWithPort = `[${address}]:${port}`;
+    } else {
+      this._serverAddressWithPort = `${address}:${port}`;
+    }
     this._addDeviceConnectionHandler(server);
     this._addDebuggerConnectionHandler(server);
   }
@@ -161,13 +166,11 @@ class InspectorProxy {
           new Device(deviceId, deviceName, appName, socket),
         );
 
-        // eslint-disable-next-line no-console
-        console.log(`Got new connection: device=${deviceName}, app=${appName}`);
+        debug(`Got new connection: device=${deviceName}, app=${appName}`);
 
         socket.on('close', () => {
           this._devices.delete(deviceId);
-          // eslint-disable-next-line no-console
-          console.log(`Device ${deviceName} disconnected.`);
+          debug(`Device ${deviceName} disconnected.`);
         });
       } catch (e) {
         console.error('error', e);

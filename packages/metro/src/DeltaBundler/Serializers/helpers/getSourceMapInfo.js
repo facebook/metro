@@ -13,7 +13,10 @@
 const {getJsOutput} = require('./js');
 
 import type {Module} from '../../types.flow';
-import type {MetroSourceMapSegmentTuple} from 'metro-source-map';
+import type {
+  MetroSourceMapSegmentTuple,
+  FBSourceFunctionMap,
+} from 'metro-source-map';
 
 function getSourceMapInfo(
   module: Module<>,
@@ -22,9 +25,11 @@ function getSourceMapInfo(
   |},
 ): {|
   +map: Array<MetroSourceMapSegmentTuple>,
+  +functionMap: ?FBSourceFunctionMap,
   +code: string,
   +path: string,
   +source: string,
+  +lineCount: number,
 |} {
   return {
     ...getJsOutput(module).data,

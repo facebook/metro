@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+javascript_foundation
+ * @emails oncall+metro_bundler
  * @format
  */
 
@@ -24,7 +24,9 @@ function createModule(name, dependencies, type = 'js/module') {
         ]),
       ),
       getSource: () => Buffer.from(`source of ${name}`),
-      output: [{type, data: {code: `__d(function() {${name}()});`}}],
+      output: [
+        {type, data: {code: `__d(function() {${name}()});`, lineCount: 1}},
+      ],
     },
   ];
 }
@@ -39,6 +41,7 @@ const graph = {
     createModule('bar', []),
     createModule('qux', []),
   ]),
+  importBundleNames: new Set(),
 };
 
 const pre = [createModule('pre', [], 'js/script')[1]];

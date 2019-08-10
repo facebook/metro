@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+javascript_foundation
+ * @emails oncall+metro_bundler
  * @format
  */
 
@@ -141,13 +141,16 @@ beforeEach(async () => {
       return {
         dependencies: (mockedDependencyTree.get(path) || []).map(dep => ({
           name: dep.name,
-          isAsync: false,
+          data: {
+            isAsync: false,
+          },
         })),
         getSource: () => Buffer.from('// source'),
         output: [
           {
             data: {
               code: '// code',
+              lineCount: 1,
               map: [],
             },
             type: 'js/module',
@@ -156,6 +159,7 @@ beforeEach(async () => {
       };
     }),
     onProgress: null,
+    shallow: false,
   };
 
   // Generate the initial dependency graph.
@@ -255,6 +259,58 @@ it('should retry to traverse the dependencies as it was after getting an error',
   await expect(
     traverseDependencies(['/foo'], graph, options),
   ).rejects.toBeInstanceOf(Error);
+});
+
+it('should retry traversing dependencies after a transform error', async () => {
+  function BadError() {}
+
+  const localOptions = {
+    ...options,
+    transform(path) {
+      if (path === '/bad') {
+        throw new BadError();
+      }
+      return options.transform.apply(this, arguments);
+    },
+  };
+
+  await initialTraverseDependencies(graph, localOptions);
+
+  Actions.createFile('/bad');
+  Actions.addDependency('/foo', '/bad');
+
+  await expect(
+    traverseDependencies(['/foo'], graph, localOptions),
+  ).rejects.toBeInstanceOf(BadError);
+
+  // Repeated attempt should give the same error.
+  await expect(
+    traverseDependencies(['/foo'], graph, localOptions),
+  ).rejects.toBeInstanceOf(BadError);
+
+  // Finally, pass normal `options` that don't reject the '/bad' module:
+  expect(
+    getPaths(await traverseDependencies([...files], graph, options)),
+  ).toEqual({
+    added: new Set(['/bad']),
+    modified: new Set(['/foo']),
+    deleted: new Set(),
+  });
+});
+
+it('should not traverse past the initial module if `shallow` is passed', async () => {
+  const result = await initialTraverseDependencies(graph, {
+    ...options,
+    shallow: true,
+  });
+
+  expect(getPaths(result)).toEqual({
+    added: new Set(['/bundle']),
+    modified: new Set(),
+    deleted: new Set(),
+  });
+
+  expect(graph).toMatchSnapshot();
 });
 
 describe('Progress updates', () => {
@@ -454,7 +510,7 @@ describe('edge cases', () => {
     expect(graph.dependencies.get('/baz')).toBe(undefined);
   });
 
-  it('maintain the order of module dependencies consistent', async () => {
+  it('maintain the order of module dependencies', async () => {
     await initialTraverseDependencies(graph, options);
 
     Actions.addDependency('/foo', '/qux', 0);
@@ -468,9 +524,18 @@ describe('edge cases', () => {
     });
 
     expect([...graph.dependencies.get(moduleFoo).dependencies]).toEqual([
-      ['qux', {absolutePath: '/qux', data: {isAsync: false, name: 'qux'}}],
-      ['bar', {absolutePath: '/bar', data: {isAsync: false, name: 'bar'}}],
-      ['baz', {absolutePath: '/baz', data: {isAsync: false, name: 'baz'}}],
+      [
+        'qux',
+        {absolutePath: '/qux', data: {data: {isAsync: false}, name: 'qux'}},
+      ],
+      [
+        'bar',
+        {absolutePath: '/bar', data: {data: {isAsync: false}, name: 'bar'}},
+      ],
+      [
+        'baz',
+        {absolutePath: '/baz', data: {data: {isAsync: false}, name: 'baz'}},
+      ],
     ]);
   });
 
@@ -517,7 +582,7 @@ describe('edge cases', () => {
         {
           absolutePath: '/foo',
           data: {
-            isAsync: false,
+            data: {isAsync: false},
             name: 'foo.js',
           },
         },
@@ -527,7 +592,7 @@ describe('edge cases', () => {
         {
           absolutePath: '/foo',
           data: {
-            isAsync: false,
+            data: {isAsync: false},
             name: 'foo',
           },
         },

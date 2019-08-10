@@ -20,9 +20,10 @@ import type {Moduleish, Packageish} from './ResolutionRequest';
 import type {
   CustomResolver,
   DoesFileExist,
+  FileCandidates,
   IsAssetFile,
-  ResolveAsset,
   Resolution,
+  ResolveAsset,
 } from 'metro-resolver';
 
 export type DirExistsFn = (filePath: string) => boolean;
@@ -53,13 +54,13 @@ export type ModuleishCache<TModule, TPackage> = {
 };
 
 type Options<TModule, TPackage> = {|
-  +allowPnp: boolean,
   +dirExists: DirExistsFn,
   +doesFileExist: DoesFileExist,
   +extraNodeModules: ?Object,
   +isAssetFile: IsAssetFile,
   +mainFields: $ReadOnlyArray<string>,
   +moduleCache: ModuleishCache<TModule, TPackage>,
+  +projectRoot: string,
   +preferNativePlatform: boolean,
   +moduleMap: ModuleMap,
   +resolveAsset: ResolveAsset,
@@ -158,14 +159,16 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       if (error instanceof Resolver.FailedToResolvePathError) {
         const {candidates} = error;
         throw new UnableToResolveError(
-          fromModule.path,
+          path.relative(this._options.projectRoot, fromModule.path),
           moduleName,
           [
-            `The module \`${moduleName}\` could not be found from \`${
-              fromModule.path
-            }\`. Indeed, none of these files exist:`,
-            `  * \`${Resolver.formatFileCandidates(candidates.file)}\``,
-            `  * \`${Resolver.formatFileCandidates(candidates.dir)}\``,
+            '\n\nNone of these files exist:',
+            `  * ${Resolver.formatFileCandidates(
+              this._removeRoot(candidates.file),
+            )}`,
+            `  * ${Resolver.formatFileCandidates(
+              this._removeRoot(candidates.dir),
+            )}`,
           ].join('\n'),
         );
       }
@@ -180,24 +183,23 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         } = error;
         const displayDirPaths = dirPaths
           .filter((dirPath: string) => this._options.dirExists(dirPath))
+          .map(dirPath => path.relative(this._options.projectRoot, dirPath))
           .concat(extraPaths);
 
         const hint = displayDirPaths.length ? ' or in these directories:' : '';
         throw new UnableToResolveError(
-          fromModule.path,
+          path.relative(this._options.projectRoot, fromModule.path),
           moduleName,
           [
-            `Module \`${moduleName}\` does not exist in the Haste module map${hint}`,
+            `${moduleName} could not be found within the project${hint || '.'}`,
             ...displayDirPaths.map(
               (dirPath: string) => `  ${path.dirname(dirPath)}`,
             ),
-            '',
-            'This might be related to https://github.com/facebook/react-native/issues/4968',
-            'To resolve try the following:',
-            '  1. Clear watchman watches: `watchman watch-del-all`.',
-            '  2. Delete the `node_modules` folder: `rm -rf node_modules && npm install`.',
-            '  3. Reset Metro Bundler cache: `rm -rf /tmp/metro-bundler-cache-*` or `npm start -- --reset-cache`.',
-            '  4. Remove haste cache: `rm -rf /tmp/haste-map-react-native-packager-*`.',
+            '\nIf you are sure the module exists, try these steps:',
+            ' 1. Clear watchman watches: watchman watch-del-all',
+            ' 2. Delete node_modules: rm -rf node_modules and run yarn install',
+            " 3. Reset Metro's cache: yarn start --reset-cache",
+            ' 4. Remove the cache: rm -rf /tmp/metro-*',
           ].join('\n'),
         );
       }
@@ -233,6 +235,16 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         (resolution.type: empty);
         throw new Error('invalid type');
     }
+  }
+
+  _removeRoot(candidates: FileCandidates) {
+    if (candidates.filePathPrefix) {
+      candidates.filePathPrefix = path.relative(
+        this._options.projectRoot,
+        candidates.filePathPrefix,
+      );
+    }
+    return candidates;
   }
 }
 

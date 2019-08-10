@@ -34,10 +34,6 @@ function createUpdate(rev, added = [], modified = [], deleted = []) {
     added: added.map(i => [i, `__d("${i}.${rev}");`]),
     modified: modified.map(i => [i, `__d("${i}.${rev}");`]),
     deleted,
-    addedSourceMappingURLs: [],
-    addedSourceURLs: [],
-    modifiedSourceMappingURLs: [],
-    modifiedSourceURLs: [],
   };
 }
 

@@ -15,9 +15,9 @@ import type {
   MinifierOptions,
 } from '../JSTransformer/worker';
 import type {TransformInputOptions} from '../lib/transformHelpers';
-import type {BabelSourceMap} from '@babel/core';
 import type {
-  MetroSourceMap,
+  BasicSourceMap,
+  MixedSourceMap,
   MetroSourceMapSegmentTuple,
 } from 'metro-source-map';
 
@@ -33,7 +33,7 @@ type BundleType =
   | 'graph';
 
 type MetroSourceMapOrMappings =
-  | MetroSourceMap
+  | MixedSourceMap
   | Array<MetroSourceMapSegmentTuple>;
 
 export type BundleOptions = {
@@ -45,18 +45,27 @@ export type BundleOptions = {
   +hot: boolean,
   +inlineSourceMap: boolean,
   minify: boolean,
+  +modulesOnly: boolean,
   onProgress: ?(doneCont: number, totalCount: number) => mixed,
   +platform: ?string,
   +runModule: boolean,
+  +shallow: boolean,
   sourceMapUrl: ?string,
+  sourceUrl: ?string,
   createModuleIdFactory?: () => (path: string) => number,
 };
 
 export type SerializerOptions = {|
   +sourceMapUrl: ?string,
+  +sourceUrl: ?string,
   +runModule: boolean,
   +excludeSource: boolean,
   +inlineSourceMap: boolean,
+  +modulesOnly: boolean,
+|};
+
+export type GraphOptions = {|
+  +shallow: boolean,
 |};
 
 // Stricter representation of BundleOptions.
@@ -64,6 +73,7 @@ export type SplitBundleOptions = {|
   +entryFile: string,
   +transformOptions: TransformInputOptions,
   +serializerOptions: SerializerOptions,
+  +graphOptions: GraphOptions,
   +onProgress: $PropertyType<DeltaBundlerOptions<>, 'onProgress'>,
 |};
 
@@ -119,7 +129,7 @@ export type {MinifierOptions};
 
 export type MinifierResult = {
   code: string,
-  map?: BabelSourceMap,
+  map?: BasicSourceMap,
 };
 
 export type MetroMinifier = MinifierOptions => MinifierResult;

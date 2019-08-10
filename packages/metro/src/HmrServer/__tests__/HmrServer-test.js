@@ -27,6 +27,8 @@ describe('HmrServer', () => {
   let deltaBundlerMock;
   let callbacks;
   let mockedGraph;
+  let connect;
+  let message;
 
   const hiModule = {
     dependencies: new Map(),
@@ -39,6 +41,7 @@ describe('HmrServer', () => {
         data: {
           map: [],
           code: '__d(function() { alert("hi"); });',
+          lineCount: 1,
         },
       },
     ],
@@ -82,6 +85,7 @@ describe('HmrServer', () => {
           graph: mockedGraph,
         },
         delta: {
+          added: new Map(),
           modified: new Map(),
           deleted: new Set(),
         },
@@ -100,39 +104,77 @@ describe('HmrServer', () => {
       reporter: {
         update: jest.fn(),
       },
+      transformer: {
+        experimentalImportBundleSupport: false,
+      },
       resolver: {
         platforms: [],
       },
     });
+
+    connect = async (relativeUrl, sendFn) => {
+      relativeUrl = 'ws://localhost/' + relativeUrl;
+      const client = await hmrServer.onClientConnect(
+        relativeUrl,
+        sendFn || jest.fn(),
+      );
+      await message(
+        client,
+        {
+          type: 'register-entrypoints',
+          entryPoints: [relativeUrl],
+        },
+        sendFn,
+      );
+      return client;
+    };
+
+    message = async (client, message, sendFn) => {
+      await hmrServer.onClientMessage(
+        client,
+        JSON.stringify(message),
+        sendFn || jest.fn(),
+      );
+    };
   });
 
   it('should retrieve the correct graph from the incremental bundler (graphId)', async () => {
-    await hmrServer.onClientConnect(
-      '/hot?bundleEntry=EntryPoint.js&platform=ios',
-      jest.fn(),
-    );
+    await connect('/hot?bundleEntry=EntryPoint.js&platform=ios');
 
     expect(getRevisionByGraphIdMock).toBeCalledWith(
-      getGraphId('/root/EntryPoint.js', {
-        hot: true,
-        dev: true,
-        minify: false,
-        platform: 'ios',
-        customTransformOptions: {},
-        type: 'module',
-      }),
+      getGraphId(
+        '/root/EntryPoint.js',
+        {
+          hot: true,
+          dev: true,
+          minify: false,
+          platform: 'ios',
+          customTransformOptions: {},
+          type: 'module',
+        },
+        {
+          shallow: false,
+          experimentalImportBundleSupport: false,
+        },
+      ),
     );
   });
 
   it('should retrieve the correct graph from the incremental bundler (revisionId)', async () => {
-    await hmrServer.onClientConnect('/hot?revisionId=test-id', jest.fn());
+    await connect('/hot?revisionId=test-id');
 
     expect(getRevisionMock).toBeCalledWith('test-id');
   });
 
   it('should only listen to file changes once', async () => {
-    await hmrServer.onClientConnect('/hot?revisionId=test-id', jest.fn());
-    await hmrServer.onClientConnect('/hot?revisionId=test-id', jest.fn());
+    const client = await connect(
+      '/hot?revisionId=test-id',
+      jest.fn(),
+    );
+    await message(client, {
+      type: 'register-entrypoints',
+      entryPoints: ['http://localhost/hot?revisionId=test-id'],
+    });
 
     expect(callbacks.get(mockedGraph).length).toBe(1);
   });
@@ -141,19 +183,26 @@ describe('HmrServer', () => {
     const sendMessage = jest.fn();
     getRevisionByGraphIdMock.mockReturnValueOnce(undefined);
 
-    const client = await hmrServer.onClientConnect(
+    await connect(
       '/hot?bundleEntry=EntryPoint.js&platform=ios',
       sendMessage,
     );
 
-    const expectedMessage = `The graph \`${getGraphId('/root/EntryPoint.js', {
-      hot: true,
-      dev: true,
-      minify: false,
-      platform: 'ios',
-      customTransformOptions: {},
-      type: 'module',
-    })}\` was not found.`;
+    const expectedMessage = `The graph \`${getGraphId(
+      '/root/EntryPoint.js',
+      {
+        hot: true,
+        dev: true,
+        minify: false,
+        platform: 'ios',
+        customTransformOptions: {},
+        type: 'module',
+      },
+      {
+        shallow: false,
+        experimentalImportBundleSupport: false,
+      },
+    )}\` was not found.`;
 
     const sentErrorMessage = JSON.parse(sendMessage.mock.calls[0][0]);
     expect(sentErrorMessage).toMatchObject({type: 'error'});
@@ -162,14 +211,13 @@ describe('HmrServer', () => {
       message: expectedMessage,
       errors: [],
     });
-    expect(client).toBe(null);
   });
 
   it('should send an error message when the revision cannot be found', async () => {
     const sendMessage = jest.fn();
     getRevisionMock.mockReturnValueOnce(undefined);
 
-    const client = await hmrServer.onClientConnect(
+    await connect(
       '/hot?revisionId=test-id',
       sendMessage,
     );
@@ -183,7 +231,6 @@ describe('HmrServer', () => {
       message: expectedMessage,
       errors: [],
     });
-    expect(client).toBe(null);
   });
 
   it('should send an initial update when a client connects', async () => {
@@ -201,7 +248,7 @@ describe('HmrServer', () => {
       },
     });
 
-    await hmrServer.onClientConnect(
+    await connect(
       '/hot?bundleEntry=EntryPoint.js&platform=ios',
       sendMessage,
     );
@@ -217,20 +264,27 @@ describe('HmrServer', () => {
           revisionId: 'rev0',
           added: [],
           modified: [
-            [
-              '/root/hi-id',
-              '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
-            ],
+            {
+              module: [
+                '/root/hi-id',
+                '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});\n' +
+                  '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
+                  '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
+              ],
+              sourceMappingURL:
+                'http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+              sourceURL:
+                'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+            },
           ],
           deleted: ['/root/bye-id'],
-          addedSourceMappingURLs: [],
-          addedSourceURLs: [],
-          modifiedSourceURLs: ['/root/hi'],
-          modifiedSourceMappingURLs: [expect.anything()],
         },
       },
       {
         type: 'update-done',
+      },
+      {
+        type: 'bundle-registered',
       },
     ]);
   });
@@ -239,12 +293,33 @@ describe('HmrServer', () => {
     const sendMessage1 = jest.fn();
     const sendMessage2 = jest.fn();
 
-    await hmrServer.onClientConnect(
-      '/hot?bundleEntry=EntryPoint.js&platform=ios',
+    const client = await connect(
+      '/hot',
       sendMessage1,
     );
-    await hmrServer.onClientConnect(
-      '/hot?bundleEntry=EntryPoint.js&platform=ios',
+    const client2 = await connect(
+      '/hot',
+      sendMessage2,
+    );
+
+    await message(
+      client,
+      {
+        type: 'register-entrypoints',
+        entryPoints: [
+          'http://localhost/hot?bundleEntry=EntryPoint.js&platform=ios',
+        ],
+      },
+      sendMessage1,
+    );
+    await message(
+      client2,
+      {
+        type: 'register-entrypoints',
+        entryPoints: [
+          'http://localhost/hot?bundleEntry=EntryPoint.js&platform=ios',
+        ],
+      },
       sendMessage2,
     );
 
@@ -269,6 +344,7 @@ describe('HmrServer', () => {
 
     const messages1 = sendMessage1.mock.calls.map(call => JSON.parse(call[0]));
     const messages2 = sendMessage2.mock.calls.map(call => JSON.parse(call[0]));
+
     expect(messages1).toMatchObject([
       {
         type: 'update-start',
@@ -279,16 +355,21 @@ describe('HmrServer', () => {
           revisionId: 'rev0',
           added: [],
           modified: [
-            [
-              '/root/hi-id',
-              '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
-            ],
+            {
+              module: [
+                '/root/hi-id',
+                '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});\n' +
+                  '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
+                  '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
+              ],
+
+              sourceURL:
+                'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+              sourceMappingURL:
+                'http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+            },
           ],
           deleted: ['/root/bye-id'],
-          addedSourceMappingURLs: [],
-          addedSourceURLs: [],
-          modifiedSourceURLs: ['/root/hi'],
-          modifiedSourceMappingURLs: [expect.anything()],
         },
       },
       {
@@ -301,7 +382,7 @@ describe('HmrServer', () => {
   it('should return the correctly formatted HMR message after a file change', async () => {
     const sendMessage = jest.fn();
 
-    await hmrServer.onClientConnect(
+    await connect(
       '/hot?bundleEntry=EntryPoint.js&platform=ios',
       sendMessage,
     );
@@ -336,46 +417,31 @@ describe('HmrServer', () => {
           revisionId: 'rev1',
           added: [],
           modified: [
-            [
-              '/root/hi-id',
-              '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
-            ],
+            {
+              module: [
+                '/root/hi-id',
+                '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});\n' +
+                  '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
+                  '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
+              ],
+              sourceURL:
+                'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+            },
           ],
           deleted: ['/root/bye-id'],
-          modifiedSourceURLs: ['/root/hi'],
         },
       },
       {
         type: 'update-done',
       },
     ]);
-
-    const modifiedSourceMappingURL =
-      messages[1].body.modifiedSourceMappingURLs[0];
-
-    expect(
-      JSON.parse(
-        Buffer.from(
-          modifiedSourceMappingURL.slice(
-            modifiedSourceMappingURL.indexOf('base64') + 7,
-          ),
-          'base64',
-        ).toString(),
-      ),
-    ).toEqual({
-      mappings: '',
-      names: [],
-      sources: ['/root/hi'],
-      sourcesContent: [hiModule.getSource()],
-      version: 3,
-    });
   });
 
   it('should return error messages when there is a transform error', async () => {
     jest.useRealTimers();
     const sendMessage = jest.fn();
 
-    await hmrServer.onClientConnect(
+    await connect(
       '/hot?bundleEntry=EntryPoint.js&platform=ios',
       sendMessage,
     );

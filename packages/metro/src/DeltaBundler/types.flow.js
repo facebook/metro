@@ -54,6 +54,7 @@ export type Module<T = MixedOutput> = {|
 
 export type Graph<T = MixedOutput> = {|
   dependencies: Map<string, Module<T>>,
+  importBundleNames: Set<string>,
   +entryPoints: $ReadOnlyArray<string>,
 |};
 
@@ -75,6 +76,8 @@ export type Options<T = MixedOutput> = {|
   +resolve: (from: string, to: string) => string,
   +transform: TransformFn<T>,
   +onProgress: ?(numProcessed: number, total: number) => mixed,
+  +experimentalImportBundleSupport: boolean,
+  +shallow: boolean,
 |};
 
 export type DeltaResult<T = MixedOutput> = {|
@@ -85,13 +88,16 @@ export type DeltaResult<T = MixedOutput> = {|
 |};
 
 export type SerializerOptions = {|
-  +processModuleFilter: (module: Module<>) => boolean,
+  +asyncRequireModulePath: string,
   +createModuleId: string => number,
   +dev: boolean,
   +getRunModuleStatement: (number | string) => string,
+  +inlineSourceMap: ?boolean,
+  +modulesOnly: boolean,
+  +processModuleFilter: (module: Module<>) => boolean,
   +projectRoot: string,
   +runBeforeMainModule: $ReadOnlyArray<string>,
   +runModule: boolean,
   +sourceMapUrl: ?string,
-  +inlineSourceMap: ?boolean,
+  +sourceUrl: ?string,
 |};

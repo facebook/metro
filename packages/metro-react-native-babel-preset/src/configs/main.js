@@ -79,6 +79,10 @@ const babelRuntime = [
   },
 ];
 
+function unstable_disableES6Transforms(options) {
+  return !!(options && options.unstable_disableES6Transforms);
+}
+
 const getPreset = (src, options) => {
   const isNull = src == null;
   const hasClass = isNull || src.indexOf('class') !== -1;
@@ -108,9 +112,11 @@ const getPreset = (src, options) => {
   if (hasClass) {
     extraPlugins.push(es2015Classes);
   }
-  if (isNull || src.indexOf('=>') !== -1) {
-    extraPlugins.push(es2015ArrowFunctions);
-  }
+
+  // TODO(gaearon): put this back into '=>' indexOf bailout
+  // and patch react-refresh to not depend on this transform.
+  extraPlugins.push(es2015ArrowFunctions);
+
   if (isNull || hasClass || src.indexOf('...') !== -1) {
     extraPlugins.push(es2015Spread);
     extraPlugins.push(objectRestSpread);
@@ -127,7 +133,10 @@ const getPreset = (src, options) => {
   if (hasForOf) {
     extraPlugins.push(es2015ForOf);
   }
-  if (hasForOf || src.indexOf('Symbol') !== -1) {
+  if (
+    !unstable_disableES6Transforms(options) &&
+    (hasForOf || src.indexOf('Symbol') !== -1)
+  ) {
     extraPlugins.push(symbolMember);
   }
   if (

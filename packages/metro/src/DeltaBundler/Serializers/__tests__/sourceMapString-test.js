@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+javascript_foundation
+ * @emails oncall+metro_bundler
  * @format
  */
 
@@ -20,6 +20,7 @@ const polyfill = {
       type: 'js/script',
       data: {
         code: '__d(function() {/* code for polyfill */});',
+        lineCount: 1,
         map: [],
       },
     },
@@ -35,7 +36,9 @@ const fooModule = {
       type: 'js/module',
       data: {
         code: '__d(function() {/* code for foo */});',
+        lineCount: 1,
         map: [],
+        functionMap: {names: ['<global>'], mappings: 'AAA'},
       },
     },
   ],
@@ -50,6 +53,7 @@ const barModule = {
       type: 'js/module',
       data: {
         code: '__d(function() {/* code for bar */});',
+        lineCount: 1,
         map: [],
       },
     },
@@ -68,6 +72,7 @@ it('should serialize a very simple bundle', () => {
     version: 3,
     sources: ['/root/pre.js', '/root/foo.js', '/root/bar.js'],
     sourcesContent: ['source pre', 'source foo', 'source bar'],
+    x_facebook_sources: [null, [{names: ['<global>'], mappings: 'AAA'}], null],
     names: [],
     mappings: '',
   });
@@ -85,6 +90,7 @@ it('modules should appear in their original order', () => {
     version: 3,
     sources: ['/root/pre.js', '/root/bar.js', '/root/foo.js'],
     sourcesContent: ['source pre', 'source bar', 'source foo'],
+    x_facebook_sources: [null, null, [{names: ['<global>'], mappings: 'AAA'}]],
     names: [],
     mappings: '',
   });
@@ -102,6 +108,7 @@ it('should not include the source of an asset', () => {
         type: 'js/module/asset',
         data: {
           code: '__d(function() {/* code for bar */});',
+          lineCount: 1,
           map: [],
         },
       },
@@ -119,6 +126,7 @@ it('should not include the source of an asset', () => {
     version: 3,
     sources: ['/root/foo.js', '/root/asset.jpg'],
     sourcesContent: ['source foo', ''],
+    x_facebook_sources: [[{names: ['<global>'], mappings: 'AAA'}], null],
     names: [],
     mappings: '',
   });

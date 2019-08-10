@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @emails oncall+js_foundation
+ * @emails oncall+js_symbolication
  * @flow strict-local
  */
 
@@ -33,6 +33,22 @@ it('adds file name and source code when starting a file', () => {
     objectContaining({
       sources: [file1, file2],
       sourcesContent: [source1, source2],
+    }),
+  );
+});
+
+it('adds function map when starting a file', () => {
+  const file1 = 'just/a/file';
+  const file2 = 'another/file';
+  const source1 = 'var a = 1;';
+  const source2 = 'var a = 2;';
+
+  generator.startFile(file1, source1);
+  generator.startFile(file2, source2, {names: ['<global>'], mappings: 'AAA'});
+
+  expect(generator.toMap()).toEqual(
+    objectContaining({
+      x_facebook_sources: [null, [{names: ['<global>'], mappings: 'AAA'}]],
     }),
   );
 });

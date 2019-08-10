@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+javascript_foundation
+ * @emails oncall+metro_bundler
  * @format
  */
 
@@ -67,7 +67,6 @@ describe('traverseDependencies', function() {
         assetExts: ['png', 'jpg'],
         // This pattern is not expected to match anything.
         blacklistRE: /.^/,
-        providesModuleNodeModules: [],
         platforms: ['ios', 'android'],
         resolverMainFields: ['react-native', 'browser', 'main'],
         sourceExts: ['js', 'json'],
@@ -1740,25 +1739,6 @@ describe('traverseDependencies', function() {
           resolver = await createResolver(config);
           expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toBe(
             p('/root/hasteModule.js'),
-          );
-        });
-
-        it('resolves haste modules in node_modules if added to providesModuleNodeModules', async () => {
-          config.resolver.providesModuleNodeModules = ['aPackage'];
-
-          setMockFileSystem({
-            'index.js': '',
-            node_modules: {
-              aPackage: {
-                'package.json': JSON.stringify({name: 'aPackage'}),
-                'hasteModule.js': '@providesModule hasteModule',
-              },
-            },
-          });
-
-          resolver = await createResolver(config);
-          expect(resolver.resolve(p('/root/index.js'), 'hasteModule')).toBe(
-            p('/root/node_modules/aPackage/hasteModule.js'),
           );
         });
       });

@@ -32,7 +32,6 @@ import type {Extensions, Path} from './node-haste.flow';
 import type {CustomResolver} from 'metro-resolver';
 
 type ResolveOptions = {|
-  allowPnp: boolean,
   assetExts: Extensions,
   extraNodeModules: {[id: string]: string},
   mainFields: $ReadOnlyArray<string>,
@@ -108,7 +107,6 @@ const createModuleMap = ({files, helpers, moduleCache, sourceExts}) => {
 
 exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
   const {
-    allowPnp,
     assetExts,
     extraNodeModules,
     transformedFiles,
@@ -126,7 +124,6 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
 
   const helpers = new DependencyGraphHelpers({
     assetExts,
-    providesModuleNodeModules: defaults.providesModuleNodeModules,
   });
 
   const hasteFS = new HasteFS(files);
@@ -143,7 +140,6 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     platforms,
   });
   const moduleResolver = new ModuleResolver({
-    allowPnp,
     dirExists: (filePath: string): boolean => hasteFS.dirExists(filePath),
     doesFileExist: (filePath: string): boolean => hasteFS.exists(filePath),
     extraNodeModules,
@@ -157,6 +153,7 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
       rootDir: '',
     }),
     preferNativePlatform: true,
+    projectRoot: '',
     resolveAsset: (
       dirPath: string,
       assetName: string,

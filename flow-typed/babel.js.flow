@@ -8,15 +8,15 @@
  * @format
  */
 
-type _BabelSourceMap = {
-  file?: string,
-  mappings: string,
-  names: Array<string>,
-  sourceRoot?: string,
-  sources: Array<string>,
-  sourcesContent?: Array<?string>,
-  version: number,
-};
+type _BabelSourceMap = {|
+  +file?: string,
+  +mappings: string,
+  +names: Array<string>,
+  +sourceRoot?: string,
+  +sources: Array<string>,
+  +sourcesContent?: Array<?string>,
+  +version: number,
+|};
 
 // based on babylon v6.13.1
 type BabylonOptions = {
@@ -125,9 +125,9 @@ type BabelVisitor = {};
 
 type _BabelSourceMapSegment = {
   generated: {column: number, line: number},
-  name?: string,
+  name?: ?string,
   original?: {column: number, line: number},
-  source?: string,
+  source?: ?string,
 };
 
 // #############################################
@@ -245,6 +245,8 @@ export type TransformFromAstSync = (
   options?: BabelCoreOptions,
 ) => Transform7Result;
 
+type ParseCallback = (Error => void) | ((void, BabelNode) => void);
+
 // Use the sync versions if you expect a result
 type void_DO_NOT_USE_SYNC = void;
 
@@ -287,6 +289,17 @@ declare module '@babel/core' {
   declare var transformFromAstSync: TransformFromAstSync;
 
   declare function buildExternalHelpers(Array<string>): string;
+
+  // Note: DO NOT USE WITHOUT CALLBACK. Use parseSync instead.
+  declare function parse(
+    code: string,
+    options: BabelCoreOptions,
+    callback: ParseCallback,
+  ): void_DO_NOT_USE_SYNC;
+  declare function parseSync(
+    code: string,
+    options?: BabelCoreOptions,
+  ): BabelNode;
 }
 
 // https://github.com/babel/babel/tree/master/packages/babel-generator

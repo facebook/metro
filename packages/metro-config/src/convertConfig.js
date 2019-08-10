@@ -39,12 +39,10 @@ async function convertOldToNew({
   resetCache = false,
   maxWorkers = getMaxWorkers(),
   minifierPath,
-  // $FlowFixMe TODO t0 https://github.com/facebook/flow/issues/183
   port = null,
   reporter = new TerminalReporter(new Terminal(process.stdout)),
 }: PublicMetroOptions): Promise<ConfigT> {
   const {
-    allowPnp,
     getBlacklistRE,
     cacheStores,
     createModuleIdFactory,
@@ -55,7 +53,6 @@ async function convertOldToNew({
     resolveRequest,
     getAssetExts,
     getPlatforms,
-    getProvidesModuleNodeModules,
     getResolverMainFields,
     getSourceExts,
     hasteImplModulePath,
@@ -90,19 +87,12 @@ async function convertOldToNew({
   const platforms =
     (getPlatforms && getPlatforms()) || defaultConfig.resolver.platforms;
 
-  const providesModuleNodeModules =
-    typeof getProvidesModuleNodeModules === 'function'
-      ? getProvidesModuleNodeModules()
-      : defaultConfig.resolver.providesModuleNodeModules;
-
   const watchFolders = getWatchFolders();
 
   return {
     resolver: {
-      allowPnp,
       assetExts,
       platforms,
-      providesModuleNodeModules,
       resolverMainFields: getResolverMainFields(),
       sourceExts,
       hasteImplModulePath,
@@ -132,9 +122,10 @@ async function convertOldToNew({
       port,
       enableVisualizer: false,
       enhanceMiddleware,
-      runInspectorProxy: false,
+      runInspectorProxy: true,
       verifyConnections: false,
     },
+    symbolicator: defaultConfig.symbolicator,
     transformer: {
       assetPlugins: defaultConfig.transformer.assetPlugins,
       assetRegistryPath,
@@ -143,6 +134,7 @@ async function convertOldToNew({
       dynamicDepsInPackages,
       enableBabelRCLookup: getEnableBabelRCLookup(),
       enableBabelRuntime: true,
+      experimentalImportBundleSupport: false,
       getTransformOptions,
       minifierConfig: defaultConfig.transformer.minifierConfig,
       minifierPath: minifierPath || defaultConfig.transformer.minifierPath,

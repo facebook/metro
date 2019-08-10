@@ -10,7 +10,7 @@
  */
 'use strict';
 
-import type {BabelSourceMap} from '@babel/core';
+import type {BasicSourceMap} from 'metro-source-map';
 
 jest.mock('uglify-es', () => ({
   minify: jest.fn(code => {
@@ -24,7 +24,7 @@ jest.mock('uglify-es', () => ({
 const minify = require('..');
 const {objectContaining} = jasmine;
 
-function getFakeMap(): BabelSourceMap {
+function getFakeMap(): BasicSourceMap {
   return {
     version: 3,
     sources: ['?'],
@@ -44,12 +44,18 @@ const baseOptions = {
 describe('Minification:', () => {
   const filename = '/arbitrary/file.js';
   const code = 'arbitrary(code)';
-  let map: BabelSourceMap;
+  let map: BasicSourceMap;
   let uglify;
 
   beforeEach(() => {
     uglify = require('uglify-es');
+    /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.99 was deployed. To see the error, delete this
+     * comment and run Flow. */
     uglify.minify.mockClear();
+    /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.99 was deployed. To see the error, delete this
+     * comment and run Flow. */
     uglify.minify.mockReturnValue({code: '', map: '{}'});
     map = getFakeMap();
   });
@@ -74,12 +80,18 @@ describe('Minification:', () => {
   });
 
   it('returns the code provided by uglify', () => {
+    /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.99 was deployed. To see the error, delete this
+     * comment and run Flow. */
     uglify.minify.mockReturnValue({code, map: '{}'});
     const result = minify(baseOptions);
     expect(result.code).toBe(code);
   });
 
   it('parses the source map object provided by uglify and sets the sources property', () => {
+    /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.99 was deployed. To see the error, delete this
+     * comment and run Flow. */
     uglify.minify.mockReturnValue({map: JSON.stringify(map), code: ''});
     const result = minify({...baseOptions, filename});
     expect(result.map).toEqual({...map, sources: [filename]});

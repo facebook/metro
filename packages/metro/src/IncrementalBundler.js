@@ -33,6 +33,7 @@ export type OutputGraph = Graph<>;
 
 type OtherOptions = {|
   +onProgress: $PropertyType<DeltaBundlerOptions<>, 'onProgress'>,
+  +shallow: boolean,
 |};
 
 export type GraphRevision = {|
@@ -93,6 +94,7 @@ class IncrementalBundler {
     transformOptions: TransformInputOptions,
     otherOptions?: OtherOptions = {
       onProgress: null,
+      shallow: false,
     },
   ): Promise<OutputGraph> {
     const absoluteEntryFiles = entryFiles.map((entryFile: string) =>
@@ -129,6 +131,9 @@ class IncrementalBundler {
         transformOptions,
       ),
       onProgress: otherOptions.onProgress,
+      experimentalImportBundleSupport: this._config.transformer
+        .experimentalImportBundleSupport,
+      shallow: otherOptions.shallow,
     });
 
     this._config.serializer.experimentalSerializerHook(graph, {
@@ -146,6 +151,7 @@ class IncrementalBundler {
     transformOptions: TransformInputOptions,
     otherOptions?: OtherOptions = {
       onProgress: null,
+      shallow: false,
     },
   ): Promise<{|+graph: OutputGraph, +prepend: $ReadOnlyArray<Module<>>|}> {
     const graph = await this.buildGraphForEntries(
@@ -160,6 +166,8 @@ class IncrementalBundler {
       experimentalImportSupport: transformOptions.experimentalImportSupport,
       hot: transformOptions.hot,
       minify: transformOptions.minify,
+      unstable_disableES6Transforms:
+        transformOptions.unstable_disableES6Transforms,
       platform: transformOptions.platform,
     };
 
@@ -183,9 +191,14 @@ class IncrementalBundler {
     transformOptions: TransformInputOptions,
     otherOptions?: OtherOptions = {
       onProgress: null,
+      shallow: false,
     },
   ): Promise<{delta: DeltaResult<>, revision: GraphRevision}> {
-    const graphId = getGraphId(entryFile, transformOptions);
+    const graphId = getGraphId(entryFile, transformOptions, {
+      shallow: otherOptions.shallow,
+      experimentalImportBundleSupport: this._config.transformer
+        .experimentalImportBundleSupport,
+    });
     const revisionId = createRevisionId();
     const revisionPromise = (async () => {
       const {graph, prepend} = await this.buildGraph(
@@ -204,26 +217,35 @@ class IncrementalBundler {
 
     this._revisionsById.set(revisionId, revisionPromise);
     this._revisionsByGraphId.set(graphId, revisionPromise);
-    const revision = await revisionPromise;
-
-    const delta = {
-      added: revision.graph.dependencies,
-      modified: new Map(),
-      deleted: new Set(),
-      reset: true,
-    };
-
-    return {
-      revision,
-      delta,
-    };
+    try {
+      const revision = await revisionPromise;
+      const delta = {
+        added: revision.graph.dependencies,
+        modified: new Map(),
+        deleted: new Set(),
+        reset: true,
+      };
+      return {
+        revision,
+        delta,
+      };
+    } catch (err) {
+      // Evict a bad revision from the cache since otherwise
+      // we'll keep getting it even after the build is fixed.
+      this._revisionsById.delete(revisionId);
+      this._revisionsByGraphId.delete(graphId);
+      throw err;
+    }
   }
 
   async updateGraph(
     revision: GraphRevision,
     reset: boolean,
   ): Promise<{delta: DeltaResult<>, revision: GraphRevision}> {
-    const delta = await this._deltaBundler.getDelta(revision.graph, {reset});
+    const delta = await this._deltaBundler.getDelta(revision.graph, {
+      reset,
+      shallow: false,
+    });
 
     this._config.serializer.experimentalSerializerHook(revision.graph, delta);
 

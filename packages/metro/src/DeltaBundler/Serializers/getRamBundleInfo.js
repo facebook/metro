@@ -10,7 +10,6 @@
 
 'use strict';
 
-const fullSourceMapObject = require('./sourceMapObject');
 const getAppendScripts = require('../../lib/getAppendScripts');
 const getTransitiveDependencies = require('./helpers/getTransitiveDependencies');
 const nullthrows = require('nullthrows');
@@ -18,6 +17,7 @@ const path = require('path');
 
 const {createRamBundleGroups} = require('../../Bundler/util');
 const {isJsModule, wrapModule} = require('./helpers/js');
+const {sourceMapObject} = require('./sourceMapObject');
 
 import type {
   ModuleTransportLike,
@@ -50,7 +50,9 @@ async function getRamBundleInfo(
     ...pre,
     ...graph.dependencies.values(),
   ];
-  modules = modules.concat(getAppendScripts(entryPoint, modules, options));
+  modules = modules.concat(
+    getAppendScripts(entryPoint, modules, graph.importBundleNames, options),
+  );
 
   modules.forEach((module: Module<>) => options.createModuleId(module.path));
 
@@ -61,7 +63,7 @@ async function getRamBundleInfo(
       (module: Module<>): RamModuleTransport => ({
         id: options.createModuleId(module.path),
         code: wrapModule(module, options),
-        map: fullSourceMapObject([module], {
+        map: sourceMapObject([module], {
           excludeSource: options.excludeSource,
           processModuleFilter: options.processModuleFilter,
         }),
@@ -152,6 +154,9 @@ async function _getRamOptions(
   const {preloadedModules, ramGroups} = await getTransformOptions(
     [entryFile],
     {dev: options.dev, hot: true, platform: options.platform},
+    /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an
+     * error found when Flow v0.99 was deployed. To see the error, delete this
+     * comment and run Flow. */
     async (x: string) => Array.from(getDependencies),
   );
 

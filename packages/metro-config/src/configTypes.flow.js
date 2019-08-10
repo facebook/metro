@@ -10,11 +10,10 @@
 
 'use strict';
 
-import type {BabelSourceMap} from '@babel/core';
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
 import type {CustomResolver} from 'metro-resolver';
-import type {MetroSourceMap} from 'metro-source-map';
+import type {BasicSourceMap, MixedSourceMap} from 'metro-source-map';
 import type {
   DeltaResult,
   Graph,
@@ -30,14 +29,14 @@ import type {Reporter} from 'metro/src/lib/reporting';
 
 export type PostMinifyProcess = ({
   code: string,
-  map: ?BabelSourceMap,
-}) => {code: string, map: ?BabelSourceMap};
+  map: ?BasicSourceMap,
+}) => {code: string, map: ?BasicSourceMap};
 
 export type PostProcessBundleSourcemap = ({
   code: Buffer | string,
-  map: MetroSourceMap,
+  map: MixedSourceMap,
   outFileName: string,
-}) => {code: Buffer | string, map: MetroSourceMap | string};
+}) => {code: Buffer | string, map: MixedSourceMap | string};
 
 type ExtraTransformOptions = {
   +preloadedModules: {[path: string]: true} | false,
@@ -45,6 +44,7 @@ type ExtraTransformOptions = {
   +transform: {|
     +experimentalImportSupport: boolean,
     +inlineRequires: {+blacklist: {[string]: true}} | boolean,
+    +unstable_disableES6Transforms?: boolean,
   |},
 };
 
@@ -67,7 +67,6 @@ export type Middleware = (
 ) => mixed;
 
 export type OldConfigT = {
-  allowPnp: boolean,
   assetRegistryPath: string,
   cacheStores: Array<CacheStore<TransformResult<>>>,
   cacheVersion: string,
@@ -85,7 +84,6 @@ export type OldConfigT = {
   getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
   getProjectRoots: ?() => Array<string>, // @deprecated
   getProjectRoot: () => string,
-  getProvidesModuleNodeModules?: () => Array<string>,
   getResolverMainFields: () => $ReadOnlyArray<string>,
   getRunModuleStatement: (number | string) => string,
   getSourceExts: () => Array<string>,
@@ -104,13 +102,11 @@ export type OldConfigT = {
 };
 
 type ResolverConfigT = {|
-  allowPnp: boolean,
   assetExts: $ReadOnlyArray<string>,
   blacklistRE: RegExp,
   extraNodeModules: {[name: string]: string},
   hasteImplModulePath: ?string,
   platforms: $ReadOnlyArray<string>,
-  providesModuleNodeModules: $ReadOnlyArray<string>,
   resolverMainFields: $ReadOnlyArray<string>,
   resolveRequest: ?CustomResolver,
   sourceExts: $ReadOnlyArray<string>,
@@ -142,6 +138,7 @@ type TransformerConfigT = {|
   transformVariants: TransformVariants,
   workerPath: string,
   publicPath: string,
+  experimentalImportBundleSupport: false,
 |};
 
 export type VisualizerConfigT = {|
@@ -157,6 +154,7 @@ export type VisualizerConfigT = {|
 type MetalConfigT = {|
   cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
   cacheVersion: string,
+  hasteMapCacheDirectory?: string,
   maxWorkers: number,
   projectRoot: string,
   stickyWorkers: boolean,
@@ -175,12 +173,23 @@ type ServerConfigT = {|
   verifyConnections: boolean,
 |};
 
+type SymbolicatorConfigT = {|
+  customizeFrame: ({
+    +file: ?string,
+    +lineNumber: ?number,
+    +column: ?number,
+    +methodName: ?string,
+  }) => ?{|+collapse?: boolean|} | Promise<?{|+collapse?: boolean|}>,
+  workerPath: string,
+|};
+
 export type InputConfigT = $Shape<{|
   ...MetalConfigT,
   ...$ReadOnly<{|
     resolver: $Shape<ResolverConfigT>,
     server: $Shape<ServerConfigT>,
     serializer: $Shape<SerializerConfigT>,
+    symbolicator: $Shape<SymbolicatorConfigT>,
     transformer: $Shape<TransformerConfigT>,
     visualizer: $Shape<VisualizerConfigT>,
   |}>,
@@ -192,6 +201,7 @@ export type IntermediateConfigT = {|
     resolver: ResolverConfigT,
     server: ServerConfigT,
     serializer: SerializerConfigT,
+    symbolicator: SymbolicatorConfigT,
     transformer: TransformerConfigT,
     visualizer: VisualizerConfigT,
   |},
@@ -203,6 +213,7 @@ export type ConfigT = $ReadOnly<{|
     resolver: $ReadOnly<ResolverConfigT>,
     server: $ReadOnly<ServerConfigT>,
     serializer: $ReadOnly<SerializerConfigT>,
+    symbolicator: $ReadOnly<SymbolicatorConfigT>,
     transformer: $ReadOnly<TransformerConfigT>,
     visualizer: $ReadOnly<VisualizerConfigT>,
   |}>,

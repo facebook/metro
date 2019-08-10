@@ -6,7 +6,7 @@
  *
  * @flow strict-local
  * @format
- * @emails  oncall+javascript_foundation
+ * @emails  oncall+metro_bundler
  */
 
 'use strict';
@@ -152,6 +152,7 @@ const dummyMetroGraph: Graph<> = {
     ],
   ]),
   entryPoints: ['foo'],
+  importBundleNames: new Set(),
 };
 
 module.exports = dummyMetroGraph;

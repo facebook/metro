@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+javascript_foundation
+ * @emails oncall+metro_bundler
  * @format
  */
 
@@ -46,15 +46,16 @@ describe('DeltaBundler', () => {
   });
 
   it('should create a new graph when buildGraph gets called', async () => {
-    expect(await deltaBundler.buildGraph({})).toEqual(graph);
+    expect(await deltaBundler.buildGraph({}, {shallow: false})).toEqual(graph);
 
     expect(DeltaCalculator.prototype.getDelta.mock.calls[0][0]).toEqual({
       reset: true,
+      shallow: false,
     });
   });
 
   it('should get a delta when getDelta gets called', async () => {
-    const graph = await deltaBundler.buildGraph({});
+    const graph = await deltaBundler.buildGraph({}, {shallow: false});
 
     expect(await deltaBundler.getDelta(graph, {reset: false})).toEqual({
       modified: new Map(),
@@ -64,7 +65,7 @@ describe('DeltaBundler', () => {
   });
 
   it('should get a reset delta when calling getDelta({reset: true})', async () => {
-    const graph = await deltaBundler.buildGraph({});
+    const graph = await deltaBundler.buildGraph({}, {shallow: false});
 
     expect(await deltaBundler.getDelta(graph, {reset: true})).toEqual({
       modified: graph.dependencies,
@@ -74,7 +75,7 @@ describe('DeltaBundler', () => {
   });
 
   it('should throw an error when trying to get the delta of a graph that does not exist', async () => {
-    const graph = await deltaBundler.buildGraph({});
+    const graph = await deltaBundler.buildGraph({}, {shallow: false});
 
     deltaBundler.endGraph(graph);
 
@@ -84,7 +85,7 @@ describe('DeltaBundler', () => {
   });
 
   it('should throw an error when trying to end a graph twice', async () => {
-    const graph = await deltaBundler.buildGraph({});
+    const graph = await deltaBundler.buildGraph({}, {shallow: false});
 
     deltaBundler.endGraph(graph);
 

@@ -19,6 +19,13 @@ export opaque type GraphId: string = string;
 function getGraphId(
   entryFile: string,
   options: TransformInputOptions,
+  {
+    shallow,
+    experimentalImportBundleSupport,
+  }: {
+    +shallow: boolean,
+    +experimentalImportBundleSupport: boolean,
+  },
 ): GraphId {
   return JSON.stringify(
     {
@@ -32,8 +39,11 @@ function getGraphId(
         experimentalImportSupport: options.experimentalImportSupport || false,
         hot: options.hot,
         minify: options.minify,
+        unstable_disableES6Transforms: options.unstable_disableES6Transforms,
         platform: options.platform != null ? options.platform : null,
         type: options.type,
+        experimentalImportBundleSupport,
+        shallow,
       },
     },
     canonicalize,

@@ -14,14 +14,13 @@
 // $FlowFixMe: too hard to type, and they only have a .ts file.
 const sourceMap = require('source-map');
 
-import type {BabelSourceMap} from '@babel/core';
-import type {MetroSourceMap} from 'metro-source-map';
+import type {MixedSourceMap, BasicSourceMap} from 'metro-source-map';
 
 function mergeSourceMaps(
   file: string,
-  originalMap: MetroSourceMap,
-  secondMap: MetroSourceMap,
-): BabelSourceMap {
+  originalMap: MixedSourceMap,
+  secondMap: MixedSourceMap,
+): BasicSourceMap {
   const merged = new sourceMap.SourceMapGenerator();
   const inputMap = new sourceMap.SourceMapConsumer(originalMap);
 

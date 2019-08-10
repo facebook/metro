@@ -5,61 +5,30 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @flow
- *
- * NOTE: This file uses Flow comment syntax so it can run uncompiled in tests,
- * but this in turn runs into https://github.com/prettier/prettier/issues/3493.
- * Therefore formatting is disabled: @noformat
+ * @format
  */
 
 'use strict';
 
-const util = require('source-map/lib/util');
 const vlq = require('vlq');
 
-/*::
-import type {BabelSourceMap} from '@babel/core';
+const {normalizeSourcePath} = require('metro-source-map');
+
 import type {
-  MetroSourceMap,
-  FBSourceMap,
+  MixedSourceMap,
   FBSourcesArray,
   FBSourceFunctionMap,
   FBSourceMetadata,
-  FBBasicSourceMap,
+  BasicSourceMap,
   IndexMap,
 } from 'metro-source-map';
-*/
-
-// Extracted from source-map@0.5.6's SourceMapConsumer
-function normalizeSource(
-  source /*: string */,
-  map /*: BabelSourceMap */,
-) /*: string */ {
-  const {sourceRoot} = map;
-  source = String(source);
-  // Some source maps produce relative source paths like "./foo.js" instead of
-  // "foo.js".  Normalize these first so that future comparisons will succeed.
-  // See bugzil.la/1090768.
-  source = util.normalize(source);
-  // Always ensure that absolute sources are internally stored relative to
-  // the source root, if the source root is absolute. Not doing this would
-  // be particularly problematic when the source root is a prefix of the
-  // source (valid, but why??). See github issue #199 and bugzil.la/1188982.
-  source =
-    sourceRoot && util.isAbsolute(sourceRoot) && util.isAbsolute(source)
-      ? util.relative(sourceRoot, source)
-      : source;
-
-  return source;
-}
 
 const METADATA_FIELD_FUNCTIONS = 0;
 
-/*::
 type Position = {+line: number, +column: number};
 type FunctionMapping = {+line: number, +column: number, +name: string};
-type SourceNameNormalizer = (string, BabelSourceMap) => string;
-type MetadataMap = {[source: string]: FBSourceMetadata};
-*/
+type SourceNameNormalizer = (string, {+sourceRoot?: ?string}) => string;
+type MetadataMap = {[source: string]: ?FBSourceMetadata};
 
 /**
  * Consumes the `x_facebook_sources` metadata field from a source map and
@@ -77,20 +46,18 @@ type MetadataMap = {[source: string]: FBSourceMetadata};
  */
 class SourceMetadataMapConsumer {
   constructor(
-    map /*: MetroSourceMap | FBSourceMap */,
-    normalizeSourceFn /*: SourceNameNormalizer */ = normalizeSource,
+    map: MixedSourceMap,
+    normalizeSourceFn: SourceNameNormalizer = normalizeSourcePath,
   ) {
     this._sourceMap = map;
     this._decodedFunctionMapCache = new Map();
     this._normalizeSource = normalizeSourceFn;
   }
 
-  /*::
-  _sourceMap: MetroSourceMap | FBSourceMap;
+  _sourceMap: MixedSourceMap;
   _decodedFunctionMapCache: Map<string, ?$ReadOnlyArray<FunctionMapping>>;
   _normalizeSource: SourceNameNormalizer;
   _metadataBySource: ?MetadataMap;
-  */
 
   /**
    * Retrieves a human-readable name for the function enclosing a particular
@@ -104,7 +71,7 @@ class SourceMetadataMapConsumer {
     line,
     column,
     source,
-  } /*: Position & {source: ?string} */) /*: ?string */ {
+  }: Position & {+source: ?string}): ?string {
     if (source && line != null && column != null) {
       const mappings = this._getFunctionMappings(source);
       if (mappings) {
@@ -124,11 +91,11 @@ class SourceMetadataMapConsumer {
    * This array can be used as the `x_facebook_sources` field of a map whose
    * `sources` field is the array that was passed into this method.
    */
-  toArray(sources /*: $ReadOnlyArray<string> */) /*: FBSourcesArray */ {
+  toArray(sources: $ReadOnlyArray<string>): FBSourcesArray {
     const metadataBySource = this._getMetadataBySource();
     const encoded = [];
     for (const source of sources) {
-      encoded.push(metadataBySource[source]);
+      encoded.push(metadataBySource[source] || null);
     }
     return encoded;
   }
@@ -136,7 +103,7 @@ class SourceMetadataMapConsumer {
   /**
    * Prepares and caches a lookup table of metadata by source name.
    */
-  _getMetadataBySource() /*: MetadataMap */ {
+  _getMetadataBySource(): MetadataMap {
     if (!this._metadataBySource) {
       this._metadataBySource = this._getMetadataObjectsBySourceNames(
         this._sourceMap,
@@ -150,16 +117,14 @@ class SourceMetadataMapConsumer {
    * Decodes the function name mappings for the given source if needed, and
    * retrieves a sorted, searchable array of mappings.
    */
-  _getFunctionMappings(
-    source /*: string */,
-  ) /*: ?$ReadOnlyArray<FunctionMapping> */ {
+  _getFunctionMappings(source: string): ?$ReadOnlyArray<FunctionMapping> {
     if (this._decodedFunctionMapCache.has(source)) {
       return this._decodedFunctionMapCache.get(source);
     }
     let parsedFunctionMap = null;
     const metadataBySource = this._getMetadataBySource();
     if (Object.prototype.hasOwnProperty.call(metadataBySource, source)) {
-      const metadata = metadataBySource[source];
+      const metadata = metadataBySource[source] || [];
       parsedFunctionMap = decodeFunctionMap(metadata[METADATA_FIELD_FUNCTIONS]);
     }
     this._decodedFunctionMapCache.set(source, parsedFunctionMap);
@@ -175,12 +140,10 @@ class SourceMetadataMapConsumer {
    * Metro, but is technically possible because of index maps) we only keep the
    * metadata from the last occurrence of any given source.
    */
-  _getMetadataObjectsBySourceNames(
-    map /*: MetroSourceMap | FBSourceMap */,
-  ) /*: MetadataMap */ {
+  _getMetadataObjectsBySourceNames(map: MixedSourceMap): MetadataMap {
     // eslint-disable-next-line lint/strictly-null
     if (map.mappings === undefined) {
-      const indexMap /*: IndexMap */ = map;
+      const indexMap: IndexMap = map;
       return Object.assign(
         {},
         ...indexMap.sections.map(section =>
@@ -190,16 +153,12 @@ class SourceMetadataMapConsumer {
     }
 
     if ('x_facebook_sources' in map) {
-      // $FlowFixMe TODO T40268235 Augmented source maps are hard to type
-      const basicMap /*: FBBasicSourceMap */ = map;
+      const basicMap: BasicSourceMap = map;
       return (basicMap.x_facebook_sources || []).reduce(
         (acc, metadata, index) => {
           let source = basicMap.sources[index];
           if (source != null) {
-            source = this._normalizeSource(
-              source,
-              basicMap,
-            );
+            source = this._normalizeSource(source, basicMap);
             acc[source] = metadata;
           }
           return acc;
@@ -212,8 +171,8 @@ class SourceMetadataMapConsumer {
 }
 
 function decodeFunctionMap(
-  functionMap /*: ?FBSourceFunctionMap */,
-) /*: $ReadOnlyArray<FunctionMapping> */ {
+  functionMap: ?FBSourceFunctionMap,
+): $ReadOnlyArray<FunctionMapping> {
   if (!functionMap) {
     return [];
   }
@@ -234,9 +193,9 @@ function decodeFunctionMap(
 }
 
 function findEnclosingMapping(
-  mappings /*: $ReadOnlyArray<FunctionMapping> */,
-  target /*: Position */,
-) /*: ?FunctionMapping */ {
+  mappings: $ReadOnlyArray<FunctionMapping>,
+  target: Position,
+): ?FunctionMapping {
   let first = 0;
   let it = 0;
   let count = mappings.length;
@@ -247,7 +206,7 @@ function findEnclosingMapping(
     it += step;
     if (comparePositions(target, mappings[it]) >= 0) {
       first = ++it;
-      count -= (step + 1);
+      count -= step + 1;
     } else {
       count = step;
     }
@@ -255,7 +214,7 @@ function findEnclosingMapping(
   return first ? mappings[first - 1] : null;
 }
 
-function comparePositions(a /*: Position */, b /*: Position */) /*: number */ {
+function comparePositions(a: Position, b: Position): number {
   if (a.line === b.line) {
     return a.column - b.column;
   }

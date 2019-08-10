@@ -78,6 +78,7 @@ class Transformer {
       inlinePlatform,
       inlineRequires,
       minify,
+      unstable_disableES6Transforms,
       platform,
       type,
       ...extra
@@ -107,6 +108,7 @@ class Transformer {
       inlinePlatform,
       inlineRequires,
       minify,
+      unstable_disableES6Transforms,
       platform,
       type,
     ]);

@@ -167,6 +167,15 @@ function create({
       getHmrServerUrl(bundleKey, prevRevisionId),
     );
 
+    wsClient.on('open', () => {
+      wsClient.send(
+        JSON.stringify({
+          type: 'register-entrypoints',
+          entryPoints: [getHmrServerUrl(bundleKey, prevRevisionId)],
+        }),
+      );
+    });
+
     wsClient.on('connection-error', error => {
       rejectBundleRes(error);
     });
@@ -242,8 +251,6 @@ function create({
         client.bundleResPromise = Promise.resolve(nextBundleRes);
       }
     });
-
-    wsClient.enable();
 
     return client;
   };

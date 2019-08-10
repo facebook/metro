@@ -24,7 +24,7 @@ const outputBundle = require('./shared/output/bundle');
 
 const {readFile} = require('fs-extra');
 const {loadConfig, mergeConfig, getDefaultConfig} = require('metro-config');
-const {runInspectorProxy} = require('metro-inspector-proxy');
+const {InspectorProxy} = require('metro-inspector-proxy');
 
 import type {Graph} from './DeltaBundler';
 import type {CustomTransformOptions} from './JSTransformer/worker';
@@ -154,13 +154,9 @@ exports.runServer = async (
     }
   }
 
+  let inspectorProxy: ?InspectorProxy = null;
   if (config.server.runInspectorProxy) {
-    // Port number is hardcoded here now for a transition state.
-    // When Inspector Proxy will be ready to use we will change
-    // this to use the same port as Metro (this will require
-    // creating new InspectorProxy and attaching it to httpServer
-    // instead of creating new HTTP Server).
-    runInspectorProxy(8082);
+    inspectorProxy = new InspectorProxy();
   }
 
   let httpServer;
@@ -192,6 +188,16 @@ exports.runServer = async (
         if (hmrEnabled) {
           attachHmrServer(httpServer);
         }
+
+        if (inspectorProxy) {
+          inspectorProxy.addWebSocketListener(httpServer);
+
+          // TODO(hypuk): Refactor inspectorProxy.processRequest into separate request handlers
+          // so that we could provide routes (/json/list and /json/version) here.
+          // Currently this causes Metro to give warning about T31407894.
+          serverApp.use(inspectorProxy.processRequest.bind(inspectorProxy));
+        }
+
         resolve(httpServer);
       });
 
@@ -344,9 +350,7 @@ type ServeCommandOptions = {||} | null;
 exports.attachMetroCli = function(
   yargs: Yargs,
   {
-    // $FlowFixMe TODO T26072405
     build = {},
-    // $FlowFixMe TODO T26072405
     serve = {},
     dependencies = {},
   }: {

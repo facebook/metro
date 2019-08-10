@@ -18,7 +18,7 @@ yargs.option('port', {
   alias: 'p',
   describe: 'port to run inspector proxy on',
   type: 'number',
-  default: 8082,
+  default: 8081,
 });
 
 runInspectorProxy((yargs.argv.port: any));

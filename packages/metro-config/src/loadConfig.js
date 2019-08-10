@@ -35,7 +35,6 @@ type YargArguments = {
   assetExts?: Array<string>,
   sourceExts?: Array<string>,
   platforms?: Array<string>,
-  providesModuleNodeModules?: Array<string>,
   'max-workers'?: string | number,
   maxWorkers?: string | number,
   transformer?: string,
@@ -105,6 +104,9 @@ function mergeConfig<T: InputConfigT>(
 ): T {
   // If the file is a plain object we merge the file with the default config,
   // for the function we don't do this since that's the responsibility of the user
+  /* $FlowFixMe(>=0.98.0 site=react_native_fb) This comment suppresses an error
+   * found when Flow v0.98 was deployed. To see the error delete this comment
+   * and run Flow. */
   return configs.reduce(
     (totalConfig, nextConfig) => ({
       ...totalConfig,
@@ -125,6 +127,10 @@ function mergeConfig<T: InputConfigT>(
       server: {
         ...totalConfig.server,
         ...(nextConfig.server || {}),
+      },
+      symbolicator: {
+        ...totalConfig.symbolicator,
+        ...(nextConfig.symbolicator || {}),
       },
     }),
     defaultConfig,
@@ -198,10 +204,6 @@ function overrideConfigWithArguments(
     output.resolver.platforms = argv.platforms;
   }
 
-  if (argv.providesModuleNodeModules != null) {
-    output.resolver.providesModuleNodeModules = argv.providesModuleNodeModules;
-  }
-
   if (argv['max-workers'] != null || argv.maxWorkers != null) {
     output.maxWorkers = Number(argv['max-workers'] || argv.maxWorkers);
   }
@@ -246,7 +248,7 @@ async function loadConfig(
 
   validate(configuration, {
     exampleConfig: await validConfig(),
-    recursiveBlacklist: ['reporter'],
+    recursiveBlacklist: ['reporter', 'resolver', 'transformer'],
   });
 
   // Override the configuration with cli parameters

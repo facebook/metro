@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+javascript_foundation
+ * @emails oncall+metro_bundler
  * @format
  * @flow strict-local
  */
@@ -25,15 +25,6 @@ describe('parseOptionsFromUrl', () => {
       ).toMatchObject({bundleType: type});
     },
   );
-
-  it('removes extraneous options from the pathname', () => {
-    expect(
-      parseOptionsFromUrl(
-        'http://localhost/my/bundle.bundle.includeRequire.runModule.assets',
-        new Set([]),
-      ).options,
-    ).toMatchObject({entryFile: './my/bundle'});
-  });
 
   it('retrieves the platform from the query parameters', () => {
     expect(

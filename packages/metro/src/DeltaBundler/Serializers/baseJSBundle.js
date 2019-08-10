@@ -38,6 +38,11 @@ function baseJSBundle(
     projectRoot: options.projectRoot,
   };
 
+  // Do not prepend polyfills or the require runtime when only modules are requested
+  if (options.modulesOnly) {
+    preModules = [];
+  }
+
   const preCode = processModules(preModules, processModulesOptions)
     .map(([_, code]) => code)
     .join('\n');
@@ -48,14 +53,22 @@ function baseJSBundle(
   );
 
   const postCode = processModules(
-    getAppendScripts(entryPoint, [...preModules, ...modules], {
-      createModuleId: options.createModuleId,
-      getRunModuleStatement: options.getRunModuleStatement,
-      runBeforeMainModule: options.runBeforeMainModule,
-      runModule: options.runModule,
-      sourceMapUrl: options.sourceMapUrl,
-      inlineSourceMap: options.inlineSourceMap,
-    }),
+    getAppendScripts(
+      entryPoint,
+      [...preModules, ...modules],
+      graph.importBundleNames,
+      {
+        asyncRequireModulePath: options.asyncRequireModulePath,
+        createModuleId: options.createModuleId,
+        getRunModuleStatement: options.getRunModuleStatement,
+        inlineSourceMap: options.inlineSourceMap,
+        projectRoot: options.projectRoot,
+        runBeforeMainModule: options.runBeforeMainModule,
+        runModule: options.runModule,
+        sourceMapUrl: options.sourceMapUrl,
+        sourceUrl: options.sourceUrl,
+      },
+    ),
     processModulesOptions,
   )
     .map(([_, code]) => code)

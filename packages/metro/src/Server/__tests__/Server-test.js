@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @emails oncall+javascript_foundation
+ * @emails oncall+metro_bundler
  * @format
  */
 
@@ -20,9 +20,6 @@ jest
   .mock('jest-worker', () => ({}))
   .mock('crypto')
   .mock('fs')
-  .mock('../symbolicate/symbolicate', () => ({
-    createWorker: jest.fn().mockReturnValue(jest.fn()),
-  }))
   .mock('../../Bundler')
   .mock('../../DeltaBundler')
   .mock('../../Assets')
@@ -42,7 +39,6 @@ describe('processRequest', () => {
   let getAsset;
   let getPrependedScripts;
   let transformHelpers;
-  let symbolicate;
   let DeltaBundler;
 
   beforeEach(() => {
@@ -58,7 +54,6 @@ describe('processRequest', () => {
     getAsset = require('../../Assets').getAsset;
     getPrependedScripts = require('../../lib/getPrependedScripts');
     transformHelpers = require('../../lib/transformHelpers');
-    symbolicate = require('../symbolicate/symbolicate');
     DeltaBundler = require('../../DeltaBundler');
   });
 
@@ -74,6 +69,12 @@ describe('processRequest', () => {
   options.reporter = require('../../lib/reporting').nullReporter;
   options.serializer.polyfillModuleNames = null;
   options.serializer.getModulesRunBeforeMainModule = () => ['InitializeCore'];
+  options.symbolicator.customizeFrame = ({file}) => {
+    if (file === '/root/foo.js') {
+      return {collapse: true};
+    }
+    return null;
+  };
 
   const makeRequest = (requrl, reqOptions) =>
     new Promise((resolve, reject) =>
@@ -103,61 +104,66 @@ describe('processRequest', () => {
   let changeHandler;
 
   beforeEach(() => {
-    dependencies = new Map([
-      [
-        '/root/mybundle.js',
-        {
-          path: '/root/mybundle.js',
-          dependencies: new Map([
-            [
-              'foo',
+    const currentGraphs = new Set();
+    DeltaBundler.prototype.buildGraph.mockImplementation(
+      async (entryPoints, options) => {
+        dependencies = new Map([
+          [
+            '/root/mybundle.js',
+            {
+              path: '/root/mybundle.js',
+              dependencies: new Map([
+                [
+                  'foo',
+                  {
+                    absolutePath: '/root/foo.js',
+                    data: {isAsync: false, name: 'foo'},
+                  },
+                ],
+              ]),
+              getSource: () => Buffer.from('code-mybundle'),
+              output: [
+                {
+                  type: 'js/module',
+                  data: {
+                    code: '__d(function() {entry();});',
+                    lineCount: 1,
+                    map: [[1, 16, 1, 0]],
+                  },
+                },
+              ],
+            },
+          ],
+        ]);
+        if (!options.shallow) {
+          dependencies.set('/root/foo.js', {
+            path: '/root/foo.js',
+            dependencies: new Map(),
+            getSource: () => Buffer.from('code-foo'),
+            output: [
               {
-                absolutePath: '/root/foo.js',
-                data: {isAsync: false, name: 'foo'},
+                type: 'js/module',
+                data: {
+                  code: '__d(function() {foo();});',
+                  lineCount: 1,
+                  map: [[1, 16, 1, 0]],
+                  functionMap: {names: ['<global>'], mappings: 'AAA'},
+                },
               },
             ],
-          ]),
-          getSource: () => Buffer.from('code-mybundle'),
-          output: [
-            {
-              type: 'js/module',
-              data: {
-                code: '__d(function() {entry();});',
-                map: [],
-              },
-            },
-          ],
-        },
-      ],
-      [
-        '/root/foo.js',
-        {
-          path: '/root/foo.js',
-          dependencies: new Map(),
-          getSource: () => Buffer.from('code-foo'),
-          output: [
-            {
-              type: 'js/module',
-              data: {
-                code: '__d(function() {foo();});',
-                map: [],
-              },
-            },
-          ],
-        },
-      ],
-    ]);
+          });
+        }
 
-    const currentGraphs = new Set();
-    DeltaBundler.prototype.buildGraph.mockImplementation(async () => {
-      const graph = {
-        entryPoints: ['/root/mybundle.js'],
-        dependencies,
-      };
-      currentGraphs.add(graph);
+        const graph = {
+          entryPoints: ['/root/mybundle.js'],
+          dependencies,
+          importBundleNames: new Set(),
+        };
+        currentGraphs.add(graph);
 
-      return graph;
-    });
+        return graph;
+      },
+    );
     DeltaBundler.prototype.getDelta.mockImplementation(
       async (graph, {reset}) => {
         if (!currentGraphs.has(graph)) {
@@ -184,6 +190,7 @@ describe('processRequest', () => {
               type: 'js/script',
               data: {
                 code: 'function () {require();}',
+                lineCount: 1,
                 map: [],
               },
             },
@@ -229,6 +236,7 @@ describe('processRequest', () => {
         '__d(function() {foo();},1,[],"foo.js");',
         'require(0);',
         '//# sourceMappingURL=//localhost:8081/mybundle.map?runModule=true',
+        '//# sourceURL=http://localhost:8081/mybundle.bundle?runModule=true',
       ].join('\n'),
     );
   });
@@ -242,6 +250,7 @@ describe('processRequest', () => {
         '__d(function() {entry();},0,[1],"mybundle.js");',
         '__d(function() {foo();},1,[],"foo.js");',
         '//# sourceMappingURL=//localhost:8081/mybundle.map?runModule=false',
+        '//# sourceURL=http://localhost:8081/mybundle.bundle?runModule=false',
       ].join('\n'),
     );
   });
@@ -331,6 +340,37 @@ describe('processRequest', () => {
     });
   });
 
+  it('supports the `modulesOnly` option', async () => {
+    const response = await makeRequest(
+      'mybundle.bundle?modulesOnly=true&runModule=false',
+      null,
+    );
+
+    expect(response.body).toEqual(
+      [
+        '__d(function() {entry();},0,[1],"mybundle.js");',
+        '__d(function() {foo();},1,[],"foo.js");',
+        '//# sourceMappingURL=//localhost:8081/mybundle.map?modulesOnly=true&runModule=false',
+        '//# sourceURL=http://localhost:8081/mybundle.bundle?modulesOnly=true&runModule=false',
+      ].join('\n'),
+    );
+  });
+
+  it('supports the `shallow` option', async () => {
+    const response = await makeRequest(
+      'mybundle.bundle?shallow=true&modulesOnly=true&runModule=false',
+      null,
+    );
+
+    expect(response.body).toEqual(
+      [
+        '__d(function() {entry();},0,[1],"mybundle.js");',
+        '//# sourceMappingURL=//localhost:8081/mybundle.map?shallow=true&modulesOnly=true&runModule=false',
+        '//# sourceURL=http://localhost:8081/mybundle.bundle?shallow=true&modulesOnly=true&runModule=false',
+      ].join('\n'),
+    );
+  });
+
   it('returns sourcemap on request of *.map', async () => {
     const response = await makeRequest('mybundle.map');
 
@@ -339,7 +379,38 @@ describe('processRequest', () => {
       sources: ['require-js', '/root/mybundle.js', '/root/foo.js'],
       sourcesContent: ['code-require', 'code-mybundle', 'code-foo'],
       names: [],
-      mappings: '',
+      mappings: ';gBCAA;gBCAA',
+      x_facebook_sources: [
+        null,
+        null,
+        [
+          {
+            mappings: 'AAA',
+            names: ['<global>'],
+          },
+        ],
+      ],
+    });
+  });
+
+  it('source map request respects `modulesOnly` option', async () => {
+    const response = await makeRequest('mybundle.map?modulesOnly=true');
+
+    expect(JSON.parse(response.body)).toEqual({
+      version: 3,
+      sources: ['/root/mybundle.js', '/root/foo.js'],
+      sourcesContent: ['code-mybundle', 'code-foo'],
+      names: [],
+      mappings: 'gBAAA;gBCAA',
+      x_facebook_sources: [
+        null,
+        [
+          {
+            mappings: 'AAA',
+            names: ['<global>'],
+          },
+        ],
+      ],
     });
   });
 
@@ -392,9 +463,11 @@ describe('processRequest', () => {
     expect(DeltaBundler.prototype.buildGraph).toBeCalledWith(
       ['/root/index.js'],
       {
-        resolve: expect.any(Function),
-        transform: expect.any(Function),
+        experimentalImportBundleSupport: false,
         onProgress: expect.any(Function),
+        resolve: expect.any(Function),
+        shallow: false,
+        transform: expect.any(Function),
       },
     );
   });
@@ -421,8 +494,10 @@ describe('processRequest', () => {
         base: true,
         revisionId: 'XXXXX-0',
         pre: 'function () {require();}',
-        post:
+        post: [
           '//# sourceMappingURL=http://localhost:8081/index.map?platform=ios',
+          '//# sourceURL=http://localhost:8081/index.delta?platform=ios',
+        ].join('\n'),
         modules: [
           [0, '__d(function() {entry();},0,[1],"mybundle.js");'],
           [1, '__d(function() {foo();},1,[],"foo.js");'],
@@ -444,7 +519,10 @@ describe('processRequest', () => {
                 output: [
                   {
                     type: 'js/module',
-                    data: {code: '__d(function() {modified();});'},
+                    data: {
+                      code: '__d(function() {modified();});',
+                      lineCount: 1,
+                    },
                   },
                 ],
                 dependencies: new Map(),
@@ -475,6 +553,7 @@ describe('processRequest', () => {
 
       expect(DeltaBundler.prototype.getDelta.mock.calls[0][1]).toEqual({
         reset: false,
+        shallow: false,
       });
     });
 
@@ -490,7 +569,10 @@ describe('processRequest', () => {
                 output: [
                   {
                     type: 'js/module',
-                    data: {code: '__d(function() {modified();});'},
+                    data: {
+                      code: '__d(function() {modified();});',
+                      lineCount: 1,
+                    },
                   },
                 ],
                 dependencies: new Map(),
@@ -511,9 +593,11 @@ describe('processRequest', () => {
 
       expect(DeltaBundler.prototype.getDelta.mock.calls[0][1]).toEqual({
         reset: false,
+        shallow: false,
       });
       expect(DeltaBundler.prototype.getDelta.mock.calls[1][1]).toEqual({
         reset: true,
+        shallow: false,
       });
     });
 
@@ -530,6 +614,10 @@ describe('processRequest', () => {
         expect(() => JSON.parse(response.body)).not.toThrow();
         const body = JSON.parse(response.body);
         expect(body).toMatchObject({
+          // CAUTION -- these *exact* field names are important because
+          // they are being parsed by DebugServerException.java on Android.
+          // DO NOT change them without also ensuring that a transform error
+          // still shows a meaningful message on the initial bundle load.
           type: 'TransformError',
           message: 'test syntax error',
         });
@@ -556,6 +644,7 @@ describe('processRequest', () => {
       expect(DeltaBundler.prototype.getDelta.mock.calls.length).toBe(1);
       expect(DeltaBundler.prototype.getDelta.mock.calls[0][1]).toEqual({
         reset: true,
+        shallow: false,
       });
     });
   });
@@ -710,67 +799,197 @@ describe('processRequest', () => {
       expect(DeltaBundler.prototype.buildGraph).toBeCalledWith(
         ['/root/foo file'],
         {
-          resolve: expect.any(Function),
-          transform: expect.any(Function),
+          experimentalImportBundleSupport: false,
           onProgress: null,
+          resolve: expect.any(Function),
+          shallow: false,
+          transform: expect.any(Function),
         },
       );
     });
   });
 
   describe('/symbolicate endpoint', () => {
-    let symbolicationWorker;
-    beforeEach(() => {
-      symbolicationWorker = symbolicate.createWorker();
-      symbolicationWorker.mockReset();
-    });
-
-    it('should symbolicate given stack trace', () => {
-      const inputStack = [
-        {
-          file: 'http://foo.bundle?platform=ios',
-          lineNumber: 2100,
-          column: 44,
-          customPropShouldBeLeftUnchanged: 'foo',
-        },
-      ];
-      const outputStack = [
-        {
-          source: 'foo.js',
-          line: 21,
-          column: 4,
-        },
-      ];
-      const body = JSON.stringify({stack: inputStack});
-
-      expect.assertions(2);
-      symbolicationWorker.mockImplementation(stack => {
-        expect(stack).toEqual(inputStack);
-        return outputStack;
+    it('should symbolicate given stack trace', async () => {
+      const response = await makeRequest('/symbolicate', {
+        rawBody: JSON.stringify({
+          stack: [
+            {
+              file: 'http://localhost:8081/mybundle.bundle?runModule=true',
+              lineNumber: 2,
+              column: 18,
+              customPropShouldBeLeftUnchanged: 'foo',
+              methodName: 'clientSideMethodName',
+            },
+          ],
+        }),
       });
 
-      return makeRequest('/symbolicate', {
-        rawBody: body,
-      }).then(response =>
-        expect(JSON.parse(response.body)).toEqual({stack: outputStack}),
-      );
+      expect(JSON.parse(response.body)).toMatchInlineSnapshot(`
+        Object {
+          "stack": Array [
+            Object {
+              "collapse": false,
+              "column": 0,
+              "customPropShouldBeLeftUnchanged": "foo",
+              "file": "/root/mybundle.js",
+              "lineNumber": 1,
+              "methodName": "clientSideMethodName",
+            },
+          ],
+        }
+      `);
+    });
+
+    it('supports the `modulesOnly` option', async () => {
+      const response = await makeRequest('/symbolicate', {
+        rawBody: JSON.stringify({
+          stack: [
+            {
+              file:
+                'http://localhost:8081/mybundle.bundle?runModule=true&modulesOnly=true',
+              lineNumber: 2,
+              column: 16,
+            },
+          ],
+        }),
+      });
+
+      expect(JSON.parse(response.body)).toMatchObject({
+        stack: [
+          expect.objectContaining({
+            column: 0,
+            file: '/root/foo.js',
+            lineNumber: 1,
+          }),
+        ],
+      });
+    });
+
+    it('supports the `shallow` option', async () => {
+      const response = await makeRequest('/symbolicate', {
+        rawBody: JSON.stringify({
+          stack: [
+            {
+              file:
+                'http://localhost:8081/mybundle.bundle?runModule=true&shallow=true',
+              lineNumber: 2,
+              column: 18,
+              customPropShouldBeLeftUnchanged: 'foo',
+              methodName: 'clientSideMethodName',
+            },
+          ],
+        }),
+      });
+
+      expect(JSON.parse(response.body)).toMatchInlineSnapshot(`
+        Object {
+          "stack": Array [
+            Object {
+              "collapse": false,
+              "column": 0,
+              "customPropShouldBeLeftUnchanged": "foo",
+              "file": "/root/mybundle.js",
+              "lineNumber": 1,
+              "methodName": "clientSideMethodName",
+            },
+          ],
+        }
+      `);
+    });
+
+    it('should symbolicate function name if available', async () => {
+      const response = await makeRequest('/symbolicate', {
+        rawBody: JSON.stringify({
+          stack: [
+            {
+              file: 'http://localhost:8081/mybundle.bundle?runModule=true',
+              lineNumber: 3,
+              column: 18,
+            },
+          ],
+        }),
+      });
+
+      expect(JSON.parse(response.body)).toMatchObject({
+        stack: [
+          expect.objectContaining({
+            methodName: '<global>',
+          }),
+        ],
+      });
+    });
+
+    it('should collapse frames as specified in customizeFrame', async () => {
+      // NOTE: See implementation of symbolicator.customizeFrame above.
+
+      const response = await makeRequest('/symbolicate', {
+        rawBody: JSON.stringify({
+          stack: [
+            {
+              file: 'http://localhost:8081/mybundle.bundle?runModule=true',
+              lineNumber: 3,
+              column: 18,
+            },
+          ],
+        }),
+      });
+
+      expect(JSON.parse(response.body)).toMatchObject({
+        stack: [
+          expect.objectContaining({
+            file: '/root/foo.js',
+            collapse: true,
+          }),
+        ],
+      });
+    });
+
+    it('should leave original file and position when cannot symbolicate', async () => {
+      const response = await makeRequest('/symbolicate', {
+        rawBody: JSON.stringify({
+          stack: [
+            {
+              file: 'http://localhost:8081/mybundle.bundle?runModule=true',
+              lineNumber: 200,
+              column: 18,
+              customPropShouldBeLeftUnchanged: 'foo',
+              methodName: 'clientSideMethodName',
+            },
+          ],
+        }),
+      });
+
+      expect(JSON.parse(response.body)).toMatchInlineSnapshot(`
+        Object {
+          "stack": Array [
+            Object {
+              "collapse": false,
+              "column": 18,
+              "customPropShouldBeLeftUnchanged": "foo",
+              "file": "http://localhost:8081/mybundle.bundle?runModule=true",
+              "lineNumber": 200,
+              "methodName": "clientSideMethodName",
+            },
+          ],
+        }
+      `);
     });
   });
 
   describe('/symbolicate handles errors', () => {
-    it('should symbolicate given stack trace', () => {
+    it('should symbolicate given stack trace', async () => {
       const body = 'clearly-not-json';
       console.error = jest.fn();
 
-      return makeRequest('/symbolicate', {
+      const response = await makeRequest('/symbolicate', {
         rawBody: body,
-      }).then(response => {
-        expect(response.statusCode).toEqual(500);
-        expect(JSON.parse(response.body)).toEqual({
-          error: expect.any(String),
-        });
-        expect(console.error).toBeCalled();
       });
+      expect(response.statusCode).toEqual(500);
+      expect(JSON.parse(response.body)).toEqual({
+        error: expect.any(String),
+      });
+      expect(console.error).toBeCalled();
     });
   });
 

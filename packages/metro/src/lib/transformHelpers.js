@@ -68,6 +68,9 @@ async function calcTransformerOptions(
         minify: false,
       }),
       onProgress: null,
+      experimentalImportBundleSupport:
+        config.transformer.experimentalImportBundleSupport,
+      shallow: false,
     });
 
     return Array.from(dependencies.keys());
@@ -83,6 +86,8 @@ async function calcTransformerOptions(
     ...baseOptions,
     inlineRequires: transform.inlineRequires || false,
     experimentalImportSupport: transform.experimentalImportSupport || false,
+    unstable_disableES6Transforms:
+      transform.unstable_disableES6Transforms || false,
     type: 'module',
   };
 }

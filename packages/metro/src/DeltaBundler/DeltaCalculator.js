@@ -49,6 +49,7 @@ class DeltaCalculator<T> extends EventEmitter {
     this._graph = {
       dependencies: new Map(),
       entryPoints,
+      importBundleNames: new Set(),
     };
 
     this._dependencyGraph
@@ -70,6 +71,7 @@ class DeltaCalculator<T> extends EventEmitter {
     this._graph = {
       dependencies: new Map(),
       entryPoints: this._graph.entryPoints,
+      importBundleNames: new Set(),
     };
     this._modifiedFiles = new Set();
     this._deletedFiles = new Set();
@@ -79,7 +81,13 @@ class DeltaCalculator<T> extends EventEmitter {
    * Main method to calculate the delta of modules. It returns a DeltaResult,
    * which contain the modified/added modules and the removed modules.
    */
-  async getDelta({reset}: {reset: boolean}): Promise<DeltaResult<T>> {
+  async getDelta({
+    reset,
+    shallow,
+  }: {
+    reset: boolean,
+    shallow: boolean,
+  }): Promise<DeltaResult<T>> {
     // If there is already a build in progress, wait until it finish to start
     // processing a new one (delta server doesn't support concurrent builds).
     if (this._currentBuildPromise) {
@@ -130,7 +138,7 @@ class DeltaCalculator<T> extends EventEmitter {
 
     // Return all the modules if the client requested a reset delta.
     if (reset) {
-      reorderGraph(this._graph);
+      reorderGraph(this._graph, {shallow});
 
       return {
         added: this._graph.dependencies,

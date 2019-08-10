@@ -53,7 +53,9 @@ module.exports = ({
     moduleGroups,
     options,
   );
-  delete map.x_facebook_offsets[Number.MIN_SAFE_INTEGER];
+  if (map.x_facebook_offsets != null) {
+    delete map.x_facebook_offsets[Number.MIN_SAFE_INTEGER];
+  }
 
   return map;
 };
