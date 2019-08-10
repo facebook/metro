@@ -15,7 +15,7 @@ Generates a JavaScript bundle containing the specified entrypoint and its descen
 | Option   | Alias    | Description    | Value |
 |----------|----------|----------|----------|
 | `out`    | `O` | File name where to store the output | String |
-| `platform` | `p` | Which platform to bundle for | `web` \| `android` \| `ios` |
+| `platform` | `p` | Which platform to bundle for | `web`, `android`, `ios` |
 | `minify` | `z` | Whether Metro should minify the bundle | Boolean |
 | `dev` | `g` | Create a development version of the build (`process.env.NODE_ENV = 'development'`) | Boolean |
 | `config` | `c` | Location of the `metro.config.js` to use | String |
