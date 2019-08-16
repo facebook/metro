@@ -1,7 +1,7 @@
 {
   "name": "metro-visualizer",
   "version": "0.56.0",
-  "description": "Suite of visual analysis tools for the metro bundler",
+  "description": "Suite of visual analysis tools for Metro",
   "main": "src/index.js",
   "license": "MIT",
   "scripts": {
