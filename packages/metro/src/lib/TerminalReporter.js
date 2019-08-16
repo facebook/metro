@@ -86,11 +86,11 @@ class TerminalReporter {
    * Construct a message that represents the progress of a
    * single bundle build, for example:
    *
-   *     BUNDLE [ios, dev, minified] foo.js  ▓▓▓▓▓░░░░░░░░░░░ 36.6% (4790/7922)
+   *     BUNDLE path/to/bundle.js ▓▓▓▓▓░░░░░░░░░░░ 36.6% (4790/7922)
    */
   _getBundleStatusMessage(
     {
-      bundleDetails: {entryFile, platform, dev, minify, bundleType},
+      bundleDetails: {entryFile, bundleType},
       transformedFileCount,
       totalFileCount,
       ratio,
@@ -98,30 +98,29 @@ class TerminalReporter {
     phase: BuildPhase,
   ): string {
     const localPath = path.relative('.', entryFile);
-    const fileName = path.basename(localPath);
-    const dirName = path.dirname(localPath);
-
-    platform = platform ? platform + ', ' : '';
-    const devOrProd = dev ? 'dev' : 'prod';
-    const min = minify ? ', minified' : '';
-    const progress = (100 * ratio).toFixed(1);
-    const currentPhase =
-      phase === 'done' ? ', done.' : phase === 'failed' ? ', failed.' : '';
-
     const filledBar = Math.floor(ratio * MAX_PROGRESS_BAR_CHAR_WIDTH);
+    const bundleTypeColor =
+      phase === 'done'
+        ? chalk.green
+        : phase === 'failed'
+        ? chalk.red
+        : chalk.yellow;
+    const progress =
+      phase === 'in_progress'
+        ? chalk.green.bgGreen(DARK_BLOCK_CHAR.repeat(filledBar)) +
+          chalk.bgWhite.white(
+            LIGHT_BLOCK_CHAR.repeat(MAX_PROGRESS_BAR_CHAR_WIDTH - filledBar),
+          ) +
+          chalk.bold(` ${(100 * ratio).toFixed(1)}% `) +
+          chalk.dim(`(${transformedFileCount}/${totalFileCount})`)
+        : '';
 
     return (
-      chalk.inverse.green.bold(` ${bundleType.toUpperCase()} `) +
-      chalk.dim(` [${platform}${devOrProd}${min}] ${dirName}/`) +
-      chalk.bold(fileName) +
+      bundleTypeColor.inverse.bold(` ${bundleType.toUpperCase()} `) +
+      chalk.reset.dim(` ${path.dirname(localPath)}/`) +
+      chalk.bold(path.basename(localPath)) +
       ' ' +
-      chalk.green.bgGreen(DARK_BLOCK_CHAR.repeat(filledBar)) +
-      chalk.bgWhite.white(
-        LIGHT_BLOCK_CHAR.repeat(MAX_PROGRESS_BAR_CHAR_WIDTH - filledBar),
-      ) +
-      chalk.bold(` ${progress}% `) +
-      chalk.dim(`(${transformedFileCount}/${totalFileCount})`) +
-      currentPhase +
+      progress +
       '\n'
     );
   }
@@ -292,7 +291,7 @@ class TerminalReporter {
           .sort()
           .map(dupFilePath => `  * \`${dupFilePath}\`\n`)
           .join('');
-      this._logBundlingErrorMessage(message);
+      reporting.logError(this.terminal, message);
       return;
     }
 
@@ -313,11 +312,7 @@ class TerminalReporter {
     if (error.snippet != null) {
       message += '\n' + error.snippet;
     }
-    this._logBundlingErrorMessage(message);
-  }
-
-  _logBundlingErrorMessage(message: string): void {
-    reporting.logError(this.terminal, 'bundling failed: %s', message);
+    reporting.logError(this.terminal, message);
   }
 
   _logWorkerChunk(origin: 'stdout' | 'stderr', chunk: string): void {

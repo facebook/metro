@@ -562,6 +562,13 @@ class Server {
           'Content-Type': 'application/json; charset=UTF-8',
         });
         mres.end(JSON.stringify(formattedError));
+
+        this._reporter.update({
+          buildID,
+          type: 'bundle_build_failed',
+          bundleOptions,
+        });
+
         this._reporter.update({error, type: 'bundling_error'});
 
         log({
@@ -571,12 +578,6 @@ class Server {
           bundle_id: graphId,
           build_id: buildID,
           stack: formattedError.message,
-        });
-
-        this._reporter.update({
-          buildID,
-          type: 'bundle_build_failed',
-          bundleOptions,
         });
 
         return;
