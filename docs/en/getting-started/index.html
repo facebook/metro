@@ -60,7 +60,7 @@ Metro.loadConfig().then(<span class="hljs-function"><span class="hljs-params">co
   httpServer.listen(<span class="hljs-number">8081</span>);
 });
 </code></pre>
-<p>In order to be also compatible with Express apps, processRequest will also call its third parameter when the request could not be handled by Metro bundler. This allows you to integrate the server with your existing server, or to extend a new one:</p>
+<p>In order to be also compatible with Express apps, processRequest will also call its third parameter when the request could not be handled by Metro. This allows you to integrate the server with your existing server, or to extend a new one:</p>
 <pre><code class="hljs css languages- js"><span class="hljs-keyword">const</span> httpServer = http.createServer(<span class="hljs-function">(<span class="hljs-params">req, res</span>) =&gt;</span> {
   metroBundlerServer.processRequest(req, res, () =&gt; {
     <span class="hljs-comment">// Metro does not know how to handle the request.</span>
