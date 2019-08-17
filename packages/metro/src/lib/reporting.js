@@ -31,7 +31,7 @@ export type BundleDetails = {
  */
 export type ReportableEvent =
   | {
-      port: number,
+      port: ?number,
       projectRoots: $ReadOnlyArray<string>,
       type: 'initialize_started',
     }

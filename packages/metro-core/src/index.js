@@ -15,9 +15,12 @@ const Logger = require('./Logger');
 const PackageResolutionError = require('./errors/PackageResolutionError');
 const Terminal = require('./Terminal');
 
+const formatBanner = require('./formatBanner');
+
 module.exports = {
   AmbiguousModuleResolutionError,
   Logger,
   PackageResolutionError,
   Terminal,
+  formatBanner,
 };

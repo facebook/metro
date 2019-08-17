@@ -16,6 +16,7 @@ const reporting = require('./reporting');
 const throttle = require('lodash.throttle');
 
 const {AmbiguousModuleResolutionError} = require('metro-core');
+const {formatBanner} = require('metro-core');
 
 import type {
   BundleDetails,
@@ -24,12 +25,20 @@ import type {
 } from './reporting';
 import type {Terminal} from 'metro-core';
 
+const DEP_GRAPH_MESSAGE = 'Loading dependency graph';
+const GLOBAL_CACHE_DISABLED_MESSAGE_FORMAT =
+  'The global cache is now disabled because %s';
+
 type BundleProgress = {
   bundleDetails: BundleDetails,
   transformedFileCount: number,
   totalFileCount: number,
   ratio: number,
 };
+
+const DARK_BLOCK_CHAR = '\u2593';
+const LIGHT_BLOCK_CHAR = '\u2591';
+const MAX_PROGRESS_BAR_CHAR_WIDTH = 16;
 
 export type TerminalReportableEvent =
   | ReportableEvent
@@ -47,13 +56,6 @@ type SnippetError = ErrnoError & {
   snippet?: string,
 };
 
-const GLOBAL_CACHE_DISABLED_MESSAGE_FORMAT =
-  'The global cache is now disabled because %s';
-
-const DARK_BLOCK_CHAR = '\u2593';
-const LIGHT_BLOCK_CHAR = '\u2591';
-const MAX_PROGRESS_BAR_CHAR_WIDTH = 16;
-
 /**
  * We try to print useful information to the terminal for interactive builds.
  * This implements the `Reporter` interface from the './reporting' module.
@@ -66,6 +68,7 @@ class TerminalReporter {
    */
   _activeBundles: Map<string, BundleProgress>;
 
+  _dependencyGraphHasLoaded: boolean;
   _scheduleUpdateBundleProgress: (data: {
     buildID: string,
     transformedFileCount: number,
@@ -75,6 +78,7 @@ class TerminalReporter {
   +terminal: Terminal;
 
   constructor(terminal: Terminal) {
+    this._dependencyGraphHasLoaded = false;
     this._activeBundles = new Map();
     this._scheduleUpdateBundleProgress = throttle(data => {
       this.update({...data, type: 'bundle_transform_progressed_throttled'});
@@ -169,42 +173,29 @@ class TerminalReporter {
     }
   }
 
-  _logInitializing(port: number): void {
-    const logo = [
-      '                                                          ',
-      '               ######                ######               ',
-      '             ###     ####        ####     ###             ',
-      '            ##          ###    ###          ##            ',
-      '            ##             ####             ##            ',
-      '            ##             ####             ##            ',
-      '            ##           ##    ##           ##            ',
-      '            ##         ###      ###         ##            ',
-      '             ##  ########################  ##             ',
-      '          ######    ###            ###    ######          ',
-      '      ###     ##    ##              ##    ##     ###      ',
-      '   ###         ## ###      ####      ### ##         ###   ',
-      '  ##           ####      ########      ####           ##  ',
-      ' ##             ###     ##########     ###             ## ',
-      '  ##           ####      ########      ####           ##  ',
-      '   ###         ## ###      ####      ### ##         ###   ',
-      '      ###     ##    ##              ##    ##     ###      ',
-      '          ######    ###            ###    ######          ',
-      '             ##  ########################  ##             ',
-      '            ##         ###      ###         ##            ',
-      '            ##           ##    ##           ##            ',
-      '            ##             ####             ##            ',
-      '            ##             ####             ##            ',
-      '            ##          ###    ###          ##            ',
-      '             ###     ####        ####     ###             ',
-      '               ######                ######               ',
-      '                                                          ',
-    ];
+  _logInitializing(port: ?number, projectRoots: $ReadOnlyArray<string>): void {
+    if (port) {
+      this.terminal.log(
+        formatBanner(
+          'Running Metro Bundler on port ' +
+            port +
+            '.\n\n' +
+            'Keep Metro running while developing on any JS projects. Feel ' +
+            'free to close this tab and run your own Metro instance ' +
+            'if you prefer.\n\n' +
+            'https://github.com/facebook/react-native',
+          {
+            paddingTop: 1,
+            paddingBottom: 1,
+          },
+        ) + '\n',
+      );
+    }
 
     this.terminal.log(
-      chalk.blue(logo.join('\n')) +
-        '\n' +
-        chalk.blue.bold('                  Welcome to React Native!\n') +
-        chalk.gray('                 Learn once, write anywhere\n'),
+      'Looking for JS files in\n  ',
+      chalk.dim(projectRoots.join('\n   ')),
+      '\n',
     );
   }
 
@@ -212,7 +203,10 @@ class TerminalReporter {
     if (error.code === 'EADDRINUSE') {
       this.terminal.log(
         chalk.bgRed.bold(' ERROR '),
-        chalk.red("Metro can't listen on port", chalk.bold(String(port))),
+        chalk.red(
+          "Metro Bundler can't listen on port",
+          chalk.bold(String(port)),
+        ),
       );
       this.terminal.log(
         'Most likely another process is already using this port',
@@ -221,7 +215,7 @@ class TerminalReporter {
       this.terminal.log('\n  ', chalk.bold('lsof -i :' + port), '\n');
       this.terminal.log('Then, you can either shut down the other process:');
       this.terminal.log('\n  ', chalk.bold('kill -9 <PID>'), '\n');
-      this.terminal.log('or run Metro on different port.');
+      this.terminal.log('or run Metro Bundler on different port.');
     } else {
       this.terminal.log(chalk.bgRed.bold(' ERROR '), chalk.red(error.message));
       const errorAttributes = JSON.stringify(error);
@@ -239,10 +233,10 @@ class TerminalReporter {
   _log(event: TerminalReportableEvent): void {
     switch (event.type) {
       case 'initialize_started':
-        this._logInitializing(event.port);
+        this._logInitializing(event.port, event.projectRoots);
         break;
       case 'initialize_done':
-        this.terminal.log('\nMetro is ready.\n');
+        this.terminal.log('\nMetro Bundler ready.\n');
         break;
       case 'initialize_failed':
         this._logInitializingFailed(event.port, event.error);
@@ -255,6 +249,9 @@ class TerminalReporter {
         break;
       case 'bundling_error':
         this._logBundlingError(event.error);
+        break;
+      case 'dep_graph_loaded':
+        this.terminal.log(`${DEP_GRAPH_MESSAGE}, done.`);
         break;
       case 'global_cache_disabled':
         this._logCacheDisabled(event.reason);
@@ -386,7 +383,20 @@ class TerminalReporter {
       case 'bundle_transform_progressed_throttled':
         this._updateBundleProgress(event);
         break;
+      case 'dep_graph_loading':
+        this._dependencyGraphHasLoaded = false;
+        break;
+      case 'dep_graph_loaded':
+        this._dependencyGraphHasLoaded = true;
+        break;
     }
+  }
+
+  _getDepGraphStatusMessage(): null | string {
+    if (!this._dependencyGraphHasLoaded) {
+      return `${DEP_GRAPH_MESSAGE}...`;
+    }
+    return null;
   }
 
   /**
@@ -395,9 +405,12 @@ class TerminalReporter {
    * different callsites overriding each other status messages.
    */
   _getStatusMessage(): string {
-    return Array.from(this._activeBundles.entries())
-      .map(([_, progress]: [string, BundleProgress]) =>
-        this._getBundleStatusMessage(progress, 'in_progress'),
+    return [this._getDepGraphStatusMessage()]
+      .concat(
+        Array.from(this._activeBundles.entries()).map(
+          ([_, progress]: [string, BundleProgress]) =>
+            this._getBundleStatusMessage(progress, 'in_progress'),
+        ),
       )
       .filter((str: null | string) => str != null)
       .join('\n');
