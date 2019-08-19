@@ -133,26 +133,10 @@ exports.runServer = async (
   const {
     attachHmrServer,
     middleware,
-    metroServer,
     end,
   } = await exports.createConnectMiddleware(config);
 
   serverApp.use(middleware);
-
-  if (config.server.enableVisualizer) {
-    let initializeVisualizerMiddleware;
-    try {
-      // eslint-disable-next-line import/no-extraneous-dependencies
-      ({initializeVisualizerMiddleware} = require('metro-visualizer'));
-    } catch (e) {
-      console.warn(
-        "'config.server.enableVisualizer' is enabled but the 'metro-visualizer' package was not found - have you installed it?",
-      );
-    }
-    if (initializeVisualizerMiddleware) {
-      serverApp.use('/visualizer', initializeVisualizerMiddleware(metroServer));
-    }
-  }
 
   let inspectorProxy: ?InspectorProxy = null;
   if (config.server.runInspectorProxy) {

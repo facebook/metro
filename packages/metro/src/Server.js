@@ -49,10 +49,7 @@ import type {
   GraphOptions,
   SplitBundleOptions,
 } from './shared/types.flow';
-import type {
-  ConfigT,
-  VisualizerConfigT,
-} from 'metro-config/src/configTypes.flow';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {AssetData} from './Assets';
 import type {RevisionId} from './IncrementalBundler';
 import type {Graph, Module} from './DeltaBundler/types.flow';
@@ -1089,10 +1086,6 @@ class Server {
 
   getWatchFolders(): $ReadOnlyArray<string> {
     return this._config.watchFolders;
-  }
-
-  getVisualizerConfig(): $ReadOnly<VisualizerConfigT> {
-    return this._config.visualizer;
   }
 
   static DEFAULT_GRAPH_OPTIONS = {
