@@ -37,7 +37,8 @@ async function getAssets(
     if (
       isJsModule(module) &&
       processModuleFilter(module) &&
-      getJsOutput(module).type === 'js/module/asset'
+      getJsOutput(module).type === 'js/module/asset' &&
+      path.relative(options.projectRoot, module.path) !== 'package.json'
     ) {
       promises.push(
         getAssetData(

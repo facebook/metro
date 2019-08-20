@@ -41,6 +41,15 @@ describe('FileStore', () => {
     expect(fileStore.get(cache)).toEqual(null);
   });
 
+  it('returns null when reading a empty file', () => {
+    const fileStore = new FileStore({root: '/root'});
+    const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
+    const filePath = fileStore._getFilePath(cache);
+
+    fs.writeFileSync(filePath, '');
+    expect(fileStore.get(cache)).toEqual(null);
+  });
+
   it('writes into cache if folder is missing', () => {
     const fileStore = new FileStore({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);

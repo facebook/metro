@@ -77,6 +77,7 @@ export type Options<T = MixedOutput> = {|
   +transform: TransformFn<T>,
   +onProgress: ?(numProcessed: number, total: number) => mixed,
   +experimentalImportBundleSupport: boolean,
+  +shallow: boolean,
 |};
 
 export type DeltaResult<T = MixedOutput> = {|

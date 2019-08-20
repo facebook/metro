@@ -40,14 +40,18 @@ export type FormattedError = {|
   +errors: Array<{description: string}>,
 |};
 
+export type HmrModule = {|
+  +module: [number, string],
+  +sourceMappingURL: string,
+  +sourceURL: string,
+|};
+
 export type HmrUpdate = {|
-  ...DeltaBundle,
+  +added: $ReadOnlyArray<HmrModule>,
+  +deleted: $ReadOnlyArray<number>,
   +isInitialUpdate: boolean,
+  +modified: $ReadOnlyArray<HmrModule>,
   +revisionId: string,
-  +addedSourceMappingURLs: $ReadOnlyArray<string>,
-  +addedSourceURLs: $ReadOnlyArray<string>,
-  +modifiedSourceMappingURLs: $ReadOnlyArray<string>,
-  +modifiedSourceURLs: $ReadOnlyArray<string>,
 |};
 
 export type HmrUpdateMessage = {|

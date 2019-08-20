@@ -44,11 +44,12 @@ import type {IncomingMessage, ServerResponse} from 'http';
 import type {Reporter} from './lib/reporting';
 import type {GraphId} from './lib/getGraphId';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
-import type {BundleOptions, SplitBundleOptions} from './shared/types.flow';
 import type {
-  ConfigT,
-  VisualizerConfigT,
-} from 'metro-config/src/configTypes.flow';
+  BundleOptions,
+  GraphOptions,
+  SplitBundleOptions,
+} from './shared/types.flow';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {AssetData} from './Assets';
 import type {RevisionId} from './IncrementalBundler';
 import type {Graph, Module} from './DeltaBundler/types.flow';
@@ -79,12 +80,13 @@ export type BundleMetadata = {
 };
 
 type ProcessStartContext = {|
+  +buildID: string,
+  +bundleOptions: BundleOptions,
+  +graphId: GraphId,
+  +graphOptions: GraphOptions,
   +mres: MultipartResponse,
   +req: IncomingMessage,
-  +buildID: string,
-  +graphId: GraphId,
   +revisionId: ?RevisionId,
-  +bundleOptions: BundleOptions,
   ...SplitBundleOptions,
 |};
 
@@ -179,15 +181,19 @@ class Server {
   async build(options: BundleOptions): Promise<{code: string, map: string}> {
     const {
       entryFile,
-      transformOptions,
-      serializerOptions,
+      graphOptions,
       onProgress,
+      serializerOptions,
+      transformOptions,
     } = splitBundleOptions(options);
 
     const {prepend, graph} = await this._bundler.buildGraph(
       entryFile,
       transformOptions,
-      {onProgress},
+      {
+        onProgress,
+        shallow: graphOptions.shallow,
+      },
     );
 
     const entryPoint = path.resolve(this._config.projectRoot, entryFile);
@@ -221,15 +227,16 @@ class Server {
   async getRamBundleInfo(options: BundleOptions): Promise<RamBundleInfo> {
     const {
       entryFile,
-      transformOptions,
-      serializerOptions,
+      graphOptions,
       onProgress,
+      serializerOptions,
+      transformOptions,
     } = splitBundleOptions(options);
 
     const {prepend, graph} = await this._bundler.buildGraph(
       entryFile,
       transformOptions,
-      {onProgress},
+      {onProgress, shallow: graphOptions.shallow},
     );
 
     const entryPoint = path.resolve(this._config.projectRoot, entryFile);
@@ -263,7 +270,7 @@ class Server {
     const {graph} = await this._bundler.buildGraph(
       entryFile,
       transformOptions,
-      {onProgress},
+      {onProgress, shallow: false},
     );
 
     return await getAssets(graph, {
@@ -290,7 +297,7 @@ class Server {
     const {prepend, graph} = await this._bundler.buildGraph(
       entryFile,
       transformOptions,
-      {onProgress},
+      {onProgress, shallow: false},
     );
 
     const platform =
@@ -471,6 +478,7 @@ class Server {
       );
       const {
         entryFile,
+        graphOptions,
         transformOptions,
         serializerOptions,
       } = splitBundleOptions(bundleOptions);
@@ -487,7 +495,11 @@ class Server {
         `${this._config.projectRoot}/.`,
         entryFile,
       );
-      const graphId = getGraphId(resolvedEntryFilePath, transformOptions);
+      const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
+        shallow: graphOptions.shallow,
+        experimentalImportBundleSupport: this._config.transformer
+          .experimentalImportBundleSupport,
+      });
       const buildID = this.getNewBuildID();
 
       let onProgress = null;
@@ -520,16 +532,17 @@ class Server {
       });
 
       const startContext = {
-        req,
-        mres,
-        revisionId,
         buildID,
         bundleOptions,
         entryFile: resolvedEntryFilePath,
-        transformOptions,
-        serializerOptions,
-        onProgress,
         graphId,
+        graphOptions,
+        mres,
+        onProgress,
+        req,
+        revisionId,
+        serializerOptions,
+        transformOptions,
       };
       const logEntry = log(
         createActionStartEntry(createStartEntry(startContext)),
@@ -546,6 +559,13 @@ class Server {
           'Content-Type': 'application/json; charset=UTF-8',
         });
         mres.end(JSON.stringify(formattedError));
+
+        this._reporter.update({
+          buildID,
+          type: 'bundle_build_failed',
+          bundleOptions,
+        });
+
         this._reporter.update({error, type: 'bundling_error'});
 
         log({
@@ -555,12 +575,6 @@ class Server {
           bundle_id: graphId,
           build_id: buildID,
           stack: formattedError.message,
-        });
-
-        this._reporter.update({
-          buildID,
-          type: 'bundle_build_failed',
-          bundleOptions,
         });
 
         return;
@@ -610,12 +624,13 @@ class Server {
       };
     },
     build: async ({
-      revisionId,
-      graphId,
       entryFile,
-      transformOptions,
-      serializerOptions,
+      graphId,
+      graphOptions,
       onProgress,
+      revisionId,
+      serializerOptions,
+      transformOptions,
     }) => {
       // TODO(T34760593): We should eventually move to a model where this
       // endpoint is placed at /delta/:revisionId, and requesting an unknown revisionId
@@ -644,7 +659,7 @@ class Server {
         ({delta, revision} = await this._bundler.initializeGraph(
           entryFile,
           transformOptions,
-          {onProgress},
+          {onProgress, shallow: graphOptions.shallow},
         ));
       }
 
@@ -718,11 +733,12 @@ class Server {
       };
     },
     build: async ({
-      graphId,
       entryFile,
-      transformOptions,
-      serializerOptions,
+      graphId,
+      graphOptions,
       onProgress,
+      serializerOptions,
+      transformOptions,
     }) => {
       const revPromise = this._bundler.getRevisionByGraphId(graphId);
 
@@ -730,6 +746,7 @@ class Server {
         ? this._bundler.updateGraph(await revPromise, false)
         : this._bundler.initializeGraph(entryFile, transformOptions, {
             onProgress,
+            shallow: graphOptions.shallow,
           }));
 
       const serializer =
@@ -815,10 +832,11 @@ class Server {
     },
     build: async ({
       entryFile,
-      transformOptions,
-      serializerOptions,
-      onProgress,
       graphId,
+      graphOptions,
+      onProgress,
+      serializerOptions,
+      transformOptions,
     }) => {
       let revision;
       const revPromise = this._bundler.getRevisionByGraphId(graphId);
@@ -826,7 +844,7 @@ class Server {
         ({revision} = await this._bundler.initializeGraph(
           entryFile,
           transformOptions,
-          {onProgress},
+          {onProgress, shallow: graphOptions.shallow},
         ));
       } else {
         revision = await revPromise;
@@ -927,7 +945,7 @@ class Server {
       const {graph} = await this._bundler.buildGraph(
         entryFile,
         transformOptions,
-        {onProgress},
+        {onProgress, shallow: false},
       );
 
       return await getAssets(graph, {
@@ -1011,6 +1029,7 @@ class Server {
       entryFile,
       transformOptions,
       serializerOptions,
+      graphOptions,
       onProgress,
     } = splitBundleOptions(options);
 
@@ -1027,14 +1046,18 @@ class Server {
       entryFile,
     );
 
-    const graphId = getGraphId(resolvedEntryFilePath, transformOptions);
+    const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
+      shallow: graphOptions.shallow,
+      experimentalImportBundleSupport: this._config.transformer
+        .experimentalImportBundleSupport,
+    });
     let revision;
     const revPromise = this._bundler.getRevisionByGraphId(graphId);
     if (revPromise == null) {
       ({revision} = await this._bundler.initializeGraph(
         resolvedEntryFilePath,
         transformOptions,
-        {onProgress},
+        {onProgress, shallow: graphOptions.shallow},
       ));
     } else {
       revision = await revPromise;
@@ -1065,10 +1088,6 @@ class Server {
     return this._config.watchFolders;
   }
 
-  getVisualizerConfig(): $ReadOnly<VisualizerConfigT> {
-    return this._config.visualizer;
-  }
-
   static DEFAULT_GRAPH_OPTIONS = {
     customTransformOptions: Object.create(null),
     dev: true,
@@ -1083,6 +1102,7 @@ class Server {
     modulesOnly: false,
     onProgress: null,
     runModule: true,
+    shallow: false,
     sourceMapUrl: null,
     sourceUrl: null,
   };

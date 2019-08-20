@@ -120,7 +120,6 @@ async function convertOldToNew({
     server: {
       useGlobalHotkey: getUseGlobalHotkey(),
       port,
-      enableVisualizer: false,
       enhanceMiddleware,
       runInspectorProxy: true,
       verifyConnections: false,
@@ -156,7 +155,6 @@ async function convertOldToNew({
     transformerPath: defaultConfig.transformerPath,
     resetCache,
     maxWorkers,
-    visualizer: {presets: []},
   };
 }
 

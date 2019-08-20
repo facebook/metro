@@ -34,6 +34,9 @@ function splitBundleOptions(options: BundleOptions): SplitBundleOptions {
       sourceMapUrl: options.sourceMapUrl,
       sourceUrl: options.sourceUrl,
     },
+    graphOptions: {
+      shallow: options.shallow,
+    },
     onProgress: options.onProgress,
   };
 }

@@ -282,15 +282,18 @@ function parent2() {
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
       "
       <global> from 1:0
+      C from 2:6
       C#m from 3:8
-      <global> from 5:9
+      C from 5:9
+      <global> from 6:7
       "
     `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
       Object {
-        "mappings": "AAA;QCE;SDE",
+        "mappings": "AAA;MCC;QCC;SDE;ODC",
         "names": Array [
           "<global>",
+          "C",
           "C#m",
         ],
       }
@@ -309,15 +312,18 @@ function parent2() {
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
       "
       <global> from 1:0
+      C from 2:6
       C#constructor from 3:8
-      <global> from 5:9
+      C from 5:9
+      <global> from 6:7
       "
     `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
       Object {
-        "mappings": "AAA;QCE;SDE",
+        "mappings": "AAA;MCC;QCC;SDE;ODC",
         "names": Array [
           "<global>",
+          "C",
           "C#constructor",
         ],
       }
@@ -336,15 +342,18 @@ function parent2() {
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
       "
       <global> from 1:0
+      C from 2:6
       C#set__m from 3:8
-      <global> from 5:9
+      C from 5:9
+      <global> from 6:7
       "
     `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
       Object {
-        "mappings": "AAA;QCE;SDE",
+        "mappings": "AAA;MCC;QCC;SDE;ODC",
         "names": Array [
           "<global>",
+          "C",
           "C#set__m",
         ],
       }
@@ -363,15 +372,18 @@ function parent2() {
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
       "
       <global> from 1:0
+      C from 2:6
       C#get__m from 3:8
-      <global> from 5:9
+      C from 5:9
+      <global> from 6:7
       "
     `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
       Object {
-        "mappings": "AAA;QCE;SDE",
+        "mappings": "AAA;MCC;QCC;SDE;ODC",
         "names": Array [
           "<global>",
+          "C",
           "C#get__m",
         ],
       }
@@ -390,15 +402,18 @@ function parent2() {
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
       "
       <global> from 1:0
+      C from 2:6
       C#m from 3:12
-      <global> from 5:9
+      C from 5:9
+      <global> from 6:7
       "
     `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
       Object {
-        "mappings": "AAA;YCE;SDE",
+        "mappings": "AAA;MCC;YCC;SDE;ODC",
         "names": Array [
           "<global>",
+          "C",
           "C#m",
         ],
       }
@@ -417,15 +432,18 @@ function parent2() {
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
       "
       <global> from 1:0
+      C from 2:6
       C.m from 3:8
-      <global> from 5:9
+      C from 5:9
+      <global> from 6:7
       "
     `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
       Object {
-        "mappings": "AAA;QCE;SDE",
+        "mappings": "AAA;MCC;QCC;SDE;ODC",
         "names": Array [
           "<global>",
+          "C",
           "C.m",
         ],
       }
@@ -444,15 +462,18 @@ function parent2() {
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
       "
       <global> from 1:0
+      C from 2:6
       C.set__m from 3:8
-      <global> from 5:9
+      C from 5:9
+      <global> from 6:7
       "
     `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
       Object {
-        "mappings": "AAA;QCE;SDE",
+        "mappings": "AAA;MCC;QCC;SDE;ODC",
         "names": Array [
           "<global>",
+          "C",
           "C.set__m",
         ],
       }
@@ -471,15 +492,18 @@ function parent2() {
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
       "
       <global> from 1:0
+      C from 2:6
       C.get__m from 3:8
-      <global> from 5:9
+      C from 5:9
+      <global> from 6:7
       "
     `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
       Object {
-        "mappings": "AAA;QCE;SDE",
+        "mappings": "AAA;MCC;QCC;SDE;ODC",
         "names": Array [
           "<global>",
+          "C",
           "C.get__m",
         ],
       }
@@ -498,15 +522,18 @@ function parent2() {
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
       "
       <global> from 1:0
+      C from 2:6
       C.m from 3:19
-      <global> from 5:9
+      C from 5:9
+      <global> from 6:7
       "
     `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
       Object {
-        "mappings": "AAA;mBCE;SDE",
+        "mappings": "AAA;MCC;mBCC;SDE;ODC",
         "names": Array [
           "<global>",
+          "C",
           "C.m",
         ],
       }
@@ -525,15 +552,18 @@ function parent2() {
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
       "
       <global> from 1:0
+      <anonymous> from 2:6
       m from 3:8
-      <global> from 5:9
+      <anonymous> from 5:9
+      <global> from 6:7
       "
     `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
       Object {
-        "mappings": "AAA;QCE;SDE",
+        "mappings": "AAA;MCC;QCC;SDE;ODC",
         "names": Array [
           "<global>",
+          "<anonymous>",
           "m",
         ],
       }
@@ -552,15 +582,18 @@ function parent2() {
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
       "
       <global> from 1:0
+      C from 2:16
       C#m from 3:8
-      <global> from 5:9
+      C from 5:9
+      <global> from 6:7
       "
     `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
       Object {
-        "mappings": "AAA;QCE;SDE",
+        "mappings": "AAA;gBCC;QCC;SDE;ODC",
         "names": Array [
           "<global>",
+          "C",
           "C#m",
         ],
       }
@@ -662,15 +695,18 @@ function parent2() {
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
       "
       <global> from 1:0
+      C from 2:6
       C#@@iterator from 3:8
-      <global> from 5:9
+      C from 5:9
+      <global> from 6:7
       "
     `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
       Object {
-        "mappings": "AAA;QCE;SDE",
+        "mappings": "AAA;MCC;QCC;SDE;ODC",
         "names": Array [
           "<global>",
+          "C",
           "C#@@iterator",
         ],
       }
@@ -690,15 +726,18 @@ function parent2() {
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
       "
       <global> from 1:0
+      C from 2:6
       C#foo.bar from 3:8
-      <global> from 5:9
+      C from 5:9
+      <global> from 6:7
       "
     `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
       Object {
-        "mappings": "AAA;QCE;SDE",
+        "mappings": "AAA;MCC;QCC;SDE;ODC",
         "names": Array [
           "<global>",
+          "C",
           "C#foo.bar",
         ],
       }
@@ -763,15 +802,18 @@ function parent2() {
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
       "
       <global> from 1:0
+      a.b from 3:11
       a.b.c from 4:21
-      <global> from 4:35
+      a.b from 4:35
+      <global> from 5:9
       "
     `);
     expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
       Object {
-        "mappings": "AAA;qBCG,cD",
+        "mappings": "AAA;WCE;qBCC,cD;SDC",
         "names": Array [
           "<global>",
+          "a.b",
           "a.b.c",
         ],
       }
@@ -1069,16 +1111,16 @@ function parent2() {
 
     expect(generateCompactRawMappings(ast, context)).toMatchInlineSnapshot(`
       "
-      <global> from 1:0
+      FooBar from 1:0
       baz from 1:15
-      <global> from 1:23
+      FooBar from 1:23
       "
     `);
     expect(generateFunctionMap(ast, context)).toMatchInlineSnapshot(`
       Object {
         "mappings": "AAA,eC,QD",
         "names": Array [
-          "<global>",
+          "FooBar",
           "baz",
         ],
       }
@@ -1091,16 +1133,16 @@ function parent2() {
 
     expect(generateCompactRawMappings(ast, context)).toMatchInlineSnapshot(`
       "
-      <global> from 1:0
+      FooBarItem from 1:0
       FooBarItem#baz from 1:19
-      <global> from 1:27
+      FooBarItem from 1:27
       "
     `);
     expect(generateFunctionMap(ast, context)).toMatchInlineSnapshot(`
       Object {
         "mappings": "AAA,mBC,QD",
         "names": Array [
-          "<global>",
+          "FooBarItem",
           "FooBarItem#baz",
         ],
       }
@@ -1193,5 +1235,23 @@ function parent2() {
         }),
       ).toBe(prev.name);
     }
+  });
+
+  it('records class names like functions', () => {
+    const ast = getAst('class Foo {}');
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      Foo from 1:0
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA",
+        "names": Array [
+          "Foo",
+        ],
+      }
+    `);
   });
 });

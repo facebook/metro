@@ -16,7 +16,6 @@ const reporting = require('./reporting');
 const throttle = require('lodash.throttle');
 
 const {AmbiguousModuleResolutionError} = require('metro-core');
-const {formatBanner} = require('metro-core');
 
 import type {
   BundleDetails,
@@ -25,20 +24,12 @@ import type {
 } from './reporting';
 import type {Terminal} from 'metro-core';
 
-const DEP_GRAPH_MESSAGE = 'Loading dependency graph';
-const GLOBAL_CACHE_DISABLED_MESSAGE_FORMAT =
-  'The global cache is now disabled because %s';
-
 type BundleProgress = {
   bundleDetails: BundleDetails,
   transformedFileCount: number,
   totalFileCount: number,
   ratio: number,
 };
-
-const DARK_BLOCK_CHAR = '\u2593';
-const LIGHT_BLOCK_CHAR = '\u2591';
-const MAX_PROGRESS_BAR_CHAR_WIDTH = 16;
 
 export type TerminalReportableEvent =
   | ReportableEvent
@@ -56,6 +47,13 @@ type SnippetError = ErrnoError & {
   snippet?: string,
 };
 
+const GLOBAL_CACHE_DISABLED_MESSAGE_FORMAT =
+  'The global cache is now disabled because %s';
+
+const DARK_BLOCK_CHAR = '\u2593';
+const LIGHT_BLOCK_CHAR = '\u2591';
+const MAX_PROGRESS_BAR_CHAR_WIDTH = 16;
+
 /**
  * We try to print useful information to the terminal for interactive builds.
  * This implements the `Reporter` interface from the './reporting' module.
@@ -68,7 +66,6 @@ class TerminalReporter {
    */
   _activeBundles: Map<string, BundleProgress>;
 
-  _dependencyGraphHasLoaded: boolean;
   _scheduleUpdateBundleProgress: (data: {
     buildID: string,
     transformedFileCount: number,
@@ -78,7 +75,6 @@ class TerminalReporter {
   +terminal: Terminal;
 
   constructor(terminal: Terminal) {
-    this._dependencyGraphHasLoaded = false;
     this._activeBundles = new Map();
     this._scheduleUpdateBundleProgress = throttle(data => {
       this.update({...data, type: 'bundle_transform_progressed_throttled'});
@@ -90,11 +86,11 @@ class TerminalReporter {
    * Construct a message that represents the progress of a
    * single bundle build, for example:
    *
-   *     BUNDLE [ios, dev, minified] foo.js  ▓▓▓▓▓░░░░░░░░░░░ 36.6% (4790/7922)
+   *     BUNDLE path/to/bundle.js ▓▓▓▓▓░░░░░░░░░░░ 36.6% (4790/7922)
    */
   _getBundleStatusMessage(
     {
-      bundleDetails: {entryFile, platform, dev, minify, bundleType},
+      bundleDetails: {entryFile, bundleType},
       transformedFileCount,
       totalFileCount,
       ratio,
@@ -102,30 +98,29 @@ class TerminalReporter {
     phase: BuildPhase,
   ): string {
     const localPath = path.relative('.', entryFile);
-    const fileName = path.basename(localPath);
-    const dirName = path.dirname(localPath);
-
-    platform = platform ? platform + ', ' : '';
-    const devOrProd = dev ? 'dev' : 'prod';
-    const min = minify ? ', minified' : '';
-    const progress = (100 * ratio).toFixed(1);
-    const currentPhase =
-      phase === 'done' ? ', done.' : phase === 'failed' ? ', failed.' : '';
-
     const filledBar = Math.floor(ratio * MAX_PROGRESS_BAR_CHAR_WIDTH);
+    const bundleTypeColor =
+      phase === 'done'
+        ? chalk.green
+        : phase === 'failed'
+        ? chalk.red
+        : chalk.yellow;
+    const progress =
+      phase === 'in_progress'
+        ? chalk.green.bgGreen(DARK_BLOCK_CHAR.repeat(filledBar)) +
+          chalk.bgWhite.white(
+            LIGHT_BLOCK_CHAR.repeat(MAX_PROGRESS_BAR_CHAR_WIDTH - filledBar),
+          ) +
+          chalk.bold(` ${(100 * ratio).toFixed(1)}% `) +
+          chalk.dim(`(${transformedFileCount}/${totalFileCount})`)
+        : '';
 
     return (
-      chalk.inverse.green.bold(` ${bundleType.toUpperCase()} `) +
-      chalk.dim(` [${platform}${devOrProd}${min}] ${dirName}/`) +
-      chalk.bold(fileName) +
+      bundleTypeColor.inverse.bold(` ${bundleType.toUpperCase()} `) +
+      chalk.reset.dim(` ${path.dirname(localPath)}/`) +
+      chalk.bold(path.basename(localPath)) +
       ' ' +
-      chalk.green.bgGreen(DARK_BLOCK_CHAR.repeat(filledBar)) +
-      chalk.bgWhite.white(
-        LIGHT_BLOCK_CHAR.repeat(MAX_PROGRESS_BAR_CHAR_WIDTH - filledBar),
-      ) +
-      chalk.bold(` ${progress}% `) +
-      chalk.dim(`(${transformedFileCount}/${totalFileCount})`) +
-      currentPhase +
+      progress +
       '\n'
     );
   }
@@ -174,29 +169,48 @@ class TerminalReporter {
     }
   }
 
-  _logInitializing(port: ?number, projectRoots: $ReadOnlyArray<string>): void {
-    if (port) {
-      this.terminal.log(
-        formatBanner(
-          'Running Metro Bundler on port ' +
-            port +
-            '.\n\n' +
-            'Keep Metro running while developing on any JS projects. Feel ' +
-            'free to close this tab and run your own Metro instance ' +
-            'if you prefer.\n\n' +
-            'https://github.com/facebook/react-native',
-          {
-            paddingTop: 1,
-            paddingBottom: 1,
-          },
-        ) + '\n',
-      );
-    }
+  _logInitializing(port: number, projectRoots: $ReadOnlyArray<string>): void {
+    const logo = [
+      '                                                          ',
+      '               ######                ######               ',
+      '             ###     ####        ####     ###             ',
+      '            ##          ###    ###          ##            ',
+      '            ##             ####             ##            ',
+      '            ##             ####             ##            ',
+      '            ##           ##    ##           ##            ',
+      '            ##         ###      ###         ##            ',
+      '             ##  ########################  ##             ',
+      '          ######    ###            ###    ######          ',
+      '      ###     ##    ##              ##    ##     ###      ',
+      '   ###         ## ###      ####      ### ##         ###   ',
+      '  ##           ####      ########      ####           ##  ',
+      ' ##             ###     ##########     ###             ## ',
+      '  ##           ####      ########      ####           ##  ',
+      '   ###         ## ###      ####      ### ##         ###   ',
+      '      ###     ##    ##              ##    ##     ###      ',
+      '          ######    ###            ###    ######          ',
+      '             ##  ########################  ##             ',
+      '            ##         ###      ###         ##            ',
+      '            ##           ##    ##           ##            ',
+      '            ##             ####             ##            ',
+      '            ##             ####             ##            ',
+      '            ##          ###    ###          ##            ',
+      '             ###     ####        ####     ###             ',
+      '               ######                ######               ',
+      '                                                          ',
+    ];
 
     this.terminal.log(
-      'Looking for JS files in\n  ',
-      chalk.dim(projectRoots.join('\n   ')),
-      '\n',
+      chalk.blue(logo.join('\n')) +
+        '\n' +
+        chalk.blue.bold('                  Welcome to React Native!\n') +
+        chalk.gray('                 Learn once, write anywhere\n\n') +
+        'Running Metro on port ' +
+        port +
+        '\n' +
+        'Looking for JS files in\n' +
+        projectRoots.map(root => `  ${root}`).join('\n') +
+        '\n',
     );
   }
 
@@ -204,10 +218,7 @@ class TerminalReporter {
     if (error.code === 'EADDRINUSE') {
       this.terminal.log(
         chalk.bgRed.bold(' ERROR '),
-        chalk.red(
-          "Metro Bundler can't listen on port",
-          chalk.bold(String(port)),
-        ),
+        chalk.red("Metro can't listen on port", chalk.bold(String(port))),
       );
       this.terminal.log(
         'Most likely another process is already using this port',
@@ -216,7 +227,7 @@ class TerminalReporter {
       this.terminal.log('\n  ', chalk.bold('lsof -i :' + port), '\n');
       this.terminal.log('Then, you can either shut down the other process:');
       this.terminal.log('\n  ', chalk.bold('kill -9 <PID>'), '\n');
-      this.terminal.log('or run Metro Bundler on different port.');
+      this.terminal.log('or run Metro on different port.');
     } else {
       this.terminal.log(chalk.bgRed.bold(' ERROR '), chalk.red(error.message));
       const errorAttributes = JSON.stringify(error);
@@ -237,7 +248,7 @@ class TerminalReporter {
         this._logInitializing(event.port, event.projectRoots);
         break;
       case 'initialize_done':
-        this.terminal.log('\nMetro Bundler ready.\n');
+        this.terminal.log('\nMetro is ready.\n');
         break;
       case 'initialize_failed':
         this._logInitializingFailed(event.port, event.error);
@@ -250,9 +261,6 @@ class TerminalReporter {
         break;
       case 'bundling_error':
         this._logBundlingError(event.error);
-        break;
-      case 'dep_graph_loaded':
-        this.terminal.log(`${DEP_GRAPH_MESSAGE}, done.`);
         break;
       case 'global_cache_disabled':
         this._logCacheDisabled(event.reason);
@@ -268,6 +276,9 @@ class TerminalReporter {
         break;
       case 'hmr_client_error':
         this._logHmrClientError(event.error);
+        break;
+      case 'dep_graph_loaded':
+        this.terminal.log(chalk.dim('Server ready.'));
         break;
     }
   }
@@ -289,7 +300,7 @@ class TerminalReporter {
           .sort()
           .map(dupFilePath => `  * \`${dupFilePath}\`\n`)
           .join('');
-      this._logBundlingErrorMessage(message);
+      reporting.logError(this.terminal, message);
       return;
     }
 
@@ -310,11 +321,7 @@ class TerminalReporter {
     if (error.snippet != null) {
       message += '\n' + error.snippet;
     }
-    this._logBundlingErrorMessage(message);
-  }
-
-  _logBundlingErrorMessage(message: string): void {
-    reporting.logError(this.terminal, 'bundling failed: %s', message);
+    reporting.logError(this.terminal, message);
   }
 
   _logWorkerChunk(origin: 'stdout' | 'stderr', chunk: string): void {
@@ -388,20 +395,7 @@ class TerminalReporter {
       case 'bundle_transform_progressed_throttled':
         this._updateBundleProgress(event);
         break;
-      case 'dep_graph_loading':
-        this._dependencyGraphHasLoaded = false;
-        break;
-      case 'dep_graph_loaded':
-        this._dependencyGraphHasLoaded = true;
-        break;
     }
-  }
-
-  _getDepGraphStatusMessage(): null | string {
-    if (!this._dependencyGraphHasLoaded) {
-      return `${DEP_GRAPH_MESSAGE}...`;
-    }
-    return null;
   }
 
   /**
@@ -410,12 +404,9 @@ class TerminalReporter {
    * different callsites overriding each other status messages.
    */
   _getStatusMessage(): string {
-    return [this._getDepGraphStatusMessage()]
-      .concat(
-        Array.from(this._activeBundles.entries()).map(
-          ([_, progress]: [string, BundleProgress]) =>
-            this._getBundleStatusMessage(progress, 'in_progress'),
-        ),
+    return Array.from(this._activeBundles.entries())
+      .map(([_, progress]: [string, BundleProgress]) =>
+        this._getBundleStatusMessage(progress, 'in_progress'),
       )
       .filter((str: null | string) => str != null)
       .join('\n');

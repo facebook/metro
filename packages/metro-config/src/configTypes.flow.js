@@ -141,19 +141,10 @@ type TransformerConfigT = {|
   experimentalImportBundleSupport: false,
 |};
 
-export type VisualizerConfigT = {|
-  presets: $ReadOnlyArray<{|
-    entryPath: string,
-    name: string,
-    description: string,
-    featured?: boolean,
-    platforms?: $ReadOnlyArray<string>,
-  |}>,
-|};
-
 type MetalConfigT = {|
   cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
   cacheVersion: string,
+  hasteMapCacheDirectory?: string,
   maxWorkers: number,
   projectRoot: string,
   stickyWorkers: boolean,
@@ -164,7 +155,6 @@ type MetalConfigT = {|
 |};
 
 type ServerConfigT = {|
-  enableVisualizer: boolean,
   enhanceMiddleware: (Middleware, Server) => Middleware,
   useGlobalHotkey: boolean,
   port: number,
@@ -174,9 +164,9 @@ type ServerConfigT = {|
 
 type SymbolicatorConfigT = {|
   customizeFrame: ({
-    +file: string,
-    +lineNumber: number,
-    +column: number,
+    +file: ?string,
+    +lineNumber: ?number,
+    +column: ?number,
     +methodName: ?string,
   }) => ?{|+collapse?: boolean|} | Promise<?{|+collapse?: boolean|}>,
   workerPath: string,
@@ -190,7 +180,6 @@ export type InputConfigT = $Shape<{|
     serializer: $Shape<SerializerConfigT>,
     symbolicator: $Shape<SymbolicatorConfigT>,
     transformer: $Shape<TransformerConfigT>,
-    visualizer: $Shape<VisualizerConfigT>,
   |}>,
 |}>;
 
@@ -202,7 +191,6 @@ export type IntermediateConfigT = {|
     serializer: SerializerConfigT,
     symbolicator: SymbolicatorConfigT,
     transformer: TransformerConfigT,
-    visualizer: VisualizerConfigT,
   |},
 |};
 
@@ -214,6 +202,5 @@ export type ConfigT = $ReadOnly<{|
     serializer: $ReadOnly<SerializerConfigT>,
     symbolicator: $ReadOnly<SymbolicatorConfigT>,
     transformer: $ReadOnly<TransformerConfigT>,
-    visualizer: $ReadOnly<VisualizerConfigT>,
   |}>,
 |}>;

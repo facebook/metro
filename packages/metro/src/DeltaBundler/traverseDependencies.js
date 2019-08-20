@@ -44,6 +44,7 @@ type InternalOptions<T> = $ReadOnly<{|
   onDependencyAdded: () => mixed,
   resolve: $PropertyType<Options<T>, 'resolve'>,
   transform: $PropertyType<Options<T>, 'transform'>,
+  shallow: boolean,
 |}>;
 
 function getInternalOptions<T>({
@@ -51,6 +52,7 @@ function getInternalOptions<T>({
   resolve,
   onProgress,
   experimentalImportBundleSupport,
+  shallow,
 }: Options<T>): InternalOptions<T> {
   let numProcessed = 0;
   let total = 0;
@@ -61,6 +63,7 @@ function getInternalOptions<T>({
     resolve,
     onDependencyAdd: () => onProgress && onProgress(numProcessed, ++total),
     onDependencyAdded: () => onProgress && onProgress(++numProcessed, total),
+    shallow,
   };
 }
 
@@ -162,7 +165,9 @@ async function initialTraverseDependencies<T>(
     ),
   );
 
-  reorderGraph(graph);
+  reorderGraph(graph, {
+    shallow: options.shallow,
+  });
 
   return {
     added: graph.dependencies,
@@ -232,15 +237,17 @@ async function processModule<T>(
   const promises = [];
 
   for (const [relativePath, dependency] of currentDependencies) {
-    if (
-      options.experimentalImportBundleSupport &&
-      dependency.data.data.isAsync
-    ) {
-      graph.importBundleNames.add(dependency.absolutePath);
-    } else if (!previousDependencies.has(relativePath)) {
-      promises.push(
-        addDependency(module, dependency.absolutePath, graph, delta, options),
-      );
+    if (!options.shallow) {
+      if (
+        options.experimentalImportBundleSupport &&
+        dependency.data.data.isAsync
+      ) {
+        graph.importBundleNames.add(dependency.absolutePath);
+      } else if (!previousDependencies.has(relativePath)) {
+        promises.push(
+          addDependency(module, dependency.absolutePath, graph, delta, options),
+        );
+      }
     }
   }
 
@@ -349,7 +356,7 @@ function resolveDependencies<T>(
  * Re-traverse the dependency graph in DFS order to reorder the modules and
  * guarantee the same order between runs. This method mutates the passed graph.
  */
-function reorderGraph<T>(graph: Graph<T>): void {
+function reorderGraph<T>(graph: Graph<T>, options: {shallow: boolean}): void {
   const orderedDependencies = new Map();
 
   graph.entryPoints.forEach((entryPoint: string) => {
@@ -359,7 +366,7 @@ function reorderGraph<T>(graph: Graph<T>): void {
       throw new ReferenceError('Module not registered in graph: ' + entryPoint);
     }
 
-    reorderDependencies(graph, mainModule, orderedDependencies);
+    reorderDependencies(graph, mainModule, orderedDependencies, options);
   });
 
   graph.dependencies = orderedDependencies;
@@ -369,6 +376,9 @@ function reorderDependencies<T>(
   graph: Graph<T>,
   module: Module<T>,
   orderedDependencies: Map<string, Module<T>>,
+  options: {
+    shallow: boolean,
+  },
 ): void {
   if (module.path) {
     if (orderedDependencies.has(module.path)) {
@@ -383,14 +393,14 @@ function reorderDependencies<T>(
     const childModule = graph.dependencies.get(path);
 
     if (!childModule) {
-      if (dependency.data.data.isAsync) {
+      if (dependency.data.data.isAsync || options.shallow) {
         return;
       } else {
         throw new ReferenceError('Module not registered in graph: ' + path);
       }
     }
 
-    reorderDependencies(graph, childModule, orderedDependencies);
+    reorderDependencies(graph, childModule, orderedDependencies, options);
   });
 }
 

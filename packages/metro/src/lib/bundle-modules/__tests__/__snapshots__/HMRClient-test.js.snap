@@ -11,9 +11,7 @@ exports[`can add and delete a module in a batch 1`] = `
 
 
 /* 1.js */
-  function 1_A() {}
-//# sourceMappingURL=1_A.js.map
-//# sourceURL=1.js"
+  function 1_A() {}"
 `;
 
 exports[`can apply updates individually and in a batch: 1: run updates as they arrive 1`] = `
@@ -21,60 +19,40 @@ exports[`can apply updates individually and in a batch: 1: run updates as they a
 /*** begin A (add 1, 2, and 3) ***/
 /* 1.js */
   function 1_A() {}
-//# sourceMappingURL=1_A.js.map
-//# sourceURL=1.js
 /* 2.js */
   function 2_A() {}
-//# sourceMappingURL=2_A.js.map
-//# sourceURL=2.js
 /* 3.js */
   function 3_A() {}
-//# sourceMappingURL=3_A.js.map
-//# sourceURL=3.js
 /*** end A (add 1, 2, and 3) ***/
 
 
 /*** begin B (add 4, edit 3 and 1) ***/
 /* 4.js */
   function 4_B() {}
-//# sourceMappingURL=4_B.js.map
-//# sourceURL=4.js
 /* 3.js */
   function 3_B() {}
-//# sourceMappingURL=3_B.js.map
-//# sourceURL=3.js
 /* 1.js */
   function 1_B() {}
-//# sourceMappingURL=1_B.js.map
-//# sourceURL=1.js
 /*** end B (add 4, edit 3 and 1) ***/
 
 
 /*** begin C (edit 2, delete 3) ***/
 /* 2.js */
   function 2_C() {}
-//# sourceMappingURL=2_C.js.map
-//# sourceURL=2.js
 /*** end C (edit 2, delete 3) ***/
 
 
 /*** begin D (delete 1, add 3) ***/
 /* 3.js */
   function 3_D() {}
-//# sourceMappingURL=3_D.js.map
-//# sourceURL=3.js
 /*** end D (delete 1, add 3) ***/
 
 
 /*** begin E (edit 2 and 3) ***/
 /* 2.js */
   function 2_E() {}
-//# sourceMappingURL=2_E.js.map
-//# sourceURL=2.js
 /* 3.js */
   function 3_E() {}
-//# sourceMappingURL=3_E.js.map
-//# sourceURL=3.js
 /*** end E (edit 2 and 3) ***/
 
 "
@@ -108,16 +86,10 @@ exports[`can apply updates individually and in a batch: 3: apply updates in a ba
 "
 /* 2.js */
   function 2_E() {}
-//# sourceMappingURL=2_E.js.map
-//# sourceURL=2.js
 /* 4.js */
   function 4_B() {}
-//# sourceMappingURL=4_B.js.map
-//# sourceURL=4.js
 /* 3.js */
-  function 3_E() {}
-//# sourceMappingURL=3_E.js.map
-//# sourceURL=3.js"
+  function 3_E() {}"
 `;
 
 exports[`can delete and re-add a module in a batch 1`] = `
@@ -132,12 +104,8 @@ exports[`can delete and re-add a module in a batch 1`] = `
 
 /* 1.js */
   function 1_B() {}
-//# sourceMappingURL=1_B.js.map
-//# sourceURL=1.js
 /* 2.js */
-  function 2_B() {}
-//# sourceMappingURL=2_B.js.map
-//# sourceURL=2.js"
+  function 2_B() {}"
 `;
 
 exports[`can enable and disable the client to batch updates 1`] = `
@@ -145,16 +113,10 @@ exports[`can enable and disable the client to batch updates 1`] = `
 /*** begin A (add 1, 2, and 3) ***/
 /* 1.js */
   function 1_A() {}
-//# sourceMappingURL=1_A.js.map
-//# sourceURL=1.js
 /* 2.js */
   function 2_A() {}
-//# sourceMappingURL=2_A.js.map
-//# sourceURL=2.js
 /* 3.js */
   function 3_A() {}
-//# sourceMappingURL=3_A.js.map
-//# sourceURL=3.js
 /*** end A (add 1, 2, and 3) ***/
 
 
@@ -168,16 +130,10 @@ exports[`can enable and disable the client to batch updates 1`] = `
 
 /* 4.js */
   function 4_B() {}
-//# sourceMappingURL=4_B.js.map
-//# sourceURL=4.js
 /* 1.js */
   function 1_B() {}
-//# sourceMappingURL=1_B.js.map
-//# sourceURL=1.js
 /* 2.js */
   function 2_C() {}
-//# sourceMappingURL=2_C.js.map
-//# sourceURL=2.js
 /*** begin D (delete 1, add 3) ***/
 /*** end D (delete 1, add 3) ***/
 
@@ -188,10 +144,6 @@ exports[`can enable and disable the client to batch updates 1`] = `
 
 /* 3.js */
   function 3_E() {}
-//# sourceMappingURL=3_E.js.map
-//# sourceURL=3.js
 /* 2.js */
-  function 2_E() {}
-//# sourceMappingURL=2_E.js.map
-//# sourceURL=2.js"
+  function 2_E() {}"
 `;

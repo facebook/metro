@@ -59,6 +59,7 @@ async function getPrependedScripts(
       onProgress: null,
       experimentalImportBundleSupport:
         config.transformer.experimentalImportBundleSupport,
+      shallow: false,
     },
   );
 

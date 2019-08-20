@@ -31,7 +31,7 @@ export type BundleDetails = {
  */
 export type ReportableEvent =
   | {
-      port: ?number,
+      port: number,
       projectRoots: $ReadOnlyArray<string>,
       type: 'initialize_started',
     }
@@ -120,7 +120,7 @@ export type Reporter = {
 
 /**
  * A standard way to log a warning to the terminal. This should not be called
- * from some arbitrary Metro Bundler logic, only from the reporters. Instead of
+ * from some arbitrary Metro logic, only from the reporters. Instead of
  * calling this, add a new type of ReportableEvent instead, and implement a
  * proper handler in the reporter(s).
  */
