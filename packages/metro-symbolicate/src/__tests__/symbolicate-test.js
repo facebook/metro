@@ -284,3 +284,10 @@ test('symbolicating a stack trace ignoring a function map', async () =>
       read('with-function-map.stack'),
     ),
   ).resolves.toMatchSnapshot());
+
+describe('directory context', () => {
+  test('symbolicating a stack trace', async () =>
+    await expect(
+      execute([resolve('directory')], read('directory/test.stack')),
+    ).resolves.toMatchSnapshot());
+});

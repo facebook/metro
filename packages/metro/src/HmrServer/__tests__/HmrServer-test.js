@@ -104,6 +104,9 @@ describe('HmrServer', () => {
       reporter: {
         update: jest.fn(),
       },
+      transformer: {
+        experimentalImportBundleSupport: false,
+      },
       resolver: {
         platforms: [],
       },
@@ -139,14 +142,21 @@ describe('HmrServer', () => {
     await connect('/hot?bundleEntry=EntryPoint.js&platform=ios');
 
     expect(getRevisionByGraphIdMock).toBeCalledWith(
-      getGraphId('/root/EntryPoint.js', {
-        hot: true,
-        dev: true,
-        minify: false,
-        platform: 'ios',
-        customTransformOptions: {},
-        type: 'module',
-      }),
+      getGraphId(
+        '/root/EntryPoint.js',
+        {
+          hot: true,
+          dev: true,
+          minify: false,
+          platform: 'ios',
+          customTransformOptions: {},
+          type: 'module',
+        },
+        {
+          shallow: false,
+          experimentalImportBundleSupport: false,
+        },
+      ),
     );
   });
 
@@ -178,14 +188,21 @@ describe('HmrServer', () => {
       sendMessage,
     );
 
-    const expectedMessage = `The graph \`${getGraphId('/root/EntryPoint.js', {
-      hot: true,
-      dev: true,
-      minify: false,
-      platform: 'ios',
-      customTransformOptions: {},
-      type: 'module',
-    })}\` was not found.`;
+    const expectedMessage = `The graph \`${getGraphId(
+      '/root/EntryPoint.js',
+      {
+        hot: true,
+        dev: true,
+        minify: false,
+        platform: 'ios',
+        customTransformOptions: {},
+        type: 'module',
+      },
+      {
+        shallow: false,
+        experimentalImportBundleSupport: false,
+      },
+    )}\` was not found.`;
 
     const sentErrorMessage = JSON.parse(sendMessage.mock.calls[0][0]);
     expect(sentErrorMessage).toMatchObject({type: 'error'});
@@ -247,18 +264,20 @@ describe('HmrServer', () => {
           revisionId: 'rev0',
           added: [],
           modified: [
-            [
-              '/root/hi-id',
-              '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
-            ],
+            {
+              module: [
+                '/root/hi-id',
+                '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});\n' +
+                  '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
+                  '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
+              ],
+              sourceMappingURL:
+                'http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+              sourceURL:
+                'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+            },
           ],
           deleted: ['/root/bye-id'],
-          addedSourceMappingURLs: [],
-          addedSourceURLs: [],
-          modifiedSourceURLs: [
-            'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false',
-          ],
-          modifiedSourceMappingURLs: [expect.anything()],
         },
       },
       {
@@ -336,18 +355,21 @@ describe('HmrServer', () => {
           revisionId: 'rev0',
           added: [],
           modified: [
-            [
-              '/root/hi-id',
-              '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
-            ],
+            {
+              module: [
+                '/root/hi-id',
+                '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});\n' +
+                  '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
+                  '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
+              ],
+
+              sourceURL:
+                'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+              sourceMappingURL:
+                'http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+            },
           ],
           deleted: ['/root/bye-id'],
-          addedSourceMappingURLs: [],
-          addedSourceURLs: [],
-          modifiedSourceURLs: [
-            'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false',
-          ],
-          modifiedSourceMappingURLs: [expect.anything()],
         },
       },
       {
@@ -395,41 +417,24 @@ describe('HmrServer', () => {
           revisionId: 'rev1',
           added: [],
           modified: [
-            [
-              '/root/hi-id',
-              '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});',
-            ],
+            {
+              module: [
+                '/root/hi-id',
+                '__d(function() { alert("hi"); },"/root/hi-id",[],"hi",{});\n' +
+                  '//# sourceMappingURL=http://localhost/hi.map?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n' +
+                  '//# sourceURL=http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true\n',
+              ],
+              sourceURL:
+                'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+            },
           ],
           deleted: ['/root/bye-id'],
-          modifiedSourceURLs: [
-            'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false',
-          ],
         },
       },
       {
         type: 'update-done',
       },
     ]);
-
-    const modifiedSourceMappingURL =
-      messages[1].body.modifiedSourceMappingURLs[0];
-
-    expect(
-      JSON.parse(
-        Buffer.from(
-          modifiedSourceMappingURL.slice(
-            modifiedSourceMappingURL.indexOf('base64') + 7,
-          ),
-          'base64',
-        ).toString(),
-      ),
-    ).toEqual({
-      mappings: '',
-      names: [],
-      sources: ['/root/hi'],
-      sourcesContent: [hiModule.getSource()],
-      version: 3,
-    });
   });
 
   it('should return error messages when there is a transform error', async () => {

@@ -28,7 +28,7 @@ const WRAP_NAME = '$$_REQUIRE'; // note: babel will prefix this with _
 // can create a local variable called global to fake it as a global object
 // without having to pollute the window object on web.
 const IIFE_PARAM = template(
-  "typeof global !== 'undefined' ? global : typeof window !== 'undefined' ? window : this",
+  "typeof globalThis !== 'undefined' ? globalThis : typeof global !== 'undefined' ? global : typeof window !== 'undefined' ? window : this",
 );
 
 function wrapModule(

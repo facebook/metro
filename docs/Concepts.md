@@ -3,7 +3,7 @@ id: concepts
 title: Concepts
 ---
 
-Metro is a JavaScript bundler. It takes in options, an entry file, and gives you a JavaScript file including all JavaScript files back.
+Metro is a JavaScript bundler. It takes in an entry file and various options, and gives you back a single JavaScript file that includes all your code and its dependencies.
 
 Metro has three separate stages in its bundling process:
 

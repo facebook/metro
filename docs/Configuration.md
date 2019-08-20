@@ -120,12 +120,6 @@ Type: `(Middleware, Server) => Middleware`
 
 The possibility to add custom middleware to the server response chain.
 
-#### `enableVisualizer`
-
-Type: `boolean`
-
-Enable the `metro-visualizer` middleware (available at `/visualizer`). This requires the `metro-visualizer` package to be installed in your project.
-
 #### `runInspectorProxy`
 
 Type: `boolean` (default: `true`)

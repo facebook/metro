@@ -3,6 +3,8 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
+ *
+ * @format
  */
 
 'use strict';
@@ -40,8 +42,8 @@ class Help extends React.Component {
             channel on [Reactiflux](http://www.reactiflux.com/), a Discord
             community.\n- Many members of the community use Stack Overflow. Read
             through the [existing
-            questions](https://stackoverflow.com/questions/tagged/metrojs) tagged
-            with **metrojs** or [ask your
+            questions](https://stackoverflow.com/questions/tagged/metrojs)
+            tagged with **metrojs** or [ask your
             own](https://stackoverflow.com/questions/ask)!
           </translate>
         ),
@@ -51,8 +53,8 @@ class Help extends React.Component {
         content: (
           <translate>
             Find out what's new with Metro.\n\n- Follow
-            [Metro](https://twitter.com/MetroBundler) on Twitter.\n- Subscribe to the
-            [Metro blog](/metro/blog/).
+            [Metro](https://twitter.com/MetroBundler) on Twitter.\n- Subscribe
+            to the [Metro blog](/metro/blog/).
           </translate>
         ),
         title: <translate>Stay up to date</translate>,
@@ -70,8 +72,8 @@ class Help extends React.Component {
             </header>
             <p>
               <translate>
-                Metro Bundler is worked on full-time by Facebook's JavaScript Foundation team.
-                Team members are often around and available for questions.
+                Metro is worked on by Facebook's React Native team. Team members
+                are often around and available for questions.
               </translate>
             </p>
             <GridBlock contents={supportLinks} layout="threeColumn" />

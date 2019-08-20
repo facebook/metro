@@ -51,7 +51,7 @@ Metro.loadConfig().then(config => {
 });
 ```
 
-In order to be also compatible with Express apps, processRequest will also call its third parameter when the request could not be handled by Metro bundler. This allows you to integrate the server with your existing server, or to extend a new one:
+In order to be also compatible with Express apps, processRequest will also call its third parameter when the request could not be handled by Metro. This allows you to integrate the server with your existing server, or to extend a new one:
 
 ```js
 const httpServer = http.createServer((req, res) => {

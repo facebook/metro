@@ -262,6 +262,7 @@ function guardedLoadModule(
     try {
       returnValue = loadModuleImplementation(moduleId, module);
     } catch (e) {
+      // TODO: (moti) T48204692 Type this use of ErrorUtils.
       global.ErrorUtils.reportFatalError(e);
     }
     inGuard = false;
@@ -639,7 +640,7 @@ if (__DEV__) {
     }
 
     if (Refresh != null) {
-      // Debounce a little in case there's multiple updates queued up.
+      // Debounce a little in case there are multiple updates queued up.
       // This is also useful because __accept may be called multiple times.
       if (reactRefreshTimeout == null) {
         reactRefreshTimeout = setTimeout(() => {

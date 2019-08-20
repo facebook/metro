@@ -59,8 +59,6 @@ function mergeUpdates(base: HmrUpdate, next: HmrUpdate): HmrUpdate {
   const addedIDs = new Set();
   const deletedIDs = new Set();
   const moduleMap = new Map();
-  const sourceMappingURLs = new Map();
-  const sourceURLs = new Map();
 
   // Fill in the temporary maps and sets from both updates in their order.
   applyUpdateLocally(base);
@@ -75,20 +73,18 @@ function mergeUpdates(base: HmrUpdate, next: HmrUpdate): HmrUpdate {
       }
       moduleMap.delete(id);
     });
-    update.added.forEach(([id, source], index) => {
+    update.added.forEach(item => {
+      const id = item.module[0];
       if (deletedIDs.has(id)) {
         deletedIDs.delete(id);
       } else {
         addedIDs.add(id);
       }
-      moduleMap.set(id, source);
-      sourceMappingURLs.set(id, update.addedSourceMappingURLs[index]);
-      sourceURLs.set(id, update.addedSourceURLs[index]);
+      moduleMap.set(id, item);
     });
-    update.modified.forEach(([id, source], index) => {
-      moduleMap.set(id, source);
-      sourceMappingURLs.set(id, update.modifiedSourceMappingURLs[index]);
-      sourceURLs.set(id, update.modifiedSourceURLs[index]);
+    update.modified.forEach(item => {
+      const id = item.module[0];
+      moduleMap.set(id, item);
     });
   }
 
@@ -98,36 +94,21 @@ function mergeUpdates(base: HmrUpdate, next: HmrUpdate): HmrUpdate {
     isInitialUpdate: next.isInitialUpdate,
     revisionId: next.revisionId,
     added: [],
-    addedSourceMappingURLs: [],
-    addedSourceURLs: [],
     modified: [],
-    modifiedSourceMappingURLs: [],
-    modifiedSourceURLs: [],
     deleted: [],
   };
   deletedIDs.forEach(id => {
     result.deleted.push(id);
   });
-  moduleMap.forEach((source, id) => {
+  moduleMap.forEach((item, id) => {
     if (deletedIDs.has(id)) {
       return;
     }
-    const sourceURL = sourceURLs.get(id);
-    const sourceMappingURL = sourceMappingURLs.get(id);
-    if (typeof sourceURL !== 'string') {
-      throw new Error('[HMRClient] Expected to find a sourceURL in the map.');
-    }
-    if (typeof sourceMappingURL !== 'string') {
-      throw new Error('[HMRClient] Expected to find a sourceURL in the map.');
-    }
+
     if (addedIDs.has(id)) {
-      result.added.push([id, source]);
-      result.addedSourceMappingURLs.push(sourceMappingURL);
-      result.addedSourceURLs.push(sourceURL);
+      result.added.push(item);
     } else {
-      result.modified.push([id, source]);
-      result.modifiedSourceMappingURLs.push(sourceMappingURL);
-      result.modifiedSourceURLs.push(sourceURL);
+      result.modified.push(item);
     }
   });
   return result;

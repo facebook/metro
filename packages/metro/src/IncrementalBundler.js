@@ -33,6 +33,7 @@ export type OutputGraph = Graph<>;
 
 type OtherOptions = {|
   +onProgress: $PropertyType<DeltaBundlerOptions<>, 'onProgress'>,
+  +shallow: boolean,
 |};
 
 export type GraphRevision = {|
@@ -93,6 +94,7 @@ class IncrementalBundler {
     transformOptions: TransformInputOptions,
     otherOptions?: OtherOptions = {
       onProgress: null,
+      shallow: false,
     },
   ): Promise<OutputGraph> {
     const absoluteEntryFiles = entryFiles.map((entryFile: string) =>
@@ -131,6 +133,7 @@ class IncrementalBundler {
       onProgress: otherOptions.onProgress,
       experimentalImportBundleSupport: this._config.transformer
         .experimentalImportBundleSupport,
+      shallow: otherOptions.shallow,
     });
 
     this._config.serializer.experimentalSerializerHook(graph, {
@@ -148,6 +151,7 @@ class IncrementalBundler {
     transformOptions: TransformInputOptions,
     otherOptions?: OtherOptions = {
       onProgress: null,
+      shallow: false,
     },
   ): Promise<{|+graph: OutputGraph, +prepend: $ReadOnlyArray<Module<>>|}> {
     const graph = await this.buildGraphForEntries(
@@ -187,9 +191,14 @@ class IncrementalBundler {
     transformOptions: TransformInputOptions,
     otherOptions?: OtherOptions = {
       onProgress: null,
+      shallow: false,
     },
   ): Promise<{delta: DeltaResult<>, revision: GraphRevision}> {
-    const graphId = getGraphId(entryFile, transformOptions);
+    const graphId = getGraphId(entryFile, transformOptions, {
+      shallow: otherOptions.shallow,
+      experimentalImportBundleSupport: this._config.transformer
+        .experimentalImportBundleSupport,
+    });
     const revisionId = createRevisionId();
     const revisionPromise = (async () => {
       const {graph, prepend} = await this.buildGraph(
@@ -233,7 +242,10 @@ class IncrementalBundler {
     revision: GraphRevision,
     reset: boolean,
   ): Promise<{delta: DeltaResult<>, revision: GraphRevision}> {
-    const delta = await this._deltaBundler.getDelta(revision.graph, {reset});
+    const delta = await this._deltaBundler.getDelta(revision.graph, {
+      reset,
+      shallow: false,
+    });
 
     this._config.serializer.experimentalSerializerHook(revision.graph, delta);
 

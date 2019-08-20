@@ -18,9 +18,9 @@ import type {ExplodedSourceMap} from '../DeltaBundler/Serializers/getExplodedSou
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 export type StackFrameInput = {
-  +file: string,
-  +lineNumber: number,
-  +column: number,
+  +file: ?string,
+  +lineNumber: ?number,
+  +column: ?number,
   +methodName: ?string,
 };
 export type StackFrameOutput = $ReadOnly<{
@@ -64,7 +64,7 @@ async function symbolicate(
 
   function findModule(frame: StackFrameInput): ?ExplodedSourceMapModule {
     const map = mapsByUrl.get(frame.file);
-    if (!map) {
+    if (!map || frame.lineNumber == null) {
       return null;
     }
     const moduleIndex = greatestLowerBound(
@@ -82,7 +82,11 @@ async function symbolicate(
     frame: StackFrameInput,
     module: ExplodedSourceMapModule,
   ): ?Position {
-    if (module.map == null) {
+    if (
+      module.map == null ||
+      frame.lineNumber == null ||
+      frame.column == null
+    ) {
       return null;
     }
     const generatedPosInModule = {

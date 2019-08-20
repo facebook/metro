@@ -121,7 +121,9 @@ class HmrServer<TClient: Client> {
         requestUrl,
         new Set(this._config.resolver.platforms),
       );
-      const {entryFile, transformOptions} = splitBundleOptions(options);
+      const {entryFile, transformOptions, graphOptions} = splitBundleOptions(
+        options,
+      );
 
       /**
        * `entryFile` is relative to projectRoot, we need to use resolution function
@@ -135,7 +137,11 @@ class HmrServer<TClient: Client> {
         this._config.projectRoot + '/.',
         entryFile,
       );
-      const graphId = getGraphId(resolvedEntryFilePath, transformOptions);
+      const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
+        shallow: graphOptions.shallow,
+        experimentalImportBundleSupport: this._config.transformer
+          .experimentalImportBundleSupport,
+      });
       revPromise = this._bundler.getRevisionByGraphId(graphId);
 
       if (!revPromise) {
@@ -158,14 +164,14 @@ class HmrServer<TClient: Client> {
     } else {
       // Prepare the clientUrl to be used as sourceUrl in HMR updates.
       clientUrl.protocol = 'http';
-      const {platform, dev, minify, modulesOnly, runModule} =
-        clientUrl.query || {};
+      const {platform, dev, minify, runModule} = clientUrl.query || {};
       clientUrl.query = {
         platform,
         dev: dev || 'true',
         minify: minify || 'false',
-        modulesOnly: modulesOnly || 'true',
+        modulesOnly: 'true',
         runModule: runModule || 'false',
+        shallow: 'true',
       };
       clientUrl.search = '';
 

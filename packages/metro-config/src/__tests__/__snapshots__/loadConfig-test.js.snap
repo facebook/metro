@@ -74,7 +74,6 @@ Object {
     "processModuleFilter": [Function],
   },
   "server": Object {
-    "enableVisualizer": false,
     "enhanceMiddleware": [Function],
     "port": 8080,
     "runInspectorProxy": true,
@@ -123,9 +122,6 @@ Object {
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
-  "visualizer": Object {
-    "presets": Array [],
-  },
   "watchFolders": Array [
     "/",
   ],
@@ -206,7 +202,6 @@ Object {
     "processModuleFilter": [Function],
   },
   "server": Object {
-    "enableVisualizer": false,
     "enhanceMiddleware": [Function],
     "port": 8080,
     "runInspectorProxy": true,
@@ -255,9 +250,6 @@ Object {
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
-  "visualizer": Object {
-    "presets": Array [],
-  },
   "watchFolders": Array [
     "/",
   ],
