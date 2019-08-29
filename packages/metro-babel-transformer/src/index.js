@@ -71,7 +71,9 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
 
     return {ast, functionMap};
   } finally {
-    process.env.BABEL_ENV = OLD_BABEL_ENV;
+    if (OLD_BABEL_ENV) {
+      process.env.BABEL_ENV = OLD_BABEL_ENV;
+    }
   }
 }
 
