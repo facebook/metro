@@ -44,22 +44,6 @@ describe('parseOptionsFromUrl', () => {
     ).toMatchObject({platform: 'test'});
   });
 
-  it('retrieves the revision id from the url', () => {
-    expect(
-      parseOptionsFromUrl(
-        'http://localhost/my/bundle.delta?revisionId=XXX',
-        new Set([]),
-      ),
-    ).toMatchObject({revisionId: 'XXX'});
-
-    expect(
-      parseOptionsFromUrl(
-        'http://localhost/my/bundle.delta?deltaBundleId=XXX',
-        new Set([]),
-      ),
-    ).toMatchObject({revisionId: 'XXX'});
-  });
-
   it('infers the source map url from the pathname', () => {
     expect(
       parseOptionsFromUrl('http://localhost/my/bundle.bundle', new Set([]))

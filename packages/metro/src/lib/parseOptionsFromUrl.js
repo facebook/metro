@@ -16,9 +16,6 @@ const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath')
 const path = require('path');
 const url = require('url');
 
-const {revisionIdFromString} = require('../IncrementalBundler');
-
-import type {RevisionId} from '../IncrementalBundler';
 import type {BundleOptions} from '../shared/types.flow';
 
 const getBoolean = (query, opt, defaultVal) =>
@@ -34,7 +31,7 @@ const getBundleType = bundleName => {
 module.exports = function parseOptionsFromUrl(
   requestUrl: string,
   platforms: Set<string>,
-): {|options: BundleOptions, revisionId: ?RevisionId|} {
+): {|options: BundleOptions|} {
   const parsedURL = nullthrows(url.parse(requestUrl, true)); // `true` to parse the query param as an object.
   const query = nullthrows(parsedURL.query);
   const pathname =
@@ -42,9 +39,7 @@ module.exports = function parseOptionsFromUrl(
     (parsedURL.pathname != null ? decodeURIComponent(parsedURL.pathname) : '');
   const platform =
     query.platform || parsePlatformFilePath(pathname, platforms).platform;
-  const revisionId = query.revisionId || query.deltaBundleId || null;
   return {
-    revisionId: revisionId != null ? revisionIdFromString(revisionId) : null,
     options: {
       bundleType: getBundleType(pathname),
       customTransformOptions: parseCustomTransformOptions(parsedURL),

@@ -9,11 +9,11 @@
  */
 'use strict';
 
-const HmrServer = require('..');
+const HmrServer = require('../HmrServer');
 
-const getGraphId = require('../../lib/getGraphId');
+const getGraphId = require('../lib/getGraphId');
 
-jest.mock('../../lib/transformHelpers', () => ({
+jest.mock('../lib/transformHelpers', () => ({
   getResolveDependencyFn: () => (from, to) =>
     `${require('path').resolve(from, to)}.js`,
 }));
@@ -160,25 +160,6 @@ describe('HmrServer', () => {
     );
   });
 
-  it('should retrieve the correct graph from the incremental bundler (revisionId)', async () => {
-    await connect('/hot?revisionId=test-id');
-
-    expect(getRevisionMock).toBeCalledWith('test-id');
-  });
-
-  it('should only listen to file changes once', async () => {
-    const client = await connect(
-      '/hot?revisionId=test-id',
-      jest.fn(),
-    );
-    await message(client, {
-      type: 'register-entrypoints',
-      entryPoints: ['http://localhost/hot?revisionId=test-id'],
-    });
-
-    expect(callbacks.get(mockedGraph).length).toBe(1);
-  });
-
   it('should send an error message when the graph cannot be found', async () => {
     const sendMessage = jest.fn();
     getRevisionByGraphIdMock.mockReturnValueOnce(undefined);
@@ -208,26 +189,6 @@ describe('HmrServer', () => {
     expect(sentErrorMessage).toMatchObject({type: 'error'});
     expect(sentErrorMessage.body).toMatchObject({
       type: 'GraphNotFoundError',
-      message: expectedMessage,
-      errors: [],
-    });
-  });
-
-  it('should send an error message when the revision cannot be found', async () => {
-    const sendMessage = jest.fn();
-    getRevisionMock.mockReturnValueOnce(undefined);
-
-    await connect(
-      '/hot?revisionId=test-id',
-      sendMessage,
-    );
-
-    const expectedMessage = 'The revision `test-id` was not found.';
-
-    const sentErrorMessage = JSON.parse(sendMessage.mock.calls[0][0]);
-    expect(sentErrorMessage).toMatchObject({type: 'error'});
-    expect(sentErrorMessage.body).toMatchObject({
-      type: 'RevisionNotFoundError',
       message: expectedMessage,
       errors: [],
     });
@@ -294,11 +255,11 @@ describe('HmrServer', () => {
     const sendMessage2 = jest.fn();
 
     const client = await connect(
-      '/hot',
+      '/hot?platform=ios',
       sendMessage1,
     );
     const client2 = await connect(
-      '/hot',
+      '/hot?platform=ios',
       sendMessage2,
     );
 

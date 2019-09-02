@@ -102,56 +102,37 @@ class HmrServer<TClient: Client> {
     sendFn: (data: string) => void,
   ): Promise<void> {
     const clientUrl = nullthrows(url.parse(requestUrl, true));
-    const query = nullthrows(clientUrl.query);
+    const {options} = parseOptionsFromUrl(
+      requestUrl,
+      new Set(this._config.resolver.platforms),
+    );
+    const {entryFile, transformOptions, graphOptions} = splitBundleOptions(
+      options,
+    );
 
-    let revPromise;
-    if (query.revisionId) {
-      const revisionId = query.revisionId;
-      revPromise = this._bundler.getRevision(revisionId);
-
-      if (!revPromise) {
-        send([sendFn], {
-          type: 'error',
-          body: formatBundlingError(new RevisionNotFoundError(revisionId)),
-        });
-        return;
-      }
-    } else if (query.bundleEntry != null) {
-      const {options} = parseOptionsFromUrl(
-        requestUrl,
-        new Set(this._config.resolver.platforms),
-      );
-      const {entryFile, transformOptions, graphOptions} = splitBundleOptions(
-        options,
-      );
-
-      /**
-       * `entryFile` is relative to projectRoot, we need to use resolution function
-       * to find the appropriate file with supported extensions.
-       */
-      const resolutionFn = await transformHelpers.getResolveDependencyFn(
-        this._bundler.getBundler(),
-        transformOptions.platform,
-      );
-      const resolvedEntryFilePath = resolutionFn(
-        this._config.projectRoot + '/.',
-        entryFile,
-      );
-      const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
-        shallow: graphOptions.shallow,
-        experimentalImportBundleSupport: this._config.transformer
-          .experimentalImportBundleSupport,
+    /**
+     * `entryFile` is relative to projectRoot, we need to use resolution function
+     * to find the appropriate file with supported extensions.
+     */
+    const resolutionFn = await transformHelpers.getResolveDependencyFn(
+      this._bundler.getBundler(),
+      transformOptions.platform,
+    );
+    const resolvedEntryFilePath = resolutionFn(
+      this._config.projectRoot + '/.',
+      entryFile,
+    );
+    const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
+      shallow: graphOptions.shallow,
+      experimentalImportBundleSupport: this._config.transformer
+        .experimentalImportBundleSupport,
+    });
+    const revPromise = this._bundler.getRevisionByGraphId(graphId);
+    if (!revPromise) {
+      send([sendFn], {
+        type: 'error',
+        body: formatBundlingError(new GraphNotFoundError(graphId)),
       });
-      revPromise = this._bundler.getRevisionByGraphId(graphId);
-
-      if (!revPromise) {
-        send([sendFn], {
-          type: 'error',
-          body: formatBundlingError(new GraphNotFoundError(graphId)),
-        });
-        return;
-      }
-    } else {
       return;
     }
 

@@ -468,7 +468,7 @@ class Server {
       res: ServerResponse,
     ): Promise<void> {
       const mres = MultipartResponse.wrap(req, res);
-      const {revisionId, options: bundleOptions} = parseOptionsFromUrl(
+      const {options: bundleOptions} = parseOptionsFromUrl(
         url.format({
           ...url.parse(req.url),
           protocol: 'http',
@@ -540,7 +540,7 @@ class Server {
         mres,
         onProgress,
         req,
-        revisionId,
+        revisionId: null,
         serializerOptions,
         transformOptions,
       };
