@@ -11,7 +11,6 @@
 'use strict';
 
 const bundleToString = require('../bundleToString');
-const stringToBundle = require('../stringToBundle');
 
 describe('bundleToString', () => {
   it('serializes a bundle into a plain JS bundle', () => {
@@ -43,19 +42,6 @@ console.log(\\"That's all folks!\\");"
 3
 console.log(\\"That's all folks!\\");"
 `);
-  });
-
-  it('provides metadata allowing to retrieve the original bundle from the code', () => {
-    const bundle = {
-      pre: 'console.log("Hello World!");',
-      post: 'console.log("That\'s all folks!");',
-      modules: [[3, '3'], [0, '0'], [2, '2'], [1, '1']],
-    };
-    const {code, metadata} = bundleToString(bundle);
-    const bundle2 = stringToBundle(code, metadata);
-    expect(bundle2.pre).toEqual(bundle.pre);
-    expect(bundle2.post).toEqual(bundle.post);
-    expect(bundle2.modules).toEqual(expect.arrayContaining(bundle.modules));
   });
 
   it("doesn't add extraneous line breaks when either pre, post or modules are absent", () => {

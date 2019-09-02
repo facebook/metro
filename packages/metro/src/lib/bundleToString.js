@@ -10,7 +10,7 @@
 
 'use strict';
 
-import type {Bundle, BundleMetadata} from '../types.flow';
+import type {Bundle, BundleMetadata} from './bundle-modules/types.flow';
 
 /**
  * Serializes a bundle into a plain JS bundle.

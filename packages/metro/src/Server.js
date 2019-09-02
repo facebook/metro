@@ -13,7 +13,7 @@ const IncrementalBundler = require('./IncrementalBundler');
 const MultipartResponse = require('./Server/MultipartResponse');
 
 const baseJSBundle = require('./DeltaBundler/Serializers/baseJSBundle');
-const bundleToString = require('./lib/bundle-modules/DeltaClient/bundleToString');
+const bundleToString = require('./lib/bundleToString');
 const deltaJSBundle = require('./DeltaBundler/Serializers/deltaJSBundle');
 const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('./DeltaBundler/Serializers/getAssets');
