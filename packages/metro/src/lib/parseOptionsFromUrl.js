@@ -21,17 +21,10 @@ import type {BundleOptions} from '../shared/types.flow';
 const getBoolean = (query, opt, defaultVal) =>
   query[opt] == null ? defaultVal : query[opt] === 'true' || query[opt] === '1';
 
-const getBundleType = bundleName => {
-  const bundleType = path.extname(bundleName).substr(1);
-  return bundleType === 'delta' || bundleType === 'map' || bundleType === 'meta'
-    ? bundleType
-    : 'bundle';
-};
-
 module.exports = function parseOptionsFromUrl(
   requestUrl: string,
   platforms: Set<string>,
-): {|options: BundleOptions|} {
+): BundleOptions {
   const parsedURL = nullthrows(url.parse(requestUrl, true)); // `true` to parse the query param as an object.
   const query = nullthrows(parsedURL.query);
   const pathname =
@@ -40,31 +33,29 @@ module.exports = function parseOptionsFromUrl(
   const platform =
     query.platform || parsePlatformFilePath(pathname, platforms).platform;
   return {
-    options: {
-      bundleType: getBundleType(pathname),
-      customTransformOptions: parseCustomTransformOptions(parsedURL),
-      dev: getBoolean(query, 'dev', true),
-      entryFile: pathname.replace(/^(?:\.?\/)?/, './').replace(/\.[^/.]+$/, ''),
-      excludeSource: getBoolean(query, 'excludeSource', false),
-      hot: true,
-      inlineSourceMap: getBoolean(query, 'inlineSourceMap', false),
-      minify: getBoolean(query, 'minify', false),
-      modulesOnly: getBoolean(query, 'modulesOnly', false),
-      onProgress: null,
-      platform,
-      runModule: getBoolean(query, 'runModule', true),
-      shallow: getBoolean(query, 'shallow', false),
-      sourceMapUrl: url.format({
-        ...parsedURL,
-        // The Chrome Debugger loads bundles via Blob urls, whose
-        // protocol is blob:http. This breaks loading source maps through
-        // protocol-relative URLs, which is why we must force the HTTP protocol
-        // when loading the bundle for either Android or iOS.
-        protocol:
-          platform != null && platform.match(/^(android|ios)$/) ? 'http' : '',
-        pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
-      }),
-      sourceUrl: requestUrl,
-    },
+    bundleType: path.extname(pathname).substr(1) === 'map' ? 'map' : 'bundle',
+    customTransformOptions: parseCustomTransformOptions(parsedURL),
+    dev: getBoolean(query, 'dev', true),
+    entryFile: pathname.replace(/^(?:\.?\/)?/, './').replace(/\.[^/.]+$/, ''),
+    excludeSource: getBoolean(query, 'excludeSource', false),
+    hot: true,
+    inlineSourceMap: getBoolean(query, 'inlineSourceMap', false),
+    minify: getBoolean(query, 'minify', false),
+    modulesOnly: getBoolean(query, 'modulesOnly', false),
+    onProgress: null,
+    platform,
+    runModule: getBoolean(query, 'runModule', true),
+    shallow: getBoolean(query, 'shallow', false),
+    sourceMapUrl: url.format({
+      ...parsedURL,
+      // The Chrome Debugger loads bundles via Blob urls, whose
+      // protocol is blob:http. This breaks loading source maps through
+      // protocol-relative URLs, which is why we must force the HTTP protocol
+      // when loading the bundle for either Android or iOS.
+      protocol:
+        platform != null && platform.match(/^(android|ios)$/) ? 'http' : '',
+      pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
+    }),
+    sourceUrl: requestUrl,
   };
 };

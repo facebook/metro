@@ -14,7 +14,6 @@ const MultipartResponse = require('./Server/MultipartResponse');
 
 const baseJSBundle = require('./DeltaBundler/Serializers/baseJSBundle');
 const bundleToString = require('./lib/bundleToString');
-const deltaJSBundle = require('./DeltaBundler/Serializers/deltaJSBundle');
 const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('./DeltaBundler/Serializers/getAssets');
 const getGraphId = require('./lib/getGraphId');
@@ -28,11 +27,9 @@ const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
 const transformHelpers = require('./lib/transformHelpers');
 const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
 const path = require('path');
-const serializeDeltaJSBundle = require('./DeltaBundler/Serializers/helpers/serializeDeltaJSBundle');
 const symbolicate = require('./Server/symbolicate');
 const url = require('url');
 const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
-const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundError');
 
 const {getAsset} = require('./Assets');
 const {
@@ -54,7 +51,6 @@ import type {AssetData} from './Assets';
 import type {RevisionId} from './IncrementalBundler';
 import type {Graph, Module} from './DeltaBundler/types.flow';
 import type {CacheStore} from 'metro-cache';
-import type {BundleVariant} from './lib/bundle-modules/types.flow';
 import type DependencyGraph from './node-haste/DependencyGraph';
 import type {MixedOutput, TransformResult} from './DeltaBundler/types.flow';
 import type {StackFrameOutput} from './Server/symbolicate';
@@ -86,7 +82,7 @@ type ProcessStartContext = {|
   +graphOptions: GraphOptions,
   +mres: MultipartResponse,
   +req: IncomingMessage,
-  +revisionId: ?RevisionId,
+  +revisionId?: ?RevisionId,
   ...SplitBundleOptions,
 |};
 
@@ -435,10 +431,6 @@ class Server {
       await this._processSourceMapRequest(req, res);
     } else if (pathname.match(/\.assets$/)) {
       await this._processAssetsRequest(req, res);
-    } else if (pathname.match(/\.delta$/)) {
-      await this._processDeltaRequest(req, res);
-    } else if (pathname.match(/\.meta/)) {
-      await this._processMetadataRequest(req, res);
     } else if (pathname.match(/^\/onchange\/?$/)) {
       this._processOnChangeRequest(req, res);
     } else if (pathname.match(/^\/assets\//)) {
@@ -468,7 +460,7 @@ class Server {
       res: ServerResponse,
     ): Promise<void> {
       const mres = MultipartResponse.wrap(req, res);
-      const {options: bundleOptions} = parseOptionsFromUrl(
+      const bundleOptions = parseOptionsFromUrl(
         url.format({
           ...url.parse(req.url),
           protocol: 'http',
@@ -540,7 +532,6 @@ class Server {
         mres,
         onProgress,
         req,
-        revisionId: null,
         serializerOptions,
         transformOptions,
       };
@@ -599,114 +590,6 @@ class Server {
       );
     };
   }
-
-  _processDeltaRequest = this._createRequestProcessor({
-    createStartEntry(context: ProcessStartContext) {
-      return {
-        action_name: 'Requesting delta',
-        bundle_url: context.req.url,
-        entry_point: context.entryFile,
-        bundler: 'delta',
-        build_id: context.buildID,
-        bundle_options: context.bundleOptions,
-        bundle_hash: context.graphId,
-      };
-    },
-    createEndEntry(
-      context: ProcessEndContext<{|
-        bundle: BundleVariant,
-        nextRevId: RevisionId,
-        numModifiedFiles: number,
-      |}>,
-    ) {
-      return {
-        outdated_modules: context.result.numModifiedFiles,
-      };
-    },
-    build: async ({
-      entryFile,
-      graphId,
-      graphOptions,
-      onProgress,
-      revisionId,
-      serializerOptions,
-      transformOptions,
-    }) => {
-      // TODO(T34760593): We should eventually move to a model where this
-      // endpoint is placed at /delta/:revisionId, and requesting an unknown revisionId
-      // throws a 404.
-      // However, this would break existing delta clients, since they expect the
-      // endpoint to rebuild the graph, were it not found in cache.
-      let revPromise;
-      if (revisionId != null) {
-        revPromise = this._bundler.getRevision(revisionId);
-      }
-      // Even if we receive a revisionId, it might have expired.
-      if (revPromise == null) {
-        revPromise = this._bundler.getRevisionByGraphId(graphId);
-      }
-
-      let delta;
-      let revision;
-      if (revPromise != null) {
-        const prevRevision = await revPromise;
-
-        ({delta, revision} = await this._bundler.updateGraph(
-          prevRevision,
-          prevRevision.id !== revisionId,
-        ));
-      } else {
-        ({delta, revision} = await this._bundler.initializeGraph(
-          entryFile,
-          transformOptions,
-          {onProgress, shallow: graphOptions.shallow},
-        ));
-      }
-
-      const bundle = deltaJSBundle(
-        entryFile,
-        revision.prepend,
-        delta,
-        revision.id,
-        revision.graph,
-        {
-          asyncRequireModulePath: this._config.transformer
-            .asyncRequireModulePath,
-          processModuleFilter: this._config.serializer.processModuleFilter,
-          createModuleId: this._createModuleId,
-          dev: transformOptions.dev,
-          getRunModuleStatement: this._config.serializer.getRunModuleStatement,
-          projectRoot: this._config.projectRoot,
-          modulesOnly: serializerOptions.modulesOnly,
-          runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-            path.relative(this._config.projectRoot, entryFile),
-          ),
-          runModule: serializerOptions.runModule,
-          sourceMapUrl: serializerOptions.sourceMapUrl,
-          sourceUrl: serializerOptions.sourceUrl,
-          inlineSourceMap: serializerOptions.inlineSourceMap,
-        },
-      );
-
-      return {
-        numModifiedFiles:
-          delta.added.size + delta.modified.size + delta.deleted.size,
-        nextRevId: revision.id,
-        bundle,
-      };
-    },
-    finish({mres, result}) {
-      const bundle = serializeDeltaJSBundle.toJSON(result.bundle);
-      mres.setHeader(
-        FILES_CHANGED_COUNT_HEADER,
-        String(result.numModifiedFiles),
-      );
-      mres.setHeader(DELTA_ID_HEADER, String(result.nextRevId));
-      mres.setHeader('Content-Type', 'application/json');
-      mres.setHeader('Content-Length', String(Buffer.byteLength(bundle)));
-      mres.end(bundle);
-    },
-  });
 
   _processBundleRequest = this._createRequestProcessor({
     createStartEntry(context: ProcessStartContext) {
@@ -866,67 +749,6 @@ class Server {
     },
   });
 
-  _processMetadataRequest = this._createRequestProcessor({
-    createStartEntry(context: ProcessStartContext) {
-      return {
-        action_name: 'Requesting bundle metadata',
-        bundle_url: context.req.url,
-        entry_point: context.entryFile,
-        bundler: 'delta',
-      };
-    },
-    createEndEntry(context: ProcessEndContext<BundleMetadata>) {
-      return {
-        bundler: 'delta',
-      };
-    },
-    build: async ({
-      entryFile,
-      transformOptions,
-      serializerOptions,
-      onProgress,
-      revisionId,
-    }) => {
-      if (revisionId == null) {
-        throw new Error(
-          'You must provide a `revisionId` query parameter to the metadata endpoint.',
-        );
-      }
-
-      let revision;
-      const revPromise = this._bundler.getRevision(revisionId);
-      if (revPromise == null) {
-        throw new RevisionNotFoundError(revisionId);
-      } else {
-        revision = await revPromise;
-      }
-
-      const base = baseJSBundle(entryFile, revision.prepend, revision.graph, {
-        asyncRequireModulePath: this._config.transformer.asyncRequireModulePath,
-        processModuleFilter: this._config.serializer.processModuleFilter,
-        createModuleId: this._createModuleId,
-        getRunModuleStatement: this._config.serializer.getRunModuleStatement,
-        dev: transformOptions.dev,
-        projectRoot: this._config.projectRoot,
-        modulesOnly: serializerOptions.modulesOnly,
-        runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-          path.relative(this._config.projectRoot, entryFile),
-        ),
-        runModule: serializerOptions.runModule,
-        sourceMapUrl: serializerOptions.sourceMapUrl,
-        sourceUrl: serializerOptions.sourceUrl,
-        inlineSourceMap: serializerOptions.inlineSourceMap,
-      });
-
-      // $FlowFixMe the return value of an async function is always a Promise
-      return bundleToString(base).metadata;
-    },
-    finish({mres, result}) {
-      mres.setHeader('Content-Type', 'application/json');
-      mres.end(JSON.stringify(result));
-    },
-  });
-
   _processAssetsRequest = this._createRequestProcessor({
     createStartEntry(context: ProcessStartContext) {
       return {
@@ -1020,7 +842,7 @@ class Server {
   }
 
   async _explodedSourceMapForURL(reqUrl: string): Promise<ExplodedSourceMap> {
-    const {options} = parseOptionsFromUrl(
+    const options = parseOptionsFromUrl(
       reqUrl,
       new Set(this._config.resolver.platforms),
     );

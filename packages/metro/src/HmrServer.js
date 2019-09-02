@@ -102,7 +102,7 @@ class HmrServer<TClient: Client> {
     sendFn: (data: string) => void,
   ): Promise<void> {
     const clientUrl = nullthrows(url.parse(requestUrl, true));
-    const {options} = parseOptionsFromUrl(
+    const options = parseOptionsFromUrl(
       requestUrl,
       new Set(this._config.resolver.platforms),
     );
