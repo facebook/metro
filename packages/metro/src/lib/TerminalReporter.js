@@ -169,7 +169,7 @@ class TerminalReporter {
     }
   }
 
-  _logInitializing(port: number, projectRoots: $ReadOnlyArray<string>): void {
+  _logInitializing(port: number): void {
     const logo = [
       '                                                          ',
       '               ######                ######               ',
@@ -200,18 +200,7 @@ class TerminalReporter {
       '                                                          ',
     ];
 
-    this.terminal.log(
-      chalk.blue(logo.join('\n')) +
-        '\n' +
-        chalk.blue.bold('                  Welcome to React Native!\n') +
-        chalk.gray('                 Learn once, write anywhere\n\n') +
-        'Running Metro on port ' +
-        port +
-        '\n' +
-        'Looking for JS files in\n' +
-        projectRoots.map(root => `  ${root}`).join('\n') +
-        '\n',
-    );
+    this.terminal.log(chalk.blue(logo.join('\n')));
   }
 
   _logInitializingFailed(port: number, error: SnippetError): void {
@@ -245,7 +234,7 @@ class TerminalReporter {
   _log(event: TerminalReportableEvent): void {
     switch (event.type) {
       case 'initialize_started':
-        this._logInitializing(event.port, event.projectRoots);
+        this._logInitializing(event.port);
         break;
       case 'initialize_done':
         this.terminal.log('\nMetro is ready.\n');
@@ -277,8 +266,12 @@ class TerminalReporter {
       case 'hmr_client_error':
         this._logHmrClientError(event.error);
         break;
-      case 'dep_graph_loaded':
-        this.terminal.log(chalk.dim('Server ready.'));
+      case 'dep_graph_loading':
+        // IMPORTANT: Keep this in sync with `nuclide-metro-rpc/lib/parseMessages.tsx`
+        this.terminal.log(
+          chalk.blue.bold('                  Welcome to React Native!\n') +
+            chalk.dim('                 Learn once, write anywhere\n\n'),
+        );
         break;
     }
   }
