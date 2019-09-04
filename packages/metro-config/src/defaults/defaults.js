@@ -44,6 +44,7 @@ exports.assetExts = [
   // Font formats
   'otf',
   'ttf',
+  'slug',
   // Archives (virtual files)
   'zip',
 ];
