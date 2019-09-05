@@ -70,7 +70,7 @@ class Device {
     this._deviceSocket.on('message', (message: string) => {
       const parsedMessage = JSON.parse(message);
       if (parsedMessage.event !== 'getPages') {
-        debug('<- From device: ' + message);
+        debug('(Debugger)    (Proxy) <- (Device): ' + message);
       }
       this._handleMessageFromDevice(parsedMessage);
     });
@@ -112,7 +112,7 @@ class Device {
     });
 
     socket.on('message', (message: string) => {
-      debug('<- From debugger: ' + message);
+      debug('(Debugger) -> (Proxy)    (Device): ' + message);
       const parsedMessage = JSON.parse(message);
       this._processMessageFromDebugger(parsedMessage, debuggerInfo);
 
@@ -133,6 +133,12 @@ class Device {
         },
       });
     });
+
+    const sendFunc = socket.send;
+    socket.send = function(message: string) {
+      debug('(Debugger) <- (Proxy)    (Device): ' + message);
+      return sendFunc.call(socket, message);
+    };
   }
 
   // Handles messages received from device:
@@ -172,7 +178,6 @@ class Device {
       this._processMessageFromDevice(parsedPayload, debuggerInfo);
 
       const messageToSend = JSON.stringify(parsedPayload);
-      debug('-> To debugger: ' + messageToSend);
       debuggerSocket.send(messageToSend);
     }
   }
@@ -181,7 +186,7 @@ class Device {
   _sendMessageToDevice(message: MessageToDevice) {
     try {
       if (message.event !== 'getPages') {
-        debug('-> To device' + JSON.stringify(message));
+        debug('(Debugger)    (Proxy) -> (Device): ' + JSON.stringify(message));
       }
       this._deviceSocket.send(JSON.stringify(message));
     } catch (error) {}
