@@ -1,13 +1,9 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) 2017-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
- *
- * @format
  */
-
-'use strict';
 
 const languages = [
   {
@@ -176,15 +172,14 @@ const languages = [
     tag: 'vi',
   },
   {
-    enabled: false,
-    name: '简体中文',
-    tag: 'zh-Hans',
+    enabled: true,
+    name: '中文',
+    tag: 'zh-CN',
   },
   {
     enabled: false,
     name: '繁體中文',
-    tag: 'zh-Hant',
+    tag: 'zh-TW'
   },
 ];
-
 module.exports = languages;
