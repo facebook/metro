@@ -34,6 +34,15 @@ type DebuggerInfo = {
   originalSourceURLAddress?: string,
 
   prependedFilePrefix: boolean,
+
+  pageId: string,
+};
+
+const REACT_NATIVE_RELOADABLE_PAGE = {
+  id: '-1',
+  title: 'React Native Experimental (Improved Chrome Reloads)',
+  vm: "don't use",
+  app: "don't use",
 };
 
 /**
@@ -56,29 +65,49 @@ class Device {
   // Stores last list of device's pages.
   _pages: Array<Page>;
 
-  // Maps Page ID to debugger information for the pages that are currently
-  // debugged.
-  _debuggerConnections: Map<string, DebuggerInfo>;
+  // Stores information about currently connected debugger (if any).
+  _debuggerConnection: ?DebuggerInfo = null;
+
+  // Last known Page ID of the React Native page.
+  // This is used by debugger connections that don't have PageID specified
+  // (and will interact with the latest React Native page).
+  _lastReactNativePageId: ?string = null;
+
+  // Whether we are in the middle of a reload in the REACT_NATIVE_RELOADABLE_PAGE.
+  _isReloading: boolean = false;
+
+  // The previous "GetPages" message, for deduplication in debug logs.
+  _lastGetPagesMessage: string = '';
 
   constructor(id: number, name: string, app: string, socket: WS) {
     this._id = id;
     this._name = name;
     this._app = app;
     this._pages = [];
-    this._debuggerConnections = new Map();
     this._deviceSocket = socket;
+
     this._deviceSocket.on('message', (message: string) => {
       const parsedMessage = JSON.parse(message);
-      if (parsedMessage.event !== 'getPages') {
+      if (parsedMessage.event === 'getPages') {
+        // There's a 'getPages' message every second, so only show them if they change
+        if (message !== this._lastGetPagesMessage) {
+          debug(
+            '(Debugger)    (Proxy) <- (Device), getPages ping has changed: ' +
+              message,
+          );
+          this._lastGetPagesMessage = message;
+        }
+      } else {
         debug('(Debugger)    (Proxy) <- (Device): ' + message);
       }
       this._handleMessageFromDevice(parsedMessage);
     });
     this._deviceSocket.on('close', () => {
-      // Device disconnected - close all debugger connections.
-      Array.from(this._debuggerConnections.values()).forEach(({socket: WS}) =>
-        socket.close(),
-      );
+      // Device disconnected - close debugger connection.
+      if (this._debuggerConnection) {
+        this._debuggerConnection.socket.close();
+        this._debuggerConnection = null;
+      }
     });
 
     this._setPagesPolling();
@@ -89,7 +118,11 @@ class Device {
   }
 
   getPagesList(): Array<Page> {
-    return this._pages;
+    if (this._lastReactNativePageId) {
+      return this._pages.concat(REACT_NATIVE_RELOADABLE_PAGE);
+    } else {
+      return this._pages;
+    }
   }
 
   // Handles new debugger connection to this device:
@@ -97,17 +130,25 @@ class Device {
   // 2. Forwards all messages from the debugger to device as wrappedEvent
   // 3. Sends disconnect event to device when debugger connection socket closes.
   handleDebuggerConnection(socket: WS, pageId: string) {
+    // Disconnect current debugger if we already have debugger connected.
+    if (this._debuggerConnection) {
+      this._debuggerConnection.socket.close();
+      this._debuggerConnection = null;
+    }
+
     const debuggerInfo = {
       socket,
       prependedFilePrefix: false,
+      pageId,
     };
-    this._debuggerConnections.set(pageId, debuggerInfo);
+    this._debuggerConnection = debuggerInfo;
+
     debug(`Got new debugger connection for page ${pageId} of ${this._name}`);
 
     this._sendMessageToDevice({
       event: 'connect',
       payload: {
-        pageId,
+        pageId: this._getPageId(pageId),
       },
     });
 
@@ -119,7 +160,7 @@ class Device {
       this._sendMessageToDevice({
         event: 'wrappedEvent',
         payload: {
-          pageId,
+          pageId: this._getPageId(pageId),
           wrappedEvent: JSON.stringify(parsedMessage),
         },
       });
@@ -129,9 +170,10 @@ class Device {
       this._sendMessageToDevice({
         event: 'disconnect',
         payload: {
-          pageId,
+          pageId: this._getPageId(pageId),
         },
       });
+      this._debuggerConnection = null;
     });
 
     const sendFunc = socket.send;
@@ -151,31 +193,56 @@ class Device {
   _handleMessageFromDevice(message: MessageFromDevice) {
     if (message.event === 'getPages') {
       this._pages = message.payload;
+
+      // Check if device have new React Native page.
+      // There is usually no more than 2-3 pages per device so this operation
+      // is not expensive.
+      // TODO(hypuk): It is better for VM to send update event when new page is
+      // created instead of manually checking this on every getPages result.
+      for (let i = 0; i < this._pages.length; ++i) {
+        if (this._pages[i].title.indexOf('React') >= 0) {
+          if (this._pages[i].id != this._lastReactNativePageId) {
+            this._newReactNativePage(this._pages[i].id);
+            break;
+          }
+        }
+      }
     } else if (message.event === 'disconnect') {
       // Device sends disconnect events only when page is reloaded or
       // if debugger socket was disconnected.
       const pageId = message.payload.pageId;
-      const debuggerInfo = this._debuggerConnections.get(pageId);
-      const debuggerSocket = debuggerInfo ? debuggerInfo.socket : null;
-      if (debuggerSocket && debuggerSocket.readyState == WS.OPEN) {
-        debug(`Page ${pageId} is reloading.`);
-        debuggerSocket.send(JSON.stringify({method: 'reload'}));
+      const debuggerSocket = this._debuggerConnection
+        ? this._debuggerConnection.socket
+        : null;
+      if (debuggerSocket && debuggerSocket.readyState === WS.OPEN) {
+        if (
+          this._debuggerConnection != null &&
+          this._debuggerConnection.pageId !== REACT_NATIVE_RELOADABLE_PAGE.id
+        ) {
+          debug(`Page ${pageId} is reloading.`);
+          debuggerSocket.send(JSON.stringify({method: 'reload'}));
+        }
       }
     } else if (message.event === 'wrappedEvent') {
-      const pageId = message.payload.pageId;
-      const debuggerInfo = this._debuggerConnections.get(pageId);
-      if (debuggerInfo == null) {
+      if (this._debuggerConnection == null) {
         return;
       }
 
-      const debuggerSocket = debuggerInfo.socket;
-      if (debuggerSocket == null) {
+      // FIXME: Is it possible that we received message for pageID that does not
+      // correspond to current debugger connection?
+
+      const debuggerSocket = this._debuggerConnection.socket;
+      if (debuggerSocket == null || debuggerSocket.readyState !== WS.OPEN) {
         // TODO(hypuk): Send error back to device?
         return;
       }
 
       const parsedPayload = JSON.parse(message.payload.wrappedEvent);
-      this._processMessageFromDevice(parsedPayload, debuggerInfo);
+
+      if (this._debuggerConnection) {
+        // Wrapping just to make flow happy :)
+        this._processMessageFromDevice(parsedPayload, this._debuggerConnection);
+      }
 
       const messageToSend = JSON.stringify(parsedPayload);
       debuggerSocket.send(messageToSend);
@@ -197,6 +264,60 @@ class Device {
     Observable.interval(PAGES_POLLING_INTERVAL).subscribe(_ =>
       this._sendMessageToDevice({event: 'getPages'}),
     );
+  }
+
+  // We received new React Native Page ID.
+  _newReactNativePage(pageId: string) {
+    debug(`React Native page updated to ${pageId}`);
+    if (
+      this._debuggerConnection == null ||
+      this._debuggerConnection.pageId !== REACT_NATIVE_RELOADABLE_PAGE.id
+    ) {
+      // We can just remember new page ID without any further actions if no
+      // debugger is currently attached or attached debugger is not
+      // "Reloadable React Native" connection.
+      this._lastReactNativePageId = pageId;
+      return;
+    }
+    const oldPageId = this._lastReactNativePageId;
+    this._lastReactNativePageId = pageId;
+    this._isReloading = true;
+
+    // We already had a debugger connected to React Native page and a
+    // new one appeared - in this case we need to emulate execution context
+    // detroy and resend Debugger.enable and Runtime.enable commands to new
+    // page.
+
+    if (oldPageId != null) {
+      this._sendMessageToDevice({
+        event: 'disconnect',
+        payload: {
+          pageId: oldPageId,
+        },
+      });
+    }
+
+    this._sendMessageToDevice({
+      event: 'connect',
+      payload: {
+        pageId,
+      },
+    });
+
+    const toSend = [
+      {method: 'Runtime.enable', id: 1e9},
+      {method: 'Debugger.enable', id: 1e9},
+    ];
+
+    for (const message of toSend) {
+      this._sendMessageToDevice({
+        event: 'wrappedEvent',
+        payload: {
+          pageId: this._getPageId(pageId),
+          wrappedEvent: JSON.stringify(message),
+        },
+      });
+    }
   }
 
   // Allows to make changes in incoming message from device.
@@ -235,6 +356,24 @@ class Device {
           debuggerInfo.prependedFilePrefix = true;
         }
       }
+
+      // Chrome won't use the source map unless it appears to be new.
+      payload.params.sourceMapURL +=
+        '&random=' + this._getPageId(debuggerInfo.pageId);
+      payload.params.url += '&random=' + this._getPageId(debuggerInfo.pageId);
+    }
+
+    if (
+      payload.method === 'Runtime.executionContextCreated' &&
+      this._isReloading
+    ) {
+      // The new context is ready. First notify Chrome that we've reloaded so
+      // it'll resend its breakpoints. If we do this earlier, we may not be
+      // ready to receive them.
+      debuggerInfo.socket.send(
+        JSON.stringify({method: 'Runtime.executionContextsCleared'}),
+      );
+      this._isReloading = false;
     }
   }
 
@@ -267,6 +406,17 @@ class Device {
           debuggerInfo.originalSourceURLAddress,
         );
       }
+    }
+  }
+
+  _getPageId(pageId: string): string {
+    if (
+      pageId === REACT_NATIVE_RELOADABLE_PAGE.id &&
+      this._lastReactNativePageId != null
+    ) {
+      return this._lastReactNativePageId;
+    } else {
+      return pageId;
     }
   }
 }
