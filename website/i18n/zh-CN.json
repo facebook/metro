@@ -57,7 +57,7 @@
     "Ask questions and find answers from other Metro users like you.\\n\\n- Join the [#metro](https://discordapp.com/channels/102860784329052160/103622435865104384) channel on [Reactiflux](http://www.reactiflux.com/), a Discord community.\\n- Many members of the community use Stack Overflow. Read through the [existing questions](https://stackoverflow.com/questions/tagged/metrojs) tagged with **metrojs** or [ask your own](https://stackoverflow.com/questions/ask)!|no description given": "你可以向其他 Metro 用户提问题或者查找类似答案\\n\\n- 加入在 [Reactiflux](http://www.reactiflux.com/) 上的 [#metro](https://discordapp.com/channels/102860784329052160/103622435865104384) 频道。\\n- 此外更多人用 Stack Overflow，可以仔细阅读被标记为 **metrojs** 的 [已知问题](https://stackoverflow.com/questions/tagged/metrojs)  或者 [直接提问](https://stackoverflow.com/questions/ask)!",
     "Find out what's new with Metro.\\n\\n- Follow [Metro](https://twitter.com/MetroBundler) on Twitter.\\n- Subscribe to the [Metro blog](/metro/blog/).|no description given": "了解 Metro 的最新动态。\\n\\n- 关注 [Metro](https://twitter.com/MetroBundler) 的 Twitter.\\n- 订阅 [Metro blog](/metro/blog/).",
     "Metro is worked on by Facebook's React Native team. Team members are often around and available for questions.|no description given": "Metro 主要由 Facebook 的 React Native 团队开发，大家都非常乐意为开发者效劳。",
-    "Get Started|no description given": "入门",
+    "Get Started|no description given": "快速入门",
     "Learn More|no description given": "了解更多",
     "Metro aims for sub-second reload cycles, fast startup and quick bundling speeds.|no description given": "Metro 的目标是亚秒级的循环重载、极速启动和极速打包。",
     "Fast|no description given": "速度快",

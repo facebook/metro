@@ -47,8 +47,12 @@ commands:
       - run: wget https://artifacts.crowdin.com/repo/deb/crowdin.deb -O crowdin.deb
       - run: sudo dpkg -i crowdin.deb
       # translations upload/download
-      - run: crowdin --config crowdin.yaml upload sources --auto-update -b master
-      - run: crowdin --config crowdin.yaml download -b master
+      - run:
+          command: CROWDIN_DOCUSAURUS_PROJECT_ID=metro CROWDIN_DOCUSAURUS_API_KEY=534eb0e7da51d71c298d7cc7efd3de79 yarn run crowdin-upload
+          working_directory: website
+      - run:
+          command: CROWDIN_DOCUSAURUS_PROJECT_ID=metro CROWDIN_DOCUSAURUS_API_KEY=534eb0e7da51d71c298d7cc7efd3de79 yarn run crowdin-download
+          working_directory: website
       # build and publish website      
       - yarn_run:
           command: publish-gh-pages

@@ -40,3 +40,34 @@ Run the above command against your own fork of `facebook/metro`:
 ```
 DEPLOY_USER=YOUR_GITHUB_USERNAME GIT_USER=YOUR_GITHUB_USERNAME CIRCLE_PROJECT_USERNAME=YOUR_GITHUB_USERNAME CIRCLE_PROJECT_REPONAME=metro npm run gh-pages
 ```
+
+## Translations & Localization
+
+> [Docusaurus](https://docusaurus.io/docs/en/next/translation) allows for easy translation functionality using [Crowdin](https://crowdin.com/). Documentation files written in English are uploaded to Crowdin for translation by users within a community.   
+
+And you can preview locally
+
+```bash
+# 1. Install crowdin
+# https://support.crowdin.com/cli-tool/
+
+# 3. You may need to turn on the language switch
+# The `languages.js` file tells Docusaurus what languages you want to enable for your site. At present, English and Chinese have been enabled.
+
+# 4. Translating `i18n/zh-CN.json`
+# If there is no json file you want here, you can create a new one. for example `日本語`
+cp i18n/en.json i18n/ja.json
+# Translating `i18n/xxx.json` and git add the `i18n/xxx.json`
+git add i18n/ja.json -f && git commit -m 'docs: init i18n/ja.json'
+
+# 5. Translating Other Docs
+# see [https://crowdin.com/project/metro](https://crowdin.com/project/metro)
+
+# 6. Download crowdin data
+CROWDIN_DOCUSAURUS_PROJECT_ID=metro CROWDIN_DOCUSAURUS_API_KEY=534eb0e7da51d71c298d7cc7efd3de79 yarn run crowdin-download
+
+# 7. Start local server
+yarn start
+
+# 8. Push and PR
+```
