@@ -42,6 +42,14 @@ commands:
       - yarn_run:
           command: write-translations
           working_directory: website
+      # crowdin install
+      - run: sudo apt-get install default-jre
+      - run: wget https://artifacts.crowdin.com/repo/deb/crowdin.deb -O crowdin.deb
+      - run: sudo dpkg -i crowdin.deb
+      # translations upload/download
+      - run: crowdin --config crowdin.yaml upload sources --auto-update -b master
+      - run: crowdin --config crowdin.yaml download -b master
+      # build and publish website      
       - yarn_run:
           command: publish-gh-pages
           working_directory: website
