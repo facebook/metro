@@ -54,20 +54,14 @@ And you can preview locally
 # 3. You may need to turn on the language switch
 # The `languages.js` file tells Docusaurus what languages you want to enable for your site. At present, English and Chinese have been enabled.
 
-# 4. Translating `i18n/zh-CN.json`
-# If there is no json file you want here, you can create a new one. for example `日本語`
-cp i18n/en.json i18n/ja.json
-# Translating `i18n/xxx.json` and git add the `i18n/xxx.json`
-git add i18n/ja.json -f && git commit -m 'docs: init i18n/ja.json'
-
-# 5. Translating Other Docs
+# 4. Translating Docs
 # see [https://crowdin.com/project/metro](https://crowdin.com/project/metro)
 
-# 6. Download crowdin data
+# 5. Download crowdin data
 CROWDIN_DOCUSAURUS_PROJECT_ID=metro CROWDIN_DOCUSAURUS_API_KEY=534eb0e7da51d71c298d7cc7efd3de79 yarn run crowdin-download
 
-# 7. Start local server
+# 6. Start local server
 yarn start
 
-# 8. Push and PR
+# 7. Push and PR
 ```
