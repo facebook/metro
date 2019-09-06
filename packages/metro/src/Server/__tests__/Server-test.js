@@ -101,8 +101,6 @@ describe('processRequest', () => {
       ),
     );
 
-  let changeHandler;
-
   beforeEach(() => {
     const currentGraphs = new Set();
     DeltaBundler.prototype.buildGraph.mockImplementation(
@@ -199,18 +197,11 @@ describe('processRequest', () => {
       ]),
     );
 
-    changeHandler = null;
     Bundler.prototype.getDependencyGraph = jest.fn().mockReturnValue(
       Promise.resolve({
         getHasteMap: jest.fn().mockReturnValue({on: jest.fn()}),
         load: jest.fn(() => Promise.resolve()),
-        getWatcher: jest.fn(() => ({
-          on(name, handler) {
-            if (name === 'change') {
-              changeHandler = handler;
-            }
-          },
-        })),
+        getWatcher: jest.fn(() => ({})),
       }),
     );
 
@@ -484,45 +475,6 @@ describe('processRequest', () => {
 
     expect(DeltaBundler.prototype.buildGraph.mock.calls.length).toBe(1);
     expect(DeltaBundler.prototype.getDelta.mock.calls.length).toBe(1);
-  });
-
-  describe('/onchange endpoint', () => {
-    let EventEmitter;
-    let req;
-    let res;
-
-    beforeEach(() => {
-      EventEmitter = require.requireActual('events').EventEmitter;
-      req = scaffoldReq(new EventEmitter());
-      req.url = '/onchange';
-      res = {
-        writeHead: jest.fn(),
-        end: jest.fn(),
-      };
-    });
-
-    it('should hold on to request and inform on change', done => {
-      jest.useRealTimers();
-      process.nextTick(() => {
-        // Ensure that the dependency graph has been resolved and the change
-        // handler registered.
-        server.processRequest(req, res);
-        changeHandler();
-        res.end.mockImplementation(value => {
-          expect(value).toBe(JSON.stringify({changed: true}));
-          done();
-        });
-      });
-    });
-
-    it('should not inform changes on disconnected clients', () => {
-      server.processRequest(req, res);
-      req.emit('close');
-      jest.runAllTimers();
-      changeHandler();
-      jest.runAllTimers();
-      expect(res.end).not.toBeCalled();
-    });
   });
 
   describe('/assets endpoint', () => {

@@ -51,7 +51,6 @@ import type {AssetData} from './Assets';
 import type {RevisionId} from './IncrementalBundler';
 import type {Graph, Module} from './DeltaBundler/types.flow';
 import type {CacheStore} from 'metro-cache';
-import type DependencyGraph from './node-haste/DependencyGraph';
 import type {MixedOutput, TransformResult} from './DeltaBundler/types.flow';
 import type {StackFrameOutput} from './Server/symbolicate';
 
@@ -91,23 +90,11 @@ type ProcessEndContext<T> = {|
   +result: T,
 |};
 
-function debounceAndBatch(fn: () => void, delay: number): () => void {
-  let timeout;
-  return () => {
-    clearTimeout(timeout);
-    timeout = setTimeout(fn, delay);
-  };
-}
-
 const DELTA_ID_HEADER = 'X-Metro-Delta-ID';
 const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';
 
 class Server {
   _config: ConfigT;
-  _changeWatchers: Array<{
-    req: IncomingMessage,
-    res: ServerResponse,
-  }>;
   _createModuleId: (path: string) => number;
   _reporter: Reporter;
   _logger: typeof Logger;
@@ -128,7 +115,6 @@ class Server {
 
     this._reporter = config.reporter;
     this._logger = Logger;
-    this._changeWatchers = [];
     this._platforms = new Set(this._config.resolver.platforms);
     this._isEnded = false;
 
@@ -138,24 +124,6 @@ class Server {
     // The whole bundling/serializing logic should follow as well.
     this._createModuleId = config.serializer.createModuleIdFactory();
     this._bundler = new IncrementalBundler(config);
-
-    const debouncedFileChangeHandler = debounceAndBatch(
-      () => this._informChangeWatchers(),
-      50,
-    );
-
-    // changes to the haste map can affect resolution of files in the bundle
-    this._bundler
-      .getBundler()
-      .getDependencyGraph()
-      .then((dependencyGraph: DependencyGraph) => {
-        dependencyGraph.getWatcher().on('change', () => {
-          // Make sure the file watcher event runs through the system before
-          // we rebuild the bundles.
-          debouncedFileChangeHandler();
-        });
-      });
-
     this._nextBundleBuildID = 1;
   }
 
@@ -306,38 +274,6 @@ class Server {
     });
   }
 
-  _informChangeWatchers() {
-    const watchers = this._changeWatchers;
-    const headers = {
-      'Content-Type': 'application/json; charset=UTF-8',
-    };
-
-    watchers.forEach(function(w: {req: IncomingMessage, res: ServerResponse}) {
-      w.res.writeHead(205, headers);
-      w.res.end(JSON.stringify({changed: true}));
-    });
-
-    this._changeWatchers = [];
-  }
-
-  _processOnChangeRequest(req: IncomingMessage, res: ServerResponse) {
-    const watchers = this._changeWatchers;
-
-    watchers.push({
-      req,
-      res,
-    });
-
-    req.on('close', () => {
-      for (let i = 0; i < watchers.length; i++) {
-        if (watchers[i] && watchers[i].req === req) {
-          watchers.splice(i, 1);
-          break;
-        }
-      }
-    });
-  }
-
   _rangeRequestMiddleware(
     req: IncomingMessage,
     res: ServerResponse,
@@ -431,8 +367,6 @@ class Server {
       await this._processSourceMapRequest(req, res);
     } else if (pathname.match(/\.assets$/)) {
       await this._processAssetsRequest(req, res);
-    } else if (pathname.match(/^\/onchange\/?$/)) {
-      this._processOnChangeRequest(req, res);
     } else if (pathname.match(/^\/assets\//)) {
       await this._processSingleAssetRequest(req, res);
     } else if (pathname === '/symbolicate') {
