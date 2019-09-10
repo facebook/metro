@@ -11,6 +11,9 @@
 
 'use strict';
 const {BundleBuilder} = require('../BundleBuilder');
+const {Consumer} = require('../source-map');
+const {add0, add1} = require('ob1');
+const {objectContaining} = expect;
 
 let builder;
 beforeEach(() => {
@@ -567,4 +570,54 @@ Object {
 }
 `);
   });
+
+  it('encodes unmapped regions correctly', () => {
+    const builder = new BundleBuilder('bundle.js');
+    builder
+      .append('abc\n', {
+        version: 3,
+        mappings: 'AAAAA',
+        names: ['ABC'],
+        sources: ['abc.js'],
+      })
+      .append('def\n')
+      .append('ghi\n', {
+        version: 3,
+        mappings: 'CAACA', // The first character of this region is unmapped!
+        names: ['GHI'],
+        sources: ['ghi.js'],
+      });
+    const map = builder.getMap();
+    const code = builder.getCode();
+    expect(code).toMatchInlineSnapshot(`
+"abc
+def
+ghi
+"
+`);
+    const consumer = new Consumer(map);
+    expect(consumer.originalPositionFor(find(code, 'abc'))).toEqual(
+      objectContaining({line: 1, column: 0, source: 'abc.js'}),
+    );
+    expect(consumer.originalPositionFor(find(code, 'def'))).toEqual(
+      objectContaining({line: null, column: null, source: null}),
+    );
+    expect(consumer.originalPositionFor(find(code, 'g'))).toEqual(
+      objectContaining({line: null, column: null, source: null}),
+    );
+    expect(consumer.originalPositionFor(find(code, 'hi'))).toEqual(
+      objectContaining({line: 1, column: 1, source: 'ghi.js'}),
+    );
+  });
 });
+
+function find(text, string) {
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const column = lines[i].indexOf(string);
+    if (column !== -1) {
+      return {line: add1(i), column: add0(column)};
+    }
+  }
+  throw new Error(`${string} not found in code, this test is broken`);
+}
