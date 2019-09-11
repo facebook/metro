@@ -11,26 +11,44 @@ title: API
 
 ## Quick Start
 
-  - Compile a file
+- Compile a file
 
-    ```
-    const config = await Metro.loadConfig();
+  ```js
+  const config = await Metro.loadConfig();
 
-    await Metro.runBuild(config, {
-      entry: 'index.js',
-      out: 'bundle.js',
-    });
-    ```
+  await Metro.runBuild(config, {
+    entry: 'index.js',
+    out: 'bundle.js',
+  });
+  ```
 
-  - Run a server & watch the filesystem for changes
+- Run a server and watch the filesystem for changes
 
-    ```
-    const config = await Metro.loadConfig();
+  ```js
+  const config = await Metro.loadConfig();
 
-    await Metro.runServer(config, {
-      port: 8080,
-    });
-    ```
+  await Metro.runServer(config, {
+    port: 8080,
+  });
+  ```
+
+- Create a Connect middleware and plug it into a server
+
+  ```js
+  const Metro = require('metro');
+  const express = require('express');
+  const app = express();
+  const server = require('http').Server(app);
+
+  Metro.loadConfig().then(async config => {
+    const connectMiddleware = await Metro.createConnectMiddleware(config);
+    const {server: {port}} = config;
+
+    app.use(connectMiddleware.middleware);
+    server.listen(port);
+    connectMiddleware.attachHmrServer(server);
+  });
+  ```
 
 ## Reference
 

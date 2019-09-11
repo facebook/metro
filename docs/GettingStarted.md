@@ -5,13 +5,13 @@ title: Getting Started
 
 Install Metro using [`npm`](https://www.npmjs.com/):
 
-```
+```bash
 npm install --save-dev metro metro-core
 ```
 
 Or via [`yarn`](https://yarnpkg.com/):
 
-```
+```bash
 yarn add --dev metro metro-core
 ```
 
@@ -74,7 +74,7 @@ app.use(
 app.listen(8081);
 ```
 
-### Method `runServer(Config, Options)`
+### Method `runServer(config, options)`
 
 Starts a development server based on the given configuration and options. Returns the server.
 We recommend using `runMetro` instead of `runServer`, `runMetro` calls this function.
@@ -88,7 +88,15 @@ We recommend using `runMetro` instead of `runServer`, `runMetro` calls this func
 * `secureCert (string)`: The cert to use for `https` when `secure` is on.
 * `hmrEnabled (boolean)`: Whether Hot Module Replacement is turned on.
 
-### Method `runBuild(Config, Options)`
+```js
+const config = await Metro.loadConfig();
+
+await Metro.runServer(config, {
+  port: 8080,
+});
+```
+
+### Method `runBuild(config, options)`
 
 Given a configuration and a set of options that you would typically pass to a server, plus a set of options specific to the bundle itself, a bundle will be built. The return value is a Promise that resolves to an object with two properties, `code` and `map`. This is useful at build time.
 
@@ -106,6 +114,40 @@ Given a configuration and a set of options that you would typically pass to a se
 * `platform ('web' | 'android' | 'ios')`: Which platform to bundle for if a list of platforms is provided.
 * `sourceMap (boolean)`: Whether Metro should generate source maps.
 * `sourceMapUrl (string)`: URL where the source map can be found. It defaults to the same same URL as the bundle, but changing the extension from `.bundle` to `.map`. When `inlineSourceMap` is `true`, this property has no effect.
+
+```js
+const config = await Metro.loadConfig();
+
+await Metro.runBuild(config, {
+  platform: 'ios',
+  minify: true,
+  out: '/Users/Metro/metro-ios.js'
+});
+```
+
+### Method `createConnectMiddleware(config)`
+
+Instead of creating the full server, creates a Connect middleware that answers to bundle requests. This middleware can then be plugged into your own servers. The `port` parameter is optional and only used for logging purposes.
+
+#### Options
+
+* `port (number)`: Port for the Connect Middleware (Only for logging purposes).
+
+```js
+const Metro = require('metro');
+const express = require('express');
+const app = express();
+const server = require('http').Server(app);
+
+Metro.loadConfig().then(async config => {
+  const connectMiddleware = await Metro.createConnectMiddleware(config);
+  const {server: {port}} = config;
+
+  app.use(connectMiddleware.middleware);
+  server.listen(port);
+  connectMiddleware.attachHmrServer(server);
+});
+```
 
 ## Available options
 
