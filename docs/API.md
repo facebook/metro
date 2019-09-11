@@ -22,7 +22,7 @@ title: API
   });
   ```
 
-- Run a server & watch the filesystem for changes
+- Run a server and watch the filesystem for changes
 
   ```js
   const config = await Metro.loadConfig();
