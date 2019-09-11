@@ -141,7 +141,7 @@ const server = require('http').Server(app);
 
 Metro.loadConfig().then(async config => {
   const connectMiddleware = await Metro.createConnectMiddleware(config);
-  const { server: { port } } = config;
+  const {server: {port}} = config;
 
   app.use(connectMiddleware.middleware);
   server.listen(port);
