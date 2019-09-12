@@ -6,8 +6,7 @@
  *
  * This is the set of modules that React Native publicly exports and that we
  * want to require lazily. Keep this list in sync with
- * Libraries/react-native/react-native-implementation.js (though having extra
- * entries here is fairly harmless).
+ * react-native/index.js (though having extra entries here is fairly harmless).
 
  * @format
  */
