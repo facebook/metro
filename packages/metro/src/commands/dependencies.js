@@ -9,13 +9,14 @@
 
 'use strict';
 
+const Server = require('../Server');
+
 const denodeify = require('denodeify');
 const fs = require('fs');
 const path = require('path');
-const {loadConfig} = require('metro-config');
 
-const {getOrderedDependencyPaths} = require('../legacy');
 const {makeAsyncCommand} = require('../cli-utils');
+const {loadConfig} = require('metro-config');
 
 import typeof Yargs from 'yargs';
 
@@ -47,8 +48,8 @@ async function dependencies(args: any, config: any) {
     ? fs.createWriteStream(args.output)
     : process.stdout;
 
-  const deps = await getOrderedDependencyPaths(config, options);
-
+  const server = new Server(config);
+  const deps = await server.getOrderedDependencyPaths(options);
   deps.forEach(modulePath => {
     // Temporary hack to disable listing dependencies not under this directory.
     // Long term, we need either
@@ -61,6 +62,8 @@ async function dependencies(args: any, config: any) {
       outStream.write(modulePath + '\n');
     }
   });
+
+  server.end();
   return writeToFile
     ? denodeify(outStream.end).bind(outStream)()
     : Promise.resolve();

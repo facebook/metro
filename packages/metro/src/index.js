@@ -45,6 +45,54 @@ type MetroMiddleWare = {|
   middleware: Middleware,
 |};
 
+type RunServerOptions = {|
+  host?: string,
+  onReady?: (server: HttpServer | HttpsServer) => void,
+  onError?: (Error & {|code?: string|}) => void,
+  secure?: boolean,
+  secureKey?: string,
+  secureCert?: string,
+  hmrEnabled?: boolean,
+  runInspectorProxy?: boolean,
+|};
+
+type BuildGraphOptions = {|
+  entries: $ReadOnlyArray<string>,
+  customTransformOptions?: CustomTransformOptions,
+  dev?: boolean,
+  minify?: boolean,
+  onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
+  platform?: string,
+  type?: 'module' | 'script',
+|};
+
+type RunBuildOptions = {|
+  entry: string,
+  dev?: boolean,
+  out?: string,
+  onBegin?: () => void,
+  onComplete?: () => void,
+  onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
+  minify?: boolean,
+  output?: {
+    build: (
+      MetroServer,
+      RequestOptions,
+    ) => Promise<{code: string, map: string}>,
+    save: (
+      {code: string, map: string},
+      OutputOptions,
+      (...args: Array<string>) => void,
+    ) => Promise<mixed>,
+  },
+  platform?: string,
+  sourceMap?: boolean,
+  sourceMapUrl?: string,
+|};
+
+type BuildCommandOptions = {||} | null;
+type ServeCommandOptions = {||} | null;
+
 async function getConfig(config: InputConfigT): Promise<ConfigT> {
   const defaultConfig = await getDefaultConfig(config.projectRoot);
   return mergeConfig(defaultConfig, config);
@@ -101,17 +149,6 @@ exports.createConnectMiddleware = async function(
     },
   };
 };
-
-type RunServerOptions = {|
-  host?: string,
-  onReady?: (server: HttpServer | HttpsServer) => void,
-  onError?: (Error & {|code?: string|}) => void,
-  secure?: boolean,
-  secureKey?: string,
-  secureCert?: string,
-  hmrEnabled?: boolean,
-  runInspectorProxy?: boolean,
-|};
 
 exports.runServer = async (
   config: ConfigT,
@@ -201,40 +238,6 @@ exports.runServer = async (
     },
   );
 };
-
-type BuildGraphOptions = {|
-  entries: $ReadOnlyArray<string>,
-  customTransformOptions?: CustomTransformOptions,
-  dev?: boolean,
-  minify?: boolean,
-  onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
-  platform?: string,
-  type?: 'module' | 'script',
-|};
-
-type RunBuildOptions = {|
-  entry: string,
-  dev?: boolean,
-  out?: string,
-  onBegin?: () => void,
-  onComplete?: () => void,
-  onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
-  minify?: boolean,
-  output?: {
-    build: (
-      MetroServer,
-      RequestOptions,
-    ) => Promise<{code: string, map: string}>,
-    save: (
-      {code: string, map: string},
-      OutputOptions,
-      (...args: Array<string>) => void,
-    ) => Promise<mixed>,
-  },
-  platform?: string,
-  sourceMap?: boolean,
-  sourceMapUrl?: string,
-|};
 
 exports.runBuild = async (
   config: ConfigT,
@@ -328,9 +331,6 @@ exports.buildGraph = async function(
   }
 };
 
-type BuildCommandOptions = {||} | null;
-type ServeCommandOptions = {||} | null;
-
 exports.attachMetroCli = function(
   yargs: Yargs,
   {
@@ -357,6 +357,3 @@ exports.attachMetroCli = function(
   }
   return yargs;
 };
-
-// The symbols below belong to the legacy API and should not be relied upon
-Object.assign(exports, require('./legacy'));
