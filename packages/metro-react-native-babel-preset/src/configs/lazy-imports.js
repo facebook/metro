@@ -79,7 +79,6 @@ module.exports = new Set([
   'StatusBarIOS',
   'StyleSheet',
   'Systrace',
-  'TimePickerAndroid',
   'ToastAndroid',
   'TVEventHandler',
   'UIManager',
