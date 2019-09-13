@@ -25,9 +25,6 @@ export type Options = {|
   endpoint: string,
   family?: 4 | 6,
   timeout?: number,
-  key?: string | $ReadOnlyArray<string> | Buffer | $ReadOnlyArray<Buffer>,
-  cert?: string | $ReadOnlyArray<string> | Buffer | $ReadOnlyArray<Buffer>,
-  ca?: string | $ReadOnlyArray<string> | Buffer | $ReadOnlyArray<Buffer>,
 |};
 
 const ZLIB_OPTIONS = {
@@ -55,28 +52,13 @@ class HttpStore<T> {
     const uri = url.parse(options.endpoint);
     const module = uri.protocol === 'http:' ? http : https;
 
-    const agentConfig: http$agentOptions = {
+    const agentConfig = {
       family: options.family,
       keepAlive: true,
       keepAliveMsecs: options.timeout || 5000,
       maxSockets: 64,
       maxFreeSockets: 64,
     };
-
-    if (options.key != null) {
-      // $FlowFixMe `key` is missing in the Flow definition
-      agentConfig.key = options.key;
-    }
-
-    if (options.cert != null) {
-      // $FlowFixMe `cert` is missing in the Flow definition
-      agentConfig.cert = options.cert;
-    }
-
-    if (options.ca != null) {
-      // $FlowFixMe `ca` is missing in the Flow definition
-      agentConfig.ca = options.ca;
-    }
 
     if (!uri.hostname || !uri.pathname) {
       throw new TypeError('Invalid endpoint: ' + options.endpoint);
