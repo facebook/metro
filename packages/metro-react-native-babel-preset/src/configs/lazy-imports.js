@@ -15,7 +15,6 @@
 module.exports = new Set([
   'AccessibilityInfo',
   'ActivityIndicator',
-  'ReactNativeART',
   'Button',
   'CheckBox',
   'DatePickerIOS',
