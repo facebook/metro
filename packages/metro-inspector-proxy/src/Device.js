@@ -359,8 +359,9 @@ class Device {
 
       // Chrome won't use the source map unless it appears to be new.
       payload.params.sourceMapURL +=
-        '&random=' + this._getPageId(debuggerInfo.pageId);
-      payload.params.url += '&random=' + this._getPageId(debuggerInfo.pageId);
+        '&cachePrevention=' + this._getPageId(debuggerInfo.pageId);
+      payload.params.url +=
+        '&cachePrevention=' + this._getPageId(debuggerInfo.pageId);
     }
 
     if (
