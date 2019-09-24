@@ -9,7 +9,6 @@
  */
 
 'use strict';
-
 const createConsumer = require('./createConsumer');
 
 const {
@@ -20,6 +19,7 @@ const {
 } = require('./constants');
 
 import type {MixedSourceMap} from '../source-map';
+import type {LookupBias} from './constants.js';
 import type {
   SourcePosition,
   GeneratedPositionLookup,
@@ -34,14 +34,14 @@ import type {
  * `createConsumer`).
  */
 class DelegatingConsumer implements IConsumer {
-  static +GENERATED_ORDER = GENERATED_ORDER;
-  static +ORIGINAL_ORDER = ORIGINAL_ORDER;
-  static +GREATEST_LOWER_BOUND = GREATEST_LOWER_BOUND;
-  static +LEAST_UPPER_BOUND = LEAST_UPPER_BOUND;
+  static +GENERATED_ORDER: IterationOrder = GENERATED_ORDER;
+  static +ORIGINAL_ORDER: IterationOrder = ORIGINAL_ORDER;
+  static +GREATEST_LOWER_BOUND: LookupBias = GREATEST_LOWER_BOUND;
+  static +LEAST_UPPER_BOUND: LookupBias = LEAST_UPPER_BOUND;
 
   _rootConsumer: IConsumer;
 
-  constructor(sourceMap: MixedSourceMap) {
+  constructor(sourceMap: MixedSourceMap): IConsumer {
     this._rootConsumer = createConsumer(sourceMap);
     return this._rootConsumer;
   }

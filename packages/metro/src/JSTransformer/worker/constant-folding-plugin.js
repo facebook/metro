@@ -12,7 +12,19 @@
 
 import typeof {types as BabelTypes} from '@babel/core';
 
-function constantFoldingPlugin(context: {types: BabelTypes}) {
+function constantFoldingPlugin(context: {
+  types: BabelTypes,
+}): $TEMPORARY$object<{|
+  visitor: $TEMPORARY$object<{|
+    BinaryExpression: $TEMPORARY$object<{|exit: (path: any) => void|}>,
+    LogicalExpression: $TEMPORARY$object<{|exit: (path: any) => void|}>,
+    Program: $TEMPORARY$object<{|
+      enter: (path: any, state: any) => void,
+      exit: (path: any, state: any) => void,
+    |}>,
+    UnaryExpression: $TEMPORARY$object<{|exit: (path: any) => void|}>,
+  |}>,
+|}> {
   const t = context.types;
 
   const evaluate = function(path: Object) {

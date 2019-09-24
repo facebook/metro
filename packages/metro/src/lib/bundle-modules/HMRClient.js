@@ -134,11 +134,11 @@ class HMRClient extends EventEmitter {
     this._isEnabled = false;
   }
 
-  isEnabled() {
+  isEnabled(): boolean {
     return this._isEnabled;
   }
 
-  hasPendingUpdates() {
+  hasPendingUpdates(): boolean {
     return this._pendingUpdate != null;
   }
 }

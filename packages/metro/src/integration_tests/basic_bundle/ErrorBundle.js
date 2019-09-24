@@ -20,4 +20,4 @@ const calcSum = (value: string) => {
   return error;
 };
 
-module.exports = calcSum('anything');
+module.exports = (calcSum('anything'): Error);

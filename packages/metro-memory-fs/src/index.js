@@ -175,7 +175,7 @@ class MemoryFs {
   _platform: 'win32' | 'posix';
   _pathSep: string;
   _cwd: ?() => string;
-  constants = constants;
+  constants: any = constants;
   promises: {[funcName: string]: (...args: Array<*>) => Promise<*>};
 
   close: (fd: number, callback: (error: ?Error) => mixed) => void;
@@ -288,7 +288,10 @@ class MemoryFs {
     this._fds = new Map();
   }
 
-  accessSync = (filePath: FilePath, mode?: number): void => {
+  accessSync: (filePath: FilePath, mode?: number) => void = (
+    filePath: FilePath,
+    mode?: number,
+  ): void => {
     if (mode == null) {
       mode = constants.F_OK;
     }
@@ -332,7 +335,7 @@ class MemoryFs {
     }
   };
 
-  closeSync = (fd: number): void => {
+  closeSync: (fd: number) => void = (fd: number): void => {
     const desc = this._getDesc(fd);
     if (desc.writable) {
       this._emitFileChange(desc.nodePath.slice(), {eventType: 'change'});
@@ -340,20 +343,28 @@ class MemoryFs {
     this._fds.delete(fd);
   };
 
-  copyFileSync = (src: FilePath, dest: FilePath, flags?: number = 0) => {
+  copyFileSync: (src: FilePath, dest: FilePath, flags?: number) => void = (
+    src: FilePath,
+    dest: FilePath,
+    flags?: number = 0,
+  ) => {
     const options = flags & constants.COPYFILE_EXCL ? {flag: 'wx'} : {};
     this.writeFileSync(dest, this.readFileSync(src), options);
   };
 
-  fsyncSync = (fd: number): void => {
+  fsyncSync: (fd: number) => void = (fd: number): void => {
     this._getDesc(fd);
   };
 
-  fdatasyncSync = (fd: number): void => {
+  fdatasyncSync: (fd: number) => void = (fd: number): void => {
     this._getDesc(fd);
   };
 
-  openSync = (
+  openSync: (
+    filePath: FilePath,
+    flags: string | number,
+    mode?: number,
+  ) => number = (
     filePath: FilePath,
     flags: string | number,
     mode?: number,
@@ -364,7 +375,13 @@ class MemoryFs {
     return this._open(pathStr(filePath), flags, mode);
   };
 
-  readSync = (
+  readSync: (
+    fd: number,
+    buffer: Buffer,
+    offset: number,
+    length: number,
+    position: ?number,
+  ) => number = (
     fd: number,
     buffer: Buffer,
     offset: number,
@@ -385,7 +402,10 @@ class MemoryFs {
     return bytesRead;
   };
 
-  readdirSync = (
+  readdirSync: (
+    filePath: FilePath,
+    options?: {encoding?: Encoding} | Encoding,
+  ) => Array<string | Buffer> = (
     filePath: FilePath,
     options?:
       | {
@@ -419,7 +439,10 @@ class MemoryFs {
     });
   };
 
-  readFileSync = (
+  readFileSync: (
+    filePath: FilePath,
+    options?: {encoding?: Encoding, flag?: string} | Encoding,
+  ) => Buffer | string = (
     filePath: FilePath,
     options?:
       | {
@@ -458,7 +481,10 @@ class MemoryFs {
     return result.toString(encoding);
   };
 
-  readlinkSync = (
+  readlinkSync: (
+    filePath: FilePath,
+    options: ?(Encoding | {encoding: ?Encoding}),
+  ) => string | Buffer = (
     filePath: FilePath,
     options: ?Encoding | {encoding: ?Encoding},
   ): string | Buffer => {
@@ -486,11 +512,19 @@ class MemoryFs {
     return buf.toString(encoding);
   };
 
-  realpathSync = (filePath: FilePath): string => {
+  realpathSync: (filePath: FilePath) => string = (
+    filePath: FilePath,
+  ): string => {
     return this._resolve(pathStr(filePath)).realpath;
   };
 
-  writeSync = (
+  writeSync: (
+    fd: number,
+    bufferOrString: Buffer | string,
+    offsetOrPosition?: number,
+    lengthOrEncoding?: number | string,
+    position?: number,
+  ) => number = (
     fd: number,
     bufferOrString: Buffer | string,
     offsetOrPosition?: number,
@@ -522,7 +556,11 @@ class MemoryFs {
     return this._write(fd, buffer, offset, length, position);
   };
 
-  writeFileSync = (
+  writeFileSync: (
+    filePathOrFd: FilePath | number,
+    data: Buffer | string,
+    options?: {encoding?: ?Encoding, flag?: ?string, mode?: ?number} | Encoding,
+  ) => void = (
     filePathOrFd: FilePath | number,
     data: Buffer | string,
     options?:
@@ -558,7 +596,10 @@ class MemoryFs {
     }
   };
 
-  mkdirSync = (dirPath: string | Buffer, mode?: number): void => {
+  mkdirSync: (dirPath: string | Buffer, mode?: number) => void = (
+    dirPath: string | Buffer,
+    mode?: number,
+  ): void => {
     if (mode == null) {
       mode = 0o777;
     }
@@ -570,7 +611,9 @@ class MemoryFs {
     dirNode.entries.set(basename, this._makeDir(mode));
   };
 
-  rmdirSync = (dirPath: string | Buffer): void => {
+  rmdirSync: (dirPath: string | Buffer) => void = (
+    dirPath: string | Buffer,
+  ): void => {
     dirPath = pathStr(dirPath);
     const {dirNode, node, basename} = this._resolve(dirPath);
     if (node == null) {
@@ -587,11 +630,11 @@ class MemoryFs {
     dirNode.entries.delete(basename);
   };
 
-  symlinkSync = (
+  symlinkSync: (
     target: string | Buffer,
     filePath: FilePath,
     type?: string,
-  ) => {
+  ) => void = (target: string | Buffer, filePath: FilePath, type?: string) => {
     if (type == null) {
       type = 'file';
     }
@@ -614,7 +657,9 @@ class MemoryFs {
     });
   };
 
-  existsSync = (filePath: FilePath): boolean => {
+  existsSync: (filePath: FilePath) => boolean = (
+    filePath: FilePath,
+  ): boolean => {
     try {
       const {node} = this._resolve(pathStr(filePath));
       return node != null;
@@ -626,7 +671,7 @@ class MemoryFs {
     }
   };
 
-  statSync = (filePath: FilePath) => {
+  statSync: (filePath: FilePath) => Stats = (filePath: FilePath) => {
     filePath = pathStr(filePath);
     const {node} = this._resolve(filePath);
     if (node == null) {
@@ -635,7 +680,7 @@ class MemoryFs {
     return new Stats(node);
   };
 
-  lstatSync = (filePath: FilePath) => {
+  lstatSync: (filePath: FilePath) => Stats = (filePath: FilePath) => {
     filePath = pathStr(filePath);
     const {node} = this._resolve(filePath, {
       keepFinalSymlink: true,
@@ -646,12 +691,26 @@ class MemoryFs {
     return new Stats(node);
   };
 
-  fstatSync = (fd: number) => {
+  fstatSync: (fd: number) => Stats = (fd: number) => {
     const desc = this._getDesc(fd);
     return new Stats(desc.node);
   };
 
-  createReadStream = (
+  createReadStream: (
+    filePath: FilePath,
+    options?:
+      | {
+          autoClose?: ?boolean,
+          encoding?: ?Encoding,
+          end?: ?number,
+          fd?: ?number,
+          flags?: ?string,
+          highWaterMark?: ?number,
+          mode?: ?number,
+          start?: ?number,
+        }
+      | Encoding,
+  ) => ReadFileSteam = (
     filePath: FilePath,
     options?:
       | {
@@ -694,7 +753,7 @@ class MemoryFs {
     return rst;
   };
 
-  unlinkSync = (filePath: FilePath) => {
+  unlinkSync: (filePath: FilePath) => void = (filePath: FilePath) => {
     filePath = pathStr(filePath);
     const {basename, dirNode, dirPath, node} = this._resolve(filePath, {
       keepFinalSymlink: true,
@@ -711,7 +770,19 @@ class MemoryFs {
     });
   };
 
-  createWriteStream = (
+  createWriteStream: (
+    filePath: FilePath,
+    options?:
+      | {
+          autoClose?: boolean,
+          encoding?: Encoding,
+          fd?: ?number,
+          flags?: string,
+          mode?: number,
+          start?: number,
+        }
+      | Encoding,
+  ) => WriteFileStream = (
     filePath: FilePath,
     options?:
       | {
@@ -748,7 +819,16 @@ class MemoryFs {
     return st;
   };
 
-  watch = (
+  watch: (
+    filePath: FilePath,
+    options?:
+      | {encoding?: Encoding, persistent?: boolean, recursive?: boolean}
+      | Encoding,
+    listener?: (
+      eventType: 'rename' | 'change',
+      filePath: ?(string | Buffer),
+    ) => mixed,
+  ) => FSWatcher = (
     filePath: FilePath,
     options?:
       | {

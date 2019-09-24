@@ -12,7 +12,7 @@
 
 const os = require('os');
 
-module.exports = (workers: ?number) => {
+module.exports = (workers: ?number): number => {
   const cores = os.cpus().length;
   return typeof workers === 'number' && Number.isInteger(workers)
     ? Math.min(cores, workers > 0 ? workers : 1)

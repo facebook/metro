@@ -21,15 +21,15 @@ class DependencyGraphHelpers {
     this._assetExts = new Set(assetExts);
   }
 
-  isNodeModulesDir(file: string) {
+  isNodeModulesDir(file: string): boolean {
     return file.lastIndexOf(NODE_MODULES) !== -1;
   }
 
-  isAssetFile(file: string) {
+  isAssetFile(file: string): boolean {
     return this._assetExts.has(this.extname(file));
   }
 
-  extname(name: string) {
+  extname(name: string): string {
     return path.extname(name).substr(1);
   }
 }

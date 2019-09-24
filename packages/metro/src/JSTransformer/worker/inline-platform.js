@@ -17,7 +17,14 @@ const importMap = new Map([['ReactNative', 'react-native']]);
 function createInlinePlatformChecks(
   t: BabelTypes,
   requireName: string = 'require',
-) {
+): $TEMPORARY$object<{|
+  isPlatformNode: (node: any, scope: any, isWrappedModule: boolean) => boolean,
+  isPlatformSelectNode: (
+    node: any,
+    scope: any,
+    isWrappedModule: boolean,
+  ) => boolean,
+|}> {
   const isPlatformNode = (
     node: Object,
     scope: Object,

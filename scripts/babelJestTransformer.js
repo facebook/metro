@@ -18,7 +18,7 @@ const BABEL_CONFIG_PATH = require.resolve('../babel.config.js');
 const babelConfigCacheKey = require('../babel.config.js').getCacheKey();
 
 module.exports = {
-  process(src /*: string */, file /*: string */) {
+  process(src /*: string */, file /*: string */) /*: Transform7Result */ {
     return babelTransformSync(src, {
       filename: file,
       configFile: BABEL_CONFIG_PATH,
@@ -26,8 +26,8 @@ module.exports = {
     });
   },
 
-  getCacheKey: createCacheKeyFunction(
+  getCacheKey: (createCacheKeyFunction(
     [__filename, require.resolve('@babel/core/package.json')],
     [babelConfigCacheKey],
-  ),
+  ) /*: any */),
 };
