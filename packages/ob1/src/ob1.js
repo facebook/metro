@@ -26,7 +26,7 @@ declare function add(a: Number1, b: Number0): Number1;
 declare function add(a: Number0, b: Number1): Number1;
 declare function add(a: Number0, b: Number0): Number0;
 
-function add(a, b) {
+function add(a, b) /*: $FlowFixMeEmpty */ {
   return a + b;
 }
 
@@ -39,21 +39,21 @@ declare function sub(a: Number1, b: Number0): Number1;
 declare function sub(a: Number0, b: Number0): Number0;
 declare function sub(a: Number1, b: Number1): Number0;
 
-function sub(a, b) {
+function sub(a, b): number {
   return a - b;
 }
 
 // Get the underlying number of a 0-based offset, casting away the opaque type.
 declare function get0(x: Number0): number;
 declare function get0(x: void | null): void | null;
-function get0(x) {
+function get0(x) /*: $FlowFixMeEmpty */ {
   return x;
 }
 
 // Get the underlying number of a 1-based offset, casting away the opaque type.
 declare function get1(x: Number1): number;
 declare function get1(x: void | null): void | null;
-function get1(x) {
+function get1(x) /*: $FlowFixMeEmpty */ {
   return x;
 }
 
@@ -82,7 +82,7 @@ declare function inc(a: Number0): Number0;
 // Increment a 1-based offset.
 declare function inc(a: Number1): Number1;
 
-function inc(x) {
+function inc(x) /*: $FlowFixMeEmpty */ {
   return x + 1;
 }
 

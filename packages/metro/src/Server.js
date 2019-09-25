@@ -844,7 +844,12 @@ class Server {
     return this._config.watchFolders;
   }
 
-  static DEFAULT_GRAPH_OPTIONS = {
+  static DEFAULT_GRAPH_OPTIONS: {|
+    customTransformOptions: any,
+    dev: boolean,
+    hot: boolean,
+    minify: boolean,
+  |} = {
     customTransformOptions: Object.create(null),
     dev: true,
     hot: false,

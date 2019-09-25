@@ -23,7 +23,9 @@ exports.watchFile = async function(
   await callback();
 };
 
-exports.makeAsyncCommand = (command: (argv: any) => Promise<*>) => (
+exports.makeAsyncCommand = (
+  command: (argv: any) => Promise<*>,
+): ((argv: any) => void) => (
   // eslint-disable-next-line lint/no-unclear-flowtypes
   argv: any,
 ) => {

@@ -16,4 +16,4 @@ const {Writable} = require('stream');
  * found when Flow v0.97 was deployed. To see the error delete this comment and
  * run Flow. */
 const write = (_, __, callback) => callback();
-module.exports = new Console(new Writable({write, writev: write}));
+module.exports = (new Console(new Writable({write, writev: write})): Console);

@@ -25,7 +25,7 @@ export const extraData = {
   importStar,
   myDefault,
   myFoo,
-  myFunction: myFunction(),
+  myFunction: (myFunction(): string),
   primitiveDefault,
   primitiveFoo,
 };

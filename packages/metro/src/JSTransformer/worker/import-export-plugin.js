@@ -108,7 +108,20 @@ function resolvePath(node: {value: string}, resolve: boolean) {
 }
 
 // eslint-disable-next-line lint/flow-no-fixme
-function importExportPlugin({types: t}: $FlowFixMe) {
+function importExportPlugin({
+  types: t,
+}: $FlowFixMe): $TEMPORARY$object<{|
+  visitor: $TEMPORARY$object<{|
+    ExportAllDeclaration: (path: Path, state: State) => void,
+    ExportDefaultDeclaration: (path: Path, state: State) => void,
+    ExportNamedDeclaration: (path: Path, state: State) => void,
+    ImportDeclaration: (path: Path, state: State) => void,
+    Program: $TEMPORARY$object<{|
+      enter: (path: Path, state: State) => void,
+      exit: (path: Path, state: State) => void,
+    |}>,
+  |}>,
+|}> {
   return {
     visitor: {
       ExportAllDeclaration(path: Path, state: State): void {
