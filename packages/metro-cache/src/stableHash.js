@@ -13,7 +13,7 @@
 const canonicalize = require('metro-core/src/canonicalize');
 const crypto = require('crypto');
 
-function stableHash(value: mixed): Buffer {
+function stableHash(value: mixed) {
   return (
     crypto
       .createHash('md4')

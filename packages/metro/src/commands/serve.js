@@ -18,12 +18,7 @@ const {promisify} = require('util');
 
 import typeof Yargs from 'yargs';
 
-module.exports = (): $TEMPORARY$object<{|
-  builder: (yargs: Yargs) => void,
-  command: $TEMPORARY$string<'serve'>,
-  description: string,
-  handler: (argv: any) => void,
-|}> => ({
+module.exports = () => ({
   command: 'serve',
 
   description:

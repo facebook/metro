@@ -22,12 +22,7 @@ import typeof Yargs from 'yargs';
 const term = new Terminal(process.stdout);
 const updateReporter = new TerminalReporter(term);
 
-module.exports = (): $TEMPORARY$object<{|
-  builder: (yargs: Yargs) => void,
-  command: string,
-  description: string,
-  handler: (argv: any) => void,
-|}> => ({
+module.exports = () => ({
   command: 'build <entry>',
 
   description:

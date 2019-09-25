@@ -57,7 +57,7 @@ module.exports = class Package {
     return !!this.data.name;
   }
 
-  redirectRequire(name: string): any | boolean | string {
+  redirectRequire(name: string) {
     // Copied from node-haste/Package.js
     const replacements = getReplacements(this.data);
 

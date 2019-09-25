@@ -10,7 +10,7 @@
 
 'use strict';
 
-module.exports = function(declared: Object): (opts: any) => any {
+module.exports = function(declared: Object) {
   return function(opts: Object) {
     for (var p in declared) {
       if (opts[p] == null && declared[p].default != null) {

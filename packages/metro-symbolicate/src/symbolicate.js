@@ -40,7 +40,7 @@ async function main(
     stderr: stream$Writable,
     stdout: stream$Writable,
   } = process,
-): Promise<number> {
+) {
   const argv = argvInput.slice();
   function checkAndRemoveArg(arg, valuesPerArg = 0) {
     let values = null;

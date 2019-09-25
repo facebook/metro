@@ -50,9 +50,7 @@ exports.assetExts = [
 
 exports.sourceExts = ['js', 'json', 'ts', 'tsx'];
 
-exports.moduleSystem = (require.resolve(
-  'metro/src/lib/polyfills/require.js',
-): string);
+exports.moduleSystem = require.resolve('metro/src/lib/polyfills/require.js');
 
 exports.platforms = ['ios', 'android', 'windows', 'web'];
 

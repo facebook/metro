@@ -43,7 +43,7 @@ class B64Builder {
   /**
    * Adds `n` markers for generated lines to the mappings.
    */
-  markLines(n: number): this {
+  markLines(n: number) {
     if (n < 1) {
       return this;
     }
@@ -60,7 +60,7 @@ class B64Builder {
   /**
    * Starts a segment at the specified column offset in the current line.
    */
-  startSegment(column: number): this {
+  startSegment(column: number) {
     if (this.hasSegment) {
       this._writeByte(COMMA);
     } else {
@@ -74,7 +74,7 @@ class B64Builder {
   /**
    * Appends a single number to the mappings.
    */
-  append(value: number): this {
+  append(value: number) {
     if (this.pos + MAX_SEGMENT_LENGTH >= this.buffer.length) {
       this._realloc();
     }
@@ -86,7 +86,7 @@ class B64Builder {
   /**
    * Returns the string representation of the mappings.
    */
-  toString(): string {
+  toString() {
     return this.buffer.toString('ascii', 0, this.pos);
   }
 

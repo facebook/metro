@@ -36,16 +36,7 @@ const processId = {name: 'process'};
 
 const dev = {name: '__DEV__'};
 
-function inlinePlugin(
-  context: Context,
-  options: Options,
-): $TEMPORARY$object<{|
-  visitor: $TEMPORARY$object<{|
-    CallExpression: (path: Path, state: State) => void,
-    Identifier: (path: Path, state: State) => void,
-    MemberExpression: (path: Path, state: State) => void,
-  |}>,
-|}> {
+function inlinePlugin(context: Context, options: Options) {
   const t = context.types;
 
   const {isPlatformNode, isPlatformSelectNode} = createInlinePlatformChecks(

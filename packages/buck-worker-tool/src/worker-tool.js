@@ -93,7 +93,7 @@ type JSONWriter = {
   end(object?: Response): void,
 };
 
-function buckWorker(commands: Commands): any {
+function buckWorker(commands: Commands) {
   const reader: JSONReader = JSONStream.parse('*');
   const writer: JSONWriter = JSONStream.stringify();
 

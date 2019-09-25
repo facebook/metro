@@ -19,15 +19,7 @@ type State = {|
   |},
 |};
 
-function reverseDependencyMapReferences({
-  types: t,
-}: {
-  types: BabelTypes,
-}): $TEMPORARY$object<{|
-  visitor: $TEMPORARY$object<{|
-    CallExpression: (path: Path, state: State) => void,
-  |}>,
-|}> {
+function reverseDependencyMapReferences({types: t}: {types: BabelTypes}) {
   return {
     visitor: {
       CallExpression(path: Path, state: State) {

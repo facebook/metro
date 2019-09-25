@@ -21,8 +21,7 @@ import type {
 
 const newline = /\r\n?|\n|\u2028|\u2029/g;
 // fastest implementation
-const countLines = (string: string): number =>
-  (string.match(newline) || []).length + 1;
+const countLines = (string: string) => (string.match(newline) || []).length + 1;
 
 function lineToLineSourceMap(
   source: string,

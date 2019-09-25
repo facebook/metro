@@ -10,8 +10,7 @@
 
 'use strict';
 
-const {DuplicateHasteCandidatesError} = (require('jest-haste-map')
-  .ModuleMap: any);
+const {DuplicateHasteCandidatesError} = require('jest-haste-map').ModuleMap;
 
 class AmbiguousModuleResolutionError extends Error {
   fromModulePath: string;
