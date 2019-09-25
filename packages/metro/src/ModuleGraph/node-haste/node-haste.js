@@ -145,7 +145,6 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     extraNodeModules,
     isAssetFile: (filePath: string): boolean => helpers.isAssetFile(filePath),
     mainFields: options.mainFields,
-    // $FlowFixMe -- error revealed by types-first codemod
     moduleCache,
     moduleMap: new ModuleMap({
       duplicates: new Map(),
@@ -171,7 +170,6 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
         ? new Module(sourcePath, moduleCache, getTransformedFile(sourcePath))
         : NULL_MODULE;
     const allowHaste = !helpers.isNodeModulesDir(from.path);
-    // $FlowFixMe -- error revealed by types-first codemod
     return moduleResolver.resolveDependency(from, id, allowHaste, platform)
       .path;
   };
