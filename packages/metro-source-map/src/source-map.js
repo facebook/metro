@@ -58,6 +58,7 @@ export type BasicSourceMap = {|
   +x_metro_module_paths?: Array<string>,
   +x_facebook_sources?: FBSourcesArray,
   +x_facebook_segments?: FBSegmentMap,
+  +x_hermes_function_offsets?: mixed,
 |};
 
 export type IndexMapSection = {
@@ -74,6 +75,7 @@ export type IndexMap = {|
   +x_metro_module_paths?: Array<string>,
   +x_facebook_sources?: FBSourcesArray,
   +x_facebook_segments?: FBSegmentMap,
+  +x_hermes_function_offsets?: mixed,
 |};
 
 export type MixedSourceMap = IndexMap | BasicSourceMap;
