@@ -193,9 +193,13 @@ class DependencyGraph extends EventEmitter {
     const sha1 = this._hasteFS.getSha1(resolvedPath);
 
     if (!sha1) {
-      throw new ReferenceError(
-        `SHA-1 for file ${filename} (${resolvedPath}) is not computed`,
-      );
+      return getFileHash(resolvedPath)
+      function getFileHash(file) {
+        return require('crypto')
+          .createHash('sha1')
+          .update(fs.readFileSync(file))
+          .digest('hex')
+      }
     }
 
     return sha1;
