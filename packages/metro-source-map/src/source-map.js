@@ -35,6 +35,8 @@ export type MetroSourceMapSegmentTuple =
   | SourceMapping
   | GeneratedCodeMapping;
 
+export type HermesFunctionOffsets = $ReadOnlyArray<$ReadOnlyArray<number>>;
+
 export type FBSourcesArray = $ReadOnlyArray<?FBSourceMetadata>;
 export type FBSourceMetadata = [?FBSourceFunctionMap];
 export type FBSourceFunctionMap = {|
@@ -58,7 +60,7 @@ export type BasicSourceMap = {|
   +x_metro_module_paths?: Array<string>,
   +x_facebook_sources?: FBSourcesArray,
   +x_facebook_segments?: FBSegmentMap,
-  +x_hermes_function_offsets?: mixed,
+  +x_hermes_function_offsets?: HermesFunctionOffsets,
 |};
 
 export type IndexMapSection = {
@@ -75,7 +77,7 @@ export type IndexMap = {|
   +x_metro_module_paths?: Array<string>,
   +x_facebook_sources?: FBSourcesArray,
   +x_facebook_segments?: FBSegmentMap,
-  +x_hermes_function_offsets?: mixed,
+  +x_hermes_function_offsets?: HermesFunctionOffsets,
 |};
 
 export type MixedSourceMap = IndexMap | BasicSourceMap;
