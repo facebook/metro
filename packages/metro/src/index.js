@@ -15,6 +15,7 @@ const MetroHmrServer = require('./HmrServer');
 const MetroServer = require('./Server');
 
 const attachWebsocketServer = require('./lib/attachWebsocketServer');
+const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const makeBuildCommand = require('./commands/build');
@@ -22,7 +23,6 @@ const makeDependenciesCommand = require('./commands/dependencies');
 const makeServeCommand = require('./commands/serve');
 const outputBundle = require('./shared/output/bundle');
 
-const {readFile} = require('fs-extra');
 const {loadConfig, mergeConfig, getDefaultConfig} = require('metro-config');
 const {InspectorProxy} = require('metro-inspector-proxy');
 
@@ -182,11 +182,15 @@ exports.runServer = async (
 
   let httpServer;
 
-  if (secure) {
+  if (
+    secure &&
+    typeof secureKey === 'string' &&
+    typeof secureCert === 'string'
+  ) {
     httpServer = https.createServer(
       {
-        key: await readFile(secureKey),
-        cert: await readFile(secureCert),
+        key: fs.readFileSync(secureKey),
+        cert: fs.readFileSync(secureCert),
       },
       serverApp,
     );
