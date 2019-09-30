@@ -548,7 +548,7 @@ if (__DEV__) {
       if (parentIDs.length === 0) {
         // Reload the app because the hot reload can't succeed.
         // This should work both on web and React Native.
-        performFullRefresh();
+        performFullRefresh('Fast Refresh - No root boundary');
         return;
       }
 
@@ -612,7 +612,7 @@ if (__DEV__) {
           const parentIDs = inverseDependencies[updatedID];
           if (parentIDs.length === 0) {
             // Looks like we bubbled to the root. Can't recover from that.
-            performFullRefresh();
+            performFullRefresh('Fast Refresh - Invalidated root boundary');
             return;
           }
           // Schedule all parent refresh boundaries to re-run in this loop.
@@ -631,7 +631,7 @@ if (__DEV__) {
               refreshBoundaryIDs.add(parentID);
               updatedModuleIDs.push(parentID);
             } else {
-              performFullRefresh();
+              performFullRefresh('Fast Refresh - Invalidated boundary');
               return;
             }
           }
@@ -725,7 +725,7 @@ if (__DEV__) {
     return false;
   };
 
-  const performFullRefresh = () => {
+  const performFullRefresh = (reason: string) => {
     /* global window */
     if (
       typeof window !== 'undefined' &&
@@ -737,7 +737,7 @@ if (__DEV__) {
       // This is attached in setUpDeveloperTools.
       const {Refresh} = metroRequire;
       if (Refresh != null) {
-        Refresh.performFullRefresh();
+        Refresh.performFullRefresh(reason);
       } else {
         console.warn('Could not reload the application after an edit.');
       }
