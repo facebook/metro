@@ -105,6 +105,22 @@ it('collects mixed dependencies as being sync; reverse order', () => {
   );
 });
 
+it('collects __jsResource calls', () => {
+  const ast = astFromCode(`
+    __jsResource("some/async/module");
+  `);
+  const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
+  expect(dependencies).toEqual([
+    {name: 'some/async/module', data: {isAsync: true}},
+    {name: 'asyncRequire', data: {isAsync: false}},
+  ]);
+  expect(codeFromAst(ast)).toEqual(
+    comparableCode(`
+      require(${dependencyMapName}[1], "asyncRequire").resource(${dependencyMapName}[0], "some/async/module");
+    `),
+  );
+});
+
 describe('import() prefetching', () => {
   it('collects prefetch calls', () => {
     const ast = astFromCode(`

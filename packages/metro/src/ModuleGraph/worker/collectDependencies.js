@@ -30,6 +30,7 @@ opaque type Path = any;
 
 type DepOptions = {|
   +prefetchOnly: boolean,
+  +jsResource?: boolean,
 |};
 
 type InternalDependency<D> = {|
@@ -104,6 +105,10 @@ const makeAsyncPrefetchTemplate = template(`
   require(ASYNC_REQUIRE_MODULE_PATH).prefetch(MODULE_ID, MODULE_NAME)
 `);
 
+const makeJSResourceTemplate = template(`
+  require(ASYNC_REQUIRE_MODULE_PATH).resource(MODULE_ID, MODULE_NAME)
+`);
+
 /**
  * Transform all the calls to `require()` and `import()` in a file into ID-
  * independent code, and return the list of dependencies. For example, a call
@@ -141,12 +146,24 @@ function collectDependencies(
       const name = callee.node.name;
 
       if (callee.isImport()) {
-        processImportCall(path, state, {prefetchOnly: false});
+        processImportCall(path, state, {
+          prefetchOnly: false,
+        });
         return;
       }
 
       if (name === '__prefetchImport' && !path.scope.getBinding(name)) {
-        processImportCall(path, state, {prefetchOnly: true});
+        processImportCall(path, state, {
+          prefetchOnly: true,
+        });
+        return;
+      }
+
+      if (name === '__jsResource' && !path.scope.getBinding(name)) {
+        processImportCall(path, state, {
+          prefetchOnly: false,
+          jsResource: true,
+        });
         return;
       }
 
@@ -219,7 +236,15 @@ function processImportCall(
   );
   const MODULE_NAME = types.stringLiteral(name);
 
-  if (!options.prefetchOnly) {
+  if (options.jsResource) {
+    path.replaceWith(
+      makeJSResourceTemplate({
+        ASYNC_REQUIRE_MODULE_PATH,
+        MODULE_ID,
+        MODULE_NAME,
+      }),
+    );
+  } else if (!options.prefetchOnly) {
     path.replaceWith(
       makeAsyncRequireTemplate({
         ASYNC_REQUIRE_MODULE_PATH,
