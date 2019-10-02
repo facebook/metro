@@ -107,6 +107,7 @@ const ASYNC_FUNC_NAMES = [
   'fsync',
   'fdatasync',
   'lstat',
+  'mkdir',
   'open',
   'read',
   'readdir',
