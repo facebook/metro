@@ -357,11 +357,13 @@ class Device {
         }
       }
 
-      // Chrome won't use the source map unless it appears to be new.
-      payload.params.sourceMapURL +=
-        '&cachePrevention=' + this._getPageId(debuggerInfo.pageId);
-      payload.params.url +=
-        '&cachePrevention=' + this._getPageId(debuggerInfo.pageId);
+      if (debuggerInfo.pageId == REACT_NATIVE_RELOADABLE_PAGE.id) {
+        // Chrome won't use the source map unless it appears to be new.
+        payload.params.sourceMapURL +=
+          '&cachePrevention=' + this._getPageId(debuggerInfo.pageId);
+        payload.params.url +=
+          '&cachePrevention=' + this._getPageId(debuggerInfo.pageId);
+      }
     }
 
     if (
