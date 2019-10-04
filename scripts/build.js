@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @flow
- * Note: cannot use prettier here because this file is ran as-is
+ * @noformat
  */
+
+// Note: cannot use prettier here because this file is ran as-is
 
 /**
  * script to build (transpile) files.

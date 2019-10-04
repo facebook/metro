@@ -4,12 +4,13 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * This is the set of modules that React Native publicly exports and that we
- * want to require lazily. Keep this list in sync with
- * react-native/index.js (though having extra entries here is fairly harmless).
-
  * @format
  */
+
+// This is the set of modules that React Native publicly exports and that we
+// want to require lazily. Keep this list in sync with
+// react-native/index.js (though having extra entries here is fairly harmless).
+
 'use strict';
 
 module.exports = new Set([

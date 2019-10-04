@@ -5,19 +5,19 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * Symbolicates a JavaScript stack trace using a source map.
- * In our first form, we read a stack trace from stdin and symbolicate it via
- * the provided source map.
- * In our second form, we symbolicate using an explicit line number, and
- * optionally a column.
- * In our third form, we symbolicate using a module ID, a line number, and
- * optionally a column.
- *
- * See https://our.intern.facebook.com/intern/dex/symbolicating-javascript-stack-traces-for-react-native/
- *
  * @flow strict-local
  * @format
  */
+
+// Symbolicates a JavaScript stack trace using a source map.
+// In our first form, we read a stack trace from stdin and symbolicate it via
+// the provided source map.
+// In our second form, we symbolicate using an explicit line number, and
+// optionally a column.
+// In our third form, we symbolicate using a module ID, a line number, and
+// optionally a column.
+//
+// See https://our.intern.facebook.com/intern/dex/symbolicating-javascript-stack-traces-for-react-native/
 
 'use strict';
 

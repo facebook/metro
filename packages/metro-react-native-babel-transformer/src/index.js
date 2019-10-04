@@ -4,11 +4,12 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * Note: This is a fork of the fb-specific transform.js
- *
  * @flow
  * @format
  */
+
+// Note: This is a fork of the fb-specific transform.js
+
 'use strict';
 
 const crypto = require('crypto');
