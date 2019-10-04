@@ -12,8 +12,10 @@
 
 'use strict';
 
-// flowlint-next-line untyped-import:off
+//flowlint untyped-import:off
 const yargs = require('yargs');
+
+//flowlint untyped-import:error
 
 const {attachMetroCli} = require('./index');
 
