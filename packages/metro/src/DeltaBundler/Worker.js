@@ -126,6 +126,6 @@ function getEndLogEntry(startLogEntry: LogEntry, filename: string): LogEntry {
   };
 }
 
-((module.exports = {
+module.exports = ({
   transform,
-}): Worker);
+}: Worker);

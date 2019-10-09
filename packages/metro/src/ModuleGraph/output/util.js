@@ -18,7 +18,7 @@ const virtualModule = require('../module').virtual;
 
 const {transformSync} = require('@babel/core');
 
-import type {IdsForPathFn, Module} from '../types.flow';
+import type {Dependency, IdsForPathFn, Module} from '../types.flow';
 import type {BasicSourceMap} from 'metro-source-map';
 
 // Transformed modules have the form
@@ -101,7 +101,10 @@ function getModuleCodeAndMap(
   module: Module,
   idForPath: IdForPathFn,
   options: $ReadOnly<{enableIDInlining: boolean}>,
-) {
+): {|
+  moduleCode: string,
+  moduleMap: ?BasicSourceMap,
+|} {
   const {file} = module;
   let moduleCode, moduleMap;
 
@@ -183,7 +186,7 @@ exports.partition = (
 
 // Transforms a new Module object into an old one, so that it can be passed
 // around code.
-exports.toModuleTransport = (module: Module, idsForPath: IdsForPathFn) => {
+exports.toModuleTransport = ((module: Module, idsForPath: IdsForPathFn) => {
   const {dependencies, file} = module;
   const {moduleCode, moduleMap} = getModuleCodeAndMap(
     module,
@@ -200,4 +203,14 @@ exports.toModuleTransport = (module: Module, idsForPath: IdsForPathFn) => {
     name: file.path,
     sourcePath: file.path,
   };
-};
+}: (
+  module: Module,
+  idsForPath: IdsForPathFn,
+) => {
+  code: string,
+  dependencies: Array<Dependency>,
+  id: number,
+  map: ?BasicSourceMap,
+  name: string,
+  sourcePath: string,
+});

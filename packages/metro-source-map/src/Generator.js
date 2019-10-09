@@ -237,7 +237,7 @@ class IndexedSet {
     this.nextIndex = 0;
   }
 
-  indexFor(x: string) {
+  indexFor(x: string): number {
     let index = this.map.get(x);
     if (index == null) {
       index = this.nextIndex++;
@@ -246,7 +246,7 @@ class IndexedSet {
     return index;
   }
 
-  items() {
+  items(): Array<string> {
     return Array.from(this.map.keys());
   }
 }

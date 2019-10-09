@@ -201,7 +201,7 @@ class DependencyGraph extends EventEmitter {
     return sha1;
   }
 
-  getWatcher() {
+  getWatcher(): JestHasteMap {
     return this._haste;
   }
 

@@ -342,7 +342,11 @@ class Server {
     }
   }
 
-  processRequest = (
+  processRequest: (
+    IncomingMessage,
+    ServerResponse,
+    (e: ?Error) => mixed,
+  ) => void = (
     req: IncomingMessage,
     res: ServerResponse,
     next: (?Error) => mixed,
@@ -856,7 +860,17 @@ class Server {
     minify: false,
   };
 
-  static DEFAULT_BUNDLE_OPTIONS = {
+  static DEFAULT_BUNDLE_OPTIONS: {|
+    ...typeof Server.DEFAULT_GRAPH_OPTIONS,
+    excludeSource: false,
+    inlineSourceMap: false,
+    modulesOnly: false,
+    onProgress: null,
+    runModule: true,
+    shallow: false,
+    sourceMapUrl: null,
+    sourceUrl: null,
+  |} = {
     ...Server.DEFAULT_GRAPH_OPTIONS,
     excludeSource: false,
     inlineSourceMap: false,

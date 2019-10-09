@@ -341,7 +341,7 @@ function getModuleNameFromCallArgs(path: Path): ?string {
 collectDependencies.getModuleNameFromCallArgs = getModuleNameFromCallArgs;
 
 class InvalidRequireCallError extends Error {
-  constructor({node}) {
+  constructor({node}: any) {
     const line = node.loc && node.loc.start && node.loc.start.line;
 
     super(

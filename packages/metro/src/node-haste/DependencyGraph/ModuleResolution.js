@@ -228,9 +228,9 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         return this._options.moduleCache.getModule(arbitrary);
       case 'empty':
         const {moduleCache} = this._options;
-        const module = moduleCache.getModule(ModuleResolver.EMPTY_MODULE);
-        invariant(module != null, 'empty module is not available');
-        return module;
+        const module_ = moduleCache.getModule(ModuleResolver.EMPTY_MODULE);
+        invariant(module_ != null, 'empty module is not available');
+        return module_;
       default:
         (resolution.type: empty);
         throw new Error('invalid type');

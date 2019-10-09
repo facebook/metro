@@ -60,7 +60,9 @@ class IncrementalBundler {
   _revisionsById: Map<RevisionId, Promise<GraphRevision>> = new Map();
   _revisionsByGraphId: Map<GraphId, Promise<GraphRevision>> = new Map();
 
-  static revisionIdFromString = revisionIdFromString;
+  static revisionIdFromString: (
+    str: string,
+  ) => RevisionId = revisionIdFromString;
 
   constructor(config: ConfigT) {
     this._config = config;

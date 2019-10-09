@@ -16,6 +16,7 @@ const {
 } = require('./util');
 
 import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
+import type {IndexMap} from 'metro-source-map';
 
 type Params = {|
   fixWrapperOffset: boolean,
@@ -24,7 +25,7 @@ type Params = {|
   startupModules: $ReadOnlyArray<ModuleTransportLike>,
 |};
 
-module.exports = ({
+module.exports = (({
   fixWrapperOffset,
   lazyModules,
   moduleGroups,
@@ -58,4 +59,4 @@ module.exports = ({
   }
 
   return map;
-};
+}: Params => IndexMap);

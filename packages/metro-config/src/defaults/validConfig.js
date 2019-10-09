@@ -9,7 +9,7 @@
  */
 'use strict';
 
-module.exports = async () => {
+module.exports = (async () => {
   const defaultConfig = await require('./index')('/path/to/project');
   const validConfig = {
     ...defaultConfig,
@@ -25,4 +25,4 @@ module.exports = async () => {
   };
 
   return validConfig;
-};
+}: () => any);

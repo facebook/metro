@@ -11,8 +11,10 @@
 'use strict';
 
 const {add0, add1} = require('ob1');
-const FIRST_COLUMN = add0(0);
-const FIRST_LINE = add1(0);
+
+import type {Number0, Number1} from 'ob1';
+const FIRST_COLUMN: Number0 = add0(0);
+const FIRST_LINE: Number1 = add1(0);
 
 export opaque type IterationOrder = 'GENERATED_ORDER' | 'ORIGINAL_ORDER';
 const GENERATED_ORDER: IterationOrder = 'GENERATED_ORDER';
