@@ -262,7 +262,7 @@ it('should retry to traverse the dependencies as it was after getting an error',
 });
 
 it('should retry traversing dependencies after a transform error', async () => {
-  function BadError() {}
+  class BadError extends Error {}
 
   const localOptions = {
     ...options,
