@@ -23,6 +23,7 @@ type BabelTransformerOptions = $ReadOnly<{
   disableFlowStripTypesTransform?: boolean,
   enableBabelRCLookup?: boolean,
   enableBabelRuntime: boolean,
+  extendsBabelConfigPath?: string,
   experimentalImportSupport?: boolean,
   hot: boolean,
   inlineRequires: boolean,
