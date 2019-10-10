@@ -47,15 +47,22 @@ const getBabelRC = (function() {
     plugins: BabelPlugins,
   } = null;
 
-  return function _getBabelRC(projectRoot, options) {
+  return function _getBabelRC({
+    projectRoot,
+    extendsBabelConfigPath,
+    ...options
+  }) {
     if (babelRC != null) {
       return babelRC;
     }
 
-    babelRC = {plugins: []};
+    babelRC = {plugins: [], extends: extendsBabelConfigPath};
+
+    if (extendsBabelConfigPath) {
+      return babelRC;
+    }
 
     // Let's look for a babel config file in the project root.
-    // TODO look into adding a command line option to specify this location
     let projectBabelRCPath;
 
     // .babelrc
@@ -90,6 +97,7 @@ const getBabelRC = (function() {
         [
           require('metro-react-native-babel-preset'),
           {
+            projectRoot,
             ...presetOptions,
             disableImportExportTransform: experimentalImportSupport,
             enableBabelRuntime: options.enableBabelRuntime,
@@ -107,7 +115,7 @@ const getBabelRC = (function() {
  * config object with the appropriate plugins.
  */
 function buildBabelConfig(filename, options, plugins?: BabelPlugins = []) {
-  const babelRC = getBabelRC(options.projectRoot, options);
+  const babelRC = getBabelRC(options);
 
   const extraConfig = {
     babelrc:
