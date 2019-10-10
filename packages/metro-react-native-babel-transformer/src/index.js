@@ -141,6 +141,7 @@ function buildBabelConfig(filename, options, plugins?: BabelPlugins = []) {
 
     if (mayContainEditableReactComponents) {
       const hmrConfig = makeHMRConfig();
+      hmrConfig.plugins = config.plugins.concat(hmrConfig.plugins);
       config = Object.assign({}, config, hmrConfig);
     }
   }
