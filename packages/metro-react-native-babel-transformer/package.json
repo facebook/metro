@@ -19,7 +19,7 @@
   "license": "MIT",
   "dependencies": {
     "@babel/core": "^7.0.0",
-    "babel-preset-fbjs": "^3.1.2",
+    "babel-preset-fbjs": "^3.3.0",
     "metro-babel-transformer": "0.56.0",
     "metro-react-native-babel-preset": "0.56.0",
     "metro-source-map": "0.56.0"
