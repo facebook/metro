@@ -8,6 +8,7 @@
  * @format
  * @emails oncall+js_foundation
  */
+
 'use strict';
 
 import type {BasicSourceMap} from 'metro-source-map';

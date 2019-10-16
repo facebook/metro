@@ -7,6 +7,7 @@
  * @format
  * @flow strict
  */
+
 'use strict';
 
 const MAGIC_NUMBER = require('../shared/output/RamBundle/magic-number');

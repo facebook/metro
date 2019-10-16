@@ -7,6 +7,7 @@
  * @format
  * @flow strict
  */
+
 'use strict';
 
 const {Console} = require('console');

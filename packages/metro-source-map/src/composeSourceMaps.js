@@ -7,6 +7,7 @@
  * @flow
  * @format
  */
+
 'use strict';
 
 // eslint-disable-next-line lint/sort-requires

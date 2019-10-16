@@ -6,6 +6,7 @@
  *
  * @format
  */
+
 'use strict';
 
 const escapeRegExp = require('escape-string-regexp');

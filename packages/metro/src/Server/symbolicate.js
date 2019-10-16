@@ -7,6 +7,7 @@
  * @flow strict-local
  * @format
  */
+
 'use strict';
 
 const {greatestLowerBound} = require('metro-source-map/src/Consumer/search');

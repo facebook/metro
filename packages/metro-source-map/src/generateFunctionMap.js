@@ -6,8 +6,8 @@
  *
  * @flow
  * @format
- *
  */
+
 'use strict';
 
 const B64Builder = require('./B64Builder');

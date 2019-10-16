@@ -6,6 +6,7 @@
  *
  * @format
  */
+
 'use strict';
 
 global.Promise = require('promise');

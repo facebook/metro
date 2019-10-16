@@ -8,6 +8,7 @@
  * @emails oncall+js_foundation
  * @flow strict
  */
+
 'use strict';
 
 const addParamsToDefineCall = require('../addParamsToDefineCall');

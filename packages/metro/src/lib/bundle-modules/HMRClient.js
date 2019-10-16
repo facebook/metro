@@ -7,6 +7,7 @@
  * @flow strict-local
  * @format
  */
+
 'use strict';
 
 const EventEmitter = require('eventemitter3');

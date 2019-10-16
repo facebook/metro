@@ -8,6 +8,7 @@
  * @flow
  * @format
  */
+
 'use strict';
 
 /* eslint-disable no-multi-str */

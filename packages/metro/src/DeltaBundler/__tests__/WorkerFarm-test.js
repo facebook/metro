@@ -7,6 +7,7 @@
  * @emails oncall+metro_bundler
  * @format
  */
+
 'use strict';
 
 const getDefaultConfig = require('metro-config/src/defaults');

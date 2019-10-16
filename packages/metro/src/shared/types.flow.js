@@ -7,6 +7,7 @@
  * @flow strict-local
  * @format
  */
+
 'use strict';
 
 import type {Options as DeltaBundlerOptions} from '../DeltaBundler/types.flow';

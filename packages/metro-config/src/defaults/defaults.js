@@ -7,6 +7,7 @@
  * @flow strict
  * @format
  */
+
 'use strict';
 
 const defaultCreateModuleIdFactory = require('metro/src/lib/createModuleIdFactory');

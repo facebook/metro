@@ -6,6 +6,7 @@
  *
  * @format
  */
+
 'use strict';
 
 const generate = require('@babel/generator').default;

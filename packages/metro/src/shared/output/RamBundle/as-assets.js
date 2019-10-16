@@ -7,6 +7,7 @@
  * @flow
  * @format
  */
+
 'use strict';
 
 const MAGIC_RAM_BUNDLE_NUMBER = require('./magic-number');

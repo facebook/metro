@@ -7,6 +7,7 @@
  * @flow strict-local
  * @format
  */
+
 'use strict';
 
 const writeFile = require('../writeFile');

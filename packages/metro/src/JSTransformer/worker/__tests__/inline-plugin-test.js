@@ -8,6 +8,7 @@
  * @flow
  * @format
  */
+
 'use strict';
 
 const inlinePlugin = require('../inline-plugin');

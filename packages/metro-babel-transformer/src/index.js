@@ -7,6 +7,7 @@
  * @flow
  * @format
  */
+
 'use strict';
 
 const {parseSync, transformFromAstSync} = require('@babel/core');
