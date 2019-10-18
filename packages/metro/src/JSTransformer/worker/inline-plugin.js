@@ -39,13 +39,13 @@ const dev = {name: '__DEV__'};
 function inlinePlugin(
   context: Context,
   options: Options,
-): $TEMPORARY$object<{|
-  visitor: $TEMPORARY$object<{|
+): {|
+  visitor: {|
     CallExpression: (path: Path, state: State) => void,
     Identifier: (path: Path, state: State) => void,
     MemberExpression: (path: Path, state: State) => void,
-  |}>,
-|}> {
+  |},
+|} {
   const t = context.types;
 
   const {isPlatformNode, isPlatformSelectNode} = createInlinePlatformChecks(

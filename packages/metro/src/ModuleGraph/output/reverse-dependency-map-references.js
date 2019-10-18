@@ -23,11 +23,7 @@ function reverseDependencyMapReferences({
   types: t,
 }: {
   types: BabelTypes,
-}): $TEMPORARY$object<{|
-  visitor: $TEMPORARY$object<{|
-    CallExpression: (path: Path, state: State) => void,
-  |}>,
-|}> {
+}): {|visitor: {|CallExpression: (path: Path, state: State) => void|}|} {
   return {
     visitor: {
       CallExpression(path: Path, state: State) {
