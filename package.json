@@ -79,5 +79,6 @@
       "<rootDir>/scripts/setupJest.js"
     ]
   },
-  "license": "MIT"
+  "license": "MIT",
+  "version": "0.56.1"
 }
