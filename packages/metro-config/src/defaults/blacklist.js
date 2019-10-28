@@ -14,17 +14,15 @@ var path = require('path');
 // Don't forget to everything listed here to `package.json`
 // modulePathIgnorePatterns.
 var sharedBlacklist = [
-  /node_modules[/\\]react[/\\]dist[/\\].*/,
-
+  /node_modules\/react\/dist\/.*/,
   /website\/node_modules\/.*/,
-
   /heapCapture\/bundle\.js/,
-
   /.*\/__tests__\/.*/,
 ];
 
 function escapeRegExp(pattern) {
   if (Object.prototype.toString.call(pattern) === '[object RegExp]') {
+    // eslint-disable-next-line no-console
     return pattern.source.replace(/\//g, path.sep);
   } else if (typeof pattern === 'string') {
     var escaped = pattern.replace(/[\-\[\]\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&');
