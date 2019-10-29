@@ -18,7 +18,6 @@ const debounceAsyncQueue = require('./lib/debounceAsyncQueue');
 const formatBundlingError = require('./lib/formatBundlingError');
 const getGraphId = require('./lib/getGraphId');
 const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
-const logToConsole = require('./lib/logToConsole');
 const nullthrows = require('nullthrows');
 const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
 const splitBundleOptions = require('./lib/splitBundleOptions');
@@ -204,7 +203,11 @@ class HmrServer<TClient: Client> {
             ),
           );
         case 'log':
-          logToConsole(data.level, data.data);
+          this._config.reporter.update({
+            type: 'client_log',
+            level: data.level,
+            data: data.data,
+          });
           break;
         case 'log-opt-in':
           client.optedIntoHMR = true;

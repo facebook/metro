@@ -16,6 +16,7 @@ const reporting = require('./reporting');
 const throttle = require('lodash.throttle');
 
 const {AmbiguousModuleResolutionError} = require('metro-core');
+const logToConsole = require('./logToConsole');
 
 import type {
   BundleDetails,
@@ -265,6 +266,9 @@ class TerminalReporter {
         break;
       case 'hmr_client_error':
         this._logHmrClientError(event.error);
+        break;
+      case 'client_log':
+        logToConsole(event.level, event.data);
         break;
       case 'dep_graph_loading':
         // IMPORTANT: Keep this in sync with `nuclide-metro-rpc/lib/parseMessages.tsx`

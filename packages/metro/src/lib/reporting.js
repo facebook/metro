@@ -94,6 +94,19 @@ export type ReportableEvent =
   | {
       type: 'hmr_client_error',
       error: Error,
+    }
+  | {
+      type: 'client_log',
+      level:
+        | 'trace'
+        | 'info'
+        | 'warn'
+        | 'log'
+        | 'group'
+        | 'groupCollapsed'
+        | 'groupEnd'
+        | 'debug',
+      data: Array<mixed>,
     };
 
 /**
