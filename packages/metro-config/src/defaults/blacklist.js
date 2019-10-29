@@ -22,7 +22,6 @@ var sharedBlacklist = [
 
 function escapeRegExp(pattern) {
   if (Object.prototype.toString.call(pattern) === '[object RegExp]') {
-    // eslint-disable-next-line no-console
     return pattern.source.replace(/\//g, path.sep);
   } else if (typeof pattern === 'string') {
     var escaped = pattern.replace(/[\-\[\]\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&');
