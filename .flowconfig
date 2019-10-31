@@ -4,6 +4,8 @@
 [options]
 emoji=true
 
+esproposal.optional_chaining=enable
+
 munge_underscores=true
 
 module.name_mapper='\(metro-[^/]*\)' -> '<PROJECT_ROOT>/packages/\1/src/index.js'
