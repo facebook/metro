@@ -1,0 +1,33 @@
+{
+  "callstack": [
+    {
+      "CJSModuleOffset": 0,
+      "FunctionID": 270,
+      "ByteCodeOffset": 12,
+      "SourceURL": "Fb4aBundle.js"
+    },
+    {
+      "CJSModuleOffset": 51,
+      "FunctionID": 3,
+      "ByteCodeOffset": 4,
+      "SourceURL": "Fb4aBundle.js"
+    },
+    {
+      "CJSModuleOffset": 51,
+      "FunctionID": 3,
+      "ByteCodeOffset": 4,
+      "SourceURL": "seg-5.js"
+    },
+    {
+      "CJSModuleOffset": 51,
+      "FunctionID": 3,
+      "ByteCodeOffset": 4,
+      "SourceURL": "Fb4aBundle.js",
+      "StackFrameRegOffs": 1219,
+      "SourceLocation": "file.js:12:11"
+    },
+    {
+      "NativeCode": true
+    }
+  ]
+}

@@ -7,6 +7,85 @@ fileThatDoesntExist.js:10:null
 "
 `;
 
+exports[`symbolicating a hermes stack trace 1`] = `
+Array [
+  Object {
+    "column": 21,
+    "functionName": "columns.forEach$argument_0",
+    "line": 480,
+    "name": "rows",
+    "source": "/js/node_modules/react-native/Libraries/polyfills/console.js",
+  },
+  Object {
+    "column": 8,
+    "functionName": "setEnabled",
+    "line": 101,
+    "name": "_enabled",
+    "source": "/js/react-native-github/Libraries/Performance/Systrace.js",
+  },
+  Object {
+    "column": 2,
+    "functionName": "getValue",
+    "line": 13,
+    "name": null,
+    "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
+  },
+  Object {
+    "column": null,
+    "functionName": null,
+    "line": null,
+    "name": null,
+    "source": null,
+  },
+  Object {
+    "column": 2,
+    "functionName": "getValue",
+    "line": 13,
+    "name": null,
+    "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
+  },
+  Object {
+    "NativeCode": true,
+  },
+]
+`;
+
+exports[`symbolicating a hermes stack trace CJS 1`] = `
+Array [
+  Object {
+    "column": 36,
+    "functionName": "result.clearExceptTimespans",
+    "line": 160,
+    "name": null,
+    "source": "/js/react-native-github/Libraries/Utilities/createPerformanceLogger.js",
+  },
+  Object {
+    "column": 2,
+    "functionName": "getValue",
+    "line": 13,
+    "name": null,
+    "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
+  },
+  Object {
+    "column": 2,
+    "functionName": "getValue",
+    "line": 13,
+    "name": null,
+    "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
+  },
+  Object {
+    "column": 2,
+    "functionName": "getValue",
+    "line": 13,
+    "name": null,
+    "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
+  },
+  Object {
+    "NativeCode": true,
+  },
+]
+`;
+
 exports[`symbolicating a profiler map 1`] = `
 "JS_0000_xxxxxxxxxxxxxxxxxxxxxx throws0::thrower.js:48:11
 JS_0001_xxxxxxxxxxxxxxxxxxxxxx throws6::thrower.js:35:38

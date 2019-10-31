@@ -1,0 +1,39 @@
+{
+  "callstack": [
+    {
+      "CJSModuleOffset": 0,
+      "FunctionID": 50,
+      "ByteCodeOffset": 58,
+      "SourceURL": "/a/b/c/main.jsbundle"
+    },
+    {
+      "CJSModuleOffset": 0,
+      "FunctionID": 290,
+      "ByteCodeOffset": 3,
+      "SourceURL": "/a/b/c/main.jsbundle"
+    },
+    {
+      "CJSModuleOffset": 0,
+      "FunctionID": 3,
+      "ByteCodeOffset": 4,
+      "SourceURL": "seg-1.js"
+    },
+    {
+      "CJSModuleOffset": 0,
+      "FunctionID": 3,
+      "ByteCodeOffset": 4,
+      "SourceURL": "seg-16.js"
+    },
+    {
+      "CJSModuleOffset": 0,
+      "FunctionID": 3,
+      "ByteCodeOffset": 4,
+      "SourceURL": "seg-1.js",
+      "StackFrameRegOffs": 1912,
+      "SourceLocation": "file.js:23:14"
+    },
+    {
+      "NativeCode": true
+    }
+  ]
+}

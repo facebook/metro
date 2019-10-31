@@ -58,6 +58,7 @@ async function main(
   }
   try {
     const noFunctionNames = checkAndRemoveArg('--no-function-names');
+    const isHermesCrash = checkAndRemoveArg('--hermes-crash');
     const inputLineStart = Number.parseInt(
       checkAndRemoveArgWithValue('--input-line-start') || '1',
       10,
@@ -91,6 +92,7 @@ async function main(
         '       ' + __filename + ' <source-map-file> <tracefile>.cpuprofile',
         ' Optional flags:',
         '  --no-function-names',
+        '  --hermes-crash',
         '  --input-line-start <line> (default: 1)',
         '  --input-column-start <column> (default: 0)',
         '  --output-line-start <line> (default: 1)',
@@ -126,7 +128,15 @@ async function main(
     }
     if (argv.length === 0) {
       const stackTrace = await readAll(stdin);
-      stdout.write(context.symbolicate(stackTrace));
+      if (isHermesCrash) {
+        const stackTraceJSON = JSON.parse(stackTrace);
+        const symbolicatedTrace = context.symbolicateHermesMinidumpTrace(
+          stackTraceJSON,
+        );
+        stdout.write(JSON.stringify(symbolicatedTrace));
+      } else {
+        stdout.write(context.symbolicate(stackTrace));
+      }
     } else if (argv[0].endsWith('.profmap')) {
       stdout.write(context.symbolicateProfilerMap(argv[0]));
     } else if (argv[0] === '--attribution') {

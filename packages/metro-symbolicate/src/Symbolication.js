@@ -16,7 +16,7 @@ const fs = require('fs');
 const invariant = require('invariant');
 const path = require('path');
 
-import type {MixedSourceMap} from 'metro-source-map';
+import type {MixedSourceMap, HermesFunctionOffsets} from 'metro-source-map';
 // flowlint-next-line untyped-type-import:off
 import {typeof SourceMapConsumer} from 'source-map';
 
@@ -40,6 +40,36 @@ type SizeAttributionMap = Object;
 type ChromeTrace = Object;
 // eslint-disable-next-line lint/no-unclear-flowtypes
 type ChromeTraceEntry = Object;
+
+type HermesMinidumpCrashInfo = {
+  +callstack: $ReadOnlyArray<HermesMinidumpStackFrame | NativeCodeStackFrame>,
+};
+
+type HermesMinidumpStackFrame = $ReadOnly<{|
+  ByteCodeOffset: number,
+  FunctionID: number,
+  CJSModuleOffset: number,
+  SourceURL: string,
+  StackFrameRegOffs: string,
+  SourceLocation?: string,
+|}>;
+
+type NativeCodeStackFrame = $ReadOnly<{|
+  NativeCode: true,
+  StackFrameRegOffs: string,
+|}>;
+
+type SymbolicatedStackTrace = $ReadOnlyArray<
+  SymbolicatedStackFrame | NativeCodeStackFrame,
+>;
+
+type SymbolicatedStackFrame = $ReadOnly<{|
+  line: ?number,
+  column: ?number,
+  source: ?string,
+  functionName: ?string,
+  name: ?string,
+|}>;
 
 const UNKNOWN_MODULE_IDS: SingleMapModuleIds = {
   segmentId: 0,
@@ -314,6 +344,16 @@ class SymbolicationContext<ModuleIdsT> {
   }
 
   /*
+   * Symbolicates the JavaScript stack trace extracted from the minidump
+   * produced by hermes
+   */
+  symbolicateHermesMinidumpTrace(
+    crashInfo: HermesMinidumpCrashInfo,
+  ): SymbolicatedStackTrace {
+    throw new Error('Not implemented');
+  }
+
+  /*
    * An internal helper function similar to getOriginalPositionFor. This one
    * returns both `name` and `functionName` fields so callers can distinguish the
    * source of the name.
@@ -322,13 +362,7 @@ class SymbolicationContext<ModuleIdsT> {
     lineNumber: ?number,
     columnNumber: ?number,
     moduleIds: ?ModuleIdsT,
-  ): {|
-    line: ?number,
-    column: ?number,
-    source: ?string,
-    name: ?string,
-    functionName: ?string,
-  |} {
+  ): SymbolicatedStackFrame {
     throw new Error('Not implemented');
   }
 
@@ -343,8 +377,10 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
       +consumer: SourceMapConsumer,
       +moduleOffsets: $ReadOnlyArray<number>,
       +sourceFunctionsConsumer: ?SourceMetadataMapConsumer,
+      +hermesOffsets: ?HermesFunctionOffsets,
     |},
   };
+  +_hasLegacySegments: boolean;
 
   constructor(
     SourceMapConsumer: SourceMapConsumer,
@@ -357,6 +393,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
       typeof sourceMapContent === 'string'
         ? JSON.parse(sourceMapContent.replace(/^\)\]\}'/, ''))
         : sourceMapContent;
+    const {x_hermes_function_offsets} = sourceMapJson;
     const segments = {
       '0': {
         consumer: new SourceMapConsumer(sourceMapJson),
@@ -364,6 +401,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
         sourceFunctionsConsumer: useFunctionNames
           ? new SourceMetadataMapConsumer(sourceMapJson)
           : null,
+        hermesOffsets: x_hermes_function_offsets,
       },
     };
     if (sourceMapJson.x_facebook_segments) {
@@ -375,10 +413,63 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
           sourceFunctionsConsumer: useFunctionNames
             ? new SourceMetadataMapConsumer(map)
             : null,
+          hermesOffsets: map.x_hermes_function_offsets,
         };
       }
     }
+    this._hasLegacySegments = sourceMapJson.x_facebook_segments != null;
     this._segments = segments;
+  }
+
+  symbolicateHermesMinidumpTrace(
+    crashInfo: HermesMinidumpCrashInfo,
+  ): SymbolicatedStackTrace {
+    const symbolicatedTrace = [];
+    const {callstack} = crashInfo;
+    if (callstack != null) {
+      for (const stackItem of callstack) {
+        if (stackItem.NativeCode) {
+          symbolicatedTrace.push(stackItem);
+        } else {
+          const {
+            CJSModuleOffset,
+            SourceURL,
+            FunctionID,
+            ByteCodeOffset: localOffset,
+          } = stackItem;
+          const moduleInformation = this._hasLegacySegments
+            ? this.parseFileName(SourceURL)
+            : UNKNOWN_MODULE_IDS;
+          const generatedLine = CJSModuleOffset + this.options.inputLineStart;
+          const segment = this._segments[
+            moduleInformation.segmentId.toString()
+          ];
+          const hermesOffsets = segment?.hermesOffsets;
+          if (!hermesOffsets) {
+            symbolicatedTrace.push({
+              line: null,
+              column: null,
+              source: null,
+              functionName: null,
+              name: null,
+            });
+          } else {
+            const segmentOffsets = hermesOffsets[Number(CJSModuleOffset)];
+            const generatedColumn =
+              segmentOffsets[FunctionID] +
+              localOffset +
+              this.options.inputColumnStart;
+            const originalPosition = this.getOriginalPositionDetailsFor(
+              generatedLine,
+              generatedColumn,
+              moduleInformation,
+            );
+            symbolicatedTrace.push(originalPosition);
+          }
+        }
+      }
+    }
+    return symbolicatedTrace;
   }
 
   /*
@@ -390,13 +481,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
     lineNumber: ?number,
     columnNumber: ?number,
     moduleIds: ?SingleMapModuleIds,
-  ): {|
-    line: ?number,
-    column: ?number,
-    source: ?string,
-    name: ?string,
-    functionName: ?string,
-  |} {
+  ): SymbolicatedStackFrame {
     // Adjust arguments to source-map's input coordinates
     lineNumber =
       lineNumber != null
@@ -497,13 +582,7 @@ class DirectorySymbolicationContext extends SymbolicationContext<string> {
     lineNumber: ?number,
     columnNumber: ?number,
     filename: ?string,
-  ): {|
-    line: ?number,
-    column: ?number,
-    source: ?string,
-    name: ?string,
-    functionName: ?string,
-  |} {
+  ): SymbolicatedStackFrame {
     invariant(
       filename != null,
       'filename is required for DirectorySymbolicationContext',
