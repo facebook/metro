@@ -16,8 +16,6 @@
 // optionally a column.
 // In our third form, we symbolicate using a module ID, a line number, and
 // optionally a column.
-//
-// See https://our.intern.facebook.com/intern/dex/symbolicating-javascript-stack-traces-for-react-native/
 
 'use strict';
 
