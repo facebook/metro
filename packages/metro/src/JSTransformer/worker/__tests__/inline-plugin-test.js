@@ -236,7 +236,7 @@ describe('inline constants', () => {
     });
   });
 
-  it("inlines Platform.select in the code if Platform is a global and the argument doesn't have target platform in it's keys", () => {
+  it("inlines Platform.select in the code if Platform is a global and the argument doesn't have a target platform in its keys", () => {
     const code = `
       function a() {
         var a = Platform.select({ios: 1, default: 2});
@@ -250,7 +250,7 @@ describe('inline constants', () => {
     });
   });
 
-  it("inlines Platform.select in the code if Platform is a global and the argument doesn't have target platform in it keys but has native", () => {
+  it("inlines Platform.select in the code if Platform is a global and the argument doesn't have a target platform in its keys but has native", () => {
     const code = `
       function a() {
         var a = Platform.select({ios: 1, native: 2});
