@@ -236,7 +236,7 @@ describe('inline constants', () => {
     });
   });
 
-  it("inlines Platform.select in the code if Platform is a global and the argument doesn't have target platform in it's keys", () => {
+  it("inlines Platform.select in the code if Platform is a global and the argument doesn't have a target platform in its keys", () => {
     const code = `
       function a() {
         var a = Platform.select({ios: 1, default: 2});
@@ -248,6 +248,39 @@ describe('inline constants', () => {
       inlinePlatform: 'true',
       platform: 'android',
     });
+  });
+
+  it("inlines Platform.select in the code if Platform is a global and the argument doesn't have a target platform in its keys but has native", () => {
+    const code = `
+      function a() {
+        var a = Platform.select({ios: 1, native: 2});
+        var b = a.Platform.select({ios: 1, native: 2});
+      }
+    `;
+
+    compare([inlinePlugin], code, code.replace(/Platform\.select[^;]+/, '2'), {
+      inlinePlatform: 'true',
+      platform: 'android',
+    });
+  });
+
+  it("doesn't inline Platform.select in the code if Platform is a global and the argument only has an unknown platform in its keys", () => {
+    const code = `
+      function a() {
+        var a = Platform.select({web: 2});
+        var b = a.Platform.select({native: 2});
+      }
+    `;
+
+    compare(
+      [inlinePlugin],
+      code,
+      code.replace(/Platform\.select[^;]+/, 'undefined'),
+      {
+        inlinePlatform: 'true',
+        platform: 'android',
+      },
+    );
   });
 
   it('inlines Platform.select in the code when using string keys', () => {
