@@ -48,6 +48,9 @@ function minify({
     },
   };
 
+  /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
+   * error found when Flow v0.111 was deployed. To see the error, delete this
+   * comment and run Flow. */
   const result = uglify.minify(code, options);
 
   if (result.error) {
@@ -57,7 +60,6 @@ function minify({
   return {
     code: result.code,
     // eslint-disable-next-line lint/flow-no-fixme
-    // $FlowFixMe flow cannot coerce the uglify options after using spread.
     map: result.map,
   };
 }
