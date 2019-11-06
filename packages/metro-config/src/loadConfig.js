@@ -110,22 +110,37 @@ function mergeConfig<T: InputConfigT>(
       ...nextConfig,
 
       resolver: {
+        /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses
+         * an error found when Flow v0.111 was deployed. To see the error,
+         * delete this comment and run Flow. */
         ...totalConfig.resolver,
         ...(nextConfig.resolver || {}),
       },
       serializer: {
+        /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses
+         * an error found when Flow v0.111 was deployed. To see the error,
+         * delete this comment and run Flow. */
         ...totalConfig.serializer,
         ...(nextConfig.serializer || {}),
       },
       transformer: {
+        /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses
+         * an error found when Flow v0.111 was deployed. To see the error,
+         * delete this comment and run Flow. */
         ...totalConfig.transformer,
         ...(nextConfig.transformer || {}),
       },
       server: {
+        /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses
+         * an error found when Flow v0.111 was deployed. To see the error,
+         * delete this comment and run Flow. */
         ...totalConfig.server,
         ...(nextConfig.server || {}),
       },
       symbolicator: {
+        /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses
+         * an error found when Flow v0.111 was deployed. To see the error,
+         * delete this comment and run Flow. */
         ...totalConfig.symbolicator,
         ...(nextConfig.symbolicator || {}),
       },

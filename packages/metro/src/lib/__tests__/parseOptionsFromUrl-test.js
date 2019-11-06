@@ -88,6 +88,9 @@ describe('parseOptionsFromUrl', () => {
     it(`defaults to \`${String(defaultValue)}\``, () => {
       expect(
         parseOptionsFromUrl('http://localhost/my/bundle.bundle', new Set([])),
+        /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
+         * error found when Flow v0.111 was deployed. To see the error, delete
+         * this comment and run Flow. */
       ).toMatchObject({[optionName]: defaultValue});
     });
 
@@ -97,6 +100,9 @@ describe('parseOptionsFromUrl', () => {
           `http://localhost/my/bundle.bundle?${optionName}=true`,
           new Set([]),
         ),
+        /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
+         * error found when Flow v0.111 was deployed. To see the error, delete
+         * this comment and run Flow. */
       ).toMatchObject({[optionName]: true});
 
       expect(
@@ -104,6 +110,9 @@ describe('parseOptionsFromUrl', () => {
           `http://localhost/my/bundle.bundle?${optionName}=false`,
           new Set([]),
         ),
+        /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
+         * error found when Flow v0.111 was deployed. To see the error, delete
+         * this comment and run Flow. */
       ).toMatchObject({[optionName]: false});
     });
   });

@@ -254,6 +254,9 @@ class Server {
   }): Promise<Array<string>> {
     const {entryFile, transformOptions, onProgress} = splitBundleOptions({
       ...Server.DEFAULT_BUNDLE_OPTIONS,
+      /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
+       * error found when Flow v0.111 was deployed. To see the error, delete
+       * this comment and run Flow. */
       ...options,
       bundleType: 'bundle',
     });
@@ -523,6 +526,9 @@ class Server {
       log(
         createActionEndEntry({
           ...logEntry,
+          /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses
+           * an error found when Flow v0.111 was deployed. To see the error,
+           * delete this comment and run Flow. */
           ...createEndEntry(endContext),
         }),
       );
