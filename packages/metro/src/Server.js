@@ -11,54 +11,54 @@
 'use strict';
 const IncrementalBundler = require('./IncrementalBundler');
 const MultipartResponse = require('./Server/MultipartResponse');
+const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
 
 const baseJSBundle = require('./DeltaBundler/Serializers/baseJSBundle');
 const bundleToString = require('./lib/bundleToString');
+
+const {codeFrameColumns} = require('@babel/code-frame');
+const debug = require('debug')('Metro:Server');
+const formatBundlingError = require('./lib/formatBundlingError');
+const fs = require('graceful-fs');
 const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
 const getAssets = require('./DeltaBundler/Serializers/getAssets');
 const getGraphId = require('./lib/getGraphId');
 const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
-const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
-const splitBundleOptions = require('./lib/splitBundleOptions');
-const debug = require('debug')('Metro:Server');
-const formatBundlingError = require('./lib/formatBundlingError');
 const mime = require('mime-types');
 const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
-const transformHelpers = require('./lib/transformHelpers');
 const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
 const path = require('path');
+const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
+const splitBundleOptions = require('./lib/splitBundleOptions');
 const symbolicate = require('./Server/symbolicate');
+const transformHelpers = require('./lib/transformHelpers');
 const url = require('url');
-const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
 
 const {getAsset} = require('./Assets');
 const {
   getExplodedSourceMap,
 } = require('./DeltaBundler/Serializers/getExplodedSourceMap');
-
-import type {ExplodedSourceMap} from './DeltaBundler/Serializers/getExplodedSourceMap';
-import type {IncomingMessage, ServerResponse} from 'http';
-import type {Reporter} from './lib/reporting';
-import type {GraphId} from './lib/getGraphId';
-import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
-import type {
-  BundleOptions,
-  GraphOptions,
-  SplitBundleOptions,
-} from './shared/types.flow';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
-import type {AssetData} from './Assets';
-import type {RevisionId} from './IncrementalBundler';
-import type {Graph, Module} from './DeltaBundler/types.flow';
-import type {CacheStore} from 'metro-cache';
-import type {MixedOutput, TransformResult} from './DeltaBundler/types.flow';
-import type {StackFrameOutput} from './Server/symbolicate';
-
 const {
   Logger,
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
 
+import type {AssetData} from './Assets';
+import type {ExplodedSourceMap} from './DeltaBundler/Serializers/getExplodedSourceMap';
+import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
+import type {Graph, Module} from './DeltaBundler/types.flow';
+import type {MixedOutput, TransformResult} from './DeltaBundler/types.flow';
+import type {RevisionId} from './IncrementalBundler';
+import type {GraphId} from './lib/getGraphId';
+import type {Reporter} from './lib/reporting';
+import type {
+  BundleOptions,
+  GraphOptions,
+  SplitBundleOptions,
+} from './shared/types.flow';
+import type {IncomingMessage, ServerResponse} from 'http';
+import type {CacheStore} from 'metro-cache';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {
   ActionLogEntryData,
   ActionStartLogEntry,
@@ -377,7 +377,7 @@ class Server {
     } else if (pathname.match(/^\/assets\//)) {
       await this._processSingleAssetRequest(req, res);
     } else if (pathname === '/symbolicate') {
-      this._symbolicate(req, res);
+      await this._symbolicate(req, res);
     } else {
       next();
     }
@@ -728,61 +728,81 @@ class Server {
     },
   });
 
-  _symbolicate(req: IncomingMessage, res: ServerResponse) {
-    const symbolicatingLogEntry = log(createActionStartEntry('Symbolicating'));
+  async _symbolicate(req: IncomingMessage, res: ServerResponse) {
+    const getCodeFrame = (urls, symbolicatedStack) => {
+      for (let i = 0; i < symbolicatedStack.length; i++) {
+        const {collapse, column, file, lineNumber} = symbolicatedStack[i];
+        if (collapse || lineNumber == null || urls.has(file)) {
+          continue;
+        }
 
-    debug('Start symbolication');
+        return {
+          content: codeFrameColumns(fs.readFileSync(file, 'utf8'), {
+            // Metro returns 0 based columns but codeFrameColumns expects 1-based columns
+            start: {column: column + 1, line: lineNumber},
+          }),
+          location: {
+            row: lineNumber,
+            column,
+          },
+          fileName: file,
+        };
+      }
 
-    /* $FlowFixMe: where is `rowBody` defined? Is it added by
-     * the `connect` framework? */
-    Promise.resolve(req.rawBody)
-      .then((body: string) => {
-        const stack = JSON.parse(body).stack;
+      return null;
+    };
 
-        // In case of multiple bundles / HMR, some stack frames can have
-        // different URLs from others
-        const urls = new Set();
-        stack.forEach(frame => {
-          const sourceUrl = frame.file;
-          // Skip `/debuggerWorker.js` which drives remote debugging because it
-          // does not need to symbolication.
-          // Skip anything except http(s), because there is no support for that yet
-          if (
-            sourceUrl != null &&
-            !urls.has(sourceUrl) &&
-            !sourceUrl.endsWith('/debuggerWorker.js') &&
-            sourceUrl.startsWith('http')
-          ) {
-            urls.add(sourceUrl);
-          }
-        });
-
-        const mapPromises = Array.from(urls.values()).map(
-          this._explodedSourceMapForURL,
-          this,
-        );
-
-        debug('Getting source maps for symbolication');
-        return Promise.all(mapPromises).then(maps => {
-          debug('Performing fast symbolication');
-          const urlsToMaps = zip(urls.values(), maps);
-          return symbolicate(stack, urlsToMaps, this._config);
-        });
-      })
-      .then(
-        (stack: $ReadOnlyArray<StackFrameOutput>) => {
-          debug('Symbolication done');
-          res.end(JSON.stringify({stack}));
-          process.nextTick(() => {
-            log(createActionEndEntry(symbolicatingLogEntry));
-          });
-        },
-        error => {
-          console.error(error.stack || error);
-          res.statusCode = 500;
-          res.end(JSON.stringify({error: error.message}));
-        },
+    try {
+      const symbolicatingLogEntry = log(
+        createActionStartEntry('Symbolicating'),
       );
+      debug('Start symbolication');
+      /* $FlowFixMe: where is `rawBody` defined? Is it added by the `connect` framework? */
+      const body = await req.rawBody;
+      const stack = JSON.parse(body).stack;
+
+      // In case of multiple bundles / HMR, some stack frames can have different URLs from others
+      const urls = new Set();
+      stack.forEach(frame => {
+        const sourceUrl = frame.file;
+        // Skip `/debuggerWorker.js` which does not need symbolication.
+        if (
+          sourceUrl != null &&
+          !urls.has(sourceUrl) &&
+          !sourceUrl.endsWith('/debuggerWorker.js') &&
+          sourceUrl.startsWith('http')
+        ) {
+          urls.add(sourceUrl);
+        }
+      });
+
+      debug('Getting source maps for symbolication');
+      const sourceMaps = await Promise.all(
+        Array.from(urls.values()).map(this._explodedSourceMapForURL, this),
+      );
+
+      debug('Performing fast symbolication');
+      const symbolicatedStack = await await symbolicate(
+        stack,
+        zip(urls.values(), sourceMaps),
+        this._config,
+      );
+
+      debug('Symbolication done');
+      res.end(
+        JSON.stringify({
+          codeFrame: getCodeFrame(urls, symbolicatedStack),
+          stack: symbolicatedStack,
+        }),
+      );
+      process.nextTick(() => {
+        log(createActionEndEntry(symbolicatingLogEntry));
+      });
+    } catch (error) {
+      console.error(error.stack || error);
+      res.statusCode = 500;
+      res.end(JSON.stringify({error: error.message}));
+    }
   }
 
   async _explodedSourceMapForURL(reqUrl: string): Promise<ExplodedSourceMap> {

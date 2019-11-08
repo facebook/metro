@@ -48,13 +48,14 @@ describe('processRequest', () => {
     global.Date = NativeDate;
 
     Bundler = require('../../Bundler');
-    Server = require('../');
     crypto = require('crypto');
+    jest.mock('fs', () => new (require('metro-memory-fs'))());
     fs = require('fs');
     getAsset = require('../../Assets').getAsset;
     getPrependedScripts = require('../../lib/getPrependedScripts');
     transformHelpers = require('../../lib/transformHelpers');
     DeltaBundler = require('../../DeltaBundler');
+    Server = require('../');
   });
 
   let server;
@@ -599,6 +600,14 @@ describe('processRequest', () => {
   });
 
   describe('/symbolicate endpoint', () => {
+    beforeEach(() => {
+      fs.mkdirSync('/root');
+      fs.writeFileSync(
+        '/root/mybundle.js',
+        'this\nis\njust an example and it is all fake data, yay!',
+      );
+    });
+
     it('should symbolicate given stack trace', async () => {
       const response = await makeRequest('/symbolicate', {
         rawBody: JSON.stringify({
@@ -616,6 +625,17 @@ describe('processRequest', () => {
 
       expect(JSON.parse(response.body)).toMatchInlineSnapshot(`
         Object {
+          "codeFrame": Object {
+            "content": "> 1 | this
+            | ^
+          2 | is
+          3 | just an example and it is all fake data, yay!",
+            "fileName": "/root/mybundle.js",
+            "location": Object {
+              "column": 0,
+              "row": 1,
+            },
+          },
           "stack": Array [
             Object {
               "collapse": false,
@@ -673,6 +693,17 @@ describe('processRequest', () => {
 
       expect(JSON.parse(response.body)).toMatchInlineSnapshot(`
         Object {
+          "codeFrame": Object {
+            "content": "> 1 | this
+            | ^
+          2 | is
+          3 | just an example and it is all fake data, yay!",
+            "fileName": "/root/mybundle.js",
+            "location": Object {
+              "column": 0,
+              "row": 1,
+            },
+          },
           "stack": Array [
             Object {
               "collapse": false,
@@ -751,6 +782,7 @@ describe('processRequest', () => {
 
       expect(JSON.parse(response.body)).toMatchInlineSnapshot(`
         Object {
+          "codeFrame": null,
           "stack": Array [
             Object {
               "collapse": false,
