@@ -102,9 +102,10 @@ function resolve(
   const modulePaths = [];
   for (let packagePath of genPackagePaths(context, parsedName)) {
     packagePath = context.redirectPackage(packagePath);
-    const modulePath = context.redirectModulePath(
-      path.join(packagePath, parsedName.file),
-    );
+    const modulePath = parsedName.file
+      ? context.redirectModulePath(path.join(packagePath, parsedName.file))
+      : packagePath;
+
     const result = resolveFileOrDir(context, modulePath, platform);
     if (result.type === 'resolved') {
       return result.resolution;
