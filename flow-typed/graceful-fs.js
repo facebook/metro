@@ -243,23 +243,23 @@ declare module 'graceful-fs' {
   ): void;
   declare function readFile(
     filename: string,
-    options: {encoding: string, flag?: string},
+    options: {encoding: string, flag?: string, ...},
     callback: (err: ?Error, data: string) => void,
   ): void;
   declare function readFile(
     filename: string,
-    options: {flag?: string},
+    options: {flag?: string, ...},
     callback: (err: ?Error, data: Buffer) => void,
   ): void;
   declare function readFileSync(filename: string, _: void): Buffer;
   declare function readFileSync(filename: string, encoding: string): string;
   declare function readFileSync(
     filename: string,
-    options: {encoding: string, flag?: string},
+    options: {encoding: string, flag?: string, ...},
   ): string;
   declare function readFileSync(
     filename: string,
-    options: {encoding?: void, flag?: string},
+    options: {encoding?: void, flag?: string, ...},
   ): Buffer;
   declare function writeFile(
     filename: string,

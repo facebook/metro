@@ -12,7 +12,7 @@
 type _Input =
   | string // code or file name
   | Array<string> // array of file names
-  | {[filename: string]: string}; // file names and corresponding code
+  | {[filename: string]: string, ...}; // file names and corresponding code
 
 type _Options = {
   // https://github.com/mishoo/UglifyJS2/tree/harmony#compress-options
@@ -31,10 +31,12 @@ type _Options = {
               keep_quoted?: boolean,
               regex?: RegExp,
               reserved?: $ReadOnlyArray<string>,
+              ...
             },
         reserved?: $ReadOnlyArray<string>,
         safari10?: boolean,
         toplevel?: boolean,
+        ...
       },
   output?: {
     ascii_only?: boolean,
@@ -55,15 +57,18 @@ type _Options = {
     shebang?: boolean,
     width?: number,
     wrap_iife?: boolean,
+    ...
   },
   parse?: {
     bare_returns: boolean,
     html5_comments: boolean,
     shebang: boolean,
+    ...
   },
   sourceMap?: false,
   toplevel?: boolean,
   warnings?: boolean | 'verbose',
+  ...
 };
 
 type _SourceMap = {
@@ -74,6 +79,7 @@ type _SourceMap = {
   sources: Array<string>,
   sourcesContent?: Array<?string>,
   version: number,
+  ...
 };
 
 type _SourceMapOptions =
@@ -84,6 +90,7 @@ type _SourceMapOptions =
       includeSources?: boolean,
       root?: string,
       url?: string,
+      ...
     };
 
 type _Error = {|error: Error|};
@@ -93,7 +100,7 @@ declare module 'uglify-es' {
   declare function minify(code: _Input, options?: _Options): _Error | _Result;
   declare function minify(
     code: _Input,
-    options: {..._Options, sourceMap: _SourceMapOptions},
+    options: {..._Options, sourceMap: _SourceMapOptions, ...},
   ): _Error | {|..._Result, map: string|};
 }
 
@@ -101,6 +108,6 @@ declare module 'terser' {
   declare function minify(code: _Input, options?: _Options): _Error | _Result;
   declare function minify(
     code: _Input,
-    options: {..._Options, sourceMap: _SourceMapOptions},
+    options: {..._Options, sourceMap: _SourceMapOptions, ...},
   ): _Error | {|..._Result, map: string|};
 }

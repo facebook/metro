@@ -41,6 +41,7 @@ type BabylonOptions = {
     | 'optionalChaining'
     | 'optionalCatchBinding',
   >,
+  ...
 };
 
 // based on babel-generator v6.18.0
@@ -60,9 +61,10 @@ type GeneratorOptions = {
   sourceMapTarget?: string,
   sourceRoot?: string,
   sourceFileName?: string,
+  ...
 };
 
-type InlinePlugin = string | {} | (() => {});
+type InlinePlugin = string | {...} | (() => {...});
 type _Plugins = Array<string | Object | [InlinePlugin] | [InlinePlugin, mixed]>;
 
 // based on https://babeljs.io/docs/usage/options/ -- 2016-11-11
@@ -97,10 +99,12 @@ type __TransformOptions = {
   shouldPrintComment?: (comment: string) => boolean,
   retainLines?: boolean,
   extends?: string,
+  ...
 };
 
 type _TransformOptions = __TransformOptions & {
-  env?: {[key: string]: __TransformOptions},
+  env?: {[key: string]: __TransformOptions, ...},
+  ...
 };
 
 type BabelNode = $FlowFixMe;
@@ -111,23 +115,26 @@ type TransformResult = {
   code: ?string,
   ignored: boolean,
   map: ?_BabelSourceMap,
+  ...
 };
 // https://github.com/babel/babel/blob/master/packages/babel-generator/src/buffer.js#L42
 export type GeneratorResult = {
   code: string,
   map: ?_BabelSourceMap,
   rawMappings: ?Array<_BabelSourceMapSegment>,
+  ...
 };
 type VisitFn = <State>(path: Object, state: State) => any;
 
-type BabelTypes = {[key: string]: Function};
-type BabelVisitor = {};
+type BabelTypes = {[key: string]: Function, ...};
+type BabelVisitor = {...};
 
 type _BabelSourceMapSegment = {
-  generated: {column: number, line: number},
+  generated: {column: number, line: number, ...},
   name?: ?string,
-  original?: {column: number, line: number},
+  original?: {column: number, line: number, ...},
   source?: ?string,
+  ...
 };
 
 // #############################################
@@ -158,12 +165,16 @@ type BabelCoreOptions = {|
   babelrcRoots?: Array<string>,
   cwd?: string,
   envName?: string,
-  caller?: {name: string},
+  caller?: {name: string, ...},
   code?: boolean,
   comments?: boolean,
   compact?: 'auto' | boolean,
   configFile?: boolean | string,
-  env?: {production: {[string]: mixed}, staging: {[string]: mixed}},
+  env?: {
+    production: {[string]: mixed, ...},
+    staging: {[string]: mixed, ...},
+    ...
+  },
   extends?: ?string,
   filename?: string,
   filenameRelative?: 'string',
@@ -174,7 +185,7 @@ type BabelCoreOptions = {|
   inputSourceMap?: ?_BabelSourceMap,
   minified?: boolean,
   moduleId?: ?string,
-  moduleIds?: ?{[string]: string},
+  moduleIds?: ?{[string]: string, ...},
   moduleRoot?: string,
   only?: ?(string | Array<string> | RegExp | Array<string | RegExp>),
   parserOpts?: ?Babylon7Options,
@@ -206,7 +217,7 @@ type TemplateOptions = Babylon7Options & {|
   preserveComments?: boolean,
 |};
 
-type Templatable = ({[tokenName: string]: mixed}) => BabelNode;
+type Templatable = ({[tokenName: string]: mixed, ...}) => BabelNode;
 
 type TemplateFunc = (tpl: string, options?: TemplateOptions) => Templatable;
 
@@ -309,7 +320,7 @@ declare module '@babel/generator' {
   declare export default (
     ast: BabelNode,
     options?: GeneratorOptions,
-    code?: string | {[string]: string},
+    code?: string | {[string]: string, ...},
   ) => GeneratorResult;
   declare export default (
     ast: BabelNode,
