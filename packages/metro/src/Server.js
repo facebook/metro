@@ -637,7 +637,13 @@ class Server {
   // This function ensures that modules in source maps are sorted in the same
   // order as in a plain JS bundle.
   _getSortedModules(graph: Graph<>): $ReadOnlyArray<Module<>> {
-    return [...graph.dependencies.values()].sort(
+    const modules = [...graph.dependencies.values()];
+    // Assign IDs to modules in a consistent order
+    for (const module of modules) {
+      this._createModuleId(module.path);
+    }
+    // Sort by IDs
+    return modules.sort(
       (a: Module<MixedOutput>, b: Module<MixedOutput>) =>
         this._createModuleId(a.path) - this._createModuleId(b.path),
     );
