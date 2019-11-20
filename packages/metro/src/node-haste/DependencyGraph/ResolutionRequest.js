@@ -27,11 +27,13 @@ export type Packageish = {
     mainFields: $ReadOnlyArray<string>,
   ): string | false,
   getMain(mainFields: $ReadOnlyArray<string>): string,
+  ...
 };
 
 export type Moduleish = {
   +path: string,
   getPackage(): ?Packageish,
+  ...
 };
 
 export type ModuleishCache<TModule, TPackage> = {
@@ -41,6 +43,7 @@ export type ModuleishCache<TModule, TPackage> = {
     supportsNativePlatform?: boolean,
   ): TPackage,
   getModule(path: string): TModule,
+  ...
 };
 
 type Options<TModule, TPackage> = {|
@@ -52,7 +55,11 @@ type Options<TModule, TPackage> = {|
 |};
 
 class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
-  _immediateResolutionCache: {[key: string]: TModule, __proto__: null};
+  _immediateResolutionCache: {
+    [key: string]: TModule,
+    __proto__: null,
+    ...
+  };
   _options: Options<TModule, TPackage>;
 
   constructor(options: Options<TModule, TPackage>) {
@@ -106,7 +113,11 @@ class ResolutionRequest<TModule: Moduleish, TPackage: Packageish> {
     this._immediateResolutionCache = Object.create(null);
   }
 
-  getResolutionCache(): {[key: string]: TModule, __proto__: null} {
+  getResolutionCache(): {
+    [key: string]: TModule,
+    __proto__: null,
+    ...
+  } {
     return this._immediateResolutionCache;
   }
 }

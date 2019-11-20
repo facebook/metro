@@ -24,9 +24,9 @@ import type {
 
 // Implementation details shared between MappingsConsumer and SectionsConsumer
 class AbstractConsumer implements IConsumer {
-  _sourceMap: {+file?: string};
+  _sourceMap: {+file?: string, ...};
 
-  constructor(sourceMap: {+file?: string}) {
+  constructor(sourceMap: {+file?: string, ...}) {
     this._sourceMap = sourceMap;
   }
 

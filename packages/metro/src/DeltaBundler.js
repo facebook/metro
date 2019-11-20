@@ -71,7 +71,14 @@ class DeltaBundler<T = MixedOutput> {
 
   async getDelta(
     graph: Graph<T>,
-    {reset, shallow}: {reset: boolean, shallow: boolean},
+    {
+      reset,
+      shallow,
+    }: {
+      reset: boolean,
+      shallow: boolean,
+      ...
+    },
   ): Promise<DeltaResult<T>> {
     const deltaCalculator = this._deltaCalculators.get(graph);
 

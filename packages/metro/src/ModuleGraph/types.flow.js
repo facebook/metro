@@ -72,11 +72,12 @@ export type ModuleIds = {|
  * Indempotent function that gets us the IDs corresponding to a particular
  * module identified by path.
  */
-export type IdsForPathFn = ({path: string}) => ModuleIds;
+export type IdsForPathFn = ({path: string, ...}) => ModuleIds;
 
 export type LoadResult = {
   file: File,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
+  ...
 };
 
 export type LoadFn = (file: string) => LoadResult;
@@ -133,13 +134,17 @@ export type TransformResult = {|
   map: ?BasicSourceMap,
   requireName: string,
   soundResources?: ?Array<string>,
-  importNames?: {all: string, default: string},
+  importNames?: {
+    all: string,
+    default: string,
+    ...
+  },
   isESModule?: true,
 |};
 
-export type TransformResults = {[string]: TransformResult};
+export type TransformResults = {[string]: TransformResult, ...};
 
-export type TransformVariants = {+[name: string]: {}};
+export type TransformVariants = {+[name: string]: {...}, ...};
 
 export type TransformedCodeFile = {|
   +file: string,
@@ -220,9 +225,11 @@ export type Base64Content = string;
 export type AssetContents = {
   +data: Base64Content,
   +outputPath: string,
+  ...
 };
 export type AssetContentsByPath = {
   +[moduleFilePath: string]: $ReadOnlyArray<AssetContents>,
+  ...,
 };
 
 export type ResolvedCodeFile = {|
@@ -233,7 +240,7 @@ export type ResolvedCodeFile = {|
    * all the other dependencies. For example, it could be
    * `{'foo': 'bar/foo.js', 'bar': 'node_modules/bar/index.js'}`.
    */
-  +filePathsByDependencyName: {[dependencyName: string]: string},
+  +filePathsByDependencyName: {[dependencyName: string]: string, ...},
 |};
 
 export type LibraryBoundCodeFile = {|

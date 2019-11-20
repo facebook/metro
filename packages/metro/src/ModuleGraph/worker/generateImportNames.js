@@ -24,7 +24,11 @@ import type {Ast} from '@babel/core';
  */
 function generateImportNames(
   ast: Ast,
-): {importAll: string, importDefault: string} {
+): {
+  importAll: string,
+  importDefault: string,
+  ...
+} {
   let importDefault;
   let importAll;
 

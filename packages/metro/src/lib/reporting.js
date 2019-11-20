@@ -23,6 +23,7 @@ export type BundleDetails = {
   dev: boolean,
   minify: boolean,
   bundleType: string,
+  ...
 };
 
 /**
@@ -34,66 +35,70 @@ export type ReportableEvent =
       port: number,
       projectRoots: $ReadOnlyArray<string>,
       type: 'initialize_started',
+      ...
     }
-  | {
-      type: 'initialize_done',
-    }
+  | {type: 'initialize_done', ...}
   | {
       type: 'initialize_failed',
       port: number,
       error: Error,
+      ...
     }
   | {
       buildID: string,
       type: 'bundle_build_done',
+      ...
     }
   | {
       buildID: string,
       type: 'bundle_build_failed',
+      ...
     }
   | {
       buildID: string,
       bundleDetails: BundleDetails,
       type: 'bundle_build_started',
+      ...
     }
   | {
       error: Error,
       type: 'bundling_error',
+      ...
     }
-  | {
-      type: 'dep_graph_loading',
-    }
-  | {
-      type: 'dep_graph_loaded',
-    }
+  | {type: 'dep_graph_loading', ...}
+  | {type: 'dep_graph_loaded', ...}
   | {
       buildID: string,
       type: 'bundle_transform_progressed',
       transformedFileCount: number,
       totalFileCount: number,
+      ...
     }
   | {
       type: 'global_cache_error',
       error: Error,
+      ...
     }
   | {
       type: 'global_cache_disabled',
       reason: GlobalCacheDisabledReason,
+      ...
     }
-  | {
-      type: 'transform_cache_reset',
-    }
+  | {type: 'transform_cache_reset', ...}
   | {
       type: 'worker_stdout_chunk',
       chunk: string,
+      ...
     }
   | {
       type: 'worker_stderr_chunk',
       chunk: string,
+      ...
     }
   | {
       type: 'hmr_client_error',
       error: Error,
+      ...
     }
   | {
       type: 'client_log',
@@ -107,6 +112,7 @@ export type ReportableEvent =
         | 'groupEnd'
         | 'debug',
       data: Array<mixed>,
+      ...
     };
 
 /**
@@ -127,9 +133,7 @@ export type ReportableEvent =
  * TerminalReporter, that should be the only place in the application should
  * access the `terminal` module (nor the `console`).
  */
-export type Reporter = {
-  update(event: ReportableEvent): void,
-};
+export type Reporter = {update(event: ReportableEvent): void, ...};
 
 /**
  * A standard way to log a warning to the terminal. This should not be called

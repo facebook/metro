@@ -40,6 +40,7 @@ export type TransformerFn = (
 export type TransformerConfig = {
   transformerPath: string,
   transformerConfig: JsTransformerConfig,
+  ...
 };
 
 type Data = $ReadOnly<{|
@@ -49,7 +50,7 @@ type Data = $ReadOnly<{|
   transformFileEndLogEntry: LogEntry,
 |}>;
 
-const transformers: {[string]: Transformer} = {};
+const transformers: {[string]: Transformer, ...} = {};
 
 function getTransformer(
   projectRoot: string,

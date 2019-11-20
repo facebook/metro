@@ -19,9 +19,17 @@ import type {FBSourceFunctionMap} from './source-map';
 import type {Ast} from '@babel/core';
 import traverse from '@babel/traverse';
 import type {Path} from '@babel/traverse';
-type Position = {line: number, column: number};
-type RangeMapping = {name: string, start: Position};
-type Context = {filename?: string};
+type Position = {
+  line: number,
+  column: number,
+  ...
+};
+type RangeMapping = {
+  name: string,
+  start: Position,
+  ...
+};
+type Context = {filename?: string, ...};
 
 /**
  * Generate a map of source positions to function names. The names are meant to

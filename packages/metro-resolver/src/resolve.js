@@ -331,6 +331,7 @@ function resolveFile(
 
 type SourceFileContext = SourceFileForAllExtsContext & {
   +sourceExts: $ReadOnlyArray<string>,
+  ...
 };
 
 /**
@@ -364,6 +365,7 @@ function resolveSourceFile(
 
 type SourceFileForAllExtsContext = SourceFileForExtContext & {
   +preferNativePlatform: boolean,
+  ...
 };
 
 /**
@@ -397,6 +399,7 @@ type SourceFileForExtContext = {
   +candidateExts: Array<string>,
   +doesFileExist: DoesFileExist,
   +filePathPrefix: string,
+  ...
 };
 
 /**

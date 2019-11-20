@@ -68,6 +68,7 @@ export type FileContext = {
   +redirectModulePath: (modulePath: string) => string | false,
   +resolveAsset: ResolveAsset,
   +sourceExts: $ReadOnlyArray<string>,
+  ...
 };
 
 export type FileOrDirContext = FileContext & {
@@ -81,6 +82,7 @@ export type FileOrDirContext = FileContext & {
    * `ModuleGraph/node-haste/Package.js` (!)
    */
   +getPackageMainPath: (packageJsonPath: string) => string,
+  ...
 };
 
 export type HasteContext = FileOrDirContext & {
@@ -95,6 +97,7 @@ export type HasteContext = FileOrDirContext & {
    * `/smth/Foo/package.json`.
    */
   +resolveHastePackage: (name: string) => ?string,
+  ...
 };
 
 export type ModulePathContext = FileOrDirContext & {
@@ -103,14 +106,16 @@ export type ModulePathContext = FileOrDirContext & {
    * resolved.
    */
   +originModulePath: string,
+  ...
 };
 
 export type ResolutionContext = ModulePathContext &
   HasteContext & {
     allowHaste: boolean,
-    extraNodeModules: ?{[string]: string},
+    extraNodeModules: ?{[string]: string, ...},
     originModulePath: string,
     resolveRequest?: ?CustomResolver,
+    ...
   };
 
 export type CustomResolver = (

@@ -31,7 +31,9 @@ export type CustomError = Error & {
     description: string,
     filename: string,
     lineNumber: number,
+    ...
   }>,
+  ...
 };
 
 function formatBundlingError(error: CustomError): FormattedError {

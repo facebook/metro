@@ -35,7 +35,7 @@ function asIndexedRamBundle({
   extraFiles?: Iterable<[string, string | Buffer]>,
   map: IndexMap,
 |} {
-  const idForPath = (x: {path: string}) => idsForPath(x).moduleId;
+  const idForPath = (x: {path: string, ...}) => idsForPath(x).moduleId;
   const [startup, deferred] = partition(modules, preloadedModules);
   const startupModules = [...startup, ...requireCalls];
   const deferredModules = deferred.map((m: Module) =>

@@ -28,16 +28,21 @@ export type RemoteFileMap = {
       [number]: {
         handle: string,
         hash: string,
+        ...
       },
+      ...,
     },
+    ...,
   },
   __proto__: null,
+  ...
 };
 
 // Structure of the object: platform.dir.name.scale = asset
 export type PlatformRemoteFileMap = {
   [string]: RemoteFileMap,
   __proto__: null,
+  ...
 };
 
 type SubTree<T: ModuleTransportLike> = (

@@ -30,7 +30,7 @@ import type {BasicSourceMap} from 'metro-source-map';
 // the dependencies of the module before the closing parenthesis.
 function addModuleIdsToModuleWrapper(
   module: Module,
-  idForPath: ({path: string}) => number,
+  idForPath: ({path: string, ...}) => number,
 ): string {
   const {dependencies, file} = module;
   const {code} = file;
@@ -53,10 +53,11 @@ exports.addModuleIdsToModuleWrapper = addModuleIdsToModuleWrapper;
 
 function inlineModuleIds(
   module: Module,
-  idForPath: ({path: string}) => number,
+  idForPath: ({path: string, ...}) => number,
 ): {
   moduleCode: string,
   moduleMap: ?BasicSourceMap,
+  ...
 } {
   const {dependencies, file} = module;
   const {code, map, path} = file;
@@ -90,7 +91,7 @@ function inlineModuleIds(
 
 exports.inlineModuleIds = inlineModuleIds;
 
-type IdForPathFn = ({path: string}) => number;
+type IdForPathFn = ({path: string, ...}) => number;
 
 /**
  * 1. Adds the module ids to a file if the file is a module. If it's not (e.g.
@@ -100,7 +101,7 @@ type IdForPathFn = ({path: string}) => number;
 function getModuleCodeAndMap(
   module: Module,
   idForPath: IdForPathFn,
-  options: $ReadOnly<{enableIDInlining: boolean}>,
+  options: $ReadOnly<{enableIDInlining: boolean, ...}>,
 ): {|
   moduleCode: string,
   moduleMap: ?BasicSourceMap,
@@ -140,7 +141,7 @@ exports.concat = function* concat<T>(
 
 // Creates an idempotent function that returns numeric IDs for objects based
 // on their `path` property.
-exports.createIdForPathFn = (): (({path: string}) => number) => {
+exports.createIdForPathFn = (): (({path: string, ...}) => number) => {
   const seen = new Map();
   let next = 0;
   return ({path}) => {
@@ -190,7 +191,7 @@ exports.toModuleTransport = ((module: Module, idsForPath: IdsForPathFn) => {
   const {dependencies, file} = module;
   const {moduleCode, moduleMap} = getModuleCodeAndMap(
     module,
-    (x: {path: string}) => idsForPath(x).moduleId,
+    (x: {path: string, ...}) => idsForPath(x).moduleId,
     {enableIDInlining: true},
   );
 
@@ -213,4 +214,5 @@ exports.toModuleTransport = ((module: Module, idsForPath: IdsForPathFn) => {
   map: ?BasicSourceMap,
   name: string,
   sourcePath: string,
+  ...
 });

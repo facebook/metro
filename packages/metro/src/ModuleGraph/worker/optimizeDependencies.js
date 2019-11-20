@@ -23,6 +23,7 @@ import type {TransformResultDependency} from 'metro/src/DeltaBundler';
 type Context = {
   oldToNewIndex: Map<number, number>,
   dependencies: Array<TransformResultDependency>,
+  ...
 };
 
 type Dependencies = $ReadOnlyArray<TransformResultDependency>;

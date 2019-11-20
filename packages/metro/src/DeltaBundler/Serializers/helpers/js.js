@@ -21,6 +21,7 @@ export type Options = {
   +createModuleId: string => number | string,
   +dev: boolean,
   +projectRoot: string,
+  ...
 };
 
 function wrapModule(module: Module<>, options: Options): string {

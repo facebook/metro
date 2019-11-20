@@ -25,10 +25,19 @@ import type {
 
 const METADATA_FIELD_FUNCTIONS = 0;
 
-type Position = {+line: number, +column: number};
-type FunctionMapping = {+line: number, +column: number, +name: string};
-type SourceNameNormalizer = (string, {+sourceRoot?: ?string}) => string;
-type MetadataMap = {[source: string]: ?FBSourceMetadata};
+type Position = {
+  +line: number,
+  +column: number,
+  ...
+};
+type FunctionMapping = {
+  +line: number,
+  +column: number,
+  +name: string,
+  ...
+};
+type SourceNameNormalizer = (string, {+sourceRoot?: ?string, ...}) => string;
+type MetadataMap = {[source: string]: ?FBSourceMetadata, ...};
 
 /**
  * Consumes the `x_facebook_sources` metadata field from a source map and
@@ -71,7 +80,7 @@ class SourceMetadataMapConsumer {
     line,
     column,
     source,
-  }: Position & {+source: ?string}): ?string {
+  }: Position & {+source: ?string, ...}): ?string {
     if (source && line != null && column != null) {
       const mappings = this._getFunctionMappings(source);
       if (mappings) {

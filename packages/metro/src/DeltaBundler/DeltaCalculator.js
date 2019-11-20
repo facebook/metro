@@ -87,6 +87,7 @@ class DeltaCalculator<T> extends EventEmitter {
   }: {
     reset: boolean,
     shallow: boolean,
+    ...
   }): Promise<DeltaResult<T>> {
     // If there is already a build in progress, wait until it finish to start
     // processing a new one (delta server doesn't support concurrent builds).
@@ -175,6 +176,7 @@ class DeltaCalculator<T> extends EventEmitter {
   }: {
     type: string,
     filePath: string,
+    ...
   }): mixed => {
     if (type === 'delete') {
       this._deletedFiles.add(filePath);

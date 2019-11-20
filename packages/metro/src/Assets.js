@@ -43,6 +43,7 @@ export type AssetDataWithoutFiles = {
   +scales: Array<number>,
   +type: string,
   +width: ?number,
+  ...
 };
 export type AssetDataFiltered = {
   +__packager_asset: boolean,
@@ -53,11 +54,10 @@ export type AssetDataFiltered = {
   +scales: Array<number>,
   +type: string,
   +width: ?number,
+  ...
 };
 
-export type AssetData = AssetDataWithoutFiles & {
-  +files: Array<string>,
-};
+export type AssetData = AssetDataWithoutFiles & {+files: Array<string>, ...};
 
 export type AssetDataPlugin = (
   assetData: AssetData,

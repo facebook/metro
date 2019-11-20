@@ -24,6 +24,7 @@ type Result<T> = {
   added: Map<string, Module<T>>,
   modified: Map<string, Module<T>>,
   deleted: Set<string>,
+  ...
 };
 
 /**
@@ -356,7 +357,10 @@ function resolveDependencies<T>(
  * Re-traverse the dependency graph in DFS order to reorder the modules and
  * guarantee the same order between runs. This method mutates the passed graph.
  */
-function reorderGraph<T>(graph: Graph<T>, options: {shallow: boolean}): void {
+function reorderGraph<T>(
+  graph: Graph<T>,
+  options: {shallow: boolean, ...},
+): void {
   const orderedDependencies = new Map();
 
   graph.entryPoints.forEach((entryPoint: string) => {
@@ -376,9 +380,7 @@ function reorderDependencies<T>(
   graph: Graph<T>,
   module: Module<T>,
   orderedDependencies: Map<string, Module<T>>,
-  options: {
-    shallow: boolean,
-  },
+  options: {shallow: boolean, ...},
 ): void {
   if (module.path) {
     if (orderedDependencies.has(module.path)) {

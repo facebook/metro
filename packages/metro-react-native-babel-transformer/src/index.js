@@ -45,6 +45,7 @@ const getBabelRC = (function() {
     presets?: any,
     extends?: string,
     plugins: BabelPlugins,
+    ...
   } = null;
 
   return function _getBabelRC({

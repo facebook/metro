@@ -21,7 +21,11 @@ import type {MixedSourceMap} from 'metro-source-map';
 function buildBundle(
   packagerClient: Server,
   requestOptions: RequestOptions,
-): Promise<{code: string, map: string}> {
+): Promise<{
+  code: string,
+  map: string,
+  ...
+}> {
   return packagerClient.build({
     ...Server.DEFAULT_BUNDLE_OPTIONS,
     ...requestOptions,
@@ -39,7 +43,11 @@ function relativateSerializedMap(
 }
 
 async function saveBundleAndMap(
-  bundle: {code: string, map: string},
+  bundle: {
+    code: string,
+    map: string,
+    ...
+  },
   options: OutputOptions,
   log: (...args: Array<string>) => void,
 ): Promise<mixed> {

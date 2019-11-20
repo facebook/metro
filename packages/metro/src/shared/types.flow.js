@@ -54,6 +54,7 @@ export type BundleOptions = {
   sourceMapUrl: ?string,
   sourceUrl: ?string,
   createModuleIdFactory?: () => (path: string) => number,
+  ...
 };
 
 export type SerializerOptions = {|
@@ -90,6 +91,7 @@ export type ModuleTransportLike = {
   +map: ?MetroSourceMapOrMappings,
   +name?: string,
   +sourcePath: string,
+  ...
 };
 export type ModuleTransportLikeStrict = {|
   +code: string,
@@ -113,6 +115,7 @@ export type OutputOptions = {
   sourcemapOutput?: string,
   sourcemapSourcesRoot?: string,
   sourcemapUseAbsolutePath?: boolean,
+  ...
 };
 
 export type RequestOptions = {|
@@ -131,6 +134,7 @@ export type {MinifierOptions};
 export type MinifierResult = {
   code: string,
   map?: BasicSourceMap,
+  ...
 };
 
 export type MetroMinifier = MinifierOptions => MinifierResult;

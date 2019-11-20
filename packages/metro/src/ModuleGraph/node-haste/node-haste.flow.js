@@ -27,6 +27,7 @@ export type Module = {
   getName(): ModuleID,
   getPackage(): ?Package,
   isHaste(): Promise<boolean>,
+  ...
 };
 
 export type Package = {
@@ -37,12 +38,14 @@ export type Package = {
   getName(): ModuleID,
   isHaste(): Promise<boolean>,
   redirectRequire(id: ModuleID): Path | false,
+  ...
 };
 
 export type ModuleCache = {
   getModule(path: Path): Module,
   getPackage(path: Path): Package,
   getPackageOf(path: Path): ?Package,
+  ...
 };
 
 export type FastFS = {
@@ -51,6 +54,7 @@ export type FastFS = {
   fileExists(path: Path): boolean,
   getAllFiles(): Array<Path>,
   matches(directory: Path, pattern: RegExp): Array<Path>,
+  ...
 };
 
 type HasteMapOptions = {|

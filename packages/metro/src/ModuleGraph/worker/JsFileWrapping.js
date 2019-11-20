@@ -36,7 +36,11 @@ function wrapModule(
   importDefaultName: string,
   importAllName: string,
   dependencyMapName: string,
-): {ast: Object, requireName: string} {
+): {
+  ast: Object,
+  requireName: string,
+  ...
+} {
   const params = buildParameters(
     importDefaultName,
     importAllName,

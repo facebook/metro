@@ -16,7 +16,7 @@ const util = require('source-map/lib/util');
 // Extracted from source-map@0.5.6's SourceMapConsumer
 function normalizeSourcePath(
   sourceInput: string,
-  map: {+sourceRoot?: ?string},
+  map: {+sourceRoot?: ?string, ...},
 ): string {
   const {sourceRoot} = map;
   let source = sourceInput;

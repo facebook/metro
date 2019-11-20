@@ -42,6 +42,7 @@ export type ModuleMap = {
     platform: string | null,
     supportsNativePlatform: ?boolean,
   ): ?string,
+  ...
 };
 
 export type ModuleishCache<TModule, TPackage> = {
@@ -51,6 +52,7 @@ export type ModuleishCache<TModule, TPackage> = {
     supportsNativePlatform?: boolean,
   ): TPackage,
   getModule(path: string): TModule,
+  ...
 };
 
 type Options<TModule, TPackage> = {|
@@ -180,6 +182,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
           // $flowfixme these types are defined explicitly in FailedToResolveNameError but Flow refuses to recognize them here
           dirPaths: $ReadOnlyArray<string>,
           extraPaths: $ReadOnlyArray<string>,
+          ...
         } = error;
         const displayDirPaths = dirPaths
           .filter((dirPath: string) => this._options.dirExists(dirPath))

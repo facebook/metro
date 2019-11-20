@@ -28,6 +28,7 @@ type Options<T: number | string> = {
   +runModule: boolean,
   +sourceMapUrl: ?string,
   +sourceUrl: ?string,
+  ...
 };
 
 function getAppendScripts<T: number | string>(

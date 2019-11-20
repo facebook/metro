@@ -19,19 +19,23 @@ import type {Ast} from '@babel/core';
 import type {Path} from '@babel/traverse';
 
 type State = {
-  exportAll: Array<{file: string}>,
-  exportDefault: Array<{local: string}>,
-  exportNamed: Array<{local: string, remote: string}>,
-
+  exportAll: Array<{file: string, ...}>,
+  exportDefault: Array<{local: string, ...}>,
+  exportNamed: Array<{
+    local: string,
+    remote: string,
+    ...
+  }>,
   importDefault: Ast,
   importAll: Ast,
-
   opts: {
     importDefault: string,
     importAll: string,
     resolve: boolean,
-    out?: {isESModule: boolean},
+    out?: {isESModule: boolean, ...},
+    ...
   },
+  ...
 };
 
 /**
@@ -97,7 +101,7 @@ const resolveTemplate = template.expression(`
 /**
  * Enforces the resolution of a path to a fully-qualified one, if set.
  */
-function resolvePath(node: {value: string}, resolve: boolean) {
+function resolvePath(node: {value: string, ...}, resolve: boolean) {
   if (!resolve) {
     return node;
   }
@@ -350,7 +354,7 @@ function importExportPlugin({
         exit(path: Path, state: State): void {
           const body = path.node.body;
 
-          state.exportDefault.forEach((e: {local: string}) => {
+          state.exportDefault.forEach((e: {local: string, ...}) => {
             body.push(
               exportTemplate({
                 LOCAL: t.identifier(e.local),
@@ -359,7 +363,7 @@ function importExportPlugin({
             );
           });
 
-          state.exportAll.forEach((e: {file: string}) => {
+          state.exportAll.forEach((e: {file: string, ...}) => {
             body.push(
               ...exportAllTemplate({
                 FILE: resolvePath(t.stringLiteral(e.file), state.opts.resolve),
@@ -369,14 +373,16 @@ function importExportPlugin({
             );
           });
 
-          state.exportNamed.forEach((e: {local: string, remote: string}) => {
-            body.push(
-              exportTemplate({
-                LOCAL: t.identifier(e.local),
-                REMOTE: t.identifier(e.remote),
-              }),
-            );
-          });
+          state.exportNamed.forEach(
+            (e: {local: string, remote: string, ...}) => {
+              body.push(
+                exportTemplate({
+                  LOCAL: t.identifier(e.local),
+                  REMOTE: t.identifier(e.remote),
+                }),
+              );
+            },
+          );
 
           if (
             state.exportDefault.length ||

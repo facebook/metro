@@ -25,7 +25,11 @@ const ASSET_BASE_NAME_RE = /(.+?)(@([\d.]+)x)?$/;
 
 function parseBaseName(
   baseName: string,
-): {resolution: number, rootName: string} {
+): {
+  resolution: number,
+  rootName: string,
+  ...
+} {
   const match = baseName.match(ASSET_BASE_NAME_RE);
   if (!match) {
     throw new Error(`invalid asset name: \`${baseName}'`);

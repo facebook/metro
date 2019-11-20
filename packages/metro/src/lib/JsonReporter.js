@@ -12,7 +12,7 @@
 
 const {Writable} = require('stream');
 
-class JsonReporter<TEvent: {[string]: any}> {
+class JsonReporter<TEvent: {[string]: any, ...}> {
   _stream: Writable;
 
   constructor(stream: Writable) {

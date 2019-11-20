@@ -37,6 +37,7 @@ async function main(
     stdin: stream$Readable | tty$ReadStream,
     stderr: stream$Writable,
     stdout: stream$Writable,
+    ...
   } = process,
 ): Promise<number> {
   const argv = argvInput.slice();

@@ -14,6 +14,7 @@ import typeof {types as BabelTypes} from '@babel/core';
 
 function constantFoldingPlugin(context: {
   types: BabelTypes,
+  ...
 }): {|
   visitor: {|
     BinaryExpression: {|exit: (path: any) => void|},

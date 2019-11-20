@@ -23,6 +23,7 @@ function reverseDependencyMapReferences({
   types: t,
 }: {
   types: BabelTypes,
+  ...
 }): {|visitor: {|CallExpression: (path: Path, state: State) => void|}|} {
   return {
     visitor: {

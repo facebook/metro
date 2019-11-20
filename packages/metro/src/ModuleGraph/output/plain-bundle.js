@@ -31,7 +31,7 @@ function asPlainBundle({
   map: MixedSourceMap,
 |} {
   const builder = new BundleBuilder(filename);
-  const modIdForPath = (x: {path: string}) => idsForPath(x).moduleId;
+  const modIdForPath = (x: {path: string, ...}) => idsForPath(x).moduleId;
 
   for (const module of concat(modules, requireCalls)) {
     const {moduleCode, moduleMap} = getModuleCodeAndMap(module, modIdForPath, {

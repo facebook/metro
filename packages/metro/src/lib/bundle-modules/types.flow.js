@@ -37,7 +37,7 @@ export type BundleMetadata = {|
 export type FormattedError = {|
   +type: string,
   +message: string,
-  +errors: Array<{description: string}>,
+  +errors: Array<{description: string, ...}>,
 |};
 
 export type HmrModule = {|

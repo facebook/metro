@@ -195,7 +195,11 @@ class IncrementalBundler {
       onProgress: null,
       shallow: false,
     },
-  ): Promise<{delta: DeltaResult<>, revision: GraphRevision}> {
+  ): Promise<{
+    delta: DeltaResult<>,
+    revision: GraphRevision,
+    ...
+  }> {
     const graphId = getGraphId(entryFile, transformOptions, {
       shallow: otherOptions.shallow,
       experimentalImportBundleSupport: this._config.transformer
@@ -243,7 +247,11 @@ class IncrementalBundler {
   async updateGraph(
     revision: GraphRevision,
     reset: boolean,
-  ): Promise<{delta: DeltaResult<>, revision: GraphRevision}> {
+  ): Promise<{
+    delta: DeltaResult<>,
+    revision: GraphRevision,
+    ...
+  }> {
     const delta = await this._deltaBundler.getDelta(revision.graph, {
       reset,
       shallow: false,

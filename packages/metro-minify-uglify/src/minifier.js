@@ -35,7 +35,11 @@ function minify({
   map,
   reserved,
   config,
-}: MinifierOptions): {code: string, map: ?string} {
+}: MinifierOptions): {
+  code: string,
+  map: ?string,
+  ...
+} {
   const options = {
     ...config,
     mangle: {

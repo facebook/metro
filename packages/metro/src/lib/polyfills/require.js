@@ -22,8 +22,8 @@ type FactoryFn = (
   require: RequireFn,
   metroImportDefault: RequireFn,
   metroImportAll: RequireFn,
-  moduleObject: {exports: {}},
-  exports: {},
+  moduleObject: {exports: {...}, ...},
+  exports: {...},
   dependencyMap: ?DependencyMap,
 ) => void;
 type HotModuleReloadingCallback = () => void;
@@ -39,6 +39,7 @@ type Module = {
   id?: ModuleID,
   exports: Exports,
   hot?: HotModuleReloadingData,
+  ...
 };
 type ModuleDefinition = {|
   dependencyMap: ?DependencyMap,
@@ -53,7 +54,11 @@ type ModuleDefinition = {|
   publicModule: Module,
   verboseName?: string,
 |};
-type ModuleList = {[number]: ?ModuleDefinition, __proto__: null};
+type ModuleList = {
+  [number]: ?ModuleDefinition,
+  __proto__: null,
+  ...
+};
 type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
 type VerboseModuleNameForDev = string;
 
@@ -87,6 +92,7 @@ if (__DEV__) {
   var verboseNamesToModuleIds: {
     [key: string]: number,
     __proto__: null,
+    ...
   } = Object.create(null);
   var initializingModuleIds: Array<number> = [];
 }
@@ -277,14 +283,22 @@ const LOCAL_ID_MASK = ~0 >>> ID_MASK_SHIFT;
 
 function unpackModuleId(
   moduleId: ModuleID,
-): {localId: number, segmentId: number} {
+): {
+  localId: number,
+  segmentId: number,
+  ...
+} {
   const segmentId = moduleId >>> ID_MASK_SHIFT;
   const localId = moduleId & LOCAL_ID_MASK;
   return {segmentId, localId};
 }
 metroRequire.unpackModuleId = unpackModuleId;
 
-function packModuleId(value: {localId: number, segmentId: number}): ModuleID {
+function packModuleId(value: {
+  localId: number,
+  segmentId: number,
+  ...
+}): ModuleID {
   return (value.segmentId << ID_MASK_SHIFT) + value.localId;
 }
 metroRequire.packModuleId = packModuleId;
@@ -467,7 +481,7 @@ if (__DEV__) {
     id: ModuleID,
     factory: FactoryFn,
     dependencyMap: DependencyMap,
-    inverseDependencies: {[key: ModuleID]: Array<ModuleID>},
+    inverseDependencies: {[key: ModuleID]: Array<ModuleID>, ...},
   ) {
     const mod = modules[id];
     if (!mod) {

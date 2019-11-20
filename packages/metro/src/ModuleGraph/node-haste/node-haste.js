@@ -33,11 +33,11 @@ import type {CustomResolver} from 'metro-resolver';
 
 type ResolveOptions = {|
   assetExts: Extensions,
-  extraNodeModules: {[id: string]: string},
+  extraNodeModules: {[id: string]: string, ...},
   mainFields: $ReadOnlyArray<string>,
   resolveRequest?: ?CustomResolver,
   +sourceExts: Extensions,
-  transformedFiles: {[path: Path]: TransformedCodeFile},
+  transformedFiles: {[path: Path]: TransformedCodeFile, ...},
   +platform: string,
 |};
 

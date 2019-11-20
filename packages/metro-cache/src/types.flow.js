@@ -14,4 +14,5 @@ export type CacheStore<T> = {
   get(key: Buffer): ?T | Promise<?T>,
   set(key: Buffer, value: T): void | Promise<void>,
   clear(): void | Promise<void>,
+  ...
 };

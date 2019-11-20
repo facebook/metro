@@ -30,6 +30,7 @@ type BundleProgress = {
   transformedFileCount: number,
   totalFileCount: number,
   ratio: number,
+  ...
 };
 
 export type TerminalReportableEvent =
@@ -39,6 +40,7 @@ export type TerminalReportableEvent =
       type: 'bundle_transform_progressed_throttled',
       transformedFileCount: number,
       totalFileCount: number,
+      ...
     };
 
 type BuildPhase = 'in_progress' | 'done' | 'failed';
@@ -46,6 +48,7 @@ type BuildPhase = 'in_progress' | 'done' | 'failed';
 type SnippetError = ErrnoError & {
   filename?: string,
   snippet?: string,
+  ...
 };
 
 const GLOBAL_CACHE_DISABLED_MESSAGE_FORMAT =
@@ -71,6 +74,7 @@ class TerminalReporter {
     buildID: string,
     transformedFileCount: number,
     totalFileCount: number,
+    ...
   }) => void;
 
   +terminal: Terminal;
@@ -344,6 +348,7 @@ class TerminalReporter {
     buildID: string,
     transformedFileCount: number,
     totalFileCount: number,
+    ...
   }): void {
     const currentProgress = this._activeBundles.get(buildID);
     if (currentProgress == null) {

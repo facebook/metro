@@ -17,7 +17,7 @@ const NODE_MODULES = path.sep + 'node_modules' + path.sep;
 class DependencyGraphHelpers {
   _assetExts: Set<string>;
 
-  constructor({assetExts}: {+assetExts: $ReadOnlyArray<string>}) {
+  constructor({assetExts}: {+assetExts: $ReadOnlyArray<string>, ...}) {
     this._assetExts = new Set(assetExts);
   }
 

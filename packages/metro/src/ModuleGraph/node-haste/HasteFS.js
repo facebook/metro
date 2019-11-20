@@ -18,6 +18,7 @@ type pathParseResult = {
   base: string,
   ext: string,
   name: string,
+  ...
 };
 
 module.exports = class HasteFS {

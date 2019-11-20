@@ -20,12 +20,14 @@ type BatchProcessorOptions = {
   maximumDelayMs: number,
   maximumItems: number,
   concurrency: number,
+  ...
 };
 
 type QueueItem<TItem, TResult> = {
   item: TItem,
   reject: (error: mixed) => mixed,
   resolve: (result: TResult) => mixed,
+  ...
 };
 
 /**

@@ -17,11 +17,19 @@ type GetClosestPackageFn = (filePath: string) => ?string;
 
 class ModuleCache {
   _getClosestPackage: GetClosestPackageFn;
-  _moduleCache: {[filePath: string]: Module, __proto__: null};
-  _packageCache: {[filePath: string]: Package, __proto__: null};
+  _moduleCache: {
+    [filePath: string]: Module,
+    __proto__: null,
+    ...
+  };
+  _packageCache: {
+    [filePath: string]: Package,
+    __proto__: null,
+    ...
+  };
   _packageModuleMap: WeakMap<Module, string>;
 
-  constructor(options: {getClosestPackage: GetClosestPackageFn}) {
+  constructor(options: {getClosestPackage: GetClosestPackageFn, ...}) {
     this._getClosestPackage = options.getClosestPackage;
     this._moduleCache = Object.create(null);
     this._packageCache = Object.create(null);

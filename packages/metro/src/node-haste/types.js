@@ -18,4 +18,5 @@ export type HasteFS = {
   getModuleName(filePath: string): ?string,
   getSha1(string): ?string,
   matchFiles(pattern: RegExp | string): Array<string>,
+  ...
 };

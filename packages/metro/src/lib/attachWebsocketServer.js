@@ -25,12 +25,14 @@ type WebsocketServiceInterface<T> = {
     message: string,
     sendFn: (data: string) => void,
   ) => mixed,
+  ...
 };
 
 type HMROptions<TClient> = {
   httpServer: HttpServer | HttpsServer,
   websocketServer: WebsocketServiceInterface<TClient>,
   path: string,
+  ...
 };
 
 /**

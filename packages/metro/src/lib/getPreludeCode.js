@@ -14,7 +14,7 @@ function getPreludeCode({
   extraVars,
   isDev,
 }: {|
-  +extraVars?: {[string]: mixed},
+  +extraVars?: {[string]: mixed, ...},
   +isDev: boolean,
 |}): string {
   const vars = [
@@ -30,7 +30,7 @@ function getPreludeCode({
 
 const excluded = new Set(['__BUNDLE_START_TIME__', '__DEV__', 'process']);
 
-function formatExtraVars(extraVars: ?{[string]: mixed}): Array<string> {
+function formatExtraVars(extraVars: ?{[string]: mixed, ...}): Array<string> {
   const assignments = [];
 
   for (const key in extraVars) {

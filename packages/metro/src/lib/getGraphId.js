@@ -25,6 +25,7 @@ function getGraphId(
   }: {
     +shallow: boolean,
     +experimentalImportBundleSupport: boolean,
+    ...
   },
 ): GraphId {
   return JSON.stringify(

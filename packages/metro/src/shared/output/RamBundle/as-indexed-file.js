@@ -128,7 +128,11 @@ function entryOffset(n: number): number {
 
 function buildModuleTable(
   startupCode: Buffer,
-  moduleBuffers: Array<{buffer: Buffer, id: number}>,
+  moduleBuffers: Array<{
+    buffer: Buffer,
+    id: number,
+    ...
+  }>,
   moduleGroups: ModuleGroups,
 ): Buffer {
   // table format:
@@ -194,7 +198,11 @@ function buildModuleBuffers(
   modules: $ReadOnlyArray<ModuleTransportLike>,
   moduleGroups: ModuleGroups,
   encoding: void | 'ascii' | 'utf16le' | 'utf8',
-): Array<{buffer: Buffer, id: number}> {
+): Array<{
+  buffer: Buffer,
+  id: number,
+  ...
+}> {
   return modules
     .filter((m: ModuleTransportLike) => !moduleGroups.modulesInGroups.has(m.id))
     .map(({id, code}) =>

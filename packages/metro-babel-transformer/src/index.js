@@ -16,7 +16,11 @@ const {generateFunctionMap} = require('metro-source-map');
 import type {Ast, Plugins} from '@babel/core';
 import type {FBSourceFunctionMap} from 'metro-source-map';
 
-export type CustomTransformOptions = {[string]: mixed, __proto__: null};
+export type CustomTransformOptions = {
+  [string]: mixed,
+  __proto__: null,
+  ...
+};
 
 type BabelTransformerOptions = $ReadOnly<{
   customTransformOptions?: CustomTransformOptions,
@@ -33,6 +37,7 @@ type BabelTransformerOptions = $ReadOnly<{
   platform: ?string,
   projectRoot: string,
   publicPath: string,
+  ...
 }>;
 
 export type BabelTransformerArgs = $ReadOnly<{|
@@ -46,6 +51,7 @@ export type BabelTransformer = {|
   transform: BabelTransformerArgs => {
     ast: Ast,
     functionMap: ?FBSourceFunctionMap,
+    ...
   },
   getCacheKey?: () => string,
 |};

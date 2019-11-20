@@ -22,7 +22,7 @@ async function transform(
   {filename, options, src}: BabelTransformerArgs,
   assetRegistryPath: string,
   assetDataPlugins: $ReadOnlyArray<string>,
-): Promise<{ast: Ast}> {
+): Promise<{ast: Ast, ...}> {
   options = options || {
     platform: '',
     projectRoot: '',

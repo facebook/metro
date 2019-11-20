@@ -18,6 +18,7 @@ export type Page = {
   title: string,
   vm: string,
   app: string,
+  ...
 };
 
 // Chrome Debugger Protocol message/event passed between device and debugger.
@@ -26,36 +27,35 @@ export type WrappedEvent = {
   payload: {
     pageId: string,
     wrappedEvent: string,
+    ...
   },
+  ...
 };
 
 // Request sent from Inspector Proxy to Device when new debugger is connected
 // to particular page.
 export type ConnectRequest = {
   event: 'connect',
-  payload: {
-    pageId: string,
-  },
+  payload: {pageId: string, ...},
+  ...
 };
 
 // Request sent from Inspector Proxy to Device to notify that debugger is
 // disconnected.
 export type DisconnectRequest = {
   event: 'disconnect',
-  payload: {
-    pageId: string,
-  },
+  payload: {pageId: string, ...},
+  ...
 };
 
 // Request sent from Inspector Proxy to Device to get a list of pages.
-export type GetPagesRequest = {
-  event: 'getPages',
-};
+export type GetPagesRequest = {event: 'getPages', ...};
 
 // Response to GetPagesRequest containing a list of page infos.
 export type GetPagesResponse = {
   event: 'getPages',
   payload: Array<Page>,
+  ...
 };
 
 // Union type for all possible messages sent from device to Inspector Proxy.
@@ -80,6 +80,7 @@ export type PageDescription = {
   devtoolsFrontendUrl: string,
   type: string,
   webSocketDebuggerUrl: string,
+  ...
 };
 export type JsonPagesListResponse = Array<PageDescription>;
 
@@ -88,4 +89,5 @@ export type JsonPagesListResponse = Array<PageDescription>;
 export type JsonVersionResponse = {
   Browser: string,
   'Protocol-Version': string,
+  ...
 };

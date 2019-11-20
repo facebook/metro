@@ -24,7 +24,7 @@ async function getPrependedScripts(
   config: ConfigT,
   options: $Diff<
     TransformInputOptions,
-    {type: $PropertyType<TransformInputOptions, 'type'>},
+    {type: $PropertyType<TransformInputOptions, 'type'>, ...},
   >,
   bundler: Bundler,
   deltaBundler: DeltaBundler<>,
@@ -66,7 +66,7 @@ async function getPrependedScripts(
   return [_getPrelude({dev: options.dev}), ...graph.dependencies.values()];
 }
 
-function _getPrelude({dev}: {dev: boolean}): Module<> {
+function _getPrelude({dev}: {dev: boolean, ...}): Module<> {
   const code = getPreludeCode({isDev: dev});
   const name = '__prelude__';
 

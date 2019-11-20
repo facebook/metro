@@ -22,6 +22,7 @@ const VERSION = require('../package.json').version;
 export type ActionLogEntryData = {
   action_name: string,
   log_entry_label?: string,
+  ...
 };
 
 export type ActionStartLogEntry = {
@@ -30,6 +31,7 @@ export type ActionStartLogEntry = {
   log_entry_label: string,
   log_session?: string,
   start_timestamp?: [number, number],
+  ...
 };
 
 export type LogEntry = {
@@ -45,6 +47,7 @@ export type LogEntry = {
   bundle_options?: BundleOptions,
   bundle_hash?: string,
   build_id?: string,
+  ...
 };
 
 const log_session = `${os.hostname()}-${Date.now()}`;

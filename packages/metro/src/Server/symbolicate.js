@@ -23,10 +23,12 @@ export type StackFrameInput = {
   +lineNumber: ?number,
   +column: ?number,
   +methodName: ?string,
+  ...
 };
 export type StackFrameOutput = $ReadOnly<{
   ...StackFrameInput,
   +collapse: boolean,
+  ...
 }>;
 type ExplodedSourceMapModule = $ElementType<ExplodedSourceMap, number>;
 type Position = {|+line1Based: number, column0Based: number|};

@@ -79,6 +79,7 @@ function findOriginalPosition(
   column: ?number,
   source: ?string,
   name: ?string,
+  ...
 } {
   let currentLine = generatedLine;
   let currentColumn = generatedColumn;

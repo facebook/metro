@@ -21,11 +21,13 @@ type CleanOptions = {
   ...Options,
   intervalMs?: number,
   cleanupThresholdMs?: number,
+  ...
 };
 
 type FileList = {
   path: string,
   stats: fs.Stats,
+  ...
 };
 
 // List all files in a directory in Node.js recursively in a synchronous fashion

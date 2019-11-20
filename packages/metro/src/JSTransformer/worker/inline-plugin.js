@@ -16,7 +16,7 @@ import typeof {types as BabelTypes} from '@babel/core';
 import type {Ast} from '@babel/core';
 import type {Path} from '@babel/traverse';
 
-type Context = {types: BabelTypes};
+type Context = {types: BabelTypes, ...};
 
 type Options = {
   dev: boolean,
@@ -24,11 +24,10 @@ type Options = {
   isWrapped: boolean,
   requireName?: string,
   platform: string,
+  ...
 };
 
-type State = {
-  opts: Options,
-};
+type State = {opts: Options, ...};
 
 const env = {name: 'env'};
 const nodeEnv = {name: 'NODE_ENV'};

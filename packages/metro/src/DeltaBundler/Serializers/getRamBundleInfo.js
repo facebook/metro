@@ -140,10 +140,17 @@ async function getRamBundleInfo(
  */
 async function _getRamOptions(
   entryFile: string,
-  options: {dev: boolean, platform: ?string},
+  options: {
+    dev: boolean,
+    platform: ?string,
+    ...
+  },
   getDependencies: string => Iterable<string>,
   getTransformOptions: ?GetTransformOptions,
-): Promise<{|+preloadedModules: {[string]: true}, +ramGroups: Array<string>|}> {
+): Promise<{|
+  +preloadedModules: {[string]: true, ...},
+  +ramGroups: Array<string>,
+|}> {
   if (getTransformOptions == null) {
     return {
       preloadedModules: {},

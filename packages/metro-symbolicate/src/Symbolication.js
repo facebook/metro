@@ -23,6 +23,7 @@ import {typeof SourceMapConsumer} from 'source-map';
 type SingleMapModuleIds = {
   segmentId: number,
   localId: ?number,
+  ...
 };
 
 type ContextOptionsInput = {
@@ -31,6 +32,7 @@ type ContextOptionsInput = {
   +inputColumnStart?: number,
   +outputLineStart?: number,
   +outputColumnStart?: number,
+  ...
 };
 
 // TODO (T46584006): Write the real types for these.
@@ -43,6 +45,7 @@ type ChromeTraceEntry = Object;
 
 type HermesMinidumpCrashInfo = {
   +callstack: $ReadOnlyArray<HermesMinidumpStackFrame | NativeCodeStackFrame>,
+  ...
 };
 
 type HermesMinidumpStackFrame = $ReadOnly<{|
@@ -83,6 +86,7 @@ class SymbolicationContext<ModuleIdsT> {
     +inputColumnStart: number,
     +outputLineStart: number,
     +outputColumnStart: number,
+    ...
   };
 
   constructor(options: ContextOptionsInput) {
@@ -225,7 +229,14 @@ class SymbolicationContext<ModuleIdsT> {
   // hbc bundle without debug info.
   symbolicateChromeTrace(
     traceFile: string,
-    {stdout, stderr}: {stdout: stream$Writable, stderr: stream$Writable},
+    {
+      stdout,
+      stderr,
+    }: {
+      stdout: stream$Writable,
+      stderr: stream$Writable,
+      ...
+    },
   ): void {
     const contentJson: ChromeTrace = JSON.parse(
       fs.readFileSync(traceFile, 'utf8'),
@@ -379,6 +390,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
       +sourceFunctionsConsumer: ?SourceMetadataMapConsumer,
       +hermesOffsets: ?HermesFunctionOffsets,
     |},
+    ...,
   };
   +_hasLegacySegments: boolean;
 
@@ -704,7 +716,14 @@ function symbolicateAttribution<ModuleIdsT>(
 
 function symbolicateChromeTrace<ModuleIdsT>(
   traceFile: string,
-  {stdout, stderr}: {stdout: stream$Writable, stderr: stream$Writable},
+  {
+    stdout,
+    stderr,
+  }: {
+    stdout: stream$Writable,
+    stderr: stream$Writable,
+    ...
+  },
   context: SymbolicationContext<ModuleIdsT>,
 ): void {
   return context.symbolicateChromeTrace(traceFile, {stdout, stderr});

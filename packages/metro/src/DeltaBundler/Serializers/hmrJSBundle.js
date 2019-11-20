@@ -24,6 +24,7 @@ type Options = {
   +clientUrl: EntryPointURL,
   +createModuleId: string => number,
   +projectRoot: string,
+  ...
 };
 
 function generateModules(
@@ -97,8 +98,8 @@ function prepareModule(
 function getInverseDependencies(
   path: string,
   graph: Graph<>,
-  inverseDependencies: {[key: string]: Array<string>} = {},
-): {[key: string]: Array<string>} {
+  inverseDependencies: {[key: string]: Array<string>, ...} = {},
+): {[key: string]: Array<string>, ...} {
   // Dependency alredy traversed.
   if (path in inverseDependencies) {
     return inverseDependencies;

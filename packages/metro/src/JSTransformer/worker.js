@@ -42,7 +42,7 @@ import type {
   MetroSourceMapSegmentTuple,
 } from 'metro-source-map';
 
-type MinifierConfig = $ReadOnly<{[string]: mixed}>;
+type MinifierConfig = $ReadOnly<{[string]: mixed, ...}>;
 
 export type MinifierOptions = {
   code: string,
@@ -50,6 +50,7 @@ export type MinifierOptions = {
   filename: string,
   reserved: $ReadOnlyArray<string>,
   config: MinifierConfig,
+  ...
 };
 
 export type Type = 'script' | 'module' | 'asset';
@@ -338,7 +339,11 @@ class JsTransformer {
     source: string,
     map: Array<MetroSourceMapSegmentTuple>,
     reserved?: $ReadOnlyArray<string> = [],
-  ): Promise<{code: string, map: Array<MetroSourceMapSegmentTuple>}> {
+  ): Promise<{
+    code: string,
+    map: Array<MetroSourceMapSegmentTuple>,
+    ...
+  }> {
     const sourceMap = fromRawMappings([
       {code, source, map, functionMap: null, path: filename},
     ]).toMap(undefined, {});

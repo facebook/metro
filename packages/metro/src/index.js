@@ -78,12 +78,21 @@ type RunBuildOptions = {|
     build: (
       MetroServer,
       RequestOptions,
-    ) => Promise<{code: string, map: string}>,
+    ) => Promise<{
+      code: string,
+      map: string,
+      ...
+    }>,
     save: (
-      {code: string, map: string},
+      {
+        code: string,
+        map: string,
+        ...
+      },
       OutputOptions,
       (...args: Array<string>) => void,
     ) => Promise<mixed>,
+    ...
   },
   platform?: string,
   sourceMap?: boolean,
@@ -258,7 +267,11 @@ exports.runBuild = async (
     sourceMap = false,
     sourceMapUrl,
   }: RunBuildOptions,
-): Promise<{code: string, map: string}> => {
+): Promise<{
+  code: string,
+  map: string,
+  ...
+}> => {
   const metroServer = await runMetro(config);
 
   try {
@@ -345,6 +358,7 @@ exports.attachMetroCli = function(
     build: BuildCommandOptions,
     serve: ServeCommandOptions,
     dependencies: any,
+    ...
   } = {},
 ): Yargs {
   if (build) {

@@ -18,6 +18,7 @@ type PackageContent = {
   'react-native': mixed,
   browser: mixed,
   main: ?string,
+  ...
 };
 
 class Package {
@@ -26,7 +27,7 @@ class Package {
   _root: string;
   _content: ?PackageContent;
 
-  constructor({file}: {file: string}) {
+  constructor({file}: {file: string, ...}) {
     this.path = path.resolve(file);
     this._root = path.dirname(this.path);
     this._content = null;
@@ -140,7 +141,7 @@ class Package {
 function getReplacements(
   pkg: PackageContent,
   mainFields: $ReadOnlyArray<string>,
-): ?{[string]: string | false} {
+): ?{[string]: string | false, ...} {
   const replacements = mainFields
     .map((name: string) => {
       // If the field is a string, that doesn't mean we want to redirect the

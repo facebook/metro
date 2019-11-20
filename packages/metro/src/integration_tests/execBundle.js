@@ -14,7 +14,7 @@
 const acorn = require('acorn');
 const vm = require('vm');
 
-module.exports = function execBundle(code: string, context: {} = {}): mixed {
+module.exports = function execBundle(code: string, context: {...} = {}): mixed {
   // Verify the code can run on older VMs by parsing it as ES5 (versus ES6+).
   acorn.parse(code, {ecmaVersion: 5});
 

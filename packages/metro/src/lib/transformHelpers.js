@@ -18,13 +18,14 @@ import type DeltaBundler, {TransformFn} from '../DeltaBundler';
 import type {Type} from '../JSTransformer/worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
-type InlineRequiresRaw = {+blacklist: {[string]: true}} | boolean;
+type InlineRequiresRaw = {+blacklist: {[string]: true, ...}, ...} | boolean;
 
 export type TransformInputOptions = $Diff<
   TransformOptions,
   {
     inlinePlatform: boolean,
     inlineRequires: boolean,
+    ...
   },
 >;
 

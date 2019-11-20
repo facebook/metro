@@ -35,7 +35,7 @@ export type MetroSourceMapSegmentTuple =
   | SourceMapping
   | GeneratedCodeMapping;
 
-export type HermesFunctionOffsets = {[number]: $ReadOnlyArray<number>};
+export type HermesFunctionOffsets = {[number]: $ReadOnlyArray<number>, ...};
 
 export type FBSourcesArray = $ReadOnlyArray<?FBSourceMetadata>;
 export type FBSourceMetadata = [?FBSourceFunctionMap];
@@ -44,9 +44,7 @@ export type FBSourceFunctionMap = {|
   +mappings: string,
 |};
 
-export type FBSegmentMap = {
-  [id: string]: MixedSourceMap,
-};
+export type FBSegmentMap = {[id: string]: MixedSourceMap, ...};
 
 export type BasicSourceMap = {|
   +file?: string,
@@ -65,7 +63,12 @@ export type BasicSourceMap = {|
 
 export type IndexMapSection = {
   map: IndexMap | BasicSourceMap,
-  offset: {line: number, column: number},
+  offset: {
+    line: number,
+    column: number,
+    ...
+  },
+  ...
 };
 
 export type IndexMap = {|
@@ -94,6 +97,7 @@ function fromRawMappingsImpl(
     +path: string,
     +source: string,
     +code: string,
+    ...
   }>,
   offsetLines: number,
 ): void {
@@ -160,6 +164,7 @@ function fromRawMappings(
     +path: string,
     +source: string,
     +code: string,
+    ...
   }>,
   offsetLines: number = 0,
 ): Generator {
@@ -185,6 +190,7 @@ async function fromRawMappingsNonBlocking(
     +path: string,
     +source: string,
     +code: string,
+    ...
   }>,
   offsetLines: number = 0,
 ): Promise<Generator> {

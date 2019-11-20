@@ -49,6 +49,7 @@ type EntityNode = DirectoryNode | FileNode | SymbolicLinkNode;
 type NodeWatcher = {
   recursive: boolean,
   listener: (eventType: 'change' | 'rename', filePath: string) => void,
+  ...
 };
 
 type Encoding =
@@ -88,7 +89,9 @@ const FLAGS_SPECS: {
     readable?: true,
     truncate?: true,
     writable?: true,
+    ...
   },
+  ...,
 } = {
   r: {mustExist: true, readable: true},
   'r+': {mustExist: true, readable: true, writable: true},
@@ -161,6 +164,7 @@ type Options = {
    * directory is ever created automatically).
    */
   cwd?: () => string,
+  ...
 };
 
 /**
@@ -177,7 +181,7 @@ class MemoryFs {
   _pathSep: string;
   _cwd: ?() => string;
   constants: any = constants;
-  promises: {[funcName: string]: (...args: Array<*>) => Promise<*>};
+  promises: {[funcName: string]: (...args: Array<*>) => Promise<*>, ...};
 
   close: (fd: number, callback: (error: ?Error) => mixed) => void;
   copyFile: ((
@@ -211,6 +215,7 @@ class MemoryFs {
       | {
           encoding?: Encoding,
           flag?: string,
+          ...
         }
       | Encoding
       | ((?Error, ?Buffer | string) => mixed),
@@ -233,6 +238,7 @@ class MemoryFs {
           encoding?: ?Encoding,
           mode?: ?number,
           flag?: ?string,
+          ...
         }
       | Encoding
       | ((?Error) => mixed),
@@ -405,14 +411,10 @@ class MemoryFs {
 
   readdirSync: (
     filePath: FilePath,
-    options?: {encoding?: Encoding} | Encoding,
+    options?: {encoding?: Encoding, ...} | Encoding,
   ) => Array<string | Buffer> = (
     filePath: FilePath,
-    options?:
-      | {
-          encoding?: Encoding,
-        }
-      | Encoding,
+    options?: {encoding?: Encoding, ...} | Encoding,
   ): Array<string | Buffer> => {
     let encoding;
     if (typeof options === 'string') {
@@ -442,13 +444,20 @@ class MemoryFs {
 
   readFileSync: (
     filePath: FilePath,
-    options?: {encoding?: Encoding, flag?: string} | Encoding,
+    options?:
+      | {
+          encoding?: Encoding,
+          flag?: string,
+          ...
+        }
+      | Encoding,
   ) => Buffer | string = (
     filePath: FilePath,
     options?:
       | {
           encoding?: Encoding,
           flag?: string,
+          ...
         }
       | Encoding,
   ): Buffer | string => {
@@ -484,10 +493,10 @@ class MemoryFs {
 
   readlinkSync: (
     filePath: FilePath,
-    options: ?(Encoding | {encoding: ?Encoding}),
+    options: ?(Encoding | {encoding: ?Encoding, ...}),
   ) => string | Buffer = (
     filePath: FilePath,
-    options: ?Encoding | {encoding: ?Encoding},
+    options: ?Encoding | {encoding: ?Encoding, ...},
   ): string | Buffer => {
     let encoding;
     if (typeof options === 'string') {
@@ -560,7 +569,14 @@ class MemoryFs {
   writeFileSync: (
     filePathOrFd: FilePath | number,
     data: Buffer | string,
-    options?: {encoding?: ?Encoding, flag?: ?string, mode?: ?number} | Encoding,
+    options?:
+      | {
+          encoding?: ?Encoding,
+          flag?: ?string,
+          mode?: ?number,
+          ...
+        }
+      | Encoding,
   ) => void = (
     filePathOrFd: FilePath | number,
     data: Buffer | string,
@@ -569,6 +585,7 @@ class MemoryFs {
           encoding?: ?Encoding,
           mode?: ?number,
           flag?: ?string,
+          ...
         }
       | Encoding,
   ): void => {
@@ -709,6 +726,7 @@ class MemoryFs {
           highWaterMark?: ?number,
           mode?: ?number,
           start?: ?number,
+          ...
         }
       | Encoding,
   ) => ReadFileSteam = (
@@ -723,6 +741,7 @@ class MemoryFs {
           highWaterMark?: ?number,
           mode?: ?number,
           start?: ?number,
+          ...
         }
       | Encoding,
   ) => {
@@ -781,6 +800,7 @@ class MemoryFs {
           flags?: string,
           mode?: number,
           start?: number,
+          ...
         }
       | Encoding,
   ) => WriteFileStream = (
@@ -793,6 +813,7 @@ class MemoryFs {
           flags?: string,
           mode?: number,
           start?: number,
+          ...
         }
       | Encoding,
   ) => {
@@ -823,7 +844,12 @@ class MemoryFs {
   watch: (
     filePath: FilePath,
     options?:
-      | {encoding?: Encoding, persistent?: boolean, recursive?: boolean}
+      | {
+          encoding?: Encoding,
+          persistent?: boolean,
+          recursive?: boolean,
+          ...
+        }
       | Encoding,
     listener?: (
       eventType: 'rename' | 'change',
@@ -836,6 +862,7 @@ class MemoryFs {
           encoding?: Encoding,
           recursive?: boolean,
           persistent?: boolean,
+          ...
         }
       | Encoding,
     listener?: (
@@ -963,7 +990,7 @@ class MemoryFs {
    */
   _resolve(
     filePath: string,
-    options?: {keepFinalSymlink: boolean},
+    options?: {keepFinalSymlink: boolean, ...},
   ): Resolution {
     let keepFinalSymlink = false;
     if (options != null) {
@@ -1128,7 +1155,7 @@ class MemoryFs {
 
   _emitFileChange(
     nodePath: Array<[string, EntityNode]>,
-    options: {eventType: 'rename' | 'change'},
+    options: {eventType: 'rename' | 'change', ...},
   ): void {
     const fileNode = nodePath.pop();
     let filePath = fileNode[0];
@@ -1237,7 +1264,11 @@ type ReadSync = (
 class ReadFileSteam extends stream.Readable {
   _buffer: Buffer;
   _fd: number;
-  _positions: ?{current: number, last: number};
+  _positions: ?{
+    current: number,
+    last: number,
+    ...
+  };
   _readSync: ReadSync;
   bytesRead: number;
   path: string | Buffer;
@@ -1250,6 +1281,7 @@ class ReadFileSteam extends stream.Readable {
     highWaterMark: ?number,
     readSync: ReadSync,
     start: ?number,
+    ...
   }) {
     const {highWaterMark, fd} = options;
     // eslint-disable-next-line lint/flow-no-fixme
@@ -1312,6 +1344,7 @@ class WriteFileStream extends stream.Writable {
     filePath: FilePath,
     writeSync: WriteSync,
     start?: number,
+    ...
   }) {
     super();
     this.path = opts.filePath;
@@ -1343,7 +1376,12 @@ class FSWatcher extends EventEmitter {
 
   constructor(
     node: EntityNode,
-    options: {encoding: Encoding, recursive: boolean, persistent: boolean},
+    options: {
+      encoding: Encoding,
+      recursive: boolean,
+      persistent: boolean,
+      ...
+    },
   ) {
     super();
     this._encoding = options.encoding;

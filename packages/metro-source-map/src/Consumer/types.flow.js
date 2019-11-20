@@ -22,12 +22,18 @@ export type SourcePosition = {
   +line: ?Number1,
   +column: ?Number0,
   +name: ?string,
+  ...
 };
-export type GeneratedPosition = {+line: Number1, +column: Number0};
+export type GeneratedPosition = {
+  +line: Number1,
+  +column: Number0,
+  ...
+};
 export type GeneratedPositionLookup = {
   +line: ?Number1,
   +column: ?Number0,
   +bias?: LookupBias,
+  ...
 };
 
 export type Mapping = {
@@ -37,6 +43,7 @@ export type Mapping = {
   originalLine: ?Number1,
   originalColumn: ?Number0,
   name: ?string,
+  ...
 };
 
 export interface IConsumer {

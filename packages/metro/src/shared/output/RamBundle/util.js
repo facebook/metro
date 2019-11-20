@@ -52,7 +52,7 @@ const Section = (line: number, column: number, map: MixedSourceMap) => ({
   offset: {line, column},
 });
 
-type CombineOptions = {fixWrapperOffset: boolean};
+type CombineOptions = {fixWrapperOffset: boolean, ...};
 
 function combineSourceMaps(
   modules: $ReadOnlyArray<ModuleTransportLike>,
@@ -137,8 +137,8 @@ function combineMaps(
   return sections;
 }
 
-const joinModules = (modules: $ReadOnlyArray<{+code: string}>): string =>
-  modules.map((m: {+code: string}) => m.code).join('\n');
+const joinModules = (modules: $ReadOnlyArray<{+code: string, ...}>): string =>
+  modules.map((m: {+code: string, ...}) => m.code).join('\n');
 
 module.exports = {
   combineSourceMaps,

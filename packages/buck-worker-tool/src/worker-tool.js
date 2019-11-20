@@ -26,11 +26,12 @@ export type Command = (
   structuredArgs: mixed,
   console: Console,
 ) => Promise<void> | void;
-export type Commands = {[key: string]: Command};
+export type Commands = {[key: string]: Command, ...};
 
 type Message<Type: string, Data> = Data & {
   id: number,
   type: Type,
+  ...
 };
 
 type HandshakeMessage = Message<
@@ -38,6 +39,7 @@ type HandshakeMessage = Message<
   {
     protocol_version: '0',
     capabilities: [],
+    ...
   },
 >;
 
@@ -47,6 +49,7 @@ type CommandMessage = Message<
     args_path: string,
     stdout_path: string,
     stderr_path: string,
+    ...
   },
 >;
 
@@ -55,22 +58,13 @@ type HandshakeReponse = Message<
   {
     protocol_version: '0',
     capabilities: [],
+    ...
   },
 >;
 
-type CommandResponse = Message<
-  'result',
-  {
-    exit_code: 0,
-  },
->;
+type CommandResponse = Message<'result', {exit_code: 0, ...}>;
 
-type ErrorResponse = Message<
-  'error',
-  {
-    exit_code: number,
-  },
->;
+type ErrorResponse = Message<'error', {exit_code: number, ...}>;
 
 type IncomingMessage = HandshakeMessage | CommandMessage;
 type Response = HandshakeReponse | CommandResponse | ErrorResponse;
@@ -86,11 +80,13 @@ type JSONReaderListener = JSONReaderDataListener & JSONReaderEndListener;
 type JSONReader = {
   on: JSONReaderListener,
   removeListener: JSONReaderListener,
+  ...
 };
 
 type JSONWriter = {
   write(object: Response): void,
   end(object?: Response): void,
+  ...
 };
 
 function buckWorker(commands: Commands): any {

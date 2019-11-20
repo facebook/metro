@@ -23,6 +23,7 @@ type CosmiConfigResult = {
   filepath: string,
   isEmpty: boolean,
   config: (ConfigT => Promise<ConfigT>) | (ConfigT => ConfigT) | InputConfigT,
+  ...
 };
 
 type YargArguments = {
@@ -42,6 +43,7 @@ type YargArguments = {
   resetCache?: boolean,
   runInspectorProxy?: boolean,
   verbose?: boolean,
+  ...
 };
 
 /**

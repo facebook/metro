@@ -28,14 +28,12 @@ const FILE_PREFIX = 'file://';
 type DebuggerInfo = {
   // Debugger web socket connection
   socket: WS,
-
   // If we replaced address (like '10.0.2.2') to localhost we need to store original
   // address because Chrome uses URL or urlRegex params (instead of scriptId) to set breakpoints.
   originalSourceURLAddress?: string,
-
   prependedFilePrefix: boolean,
-
   pageId: string,
+  ...
 };
 
 const REACT_NATIVE_RELOADABLE_PAGE = {
