@@ -169,7 +169,6 @@ type SymbolicatorConfigT = {|
     +column: ?number,
     +methodName: ?string,
   }) => ?{|+collapse?: boolean|} | Promise<?{|+collapse?: boolean|}>,
-  workerPath: string,
 |};
 
 export type InputConfigT = $Shape<{|

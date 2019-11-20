@@ -83,7 +83,6 @@ Object {
   "stickyWorkers": true,
   "symbolicator": Object {
     "customizeFrame": [Function],
-    "workerPath": "metro/src/Server/symbolicate/worker",
   },
   "transformer": Object {
     "assetPlugins": Array [],
@@ -211,7 +210,6 @@ Object {
   "stickyWorkers": true,
   "symbolicator": Object {
     "customizeFrame": [Function],
-    "workerPath": "metro/src/Server/symbolicate/worker",
   },
   "transformer": Object {
     "assetPlugins": Array [],
