@@ -67,6 +67,10 @@ function composeSourceMaps(
   composedMap.x_facebook_sources = metadataConsumer.toArray(
     composedMap.sources,
   );
+  const function_offsets = maps[maps.length - 1].x_hermes_function_offsets;
+  if (function_offsets) {
+    composedMap.x_hermes_function_offsets = function_offsets;
+  }
   return composedMap;
 }
 

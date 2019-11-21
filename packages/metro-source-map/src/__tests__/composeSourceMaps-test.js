@@ -198,4 +198,37 @@ Object {
 }
 `);
   });
+
+  it('Propagate x_hermes_function_offsets', () => {
+    const map1 = {
+      version: 3,
+      sections: [
+        {
+          offset: {line: 0, column: 0},
+          map: {
+            version: 3,
+            sources: ['src.js'],
+            x_facebook_sources: [[{names: ['<global>'], mappings: 'AAA'}]],
+            names: ['global'],
+            mappings: ';CACCA',
+          },
+        },
+      ],
+    };
+    /* eslint-disable no-useless-computed-key*/
+    const map2 = {
+      version: 3,
+      sources: ['src-transformed.js'],
+      names: ['gLoBAl'],
+      mappings: ';CACCA',
+      x_hermes_function_offsets: {[0]: [20, 25, 36], [1]: [47, 220, 300]},
+    };
+
+    const mergedMap = composeSourceMaps([map1, map2]);
+    expect(mergedMap.x_hermes_function_offsets).toEqual({
+      [0]: [20, 25, 36],
+      [1]: [47, 220, 300],
+    });
+    /* eslint-enable no-useless-computed-key*/
+  });
 });
