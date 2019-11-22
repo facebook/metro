@@ -743,10 +743,14 @@ class Server {
         }
 
         return {
-          content: codeFrameColumns(fs.readFileSync(file, 'utf8'), {
-            // Metro returns 0 based columns but codeFrameColumns expects 1-based columns
-            start: {column: column + 1, line: lineNumber},
-          }),
+          content: codeFrameColumns(
+            fs.readFileSync(file, 'utf8'),
+            {
+              // Metro returns 0 based columns but codeFrameColumns expects 1-based columns
+              start: {column: column + 1, line: lineNumber},
+            },
+            {forceColor: true},
+          ),
           location: {
             row: lineNumber,
             column,
