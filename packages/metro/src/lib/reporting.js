@@ -11,6 +11,7 @@
 'use strict';
 
 const chalk = require('chalk');
+const stripAnsi = require('strip-ansi');
 const util = require('util');
 
 const {Terminal} = require('metro-core');
@@ -158,8 +159,15 @@ function logError(
   format: string,
   ...args: Array<mixed>
 ): void {
-  const str = util.format(format, ...args);
-  terminal.log('%s: %s', chalk.red('error'), str);
+  terminal.log(
+    '%s: %s',
+    chalk.red('error'),
+    // Syntax errors may have colors applied for displaying code frames
+    // in various places outside of where Metro is currently running.
+    // If the current terminal does not support color, we'll strip the colors
+    // here.
+    util.format(chalk.supportsColor ? format : stripAnsi(format), ...args),
+  );
 }
 
 /**

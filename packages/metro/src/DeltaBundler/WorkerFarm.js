@@ -10,8 +10,6 @@
 
 'use strict';
 
-const chalk = require('chalk');
-
 const {Logger} = require('metro-core');
 const JestWorker = require('jest-worker').default;
 
@@ -111,7 +109,7 @@ class WorkerFarm {
     const env = {
       ...process.env,
       // Force color to print syntax highlighted code frames.
-      FORCE_COLOR: chalk.supportsColor ? 1 : 0,
+      FORCE_COLOR: 1,
     };
 
     return new JestWorker(workerPath, {
