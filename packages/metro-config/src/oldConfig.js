@@ -69,6 +69,7 @@ const DEFAULT = ({
   processModuleFilter: module => true,
   transformVariants: () => ({default: {}}),
   virtualMapper: file => [file],
+  watch: true,
 }: ConfigT);
 
 module.exports = {
