@@ -75,7 +75,8 @@
     "acorn": "^5.1.2",
     "metro-memory-fs": "0.57.0",
     "metro-react-native-babel-preset": "0.57.0",
-    "metro-react-native-babel-transformer": "0.57.0"
+    "metro-react-native-babel-transformer": "0.57.0",
+    "stack-trace": "^0.0.10"
   },
   "license": "MIT"
 }
