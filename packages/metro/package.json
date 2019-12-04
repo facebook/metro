@@ -67,7 +67,7 @@
     "write-file-atomic": "^1.2.0",
     "ws": "^1.1.5",
     "xpipe": "^1.0.5",
-    "yargs": "^14.2.0"
+    "yargs": "^15.0.2"
   },
   "devDependencies": {
     "@babel/plugin-syntax-nullish-coalescing-operator": "^7.0.0",
