@@ -65,13 +65,14 @@ import type {
   LogEntry,
 } from 'metro-core/src/Logger';
 
-export type SegmentLoadData = {[number]: [Array<number>, ?number]};
+export type SegmentLoadData = {[number]: [Array<number>, ?number], ...};
 export type BundleMetadata = {
   hash: string,
   otaBuildNumber: ?string,
   mobileConfigs: Array<string>,
   segmentHashes: Array<string>,
   segmentLoadData: SegmentLoadData,
+  ...
 };
 
 type ProcessStartContext = {|
@@ -142,7 +143,13 @@ class Server {
     return this._createModuleId;
   }
 
-  async build(options: BundleOptions): Promise<{code: string, map: string}> {
+  async build(
+    options: BundleOptions,
+  ): Promise<{
+    code: string,
+    map: string,
+    ...
+  }> {
     const {
       entryFile,
       graphOptions,
@@ -251,6 +258,7 @@ class Server {
     +entryFile: string,
     +minify: boolean,
     +platform: string,
+    ...
   }): Promise<Array<string>> {
     const {entryFile, transformOptions, onProgress} = splitBundleOptions({
       ...Server.DEFAULT_BUNDLE_OPTIONS,
