@@ -379,6 +379,8 @@ class Server {
     if (pathname.match(/\.bundle$/)) {
       await this._processBundleRequest(req, res);
     } else if (pathname.match(/\.map$/)) {
+      // Chrome dev tools may need to access the source maps.
+      res.setHeader('Access-Control-Allow-Origin', 'devtools://devtools');
       await this._processSourceMapRequest(req, res);
     } else if (pathname.match(/\.assets$/)) {
       await this._processAssetsRequest(req, res);
