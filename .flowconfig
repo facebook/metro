@@ -6,6 +6,8 @@ emoji=true
 
 esproposal.optional_chaining=enable
 
+exact_by_default=true
+
 munge_underscores=true
 
 module.name_mapper='\(metro-[^/]*\)' -> '<PROJECT_ROOT>/packages/\1/src/index.js'
@@ -36,7 +38,6 @@ inexact-spread=warn
 unnecessary-invariant=warn
 signature-verification-failure=warn
 deprecated-utility=error
-implicit-inexact-object=error
 
 [strict]
 deprecated-type
