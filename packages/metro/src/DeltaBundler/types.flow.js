@@ -36,6 +36,12 @@ export type TransformResultDependency = {|
      * The dependency is actually a `__prefetchImport()` call.
      */
     +isPrefetchOnly?: true,
+    /**
+     * The condition for splitting on this dependency edge.
+     */
+    +splitCondition?: {|
+      +mobileConfigName: string,
+    |},
   |},
 |};
 

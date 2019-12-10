@@ -268,6 +268,7 @@ function makeDependency(name) {
     isAsync: false,
     isPrefetchOnly: false,
     path,
+    splitCondition: null,
   };
 }
 
