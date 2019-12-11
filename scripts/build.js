@@ -101,7 +101,7 @@ function buildFile(file, silent) {
       );
   } else {
     const transformed = prettier.format(babel.transformFileSync(file, {}).code, {
-      parser: 'babylon',
+      parser: 'babel',
     });
     fs.writeFileSync(destPath, transformed);
     const source = fs.readFileSync(file).toString('utf-8');
