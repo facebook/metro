@@ -1212,6 +1212,105 @@ describe('require', () => {
       expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
     });
 
+    it('runs dependencies before dependents', () => {
+      let log = [];
+      createModuleSystem(moduleSystem, true);
+      const Refresh = createReactRefreshMock(moduleSystem);
+
+      // This is the module graph:
+      //        MiddleA* ----
+      //     /      |         \
+      // Root    MiddleB ----- Leaf
+      //
+      // * - refresh boundary (exports a component)
+      //
+      // We expect that editing Leaf will propagate to
+      // MiddleA which is a Refresh Boundary.
+      //
+      // However, it's essential that code for MiddleB executes *before* MiddleA on updates.
+
+      createModule(
+        moduleSystem,
+        0,
+        'root.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init RootV1');
+          require(1);
+          module.exports = function Root() {};
+        },
+      );
+      createModule(
+        moduleSystem,
+        1,
+        'middleA.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init MiddleAV1');
+          const L = require(3);
+          const MB = require(2);
+          module.exports = function MiddleA() {
+            return L * MB;
+          };
+        },
+      );
+      createModule(
+        moduleSystem,
+        2,
+        'middleB.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init MiddleBV1');
+          const L = require(3); // Import leaf
+          module.exports = L;
+        },
+      );
+      createModule(
+        moduleSystem,
+        3,
+        'leaf.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init LeafV1');
+          // Doesn't accept its own updates; they will propagate.
+          module.exports = 2;
+        },
+      );
+      moduleSystem.__r(0);
+      expect(log).toEqual([
+        'init RootV1',
+        'init MiddleAV1',
+        'init LeafV1',
+        'init MiddleBV1',
+      ]);
+      log = [];
+
+      // We edited Leaf, but it doesn't accept.
+      // So we expect it to re-run together with MiddleA and MiddleB which do.
+      moduleSystem.__accept(
+        3,
+        (global, require, importDefault, importAll, module, exports) => {
+          log.push('init LeafV2');
+          module.exports = 3;
+        },
+        [],
+        // Inverse dependency map.
+        {
+          3: [2, 1],
+          2: [1],
+          1: [0],
+          0: [],
+        },
+        undefined,
+      );
+
+      expect(log).toEqual(['init LeafV2', 'init MiddleBV1', 'init MiddleAV1']);
+      log = [];
+
+      // This is achieved by running dependencies in a topological sort order
+      expect(moduleSystem.__r(1)()).toBe(9); // Ensure edit propagated consistently
+
+      jest.runAllTimers();
+      expect(Refresh.performReactRefresh).toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
+    });
+
     it('provides fresh value for module.exports in parents', () => {
       let log = [];
       createModuleSystem(moduleSystem, true);

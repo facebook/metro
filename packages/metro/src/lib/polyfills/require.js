@@ -501,9 +501,6 @@ if (__DEV__) {
     }
 
     const {Refresh} = metroRequire;
-    const pendingModuleIDs = [id];
-    const updatedModuleIDs = [];
-    const seenModuleIDs = new Set();
     const refreshBoundaryIDs = new Set();
 
     // In this loop, we will traverse the dependency tree upwards from the
@@ -516,21 +513,22 @@ if (__DEV__) {
     // a hot update. It is only safe when the update was accepted somewhere
     // along the way upwards for each of its parent dependency module chains.
     //
+    // We perform a topological sort because we may discover the same
+    // module more than once in the list of things to re-execute, and
+    // we want to execute modules before modules that depend on them.
+    //
     // If we didn't have this check, we'd risk re-evaluating modules that
     // have side effects and lead to confusing and meaningless crashes.
 
-    while (pendingModuleIDs.length > 0) {
-      const pendingID = pendingModuleIDs.pop();
-      // Don't process twice if we have a cycle.
-      if (seenModuleIDs.has(pendingID)) {
-        continue;
-      }
-      seenModuleIDs.add(pendingID);
-
-      // If the module accepts itself, no need to bubble.
-      // We can stop worrying about this module chain and pick the next one.
-      const pendingModule = modules[pendingID];
-      if (pendingModule != null) {
+    let didBailOut = false;
+    const updatedModuleIDs = topologicalSort(
+      [id], // Start with the changed module and go upwards
+      pendingID => {
+        const pendingModule = modules[pendingID];
+        if (pendingModule == null) {
+          // Nothing to do.
+          return [];
+        }
         const pendingHot = pendingModule.hot;
         if (pendingHot == null) {
           throw new Error(
@@ -551,30 +549,33 @@ if (__DEV__) {
           }
         }
         if (canAccept) {
-          updatedModuleIDs.push(pendingID);
-          continue;
+          // Don't look at parents.
+          return [];
         }
-      }
+        // If we bubble through the roof, there is no way to do a hot update.
+        // Bail out altogether. This is the failure case.
+        const parentIDs = inverseDependencies[pendingID];
+        if (parentIDs.length === 0) {
+          // Reload the app because the hot reload can't succeed.
+          // This should work both on web and React Native.
+          performFullRefresh('Fast Refresh - No root boundary');
+          didBailOut = true;
+          return [];
+        }
+        // This module can't handle the update but maybe all its parents can?
+        // Put them all in the queue to run the same set of checks.
+        return parentIDs;
+      },
+      () => didBailOut, // Should we stop?
+    ).reverse();
 
-      // If we bubble through the roof, there is no way to do a hot update.
-      // Bail out altogether. This is the failure case.
-      const parentIDs = inverseDependencies[pendingID];
-      if (parentIDs.length === 0) {
-        // Reload the app because the hot reload can't succeed.
-        // This should work both on web and React Native.
-        performFullRefresh('Fast Refresh - No root boundary');
-        return;
-      }
-
-      // This module didn't accept but maybe all its parents did?
-      // Put them all in the queue to run the same set of checks.
-      updatedModuleIDs.push(pendingID);
-      parentIDs.forEach(parentID => pendingModuleIDs.push(parentID));
+    if (didBailOut) {
+      return;
     }
 
     // If we reached here, it is likely that hot reload will be successful.
     // Run the actual factories.
-    seenModuleIDs.clear();
+    const seenModuleIDs = new Set();
     for (let i = 0; i < updatedModuleIDs.length; i++) {
       // Don't process twice if we have a cycle.
       const updatedID = updatedModuleIDs[i];
@@ -664,6 +665,35 @@ if (__DEV__) {
         }, 30);
       }
     }
+  };
+
+  const topologicalSort = function<T>(
+    roots: Array<T>,
+    getEdges: T => Array<T>,
+    earlyStop: T => boolean,
+  ): Array<T> {
+    const result = [];
+    const visited = new Set();
+    function traverseDependentNodes(node: T) {
+      visited.add(node);
+      const dependentNodes = getEdges(node);
+      if (earlyStop(node)) {
+        return;
+      }
+      dependentNodes.forEach(dependent => {
+        if (visited.has(dependent)) {
+          return;
+        }
+        traverseDependentNodes(dependent);
+      });
+      result.push(node);
+    }
+    roots.forEach(root => {
+      if (!visited.has(root)) {
+        traverseDependentNodes(root);
+      }
+    });
+    return result;
   };
 
   const runUpdatedModule = function(
