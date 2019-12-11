@@ -425,6 +425,21 @@ describe('edge cases', () => {
     expect(graph.dependencies.get('/foo')).toBe(undefined);
   });
 
+  it('should handle file extension changes correctly', async () => {
+    await initialTraverseDependencies(graph, options);
+
+    Actions.removeDependency('/foo', '/baz');
+    Actions.addDependency('/foo', '/baz.js', null, 'baz');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(['/baz.js']),
+      modified: new Set(['/foo']),
+      deleted: new Set(['/baz']),
+    });
+  });
+
   it('modify a file and delete it afterwards', async () => {
     await initialTraverseDependencies(graph, options);
 

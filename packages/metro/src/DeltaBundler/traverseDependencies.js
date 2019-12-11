@@ -227,7 +227,11 @@ async function processModule<T>(
   }
 
   for (const [relativePath, dependency] of previousDependencies) {
-    if (!currentDependencies.has(relativePath)) {
+    if (
+      !currentDependencies.has(relativePath) ||
+      nullthrows(currentDependencies.get(relativePath)).absolutePath !==
+        dependency.absolutePath
+    ) {
       removeDependency(module, dependency.absolutePath, graph, delta);
     }
   }
@@ -244,7 +248,11 @@ async function processModule<T>(
         dependency.data.data.isAsync
       ) {
         graph.importBundleNames.add(dependency.absolutePath);
-      } else if (!previousDependencies.has(relativePath)) {
+      } else if (
+        !previousDependencies.has(relativePath) ||
+        nullthrows(previousDependencies.get(relativePath)).absolutePath !==
+          dependency.absolutePath
+      ) {
         promises.push(
           addDependency(module, dependency.absolutePath, graph, delta, options),
         );
