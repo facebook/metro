@@ -16,6 +16,7 @@ const blacklist = require('./blacklist');
 const getMaxWorkers = require('metro/src/lib/getMaxWorkers');
 const os = require('os');
 const path = require('path');
+const ci = require('ci-info');
 
 const {
   assetExts,
@@ -122,6 +123,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   projectRoot: projectRoot || path.resolve(__dirname, '../../..'),
   stickyWorkers: true,
   watchFolders: [],
+  watch: !ci.isCI,
   transformerPath: require.resolve('metro/src/JSTransformer/worker.js'),
   maxWorkers: getMaxWorkers(),
   resetCache: false,
