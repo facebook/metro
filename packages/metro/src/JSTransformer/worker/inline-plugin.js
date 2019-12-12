@@ -103,6 +103,27 @@ function inlinePlugin(
     });
   }
 
+  function hasMacProperty(objectExpression): boolean {
+    return findProperty(objectExpression, 'mac', () => false);
+  }
+
+  function hasIOSProperty(objectExpression): boolean {
+    return findProperty(objectExpression, 'ios', () => false);
+  }
+
+  function removePlatformsOutsideOfIOSAndMac(objectExpression): boolean {
+    return objectExpression.properties.filter(p => {
+      if (
+        t.isIdentifier(p.key) &&
+        (p.key.name === 'ios' || p.key.name === 'mac')
+      ) {
+        return true;
+      }
+
+      return false;
+    });
+  }
+
   return {
     visitor: {
       Identifier(path: Path, state: State): void {
@@ -144,7 +165,16 @@ function inlinePlugin(
                 findProperty(arg, 'default', () => t.identifier('undefined')),
               );
 
-            path.replaceWith(findProperty(arg, opts.platform, fallback));
+            if (opts.platform === 'ios' && hasMacProperty(arg)) {
+              if (hasIOSProperty(arg)) {
+                node.arguments[0] = t.objectExpression(
+                  removePlatformsOutsideOfIOSAndMac(arg),
+                );
+                path.replaceWith(node);
+              }
+            } else {
+              path.replaceWith(findProperty(arg, opts.platform, fallback));
+            }
           }
         }
       },

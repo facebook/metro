@@ -296,6 +296,19 @@ describe('inline constants', () => {
     });
   });
 
+  it('inlines Platform.select in the code to ios and mac if both are present and running on ios platform', () => {
+    const code = `
+      function a() {
+        var a = Platform.select({ios: 1, android: 2, mac: 3});
+      }
+    `;
+
+    compare([inlinePlugin], code, code.replace(' android: 2,', ''), {
+      inlinePlatform: 'true',
+      platform: 'ios',
+    });
+  });
+
   it('does not inline Platform.select in the code when some of the properties are dynamic', () => {
     const code = `
       function a() {
@@ -334,6 +347,32 @@ describe('inline constants', () => {
     compare([inlinePlugin], code, code, {
       inlinePlatform: true,
       platform: 'android',
+    });
+  });
+
+  it('does not inline Platform.select if the current platform is ios, and ios and mac are in the properties', () => {
+    const code = `
+      function a() {
+        var a = Platform.select({ios: 1, mac: 2});
+      }
+    `;
+
+    compare([inlinePlugin], code, code, {
+      inlinePlatform: true,
+      platform: 'ios',
+    });
+  });
+
+  it('does not inline Platform.select if the current platform is ios and mac is in the properties, but ios is not', () => {
+    const code = `
+      function a() {
+        var a = Platform.select({mac: 1, default: 2});
+      }
+    `;
+
+    compare([inlinePlugin], code, code, {
+      inlinePlatform: true,
+      platform: 'ios',
     });
   });
 
