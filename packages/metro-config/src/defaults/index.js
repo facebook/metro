@@ -122,6 +122,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   projectRoot: projectRoot || path.resolve(__dirname, '../../..'),
   stickyWorkers: true,
   watchFolders: [],
+  watch: true,
   transformerPath: require.resolve('metro/src/JSTransformer/worker.js'),
   maxWorkers: getMaxWorkers(),
   resetCache: false,
