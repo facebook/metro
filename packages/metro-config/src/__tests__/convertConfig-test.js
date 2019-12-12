@@ -47,6 +47,7 @@ describe('convertConfig', () => {
       minifierPath: DEFAULT_METRO_MINIFIER_PATH,
       port: 8080,
       reporter: new TerminalReporter(new Terminal(process.stdout)),
+      watch: false,
     });
 
     expect(prettyFormat(convertedConfig)).toEqual(prettyFormat(defaultConfig));

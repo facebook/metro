@@ -154,6 +154,7 @@ async function convertOldToNew({
     watchFolders,
     transformerPath: defaultConfig.transformerPath,
     resetCache,
+    watch,
     maxWorkers,
   };
 }
