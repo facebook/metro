@@ -31,6 +31,7 @@ type PublicMetroOptions = {|
   minifierPath?: string,
   port?: ?number,
   reporter?: Reporter,
+  watch?: boolean,
 |};
 
 // We get the metro runServer signature here and create the new config out of it
@@ -41,6 +42,7 @@ async function convertOldToNew({
   minifierPath,
   port = null,
   reporter = new TerminalReporter(new Terminal(process.stdout)),
+  watch = true,
 }: PublicMetroOptions): Promise<ConfigT> {
   const {
     getBlacklistRE,
@@ -154,6 +156,7 @@ async function convertOldToNew({
     watchFolders,
     transformerPath: defaultConfig.transformerPath,
     resetCache,
+    watch,
     maxWorkers,
   };
 }
