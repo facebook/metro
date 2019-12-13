@@ -558,7 +558,10 @@ if (__DEV__) {
         if (parentIDs.length === 0) {
           // Reload the app because the hot reload can't succeed.
           // This should work both on web and React Native.
-          performFullRefresh('Fast Refresh - No root boundary');
+          performFullRefresh('No root boundary', {
+            source: mod,
+            failed: pendingModule,
+          });
           didBailOut = true;
           return [];
         }
@@ -584,17 +587,17 @@ if (__DEV__) {
       }
       seenModuleIDs.add(updatedID);
 
-      const mod = modules[updatedID];
-      if (mod == null) {
+      const updatedMod = modules[updatedID];
+      if (updatedMod == null) {
         throw new Error('[Refresh] Expected to find the updated module.');
       }
-      const prevExports = mod.publicModule.exports;
+      const prevExports = updatedMod.publicModule.exports;
       const didError = runUpdatedModule(
         updatedID,
         updatedID === id ? factory : undefined,
         updatedID === id ? dependencyMap : undefined,
       );
-      const nextExports = mod.publicModule.exports;
+      const nextExports = updatedMod.publicModule.exports;
 
       if (didError) {
         // The user was shown a redbox about module initialization.
@@ -627,7 +630,15 @@ if (__DEV__) {
           const parentIDs = inverseDependencies[updatedID];
           if (parentIDs.length === 0) {
             // Looks like we bubbled to the root. Can't recover from that.
-            performFullRefresh('Fast Refresh - Invalidated root boundary');
+            performFullRefresh(
+              isNoLongerABoundary
+                ? 'No longer a boundary'
+                : 'Invalidated boundary',
+              {
+                source: mod,
+                failed: updatedMod,
+              },
+            );
             return;
           }
           // Schedule all parent refresh boundaries to re-run in this loop.
@@ -646,7 +657,10 @@ if (__DEV__) {
               refreshBoundaryIDs.add(parentID);
               updatedModuleIDs.push(parentID);
             } else {
-              performFullRefresh('Fast Refresh - Invalidated boundary');
+              performFullRefresh('Invalidated boundary', {
+                source: mod,
+                failed: parentMod,
+              });
               return;
             }
           }
@@ -769,7 +783,10 @@ if (__DEV__) {
     return false;
   };
 
-  const performFullRefresh = (reason: string) => {
+  const performFullRefresh = (
+    reason: string,
+    modules: $ReadOnly<{source: ModuleDefinition, failed: ModuleDefinition}>,
+  ) => {
     /* global window */
     if (
       typeof window !== 'undefined' &&
@@ -781,7 +798,11 @@ if (__DEV__) {
       // This is attached in setUpDeveloperTools.
       const {Refresh} = metroRequire;
       if (Refresh != null) {
-        Refresh.performFullRefresh(reason);
+        const sourceName = modules.source?.verboseName ?? 'unknown';
+        const failedName = modules.failed?.verboseName ?? 'unknown';
+        Refresh.performFullRefresh(
+          `Fast Refresh - ${reason} <${sourceName}> <${failedName}>`,
+        );
       } else {
         console.warn('Could not reload the application after an edit.');
       }
