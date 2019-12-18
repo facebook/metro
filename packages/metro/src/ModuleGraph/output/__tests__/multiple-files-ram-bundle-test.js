@@ -154,6 +154,7 @@ function makeDependency(name: string) {
     isAsync: false,
     isPrefetchOnly: false,
     path,
+    splitCondition: null,
   };
 }
 

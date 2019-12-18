@@ -30,22 +30,33 @@ import type {Reporter} from 'metro/src/lib/reporting';
 export type PostMinifyProcess = ({
   code: string,
   map: ?BasicSourceMap,
-}) => {code: string, map: ?BasicSourceMap};
+  ...
+}) => {
+  code: string,
+  map: ?BasicSourceMap,
+  ...
+};
 
 export type PostProcessBundleSourcemap = ({
   code: Buffer | string,
   map: MixedSourceMap,
   outFileName: string,
-}) => {code: Buffer | string, map: MixedSourceMap | string};
+  ...
+}) => {
+  code: Buffer | string,
+  map: MixedSourceMap | string,
+  ...
+};
 
 type ExtraTransformOptions = {
-  +preloadedModules: {[path: string]: true} | false,
+  +preloadedModules: {[path: string]: true, ...} | false,
   +ramGroups: Array<string>,
   +transform: {|
     +experimentalImportSupport: boolean,
-    +inlineRequires: {+blacklist: {[string]: true}} | boolean,
+    +inlineRequires: {+blacklist: {[string]: true, ...}, ...} | boolean,
     +unstable_disableES6Transforms?: boolean,
   |},
+  ...
 };
 
 export type GetTransformOptionsOpts = {|
@@ -72,7 +83,7 @@ export type OldConfigT = {
   cacheVersion: string,
   createModuleIdFactory: () => (path: string) => number,
   enhanceMiddleware: (Middleware, Server) => Middleware,
-  extraNodeModules: {[id: string]: string},
+  extraNodeModules: {[id: string]: string, ...},
   +dynamicDepsInPackages: DynamicRequiresBehavior,
   getAssetExts: () => Array<string>,
   getAsyncRequireModulePath(): string,
@@ -81,8 +92,9 @@ export type OldConfigT = {
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
   getPlatforms: () => Array<string>,
   getPolyfillModuleNames: () => Array<string>,
-  getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
-  getProjectRoots: ?() => Array<string>, // @deprecated
+  getPolyfills: ({platform: ?string, ...}) => $ReadOnlyArray<string>,
+  // @deprecated
+  getProjectRoots: ?() => Array<string>,
   getProjectRoot: () => string,
   getResolverMainFields: () => $ReadOnlyArray<string>,
   getRunModuleStatement: (number | string) => string,
@@ -100,12 +112,13 @@ export type OldConfigT = {
   transformVariants: () => TransformVariants,
   virtualMapper: (file: string) => Array<string>,
   watch: ?boolean,
+  ...
 };
 
 type ResolverConfigT = {|
   assetExts: $ReadOnlyArray<string>,
   blacklistRE: RegExp,
-  extraNodeModules: {[name: string]: string},
+  extraNodeModules: {[name: string]: string, ...},
   hasteImplModulePath: ?string,
   platforms: $ReadOnlyArray<string>,
   resolverMainFields: $ReadOnlyArray<string>,
@@ -125,7 +138,7 @@ type SerializerConfigT = {|
   ) => string,
   experimentalSerializerHook: (graph: Graph<>, delta: DeltaResult<>) => mixed,
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
-  getPolyfills: ({platform: ?string}) => $ReadOnlyArray<string>,
+  getPolyfills: ({platform: ?string, ...}) => $ReadOnlyArray<string>,
   getRunModuleStatement: (number | string) => string,
   polyfillModuleNames: $ReadOnlyArray<string>,
   postProcessBundleSourcemap: PostProcessBundleSourcemap,
@@ -170,6 +183,7 @@ type SymbolicatorConfigT = {|
     +lineNumber: ?number,
     +column: ?number,
     +methodName: ?string,
+    ...
   }) => ?{|+collapse?: boolean|} | Promise<?{|+collapse?: boolean|}>,
 |};
 

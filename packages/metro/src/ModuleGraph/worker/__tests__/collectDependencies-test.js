@@ -121,6 +121,18 @@ it('collects __jsResource calls', () => {
   );
 });
 
+it('collects conditionallySplitJSResource calls', () => {
+  const ast = astFromCode(`
+    __conditionallySplitJSResource("some/async/module", {mobileConfigName: 'aaa'});
+    __conditionallySplitJSResource("some/async/module", {mobileConfigName: 'bbb'});
+  `);
+  const {dependencies} = collectDependencies(ast, opts);
+  expect(dependencies).toEqual([
+    {name: 'some/async/module', data: {isAsync: true}},
+    {name: 'asyncRequire', data: {isAsync: false}},
+  ]);
+});
+
 describe('import() prefetching', () => {
   it('collects prefetch calls', () => {
     const ast = astFromCode(`

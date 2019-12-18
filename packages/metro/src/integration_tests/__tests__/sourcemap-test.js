@@ -15,6 +15,7 @@ const Metro = require('../../..');
 const execBundle = require('../execBundle');
 const fs = require('fs');
 const sourceMap = require('source-map');
+const stackTrace = require('stack-trace');
 
 jest.unmock('cosmiconfig');
 
@@ -98,14 +99,17 @@ function getErrorFromCode(code) {
   const oldStackTrace = Error.prepareStackTrace;
   Error.prepareStackTrace = (err, structuredStackTrace) => structuredStackTrace;
 
+  const stack =
+    typeof error.stack === 'string' ? stackTrace.parse(error) : error.stack;
+
   try {
     return {
-      line: error.stack[0].getLineNumber(),
+      line: stack[0].getLineNumber(),
       // Column numbers coming from v8 are 1-based
       // https://chromium.googlesource.com/v8/v8.git/+/master/src/inspector/js_protocol.json#69
       // But mozilla sourcemap library expects 0-based columns
       // https://github.com/mozilla/source-map#sourcemapconsumerprototypeoriginalpositionforgeneratedposition
-      column: error.stack[0].getColumnNumber() - 1,
+      column: stack[0].getColumnNumber() - 1,
     };
   } finally {
     Error.prepareStackTrace = oldStackTrace;

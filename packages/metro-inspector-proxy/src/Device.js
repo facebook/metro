@@ -374,6 +374,22 @@ class Device {
       debuggerInfo.socket.send(
         JSON.stringify({method: 'Runtime.executionContextsCleared'}),
       );
+
+      // The VM starts in a paused mode. Ask it to resume.
+      // Note that if setting breakpoints in early initialization functions,
+      // there's a currently race condition between these functions executing
+      // and Chrome re-applying the breakpoints due to the message above.
+      //
+      // This is not an issue in VSCode/Nuclide where the IDE knows to resume
+      // at its convenience.
+      this._sendMessageToDevice({
+        event: 'wrappedEvent',
+        payload: {
+          pageId: this._getPageId(debuggerInfo.pageId),
+          wrappedEvent: JSON.stringify({method: 'Debugger.resume', id: 0}),
+        },
+      });
+
       this._isReloading = false;
     }
   }

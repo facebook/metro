@@ -27,6 +27,9 @@ export type Dependency = {|
   id: string,
   +isAsync: boolean,
   +isPrefetchOnly: boolean,
+  +splitCondition: ?{|
+    +mobileConfigName: string,
+  |},
   path: string,
 |};
 

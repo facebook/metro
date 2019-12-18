@@ -159,7 +159,11 @@ function collectDependencies(
         return;
       }
 
-      if (name === '__jsResource' && !path.scope.getBinding(name)) {
+      if (
+        (name === '__jsResource' ||
+          name === '__conditionallySplitJSResource') &&
+        !path.scope.getBinding(name)
+      ) {
         processImportCall(path, state, {
           prefetchOnly: false,
           jsResource: true,
@@ -326,7 +330,9 @@ function getDependency(
 }
 
 function getModuleNameFromCallArgs(path: Path): ?string {
-  if (path.get('arguments').length !== 1) {
+  const expectedCount =
+    path.node.callee.name === '__conditionallySplitJSResource' ? 2 : 1;
+  if (path.get('arguments').length !== expectedCount) {
     throw new InvalidRequireCallError(path);
   }
 
