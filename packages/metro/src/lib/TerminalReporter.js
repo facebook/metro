@@ -11,12 +11,13 @@
 'use strict';
 
 const chalk = require('chalk');
+const formatLogTimestamp = require('./formatLogTimestamp');
+const logWithTimestamp = require('./logWithTimestamp');
 const path = require('path');
 const reporting = require('./reporting');
 const throttle = require('lodash.throttle');
 
 const {AmbiguousModuleResolutionError} = require('metro-core');
-const logToConsole = require('./logToConsole');
 
 import type {
   BundleDetails,
@@ -30,6 +31,7 @@ type BundleProgress = {
   transformedFileCount: number,
   totalFileCount: number,
   ratio: number,
+  startTime: Date,
   ...
 };
 
@@ -70,12 +72,15 @@ class TerminalReporter {
    */
   _activeBundles: Map<string, BundleProgress>;
 
-  _scheduleUpdateBundleProgress: (data: {
-    buildID: string,
-    transformedFileCount: number,
-    totalFileCount: number,
-    ...
-  }) => void;
+  _scheduleUpdateBundleProgress: {
+    (data: {
+      buildID: string,
+      transformedFileCount: number,
+      totalFileCount: number,
+      ...
+    }): void,
+    cancel(): void,
+  };
 
   +terminal: Terminal;
 
@@ -99,6 +104,7 @@ class TerminalReporter {
       transformedFileCount,
       totalFileCount,
       ratio,
+      startTime,
     }: BundleProgress,
     phase: BuildPhase,
   ): string {
@@ -121,6 +127,7 @@ class TerminalReporter {
         : '';
 
     return (
+      formatLogTimestamp(startTime) +
       bundleTypeColor.inverse.bold(` ${bundleType.toUpperCase()} `) +
       chalk.reset.dim(` ${path.dirname(localPath)}/`) +
       chalk.bold(path.basename(localPath)) +
@@ -272,13 +279,13 @@ class TerminalReporter {
         this._logHmrClientError(event.error);
         break;
       case 'client_log':
-        logToConsole(event.level, event.data);
+        logWithTimestamp(this.terminal, event.level, ...event.data);
         break;
       case 'dep_graph_loading':
         // IMPORTANT: Keep this in sync with `nuclide-metro-rpc/lib/parseMessages.tsx`
         this.terminal.log(
-          chalk.blue.bold('                  Welcome to React Native!\n') +
-            chalk.dim('                 Learn once, write anywhere\n\n'),
+          chalk.blue.bold('                 Welcome to React Native!\n') +
+            chalk.dim('                Learn once, write anywhere\n\n'),
         );
         break;
     }
@@ -380,14 +387,12 @@ class TerminalReporter {
           transformedFileCount: 0,
           totalFileCount: 1,
           ratio: 0,
+          startTime: new Date(),
         };
         this._activeBundles.set(event.buildID, bundleProgress);
         break;
       case 'bundle_transform_progressed':
         if (event.totalFileCount === event.transformedFileCount) {
-          /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses
-           * an error found when Flow v0.99 was deployed. To see the error,
-           * delete this comment and run Flow. */
           this._scheduleUpdateBundleProgress.cancel();
           this._updateBundleProgress(event);
         } else {
