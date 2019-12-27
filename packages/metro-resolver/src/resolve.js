@@ -85,7 +85,12 @@ function resolve(
 
   if (resolveRequest) {
     try {
-      const resolution = resolveRequest(context, realModuleName, platform);
+      const resolution = resolveRequest(
+        context,
+        realModuleName,
+        platform,
+        moduleName,
+      );
       if (resolution) {
         return resolution;
       }
