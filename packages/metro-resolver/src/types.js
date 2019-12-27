@@ -122,4 +122,5 @@ export type CustomResolver = (
   ResolutionContext,
   string,
   string | null,
+  string | null,
 ) => Resolution;
