@@ -23,6 +23,10 @@ module.exports = (async () => {
       ...defaultConfig.transformer,
       getTransformOptions: function getTransformOptions() {},
     },
+    serializer: {
+      ...defaultConfig.serializer,
+      customSerializer: function customSerializer() {},
+    },
   };
 
   return validConfig;

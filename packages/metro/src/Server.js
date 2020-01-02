@@ -169,7 +169,7 @@ class Server {
 
     const entryPoint = path.resolve(this._config.projectRoot, entryFile);
 
-    const bundle = baseJSBundle(entryPoint, prepend, graph, {
+    const bundleOptions = {
       asyncRequireModulePath: this._config.transformer.asyncRequireModulePath,
       processModuleFilter: this._config.serializer.processModuleFilter,
       createModuleId: this._createModuleId,
@@ -184,14 +184,39 @@ class Server {
       sourceMapUrl: serializerOptions.sourceMapUrl,
       sourceUrl: serializerOptions.sourceUrl,
       inlineSourceMap: serializerOptions.inlineSourceMap,
-    });
-
+    };
+    let bundleCode = null;
+    let bundleMap = null;
+    if (this._config.serializer.customSerializer) {
+      const bundle = this._config.serializer.customSerializer(
+        entryPoint,
+        prepend,
+        graph,
+        bundleOptions,
+      );
+      if (typeof bundle === 'string') {
+        bundleCode = bundle;
+      } else {
+        bundleCode = bundle.code;
+        bundleMap = bundle.map;
+      }
+    } else {
+      bundleCode = bundleToString(
+        baseJSBundle(entryPoint, prepend, graph, bundleOptions),
+      ).code;
+    }
+    if (!bundleMap) {
+      bundleMap = sourceMapString(
+        [...prepend, ...this._getSortedModules(graph)],
+        {
+          excludeSource: serializerOptions.excludeSource,
+          processModuleFilter: this._config.serializer.processModuleFilter,
+        },
+      );
+    }
     return {
-      code: bundleToString(bundle).code,
-      map: sourceMapString([...prepend, ...this._getSortedModules(graph)], {
-        excludeSource: serializerOptions.excludeSource,
-        processModuleFilter: this._config.serializer.processModuleFilter,
-      }),
+      code: bundleCode,
+      map: bundleMap,
     };
   }
 
@@ -607,13 +632,15 @@ class Server {
         inlineSourceMap: serializerOptions.inlineSourceMap,
       });
 
+      const bundleCode = typeof bundle === 'string' ? bundle : bundle.code;
+
       return {
         numModifiedFiles: delta.reset
           ? delta.added.size + revision.prepend.length
           : delta.added.size + delta.modified.size + delta.deleted.size,
         lastModifiedDate: revision.date,
         nextRevId: revision.id,
-        bundle,
+        bundle: bundleCode,
       };
     },
     finish({req, mres, result}) {
