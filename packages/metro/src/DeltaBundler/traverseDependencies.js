@@ -226,15 +226,18 @@ async function processModule<T>(
     module.dependencies.set(relativePath, dependency);
   }
 
-  for (const [relativePath, dependency] of previousDependencies) {
-    if (
-      !currentDependencies.has(relativePath) ||
-      nullthrows(currentDependencies.get(relativePath)).absolutePath !==
-        dependency.absolutePath
-    ) {
-      removeDependency(module, dependency.absolutePath, graph, delta);
-    }
-  }
+  await Promise.all(
+    Array.from(previousDependencies.entries())
+      .filter(
+        ([relativePath, dependency]) =>
+          !currentDependencies.has(relativePath) ||
+          nullthrows(currentDependencies.get(relativePath)).absolutePath !==
+            dependency.absolutePath,
+      )
+      .map(([relativePath, dependency]) =>
+        removeDependency(module, dependency.absolutePath, graph, delta),
+      ),
+  );
 
   // Check all the module dependencies and start traversing the tree from each
   // added and removed dependency, to get all the modules that have to be added
@@ -309,12 +312,71 @@ async function addDependency<T>(
   options.onDependencyAdded();
 }
 
-function removeDependency<T>(
+/**
+ * Recursively look up `inverseDependencies` until it is empty,
+ * returning a set of paths for the last module that does not have
+ * `inverseDependencies`.
+ */
+function getAllTopLevelInverseDependencies<T>(
+  inverseDependencies: Set<string>,
+  parentModule: string,
+  graph: Graph<T>,
+  currModule: string,
+  visited: Set<string>,
+): Set<string> {
+  if (visited.has(currModule)) {
+    return new Set();
+  }
+  visited.add(currModule);
+  if (!inverseDependencies.size || currModule === parentModule) {
+    return new Set([currModule]);
+  }
+
+  return Array.from(inverseDependencies)
+    .filter(inverseDep => graph.dependencies.has(inverseDep))
+    .reduce((acc, inverseDep) => {
+      const mod = graph.dependencies.get(inverseDep);
+      if (!mod) {
+        return acc;
+      }
+      getAllTopLevelInverseDependencies(
+        mod.inverseDependencies,
+        parentModule,
+        graph,
+        inverseDep,
+        visited,
+      ).forEach(x => {
+        acc.add(x);
+      });
+      return acc;
+    }, new Set());
+}
+
+/**
+ * Given `inverseDependencies`, tracing back inverse dependencies to
+ * see if it only leads back to `parentModule`.
+ */
+async function canSafelyRemoveFromParentModule<T>(
+  inverseDependencies: Set<string>,
+  parentModule: string,
+  graph: Graph<T>,
+): Promise<boolean> {
+  const result = getAllTopLevelInverseDependencies(
+    inverseDependencies,
+    parentModule,
+    graph,
+    '',
+    new Set(),
+  );
+  return result.size === 1 && Array.from(result)[0] === parentModule;
+}
+
+async function removeDependency<T>(
   parentModule: Module<T>,
   absolutePath: string,
   graph: Graph<T>,
   delta: Delta,
-): void {
+): Promise<void> {
   const module = graph.dependencies.get(absolutePath);
 
   if (!module) {
@@ -323,9 +385,17 @@ function removeDependency<T>(
 
   module.inverseDependencies.delete(parentModule.path);
 
-  // This module is still used by another modules, so we cannot remove it from
-  // the bundle.
-  if (module.inverseDependencies.size) {
+  // Even if there are modules still using parentModule, we want to ensure
+  // there isn't circular dependency. Thus, we check if it can be safely remove
+  // by tracing back the inverseDependencies.
+  if (
+    module.inverseDependencies.size &&
+    !(await canSafelyRemoveFromParentModule(
+      module.inverseDependencies,
+      module.path,
+      graph,
+    ))
+  ) {
     return;
   }
 
@@ -334,9 +404,17 @@ function removeDependency<T>(
   // Now we need to iterate through the module dependencies in order to
   // clean up everything (we cannot read the module because it may have
   // been deleted).
-  for (const dependency of module.dependencies.values()) {
-    removeDependency(module, dependency.absolutePath, graph, delta);
-  }
+  await Promise.all(
+    Array.from(module.dependencies.values())
+      .filter(
+        dependency =>
+          !delta.deleted.has(dependency.absolutePath) &&
+          dependency.absolutePath !== parentModule.path,
+      )
+      .map(dependency =>
+        removeDependency(module, dependency.absolutePath, graph, delta),
+      ),
+  );
 
   // This module is not used anywhere else!! we can clear it from the bundle
   graph.dependencies.delete(module.path);
