@@ -164,7 +164,6 @@ type MetalConfigT = {|
   transformerPath: string,
   reporter: Reporter,
   resetCache: boolean,
-  watch: boolean,
   watchFolders: $ReadOnlyArray<string>,
 |};
 

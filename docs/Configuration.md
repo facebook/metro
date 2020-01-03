@@ -60,18 +60,13 @@ The root folder of your project.
 Type: `Array<string>`
 
 Specify any additional (to projectRoot) watch folders, this is used to know which files to watch.
+(By default the file watching is disabled in CI environments. Also it can be manually disabled by setting the env variable `CI=true`)
 
 #### `transformerPath`
 
 Type: `string`
 
 The path to the transformer to use.
-
-#### `watch`
-
-Type: `boolean`
-
-Whether we should watch for all files.
 
 #### `reporter`
 

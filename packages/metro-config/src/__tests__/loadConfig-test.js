@@ -12,19 +12,16 @@
 'use strict';
 
 jest.mock('cosmiconfig');
-jest.mock('ci-info');
 
 const {loadConfig} = require('../loadConfig');
 const getDefaultConfig = require('../defaults');
 const cosmiconfig = require('cosmiconfig');
-const ci = require('ci-info');
 const prettyFormat = require('pretty-format');
 const stripAnsi = require('strip-ansi');
 
 describe('loadConfig', () => {
   beforeEach(() => {
     cosmiconfig.reset();
-    ci.reset();
   });
 
   it('can load config objects', async () => {
@@ -126,11 +123,5 @@ describe('loadConfig', () => {
     } catch (error) {
       expect(stripAnsi(error.message)).toMatchSnapshot();
     }
-  });
-
-  it('validates config for file watch in CI server', async () => {
-    ci.setCI();
-    const defaultConfig = await getDefaultConfig(process.cwd());
-    expect(defaultConfig.watch).toBeFalsy();
   });
 });
