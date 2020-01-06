@@ -17,6 +17,7 @@ const Module = require('./Module');
 const ModuleCache = require('./ModuleCache');
 const ResolutionRequest = require('./DependencyGraph/ResolutionRequest');
 
+const ci = require('ci-info');
 const fs = require('fs');
 const path = require('path');
 
@@ -92,7 +93,7 @@ class DependencyGraph extends EventEmitter {
       roots: config.watchFolders,
       throwOnModuleCollision: true,
       useWatchman: config.resolver.useWatchman,
-      watch: true,
+      watch: !ci.isCI,
     });
   }
 
