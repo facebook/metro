@@ -49,7 +49,7 @@
     "@babel/plugin-transform-spread": "^7.0.0",
     "@babel/plugin-transform-sticky-regex": "^7.0.0",
     "@babel/plugin-transform-template-literals": "^7.0.0",
-    "@babel/plugin-transform-typescript": "^7.0.0",
+    "@babel/plugin-transform-typescript": "^7.5.0",
     "@babel/plugin-transform-unicode-regex": "^7.0.0",
     "@babel/template": "^7.0.0",
     "react-refresh": "^0.4.0"

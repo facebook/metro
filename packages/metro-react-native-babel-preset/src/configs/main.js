@@ -181,13 +181,25 @@ const getPreset = (src, options) => {
       {
         test: isTypeScriptSource,
         plugins: [
-          [require('@babel/plugin-transform-typescript'), {isTSX: false}],
+          [
+            require('@babel/plugin-transform-typescript'),
+            {
+              isTSX: false,
+              allowNamespaces: true,
+            },
+          ],
         ],
       },
       {
         test: isTSXSource,
         plugins: [
-          [require('@babel/plugin-transform-typescript'), {isTSX: true}],
+          [
+            require('@babel/plugin-transform-typescript'),
+            {
+              isTSX: true,
+              allowNamespaces: true,
+            },
+          ],
         ],
       },
       {
