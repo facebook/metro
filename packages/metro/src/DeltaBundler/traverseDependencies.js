@@ -356,11 +356,11 @@ function getAllTopLevelInverseDependencies<T>(
  * Given `inverseDependencies`, tracing back inverse dependencies to
  * see if it only leads back to `parentModule`.
  */
-async function canSafelyRemoveFromParentModule<T>(
+function canSafelyRemoveFromParentModule<T>(
   inverseDependencies: Set<string>,
   parentModule: string,
   graph: Graph<T>,
-): Promise<boolean> {
+): boolean {
   const result = getAllTopLevelInverseDependencies(
     inverseDependencies,
     parentModule,
@@ -390,11 +390,11 @@ async function removeDependency<T>(
   // by tracing back the inverseDependencies.
   if (
     module.inverseDependencies.size &&
-    !(await canSafelyRemoveFromParentModule(
+    !canSafelyRemoveFromParentModule(
       module.inverseDependencies,
       module.path,
       graph,
-    ))
+    )
   ) {
     return;
   }
