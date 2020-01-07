@@ -33,7 +33,7 @@
     "eslint-plugin-react": "7.6.1",
     "eslint-plugin-relay": "1.4.1",
     "fbjs-scripts": "^1.1.0",
-    "flow-bin": "^0.114.0",
+    "flow-bin": "^0.115.0",
     "glob": "^7.1.1",
     "istanbul-api": "^1.1.0",
     "istanbul-lib-coverage": "^1.0.0",
