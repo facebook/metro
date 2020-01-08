@@ -1,5 +1,5 @@
 {
-  "version": "0.56.3",
+  "version": "0.56.4",
   "name": "metro-core",
   "description": "🚇 Core files for Metro",
   "main": "src/index.js",
@@ -14,7 +14,7 @@
   "dependencies": {
     "jest-haste-map": "^24.7.1",
     "lodash.throttle": "^4.1.1",
-    "metro-resolver": "0.56.3",
+    "metro-resolver": "^0.56.4",
     "wordwrap": "^1.0.0"
   },
   "license": "MIT"

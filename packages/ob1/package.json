@@ -1,6 +1,6 @@
 {
   "name": "ob1",
-  "version": "0.56.3",
+  "version": "0.56.4",
   "description": "A small library for working with 0- and 1-based offsets in a type-checked way.",
   "main": "src/ob1.js",
   "repository": {
@@ -14,6 +14,5 @@
   "keywords": [
     "metro"
   ],
-  "license": "MIT",
-  "dependencies": {}
+  "license": "MIT"
 }

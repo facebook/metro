@@ -1,6 +1,6 @@
 {
   "name": "metro-react-native-babel-transformer",
-  "version": "0.56.3",
+  "version": "0.56.4",
   "description": "Babel transformer for React Native applications",
   "main": "src/index.js",
   "repository": {
@@ -20,9 +20,9 @@
   "dependencies": {
     "@babel/core": "^7.0.0",
     "babel-preset-fbjs": "^3.1.2",
-    "metro-babel-transformer": "0.56.3",
-    "metro-react-native-babel-preset": "0.56.3",
-    "metro-source-map": "0.56.3"
+    "metro-babel-transformer": "^0.56.4",
+    "metro-react-native-babel-preset": "^0.56.4",
+    "metro-source-map": "^0.56.4"
   },
   "peerDependencies": {
     "@babel/core": "*"

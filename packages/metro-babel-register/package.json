@@ -1,5 +1,5 @@
 {
-  "version": "0.56.3",
+  "version": "0.56.4",
   "name": "metro-babel-register",
   "description": "🚇 babel/register configuration for Metro.",
   "main": "src/babel-register.js",
