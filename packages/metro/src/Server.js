@@ -91,6 +91,10 @@ type ProcessEndContext<T> = {|
   +result: T,
 |};
 
+export type ServerOptionsT = {|
+  +watch?: boolean,
+|};
+
 const DELTA_ID_HEADER = 'X-Metro-Delta-ID';
 const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';
 
@@ -104,7 +108,7 @@ class Server {
   _bundler: IncrementalBundler;
   _isEnded: boolean;
 
-  constructor(config: ConfigT) {
+  constructor(config: ConfigT, options?: ServerOptions = {}) {
     this._config = config;
 
     if (this._config.resetCache) {
@@ -124,7 +128,9 @@ class Server {
     // the HmrServer.
     // The whole bundling/serializing logic should follow as well.
     this._createModuleId = config.serializer.createModuleIdFactory();
-    this._bundler = new IncrementalBundler(config);
+    this._bundler = new IncrementalBundler(config, {
+      watch: options.watch,
+    });
     this._nextBundleBuildID = 1;
   }
 

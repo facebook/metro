@@ -73,7 +73,11 @@ class DependencyGraph extends EventEmitter {
     this._createModuleResolver();
   }
 
-  static _createHaste(config: ConfigT): JestHasteMap {
+  static _createHaste(config: ConfigT, watch?: boolean): JestHasteMap {
+    const shouldWatch = watch === undefined ?
+      !ci.isCI :
+      options.watch;
+
     return new JestHasteMap({
       cacheDirectory: config.hasteMapCacheDirectory,
       computeDependencies: false,
@@ -93,17 +97,17 @@ class DependencyGraph extends EventEmitter {
       roots: config.watchFolders,
       throwOnModuleCollision: true,
       useWatchman: config.resolver.useWatchman,
-      watch: !ci.isCI,
+      watch: shouldWatch,
     });
   }
 
-  static async load(config: ConfigT): Promise<DependencyGraph> {
+  static async load(config: ConfigT, options: { watch?: boolean } = {}): Promise<DependencyGraph> {
     const initializingMetroLogEntry = log(
       createActionStartEntry('Initializing Metro'),
     );
 
     config.reporter.update({type: 'dep_graph_loading'});
-    const haste = DependencyGraph._createHaste(config);
+    const haste = DependencyGraph._createHaste(config, options.watch);
     const {hasteFS, moduleMap} = await haste.build();
 
     log(createActionEndEntry(initializingMetroLogEntry));
