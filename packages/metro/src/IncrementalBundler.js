@@ -68,7 +68,7 @@ class IncrementalBundler {
     str: string,
   ) => RevisionId = revisionIdFromString;
 
-  constructor(config: ConfigT, options: IncrementalBundlerOptions = {}) {
+  constructor(config: ConfigT, options?: IncrementalBundlerOptions) {
     this._config = config;
     this._bundler = new Bundler(config, options);
     this._deltaBundler = new DeltaBundler(this._bundler);

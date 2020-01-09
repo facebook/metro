@@ -91,7 +91,7 @@ type ProcessEndContext<T> = {|
   +result: T,
 |};
 
-export type ServerOptionsT = {|
+export type ServerOptions = {|
   +watch?: boolean,
 |};
 
@@ -108,7 +108,7 @@ class Server {
   _bundler: IncrementalBundler;
   _isEnded: boolean;
 
-  constructor(config: ConfigT, options?: ServerOptions = {}) {
+  constructor(config: ConfigT, options?: ServerOptions) {
     this._config = config;
 
     if (this._config.resetCache) {
@@ -129,7 +129,7 @@ class Server {
     // The whole bundling/serializing logic should follow as well.
     this._createModuleId = config.serializer.createModuleIdFactory();
     this._bundler = new IncrementalBundler(config, {
-      watch: options.watch,
+      watch: options ? options.watch : undefined,
     });
     this._nextBundleBuildID = 1;
   }

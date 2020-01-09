@@ -25,7 +25,7 @@ class Bundler {
   _depGraphPromise: Promise<DependencyGraph>;
   _transformer: Transformer;
 
-  constructor(config: ConfigT, options: BundlerOptions = {}) {
+  constructor(config: ConfigT, options?: BundlerOptions) {
     this._depGraphPromise = DependencyGraph.load(config, options);
 
     this._depGraphPromise

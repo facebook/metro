@@ -26,6 +26,7 @@ const outputBundle = require('./shared/output/bundle');
 const {loadConfig, mergeConfig, getDefaultConfig} = require('metro-config');
 const {InspectorProxy} = require('metro-inspector-proxy');
 
+import type {ServerOptions} from './Server';
 import type {Graph} from './DeltaBundler';
 import type {CustomTransformOptions} from './JSTransformer/worker';
 import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
@@ -107,7 +108,10 @@ async function getConfig(config: InputConfigT): Promise<ConfigT> {
   return mergeConfig(defaultConfig, config);
 }
 
-async function runMetro(config: InputConfigT): Promise<MetroServer> {
+async function runMetro(
+  config: InputConfigT,
+  options?: ServerOptions,
+): Promise<MetroServer> {
   const mergedConfig = await getConfig(config);
 
   mergedConfig.reporter.update({
@@ -118,7 +122,7 @@ async function runMetro(config: InputConfigT): Promise<MetroServer> {
     projectRoots: mergedConfig.watchFolders,
   });
 
-  return new MetroServer(mergedConfig);
+  return new MetroServer(mergedConfig, options);
 }
 
 exports.runMetro = runMetro;
@@ -272,7 +276,10 @@ exports.runBuild = async (
   map: string,
   ...
 }> => {
-  const metroServer = await runMetro(config);
+  const metroServer = await runMetro(config, {
+    // watchers not needed for one-off builds
+    watch: false,
+  });
 
   try {
     const requestOptions: RequestOptions = {
