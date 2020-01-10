@@ -91,9 +91,9 @@ type ProcessEndContext<T> = {|
   +result: T,
 |};
 
-export type ServerOptions = {|
-  +watch?: boolean,
-|};
+export type ServerOptions = $ReadOnly<{|
+  watch?: boolean,
+|}>;
 
 const DELTA_ID_HEADER = 'X-Metro-Delta-ID';
 const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';

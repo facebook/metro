@@ -74,8 +74,6 @@ class DependencyGraph extends EventEmitter {
   }
 
   static _createHaste(config: ConfigT, watch?: boolean): JestHasteMap {
-    const shouldWatch = watch === undefined ? !ci.isCI : watch;
-
     return new JestHasteMap({
       cacheDirectory: config.hasteMapCacheDirectory,
       computeDependencies: false,
@@ -95,7 +93,7 @@ class DependencyGraph extends EventEmitter {
       roots: config.watchFolders,
       throwOnModuleCollision: true,
       useWatchman: config.resolver.useWatchman,
-      watch: shouldWatch,
+      watch: watch == null ? !ci.isCI : watch,
     });
   }
 
@@ -108,7 +106,10 @@ class DependencyGraph extends EventEmitter {
     );
 
     config.reporter.update({type: 'dep_graph_loading'});
-    const haste = DependencyGraph._createHaste(config, (options || {}).watch);
+    const haste = DependencyGraph._createHaste(
+      config,
+      options && options.watch,
+    );
     const {hasteFS, moduleMap} = await haste.build();
 
     log(createActionEndEntry(initializingMetroLogEntry));

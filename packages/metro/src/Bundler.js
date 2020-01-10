@@ -17,9 +17,9 @@ import type {TransformOptions} from './DeltaBundler/Worker';
 import type {TransformResultWithSource} from './DeltaBundler';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
-export type BundlerOptions = {|
-  +watch?: boolean,
-|};
+export type BundlerOptions = $ReadOnly<{|
+  watch?: boolean,
+|}>;
 
 class Bundler {
   _depGraphPromise: Promise<DependencyGraph>;

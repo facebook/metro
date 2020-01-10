@@ -45,9 +45,9 @@ export type GraphRevision = {|
   +prepend: $ReadOnlyArray<Module<>>,
 |};
 
-export type IncrementalBundlerOptions = {|
-  +watch?: boolean,
-|};
+export type IncrementalBundlerOptions = $ReadOnly<{|
+  watch?: boolean,
+|}>;
 
 function createRevisionId(): RevisionId {
   return crypto.randomBytes(8).toString('hex');
