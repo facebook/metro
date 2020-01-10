@@ -277,7 +277,6 @@ exports.runBuild = async (
   ...
 }> => {
   const metroServer = await runMetro(config, {
-    // watchers not needed for one-off builds
     watch: false,
   });
 
