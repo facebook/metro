@@ -17,12 +17,16 @@ import type {TransformOptions} from './DeltaBundler/Worker';
 import type {TransformResultWithSource} from './DeltaBundler';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
+export type BundlerOptions = $ReadOnly<{|
+  watch?: boolean,
+|}>;
+
 class Bundler {
   _depGraphPromise: Promise<DependencyGraph>;
   _transformer: Transformer;
 
-  constructor(config: ConfigT) {
-    this._depGraphPromise = DependencyGraph.load(config);
+  constructor(config: ConfigT, options?: BundlerOptions) {
+    this._depGraphPromise = DependencyGraph.load(config, options);
 
     this._depGraphPromise
       .then((dependencyGraph: DependencyGraph) => {

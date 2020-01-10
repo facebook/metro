@@ -45,6 +45,10 @@ export type GraphRevision = {|
   +prepend: $ReadOnlyArray<Module<>>,
 |};
 
+export type IncrementalBundlerOptions = $ReadOnly<{|
+  watch?: boolean,
+|}>;
+
 function createRevisionId(): RevisionId {
   return crypto.randomBytes(8).toString('hex');
 }
@@ -64,9 +68,9 @@ class IncrementalBundler {
     str: string,
   ) => RevisionId = revisionIdFromString;
 
-  constructor(config: ConfigT) {
+  constructor(config: ConfigT, options?: IncrementalBundlerOptions) {
     this._config = config;
-    this._bundler = new Bundler(config);
+    this._bundler = new Bundler(config, options);
     this._deltaBundler = new DeltaBundler(this._bundler);
   }
 
