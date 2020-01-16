@@ -14,10 +14,10 @@ var path = require('path');
 // Don't forget to everything listed here to `package.json`
 // modulePathIgnorePatterns.
 var sharedBlacklist = [
-  /node_modules\/react\/dist\/.*/,
+  /node_modules[\/\\]react[\/\\]dist[\/\\].*/,
   /website\/node_modules\/.*/,
   /heapCapture\/bundle\.js/,
-  /.*\/__tests__\/.*/,
+  /.*\/__tests__\/.*/
 ];
 
 function escapeRegExp(pattern) {
