@@ -476,6 +476,70 @@ describe('edge cases', () => {
     expect(graph.dependencies.get('/baz')).toBe(undefined);
   });
 
+  it('removes a cyclic dependecy but should not remove any dependency', async () => {
+    Actions.createFile('/bar1');
+    Actions.addDependency('/bar', '/bar1');
+    Actions.addDependency('/bar1', '/foo');
+    Actions.addDependency('/bundle', '/bar');
+    files = new Set();
+
+    await initialTraverseDependencies(graph, options);
+
+    Actions.removeDependency('/bundle', '/foo');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/bundle']),
+      deleted: new Set([]),
+    });
+  });
+
+  it('removes cyclic leaf dependencies interchangeably', async () => {
+    Actions.createFile('/core');
+    Actions.createFile('/a');
+    Actions.createFile('/b');
+    Actions.addDependency('/core', '/a');
+    Actions.addDependency('/core', '/b');
+    Actions.addDependency('/a', '/baz');
+    Actions.addDependency('/bundle', '/core');
+    Actions.addDependency('/foo', '/core');
+    files = new Set();
+
+    await initialTraverseDependencies(graph, options);
+
+    Actions.removeDependency('/bundle', '/core');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/bundle']),
+      deleted: new Set([]),
+    });
+
+    Actions.addDependency('/bundle', '/core');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/bundle']),
+      deleted: new Set([]),
+    });
+
+    Actions.removeDependency('/bundle', '/foo');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/bundle']),
+      deleted: new Set(['/foo', '/bar']),
+    });
+  });
+
   it('removes a cyclic dependency with inverse dependency from other sub-graph', async () => {
     Actions.createFile('/toFoo');
     Actions.addDependency('/toFoo', '/baz');
