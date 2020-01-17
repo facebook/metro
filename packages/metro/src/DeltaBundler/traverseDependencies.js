@@ -425,7 +425,7 @@ function removeDependency<T>(
   module.inverseDependencies.delete(parentModule.path);
 
   // Even if there are modules still using parentModule, we want to ensure
-  // there isn't circular dependency. Thus, we check if it can be safely remove
+  // there is no circular dependency. Thus, we check if it can be safely removed
   // by tracing back the inverseDependencies.
   if (!canBeRemovedSafely.has(module.path)) {
     if (
