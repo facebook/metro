@@ -476,7 +476,7 @@ describe('edge cases', () => {
     expect(graph.dependencies.get('/baz')).toBe(undefined);
   });
 
-  it('removes a cyclic dependecy but should not remove any dependency', async () => {
+  it('removes a cyclic dependency but should not remove any dependency', async () => {
     Actions.createFile('/bar1');
     Actions.addDependency('/bar', '/bar1');
     Actions.addDependency('/bar1', '/foo');
