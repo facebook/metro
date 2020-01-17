@@ -19,7 +19,9 @@ function isTSXSource(fileName) {
   return !!fileName && fileName.endsWith('.tsx');
 }
 
-const defaultPlugins = [
+// Babel plugins required for each iOS (JSC) version can be found here
+// https://github.com/babel/babel/blob/master/packages/babel-compat-data/data/plugins.json
+const es6TransformsEnabledDefaultPlugins = [
   [require('@babel/plugin-syntax-flow')],
   [require('@babel/plugin-proposal-optional-catch-binding')],
   [require('@babel/plugin-transform-block-scoping')],
@@ -42,6 +44,22 @@ const defaultPlugins = [
   [require('@babel/plugin-transform-unicode-regex')],
 ];
 
+const es6TransformsDisabledDefaultPlugins = [
+  [require('@babel/plugin-syntax-flow')],
+  [require('@babel/plugin-proposal-optional-catch-binding')],
+  [require('@babel/preset-modules/lib/plugins/transform-safari-for-shadowing')],
+  [
+    require('@babel/plugin-proposal-class-properties'),
+    // use `this.foo = bar` instead of `this.defineProperty('foo', ...)`
+    {loose: true},
+  ],
+  [require('@babel/plugin-syntax-dynamic-import')],
+  [require('@babel/plugin-syntax-export-default-from')],
+  [require('@babel/plugin-transform-react-jsx')],
+  [require('@babel/plugin-transform-async-to-generator')],
+  [require('@babel/plugin-transform-unicode-regex')],
+];
+
 const es2015ArrowFunctions = [
   require('@babel/plugin-transform-arrow-functions'),
 ];
@@ -51,6 +69,9 @@ const es2015Spread = [require('@babel/plugin-transform-spread')];
 const es2015TemplateLiterals = [
   require('@babel/plugin-transform-template-literals'),
   {loose: true}, // dont 'a'.concat('b'), just use 'a'+'b'
+];
+const taggedTemplateCaching = [
+  require('@babel/preset-modules/lib/plugins/transform-tagged-template-caching'),
 ];
 const exponentiationOperator = [
   require('@babel/plugin-transform-exponentiation-operator'),
@@ -71,14 +92,6 @@ const reactDisplayName = [
 const reactJsxSource = [require('@babel/plugin-transform-react-jsx-source')];
 const symbolMember = [require('../transforms/transform-symbol-member')];
 
-const babelRuntime = [
-  require('@babel/plugin-transform-runtime'),
-  {
-    helpers: true,
-    regenerator: true,
-  },
-];
-
 function unstable_disableES6Transforms(options) {
   return !!(options && options.unstable_disableES6Transforms);
 }
@@ -90,6 +103,7 @@ const getPreset = (src, options) => {
     isNull || (src.indexOf('for') !== -1 && src.indexOf('of') !== -1);
 
   const extraPlugins = [];
+  const enableES6Transforms = !unstable_disableES6Transforms(options);
 
   if (!options || !options.disableImportExportTransform) {
     extraPlugins.push(
@@ -109,34 +123,37 @@ const getPreset = (src, options) => {
     );
   }
 
-  if (hasClass) {
+  if (enableES6Transforms && hasClass) {
     extraPlugins.push(es2015Classes);
   }
 
   // TODO(gaearon): put this back into '=>' indexOf bailout
   // and patch react-refresh to not depend on this transform.
-  extraPlugins.push(es2015ArrowFunctions);
+  if (enableES6Transforms || (options && options.dev)) {
+    extraPlugins.push(es2015ArrowFunctions);
+  }
 
   if (isNull || hasClass || src.indexOf('...') !== -1) {
-    extraPlugins.push(es2015Spread);
+    if (enableES6Transforms) {
+      extraPlugins.push(es2015Spread);
+    }
     extraPlugins.push(objectRestSpread);
   }
   if (isNull || src.indexOf('`') !== -1) {
-    extraPlugins.push(es2015TemplateLiterals);
+    extraPlugins.push(
+      enableES6Transforms ? es2015TemplateLiterals : taggedTemplateCaching,
+    );
   }
   if (isNull || src.indexOf('**') !== -1) {
     extraPlugins.push(exponentiationOperator);
   }
-  if (isNull || src.indexOf('Object.assign') !== -1) {
+  if (enableES6Transforms && (isNull || src.indexOf('Object.assign') !== -1)) {
     extraPlugins.push(objectAssign);
   }
-  if (hasForOf) {
+  if (enableES6Transforms && hasForOf) {
     extraPlugins.push(es2015ForOf);
   }
-  if (
-    !unstable_disableES6Transforms(options) &&
-    (hasForOf || src.indexOf('Symbol') !== -1)
-  ) {
+  if (enableES6Transforms && (hasForOf || src.indexOf('Symbol') !== -1)) {
     extraPlugins.push(symbolMember);
   }
   if (
@@ -158,7 +175,13 @@ const getPreset = (src, options) => {
   }
 
   if (!options || options.enableBabelRuntime !== false) {
-    extraPlugins.push(babelRuntime);
+    extraPlugins.push([
+      require('@babel/plugin-transform-runtime'),
+      {
+        helpers: true,
+        regenerator: enableES6Transforms,
+      },
+    ]);
   }
 
   let flowPlugins = {};
@@ -176,7 +199,9 @@ const getPreset = (src, options) => {
       // there'll be a test case that fails if you don't.
       flowPlugins,
       {
-        plugins: defaultPlugins,
+        plugins: enableES6Transforms
+          ? es6TransformsEnabledDefaultPlugins
+          : es6TransformsDisabledDefaultPlugins,
       },
       {
         test: isTypeScriptSource,
