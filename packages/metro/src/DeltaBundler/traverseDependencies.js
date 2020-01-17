@@ -226,24 +226,22 @@ async function processModule<T>(
     module.dependencies.set(relativePath, dependency);
   }
 
-  await Promise.all(
-    Array.from(previousDependencies.entries())
-      .filter(
-        ([relativePath, dependency]) =>
-          !currentDependencies.has(relativePath) ||
-          nullthrows(currentDependencies.get(relativePath)).absolutePath !==
-            dependency.absolutePath,
-      )
-      .map(([relativePath, dependency]) =>
-        removeDependency(
-          module,
+  Array.from(previousDependencies.entries())
+    .filter(
+      ([relativePath, dependency]) =>
+        !currentDependencies.has(relativePath) ||
+        nullthrows(currentDependencies.get(relativePath)).absolutePath !==
           dependency.absolutePath,
-          graph,
-          delta,
-          new Set(),
-        ),
+    )
+    .forEach(([relativePath, dependency]) =>
+      removeDependency(
+        module,
+        dependency.absolutePath,
+        graph,
+        delta,
+        new Set(),
       ),
-  );
+    );
 
   // Check all the module dependencies and start traversing the tree from each
   // added and removed dependency, to get all the modules that have to be added
@@ -368,14 +366,14 @@ function canSafelyRemoveFromParentModule<T>(
   delta: Delta,
 ): boolean {
   const visited = new Set();
-  const result = getAllTopLevelInverseDependencies(
+  const topInverseDependencies = getAllTopLevelInverseDependencies(
     inverseDependencies,
     graph,
-    '',
+    '', // current module name
     visited,
   );
 
-  if (!result.size) {
+  if (!topInverseDependencies.size) {
     /**
      * This happens when parentModule and inverseDependencies has circular dependency,
      * this will eventaully became an empty set due to `visited` Set being the base case
@@ -384,9 +382,9 @@ function canSafelyRemoveFromParentModule<T>(
     return true;
   }
 
-  const filterNotDeletedResult = Array.from(result).filter(
-    x => !delta.deleted.has(x),
-  );
+  const undeletedInverseDependencies = Array.from(
+    topInverseDependencies,
+  ).filter(x => !delta.deleted.has(x));
 
   /**
    * We can only mark `visited` set of modules to be safely removable if
@@ -394,12 +392,11 @@ function canSafelyRemoveFromParentModule<T>(
    *   this can happen when trying to see if we can safely remove from
    *   a module that was deleted. This is why we filtered them out with `delta.deleted`
    * 2. We have one top module and it is parentModule
-   *
    */
   const canSafelyRemove =
-    !filterNotDeletedResult.length ||
-    (filterNotDeletedResult.length === 1 &&
-      filterNotDeletedResult[0] === parentModule);
+    !undeletedInverseDependencies.length ||
+    (undeletedInverseDependencies.length === 1 &&
+      undeletedInverseDependencies[0] === parentModule);
 
   if (canSafelyRemove) {
     visited.forEach(mod => {
@@ -409,7 +406,7 @@ function canSafelyRemoveFromParentModule<T>(
   return canSafelyRemove;
 }
 
-async function removeDependency<T>(
+function removeDependency<T>(
   parentModule: Module<T>,
   absolutePath: string,
   graph: Graph<T>,
@@ -418,7 +415,7 @@ async function removeDependency<T>(
   // module(s) that we're sure can be removed. This will skip expensive
   // inverse dependency traversals.
   canBeRemovedSafely: Set<string> = new Set(),
-): Promise<void> {
+): void {
   const module = graph.dependencies.get(absolutePath);
 
   if (!module) {
@@ -450,24 +447,21 @@ async function removeDependency<T>(
   // Now we need to iterate through the module dependencies in order to
   // clean up everything (we cannot read the module because it may have
   // been deleted).
-  await Promise.all(
-    Array.from(module.dependencies.values())
-      .filter(
-        dependency =>
-          !delta.deleted.has(dependency.absolutePath) &&
-          dependency.absolutePath !== parentModule.path,
-      )
-      .map(dependency =>
-        removeDependency(
-          module,
-          dependency.absolutePath,
-          graph,
-          delta,
-          canBeRemovedSafely,
-        ),
+  Array.from(module.dependencies.values())
+    .filter(
+      dependency =>
+        !delta.deleted.has(dependency.absolutePath) &&
+        dependency.absolutePath !== parentModule.path,
+    )
+    .forEach(dependency =>
+      removeDependency(
+        module,
+        dependency.absolutePath,
+        graph,
+        delta,
+        canBeRemovedSafely,
       ),
-  );
-
+    );
   // This module is not used anywhere else!! we can clear it from the bundle
   graph.dependencies.delete(module.path);
 }
