@@ -375,9 +375,9 @@ function canSafelyRemoveFromParentModule<T>(
 
   if (!topInverseDependencies.size) {
     /**
-     * This happens when parentModule and inverseDependencies has circular dependency,
-     * this will eventaully became an empty set due to `visited` Set being the base case
-     * for the recursive call.
+     * This happens when parentModule and inverseDependencies have a circular dependency.
+     * This will eventually become an empty set due to the `visited` Set being the
+     * base case for the recursive call.
      */
     return true;
   }
@@ -387,9 +387,9 @@ function canSafelyRemoveFromParentModule<T>(
   ).filter(x => !delta.deleted.has(x));
 
   /**
-   * We can only mark `visited` set of modules to be safely removable if
-   * 1. We do not have top level module to compare with parentModule,
-   *   this can happen when trying to see if we can safely remove from
+   * We can only mark the `visited` Set of modules to be safely removable if
+   * 1. We do not have top a level module to compare with parentModule.
+   *   This can happen when trying to see if we can safely remove from
    *   a module that was deleted. This is why we filtered them out with `delta.deleted`
    * 2. We have one top module and it is parentModule
    */
