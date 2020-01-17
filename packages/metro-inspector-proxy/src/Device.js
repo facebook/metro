@@ -419,7 +419,7 @@ class Device {
       }
       if ('urlRegex' in params) {
         payload.params.urlRegex = params.urlRegex.replace(
-          'localhost',
+          /localhost/g,
           debuggerInfo.originalSourceURLAddress,
         );
       }
