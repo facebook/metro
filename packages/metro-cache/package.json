@@ -1,5 +1,5 @@
 {
-  "version": "0.57.0",
+  "version": "0.58.0",
   "name": "metro-cache",
   "description": "� Cache layers for Metro",
   "main": "src/index.js",
@@ -13,12 +13,12 @@
   },
   "dependencies": {
     "jest-serializer": "^24.4.0",
-    "metro-core": "0.57.0",
+    "metro-core": "0.58.0",
     "mkdirp": "^0.5.1",
     "rimraf": "^2.5.4"
   },
   "devDependencies": {
-    "metro-memory-fs": "0.57.0"
+    "metro-memory-fs": "0.58.0"
   },
   "license": "MIT"
 }

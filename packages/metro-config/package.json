@@ -1,6 +1,6 @@
 {
   "name": "metro-config",
-  "version": "0.57.0",
+  "version": "0.58.0",
   "description": "🚇 Config parser for Metro",
   "main": "src/index.js",
   "repository": {
@@ -15,9 +15,9 @@
   "dependencies": {
     "cosmiconfig": "^5.0.5",
     "jest-validate": "^24.7.0",
-    "metro": "0.57.0",
-    "metro-cache": "0.57.0",
-    "metro-core": "0.57.0",
+    "metro": "0.58.0",
+    "metro-cache": "0.58.0",
+    "metro-core": "0.58.0",
     "pretty-format": "^24.7.0"
   },
   "devDependencies": {
