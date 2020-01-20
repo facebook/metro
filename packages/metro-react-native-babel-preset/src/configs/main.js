@@ -22,7 +22,6 @@ function isTSXSource(fileName) {
 const defaultPlugins = [
   [require('@babel/plugin-syntax-flow')],
   [require('@babel/plugin-proposal-optional-catch-binding')],
-  [require('@babel/plugin-transform-block-scoping')],
   [
     require('@babel/plugin-proposal-class-properties'),
     // use `this.foo = bar` instead of `this.defineProperty('foo', ...)`
@@ -43,6 +42,9 @@ const es2015Spread = [require('@babel/plugin-transform-spread')];
 const es2015TemplateLiterals = [
   require('@babel/plugin-transform-template-literals'),
   {loose: true}, // dont 'a'.concat('b'), just use 'a'+'b'
+];
+const taggedTemplateCaching = [
+  require('@babel/preset-modules/lib/plugins/transform-tagged-template-caching'),
 ];
 const exponentiationOperator = [
   require('@babel/plugin-transform-exponentiation-operator'),
@@ -71,6 +73,10 @@ const es2015StickyRegex = [require('@babel/plugin-transform-sticky-regex')];
 const es2015Literals = [require('@babel/plugin-transform-literals')];
 const es2015ShorthandProperties = [
   require('@babel/plugin-transform-shorthand-properties'),
+];
+const es2015BlockScoping = [require('@babel/plugin-transform-block-scoping')];
+const safariForShadowing = [
+  require('@babel/preset-modules/lib/plugins/transform-safari-for-shadowing'),
 ];
 const functionName = [require('@babel/plugin-transform-function-name')];
 const regenerator = [require('@babel/plugin-transform-regenerator')];
@@ -147,10 +153,16 @@ const getPreset = (src, options) => {
     extraPlugins.push(es2015ArrowFunctions);
   }
 
+  extraPlugins.push(
+    enableES6Transforms ? es2015BlockScoping : safariForShadowing,
+  );
+
   extraPlugins.push(enableES6Transforms ? regenerator : asyncToGenerator);
 
   if (isNull || src.indexOf('`') !== -1) {
-    extraPlugins.push(es2015TemplateLiterals);
+    extraPlugins.push(
+      enableES6Transforms ? es2015TemplateLiterals : taggedTemplateCaching,
+    );
   }
 
   if (isNull || hasClass || src.indexOf('...') !== -1) {
