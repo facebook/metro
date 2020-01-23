@@ -226,15 +226,22 @@ async function processModule<T>(
     module.dependencies.set(relativePath, dependency);
   }
 
-  for (const [relativePath, dependency] of previousDependencies) {
-    if (
-      !currentDependencies.has(relativePath) ||
-      nullthrows(currentDependencies.get(relativePath)).absolutePath !==
-        dependency.absolutePath
-    ) {
-      removeDependency(module, dependency.absolutePath, graph, delta);
-    }
-  }
+  Array.from(previousDependencies.entries())
+    .filter(
+      ([relativePath, dependency]) =>
+        !currentDependencies.has(relativePath) ||
+        nullthrows(currentDependencies.get(relativePath)).absolutePath !==
+          dependency.absolutePath,
+    )
+    .forEach(([relativePath, dependency]) =>
+      removeDependency(
+        module,
+        dependency.absolutePath,
+        graph,
+        delta,
+        new Set(),
+      ),
+    );
 
   // Check all the module dependencies and start traversing the tree from each
   // added and removed dependency, to get all the modules that have to be added
@@ -309,11 +316,105 @@ async function addDependency<T>(
   options.onDependencyAdded();
 }
 
+/**
+ * Recursively look up `inverseDependencies` until it is empty,
+ * returning a set of paths for the last module that does not have
+ * `inverseDependencies`.
+ */
+function getAllTopLevelInverseDependencies<T>(
+  inverseDependencies: Set<string>,
+  graph: Graph<T>,
+  currModule: string,
+  visited: Set<string>,
+): Set<string> {
+  if (visited.has(currModule)) {
+    return new Set();
+  }
+  visited.add(currModule);
+  if (!inverseDependencies.size) {
+    return new Set([currModule]);
+  }
+
+  return Array.from(inverseDependencies)
+    .filter(inverseDep => graph.dependencies.has(inverseDep))
+    .reduce((acc, inverseDep) => {
+      const mod = graph.dependencies.get(inverseDep);
+      if (!mod) {
+        return acc;
+      }
+      getAllTopLevelInverseDependencies(
+        mod.inverseDependencies,
+        graph,
+        inverseDep,
+        visited,
+      ).forEach(x => {
+        acc.add(x);
+      });
+      return acc;
+    }, new Set());
+}
+
+/**
+ * Given `inverseDependencies`, tracing back inverse dependencies to
+ * see if it only leads back to `parentModule`.
+ */
+function canSafelyRemoveFromParentModule<T>(
+  inverseDependencies: Set<string>,
+  parentModule: string,
+  graph: Graph<T>,
+  canBeRemovedSafely: Set<string>,
+  delta: Delta,
+): boolean {
+  const visited = new Set();
+  const topInverseDependencies = getAllTopLevelInverseDependencies(
+    inverseDependencies,
+    graph,
+    '', // current module name
+    visited,
+  );
+
+  if (!topInverseDependencies.size) {
+    /**
+     * This happens when parentModule and inverseDependencies have a circular dependency.
+     * This will eventually become an empty set due to the `visited` Set being the
+     * base case for the recursive call.
+     */
+    return true;
+  }
+
+  const undeletedInverseDependencies = Array.from(
+    topInverseDependencies,
+  ).filter(x => !delta.deleted.has(x));
+
+  /**
+   * We can only mark the `visited` Set of modules to be safely removable if
+   * 1. We do not have top a level module to compare with parentModule.
+   *   This can happen when trying to see if we can safely remove from
+   *   a module that was deleted. This is why we filtered them out with `delta.deleted`
+   * 2. We have one top module and it is parentModule
+   */
+  const canSafelyRemove =
+    !undeletedInverseDependencies.length ||
+    (undeletedInverseDependencies.length === 1 &&
+      undeletedInverseDependencies[0] === parentModule);
+
+  if (canSafelyRemove) {
+    visited.forEach(mod => {
+      canBeRemovedSafely.add(mod);
+    });
+  }
+  return canSafelyRemove;
+}
+
 function removeDependency<T>(
   parentModule: Module<T>,
   absolutePath: string,
   graph: Graph<T>,
   delta: Delta,
+  // We use `canBeRemovedSafely` set to keep track of visited
+  // module(s) that we're sure can be removed. This will skip expensive
+  // inverse dependency traversals.
+  canBeRemovedSafely: Set<string> = new Set(),
 ): void {
   const module = graph.dependencies.get(absolutePath);
 
@@ -323,10 +424,22 @@ function removeDependency<T>(
 
   module.inverseDependencies.delete(parentModule.path);
 
-  // This module is still used by another modules, so we cannot remove it from
-  // the bundle.
-  if (module.inverseDependencies.size) {
-    return;
+  // Even if there are modules still using parentModule, we want to ensure
+  // there is no circular dependency. Thus, we check if it can be safely removed
+  // by tracing back the inverseDependencies.
+  if (!canBeRemovedSafely.has(module.path)) {
+    if (
+      module.inverseDependencies.size &&
+      !canSafelyRemoveFromParentModule(
+        module.inverseDependencies,
+        module.path,
+        graph,
+        canBeRemovedSafely,
+        delta,
+      )
+    ) {
+      return;
+    }
   }
 
   delta.deleted.add(module.path);
@@ -334,10 +447,21 @@ function removeDependency<T>(
   // Now we need to iterate through the module dependencies in order to
   // clean up everything (we cannot read the module because it may have
   // been deleted).
-  for (const dependency of module.dependencies.values()) {
-    removeDependency(module, dependency.absolutePath, graph, delta);
-  }
-
+  Array.from(module.dependencies.values())
+    .filter(
+      dependency =>
+        !delta.deleted.has(dependency.absolutePath) &&
+        dependency.absolutePath !== parentModule.path,
+    )
+    .forEach(dependency =>
+      removeDependency(
+        module,
+        dependency.absolutePath,
+        graph,
+        delta,
+        canBeRemovedSafely,
+      ),
+    );
   // This module is not used anywhere else!! we can clear it from the bundle
   graph.dependencies.delete(module.path);
 }

@@ -476,16 +476,41 @@ describe('edge cases', () => {
     expect(graph.dependencies.get('/baz')).toBe(undefined);
   });
 
-  it('removes a cyclic dependency', async () => {
-    Actions.addDependency('/baz', '/foo');
+  it('removes a cyclic dependency but should not remove any dependency', async () => {
+    Actions.createFile('/bar1');
+    Actions.addDependency('/bar', '/bar1');
+    Actions.addDependency('/bar1', '/foo');
+    Actions.addDependency('/bundle', '/bar');
     files = new Set();
 
     await initialTraverseDependencies(graph, options);
 
     Actions.removeDependency('/bundle', '/foo');
 
-    // Unfortunately, since we do reference counting we cannot detect that the
-    // whole cycle has been removed from the graph.
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/bundle']),
+      deleted: new Set([]),
+    });
+  });
+
+  it('removes cyclic leaf dependencies interchangeably', async () => {
+    Actions.createFile('/core');
+    Actions.createFile('/a');
+    Actions.createFile('/b');
+    Actions.addDependency('/core', '/a');
+    Actions.addDependency('/core', '/b');
+    Actions.addDependency('/a', '/baz');
+    Actions.addDependency('/bundle', '/core');
+    Actions.addDependency('/foo', '/core');
+    files = new Set();
+
+    await initialTraverseDependencies(graph, options);
+
+    Actions.removeDependency('/bundle', '/core');
+
     expect(
       getPaths(await traverseDependencies([...files], graph, options)),
     ).toEqual({
@@ -494,17 +519,119 @@ describe('edge cases', () => {
       deleted: new Set([]),
     });
 
-    // Now break the cycle. Once we break the cycle, we can detect that no
-    // module is being used and remove all of them.
-    files = new Set();
-    Actions.removeDependency('/baz', '/foo');
+    Actions.addDependency('/bundle', '/core');
 
     expect(
       getPaths(await traverseDependencies([...files], graph, options)),
     ).toEqual({
-      added: new Set([]),
-      modified: new Set([]),
+      added: new Set(),
+      modified: new Set(['/bundle']),
+      deleted: new Set([]),
+    });
+
+    Actions.removeDependency('/bundle', '/foo');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/bundle']),
+      deleted: new Set(['/foo', '/bar']),
+    });
+  });
+
+  it('removes a cyclic dependency with inverse dependency from other sub-graph', async () => {
+    Actions.createFile('/toFoo');
+    Actions.addDependency('/toFoo', '/baz');
+    Actions.addDependency('/bundle', '/toFoo');
+    files = new Set();
+
+    await initialTraverseDependencies(graph, options);
+
+    Actions.removeDependency('/bundle', '/foo');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/bundle']),
+      deleted: new Set(['/foo', '/bar']),
+    });
+  });
+
+  it('removes a cyclic dependency', async () => {
+    Actions.addDependency('/baz', '/foo');
+    files = new Set();
+
+    await initialTraverseDependencies(graph, options);
+
+    Actions.removeDependency('/bundle', '/foo');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/bundle']),
       deleted: new Set(['/foo', '/bar', '/baz']),
+    });
+  });
+
+  it('removes a cyclic dependency which is both inverse dependency and direct dependency', async () => {
+    Actions.addDependency('/foo', '/bundle');
+
+    files = new Set();
+
+    await initialTraverseDependencies(graph, options);
+
+    Actions.removeDependency('/bundle', '/foo');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/bundle']),
+      deleted: new Set(['/foo', '/bar', '/baz']),
+    });
+  });
+
+  it('removes a dependency with transient cyclic dependency', async () => {
+    Actions.createFile('/baz1');
+    Actions.addDependency('/baz', '/baz1');
+    Actions.addDependency('/baz1', '/foo');
+
+    files = new Set();
+
+    await initialTraverseDependencies(graph, options);
+
+    Actions.removeDependency('/bundle', '/foo');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/bundle']),
+      deleted: new Set(['/foo', '/bar', '/baz', '/baz1']),
+    });
+  });
+
+  it('removes a sub graph that has internal cyclic dependency', async () => {
+    Actions.createFile('/bar2');
+    Actions.addDependency('/bar', '/bar2');
+    Actions.addDependency('/bar2', '/bar');
+    Actions.addDependency('/foo', '/bundle');
+
+    files = new Set();
+
+    await initialTraverseDependencies(graph, options);
+
+    Actions.removeDependency('/bundle', '/foo');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/bundle']),
+      deleted: new Set(['/foo', '/bar', '/baz', '/bar2']),
     });
   });
 
