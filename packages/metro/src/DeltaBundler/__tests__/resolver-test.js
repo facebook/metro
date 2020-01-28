@@ -13,6 +13,7 @@
 const path = require('path');
 
 const {mergeConfig} = require('metro-config');
+const mockPlatform = process.platform;
 
 jest.useRealTimers();
 jest
@@ -20,7 +21,7 @@ jest
   .mock('child_process', () => ({}))
   .mock('os', () => ({
     platform: () => 'test',
-    tmpdir: () => (process.platform === 'win32' ? 'C:\\tmp' : '/tmp'),
+    tmpdir: () => (mockPlatform === 'win32' ? 'C:\\tmp' : '/tmp'),
     hostname: () => 'testhost',
     endianness: () => 'LE',
   }))
