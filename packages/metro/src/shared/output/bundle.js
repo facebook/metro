@@ -26,11 +26,19 @@ function buildBundle(
   map: string,
   ...
 }> {
-  return packagerClient.build({
-    ...Server.DEFAULT_BUNDLE_OPTIONS,
-    ...requestOptions,
-    bundleType: 'bundle',
-  });
+  const OLD_BABEL_ENV = process.env.BABEL_ENV;
+  process.env.BABEL_ENV = requestOptions.dev
+                        ? "development"
+                        : (process.env.BABEL_ENV || "production");
+  try {
+    return packagerClient.build({
+      ...Server.DEFAULT_BUNDLE_OPTIONS,
+      ...requestOptions,
+      bundleType: 'bundle',
+    });
+  } finally {
+    process.env.BABEL_ENV = OLD_BABEL_ENV;
+  }
 }
 
 function relativateSerializedMap(
