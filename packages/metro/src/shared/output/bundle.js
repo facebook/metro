@@ -29,7 +29,7 @@ function buildBundle(
   const OLD_BABEL_ENV = process.env.BABEL_ENV;
   process.env.BABEL_ENV = requestOptions.dev
     ? 'development'
-    : (process.env.BABEL_ENV || 'production');
+    : process.env.BABEL_ENV || 'production';
   try {
     return packagerClient.build({
       ...Server.DEFAULT_BUNDLE_OPTIONS,
