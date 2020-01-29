@@ -41,6 +41,7 @@ type InternalDependency<D> = {|
 type InternalDependencyData = {|
   isAsync: boolean,
   isPrefetchOnly?: true,
+  locs: Array<BabelSourceLocation>,
 |};
 
 type InternalDependencyInfo = {|
@@ -177,9 +178,14 @@ function collectDependencies(
     },
 
     ImportDeclaration(path: Path, state: State) {
-      const dep = getDependency(state, path.node.source.value, {
-        prefetchOnly: false,
-      });
+      const dep = getDependency(
+        state,
+        path.node.source.value,
+        {
+          prefetchOnly: false,
+        },
+        path.node.loc,
+      );
 
       dep.data.isAsync = false;
     },
@@ -224,7 +230,7 @@ function processImportCall(
     throw new InvalidRequireCallError(path);
   }
 
-  const dep = getDependency(state, name, options);
+  const dep = getDependency(state, name, options, path.node.loc);
   if (!options.prefetchOnly) {
     delete dep.data.isPrefetchOnly;
   }
@@ -285,7 +291,7 @@ function processRequireCall(path: Path, state: State): Path {
     return path;
   }
 
-  const dep = getDependency(state, name, {prefetchOnly: false});
+  const dep = getDependency(state, name, {prefetchOnly: false}, path.node.loc);
   dep.data.isAsync = false;
   delete dep.data.isPrefetchOnly;
 
@@ -310,13 +316,14 @@ function getDependency(
   state: State,
   name: string,
   options: DepOptions,
+  loc: BabelSourceLocation,
 ): InternalDependencyInfo {
   let index = state.dependencyIndexes.get(name);
   let data: ?InternalDependencyData = state.dependencyData.get(name);
 
   if (!data) {
     index = state.dependency++;
-    data = {isAsync: true};
+    data = {isAsync: true, locs: []};
 
     if (options.prefetchOnly) {
       data.isPrefetchOnly = true;
@@ -324,6 +331,10 @@ function getDependency(
 
     state.dependencyIndexes.set(name, index);
     state.dependencyData.set(name, data);
+  }
+
+  if (loc != null) {
+    data.locs.push(loc);
   }
 
   return {index: nullthrows(index), data: nullthrows(data)};

@@ -74,6 +74,7 @@
     "@babel/plugin-syntax-nullish-coalescing-operator": "^7.0.0",
     "@babel/plugin-transform-flow-strip-types": "^7.0.0",
     "acorn": "^5.1.2",
+    "dedent": "^0.7.0",
     "metro-memory-fs": "0.58.0",
     "metro-react-native-babel-preset": "0.58.0",
     "metro-react-native-babel-transformer": "0.58.0",

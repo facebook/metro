@@ -13,10 +13,12 @@
 
 const babylon = require('@babel/parser');
 const collectDependencies = require('../collectDependencies');
+const dedent = require('dedent');
 
 const {codeFromAst, comparableCode} = require('../../test-helpers');
+const {codeFrameColumns} = require('@babel/code-frame');
 
-const {any} = expect;
+const {any, objectContaining} = expect;
 
 const {InvalidRequireCallError} = collectDependencies;
 const opts = {
@@ -37,9 +39,9 @@ it('collects unique dependency identifiers and transforms the AST', () => {
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'b/lib/a', data: {isAsync: false}},
-    {name: 'do', data: {isAsync: false}},
-    {name: 'setup/something', data: {isAsync: false}},
+    {name: 'b/lib/a', data: objectContaining({isAsync: false})},
+    {name: 'do', data: objectContaining({isAsync: false})},
+    {name: 'setup/something', data: objectContaining({isAsync: false})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -59,8 +61,8 @@ it('collects asynchronous dependencies', () => {
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'some/async/module', data: {isAsync: true}},
-    {name: 'asyncRequire', data: {isAsync: false}},
+    {name: 'some/async/module', data: objectContaining({isAsync: true})},
+    {name: 'asyncRequire', data: objectContaining({isAsync: false})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -76,8 +78,8 @@ it('collects mixed dependencies as being sync', () => {
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'some/async/module', data: {isAsync: false}},
-    {name: 'asyncRequire', data: {isAsync: false}},
+    {name: 'some/async/module', data: objectContaining({isAsync: false})},
+    {name: 'asyncRequire', data: objectContaining({isAsync: false})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -94,8 +96,8 @@ it('collects mixed dependencies as being sync; reverse order', () => {
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'some/async/module', data: {isAsync: false}},
-    {name: 'asyncRequire', data: {isAsync: false}},
+    {name: 'some/async/module', data: objectContaining({isAsync: false})},
+    {name: 'asyncRequire', data: objectContaining({isAsync: false})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -111,8 +113,8 @@ it('collects __jsResource calls', () => {
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'some/async/module', data: {isAsync: true}},
-    {name: 'asyncRequire', data: {isAsync: false}},
+    {name: 'some/async/module', data: objectContaining({isAsync: true})},
+    {name: 'asyncRequire', data: objectContaining({isAsync: false})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -128,8 +130,8 @@ it('collects conditionallySplitJSResource calls', () => {
   `);
   const {dependencies} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'some/async/module', data: {isAsync: true}},
-    {name: 'asyncRequire', data: {isAsync: false}},
+    {name: 'some/async/module', data: objectContaining({isAsync: true})},
+    {name: 'asyncRequire', data: objectContaining({isAsync: false})},
   ]);
 });
 
@@ -140,8 +142,11 @@ describe('import() prefetching', () => {
     `);
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
-      {name: 'some/async/module', data: {isAsync: true, isPrefetchOnly: true}},
-      {name: 'asyncRequire', data: {isAsync: false}},
+      {
+        name: 'some/async/module',
+        data: objectContaining({isAsync: true, isPrefetchOnly: true}),
+      },
+      {name: 'asyncRequire', data: objectContaining({isAsync: false})},
     ]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`
@@ -157,8 +162,8 @@ describe('import() prefetching', () => {
     `);
     const {dependencies} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
-      {name: 'some/async/module', data: {isAsync: true}},
-      {name: 'asyncRequire', data: {isAsync: false}},
+      {name: 'some/async/module', data: objectContaining({isAsync: true})},
+      {name: 'asyncRequire', data: objectContaining({isAsync: false})},
     ]);
   });
 });
@@ -167,7 +172,9 @@ describe('Evaluating static arguments', () => {
   it('supports template literals as arguments', () => {
     const ast = astFromCode('require(`left-pad`)');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
-    expect(dependencies).toEqual([{name: 'left-pad', data: {isAsync: false}}]);
+    expect(dependencies).toEqual([
+      {name: 'left-pad', data: objectContaining({isAsync: false})},
+    ]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`require(${dependencyMapName}[0], "left-pad");`),
     );
@@ -176,7 +183,9 @@ describe('Evaluating static arguments', () => {
   it('supports template literals with static interpolations', () => {
     const ast = astFromCode('require(`left${"-"}pad`)');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
-    expect(dependencies).toEqual([{name: 'left-pad', data: {isAsync: false}}]);
+    expect(dependencies).toEqual([
+      {name: 'left-pad', data: objectContaining({isAsync: false})},
+    ]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`require(${dependencyMapName}[0], "left-pad");`),
     );
@@ -211,7 +220,9 @@ describe('Evaluating static arguments', () => {
   it('supports multiple static strings concatenated', () => {
     const ast = astFromCode('require("foo_" + "bar")');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
-    expect(dependencies).toEqual([{name: 'foo_bar', data: {isAsync: false}}]);
+    expect(dependencies).toEqual([
+      {name: 'foo_bar', data: objectContaining({isAsync: false})},
+    ]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`require(${dependencyMapName}[0], "foo_bar");`),
     );
@@ -221,7 +232,7 @@ describe('Evaluating static arguments', () => {
     const ast = astFromCode('require("foo_" + "bar" + `_baz`)');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
-      {name: 'foo_bar_baz', data: {isAsync: false}},
+      {name: 'foo_bar_baz', data: objectContaining({isAsync: false})},
     ]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`require(${dependencyMapName}[0], "foo_bar_baz");`),
@@ -231,7 +242,9 @@ describe('Evaluating static arguments', () => {
   it('supports using static variables in require statements', () => {
     const ast = astFromCode('const myVar="my";require("foo_" + myVar)');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
-    expect(dependencies).toEqual([{name: 'foo_my', data: {isAsync: false}}]);
+    expect(dependencies).toEqual([
+      {name: 'foo_my', data: objectContaining({isAsync: false})},
+    ]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(
         `const myVar = \"my\"; require(${dependencyMapName}[0], "foo_my");`,
@@ -297,9 +310,9 @@ it('ignores require functions defined defined by lower scopes', () => {
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'b/lib/a', data: {isAsync: false}},
-    {name: 'do', data: {isAsync: false}},
-    {name: 'setup/something', data: {isAsync: false}},
+    {name: 'b/lib/a', data: objectContaining({isAsync: false})},
+    {name: 'do', data: objectContaining({isAsync: false})},
+    {name: 'setup/something', data: objectContaining({isAsync: false})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -330,11 +343,87 @@ it('collects imports', () => {
   const {dependencies} = collectDependencies(ast, opts);
 
   expect(dependencies).toEqual([
-    {name: 'b/lib/a', data: {isAsync: false}},
-    {name: 'do', data: {isAsync: false}},
-    {name: 'setup/something', data: {isAsync: false}},
+    {name: 'b/lib/a', data: objectContaining({isAsync: false})},
+    {name: 'do', data: objectContaining({isAsync: false})},
+    {name: 'setup/something', data: objectContaining({isAsync: false})},
   ]);
 });
+
+it('records locations of dependencies', () => {
+  const code = dedent`
+    import b from 'b/lib/a';
+    import * as d from 'do';
+    import type {s} from 'setup/something';
+    import('some/async/module').then(foo => {});
+    __jsResource('some/async/module');
+    __conditionallySplitJSResource('some/async/module', {mobileConfigName: 'aaa'});
+    __conditionallySplitJSResource('some/async/module', {mobileConfigName: 'bbb'});
+    require('foo'); __prefetchImport('baz');
+  `;
+  const ast = astFromCode(code);
+
+  const {dependencies} = collectDependencies(ast, opts);
+
+  for (const dep of dependencies) {
+    expect(dep).toEqual(
+      objectContaining({data: objectContaining({locs: any(Array)})}),
+    );
+  }
+  expect(formatDependencyLocs(dependencies, code)).toMatchInlineSnapshot(`
+    "
+    > 1 | import b from 'b/lib/a';
+        | ^^^^^^^^^^^^^^^^^^^^^^^^ dep #0
+    > 2 | import * as d from 'do';
+        | ^^^^^^^^^^^^^^^^^^^^^^^^ dep #1
+    > 3 | import type {s} from 'setup/something';
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #2
+    > 4 | import('some/async/module').then(foo => {});
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3
+    > 5 | __jsResource('some/async/module');
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3
+    > 6 | __conditionallySplitJSResource('some/async/module', {mobileConfigName: 'aaa'});
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3
+    > 7 | __conditionallySplitJSResource('some/async/module', {mobileConfigName: 'bbb'});
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3
+    dep #4 (asyncRequire): no location recorded
+    > 8 | require('foo'); __prefetchImport('baz');
+        | ^^^^^^^^^^^^^^ dep #5
+    > 8 | require('foo'); __prefetchImport('baz');
+        |                 ^^^^^^^^^^^^^^^^^^^^^^^ dep #6"
+  `);
+});
+
+function formatDependencyLocs(dependencies, code) {
+  return (
+    '\n' +
+    dependencies
+      .map((dep, depIndex) =>
+        dep.data.locs.length
+          ? dep.data.locs.map(loc => formatLoc(loc, depIndex, code)).join('\n')
+          : `dep #${depIndex} (${dep.name}): no location recorded`,
+      )
+      .join('\n')
+  );
+}
+
+function adjustPosForCodeFrame(pos) {
+  return pos ? {...pos, column: pos.column + 1} : pos;
+}
+
+function adjustLocForCodeFrame(loc) {
+  return {
+    start: adjustPosForCodeFrame(loc.start),
+    end: adjustPosForCodeFrame(loc.end),
+  };
+}
+
+function formatLoc(loc, depIndex, code) {
+  return codeFrameColumns(code, adjustLocForCodeFrame(loc), {
+    message: `dep #${depIndex}`,
+    linesAbove: 0,
+    linesBelow: 0,
+  });
+}
 
 function astFromCode(code: string) {
   return babylon.parse(code, {

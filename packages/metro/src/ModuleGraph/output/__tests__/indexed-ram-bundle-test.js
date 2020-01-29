@@ -269,6 +269,7 @@ function makeDependency(name) {
     isPrefetchOnly: false,
     path,
     splitCondition: null,
+    locs: [],
   };
 }
 

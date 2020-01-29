@@ -23,11 +23,17 @@ beforeEach(() => {
     dependencies: new Map([
       [
         'bar',
-        {absolutePath: '/bar', data: {data: {isAsync: false}, name: 'bar'}},
+        {
+          absolutePath: '/bar',
+          data: {data: {isAsync: false, locs: []}, name: 'bar'},
+        },
       ],
       [
         'baz',
-        {absolutePath: '/baz', data: {data: {isAsync: false}, name: 'baz'}},
+        {
+          absolutePath: '/baz',
+          data: {data: {isAsync: false, locs: []}, name: 'baz'},
+        },
       ],
     ]),
     getSource: () => Buffer.from(''),

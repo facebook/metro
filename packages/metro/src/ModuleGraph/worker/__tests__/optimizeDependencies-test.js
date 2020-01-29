@@ -14,17 +14,19 @@
 const babylon = require('@babel/parser');
 const optimizeDependencies = require('../optimizeDependencies');
 
+const {objectContaining} = expect;
+
 const {InvalidRequireCallError} = optimizeDependencies;
 
 const {codeFromAst, comparableCode} = require('../../test-helpers');
 
 const DEP_MAP_NAME = 'arbitrary';
 const DEPS = [
-  {name: 'b/lib/a', data: {isAsync: false}},
-  {name: 'do', data: {isAsync: false}},
-  {name: 'asyncRequire', data: {isAsync: false}},
-  {name: 'some/async/module', data: {isAsync: true}},
-  {name: 'setup/something', data: {isAsync: false}},
+  {name: 'b/lib/a', data: {isAsync: false, locs: []}},
+  {name: 'do', data: {isAsync: false, locs: []}},
+  {name: 'asyncRequire', data: {isAsync: false, locs: []}},
+  {name: 'some/async/module', data: {isAsync: true, locs: []}},
+  {name: 'setup/something', data: {isAsync: false, locs: []}},
 ];
 const REQUIRE_NAMES = new Set(['require']);
 
@@ -64,7 +66,9 @@ it('strips unused dependencies and translates require() calls', () => {
     DEP_MAP_NAME,
     REQUIRE_NAMES,
   );
-  expect(dependencies).toEqual([{name: 'do', data: {isAsync: false}}]);
+  expect(dependencies).toEqual([
+    {name: 'do', data: objectContaining({isAsync: false})},
+  ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`require(${DEP_MAP_NAME}[0]);`),
   );
@@ -81,8 +85,8 @@ it('strips unused dependencies and translates loadForModule() calls', () => {
     REQUIRE_NAMES,
   );
   expect(dependencies).toEqual([
-    {name: 'asyncRequire', data: {isAsync: false}},
-    {name: 'some/async/module', data: {isAsync: true}},
+    {name: 'asyncRequire', data: objectContaining({isAsync: false})},
+    {name: 'some/async/module', data: objectContaining({isAsync: true})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -97,9 +101,9 @@ it('strips unused dependencies and translates loadForModule() calls; different o
     require(${DEP_MAP_NAME}[2], "asyncRequire")(${DEP_MAP_NAME}[1]).then(foo => {});
   `);
   const deps = [
-    {name: 'something/else', data: {isAsync: false}},
-    {name: 'some/async/module', data: {isAsync: true}},
-    {name: 'asyncRequire', data: {isAsync: false}},
+    {name: 'something/else', data: {isAsync: false, locs: []}},
+    {name: 'some/async/module', data: {isAsync: true, locs: []}},
+    {name: 'asyncRequire', data: {isAsync: false, locs: []}},
   ];
   const dependencies = optimizeDependencies(
     ast,
@@ -108,9 +112,9 @@ it('strips unused dependencies and translates loadForModule() calls; different o
     REQUIRE_NAMES,
   );
   expect(dependencies).toEqual([
-    {name: 'something/else', data: {isAsync: false}},
-    {name: 'asyncRequire', data: {isAsync: false}},
-    {name: 'some/async/module', data: {isAsync: true}},
+    {name: 'something/else', data: objectContaining({isAsync: false})},
+    {name: 'asyncRequire', data: objectContaining({isAsync: false})},
+    {name: 'some/async/module', data: objectContaining({isAsync: true})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`

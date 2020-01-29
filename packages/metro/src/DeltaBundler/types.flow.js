@@ -42,6 +42,8 @@ export type TransformResultDependency = {|
     +splitCondition?: {|
       +mobileConfigName: string,
     |},
+
+    +locs: $ReadOnlyArray<BabelSourceLocation>,
   |},
 |};
 

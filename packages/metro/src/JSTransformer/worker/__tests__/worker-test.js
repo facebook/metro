@@ -10,6 +10,8 @@
 
 'use strict';
 
+const {objectContaining} = expect;
+
 jest
   .mock('../constant-folding-plugin')
   .mock('../../../lib/getMinifier', () => () => ({code, map}) => ({
@@ -143,12 +145,12 @@ describe('code transformation worker:', () => {
     expect(result.output[0].data.functionMap).toMatchSnapshot();
     expect(result.dependencies).toEqual([
       {
-        data: {isAsync: false},
+        data: objectContaining({isAsync: false}),
         name: '@babel/runtime/helpers/interopRequireDefault',
       },
-      {data: {isAsync: false}, name: './c'},
-      {data: {isAsync: false}, name: './a'},
-      {data: {isAsync: false}, name: 'b'},
+      {data: objectContaining({isAsync: false}), name: './c'},
+      {data: objectContaining({isAsync: false}), name: './a'},
+      {data: objectContaining({isAsync: false}), name: 'b'},
     ]);
   });
 
@@ -168,11 +170,11 @@ describe('code transformation worker:', () => {
     expect(result.output[0].data.functionMap).toMatchSnapshot();
     expect(result.dependencies).toEqual([
       {
-        data: {isAsync: false},
+        data: objectContaining({isAsync: false}),
         name: '@babel/runtime/helpers/interopRequireDefault',
       },
       {
-        data: {isAsync: false},
+        data: objectContaining({isAsync: false}),
         name: '@babel/runtime/regenerator',
       },
     ]);
@@ -201,9 +203,9 @@ describe('code transformation worker:', () => {
     expect(result.output[0].data.functionMap).toMatchSnapshot();
     expect(result.dependencies).toEqual([
       {
-        data: {
+        data: objectContaining({
           isAsync: false,
-        },
+        }),
         name: './c',
       },
     ]);

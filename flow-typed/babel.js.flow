@@ -221,6 +221,12 @@ type Templatable = ({[tokenName: string]: mixed, ...}) => BabelNode;
 
 type TemplateFunc = (tpl: string, options?: TemplateOptions) => Templatable;
 
+type BabelSourceLocation = {|
+  +start: {|+line: number, +column: number|},
+  +end: {|+line: number, +column: number|},
+  +identifierName?: string,
+|};
+
 // note: ast is not optional, babel will throw if it would be empty:
 // https://github.com/babel/babel/blob/98969b8a7335e831c069164f5c56132111847224/packages/babel-core/src/transform-ast.js#L52
 // https://github.com/babel/babel/blob/98969b8a7335e831c069164f5c56132111847224/packages/babel-core/src/transform-ast-sync.js#L15

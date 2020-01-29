@@ -31,6 +31,7 @@ export type Dependency = {|
     +mobileConfigName: string,
   |},
   path: string,
+  +locs: $ReadOnlyArray<BabelSourceLocation>,
 |};
 
 export type File = {|
