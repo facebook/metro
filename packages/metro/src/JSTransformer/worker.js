@@ -143,13 +143,20 @@ class JsTransformer {
     if (options.type === 'script') {
       type = 'js/script';
     }
+    const disableES6Transforms = options.unstable_disableES6Transforms ?? false;
 
     if (filename.endsWith('.json')) {
       let code = JsFileWrapping.wrapJson(sourceCode);
       let map = [];
 
       if (options.minify) {
-        ({map, code} = await this._minifyCode(filename, code, sourceCode, map));
+        ({map, code} = await this._minifyCode(
+          filename,
+          code,
+          sourceCode,
+          map,
+          disableES6Transforms,
+        ));
       }
 
       return {
@@ -319,6 +326,7 @@ class JsTransformer {
         result.code,
         sourceCode,
         map,
+        disableES6Transforms,
         reserved,
       ));
     }
@@ -338,6 +346,7 @@ class JsTransformer {
     code: string,
     source: string,
     map: Array<MetroSourceMapSegmentTuple>,
+    disableES6Transforms: boolean,
     reserved?: $ReadOnlyArray<string> = [],
   ): Promise<{
     code: string,
@@ -356,7 +365,11 @@ class JsTransformer {
         map: sourceMap,
         filename,
         reserved,
-        config: this._config.minifierConfig,
+        config: {
+          ...this._config.minifierConfig,
+          ecma: disableES6Transforms ? 2015 : 5,
+          safari10: disableES6Transforms,
+        },
       });
 
       return {
