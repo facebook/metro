@@ -30,15 +30,15 @@ function buildBundle(
   process.env.BABEL_ENV = requestOptions.dev
     ? 'development'
     : process.env.BABEL_ENV || 'production';
-  try {
-    return packagerClient.build({
-      ...Server.DEFAULT_BUNDLE_OPTIONS,
-      ...requestOptions,
-      bundleType: 'bundle',
-    });
-  } finally {
+  return packagerClient.build({
+    ...Server.DEFAULT_BUNDLE_OPTIONS,
+    ...requestOptions,
+    bundleType: 'bundle',
+  })
+  .finally(res => {
     process.env.BABEL_ENV = OLD_BABEL_ENV;
-  }
+    return res;
+  });
 }
 
 function relativateSerializedMap(
