@@ -35,7 +35,10 @@ function buildBundle(
     ...requestOptions,
     bundleType: 'bundle',
   })
-  .finally(res => {
+  .then(res => {
+    process.env.BABEL_ENV = OLD_BABEL_ENV;
+    return res;
+  }, res => {
     process.env.BABEL_ENV = OLD_BABEL_ENV;
     return res;
   });
