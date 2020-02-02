@@ -227,6 +227,19 @@ class DependencyGraph extends EventEmitter {
 
     return req.resolveDependency(this._moduleCache.getModule(from), to).path;
   }
+  /*
+   * Resolve the dependency from the resolver directly, skip populating the cache.
+   */
+  resolveDependencyFast(from: string, to: string, platform: string): string {
+    const fromModule = this._moduleCache.getModule(from);
+
+    return this._moduleResolver.resolveDependency(
+      fromModule,
+      to,
+      true,
+      platform,
+    ).path;
+  }
 
   _doesFileExist = (filePath: string): boolean => {
     return this._hasteFS.exists(filePath);
