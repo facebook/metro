@@ -28,12 +28,12 @@ describe('basic maps', () => {
       });
       expect(consumer.originalPositionFor({line: add1(0), column: add0(0)}))
         .toMatchInlineSnapshot(`
-          Object {
-            "column": null,
-            "line": null,
-            "name": null,
-            "source": null,
-          }
+        Object {
+          "column": null,
+          "line": null,
+          "name": null,
+          "source": null,
+        }
       `);
     });
 
@@ -46,30 +46,30 @@ describe('basic maps', () => {
       });
       expect(consumer.originalPositionFor({line: add1(0), column: add0(0)}))
         .toMatchInlineSnapshot(`
-          Object {
-            "column": 0,
-            "line": 1,
-            "name": "name0",
-            "source": "source0",
-          }
+        Object {
+          "column": 0,
+          "line": 1,
+          "name": "name0",
+          "source": "source0",
+        }
       `);
       expect(consumer.originalPositionFor({line: add1(0), column: add0(10)}))
         .toMatchInlineSnapshot(`
-          Object {
-            "column": 0,
-            "line": 1,
-            "name": "name0",
-            "source": "source0",
-          }
+        Object {
+          "column": 0,
+          "line": 1,
+          "name": "name0",
+          "source": "source0",
+        }
       `);
       expect(consumer.originalPositionFor({line: add1(1), column: add0(0)}))
         .toMatchInlineSnapshot(`
-          Object {
-            "column": null,
-            "line": null,
-            "name": null,
-            "source": null,
-          }
+        Object {
+          "column": null,
+          "line": null,
+          "name": null,
+          "source": null,
+        }
       `);
     });
 
@@ -83,30 +83,30 @@ describe('basic maps', () => {
 
       expect(consumer.originalPositionFor({line: add1(0), column: add0(0)}))
         .toMatchInlineSnapshot(`
-          Object {
-            "column": 0,
-            "line": 1,
-            "name": "name0",
-            "source": "source0",
-          }
+        Object {
+          "column": 0,
+          "line": 1,
+          "name": "name0",
+          "source": "source0",
+        }
       `);
       expect(consumer.originalPositionFor({line: add1(1), column: add0(1)}))
         .toMatchInlineSnapshot(`
-          Object {
-            "column": 1,
-            "line": 1,
-            "name": null,
-            "source": "source0",
-          }
+        Object {
+          "column": 1,
+          "line": 1,
+          "name": null,
+          "source": "source0",
+        }
       `);
       expect(consumer.originalPositionFor({line: add1(2), column: add0(2)}))
         .toMatchInlineSnapshot(`
-          Object {
-            "column": 3,
-            "line": 1,
-            "name": "name1",
-            "source": "source0",
-          }
+        Object {
+          "column": 3,
+          "line": 1,
+          "name": "name1",
+          "source": "source0",
+        }
       `);
     });
   });
@@ -205,12 +205,12 @@ describe('indexed (sectioned) maps', () => {
       });
       expect(consumer.originalPositionFor({line: add1(0), column: add0(0)}))
         .toMatchInlineSnapshot(`
-          Object {
-            "column": null,
-            "line": null,
-            "name": null,
-            "source": null,
-          }
+        Object {
+          "column": null,
+          "line": null,
+          "name": null,
+          "source": null,
+        }
       `);
     });
 
@@ -249,30 +249,30 @@ describe('indexed (sectioned) maps', () => {
       });
       expect(consumer.originalPositionFor({line: add1(0), column: add0(0)}))
         .toMatchInlineSnapshot(`
-          Object {
-            "column": 2,
-            "line": 3,
-            "name": "section0_name0",
-            "source": "section0_source0",
-          }
+        Object {
+          "column": 2,
+          "line": 3,
+          "name": "section0_name0",
+          "source": "section0_source0",
+        }
       `);
       expect(consumer.originalPositionFor({line: add1(0), column: add0(1)}))
         .toMatchInlineSnapshot(`
-          Object {
-            "column": 2,
-            "line": 3,
-            "name": "section1_name0",
-            "source": "section1_source0",
-          }
+        Object {
+          "column": 2,
+          "line": 3,
+          "name": "section1_name0",
+          "source": "section1_source0",
+        }
       `);
       expect(consumer.originalPositionFor({line: add1(0), column: add0(2)}))
         .toMatchInlineSnapshot(`
-          Object {
-            "column": 2,
-            "line": 3,
-            "name": "section2_name0",
-            "source": "section2_source0",
-          }
+        Object {
+          "column": 2,
+          "line": 3,
+          "name": "section2_name0",
+          "source": "section2_source0",
+        }
       `);
     });
 
@@ -311,66 +311,66 @@ describe('indexed (sectioned) maps', () => {
       });
       expect(consumer.originalPositionFor({line: add1(0), column: add0(0)}))
         .toMatchInlineSnapshot(`
-          Object {
-            "column": null,
-            "line": null,
-            "name": null,
-            "source": null,
-          }
+        Object {
+          "column": null,
+          "line": null,
+          "name": null,
+          "source": null,
+        }
       `);
       expect(consumer.originalPositionFor({line: add1(0), column: add0(1)}))
         .toMatchInlineSnapshot(`
-          Object {
-            "column": 2,
-            "line": 3,
-            "name": "section0_name0",
-            "source": "section0_source0",
-          }
+        Object {
+          "column": 2,
+          "line": 3,
+          "name": "section0_name0",
+          "source": "section0_source0",
+        }
       `);
       expect(consumer.originalPositionFor({line: add1(0), column: add0(3)}))
         .toMatchInlineSnapshot(`
-          Object {
-            "column": 2,
-            "line": 3,
-            "name": "section1_name0",
-            "source": "section1_source0",
-          }
+        Object {
+          "column": 2,
+          "line": 3,
+          "name": "section1_name0",
+          "source": "section1_source0",
+        }
       `);
       expect(consumer.originalPositionFor({line: add1(0), column: add0(4)}))
         .toMatchInlineSnapshot(`
-          Object {
-            "column": null,
-            "line": null,
-            "name": null,
-            "source": null,
-          }
+        Object {
+          "column": null,
+          "line": null,
+          "name": null,
+          "source": null,
+        }
       `);
       expect(consumer.originalPositionFor({line: add1(0), column: add0(5)}))
         .toMatchInlineSnapshot(`
-          Object {
-            "column": 2,
-            "line": 3,
-            "name": "section2_name0",
-            "source": "section2_source0",
-          }
+        Object {
+          "column": 2,
+          "line": 3,
+          "name": "section2_name0",
+          "source": "section2_source0",
+        }
       `);
       expect(consumer.originalPositionFor({line: add1(0), column: add0(6)}))
         .toMatchInlineSnapshot(`
-          Object {
-            "column": 2,
-            "line": 3,
-            "name": "section2_name0",
-            "source": "section2_source0",
-          }
+        Object {
+          "column": 2,
+          "line": 3,
+          "name": "section2_name0",
+          "source": "section2_source0",
+        }
       `);
       expect(consumer.originalPositionFor({line: add1(0), column: add0(7)}))
         .toMatchInlineSnapshot(`
-          Object {
-            "column": 2,
-            "line": 3,
-            "name": "section2_name0",
-            "source": "section2_source0",
-          }
+        Object {
+          "column": 2,
+          "line": 3,
+          "name": "section2_name0",
+          "source": "section2_source0",
+        }
       `);
     });
   });

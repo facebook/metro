@@ -781,20 +781,20 @@ describe('processRequest', () => {
       });
 
       expect(JSON.parse(response.body)).toMatchInlineSnapshot(`
-                Object {
-                  "codeFrame": null,
-                  "stack": Array [
-                    Object {
-                      "collapse": false,
-                      "column": 18,
-                      "customPropShouldBeLeftUnchanged": "foo",
-                      "file": "http://localhost:8081/mybundle.bundle?runModule=true",
-                      "lineNumber": 200,
-                      "methodName": "clientSideMethodName",
-                    },
-                  ],
-                }
-            `);
+        Object {
+          "codeFrame": null,
+          "stack": Array [
+            Object {
+              "collapse": false,
+              "column": 18,
+              "customPropShouldBeLeftUnchanged": "foo",
+              "file": "http://localhost:8081/mybundle.bundle?runModule=true",
+              "lineNumber": 200,
+              "methodName": "clientSideMethodName",
+            },
+          ],
+        }
+      `);
     });
   });
 

@@ -60,23 +60,23 @@ it('minimizes arguments given', () => {
 
   expect(result.reserved).toEqual(['g', 'r', 'm', 'e', 'd']);
   expect(result.code).toMatchInlineSnapshot(`
-"__d(function (g, r, m, e, d) {
-  r(27).foo();
+    "__d(function (g, r, m, e, d) {
+      r(27).foo();
 
-  (function () {
-    {
-      const _r4 = 1; // _$$_REQUIRE will be renamed to \\"r\\".
+      (function () {
+        {
+          const _r4 = 1; // _$$_REQUIRE will be renamed to \\"r\\".
 
-      return _r4++;
-    }
-  })();
+          return _r4++;
+        }
+      })();
 
-  (function () {
-    var global = 'potato';
-    return global + 'tomato';
-  })();
-});"
-`);
+      (function () {
+        var global = 'potato';
+        return global + 'tomato';
+      })();
+    });"
+  `);
 });
 
 it('throws if two variables collapse to the same name', () => {

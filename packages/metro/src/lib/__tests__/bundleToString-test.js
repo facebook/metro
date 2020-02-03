@@ -21,10 +21,10 @@ describe('bundleToString', () => {
         modules: [[0, 'console.log("Best module.");']],
       }).code,
     ).toMatchInlineSnapshot(`
-"console.log(\\"Hello World!\\");
-console.log(\\"Best module.\\");
-console.log(\\"That's all folks!\\");"
-`);
+      "console.log(\\"Hello World!\\");
+      console.log(\\"Best module.\\");
+      console.log(\\"That's all folks!\\");"
+    `);
   });
 
   it('modules are sorted by id', () => {
@@ -35,13 +35,13 @@ console.log(\\"That's all folks!\\");"
         modules: [[3, '3'], [0, '0'], [2, '2'], [1, '1']],
       }).code,
     ).toMatchInlineSnapshot(`
-"console.log(\\"Hello World!\\");
-0
-1
-2
-3
-console.log(\\"That's all folks!\\");"
-`);
+      "console.log(\\"Hello World!\\");
+      0
+      1
+      2
+      3
+      console.log(\\"That's all folks!\\");"
+    `);
   });
 
   it("doesn't add extraneous line breaks when either pre, post or modules are absent", () => {
@@ -60,9 +60,9 @@ console.log(\\"That's all folks!\\");"
         modules: [[0, ''], [1, '']],
       }).code,
     ).toMatchInlineSnapshot(`
-"pre
-post"
-`);
+      "pre
+      post"
+    `);
 
     expect(
       bundleToString({
@@ -71,9 +71,9 @@ post"
         modules: [[0, '0']],
       }).code,
     ).toMatchInlineSnapshot(`
-"0
-console.log(\\"That's all folks!\\");"
-`);
+      "0
+      console.log(\\"That's all folks!\\");"
+    `);
 
     expect(
       bundleToString({
@@ -82,9 +82,9 @@ console.log(\\"That's all folks!\\");"
         modules: [[0, '0']],
       }).code,
     ).toMatchInlineSnapshot(`
-"console.log(\\"Hello World!\\");
-0"
-`);
+      "console.log(\\"Hello World!\\");
+      0"
+    `);
 
     expect(
       bundleToString({
@@ -117,8 +117,8 @@ console.log(\\"That's all folks!\\");"
         modules: [[0, '0']],
       }).code,
     ).toMatchInlineSnapshot(`
-"0
-console.log(\\"That's all folks!\\");"
-`);
+      "0
+      console.log(\\"That's all folks!\\");"
+    `);
   });
 });

@@ -183,20 +183,20 @@ describe('composeSourceMaps', () => {
       },
     ]);
     expect(mergedMap).toMatchInlineSnapshot(`
-Object {
-  "mappings": "AAACA,C,CAAAA,CAACA",
-  "names": Array [
-    "a",
-  ],
-  "sources": Array [
-    "a.js",
-  ],
-  "version": 3,
-  "x_facebook_sources": Array [
-    null,
-  ],
-}
-`);
+      Object {
+        "mappings": "AAACA,C,CAAAA,CAACA",
+        "names": Array [
+          "a",
+        ],
+        "sources": Array [
+          "a.js",
+        ],
+        "version": 3,
+        "x_facebook_sources": Array [
+          null,
+        ],
+      }
+    `);
   });
 
   it('Propagate x_hermes_function_offsets', () => {

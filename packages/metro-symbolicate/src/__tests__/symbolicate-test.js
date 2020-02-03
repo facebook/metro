@@ -199,18 +199,18 @@ describe('symbolicating an attribution file specifying unmapped offsets', () => 
         usage: [],
       }),
     ).resolves.toMatchInlineSnapshot(`
-                        Array [
-                          Object {
-                            "functionId": 0,
-                            "location": Object {
-                              "column": null,
-                              "file": null,
-                              "line": null,
-                            },
-                            "usage": Array [],
-                          },
-                        ]
-                    `));
+            Array [
+              Object {
+                "functionId": 0,
+                "location": Object {
+                  "column": null,
+                  "file": null,
+                  "line": null,
+                },
+                "usage": Array [],
+              },
+            ]
+          `));
 
   test('Lookup finds a null mapping and falls back to a non-null mapping in range', async () =>
     await expect(
@@ -220,18 +220,18 @@ describe('symbolicating an attribution file specifying unmapped offsets', () => 
         usage: [],
       }),
     ).resolves.toMatchInlineSnapshot(`
-                        Array [
-                          Object {
-                            "functionId": 1,
-                            "location": Object {
-                              "column": 1,
-                              "file": "foo.js",
-                              "line": 2,
-                            },
-                            "usage": Array [],
-                          },
-                        ]
-                    `));
+            Array [
+              Object {
+                "functionId": 1,
+                "location": Object {
+                  "column": 1,
+                  "file": "foo.js",
+                  "line": 2,
+                },
+                "usage": Array [],
+              },
+            ]
+          `));
 
   test('Lookup finds a null mapping with no bytecodeSize specified', async () =>
     await expect(
@@ -241,18 +241,18 @@ describe('symbolicating an attribution file specifying unmapped offsets', () => 
         usage: [],
       }),
     ).resolves.toMatchInlineSnapshot(`
-                        Array [
-                          Object {
-                            "functionId": 1,
-                            "location": Object {
-                              "column": null,
-                              "file": null,
-                              "line": null,
-                            },
-                            "usage": Array [],
-                          },
-                        ]
-                    `));
+            Array [
+              Object {
+                "functionId": 1,
+                "location": Object {
+                  "column": null,
+                  "file": null,
+                  "line": null,
+                },
+                "usage": Array [],
+              },
+            ]
+          `));
 
   test('Lookup finds a null mapping with no non-null mapping in range', async () =>
     await expect(
@@ -283,18 +283,18 @@ describe('symbolicating an attribution file specifying unmapped offsets', () => 
         usage: [],
       }),
     ).resolves.toMatchInlineSnapshot(`
-                        Array [
-                          Object {
-                            "functionId": 3,
-                            "location": Object {
-                              "column": null,
-                              "file": null,
-                              "line": null,
-                            },
-                            "usage": Array [],
-                          },
-                        ]
-                    `));
+            Array [
+              Object {
+                "functionId": 3,
+                "location": Object {
+                  "column": null,
+                  "file": null,
+                  "line": null,
+                },
+                "usage": Array [],
+              },
+            ]
+          `));
 });
 
 test('symbolicating with a cpuprofile', async () => {

@@ -24,60 +24,60 @@ describe('BundleBuilder', () => {
   it('empty', () => {
     expect(builder.getCode()).toBe('');
     expect(builder.getMap()).toMatchInlineSnapshot(`
-Object {
-  "file": "bundle.js",
-  "sections": Array [],
-  "version": 3,
-}
-`);
+      Object {
+        "file": "bundle.js",
+        "sections": Array [],
+        "version": 3,
+      }
+    `);
   });
 
   it('single empty region', () => {
     builder.append('');
     expect(builder.getCode()).toBe('');
     expect(builder.getMap()).toMatchInlineSnapshot(`
-Object {
-  "file": "bundle.js",
-  "sections": Array [],
-  "version": 3,
-}
-`);
+      Object {
+        "file": "bundle.js",
+        "sections": Array [],
+        "version": 3,
+      }
+    `);
   });
 
   it('single unmapped region', () => {
     builder.append('abcdef');
     expect(builder.getCode()).toBe('abcdef');
     expect(builder.getMap()).toMatchInlineSnapshot(`
-Object {
-  "file": "bundle.js",
-  "sections": Array [],
-  "version": 3,
-}
-`);
+      Object {
+        "file": "bundle.js",
+        "sections": Array [],
+        "version": 3,
+      }
+    `);
   });
 
   it('single unmapped region ending in newline', () => {
     builder.append('abcdef\n');
     expect(builder.getCode()).toBe('abcdef\n');
     expect(builder.getMap()).toMatchInlineSnapshot(`
-Object {
-  "file": "bundle.js",
-  "sections": Array [],
-  "version": 3,
-}
-`);
+      Object {
+        "file": "bundle.js",
+        "sections": Array [],
+        "version": 3,
+      }
+    `);
   });
 
   it('two unmapped regions in one line', () => {
     builder.append('abc').append('def');
     expect(builder.getCode()).toBe('abcdef');
     expect(builder.getMap()).toMatchInlineSnapshot(`
-Object {
-  "file": "bundle.js",
-  "sections": Array [],
-  "version": 3,
-}
-`);
+      Object {
+        "file": "bundle.js",
+        "sections": Array [],
+        "version": 3,
+      }
+    `);
   });
 
   it('two mapped regions in one line', () => {
@@ -86,49 +86,49 @@ Object {
       .append('def', {version: 3, mappings: 'A,C', names: [], sources: []});
     expect(builder.getCode()).toBe('abcdef');
     expect(builder.getMap()).toMatchInlineSnapshot(`
-Object {
-  "file": "bundle.js",
-  "sections": Array [
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
+      Object {
+        "file": "bundle.js",
+        "sections": Array [
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 0,
+              "line": 0,
+            },
+          },
+          Object {
+            "map": Object {
+              "mappings": "A,C",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 3,
+              "line": 0,
+            },
+          },
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 6,
+              "line": 0,
+            },
+          },
+        ],
         "version": 3,
-      },
-      "offset": Object {
-        "column": 0,
-        "line": 0,
-      },
-    },
-    Object {
-      "map": Object {
-        "mappings": "A,C",
-        "names": Array [],
-        "sources": Array [],
-        "version": 3,
-      },
-      "offset": Object {
-        "column": 3,
-        "line": 0,
-      },
-    },
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
-        "version": 3,
-      },
-      "offset": Object {
-        "column": 6,
-        "line": 0,
-      },
-    },
-  ],
-  "version": 3,
-}
-`);
+      }
+    `);
   });
 
   it('two mapped regions with newlines', () => {
@@ -147,49 +147,49 @@ Object {
       });
     expect(builder.getCode()).toBe('abc\ndef\n');
     expect(builder.getMap()).toMatchInlineSnapshot(`
-Object {
-  "file": "bundle.js",
-  "sections": Array [
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
+      Object {
+        "file": "bundle.js",
+        "sections": Array [
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 0,
+              "line": 0,
+            },
+          },
+          Object {
+            "map": Object {
+              "mappings": "A,C",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 0,
+              "line": 1,
+            },
+          },
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 0,
+              "line": 2,
+            },
+          },
+        ],
         "version": 3,
-      },
-      "offset": Object {
-        "column": 0,
-        "line": 0,
-      },
-    },
-    Object {
-      "map": Object {
-        "mappings": "A,C",
-        "names": Array [],
-        "sources": Array [],
-        "version": 3,
-      },
-      "offset": Object {
-        "column": 0,
-        "line": 1,
-      },
-    },
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
-        "version": 3,
-      },
-      "offset": Object {
-        "column": 0,
-        "line": 2,
-      },
-    },
-  ],
-  "version": 3,
-}
-`);
+      }
+    `);
   });
 
   it('unmapped columns before a mapped region', () => {
@@ -201,37 +201,37 @@ Object {
     });
     expect(builder.getCode()).toBe('abcdef\n');
     expect(builder.getMap()).toMatchInlineSnapshot(`
-Object {
-  "file": "bundle.js",
-  "sections": Array [
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
+      Object {
+        "file": "bundle.js",
+        "sections": Array [
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 3,
+              "line": 0,
+            },
+          },
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 0,
+              "line": 1,
+            },
+          },
+        ],
         "version": 3,
-      },
-      "offset": Object {
-        "column": 3,
-        "line": 0,
-      },
-    },
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
-        "version": 3,
-      },
-      "offset": Object {
-        "column": 0,
-        "line": 1,
-      },
-    },
-  ],
-  "version": 3,
-}
-`);
+      }
+    `);
   });
 
   it('CR newlines', () => {
@@ -243,37 +243,37 @@ Object {
     });
     expect(builder.getCode()).toBe('\r\rabc');
     expect(builder.getMap()).toMatchInlineSnapshot(`
-Object {
-  "file": "bundle.js",
-  "sections": Array [
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
+      Object {
+        "file": "bundle.js",
+        "sections": Array [
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 0,
+              "line": 2,
+            },
+          },
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 3,
+              "line": 2,
+            },
+          },
+        ],
         "version": 3,
-      },
-      "offset": Object {
-        "column": 0,
-        "line": 2,
-      },
-    },
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
-        "version": 3,
-      },
-      "offset": Object {
-        "column": 3,
-        "line": 2,
-      },
-    },
-  ],
-  "version": 3,
-}
-`);
+      }
+    `);
   });
 
   it('LF newlines', () => {
@@ -285,37 +285,37 @@ Object {
     });
     expect(builder.getCode()).toBe('\n\nabc');
     expect(builder.getMap()).toMatchInlineSnapshot(`
-Object {
-  "file": "bundle.js",
-  "sections": Array [
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
+      Object {
+        "file": "bundle.js",
+        "sections": Array [
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 0,
+              "line": 2,
+            },
+          },
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 3,
+              "line": 2,
+            },
+          },
+        ],
         "version": 3,
-      },
-      "offset": Object {
-        "column": 0,
-        "line": 2,
-      },
-    },
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
-        "version": 3,
-      },
-      "offset": Object {
-        "column": 3,
-        "line": 2,
-      },
-    },
-  ],
-  "version": 3,
-}
-`);
+      }
+    `);
   });
 
   it('CRLF newlines', () => {
@@ -327,37 +327,37 @@ Object {
     });
     expect(builder.getCode()).toBe('\r\n\r\nabc');
     expect(builder.getMap()).toMatchInlineSnapshot(`
-Object {
-  "file": "bundle.js",
-  "sections": Array [
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
+      Object {
+        "file": "bundle.js",
+        "sections": Array [
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 0,
+              "line": 2,
+            },
+          },
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 3,
+              "line": 2,
+            },
+          },
+        ],
         "version": 3,
-      },
-      "offset": Object {
-        "column": 0,
-        "line": 2,
-      },
-    },
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
-        "version": 3,
-      },
-      "offset": Object {
-        "column": 3,
-        "line": 2,
-      },
-    },
-  ],
-  "version": 3,
-}
-`);
+      }
+    `);
   });
 
   it('mapped, unmapped, mapped', () => {
@@ -377,61 +377,61 @@ Object {
       });
     expect(builder.getCode()).toBe('abc\ndef\nghi\n');
     expect(builder.getMap()).toMatchInlineSnapshot(`
-Object {
-  "file": "bundle.js",
-  "sections": Array [
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
+      Object {
+        "file": "bundle.js",
+        "sections": Array [
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 0,
+              "line": 0,
+            },
+          },
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 0,
+              "line": 1,
+            },
+          },
+          Object {
+            "map": Object {
+              "mappings": "A,C",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 0,
+              "line": 2,
+            },
+          },
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 0,
+              "line": 3,
+            },
+          },
+        ],
         "version": 3,
-      },
-      "offset": Object {
-        "column": 0,
-        "line": 0,
-      },
-    },
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
-        "version": 3,
-      },
-      "offset": Object {
-        "column": 0,
-        "line": 1,
-      },
-    },
-    Object {
-      "map": Object {
-        "mappings": "A,C",
-        "names": Array [],
-        "sources": Array [],
-        "version": 3,
-      },
-      "offset": Object {
-        "column": 0,
-        "line": 2,
-      },
-    },
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
-        "version": 3,
-      },
-      "offset": Object {
-        "column": 0,
-        "line": 3,
-      },
-    },
-  ],
-  "version": 3,
-}
-`);
+      }
+    `);
   });
 
   it('mapped, unmapped', () => {
@@ -445,37 +445,37 @@ Object {
       .append('def\n');
     expect(builder.getCode()).toBe('abc\ndef\n');
     expect(builder.getMap()).toMatchInlineSnapshot(`
-Object {
-  "file": "bundle.js",
-  "sections": Array [
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
+      Object {
+        "file": "bundle.js",
+        "sections": Array [
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 0,
+              "line": 0,
+            },
+          },
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 0,
+              "line": 1,
+            },
+          },
+        ],
         "version": 3,
-      },
-      "offset": Object {
-        "column": 0,
-        "line": 0,
-      },
-    },
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
-        "version": 3,
-      },
-      "offset": Object {
-        "column": 0,
-        "line": 1,
-      },
-    },
-  ],
-  "version": 3,
-}
-`);
+      }
+    `);
   });
 
   it('getMap is idempotent', () => {
@@ -514,61 +514,61 @@ Object {
       });
     expect(builder.getCode()).toBe('abc\ndef\nghi\n');
     expect(builder.getMap()).toMatchInlineSnapshot(`
-Object {
-  "file": "bundle.js",
-  "sections": Array [
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
+      Object {
+        "file": "bundle.js",
+        "sections": Array [
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 0,
+              "line": 0,
+            },
+          },
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 0,
+              "line": 1,
+            },
+          },
+          Object {
+            "map": Object {
+              "mappings": "C",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 0,
+              "line": 2,
+            },
+          },
+          Object {
+            "map": Object {
+              "mappings": "A",
+              "names": Array [],
+              "sources": Array [],
+              "version": 3,
+            },
+            "offset": Object {
+              "column": 0,
+              "line": 3,
+            },
+          },
+        ],
         "version": 3,
-      },
-      "offset": Object {
-        "column": 0,
-        "line": 0,
-      },
-    },
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
-        "version": 3,
-      },
-      "offset": Object {
-        "column": 0,
-        "line": 1,
-      },
-    },
-    Object {
-      "map": Object {
-        "mappings": "C",
-        "names": Array [],
-        "sources": Array [],
-        "version": 3,
-      },
-      "offset": Object {
-        "column": 0,
-        "line": 2,
-      },
-    },
-    Object {
-      "map": Object {
-        "mappings": "A",
-        "names": Array [],
-        "sources": Array [],
-        "version": 3,
-      },
-      "offset": Object {
-        "column": 0,
-        "line": 3,
-      },
-    },
-  ],
-  "version": 3,
-}
-`);
+      }
+    `);
   });
 
   it('encodes unmapped regions correctly', () => {
@@ -590,11 +590,11 @@ Object {
     const map = builder.getMap();
     const code = builder.getCode();
     expect(code).toMatchInlineSnapshot(`
-"abc
-def
-ghi
-"
-`);
+      "abc
+      def
+      ghi
+      "
+    `);
     const consumer = new Consumer(map);
     expect(consumer.originalPositionFor(find(code, 'abc'))).toEqual(
       objectContaining({line: 1, column: 0, source: 'abc.js'}),
