@@ -69,7 +69,6 @@ const reactDisplayName = [
   require('@babel/plugin-transform-react-display-name'),
 ];
 const reactJsxSource = [require('@babel/plugin-transform-react-jsx-source')];
-const symbolMember = [require('../transforms/transform-symbol-member')];
 
 const babelRuntime = [
   require('@babel/plugin-transform-runtime'),
@@ -78,10 +77,6 @@ const babelRuntime = [
     regenerator: true,
   },
 ];
-
-function unstable_disableES6Transforms(options) {
-  return !!(options && options.unstable_disableES6Transforms);
-}
 
 const getPreset = (src, options) => {
   const isNull = src == null;
@@ -132,12 +127,6 @@ const getPreset = (src, options) => {
   }
   if (hasForOf) {
     extraPlugins.push(es2015ForOf);
-  }
-  if (
-    !unstable_disableES6Transforms(options) &&
-    (hasForOf || src.indexOf('Symbol') !== -1)
-  ) {
-    extraPlugins.push(symbolMember);
   }
   if (
     isNull ||
