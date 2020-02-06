@@ -92,11 +92,11 @@ class InspectorProxy {
 
   // Adds websocket listeners to the provided HTTP/HTTPS server.
   addWebSocketListener(server: HttpServer | HttpsServer) {
-    const {address, port} = server.address();
+    const {port} = server.address();
     if (server.address().family === 'IPv6') {
-      this._serverAddressWithPort = `[${address}]:${port}`;
+      this._serverAddressWithPort = `[::]:${port}`;
     } else {
-      this._serverAddressWithPort = `${address}:${port}`;
+      this._serverAddressWithPort = `localhost:${port}`;
     }
     this._addDeviceConnectionHandler(server);
     this._addDebuggerConnectionHandler(server);
