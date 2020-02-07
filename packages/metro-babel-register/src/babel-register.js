@@ -11,7 +11,6 @@
 
 const escapeRegExp = require('escape-string-regexp');
 const path = require('path');
-require('./node-polyfills');
 
 var _only = [];
 
