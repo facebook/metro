@@ -231,10 +231,13 @@ class DependencyGraph extends EventEmitter {
    * Resolve the dependency from the resolver directly, skip populating the cache.
    */
   resolveDependencyFast(from: string, to: string, platform: string): string {
-    const fromModule = this._moduleCache.getModule(from);
+    const modulePath = this._moduleMap.getModule(to, platform, true);
+    if (modulePath) {
+      return modulePath;
+    }
 
     return this._moduleResolver.resolveDependency(
-      fromModule,
+      this._moduleCache.getModule(from),
       to,
       true,
       platform,
