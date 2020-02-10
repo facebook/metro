@@ -14,19 +14,13 @@ const path = require('path');
 
 var _only = [];
 
-const PLUGINS = [
+const plugins = [
   [require('@babel/plugin-transform-flow-strip-types').default],
-  [require('@babel/plugin-proposal-object-rest-spread').default],
   [require('@babel/plugin-proposal-class-properties').default],
   [require('@babel/plugin-transform-modules-commonjs').default],
   [require('@babel/plugin-proposal-nullish-coalescing-operator').default],
-  [require('@babel/plugin-proposal-optional-catch-binding').default],
   [require('@babel/plugin-proposal-optional-chaining').default],
 ];
-
-if (/^v[0-7]\./.test(process.version)) {
-  PLUGINS.push([require('@babel/plugin-transform-async-to-generator').default]);
-}
 
 function registerOnly(onlyList) {
   // This prevents `babel-register` from transforming the code of the
@@ -43,7 +37,7 @@ function config(onlyList) {
     configFile: false,
     ignore: null,
     only: _only,
-    plugins: PLUGINS,
+    plugins,
     presets: [],
     retainLines: true,
     sourceMaps: 'inline',
