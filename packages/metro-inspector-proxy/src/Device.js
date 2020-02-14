@@ -11,7 +11,6 @@
 'use strict';
 
 import type {Page, MessageFromDevice, MessageToDevice} from './types';
-import {Observable} from 'rxjs';
 import WS from 'ws';
 
 const PAGES_POLLING_INTERVAL = 1000;
@@ -259,8 +258,9 @@ class Device {
 
   // Sends 'getPages' request to device every PAGES_POLLING_INTERVAL milliseconds.
   _setPagesPolling() {
-    Observable.interval(PAGES_POLLING_INTERVAL).subscribe(_ =>
-      this._sendMessageToDevice({event: 'getPages'}),
+    setInterval(
+      () => this._sendMessageToDevice({event: 'getPages'}),
+      PAGES_POLLING_INTERVAL,
     );
   }
 

@@ -19,7 +19,6 @@
   "dependencies": {
     "connect": "^3.6.5",
     "debug": "^2.2.0",
-    "rxjs": "^5.4.3",
     "ws": "^1.1.5",
     "yargs": "^14.2.0"
   }
