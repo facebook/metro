@@ -54,6 +54,7 @@ type ExtraTransformOptions = {
   +transform: {|
     +experimentalImportSupport: boolean,
     +inlineRequires: {+blacklist: {[string]: true, ...}, ...} | boolean,
+    +nonInlinedRequires?: $ReadOnlyArray<string>,
     +unstable_disableES6Transforms?: boolean,
   |},
   ...

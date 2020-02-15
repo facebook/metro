@@ -34,6 +34,8 @@ type TransformOptionsWithRawInlines = {|
   +inlineRequires: InlineRequiresRaw,
 |};
 
+const baseIgnoredInlineRequires = ['React', 'react', 'react-native'];
+
 async function calcTransformerOptions(
   entryFiles: $ReadOnlyArray<string>,
   bundler: Bundler,
@@ -89,6 +91,8 @@ async function calcTransformerOptions(
     experimentalImportSupport: transform.experimentalImportSupport || false,
     unstable_disableES6Transforms:
       transform.unstable_disableES6Transforms || false,
+    nonInlinedRequires:
+      transform.nonInlinedRequires || baseIgnoredInlineRequires,
     type: 'module',
   };
 }

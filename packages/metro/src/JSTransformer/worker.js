@@ -81,6 +81,7 @@ export type JsTransformOptions = $ReadOnly<{|
   hot: boolean,
   inlinePlatform: boolean,
   inlineRequires: boolean,
+  nonInlinedRequires?: $ReadOnlyArray<string>,
   minify: boolean,
   unstable_disableES6Transforms?: boolean,
   platform: ?string,
@@ -177,6 +178,7 @@ class JsTransformer {
         // unfortunately remove it from the internal transformer, since this one
         // is used by other tooling, and this would affect it.
         inlineRequires: false,
+        nonInlinedRequires: [],
         projectRoot: this._projectRoot,
         publicPath: this._config.publicPath,
       },
@@ -230,7 +232,13 @@ class JsTransformer {
     }
 
     if (options.inlineRequires) {
-      plugins.push([inlineRequiresPlugin, opts]);
+      plugins.push([
+        inlineRequiresPlugin,
+        {
+          ...opts,
+          ignoredRequires: options.nonInlinedRequires,
+        },
+      ]);
     }
 
     if (!options.dev) {
