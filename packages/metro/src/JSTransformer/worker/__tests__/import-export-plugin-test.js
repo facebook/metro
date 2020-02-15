@@ -43,12 +43,15 @@ it('correctly transforms complex patterns', () => {
   const code = `
     import a, * as b from 'foo';
     import c, {d as e, f} from 'bar';
+    import {g} from 'baz';
   `;
 
   const expected = `
+    var _bar = require('bar'),
+        e = _bar.d,
+        f = _bar.f;
+    var g = require('baz').g;
     var c = _$$_IMPORT_DEFAULT('bar');
-    var e = require('bar').d;
-    var f = require('bar').f;
     var a = _$$_IMPORT_DEFAULT('foo');
     var b = _$$_IMPORT_ALL('foo');
   `;
@@ -87,14 +90,16 @@ it('exports members of another module directly from an import (as named)', () =>
 
 it('exports members of another module directly from an import (as default)', () => {
   const code = `
-    export {foo as default} from 'bar';
+    export {foo as default, baz} from 'bar';
   `;
 
   const expected = `
     Object.defineProperty(exports, '__esModule', {value: true});
 
     var _foo = require('bar').foo;
+    var _baz = require('bar').baz;
     exports.default = _foo;
+    exports.baz = _baz;
   `;
 
   compare([importExportPlugin], code, expected, opts);
