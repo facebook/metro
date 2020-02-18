@@ -11,6 +11,7 @@
 'use strict';
 
 const AssetResolutionCache = require('../../node-haste/AssetResolutionCache');
+const DependencyGraphHelpers = require('../../node-haste/DependencyGraph/DependencyGraphHelpers');
 const FilesByDirNameIndex = require('../../node-haste/FilesByDirNameIndex');
 const HasteFS = require('./HasteFS');
 const Module = require('./Module');
@@ -55,15 +56,12 @@ const NULL_MODULE: Moduleish = {
   },
 };
 
-const NODE_MODULES = path.sep + 'node_modules' + path.sep;
-const isNodeModules = file => file.includes(NODE_MODULES);
-
 // This function maps the ModuleGraph data structure to jest-haste-map's ModuleMap
-const createModuleMap = ({files, moduleCache, sourceExts}) => {
+const createModuleMap = ({files, helpers, moduleCache, sourceExts}) => {
   const map = new Map();
 
   files.forEach((filePath: string) => {
-    if (isNodeModules(filePath)) {
+    if (helpers.isNodeModulesDir(filePath)) {
       return;
     }
     let id;
@@ -124,6 +122,10 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     return result;
   }
 
+  const helpers = new DependencyGraphHelpers({
+    assetExts,
+  });
+
   const hasteFS = new HasteFS(files);
   const moduleCache = new ModuleCache(
     (filePath: string) => hasteFS.closest(filePath, 'package.json'),
@@ -137,21 +139,17 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
       filesByDirNameIndex.getAllFiles(dirPath),
     platforms,
   });
-
-  const assetExtensions = new Set(assetExts.map(asset => '.' + asset));
-  const isAssetFile = file => assetExtensions.has(path.extname(file));
-
   const moduleResolver = new ModuleResolver({
     dirExists: (filePath: string): boolean => hasteFS.dirExists(filePath),
     doesFileExist: (filePath: string): boolean => hasteFS.exists(filePath),
     extraNodeModules,
-    isAssetFile,
+    isAssetFile: (filePath: string): boolean => helpers.isAssetFile(filePath),
     mainFields: options.mainFields,
     // $FlowFixMe -- error revealed by types-first codemod
     moduleCache,
     moduleMap: new ModuleMap({
       duplicates: new Map(),
-      map: createModuleMap({files, moduleCache, sourceExts}),
+      map: createModuleMap({files, helpers, moduleCache, sourceExts}),
       mocks: new Map(),
       rootDir: '',
     }),
@@ -172,7 +170,7 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
       sourcePath != null
         ? new Module(sourcePath, moduleCache, getTransformedFile(sourcePath))
         : NULL_MODULE;
-    const allowHaste = !isNodeModules(from.path);
+    const allowHaste = !helpers.isNodeModulesDir(from.path);
     // $FlowFixMe -- error revealed by types-first codemod
     return moduleResolver.resolveDependency(from, id, allowHaste, platform)
       .path;

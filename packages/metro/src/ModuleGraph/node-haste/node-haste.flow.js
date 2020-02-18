@@ -12,6 +12,8 @@
 
 'use strict';
 
+import DependencyGraphHelpers from '../../node-haste/DependencyGraph/DependencyGraphHelpers';
+
 type ModuleID = string;
 export type Path = string;
 type Platform = string;
@@ -58,6 +60,7 @@ export type FastFS = {
 type HasteMapOptions = {|
   extensions: Extensions,
   files: Array<string>,
+  helpers: DependencyGraphHelpers,
   moduleCache: ModuleCache,
   platforms: Platforms,
   preferNativePlatform: true,
