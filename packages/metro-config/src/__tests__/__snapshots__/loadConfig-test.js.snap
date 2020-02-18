@@ -60,7 +60,6 @@ Object {
       "tsx",
     ],
     "useWatchman": true,
-    "virtualMapper": [Function],
   },
   "serializer": Object {
     "createModuleIdFactory": [Function],
@@ -187,7 +186,6 @@ Object {
       "tsx",
     ],
     "useWatchman": true,
-    "virtualMapper": [Function],
   },
   "serializer": Object {
     "createModuleIdFactory": [Function],

@@ -100,7 +100,6 @@ class DependencyGraph extends EventEmitter {
       forceNodeFilesystemAPI: !config.resolver.useWatchman,
       hasteImplModulePath: config.resolver.hasteImplModulePath,
       ignorePattern: config.resolver.blacklistRE || / ^/,
-      mapper: config.resolver.virtualMapper,
       maxWorkers: config.maxWorkers,
       mocksPattern: '',
       name: 'metro-' + JEST_HASTE_MAP_CACHE_BREAKER,

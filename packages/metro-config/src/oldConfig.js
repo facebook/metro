@@ -68,7 +68,6 @@ const DEFAULT = ({
   getWorkerPath: () => 'metro/src/DeltaBundler/Worker',
   processModuleFilter: module => true,
   transformVariants: () => ({default: {}}),
-  virtualMapper: file => [file],
 }: ConfigT);
 
 module.exports = {

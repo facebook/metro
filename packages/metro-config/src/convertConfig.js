@@ -73,7 +73,6 @@ async function convertOldToNew({
     extraNodeModules,
     transformVariants,
     processModuleFilter,
-    virtualMapper,
   } = config;
 
   const defaultConfig = await getDefaultConfig(getProjectRoot());
@@ -102,7 +101,6 @@ async function convertOldToNew({
         ? getBlacklistRE()
         : defaultConfig.resolver.blacklistRE,
       useWatchman: true,
-      virtualMapper,
     },
     serializer: {
       customSerializer: defaultConfig.serializer.customSerializer,
