@@ -26,7 +26,7 @@ const {
 } = require('../../node-haste/DependencyGraph/ModuleResolution');
 const {ModuleMap} = require('jest-haste-map');
 
-import type {Moduleish} from '../../node-haste/DependencyGraph/ResolutionRequest';
+import type {Moduleish} from '../../node-haste/DependencyGraph/ModuleResolution';
 import type {ResolveFn, TransformedCodeFile} from '../types.flow';
 import type {Extensions, Path} from './node-haste.flow';
 import type {CustomResolver} from 'metro-resolver';

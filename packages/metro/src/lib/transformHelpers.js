@@ -155,7 +155,7 @@ async function getResolveDependencyFn(
   bundler: Bundler,
   platform: ?string,
 ): Promise<(from: string, to: string) => string> {
-  const dependencyGraph = await bundler.getDependencyGraph();
+  const dependencyGraph = await await bundler.getDependencyGraph();
 
   return (from: string, to: string) =>
     dependencyGraph.resolveDependency(from, to, platform);

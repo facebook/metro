@@ -16,7 +16,6 @@ const invariant = require('invariant');
 const path = require('path');
 const util = require('util');
 
-import type {Moduleish, Packageish} from './ResolutionRequest';
 import type {
   CustomResolver,
   DoesFileExist,
@@ -27,6 +26,22 @@ import type {
 } from 'metro-resolver';
 
 export type DirExistsFn = (filePath: string) => boolean;
+
+export type Packageish = {
+  path: string,
+  redirectRequire(
+    toModuleName: string,
+    mainFields: $ReadOnlyArray<string>,
+  ): string | false,
+  getMain(mainFields: $ReadOnlyArray<string>): string,
+  ...
+};
+
+export type Moduleish = {
+  +path: string,
+  getPackage(): ?Packageish,
+  ...
+};
 
 /**
  * `jest-haste-map`'s interface for ModuleMap.

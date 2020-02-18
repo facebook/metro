@@ -10,12 +10,16 @@
 
 'use strict';
 
+const {AmbiguousModuleResolutionError} = require('metro-core');
+const {DuplicateHasteCandidatesError} = require('jest-haste-map').ModuleMap;
+const {InvalidPackageError} = require('metro-resolver');
+const {PackageResolutionError} = require('metro-core');
+
 const AssetResolutionCache = require('./AssetResolutionCache');
 const DependencyGraphHelpers = require('./DependencyGraph/DependencyGraphHelpers');
 const JestHasteMap = require('jest-haste-map');
 const Module = require('./Module');
 const ModuleCache = require('./ModuleCache');
-const ResolutionRequest = require('./DependencyGraph/ResolutionRequest');
 
 const ci = require('ci-info');
 const fs = require('fs');
@@ -34,6 +38,18 @@ import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 const JEST_HASTE_MAP_CACHE_BREAKER = 4;
 
+function getOrCreate<T>(
+  map: Map<string, Map<string, T>>,
+  field,
+): Map<string, T> {
+  let subMap = map.get(field);
+  if (!subMap) {
+    subMap = new Map();
+    map.set(field, subMap);
+  }
+  return subMap;
+}
+
 class DependencyGraph extends EventEmitter {
   _assetResolutionCache: AssetResolutionCache;
   _config: ConfigT;
@@ -43,6 +59,7 @@ class DependencyGraph extends EventEmitter {
   _moduleCache: ModuleCache;
   _moduleMap: ModuleMap;
   _moduleResolver: ModuleResolver<Module, Package>;
+  _resolutionCache: Map<string, Map<string, Map<string, string>>>;
 
   constructor({
     config,
@@ -69,6 +86,7 @@ class DependencyGraph extends EventEmitter {
       assetExts: config.resolver.assetExts,
     });
     this._haste.on('change', this._onHasteChange.bind(this));
+    this._resolutionCache = new Map();
     this._moduleCache = this._createModuleCache();
     this._createModuleResolver();
   }
@@ -140,6 +158,7 @@ class DependencyGraph extends EventEmitter {
   _onHasteChange({eventsQueue, hasteFS, moduleMap}) {
     this._hasteFS = hasteFS;
     this._assetResolutionCache.clear();
+    this._resolutionCache = new Map();
     this._moduleMap = moduleMap;
     eventsQueue.forEach(({type, filePath}) =>
       this._moduleCache.processFileChange(type, filePath),
@@ -216,32 +235,63 @@ class DependencyGraph extends EventEmitter {
     this._haste.end();
   }
 
-  resolveDependency(from: string, to: string, platform: ?string): string {
-    const req = new ResolutionRequest({
-      moduleResolver: this._moduleResolver,
-      entryPath: from,
-      helpers: this._helpers,
-      platform: platform || null,
-      moduleCache: this._moduleCache,
-    });
-
-    return req.resolveDependency(this._moduleCache.getModule(from), to).path;
-  }
-  /*
-   * Resolve the dependency from the resolver directly, skip populating the cache.
-   */
-  resolveDependencyFast(from: string, to: string, platform: string): string {
-    const modulePath = this._moduleMap.getModule(to, platform, true);
-    if (modulePath) {
-      return modulePath;
+  resolveDependency(
+    from: string,
+    to: string,
+    platform: string,
+    {assumeFlatNodeModules}: {assumeFlatNodeModules: boolean} = {
+      assumeFlatNodeModules: false,
+    },
+  ): string {
+    const isPath =
+      to.includes('/') || from.includes(path.sep + 'node_modules' + path.sep);
+    const mapByDirectory = getOrCreate(
+      this._resolutionCache,
+      isPath ? path.dirname(from) : '',
+    );
+    let mapByPlatform = getOrCreate(mapByDirectory, to);
+    let modulePath = mapByPlatform.get(platform);
+    if (!modulePath) {
+      modulePath = this._moduleMap.getModule(to, platform, true);
     }
 
-    return this._moduleResolver.resolveDependency(
-      this._moduleCache.getModule(from),
-      to,
-      true,
-      platform,
-    ).path;
+    if (!modulePath) {
+      try {
+        modulePath = this._moduleResolver.resolveDependency(
+          this._moduleCache.getModule(from),
+          to,
+          true,
+          platform,
+        ).path;
+
+        // If we cannot assume that only one node_modules folder exists in the project,
+        // we need to cache packages by directory instead of globally.
+        if (
+          !assumeFlatNodeModules &&
+          modulePath.includes(path.sep + 'node_modules' + path.sep)
+        ) {
+          mapByPlatform = getOrCreate(
+            getOrCreate(this._resolutionCache, path.dirname(from)),
+            to,
+          );
+        }
+      } catch (error) {
+        if (error instanceof DuplicateHasteCandidatesError) {
+          throw new AmbiguousModuleResolutionError(from, error);
+        }
+        if (error instanceof InvalidPackageError) {
+          throw new PackageResolutionError({
+            packageError: error,
+            originModulePath: from,
+            targetModuleName: to,
+          });
+        }
+        throw error;
+      }
+    }
+
+    mapByPlatform.set(platform, modulePath);
+    return modulePath;
   }
 
   _doesFileExist = (filePath: string): boolean => {

@@ -47,8 +47,8 @@ class Bundler {
     dependencyGraph.getWatcher().end();
   }
 
-  getDependencyGraph(): Promise<DependencyGraph> {
-    return this._depGraphPromise;
+  async getDependencyGraph(): Promise<DependencyGraph> {
+    return await this._depGraphPromise;
   }
 
   async transformFile(

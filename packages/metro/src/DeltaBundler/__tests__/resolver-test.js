@@ -31,9 +31,6 @@ jest.setTimeout(10000);
 
 describe('traverseDependencies', function() {
   let UnableToResolveError;
-  let transformHelpers;
-  let dependencyGraphPromise;
-
   let fs;
   let resolver;
 
@@ -82,24 +79,14 @@ describe('traverseDependencies', function() {
 
     async function createResolver(config = {}, platform = '') {
       const DependencyGraph = require('../../node-haste/DependencyGraph');
-
-      dependencyGraphPromise = DependencyGraph.load(
+      const dependencyGraph = await DependencyGraph.load(
         mergeConfig(defaultConfig, config),
       );
-      const bundler = {
-        async getDependencyGraph() {
-          return await dependencyGraphPromise;
-        },
-      };
 
       return {
-        resolve: await transformHelpers.getResolveDependencyFn(
-          bundler,
-          platform,
-        ),
-        async end() {
-          (await bundler.getDependencyGraph()).end();
-        },
+        resolve: (from, to, options) =>
+          dependencyGraph.resolveDependency(from, to, platform, options),
+        end: dependencyGraph.end.bind(dependencyGraph),
       };
     }
 
@@ -134,7 +121,6 @@ describe('traverseDependencies', function() {
           jest.mock('fs', () => new (require('metro-memory-fs'))());
         }
 
-        transformHelpers = require('../../lib/transformHelpers');
         ({
           UnableToResolveError,
         } = require('../../node-haste/DependencyGraph/ModuleResolution'));
@@ -394,6 +380,43 @@ describe('traverseDependencies', function() {
               'foo',
             ),
           ).toBe(p('/root/lib/subfolder/node_modules/foo/index.js'));
+        });
+
+        it('caches the closest node_modules folder if a flat layout is assumed', async () => {
+          setMockFileSystem({
+            node_modules: {
+              foo: {
+                'package.json': JSON.stringify({name: 'foo'}),
+                'index.js': '',
+              },
+            },
+            lib: {
+              'index.js': '',
+              subfolder: {
+                anotherSubfolder: {'index.js': ''},
+                node_modules: {
+                  foo: {
+                    'package.json': JSON.stringify({name: 'foo'}),
+                    'index.js': '',
+                  },
+                },
+              },
+            },
+          });
+
+          resolver = await createResolver();
+          expect(
+            resolver.resolve(p('/root/lib/index.js'), 'foo', {
+              assumeFlatNodeModules: true,
+            }),
+          ).toBe(p('/root/node_modules/foo/index.js'));
+          expect(
+            resolver.resolve(
+              p('/root/lib/subfolder/anotherSubfolder/index.js'),
+              'foo',
+              {assumeFlatNodeModules: true},
+            ),
+          ).toBe(p('/root/node_modules/foo/index.js'));
         });
 
         it('works with packages with a .js extension', async () => {
