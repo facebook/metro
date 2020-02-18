@@ -70,6 +70,7 @@ module.exports = new Set([
   'Keyboard',
   'LayoutAnimation',
   'Linking',
+  'LogBox',
   'NativeEventEmitter',
   'PanResponder',
   'PermissionsAndroid',
