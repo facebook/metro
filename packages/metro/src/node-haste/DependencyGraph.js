@@ -16,7 +16,6 @@ const {InvalidPackageError} = require('metro-resolver');
 const {PackageResolutionError} = require('metro-core');
 
 const AssetResolutionCache = require('./AssetResolutionCache');
-const DependencyGraphHelpers = require('./DependencyGraph/DependencyGraphHelpers');
 const JestHasteMap = require('jest-haste-map');
 const Module = require('./Module');
 const ModuleCache = require('./ModuleCache');
@@ -51,11 +50,11 @@ function getOrCreate<T>(
 }
 
 class DependencyGraph extends EventEmitter {
+  _assetExtensions: Set<string>;
   _assetResolutionCache: AssetResolutionCache;
   _config: ConfigT;
   _haste: JestHasteMap;
   _hasteFS: HasteFS;
-  _helpers: DependencyGraphHelpers;
   _moduleCache: ModuleCache;
   _moduleMap: ModuleMap;
   _moduleResolver: ModuleResolver<Module, Package>;
@@ -82,9 +81,9 @@ class DependencyGraph extends EventEmitter {
     this._haste = haste;
     this._hasteFS = initialHasteFS;
     this._moduleMap = initialModuleMap;
-    this._helpers = new DependencyGraphHelpers({
-      assetExts: config.resolver.assetExts,
-    });
+    this._assetExtensions = new Set(
+      config.resolver.assetExts.map(asset => '.' + asset),
+    );
     this._haste.on('change', this._onHasteChange.bind(this));
     this._resolutionCache = new Map();
     this._moduleCache = this._createModuleCache();
@@ -167,6 +166,7 @@ class DependencyGraph extends EventEmitter {
   }
 
   _createModuleResolver() {
+    const isAssetFile = file => this._assetExtensions.has(path.extname(file));
     this._moduleResolver = new ModuleResolver({
       dirExists: (filePath: string) => {
         try {
@@ -176,7 +176,7 @@ class DependencyGraph extends EventEmitter {
       },
       doesFileExist: this._doesFileExist,
       extraNodeModules: this._config.resolver.extraNodeModules,
-      isAssetFile: (filePath: string) => this._helpers.isAssetFile(filePath),
+      isAssetFile,
       mainFields: this._config.resolver.resolverMainFields,
       moduleCache: this._moduleCache,
       moduleMap: this._moduleMap,
