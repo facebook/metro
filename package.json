@@ -20,7 +20,7 @@
     "babel-preset-jest": "^24.9.0",
     "chalk": "^2.4.1",
     "chokidar": "^2.0.4",
-    "codecov": "^2.2.0",
+    "codecov": "^3.6.5",
     "debug": "^2.2.0",
     "eslint": "5.1.0",
     "eslint-config-fb-strict": "^24.9.0",
