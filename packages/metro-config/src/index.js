@@ -10,7 +10,6 @@
 
 'use strict';
 
-const convertConfig = require('./convertConfig');
 const getDefaultConfig = require('./defaults');
 
 const {loadConfig, resolveConfig, mergeConfig} = require('./loadConfig');
@@ -20,5 +19,4 @@ module.exports = {
   resolveConfig,
   mergeConfig,
   getDefaultConfig,
-  convert: convertConfig,
 };

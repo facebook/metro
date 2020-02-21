@@ -23,7 +23,6 @@ import type {SerializerOptions} from 'metro/src/DeltaBundler/types.flow';
 import type {TransformResult} from 'metro/src/DeltaBundler';
 import type {JsTransformerConfig} from 'metro/src/JSTransformer/worker';
 import type {TransformVariants} from 'metro/src/ModuleGraph/types.flow.js';
-import type {DynamicRequiresBehavior} from 'metro/src/ModuleGraph/worker/collectDependencies';
 import type Server from 'metro/src/Server';
 import type {Reporter} from 'metro/src/lib/reporting';
 
@@ -77,42 +76,6 @@ export type Middleware = (
   ServerResponse,
   (e: ?Error) => mixed,
 ) => mixed;
-
-export type OldConfigT = {
-  assetRegistryPath: string,
-  cacheStores: Array<CacheStore<TransformResult<>>>,
-  cacheVersion: string,
-  createModuleIdFactory: () => (path: string) => number,
-  enhanceMiddleware: (Middleware, Server) => Middleware,
-  extraNodeModules: {[id: string]: string, ...},
-  +dynamicDepsInPackages: DynamicRequiresBehavior,
-  getAssetExts: () => Array<string>,
-  getAsyncRequireModulePath(): string,
-  getBlacklistRE(): RegExp,
-  getEnableBabelRCLookup(): boolean,
-  getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
-  getPlatforms: () => Array<string>,
-  getPolyfillModuleNames: () => Array<string>,
-  getPolyfills: ({platform: ?string, ...}) => $ReadOnlyArray<string>,
-  // @deprecated
-  getProjectRoots: ?() => Array<string>,
-  getProjectRoot: () => string,
-  getResolverMainFields: () => $ReadOnlyArray<string>,
-  getRunModuleStatement: (number | string) => string,
-  getSourceExts: () => Array<string>,
-  getTransformModulePath: () => string,
-  getTransformOptions: GetTransformOptions,
-  getUseGlobalHotkey: () => boolean,
-  getWatchFolders: () => Array<string>,
-  getWorkerPath: () => string,
-  hasteImplModulePath?: ?string,
-  postMinifyProcess: PostMinifyProcess,
-  postProcessBundleSourcemap: PostProcessBundleSourcemap,
-  processModuleFilter: (modules: Module<>) => boolean,
-  resolveRequest: ?CustomResolver,
-  transformVariants: () => TransformVariants,
-  ...
-};
 
 type ResolverConfigT = {|
   assetExts: $ReadOnlyArray<string>,
