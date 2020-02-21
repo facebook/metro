@@ -16,3 +16,4 @@ module.exports = function(babel, options) {
 };
 
 module.exports.getPreset = main.getPreset;
+module.exports.passthroughSyntaxPlugins = require('./passthrough-syntax-plugins');

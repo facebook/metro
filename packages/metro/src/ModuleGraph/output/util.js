@@ -16,6 +16,8 @@ const mergeSourceMaps = require('../worker/mergeSourceMaps');
 const reverseDependencyMapReferences = require('./reverse-dependency-map-references');
 const virtualModule = require('../module').virtual;
 
+// flowlint-next-line untyped-import:off
+const {passthroughSyntaxPlugins} = require('metro-react-native-babel-preset');
 const {transformSync} = require('@babel/core');
 
 import type {Dependency, IdsForPathFn, Module} from '../types.flow';
@@ -73,7 +75,10 @@ function inlineModuleIds(
     babelrc: false,
     code: false,
     configFile: false,
-    plugins: [[reverseDependencyMapReferences, {dependencyIds}]],
+    plugins: [
+      ...passthroughSyntaxPlugins,
+      [reverseDependencyMapReferences, {dependencyIds}],
+    ],
   });
 
   const {code: generatedCode, map: generatedMap} = generate(

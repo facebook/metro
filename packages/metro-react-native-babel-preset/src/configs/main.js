@@ -10,6 +10,7 @@
 'use strict';
 
 const lazyImports = require('./lazy-imports');
+const passthroughSyntaxPlugins = require('../passthrough-syntax-plugins');
 
 function isTypeScriptSource(fileName) {
   return !!fileName && fileName.endsWith('.ts');
@@ -30,6 +31,7 @@ const defaultPlugins = [
   ],
   [require('@babel/plugin-syntax-dynamic-import')],
   [require('@babel/plugin-syntax-export-default-from')],
+  ...passthroughSyntaxPlugins,
   [require('@babel/plugin-transform-computed-properties')],
   [require('@babel/plugin-transform-destructuring')],
   [require('@babel/plugin-transform-function-name')],
