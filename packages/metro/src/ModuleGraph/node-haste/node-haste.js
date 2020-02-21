@@ -10,8 +10,6 @@
 
 'use strict';
 
-const AssetResolutionCache = require('../../node-haste/AssetResolutionCache');
-const FilesByDirNameIndex = require('../../node-haste/FilesByDirNameIndex');
 const HasteFS = require('./HasteFS');
 const Module = require('./Module');
 const ModuleCache = require('./ModuleCache');
@@ -32,6 +30,7 @@ import type {CustomResolver} from 'metro-resolver';
 
 type ResolveOptions = {|
   assetExts: Extensions,
+  assetResolutions: $ReadOnlyArray<string>,
   extraNodeModules: {[id: string]: string, ...},
   mainFields: $ReadOnlyArray<string>,
   resolveRequest?: ?CustomResolver,
@@ -110,6 +109,7 @@ const createModuleMap = ({files, moduleCache, sourceExts}) => {
 exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
   const {
     assetExts,
+    assetResolutions,
     extraNodeModules,
     transformedFiles,
     sourceExts,
@@ -129,14 +129,6 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     (filePath: string) => hasteFS.closest(filePath, 'package.json'),
     getTransformedFile,
   );
-
-  const filesByDirNameIndex = new FilesByDirNameIndex(files);
-  const assetResolutionCache = new AssetResolutionCache({
-    assetExtensions: new Set(assetExts),
-    getDirFiles: (dirPath: string): $ReadOnlyArray<string> =>
-      filesByDirNameIndex.getAllFiles(dirPath),
-    platforms,
-  });
 
   const assetExtensions = new Set(assetExts.map(asset => '.' + asset));
   const isAssetFile = file => assetExtensions.has(path.extname(file));
@@ -160,9 +152,17 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     resolveAsset: (
       dirPath: string,
       assetName: string,
-      platform: null | string,
-    ): ?$ReadOnlyArray<string> =>
-      assetResolutionCache.resolve(dirPath, assetName, platform),
+      extension: string,
+    ): ?$ReadOnlyArray<string> => {
+      const basePath = dirPath + path.sep + assetName;
+      const assets = [
+        basePath + extension,
+        ...assetResolutions.map(
+          resolution => basePath + '@' + resolution + 'x' + extension,
+        ),
+      ].filter(candidate => hasteFS.exists(candidate));
+      return assets.length ? assets : null;
+    },
     resolveRequest: options.resolveRequest,
     sourceExts,
   });

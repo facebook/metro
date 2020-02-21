@@ -91,6 +91,7 @@ async function convertOldToNew({
   return {
     resolver: {
       assetExts,
+      assetResolutions: defaultConfig.resolver.assetResolutions,
       platforms,
       resolverMainFields: getResolverMainFields(),
       sourceExts,

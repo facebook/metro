@@ -19,7 +19,6 @@ const isAbsolutePath = require('absolute-path');
 const path = require('path');
 
 import type {
-  AssetFileResolution,
   DoesFileExist,
   FileAndDirCandidates,
   FileCandidates,
@@ -30,7 +29,6 @@ import type {
   ModulePathContext,
   ResolutionContext,
   Resolution,
-  ResolveAsset,
   Result,
 } from './types';
 
@@ -311,21 +309,32 @@ function resolvePackage(
 function resolveFile(
   context: FileContext,
   dirPath: string,
-  fileNameHint: string,
+  fileName: string,
   platform: string | null,
 ): Result<FileResolution, FileCandidates> {
   const {isAssetFile, resolveAsset} = context;
-  if (isAssetFile(fileNameHint)) {
-    const result = resolveAssetFiles(
-      resolveAsset,
-      dirPath,
-      fileNameHint,
-      platform,
-    );
-    return mapResult(result, filePaths => ({type: 'assetFiles', filePaths}));
+  if (isAssetFile(fileName)) {
+    const extension = path.extname(fileName);
+    const basename = path.basename(fileName, extension);
+    if (!/@\d+(?:\.\d+)?x$/.test(basename)) {
+      try {
+        const assets = resolveAsset(dirPath, basename, extension);
+        if (assets != null) {
+          return mapResult(resolvedAs(assets), filePaths => ({
+            type: 'assetFiles',
+            filePaths,
+          }));
+        }
+      } catch (err) {
+        if (err.code === 'ENOENT') {
+          return failedFor({type: 'asset', name: fileName});
+        }
+      }
+    }
+    return failedFor({type: 'asset', name: fileName});
   }
   const candidateExts = [];
-  const filePathPrefix = path.join(dirPath, fileNameHint);
+  const filePathPrefix = path.join(dirPath, fileName);
   const sfContext = {...context, candidateExts, filePathPrefix};
   const filePath = resolveSourceFile(sfContext, platform);
   if (filePath != null) {
@@ -421,31 +430,6 @@ function resolveSourceFileForExt(
   }
   context.candidateExts.push(extension);
   return null;
-}
-
-/**
- * Find all the asset files corresponding to the file base name, and return
- * it wrapped as a resolution result.
- */
-function resolveAssetFiles(
-  resolveAsset: ResolveAsset,
-  dirPath: string,
-  fileNameHint: string,
-  platform: string | null,
-): Result<AssetFileResolution, FileCandidates> {
-  try {
-    const assetNames = resolveAsset(dirPath, fileNameHint, platform);
-
-    if (assetNames != null) {
-      const res = assetNames.map(assetName => path.join(dirPath, assetName));
-      return resolvedAs(res);
-    }
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      return failedFor({type: 'asset', name: fileNameHint});
-    }
-  }
-  return failedFor({type: 'asset', name: fileNameHint});
 }
 
 // HasteFS stores paths with backslashes on Windows, this ensures the path is in

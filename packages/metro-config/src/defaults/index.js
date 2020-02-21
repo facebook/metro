@@ -19,6 +19,7 @@ const path = require('path');
 
 const {
   assetExts,
+  assetResolutions,
   sourceExts,
   platforms,
   DEFAULT_METRO_MINIFIER_PATH,
@@ -32,6 +33,7 @@ import type {ConfigT} from '../configTypes.flow';
 const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   resolver: {
     assetExts,
+    assetResolutions,
     platforms,
     sourceExts,
     resolverMainFields: ['browser', 'main'],

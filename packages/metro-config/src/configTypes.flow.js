@@ -116,6 +116,7 @@ export type OldConfigT = {
 
 type ResolverConfigT = {|
   assetExts: $ReadOnlyArray<string>,
+  assetResolutions: $ReadOnlyArray<string>,
   blacklistRE: RegExp,
   extraNodeModules: {[name: string]: string, ...},
   hasteImplModulePath: ?string,

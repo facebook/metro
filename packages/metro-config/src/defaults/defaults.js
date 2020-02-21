@@ -49,6 +49,8 @@ exports.assetExts = [
   'zip',
 ];
 
+exports.assetResolutions = ['1', '1.5', '2', '3', '4'];
+
 exports.sourceExts = ['js', 'json', 'ts', 'tsx'];
 
 exports.moduleSystem = (require.resolve(

@@ -15,7 +15,6 @@ const {DuplicateHasteCandidatesError} = require('jest-haste-map').ModuleMap;
 const {InvalidPackageError} = require('metro-resolver');
 const {PackageResolutionError} = require('metro-core');
 
-const AssetResolutionCache = require('./AssetResolutionCache');
 const JestHasteMap = require('jest-haste-map');
 const Module = require('./Module');
 const ModuleCache = require('./ModuleCache');
@@ -51,7 +50,6 @@ function getOrCreate<T>(
 
 class DependencyGraph extends EventEmitter {
   _assetExtensions: Set<string>;
-  _assetResolutionCache: AssetResolutionCache;
   _config: ConfigT;
   _haste: JestHasteMap;
   _hasteFS: HasteFS;
@@ -73,11 +71,6 @@ class DependencyGraph extends EventEmitter {
   |}) {
     super();
     this._config = config;
-    this._assetResolutionCache = new AssetResolutionCache({
-      assetExtensions: new Set(config.resolver.assetExts),
-      getDirFiles: (dirPath: string) => fs.readdirSync(dirPath),
-      platforms: new Set(config.resolver.platforms),
-    });
     this._haste = haste;
     this._hasteFS = initialHasteFS;
     this._moduleMap = initialModuleMap;
@@ -155,7 +148,6 @@ class DependencyGraph extends EventEmitter {
 
   _onHasteChange({eventsQueue, hasteFS, moduleMap}) {
     this._hasteFS = hasteFS;
-    this._assetResolutionCache.clear();
     this._resolutionCache = new Map();
     this._moduleMap = moduleMap;
     eventsQueue.forEach(({type, filePath}) =>
@@ -166,7 +158,6 @@ class DependencyGraph extends EventEmitter {
   }
 
   _createModuleResolver() {
-    const isAssetFile = file => this._assetExtensions.has(path.extname(file));
     this._moduleResolver = new ModuleResolver({
       dirExists: (filePath: string) => {
         try {
@@ -176,17 +167,22 @@ class DependencyGraph extends EventEmitter {
       },
       doesFileExist: this._doesFileExist,
       extraNodeModules: this._config.resolver.extraNodeModules,
-      isAssetFile,
+      isAssetFile: file => this._assetExtensions.has(path.extname(file)),
       mainFields: this._config.resolver.resolverMainFields,
       moduleCache: this._moduleCache,
       moduleMap: this._moduleMap,
       preferNativePlatform: true,
       projectRoot: this._config.projectRoot,
-      resolveAsset: (
-        dirPath: string,
-        assetName: string,
-        platform: null | string,
-      ) => this._assetResolutionCache.resolve(dirPath, assetName, platform),
+      resolveAsset: (dirPath: string, assetName: string, extension: string) => {
+        const basePath = dirPath + path.sep + assetName;
+        const assets = [
+          basePath + extension,
+          ...this._config.resolver.assetResolutions.map(
+            resolution => basePath + '@' + resolution + 'x' + extension,
+          ),
+        ].filter(candidate => this._hasteFS.exists(candidate));
+        return assets.length ? assets : null;
+      },
       resolveRequest: this._config.resolver.resolveRequest,
       sourceExts: this._config.resolver.sourceExts,
     });
