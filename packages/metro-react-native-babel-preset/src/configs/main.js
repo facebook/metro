@@ -71,6 +71,7 @@ const reactDisplayName = [
   require('@babel/plugin-transform-react-display-name'),
 ];
 const reactJsxSource = [require('@babel/plugin-transform-react-jsx-source')];
+const reactJsxSelf = [require('@babel/plugin-transform-react-jsx-self')];
 
 const babelRuntime = [
   require('@babel/plugin-transform-runtime'),
@@ -146,6 +147,7 @@ const getPreset = (src, options) => {
 
   if (options && options.dev) {
     extraPlugins.push(reactJsxSource);
+    extraPlugins.push(reactJsxSelf);
   }
 
   if (!options || options.enableBabelRuntime !== false) {
