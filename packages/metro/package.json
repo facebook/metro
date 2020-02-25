@@ -31,6 +31,7 @@
     "connect": "^3.6.5",
     "debug": "^2.2.0",
     "denodeify": "^1.2.1",
+    "error-stack-parser": "^2.0.6",
     "eventemitter3": "^3.0.0",
     "fbjs": "^1.0.0",
     "fs-extra": "^1.0.0",

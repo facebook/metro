@@ -10,15 +10,18 @@
 
 'use strict';
 
+const ErrorStackParser = require('error-stack-parser');
 const GraphNotFoundError = require('../IncrementalBundler/GraphNotFoundError');
 const ResourceNotFoundError = require('../IncrementalBundler/ResourceNotFoundError');
 const RevisionNotFoundError = require('../IncrementalBundler/RevisionNotFoundError');
 
+const fs = require('fs');
 const serializeError = require('serialize-error');
 
 const {
   UnableToResolveError,
 } = require('../node-haste/DependencyGraph/ModuleResolution');
+const {codeFrameColumns} = require('@babel/code-frame');
 const {AmbiguousModuleResolutionError} = require('metro-core');
 
 import type {FormattedError} from './bundle-modules/types.flow';
@@ -89,10 +92,25 @@ function formatBundlingError(error: CustomError): FormattedError {
       message: error.message,
     };
   } else {
+    const stack = ErrorStackParser.parse(error);
+    const fileName = stack[0].fileName;
+    const column = stack[0].columnNumber;
+    const line = stack[0].lineNumber;
+
+    const codeFrame = codeFrameColumns(
+      fs.readFileSync(fileName, 'utf8'),
+      {
+        start: {column, line},
+      },
+      {forceColor: true},
+    );
+
     return {
       type: 'InternalError',
       errors: [],
-      message: 'Metro has encountered an error: ' + error.message,
+      message: `Metro has encountered an error: ${
+        error.message
+      }: ${fileName} (${line}:${column})\n\n${codeFrame}`,
     };
   }
 }
