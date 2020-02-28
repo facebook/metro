@@ -42,7 +42,6 @@
     "micromatch": "^2.3.11",
     "mkdirp": "^0.5.1",
     "prettier": "1.17.0",
-    "pretty-format": "^24.9.0",
     "progress": "^2.0.0",
     "promise": "^7.1.1",
     "temp": "^0.8.3"
