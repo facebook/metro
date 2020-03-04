@@ -38,7 +38,6 @@ const defaultPlugins = [
   [require('@babel/plugin-transform-literals')],
   [require('@babel/plugin-transform-parameters')],
   [require('@babel/plugin-transform-shorthand-properties')],
-  [require('@babel/plugin-transform-react-jsx')],
   [require('@babel/plugin-transform-regenerator')],
   [require('@babel/plugin-transform-sticky-regex')],
   [require('@babel/plugin-transform-unicode-regex')],
@@ -88,6 +87,9 @@ const getPreset = (src, options) => {
     isNull || (src.indexOf('for') !== -1 && src.indexOf('of') !== -1);
 
   const extraPlugins = [];
+  if (!options.useTransformReactJsxExperimental) {
+    extraPlugins.push([require('@babel/plugin-transform-react-jsx')]);
+  }
 
   if (!options || !options.disableImportExportTransform) {
     extraPlugins.push(
@@ -145,7 +147,7 @@ const getPreset = (src, options) => {
     extraPlugins.push(nullishCoalescingOperator);
   }
 
-  if (options && options.dev) {
+  if (options && options.dev && !options.useTransformReactJsxExperimental) {
     extraPlugins.push(reactJsxSource);
     extraPlugins.push(reactJsxSelf);
   }
