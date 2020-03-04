@@ -139,6 +139,8 @@ class IncrementalBundler {
       onProgress: otherOptions.onProgress,
       experimentalImportBundleSupport: this._config.transformer
         .experimentalImportBundleSupport,
+      allowOptionalDependencies: this._config.transformer
+        .allowOptionalDependencies,
       shallow: otherOptions.shallow,
     });
 

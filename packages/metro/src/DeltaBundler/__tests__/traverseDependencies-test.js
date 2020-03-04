@@ -870,3 +870,113 @@ describe('reorderGraph', () => {
     ]);
   });
 });
+
+describe('optional dependencies', () => {
+  let localGraph;
+  let localOptions;
+  const getAllDependencies = () => {
+    const all = new Set();
+    mockedDependencyTree.forEach(deps => {
+      deps.forEach(r => all.add(r.name));
+    });
+    return all;
+  };
+  const assertResults = (dependencies, expectedMissing) => {
+    let count = 0;
+    const allDependency = getAllDependencies();
+    allDependency.forEach(m => {
+      const data = dependencies.get(`/${m}`);
+      if (expectedMissing.includes(m)) {
+        expect(data).toBeUndefined();
+      } else {
+        expect(data).not.toBeUndefined();
+      }
+      count += 1;
+    });
+    expect(count).toBeGreaterThan(0);
+    expect(count).toBe(allDependency.size);
+  };
+
+  beforeEach(() => {
+    mockedDependencies = new Set();
+    mockedDependencyTree = new Map();
+
+    entryModule = Actions.createFile('/bundle-o');
+    entryModule = Actions.createFile('/optional-c');
+
+    Actions.addDependency('/bundle-o', '/regular-a');
+    Actions.addDependency('/bundle-o', '/optional-b');
+    Actions.addDependency('/bundle-o', '/optional-c');
+    Actions.addDependency('/optional-c', '/optional-d');
+    Actions.addDependency('/optional-c', '/regular-e');
+
+    Actions.deleteFile('/optional-b');
+
+    localOptions = {
+      ...options,
+      transform(path) {
+        const result = options.transform.apply(this, arguments);
+        result.dependencies.forEach(dep => {
+          if (dep.name.includes('optional-')) {
+            dep.data.isOptional = true;
+          }
+        });
+        return result;
+      },
+    };
+    localGraph = {
+      dependencies: new Map(),
+      entryPoints: ['/bundle-o'],
+    };
+  });
+  describe('when allowOptionalDependencies config is true', () => {
+    beforeEach(() => {
+      localOptions.allowOptionalDependencies = true;
+    });
+    it('will ignore only the failed optional dependency', async () => {
+      const result = await initialTraverseDependencies(
+        localGraph,
+        localOptions,
+      );
+
+      const dependencies = result.added;
+
+      // Only `optional-b` is actually missing,
+      // the other optional modules `optional-c` and `optional-d` will
+      // still be included.
+      assertResults(dependencies, ['optional-b']);
+    });
+  });
+  describe('when allowOptionalDependencies config is false', () => {
+    beforeEach(() => {
+      localOptions.allowOptionalDependencies = false;
+    });
+    it('will not ignore failed optional dependency', async () => {
+      await expect(
+        initialTraverseDependencies(localGraph, localOptions),
+      ).rejects.toThrow('Dependency not found: /optional-b->optional-b');
+    });
+  });
+  describe('when allowOptionalDependencies with exclude', () => {
+    it('will not ignore the excluded optional dependency', async () => {
+      localOptions.allowOptionalDependencies = {exclude: ['optional-b']};
+      await expect(
+        initialTraverseDependencies(localGraph, localOptions),
+      ).rejects.toThrow('Dependency not found: /optional-b->optional-b');
+    });
+    it('but will still ignore the non-excluded optional dependency', async () => {
+      localOptions.allowOptionalDependencies = {exclude: ['optional-d']};
+      const result = await initialTraverseDependencies(
+        localGraph,
+        localOptions,
+      );
+
+      const dependencies = result.added;
+
+      // Only `optional-b` is actually missing,
+      // the other optional modules `optional-c` and `optional-d` will
+      // still be included.
+      assertResults(dependencies, ['optional-b']);
+    });
+  });
+});

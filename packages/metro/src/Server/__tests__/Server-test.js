@@ -460,6 +460,7 @@ describe('processRequest', () => {
         resolve: expect.any(Function),
         shallow: false,
         transform: expect.any(Function),
+        allowOptionalDependencies: false,
       },
     );
   });
@@ -594,6 +595,7 @@ describe('processRequest', () => {
           resolve: expect.any(Function),
           shallow: false,
           transform: expect.any(Function),
+          allowOptionalDependencies: false,
         },
       );
     });

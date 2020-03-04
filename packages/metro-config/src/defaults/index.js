@@ -111,6 +111,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     transformVariants: {default: {}},
     workerPath: 'metro/src/DeltaBundler/Worker',
     publicPath: '/assets',
+    allowOptionalDependencies: false,
   },
   cacheStores: [
     new FileStore({

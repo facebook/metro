@@ -91,6 +91,7 @@ Object {
     "customizeFrame": [Function],
   },
   "transformer": Object {
+    "allowOptionalDependencies": false,
     "assetPlugins": Array [],
     "assetRegistryPath": "missing-asset-registry-path",
     "asyncRequireModulePath": "metro/src/lib/bundle-modules/asyncRequire",
@@ -224,6 +225,7 @@ Object {
     "customizeFrame": [Function],
   },
   "transformer": Object {
+    "allowOptionalDependencies": false,
     "assetPlugins": Array [],
     "assetRegistryPath": "missing-asset-registry-path",
     "asyncRequireModulePath": "metro/src/lib/bundle-modules/asyncRequire",

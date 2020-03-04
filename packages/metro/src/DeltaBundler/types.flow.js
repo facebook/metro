@@ -42,6 +42,10 @@ export type TransformResultDependency = {|
     +splitCondition?: {|
       +mobileConfigName: string,
     |},
+    /**
+     * The dependency is enclosed in a try/catch block, indicated optional
+     */
+    +isOptional?: boolean,
 
     +locs: $ReadOnlyArray<BabelSourceLocation>,
   |},
@@ -79,12 +83,19 @@ export type TransformResultWithSource<T = MixedOutput> = $ReadOnly<{|
 export type TransformFn<T = MixedOutput> = string => Promise<
   TransformResultWithSource<T>,
 >;
+export type AllowOptionalDependenciesWithOptions = {|
+  +exclude: Array<string>,
+|};
+export type AllowOptionalDependencies =
+  | boolean
+  | AllowOptionalDependenciesWithOptions;
 
 export type Options<T = MixedOutput> = {|
   +resolve: (from: string, to: string) => string,
   +transform: TransformFn<T>,
   +onProgress: ?(numProcessed: number, total: number) => mixed,
   +experimentalImportBundleSupport: boolean,
+  +allowOptionalDependencies: AllowOptionalDependencies,
   +shallow: boolean,
 |};
 

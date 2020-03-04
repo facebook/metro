@@ -18,6 +18,7 @@ import type {
   Module,
   Options,
   TransformResultDependency,
+  AllowOptionalDependencies,
 } from './types.flow';
 
 type Result<T> = {
@@ -46,6 +47,7 @@ type InternalOptions<T> = $ReadOnly<{|
   resolve: $PropertyType<Options<T>, 'resolve'>,
   transform: $PropertyType<Options<T>, 'transform'>,
   shallow: boolean,
+  allowOptionalDependencies: AllowOptionalDependencies,
 |}>;
 
 function getInternalOptions<T>({
@@ -53,6 +55,7 @@ function getInternalOptions<T>({
   resolve,
   onProgress,
   experimentalImportBundleSupport,
+  allowOptionalDependencies,
   shallow,
 }: Options<T>): InternalOptions<T> {
   let numProcessed = 0;
@@ -60,6 +63,7 @@ function getInternalOptions<T>({
 
   return {
     experimentalImportBundleSupport,
+    allowOptionalDependencies,
     transform,
     resolve,
     onDependencyAdd: () => onProgress && onProgress(numProcessed, ++total),
@@ -471,18 +475,43 @@ function resolveDependencies<T>(
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   options: InternalOptions<T>,
 ): Map<string, Dependency> {
-  return new Map(
-    dependencies.map((result: TransformResultDependency) => {
-      const relativePath = result.name;
+  const {allowOptionalDependencies} = options;
+  const required = (path: string) =>
+    allowOptionalDependencies === false ||
+    (Array.isArray(allowOptionalDependencies.exclude) &&
+      allowOptionalDependencies.exclude.includes(path));
 
-      const dependency = {
-        absolutePath: options.resolve(parentPath, result.name),
-        data: result,
-      };
+  const resolve = (parentPath: string, result: TransformResultDependency) => {
+    const relativePath = result.name;
+    try {
+      return [
+        relativePath,
+        {
+          absolutePath: options.resolve(parentPath, relativePath),
+          data: result,
+        },
+      ];
+    } catch (e) {
+      // If this is an optional dependency, ignore the resolution error
+      if (result.data.isOptional === true && !required(relativePath)) {
+        // should we output some warning? verbose mode?
+        return undefined;
+      }
+      throw e;
+    }
+  };
 
-      return [relativePath, dependency];
-    }),
+  const resolved = dependencies.reduce(
+    (list: Array<[string, Dependency]>, result: TransformResultDependency) => {
+      const resolvedPath = resolve(parentPath, result);
+      if (resolvedPath) {
+        list.push(resolvedPath);
+      }
+      return list;
+    },
+    [],
   );
+  return new Map(resolved);
 }
 
 /**
