@@ -232,8 +232,10 @@ function processImportCall(path: Path, state: State, opts: DepOptions): Path {
     throw new InvalidRequireCallError(path);
   }
 
-  const isOptional = isOptionalDependency(path, state);
-  const options = {...opts, isOptional};
+  const options = {
+    ...opts,
+    isOptional: isOptionalDependency(name, path, state),
+  };
   const dep = getDependency(state, name, options, path.node.loc);
   if (!options.prefetchOnly) {
     delete dep.data.isPrefetchOnly;
@@ -295,11 +297,10 @@ function processRequireCall(path: Path, state: State): Path {
     return path;
   }
 
-  const isOptional = isOptionalDependency(path, state);
   const dep = getDependency(
     state,
     name,
-    {prefetchOnly: false, isOptional},
+    {prefetchOnly: false, isOptional: isOptionalDependency(name, path, state)},
     path.node.loc,
   );
   dep.data.isAsync = false;
@@ -354,8 +355,18 @@ function getDependency(
   return {index: nullthrows(index), data: nullthrows(data)};
 }
 
-const isOptionalDependency = (path: Path, state: State): boolean => {
-  if (!state.allowOptionalDependencies) {
+const isOptionalDependency = (
+  name: string,
+  path: Path,
+  state: State,
+): boolean => {
+  const {allowOptionalDependencies} = state;
+
+  const isExcluded = () =>
+    Array.isArray(allowOptionalDependencies.exclude) &&
+    allowOptionalDependencies.exclude.includes(name);
+
+  if (!allowOptionalDependencies || isExcluded()) {
     return false;
   }
 

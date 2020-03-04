@@ -897,86 +897,55 @@ describe('optional dependencies', () => {
     expect(count).toBe(allDependency.size);
   };
 
+  const mockTransform = (notOptional?: string[]) => {
+    return function(path) {
+      const result = options.transform.apply(this, arguments);
+      result.dependencies.forEach(dep => {
+        if (notOptional && notOptional.includes(dep.name)) {
+          dep.data.isOptional = false;
+        } else {
+          dep.data.isOptional = dep.name.includes('optional-');
+        }
+      });
+      return result;
+    };
+  };
+
   beforeEach(() => {
     mockedDependencies = new Set();
     mockedDependencyTree = new Map();
 
     entryModule = Actions.createFile('/bundle-o');
-    entryModule = Actions.createFile('/optional-c');
 
     Actions.addDependency('/bundle-o', '/regular-a');
     Actions.addDependency('/bundle-o', '/optional-b');
-    Actions.addDependency('/bundle-o', '/optional-c');
-    Actions.addDependency('/optional-c', '/optional-d');
-    Actions.addDependency('/optional-c', '/regular-e');
 
     Actions.deleteFile('/optional-b');
 
-    localOptions = {
-      ...options,
-      transform(path) {
-        const result = options.transform.apply(this, arguments);
-        result.dependencies.forEach(dep => {
-          if (dep.name.includes('optional-')) {
-            dep.data.isOptional = true;
-          }
-        });
-        return result;
-      },
-    };
     localGraph = {
       dependencies: new Map(),
       entryPoints: ['/bundle-o'],
     };
   });
-  describe('when allowOptionalDependencies config is true', () => {
-    beforeEach(() => {
-      localOptions.allowOptionalDependencies = true;
-    });
-    it('will ignore only the failed optional dependency', async () => {
-      const result = await initialTraverseDependencies(
-        localGraph,
-        localOptions,
-      );
 
-      const dependencies = result.added;
+  it('missing optional dependency will be skipped', async () => {
+    localOptions = {
+      ...options,
+      transform: mockTransform(),
+    };
 
-      // Only `optional-b` is actually missing,
-      // the other optional modules `optional-c` and `optional-d` will
-      // still be included.
-      assertResults(dependencies, ['optional-b']);
-    });
+    const result = await initialTraverseDependencies(localGraph, localOptions);
+
+    const dependencies = result.added;
+    assertResults(dependencies, ['optional-b']);
   });
-  describe('when allowOptionalDependencies config is false', () => {
-    beforeEach(() => {
-      localOptions.allowOptionalDependencies = false;
-    });
-    it('will not ignore failed optional dependency', async () => {
-      await expect(
-        initialTraverseDependencies(localGraph, localOptions),
-      ).rejects.toThrow('Dependency not found: /optional-b->optional-b');
-    });
-  });
-  describe('when allowOptionalDependencies with exclude', () => {
-    it('will not ignore the excluded optional dependency', async () => {
-      localOptions.allowOptionalDependencies = {exclude: ['optional-b']};
-      await expect(
-        initialTraverseDependencies(localGraph, localOptions),
-      ).rejects.toThrow('Dependency not found: /optional-b->optional-b');
-    });
-    it('but will still ignore the non-excluded optional dependency', async () => {
-      localOptions.allowOptionalDependencies = {exclude: ['optional-d']};
-      const result = await initialTraverseDependencies(
-        localGraph,
-        localOptions,
-      );
-
-      const dependencies = result.added;
-
-      // Only `optional-b` is actually missing,
-      // the other optional modules `optional-c` and `optional-d` will
-      // still be included.
-      assertResults(dependencies, ['optional-b']);
-    });
+  it('missing non-optional dependency will throw', async () => {
+    localOptions = {
+      ...options,
+      transform: mockTransform(['optional-b']),
+    };
+    await expect(
+      initialTraverseDependencies(localGraph, localOptions),
+    ).rejects.toThrow();
   });
 });

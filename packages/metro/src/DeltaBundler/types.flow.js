@@ -95,7 +95,6 @@ export type Options<T = MixedOutput> = {|
   +transform: TransformFn<T>,
   +onProgress: ?(numProcessed: number, total: number) => mixed,
   +experimentalImportBundleSupport: boolean,
-  +allowOptionalDependencies: AllowOptionalDependencies,
   +shallow: boolean,
 |};
 

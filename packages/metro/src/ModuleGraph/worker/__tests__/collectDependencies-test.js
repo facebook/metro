@@ -506,6 +506,7 @@ describe('optional dependencies', () => {
       const myVar="my";
       try {
         require("foo_" + myVar);
+        require(\`bar_\${5 + 2}\`);
       } catch (e) {}
       `);
     const {dependencies} = collectDependencies(ast, opts);
@@ -514,31 +515,43 @@ describe('optional dependencies', () => {
         name: 'foo_my',
         data: objectContaining({isAsync: false, isOptional: true}),
       },
+      {
+        name: 'bar_7',
+        data: objectContaining({isAsync: false, isOptional: true}),
+      },
     ]);
   });
-  it('controls optional dependency analysis by allowOptionalDependencies flag', () => {
-    const code = `
-    try { 
-      const a = require('a'); 
-    } catch (e) {}
-    `;
-
-    let options = {...opts, allowOptionalDependencies: true};
-    const {dependencies: depOn} = collectDependencies(
-      astFromCode(code),
-      options,
-    );
-    expect(depOn).toEqual([
-      {name: 'a', data: objectContaining({isOptional: true})},
+  it('can exclude optional dependency', () => {
+    const ast = () =>
+      astFromCode(`
+      const n = 2;
+      try {
+        const a = require(\`A-\${1 + n}\`);
+        const b = require(\`A-\${3 + n}\`);
+      } catch (e) {}
+    `);
+    const {dependencies: deps1} = collectDependencies(ast(), opts);
+    expect(deps1).toEqual([
+      {name: 'A-3', data: objectContaining({isOptional: true})},
+      {name: 'A-5', data: objectContaining({isOptional: true})},
     ]);
 
-    options = {...opts, allowOptionalDependencies: false};
-    const {dependencies: depOff} = collectDependencies(
-      astFromCode(code),
-      options,
-    );
-    expect(depOff).toEqual([
-      {name: 'a', data: expect.not.objectContaining({isOptional: true})},
+    const {dependencies: deps2} = collectDependencies(ast(), {
+      ...opts,
+      allowOptionalDependencies: false,
+    });
+    expect(deps2).toEqual([
+      {name: 'A-3', data: expect.not.objectContaining({isOptional: true})},
+      {name: 'A-5', data: expect.not.objectContaining({isOptional: true})},
+    ]);
+
+    const {dependencies: deps3} = collectDependencies(ast(), {
+      ...opts,
+      allowOptionalDependencies: {exclude: ['A-5']},
+    });
+    expect(deps3).toEqual([
+      {name: 'A-3', data: objectContaining({isOptional: true})},
+      {name: 'A-5', data: expect.not.objectContaining({isOptional: true})},
     ]);
   });
 });
