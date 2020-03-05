@@ -481,12 +481,12 @@ function resolveDependencies<T>(
           data: result,
         },
       ];
-    } catch (e) {
-      if (result.data.isOptional === true) {
-        // should we output some warning? verbose mode?
-        return undefined;
+    } catch (error) {
+      // Ignore unavailable optional dependencies. They are guarded
+      // with a try-catch block and will be handled during runtime.
+      if (result.data.isOptional !== true) {
+        throw error;
       }
-      throw e;
     }
   };
 
