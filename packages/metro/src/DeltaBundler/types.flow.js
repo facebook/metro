@@ -43,7 +43,7 @@ export type TransformResultDependency = {|
       +mobileConfigName: string,
     |},
     /**
-     * The dependency is enclosed in a try/catch block, indicated optional
+     * The dependency is enclosed in a try/catch block.
      */
     +isOptional?: boolean,
 
