@@ -18,6 +18,7 @@ var sharedBlacklist = [
   /website\/node_modules\/.*/,
   /heapCapture\/bundle\.js/,
   /.*\/__tests__\/.*/,
+  /.*\/(ios|android)\/.*\/build\/.*/
 ];
 
 function escapeRegExp(pattern) {
