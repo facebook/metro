@@ -49,6 +49,7 @@ class Package {
       }
     }
 
+    // flowlint-next-line sketchy-null-string:off
     if (!main) {
       main = 'index';
     }

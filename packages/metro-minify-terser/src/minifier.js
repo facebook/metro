@@ -62,7 +62,6 @@ function minify({
   return {
     code: result.code,
     // eslint-disable-next-line lint/flow-no-fixme
-    // $FlowFixMe flow cannot coerce the uglify options after using spread.
     map: result.map,
   };
 }
