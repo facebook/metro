@@ -28,7 +28,7 @@ const siteConfig = {
   organizationName: "facebook",
   projectName: "metro",
   url: "https://facebook.github.io",
-  baseUrl: "/",
+  baseUrl: "/metro/",
   favicon: "img/favicon.png",
   themeConfig: {
     navbar: {

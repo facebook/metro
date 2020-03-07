@@ -20,17 +20,17 @@ const contents = [
   {
     content:
       "Metro aims for sub-second reload cycles, fast startup and quick bundling speeds.",
-    image: "/img/content/high-speed-train.png",
+    image: "/metro/img/content/high-speed-train.png",
     title: "Fast"
   },
   {
     content: "Works with thousands of modules in a single application.",
-    image: "/img/content/scales.png",
+    image: "/metro/img/content/scales.png",
     title: "Scalable"
   },
   {
     content: "Supports every React Native project out of the box.",
-    image: "/img/content/atom.png",
+    image: "/metro/img/content/atom.png",
     title: "Integrated"
   }
 ];
