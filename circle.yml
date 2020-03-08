@@ -42,6 +42,8 @@ commands:
       - yarn_run:
           command: deploy
           working_directory: website
+          environment:
+            GIT_USER: metro-bot
 
 version: 2.1
 jobs:
