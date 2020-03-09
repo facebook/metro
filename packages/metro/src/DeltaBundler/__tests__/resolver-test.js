@@ -24,12 +24,12 @@ jest
     tmpdir: () => (mockPlatform === 'win32' ? 'C:\\tmp' : '/tmp'),
     hostname: () => 'testhost',
     endianness: () => 'LE',
+    release: () => '',
   }))
   .mock('graceful-fs', () => require('fs'));
 
 jest.setTimeout(10000);
 
-let UnableToResolveError;
 let fs;
 let resolver;
 
@@ -40,6 +40,10 @@ let resolver;
     fs.mkdirSync(root);
     fs.mkdirSync(p('/tmp'));
     mockDir(root, object);
+  }
+
+  function mockFileImport(importStatement: string) {
+    return `import foo from 'bar';\n${importStatement}\nimport bar from 'foo';`;
   }
 
   function mockDir(dirPath, desc) {
@@ -121,10 +125,6 @@ let resolver;
         jest.mock('fs', () => new (require('metro-memory-fs'))());
       }
 
-      ({
-        UnableToResolveError,
-      } = require('../../node-haste/DependencyGraph/ModuleResolution'));
-
       require('os').tmpdir = () => p('/tmp');
 
       fs = require('fs');
@@ -202,14 +202,14 @@ let resolver;
 
       it('fails when trying to require a non supported extension', async () => {
         setMockFileSystem({
-          'index.js': '',
+          'index.js': mockFileImport("import root from './a.another';"),
           'a.another': '',
         });
 
         resolver = await createResolver();
         expect(() =>
           resolver.resolve(p('/root/index.js'), './a.another'),
-        ).toThrow(UnableToResolveError);
+        ).toThrowErrorMatchingSnapshot();
       });
 
       it('resolves relative paths on different folders', async () => {
@@ -283,7 +283,7 @@ let resolver;
 
       it('finds nested packages in node_modules', async () => {
         setMockFileSystem({
-          'index.js': '',
+          'index.js': mockFileImport("import qux from 'qux';"),
           node_modules: {
             foo: {
               'package.json': JSON.stringify({name: 'foo'}),
@@ -314,9 +314,9 @@ let resolver;
         expect(resolver.resolve(p('/root/index.js'), 'bar')).toBe(
           p('/root/node_modules/bar/index.js'),
         );
-        expect(() => resolver.resolve(p('/root/index.js'), 'qux')).toThrow(
-          UnableToResolveError,
-        );
+        expect(() =>
+          resolver.resolve(p('/root/index.js'), 'qux'),
+        ).toThrowErrorMatchingSnapshot();
         expect(
           resolver.resolve(p('/root/node_modules/foo/index.js'), 'bar'),
         ).toBe(p('/root/node_modules/foo/node_modules/bar/index.js'));
@@ -453,7 +453,9 @@ let resolver;
 
       it('uses the folder name and not the name in the package.json', async () => {
         setMockFileSystem({
-          'index.js': '',
+          'index.js': mockFileImport(
+            "import * as invalidName from 'invalidName';",
+          ),
           node_modules: {
             foo: {
               'package.json': JSON.stringify({name: 'invalidName'}),
@@ -470,7 +472,7 @@ let resolver;
         );
         expect(() =>
           resolver.resolve(p('/root/index.js'), 'invalidName'),
-        ).toThrow(UnableToResolveError);
+        ).toThrowErrorMatchingSnapshot();
       });
 
       it('fails if there is no package.json', async () => {
@@ -721,7 +723,7 @@ let resolver;
                       './dir': 'dir/file-client.js',
                     },
                   }),
-                  'index.js': '',
+                  'index.js': mockFileImport("import f from './foo.js';"),
                   'main-client.js': '',
                   'foo-client.js': '',
                   dir: {
@@ -746,7 +748,7 @@ let resolver;
                 p('/root/node_modules/aPackage/index.js'),
                 './foo.js',
               ),
-            ).toThrow(UnableToResolveError);
+            ).toThrowErrorMatchingSnapshot();
             expect(
               resolver.resolve(
                 p('/root/node_modules/aPackage/index.js'),
@@ -784,7 +786,9 @@ let resolver;
                       'left-pad': 'left-pad-browser',
                     },
                   }),
-                  'index.js': '',
+                  'index.js': mockFileImport(
+                    "import main from 'left-pad/main';",
+                  ),
                 },
                 'left-pad-browser': {
                   'package.json': JSON.stringify({
@@ -811,7 +815,7 @@ let resolver;
                 p('/root/node_modules/aPackage/index.js'),
                 'left-pad/main',
               ),
-            ).toThrow(UnableToResolveError);
+            ).toThrowErrorMatchingSnapshot();
           });
 
           it('supports mapping a package to a file', async () => {
@@ -993,7 +997,7 @@ let resolver;
     describe('platforms', () => {
       it('resolves platform-specific files', async () => {
         setMockFileSystem({
-          'index.js': '',
+          'index.js': mockFileImport("import f from './foo.js';"),
           'foo.ios.js': '',
         });
 
@@ -1003,9 +1007,9 @@ let resolver;
           p('/root/foo.ios.js'),
         );
         // TODO: Is this behaviour expected?
-        expect(() => resolver.resolve(p('/root/index.js'), './foo.js')).toThrow(
-          UnableToResolveError,
-        );
+        expect(() =>
+          resolver.resolve(p('/root/index.js'), './foo.js'),
+        ).toThrowErrorMatchingSnapshot();
         expect(resolver.resolve(p('/root/index.js'), './foo.ios.js')).toBe(
           p('/root/foo.ios.js'),
         );
@@ -1153,9 +1157,9 @@ let resolver;
         );
       });
 
-      it('resolves asset files with resolution suffixes', async () => {
+      it('resolves asset files with resolution suffixes (matching size)', async () => {
         setMockFileSystem({
-          'index.js': '',
+          'index.js': mockFileImport("import a from './a@1.5x.png';"),
           'a@1.5x.png': '',
           'c.png': '',
           'c@2x.png': '',
@@ -1168,18 +1172,30 @@ let resolver;
         );
         expect(() =>
           resolver.resolve(p('/root/index.js'), './a@1.5x.png'),
-        ).toThrow(UnableToResolveError);
+        ).toThrowErrorMatchingSnapshot();
+      });
+
+      it('resolves asset files with resolution suffixes (matching exact)', async () => {
+        setMockFileSystem({
+          'index.js': mockFileImport("import a from './c@2x.png';"),
+          'a@1.5x.png': '',
+          'c.png': '',
+          'c@2x.png': '',
+        });
+
+        resolver = await createResolver();
+
         expect(resolver.resolve(p('/root/index.js'), './c.png')).toBe(
           p('/root/c.png'),
         );
         expect(() =>
           resolver.resolve(p('/root/index.js'), './c@2x.png'),
-        ).toThrow(UnableToResolveError);
+        ).toThrowErrorMatchingSnapshot();
       });
 
       it('checks asset extensions case insensitively', async () => {
         setMockFileSystem({
-          'index.js': '',
+          'index.js': mockFileImport("import a from './asset.PNG';"),
           'asset.PNG': '',
         });
 
@@ -1188,12 +1204,12 @@ let resolver;
         // TODO: Is this behaviour correct?
         expect(() =>
           resolver.resolve(p('/root/index.js'), './asset.PNG'),
-        ).toThrow(UnableToResolveError);
+        ).toThrowErrorMatchingSnapshot();
       });
 
       it('resolves custom asset extensions when overriding assetExts', async () => {
         setMockFileSystem({
-          'index.js': '',
+          'index.js': mockFileImport("import a from './asset2.png';"),
           'asset1.ast': '',
           'asset2.png': '',
         });
@@ -1205,7 +1221,7 @@ let resolver;
         );
         expect(() =>
           resolver.resolve(p('/root/index.js'), './asset2.png'),
-        ).toThrow(UnableToResolveError);
+        ).toThrowErrorMatchingSnapshot();
       });
 
       it('resolves assets from packages in node_modules', async () => {
@@ -1270,7 +1286,7 @@ let resolver;
 
       it('uses the name in the package.json as the package name', async () => {
         setMockFileSystem({
-          'index.js': '',
+          'index.js': mockFileImport("import a from 'aPackage';"),
           aPackage: {
             'package.json': JSON.stringify({}),
             'index.js': '',
@@ -1282,9 +1298,9 @@ let resolver;
         });
 
         resolver = await createResolver();
-        expect(() => resolver.resolve(p('/root/index.js'), 'aPackage')).toThrow(
-          UnableToResolveError,
-        );
+        expect(() =>
+          resolver.resolve(p('/root/index.js'), 'aPackage'),
+        ).toThrowErrorMatchingSnapshot();
         expect(resolver.resolve(p('/root/index.js'), 'bPackage')).toBe(
           p('/root/randomFolderName/index.js'),
         );
@@ -1543,7 +1559,8 @@ let resolver;
 
       it('does not take file name or extension into account', async () => {
         setMockFileSystem({
-          'index.js': '',
+          'index.js': mockFileImport("import module from 'hasteModule.js';"),
+          'lib.js': mockFileImport("import invalid from 'invalidName';"),
           'hasteModule.js': '@providesModule hasteModule',
           'invalidName.js': '@providesModule anotherHasteModule',
         });
@@ -1551,10 +1568,10 @@ let resolver;
         resolver = await createResolver(config);
         expect(() =>
           resolver.resolve(p('/root/index.js'), 'hasteModule.js'),
-        ).toThrow(UnableToResolveError);
+        ).toThrowErrorMatchingSnapshot();
         expect(() =>
-          resolver.resolve(p('/root/index.js'), 'invalidName'),
-        ).toThrow(UnableToResolveError);
+          resolver.resolve(p('/root/lib.js'), 'invalidName'),
+        ).toThrowErrorMatchingSnapshot();
       });
 
       it('checks for haste modules in different folder', async () => {
@@ -1695,7 +1712,7 @@ let resolver;
 
       it('does not resolve haste names in node_modules folders', async () => {
         setMockFileSystem({
-          'index.js': '',
+          'index.js': mockFileImport("import hasteModule from 'hasteModule';"),
           node_modules: {
             aPackage: {
               'package.json': JSON.stringify({name: 'aPackage'}),
@@ -1707,7 +1724,7 @@ let resolver;
         resolver = await createResolver(config);
         expect(() =>
           resolver.resolve(p('/root/index.js'), 'hasteModule'),
-        ).toThrow(UnableToResolveError);
+        ).toThrowErrorMatchingSnapshot();
       });
 
       it('does not cause collision with haste modules in node_modules', async () => {
@@ -1928,14 +1945,17 @@ let resolver;
       });
 
       it('throws if resolveRequest returns null', async () => {
-        setMockFileSystem({'index.js': '', 'foo.js': ''});
+        setMockFileSystem({
+          'index.js': mockFileImport("import f from './foo';"),
+          'foo.js': '',
+        });
 
         resolveRequest.mockReturnValue(null);
         resolver = await createResolver({resolver: {resolveRequest}});
 
-        expect(() => resolver.resolve(p('/root/index.js'), './foo')).toThrow(
-          UnableToResolveError,
-        );
+        expect(() =>
+          resolver.resolve(p('/root/index.js'), './foo'),
+        ).toThrowErrorMatchingSnapshot();
       });
 
       it('calls resolveRequest with the correct arguments', async () => {

@@ -12,9 +12,12 @@
 
 const Resolver = require('metro-resolver');
 
+const fs = require('fs');
 const invariant = require('invariant');
 const path = require('path');
 const util = require('util');
+
+const {codeFrameColumns} = require('@babel/code-frame');
 
 import type {
   CustomResolver,
@@ -176,7 +179,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
       if (error instanceof Resolver.FailedToResolvePathError) {
         const {candidates} = error;
         throw new UnableToResolveError(
-          path.relative(this._options.projectRoot, fromModule.path),
+          fromModule.path,
           moduleName,
           [
             '\n\nNone of these files exist:',
@@ -206,7 +209,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
 
         const hint = displayDirPaths.length ? ' or in these directories:' : '';
         throw new UnableToResolveError(
-          path.relative(this._options.projectRoot, fromModule.path),
+          fromModule.path,
           moduleName,
           [
             `${moduleName} could not be found within the project${hint || '.'}`,
@@ -215,7 +218,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
             ),
             '\nIf you are sure the module exists, try these steps:',
             ' 1. Clear watchman watches: watchman watch-del-all',
-            ' 2. Delete node_modules: rm -rf node_modules and run yarn install',
+            ' 2. Delete node_modules and run yarn install',
             " 3. Reset Metro's cache: yarn start --reset-cache",
             ' 4. Remove the cache: rm -rf /tmp/metro-*',
           ].join('\n'),
@@ -299,10 +302,35 @@ class UnableToResolveError extends Error {
     this.originModulePath = originModulePath;
     this.targetModuleName = targetModuleName;
     this.message = util.format(
-      'Unable to resolve module `%s` from `%s`: %s',
+      'Unable to resolve module %s from %s: %s\n%s',
       targetModuleName,
       originModulePath,
       message,
+      this.buildCodeFrameMessage(),
+    );
+  }
+
+  buildCodeFrameMessage(): string {
+    const file = fs.readFileSync(this.originModulePath, 'utf8');
+
+    const lines = file.split('\n');
+    let lineNumber = 0;
+    let column = -1;
+    for (let line = 0; line < lines.length; line++) {
+      const columnLocation = lines[line].lastIndexOf(this.targetModuleName);
+      if (columnLocation >= 0) {
+        lineNumber = line;
+        column = columnLocation;
+        break;
+      }
+    }
+
+    return codeFrameColumns(
+      fs.readFileSync(this.originModulePath, 'utf8'),
+      {
+        start: {column: column + 1, line: lineNumber + 1},
+      },
+      {forceColor: process.env.NODE_ENV !== 'test'},
     );
   }
 }
