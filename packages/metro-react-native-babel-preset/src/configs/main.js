@@ -81,6 +81,8 @@ const babelRuntime = [
 ];
 
 const getPreset = (src, options) => {
+  const transformProfile =
+    (options && options.unstable_transformProfile) || 'default';
   const isNull = src == null;
   const hasClass = isNull || src.indexOf('class') !== -1;
   const hasForOf =
@@ -140,7 +142,10 @@ const getPreset = (src, options) => {
   ) {
     extraPlugins.push(reactDisplayName);
   }
-  if (isNull || src.indexOf('?.') !== -1) {
+  if (
+    transformProfile !== 'hermes-canary' &&
+    (isNull || src.indexOf('?.') !== -1)
+  ) {
     extraPlugins.push(optionalChaining);
   }
   if (isNull || src.indexOf('??') !== -1) {
