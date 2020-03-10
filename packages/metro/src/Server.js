@@ -92,6 +92,7 @@ type ProcessEndContext<T> = {|
 |};
 
 export type ServerOptions = $ReadOnly<{|
+  hasReducedPerformance?: boolean,
   watch?: boolean,
 |}>;
 
@@ -129,6 +130,7 @@ class Server {
     // The whole bundling/serializing logic should follow as well.
     this._createModuleId = config.serializer.createModuleIdFactory();
     this._bundler = new IncrementalBundler(config, {
+      hasReducedPerformance: options && options.hasReducedPerformance,
       watch: options ? options.watch : undefined,
     });
     this._nextBundleBuildID = 1;

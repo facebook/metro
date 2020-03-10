@@ -46,6 +46,7 @@ export type GraphRevision = {|
 |};
 
 export type IncrementalBundlerOptions = $ReadOnly<{|
+  hasReducedPerformance?: boolean,
   watch?: boolean,
 |}>;
 

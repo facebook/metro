@@ -34,11 +34,10 @@ export type BundleDetails = {
 export type ReportableEvent =
   | {
       port: number,
-      projectRoots: $ReadOnlyArray<string>,
+      hasReducedPerformance: boolean,
       type: 'initialize_started',
       ...
     }
-  | {type: 'initialize_done', ...}
   | {
       type: 'initialize_failed',
       port: number,
@@ -66,7 +65,11 @@ export type ReportableEvent =
       type: 'bundling_error',
       ...
     }
-  | {type: 'dep_graph_loading', ...}
+  | {
+      type: 'dep_graph_loading',
+      hasReducedPerformance: boolean,
+      ...
+    }
   | {type: 'dep_graph_loaded', ...}
   | {
       buildID: string,

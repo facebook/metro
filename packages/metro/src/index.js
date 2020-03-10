@@ -47,14 +47,15 @@ type MetroMiddleWare = {|
 |};
 
 type RunServerOptions = {|
-  host?: string,
-  onReady?: (server: HttpServer | HttpsServer) => void,
-  onError?: (Error & {|code?: string|}) => void,
-  secure?: boolean,
-  secureKey?: string,
-  secureCert?: string,
+  hasReducedPerformance?: boolean,
   hmrEnabled?: boolean,
+  host?: string,
+  onError?: (Error & {|code?: string|}) => void,
+  onReady?: (server: HttpServer | HttpsServer) => void,
   runInspectorProxy?: boolean,
+  secure?: boolean,
+  secureCert?: string,
+  secureKey?: string,
 |};
 
 type BuildGraphOptions = {|
@@ -117,9 +118,9 @@ async function runMetro(
   mergedConfig.reporter.update({
     type: 'initialize_started',
     port: mergedConfig.server.port,
-    // FIXME: We need to change that to watchFolders. It will be a
-    // breaking since it affects custom reporter API.
-    projectRoots: mergedConfig.watchFolders,
+    hasReducedPerformance: options
+      ? Boolean(options.hasReducedPerformance)
+      : false,
   });
 
   return new MetroServer(mergedConfig, options);
@@ -130,8 +131,9 @@ exports.loadConfig = loadConfig;
 
 exports.createConnectMiddleware = async function(
   config: ConfigT,
+  options?: ServerOptions,
 ): Promise<MetroMiddleWare> {
-  const metroServer = await runMetro(config);
+  const metroServer = await runMetro(config, options);
 
   let enhancedMiddleware = metroServer.processRequest;
 
@@ -166,13 +168,14 @@ exports.createConnectMiddleware = async function(
 exports.runServer = async (
   config: ConfigT,
   {
-    host,
-    onReady,
-    onError,
-    secure = false,
-    secureKey,
-    secureCert,
+    hasReducedPerformance = false,
     hmrEnabled = false,
+    host,
+    onError,
+    onReady,
+    secure = false,
+    secureCert,
+    secureKey,
   }: RunServerOptions,
 ): Promise<HttpServer | HttpsServer> => {
   // Lazy require
@@ -184,7 +187,7 @@ exports.runServer = async (
     attachHmrServer,
     middleware,
     end,
-  } = await exports.createConnectMiddleware(config);
+  } = await exports.createConnectMiddleware(config, {hasReducedPerformance});
 
   serverApp.use(middleware);
 

@@ -108,13 +108,18 @@ class DependencyGraph extends EventEmitter {
 
   static async load(
     config: ConfigT,
-    options?: {|+watch?: boolean|},
+    options?: {|+hasReducedPerformance?: boolean, +watch?: boolean|},
   ): Promise<DependencyGraph> {
     const initializingMetroLogEntry = log(
       createActionStartEntry('Initializing Metro'),
     );
 
-    config.reporter.update({type: 'dep_graph_loading'});
+    config.reporter.update({
+      type: 'dep_graph_loading',
+      hasReducedPerformance: options
+        ? Boolean(options.hasReducedPerformance)
+        : false,
+    });
     const haste = DependencyGraph._createHaste(
       config,
       options && options.watch,

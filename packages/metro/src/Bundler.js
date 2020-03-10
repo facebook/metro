@@ -18,6 +18,7 @@ import type {TransformResultWithSource} from './DeltaBundler';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 export type BundlerOptions = $ReadOnly<{|
+  hasReducedPerformance?: boolean,
   watch?: boolean,
 |}>;
 

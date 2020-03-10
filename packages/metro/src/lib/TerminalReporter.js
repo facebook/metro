@@ -181,7 +181,7 @@ class TerminalReporter {
     }
   }
 
-  _logInitializing(port: number): void {
+  _logInitializing(port: number, hasReducedPerformance: boolean): void {
     const logo = [
       '                                                          ',
       '               ######                ######               ',
@@ -212,7 +212,8 @@ class TerminalReporter {
       '                                                          ',
     ];
 
-    this.terminal.log(chalk.blue(logo.join('\n')));
+    const color = hasReducedPerformance ? chalk.red : chalk.blue;
+    this.terminal.log(color(logo.join('\n')));
   }
 
   _logInitializingFailed(port: number, error: SnippetError): void {
@@ -246,10 +247,7 @@ class TerminalReporter {
   _log(event: TerminalReportableEvent): void {
     switch (event.type) {
       case 'initialize_started':
-        this._logInitializing(event.port);
-        break;
-      case 'initialize_done':
-        this.terminal.log('\nMetro is ready.\n');
+        this._logInitializing(event.port, event.hasReducedPerformance);
         break;
       case 'initialize_failed':
         this._logInitializingFailed(event.port, event.error);
@@ -283,10 +281,21 @@ class TerminalReporter {
         break;
       case 'dep_graph_loading':
         // IMPORTANT: Keep this in sync with `nuclide-metro-rpc/lib/parseMessages.tsx`
+        const color = event.hasReducedPerformance ? chalk.red : chalk.blue;
         this.terminal.log(
-          chalk.blue.bold('                 Welcome to React Native!\n') +
+          color.bold('                 Welcome to React Native!\n') +
             chalk.dim('                Learn once, write anywhere\n\n'),
         );
+
+        if (event.hasReducedPerformance) {
+          this.terminal.log(
+            chalk.red(
+              'Metro is operating with reduced performance.\n' +
+                'Please fix the problem above and restart Metro.\n\n',
+            ),
+          );
+        }
+
         break;
     }
   }
