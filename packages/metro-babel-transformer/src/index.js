@@ -38,6 +38,7 @@ type BabelTransformerOptions = $ReadOnly<{
   platform: ?string,
   projectRoot: string,
   publicPath: string,
+  unstable_transformProfile?: 'default' | 'hermes-stable' | 'hermes-canary',
   ...
 }>;
 
