@@ -870,3 +870,82 @@ describe('reorderGraph', () => {
     ]);
   });
 });
+
+describe('optional dependencies', () => {
+  let localGraph;
+  let localOptions;
+  const getAllDependencies = () => {
+    const all = new Set();
+    mockedDependencyTree.forEach(deps => {
+      deps.forEach(r => all.add(r.name));
+    });
+    return all;
+  };
+  const assertResults = (dependencies, expectedMissing) => {
+    let count = 0;
+    const allDependency = getAllDependencies();
+    allDependency.forEach(m => {
+      const data = dependencies.get(`/${m}`);
+      if (expectedMissing.includes(m)) {
+        expect(data).toBeUndefined();
+      } else {
+        expect(data).not.toBeUndefined();
+      }
+      count += 1;
+    });
+    expect(count).toBeGreaterThan(0);
+    expect(count).toBe(allDependency.size);
+  };
+
+  const mockTransform = (notOptional?: string[]) => {
+    return function(path) {
+      const result = options.transform.apply(this, arguments);
+      result.dependencies.forEach(dep => {
+        if (notOptional && notOptional.includes(dep.name)) {
+          dep.data.isOptional = false;
+        } else {
+          dep.data.isOptional = dep.name.includes('optional-');
+        }
+      });
+      return result;
+    };
+  };
+
+  beforeEach(() => {
+    mockedDependencies = new Set();
+    mockedDependencyTree = new Map();
+
+    entryModule = Actions.createFile('/bundle-o');
+
+    Actions.addDependency('/bundle-o', '/regular-a');
+    Actions.addDependency('/bundle-o', '/optional-b');
+
+    Actions.deleteFile('/optional-b');
+
+    localGraph = {
+      dependencies: new Map(),
+      entryPoints: ['/bundle-o'],
+    };
+  });
+
+  it('missing optional dependency will be skipped', async () => {
+    localOptions = {
+      ...options,
+      transform: mockTransform(),
+    };
+
+    const result = await initialTraverseDependencies(localGraph, localOptions);
+
+    const dependencies = result.added;
+    assertResults(dependencies, ['optional-b']);
+  });
+  it('missing non-optional dependency will throw', async () => {
+    localOptions = {
+      ...options,
+      transform: mockTransform(['optional-b']),
+    };
+    await expect(
+      initialTraverseDependencies(localGraph, localOptions),
+    ).rejects.toThrow();
+  });
+});

@@ -471,18 +471,37 @@ function resolveDependencies<T>(
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   options: InternalOptions<T>,
 ): Map<string, Dependency> {
-  return new Map(
-    dependencies.map((result: TransformResultDependency) => {
-      const relativePath = result.name;
+  const resolve = (parentPath: string, result: TransformResultDependency) => {
+    const relativePath = result.name;
+    try {
+      return [
+        relativePath,
+        {
+          absolutePath: options.resolve(parentPath, relativePath),
+          data: result,
+        },
+      ];
+    } catch (error) {
+      // Ignore unavailable optional dependencies. They are guarded
+      // with a try-catch block and will be handled during runtime.
+      if (result.data.isOptional !== true) {
+        throw error;
+      }
+    }
+    return undefined;
+  };
 
-      const dependency = {
-        absolutePath: options.resolve(parentPath, result.name),
-        data: result,
-      };
-
-      return [relativePath, dependency];
-    }),
+  const resolved = dependencies.reduce(
+    (list: Array<[string, Dependency]>, result: TransformResultDependency) => {
+      const resolvedPath = resolve(parentPath, result);
+      if (resolvedPath) {
+        list.push(resolvedPath);
+      }
+      return list;
+    },
+    [],
   );
+  return new Map(resolved);
 }
 
 /**

@@ -24,6 +24,7 @@ const traverse = require('@babel/traverse').default;
 const types = require('@babel/types');
 
 import type {Ast} from '@babel/core';
+import type {AllowOptionalDependencies} from 'metro/src/DeltaBundler/types.flow.js';
 
 opaque type Identifier = any;
 opaque type Path = any;
@@ -31,6 +32,7 @@ opaque type Path = any;
 type DepOptions = {|
   +prefetchOnly: boolean,
   +jsResource?: boolean,
+  +isOptional?: boolean,
 |};
 
 type InternalDependency<D> = {|
@@ -41,6 +43,7 @@ type InternalDependency<D> = {|
 type InternalDependencyData = {|
   isAsync: boolean,
   isPrefetchOnly?: true,
+  isOptional?: boolean,
   locs: Array<BabelSourceLocation>,
 |};
 
@@ -59,6 +62,7 @@ type State = {|
   dependencyMapIdentifier: ?Identifier,
   keepRequireNames: boolean,
   disableRequiresTransform: boolean,
+  allowOptionalDependencies: AllowOptionalDependencies,
 |};
 
 export type Options = {|
@@ -67,6 +71,7 @@ export type Options = {|
   +inlineableCalls: $ReadOnlyArray<string>,
   +keepRequireNames: boolean,
   +disableRequiresTransform?: boolean,
+  +allowOptionalDependencies: AllowOptionalDependencies,
 |};
 
 export type CollectedDependencies = {|
@@ -135,6 +140,7 @@ function collectDependencies(
     dynamicRequires: options.dynamicRequires,
     keepRequireNames: options.keepRequireNames,
     disableRequiresTransform: !!options.disableRequiresTransform,
+    allowOptionalDependencies: options.allowOptionalDependencies,
   };
 
   const visitor = {
@@ -219,17 +225,17 @@ function collectDependencies(
   };
 }
 
-function processImportCall(
-  path: Path,
-  state: State,
-  options: DepOptions,
-): Path {
+function processImportCall(path: Path, state: State, opts: DepOptions): Path {
   const name = getModuleNameFromCallArgs(path);
 
   if (name == null) {
     throw new InvalidRequireCallError(path);
   }
 
+  const options = {
+    ...opts,
+    isOptional: isOptionalDependency(name, path, state),
+  };
   const dep = getDependency(state, name, options, path.node.loc);
   if (!options.prefetchOnly) {
     delete dep.data.isPrefetchOnly;
@@ -291,7 +297,12 @@ function processRequireCall(path: Path, state: State): Path {
     return path;
   }
 
-  const dep = getDependency(state, name, {prefetchOnly: false}, path.node.loc);
+  const dep = getDependency(
+    state,
+    name,
+    {prefetchOnly: false, isOptional: isOptionalDependency(name, path, state)},
+    path.node.loc,
+  );
   dep.data.isAsync = false;
   delete dep.data.isPrefetchOnly;
 
@@ -329,6 +340,10 @@ function getDependency(
       data.isPrefetchOnly = true;
     }
 
+    if (options.isOptional) {
+      data.isOptional = true;
+    }
+
     state.dependencyIndexes.set(name, index);
     state.dependencyData.set(name, data);
   }
@@ -339,6 +354,39 @@ function getDependency(
 
   return {index: nullthrows(index), data: nullthrows(data)};
 }
+
+const isOptionalDependency = (
+  name: string,
+  path: Path,
+  state: State,
+): boolean => {
+  const {allowOptionalDependencies} = state;
+
+  const isExcluded = () =>
+    Array.isArray(allowOptionalDependencies.exclude) &&
+    allowOptionalDependencies.exclude.includes(name);
+
+  if (!allowOptionalDependencies || isExcluded()) {
+    return false;
+  }
+
+  // Valid statement stack for single-level try-block: expressionStatement -> blockStatement -> tryStatement
+  let sCount = 0;
+  let p = path;
+  while (p && sCount < 3) {
+    if (p.isStatement()) {
+      if (p.node.type === 'BlockStatement') {
+        // A single-level should have the tryStatement immediately followed BlockStatement
+        // with the key 'block' to distinguish from the finally block, which has key = 'finalizer'
+        return p.parentPath.node.type === 'TryStatement' && p.key === 'block';
+      }
+      sCount += 1;
+    }
+    p = p.parentPath;
+  }
+
+  return false;
+};
 
 function getModuleNameFromCallArgs(path: Path): ?string {
   const expectedCount =

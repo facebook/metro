@@ -35,6 +35,7 @@ const {
   toSegmentTuple,
 } = require('metro-source-map');
 import type {TransformResultDependency} from 'metro/src/DeltaBundler';
+import type {AllowOptionalDependencies} from 'metro/src/DeltaBundler/types.flow.js';
 import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
 import type {
   BasicSourceMap,
@@ -68,6 +69,7 @@ export type JsTransformerConfig = $ReadOnly<{|
   minifierPath: string,
   optimizationSizeLimit: number,
   publicPath: string,
+  allowOptionalDependencies: AllowOptionalDependencies,
 |}>;
 
 import type {CustomTransformOptions} from 'metro-babel-transformer';
@@ -280,6 +282,7 @@ class JsTransformer {
           ),
           inlineableCalls: [importDefault, importAll],
           keepRequireNames: options.dev,
+          allowOptionalDependencies: this._config.allowOptionalDependencies,
         };
         ({ast, dependencies, dependencyMapName} = collectDependencies(
           ast,

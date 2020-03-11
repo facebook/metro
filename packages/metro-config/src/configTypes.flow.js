@@ -18,8 +18,8 @@ import type {
   DeltaResult,
   Graph,
   Module,
+  SerializerOptions,
 } from 'metro/src/DeltaBundler/types.flow.js';
-import type {SerializerOptions} from 'metro/src/DeltaBundler/types.flow';
 import type {TransformResult} from 'metro/src/DeltaBundler';
 import type {JsTransformerConfig} from 'metro/src/JSTransformer/worker';
 import type {TransformVariants} from 'metro/src/ModuleGraph/types.flow.js';

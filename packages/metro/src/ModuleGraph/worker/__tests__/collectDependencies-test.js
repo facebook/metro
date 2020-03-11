@@ -18,6 +18,8 @@ const dedent = require('dedent');
 const {codeFromAst, comparableCode} = require('../../test-helpers');
 const {codeFrameColumns} = require('@babel/code-frame');
 
+import type {Options} from '../collectDependencies';
+
 const {any, objectContaining} = expect;
 
 const {InvalidRequireCallError} = collectDependencies;
@@ -26,6 +28,7 @@ const opts = {
   dynamicRequires: 'reject',
   inlineableCalls: [],
   keepRequireNames: true,
+  allowOptionalDependencies: false,
 };
 
 it('collects unique dependency identifiers and transforms the AST', () => {
@@ -240,7 +243,7 @@ describe('Evaluating static arguments', () => {
   });
 
   it('supports using static variables in require statements', () => {
-    const ast = astFromCode('const myVar="my";require("foo_" + myVar)');
+    const ast = astFromCode('const myVar="my"; require("foo_" + myVar)');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
       {name: 'foo_my', data: objectContaining({isAsync: false})},
@@ -272,6 +275,7 @@ describe('Evaluating static arguments', () => {
       dynamicRequires: 'throwAtRuntime',
       inlineableCalls: [],
       keepRequireNames: true,
+      allowOptionalDependencies: false,
     };
     const {dependencies} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([]);
@@ -391,6 +395,165 @@ it('records locations of dependencies', () => {
     > 8 | require('foo'); __prefetchImport('baz');
         |                 ^^^^^^^^^^^^^^^^^^^^^^^ dep #6"
   `);
+});
+
+describe('optional dependencies', () => {
+  const opts: Options = {
+    asyncRequireModulePath: 'asyncRequire',
+    dynamicRequires: 'reject',
+    inlineableCalls: [],
+    keepRequireNames: true,
+    allowOptionalDependencies: true,
+  };
+  const validateDependencies = (dependencies, expectedCount) => {
+    let hasAsync = false;
+    let checked = 0;
+    dependencies.forEach(d => {
+      if (d.name.includes('-async')) {
+        expect(d.data.isAsync).toBeTruthy();
+        hasAsync = true;
+      } else {
+        expect(d.data.isAsync).toBeFalsy();
+      }
+      if (
+        d.name.startsWith('optional') ||
+        d.name.startsWith('@somescope/optional')
+      ) {
+        checked += 1;
+        expect(d.data.isOptional).toBeTruthy();
+      } else if (
+        d.name.startsWith('not-optional') ||
+        d.name.startsWith('@somescope/not-optional')
+      ) {
+        checked += 1;
+        expect(d.data.isOptional).toBeFalsy();
+      }
+    });
+    expect(dependencies).toHaveLength(checked + (hasAsync ? 1 : 0));
+    expect(dependencies).toHaveLength(expectedCount);
+  };
+  it('dependency in try-block within 1-level will be optional', () => {
+    const ast = astFromCode(`
+      function fFunc() {
+        import('not-optional-async-f').then();
+      }
+      try {
+        const a = require('optional-a');
+        if(true) {
+          const b = require('not-optional-b');
+        }
+        const cFunc = () => {
+          const c = require('not-optional-c');
+        }
+        fFunc();
+        cFunc();
+
+        import('optional-async-d');
+      } catch(e) {
+        require('not-optional-e');
+      } finally {
+        require('not-optional-g');
+      }
+      `);
+
+    const {dependencies} = collectDependencies(ast, opts);
+    validateDependencies(dependencies, 8);
+  });
+  it('nested try-block follows the inner-most scope', () => {
+    const ast = astFromCode(`
+    try {
+      const a = require('optional-a');
+      try{
+        const b = import('optional-async-b');
+      } finally {}
+      const c = require('optional-c');
+    } catch(e) {}
+    `);
+
+    const {dependencies} = collectDependencies(ast, opts);
+    validateDependencies(dependencies, 4);
+  });
+  it('can handle single-line statement', () => {
+    const ast = astFromCode(
+      "try { const a = require('optional-a') } catch (e) {}",
+    );
+    const {dependencies} = collectDependencies(ast, opts);
+    validateDependencies(dependencies, 1);
+  });
+  it('independent of sibiling context', () => {
+    const ast = astFromCode(`
+      try { 
+        const x = whatever;
+        const a = x ? require('optional-a') : require('optional-b');
+      } catch (e) {}
+    `);
+    const {dependencies} = collectDependencies(ast, opts);
+    validateDependencies(dependencies, 2);
+  });
+  it('ignores require functions defined by lower scopes', () => {
+    const ast = astFromCode(`
+      const f = (require) => {
+        try {
+          const c = require('not-dependency');
+        } catch (e) {}
+      };
+    `);
+    const {dependencies} = collectDependencies(ast, opts);
+    expect(dependencies).toHaveLength(0);
+  });
+  it('supports using static variables in require statements', () => {
+    const ast = astFromCode(`
+      const myVar="my";
+      try {
+        require("foo_" + myVar);
+        require(\`bar_\${5 + 2}\`);
+      } catch (e) {}
+      `);
+    const {dependencies} = collectDependencies(ast, opts);
+    expect(dependencies).toEqual([
+      {
+        name: 'foo_my',
+        data: objectContaining({isAsync: false, isOptional: true}),
+      },
+      {
+        name: 'bar_7',
+        data: objectContaining({isAsync: false, isOptional: true}),
+      },
+    ]);
+  });
+  it('can exclude optional dependency', () => {
+    const ast = () =>
+      astFromCode(`
+      const n = 2;
+      try {
+        const a = require(\`A-\${1 + n}\`);
+        const b = require(\`A-\${3 + n}\`);
+      } catch (e) {}
+    `);
+    const {dependencies: deps1} = collectDependencies(ast(), opts);
+    expect(deps1).toEqual([
+      {name: 'A-3', data: objectContaining({isOptional: true})},
+      {name: 'A-5', data: objectContaining({isOptional: true})},
+    ]);
+
+    const {dependencies: deps2} = collectDependencies(ast(), {
+      ...opts,
+      allowOptionalDependencies: false,
+    });
+    expect(deps2).toEqual([
+      {name: 'A-3', data: expect.not.objectContaining({isOptional: true})},
+      {name: 'A-5', data: expect.not.objectContaining({isOptional: true})},
+    ]);
+
+    const {dependencies: deps3} = collectDependencies(ast(), {
+      ...opts,
+      allowOptionalDependencies: {exclude: ['A-5']},
+    });
+    expect(deps3).toEqual([
+      {name: 'A-3', data: objectContaining({isOptional: true})},
+      {name: 'A-5', data: expect.not.objectContaining({isOptional: true})},
+    ]);
+  });
 });
 
 function formatDependencyLocs(dependencies, code) {
