@@ -37,7 +37,6 @@ commands:
       - run: git config --global user.email "metro-bot@users.noreply.github.com"
       - run: git config --global user.name "Website Deployment Script"
       - run: echo "machine github.com login metro-bot password $GITHUB_TOKEN" > ~/.netrc
-      - run: export GIT_USER=metro-bot
       - yarn_install:
           working_directory: website
       - yarn_run:
@@ -80,6 +79,8 @@ jobs:
     steps:
       - checkout
       - deploy_website
+    environment:
+      - GIT_USER: metro-bot
 
 # Workflows enables us to run multiple jobs in parallel
 workflows:
