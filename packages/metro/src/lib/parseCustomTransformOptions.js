@@ -18,7 +18,7 @@ import type {CustomTransformOptions} from '../JSTransformer/worker';
 const PREFIX = 'transform.';
 
 module.exports = function parseCustomTransformOptions(urlObj: {
-  query?: {[string]: string, ...},
+  +query?: {[string]: string, ...},
   ...
 }): CustomTransformOptions {
   const customTransformOptions = Object.create(null);
