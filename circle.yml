@@ -40,17 +40,14 @@ commands:
       - yarn_install:
           working_directory: website
       - yarn_run:
-          command: write-translations
-          working_directory: website
-      - yarn_run:
-          command: publish-gh-pages
+          command: deploy
           working_directory: website
 
 version: 2.1
 jobs:
   run-js-checks:
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:10
     steps:
       - checkout
       - yarn_install
@@ -66,18 +63,9 @@ jobs:
       - yarn_run:
           command: jest
 
-  test-node-8:
-    docker:
-      - image: circleci/node:8
-    steps:
-      - checkout
-      - yarn_install
-      - yarn_run:
-          command: jest
-
   publish-to-npm:
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:10
     steps:
       - checkout
       - yarn_install
@@ -87,10 +75,12 @@ jobs:
 
   test-and-deploy-website:
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:10
     steps:
       - checkout
       - deploy_website
+    environment:
+      - GIT_USER: metro-bot
 
 # Workflows enables us to run multiple jobs in parallel
 workflows:
@@ -98,7 +88,6 @@ workflows:
   build-and-deploy:
     jobs:
       - run-js-checks
-      - test-node-8
       - test-node-10
       - test-and-deploy-website
       - publish-to-npm:

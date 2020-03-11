@@ -12,3 +12,6 @@ website/node_modules
 website/translated_docs
 .idea
 .vscode
+.docusaurus
+.cache-loader
+yarn-error.log
