@@ -36,6 +36,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     assetResolutions,
     platforms,
     sourceExts,
+    dependencyExtractor: undefined,
     resolverMainFields: ['browser', 'main'],
     extraNodeModules: {},
     resolveRequest: null,

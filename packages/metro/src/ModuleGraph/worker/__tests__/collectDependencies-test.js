@@ -353,6 +353,21 @@ it('collects imports', () => {
   ]);
 });
 
+it('collects export from', () => {
+  const ast = astFromCode(`
+    export type {Apple} from 'Apple';
+    export {Banana} from 'Banana';
+    export * from 'Kiwi';
+  `);
+
+  const {dependencies} = collectDependencies(ast, opts);
+  expect(dependencies).toEqual([
+    {name: 'Apple', data: objectContaining({isAsync: false})},
+    {name: 'Banana', data: objectContaining({isAsync: false})},
+    {name: 'Kiwi', data: objectContaining({isAsync: false})},
+  ]);
+});
+
 it('records locations of dependencies', () => {
   const code = dedent`
     import b from 'b/lib/a';

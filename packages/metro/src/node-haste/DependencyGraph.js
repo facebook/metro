@@ -34,7 +34,7 @@ import type Package from './Package';
 import type {HasteFS} from './types';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
-const JEST_HASTE_MAP_CACHE_BREAKER = 4;
+const JEST_HASTE_MAP_CACHE_BREAKER = 5;
 
 function getOrCreate<T>(
   map: Map<string, Map<string, T>>,
@@ -86,7 +86,7 @@ class DependencyGraph extends EventEmitter {
   static _createHaste(config: ConfigT, watch?: boolean): JestHasteMap {
     return new JestHasteMap({
       cacheDirectory: config.hasteMapCacheDirectory,
-      computeDependencies: false,
+      dependencyExtractor: config.resolver.dependencyExtractor,
       computeSha1: true,
       extensions: config.resolver.sourceExts.concat(config.resolver.assetExts),
       forceNodeFilesystemAPI: !config.resolver.useWatchman,
@@ -306,6 +306,10 @@ class DependencyGraph extends EventEmitter {
     }
 
     return path.relative(this._config.projectRoot, filePath);
+  }
+
+  getDependencies(filePath: string): Array<string> {
+    return this._hasteFS.getDependencies(filePath);
   }
 }
 

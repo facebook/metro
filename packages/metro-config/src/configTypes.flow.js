@@ -81,6 +81,7 @@ type ResolverConfigT = {|
   assetExts: $ReadOnlyArray<string>,
   assetResolutions: $ReadOnlyArray<string>,
   blacklistRE: RegExp,
+  dependencyExtractor: ?string,
   extraNodeModules: {[name: string]: string, ...},
   hasteImplModulePath: ?string,
   platforms: $ReadOnlyArray<string>,

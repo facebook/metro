@@ -183,18 +183,9 @@ function collectDependencies(
       }
     },
 
-    ImportDeclaration(path: Path, state: State) {
-      const dep = getDependency(
-        state,
-        path.node.source.value,
-        {
-          prefetchOnly: false,
-        },
-        path.node.loc,
-      );
-
-      dep.data.isAsync = false;
-    },
+    ImportDeclaration: collectImports,
+    ExportNamedDeclaration: collectImports,
+    ExportAllDeclaration: collectImports,
 
     Program(path: Path, state: State) {
       state.asyncRequireModulePathStringLiteral = types.stringLiteral(
@@ -223,6 +214,21 @@ function collectDependencies(
     dependencies,
     dependencyMapName: nullthrows(state.dependencyMapIdentifier).name,
   };
+}
+
+function collectImports(path: Path, state: State) {
+  if (path.node.source) {
+    const dep = getDependency(
+      state,
+      path.node.source.value,
+      {
+        prefetchOnly: false,
+      },
+      path.node.loc,
+    );
+
+    dep.data.isAsync = false;
+  }
 }
 
 function processImportCall(path: Path, state: State, opts: DepOptions): Path {

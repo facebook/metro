@@ -14,6 +14,7 @@
 export type HasteFS = {
   exists(filePath: string): boolean,
   getAllFiles(): Array<string>,
+  getDependencies(filePath: string): Array<string>,
   getFileIterator(): Iterator<string>,
   getModuleName(filePath: string): ?string,
   getSha1(string): ?string,

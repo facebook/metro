@@ -47,6 +47,7 @@ Object {
       "4",
     ],
     "blacklistRE": /\\(node_modules\\\\/react\\\\/dist\\\\/\\.\\*\\|website\\\\/node_modules\\\\/\\.\\*\\|heapCapture\\\\/bundle\\\\\\.js\\|\\.\\*\\\\/__tests__\\\\/\\.\\*\\)\\$/,
+    "dependencyExtractor": undefined,
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
     "platforms": Array [
@@ -181,6 +182,7 @@ Object {
       "4",
     ],
     "blacklistRE": /\\(node_modules\\\\/react\\\\/dist\\\\/\\.\\*\\|website\\\\/node_modules\\\\/\\.\\*\\|heapCapture\\\\/bundle\\\\\\.js\\|\\.\\*\\\\/__tests__\\\\/\\.\\*\\)\\$/,
+    "dependencyExtractor": undefined,
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
     "platforms": Array [
