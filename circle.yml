@@ -32,17 +32,6 @@ commands:
           command: NPM_TOKEN= yarn run << parameters.command >>
           working_directory: << parameters.working_directory >>
 
-  deploy_website:
-    steps:
-      - run: git config --global user.email "metro-bot@users.noreply.github.com"
-      - run: git config --global user.name "Website Deployment Script"
-      - run: echo "machine github.com login metro-bot password $GITHUB_TOKEN" > ~/.netrc
-      - yarn_install:
-          working_directory: website
-      - yarn_run:
-          command: deploy
-          working_directory: website
-
 version: 2.1
 jobs:
   run-js-checks:
@@ -73,15 +62,6 @@ jobs:
       - run: npm run publish
       - run: rm ~/.npmrc
 
-  test-and-deploy-website:
-    docker:
-      - image: circleci/node:10
-    steps:
-      - checkout
-      - deploy_website
-    environment:
-      - GIT_USER: metro-bot
-
 # Workflows enables us to run multiple jobs in parallel
 workflows:
   version: 2
@@ -89,7 +69,6 @@ workflows:
     jobs:
       - run-js-checks
       - test-node-10
-      - test-and-deploy-website
       - publish-to-npm:
           filters:
             branches:
