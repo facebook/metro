@@ -301,17 +301,30 @@ class UnableToResolveError extends Error {
     super();
     this.originModulePath = originModulePath;
     this.targetModuleName = targetModuleName;
-    this.message = util.format(
-      'Unable to resolve module %s from %s: %s\n%s',
-      targetModuleName,
-      originModulePath,
-      message,
-      this.buildCodeFrameMessage(),
-    );
+    const codeFrameMessage = this.buildCodeFrameMessage();
+    this.message =
+      util.format(
+        'Unable to resolve module %s from %s: %s',
+        targetModuleName,
+        originModulePath,
+        message,
+      ) + (codeFrameMessage ? '\n' + codeFrameMessage : '');
   }
 
-  buildCodeFrameMessage(): string {
-    const file = fs.readFileSync(this.originModulePath, 'utf8');
+  buildCodeFrameMessage(): ?string {
+    let file;
+    try {
+      file = fs.readFileSync(this.originModulePath, 'utf8');
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        // We're probably dealing with a virtualised file system where
+        // `this.originModulePath` doesn't actually exist on disk.
+        // We can't show a code frame, but there's no need to let this I/O
+        // error shadow the original module resolution error.
+        return null;
+      }
+      throw error;
+    }
 
     const lines = file.split('\n');
     let lineNumber = 0;
