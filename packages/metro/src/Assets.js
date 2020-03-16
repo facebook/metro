@@ -274,7 +274,10 @@ async function getAsset(
     new Set(platform != null ? [platform] : []),
   );
   // Replaces __/ or __\ with ../ or ..\
-  const absolutePath = path.resolve(projectRoot, relativePath.replace(/__(\/|\\)/, '..$1'));
+  const absolutePath = path.resolve(
+    projectRoot,
+    relativePath.replace(/__(\/|\\)/, '..$1'),
+  );
 
   if (!assetExts.includes(assetData.type)) {
     throw new Error(
