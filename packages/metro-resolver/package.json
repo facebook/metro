@@ -1,5 +1,5 @@
 {
-  "version": "0.58.0",
+  "version": "0.59.0",
   "name": "metro-resolver",
   "description": "🚇 Metro resolution logic",
   "main": "src",

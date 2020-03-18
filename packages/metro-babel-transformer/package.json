@@ -1,6 +1,6 @@
 {
   "name": "metro-babel-transformer",
-  "version": "0.58.0",
+  "version": "0.59.0",
   "description": "Base Babel transformer for Metro",
   "main": "src/index.js",
   "repository": {
@@ -18,6 +18,6 @@
   "license": "MIT",
   "dependencies": {
     "@babel/core": "^7.0.0",
-    "metro-source-map": "0.58.0"
+    "metro-source-map": "0.59.0"
   }
 }
