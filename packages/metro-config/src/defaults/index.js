@@ -37,7 +37,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     platforms,
     sourceExts,
     dependencyExtractor: undefined,
-    resolverMainFields: ['browser', 'main'],
+    resolverMainFields: ['react-native', 'browser', 'main'],
     extraNodeModules: {},
     resolveRequest: null,
     hasteImplModulePath: undefined,
