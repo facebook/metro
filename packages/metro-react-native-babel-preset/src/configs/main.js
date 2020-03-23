@@ -89,7 +89,7 @@ const getPreset = (src, options) => {
     isNull || (src.indexOf('for') !== -1 && src.indexOf('of') !== -1);
 
   const extraPlugins = [];
-  if (!options.useTransformReactJsxExperimental) {
+  if (!options.useTransformReactJSXExperimental) {
     extraPlugins.push([require('@babel/plugin-transform-react-jsx')]);
   }
 
@@ -152,7 +152,7 @@ const getPreset = (src, options) => {
     extraPlugins.push(nullishCoalescingOperator);
   }
 
-  if (options && options.dev && !options.useTransformReactJsxExperimental) {
+  if (options && options.dev && !options.useTransformReactJSXExperimental) {
     extraPlugins.push(reactJsxSource);
     extraPlugins.push(reactJsxSelf);
   }
