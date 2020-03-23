@@ -30,6 +30,7 @@ describe('require', () => {
     return transformSync(rawCode, {
       ast: false,
       babelrc: false,
+      filename: 'test.js',
       presets: [require.resolve('metro-react-native-babel-preset')],
       retainLines: true,
       sourceMaps: 'inline',

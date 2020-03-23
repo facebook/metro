@@ -165,7 +165,12 @@ describe('code transformation worker:', () => {
     );
 
     expect(result.output[0].type).toBe('js/module');
-    expect(result.output[0].data.code).toMatchSnapshot();
+    const code = result.output[0].data.code.split('\n');
+    // Ignore a small difference in regenerator output
+    if (code[code.length - 3] === '    }, null, null, null, Promise);') {
+      code[code.length - 3] = '    }, null, this);';
+    }
+    expect(code.join('\n')).toMatchSnapshot();
     expect(result.output[0].data.map).toHaveLength(13);
     expect(result.output[0].data.functionMap).toMatchSnapshot();
     expect(result.dependencies).toEqual([
