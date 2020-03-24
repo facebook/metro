@@ -290,7 +290,7 @@ async function getAsset(
       `'${relativePath}' could not be found, because it cannot be found in the project root or any watch folder`,
     );
   }
-  const record = await getAbsoluteAssetRecord(absolutePath, platform); // Matches __/ or __\
+  const record = await getAbsoluteAssetRecord(absolutePath, platform);
 
   for (let i = 0; i < record.scales.length; i++) {
     if (record.scales[i] >= assetData.resolution) {
