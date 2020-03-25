@@ -129,7 +129,7 @@ async function runMetro(
 exports.runMetro = runMetro;
 exports.loadConfig = loadConfig;
 
-exports.createConnectMiddleware = async function (
+exports.createConnectMiddleware = async function(
   config: ConfigT,
   options?: ServerOptions,
 ): Promise<MetroMiddleWare> {
@@ -327,7 +327,7 @@ exports.runBuild = async (
   }
 };
 
-exports.buildGraph = async function (
+exports.buildGraph = async function(
   config: InputConfigT,
   {
     customTransformOptions = Object.create(null),
@@ -357,7 +357,7 @@ exports.buildGraph = async function (
   }
 };
 
-exports.attachMetroCli = function (
+exports.attachMetroCli = function(
   yargs: Yargs,
   {
     build = {},

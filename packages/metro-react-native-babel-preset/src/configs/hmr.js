@@ -9,7 +9,7 @@
 
 'use strict';
 
-module.exports = function () {
+module.exports = function() {
   return {
     plugins: [require('react-refresh/babel')],
   };

@@ -19,28 +19,13 @@ function sortById([id1]: [number, mixed], [id2]: [number, mixed]): number {
 describe('mergeDeltas', () => {
   it('should apply a delta to another delta', async () => {
     const delta1 = {
-      added: [
-        [1, '1'],
-        [2, '2'],
-        [3, '3'],
-      ],
-      modified: [
-        [4, '4'],
-        [5, '5'],
-        [6, '6'],
-      ],
+      added: [[1, '1'], [2, '2'], [3, '3']],
+      modified: [[4, '4'], [5, '5'], [6, '6']],
       deleted: [7, 8],
     };
     const delta2 = {
-      added: [
-        [7, '7'],
-        [9, '9'],
-      ],
-      modified: [
-        [5, '5.1'],
-        [2, '2.1'],
-        [10, '10'],
-      ],
+      added: [[7, '7'], [9, '9']],
+      modified: [[5, '5.1'], [2, '2.1'], [10, '10']],
       deleted: [1, 4, 11],
     };
     const delta3 = mergeDeltas(delta1, delta2);
@@ -49,17 +34,8 @@ describe('mergeDeltas', () => {
     const modified = delta3.modified.slice().sort(sortById);
     const deleted = delta3.deleted.slice().sort((a, b) => a - b);
 
-    expect(added).toEqual([
-      [2, '2.1'],
-      [3, '3'],
-      [9, '9'],
-    ]);
-    expect(modified).toEqual([
-      [5, '5.1'],
-      [6, '6'],
-      [7, '7'],
-      [10, '10'],
-    ]);
+    expect(added).toEqual([[2, '2.1'], [3, '3'], [9, '9']]);
+    expect(modified).toEqual([[5, '5.1'], [6, '6'], [7, '7'], [10, '10']]);
     expect(deleted).toEqual([4, 8, 11]);
   });
 });

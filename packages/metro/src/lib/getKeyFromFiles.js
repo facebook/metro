@@ -18,7 +18,10 @@ function getKeyFromFile(filePath: string): string {
 }
 
 function createHash(str: string | Buffer): string {
-  return crypto.createHash('sha1').update(str).digest('hex');
+  return crypto
+    .createHash('sha1')
+    .update(str)
+    .digest('hex');
 }
 
 module.exports = function getKeyFromFiles(

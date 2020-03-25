@@ -92,7 +92,7 @@ function buildAssetMap(
     AssetPaths.tryParse(file, platforms),
   );
   const map = new Map();
-  assets.forEach(function (asset: ?AssetPath, i: number) {
+  assets.forEach(function(asset: ?AssetPath, i: number) {
     if (asset == null) {
       return;
     }

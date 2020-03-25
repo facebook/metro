@@ -263,10 +263,7 @@ describe('DeltaCalculator', () => {
 
       return {
         added: new Map(),
-        modified: new Map([
-          ['/foo', fooModule],
-          ['/qux', quxModule],
-        ]),
+        modified: new Map([['/foo', fooModule], ['/qux', quxModule]]),
         deleted: new Set(['/bar', '/baz']),
       };
     });
@@ -274,10 +271,7 @@ describe('DeltaCalculator', () => {
     const result = await deltaCalculator.getDelta({reset: false});
     expect(result).toEqual({
       added: new Map([]),
-      modified: new Map([
-        ['/foo', fooModule],
-        ['/qux', quxModule],
-      ]),
+      modified: new Map([['/foo', fooModule], ['/qux', quxModule]]),
       deleted: new Set(['/bar', '/baz']),
       reset: false,
     });

@@ -209,9 +209,8 @@ function createRamBundleGroups<T: ModuleTransportLike>(
       const parentNames = parents.map(byId.get, byId);
       const lastName = parentNames.pop();
       throw new Error(
-        `Module ${
-          byId.get(moduleId) || moduleId
-        } belongs to groups ${parentNames.join(', ')}, and ${String(
+        `Module ${byId.get(moduleId) ||
+          moduleId} belongs to groups ${parentNames.join(', ')}, and ${String(
           lastName,
         )}. Ensure that each module is only part of one group.`,
       );

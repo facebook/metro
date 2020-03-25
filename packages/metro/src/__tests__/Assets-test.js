@@ -264,7 +264,10 @@ describe('getAssetData', () => {
       'mockPlugin1',
       () => {
         return asset => {
-          asset.extraReverseHash = asset.hash.split('').reverse().join('');
+          asset.extraReverseHash = asset.hash
+            .split('')
+            .reverse()
+            .join('');
           return asset;
         };
       },

@@ -37,7 +37,7 @@ const cacheKeyParts = [
  * project level .babelrc file, and if it doesn't exist, reads the
  * default RN babelrc file and uses that.
  */
-const getBabelRC = (function () {
+const getBabelRC = (function() {
   let babelRC: ?{
     // `any` to avoid flow type mismatch with Babel 7's internal type of
     // `Array<string>` even though it correctly accepts the usage below.

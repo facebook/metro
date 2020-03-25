@@ -69,10 +69,7 @@ describe('build map from raw mappings', () => {
       {
         code: lines(3),
         functionMap: {names: ['<global>'], mappings: 'AAA'},
-        map: [
-          [1, 2],
-          [3, 4, 15, 16, 'bananas'],
-        ],
+        map: [[1, 2], [3, 4, 15, 16, 'bananas']],
         source: 'code2',
         path: 'path2',
       },
@@ -135,10 +132,7 @@ describe('build map from raw mappings', () => {
       {
         code: lines(3),
         functionMap: null,
-        map: [
-          [1, 2],
-          [3, 4, 15, 16, 'bananas'],
-        ],
+        map: [[1, 2], [3, 4, 15, 16, 'bananas']],
         source: 'code2',
         path: 'path2',
       },

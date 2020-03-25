@@ -28,7 +28,7 @@ function constantFoldingPlugin(context: {
 |} {
   const t = context.types;
 
-  const evaluate = function (path: Object) {
+  const evaluate = function(path: Object) {
     const state = {safe: true};
     const unsafe = (path: Object, state: Object) => (state.safe = false);
 

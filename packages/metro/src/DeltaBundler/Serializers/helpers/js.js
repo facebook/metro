@@ -53,14 +53,18 @@ function getJsOutput(module: Module<>): JsOutput {
 
   invariant(
     jsModules.length === 1,
-    `Modules must have exactly one JS output, but ${module.path} has ${jsModules.length} JS outputs.`,
+    `Modules must have exactly one JS output, but ${module.path} has ${
+      jsModules.length
+    } JS outputs.`,
   );
 
   const jsOutput = (jsModules[0]: any);
 
   invariant(
     Number.isFinite(jsOutput.data.lineCount),
-    `JS output must populate lineCount, but ${module.path} has ${jsOutput.type} output with lineCount '${jsOutput.data.lineCount}'`,
+    `JS output must populate lineCount, but ${module.path} has ${
+      jsOutput.type
+    } output with lineCount '${jsOutput.data.lineCount}'`,
   );
 
   return jsOutput;

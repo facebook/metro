@@ -32,12 +32,7 @@ describe('bundleToString', () => {
       bundleToString({
         pre: 'console.log("Hello World!");',
         post: 'console.log("That\'s all folks!");',
-        modules: [
-          [3, '3'],
-          [0, '0'],
-          [2, '2'],
-          [1, '1'],
-        ],
+        modules: [[3, '3'], [0, '0'], [2, '2'], [1, '1']],
       }).code,
     ).toMatchInlineSnapshot(`
       "console.log(\\"Hello World!\\");
@@ -54,10 +49,7 @@ describe('bundleToString', () => {
       bundleToString({
         pre: '',
         post: '',
-        modules: [
-          [0, ''],
-          [1, ''],
-        ],
+        modules: [[0, ''], [1, '']],
       }).code,
     ).toMatchInlineSnapshot('""');
 
@@ -65,10 +57,7 @@ describe('bundleToString', () => {
       bundleToString({
         pre: 'pre',
         post: 'post',
-        modules: [
-          [0, ''],
-          [1, ''],
-        ],
+        modules: [[0, ''], [1, '']],
       }).code,
     ).toMatchInlineSnapshot(`
       "pre

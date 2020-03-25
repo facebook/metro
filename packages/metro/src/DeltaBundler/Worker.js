@@ -23,7 +23,9 @@ import type Transformer, {
 import type {TransformResult} from './types.flow';
 import type {LogEntry} from 'metro-core/src/Logger';
 
-export type {JsTransformOptions as TransformOptions} from '../JSTransformer/worker';
+export type {
+  JsTransformOptions as TransformOptions,
+} from '../JSTransformer/worker';
 
 export type Worker = {|
   +transform: typeof transform,
@@ -92,7 +94,10 @@ async function transform(
   };
 
   const data = fs.readFileSync(path.resolve(projectRoot, filename));
-  const sha1 = crypto.createHash('sha1').update(data).digest('hex');
+  const sha1 = crypto
+    .createHash('sha1')
+    .update(data)
+    .digest('hex');
 
   const result = await transformer.transform(filename, data, transformOptions);
 

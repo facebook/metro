@@ -109,7 +109,9 @@ class InspectorProxy {
     device: Device,
     page: Page,
   ): PageDescription {
-    const debuggerUrl = `${this._serverAddressWithPort}${WS_DEBUGGER_URL}?device=${deviceId}&page=${page.id}`;
+    const debuggerUrl = `${
+      this._serverAddressWithPort
+    }${WS_DEBUGGER_URL}?device=${deviceId}&page=${page.id}`;
     const webSocketDebuggerUrl = 'ws://' + debuggerUrl;
     const devtoolsFrontendUrl =
       'chrome-devtools://devtools/bundled/inspector.html?experiments=true&v8only=true&ws=' +

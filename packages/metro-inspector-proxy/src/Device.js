@@ -174,7 +174,7 @@ class Device {
     });
 
     const sendFunc = socket.send;
-    socket.send = function (message: string) {
+    socket.send = function(message: string) {
       debug('(Debugger) <- (Proxy)    (Device): ' + message);
       return sendFunc.call(socket, message);
     };
