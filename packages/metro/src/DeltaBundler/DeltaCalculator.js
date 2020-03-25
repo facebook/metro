@@ -226,9 +226,9 @@ class DeltaCalculator<T> extends EventEmitter {
     });
 
     // We only want to process files that are in the bundle.
-    const modifiedDependencies = Array.from(modifiedFiles).filter(
-      (filePath: string) => this._graph.dependencies.has(filePath),
-    );
+    const modifiedDependencies = Array.from(
+      modifiedFiles,
+    ).filter((filePath: string) => this._graph.dependencies.has(filePath));
 
     // No changes happened. Return empty delta.
     if (modifiedDependencies.length === 0) {

@@ -161,7 +161,7 @@ exports.createIdForPathFn = (): (({path: string, ...}) => number) => {
 
 // creates a series of virtual modules with require calls to the passed-in
 // modules.
-exports.requireCallsTo = function*(
+exports.requireCallsTo = function* (
   modules: Iterable<Module>,
   idForPath: IdForPathFn,
   getRunModuleStatement: (id: number | string) => string,

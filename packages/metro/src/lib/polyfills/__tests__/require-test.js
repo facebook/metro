@@ -149,7 +149,11 @@ describe('require', () => {
     expect(moduleSystem.nativeRequire).not.toBeCalled();
     expect(mockFactory).not.toBeCalled();
 
-    const CASES = [[1, 1, 0], [42, 42, 0], [196650, 42, 3]];
+    const CASES = [
+      [1, 1, 0],
+      [42, 42, 0],
+      [196650, 42, 3],
+    ];
 
     CASES.forEach(([moduleId, localId, bundleId]) => {
       moduleSystem.nativeRequire.mockClear();
@@ -544,7 +548,7 @@ describe('require', () => {
         1,
         'foo.js',
         (global, require, importDefault, importAll, module) => {
-          module.exports.bar = function() {
+          module.exports.bar = function () {
             return require(0);
           };
         },
@@ -572,7 +576,7 @@ describe('require', () => {
         1,
         'foo.js',
         (global, require, importDefault, importAll, module) => {
-          module.exports.bar = function() {
+          module.exports.bar = function () {
             expect(require(0).baz).not.toBeDefined();
             return require(0).foo + '-cyclic';
           };
@@ -606,7 +610,7 @@ describe('require', () => {
         1,
         'foo.js',
         (global, require, importDefault, importAll, module) => {
-          module.exports.bar = function() {
+          module.exports.bar = function () {
             return require(0).foo + '-cyclic';
           };
         },
@@ -2388,7 +2392,7 @@ describe('require', () => {
         'foo.js',
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init FooV1');
-          exports.loadBar = function() {
+          exports.loadBar = function () {
             require(1);
           };
         },

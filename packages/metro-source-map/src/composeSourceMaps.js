@@ -29,7 +29,7 @@ function composeSourceMaps(
   const firstMap = maps[0];
 
   const consumers = maps
-    .map(function(map) {
+    .map(function (map) {
       return new Consumer(map);
     })
     .reverse();

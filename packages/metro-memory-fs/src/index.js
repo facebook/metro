@@ -252,7 +252,7 @@ class MemoryFs {
     this.reset();
     ASYNC_FUNC_NAMES.forEach(funcName => {
       const func = (this: $FlowFixMe)[`${funcName}Sync`];
-      (this: $FlowFixMe)[funcName] = function(...args) {
+      (this: $FlowFixMe)[funcName] = function (...args) {
         const callback = args.pop();
         process.nextTick(() => {
           let retval;

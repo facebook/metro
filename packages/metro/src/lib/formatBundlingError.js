@@ -108,9 +108,7 @@ function formatBundlingError(error: CustomError): FormattedError {
     return {
       type: 'InternalError',
       errors: [],
-      message: `Metro has encountered an error: ${
-        error.message
-      }: ${fileName} (${line}:${column})\n\n${codeFrame}`,
+      message: `Metro has encountered an error: ${error.message}: ${fileName} (${line}:${column})\n\n${codeFrame}`,
     };
   }
 }

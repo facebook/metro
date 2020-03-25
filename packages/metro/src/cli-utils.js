@@ -12,7 +12,7 @@
 
 const fs = require('fs-extra');
 
-exports.watchFile = async function(
+exports.watchFile = async function (
   filename: string,
   callback: () => *,
 ): Promise<void> {

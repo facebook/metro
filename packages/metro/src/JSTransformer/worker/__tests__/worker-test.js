@@ -258,14 +258,16 @@ describe('code transformation worker:', () => {
     });
 
     expect(
-      (await transformer.transform(
-        'node_modules/foo/bar.js',
-        'require(foo.bar);',
-        {
-          dev: true,
-          type: 'module',
-        },
-      )).output[0].data.code,
+      (
+        await transformer.transform(
+          'node_modules/foo/bar.js',
+          'require(foo.bar);',
+          {
+            dev: true,
+            type: 'module',
+          },
+        )
+      ).output[0].data.code,
     ).toBe(
       [
         HEADER_DEV,
@@ -279,21 +281,25 @@ describe('code transformation worker:', () => {
 
   it('minifies the code correctly', async () => {
     expect(
-      (await transformer.transform('local/file.js', 'arbitrary(code);', {
-        dev: true,
-        minify: true,
-        type: 'module',
-      })).output[0].data.code,
+      (
+        await transformer.transform('local/file.js', 'arbitrary(code);', {
+          dev: true,
+          minify: true,
+          type: 'module',
+        })
+      ).output[0].data.code,
     ).toBe([HEADER_PROD, '  minified(code);', '});'].join('\n'));
   });
 
   it('minifies a JSON file', async () => {
     expect(
-      (await transformer.transform('local/file.json', 'arbitrary(code);', {
-        dev: true,
-        minify: true,
-        type: 'module',
-      })).output[0].data.code,
+      (
+        await transformer.transform('local/file.json', 'arbitrary(code);', {
+          dev: true,
+          minify: true,
+          type: 'module',
+        })
+      ).output[0].data.code,
     ).toBe(
       [
         '__d(function(global, require, _aUnused, _bUnused, module, exports, _cUnused) {',

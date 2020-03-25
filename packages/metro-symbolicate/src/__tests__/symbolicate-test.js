@@ -183,10 +183,12 @@ test('symbolicating an attribution file with 1-based column output', async () =>
 
 describe('symbolicating an attribution file specifying unmapped offsets', () => {
   const attribute = async obj =>
-    (await execute(
-      [resolve('testfile.partial.js.map'), '--attribution'],
-      JSON.stringify(obj) + '\n',
-    ))
+    (
+      await execute(
+        [resolve('testfile.partial.js.map'), '--attribution'],
+        JSON.stringify(obj) + '\n',
+      )
+    )
       .split('\n')
       .filter(Boolean)
       .map(line => JSON.parse(line));

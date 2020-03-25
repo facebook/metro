@@ -14,14 +14,14 @@ const getDefaultConfig = require('metro-config/src/defaults');
 
 const {Readable} = require('stream');
 
-describe('Worker Farm', function() {
+describe('Worker Farm', function () {
   let api;
   let WorkerFarm;
   const fileName = 'arbitrary/file.js';
   const rootFolder = '/root';
   let config;
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     jest
       .resetModules()
       .mock('fs', () => ({writeFileSync: jest.fn()}))
@@ -34,7 +34,7 @@ describe('Worker Farm', function() {
 
     fs.writeFileSync.mockClear();
     jestWorker.default.mockClear();
-    jestWorker.default.mockImplementation(function(workerPath, opts) {
+    jestWorker.default.mockImplementation(function (workerPath, opts) {
       api = {
         end: jest.fn(),
         getStdout: () => new Readable({read() {}}),
@@ -137,7 +137,7 @@ describe('Worker Farm', function() {
 
     return workerFarm
       .transform(fileName, rootFolder, '', {})
-      .catch(function(error) {
+      .catch(function (error) {
         expect(error.type).toEqual('TransformError');
         expect(error.message).toBe(
           'SyntaxError in arbitrary/file.js: ' + message,

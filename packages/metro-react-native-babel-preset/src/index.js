@@ -11,7 +11,7 @@
 
 const main = require('./configs/main');
 
-module.exports = function(babel, options) {
+module.exports = function (babel, options) {
   return main(options);
 };
 

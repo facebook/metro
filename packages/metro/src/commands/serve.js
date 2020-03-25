@@ -18,12 +18,12 @@ const {promisify} = require('util');
 
 import typeof Yargs from 'yargs';
 
-module.exports = (): {|
+module.exports = (): ({|
   builder: (yargs: Yargs) => void,
   command: $TEMPORARY$string<'serve'>,
   description: string,
   handler: (argv: any) => void,
-|} => ({
+|}) => ({
   command: 'serve',
 
   description:

@@ -59,21 +59,19 @@ async function getRamBundleInfo(
   const ramModules: Array<RamModuleTransport> = modules
     .filter(isJsModule)
     .filter(options.processModuleFilter)
-    .map(
-      (module: Module<>): RamModuleTransport => ({
-        id: options.createModuleId(module.path),
-        code: wrapModule(module, options),
-        map: sourceMapObject([module], {
-          excludeSource: options.excludeSource,
-          processModuleFilter: options.processModuleFilter,
-        }),
-        name: path.basename(module.path),
-        sourcePath: module.path,
-        source: module.getSource().toString(),
-        type: nullthrows(module.output.find(({type}) => type.startsWith('js')))
-          .type,
+    .map((module: Module<>): RamModuleTransport => ({
+      id: options.createModuleId(module.path),
+      code: wrapModule(module, options),
+      map: sourceMapObject([module], {
+        excludeSource: options.excludeSource,
+        processModuleFilter: options.processModuleFilter,
       }),
-    );
+      name: path.basename(module.path),
+      sourcePath: module.path,
+      source: module.getSource().toString(),
+      type: nullthrows(module.output.find(({type}) => type.startsWith('js')))
+        .type,
+    }));
 
   const {preloadedModules, ramGroups} = await _getRamOptions(
     entryPoint,
