@@ -412,14 +412,26 @@ describe('processRequest', () => {
     );
 
     DeltaBundler.prototype.buildGraph.mockClear();
-    DeltaBundler.prototype.getDelta.mockClear();
 
     expect((await makeRequest('mybundle.map?platform=ios')).statusCode).toBe(
       200,
     );
 
     expect(DeltaBundler.prototype.buildGraph.mock.calls.length).toBe(0);
-    expect(DeltaBundler.prototype.getDelta.mock.calls.length).toBe(0);
+  });
+
+  it('does build a delta when requesting the sourcemaps after having requested the same bundle', async () => {
+    expect((await makeRequest('mybundle.bundle?platform=ios')).statusCode).toBe(
+      200,
+    );
+
+    DeltaBundler.prototype.getDelta.mockClear();
+
+    expect((await makeRequest('mybundle.map?platform=ios')).statusCode).toBe(
+      200,
+    );
+
+    expect(DeltaBundler.prototype.getDelta.mock.calls.length).toBe(1);
   });
 
   it('does rebuild the graph when requesting the sourcemaps if the bundle has not been built yet', async () => {
