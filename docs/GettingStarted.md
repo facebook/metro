@@ -86,7 +86,6 @@ We recommend using `runMetro` instead of `runServer`, `runMetro` calls this func
 * `secure (boolean)`: Whether the server should run on `https` instead of `http`.
 * `secureKey (string)`: The key to use for `https` when `secure` is on.
 * `secureCert (string)`: The cert to use for `https` when `secure` is on.
-* `hmrEnabled (boolean)`: Whether Hot Module Replacement is turned on.
 
 ```js
 const config = await Metro.loadConfig();

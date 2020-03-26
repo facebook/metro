@@ -48,7 +48,6 @@ type MetroMiddleWare = {|
 
 type RunServerOptions = {|
   hasReducedPerformance?: boolean,
-  hmrEnabled?: boolean,
   host?: string,
   onError?: (Error & {|code?: string|}) => void,
   onReady?: (server: HttpServer | HttpsServer) => void,
@@ -169,7 +168,6 @@ exports.runServer = async (
   config: ConfigT,
   {
     hasReducedPerformance = false,
-    hmrEnabled = false,
     host,
     onError,
     onReady,
@@ -215,7 +213,9 @@ exports.runServer = async (
   }
 
   httpServer.on('error', error => {
-    onError && onError(error);
+    if (onError) {
+      onError(error);
+    }
     end();
   });
 
@@ -225,11 +225,11 @@ exports.runServer = async (
       reject: mixed => mixed,
     ) => {
       httpServer.listen(config.server.port, host, () => {
-        onReady && onReady(httpServer);
-        if (hmrEnabled) {
-          attachHmrServer(httpServer);
+        if (onReady) {
+          onReady(httpServer);
         }
 
+        attachHmrServer(httpServer);
         if (inspectorProxy) {
           inspectorProxy.addWebSocketListener(httpServer);
 
