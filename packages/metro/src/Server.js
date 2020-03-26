@@ -366,7 +366,6 @@ class Server {
         assetPath[1],
         this._config.projectRoot,
         this._config.watchFolders,
-        /* $FlowFixMe: query may be empty for invalid URLs */
         urlObj.query.platform,
         this._config.resolver.assetExts,
       );
