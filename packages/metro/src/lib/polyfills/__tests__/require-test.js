@@ -167,6 +167,94 @@ describe('require', () => {
     });
   });
 
+  it('works with segmented bundles', () => {
+    const createSegmentDefiner = modules => {
+      return jest.fn(function(localId) {
+        const mockModule = modules.find(m => m.localId === localId);
+        moduleSystem.__d(mockModule.factory, mockModule.moduleId, []);
+      });
+    };
+
+    const createMockSegment = (segmentId, modules) => {
+      modules.forEach((mockModule, localId) => {
+        mockModule.factory = jest.fn(
+          (
+            global,
+            require,
+            importDefault,
+            importAll,
+            moduleObject,
+            exports,
+            dependencyMap,
+          ) => {
+            moduleObject.exports = mockModule.exports;
+          },
+        );
+        mockModule.localId = localId;
+        // eslint-disable-next-line no-bitwise
+        mockModule.moduleId = (segmentId << 16) + localId;
+      });
+      return {modules, definer: createSegmentDefiner(modules)};
+    };
+
+    const seg = {
+      1: createMockSegment(1, [
+        {
+          exports: {
+            name: 'A',
+          },
+        },
+        {
+          exports: {
+            name: 'B',
+          },
+        },
+      ]),
+      2: createMockSegment(2, [
+        {
+          exports: {
+            name: 'C',
+          },
+        },
+        {
+          exports: {
+            name: 'D',
+          },
+        },
+      ]),
+    };
+
+    createModuleSystem(moduleSystem, false);
+
+    const {__r, __registerSegment} = moduleSystem;
+
+    __registerSegment(1, seg[1].definer);
+    __registerSegment(2, seg[2].definer);
+
+    expect(seg[1].definer).not.toBeCalled();
+    expect(seg[1].modules[0].factory).not.toBeCalled();
+    expect(__r(seg[1].modules[0].moduleId)).toBe(seg[1].modules[0].exports);
+    expect(__r(seg[1].modules[0].moduleId)).toBe(seg[1].modules[0].exports);
+    expect(seg[1].modules[1].factory).not.toBeCalled();
+    expect(__r(seg[1].modules[1].moduleId)).toBe(seg[1].modules[1].exports);
+    expect(__r(seg[1].modules[1].moduleId)).toBe(seg[1].modules[1].exports);
+
+    expect(seg[2].definer).not.toBeCalled();
+    expect(seg[2].modules[0].factory).not.toBeCalled();
+    expect(__r(seg[2].modules[0].moduleId)).toBe(seg[2].modules[0].exports);
+    expect(__r(seg[2].modules[0].moduleId)).toBe(seg[2].modules[0].exports);
+    expect(seg[2].modules[1].factory).not.toBeCalled();
+    expect(__r(seg[2].modules[1].moduleId)).toBe(seg[2].modules[1].exports);
+    expect(__r(seg[2].modules[1].moduleId)).toBe(seg[2].modules[1].exports);
+
+    expect(seg[1].definer).toBeCalledTimes(2);
+    expect(seg[2].definer).toBeCalledTimes(2);
+    expect(seg[1].modules[0].factory).toBeCalledTimes(1);
+    expect(seg[1].modules[1].factory).toBeCalledTimes(1);
+    expect(seg[2].modules[0].factory).toBeCalledTimes(1);
+    expect(seg[2].modules[1].factory).toBeCalledTimes(1);
+  });
+
   describe('functionality tests', () => {
     it('module.exports === exports', done => {
       createModuleSystem(moduleSystem, false);
