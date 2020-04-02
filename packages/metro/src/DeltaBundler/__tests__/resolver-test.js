@@ -179,6 +179,39 @@ let resolver;
         );
       });
 
+      it('resolves shorthand syntax for relative index module', async () => {
+        setMockFileSystem({
+          'index.js': '',
+          'foo.js': '',
+        });
+
+        resolver = await createResolver();
+
+        expect(resolver.resolve(p('/root/foo.js'), '.')).toBe(
+          p('/root/index.js'),
+        );
+      });
+
+      it('resolves shorthand syntax for nested relative index module with resolution cache', async () => {
+        setMockFileSystem({
+          'index.js': '',
+          'foo.js': '',
+          folderA: {
+            'foo.js': '',
+            'index.js': '',
+          },
+        });
+
+        resolver = await createResolver();
+
+        expect(resolver.resolve(p('/root/foo.js'), '.')).toBe(
+          p('/root/index.js'),
+        );
+        expect(resolver.resolve(p('/root/folderA/foo.js'), '.')).toBe(
+          p('/root/folderA/index.js'),
+        );
+      });
+
       it('resolves custom extensions in the correct order', async () => {
         setMockFileSystem({
           'index.js': '',

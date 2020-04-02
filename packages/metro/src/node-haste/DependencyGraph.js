@@ -244,7 +244,9 @@ class DependencyGraph extends EventEmitter {
     },
   ): string {
     const isPath =
-      to.includes('/') || from.includes(path.sep + 'node_modules' + path.sep);
+      to.includes('/') ||
+      to === '.' ||
+      from.includes(path.sep + 'node_modules' + path.sep);
     const mapByDirectory = getOrCreate(
       this._resolutionCache,
       isPath ? path.dirname(from) : '',
