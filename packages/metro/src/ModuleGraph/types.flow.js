@@ -102,7 +102,6 @@ export type OutputFnArg = {|
   modules: Iterable<Module>,
   requireCalls: Iterable<Module>,
   sourceMapPath?: ?string,
-  bundleOrderFile?: ?string,
   enableIDInlining: boolean,
   segmentID: number,
 |};
