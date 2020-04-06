@@ -52,7 +52,6 @@ export type GraphFn = (
 ) => GraphResult;
 
 export type GraphResult = {|
-  entryModules: Array<Module>,
   modules: Array<Module>,
 |};
 
