@@ -662,6 +662,40 @@ describe('processRequest', () => {
       `);
     });
 
+    it('should update the graph when symbolicating a second time', async () => {
+      const requestData = {
+        rawBody: JSON.stringify({
+          stack: [
+            {
+              file: 'http://localhost:8081/mybundle.bundle?runModule=true',
+              lineNumber: 2,
+              column: 18,
+              customPropShouldBeLeftUnchanged: 'foo',
+              methodName: 'clientSideMethodName',
+            },
+          ],
+        }),
+      };
+
+      const IncrementalBundler = require('../../IncrementalBundler');
+      const updateSpy = jest.spyOn(IncrementalBundler.prototype, 'updateGraph');
+      const initSpy = jest.spyOn(
+        IncrementalBundler.prototype,
+        'initializeGraph',
+      );
+
+      // When symbolicating a bundle the first time, we expect to create a graph for it.
+      await makeRequest('/symbolicate', requestData);
+      expect(initSpy).toBeCalledTimes(1);
+      expect(updateSpy).not.toBeCalled();
+
+      // When symbolicating the same bundle a second time, the bundle graph may be out of date.
+      // Let's be sure to update the bundle graph.
+      await makeRequest('/symbolicate', requestData);
+      expect(initSpy).toBeCalledTimes(1);
+      expect(updateSpy).toBeCalledTimes(1);
+    });
+
     it('supports the `modulesOnly` option', async () => {
       const response = await makeRequest('/symbolicate', {
         rawBody: JSON.stringify({

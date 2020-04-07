@@ -900,7 +900,7 @@ class Server {
         {onProgress, shallow: graphOptions.shallow},
       ));
     } else {
-      revision = await revPromise;
+      ({revision} = await this._bundler.updateGraph(await revPromise, false));
     }
 
     let {prepend, graph} = revision;
