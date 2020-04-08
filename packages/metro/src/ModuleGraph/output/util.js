@@ -13,6 +13,7 @@
 const addParamsToDefineCall = require('../../lib/addParamsToDefineCall');
 const generate = require('../worker/generate');
 const mergeSourceMaps = require('../worker/mergeSourceMaps');
+const nullthrows = require('nullthrows');
 const reverseDependencyMapReferences = require('./reverse-dependency-map-references');
 const virtualModule = require('../module').virtual;
 
@@ -192,7 +193,19 @@ exports.partition = (
 
 // Transforms a new Module object into an old one, so that it can be passed
 // around code.
-exports.toModuleTransport = ((module: Module, idsForPath: IdsForPathFn) => {
+// NOTE: Used only for RAM bundle serialization.
+function toModuleTransport(
+  module: Module,
+  idsForPath: IdsForPathFn,
+): {
+  code: string,
+  dependencies: Array<Dependency>,
+  id: number,
+  map: ?BasicSourceMap,
+  name: string,
+  sourcePath: string,
+  ...
+} {
   const {dependencies, file} = module;
   const {moduleCode, moduleMap} = getModuleCodeAndMap(
     module,
@@ -204,20 +217,10 @@ exports.toModuleTransport = ((module: Module, idsForPath: IdsForPathFn) => {
     code: moduleCode,
     dependencies,
     // ID is required but we provide an invalid one for "script"s.
-    id: file.type === 'module' ? idsForPath(file).localId : -1,
+    id: file.type === 'module' ? nullthrows(idsForPath(file).localId) : -1,
     map: moduleMap,
     name: file.path,
     sourcePath: file.path,
   };
-}: (
-  module: Module,
-  idsForPath: IdsForPathFn,
-) => {
-  code: string,
-  dependencies: Array<Dependency>,
-  id: number,
-  map: ?BasicSourceMap,
-  name: string,
-  sourcePath: string,
-  ...
-});
+}
+exports.toModuleTransport = toModuleTransport;

@@ -57,18 +57,20 @@ export type GraphResult = {|
 
 export type ModuleIds = {|
   /**
-   * The module ID is global across all bundles and identifies the module
+   * The module ID is global across all segments and identifies the module
    * uniquely. This is useful to cache modules that has been loaded already at
    * the app level.
    */
   +moduleId: number,
   /**
-   * The local ID is local to each bundle. For example bundle zero may have a
-   * module with local ID 1, and bundle one a module with the same local ID.
-   * This is useful so that RAM bundles tables start at zero, but the `moduleId`
+   * The local ID is local to each segment. For example segment zero may have a
+   * module with local ID 1, and segment one a module with the same local ID.
+   * This is useful so that RAM segments tables start at zero, but the `moduleId`
    * will be used otherwise.
+   * Some bundle formats allow a module to be repeated in multiple segments, in which
+   * case this property does not apply and will be omitted.
    */
-  +localId: number,
+  +localId?: number,
 |};
 
 /**
