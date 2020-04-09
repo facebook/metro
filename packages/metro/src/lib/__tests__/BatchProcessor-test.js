@@ -54,7 +54,11 @@ describe('BatchProcessor', () => {
         ),
       ),
     );
-    expect(batches).toEqual([[1, 2, 3], [4, 5, 6], [7, 8]]);
+    expect(batches).toEqual([
+      [1, 2, 3],
+      [4, 5, 6],
+      [7, 8],
+    ]);
     expect(maxConcurrency).toEqual(options.concurrency);
     expect(results).toEqual(input.map(transform));
   });

@@ -165,10 +165,7 @@ describe('HmrServer', () => {
     const sendMessage = jest.fn();
     getRevisionByGraphIdMock.mockReturnValueOnce(undefined);
 
-    await connect(
-      '/hot?bundleEntry=EntryPoint.js&platform=ios',
-      sendMessage,
-    );
+    await connect('/hot?bundleEntry=EntryPoint.js&platform=ios', sendMessage);
 
     const expectedMessage = `The graph \`${getGraphId(
       '/root/EntryPoint.js',
@@ -210,10 +207,7 @@ describe('HmrServer', () => {
       },
     });
 
-    await connect(
-      '/hot?bundleEntry=EntryPoint.js&platform=ios',
-      sendMessage,
-    );
+    await connect('/hot?bundleEntry=EntryPoint.js&platform=ios', sendMessage);
 
     const messages = sendMessage.mock.calls.map(call => JSON.parse(call[0]));
     expect(messages).toMatchObject([
@@ -255,14 +249,8 @@ describe('HmrServer', () => {
     const sendMessage1 = jest.fn();
     const sendMessage2 = jest.fn();
 
-    const client = await connect(
-      '/hot?platform=ios',
-      sendMessage1,
-    );
-    const client2 = await connect(
-      '/hot?platform=ios',
-      sendMessage2,
-    );
+    const client = await connect('/hot?platform=ios', sendMessage1);
+    const client2 = await connect('/hot?platform=ios', sendMessage2);
 
     await message(
       client,
@@ -344,10 +332,7 @@ describe('HmrServer', () => {
   it('should return the correctly formatted HMR message after a file change', async () => {
     const sendMessage = jest.fn();
 
-    await connect(
-      '/hot?bundleEntry=EntryPoint.js&platform=ios',
-      sendMessage,
-    );
+    await connect('/hot?bundleEntry=EntryPoint.js&platform=ios', sendMessage);
 
     sendMessage.mockReset();
 
@@ -403,10 +388,7 @@ describe('HmrServer', () => {
     jest.useRealTimers();
     const sendMessage = jest.fn();
 
-    await connect(
-      '/hot?bundleEntry=EntryPoint.js&platform=ios',
-      sendMessage,
-    );
+    await connect('/hot?bundleEntry=EntryPoint.js&platform=ios', sendMessage);
 
     sendMessage.mockReset();
 

@@ -822,7 +822,10 @@ describe('edge cases', () => {
     mockedDependencyTree = new Map([
       [
         entryModule,
-        [{name: 'foo', path: moduleFoo}, {name: 'bar', path: moduleBar}],
+        [
+          {name: 'foo', path: moduleFoo},
+          {name: 'bar', path: moduleBar},
+        ],
       ],
       [moduleFoo, [{name: 'baz', path: moduleBaz}]],
       [moduleBar, [{name: 'baz', path: moduleBaz}]],

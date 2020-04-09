@@ -149,7 +149,11 @@ describe('require', () => {
     expect(moduleSystem.nativeRequire).not.toBeCalled();
     expect(mockFactory).not.toBeCalled();
 
-    const CASES = [[1, 1, 0], [42, 42, 0], [196650, 42, 3]];
+    const CASES = [
+      [1, 1, 0],
+      [42, 42, 0],
+      [196650, 42, 3],
+    ];
 
     CASES.forEach(([moduleId, localId, bundleId]) => {
       moduleSystem.nativeRequire.mockClear();

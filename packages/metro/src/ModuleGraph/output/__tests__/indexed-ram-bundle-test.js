@@ -156,7 +156,10 @@ describe('Startup section optimization', () => {
 describe('RAM groups / common sections', () => {
   let groups, groupHeads;
   beforeAll(() => {
-    groups = [[modules[1], modules[2], modules[5]], [modules[3], modules[4]]];
+    groups = [
+      [modules[1], modules[2], modules[5]],
+      [modules[3], modules[4]],
+    ];
     groupHeads = groups.map(g => g[0]);
     ({code, map} = createRamBundle(undefined, groupHeads.map(getPath)));
   });

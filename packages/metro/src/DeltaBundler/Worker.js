@@ -23,9 +23,7 @@ import type Transformer, {
 import type {TransformResult} from './types.flow';
 import type {LogEntry} from 'metro-core/src/Logger';
 
-export type {
-  JsTransformOptions as TransformOptions,
-} from '../JSTransformer/worker';
+export type {JsTransformOptions as TransformOptions} from '../JSTransformer/worker';
 
 export type Worker = {|
   +transform: typeof transform,
