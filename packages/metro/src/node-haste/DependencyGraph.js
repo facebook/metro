@@ -84,7 +84,7 @@ class DependencyGraph extends EventEmitter {
   }
 
   static _createHaste(config: ConfigT, watch?: boolean): JestHasteMap {
-    return new JestHasteMap({
+    const haste = new JestHasteMap({
       cacheDirectory: config.hasteMapCacheDirectory,
       dependencyExtractor: config.resolver.dependencyExtractor,
       computeSha1: true,
@@ -104,6 +104,12 @@ class DependencyGraph extends EventEmitter {
       useWatchman: config.resolver.useWatchman,
       watch: watch == null ? !ci.isCI : watch,
     });
+
+    // We can have a lot of graphs listening to Haste for changes.
+    // Bump this up to silence the max listeners EventEmitter warning.
+    haste.setMaxListeners(1000);
+
+    return haste;
   }
 
   static async load(
