@@ -21,7 +21,7 @@ jest
   .useRealTimers();
 
 const JSONStream = require('JSONStream');
-const buckWorker = require('../');
+const buckWorker = require('../worker-tool');
 const path = require('path');
 const mkdirp = require('mkdirp');
 
@@ -29,7 +29,7 @@ const mkdirp = require('mkdirp');
 const {Console} = require('console');
 const fs = require('fs');
 
-const {any, anything} = jasmine;
+const {any, anything} = expect;
 
 const UNKNOWN_MESSAGE = 1;
 const INVALID_MESSAGE = 2;

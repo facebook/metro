@@ -13,7 +13,7 @@
 
 import type {BasicSourceMap} from 'metro-source-map';
 
-jest.mock('terser', () => ({
+jest.mock('uglify-es', () => ({
   minify: jest.fn(code => {
     return {
       code: code.replace(/(^|\W)\s+/g, '$1'),
@@ -23,7 +23,7 @@ jest.mock('terser', () => ({
 }));
 
 const minify = require('..');
-const {objectContaining} = jasmine;
+const {objectContaining} = expect;
 
 function getFakeMap(): BasicSourceMap {
   return {
@@ -46,22 +46,22 @@ describe('Minification:', () => {
   const filename = '/arbitrary/file.js';
   const code = 'arbitrary(code)';
   let map: BasicSourceMap;
-  let terser;
+  let uglify;
 
   beforeEach(() => {
-    terser = require('terser');
+    uglify = require('uglify-es');
     /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an
      * error found when Flow v0.99 was deployed. To see the error, delete this
      * comment and run Flow. */
-    terser.minify.mockClear();
+    uglify.minify.mockClear();
     /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an
      * error found when Flow v0.99 was deployed. To see the error, delete this
      * comment and run Flow. */
-    terser.minify.mockReturnValue({code: '', map: '{}'});
+    uglify.minify.mockReturnValue({code: '', map: '{}'});
     map = getFakeMap();
   });
 
-  it('passes file name, code, and source map to `terser`', () => {
+  it('passes file name, code, and source map to `uglify`', () => {
     minify({
       ...baseOptions,
       code,
@@ -69,7 +69,7 @@ describe('Minification:', () => {
       filename,
       config: {sourceMap: {includeSources: false}},
     });
-    expect(terser.minify).toBeCalledWith(
+    expect(uglify.minify).toBeCalledWith(
       code,
       objectContaining({
         sourceMap: {
@@ -80,20 +80,20 @@ describe('Minification:', () => {
     );
   });
 
-  it('returns the code provided by terser', () => {
+  it('returns the code provided by uglify', () => {
     /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an
      * error found when Flow v0.99 was deployed. To see the error, delete this
      * comment and run Flow. */
-    terser.minify.mockReturnValue({code, map: '{}'});
+    uglify.minify.mockReturnValue({code, map: '{}'});
     const result = minify(baseOptions);
     expect(result.code).toBe(code);
   });
 
-  it('parses the source map object provided by terser and sets the sources property', () => {
+  it('parses the source map object provided by uglify and sets the sources property', () => {
     /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an
      * error found when Flow v0.99 was deployed. To see the error, delete this
      * comment and run Flow. */
-    terser.minify.mockReturnValue({map: JSON.stringify(map), code: ''});
+    uglify.minify.mockReturnValue({map: JSON.stringify(map), code: ''});
     const result = minify({...baseOptions, filename});
     expect(result.map).toEqual({...map, sources: [filename]});
   });
