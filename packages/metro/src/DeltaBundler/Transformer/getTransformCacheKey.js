@@ -32,28 +32,22 @@ function getTransformCacheKey(opts: {|
   // eslint-disable-next-line lint/flow-no-fixme
   /* $FlowFixMe: dynamic requires prevent static typing :'(  */
   const Transformer = require(transformerPath);
-  const transformerInstance = new Transformer(
-    opts.projectRoot,
-    transformerConfig,
-  );
-
-  const transformerKey =
-    typeof transformerInstance.getCacheKey !== 'undefined'
-      ? transformerInstance.getCacheKey()
-      : '';
-
-  const cacheKeyParts = [
-    'metro-cache',
-    VERSION,
-    opts.cacheVersion,
-    path.relative(path.join(__dirname, '../../../..'), opts.projectRoot),
-    getKeyFromFiles([require.resolve(transformerPath)]),
-    transformerKey,
-  ];
+  const transformerKey = Transformer.getCacheKey
+    ? Transformer.getCacheKey(transformerConfig)
+    : '';
 
   return crypto
     .createHash('sha1')
-    .update(cacheKeyParts.join('$'))
+    .update(
+      [
+        'metro-cache',
+        VERSION,
+        opts.cacheVersion,
+        path.relative(path.join(__dirname, '../../../..'), opts.projectRoot),
+        getKeyFromFiles([require.resolve(transformerPath)]),
+        transformerKey,
+      ].join('$'),
+    )
     .digest('hex');
 }
 

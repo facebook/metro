@@ -122,20 +122,73 @@ function getDynamicDepsBehavior(
   }
 }
 
-class JsTransformer {
-  _config: JsTransformerConfig;
-  _projectRoot: string;
+const minifyCode = async (
+  config: JsTransformerConfig,
+  projectRoot: string,
+  filename: string,
+  code: string,
+  source: string,
+  map: Array<MetroSourceMapSegmentTuple>,
+  reserved?: $ReadOnlyArray<string> = [],
+): Promise<{
+  code: string,
+  map: Array<MetroSourceMapSegmentTuple>,
+  ...
+}> => {
+  const sourceMap = fromRawMappings([
+    {code, source, map, functionMap: null, path: filename},
+  ]).toMap(undefined, {});
 
-  constructor(projectRoot: string, config: JsTransformerConfig) {
-    this._projectRoot = projectRoot;
-    this._config = config;
+  const minify = getMinifier(config.minifierPath);
+
+  try {
+    const minified = minify({
+      code,
+      map: sourceMap,
+      filename,
+      reserved,
+      config: config.minifierConfig,
+    });
+
+    return {
+      code: minified.code,
+      map: minified.map
+        ? toBabelSegments(minified.map).map(toSegmentTuple)
+        : [],
+    };
+  } catch (error) {
+    if (error.constructor.name === 'JS_Parse_Error') {
+      throw new Error(
+        `${error.message} in file ${filename} at ${error.line}:${error.col}`,
+      );
+    }
+
+    throw error;
   }
+};
 
-  async transform(
+class InvalidRequireCallError extends Error {
+  innerError: collectDependencies.InvalidRequireCallError;
+  filename: string;
+
+  constructor(
+    innerError: collectDependencies.InvalidRequireCallError,
+    filename: string,
+  ) {
+    super(`${filename}:${innerError.message}`);
+    this.innerError = innerError;
+    this.filename = filename;
+  }
+}
+
+module.exports = {
+  transform: async (
+    config: JsTransformerConfig,
+    projectRoot: string,
     filename: string,
     data: Buffer,
     options: JsTransformOptions,
-  ): Promise<Result> {
+  ): Promise<Result> => {
     const sourceCode = data.toString('utf8');
     let type = 'js/module';
 
@@ -151,7 +204,14 @@ class JsTransformer {
       let map = [];
 
       if (options.minify) {
-        ({map, code} = await this._minifyCode(filename, code, sourceCode, map));
+        ({map, code} = await minifyCode(
+          config,
+          projectRoot,
+          filename,
+          code,
+          sourceCode,
+          map,
+        ));
       }
 
       return {
@@ -166,22 +226,21 @@ class JsTransformer {
     }
 
     // $FlowFixMe TODO t26372934 Plugin system
-    const transformer: Transformer<*> = require(this._config
-      .babelTransformerPath);
+    const transformer: Transformer<*> = require(config.babelTransformerPath);
 
     const transformerArgs = {
       filename,
       options: {
         ...options,
-        enableBabelRCLookup: this._config.enableBabelRCLookup,
-        enableBabelRuntime: this._config.enableBabelRuntime,
+        enableBabelRCLookup: config.enableBabelRCLookup,
+        enableBabelRuntime: config.enableBabelRuntime,
         // Inline requires are now performed at a secondary step. We cannot
         // unfortunately remove it from the internal transformer, since this one
         // is used by other tooling, and this would affect it.
         inlineRequires: false,
         nonInlinedRequires: [],
-        projectRoot: this._projectRoot,
-        publicPath: this._config.publicPath,
+        projectRoot,
+        publicPath: config.publicPath,
       },
       plugins: [],
       src: sourceCode,
@@ -192,8 +251,8 @@ class JsTransformer {
         ? {
             ...(await assetTransformer.transform(
               transformerArgs,
-              this._config.assetRegistryPath,
-              this._config.assetPlugins,
+              config.assetRegistryPath,
+              config.assetPlugins,
             )),
             functionMap: null,
           }
@@ -274,14 +333,14 @@ class JsTransformer {
     } else {
       try {
         const opts = {
-          asyncRequireModulePath: this._config.asyncRequireModulePath,
+          asyncRequireModulePath: config.asyncRequireModulePath,
           dynamicRequires: getDynamicDepsBehavior(
-            this._config.dynamicDepsInPackages,
+            config.dynamicDepsInPackages,
             filename,
           ),
           inlineableCalls: [importDefault, importAll],
           keepRequireNames: options.dev,
-          allowOptionalDependencies: this._config.allowOptionalDependencies,
+          allowOptionalDependencies: config.allowOptionalDependencies,
         };
         ({ast, dependencies, dependencyMapName} = collectDependencies(
           ast,
@@ -303,7 +362,7 @@ class JsTransformer {
     }
 
     const reserved =
-      options.minify && data.length <= this._config.optimizationSizeLimit
+      options.minify && data.length <= config.optimizationSizeLimit
         ? normalizePseudoglobals(wrappedAst)
         : [];
 
@@ -324,7 +383,9 @@ class JsTransformer {
     let code = result.code;
 
     if (options.minify) {
-      ({map, code} = await this._minifyCode(
+      ({map, code} = await minifyCode(
+        config,
+        projectRoot,
         filename,
         result.code,
         sourceCode,
@@ -341,53 +402,10 @@ class JsTransformer {
         {data: {code, lineCount: countLines(code), map, functionMap}, type},
       ],
     };
-  }
+  },
 
-  async _minifyCode(
-    filename: string,
-    code: string,
-    source: string,
-    map: Array<MetroSourceMapSegmentTuple>,
-    reserved?: $ReadOnlyArray<string> = [],
-  ): Promise<{
-    code: string,
-    map: Array<MetroSourceMapSegmentTuple>,
-    ...
-  }> {
-    const sourceMap = fromRawMappings([
-      {code, source, map, functionMap: null, path: filename},
-    ]).toMap(undefined, {});
-
-    const minify = getMinifier(this._config.minifierPath);
-
-    try {
-      const minified = minify({
-        code,
-        map: sourceMap,
-        filename,
-        reserved,
-        config: this._config.minifierConfig,
-      });
-
-      return {
-        code: minified.code,
-        map: minified.map
-          ? toBabelSegments(minified.map).map(toSegmentTuple)
-          : [],
-      };
-    } catch (error) {
-      if (error.constructor.name === 'JS_Parse_Error') {
-        throw new Error(
-          `${error.message} in file ${filename} at ${error.line}:${error.col}`,
-        );
-      }
-
-      throw error;
-    }
-  }
-
-  getCacheKey(): string {
-    const {babelTransformerPath, minifierPath, ...config} = this._config;
+  getCacheKey: (config: JsTransformerConfig): string => {
+    const {babelTransformerPath, minifierPath, ...remainingConfig} = config;
 
     const filesKey = getKeyFromFiles([
       require.resolve(babelTransformerPath),
@@ -405,30 +423,10 @@ class JsTransformer {
     ]);
 
     const babelTransformer = require(babelTransformerPath);
-    const babelTransformerKey = babelTransformer.getCacheKey
-      ? babelTransformer.getCacheKey()
-      : '';
-
     return [
       filesKey,
-      stableHash(config).toString('hex'),
-      babelTransformerKey,
+      stableHash(remainingConfig).toString('hex'),
+      babelTransformer.getCacheKey ? babelTransformer.getCacheKey() : '',
     ].join('$');
-  }
-}
-
-class InvalidRequireCallError extends Error {
-  innerError: collectDependencies.InvalidRequireCallError;
-  filename: string;
-
-  constructor(
-    innerError: collectDependencies.InvalidRequireCallError,
-    filename: string,
-  ) {
-    super(`${filename}:${innerError.message}`);
-    this.innerError = innerError;
-    this.filename = filename;
-  }
-}
-
-module.exports = JsTransformer;
+  },
+};

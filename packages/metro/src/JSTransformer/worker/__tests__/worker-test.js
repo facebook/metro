@@ -10,8 +10,6 @@
 
 'use strict';
 
-const {objectContaining} = expect;
-
 jest
   .mock('../constant-folding-plugin')
   .mock('../../../lib/getMinifier', () => () => ({code, map}) => ({
@@ -34,7 +32,6 @@ const HEADER_PROD = '__d(function (g, r, i, a, m, e, d) {';
 let fs;
 let mkdirp;
 let Transformer;
-let transformer;
 
 const baseOptions = {
   assetExts: [],
@@ -59,7 +56,6 @@ describe('code transformation worker:', () => {
     fs = require('fs');
     mkdirp = require('mkdirp');
     Transformer = require('../../worker');
-    transformer = new Transformer('/root', baseOptions);
     fs.reset();
 
     mkdirp.sync('/root/local');
@@ -68,7 +64,9 @@ describe('code transformation worker:', () => {
   });
 
   it('transforms a simple script', async () => {
-    const result = await transformer.transform(
+    const result = await Transformer.transform(
+      baseOptions,
+      '/root',
       'local/file.js',
       'someReallyArbitrary(code)',
       {
@@ -91,7 +89,9 @@ describe('code transformation worker:', () => {
   });
 
   it('transforms a simple module', async () => {
-    const result = await transformer.transform(
+    const result = await Transformer.transform(
+      baseOptions,
+      '/root',
       'local/file.js',
       'arbitrary(code)',
       {
@@ -118,10 +118,16 @@ describe('code transformation worker:', () => {
       'import c from "./c";',
     ].join('\n');
 
-    const result = await transformer.transform('local/file.js', contents, {
-      dev: true,
-      type: 'module',
-    });
+    const result = await Transformer.transform(
+      baseOptions,
+      '/root',
+      'local/file.js',
+      contents,
+      {
+        dev: true,
+        type: 'module',
+      },
+    );
 
     expect(result.output[0].type).toBe('js/module');
     expect(result.output[0].data.code).toBe(
@@ -145,17 +151,19 @@ describe('code transformation worker:', () => {
     expect(result.output[0].data.functionMap).toMatchSnapshot();
     expect(result.dependencies).toEqual([
       {
-        data: objectContaining({isAsync: false}),
+        data: expect.objectContaining({isAsync: false}),
         name: '@babel/runtime/helpers/interopRequireDefault',
       },
-      {data: objectContaining({isAsync: false}), name: './c'},
-      {data: objectContaining({isAsync: false}), name: './a'},
-      {data: objectContaining({isAsync: false}), name: 'b'},
+      {data: expect.objectContaining({isAsync: false}), name: './c'},
+      {data: expect.objectContaining({isAsync: false}), name: './a'},
+      {data: expect.objectContaining({isAsync: false}), name: 'b'},
     ]);
   });
 
   it('transforms an es module with regenerator', async () => {
-    const result = await transformer.transform(
+    const result = await Transformer.transform(
+      baseOptions,
+      '/root',
       'local/file.js',
       'export async function test() {}',
       {
@@ -175,11 +183,11 @@ describe('code transformation worker:', () => {
     expect(result.output[0].data.functionMap).toMatchSnapshot();
     expect(result.dependencies).toEqual([
       {
-        data: objectContaining({isAsync: false}),
+        data: expect.objectContaining({isAsync: false}),
         name: '@babel/runtime/helpers/interopRequireDefault',
       },
       {
-        data: objectContaining({isAsync: false}),
+        data: expect.objectContaining({isAsync: false}),
         name: '@babel/runtime/regenerator',
       },
     ]);
@@ -188,11 +196,17 @@ describe('code transformation worker:', () => {
   it('transforms import/export syntax when experimental flag is on', async () => {
     const contents = ['import c from "./c";'].join('\n');
 
-    const result = await transformer.transform('local/file.js', contents, {
-      dev: true,
-      experimentalImportSupport: true,
-      type: 'module',
-    });
+    const result = await Transformer.transform(
+      baseOptions,
+      '/root',
+      'local/file.js',
+      contents,
+      {
+        dev: true,
+        experimentalImportSupport: true,
+        type: 'module',
+      },
+    );
 
     expect(result.output[0].type).toBe('js/module');
     expect(result.output[0].data.code).toBe(
@@ -208,7 +222,7 @@ describe('code transformation worker:', () => {
     expect(result.output[0].data.functionMap).toMatchSnapshot();
     expect(result.dependencies).toEqual([
       {
-        data: objectContaining({
+        data: expect.objectContaining({
           isAsync: false,
         }),
         name: './c',
@@ -217,7 +231,9 @@ describe('code transformation worker:', () => {
   });
 
   it('does not add "use strict" on non-modules', async () => {
-    const result = await transformer.transform(
+    const result = await Transformer.transform(
+      baseOptions,
+      '/root',
       'node_modules/local/file.js',
       'module.exports = {};',
       {
@@ -241,10 +257,16 @@ describe('code transformation worker:', () => {
     ].join('\n');
 
     try {
-      await transformer.transform('local/file.js', contents, {
-        dev: true,
-        type: 'module',
-      });
+      await Transformer.transform(
+        baseOptions,
+        '/root',
+        'local/file.js',
+        contents,
+        {
+          dev: true,
+          type: 'module',
+        },
+      );
       throw new Error('should not reach this');
     } catch (error) {
       expect(error.message).toMatchSnapshot();
@@ -252,14 +274,14 @@ describe('code transformation worker:', () => {
   });
 
   it('supports dynamic dependencies from within `node_modules`', async () => {
-    transformer = new Transformer('/root', {
-      ...baseOptions,
-      dynamicDepsInPackages: 'throwAtRuntime',
-    });
-
     expect(
       (
-        await transformer.transform(
+        await Transformer.transform(
+          {
+            ...baseOptions,
+            dynamicDepsInPackages: 'throwAtRuntime',
+          },
+          '/root',
           'node_modules/foo/bar.js',
           'require(foo.bar);',
           {
@@ -282,11 +304,17 @@ describe('code transformation worker:', () => {
   it('minifies the code correctly', async () => {
     expect(
       (
-        await transformer.transform('local/file.js', 'arbitrary(code);', {
-          dev: true,
-          minify: true,
-          type: 'module',
-        })
+        await Transformer.transform(
+          baseOptions,
+          '/root',
+          'local/file.js',
+          'arbitrary(code);',
+          {
+            dev: true,
+            minify: true,
+            type: 'module',
+          },
+        )
       ).output[0].data.code,
     ).toBe([HEADER_PROD, '  minified(code);', '});'].join('\n'));
   });
@@ -294,11 +322,17 @@ describe('code transformation worker:', () => {
   it('minifies a JSON file', async () => {
     expect(
       (
-        await transformer.transform('local/file.json', 'arbitrary(code);', {
-          dev: true,
-          minify: true,
-          type: 'module',
-        })
+        await Transformer.transform(
+          baseOptions,
+          '/root',
+          'local/file.json',
+          'arbitrary(code);',
+          {
+            dev: true,
+            minify: true,
+            type: 'module',
+          },
+        )
       ).output[0].data.code,
     ).toBe(
       [
