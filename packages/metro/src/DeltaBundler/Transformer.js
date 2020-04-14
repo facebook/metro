@@ -14,7 +14,7 @@ const WorkerFarm = require('./WorkerFarm');
 
 const assert = require('assert');
 const fs = require('fs');
-const getTransformCacheKey = require('./Transformer/getTransformCacheKey');
+const getTransformCacheKey = require('./getTransformCacheKey');
 const path = require('path');
 
 const {Cache, stableHash} = require('metro-cache');

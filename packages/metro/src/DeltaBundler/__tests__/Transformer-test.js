@@ -15,10 +15,10 @@ jest
   .mock('fs', () => new (require('metro-memory-fs'))())
   .mock('assert')
   .mock('../getTransformCacheKey', () => () => 'hash')
-  .mock('../../WorkerFarm')
+  .mock('../WorkerFarm')
   .mock('/path/to/transformer.js', () => ({}), {virtual: true});
 
-var Transformer = require('../');
+var Transformer = require('../Transformer');
 var {getDefaultValues} = require('metro-config/src/defaults');
 var {mergeConfig} = require('metro-config/src/loadConfig');
 var fs = require('fs');
@@ -72,7 +72,7 @@ describe('Transformer', function() {
       getSha1,
     );
 
-    require('../../WorkerFarm').prototype.transform.mockReturnValue({
+    require('../WorkerFarm').prototype.transform.mockReturnValue({
       sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
       result: {},
     });
