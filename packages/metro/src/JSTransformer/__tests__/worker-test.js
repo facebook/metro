@@ -11,10 +11,14 @@
 'use strict';
 
 jest
-  .mock('../constant-folding-plugin')
-  .mock('../../../lib/getMinifier', () => () => ({code, map}) => ({
+  .mock('../../lib/getMinifier', () => () => ({code, map}) => ({
     code: code.replace('arbitrary(code)', 'minified(code)'),
     map,
+  }))
+  .mock('metro-transform-plugins', () => ({
+    ...jest.requireActual('metro-transform-plugins'),
+    inlinePlugin: () => ({}),
+    constantFoldingPlugin: () => ({}),
   }))
   .mock('metro-minify-uglify');
 
@@ -51,11 +55,10 @@ describe('code transformation worker:', () => {
     jest.resetModules();
 
     jest.mock('fs', () => new (require('metro-memory-fs'))());
-    jest.mock('../inline-plugin', () => ({}));
 
     fs = require('fs');
     mkdirp = require('mkdirp');
-    Transformer = require('../../worker');
+    Transformer = require('../worker');
     fs.reset();
 
     mkdirp.sync('/root/local');

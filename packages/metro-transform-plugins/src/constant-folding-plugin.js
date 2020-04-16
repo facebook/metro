@@ -12,10 +12,7 @@
 
 import typeof {types as BabelTypes} from '@babel/core';
 
-function constantFoldingPlugin(context: {
-  types: BabelTypes,
-  ...
-}): {|
+export type Visitors = {|
   visitor: {|
     BinaryExpression: {|exit: (path: any) => void|},
     LogicalExpression: {|exit: (path: any) => void|},
@@ -25,7 +22,9 @@ function constantFoldingPlugin(context: {
     |},
     UnaryExpression: {|exit: (path: any) => void|},
   |},
-|} {
+|};
+
+function constantFoldingPlugin(context: {types: BabelTypes, ...}): Visitors {
   const t = context.types;
 
   const evaluate = function(path: Object) {

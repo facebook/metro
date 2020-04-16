@@ -15,7 +15,7 @@ const constantFoldingPlugin = require('../constant-folding-plugin');
 const nullishCoalescingOperatorPlugin = require('@babel/plugin-syntax-nullish-coalescing-operator')
   .default;
 
-const {compare} = require('../test-helpers');
+const {compare} = require('../__mocks__/test-helpers');
 
 describe('constant expressions', () => {
   it('can optimize conditional expressions with constant conditions', () => {

@@ -15,15 +15,18 @@ const JsFileWrapping = require('../ModuleGraph/worker/JsFileWrapping');
 const assetTransformer = require('../assetTransformer');
 const babylon = require('@babel/parser');
 const collectDependencies = require('../ModuleGraph/worker/collectDependencies');
-const constantFoldingPlugin = require('./worker/constant-folding-plugin');
 const generateImportNames = require('../ModuleGraph/worker/generateImportNames');
 const generate = require('@babel/generator').default;
 const getKeyFromFiles = require('../lib/getKeyFromFiles');
 const getMinifier = require('../lib/getMinifier');
-const importExportPlugin = require('./worker/import-export-plugin');
-const inlinePlugin = require('./worker/inline-plugin');
+const {
+  constantFoldingPlugin,
+  getTransformPluginCacheKeyFiles,
+  importExportPlugin,
+  inlinePlugin,
+  normalizePseudoGlobals,
+} = require('metro-transform-plugins');
 const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
-const normalizePseudoglobals = require('./worker/normalizePseudoglobals');
 const {transformFromAstSync} = require('@babel/core');
 const {stableHash} = require('metro-cache');
 const types = require('@babel/types');
@@ -363,7 +366,7 @@ module.exports = {
 
     const reserved =
       options.minify && data.length <= config.optimizationSizeLimit
-        ? normalizePseudoglobals(wrappedAst)
+        ? normalizePseudoGlobals(wrappedAst)
         : [];
 
     const result = generate(
@@ -410,16 +413,13 @@ module.exports = {
     const filesKey = getKeyFromFiles([
       require.resolve(babelTransformerPath),
       require.resolve(minifierPath),
-      require.resolve('../ModuleGraph/worker/JsFileWrapping'),
       require.resolve('../assetTransformer'),
-      require.resolve('../ModuleGraph/worker/collectDependencies'),
-      require.resolve('./worker/constant-folding-plugin'),
       require.resolve('../lib/getMinifier'),
-      require.resolve('./worker/inline-plugin'),
-      require.resolve('./worker/import-export-plugin'),
-      require.resolve('./worker/normalizePseudoglobals'),
-      require.resolve('../ModuleGraph/worker/optimizeDependencies'),
+      require.resolve('../ModuleGraph/worker/collectDependencies'),
       require.resolve('../ModuleGraph/worker/generateImportNames'),
+      require.resolve('../ModuleGraph/worker/JsFileWrapping'),
+      require.resolve('../ModuleGraph/worker/optimizeDependencies'),
+      ...getTransformPluginCacheKeyFiles(),
     ]);
 
     const babelTransformer = require(babelTransformerPath);

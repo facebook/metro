@@ -22,35 +22,26 @@ function transform(
   plugins: $ReadOnlyArray<Plugin>,
   options: Options,
 ) {
-  const optionsPlugins = plugins.length
-    ? plugins.map(plugin => [plugin, options])
-    : [() => ({visitor: {}})];
-
-  const babelOptions = {
-    ast: true,
-    babelrc: false,
-    code: false,
-    compact: true,
-    configFile: false,
-    plugins: optionsPlugins,
-    sourceType: 'module',
-  };
-
-  return generate(transformSync(code, babelOptions).ast).code;
+  return generate(
+    transformSync(code, {
+      ast: true,
+      babelrc: false,
+      code: false,
+      compact: true,
+      configFile: false,
+      plugins: plugins.length
+        ? plugins.map(plugin => [plugin, options])
+        : [() => ({visitor: {}})],
+      sourceType: 'module',
+    }).ast,
+  ).code;
 }
 
-function compare(
+exports.compare = function(
   plugins: $ReadOnlyArray<Plugin>,
   code: Code,
   expected: Code,
   options: Options = {},
 ) {
-  const result = transform(code, plugins, options);
-
-  const reference = transform(expected, [], {});
-
-  expect(result).toBe(reference);
-}
-
-exports.transform = transform;
-exports.compare = compare;
+  expect(transform(code, plugins, options)).toBe(transform(expected, [], {}));
+};

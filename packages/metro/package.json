@@ -54,6 +54,7 @@
     "metro-resolver": "0.59.0",
     "metro-source-map": "0.59.0",
     "metro-symbolicate": "0.59.0",
+    "metro-transform-plugins": "0.59.0",
     "mime-types": "2.1.11",
     "mkdirp": "^0.5.1",
     "node-fetch": "^2.2.0",
@@ -71,7 +72,6 @@
     "yargs": "^14.2.0"
   },
   "devDependencies": {
-    "@babel/plugin-syntax-nullish-coalescing-operator": "^7.0.0",
     "@babel/plugin-transform-flow-strip-types": "^7.0.0",
     "acorn": "^5.1.2",
     "dedent": "^0.7.0",

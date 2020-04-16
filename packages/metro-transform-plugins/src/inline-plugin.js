@@ -10,15 +10,13 @@
 
 'use strict';
 
-const createInlinePlatformChecks = require('./inline-platform');
+const createInlinePlatformChecks = require('./utils/createInlinePlatformChecks');
 
 import typeof {types as BabelTypes} from '@babel/core';
 import type {Ast} from '@babel/core';
 import type {Path} from '@babel/traverse';
 
-type Context = {types: BabelTypes, ...};
-
-type Options = {
+export type Options = {
   dev: boolean,
   inlinePlatform: boolean,
   isWrapped: boolean,
@@ -29,6 +27,14 @@ type Options = {
 
 type State = {opts: Options, ...};
 
+export type Visitors = {|
+  visitor: {|
+    CallExpression: (path: Path, state: State) => void,
+    Identifier: (path: Path, state: State) => void,
+    MemberExpression: (path: Path, state: State) => void,
+  |},
+|};
+
 const env = {name: 'env'};
 const nodeEnv = {name: 'NODE_ENV'};
 const processId = {name: 'process'};
@@ -36,17 +42,9 @@ const processId = {name: 'process'};
 const dev = {name: '__DEV__'};
 
 function inlinePlugin(
-  context: Context,
+  {types: t}: {types: BabelTypes, ...},
   options: Options,
-): {|
-  visitor: {|
-    CallExpression: (path: Path, state: State) => void,
-    Identifier: (path: Path, state: State) => void,
-    MemberExpression: (path: Path, state: State) => void,
-  |},
-|} {
-  const t = context.types;
-
+): Visitors {
   const {isPlatformNode, isPlatformSelectNode} = createInlinePlatformChecks(
     t,
     options.requireName || 'require',

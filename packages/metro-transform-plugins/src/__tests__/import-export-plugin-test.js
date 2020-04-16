@@ -12,7 +12,7 @@
 
 const importExportPlugin = require('../import-export-plugin');
 
-const {compare} = require('../test-helpers');
+const {compare} = require('../__mocks__/test-helpers');
 
 const opts = {
   importAll: '_$$_IMPORT_ALL',

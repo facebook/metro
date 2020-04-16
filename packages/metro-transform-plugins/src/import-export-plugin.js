@@ -38,6 +38,19 @@ type State = {
   ...
 };
 
+export type Visitors = {|
+  visitor: {|
+    ExportAllDeclaration: (path: Path, state: State) => void,
+    ExportDefaultDeclaration: (path: Path, state: State) => void,
+    ExportNamedDeclaration: (path: Path, state: State) => void,
+    ImportDeclaration: (path: Path, state: State) => void,
+    Program: {|
+      enter: (path: Path, state: State) => void,
+      exit: (path: Path, state: State) => void,
+    |},
+  |},
+|};
+
 /**
  * Produces a Babel template that transforms an "import * as x from ..." or an
  * "import x from ..." call into a "const x = importAll(...)" call with the
@@ -112,20 +125,7 @@ function resolvePath(node: {value: string, ...}, resolve: boolean) {
 }
 
 // eslint-disable-next-line lint/flow-no-fixme
-function importExportPlugin({
-  types: t,
-}: $FlowFixMe): {|
-  visitor: {|
-    ExportAllDeclaration: (path: Path, state: State) => void,
-    ExportDefaultDeclaration: (path: Path, state: State) => void,
-    ExportNamedDeclaration: (path: Path, state: State) => void,
-    ImportDeclaration: (path: Path, state: State) => void,
-    Program: {|
-      enter: (path: Path, state: State) => void,
-      exit: (path: Path, state: State) => void,
-    |},
-  |},
-|} {
+function importExportPlugin({types: t}: $FlowFixMe): Visitors {
   return {
     visitor: {
       ExportAllDeclaration(path: Path, state: State): void {
