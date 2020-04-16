@@ -271,13 +271,13 @@ class Server {
       options,
     );
 
-    const {graph} = await this._bundler.buildGraph(
-      entryFile,
+    const dependencies = await this._bundler.getDependencies(
+      [entryFile],
       transformOptions,
       {onProgress, shallow: false},
     );
 
-    return await getAssets(graph, {
+    return await getAssets(dependencies, {
       processModuleFilter: this._config.serializer.processModuleFilter,
       assetPlugins: this._config.transformer.assetPlugins,
       platform: transformOptions.platform,
@@ -764,13 +764,13 @@ class Server {
       };
     },
     build: async ({entryFile, transformOptions, onProgress}) => {
-      const {graph} = await this._bundler.buildGraph(
-        entryFile,
+      const dependencies = await this._bundler.getDependencies(
+        [entryFile],
         transformOptions,
         {onProgress, shallow: false},
       );
 
-      return await getAssets(graph, {
+      return await getAssets(dependencies, {
         processModuleFilter: this._config.serializer.processModuleFilter,
         assetPlugins: this._config.transformer.assetPlugins,
         platform: transformOptions.platform,

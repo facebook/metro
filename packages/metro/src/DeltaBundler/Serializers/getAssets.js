@@ -16,7 +16,7 @@ const {getAssetData} = require('../../Assets');
 const {getJsOutput, isJsModule} = require('./helpers/js');
 
 import type {AssetData} from '../../Assets';
-import type {Graph, Module} from '../types.flow';
+import type {Dependencies, Module} from '../types.flow';
 
 type Options = {|
   +processModuleFilter: (module: Module<>) => boolean,
@@ -27,13 +27,13 @@ type Options = {|
 |};
 
 async function getAssets(
-  graph: Graph<>,
+  dependencies: Dependencies<>,
   options: Options,
 ): Promise<$ReadOnlyArray<AssetData>> {
   const promises = [];
   const {processModuleFilter} = options;
 
-  for (const module of graph.dependencies.values()) {
+  for (const module of dependencies.values()) {
     if (
       isJsModule(module) &&
       processModuleFilter(module) &&

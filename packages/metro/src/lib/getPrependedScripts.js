@@ -42,7 +42,7 @@ async function getPrependedScripts(
     type: 'script',
   };
 
-  const graph = await deltaBundler.buildGraph(
+  const dependencies = await deltaBundler.getDependencies(
     [defaults.moduleSystem, ...polyfillModuleNames],
     {
       resolve: await transformHelpers.getResolveDependencyFn(
@@ -63,7 +63,7 @@ async function getPrependedScripts(
     },
   );
 
-  return [_getPrelude({dev: options.dev}), ...graph.dependencies.values()];
+  return [_getPrelude({dev: options.dev}), ...dependencies.values()];
 }
 
 function _getPrelude({dev}: {dev: boolean, ...}): Module<> {

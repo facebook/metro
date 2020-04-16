@@ -64,7 +64,7 @@ async function calcTransformerOptions(
   }
 
   const getDependencies = async (path: string) => {
-    const {dependencies} = await deltaBundler.buildGraph([path], {
+    const dependencies = await deltaBundler.getDependencies([path], {
       resolve: await getResolveDependencyFn(bundler, options.platform),
       transform: await getTransformFn([path], bundler, deltaBundler, config, {
         ...options,

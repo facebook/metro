@@ -16,6 +16,7 @@ import type Bundler from './Bundler';
 import type {
   DeltaResult,
   Graph,
+  Dependencies,
   // eslint-disable-next-line no-unused-vars
   MixedOutput,
   Options,
@@ -24,6 +25,7 @@ import type {
 export type {
   DeltaResult,
   Graph,
+  Dependencies,
   MixedOutput,
   Module,
   TransformFn,
@@ -53,6 +55,24 @@ class DeltaBundler<T = MixedOutput> {
     this._deltaCalculators = new Map();
   }
 
+  async getDependencies(
+    entryPoints: $ReadOnlyArray<string>,
+    options: Options<T>,
+  ): Promise<Dependencies<T>> {
+    const depGraph = await this._bundler.getDependencyGraph();
+
+    const deltaCalculator = new DeltaCalculator(entryPoints, depGraph, options);
+
+    await deltaCalculator.getDelta({reset: true, shallow: options.shallow});
+    const graph = deltaCalculator.getGraph();
+
+    deltaCalculator.end();
+    return graph.dependencies;
+  }
+
+  // Note: the graph returned by this function needs to be ended when finished
+  // so that we don't leak graphs that are not reachable.
+  // To get just the dependencies, use getDependencies which will not leak graphs.
   async buildGraph(
     entryPoints: $ReadOnlyArray<string>,
     options: Options<T>,
@@ -65,7 +85,6 @@ class DeltaBundler<T = MixedOutput> {
     const graph = deltaCalculator.getGraph();
 
     this._deltaCalculators.set(graph, deltaCalculator);
-
     return graph;
   }
 

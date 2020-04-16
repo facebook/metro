@@ -64,8 +64,10 @@ export type Module<T = MixedOutput> = {|
   +getSource: () => Buffer,
 |};
 
+export type Dependencies<T = MixedOutput> = Map<string, Module<T>>;
+
 export type Graph<T = MixedOutput> = {|
-  dependencies: Map<string, Module<T>>,
+  dependencies: Dependencies<T>,
   importBundleNames: Set<string>,
   +entryPoints: $ReadOnlyArray<string>,
 |};

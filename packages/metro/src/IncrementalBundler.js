@@ -21,7 +21,10 @@ const getPrependedScripts = require('./lib/getPrependedScripts');
 const path = require('path');
 const transformHelpers = require('./lib/transformHelpers');
 
-import type {Options as DeltaBundlerOptions} from './DeltaBundler/types.flow';
+import type {
+  Options as DeltaBundlerOptions,
+  Dependencies,
+} from './DeltaBundler/types.flow';
 import type {DeltaResult, Module, Graph} from './DeltaBundler';
 import type {GraphId} from './lib/getGraphId';
 import type {TransformInputOptions} from './lib/transformHelpers';
@@ -104,26 +107,7 @@ class IncrementalBundler {
       shallow: false,
     },
   ): Promise<OutputGraph> {
-    const absoluteEntryFiles = entryFiles.map((entryFile: string) =>
-      path.resolve(this._config.projectRoot, entryFile),
-    );
-
-    await Promise.all(
-      absoluteEntryFiles.map(
-        (entryFile: string) =>
-          new Promise((resolve: void => void, reject: mixed => mixed) => {
-            // This should throw an error if the file doesn't exist.
-            // Using this instead of fs.exists to account for SimLinks.
-            fs.realpath(entryFile, err => {
-              if (err) {
-                reject(new ResourceNotFoundError(entryFile));
-              } else {
-                resolve();
-              }
-            });
-          }),
-      ),
-    );
+    const absoluteEntryFiles = await this._getAbsoluteEntryFiles(entryFiles);
 
     const graph = await this._deltaBundler.buildGraph(absoluteEntryFiles, {
       resolve: await transformHelpers.getResolveDependencyFn(
@@ -151,6 +135,40 @@ class IncrementalBundler {
     });
 
     return graph;
+  }
+
+  async getDependencies(
+    entryFiles: $ReadOnlyArray<string>,
+    transformOptions: TransformInputOptions,
+    otherOptions?: OtherOptions = {
+      onProgress: null,
+      shallow: false,
+    },
+  ): Promise<Dependencies<>> {
+    const absoluteEntryFiles = await this._getAbsoluteEntryFiles(entryFiles);
+
+    const dependencies = await this._deltaBundler.getDependencies(
+      absoluteEntryFiles,
+      {
+        resolve: await transformHelpers.getResolveDependencyFn(
+          this._bundler,
+          transformOptions.platform,
+        ),
+        transform: await transformHelpers.getTransformFn(
+          absoluteEntryFiles,
+          this._bundler,
+          this._deltaBundler,
+          this._config,
+          transformOptions,
+        ),
+        onProgress: otherOptions.onProgress,
+        experimentalImportBundleSupport: this._config.transformer
+          .experimentalImportBundleSupport,
+        shallow: otherOptions.shallow,
+      },
+    );
+
+    return dependencies;
   }
 
   async buildGraph(
@@ -283,6 +301,33 @@ class IncrementalBundler {
     }
 
     return {revision, delta};
+  }
+
+  async _getAbsoluteEntryFiles(
+    entryFiles: $ReadOnlyArray<string>,
+  ): Promise<$ReadOnlyArray<string>> {
+    const absoluteEntryFiles = entryFiles.map((entryFile: string) =>
+      path.resolve(this._config.projectRoot, entryFile),
+    );
+
+    await Promise.all(
+      absoluteEntryFiles.map(
+        (entryFile: string) =>
+          new Promise((resolve: void => void, reject: mixed => mixed) => {
+            // This should throw an error if the file doesn't exist.
+            // Using this instead of fs.exists to account for SimLinks.
+            fs.realpath(entryFile, err => {
+              if (err) {
+                reject(new ResourceNotFoundError(entryFile));
+              } else {
+                resolve();
+              }
+            });
+          }),
+      ),
+    );
+
+    return absoluteEntryFiles;
   }
 }
 
