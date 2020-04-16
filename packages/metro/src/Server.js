@@ -196,7 +196,7 @@ class Server {
     let bundleCode = null;
     let bundleMap = null;
     if (this._config.serializer.customSerializer) {
-      const bundle = this._config.serializer.customSerializer(
+      const bundle = await this._config.serializer.customSerializer(
         entryPoint,
         prepend,
         graph,
@@ -622,22 +622,28 @@ class Server {
         this._config.serializer.customSerializer ||
         ((...args) => bundleToString(baseJSBundle(...args)).code);
 
-      const bundle = serializer(entryFile, revision.prepend, revision.graph, {
-        asyncRequireModulePath: this._config.transformer.asyncRequireModulePath,
-        processModuleFilter: this._config.serializer.processModuleFilter,
-        createModuleId: this._createModuleId,
-        getRunModuleStatement: this._config.serializer.getRunModuleStatement,
-        dev: transformOptions.dev,
-        projectRoot: this._config.projectRoot,
-        modulesOnly: serializerOptions.modulesOnly,
-        runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-          path.relative(this._config.projectRoot, entryFile),
-        ),
-        runModule: serializerOptions.runModule,
-        sourceMapUrl: serializerOptions.sourceMapUrl,
-        sourceUrl: serializerOptions.sourceUrl,
-        inlineSourceMap: serializerOptions.inlineSourceMap,
-      });
+      const bundle = await serializer(
+        entryFile,
+        revision.prepend,
+        revision.graph,
+        {
+          asyncRequireModulePath: this._config.transformer
+            .asyncRequireModulePath,
+          processModuleFilter: this._config.serializer.processModuleFilter,
+          createModuleId: this._createModuleId,
+          getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+          dev: transformOptions.dev,
+          projectRoot: this._config.projectRoot,
+          modulesOnly: serializerOptions.modulesOnly,
+          runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
+            path.relative(this._config.projectRoot, entryFile),
+          ),
+          runModule: serializerOptions.runModule,
+          sourceMapUrl: serializerOptions.sourceMapUrl,
+          sourceUrl: serializerOptions.sourceUrl,
+          inlineSourceMap: serializerOptions.inlineSourceMap,
+        },
+      );
 
       const bundleCode = typeof bundle === 'string' ? bundle : bundle.code;
 
