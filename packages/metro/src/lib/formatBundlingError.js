@@ -97,13 +97,17 @@ function formatBundlingError(error: CustomError): FormattedError {
     const column = stack[0].columnNumber;
     const line = stack[0].lineNumber;
 
-    const codeFrame = codeFrameColumns(
-      fs.readFileSync(fileName, 'utf8'),
-      {
-        start: {column, line},
-      },
-      {forceColor: true},
-    );
+    let codeFrame = '';
+    try {
+      codeFrame = codeFrameColumns(
+        // If the error was thrown in a node.js builtin module, this call will fail and mask the real error.
+        fs.readFileSync(fileName, 'utf8'),
+        {
+          start: {column, line},
+        },
+        {forceColor: true},
+      );
+    } catch {}
 
     return {
       type: 'InternalError',
