@@ -98,7 +98,7 @@ type SerializerConfigT = {|
     preModules: $ReadOnlyArray<Module<>>,
     graph: Graph<>,
     options: SerializerOptions,
-  ) => string | {|code: string, map: string|},
+  ) => Promise<string | {|code: string, map: string|}>,
   experimentalSerializerHook: (graph: Graph<>, delta: DeltaResult<>) => mixed,
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
   getPolyfills: ({platform: ?string, ...}) => $ReadOnlyArray<string>,
