@@ -23,10 +23,8 @@
     "@babel/types": "^7.0.0",
     "absolute-path": "^0.0.0",
     "async": "^2.4.0",
-    "buffer-crc32": "^0.2.13",
     "chalk": "^2.4.1",
     "ci-info": "^2.0.0",
-    "concat-stream": "^1.6.0",
     "connect": "^3.6.5",
     "debug": "^2.2.0",
     "denodeify": "^1.2.1",
@@ -66,9 +64,7 @@
     "strip-ansi": "^4.0.0",
     "temp": "0.8.3",
     "throat": "^4.1.0",
-    "wordwrap": "^1.0.0",
     "ws": "^1.1.5",
-    "xpipe": "^1.0.5",
     "yargs": "^14.2.0"
   },
   "devDependencies": {
