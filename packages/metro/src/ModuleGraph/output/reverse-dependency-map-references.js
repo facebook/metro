@@ -10,8 +10,8 @@
 
 'use strict';
 
-import typeof {types as BabelTypes} from '@babel/core';
 import type {Path} from '@babel/traverse';
+import type {Types} from '@babel/types';
 
 type State = {|
   opts: {|
@@ -22,7 +22,7 @@ type State = {|
 function reverseDependencyMapReferences({
   types: t,
 }: {
-  types: BabelTypes,
+  types: Types,
   ...
 }): {|visitor: {|CallExpression: (path: Path, state: State) => void|}|} {
   return {

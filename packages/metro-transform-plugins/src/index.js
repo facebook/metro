@@ -16,11 +16,11 @@ import type {
   Visitors as InlinePluginVisitors,
   Options as InlinePluginOptions,
 } from './inline-plugin';
-import typeof {types as BabelTypes} from '@babel/core';
 import type {Ast} from '@babel/core';
+import type {Types} from '@babel/types';
 
 type BabelPlugin<VisitorT, OptionsT> = (
-  context: {types: BabelTypes, ...},
+  context: {types: Types, ...},
   options: OptionsT,
 ) => VisitorT;
 

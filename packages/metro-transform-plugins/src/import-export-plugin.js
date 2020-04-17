@@ -10,10 +10,8 @@
 
 'use strict';
 
-/* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an error
- * found when Flow v0.99 was deployed. To see the error, delete this comment
- * and run Flow. */
 const template = require('@babel/template').default;
+const {expression} = require('@babel/template');
 
 import type {Ast} from '@babel/core';
 import type {Path} from '@babel/traverse';
@@ -107,7 +105,7 @@ const esModuleExportTemplate = template(`
 /**
  * Resolution template in case it is requested.
  */
-const resolveTemplate = template.expression(`
+const resolveTemplate = expression(`
   require.resolve(NODE)
 `);
 

@@ -10,7 +10,7 @@
 
 'use strict';
 
-import typeof {types as BabelTypes} from '@babel/core';
+import type {Types} from '@babel/types';
 
 export type Visitors = {|
   visitor: {|
@@ -24,7 +24,7 @@ export type Visitors = {|
   |},
 |};
 
-function constantFoldingPlugin(context: {types: BabelTypes, ...}): Visitors {
+function constantFoldingPlugin(context: {types: Types, ...}): Visitors {
   const t = context.types;
 
   const evaluate = function(path: Object) {

@@ -12,14 +12,7 @@
 
 /* eslint-disable lint/no-unclear-flowtypes */
 const t = require('@babel/types');
-/* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an error
- * found when Flow v0.99 was deployed. To see the error, delete this comment
- * and run Flow. */
 const template = require('@babel/template').default;
-
-/* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an error
- * found when Flow v0.99 was deployed. To see the error, delete this comment
- * and run Flow. */
 const traverse = require('@babel/traverse').default;
 
 const WRAP_NAME = '$$_REQUIRE'; // note: babel will prefix this with _

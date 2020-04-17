@@ -12,9 +12,9 @@
 
 const createInlinePlatformChecks = require('./utils/createInlinePlatformChecks');
 
-import typeof {types as BabelTypes} from '@babel/core';
 import type {Ast} from '@babel/core';
 import type {Path} from '@babel/traverse';
+import type {Types} from '@babel/types';
 
 export type Options = {
   dev: boolean,
@@ -42,7 +42,7 @@ const processId = {name: 'process'};
 const dev = {name: '__DEV__'};
 
 function inlinePlugin(
-  {types: t}: {types: BabelTypes, ...},
+  {types: t}: {types: Types, ...},
   options: Options,
 ): Visitors {
   const {isPlatformNode, isPlatformSelectNode} = createInlinePlatformChecks(

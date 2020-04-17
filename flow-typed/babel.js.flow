@@ -18,33 +18,6 @@ type _BabelSourceMap = {|
   +version: number,
 |};
 
-// based on babylon v6.13.1
-type BabylonOptions = {
-  allowImportExportEverywhere?: boolean,
-  allowReturnOutsideFunction?: boolean,
-  allowSuperOutsideMethod?: boolean,
-  sourceType?: 'script' | 'module',
-  sourceFilename?: 'string',
-  plugins?: Array<
-    | 'asyncGenerators'
-    | 'classProperties'
-    | 'decorators'
-    | 'doExpressions'
-    | 'dynamicImport'
-    | 'exportExtensions'
-    | 'flow'
-    | 'functionBind'
-    | 'functionSent'
-    | 'jsx'
-    | 'nullishCoalescingOperator'
-    | 'objectRestSpread'
-    | 'optionalChaining'
-    | 'optionalCatchBinding',
-  >,
-  ...
-};
-
-// based on babel-generator v6.18.0
 type GeneratorOptions = {
   auxiliaryCommentBefore?: string,
   auxiliaryCommentAfter?: string,
@@ -67,46 +40,6 @@ type GeneratorOptions = {
 type InlinePlugin = string | {...} | (() => {...});
 type _Plugins = Array<string | Object | [InlinePlugin] | [InlinePlugin, mixed]>;
 
-// based on https://babeljs.io/docs/usage/options/ -- 2016-11-11
-type __TransformOptions = {
-  filename?: string,
-  filenameRelative?: string,
-  presets?: _Plugins,
-  plugins?: _Plugins,
-  parserOpts?: BabylonOptions,
-  generatorOpts?: GeneratorOptions,
-  highlightCode?: boolean,
-  only?: string | RegExp | Array<string | RegExp>,
-  ignore?: string | RegExp | Array<string | RegExp>,
-  auxiliaryCommentBefore?: boolean,
-  auxiliaryCommentAfter?: boolean,
-  sourceMaps?: boolean,
-  inputSourceMap?: ?Object,
-  sourceMapTarget?: string,
-  sourceFileName?: string,
-  sourceRoot?: string,
-  moduleRoot?: string,
-  moduleIds?: boolean,
-  moduleId?: string,
-  getModuleId?: (moduleName: string) => string,
-  resolveModuleSource?: (source: string, filename: string) => string,
-  code?: boolean,
-  babelrc?: boolean,
-  ast?: boolean,
-  compact?: boolean | 'auto',
-  minified?: boolean,
-  comments?: boolean,
-  shouldPrintComment?: (comment: string) => boolean,
-  retainLines?: boolean,
-  extends?: string,
-  ...
-};
-
-type _TransformOptions = __TransformOptions & {
-  env?: {[key: string]: __TransformOptions, ...},
-  ...
-};
-
 type BabelNode = $FlowFixMe;
 type BabelPath = $FlowFixMe;
 
@@ -117,7 +50,6 @@ type TransformResult = {
   map: ?_BabelSourceMap,
   ...
 };
-// https://github.com/babel/babel/blob/master/packages/babel-generator/src/buffer.js#L42
 export type GeneratorResult = {
   code: string,
   map: ?_BabelSourceMap,
@@ -126,7 +58,6 @@ export type GeneratorResult = {
 };
 type VisitFn = <State>(path: Object, state: State) => any;
 
-type BabelTypes = {[key: string]: Function, ...};
 type BabelVisitor = {...};
 
 type _BabelSourceMapSegment = {
@@ -137,13 +68,7 @@ type _BabelSourceMapSegment = {
   ...
 };
 
-// #############################################
-// ############     Babel 7    #################
-// #############################################
-// (Mostly compatible with Babel 6...)
-
-// https://github.com/babel/babel/tree/master/packages/babylon#options
-type Babylon7Options = {|
+type BabelParserOptions = {|
   allowImportExportEverywhere?: boolean,
   allowReturnOutsideFunction?: boolean,
   allowSuperOutsideMethod?: mixed, // "TODO" okay. Maybe don't use this yet.
@@ -156,7 +81,6 @@ type Babylon7Options = {|
   tokens?: boolean,
 |};
 
-// https://github.com/babel/babel/tree/master/packages/babel-core#options
 type BabelCoreOptions = {|
   ast?: boolean,
   auxiliaryCommentAfter?: ?string,
@@ -188,7 +112,7 @@ type BabelCoreOptions = {|
   moduleIds?: ?{[string]: string, ...},
   moduleRoot?: string,
   only?: ?(string | Array<string> | RegExp | Array<string | RegExp>),
-  parserOpts?: ?Babylon7Options,
+  parserOpts?: ?BabelParserOptions,
   plugins?: ?_Plugins,
   presets?: Array<string>,
   retainLines?: boolean,
@@ -206,8 +130,13 @@ type BabelCoreOptions = {|
   ) => void,
 |};
 
-// https://github.com/babel/babel/tree/master/packages/babel-template
-type TemplateOptions = Babylon7Options & {|
+type BabelSourceLocation = {|
+  +start: {|+line: number, +column: number|},
+  +end: {|+line: number, +column: number|},
+  +identifierName?: string,
+|};
+
+type TemplateOptions = BabelParserOptions & {|
   // note: template defaults for these options;
   // allowReturnOutsideFunction = true
   // allowSuperOutsideMethod = true
@@ -217,35 +146,13 @@ type TemplateOptions = Babylon7Options & {|
   preserveComments?: boolean,
 |};
 
-type Templatable = ({[tokenName: string]: mixed, ...}) => BabelNode;
-
-type TemplateFunc = (tpl: string, options?: TemplateOptions) => Templatable;
-
-type BabelSourceLocation = {|
-  +start: {|+line: number, +column: number|},
-  +end: {|+line: number, +column: number|},
-  +identifierName?: string,
-|};
-
-// note: ast is not optional, babel will throw if it would be empty:
-// https://github.com/babel/babel/blob/98969b8a7335e831c069164f5c56132111847224/packages/babel-core/src/transform-ast.js#L52
-// https://github.com/babel/babel/blob/98969b8a7335e831c069164f5c56132111847224/packages/babel-core/src/transform-ast-sync.js#L15
 export type Transform7Result = {|
   code: string,
   map?: _BabelSourceMap,
-  ast: BabelNode, // note: babel never allows falsy ast value here
+  ast: BabelNode,
 |};
 
-// Do NOT make this an optional type!
 type TransformCallback = (Error => void) | ((void, Transform7Result) => void);
-
-type TraverseFunc = (
-  ast: BabelNode | Array<BabelNode>,
-  visitor: BabelVisitor,
-  scope?: ?Object,
-  state?: ?Object,
-  parentPath?: ?Object,
-) => void;
 
 export type TransformSync = (
   code: string,
@@ -265,21 +172,14 @@ export type TransformFromAstSync = (
 
 type ParseCallback = (Error => void) | ((void, BabelNode) => void);
 
-// Use the sync versions if you expect a result
 type void_DO_NOT_USE_SYNC = void;
 
-// https://github.com/babel/babel/tree/master/packages/babel-core
 declare module '@babel/core' {
   declare type Ast = BabelNode;
   declare type BabelSourceMap = _BabelSourceMap;
   declare type Plugins = _Plugins;
   declare type TransformResult = Transform7Result;
   declare type BabelCoreOptions = BabelCoreOptions;
-
-  // use @babel/types instead!
-  declare var types: BabelTypes;
-  // use @babel/traverse instead!
-  declare var traverse: TraverseFunc;
 
   declare var version: string;
 
@@ -320,7 +220,6 @@ declare module '@babel/core' {
   ): BabelNode;
 }
 
-// https://github.com/babel/babel/tree/master/packages/babel-generator
 declare module '@babel/generator' {
   declare export type BabelSourceMapSegment = _BabelSourceMapSegment;
   declare export default (
@@ -335,26 +234,32 @@ declare module '@babel/generator' {
   ) => GeneratorResult;
 }
 
-// https://github.com/babel/babel/tree/master/packages/babel-template
 declare module '@babel/template' {
-  declare module.exports: TemplateFunc;
-  // & {
-  //   ast: (code: string) => Ast,
-  //   smart: TemplateFunc,
-  //   statement: TemplateFunc,
-  //   statements: TemplateFunc,
-  //   expression: TemplateFunc,
-  //   program: TemplateFunc,
-  // };
+  declare type TemplateArgs = {[tokenName: string]: mixed, ...};
+  declare type Templatable = (args?: TemplateArgs) => BabelNode;
+  declare export default (
+    template: string,
+    options?: TemplateOptions,
+  ) => Templatable;
+  declare export function expression(
+    template: string,
+    options?: TemplateOptions,
+  ): Templatable;
 }
 
 declare module '@babel/types' {
-  // TODO we should make this types thing explicit (see pckg babel-flow-types)
-  declare module.exports: BabelTypes;
+  declare export type Types = {[key: string]: Function, ...};
+  declare module.exports: Types;
 }
 
 declare module '@babel/traverse' {
-  declare type Path = BabelPath;
+  declare export type Path = BabelPath;
 
-  declare module.exports: TraverseFunc;
+  declare export default (
+    ast: BabelNode | Array<BabelNode>,
+    visitor: BabelVisitor,
+    scope?: ?Object,
+    state?: ?Object,
+    parentPath?: ?Object,
+  ) => void;
 }

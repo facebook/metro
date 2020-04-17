@@ -10,12 +10,12 @@
 
 'use strict';
 
-import typeof {types as BabelTypes} from '@babel/core';
+import type {Types} from '@babel/types';
 
 const importMap = new Map([['ReactNative', 'react-native']]);
 
 function createInlinePlatformChecks(
-  t: BabelTypes,
+  t: Types,
   requireName: string = 'require',
 ): {|
   isPlatformNode: (node: any, scope: any, isWrappedModule: boolean) => boolean,
