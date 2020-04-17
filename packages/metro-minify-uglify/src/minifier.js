@@ -13,10 +13,7 @@
 const uglify = require('uglify-es');
 
 import type {BasicSourceMap} from 'metro-source-map';
-import type {
-  MinifierResult,
-  MinifierOptions,
-} from 'metro/src/shared/types.flow.js';
+import type {MinifierResult, MinifierOptions} from 'metro-transform-worker';
 
 function minifier(options: MinifierOptions): MinifierResult {
   const result = minify(options);

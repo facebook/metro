@@ -11,16 +11,15 @@
 'use strict';
 
 import type {Options as DeltaBundlerOptions} from '../DeltaBundler/types.flow';
-import type {
-  CustomTransformOptions,
-  MinifierOptions,
-} from '../JSTransformer/worker';
 import type {TransformInputOptions} from '../lib/transformHelpers';
 import type {
-  BasicSourceMap,
   MixedSourceMap,
   MetroSourceMapSegmentTuple,
 } from 'metro-source-map';
+import type {
+  CustomTransformOptions,
+  MinifierOptions,
+} from 'metro-transform-worker';
 
 type BundleType =
   | 'bundle'
@@ -130,11 +129,3 @@ export type RequestOptions = {|
 |};
 
 export type {MinifierOptions};
-
-export type MinifierResult = {
-  code: string,
-  map?: BasicSourceMap,
-  ...
-};
-
-export type MetroMinifier = MinifierOptions => MinifierResult;

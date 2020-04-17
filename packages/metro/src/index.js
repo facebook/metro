@@ -26,9 +26,8 @@ const outputBundle = require('./shared/output/bundle');
 const {loadConfig, mergeConfig, getDefaultConfig} = require('metro-config');
 const {InspectorProxy} = require('metro-inspector-proxy');
 
-import type {ServerOptions} from './Server';
 import type {Graph} from './DeltaBundler';
-import type {CustomTransformOptions} from './JSTransformer/worker';
+import type {ServerOptions} from './Server';
 import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
 import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
@@ -37,6 +36,7 @@ import type {
   InputConfigT,
   Middleware,
 } from 'metro-config/src/configTypes.flow';
+import type {CustomTransformOptions} from 'metro-transform-worker';
 import typeof Yargs from 'yargs';
 
 type MetroMiddleWare = {|

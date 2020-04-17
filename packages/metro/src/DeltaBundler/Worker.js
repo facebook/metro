@@ -14,14 +14,14 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
+import type {TransformResult} from './types.flow';
+import type {LogEntry} from 'metro-core/src/Logger';
 import type {
   JsTransformOptions,
   JsTransformerConfig,
-} from '../JSTransformer/worker';
-import type {TransformResult} from './types.flow';
-import type {LogEntry} from 'metro-core/src/Logger';
+} from 'metro-transform-worker';
 
-export type {JsTransformOptions as TransformOptions} from '../JSTransformer/worker';
+export type {JsTransformOptions as TransformOptions} from 'metro-transform-worker';
 
 export type Worker = {|
   +transform: typeof transform,

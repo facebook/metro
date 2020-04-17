@@ -14,8 +14,8 @@ const addParamsToDefineCall = require('../../../lib/addParamsToDefineCall');
 const invariant = require('invariant');
 const path = require('path');
 
-import type {JsOutput} from '../../../JSTransformer/worker';
 import type {MixedOutput, Module, Dependency} from '../../types.flow';
+import type {JsOutput} from 'metro-transform-worker';
 
 export type Options = {
   +createModuleId: string => number | string,

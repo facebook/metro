@@ -13,7 +13,7 @@
 
 const nullthrows = require('nullthrows');
 
-import type {CustomTransformOptions} from '../JSTransformer/worker';
+import type {CustomTransformOptions} from 'metro-transform-worker';
 
 const PREFIX = 'transform.';
 

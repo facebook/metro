@@ -11,7 +11,7 @@
 'use strict';
 
 jest
-  .mock('../../lib/getMinifier', () => () => ({code, map}) => ({
+  .mock('../utils/getMinifier', () => () => ({code, map}) => ({
     code: code.replace('arbitrary(code)', 'minified(code)'),
     map,
   }))
@@ -58,7 +58,7 @@ describe('code transformation worker:', () => {
 
     fs = require('fs');
     mkdirp = require('mkdirp');
-    Transformer = require('../worker');
+    Transformer = require('../');
     fs.reset();
 
     mkdirp.sync('/root/local');

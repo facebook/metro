@@ -10,9 +10,9 @@
 
 'use strict';
 
-import type {MetroMinifier} from '../shared/types.flow.js';
+import type {Minifier} from '../index.js';
 
-function getMinifier(minifierPath: string): MetroMinifier {
+function getMinifier(minifierPath: string): Minifier {
   // Note: minifierPath should be an absolute path OR a module name here!
   // The options allow relative paths but they HAVE to be normalized at
   // any entry point that accepts them...

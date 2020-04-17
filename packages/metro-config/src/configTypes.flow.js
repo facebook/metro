@@ -14,6 +14,7 @@ import type {IncomingMessage, ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
 import type {CustomResolver} from 'metro-resolver';
 import type {BasicSourceMap, MixedSourceMap} from 'metro-source-map';
+import type {JsTransformerConfig} from 'metro-transform-worker';
 import type {
   DeltaResult,
   Graph,
@@ -21,7 +22,6 @@ import type {
   SerializerOptions,
 } from 'metro/src/DeltaBundler/types.flow.js';
 import type {TransformResult} from 'metro/src/DeltaBundler';
-import type {JsTransformerConfig} from 'metro/src/JSTransformer/worker';
 import type {TransformVariants} from 'metro/src/ModuleGraph/types.flow.js';
 import type Server from 'metro/src/Server';
 import type {Reporter} from 'metro/src/lib/reporting';

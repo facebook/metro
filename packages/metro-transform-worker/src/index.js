@@ -10,15 +10,15 @@
 
 'use strict';
 
-const JsFileWrapping = require('../ModuleGraph/worker/JsFileWrapping');
+const JsFileWrapping = require('metro/src/ModuleGraph/worker/JsFileWrapping');
 
-const assetTransformer = require('../assetTransformer');
+const assetTransformer = require('./utils/assetTransformer');
 const babylon = require('@babel/parser');
-const collectDependencies = require('../ModuleGraph/worker/collectDependencies');
-const generateImportNames = require('../ModuleGraph/worker/generateImportNames');
+const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
+const generateImportNames = require('metro/src/ModuleGraph/worker/generateImportNames');
 const generate = require('@babel/generator').default;
-const getKeyFromFiles = require('../lib/getKeyFromFiles');
-const getMinifier = require('../lib/getMinifier');
+const getKeyFromFiles = require('metro/src/lib/getKeyFromFiles');
+const getMinifier = require('./utils/getMinifier');
 const {
   constantFoldingPlugin,
   getTransformPluginCacheKeyFiles,
@@ -30,7 +30,7 @@ const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires'
 const {transformFromAstSync} = require('@babel/core');
 const {stableHash} = require('metro-cache');
 const types = require('@babel/types');
-const countLines = require('../lib/countLines');
+const countLines = require('metro/src/lib/countLines');
 
 const {
   fromRawMappings,
@@ -39,7 +39,7 @@ const {
 } = require('metro-source-map');
 import type {TransformResultDependency} from 'metro/src/DeltaBundler';
 import type {AllowOptionalDependencies} from 'metro/src/DeltaBundler/types.flow.js';
-import type {DynamicRequiresBehavior} from '../ModuleGraph/worker/collectDependencies';
+import type {DynamicRequiresBehavior} from 'metro/src/ModuleGraph/worker/collectDependencies';
 import type {
   BasicSourceMap,
   FBSourceFunctionMap,
@@ -56,6 +56,14 @@ export type MinifierOptions = {
   config: MinifierConfig,
   ...
 };
+
+export type MinifierResult = {
+  code: string,
+  map?: BasicSourceMap,
+  ...
+};
+
+export type Minifier = MinifierOptions => MinifierResult;
 
 export type Type = 'script' | 'module' | 'asset';
 
@@ -413,12 +421,11 @@ module.exports = {
     const filesKey = getKeyFromFiles([
       require.resolve(babelTransformerPath),
       require.resolve(minifierPath),
-      require.resolve('../assetTransformer'),
-      require.resolve('../lib/getMinifier'),
-      require.resolve('../ModuleGraph/worker/collectDependencies'),
-      require.resolve('../ModuleGraph/worker/generateImportNames'),
-      require.resolve('../ModuleGraph/worker/JsFileWrapping'),
-      require.resolve('../ModuleGraph/worker/optimizeDependencies'),
+      require.resolve('./utils/getMinifier'),
+      require.resolve('./utils/assetTransformer'),
+      require.resolve('metro/src/ModuleGraph/worker/collectDependencies'),
+      require.resolve('metro/src/ModuleGraph/worker/generateImportNames'),
+      require.resolve('metro/src/ModuleGraph/worker/JsFileWrapping'),
       ...getTransformPluginCacheKeyFiles(),
     ]);
 
