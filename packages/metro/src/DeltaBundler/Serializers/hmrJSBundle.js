@@ -10,11 +10,11 @@
 
 'use strict';
 
-const addParamsToDefineCall = require('../../lib/addParamsToDefineCall');
 const path = require('path');
 const url = require('url');
 
 const {isJsModule, wrapModule} = require('./helpers/js');
+const {addParamsToDefineCall} = require('metro-transform-plugins');
 
 import type {EntryPointURL} from '../../HmrServer';
 import type {HmrModule} from '../../lib/bundle-modules/types.flow';

@@ -10,11 +10,12 @@
 
 'use strict';
 
-const addParamsToDefineCall = require('../../lib/addParamsToDefineCall');
 const generate = require('../worker/generate');
 const mergeSourceMaps = require('../worker/mergeSourceMaps');
 const nullthrows = require('nullthrows');
 const reverseDependencyMapReferences = require('./reverse-dependency-map-references');
+
+const {addParamsToDefineCall} = require('metro-transform-plugins');
 const virtualModule = require('../module').virtual;
 
 // flowlint-next-line untyped-import:off

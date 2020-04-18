@@ -10,9 +10,10 @@
 
 'use strict';
 
-const addParamsToDefineCall = require('../../../lib/addParamsToDefineCall');
 const invariant = require('invariant');
 const path = require('path');
+
+const {addParamsToDefineCall} = require('metro-transform-plugins');
 
 import type {MixedOutput, Module, Dependency} from '../../types.flow';
 import type {JsOutput} from 'metro-transform-worker';
