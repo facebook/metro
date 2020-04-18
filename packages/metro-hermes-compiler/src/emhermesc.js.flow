@@ -1,0 +1,62 @@
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict-local
+ * @format
+ */
+
+declare function cwrap(
+  'hermesCompileToBytecode',
+  string,
+  Array<string>,
+  string,
+): (number, number, string, number) => Buffer;
+declare function cwrap(
+  'hermesCompileResult_getError',
+  string,
+  Array<string>,
+): Buffer => ?Error;
+declare function cwrap(
+  'hermesCompileResult_getBytecodeAddr',
+  string,
+  Array<string>,
+): Buffer => number;
+declare function cwrap(
+  'hermesCompileResult_getBytecodeSize',
+  string,
+  Array<string>,
+): Buffer => number;
+declare function cwrap(
+  'hermesCompileResult_getSourcemapAddr',
+  string,
+  Array<string>,
+): Buffer => number;
+declare function cwrap(
+  'hermesCompileResult_getSourcemapSize',
+  string,
+  Array<string>,
+): Buffer => number;
+declare function cwrap(
+  'hermesCompileResult_free',
+  string,
+  Array<string>,
+): Buffer => void;
+
+type HermescInterface = {
+  cwrap: typeof cwrap,
+  _malloc: number => number,
+  HEAP8: Buffer,
+  _free: number => void,
+};
+
+declare function hermesc(options: {
+  noInitialRun: boolean,
+  noExitRuntime: boolean,
+  print: () => void,
+  printErr: () => void,
+}): HermescInterface;
+
+declare module.exports: typeof hermesc;
