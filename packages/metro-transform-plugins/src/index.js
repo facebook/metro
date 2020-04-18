@@ -25,6 +25,7 @@ type BabelPlugin<VisitorT, OptionsT> = (
 ) => VisitorT;
 
 type TransformPlugins = {
+  addParamsToDefineCall(string, ...Array<mixed>): string,
   constantFoldingPlugin: BabelPlugin<ConstantFoldingPluginVisitors, {}>,
   importExportPlugin: BabelPlugin<ImportExportPluginVisitors, {}>,
   inlinePlugin: BabelPlugin<InlinePluginVisitors, InlinePluginOptions>,
@@ -33,6 +34,7 @@ type TransformPlugins = {
 };
 
 module.exports = ({
+  addParamsToDefineCall: require('./addParamsToDefineCall'),
   constantFoldingPlugin: require('./constant-folding-plugin'),
   importExportPlugin: require('./import-export-plugin'),
   inlinePlugin: require('./inline-plugin'),
