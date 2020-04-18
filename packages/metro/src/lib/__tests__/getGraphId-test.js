@@ -19,6 +19,7 @@ describe('getGraphId', () => {
       getGraphId(
         '/root/waddup',
         {
+          bytecode: false,
           dev: true,
           hot: true,
           minify: true,
@@ -31,6 +32,7 @@ describe('getGraphId', () => {
       getGraphId(
         '/root/notmuch',
         {
+          bytecode: false,
           dev: true,
           hot: true,
           minify: true,
@@ -47,6 +49,7 @@ describe('getGraphId', () => {
       getGraphId(
         '/root/waddup',
         {
+          bytecode: false,
           dev: true,
           hot: true,
           minify: true,
@@ -59,6 +62,7 @@ describe('getGraphId', () => {
       getGraphId(
         '/root/waddup',
         {
+          bytecode: false,
           dev: false,
           hot: true,
           minify: true,
@@ -75,6 +79,7 @@ describe('getGraphId', () => {
       getGraphId(
         '/root/waddup',
         {
+          bytecode: false,
           dev: true,
           hot: true,
           minify: true,
@@ -87,6 +92,7 @@ describe('getGraphId', () => {
       getGraphId(
         '/root/waddup',
         {
+          bytecode: false,
           type: 'module',
           platform: 'web',
           hot: true,
@@ -103,6 +109,7 @@ describe('getGraphId', () => {
       getGraphId(
         '/root/waddup',
         {
+          bytecode: false,
           customTransformOptions: {
             a: true,
             b: false,
@@ -119,6 +126,7 @@ describe('getGraphId', () => {
       getGraphId(
         '/root/waddup',
         {
+          bytecode: false,
           customTransformOptions: {
             b: false,
             a: true,
@@ -139,6 +147,7 @@ describe('getGraphId', () => {
       getGraphId(
         '/root/waddup',
         {
+          bytecode: false,
           customTransformOptions: undefined,
           experimentalImportSupport: false,
           dev: true,
@@ -153,6 +162,7 @@ describe('getGraphId', () => {
       getGraphId(
         '/root/waddup',
         {
+          bytecode: false,
           dev: true,
           hot: true,
           minify: true,

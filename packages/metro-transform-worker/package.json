@@ -20,6 +20,7 @@
     "babel-preset-fbjs": "^3.3.0",
     "metro-babel-transformer": "0.59.0",
     "metro-cache": "0.59.0",
+    "metro-hermes-compiler": "0.59.0",
     "metro-source-map": "0.59.0",
     "metro-transform-plugins": "0.59.0",
     "metro": "0.59.0"

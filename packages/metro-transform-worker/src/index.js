@@ -26,6 +26,7 @@ const {
   inlinePlugin,
   normalizePseudoGlobals,
 } = require('metro-transform-plugins');
+const hermesCompiler = require('metro-hermes-compiler');
 const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
 const {transformFromAstSync} = require('@babel/core');
 const {stableHash} = require('metro-cache');
@@ -45,6 +46,11 @@ import type {
   FBSourceFunctionMap,
   MetroSourceMapSegmentTuple,
 } from 'metro-source-map';
+import type {
+  HermesCompilerResult,
+  Options as HermesCompilerOptions,
+} from 'metro-hermes-compiler';
+import type {CustomTransformOptions} from 'metro-babel-transformer';
 
 type MinifierConfig = $ReadOnly<{[string]: mixed, ...}>;
 
@@ -83,21 +89,21 @@ export type JsTransformerConfig = $ReadOnly<{|
   allowOptionalDependencies: AllowOptionalDependencies,
 |}>;
 
-import type {CustomTransformOptions} from 'metro-babel-transformer';
 export type {CustomTransformOptions} from 'metro-babel-transformer';
 
 export type JsTransformOptions = $ReadOnly<{|
+  bytecode: boolean,
   customTransformOptions?: CustomTransformOptions,
   dev: boolean,
   experimentalImportSupport?: boolean,
   hot: boolean,
   inlinePlatform: boolean,
   inlineRequires: boolean,
-  nonInlinedRequires?: $ReadOnlyArray<string>,
   minify: boolean,
-  unstable_disableES6Transforms?: boolean,
+  nonInlinedRequires?: $ReadOnlyArray<string>,
   platform: ?string,
   type: Type,
+  unstable_disableES6Transforms?: boolean,
 |}>;
 
 export type JsOutput = $ReadOnly<{|
@@ -110,9 +116,14 @@ export type JsOutput = $ReadOnly<{|
   type: string,
 |}>;
 
+export type BytecodeOutput = $ReadOnly<{|
+  data: HermesCompilerResult,
+  type: 'bytecode/module' | 'bytecode/module/asset' | 'bytecode/script',
+|}>;
+
 type Result = {|
-  output: $ReadOnlyArray<JsOutput>,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
+  output: $ReadOnlyArray<JsOutput | BytecodeOutput>,
 |};
 
 function getDynamicDepsBehavior(
@@ -178,6 +189,21 @@ const minifyCode = async (
   }
 };
 
+const compileToBytecode = (
+  code: string,
+  type: string,
+  options: HermesCompilerOptions,
+): HermesCompilerResult => {
+  if (type === 'js/module') {
+    const index = code.lastIndexOf(')');
+    code =
+      code.slice(0, index) +
+      ',$$_METRO_DEFINE_GLOBAL[0],$$_METRO_DEFINE_GLOBAL[1]' +
+      code.slice(index);
+  }
+  return hermesCompiler(code, options);
+};
+
 class InvalidRequireCallError extends Error {
   innerError: collectDependencies.InvalidRequireCallError;
   filename: string;
@@ -202,12 +228,15 @@ module.exports = {
   ): Promise<Result> => {
     const sourceCode = data.toString('utf8');
     let type = 'js/module';
+    let byteCodeType = 'bytecode/module';
 
     if (options.type === 'asset') {
       type = 'js/module/asset';
+      byteCodeType = 'bytecode/module/asset';
     }
     if (options.type === 'script') {
       type = 'js/script';
+      byteCodeType = 'bytecode/script';
     }
 
     if (filename.endsWith('.json')) {
@@ -225,14 +254,24 @@ module.exports = {
         ));
       }
 
+      const output = [
+        {
+          data: {code, lineCount: countLines(code), map, functionMap: null},
+          type,
+        },
+      ];
+      if (options.bytecode) {
+        output.push({
+          data: (compileToBytecode(code, type, {
+            sourceURL: filename,
+          }): HermesCompilerResult),
+          type: byteCodeType,
+        });
+      }
+
       return {
         dependencies: [],
-        output: [
-          {
-            data: {code, lineCount: countLines(code), map, functionMap: null},
-            type,
-          },
-        ],
+        output,
       };
     }
 
@@ -405,13 +444,30 @@ module.exports = {
       ));
     }
 
-    const {functionMap} = transformResult;
+    const output = [
+      {
+        data: {
+          code,
+          lineCount: countLines(code),
+          map,
+          functionMap: transformResult.functionMap,
+        },
+        type,
+      },
+    ];
+
+    if (options.bytecode) {
+      output.push({
+        data: (compileToBytecode(code, type, {
+          sourceURL: filename,
+        }): HermesCompilerResult),
+        type: byteCodeType,
+      });
+    }
 
     return {
       dependencies,
-      output: [
-        {data: {code, lineCount: countLines(code), map, functionMap}, type},
-      ],
+      output,
     };
   },
 

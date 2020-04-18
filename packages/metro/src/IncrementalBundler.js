@@ -186,6 +186,7 @@ class IncrementalBundler {
     );
 
     const transformOptionsWithoutType = {
+      bytecode: transformOptions.bytecode,
       customTransformOptions: transformOptions.customTransformOptions,
       dev: transformOptions.dev,
       experimentalImportSupport: transformOptions.experimentalImportSupport,

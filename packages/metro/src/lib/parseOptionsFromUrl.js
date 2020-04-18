@@ -21,6 +21,11 @@ import type {BundleOptions} from '../shared/types.flow';
 const getBoolean = (query, opt, defaultVal) =>
   query[opt] == null ? defaultVal : query[opt] === 'true' || query[opt] === '1';
 
+const getBundleType = bundleType =>
+  bundleType === 'map' || bundleType === 'bytecodebundle'
+    ? bundleType
+    : 'bundle';
+
 module.exports = function parseOptionsFromUrl(
   requestUrl: string,
   platforms: Set<string>,
@@ -32,8 +37,10 @@ module.exports = function parseOptionsFromUrl(
     (parsedURL.pathname != null ? decodeURIComponent(parsedURL.pathname) : '');
   const platform =
     query.platform || parsePlatformFilePath(pathname, platforms).platform;
+  const bundleType = getBundleType(path.extname(pathname).substr(1));
   return {
-    bundleType: path.extname(pathname).substr(1) === 'map' ? 'map' : 'bundle',
+    bundleType,
+    bytecode: bundleType === 'bytecodebundle',
     customTransformOptions: parseCustomTransformOptions(parsedURL),
     dev: getBoolean(query, 'dev', true),
     entryFile: pathname.replace(/^(?:\.?\/)?/, './').replace(/\.[^/.]+$/, ''),

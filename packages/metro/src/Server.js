@@ -13,7 +13,9 @@ const IncrementalBundler = require('./IncrementalBundler');
 const MultipartResponse = require('./Server/MultipartResponse');
 const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
 
+const baseBytecodeBundle = require('./DeltaBundler/Serializers/baseBytecodeBundle');
 const baseJSBundle = require('./DeltaBundler/Serializers/baseJSBundle');
+const bundleToBytecode = require('./lib/bundleToBytecode');
 const bundleToString = require('./lib/bundleToString');
 
 const {codeFrameColumns} = require('@babel/code-frame');
@@ -410,6 +412,8 @@ class Server {
 
     if (pathname.match(/\.bundle$/)) {
       await this._processBundleRequest(req, res);
+    } else if (pathname.match(/\.bytecodebundle$/)) {
+      await this._processBytecodeBundleRequest(req, res);
     } else if (pathname.match(/\.map$/)) {
       // Chrome dev tools may need to access the source maps.
       res.setHeader('Access-Control-Allow-Origin', 'devtools://devtools');
@@ -684,6 +688,104 @@ class Server {
     },
   });
 
+  _processBytecodeBundleRequest = this._createRequestProcessor({
+    createStartEntry(context: ProcessStartContext) {
+      return {
+        action_name: 'Requesting bundle',
+        bundle_url: context.req.url,
+        entry_point: context.entryFile,
+        bundler: 'delta',
+        build_id: context.buildID,
+        bundle_options: context.bundleOptions,
+        bundle_hash: context.graphId,
+      };
+    },
+    createEndEntry(
+      context: ProcessEndContext<{|
+        bytecode: Buffer,
+        lastModifiedDate: Date,
+        nextRevId: RevisionId,
+        numModifiedFiles: number,
+      |}>,
+    ) {
+      return {
+        outdated_modules: context.result.numModifiedFiles,
+      };
+    },
+    build: async ({
+      entryFile,
+      graphId,
+      graphOptions,
+      onProgress,
+      serializerOptions,
+      transformOptions,
+    }) => {
+      const revPromise = this._bundler.getRevisionByGraphId(graphId);
+
+      const {delta, revision} = await (revPromise != null
+        ? this._bundler.updateGraph(await revPromise, false)
+        : this._bundler.initializeGraph(entryFile, transformOptions, {
+            onProgress,
+            shallow: graphOptions.shallow,
+          }));
+
+      const bundle = bundleToBytecode(
+        baseBytecodeBundle(entryFile, revision.prepend, revision.graph, {
+          asyncRequireModulePath: this._config.transformer
+            .asyncRequireModulePath,
+          processModuleFilter: this._config.serializer.processModuleFilter,
+          createModuleId: this._createModuleId,
+          getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+          dev: transformOptions.dev,
+          projectRoot: this._config.projectRoot,
+          modulesOnly: serializerOptions.modulesOnly,
+          runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
+            path.relative(this._config.projectRoot, entryFile),
+          ),
+          runModule: serializerOptions.runModule,
+          sourceMapUrl: serializerOptions.sourceMapUrl,
+          sourceUrl: serializerOptions.sourceUrl,
+          inlineSourceMap: serializerOptions.inlineSourceMap,
+        }),
+      );
+
+      return {
+        numModifiedFiles: delta.reset
+          ? delta.added.size + revision.prepend.length
+          : delta.added.size + delta.modified.size + delta.deleted.size,
+        lastModifiedDate: revision.date,
+        nextRevId: revision.id,
+        bytecode: bundle.bytecode,
+      };
+    },
+    finish({req, mres, result}) {
+      if (
+        // We avoid parsing the dates since the client should never send a more
+        // recent date than the one returned by the Delta Bundler (if that's the
+        // case it's fine to return the whole bundle).
+        req.headers['if-modified-since'] ===
+        result.lastModifiedDate.toUTCString()
+      ) {
+        debug('Responding with 304');
+        mres.writeHead(304);
+        mres.end();
+      } else {
+        mres.setHeader(
+          FILES_CHANGED_COUNT_HEADER,
+          String(result.numModifiedFiles),
+        );
+        mres.setHeader(DELTA_ID_HEADER, String(result.nextRevId));
+        mres.setHeader('Content-Type', 'application/octet-stream');
+        mres.setHeader('Last-Modified', result.lastModifiedDate.toUTCString());
+        mres.setHeader(
+          'Content-Length',
+          String(Buffer.byteLength(result.bytecode)),
+        );
+        mres.end(result.bytecode);
+      }
+    },
+  });
+
   // This function ensures that modules in source maps are sorted in the same
   // order as in a plain JS bundle.
   _getSortedModules(graph: Graph<>): $ReadOnlyArray<Module<>> {
@@ -935,11 +1037,13 @@ class Server {
   }
 
   static DEFAULT_GRAPH_OPTIONS: {|
+    bytecode: boolean,
     customTransformOptions: any,
     dev: boolean,
     hot: boolean,
     minify: boolean,
   |} = {
+    bytecode: false,
     customTransformOptions: Object.create(null),
     dev: true,
     hot: false,

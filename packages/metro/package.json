@@ -45,6 +45,7 @@
     "metro-cache": "0.59.0",
     "metro-config": "0.59.0",
     "metro-core": "0.59.0",
+    "metro-hermes-compiler": "0.59.0",
     "metro-inspector-proxy": "0.59.0",
     "metro-minify-uglify": "0.59.0",
     "metro-react-native-babel-preset": "0.59.0",

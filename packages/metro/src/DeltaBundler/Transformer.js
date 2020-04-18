@@ -71,6 +71,7 @@ class Transformer {
     const cache = this._cache;
 
     const {
+      bytecode,
       customTransformOptions,
       dev,
       experimentalImportSupport,
@@ -102,6 +103,7 @@ class Transformer {
       // Path.
       localPath,
 
+      bytecode,
       customTransformOptions,
       dev,
       experimentalImportSupport,
