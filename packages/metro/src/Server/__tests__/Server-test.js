@@ -55,7 +55,7 @@ describe('processRequest', () => {
     getPrependedScripts = require('../../lib/getPrependedScripts');
     transformHelpers = require('../../lib/transformHelpers');
     DeltaBundler = require('../../DeltaBundler');
-    Server = require('../');
+    Server = require('../../Server');
   });
 
   let server;

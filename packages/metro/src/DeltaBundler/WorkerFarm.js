@@ -67,9 +67,9 @@ class WorkerFarm {
     }
   }
 
-  kill(): void {
+  async kill(): Promise<void> {
     if (this._worker && typeof this._worker.end === 'function') {
-      this._worker.end();
+      await this._worker.end();
     }
   }
 

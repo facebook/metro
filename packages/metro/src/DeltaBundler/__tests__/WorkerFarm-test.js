@@ -99,7 +99,7 @@ describe('Worker Farm', function() {
       transformerConfig,
     );
 
-    farm.kill();
+    await farm.kill();
 
     const anotherFarm = new WorkerFarm(
       {...config, projectRoot: '/bar'},
