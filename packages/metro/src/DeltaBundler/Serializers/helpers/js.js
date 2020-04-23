@@ -15,7 +15,7 @@ const path = require('path');
 
 const {addParamsToDefineCall} = require('metro-transform-plugins');
 
-import type {MixedOutput, Module, Dependency} from '../../types.flow';
+import type {MixedOutput, Module} from '../../types.flow';
 import type {JsOutput} from 'metro-transform-worker';
 
 export type Options = {
@@ -35,9 +35,9 @@ function wrapModule(module: Module<>, options: Options): string {
   const moduleId = options.createModuleId(module.path);
   const params = [
     moduleId,
-    Array.from(module.dependencies.values()).map((dependency: Dependency) => {
-      return options.createModuleId(dependency.absolutePath);
-    }),
+    Array.from(module.dependencies.values()).map(dependency =>
+      options.createModuleId(dependency.absolutePath),
+    ),
   ];
 
   // Add the module relative path as the last parameter (to make it easier to do
