@@ -218,7 +218,7 @@ function collectImports(path: Path, state: State) {
       {
         prefetchOnly: false,
       },
-      path.node.loc,
+      path,
     );
 
     dep.data.isAsync = false;
@@ -236,7 +236,7 @@ function processImportCall(path: Path, state: State, opts: DepOptions): Path {
     ...opts,
     isOptional: isOptionalDependency(name, path, state),
   };
-  const dep = getDependency(state, name, options, path.node.loc);
+  const dep = getDependency(state, name, options, path);
   if (!options.prefetchOnly) {
     delete dep.data.isPrefetchOnly;
   }
@@ -301,7 +301,7 @@ function processRequireCall(path: Path, state: State): Path {
     state,
     name,
     {prefetchOnly: false, isOptional: isOptionalDependency(name, path, state)},
-    path.node.loc,
+    path,
   );
   dep.data.isAsync = false;
   delete dep.data.isPrefetchOnly;
@@ -323,12 +323,20 @@ function processRequireCall(path: Path, state: State): Path {
   return path;
 }
 
+function getNearestLocFromPath(path: Path): ?BabelSourceLocation {
+  while (path && !path.node.loc) {
+    path = path.parentPath;
+  }
+  return path?.node.loc;
+}
+
 function getDependency(
   state: State,
   name: string,
   options: DepOptions,
-  loc: BabelSourceLocation,
+  path: Path,
 ): InternalDependencyInfo {
+  const loc = getNearestLocFromPath(path);
   let index = state.dependencyIndexes.get(name);
   let data: ?InternalDependencyData = state.dependencyData.get(name);
 

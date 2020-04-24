@@ -378,8 +378,13 @@ it('records locations of dependencies', () => {
     __conditionallySplitJSResource('some/async/module', {mobileConfigName: 'aaa'});
     __conditionallySplitJSResource('some/async/module', {mobileConfigName: 'bbb'});
     require('foo'); __prefetchImport('baz');
+    interopRequireDefault(require('quux')); // Simulated Babel output
   `;
   const ast = astFromCode(code);
+
+  // Babel does not guarantee a loc on generated `require()`s.
+  delete ast.program.body[ast.program.body.length - 1].expression.arguments[0]
+    .loc;
 
   const {dependencies} = collectDependencies(ast, opts);
 
@@ -391,24 +396,35 @@ it('records locations of dependencies', () => {
   expect(formatDependencyLocs(dependencies, code)).toMatchInlineSnapshot(`
     "
     > 1 | import b from 'b/lib/a';
-        | ^^^^^^^^^^^^^^^^^^^^^^^^ dep #0
+        | ^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (b/lib/a)
     > 2 | import * as d from 'do';
-        | ^^^^^^^^^^^^^^^^^^^^^^^^ dep #1
+        | ^^^^^^^^^^^^^^^^^^^^^^^^ dep #1 (do)
     > 3 | import type {s} from 'setup/something';
-        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #2
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #2 (setup/something)
     > 4 | import('some/async/module').then(foo => {});
-        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3 (some/async/module)
     > 5 | __jsResource('some/async/module');
-        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3 (some/async/module)
     > 6 | __conditionallySplitJSResource('some/async/module', {mobileConfigName: 'aaa'});
-        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3 (some/async/module)
     > 7 | __conditionallySplitJSResource('some/async/module', {mobileConfigName: 'bbb'});
-        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3
-    dep #4 (asyncRequire): no location recorded
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3 (some/async/module)
+    > 4 | import('some/async/module').then(foo => {});
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #4 (asyncRequire)
+    > 5 | __jsResource('some/async/module');
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #4 (asyncRequire)
+    > 6 | __conditionallySplitJSResource('some/async/module', {mobileConfigName: 'aaa'});
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #4 (asyncRequire)
+    > 7 | __conditionallySplitJSResource('some/async/module', {mobileConfigName: 'bbb'});
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #4 (asyncRequire)
     > 8 | require('foo'); __prefetchImport('baz');
-        | ^^^^^^^^^^^^^^ dep #5
+        |                 ^^^^^^^^^^^^^^^^^^^^^^^^ dep #4 (asyncRequire)
     > 8 | require('foo'); __prefetchImport('baz');
-        |                 ^^^^^^^^^^^^^^^^^^^^^^^ dep #6"
+        | ^^^^^^^^^^^^^^ dep #5 (foo)
+    > 8 | require('foo'); __prefetchImport('baz');
+        |                 ^^^^^^^^^^^^^^^^^^^^^^^ dep #6 (baz)
+    > 9 | interopRequireDefault(require('quux')); // Simulated Babel output
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #7 (quux)"
   `);
 });
 
@@ -497,7 +513,7 @@ describe('optional dependencies', () => {
   });
   it('independent of sibiling context', () => {
     const ast = astFromCode(`
-      try { 
+      try {
         const x = whatever;
         const a = x ? require('optional-a') : require('optional-b');
       } catch (e) {}
@@ -577,7 +593,9 @@ function formatDependencyLocs(dependencies, code) {
     dependencies
       .map((dep, depIndex) =>
         dep.data.locs.length
-          ? dep.data.locs.map(loc => formatLoc(loc, depIndex, code)).join('\n')
+          ? dep.data.locs
+              .map(loc => formatLoc(loc, depIndex, dep, code))
+              .join('\n')
           : `dep #${depIndex} (${dep.name}): no location recorded`,
       )
       .join('\n')
@@ -595,9 +613,9 @@ function adjustLocForCodeFrame(loc) {
   };
 }
 
-function formatLoc(loc, depIndex, code) {
+function formatLoc(loc, depIndex, dep, code) {
   return codeFrameColumns(code, adjustLocForCodeFrame(loc), {
-    message: `dep #${depIndex}`,
+    message: `dep #${depIndex} (${dep.name})`,
     linesAbove: 0,
     linesBelow: 0,
   });
