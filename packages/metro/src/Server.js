@@ -478,21 +478,38 @@ class Server {
       const buildID = this.getNewBuildID();
 
       let onProgress = null;
+      let lastProgress = -1;
       if (this._config.reporter) {
         onProgress = (transformedFileCount: number, totalFileCount: number) => {
-          mres.writeChunk(
-            {'Content-Type': 'application/json'},
-            JSON.stringify({done: transformedFileCount, total: totalFileCount}),
+          const currentProgress = parseInt(
+            (transformedFileCount / totalFileCount) * 100,
+            10,
           );
 
-          // The `uncork` called internally in Node via `promise.nextTick()` may not fire
-          // until all of the Promises are resolved because the microtask queue we're
-          // in could be starving the event loop. This can cause a bug where the progress
-          // is not actually sent in the response until after bundling is complete. This
-          // would defeat the purpose of sending progress, so we `uncork` the stream now
-          // which will force the response to flush to the client immediately.
-          if (res.socket.uncork != null) {
-            res.socket.uncork();
+          // We want to throttle the updates so that we only show meaningful
+          // UI updates slow enough for the client to actually handle them. For
+          // that, we check the percentage, and only send percentages that are
+          // actually different and that have increased from the last one we sent.
+          if (currentProgress > lastProgress || totalFileCount < 10) {
+            mres.writeChunk(
+              {'Content-Type': 'application/json'},
+              JSON.stringify({
+                done: transformedFileCount,
+                total: totalFileCount,
+              }),
+            );
+
+            // The `uncork` called internally in Node via `promise.nextTick()` may not fire
+            // until all of the Promises are resolved because the microtask queue we're
+            // in could be starving the event loop. This can cause a bug where the progress
+            // is not actually sent in the response until after bundling is complete. This
+            // would defeat the purpose of sending progress, so we `uncork` the stream now
+            // which will force the response to flush to the client immediately.
+            if (res.socket.uncork != null) {
+              res.socket.uncork();
+            }
+
+            lastProgress = currentProgress;
           }
 
           this._reporter.update({
