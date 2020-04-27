@@ -485,6 +485,16 @@ class Server {
             JSON.stringify({done: transformedFileCount, total: totalFileCount}),
           );
 
+          // The `uncork` called internally in Node via `promise.nextTick()` may not fire
+          // until all of the Promises are resolved because the microtask queue we're
+          // in could be starving the event loop. This can cause a bug where the progress
+          // is not actually sent in the response until after bundling is complete. This
+          // would defeat the purpose of sending progress, so we `uncork` the stream now
+          // which will force the response to flush to the client immediately.
+          if (res.socket.uncork != null) {
+            res.socket.uncork();
+          }
+
           this._reporter.update({
             buildID,
             type: 'bundle_transform_progressed',
