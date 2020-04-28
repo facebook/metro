@@ -188,6 +188,7 @@ class IncrementalBundler {
     const transformOptionsWithoutType = {
       customTransformOptions: transformOptions.customTransformOptions,
       dev: transformOptions.dev,
+      disableConstantFolding: transformOptions.disableConstantFolding,
       experimentalImportSupport: transformOptions.experimentalImportSupport,
       hot: transformOptions.hot,
       minify: transformOptions.minify,
