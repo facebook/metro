@@ -78,6 +78,19 @@ describe('parseOptionsFromUrl', () => {
     });
   });
 
+  it('sets the bytecode option based on the bundle type', () => {
+    expect(
+      parseOptionsFromUrl('http://localhost/my/bundle.bundle', new Set([])),
+    ).toMatchObject({bytecode: false});
+
+    expect(
+      parseOptionsFromUrl(
+        'http://localhost/my/bundle.bytecodebundle',
+        new Set([]),
+      ),
+    ).toMatchObject({bytecode: true});
+  });
+
   describe.each([
     ['dev', true],
     ['minify', false],

@@ -19,6 +19,7 @@ function splitBundleOptions(options: BundleOptions): SplitBundleOptions {
   return {
     entryFile: options.entryFile,
     transformOptions: {
+      bytecode: options.bytecode,
       customTransformOptions: options.customTransformOptions,
       dev: options.dev,
       hot: options.hot,

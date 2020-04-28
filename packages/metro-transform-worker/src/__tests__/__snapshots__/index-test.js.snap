@@ -1,8 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`code transformation worker: reports filename when encountering unsupported dynamic dependency 1`] = `"local/file.js:Invalid call at line 3: require(a)"`;
+exports[`reports filename when encountering unsupported dynamic dependency 1`] = `"local/file.js:Invalid call at line 3: require(a)"`;
 
-exports[`code transformation worker: transforms a module with dependencies 1`] = `
+exports[`transforms a module with dependencies 1`] = `
 Array [
   Array [
     2,
@@ -122,7 +122,7 @@ Array [
 ]
 `;
 
-exports[`code transformation worker: transforms a module with dependencies 2`] = `
+exports[`transforms a module with dependencies 2`] = `
 Object {
   "mappings": "AAA",
   "names": Array [
@@ -131,7 +131,7 @@ Object {
 }
 `;
 
-exports[`code transformation worker: transforms a simple module 1`] = `
+exports[`transforms a simple module 1`] = `
 Array [
   Array [
     2,
@@ -175,7 +175,7 @@ Array [
 ]
 `;
 
-exports[`code transformation worker: transforms a simple module 2`] = `
+exports[`transforms a simple module 2`] = `
 Object {
   "mappings": "AAA",
   "names": Array [
@@ -184,7 +184,7 @@ Object {
 }
 `;
 
-exports[`code transformation worker: transforms a simple script 1`] = `
+exports[`transforms a simple script 1`] = `
 Array [
   Array [
     2,
@@ -228,7 +228,7 @@ Array [
 ]
 `;
 
-exports[`code transformation worker: transforms a simple script 2`] = `
+exports[`transforms a simple script 2`] = `
 Object {
   "mappings": "AAA",
   "names": Array [
@@ -237,7 +237,7 @@ Object {
 }
 `;
 
-exports[`code transformation worker: transforms an es module with regenerator 1`] = `
+exports[`transforms an es module with regenerator 1`] = `
 "__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0], \\"@babel/runtime/helpers/interopRequireDefault\\");
 
@@ -262,7 +262,7 @@ exports[`code transformation worker: transforms an es module with regenerator 1`
 });"
 `;
 
-exports[`code transformation worker: transforms an es module with regenerator 2`] = `
+exports[`transforms an es module with regenerator 2`] = `
 Object {
   "mappings": "AAA,OC",
   "names": Array [
@@ -272,7 +272,7 @@ Object {
 }
 `;
 
-exports[`code transformation worker: transforms import/export syntax when experimental flag is on 1`] = `
+exports[`transforms import/export syntax when experimental flag is on 1`] = `
 Array [
   Array [
     4,
@@ -288,7 +288,7 @@ Array [
 ]
 `;
 
-exports[`code transformation worker: transforms import/export syntax when experimental flag is on 2`] = `
+exports[`transforms import/export syntax when experimental flag is on 2`] = `
 Object {
   "mappings": "AAA",
   "names": Array [

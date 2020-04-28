@@ -15,6 +15,12 @@ const ResourceNotFoundError = require('../../IncrementalBundler/ResourceNotFound
 const path = require('path');
 
 const {getDefaultValues} = require('metro-config/src/defaults');
+const {
+  compile,
+  getFileLength,
+  align,
+  validateBytecodeModule,
+} = require('metro-hermes-compiler');
 
 jest
   .mock('jest-worker', () => ({}))
@@ -130,6 +136,14 @@ describe('processRequest', () => {
                     map: [[1, 16, 1, 0]],
                   },
                 },
+                {
+                  type: 'bytecode/module',
+                  data: {
+                    bytecode: compile('__d(function() {entry();});', {
+                      sourceURL: '/root/mybundle.js',
+                    }).bytecode,
+                  },
+                },
               ],
             },
           ],
@@ -147,6 +161,14 @@ describe('processRequest', () => {
                   lineCount: 1,
                   map: [[1, 16, 1, 0]],
                   functionMap: {names: ['<global>'], mappings: 'AAA'},
+                },
+              },
+              {
+                type: 'bytecode/module',
+                data: {
+                  bytecode: compile('__d(function() {foo();});', {
+                    sourceURL: '/root/foo.js',
+                  }).bytecode,
                 },
               },
             ],
@@ -193,6 +215,14 @@ describe('processRequest', () => {
                 map: [],
               },
             },
+            {
+              type: 'bytecode/script',
+              data: {
+                bytecode: compile('(function () {require();})', {
+                  sourceURL: 'require-js',
+                }).bytecode,
+              },
+            },
           ],
         },
       ]),
@@ -231,6 +261,28 @@ describe('processRequest', () => {
         '//# sourceURL=http://localhost:8081/mybundle.bundle?runModule=true',
       ].join('\n'),
     );
+  });
+
+  it('returns a bytecode bundle source on request of *.bytecodebundle', async () => {
+    const response = await makeRequest(
+      'mybundle.bytecodebundle?runModule=true',
+      null,
+    );
+
+    expect(response.getHeader('Content-Type')).toEqual(
+      'application/x-metro-bytecode-bundle',
+    );
+
+    // We expect 8 bytecode modules
+    let offset = 0;
+    let modules = 0;
+    while (offset < response.body.length) {
+      expect(() => validateBytecodeModule(response.body, offset)).not.toThrow();
+      offset = align(offset + getFileLength(response.body, offset));
+      modules++;
+    }
+
+    expect(modules).toEqual(8);
   });
 
   it('returns JS bundle without the initial require() call', async () => {
@@ -588,6 +640,7 @@ describe('processRequest', () => {
         expect.any(DeltaBundler),
         expect.any(Object),
         {
+          bytecode: false,
           customTransformOptions: {},
           dev: true,
           hot: false,

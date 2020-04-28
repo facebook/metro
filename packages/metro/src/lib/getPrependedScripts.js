@@ -15,6 +15,8 @@ const defaults = require('metro-config/src/defaults/defaults');
 const getPreludeCode = require('./getPreludeCode');
 const transformHelpers = require('./transformHelpers');
 
+const {compile} = require('metro-hermes-compiler');
+
 import type Bundler from '../Bundler';
 import type DeltaBundler, {Module} from '../DeltaBundler';
 import type {TransformInputOptions} from '../lib/transformHelpers';
@@ -82,6 +84,13 @@ function _getPrelude({dev}: {dev: boolean, ...}): Module<> {
           code,
           lineCount: countLines(code),
           map: [],
+        },
+      },
+      {
+        type: 'bytecode/script/virtual',
+        data: {
+          bytecode: compile(code, {sourceURL: '__prelude__.virtual.js'})
+            .bytecode,
         },
       },
     ],
