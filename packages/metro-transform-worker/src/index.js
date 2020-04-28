@@ -312,7 +312,7 @@ module.exports = {
       ]);
     }
 
-    if (!options.dev) {
+    if (!options.dev && !options.disableConstantFolding) {
       plugins.push([constantFoldingPlugin, opts]);
     }
 
