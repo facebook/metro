@@ -17,7 +17,6 @@ const path = require('path');
 const {getDefaultValues} = require('metro-config/src/defaults');
 const {
   compile,
-  getFileLength,
   align,
   validateBytecodeModule,
 } = require('metro-hermes-compiler');
@@ -273,15 +272,16 @@ describe('processRequest', () => {
       'application/x-metro-bytecode-bundle',
     );
 
-    // We expect 8 bytecode modules
+    const buffer = response.body;
     let offset = 0;
     let modules = 0;
-    while (offset < response.body.length) {
-      expect(() => validateBytecodeModule(response.body, offset)).not.toThrow();
-      offset = align(offset + getFileLength(response.body, offset));
+    while (offset < buffer.length) {
+      expect(() => validateBytecodeModule(buffer, offset + 4)).not.toThrow();
+      offset = align(offset + buffer.readUInt32LE(offset)) + 4;
       modules++;
     }
 
+    // We expect 8 bytecode modules
     expect(modules).toEqual(8);
   });
 

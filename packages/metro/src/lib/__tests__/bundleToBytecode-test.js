@@ -10,6 +10,10 @@
 
 'use strict';
 
+jest.mock('metro-hermes-compiler', () => ({
+  getFileLength: buffer => buffer.length,
+}));
+
 const bundleToBytecode = require('../bundleToBytecode');
 
 const pre = [Buffer.from([1, 2, 3, 4])];
@@ -20,6 +24,9 @@ const modules = [
   [3, [Buffer.from([9, 10, 11, 12]), Buffer.from([13, 14, 15, 16])]],
 ];
 
+const fileLengthBuffer = Buffer.alloc(4);
+fileLengthBuffer.writeUInt32LE(4);
+
 it('serializes a bundle into a bytecode bundle', () => {
   expect(
     bundleToBytecode({
@@ -27,8 +34,13 @@ it('serializes a bundle into a bytecode bundle', () => {
       post,
       modules,
     }).bytecode,
-    // Module 3 comes before Module 5 in the final output
   ).toEqual(
-    Buffer.concat([...pre, ...modules[1][1], ...modules[0][1], ...post]),
+    Buffer.concat(
+      // Module 3 comes before Module 5 in the final output
+      [...pre, ...modules[1][1], ...modules[0][1], ...post].flatMap(buffer => [
+        fileLengthBuffer,
+        buffer,
+      ]),
+    ),
   );
 });

@@ -10,6 +10,8 @@
 
 'use strict';
 
+const {getFileLength} = require('metro-hermes-compiler');
+
 import type {BytecodeBundle, BundleMetadata} from './bundle-modules/types.flow';
 
 function bundleToBytecode(
@@ -42,7 +44,14 @@ function bundleToBytecode(
   }
 
   return {
-    bytecode: Buffer.concat(buffers),
+    bytecode: Buffer.concat(
+      buffers.flatMap(buffer => {
+        const fileLength = getFileLength(buffer, 0);
+        const header = Buffer.alloc(4);
+        header.writeUInt32LE(fileLength, 0);
+        return [header, buffer];
+      }),
+    ),
     metadata: {
       pre: bundle.pre ? bundle.pre.length : 0,
       post: bundle.post.length,
