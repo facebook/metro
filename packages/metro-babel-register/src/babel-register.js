@@ -12,7 +12,7 @@
 const escapeRegExp = require('escape-string-regexp');
 const path = require('path');
 
-var _only = [];
+let _only = [];
 
 const plugins = [
   [require('@babel/plugin-transform-flow-strip-types').default],
@@ -34,6 +34,7 @@ function config(onlyList) {
   _only = _only.concat(onlyList);
   return {
     babelrc: false,
+    compact: false,
     configFile: false,
     ignore: null,
     only: _only,
