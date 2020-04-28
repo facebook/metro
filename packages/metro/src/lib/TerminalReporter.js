@@ -11,8 +11,7 @@
 'use strict';
 
 const chalk = require('chalk');
-const formatLogTimestamp = require('./formatLogTimestamp');
-const logWithTimestamp = require('./logWithTimestamp');
+const logToConsole = require('./logToConsole');
 const path = require('path');
 const reporting = require('./reporting');
 const throttle = require('lodash.throttle');
@@ -31,7 +30,6 @@ type BundleProgress = {
   transformedFileCount: number,
   totalFileCount: number,
   ratio: number,
-  startTime: Date,
   ...
 };
 
@@ -89,7 +87,7 @@ class TerminalReporter {
     this._scheduleUpdateBundleProgress = throttle(data => {
       this.update({...data, type: 'bundle_transform_progressed_throttled'});
     }, 100);
-    (this: any).terminal = terminal;
+    this.terminal = terminal;
   }
 
   /**
@@ -104,7 +102,6 @@ class TerminalReporter {
       transformedFileCount,
       totalFileCount,
       ratio,
-      startTime,
     }: BundleProgress,
     phase: BuildPhase,
   ): string {
@@ -127,7 +124,6 @@ class TerminalReporter {
         : '';
 
     return (
-      formatLogTimestamp(startTime) +
       bundleTypeColor.inverse.bold(` ${bundleType.toUpperCase()} `) +
       chalk.reset.dim(` ${path.dirname(localPath)}/`) +
       chalk.bold(path.basename(localPath)) +
@@ -277,7 +273,7 @@ class TerminalReporter {
         this._logHmrClientError(event.error);
         break;
       case 'client_log':
-        logWithTimestamp(this.terminal, event.level, ...event.data);
+        logToConsole(this.terminal, event.level, ...event.data);
         break;
       case 'dep_graph_loading':
         // IMPORTANT: Keep this in sync with `nuclide-metro-rpc/lib/parseMessages.tsx`
@@ -396,7 +392,6 @@ class TerminalReporter {
           transformedFileCount: 0,
           totalFileCount: 1,
           ratio: 0,
-          startTime: new Date(),
         };
         this._activeBundles.set(event.buildID, bundleProgress);
         break;

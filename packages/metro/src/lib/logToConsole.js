@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @flow
  */
 
 /* eslint-disable no-console */
@@ -13,13 +14,19 @@
 
 const chalk = require('chalk');
 
+import type {Terminal} from 'metro-core';
+
 const groupStack = [];
 let collapsedGuardTimer;
 
-module.exports = (level, data) => {
+module.exports = (terminal: Terminal, level: string, ...data: Array<mixed>) => {
   const logFunction = console[level] && level !== 'trace' ? level : 'log';
   const color =
-    level === 'error' ? 'red' : level === 'warn' ? 'yellow' : 'white';
+    level === 'error'
+      ? chalk.inverse.red
+      : level === 'warn'
+      ? chalk.inverse.yellow
+      : chalk.inverse.white;
 
   if (level === 'group') {
     groupStack.push(level);
@@ -29,7 +36,7 @@ module.exports = (level, data) => {
     // Inform users that logs get swallowed if they forget to call `groupEnd`.
     collapsedGuardTimer = setTimeout(() => {
       if (groupStack.includes('groupCollapsed')) {
-        console.warn(
+        terminal.log(
           chalk.inverse.yellow.bold(' WARN '),
           'Expected `console.groupEnd` to be called after `console.groupCollapsed`.',
         );
@@ -46,8 +53,14 @@ module.exports = (level, data) => {
   }
 
   if (!groupStack.includes('groupCollapsed')) {
-    console[logFunction](
-      chalk.inverse[color].bold(` ${logFunction.toUpperCase()} `),
+    // Remove excess whitespace at the end of a log message, if possible.
+    const lastItem = data[data.length - 1];
+    if (typeof lastItem === 'string') {
+      data[data.length - 1] = lastItem.trimEnd();
+    }
+    terminal.log(
+      color.bold(` ${logFunction.toUpperCase()} `) +
+        ''.padEnd(groupStack.length * 2, ' '),
       ...data,
     );
   }
