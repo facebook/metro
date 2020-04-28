@@ -14,6 +14,38 @@ const {getFileLength} = require('metro-hermes-compiler');
 
 import type {BytecodeBundle, BundleMetadata} from './bundle-modules/types.flow';
 
+// The magic number is used as a header for bytecode.
+// It represents a Metro tunnel in binary
+//
+// 11111111
+// 11100111
+// 11000011
+// 11000011
+const MAGIC_NUMBER = 0xffe7c3c3;
+
+function getFileHeader(moduleCount: number): Buffer {
+  const buffer = Buffer.alloc(8);
+  buffer.writeUInt32LE(MAGIC_NUMBER, 0);
+  buffer.writeUInt32LE(moduleCount, 4);
+  return buffer;
+}
+
+function addModuleHeader(buffer: Buffer): [Buffer, Buffer] {
+  const fileLength = getFileLength(buffer, 0);
+  const header = Buffer.alloc(4);
+  header.writeUInt32LE(fileLength, 0);
+  return [header, buffer];
+}
+
+/**
+ * A bytecode bundle has the following format:
+ *
+ * 4 bytes MAGIC_NUMBER
+ * 4 bytes Module count
+ * 4 bytes Module length N + N bytes
+ * ...
+ *
+ */
 function bundleToBytecode(
   bundle: BytecodeBundle,
 ): {|+bytecode: Buffer, +metadata: BundleMetadata|} {
@@ -44,14 +76,10 @@ function bundleToBytecode(
   }
 
   return {
-    bytecode: Buffer.concat(
-      buffers.flatMap(buffer => {
-        const fileLength = getFileLength(buffer, 0);
-        const header = Buffer.alloc(4);
-        header.writeUInt32LE(fileLength, 0);
-        return [header, buffer];
-      }),
-    ),
+    bytecode: Buffer.concat([
+      getFileHeader(buffers.length),
+      ...buffers.flatMap(addModuleHeader),
+    ]),
     metadata: {
       pre: bundle.pre ? bundle.pre.length : 0,
       post: bundle.post.length,
@@ -61,3 +89,4 @@ function bundleToBytecode(
 }
 
 module.exports = bundleToBytecode;
+module.exports.MAGIC_NUMBER = MAGIC_NUMBER;

@@ -24,8 +24,11 @@ const modules = [
   [3, [Buffer.from([9, 10, 11, 12]), Buffer.from([13, 14, 15, 16])]],
 ];
 
-const fileLengthBuffer = Buffer.alloc(4);
-fileLengthBuffer.writeUInt32LE(4);
+const getBufferWithNumber = number => {
+  const buffer = Buffer.alloc(4);
+  buffer.writeUInt32LE(number, 0);
+  return buffer;
+};
 
 it('serializes a bundle into a bytecode bundle', () => {
   expect(
@@ -35,12 +38,16 @@ it('serializes a bundle into a bytecode bundle', () => {
       modules,
     }).bytecode,
   ).toEqual(
-    Buffer.concat(
+    Buffer.concat([
+      getBufferWithNumber(bundleToBytecode.MAGIC_NUMBER),
+      getBufferWithNumber(6),
       // Module 3 comes before Module 5 in the final output
-      [...pre, ...modules[1][1], ...modules[0][1], ...post].flatMap(buffer => [
-        fileLengthBuffer,
-        buffer,
-      ]),
-    ),
+      ...[
+        ...pre,
+        ...modules[1][1],
+        ...modules[0][1],
+        ...post,
+      ].flatMap(buffer => [getBufferWithNumber(4), buffer]),
+    ]),
   );
 });

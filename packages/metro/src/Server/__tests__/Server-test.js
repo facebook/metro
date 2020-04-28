@@ -14,6 +14,7 @@ const ResourceNotFoundError = require('../../IncrementalBundler/ResourceNotFound
 
 const path = require('path');
 
+const {MAGIC_NUMBER} = require('../../lib/bundleToBytecode');
 const {getDefaultValues} = require('metro-config/src/defaults');
 const {
   compile,
@@ -273,7 +274,12 @@ describe('processRequest', () => {
     );
 
     const buffer = response.body;
-    let offset = 0;
+    const numberOfModules = buffer.readUInt32LE(4);
+
+    expect(buffer.readUInt32LE(0)).toEqual(MAGIC_NUMBER);
+    expect(numberOfModules).toEqual(8);
+
+    let offset = 8;
     let modules = 0;
     while (offset < buffer.length) {
       expect(() => validateBytecodeModule(buffer, offset + 4)).not.toThrow();
@@ -281,8 +287,7 @@ describe('processRequest', () => {
       modules++;
     }
 
-    // We expect 8 bytecode modules
-    expect(modules).toEqual(8);
+    expect(modules).toEqual(numberOfModules);
   });
 
   it('returns JS bundle without the initial require() call', async () => {
