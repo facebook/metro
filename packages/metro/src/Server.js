@@ -505,7 +505,7 @@ class Server {
             // is not actually sent in the response until after bundling is complete. This
             // would defeat the purpose of sending progress, so we `uncork` the stream now
             // which will force the response to flush to the client immediately.
-            if (res.socket.uncork != null) {
+            if (res.socket != null && res.socket.uncork != null) {
               res.socket.uncork();
             }
 
