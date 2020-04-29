@@ -61,6 +61,7 @@ type ModuleList = {
 };
 type RequireFn = (id: ModuleID | VerboseModuleNameForDev) => Exports;
 type VerboseModuleNameForDev = string;
+type ModuleDefiner = (moduleId: ModuleID) => void;
 
 global.__r = metroRequire;
 global.__d = define;
@@ -303,10 +304,35 @@ function packModuleId(value: {
 }
 metroRequire.packModuleId = packModuleId;
 
-const moduleDefinersBySegmentID = [];
+const moduleDefinersBySegmentID: Array<?ModuleDefiner> = [];
+const definingSegmentByModuleID: Map<ModuleID, number> = new Map();
 
-function registerSegment(segmentID, moduleDefiner): void {
-  moduleDefinersBySegmentID[segmentID] = moduleDefiner;
+function registerSegment(
+  segmentId: number,
+  moduleDefiner: ModuleDefiner,
+  moduleIds: ?$ReadOnlyArray<ModuleID>,
+): void {
+  moduleDefinersBySegmentID[segmentId] = moduleDefiner;
+  if (__DEV__) {
+    if (segmentId === 0 && moduleIds) {
+      throw new Error(
+        'registerSegment: Expected moduleIds to be null for main segment',
+      );
+    }
+    if (segmentId !== 0 && !moduleIds) {
+      throw new Error(
+        'registerSegment: Expected moduleIds to be passed for segment #' +
+          segmentId,
+      );
+    }
+  }
+  if (moduleIds) {
+    moduleIds.forEach(moduleId => {
+      if (!modules[moduleId] && !definingSegmentByModuleID.has(moduleId)) {
+        definingSegmentByModuleID.set(moduleId, segmentId);
+      }
+    });
+  }
 }
 
 function loadModuleImplementation(
@@ -314,11 +340,12 @@ function loadModuleImplementation(
   module: ?ModuleDefinition,
 ): Exports {
   if (!module && moduleDefinersBySegmentID.length > 0) {
-    const {segmentId, localId} = unpackModuleId(moduleId);
+    const segmentId = definingSegmentByModuleID.get(moduleId) ?? 0;
     const definer = moduleDefinersBySegmentID[segmentId];
     if (definer != null) {
-      definer(localId);
+      definer(moduleId);
       module = modules[moduleId];
+      definingSegmentByModuleID.delete(moduleId);
     }
   }
 

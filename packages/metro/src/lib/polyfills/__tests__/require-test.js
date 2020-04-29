@@ -174,8 +174,8 @@ describe('require', () => {
 
   it('works with segmented bundles', () => {
     const createSegmentDefiner = modules => {
-      return jest.fn(function(localId) {
-        const mockModule = modules.find(m => m.localId === localId);
+      return jest.fn(function(moduleId) {
+        const mockModule = modules.find(m => m.moduleId === moduleId);
         moduleSystem.__d(mockModule.factory, mockModule.moduleId, []);
       });
     };
@@ -195,7 +195,6 @@ describe('require', () => {
             moduleObject.exports = mockModule.exports;
           },
         );
-        mockModule.localId = localId;
         // eslint-disable-next-line no-bitwise
         mockModule.moduleId = (segmentId << 16) + localId;
       });
@@ -203,7 +202,7 @@ describe('require', () => {
     };
 
     const seg = {
-      1: createMockSegment(1, [
+      0: createMockSegment(0, [
         {
           exports: {
             name: 'A',
@@ -215,7 +214,7 @@ describe('require', () => {
           },
         },
       ]),
-      2: createMockSegment(2, [
+      1: createMockSegment(1, [
         {
           exports: {
             name: 'C',
@@ -227,14 +226,47 @@ describe('require', () => {
           },
         },
       ]),
+      2: createMockSegment(2, [
+        {
+          exports: {
+            name: 'E',
+          },
+        },
+        {
+          exports: {
+            name: 'F',
+          },
+        },
+      ]),
     };
 
     createModuleSystem(moduleSystem, false);
 
     const {__r, __registerSegment} = moduleSystem;
 
-    __registerSegment(1, seg[1].definer);
-    __registerSegment(2, seg[2].definer);
+    __registerSegment(
+      0,
+      seg[0].definer,
+      // No module IDs for main segment
+    );
+    __registerSegment(
+      1,
+      seg[1].definer,
+      seg[1].modules.map(({moduleId}) => moduleId),
+    );
+    __registerSegment(
+      2,
+      seg[2].definer,
+      seg[2].modules.map(({moduleId}) => moduleId),
+    );
+
+    expect(seg[0].definer).not.toBeCalled();
+    expect(seg[0].modules[0].factory).not.toBeCalled();
+    expect(__r(seg[0].modules[0].moduleId)).toBe(seg[0].modules[0].exports);
+    expect(__r(seg[0].modules[0].moduleId)).toBe(seg[0].modules[0].exports);
+    expect(seg[0].modules[1].factory).not.toBeCalled();
+    expect(__r(seg[0].modules[1].moduleId)).toBe(seg[0].modules[1].exports);
+    expect(__r(seg[0].modules[1].moduleId)).toBe(seg[0].modules[1].exports);
 
     expect(seg[1].definer).not.toBeCalled();
     expect(seg[1].modules[0].factory).not.toBeCalled();
@@ -252,12 +284,19 @@ describe('require', () => {
     expect(__r(seg[2].modules[1].moduleId)).toBe(seg[2].modules[1].exports);
     expect(__r(seg[2].modules[1].moduleId)).toBe(seg[2].modules[1].exports);
 
+    expect(seg[0].definer).toBeCalledTimes(2);
     expect(seg[1].definer).toBeCalledTimes(2);
     expect(seg[2].definer).toBeCalledTimes(2);
+    expect(seg[0].modules[0].factory).toBeCalledTimes(1);
+    expect(seg[0].modules[1].factory).toBeCalledTimes(1);
     expect(seg[1].modules[0].factory).toBeCalledTimes(1);
     expect(seg[1].modules[1].factory).toBeCalledTimes(1);
     expect(seg[2].modules[0].factory).toBeCalledTimes(1);
     expect(seg[2].modules[1].factory).toBeCalledTimes(1);
+
+    // eslint-disable-next-line no-bitwise
+    const NONEXISTENT_MODULE_ID = 50 << (16 + 5);
+    expect(() => __r(NONEXISTENT_MODULE_ID)).toThrow();
   });
 
   describe('functionality tests', () => {
