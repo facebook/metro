@@ -169,8 +169,10 @@ async function loadMetroConfigFromDisk(
   if (typeof configModule === 'function') {
     // Get a default configuration based on what we know, which we in turn can pass
     // to the function.
+    
+    const inputConfig = mergeConfig(defaultConfig, defaultConfigOverrides);
 
-    const resultedConfig = await configModule(defaultConfig);
+    const resultedConfig = await configModule(inputConfig);
     return resultedConfig;
   }
 
