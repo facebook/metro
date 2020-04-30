@@ -838,31 +838,32 @@ if (__DEV__) {
 
   // Modules that only export components become React Refresh boundaries.
   var isReactRefreshBoundary = function(Refresh, moduleExports): boolean {
-    if (Refresh.isLikelyComponentType(moduleExports)) {
-      return true;
-    }
-    if (moduleExports == null || typeof moduleExports !== 'object') {
-      // Exit if we can't iterate over exports.
+    // also allow objects that just wrap react-components (and nothing else)
+    function isLikelyComponentTypeOrOnlyWrappedComponents(object) {
+      if (Refresh.isLikelyComponentType(object)) {
+        return true;
+      } else if (typeof object === 'object' && Object.keys(object).length > 0) {
+        for (const key in object) {
+          if (key === '__esModule') {
+            continue;
+          }
+          const desc = Object.getOwnPropertyDescriptor(object, key);
+          if (desc && desc.get) {
+            // Don't invoke getters as they may have side effects.
+            return false;
+          }
+          const value = object[key];
+          if (value !== undefined) {
+            if (!isLikelyComponentTypeOrOnlyWrappedComponents(value)) {
+              return false;
+            }
+          }
+        }
+        return true;
+      }
       return false;
     }
-    let hasExports = false;
-    let areAllExportsComponents = true;
-    for (const key in moduleExports) {
-      hasExports = true;
-      if (key === '__esModule') {
-        continue;
-      }
-      const desc = Object.getOwnPropertyDescriptor(moduleExports, key);
-      if (desc && desc.get) {
-        // Don't invoke getters as they may have side effects.
-        return false;
-      }
-      const exportValue = moduleExports[key];
-      if (!Refresh.isLikelyComponentType(exportValue)) {
-        areAllExportsComponents = false;
-      }
-    }
-    return hasExports && areAllExportsComponents;
+    return isLikelyComponentTypeOrOnlyWrappedComponents(moduleExports);
   };
 
   var shouldInvalidateReactRefreshBoundary = (
