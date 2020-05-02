@@ -72,6 +72,11 @@ const getBabelRC = (function() {
     }
 
     if (projectBabelRCPath) {
+      // babel.config.mjs
+      if (!fs.existsSync(projectBabelRCPath)) {
+        projectBabelRCPath = path.resolve(projectRoot, 'babel.config.mjs');
+      }
+      
       // .babelrc.js
       if (!fs.existsSync(projectBabelRCPath)) {
         projectBabelRCPath = path.resolve(projectRoot, '.babelrc.js');
