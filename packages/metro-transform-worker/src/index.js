@@ -198,7 +198,7 @@ const compileToBytecode = (
     const index = code.lastIndexOf(')');
     code =
       code.slice(0, index) +
-      ',$$_METRO_DEFINE_GLOBAL[0],$$_METRO_DEFINE_GLOBAL[1]' +
+      ',$$METRO_D[0],$$METRO_D[1],$$METRO_D[2]' +
       code.slice(index);
   }
   return HermesCompiler.compile(code, options);

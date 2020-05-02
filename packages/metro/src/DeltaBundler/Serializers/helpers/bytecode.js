@@ -11,6 +11,7 @@
 'use strict';
 
 const invariant = require('invariant');
+const path = require('path');
 
 const {compile} = require('metro-hermes-compiler');
 
@@ -31,13 +32,24 @@ function wrapModule(module: Module<>, options: Options): Array<Buffer> {
     return [output.data.bytecode];
   }
 
-  const moduleId = options.createModuleId(module.path);
-  const ids = Array.from(module.dependencies.values()).map(dependency =>
-    options.createModuleId(dependency.absolutePath),
-  );
-  const headerCode = `globalThis.$$_METRO_DEFINE_GLOBAL=[${moduleId},[${ids.join(
-    ',',
-  )}]];`;
+  const params = [
+    options.createModuleId(module.path),
+    '[' +
+      Array.from(module.dependencies.values())
+        .map(dependency => options.createModuleId(dependency.absolutePath))
+        .join(',') +
+      ']',
+  ];
+
+  if (options.dev) {
+    // Add the relative path of the module to make debugging easier.
+    // This is mapped to `module.verboseName` in `require.js`.
+    params.push(
+      JSON.stringify(path.relative(options.projectRoot, module.path)),
+    );
+  }
+
+  const headerCode = `globalThis.$$METRO_D=[${params.join(',')}];`;
   return [
     compile(headerCode, {
       sourceURL: module.path + '-virtual.js',

@@ -40,9 +40,9 @@ function wrapModule(module: Module<>, options: Options): string {
     ),
   ];
 
-  // Add the module relative path as the last parameter (to make it easier to do
-  // requires by name when debugging).
   if (options.dev) {
+    // Add the relative path of the module to make debugging easier.
+    // This is mapped to `module.verboseName` in `require.js`.
     params.push(path.relative(options.projectRoot, module.path));
   }
 
