@@ -194,7 +194,7 @@ const compileToBytecode = (
   type: string,
   options: HermesCompilerOptions,
 ): HermesCompilerResult => {
-  if (type === 'js/module') {
+  if (type.startsWith('js/module')) {
     const index = code.lastIndexOf(')');
     code =
       code.slice(0, index) +
