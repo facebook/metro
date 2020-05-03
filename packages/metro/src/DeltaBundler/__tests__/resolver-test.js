@@ -115,13 +115,13 @@ let resolver;
       });
 
       if (osPlatform === 'win32') {
-        jest.mock('path', () => require.requireActual('path').win32);
+        jest.mock('path', () => jest.requireActual('path').win32);
         jest.mock(
           'fs',
           () => new (require('metro-memory-fs'))({platform: 'win32'}),
         );
       } else {
-        jest.mock('path', () => require.requireActual('path'));
+        jest.mock('path', () => jest.requireActual('path'));
         jest.mock('fs', () => new (require('metro-memory-fs'))());
       }
 
