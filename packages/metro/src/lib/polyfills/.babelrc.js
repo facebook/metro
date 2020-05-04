@@ -10,6 +10,9 @@
 'use strict';
 
 module.exports = {
-  presets: [require.resolve('@babel/preset-env')],
-  plugins: [require.resolve('@babel/plugin-transform-flow-strip-types')],
+  plugins: [
+    require.resolve('@babel/plugin-transform-flow-strip-types'),
+    require.resolve('@babel/plugin-proposal-nullish-coalescing-operator'),
+    require.resolve('@babel/plugin-proposal-optional-chaining'),
+  ],
 };
