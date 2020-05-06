@@ -172,7 +172,7 @@ function transform({filename, options, src, plugins}: BabelTransformerArgs) {
       // ES modules require sourceType='module' but OSS may not always want that
       sourceType: 'unambiguous',
       ...buildBabelConfig(filename, options, plugins),
-      caller: {name: 'metro', platform: options.platform},
+      caller: {name: 'metro', bundler: 'metro', platform: options.platform},
       ast: true,
     };
     const sourceAst = parseSync(src, babelConfig);
