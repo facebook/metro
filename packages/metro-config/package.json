@@ -21,6 +21,6 @@
   },
   "devDependencies": {
     "pretty-format": "^26.0.1",
-    "strip-ansi": "^4.0.0"
+    "strip-ansi": "^6.0.0"
   }
 }
