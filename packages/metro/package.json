@@ -37,7 +37,6 @@
     "invariant": "^2.2.4",
     "jest-haste-map": "^26.0.1",
     "jest-worker": "^26.0.0",
-    "json-stable-stringify": "^1.0.1",
     "lodash.throttle": "^4.1.1",
     "metro-babel-register": "0.59.0",
     "metro-babel-transformer": "0.59.0",
