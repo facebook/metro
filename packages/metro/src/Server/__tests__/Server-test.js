@@ -427,6 +427,84 @@ describe('processRequest', () => {
     );
   });
 
+  it('should handle DELETE requests on *.bundle', async () => {
+    const IncrementalBundler = require('../../IncrementalBundler');
+    const updateSpy = jest.spyOn(IncrementalBundler.prototype, 'updateGraph');
+    const initSpy = jest.spyOn(IncrementalBundler.prototype, 'initializeGraph');
+
+    // When building a bundle for the first time, we expect to create a graph for it.
+    await makeRequest('mybundle.bundle', null);
+    expect(initSpy).toBeCalledTimes(1);
+    expect(updateSpy).not.toBeCalled();
+
+    jest.clearAllMocks();
+
+    // When building again, the graph should already exist and only need an update.
+    await makeRequest('mybundle.bundle', null);
+    expect(initSpy).not.toBeCalled();
+    expect(updateSpy).toBeCalledTimes(1);
+
+    jest.clearAllMocks();
+
+    // `DELETE`ing the bundle evicts its graph data from memory and doesn't trigger init/update.
+    const deleteResponse = await makeRequest('mybundle.bundle', {
+      method: 'DELETE',
+    });
+    expect(deleteResponse.statusCode).toBe(204);
+    expect(initSpy).not.toBeCalled();
+    expect(updateSpy).not.toBeCalled();
+
+    jest.clearAllMocks();
+
+    // Building the bundle again reinitialises the graph.
+    await makeRequest('mybundle.bundle');
+    expect(initSpy).toBeCalledTimes(1);
+    expect(updateSpy).not.toBeCalled();
+  });
+
+  it('multiple DELETE requests on *.bundle succeed', async () => {
+    await makeRequest('mybundle.bundle', null);
+    await makeRequest('mybundle.bundle', {
+      method: 'DELETE',
+    });
+    const secondDeleteResponse = await makeRequest('mybundle.bundle', {
+      method: 'DELETE',
+    });
+    expect(secondDeleteResponse.statusCode).toBe(204);
+  });
+
+  it('DELETE succeeds with a nonexistent path', async () => {
+    fs.realpath = jest.fn((file, cb) =>
+      cb(new ResourceNotFoundError('unknown.bundle')),
+    );
+
+    const response = await makeRequest('unknown.bundle?runModule=true', {
+      method: 'DELETE',
+    });
+    expect(response.statusCode).toEqual(204);
+  });
+
+  it('DELETE handles errors', async () => {
+    const IncrementalBundler = require('../../IncrementalBundler');
+    jest
+      .spyOn(IncrementalBundler.prototype, 'endGraph')
+      .mockImplementationOnce(async () => {
+        throw new Error('endGraph error');
+      });
+
+    await makeRequest('mybundle.bundle', null);
+    const response = await makeRequest('mybundle.bundle', {
+      method: 'DELETE',
+    });
+
+    expect(response.statusCode).toEqual(500);
+    expect(JSON.parse(response.body)).toEqual({
+      errors: [],
+      message: expect.any(String),
+      type: 'InternalError',
+    });
+  });
+
   it('returns sourcemap on request of *.map', async () => {
     const response = await makeRequest('mybundle.map');
 

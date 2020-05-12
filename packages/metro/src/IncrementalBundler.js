@@ -294,6 +294,17 @@ class IncrementalBundler {
     return {revision, delta};
   }
 
+  async endGraph(graphId: GraphId): Promise<void> {
+    const revPromise = this._revisionsByGraphId.get(graphId);
+    if (!revPromise) {
+      return;
+    }
+    const revision = await revPromise;
+    this._deltaBundler.endGraph(revision.graph);
+    this._revisionsByGraphId.delete(graphId);
+    this._revisionsById.delete(revision.id);
+  }
+
   async _getAbsoluteEntryFiles(
     entryFiles: $ReadOnlyArray<string>,
   ): Promise<$ReadOnlyArray<string>> {

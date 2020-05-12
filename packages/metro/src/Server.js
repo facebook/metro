@@ -88,6 +88,12 @@ type ProcessStartContext = {|
   ...SplitBundleOptions,
 |};
 
+type ProcessDeleteContext = {|
+  +graphId: GraphId,
+  +req: IncomingMessage,
+  +res: ServerResponse,
+|};
+
 type ProcessEndContext<T> = {|
   ...ProcessStartContext,
   +result: T,
@@ -438,6 +444,7 @@ class Server {
     createStartEntry,
     createEndEntry,
     build,
+    delete: deleteFn,
     finish,
   }: {|
     +createStartEntry: (context: ProcessStartContext) => ActionLogEntryData,
@@ -445,13 +452,13 @@ class Server {
       context: ProcessEndContext<T>,
     ) => $Rest<ActionStartLogEntry, LogEntry>,
     +build: (context: ProcessStartContext) => Promise<T>,
+    +delete?: (context: ProcessDeleteContext) => Promise<void>,
     +finish: (context: ProcessEndContext<T>) => void,
   |}) {
     return async function requestProcessor(
       req: IncomingMessage,
       res: ServerResponse,
     ): Promise<void> {
-      const mres = MultipartResponse.wrap(req, res);
       const bundleOptions = parseOptionsFromUrl(
         url.format({
           ...url.parse(req.url),
@@ -484,6 +491,29 @@ class Server {
         experimentalImportBundleSupport: this._config.transformer
           .experimentalImportBundleSupport,
       });
+
+      // For resources that support deletion, handle the DELETE method.
+      if (deleteFn && req.method === 'DELETE') {
+        const deleteContext = {
+          graphId,
+          req,
+          res,
+        };
+        try {
+          await deleteFn(deleteContext);
+        } catch (error) {
+          const formattedError = formatBundlingError(error);
+
+          const status = error instanceof ResourceNotFoundError ? 404 : 500;
+          res.writeHead(status, {
+            'Content-Type': 'application/json; charset=UTF-8',
+          });
+          res.end(JSON.stringify(formattedError));
+        }
+        return;
+      }
+
+      const mres = MultipartResponse.wrap(req, res);
       const buildID = this.getNewBuildID();
 
       let onProgress = null;
@@ -717,6 +747,11 @@ class Server {
         );
         mres.end(result.bundle);
       }
+    },
+    delete: async ({graphId, res}) => {
+      await this._bundler.endGraph(graphId);
+      res.statusCode = 204;
+      res.end();
     },
   });
 
