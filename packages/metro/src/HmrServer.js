@@ -144,9 +144,10 @@ class HmrServer<TClient: Client> {
     } else {
       // Prepare the clientUrl to be used as sourceUrl in HMR updates.
       clientUrl.protocol = 'http';
-      const {platform, dev, minify, runModule} = clientUrl.query || {};
+      const {dev, minify, runModule, bundleEntry: _bundleEntry, ...query} =
+        clientUrl.query || {};
       clientUrl.query = {
-        platform,
+        ...query,
         dev: dev || 'true',
         minify: minify || 'false',
         modulesOnly: 'true',

@@ -161,6 +161,30 @@ describe('HmrServer', () => {
     );
   });
 
+  it('should retrieve the correct graph when there are extra params', async () => {
+    await connect(
+      '/hot?bundleEntry=EntryPoint.js&platform=ios&unusedExtraParam=42',
+    );
+
+    expect(getRevisionByGraphIdMock).toBeCalledWith(
+      getGraphId(
+        '/root/EntryPoint.js',
+        {
+          hot: true,
+          dev: true,
+          minify: false,
+          platform: 'ios',
+          customTransformOptions: {},
+          type: 'module',
+        },
+        {
+          shallow: false,
+          experimentalImportBundleSupport: false,
+        },
+      ),
+    );
+  });
+
   it('should send an error message when the graph cannot be found', async () => {
     const sendMessage = jest.fn();
     getRevisionByGraphIdMock.mockReturnValueOnce(undefined);
@@ -373,6 +397,59 @@ describe('HmrServer', () => {
               ],
               sourceURL:
                 'http://localhost/hi.bundle?platform=ios&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+            },
+          ],
+          deleted: ['/root/bye-id'],
+        },
+      },
+      {
+        type: 'update-done',
+      },
+    ]);
+  });
+
+  it('should propagate extra params to module URLs', async () => {
+    const sendMessage = jest.fn();
+
+    await connect(
+      '/hot?bundleEntry=EntryPoint.js&platform=ios&unusedExtraParam=42',
+      sendMessage,
+    );
+
+    sendMessage.mockReset();
+
+    incrementalBundlerMock.updateGraph.mockResolvedValue({
+      revision: {
+        id: 'rev1',
+        graph: mockedGraph,
+      },
+      delta: {
+        added: new Map(),
+        modified: new Map([[hiModule.path, hiModule]]),
+        deleted: new Set(['/root/bye']),
+      },
+    });
+
+    const promise = Promise.all(callbacks.get(mockedGraph).map(cb => cb()));
+    jest.runAllTimers();
+    await promise;
+
+    const messages = sendMessage.mock.calls.map(call => JSON.parse(call[0]));
+
+    expect(messages).toMatchObject([
+      {
+        type: 'update-start',
+      },
+      {
+        type: 'update',
+        body: {
+          revisionId: 'rev1',
+          added: [],
+          modified: [
+            {
+              module: expect.any(Array),
+              sourceURL:
+                'http://localhost/hi.bundle?platform=ios&unusedExtraParam=42&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
           deleted: ['/root/bye-id'],
