@@ -115,7 +115,7 @@ type TransformerConfigT = {|
   transformVariants: TransformVariants,
   workerPath: string,
   publicPath: string,
-  experimentalImportBundleSupport: false,
+  experimentalImportBundleSupport: boolean,
 |};
 
 type MetalConfigT = {|
