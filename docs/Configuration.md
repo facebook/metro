@@ -115,6 +115,12 @@ Type: `(Middleware, Server) => Middleware`
 
 The possibility to add custom middleware to the server response chain.
 
+#### `rewriteRequestUrl`
+
+Type: `string => string`
+
+A function that will be called every time Metro processes a URL. Metro will use the return value of this function as if it were the original URL provided by the client. This applies to all incoming HTTP requests (after any custom middleware), as well as bundle URLs in `/symbolicate` request payloads and within the hot reloading protocol.
+
 #### `runInspectorProxy`
 
 Type: `boolean` (default: `true`)

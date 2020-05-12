@@ -76,6 +76,13 @@ describe('processRequest', () => {
   options.reporter = require('../../lib/reporting').nullReporter;
   options.serializer.polyfillModuleNames = null;
   options.serializer.getModulesRunBeforeMainModule = () => ['InitializeCore'];
+  options.server.rewriteRequestUrl = function(requrl) {
+    const rewritten = requrl.replace(/__REMOVE_THIS_WHEN_REWRITING__/g, '');
+    if (rewritten !== requrl) {
+      return rewritten + '&TEST_URL_WAS_REWRITTEN=true';
+    }
+    return requrl;
+  };
   options.symbolicator.customizeFrame = ({file}) => {
     if (file === '/root/foo.js') {
       return {collapse: true};
@@ -559,6 +566,24 @@ describe('processRequest', () => {
     );
   });
 
+  it('rewrites URLs before bundling', async () => {
+    const response = await makeRequest(
+      'mybundle.bundle?runModule=true__REMOVE_THIS_WHEN_REWRITING__',
+      null,
+    );
+
+    expect(response.body).toEqual(
+      [
+        'function () {require();}',
+        '__d(function() {entry();},0,[1],"mybundle.js");',
+        '__d(function() {foo();},1,[],"foo.js");',
+        'require(0);',
+        '//# sourceMappingURL=//localhost:8081/mybundle.map?runModule=true&TEST_URL_WAS_REWRITTEN=true',
+        '//# sourceURL=http://localhost:8081/mybundle.bundle?runModule=true&TEST_URL_WAS_REWRITTEN=true',
+      ].join('\n'),
+    );
+  });
+
   it('does not rebuild the bundle when making concurrent requests', async () => {
     // Delay the response of the buildGraph method.
     const promise1 = makeRequest('index.bundle');
@@ -745,6 +770,72 @@ describe('processRequest', () => {
           ],
         }
       `);
+    });
+
+    describe('should rewrite URLs before symbolicating', () => {
+      test('mapped location symbolicates correctly', async () => {
+        const mappedLocation = {
+          lineNumber: 2,
+          column: 18,
+          customPropShouldBeLeftUnchanged: 'foo',
+          methodName: 'clientSideMethodName',
+        };
+
+        const response = await makeRequest('/symbolicate', {
+          rawBody: JSON.stringify({
+            stack: [
+              {
+                file:
+                  'http://localhost:8081/my__REMOVE_THIS_WHEN_REWRITING__bundle.bundle?runModule=true',
+                ...mappedLocation,
+              },
+            ],
+          }),
+        });
+
+        expect(JSON.parse(response.body)).toEqual(
+          JSON.parse(
+            (
+              await makeRequest('/symbolicate', {
+                rawBody: JSON.stringify({
+                  stack: [
+                    {
+                      file:
+                        'http://localhost:8081/mybundle.bundle?runModule=true',
+                      ...mappedLocation,
+                    },
+                  ],
+                }),
+              })
+            ).body,
+          ),
+        );
+      });
+
+      test('unmapped location returns the rewritten URL', async () => {
+        const unmappedLocation = {
+          lineNumber: 200000,
+          column: 18,
+          customPropShouldBeLeftUnchanged: 'foo',
+          methodName: 'clientSideMethodName',
+        };
+
+        const response = await makeRequest('/symbolicate', {
+          rawBody: JSON.stringify({
+            stack: [
+              {
+                file:
+                  'http://localhost:8081/my__REMOVE_THIS_WHEN_REWRITING__bundle.bundle?runModule=true',
+                ...unmappedLocation,
+              },
+            ],
+          }),
+        });
+
+        expect(JSON.parse(response.body).stack[0].file).toBe(
+          'http://localhost:8081/mybundle.bundle?runModule=true&TEST_URL_WAS_REWRITTEN=true',
+        );
+      });
     });
 
     it('should update the graph when symbolicating a second time', async () => {

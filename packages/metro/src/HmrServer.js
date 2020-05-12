@@ -100,6 +100,7 @@ class HmrServer<TClient: Client> {
     requestUrl: string,
     sendFn: (data: string) => void,
   ): Promise<void> {
+    requestUrl = this._config.server.rewriteRequestUrl(requestUrl);
     const clientUrl = nullthrows(url.parse(requestUrl, true));
     const options = parseOptionsFromUrl(
       requestUrl,

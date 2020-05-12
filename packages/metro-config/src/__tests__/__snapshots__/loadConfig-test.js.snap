@@ -83,6 +83,7 @@ Object {
   "server": Object {
     "enhanceMiddleware": [Function],
     "port": 8080,
+    "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
     "useGlobalHotkey": true,
     "verifyConnections": false,
@@ -218,6 +219,7 @@ Object {
   "server": Object {
     "enhanceMiddleware": [Function],
     "port": 8080,
+    "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
     "useGlobalHotkey": true,
     "verifyConnections": false,

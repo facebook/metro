@@ -404,9 +404,14 @@ class Server {
     res: ServerResponse,
     next: (?Error) => mixed,
   ) {
+    const originalUrl = req.url;
+    req.url = this._config.server.rewriteRequestUrl(req.url);
     const urlObj = url.parse(req.url, true);
     const {host} = req.headers;
-    debug(`Handling request: ${host ? 'http://' + host : ''}${req.url}`);
+    debug(
+      `Handling request: ${host ? 'http://' + host : ''}${req.url}` +
+        (originalUrl !== req.url ? ` (rewritten from ${originalUrl})` : ''),
+    );
     /* $FlowFixMe: Could be empty if the URL is invalid. */
     const pathname: string = urlObj.pathname;
 
@@ -948,10 +953,18 @@ class Server {
       debug('Start symbolication');
       /* $FlowFixMe: where is `rawBody` defined? Is it added by the `connect` framework? */
       const body = await req.rawBody;
-      const stack = JSON.parse(body).stack;
-
+      const stack = JSON.parse(body).stack.map(frame => {
+        if (frame.file && frame.file.includes('://')) {
+          return {
+            ...frame,
+            file: this._config.server.rewriteRequestUrl(frame.file),
+          };
+        }
+        return frame;
+      });
       // In case of multiple bundles / HMR, some stack frames can have different URLs from others
       const urls = new Set();
+
       stack.forEach(frame => {
         const sourceUrl = frame.file;
         // Skip `/debuggerWorker.js` which does not need symbolication.

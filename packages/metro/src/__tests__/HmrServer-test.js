@@ -14,6 +14,8 @@ const HmrServer = require('../HmrServer');
 
 const getGraphId = require('../lib/getGraphId');
 
+const {getDefaultValues} = require('metro-config/src/defaults');
+
 jest.mock('../lib/transformHelpers', () => ({
   getResolveDependencyFn: () => (from, to) =>
     `${require('path').resolve(from, to)}.js`,
@@ -97,21 +99,24 @@ describe('HmrServer', () => {
       return path + '-id';
     };
 
-    hmrServer = new HmrServer(incrementalBundlerMock, createModuleIdMock, {
-      serializer: {
-        experimentalSerializerHook: () => {},
-      },
-      projectRoot: '/root',
-      reporter: {
-        update: jest.fn(),
-      },
-      transformer: {
-        experimentalImportBundleSupport: false,
-      },
-      resolver: {
-        platforms: [],
-      },
-    });
+    const options = getDefaultValues('/root');
+    options.serializer.experimentalSerializerHook = () => {};
+    options.reporter.update = jest.fn();
+    options.transformer.experimentalImportBundleSupport = false;
+    options.resolver.platforms = [];
+    options.server.rewriteRequestUrl = function(requrl) {
+      const rewritten = requrl.replace(/__REMOVE_THIS_WHEN_REWRITING__/g, '');
+      if (rewritten !== requrl) {
+        return rewritten + '&TEST_URL_WAS_REWRITTEN=true';
+      }
+      return requrl;
+    };
+
+    hmrServer = new HmrServer(
+      incrementalBundlerMock,
+      createModuleIdMock,
+      options,
+    );
 
     connect = async (relativeUrl, sendFn) => {
       relativeUrl = 'ws://localhost/' + relativeUrl;
@@ -164,6 +169,30 @@ describe('HmrServer', () => {
   it('should retrieve the correct graph when there are extra params', async () => {
     await connect(
       '/hot?bundleEntry=EntryPoint.js&platform=ios&unusedExtraParam=42',
+    );
+
+    expect(getRevisionByGraphIdMock).toBeCalledWith(
+      getGraphId(
+        '/root/EntryPoint.js',
+        {
+          hot: true,
+          dev: true,
+          minify: false,
+          platform: 'ios',
+          customTransformOptions: {},
+          type: 'module',
+        },
+        {
+          shallow: false,
+          experimentalImportBundleSupport: false,
+        },
+      ),
+    );
+  });
+
+  it('should rewrite URLs before retrieving the graph', async () => {
+    await connect(
+      '/hot?bundleEntry=Entry__REMOVE_THIS_WHEN_REWRITING__Point.js&platform=ios',
     );
 
     expect(getRevisionByGraphIdMock).toBeCalledWith(
@@ -450,6 +479,59 @@ describe('HmrServer', () => {
               module: expect.any(Array),
               sourceURL:
                 'http://localhost/hi.bundle?platform=ios&unusedExtraParam=42&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
+            },
+          ],
+          deleted: ['/root/bye-id'],
+        },
+      },
+      {
+        type: 'update-done',
+      },
+    ]);
+  });
+
+  it('should propagate rewritten URL params to module URLs', async () => {
+    const sendMessage = jest.fn();
+
+    await connect(
+      '/hot?bundleEntry=Entry__REMOVE_THIS_WHEN_REWRITING__Point.js&platform=ios',
+      sendMessage,
+    );
+
+    sendMessage.mockReset();
+
+    incrementalBundlerMock.updateGraph.mockResolvedValue({
+      revision: {
+        id: 'rev1',
+        graph: mockedGraph,
+      },
+      delta: {
+        added: new Map(),
+        modified: new Map([[hiModule.path, hiModule]]),
+        deleted: new Set(['/root/bye']),
+      },
+    });
+
+    const promise = Promise.all(callbacks.get(mockedGraph).map(cb => cb()));
+    jest.runAllTimers();
+    await promise;
+
+    const messages = sendMessage.mock.calls.map(call => JSON.parse(call[0]));
+
+    expect(messages).toMatchObject([
+      {
+        type: 'update-start',
+      },
+      {
+        type: 'update',
+        body: {
+          revisionId: 'rev1',
+          added: [],
+          modified: [
+            {
+              module: expect.any(Array),
+              sourceURL:
+                'http://localhost/hi.bundle?platform=ios&TEST_URL_WAS_REWRITTEN=true&dev=true&minify=false&modulesOnly=true&runModule=false&shallow=true',
             },
           ],
           deleted: ['/root/bye-id'],
