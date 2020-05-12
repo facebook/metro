@@ -12,6 +12,7 @@
 
 import type {Options as DeltaBundlerOptions} from '../DeltaBundler/types.flow';
 import type {TransformInputOptions} from '../lib/transformHelpers';
+import type {TransformProfile} from 'metro-babel-transformer';
 import type {
   MixedSourceMap,
   MetroSourceMapSegmentTuple,
@@ -55,6 +56,7 @@ export type BundleOptions = {
   sourceMapUrl: ?string,
   sourceUrl: ?string,
   createModuleIdFactory?: () => (path: string) => number,
+  +unstable_transformProfile: TransformProfile,
   ...
 };
 

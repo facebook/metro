@@ -52,6 +52,7 @@ async function calcTransformerOptions(
     inlinePlatform: true,
     minify: options.minify,
     platform: options.platform,
+    unstable_transformProfile: options.unstable_transformProfile,
   };
 
   // When we're processing scripts, we don't need to calculate any

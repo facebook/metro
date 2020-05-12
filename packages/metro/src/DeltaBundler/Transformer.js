@@ -83,6 +83,7 @@ class Transformer {
       unstable_disableES6Transforms,
       platform,
       type,
+      unstable_transformProfile,
       ...extra
     } = transformerOptions;
 
@@ -115,6 +116,7 @@ class Transformer {
       unstable_disableES6Transforms,
       platform,
       type,
+      unstable_transformProfile,
     ]);
 
     const sha1 = this._getSha1(filePath);

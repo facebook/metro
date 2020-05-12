@@ -533,6 +533,32 @@ describe('processRequest', () => {
     );
   });
 
+  it('passes in the unstable_transformProfile param', async () => {
+    await makeRequest('index.bundle?unstable_transformProfile=hermes-stable');
+
+    expect(transformHelpers.getTransformFn).toBeCalledWith(
+      ['/root/index.js'],
+      expect.any(Bundler),
+      expect.any(DeltaBundler),
+      expect.any(Object),
+      expect.objectContaining({
+        unstable_transformProfile: 'hermes-stable',
+      }),
+    );
+    expect(transformHelpers.getResolveDependencyFn).toBeCalled();
+
+    expect(DeltaBundler.prototype.buildGraph).toBeCalledWith(
+      ['/root/index.js'],
+      {
+        experimentalImportBundleSupport: false,
+        onProgress: expect.any(Function),
+        resolve: expect.any(Function),
+        shallow: false,
+        transform: expect.any(Function),
+      },
+    );
+  });
+
   it('does not rebuild the bundle when making concurrent requests', async () => {
     // Delay the response of the buildGraph method.
     const promise1 = makeRequest('index.bundle');
@@ -652,6 +678,7 @@ describe('processRequest', () => {
           minify: false,
           platform: undefined,
           type: 'module',
+          unstable_transformProfile: 'default',
         },
       );
       expect(transformHelpers.getResolveDependencyFn).toBeCalled();

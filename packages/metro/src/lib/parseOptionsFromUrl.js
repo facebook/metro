@@ -26,6 +26,11 @@ const getBundleType = bundleType =>
     ? bundleType
     : 'bundle';
 
+const getTransformProfile = transformProfile =>
+  transformProfile === 'hermes-stable' || transformProfile === 'hermes-canary'
+    ? transformProfile
+    : 'default';
+
 module.exports = function parseOptionsFromUrl(
   requestUrl: string,
   platforms: Set<string>,
@@ -64,5 +69,8 @@ module.exports = function parseOptionsFromUrl(
       pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
     }),
     sourceUrl: requestUrl,
+    unstable_transformProfile: getTransformProfile(
+      query.unstable_transformProfile,
+    ),
   };
 };

@@ -50,7 +50,10 @@ import type {
   HermesCompilerResult,
   Options as HermesCompilerOptions,
 } from 'metro-hermes-compiler';
-import type {CustomTransformOptions} from 'metro-babel-transformer';
+import type {
+  CustomTransformOptions,
+  TransformProfile,
+} from 'metro-babel-transformer';
 
 type MinifierConfig = $ReadOnly<{[string]: mixed, ...}>;
 
@@ -104,6 +107,7 @@ export type JsTransformOptions = $ReadOnly<{|
   platform: ?string,
   type: Type,
   unstable_disableES6Transforms?: boolean,
+  unstable_transformProfile: TransformProfile,
 |}>;
 
 export type JsOutput = $ReadOnly<{|

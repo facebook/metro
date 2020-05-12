@@ -45,6 +45,8 @@ function getGraphId(
         type: options.type,
         experimentalImportBundleSupport,
         shallow,
+        unstable_transformProfile:
+          options.unstable_transformProfile || 'default',
       },
     },
     canonicalize,

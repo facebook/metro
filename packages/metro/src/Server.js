@@ -1069,12 +1069,14 @@ class Server {
     dev: boolean,
     hot: boolean,
     minify: boolean,
+    unstable_transformProfile: 'default',
   |} = {
     bytecode: false,
     customTransformOptions: Object.create(null),
     dev: true,
     hot: false,
     minify: false,
+    unstable_transformProfile: 'default',
   };
 
   static DEFAULT_BUNDLE_OPTIONS: {|

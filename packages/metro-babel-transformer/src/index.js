@@ -22,6 +22,8 @@ export type CustomTransformOptions = {
   ...
 };
 
+export type TransformProfile = 'default' | 'hermes-stable' | 'hermes-canary';
+
 type BabelTransformerOptions = $ReadOnly<{
   customTransformOptions?: CustomTransformOptions,
   dev: boolean,
@@ -37,7 +39,7 @@ type BabelTransformerOptions = $ReadOnly<{
   platform: ?string,
   projectRoot: string,
   publicPath: string,
-  unstable_transformProfile?: 'default' | 'hermes-stable' | 'hermes-canary',
+  unstable_transformProfile?: TransformProfile,
   ...
 }>;
 

@@ -185,17 +185,7 @@ class IncrementalBundler {
       otherOptions,
     );
 
-    const transformOptionsWithoutType = {
-      bytecode: transformOptions.bytecode,
-      customTransformOptions: transformOptions.customTransformOptions,
-      dev: transformOptions.dev,
-      experimentalImportSupport: transformOptions.experimentalImportSupport,
-      hot: transformOptions.hot,
-      minify: transformOptions.minify,
-      unstable_disableES6Transforms:
-        transformOptions.unstable_disableES6Transforms,
-      platform: transformOptions.platform,
-    };
+    const {type: _, ...transformOptionsWithoutType} = transformOptions;
 
     const prepend = await getPrependedScripts(
       this._config,

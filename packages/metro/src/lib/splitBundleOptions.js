@@ -26,6 +26,7 @@ function splitBundleOptions(options: BundleOptions): SplitBundleOptions {
       minify: options.minify,
       platform: options.platform,
       type: 'module',
+      unstable_transformProfile: options.unstable_transformProfile,
     },
     serializerOptions: {
       excludeSource: options.excludeSource,
