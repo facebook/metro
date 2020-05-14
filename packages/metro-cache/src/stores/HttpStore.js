@@ -175,6 +175,15 @@ class HttpStore<T> {
        * error found when Flow v0.101 was deployed. To see the error, delete
        * this comment and run Flow. */
       const req = this._module.request(options, res => {
+        const code = res.statusCode;
+
+        if (code < 200 || code > 299) {
+          res.resume();
+          reject(new HttpError('HTTP error: ' + code, code));
+
+          return;
+        }
+
         res.on('error', err => {
           reject(err);
         });

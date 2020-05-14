@@ -188,6 +188,24 @@ describe('HttpStore', () => {
     });
   });
 
+  it('rejects when setting and HTTP returns an error response', done => {
+    const store = new HttpStore({endpoint: 'http://example.com'});
+    const promise = store.set(Buffer.from('key-set'), {foo: 42});
+    const [opts, callback] = require('http').request.mock.calls[0];
+
+    expect(opts.method).toEqual('PUT');
+
+    callback(responseHttpError(403));
+    jest.runAllTimers();
+
+    promise.catch(err => {
+      expect(err).toBeInstanceOf(HttpStore.HttpError);
+      expect(err.message).toMatch(/HTTP error: 403/);
+      expect(err.code).toBe(403);
+      done();
+    });
+  });
+
   it('gets the same value that was set', async () => {
     const store = new HttpStore({endpoint: 'http://www.example.com/endpoint'});
     const chunks = [];
