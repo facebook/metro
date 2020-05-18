@@ -186,7 +186,10 @@ class Server {
     const entryPoint = path.resolve(this._config.projectRoot, entryFile);
 
     const bundleOptions = {
-      asyncRequireModulePath: this._config.transformer.asyncRequireModulePath,
+      asyncRequireModulePath: await this._resolveRelativePath(
+        this._config.transformer.asyncRequireModulePath,
+        {transformOptions},
+      ),
       processModuleFilter: this._config.serializer.processModuleFilter,
       createModuleId: this._createModuleId,
       getRunModuleStatement: this._config.serializer.getRunModuleStatement,
@@ -254,7 +257,10 @@ class Server {
     const entryPoint = path.resolve(this._config.projectRoot, entryFile);
 
     return await getRamBundleInfo(entryPoint, prepend, graph, {
-      asyncRequireModulePath: this._config.transformer.asyncRequireModulePath,
+      asyncRequireModulePath: await this._resolveRelativePath(
+        this._config.transformer.asyncRequireModulePath,
+        {transformOptions},
+      ),
       processModuleFilter: this._config.serializer.processModuleFilter,
       createModuleId: this._createModuleId,
       dev: transformOptions.dev,
@@ -478,14 +484,9 @@ class Server {
        * `entryFile` is relative to projectRoot, we need to use resolution function
        * to find the appropriate file with supported extensions.
        */
-      const resolutionFn = await transformHelpers.getResolveDependencyFn(
-        this._bundler.getBundler(),
-        transformOptions.platform,
-      );
-      const resolvedEntryFilePath = resolutionFn(
-        `${this._config.projectRoot}/.`,
-        entryFile,
-      );
+      const resolvedEntryFilePath = await this._resolveRelativePath(entryFile, {
+        transformOptions,
+      });
       const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
         shallow: graphOptions.shallow,
         experimentalImportBundleSupport: this._config.transformer
@@ -693,8 +694,10 @@ class Server {
         revision.prepend,
         revision.graph,
         {
-          asyncRequireModulePath: this._config.transformer
-            .asyncRequireModulePath,
+          asyncRequireModulePath: await this._resolveRelativePath(
+            this._config.transformer.asyncRequireModulePath,
+            {transformOptions},
+          ),
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
           getRunModuleStatement: this._config.serializer.getRunModuleStatement,
@@ -798,8 +801,10 @@ class Server {
 
       const bundle = bundleToBytecode(
         baseBytecodeBundle(entryFile, revision.prepend, revision.graph, {
-          asyncRequireModulePath: this._config.transformer
-            .asyncRequireModulePath,
+          asyncRequireModulePath: await this._resolveRelativePath(
+            this._config.transformer.asyncRequireModulePath,
+            {transformOptions},
+          ),
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
           getRunModuleStatement: this._config.serializer.getRunModuleStatement,
@@ -1060,14 +1065,9 @@ class Server {
      * `entryFile` is relative to projectRoot, we need to use resolution function
      * to find the appropriate file with supported extensions.
      */
-    const resolutionFn = await transformHelpers.getResolveDependencyFn(
-      this._bundler.getBundler(),
-      transformOptions.platform,
-    );
-    const resolvedEntryFilePath = resolutionFn(
-      `${this._config.projectRoot}/.`,
-      entryFile,
-    );
+    const resolvedEntryFilePath = await this._resolveRelativePath(entryFile, {
+      transformOptions,
+    });
 
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
       shallow: graphOptions.shallow,
@@ -1097,6 +1097,14 @@ class Server {
         processModuleFilter: this._config.serializer.processModuleFilter,
       },
     );
+  }
+
+  async _resolveRelativePath(filePath, {transformOptions}) {
+    const resolutionFn = await transformHelpers.getResolveDependencyFn(
+      this._bundler.getBundler(),
+      transformOptions.platform,
+    );
+    return resolutionFn(`${this._config.projectRoot}/.`, filePath);
   }
 
   getNewBuildID(): string {
