@@ -47,7 +47,7 @@ describe('loadConfig', () => {
       reporter: null,
       maxWorkers: 2,
       resolver: {
-        ...defaultConfig.resolver,
+        sourceExts: [...defaultConfig.resolver.sourceExts, 'tsx'],
         hasteImplModulePath: 'test',
       },
       transformerPath: '',
@@ -55,9 +55,19 @@ describe('loadConfig', () => {
 
     cosmiconfig.setResolvedConfig(config);
 
-    const result = await loadConfig({});
+    const defaultConfigOverrides = {
+      resolver: {
+        sourceExts: ['json', 're'],
+      },
+    };
 
-    expect(result.resolver.hasteImplModulePath).toEqual('test');
+    const result = await loadConfig({}, defaultConfigOverrides);
+    const defaults = await getDefaultConfig();
+    expect(result.resolver).toMatchObject({
+      assetExts: defaults.resolver.assetExts,
+      sourceExts: ['json', 're', 'tsx'],
+      hasteImplModulePath: 'test',
+    });
   });
 
   it('can load the config with a path', async () => {

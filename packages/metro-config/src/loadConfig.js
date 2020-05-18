@@ -164,17 +164,18 @@ async function loadMetroConfigFromDisk(
   const {config: configModule, filepath} = resolvedConfigResults;
   const rootPath = dirname(filepath);
 
-  const defaultConfig: ConfigT = await getDefaultConfig(rootPath);
+  const defaults = await getDefaultConfig(rootPath);
+  const defaultConfig: ConfigT = mergeConfig(defaults, defaultConfigOverrides);
 
   if (typeof configModule === 'function') {
     // Get a default configuration based on what we know, which we in turn can pass
     // to the function.
 
     const resultedConfig = await configModule(defaultConfig);
-    return resultedConfig;
+    return mergeConfig(defaultConfig, resultedConfig);
   }
 
-  return mergeConfig(defaultConfig, defaultConfigOverrides, configModule);
+  return mergeConfig(defaultConfig, configModule);
 }
 
 function overrideConfigWithArguments(
