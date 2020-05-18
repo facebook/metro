@@ -67,7 +67,7 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
 
   try {
     const babelConfig = {
-      caller: {name: 'metro', platform: options.platform},
+      caller: {name: 'metro', bundler: 'metro', platform: options.platform},
       ast: true,
       babelrc: options.enableBabelRCLookup,
       code: false,
