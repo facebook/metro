@@ -34,14 +34,14 @@ beforeEach(() => {
         'bar',
         {
           absolutePath: '/bar',
-          data: {data: {isAsync: false, locs: []}, name: 'bar'},
+          data: {data: {asyncType: null, locs: []}, name: 'bar'},
         },
       ],
       [
         'baz',
         {
           absolutePath: '/baz',
-          data: {data: {isAsync: false, locs: []}, name: 'baz'},
+          data: {data: {asyncType: null, locs: []}, name: 'baz'},
         },
       ],
     ]),

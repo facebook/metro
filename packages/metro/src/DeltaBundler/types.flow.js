@@ -15,6 +15,8 @@ export type MixedOutput = {|
   +type: string,
 |};
 
+export type AsyncDependencyType = 'async' | 'prefetch';
+
 export type TransformResultDependency = {|
   /**
    * The literal name provided to a require or import call. For example 'foo' in
@@ -28,14 +30,9 @@ export type TransformResultDependency = {|
    */
   +data: {|
     /**
-     * If `true` this dependency is due to a dynamic `import()` call. If `false`,
-     * this dependency was pulled using a synchronous `require()` call.
+     * If not null, this dependency is due to a dynamic `import()` or `__prefetchImport()` call.
      */
-    +isAsync: boolean,
-    /**
-     * The dependency is actually a `__prefetchImport()` call.
-     */
-    +isPrefetchOnly?: true,
+    +asyncType: AsyncDependencyType | null,
     /**
      * The condition for splitting on this dependency edge.
      */

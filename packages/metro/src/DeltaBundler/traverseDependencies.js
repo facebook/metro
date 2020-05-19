@@ -252,7 +252,7 @@ async function processModule<T>(
     if (!options.shallow) {
       if (
         options.experimentalImportBundleSupport &&
-        dependency.data.data.isAsync
+        dependency.data.data.asyncType != null
       ) {
         graph.importBundleNames.add(dependency.absolutePath);
       } else if (
@@ -546,7 +546,7 @@ function reorderDependencies<T>(
     const childModule = graph.dependencies.get(path);
 
     if (!childModule) {
-      if (dependency.data.data.isAsync || options.shallow) {
+      if (dependency.data.data.asyncType != null || options.shallow) {
         return;
       } else {
         throw new ReferenceError('Module not registered in graph: ' + path);

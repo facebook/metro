@@ -22,11 +22,11 @@ const {codeFromAst, comparableCode} = require('../../test-helpers');
 
 const DEP_MAP_NAME = 'arbitrary';
 const DEPS = [
-  {name: 'b/lib/a', data: {isAsync: false, locs: []}},
-  {name: 'do', data: {isAsync: false, locs: []}},
-  {name: 'asyncRequire', data: {isAsync: false, locs: []}},
-  {name: 'some/async/module', data: {isAsync: true, locs: []}},
-  {name: 'setup/something', data: {isAsync: false, locs: []}},
+  {name: 'b/lib/a', data: {asyncType: null, locs: []}},
+  {name: 'do', data: {asyncType: null, locs: []}},
+  {name: 'asyncRequire', data: {asyncType: null, locs: []}},
+  {name: 'some/async/module', data: {asyncType: 'async', locs: []}},
+  {name: 'setup/something', data: {asyncType: null, locs: []}},
 ];
 const REQUIRE_NAMES = new Set(['require']);
 
@@ -67,7 +67,7 @@ it('strips unused dependencies and translates require() calls', () => {
     REQUIRE_NAMES,
   );
   expect(dependencies).toEqual([
-    {name: 'do', data: objectContaining({isAsync: false})},
+    {name: 'do', data: objectContaining({asyncType: null})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`require(${DEP_MAP_NAME}[0]);`),
@@ -85,8 +85,8 @@ it('strips unused dependencies and translates loadForModule() calls', () => {
     REQUIRE_NAMES,
   );
   expect(dependencies).toEqual([
-    {name: 'asyncRequire', data: objectContaining({isAsync: false})},
-    {name: 'some/async/module', data: objectContaining({isAsync: true})},
+    {name: 'asyncRequire', data: objectContaining({asyncType: null})},
+    {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -101,9 +101,9 @@ it('strips unused dependencies and translates loadForModule() calls; different o
     require(${DEP_MAP_NAME}[2], "asyncRequire")(${DEP_MAP_NAME}[1]).then(foo => {});
   `);
   const deps = [
-    {name: 'something/else', data: {isAsync: false, locs: []}},
-    {name: 'some/async/module', data: {isAsync: true, locs: []}},
-    {name: 'asyncRequire', data: {isAsync: false, locs: []}},
+    {name: 'something/else', data: {asyncType: null, locs: []}},
+    {name: 'some/async/module', data: {asyncType: 'async', locs: []}},
+    {name: 'asyncRequire', data: {asyncType: null, locs: []}},
   ];
   const dependencies = optimizeDependencies(
     ast,
@@ -112,9 +112,9 @@ it('strips unused dependencies and translates loadForModule() calls; different o
     REQUIRE_NAMES,
   );
   expect(dependencies).toEqual([
-    {name: 'something/else', data: objectContaining({isAsync: false})},
-    {name: 'asyncRequire', data: objectContaining({isAsync: false})},
-    {name: 'some/async/module', data: objectContaining({isAsync: true})},
+    {name: 'something/else', data: objectContaining({asyncType: null})},
+    {name: 'asyncRequire', data: objectContaining({asyncType: null})},
+    {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`

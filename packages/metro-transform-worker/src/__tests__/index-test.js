@@ -155,12 +155,12 @@ it('transforms a module with dependencies', async () => {
   expect(result.output[0].data.functionMap).toMatchSnapshot();
   expect(result.dependencies).toEqual([
     {
-      data: expect.objectContaining({isAsync: false}),
+      data: expect.objectContaining({asyncType: null}),
       name: '@babel/runtime/helpers/interopRequireDefault',
     },
-    {data: expect.objectContaining({isAsync: false}), name: './c'},
-    {data: expect.objectContaining({isAsync: false}), name: './a'},
-    {data: expect.objectContaining({isAsync: false}), name: 'b'},
+    {data: expect.objectContaining({asyncType: null}), name: './c'},
+    {data: expect.objectContaining({asyncType: null}), name: './a'},
+    {data: expect.objectContaining({asyncType: null}), name: 'b'},
   ]);
 });
 
@@ -187,11 +187,11 @@ it('transforms an es module with regenerator', async () => {
   expect(result.output[0].data.functionMap).toMatchSnapshot();
   expect(result.dependencies).toEqual([
     {
-      data: expect.objectContaining({isAsync: false}),
+      data: expect.objectContaining({asyncType: null}),
       name: '@babel/runtime/helpers/interopRequireDefault',
     },
     {
-      data: expect.objectContaining({isAsync: false}),
+      data: expect.objectContaining({asyncType: null}),
       name: '@babel/runtime/regenerator',
     },
   ]);
@@ -227,7 +227,7 @@ it('transforms import/export syntax when experimental flag is on', async () => {
   expect(result.dependencies).toEqual([
     {
       data: expect.objectContaining({
-        isAsync: false,
+        asyncType: null,
       }),
       name: './c',
     },

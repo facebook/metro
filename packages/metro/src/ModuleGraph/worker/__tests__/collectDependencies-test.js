@@ -42,9 +42,9 @@ it('collects unique dependency identifiers and transforms the AST', () => {
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'b/lib/a', data: objectContaining({isAsync: false})},
-    {name: 'do', data: objectContaining({isAsync: false})},
-    {name: 'setup/something', data: objectContaining({isAsync: false})},
+    {name: 'b/lib/a', data: objectContaining({asyncType: null})},
+    {name: 'do', data: objectContaining({asyncType: null})},
+    {name: 'setup/something', data: objectContaining({asyncType: null})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -64,8 +64,8 @@ it('collects asynchronous dependencies', () => {
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'some/async/module', data: objectContaining({isAsync: true})},
-    {name: 'asyncRequire', data: objectContaining({isAsync: false})},
+    {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
+    {name: 'asyncRequire', data: objectContaining({asyncType: null})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -81,8 +81,8 @@ it('collects mixed dependencies as being sync', () => {
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'some/async/module', data: objectContaining({isAsync: false})},
-    {name: 'asyncRequire', data: objectContaining({isAsync: false})},
+    {name: 'some/async/module', data: objectContaining({asyncType: null})},
+    {name: 'asyncRequire', data: objectContaining({asyncType: null})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -99,8 +99,8 @@ it('collects mixed dependencies as being sync; reverse order', () => {
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'some/async/module', data: objectContaining({isAsync: false})},
-    {name: 'asyncRequire', data: objectContaining({isAsync: false})},
+    {name: 'some/async/module', data: objectContaining({asyncType: null})},
+    {name: 'asyncRequire', data: objectContaining({asyncType: null})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -116,8 +116,8 @@ it('collects __jsResource calls', () => {
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'some/async/module', data: objectContaining({isAsync: true})},
-    {name: 'asyncRequire', data: objectContaining({isAsync: false})},
+    {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
+    {name: 'asyncRequire', data: objectContaining({asyncType: null})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -133,8 +133,8 @@ it('collects conditionallySplitJSResource calls', () => {
   `);
   const {dependencies} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'some/async/module', data: objectContaining({isAsync: true})},
-    {name: 'asyncRequire', data: objectContaining({isAsync: false})},
+    {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
+    {name: 'asyncRequire', data: objectContaining({asyncType: null})},
   ]);
 });
 
@@ -147,9 +147,9 @@ describe('import() prefetching', () => {
     expect(dependencies).toEqual([
       {
         name: 'some/async/module',
-        data: objectContaining({isAsync: true, isPrefetchOnly: true}),
+        data: objectContaining({asyncType: 'prefetch'}),
       },
-      {name: 'asyncRequire', data: objectContaining({isAsync: false})},
+      {name: 'asyncRequire', data: objectContaining({asyncType: null})},
     ]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`
@@ -165,8 +165,8 @@ describe('import() prefetching', () => {
     `);
     const {dependencies} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
-      {name: 'some/async/module', data: objectContaining({isAsync: true})},
-      {name: 'asyncRequire', data: objectContaining({isAsync: false})},
+      {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
+      {name: 'asyncRequire', data: objectContaining({asyncType: null})},
     ]);
   });
 });
@@ -176,7 +176,7 @@ describe('Evaluating static arguments', () => {
     const ast = astFromCode('require(`left-pad`)');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
-      {name: 'left-pad', data: objectContaining({isAsync: false})},
+      {name: 'left-pad', data: objectContaining({asyncType: null})},
     ]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`require(${dependencyMapName}[0], "left-pad");`),
@@ -187,7 +187,7 @@ describe('Evaluating static arguments', () => {
     const ast = astFromCode('require(`left${"-"}pad`)');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
-      {name: 'left-pad', data: objectContaining({isAsync: false})},
+      {name: 'left-pad', data: objectContaining({asyncType: null})},
     ]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`require(${dependencyMapName}[0], "left-pad");`),
@@ -224,7 +224,7 @@ describe('Evaluating static arguments', () => {
     const ast = astFromCode('require("foo_" + "bar")');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
-      {name: 'foo_bar', data: objectContaining({isAsync: false})},
+      {name: 'foo_bar', data: objectContaining({asyncType: null})},
     ]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`require(${dependencyMapName}[0], "foo_bar");`),
@@ -235,7 +235,7 @@ describe('Evaluating static arguments', () => {
     const ast = astFromCode('require("foo_" + "bar" + `_baz`)');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
-      {name: 'foo_bar_baz', data: objectContaining({isAsync: false})},
+      {name: 'foo_bar_baz', data: objectContaining({asyncType: null})},
     ]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(`require(${dependencyMapName}[0], "foo_bar_baz");`),
@@ -246,7 +246,7 @@ describe('Evaluating static arguments', () => {
     const ast = astFromCode('const myVar="my"; require("foo_" + myVar)');
     const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
-      {name: 'foo_my', data: objectContaining({isAsync: false})},
+      {name: 'foo_my', data: objectContaining({asyncType: null})},
     ]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(
@@ -314,9 +314,9 @@ it('ignores require functions defined defined by lower scopes', () => {
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'b/lib/a', data: objectContaining({isAsync: false})},
-    {name: 'do', data: objectContaining({isAsync: false})},
-    {name: 'setup/something', data: objectContaining({isAsync: false})},
+    {name: 'b/lib/a', data: objectContaining({asyncType: null})},
+    {name: 'do', data: objectContaining({asyncType: null})},
+    {name: 'setup/something', data: objectContaining({asyncType: null})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
@@ -347,9 +347,9 @@ it('collects imports', () => {
   const {dependencies} = collectDependencies(ast, opts);
 
   expect(dependencies).toEqual([
-    {name: 'b/lib/a', data: objectContaining({isAsync: false})},
-    {name: 'do', data: objectContaining({isAsync: false})},
-    {name: 'setup/something', data: objectContaining({isAsync: false})},
+    {name: 'b/lib/a', data: objectContaining({asyncType: null})},
+    {name: 'do', data: objectContaining({asyncType: null})},
+    {name: 'setup/something', data: objectContaining({asyncType: null})},
   ]);
 });
 
@@ -362,9 +362,9 @@ it('collects export from', () => {
 
   const {dependencies} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'Apple', data: objectContaining({isAsync: false})},
-    {name: 'Banana', data: objectContaining({isAsync: false})},
-    {name: 'Kiwi', data: objectContaining({isAsync: false})},
+    {name: 'Apple', data: objectContaining({asyncType: null})},
+    {name: 'Banana', data: objectContaining({asyncType: null})},
+    {name: 'Kiwi', data: objectContaining({asyncType: null})},
   ]);
 });
 
@@ -441,10 +441,10 @@ describe('optional dependencies', () => {
     let checked = 0;
     dependencies.forEach(d => {
       if (d.name.includes('-async')) {
-        expect(d.data.isAsync).toBeTruthy();
+        expect(d.data.asyncType).toBe('async');
         hasAsync = true;
       } else {
-        expect(d.data.isAsync).toBeFalsy();
+        expect(d.data.asyncType).toBe(null);
       }
       if (
         d.name.startsWith('optional') ||
@@ -544,11 +544,11 @@ describe('optional dependencies', () => {
     expect(dependencies).toEqual([
       {
         name: 'foo_my',
-        data: objectContaining({isAsync: false, isOptional: true}),
+        data: objectContaining({asyncType: null, isOptional: true}),
       },
       {
         name: 'bar_7',
-        data: objectContaining({isAsync: false, isOptional: true}),
+        data: objectContaining({asyncType: null, isOptional: true}),
       },
     ]);
   });

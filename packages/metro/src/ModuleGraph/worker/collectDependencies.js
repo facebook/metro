@@ -18,7 +18,10 @@ const traverse = require('@babel/traverse').default;
 const types = require('@babel/types');
 
 import type {Ast} from '@babel/core';
-import type {AllowOptionalDependencies} from 'metro/src/DeltaBundler/types.flow.js';
+import type {
+  AllowOptionalDependencies,
+  AsyncDependencyType,
+} from 'metro/src/DeltaBundler/types.flow.js';
 
 opaque type Identifier = any;
 opaque type Path = any;
@@ -35,8 +38,7 @@ type InternalDependency<D> = {|
 |};
 
 type InternalDependencyData = {|
-  isAsync: boolean,
-  isPrefetchOnly?: true,
+  asyncType: AsyncDependencyType | null,
   isOptional?: boolean,
   locs: Array<BabelSourceLocation>,
 |};
@@ -221,7 +223,7 @@ function collectImports(path: Path, state: State) {
       path,
     );
 
-    dep.data.isAsync = false;
+    dep.data.asyncType = null;
   }
 }
 
@@ -237,8 +239,8 @@ function processImportCall(path: Path, state: State, opts: DepOptions): Path {
     isOptional: isOptionalDependency(name, path, state),
   };
   const dep = getDependency(state, name, options, path);
-  if (!options.prefetchOnly) {
-    delete dep.data.isPrefetchOnly;
+  if (!options.prefetchOnly && dep.data.asyncType === 'prefetch') {
+    dep.data.asyncType = 'async';
   }
   if (state.disableRequiresTransform) {
     return path;
@@ -303,8 +305,7 @@ function processRequireCall(path: Path, state: State): Path {
     {prefetchOnly: false, isOptional: isOptionalDependency(name, path, state)},
     path,
   );
-  dep.data.isAsync = false;
-  delete dep.data.isPrefetchOnly;
+  dep.data.asyncType = null;
 
   if (state.disableRequiresTransform) {
     return path;
@@ -342,10 +343,10 @@ function getDependency(
 
   if (!data) {
     index = state.dependency++;
-    data = {isAsync: true, locs: []};
+    data = {asyncType: 'async', locs: []};
 
     if (options.prefetchOnly) {
-      data.isPrefetchOnly = true;
+      data.asyncType = 'prefetch';
     }
 
     if (options.isOptional) {
