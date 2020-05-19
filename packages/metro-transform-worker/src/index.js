@@ -268,6 +268,15 @@ module.exports = {
         output.push({
           data: (compileToBytecode(code, type, {
             sourceURL: filename,
+            sourceMap: fromRawMappings([
+              {
+                code,
+                source: sourceCode,
+                map,
+                functionMap: null,
+                path: filename,
+              },
+            ]).toString(),
           }): HermesCompilerResult),
           type: bytecodeType,
         });
@@ -464,6 +473,9 @@ module.exports = {
       output.push({
         data: (compileToBytecode(code, type, {
           sourceURL: filename,
+          sourceMap: fromRawMappings([
+            {code, source: sourceCode, map, functionMap: null, path: filename},
+          ]).toString(),
         }): HermesCompilerResult),
         type: bytecodeType,
       });

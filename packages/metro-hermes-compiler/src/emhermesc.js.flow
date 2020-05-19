@@ -13,7 +13,7 @@ declare function cwrap(
   'hermesCompileToBytecode',
   string,
   Array<string>,
-): (number, number, string) => Buffer;
+): (number, number, string, number, number) => Buffer;
 declare function cwrap(
   'hermesCompileResult_getError',
   string,
