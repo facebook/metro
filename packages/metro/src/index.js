@@ -191,7 +191,7 @@ exports.runServer = async (
 
   let inspectorProxy: ?InspectorProxy = null;
   if (config.server.runInspectorProxy) {
-    inspectorProxy = new InspectorProxy();
+    inspectorProxy = new InspectorProxy(config.projectRoot);
   }
 
   let httpServer;

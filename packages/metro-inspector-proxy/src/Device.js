@@ -10,7 +10,18 @@
 
 'use strict';
 
-import type {Page, MessageFromDevice, MessageToDevice} from './types';
+import type {
+  Page,
+  MessageFromDevice,
+  MessageToDevice,
+  DebuggerRequest,
+  DebuggerResponse,
+  SetBreakpointByUrlRequest,
+  GetScriptSourceRequest,
+  GetScriptSourceResponse,
+} from './types';
+import * as fs from 'fs';
+import * as path from 'path';
 import WS from 'ws';
 
 const PAGES_POLLING_INTERVAL = 1000;
@@ -76,12 +87,25 @@ class Device {
   // The previous "GetPages" message, for deduplication in debug logs.
   _lastGetPagesMessage: string = '';
 
-  constructor(id: number, name: string, app: string, socket: WS) {
+  // Mapping built from scriptParsed events and used to fetch file content in `Debugger.getScriptSource`.
+  _scriptIdToSourcePathMapping: Map<string, string> = new Map();
+
+  // Root of the project used for relative to absolute source path conversion.
+  _projectRoot: string;
+
+  constructor(
+    id: number,
+    name: string,
+    app: string,
+    socket: WS,
+    projectRoot: string,
+  ) {
     this._id = id;
     this._name = name;
     this._app = app;
     this._pages = [];
     this._deviceSocket = socket;
+    this._projectRoot = projectRoot;
 
     this._deviceSocket.on('message', (message: string) => {
       const parsedMessage = JSON.parse(message);
@@ -151,16 +175,23 @@ class Device {
 
     socket.on('message', (message: string) => {
       debug('(Debugger) -> (Proxy)    (Device): ' + message);
-      const parsedMessage = JSON.parse(message);
-      this._processMessageFromDebugger(parsedMessage, debuggerInfo);
+      const debuggerRequest = JSON.parse(message);
+      const interceptedResponse = this._interceptMessageFromDebugger(
+        debuggerRequest,
+        debuggerInfo,
+      );
 
-      this._sendMessageToDevice({
-        event: 'wrappedEvent',
-        payload: {
-          pageId: this._getPageId(pageId),
-          wrappedEvent: JSON.stringify(parsedMessage),
-        },
-      });
+      if (interceptedResponse) {
+        socket.send(JSON.stringify(interceptedResponse));
+      } else {
+        this._sendMessageToDevice({
+          event: 'wrappedEvent',
+          payload: {
+            pageId: this._getPageId(pageId),
+            wrappedEvent: JSON.stringify(debuggerRequest),
+          },
+        });
+      }
     });
     socket.on('close', () => {
       debug(`Debugger for page ${pageId} and ${this._name} disconnected.`);
@@ -353,14 +384,22 @@ class Device {
           payload.params.url = FILE_PREFIX + payload.params.url;
           debuggerInfo.prependedFilePrefix = true;
         }
+
+        if (params.scriptId != null) {
+          this._scriptIdToSourcePathMapping.set(params.scriptId, params.url);
+        }
       }
 
       if (debuggerInfo.pageId == REACT_NATIVE_RELOADABLE_PAGE.id) {
         // Chrome won't use the source map unless it appears to be new.
-        payload.params.sourceMapURL +=
-          '&cachePrevention=' + this._getPageId(debuggerInfo.pageId);
-        payload.params.url +=
-          '&cachePrevention=' + this._getPageId(debuggerInfo.pageId);
+        if (payload.params.sourceMapURL) {
+          payload.params.sourceMapURL +=
+            '&cachePrevention=' + this._getPageId(debuggerInfo.pageId);
+        }
+        if (payload.params.url) {
+          payload.params.url +=
+            '&cachePrevention=' + this._getPageId(debuggerInfo.pageId);
+        }
       }
     }
 
@@ -395,35 +434,74 @@ class Device {
   }
 
   // Allows to make changes in incoming messages from debugger.
-  // eslint-disable-next-line lint/no-unclear-flowtypes
-  _processMessageFromDebugger(payload: Object, debuggerInfo: DebuggerInfo) {
+  _interceptMessageFromDebugger(
+    req: DebuggerRequest,
+    debuggerInfo: DebuggerInfo,
+  ): ?DebuggerResponse {
+    let response = null;
+    if (req.method === 'Debugger.setBreakpointByUrl') {
+      this._processDebuggerSetBreakpointByUrl(req, debuggerInfo);
+    } else if (req.method === 'Debugger.getScriptSource') {
+      response = {
+        id: req.id,
+        result: this._processDebuggerGetScriptSource(req),
+      };
+    }
+    return response;
+  }
+
+  _processDebuggerSetBreakpointByUrl(
+    req: SetBreakpointByUrlRequest,
+    debuggerInfo: DebuggerInfo,
+  ) {
     // If we replaced Android emulator's address to localhost we need to change it back.
-    if (
-      payload.method === 'Debugger.setBreakpointByUrl' &&
-      debuggerInfo.originalSourceURLAddress
-    ) {
-      const params = payload.params || {};
-      if ('url' in params) {
-        payload.params.url = params.url.replace(
+    if (debuggerInfo.originalSourceURLAddress) {
+      if (req.params.url) {
+        req.params.url = req.params.url.replace(
           'localhost',
           debuggerInfo.originalSourceURLAddress,
         );
 
         if (
-          payload.params.url.startsWith(FILE_PREFIX) &&
+          req.params.url &&
+          req.params.url.startsWith(FILE_PREFIX) &&
           debuggerInfo.prependedFilePrefix
         ) {
           // Remove fake URL prefix if we modified URL in _processMessageFromDevice.
-          payload.params.url = payload.params.url.slice(FILE_PREFIX.length);
+          req.params.url = req.params.url.slice(FILE_PREFIX.length);
         }
       }
-      if ('urlRegex' in params) {
-        payload.params.urlRegex = params.urlRegex.replace(
+      if (req.params.urlRegex) {
+        req.params.urlRegex = req.params.urlRegex.replace(
           /localhost/g,
           debuggerInfo.originalSourceURLAddress,
         );
       }
     }
+  }
+
+  _processDebuggerGetScriptSource(
+    req: GetScriptSourceRequest,
+  ): GetScriptSourceResponse {
+    let scriptSource = `Source for script with id '${req.params.scriptId}' was not found.`;
+
+    const pathToSource = this._scriptIdToSourcePathMapping.get(
+      req.params.scriptId,
+    );
+    if (pathToSource) {
+      try {
+        scriptSource = fs.readFileSync(
+          path.resolve(this._projectRoot, pathToSource),
+          'utf8',
+        );
+      } catch (err) {
+        scriptSource = err.message;
+      }
+    }
+
+    return {
+      scriptSource,
+    };
   }
 
   _getPageId(pageId: string): string {

@@ -91,3 +91,54 @@ export type JsonVersionResponse = {
   'Protocol-Version': string,
   ...
 };
+
+/**
+ * Types were exported from https://github.com/ChromeDevTools/devtools-protocol/blob/master/types/protocol.d.ts
+ */
+
+export type SetBreakpointByUrlRequest = {
+  id: number,
+  method: 'Debugger.setBreakpointByUrl',
+  params: {
+    lineNumber: number,
+    url?: string,
+    urlRegex?: string,
+    scriptHash?: string,
+    columnNumber?: number,
+    condition?: string,
+  },
+};
+
+export type SetBreakpointByUrlResponse = {
+  breakpointId: string,
+  locations: {
+    scriptId: string,
+    lineNumber: number,
+    columnNumber?: number,
+  }[],
+};
+
+export type GetScriptSourceRequest = {
+  id: number,
+  method: 'Debugger.getScriptSource',
+  params: {
+    scriptId: string,
+  },
+};
+
+export type GetScriptSourceResponse = {
+  scriptSource: string,
+  /**
+   * Wasm bytecode.
+   */
+  bytecode?: string,
+};
+
+export type DebuggerRequest =
+  | SetBreakpointByUrlRequest
+  | GetScriptSourceRequest;
+
+export type DebuggerResponse = {
+  id: number,
+  result: SetBreakpointByUrlResponse | GetScriptSourceResponse,
+};

@@ -37,6 +37,9 @@ const INTERNAL_ERROR_CODE = 1011;
  * Main Inspector Proxy class that connects JavaScript VM inside Android/iOS apps and JS debugger.
  */
 class InspectorProxy {
+  // Root of the project used for relative to absolute source path conversion.
+  _projectRoot: string;
+
   // Maps device ID to Device instance.
   _devices: Map<number, Device>;
 
@@ -48,7 +51,8 @@ class InspectorProxy {
   // by debugger to know where to connect.
   _serverAddressWithPort: string = '';
 
-  constructor() {
+  constructor(projectRoot: string) {
+    this._projectRoot = projectRoot;
     this._devices = new Map();
   }
 
@@ -161,7 +165,7 @@ class InspectorProxy {
         const deviceId = this._deviceCounter++;
         this._devices.set(
           deviceId,
-          new Device(deviceId, deviceName, appName, socket),
+          new Device(deviceId, deviceName, appName, socket, this._projectRoot),
         );
 
         debug(`Got new connection: device=${deviceName}, app=${appName}`);

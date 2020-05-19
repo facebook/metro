@@ -14,11 +14,18 @@ const yargs = require('yargs');
 
 const {runInspectorProxy} = require('./index');
 
-yargs.option('port', {
-  alias: 'p',
-  describe: 'port to run inspector proxy on',
-  type: 'number',
-  default: 8081,
-});
+const argv = yargs
+  .option('port', {
+    alias: 'p',
+    describe: 'port to run inspector proxy on',
+    type: 'number',
+    default: 8081,
+  })
+  .option('root', {
+    alias: 'r',
+    describe: 'root folder of metro project',
+    type: 'string',
+    default: '',
+  }).argv;
 
-runInspectorProxy((yargs.argv.port: any));
+runInspectorProxy((argv.port: any), (argv.root: any));

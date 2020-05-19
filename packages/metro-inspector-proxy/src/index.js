@@ -16,8 +16,8 @@ const InspectorProxy = require('./InspectorProxy');
 // Requires are inlined here because we don't want to import them
 // when someone needs only InspectorProxy instance (without starting
 // new HTTP server).
-function runInspectorProxy(port: number) {
-  const inspectorProxy = new InspectorProxy();
+function runInspectorProxy(port: number, projectRoot: string) {
+  const inspectorProxy = new InspectorProxy(projectRoot);
   const app = require('connect')();
   app.use(inspectorProxy.processRequest.bind(inspectorProxy));
 
