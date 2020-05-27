@@ -192,7 +192,7 @@ async function getAssetData(
   publicPath: string,
 ): Promise<AssetData> {
   // OKHTTP (Android HTTP client) strips out any '..' from a URL so we replace them with 2 _'s.
-  const escapedLocalPath = localPath.replace(/\.\.\//, '__/');
+  const escapedLocalPath = localPath.replace(/\.\.\//g, '__/');
   let assetUrlPath = path.join(publicPath, path.dirname(escapedLocalPath));
 
   // On Windows, change backslashes to slashes to get proper URL path from file path.
@@ -276,7 +276,7 @@ async function getAsset(
   // Replaces __/ or __\ with ../ or ..\
   const absolutePath = path.resolve(
     projectRoot,
-    relativePath.replace(/__(\/|\\)/, '..$1'),
+    relativePath.replace(/__(\/|\\)/g, '..$1'),
   );
 
   if (!assetExts.includes(assetData.type)) {

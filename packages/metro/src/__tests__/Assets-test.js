@@ -194,9 +194,9 @@ describe('getAssetData', () => {
   it('should escape out .. in assetData', () => {
     fs.writeFileSync(path.join('/', 'b@1x.png'), 'b1 image');
 
-    return getAssetData('/b.png', '../b.png', [], null, '/assets').then(
+    return getAssetData('/b.png', '../../b.png', [], null, '/assets').then(
       data => {
-        expect(data.httpServerLocation).toEqual('/assets/__');
+        expect(data.httpServerLocation).toEqual('/assets/__/__');
       },
     );
   });
