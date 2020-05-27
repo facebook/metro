@@ -11,9 +11,7 @@
 
 var path = require('path');
 
-// Don't forget to everything listed here to `package.json`
-// modulePathIgnorePatterns.
-var sharedBlacklist = [
+var list = [
   /node_modules\/react\/dist\/.*/,
   /website\/node_modules\/.*/,
   /heapCapture\/bundle\.js/,
@@ -28,19 +26,19 @@ function escapeRegExp(pattern) {
     // convert the '/' into an escaped local file separator
     return escaped.replace(/\//g, '\\' + path.sep);
   } else {
-    throw new Error('Unexpected blacklist pattern: ' + pattern);
+    throw new Error('Unexpected exclusion pattern: ' + pattern);
   }
 }
 
-function blacklist(additionalBlacklist) {
+function exclusionList(additionalExclusions) {
   return new RegExp(
     '(' +
-      (additionalBlacklist || [])
-        .concat(sharedBlacklist)
+      (additionalExclusions || [])
+        .concat(list)
         .map(escapeRegExp)
         .join('|') +
       ')$',
   );
 }
 
-module.exports = blacklist;
+module.exports = exclusionList;

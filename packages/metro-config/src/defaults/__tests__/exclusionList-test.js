@@ -11,10 +11,10 @@
 
 'use strict';
 
+const exclusionList = require('../exclusionList');
 const path = require('path');
-const blacklist = require('../blacklist');
 
-describe('blacklist', () => {
+describe('exclusionList', () => {
   let originalSeparator;
   beforeEach(() => {
     originalSeparator = path.sep;
@@ -28,11 +28,11 @@ describe('blacklist', () => {
   it('converts forward slashes in the RegExp to the OS specific path separator', () => {
     // $FlowFixMe: property sep is not writable.
     path.sep = '/';
-    expect('a/b/c').toMatch(blacklist([new RegExp('a/b/c')]));
+    expect('a/b/c').toMatch(exclusionList([new RegExp('a/b/c')]));
 
     // $FlowFixMe: property sep is not writable.
     path.sep = '\\';
     expect(require('path').sep).toBe('\\');
-    expect('a\\b\\c').toMatch(blacklist([new RegExp('a/b/c')]));
+    expect('a\\b\\c').toMatch(exclusionList([new RegExp('a/b/c')]));
   });
 });

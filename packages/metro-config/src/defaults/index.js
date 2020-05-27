@@ -12,7 +12,7 @@
 
 const TerminalReporter = require('metro/src/lib/TerminalReporter');
 
-const blacklist = require('./blacklist');
+const exclusionList = require('./exclusionList');
 const getMaxWorkers = require('metro/src/lib/getMaxWorkers');
 const os = require('os');
 const path = require('path');
@@ -41,7 +41,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     extraNodeModules: {},
     resolveRequest: null,
     hasteImplModulePath: undefined,
-    blacklistRE: blacklist(),
+    blacklistRE: exclusionList(),
     useWatchman: true,
   },
 
