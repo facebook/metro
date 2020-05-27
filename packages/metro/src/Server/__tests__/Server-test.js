@@ -66,24 +66,24 @@ describe('processRequest', () => {
 
   let server;
 
-  const options = getDefaultValues('/');
-  options.projectRoot = '/root';
-  options.watchFolders = ['/root'];
-  options.resolver.blacklistRE = null;
-  options.cacheVersion = null;
-  options.serializer.getRunModuleStatement = moduleId =>
+  const config = getDefaultValues('/');
+  config.projectRoot = '/root';
+  config.watchFolders = ['/root'];
+  config.resolver.blacklistRE = null;
+  config.cacheVersion = null;
+  config.serializer.getRunModuleStatement = moduleId =>
     `require(${JSON.stringify(moduleId)});`;
-  options.reporter = require('../../lib/reporting').nullReporter;
-  options.serializer.polyfillModuleNames = null;
-  options.serializer.getModulesRunBeforeMainModule = () => ['InitializeCore'];
-  options.server.rewriteRequestUrl = function(requrl) {
+  config.reporter = require('../../lib/reporting').nullReporter;
+  config.serializer.polyfillModuleNames = null;
+  config.serializer.getModulesRunBeforeMainModule = () => ['InitializeCore'];
+  config.server.rewriteRequestUrl = function(requrl) {
     const rewritten = requrl.replace(/__REMOVE_THIS_WHEN_REWRITING__/g, '');
     if (rewritten !== requrl) {
       return rewritten + '&TEST_URL_WAS_REWRITTEN=true';
     }
     return requrl;
   };
-  options.symbolicator.customizeFrame = ({file}) => {
+  config.symbolicator.customizeFrame = ({file}) => {
     if (file === '/root/foo.js') {
       return {collapse: true};
     }
@@ -243,7 +243,7 @@ describe('processRequest', () => {
       }),
     );
 
-    server = new Server(options);
+    server = new Server(config);
 
     transformHelpers.getTransformFn = jest.fn().mockReturnValue(() => {});
     transformHelpers.getResolveDependencyFn = jest

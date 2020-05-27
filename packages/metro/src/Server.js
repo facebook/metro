@@ -108,14 +108,14 @@ const DELTA_ID_HEADER = 'X-Metro-Delta-ID';
 const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';
 
 class Server {
+  _bundler: IncrementalBundler;
   _config: ConfigT;
   _createModuleId: (path: string) => number;
-  _reporter: Reporter;
-  _logger: typeof Logger;
-  _platforms: Set<string>;
-  _nextBundleBuildID: number;
-  _bundler: IncrementalBundler;
   _isEnded: boolean;
+  _logger: typeof Logger;
+  _nextBundleBuildID: number;
+  _platforms: Set<string>;
+  _reporter: Reporter;
 
   constructor(config: ConfigT, options?: ServerOptions) {
     this._config = config;
@@ -424,20 +424,19 @@ class Server {
       `Handling request: ${host ? 'http://' + host : ''}${req.url}` +
         (originalUrl !== req.url ? ` (rewritten from ${originalUrl})` : ''),
     );
-    /* $FlowFixMe: Could be empty if the URL is invalid. */
-    const pathname: string = urlObj.pathname;
+    const pathname = urlObj.pathname || '';
 
-    if (pathname.match(/\.bundle$/)) {
+    if (pathname.endsWith('.bundle')) {
       await this._processBundleRequest(req, res);
-    } else if (pathname.match(/\.bytecodebundle$/)) {
+    } else if (pathname.endsWith('.bytecodebundle')) {
       await this._processBytecodeBundleRequest(req, res);
-    } else if (pathname.match(/\.map$/)) {
+    } else if (pathname.endsWith('.map')) {
       // Chrome dev tools may need to access the source maps.
       res.setHeader('Access-Control-Allow-Origin', 'devtools://devtools');
       await this._processSourceMapRequest(req, res);
-    } else if (pathname.match(/\.assets$/)) {
+    } else if (pathname.endsWith('.assets')) {
       await this._processAssetsRequest(req, res);
-    } else if (pathname.match(/^\/assets\//)) {
+    } else if (pathname.startsWith('/assets/')) {
       await this._processSingleAssetRequest(req, res);
     } else if (pathname === '/symbolicate') {
       await this._symbolicate(req, res);

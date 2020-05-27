@@ -9,12 +9,18 @@
 
 'use strict';
 
+const accepts = require('accepts');
+
 const CRLF = '\r\n';
 const BOUNDARY = '3beqjf3apnqeu3h5jqorms4i';
 
 class MultipartResponse {
   static wrap(req, res) {
-    if (acceptsMultipartResponse(req)) {
+    if (
+      accepts(req)
+        .types()
+        .includes('multipart/mixed')
+    ) {
       return new MultipartResponse(res);
     }
     // Ugly hack, ideally wrap function should always return a proxy
@@ -80,10 +86,6 @@ class MultipartResponse {
       .map(key => `${key}: ${headers[key]}`)
       .join(CRLF);
   }
-}
-
-function acceptsMultipartResponse(req) {
-  return req.headers && req.headers.accept === 'multipart/mixed';
 }
 
 module.exports = MultipartResponse;
