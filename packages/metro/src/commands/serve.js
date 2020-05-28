@@ -16,13 +16,15 @@ const {watchFile, makeAsyncCommand} = require('../cli-utils');
 const {loadConfig, resolveConfig} = require('metro-config');
 const {promisify} = require('util');
 
+import type {RunServerOptions} from '../index';
+import type {YargArguments} from 'metro-config/src/configTypes.flow';
 import typeof Yargs from 'yargs';
 
 module.exports = (): ({|
   builder: (yargs: Yargs) => void,
   command: $TEMPORARY$string<'serve'>,
   description: string,
-  handler: (argv: any) => void,
+  handler: (argv: YargArguments) => void,
 |}) => ({
   command: 'serve',
 
@@ -50,12 +52,10 @@ module.exports = (): ({|
     yargs.option('config', {alias: 'c', type: 'string'});
 
     // Deprecated
-    // $FlowFixMe Errors found when flow-typing `yargs`
-    yargs.option('reset-cache', {type: 'boolean', describe: null});
+    yargs.option('reset-cache', {type: 'boolean'});
   },
 
-  // eslint-disable-next-line lint/no-unclear-flowtypes
-  handler: makeAsyncCommand(async (argv: any) => {
+  handler: makeAsyncCommand(async (argv: YargArguments) => {
     let server = null;
     let restarting = false;
 
@@ -74,7 +74,8 @@ module.exports = (): ({|
 
       const config = await loadConfig(argv);
 
-      server = await MetroApi.runServer(config, argv);
+      // $FlowExpectedError YargArguments and RunBuildOptions are used interchangeable but their types are not yet compatible
+      server = await MetroApi.runServer(config, (argv: RunServerOptions));
 
       restarting = false;
     }

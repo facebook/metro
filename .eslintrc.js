@@ -9,6 +9,10 @@
 
 'use strict';
 
+const path = require('path');
+
+require('eslint-plugin-lint').load(path.join(__dirname, 'eslint-rules'));
+
 module.exports = {
   env: {
     node: true,

@@ -10,8 +10,7 @@
 
 'use strict';
 
-// eslint-disable-next-line lint/flow-no-fixme
-// $FlowFixMe: too hard to type, and they only have a .ts file.
+// $FlowExpectedError: TODO(t67543266): `source-map` is hard to type.
 const sourceMap = require('source-map');
 
 import type {MixedSourceMap, BasicSourceMap} from 'metro-source-map';

@@ -61,9 +61,11 @@ class WorkerFarm {
 
       this._worker = worker;
     } else {
-      // eslint-disable-next-line lint/flow-no-fixme
-      // $FlowFixMe: Flow doesn't support dynamic requires
-      this._worker = require(this._config.transformer.workerPath);
+      // eslint-disable-next-line no-useless-call
+      this._worker = (require.call(
+        null,
+        this._config.transformer.workerPath,
+      ): Worker);
     }
   }
 
@@ -152,7 +154,7 @@ class WorkerFarm {
       }: ${err.message}`,
     );
 
-    // $FlowFixMe: extending an error.
+    // $FlowExpectedError: TODO(t67543470): Change this to properly extend the error.
     return Object.assign(error, {
       stack: err.stack,
       snippet: err.codeFrame,

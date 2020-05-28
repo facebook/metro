@@ -39,6 +39,8 @@ type GeneratorOptions = {
 
 type InlinePlugin = string | {...} | (() => {...});
 type _Plugins = Array<string | Object | [InlinePlugin] | [InlinePlugin, mixed]>;
+type InlinePreset = string | {...} | (() => {...});
+type _Presets = Array<string | Object | [InlinePreset] | [InlinePreset, mixed]>;
 
 type BabelNode = $FlowFixMe;
 type BabelPath = $FlowFixMe;
@@ -114,7 +116,7 @@ type BabelCoreOptions = {|
   only?: ?(string | Array<string> | RegExp | Array<string | RegExp>),
   parserOpts?: ?BabelParserOptions,
   plugins?: ?_Plugins,
-  presets?: Array<string>,
+  presets?: ?_Presets,
   retainLines?: boolean,
   root?: string,
   shouldPrintComment?: ?(string) => boolean,
@@ -178,6 +180,7 @@ declare module '@babel/core' {
   declare type Ast = BabelNode;
   declare type BabelSourceMap = _BabelSourceMap;
   declare type Plugins = _Plugins;
+  declare type Presets = _Presets;
   declare type TransformResult = Transform7Result;
   declare type BabelCoreOptions = BabelCoreOptions;
 

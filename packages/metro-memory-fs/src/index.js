@@ -1284,9 +1284,8 @@ class ReadFileSteam extends stream.Readable {
     ...
   }) {
     const {highWaterMark, fd} = options;
-    // eslint-disable-next-line lint/flow-no-fixme
-    // $FlowFixMe: Readable does accept null of undefined for that value.
-    super({highWaterMark});
+    const superOptions = highWaterMark != null ? {highWaterMark} : {};
+    super(superOptions);
     this.bytesRead = 0;
     this.path = options.filePath;
     this._readSync = options.readSync;

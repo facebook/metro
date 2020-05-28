@@ -46,7 +46,7 @@ type MetroMiddleWare = {|
   middleware: Middleware,
 |};
 
-type RunServerOptions = {|
+export type RunServerOptions = {|
   hasReducedPerformance?: boolean,
   host?: string,
   onError?: (Error & {|code?: string|}) => void,
@@ -67,7 +67,7 @@ type BuildGraphOptions = {|
   type?: 'module' | 'script',
 |};
 
-type RunBuildOptions = {|
+export type RunBuildOptions = {|
   entry: string,
   dev?: boolean,
   out?: string,

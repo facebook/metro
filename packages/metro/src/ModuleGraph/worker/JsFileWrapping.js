@@ -10,10 +10,11 @@
 
 'use strict';
 
-/* eslint-disable lint/no-unclear-flowtypes */
 const t = require('@babel/types');
 const template = require('@babel/template').default;
 const traverse = require('@babel/traverse').default;
+
+import type {Ast} from '@babel/core';
 
 const WRAP_NAME = '$$_REQUIRE'; // note: babel will prefix this with _
 
@@ -25,12 +26,12 @@ const IIFE_PARAM = template(
 );
 
 function wrapModule(
-  fileAst: Object,
+  fileAst: Ast,
   importDefaultName: string,
   importAllName: string,
   dependencyMapName: string,
 ): {
-  ast: Object,
+  ast: Ast,
   requireName: string,
   ...
 } {
@@ -48,7 +49,7 @@ function wrapModule(
   return {ast, requireName};
 }
 
-function wrapPolyfill(fileAst: Object): Object {
+function wrapPolyfill(fileAst: Ast): Ast {
   const factory = functionFromProgram(fileAst.program, ['global']);
 
   const iife = t.callExpression(factory, [IIFE_PARAM().expression]);
@@ -71,9 +72,9 @@ function wrapJson(source: string): string {
 }
 
 function functionFromProgram(
-  program: Object,
+  program: Ast,
   parameters: $ReadOnlyArray<string>,
-): Object {
+): Ast {
   return t.functionExpression(
     t.identifier(''),
     parameters.map(makeIdentifier),
@@ -81,7 +82,7 @@ function functionFromProgram(
   );
 }
 
-function makeIdentifier(name: string): Object {
+function makeIdentifier(name: string): Ast {
   return t.identifier(name);
 }
 
@@ -101,7 +102,7 @@ function buildParameters(
   ];
 }
 
-function renameRequires(ast: Object): string {
+function renameRequires(ast: Ast): string {
   let newRequireName = WRAP_NAME;
 
   traverse(ast, {

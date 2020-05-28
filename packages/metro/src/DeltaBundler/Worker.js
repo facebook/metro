@@ -27,11 +27,15 @@ export type Worker = {|
   +transform: typeof transform,
 |};
 
-export type TransformerFn = (
-  string,
-  Buffer,
-  JsTransformOptions,
-) => Promise<TransformResult<>>;
+type TransformerInterface = {
+  transform(
+    JsTransformerConfig,
+    string,
+    string,
+    Buffer,
+    JsTransformOptions,
+  ): Promise<TransformResult<>>,
+};
 
 export type TransformerConfig = {
   transformerPath: string,
@@ -52,9 +56,11 @@ async function transform(
   projectRoot: string,
   transformerConfig: TransformerConfig,
 ): Promise<Data> {
-  // eslint-disable-next-line lint/flow-no-fixme
-  // $FlowFixMe Transforming fixed types to generic types during refactor.
-  const Transformer = require(transformerConfig.transformerPath);
+  // eslint-disable-next-line no-useless-call
+  const Transformer = (require.call(
+    null,
+    transformerConfig.transformerPath,
+  ): TransformerInterface);
 
   const transformFileStartLogEntry = {
     action_name: 'Transforming file',

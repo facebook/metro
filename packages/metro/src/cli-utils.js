@@ -12,6 +12,8 @@
 
 const fs = require('fs-extra');
 
+import type {YargArguments} from 'metro-config/src/configTypes.flow';
+
 exports.watchFile = async function(
   filename: string,
   callback: () => *,
@@ -24,11 +26,8 @@ exports.watchFile = async function(
 };
 
 exports.makeAsyncCommand = (
-  command: (argv: any) => Promise<*>,
-): ((argv: any) => void) => (
-  // eslint-disable-next-line lint/no-unclear-flowtypes
-  argv: any,
-) => {
+  command: (argv: YargArguments) => Promise<*>,
+): ((argv: YargArguments) => void) => (argv: YargArguments) => {
   Promise.resolve(command(argv)).catch(error => {
     console.error(error.stack);
     process.exitCode = 1;

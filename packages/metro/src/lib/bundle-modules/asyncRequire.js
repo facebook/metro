@@ -10,8 +10,8 @@
 
 'use strict';
 
-// eslint-disable-next-line lint/flow-no-fixme
-const dynamicRequire = (require: $FlowFixMe);
+// $FlowExpectedError Flow does not know about Metro's require extensions.
+const dynamicRequire = (require: {importAll: mixed => mixed});
 module.exports = function(moduleID: mixed): Promise<mixed> {
   return Promise.resolve().then(() => dynamicRequire.importAll(moduleID));
 };

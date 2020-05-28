@@ -35,13 +35,30 @@ type ContextOptionsInput = {
   ...
 };
 
-// TODO (T46584006): Write the real types for these.
-// eslint-disable-next-line lint/no-unclear-flowtypes
-type SizeAttributionMap = Object;
-// eslint-disable-next-line lint/no-unclear-flowtypes
-type ChromeTrace = Object;
-// eslint-disable-next-line lint/no-unclear-flowtypes
-type ChromeTraceEntry = Object;
+type SizeAttributionMap = {
+  location: {
+    file: ?string,
+    filename?: string,
+    bytecodeSize?: number,
+    virtualOffset?: number,
+    line: ?number,
+    column: ?number,
+  },
+};
+
+type ChromeTraceEntry = {
+  column: number,
+  funcColumn: number,
+  funcLine: number,
+  funcVirtAddr: number,
+  line: number,
+  name: string,
+  offset: number,
+};
+
+type ChromeTrace = {
+  stackFrames: {[string]: ChromeTraceEntry},
+};
 
 type HermesMinidumpCrashInfo = {
   +callstack: $ReadOnlyArray<HermesMinidumpStackFrame | NativeCodeStackFrame>,
@@ -188,10 +205,10 @@ class SymbolicationContext<ModuleIdsT> {
       .join('\n');
   }
 
-  symbolicateAttribution(obj: SizeAttributionMap): SizeAttributionMap {
+  symbolicateAttribution(obj: SizeAttributionMap): void {
     const loc = obj.location;
     const line = loc.line != null ? loc.line : this.options.inputLineStart;
-    let column = loc.column != null ? loc.column : loc.virtualOffset;
+    let column = Number(loc.column != null ? loc.column : loc.virtualOffset);
     const file = loc.filename ? this.parseFileName(loc.filename) : null;
     let original = this.getOriginalPositionFor(line, column, file);
 
@@ -199,6 +216,8 @@ class SymbolicationContext<ModuleIdsT> {
       loc.bytecodeSize != null &&
       loc.virtualOffset != null &&
       !loc.column != null;
+    const virtualOffset = Number(loc.virtualOffset);
+    const bytecodeSize = Number(loc.bytecodeSize);
 
     // Functions compiled from Metro-bundled modules will often have a little bit
     // of unmapped wrapper code right at the beginning - which is where we query.
@@ -211,7 +230,7 @@ class SymbolicationContext<ModuleIdsT> {
     while (
       isBytecodeRange &&
       original.source == null &&
-      ++column < loc.virtualOffset + loc.bytecodeSize
+      ++column < virtualOffset + bytecodeSize
     ) {
       original = this.getOriginalPositionFor(line, column, file);
     }
@@ -238,93 +257,86 @@ class SymbolicationContext<ModuleIdsT> {
       ...
     },
   ): void {
-    const contentJson: ChromeTrace = JSON.parse(
-      fs.readFileSync(traceFile, 'utf8'),
-    );
-    if (contentJson.stackFrames == null) {
+    const content: ChromeTrace = JSON.parse(fs.readFileSync(traceFile, 'utf8'));
+    if (content.stackFrames == null) {
       throw new Error('Unable to locate `stackFrames` section in trace.');
     }
-    stdout.write(
-      'Processing ' + Object.keys(contentJson.stackFrames).length + ' frames\n',
-    );
-    Object.values(contentJson.stackFrames).forEach(
-      (entry: ChromeTraceEntry) => {
-        let line;
-        let column;
+    const keys = Object.keys(content.stackFrames);
+    stdout.write('Processing ' + keys.length + ' frames\n');
+    keys.forEach(key => {
+      const entry = content.stackFrames[key];
+      let line;
+      let column;
 
-        // Function entrypoint line/column; used for symbolicating function name
-        // with legacy source maps (or when --no-function-names is set).
-        let funcLine;
-        let funcColumn;
+      // Function entrypoint line/column; used for symbolicating function name
+      // with legacy source maps (or when --no-function-names is set).
+      let funcLine;
+      let funcColumn;
 
-        if (entry.funcVirtAddr != null && entry.offset != null) {
-          // Without debug information.
-          const funcVirtAddr = parseInt(entry.funcVirtAddr, 10);
-          const offsetInFunction = parseInt(entry.offset, 10);
-          // Main bundle always use hard-coded line value 1.
-          // TODO: support multiple bundle/module.
-          line = this.options.inputLineStart;
-          column = funcVirtAddr + offsetInFunction;
-          funcLine = this.options.inputLineStart;
-          funcColumn = funcVirtAddr;
-        } else if (entry.line != null && entry.column != null) {
-          // For hbc bundle with debug info, name field may already have source
-          // information for the bundle; we still can use the Metro
-          // source map to symbolicate the bundle frame addresses further to its
-          // original source code.
-          line = entry.line;
-          column = entry.column;
+      if (entry.funcVirtAddr != null && entry.offset != null) {
+        // Without debug information.
+        const funcVirtAddr = parseInt(entry.funcVirtAddr, 10);
+        const offsetInFunction = parseInt(entry.offset, 10);
+        // Main bundle always use hard-coded line value 1.
+        // TODO: support multiple bundle/module.
+        line = this.options.inputLineStart;
+        column = funcVirtAddr + offsetInFunction;
+        funcLine = this.options.inputLineStart;
+        funcColumn = funcVirtAddr;
+      } else if (entry.line != null && entry.column != null) {
+        // For hbc bundle with debug info, name field may already have source
+        // information for the bundle; we still can use the Metro
+        // source map to symbolicate the bundle frame addresses further to its
+        // original source code.
+        line = entry.line;
+        column = entry.column;
 
-          funcLine = entry.funcLine;
-          funcColumn = entry.funcColumn;
-        } else {
-          // Native frames.
-          return;
-        }
+        funcLine = entry.funcLine;
+        funcColumn = entry.funcColumn;
+      } else {
+        // Native frames.
+        return;
+      }
 
-        // Symbolicate original file/line/column.
-        const addressOriginal = this.getOriginalPositionDetailsFor(
-          line,
-          column,
-        );
+      // Symbolicate original file/line/column.
+      const addressOriginal = this.getOriginalPositionDetailsFor(line, column);
 
-        let frameName;
-        if (addressOriginal.functionName) {
-          frameName = addressOriginal.functionName;
-        } else {
-          frameName = entry.name;
-          // Symbolicate function name.
-          if (funcLine != null && funcColumn != null) {
-            const funcOriginal = this.getOriginalPositionFor(
-              funcLine,
-              funcColumn,
-            );
-            if (funcOriginal.name != null) {
-              frameName = funcOriginal.name;
-            }
-          } else {
-            // No function line/column info.
-            (stderr || stdout).write(
-              'Warning: no function prolog line/column info; name may be wrong\n',
-            );
+      let frameName;
+      if (addressOriginal.functionName) {
+        frameName = addressOriginal.functionName;
+      } else {
+        frameName = entry.name;
+        // Symbolicate function name.
+        if (funcLine != null && funcColumn != null) {
+          const funcOriginal = this.getOriginalPositionFor(
+            funcLine,
+            funcColumn,
+          );
+          if (funcOriginal.name != null) {
+            frameName = funcOriginal.name;
           }
+        } else {
+          // No function line/column info.
+          (stderr || stdout).write(
+            'Warning: no function prolog line/column info; name may be wrong\n',
+          );
         }
+      }
 
-        // Output format is: funcName(file:line:column)
-        entry.name = [
-          frameName,
-          '(',
-          [
-            addressOriginal.source ?? 'null',
-            addressOriginal.line ?? 'null',
-            addressOriginal.column ?? 'null',
-          ].join(':'),
-          ')',
-        ].join('');
-      },
-    );
+      // Output format is: funcName(file:line:column)
+      entry.name = [
+        frameName,
+        '(',
+        [
+          addressOriginal.source ?? 'null',
+          addressOriginal.line ?? 'null',
+          addressOriginal.column ?? 'null',
+        ].join(':'),
+        ')',
+      ].join('');
+    });
     stdout.write('Writing to ' + traceFile + '\n');
-    fs.writeFileSync(traceFile, JSON.stringify(contentJson));
+    fs.writeFileSync(traceFile, JSON.stringify(content));
   }
 
   /*
@@ -710,8 +722,8 @@ function symbolicateProfilerMap<ModuleIdsT>(
 function symbolicateAttribution<ModuleIdsT>(
   obj: SizeAttributionMap,
   context: SymbolicationContext<ModuleIdsT>,
-): SizeAttributionMap {
-  return context.symbolicateAttribution(obj);
+): void {
+  context.symbolicateAttribution(obj);
 }
 
 function symbolicateChromeTrace<ModuleIdsT>(

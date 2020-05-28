@@ -17,6 +17,8 @@ const {makeAsyncCommand} = require('../cli-utils');
 const {loadConfig} = require('metro-config');
 const {Terminal} = require('metro-core');
 
+import type {RunBuildOptions} from '../index';
+import type {YargArguments} from 'metro-config/src/configTypes.flow';
 import typeof Yargs from 'yargs';
 
 const term = new Terminal(process.stdout);
@@ -26,7 +28,7 @@ module.exports = (): ({|
   builder: (yargs: Yargs) => void,
   command: string,
   description: string,
-  handler: (argv: any) => void,
+  handler: (argv: YargArguments) => void,
 |}) => ({
   command: 'build <entry>',
 
@@ -57,25 +59,25 @@ module.exports = (): ({|
     yargs.option('config', {alias: 'c', type: 'string'});
 
     // Deprecated
-    // $FlowFixMe Errors found when flow-typing `yargs`
-    yargs.option('reset-cache', {type: 'boolean', describe: null});
+    yargs.option('reset-cache', {type: 'boolean'});
   },
 
-  // eslint-disable-next-line lint/no-unclear-flowtypes
-  handler: makeAsyncCommand(async (argv: any) => {
+  handler: makeAsyncCommand(async (argv: YargArguments) => {
     const config = await loadConfig(argv);
+    // $FlowExpectedError YargArguments and RunBuildOptions are used interchangeable but their types are not yet compatible
+    const options = (argv: RunBuildOptions);
 
     await MetroApi.runBuild(config, {
-      ...argv,
+      ...options,
       onBegin: (): void => {
         updateReporter.update({
           buildID: '$',
           type: 'bundle_build_started',
           bundleDetails: {
-            entryFile: argv.entry,
-            platform: argv.platform,
-            dev: !!argv.dev,
-            minify: !!argv.optimize,
+            entryFile: options.entry,
+            platform: options.platform,
+            dev: !!options.dev,
+            minify: !!options.minify,
             bundleType: 'Bundle',
           },
         });

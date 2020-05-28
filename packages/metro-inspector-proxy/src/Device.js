@@ -350,8 +350,10 @@ class Device {
   }
 
   // Allows to make changes in incoming message from device.
-  // eslint-disable-next-line lint/no-unclear-flowtypes
-  _processMessageFromDevice(payload: Object, debuggerInfo: DebuggerInfo) {
+  _processMessageFromDevice(
+    payload: {method: string, params: {sourceMapURL: string, url: string}},
+    debuggerInfo: DebuggerInfo,
+  ) {
     // Replace Android addresses for scriptParsed event.
     if (payload.method === 'Debugger.scriptParsed') {
       const params = payload.params || {};

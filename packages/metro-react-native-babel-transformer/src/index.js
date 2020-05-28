@@ -21,7 +21,7 @@ const path = require('path');
 const {parseSync, transformFromAstSync} = require('@babel/core');
 const {generateFunctionMap} = require('metro-source-map');
 
-import type {Plugins as BabelPlugins} from '@babel/core';
+import type {Plugins, Presets} from '@babel/core';
 import type {
   BabelTransformer,
   BabelTransformerArgs,
@@ -39,12 +39,9 @@ const cacheKeyParts = [
  */
 const getBabelRC = (function() {
   let babelRC: ?{
-    // `any` to avoid flow type mismatch with Babel 7's internal type of
-    // `Array<string>` even though it correctly accepts the usage below.
-    // eslint-disable-next-line lint/no-unclear-flowtypes
-    presets?: any,
+    presets?: Presets,
     extends?: string,
-    plugins: BabelPlugins,
+    plugins: Plugins,
     ...
   } = null;
 
@@ -118,7 +115,7 @@ const getBabelRC = (function() {
  * Given a filename and options, build a Babel
  * config object with the appropriate plugins.
  */
-function buildBabelConfig(filename, options, plugins?: BabelPlugins = []) {
+function buildBabelConfig(filename, options, plugins?: Plugins = []) {
   const babelRC = getBabelRC(options);
 
   const extraConfig = {

@@ -182,3 +182,23 @@ export type ConfigT = $ReadOnly<{|
     transformer: $ReadOnly<TransformerConfigT>,
   |}>,
 |}>;
+
+export type YargArguments = {
+  config?: string,
+  cwd?: string,
+  port?: string | number,
+  host?: string,
+  projectRoot?: string,
+  watchFolders?: Array<string>,
+  assetExts?: Array<string>,
+  sourceExts?: Array<string>,
+  platforms?: Array<string>,
+  'max-workers'?: string | number,
+  maxWorkers?: string | number,
+  transformer?: string,
+  'reset-cache'?: boolean,
+  resetCache?: boolean,
+  runInspectorProxy?: boolean,
+  verbose?: boolean,
+  ...
+};

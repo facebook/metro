@@ -17,7 +17,11 @@ const path = require('path');
 const VERSION = require('../../package.json').version;
 
 import type {TransformerConfig} from './Worker';
+import type {JsTransformerConfig} from 'metro-transform-worker';
 
+type CacheKeyProvider = {
+  getCacheKey?: JsTransformerConfig => string,
+};
 /**
  * Returns a function that will return the transform cache key based on some
  * passed transform options.
@@ -29,9 +33,8 @@ function getTransformCacheKey(opts: {|
 |}): string {
   const {transformerPath, transformerConfig} = opts.transformerConfig;
 
-  // eslint-disable-next-line lint/flow-no-fixme
-  /* $FlowFixMe: dynamic requires prevent static typing :'(  */
-  const Transformer = require(transformerPath);
+  // eslint-disable-next-line no-useless-call
+  const Transformer = (require.call(null, transformerPath): CacheKeyProvider);
   const transformerKey = Transformer.getCacheKey
     ? Transformer.getCacheKey(transformerConfig)
     : '';

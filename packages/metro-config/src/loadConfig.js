@@ -17,32 +17,12 @@ const validConfig = require('./defaults/validConfig');
 const {validate} = require('jest-validate');
 const {dirname, resolve, join} = require('path');
 
-import type {ConfigT, InputConfigT} from './configTypes.flow';
+import type {ConfigT, InputConfigT, YargArguments} from './configTypes.flow';
 
 type CosmiConfigResult = {
   filepath: string,
   isEmpty: boolean,
   config: (ConfigT => Promise<ConfigT>) | (ConfigT => ConfigT) | InputConfigT,
-  ...
-};
-
-type YargArguments = {
-  config?: string,
-  cwd?: string,
-  port?: string | number,
-  host?: string,
-  projectRoot?: string,
-  watchFolders?: Array<string>,
-  assetExts?: Array<string>,
-  sourceExts?: Array<string>,
-  platforms?: Array<string>,
-  'max-workers'?: string | number,
-  maxWorkers?: string | number,
-  transformer?: string,
-  'reset-cache'?: boolean,
-  resetCache?: boolean,
-  runInspectorProxy?: boolean,
-  verbose?: boolean,
   ...
 };
 

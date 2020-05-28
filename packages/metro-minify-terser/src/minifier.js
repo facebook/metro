@@ -58,7 +58,6 @@ function minify({
 
   return {
     code: result.code,
-    // eslint-disable-next-line lint/flow-no-fixme
     map: result.map,
   };
 }

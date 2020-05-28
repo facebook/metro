@@ -15,6 +15,7 @@ const {expression} = require('@babel/template');
 
 import type {Ast} from '@babel/core';
 import type {Path} from '@babel/traverse';
+import type {Types} from '@babel/types';
 
 type State = {
   exportAll: Array<{file: string, ...}>,
@@ -122,8 +123,7 @@ function resolvePath(node: {value: string, ...}, resolve: boolean) {
   });
 }
 
-// eslint-disable-next-line lint/flow-no-fixme
-function importExportPlugin({types: t}: $FlowFixMe): Visitors {
+function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
   return {
     visitor: {
       ExportAllDeclaration(path: Path, state: State): void {
