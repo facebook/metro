@@ -57,7 +57,11 @@ const exponentiationOperator = [
   require('@babel/plugin-transform-exponentiation-operator'),
 ];
 const objectAssign = [require('@babel/plugin-transform-object-assign')];
-const objectRestSpread = [require('@babel/plugin-proposal-object-rest-spread')];
+const objectRestSpread = [
+  require('@babel/plugin-proposal-object-rest-spread'),
+  // Assume no dependence on getters or evaluation order. See https://github.com/babel/babel/pull/11520
+  {loose: true},
+];
 const nullishCoalescingOperator = [
   require('@babel/plugin-proposal-nullish-coalescing-operator'),
   {loose: true},
