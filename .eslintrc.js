@@ -18,13 +18,14 @@ module.exports = {
     node: true,
   },
   extends: 'eslint-config-fb-strict',
-  plugins: ['babel', 'flowtype', 'import', 'prettier'],
+  plugins: ['babel', 'flowtype', 'import', 'lint', 'prettier'],
   parser: 'babel-eslint',
   rules: {
     'babel/quotes': ['error', 'single', 'avoid-escape'],
     'consistent-return': 'error',
     'import/no-extraneous-dependencies': 'error',
     'lint/extra-arrow-initializer': 'off',
+    'lint/strictly-null': 'warn',
     'max-len': 'off',
     'no-alert': 'error',
     'no-console': 'error',
@@ -41,12 +42,6 @@ module.exports = {
       rules: {
         'operator-assignment': ['error', 'never'],
       },
-      env: {
-        node: true,
-      },
-    },
-    {
-      files: ['packages/metro-source-map/**/*.js'],
       env: {
         node: true,
       },

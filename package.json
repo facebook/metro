@@ -20,7 +20,7 @@
     "chalk": "^4.0.0",
     "codecov": "^3.6.5",
     "debug": "^2.2.0",
-    "eslint": "5.1.0",
+    "eslint": "6.8.0",
     "eslint-config-fb-strict": "^24.9.0",
     "eslint-plugin-babel": "^5.2.1",
     "eslint-plugin-flowtype": "2.43.0",
