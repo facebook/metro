@@ -248,6 +248,10 @@ declare module '@babel/template' {
     template: string,
     options?: TemplateOptions,
   ): Templatable;
+  declare export function statements(
+    template: string,
+    options?: TemplateOptions,
+  ): Templatable;
 }
 
 declare module '@babel/types' {
