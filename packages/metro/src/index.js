@@ -47,6 +47,7 @@ type MetroMiddleWare = {|
 |};
 
 export type RunServerOptions = {|
+  enableBytecodeAtBundleEndpoint?: boolean,
   hasReducedPerformance?: boolean,
   host?: string,
   onError?: (Error & {|code?: string|}) => void,
@@ -115,11 +116,14 @@ async function runMetro(
   const mergedConfig = await getConfig(config);
 
   mergedConfig.reporter.update({
-    type: 'initialize_started',
-    port: mergedConfig.server.port,
+    enableBytecodeAtBundleEndpoint: options
+      ? Boolean(options.enableBytecodeAtBundleEndpoint)
+      : false,
     hasReducedPerformance: options
       ? Boolean(options.hasReducedPerformance)
       : false,
+    port: mergedConfig.server.port,
+    type: 'initialize_started',
   });
 
   return new MetroServer(mergedConfig, options);
@@ -167,6 +171,7 @@ exports.createConnectMiddleware = async function(
 exports.runServer = async (
   config: ConfigT,
   {
+    enableBytecodeAtBundleEndpoint = false,
     hasReducedPerformance = false,
     host,
     onError,
@@ -185,7 +190,10 @@ exports.runServer = async (
     attachHmrServer,
     middleware,
     end,
-  } = await exports.createConnectMiddleware(config, {hasReducedPerformance});
+  } = await exports.createConnectMiddleware(config, {
+    enableBytecodeAtBundleEndpoint,
+    hasReducedPerformance,
+  });
 
   serverApp.use(middleware);
 
@@ -280,6 +288,7 @@ exports.runBuild = async (
   ...
 }> => {
   const metroServer = await runMetro(config, {
+    enableBytecodeAtBundleEndpoint: false,
     watch: false,
   });
 

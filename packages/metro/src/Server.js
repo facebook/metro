@@ -13,6 +13,7 @@ const IncrementalBundler = require('./IncrementalBundler');
 const MultipartResponse = require('./Server/MultipartResponse');
 const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
 
+const accepts = require('accepts');
 const baseBytecodeBundle = require('./DeltaBundler/Serializers/baseBytecodeBundle');
 const baseJSBundle = require('./DeltaBundler/Serializers/baseJSBundle');
 const bundleToBytecode = require('./lib/bundleToBytecode');
@@ -100,6 +101,7 @@ type ProcessEndContext<T> = {|
 |};
 
 export type ServerOptions = $ReadOnly<{|
+  enableBytecodeAtBundleEndpoint: boolean,
   hasReducedPerformance?: boolean,
   watch?: boolean,
 |}>;
@@ -111,6 +113,7 @@ class Server {
   _bundler: IncrementalBundler;
   _config: ConfigT;
   _createModuleId: (path: string) => number;
+  _enableBytecodeAtBundleEndpoint: boolean;
   _isEnded: boolean;
   _logger: typeof Logger;
   _nextBundleBuildID: number;
@@ -142,6 +145,9 @@ class Server {
       watch: options ? options.watch : undefined,
     });
     this._nextBundleBuildID = 1;
+    this._enableBytecodeAtBundleEndpoint = options
+      ? Boolean(options.enableBytecodeAtBundleEndpoint)
+      : false;
   }
 
   end() {
@@ -332,6 +338,15 @@ class Server {
     });
   }
 
+  _shouldUseBytecode(req: IncomingMessage) {
+    return (
+      this._enableBytecodeAtBundleEndpoint &&
+      accepts(req)
+        .types()
+        .includes('application/x-metro-bytecode-bundle')
+    );
+  }
+
   _rangeRequestMiddleware(
     req: IncomingMessage,
     res: ServerResponse,
@@ -425,11 +440,15 @@ class Server {
         (originalUrl !== req.url ? ` (rewritten from ${originalUrl})` : ''),
     );
     const pathname = urlObj.pathname || '';
+    const isBundleEndpoint = pathname.endsWith('.bundle');
 
-    if (pathname.endsWith('.bundle')) {
-      await this._processBundleRequest(req, res);
-    } else if (pathname.endsWith('.bytecodebundle')) {
+    if (
+      pathname.endsWith('.bytecodebundle') ||
+      (isBundleEndpoint && this._shouldUseBytecode(req))
+    ) {
       await this._processBytecodeBundleRequest(req, res);
+    } else if (isBundleEndpoint) {
+      await this._processBundleRequest(req, res);
     } else if (pathname.endsWith('.map')) {
       // Chrome dev tools may need to access the source maps.
       res.setHeader('Access-Control-Allow-Origin', 'devtools://devtools');
@@ -464,11 +483,17 @@ class Server {
       req: IncomingMessage,
       res: ServerResponse,
     ): Promise<void> {
+      const urlObj = url.parse(req.url);
+      const pathname = urlObj.pathname || '';
       const bundleOptions = parseOptionsFromUrl(
         url.format({
-          ...url.parse(req.url),
-          protocol: 'http',
+          ...urlObj,
           host: req.headers.host,
+          pathname:
+            pathname.endsWith('.bundle') && this._shouldUseBytecode(req)
+              ? pathname.replace(/\.bundle$/, '.bytecodebundle')
+              : pathname,
+          protocol: 'http',
         }),
         new Set(this._config.resolver.platforms),
       );

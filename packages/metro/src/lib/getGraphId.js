@@ -32,6 +32,7 @@ function getGraphId(
     {
       entryFile,
       options: {
+        bytecode: options.bytecode,
         customTransformOptions:
           options.customTransformOptions != null
             ? options.customTransformOptions

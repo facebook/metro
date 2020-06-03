@@ -183,4 +183,36 @@ describe('getGraphId', () => {
       ),
     );
   });
+
+  it('does not ignore the bytecode option', () => {
+    expect(
+      getGraphId(
+        '/root/waddup',
+        {
+          bytecode: true,
+          dev: true,
+          hot: true,
+          minify: true,
+          platform: 'web',
+          type: 'module',
+          unstable_transformProfile: 'default',
+        },
+        {shallow: false, experimentalImportBundleSupport: false},
+      ),
+    ).not.toBe(
+      getGraphId(
+        '/root/waddup',
+        {
+          bytecode: false,
+          dev: true,
+          hot: true,
+          minify: true,
+          platform: 'web',
+          type: 'module',
+          unstable_transformProfile: 'default',
+        },
+        {shallow: false, experimentalImportBundleSupport: false},
+      ),
+    );
+  });
 });
