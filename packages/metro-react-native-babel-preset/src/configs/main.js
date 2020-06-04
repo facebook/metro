@@ -147,6 +147,7 @@ const getPreset = (src, options) => {
     extraPlugins.push(reactDisplayName);
   }
   if (
+    transformProfile !== 'hermes-stable' &&
     transformProfile !== 'hermes-canary' &&
     (isNull || src.indexOf('?.') !== -1)
   ) {
