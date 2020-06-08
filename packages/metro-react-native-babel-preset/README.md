@@ -21,7 +21,7 @@ npm i metro-react-native-babel-preset --save-dev
 or with `yarn`:
 
 ```sh
-yarn add -d metro-react-native-babel-preset
+yarn add -D metro-react-native-babel-preset
 ```
 
 ### Configuring Babel
