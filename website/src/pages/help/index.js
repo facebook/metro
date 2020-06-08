@@ -17,10 +17,10 @@ const supportLinks = [
   {
     content: `Find what you're looking for in our detailed documentation and
         guides.\n\n- Learn how to [get
-        started](/metro/docs/en/getting-started.html) with Metro.\n- [Troubleshoot](/metro/docs/en/troubleshooting.html) problems with
+        started](/metro/docs/getting-started) with Metro.\n- [Troubleshoot](/metro/docs/troubleshooting) problems with
         Metro.\n- Learn how to [configure
-        Metro](/metro/docs/en/configuration.html).\n- Look at the full [API
-        Reference](/metro/docs/en/api.html).`,
+        Metro](/metro/docs/configuration).\n- Look at the full [API
+        Reference](/metro/docs/api).`,
     title: 'Browse the docs',
   },
   {
