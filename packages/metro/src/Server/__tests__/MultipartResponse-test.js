@@ -124,6 +124,17 @@ describe('MultipartResponse', () => {
       ].join('\r\n'),
     );
   });
+
+  it('passes data directly through to the response object', () => {
+    const nreq = mockNodeRequest({accept: 'multipart/mixed'});
+    const nres = mockNodeResponse();
+    const res = MultipartResponse.wrap(nreq, nres);
+    const buffer = Buffer.from([1, 2, 3, 4]);
+
+    res.writeChunk(null, buffer);
+    res.end('Hello, world!');
+    expect(nres.write).toBeCalledWith(buffer);
+  });
 });
 
 function mockNodeRequest(headers = {}) {

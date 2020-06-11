@@ -42,21 +42,21 @@ class MultipartResponse {
   }
 
   writeChunk(headers, data, isLast = false) {
-    let chunk = `${CRLF}--${BOUNDARY}${CRLF}`;
+    if (this.res.finished) {
+      return;
+    }
+
+    this.res.write(`${CRLF}--${BOUNDARY}${CRLF}`);
     if (headers) {
-      chunk += MultipartResponse.serializeHeaders(headers) + CRLF + CRLF;
+      this.res.write(MultipartResponse.serializeHeaders(headers) + CRLF + CRLF);
     }
 
     if (data) {
-      chunk += data;
+      this.res.write(data);
     }
 
     if (isLast) {
-      chunk += `${CRLF}--${BOUNDARY}--${CRLF}`;
-    }
-
-    if (!this.res.finished) {
-      this.res.write(chunk);
+      this.res.write(`${CRLF}--${BOUNDARY}--${CRLF}`);
     }
   }
 
