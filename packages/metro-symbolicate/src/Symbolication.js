@@ -405,6 +405,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
     ...,
   };
   +_hasLegacySegments: boolean;
+  +_SourceMapConsumer: SourceMapConsumer;
 
   constructor(
     SourceMapConsumer: SourceMapConsumer,
@@ -412,37 +413,43 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
     options: ContextOptionsInput = {},
   ) {
     super(options);
-    const useFunctionNames = this.options.nameSource === 'function_names';
+    this._SourceMapConsumer = SourceMapConsumer;
     const sourceMapJson: MixedSourceMap =
       typeof sourceMapContent === 'string'
         ? JSON.parse(sourceMapContent.replace(/^\)\]\}'/, ''))
         : sourceMapContent;
-    const {x_hermes_function_offsets} = sourceMapJson;
     const segments = {
-      '0': {
-        consumer: new SourceMapConsumer(sourceMapJson),
-        moduleOffsets: sourceMapJson.x_facebook_offsets || [],
-        sourceFunctionsConsumer: useFunctionNames
-          ? new SourceMetadataMapConsumer(sourceMapJson)
-          : null,
-        hermesOffsets: x_hermes_function_offsets,
-      },
+      '0': this._initSegment(sourceMapJson),
     };
     if (sourceMapJson.x_facebook_segments) {
       for (const key of Object.keys(sourceMapJson.x_facebook_segments)) {
         const map = sourceMapJson.x_facebook_segments[key];
-        segments[key] = {
-          consumer: new SourceMapConsumer(map),
-          moduleOffsets: map.x_facebook_offsets || [],
-          sourceFunctionsConsumer: useFunctionNames
-            ? new SourceMetadataMapConsumer(map)
-            : null,
-          hermesOffsets: map.x_hermes_function_offsets,
-        };
+        segments[key] = this._initSegment(map);
       }
     }
     this._hasLegacySegments = sourceMapJson.x_facebook_segments != null;
     this._segments = segments;
+  }
+
+  _initSegment(map) {
+    const useFunctionNames = this.options.nameSource === 'function_names';
+    const {_SourceMapConsumer: SourceMapConsumer} = this;
+    return {
+      get consumer() {
+        Object.defineProperty(this, 'consumer', {
+          value: new SourceMapConsumer(map),
+        });
+        return this.consumer;
+      },
+      moduleOffsets: map.x_facebook_offsets || [],
+      get sourceFunctionsConsumer() {
+        Object.defineProperty(this, 'sourceFunctionsConsumer', {
+          value: useFunctionNames ? new SourceMetadataMapConsumer(map) : null,
+        });
+        return this.sourceFunctionsConsumer;
+      },
+      hermesOffsets: map.x_hermes_function_offsets,
+    };
   }
 
   symbolicateHermesMinidumpTrace(

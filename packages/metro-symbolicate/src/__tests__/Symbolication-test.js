@@ -70,3 +70,32 @@ test('symbolicating without specifying module IDs', async () => {
     }
   `);
 });
+
+test('constructs consumer instances lazily and caches them afterwards', () => {
+  const map = {
+    version: 3,
+    mappings: 'A',
+    names: [],
+    sources: [],
+    x_facebook_segments: {
+      '1': {version: 3, mappings: 'A', names: [], sources: []},
+    },
+  };
+  let consumerCount = 0;
+  class MockConsumer extends SourceMapConsumer {
+    constructor(...args) {
+      super(...args);
+      ++consumerCount;
+    }
+  }
+  const context = Symbolication.createContext(MockConsumer, map);
+  expect(consumerCount).toBe(0);
+  context.getOriginalPositionFor(1, 0, context.parseFileName('main.js'));
+  expect(consumerCount).toBe(1);
+  context.getOriginalPositionFor(11, 0, context.parseFileName('seg-1.js'));
+  expect(consumerCount).toBe(2);
+  context.getOriginalPositionFor(21, 0, context.parseFileName('main.js'));
+  expect(consumerCount).toBe(2);
+  context.getOriginalPositionFor(31, 0, context.parseFileName('seg-1.js'));
+  expect(consumerCount).toBe(2);
+});
