@@ -354,8 +354,8 @@ it('transforms a script to JS source and bytecode', async () => {
     'local/file.js',
     'someReallyArbitrary(code)',
     {
-      bytecode: true,
       dev: true,
+      runtimeBytecodeVersion: 1,
       type: 'script',
     },
   );

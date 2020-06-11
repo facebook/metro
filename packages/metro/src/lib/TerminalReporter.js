@@ -98,13 +98,17 @@ class TerminalReporter {
    */
   _getBundleStatusMessage(
     {
-      bundleDetails: {entryFile, bundleType},
+      bundleDetails: {entryFile, bundleType, runtimeBytecodeVersion},
       transformedFileCount,
       totalFileCount,
       ratio,
     }: BundleProgress,
     phase: BuildPhase,
   ): string {
+    if (runtimeBytecodeVersion) {
+      bundleType = 'bytecodebundle';
+    }
+
     const localPath = path.relative('.', entryFile);
     const filledBar = Math.floor(ratio * MAX_PROGRESS_BAR_CHAR_WIDTH);
     const bundleTypeColor =

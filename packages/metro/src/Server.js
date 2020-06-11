@@ -13,7 +13,6 @@ const IncrementalBundler = require('./IncrementalBundler');
 const MultipartResponse = require('./Server/MultipartResponse');
 const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
 
-const accepts = require('accepts');
 const baseBytecodeBundle = require('./DeltaBundler/Serializers/baseBytecodeBundle');
 const baseJSBundle = require('./DeltaBundler/Serializers/baseJSBundle');
 const bundleToBytecode = require('./lib/bundleToBytecode');
@@ -37,6 +36,7 @@ const symbolicate = require('./Server/symbolicate');
 const transformHelpers = require('./lib/transformHelpers');
 const url = require('url');
 
+const {VERSION: BYTECODE_VERSION} = require('metro-hermes-compiler');
 const {getAsset} = require('./Assets');
 const {
   getExplodedSourceMap,
@@ -101,7 +101,6 @@ type ProcessEndContext<T> = {|
 |};
 
 export type ServerOptions = $ReadOnly<{|
-  enableBytecodeAtBundleEndpoint: boolean,
   hasReducedPerformance?: boolean,
   watch?: boolean,
 |}>;
@@ -113,7 +112,6 @@ class Server {
   _bundler: IncrementalBundler;
   _config: ConfigT;
   _createModuleId: (path: string) => number;
-  _enableBytecodeAtBundleEndpoint: boolean;
   _isEnded: boolean;
   _logger: typeof Logger;
   _nextBundleBuildID: number;
@@ -145,9 +143,6 @@ class Server {
       watch: options ? options.watch : undefined,
     });
     this._nextBundleBuildID = 1;
-    this._enableBytecodeAtBundleEndpoint = options
-      ? Boolean(options.enableBytecodeAtBundleEndpoint)
-      : false;
   }
 
   end() {
@@ -338,15 +333,6 @@ class Server {
     });
   }
 
-  _shouldUseBytecode(req: IncomingMessage) {
-    return (
-      this._enableBytecodeAtBundleEndpoint &&
-      accepts(req)
-        .types()
-        .includes('application/x-metro-bytecode-bundle')
-    );
-  }
-
   _rangeRequestMiddleware(
     req: IncomingMessage,
     res: ServerResponse,
@@ -426,6 +412,14 @@ class Server {
     this._processRequest(req, res, next).catch(next);
   };
 
+  _parseOptions(url: string): BundleOptions {
+    return parseOptionsFromUrl(
+      url,
+      new Set(this._config.resolver.platforms),
+      BYTECODE_VERSION,
+    );
+  }
+
   async _processRequest(
     req: IncomingMessage,
     res: ServerResponse,
@@ -433,28 +427,40 @@ class Server {
   ) {
     const originalUrl = req.url;
     req.url = this._config.server.rewriteRequestUrl(req.url);
+
     const urlObj = url.parse(req.url, true);
     const {host} = req.headers;
     debug(
       `Handling request: ${host ? 'http://' + host : ''}${req.url}` +
         (originalUrl !== req.url ? ` (rewritten from ${originalUrl})` : ''),
     );
+    const formattedUrl = url.format({
+      ...urlObj,
+      host,
+      protocol: 'http',
+    });
     const pathname = urlObj.pathname || '';
-    const isBundleEndpoint = pathname.endsWith('.bundle');
-
-    if (
-      pathname.endsWith('.bytecodebundle') ||
-      (isBundleEndpoint && this._shouldUseBytecode(req))
-    ) {
-      await this._processBytecodeBundleRequest(req, res);
-    } else if (isBundleEndpoint) {
-      await this._processBundleRequest(req, res);
+    if (pathname.endsWith('.bundle')) {
+      const options = this._parseOptions(formattedUrl);
+      if (options.runtimeBytecodeVersion) {
+        await this._processBytecodeBundleRequest(req, res, options);
+      } else {
+        await this._processBundleRequest(req, res, options);
+      }
     } else if (pathname.endsWith('.map')) {
       // Chrome dev tools may need to access the source maps.
       res.setHeader('Access-Control-Allow-Origin', 'devtools://devtools');
-      await this._processSourceMapRequest(req, res);
+      await this._processSourceMapRequest(
+        req,
+        res,
+        this._parseOptions(formattedUrl),
+      );
     } else if (pathname.endsWith('.assets')) {
-      await this._processAssetsRequest(req, res);
+      await this._processAssetsRequest(
+        req,
+        res,
+        this._parseOptions(formattedUrl),
+      );
     } else if (pathname.startsWith('/assets/')) {
       await this._processSingleAssetRequest(req, res);
     } else if (pathname === '/symbolicate') {
@@ -482,21 +488,8 @@ class Server {
     return async function requestProcessor(
       req: IncomingMessage,
       res: ServerResponse,
+      bundleOptions: BundleOptions,
     ): Promise<void> {
-      const urlObj = url.parse(req.url);
-      const pathname = urlObj.pathname || '';
-      const bundleOptions = parseOptionsFromUrl(
-        url.format({
-          ...urlObj,
-          host: req.headers.host,
-          pathname:
-            pathname.endsWith('.bundle') && this._shouldUseBytecode(req)
-              ? pathname.replace(/\.bundle$/, '.bytecodebundle')
-              : pathname,
-          protocol: 'http',
-        }),
-        new Set(this._config.resolver.platforms),
-      );
       const {
         entryFile,
         graphOptions,
@@ -588,11 +581,12 @@ class Server {
       this._reporter.update({
         buildID,
         bundleDetails: {
-          entryFile: resolvedEntryFilePath,
-          platform: transformOptions.platform,
-          dev: transformOptions.dev,
-          minify: transformOptions.minify,
           bundleType: bundleOptions.bundleType,
+          dev: transformOptions.dev,
+          entryFile: resolvedEntryFilePath,
+          minify: transformOptions.minify,
+          platform: transformOptions.platform,
+          runtimeBytecodeVersion: transformOptions.runtimeBytecodeVersion,
         },
         type: 'bundle_build_started',
       });
@@ -1075,6 +1069,7 @@ class Server {
     const options = parseOptionsFromUrl(
       reqUrl,
       new Set(this._config.resolver.platforms),
+      BYTECODE_VERSION,
     );
 
     const {
@@ -1144,18 +1139,18 @@ class Server {
   }
 
   static DEFAULT_GRAPH_OPTIONS: {|
-    bytecode: boolean,
     customTransformOptions: any,
     dev: boolean,
     hot: boolean,
     minify: boolean,
+    runtimeBytecodeVersion: ?number,
     unstable_transformProfile: 'default',
   |} = {
-    bytecode: false,
     customTransformOptions: Object.create(null),
     dev: true,
     hot: false,
     minify: false,
+    runtimeBytecodeVersion: null,
     unstable_transformProfile: 'default',
   };
 

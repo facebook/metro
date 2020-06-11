@@ -19,11 +19,12 @@ const {Terminal} = require('metro-core');
 export type GlobalCacheDisabledReason = 'too_many_errors' | 'too_many_misses';
 
 export type BundleDetails = {
-  entryFile: string,
-  platform: ?string,
-  dev: boolean,
-  minify: boolean,
   bundleType: string,
+  dev: boolean,
+  entryFile: string,
+  minify: boolean,
+  platform: ?string,
+  runtimeBytecodeVersion: ?number,
   ...
 };
 

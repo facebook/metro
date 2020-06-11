@@ -44,7 +44,6 @@ async function calcTransformerOptions(
   options: TransformInputOptions,
 ): Promise<TransformOptionsWithRawInlines> {
   const baseOptions = {
-    bytecode: options.bytecode,
     customTransformOptions: options.customTransformOptions,
     dev: options.dev,
     hot: options.hot,
@@ -52,6 +51,7 @@ async function calcTransformerOptions(
     inlinePlatform: true,
     minify: options.minify,
     platform: options.platform,
+    runtimeBytecodeVersion: options.runtimeBytecodeVersion,
     unstable_transformProfile: options.unstable_transformProfile,
   };
 

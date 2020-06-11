@@ -32,7 +32,6 @@ function getGraphId(
     {
       entryFile,
       options: {
-        bytecode: options.bytecode,
         customTransformOptions:
           options.customTransformOptions != null
             ? options.customTransformOptions
@@ -43,6 +42,7 @@ function getGraphId(
         minify: options.minify,
         unstable_disableES6Transforms: options.unstable_disableES6Transforms,
         platform: options.platform != null ? options.platform : null,
+        runtimeBytecodeVersion: options.runtimeBytecodeVersion,
         type: options.type,
         experimentalImportBundleSupport,
         shallow,

@@ -95,7 +95,6 @@ export type JsTransformerConfig = $ReadOnly<{|
 export type {CustomTransformOptions} from 'metro-babel-transformer';
 
 export type JsTransformOptions = $ReadOnly<{|
-  bytecode: boolean,
   customTransformOptions?: CustomTransformOptions,
   dev: boolean,
   experimentalImportSupport?: boolean,
@@ -105,6 +104,7 @@ export type JsTransformOptions = $ReadOnly<{|
   minify: boolean,
   nonInlinedRequires?: $ReadOnlyArray<string>,
   platform: ?string,
+  runtimeBytecodeVersion: ?number,
   type: Type,
   unstable_disableES6Transforms?: boolean,
   unstable_transformProfile: TransformProfile,
@@ -264,7 +264,7 @@ module.exports = {
           type,
         },
       ];
-      if (options.bytecode) {
+      if (options.runtimeBytecodeVersion) {
         output.push({
           data: (compileToBytecode(code, type, {
             sourceURL: filename,
@@ -469,7 +469,7 @@ module.exports = {
       },
     ];
 
-    if (options.bytecode) {
+    if (options.runtimeBytecodeVersion) {
       output.push({
         data: (compileToBytecode(code, type, {
           sourceURL: filename,

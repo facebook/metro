@@ -27,6 +27,7 @@ const url = require('url');
 const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
+const {VERSION: BYTECODE_VERSION} = require('metro-hermes-compiler');
 
 import type {RevisionId} from './IncrementalBundler';
 import type {
@@ -105,6 +106,7 @@ class HmrServer<TClient: Client> {
     const options = parseOptionsFromUrl(
       requestUrl,
       new Set(this._config.resolver.platforms),
+      BYTECODE_VERSION,
     );
     const {entryFile, transformOptions, graphOptions} = splitBundleOptions(
       options,

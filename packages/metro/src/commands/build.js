@@ -74,11 +74,14 @@ module.exports = (): ({|
           buildID: '$',
           type: 'bundle_build_started',
           bundleDetails: {
-            entryFile: options.entry,
-            platform: options.platform,
-            dev: !!options.dev,
-            minify: !!options.minify,
             bundleType: 'Bundle',
+            dev: !!options.dev,
+            entryFile: options.entry,
+            minify: !!options.minify,
+            platform: options.platform,
+            // Bytecode bundles in Metro are not meant for production use. Instead,
+            // the Hermes Bytecode Compiler should be invoked on the resulting JS bundle from Metro.
+            runtimeBytecodeVersion: null,
           },
         });
       },

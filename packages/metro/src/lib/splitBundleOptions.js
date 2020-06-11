@@ -19,12 +19,12 @@ function splitBundleOptions(options: BundleOptions): SplitBundleOptions {
   return {
     entryFile: options.entryFile,
     transformOptions: {
-      bytecode: options.bytecode,
       customTransformOptions: options.customTransformOptions,
       dev: options.dev,
       hot: options.hot,
       minify: options.minify,
       platform: options.platform,
+      runtimeBytecodeVersion: options.runtimeBytecodeVersion,
       type: 'module',
       unstable_transformProfile: options.unstable_transformProfile,
     },

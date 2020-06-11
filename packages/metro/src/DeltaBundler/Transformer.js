@@ -71,18 +71,18 @@ class Transformer {
     const cache = this._cache;
 
     const {
-      bytecode,
       customTransformOptions,
       dev,
       experimentalImportSupport,
       hot,
       inlinePlatform,
       inlineRequires,
-      nonInlinedRequires,
       minify,
-      unstable_disableES6Transforms,
+      nonInlinedRequires,
       platform,
+      runtimeBytecodeVersion,
       type,
+      unstable_disableES6Transforms,
       unstable_transformProfile,
       ...extra
     } = transformerOptions;
@@ -104,18 +104,18 @@ class Transformer {
       // Path.
       localPath,
 
-      bytecode,
       customTransformOptions,
       dev,
       experimentalImportSupport,
       hot,
       inlinePlatform,
       inlineRequires,
-      nonInlinedRequires,
       minify,
-      unstable_disableES6Transforms,
+      nonInlinedRequires,
       platform,
+      runtimeBytecodeVersion,
       type,
+      unstable_disableES6Transforms,
       unstable_transformProfile,
     ]);
 

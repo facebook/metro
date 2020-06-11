@@ -24,7 +24,6 @@ import type {
 
 type BundleType =
   | 'bundle'
-  | 'bytecodebundle'
   | 'delta'
   | 'meta'
   | 'map'
@@ -40,7 +39,6 @@ type MetroSourceMapOrMappings =
 
 export type BundleOptions = {
   bundleType: BundleType,
-  bytecode: boolean,
   customTransformOptions: CustomTransformOptions,
   dev: boolean,
   entryFile: string,
@@ -52,6 +50,7 @@ export type BundleOptions = {
   onProgress: ?(doneCont: number, totalCount: number) => mixed,
   +platform: ?string,
   +runModule: boolean,
+  runtimeBytecodeVersion: ?number,
   +shallow: boolean,
   sourceMapUrl: ?string,
   sourceUrl: ?string,

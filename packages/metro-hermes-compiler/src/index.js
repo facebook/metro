@@ -176,3 +176,5 @@ module.exports.getFileLength = function(
 ): number {
   return bytecode.readUInt32LE(offset + props.LENGTH_OFFSET);
 };
+
+module.exports.VERSION = props.VERSION;

@@ -151,12 +151,12 @@ describe('HmrServer', () => {
       getGraphId(
         '/root/EntryPoint.js',
         {
-          bytecode: false,
           customTransformOptions: {},
           dev: true,
           hot: true,
           minify: false,
           platform: 'ios',
+          runtimeBytecodeVersion: null,
           type: 'module',
         },
         {
@@ -176,12 +176,12 @@ describe('HmrServer', () => {
       getGraphId(
         '/root/EntryPoint.js',
         {
-          bytecode: false,
           customTransformOptions: {},
           dev: true,
           hot: true,
           minify: false,
           platform: 'ios',
+          runtimeBytecodeVersion: null,
           type: 'module',
         },
         {
@@ -201,12 +201,12 @@ describe('HmrServer', () => {
       getGraphId(
         '/root/EntryPoint.js',
         {
-          bytecode: false,
           customTransformOptions: {},
           dev: true,
           hot: true,
           minify: false,
           platform: 'ios',
+          runtimeBytecodeVersion: null,
           type: 'module',
         },
         {
@@ -226,12 +226,12 @@ describe('HmrServer', () => {
     const expectedMessage = `The graph \`${getGraphId(
       '/root/EntryPoint.js',
       {
-        bytecode: false,
         customTransformOptions: {},
         dev: true,
         hot: true,
         minify: false,
         platform: 'ios',
+        runtimeBytecodeVersion: null,
         type: 'module',
       },
       {

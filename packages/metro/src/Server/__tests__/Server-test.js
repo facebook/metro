@@ -20,6 +20,7 @@ const {
   compile,
   align,
   validateBytecodeModule,
+  VERSION: BYTECODE_VERSION,
 } = require('metro-hermes-compiler');
 
 jest
@@ -270,9 +271,9 @@ describe('processRequest', () => {
     );
   });
 
-  it('returns a bytecode bundle source on request of *.bytecodebundle', async () => {
+  it('returns a bytecode bundle source on request of *.bundle?runtimeBytecodeVersion', async () => {
     const response = await makeRequest(
-      'mybundle.bytecodebundle?runModule=true',
+      `mybundle.bundle?runtimeBytecodeVersion=${BYTECODE_VERSION}&runModule=true`,
       null,
     );
 
@@ -295,38 +296,6 @@ describe('processRequest', () => {
     }
 
     expect(modules).toEqual(numberOfModules);
-  });
-
-  it('returns a bytecode bundle from the *.bundle endpoint if the server enables it and the client accepts it', async () => {
-    server = new Server(config, {enableBytecodeAtBundleEndpoint: true});
-    const response = await makeRequest('mybundle.bundle?runModule=true', {
-      headers: {
-        accept: 'application/x-metro-bytecode-bundle',
-        host: 'localhost:8081',
-      },
-    });
-
-    expect(response.getHeader('Content-Type')).toEqual(
-      'application/x-metro-bytecode-bundle',
-    );
-
-    expect(response.body.readUInt32LE(0)).toEqual(MAGIC_NUMBER);
-    expect(response.body.readUInt32LE(4)).toEqual(8);
-  });
-
-  it('does not return a bytecode bundle from the *.bundle endpoint if the server disables it', async () => {
-    server = new Server(config, {enableBytecodeAtBundleEndpoint: false});
-    const response = await makeRequest('mybundle.bundle?runModule=true', {
-      headers: {
-        accept: 'application/x-metro-bytecode-bundle',
-        host: 'localhost:8081',
-      },
-    });
-
-    expect(response.getHeader('Content-Type')).toEqual(
-      'application/javascript',
-    );
-    expect(typeof response.body === 'string').toBe(true);
   });
 
   it('returns JS bundle without the initial require() call', async () => {
@@ -806,12 +775,12 @@ describe('processRequest', () => {
         expect.any(DeltaBundler),
         expect.any(Object),
         {
-          bytecode: false,
           customTransformOptions: {},
           dev: true,
           hot: false,
           minify: false,
           platform: undefined,
+          runtimeBytecodeVersion: null,
           type: 'module',
           unstable_transformProfile: 'default',
         },

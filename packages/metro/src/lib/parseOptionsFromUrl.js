@@ -18,13 +18,18 @@ const url = require('url');
 
 import type {BundleOptions} from '../shared/types.flow';
 
-const getBoolean = (query, opt, defaultVal) =>
-  query[opt] == null ? defaultVal : query[opt] === 'true' || query[opt] === '1';
+const getBoolean = (query, opt, defaultValue) =>
+  query[opt] == null
+    ? defaultValue
+    : query[opt] === 'true' || query[opt] === '1';
+
+const getNumber = (query, opt, defaultValue) => {
+  const number = parseInt(query[opt], 10);
+  return Number.isNaN(number) ? defaultValue : number;
+};
 
 const getBundleType = bundleType =>
-  bundleType === 'map' || bundleType === 'bytecodebundle'
-    ? bundleType
-    : 'bundle';
+  bundleType === 'map' ? bundleType : 'bundle';
 
 const getTransformProfile = transformProfile =>
   transformProfile === 'hermes-stable' || transformProfile === 'hermes-canary'
@@ -34,6 +39,7 @@ const getTransformProfile = transformProfile =>
 module.exports = function parseOptionsFromUrl(
   requestUrl: string,
   platforms: Set<string>,
+  bytecodeVersion: number,
 ): BundleOptions {
   const parsedURL = nullthrows(url.parse(requestUrl, true)); // `true` to parse the query param as an object.
   const query = nullthrows(parsedURL.query);
@@ -43,9 +49,16 @@ module.exports = function parseOptionsFromUrl(
   const platform =
     query.platform || parsePlatformFilePath(pathname, platforms).platform;
   const bundleType = getBundleType(path.extname(pathname).substr(1));
+  const runtimeBytecodeVersion = getNumber(
+    query,
+    'runtimeBytecodeVersion',
+    null,
+  );
+
   return {
     bundleType,
-    bytecode: bundleType === 'bytecodebundle',
+    runtimeBytecodeVersion:
+      bytecodeVersion === runtimeBytecodeVersion ? bytecodeVersion : null,
     customTransformOptions: parseCustomTransformOptions(parsedURL),
     dev: getBoolean(query, 'dev', true),
     entryFile: pathname.replace(/^(?:\.?\/)?/, './').replace(/\.[^/.]+$/, ''),
