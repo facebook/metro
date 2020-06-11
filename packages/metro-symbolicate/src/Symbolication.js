@@ -44,6 +44,7 @@ type SizeAttributionMap = {
     line: ?number,
     column: ?number,
   },
+  ...
 };
 
 type ChromeTraceEntry = {
@@ -215,7 +216,7 @@ class SymbolicationContext<ModuleIdsT> {
     const isBytecodeRange =
       loc.bytecodeSize != null &&
       loc.virtualOffset != null &&
-      !loc.column != null;
+      loc.column == null;
     const virtualOffset = Number(loc.virtualOffset);
     const bytecodeSize = Number(loc.bytecodeSize);
 
