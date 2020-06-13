@@ -13,6 +13,7 @@
 const AutoCleanFileStore = require('./stores/AutoCleanFileStore');
 const Cache = require('./Cache');
 const FileStore = require('./stores/FileStore');
+const HttpGetStore = require('./stores/HttpGetStore');
 const HttpStore = require('./stores/HttpStore');
 
 const stableHash = require('./stableHash');
@@ -24,6 +25,7 @@ export type {CacheStore} from './types.flow';
 module.exports.AutoCleanFileStore = AutoCleanFileStore;
 module.exports.Cache = Cache;
 module.exports.FileStore = FileStore;
+module.exports.HttpGetStore = HttpGetStore;
 module.exports.HttpStore = HttpStore;
 
 module.exports.stableHash = stableHash;
