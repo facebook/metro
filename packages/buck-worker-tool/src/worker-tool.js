@@ -17,6 +17,7 @@ const each = require('async/each');
 const fs = require('fs');
 const invariant = require('invariant');
 
+const {startProfiling, stopProfilingAndWrite} = require('./profiling');
 const {Console} = require('console');
 
 import type {Writable} from 'stream';
@@ -96,10 +97,15 @@ function buckWorker(commands: Commands): any {
   function handleHandshake(message: IncomingMessage): void {
     const response = handshakeResponse(message);
 
-    writer.write(response);
-
     if (response.type === 'handshake') {
+      if (JS_WORKER_TOOL_CPU_PROFILE) {
+        startProfiling().then(() => writer.write(response));
+      } else {
+        writer.write(response);
+      }
       reader.removeListener('data', handleHandshake).on('data', handleCommand);
+    } else {
+      writer.write(response);
     }
   }
 
@@ -147,7 +153,9 @@ function buckWorker(commands: Commands): any {
     }
   }
 
-  reader.on('data', handleHandshake).on('end', () => writer.end());
+  reader.on('data', handleHandshake).on('end', () => {
+    stopProfilingAndWrite(JS_WORKER_TOOL_NAME).then(() => writer.end());
+  });
   return duplexer(reader, writer);
 }
 
@@ -221,7 +229,11 @@ function readArgsAndExecCommand(
   });
 }
 
-const {JS_WORKER_TOOL_DEBUG_RE} = process.env;
+const {
+  JS_WORKER_TOOL_DEBUG_RE,
+  JS_WORKER_TOOL_CPU_PROFILE,
+  JS_WORKER_TOOL_NAME,
+} = process.env;
 const DEBUG_RE = JS_WORKER_TOOL_DEBUG_RE
   ? new RegExp(JS_WORKER_TOOL_DEBUG_RE)
   : null;
