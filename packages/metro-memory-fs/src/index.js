@@ -109,6 +109,7 @@ const ASYNC_FUNC_NAMES = [
   'fstat',
   'fsync',
   'fdatasync',
+  'link',
   'lstat',
   'mkdir',
   'open',
@@ -862,6 +863,38 @@ class MemoryFs {
     oldDirNode.entries.delete(oldBasename);
     // The source node has been unlinked at the old path.
     this._emitFileChange(oldDirPath.concat([[oldBasename, node]]), {
+      eventType: 'rename',
+    });
+  };
+
+  linkSync: (oldPath: FilePath, newPath: FilePath) => void = (
+    oldPath,
+    newPath,
+  ) => {
+    oldPath = pathStr(oldPath);
+    newPath = pathStr(newPath);
+    const {node: node} = this._resolve(oldPath);
+    if (node == null) {
+      throw makeError('ENOENT', oldPath, 'no such file or directory');
+    }
+    if (node.type === 'directory') {
+      throw makeError(
+        'EPERM',
+        oldPath,
+        'cannot create a hard link to a directory',
+      );
+    }
+    const {
+      basename: newBasename,
+      dirNode: newDirNode,
+      dirPath: newDirPath,
+      node: existingDestNode,
+    } = this._resolve(newPath);
+    if (existingDestNode) {
+      throw makeError('EEXIST', newPath, 'destination path already exists');
+    }
+    newDirNode.entries.set(newBasename, node);
+    this._emitFileChange(newDirPath.concat([[newBasename, node]]), {
       eventType: 'rename',
     });
   };

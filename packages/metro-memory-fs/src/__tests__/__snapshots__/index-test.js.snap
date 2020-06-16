@@ -4,6 +4,40 @@ exports[`posix support accessSync check owned file cannot be read 1`] = `"EPERM:
 
 exports[`posix support accessSync check owned file cannot be written to 1`] = `"EPERM: \`/foo.txt\`: file cannot be written to"`;
 
+exports[`posix support linkSync errors when source is a directory directory -> empty directory 1`] = `"EPERM: \`/source\`: cannot create a hard link to a directory"`;
+
+exports[`posix support linkSync errors when source is a directory directory -> file 1`] = `"EPERM: \`/source\`: cannot create a hard link to a directory"`;
+
+exports[`posix support linkSync errors when source is a directory directory -> itself 1`] = `"EPERM: \`/source\`: cannot create a hard link to a directory"`;
+
+exports[`posix support linkSync errors when source is a directory directory -> non-empty directory 1`] = `"EPERM: \`/source\`: cannot create a hard link to a directory"`;
+
+exports[`posix support linkSync errors when source is a directory directory -> symbolic link 1`] = `"EPERM: \`/source\`: cannot create a hard link to a directory"`;
+
+exports[`posix support linkSync errors when the destination is in a nonexistent directory 1`] = `"ENOENT: \`/bad/dest\`: no such file or directory"`;
+
+exports[`posix support linkSync errors when the source does not exist 1`] = `"ENOENT: \`/source\`: no such file or directory"`;
+
+exports[`posix support linkSync errors when using a file as a directory in the destination path 1`] = `"ENOTDIR: \`/dest/nope\`: not a directory"`;
+
+exports[`posix support linkSync errors when using a file as a directory in the source path 1`] = `"ENOTDIR: \`/source/nope\`: not a directory"`;
+
+exports[`posix support linkSync never overwrites the destination file -> directory 1`] = `"EEXIST: \`/dest\`: destination path already exists"`;
+
+exports[`posix support linkSync never overwrites the destination file -> file 1`] = `"EEXIST: \`/dest\`: destination path already exists"`;
+
+exports[`posix support linkSync never overwrites the destination file -> itself 1`] = `"EEXIST: \`/source\`: destination path already exists"`;
+
+exports[`posix support linkSync never overwrites the destination file -> symbolic link 1`] = `"EEXIST: \`/dest\`: destination path already exists"`;
+
+exports[`posix support linkSync never overwrites the destination symbolic link -> directory 1`] = `"EEXIST: \`/dest\`: destination path already exists"`;
+
+exports[`posix support linkSync never overwrites the destination symbolic link -> file 1`] = `"EEXIST: \`/dest\`: destination path already exists"`;
+
+exports[`posix support linkSync never overwrites the destination symbolic link -> itself 1`] = `"EEXIST: \`/source\`: destination path already exists"`;
+
+exports[`posix support linkSync never overwrites the destination symbolic link -> symbolic link 1`] = `"EEXIST: \`/dest\`: destination path already exists"`;
+
 exports[`posix support readlink throws when trying to read a regular file 1`] = `"EINVAL: \`/foo.txt\`: entity is not a symlink"`;
 
 exports[`posix support renameSync errors when making a directory its own subdirectory 1`] = `"EINVAL: \`/source/subdir\`: cannot make a directory a subdirectory of itself"`;

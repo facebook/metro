@@ -596,6 +596,15 @@ describe('posix support', () => {
       watcher.close();
     });
 
+    it('reports new hard links', () => {
+      const changedPaths = [];
+      fs.writeFileSync('/foo.txt', 'text');
+      const watcher = collectWatchEvents('/', {}, changedPaths);
+      fs.linkSync('/foo.txt', '/bar.txt');
+      expect(changedPaths).toEqual([['rename', 'bar.txt']]);
+      watcher.close();
+    });
+
     function collectWatchEvents(entPath, options, events) {
       return fs.watch(entPath, options, (eventName, filePath) => {
         events.push([eventName, filePath]);
@@ -870,6 +879,20 @@ describe('posix support', () => {
         expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
       });
 
+      it('file -> other hard link to itself succeeds', () => {
+        fs.writeFileSync('/source', 'DATA');
+        fs.linkSync('/source', '/source_alt');
+
+        fs.renameSync('/source', '/source_alt');
+        expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
+        expect(fs.readFileSync('/source_alt', 'utf8')).toBe('DATA');
+
+        // The two are still linked
+        fs.writeFileSync('/source', 'NEW_DATA');
+        expect(fs.readFileSync('/source', 'utf8')).toBe('NEW_DATA');
+        expect(fs.readFileSync('/source_alt', 'utf8')).toBe('NEW_DATA');
+      });
+
       it('file -> directory succeeds', () => {
         fs.writeFileSync('/source', 'DATA');
         fs.mkdirSync('/dest');
@@ -992,6 +1015,221 @@ describe('posix support', () => {
         fs.writeFileSync('/source/data', 'DATA');
 
         fs.renameSync('/source', '/source');
+        expect(fs.readFileSync('/source/data', 'utf8')).toBe('DATA');
+      });
+    });
+  });
+
+  describe('linkSync', () => {
+    it('errors when the source does not exist', () => {
+      fs.writeFileSync('/dest', 'TRY_TO_OVERWRITE_ME');
+      expectFsError('ENOENT', () => fs.linkSync('/source', '/dest'));
+      expect(fs.readFileSync('/dest', 'utf8')).toBe('TRY_TO_OVERWRITE_ME');
+    });
+
+    it('errors when the destination is in a nonexistent directory', () => {
+      fs.writeFileSync('/source', 'DATA');
+
+      expectFsError('ENOENT', () => fs.linkSync('/source', '/bad/dest'));
+      expect(fs.existsSync('/source')).toBe(true);
+      expect(fs.existsSync('/dest')).toBe(false);
+      expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
+    });
+
+    it('errors when using a file as a directory in the source path', () => {
+      fs.writeFileSync('/source', 'DATA');
+
+      expectFsError('ENOTDIR', () => fs.linkSync('/source/nope', '/dest'));
+      expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
+    });
+
+    it('errors when using a file as a directory in the destination path', () => {
+      fs.writeFileSync('/source', 'DATA');
+      fs.writeFileSync('/dest', 'TRY_TO_OVERWRITE_ME');
+
+      expectFsError('ENOTDIR', () => fs.linkSync('/source', '/dest/nope'));
+      expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
+      expect(fs.readFileSync('/dest', 'utf8')).toBe('TRY_TO_OVERWRITE_ME');
+    });
+
+    it('links a file', () => {
+      fs.writeFileSync('/source', 'DATA');
+
+      fs.linkSync('/source', '/dest');
+      expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
+      expect(fs.readFileSync('/dest', 'utf8')).toBe('DATA');
+    });
+
+    describe('relationship after linking', () => {
+      it('unlinking the source keeps the destination in place', () => {
+        fs.writeFileSync('/source', 'DATA');
+
+        fs.linkSync('/source', '/dest');
+        fs.unlinkSync('/source');
+        expect(fs.existsSync('/source')).toBe(false);
+        expect(fs.readFileSync('/dest', 'utf8')).toBe('DATA');
+      });
+
+      it('unlinking the destination keeps the source in place', () => {
+        fs.writeFileSync('/source', 'DATA');
+
+        fs.linkSync('/source', '/dest');
+        fs.unlinkSync('/dest');
+        expect(fs.existsSync('/dest')).toBe(false);
+        expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
+      });
+
+      it('writing to the destination updates the source', () => {
+        fs.writeFileSync('/source', 'DATA');
+
+        fs.linkSync('/source', '/dest');
+        fs.writeFileSync('/dest', 'NEW_DATA');
+        expect(fs.readFileSync('/source', 'utf8')).toBe('NEW_DATA');
+        expect(fs.readFileSync('/dest', 'utf8')).toBe('NEW_DATA');
+      });
+
+      it('writing to the source updates the destination', () => {
+        fs.writeFileSync('/source', 'DATA');
+
+        fs.linkSync('/source', '/dest');
+        fs.writeFileSync('/source', 'NEW_DATA');
+        expect(fs.readFileSync('/source', 'utf8')).toBe('NEW_DATA');
+        expect(fs.readFileSync('/dest', 'utf8')).toBe('NEW_DATA');
+      });
+    });
+
+    describe('never overwrites the destination', () => {
+      it('file -> file', () => {
+        fs.writeFileSync('/source', 'DATA');
+        fs.writeFileSync('/dest', 'TRY_TO_OVERWRITE_ME');
+
+        expectFsError('EEXIST', () => fs.linkSync('/source', '/dest'));
+        expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
+        expect(fs.readFileSync('/dest', 'utf8')).toBe('TRY_TO_OVERWRITE_ME');
+      });
+
+      it('file -> itself', () => {
+        fs.writeFileSync('/source', 'DATA');
+
+        expectFsError('EEXIST', () => fs.linkSync('/source', '/source'));
+        expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
+      });
+
+      it('file -> directory', () => {
+        fs.writeFileSync('/source', 'DATA');
+        fs.mkdirSync('/dest');
+
+        expectFsError('EEXIST', () => fs.linkSync('/source', '/dest'));
+        expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
+        expect(fs.statSync('/dest').isDirectory()).toBe(true);
+      });
+
+      it('file -> symbolic link', () => {
+        fs.writeFileSync('/source', 'DATA');
+        fs.writeFileSync('/destReal', 'TRY_TO_OVERWRITE_ME');
+        fs.symlinkSync('/destReal', '/dest');
+
+        expectFsError('EEXIST', () => fs.linkSync('/source', '/dest'));
+        expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
+        expect(fs.readlinkSync('/dest')).toBe('/destReal');
+        expect(fs.readFileSync('/dest', 'utf8')).toBe('TRY_TO_OVERWRITE_ME');
+      });
+
+      it('symbolic link -> file', () => {
+        fs.writeFileSync('/sourceReal', 'DATA');
+        fs.symlinkSync('/sourceReal', '/source');
+        fs.writeFileSync('/dest', 'TRY_TO_OVERWRITE_ME');
+
+        expectFsError('EEXIST', () => fs.linkSync('/source', '/dest'));
+
+        expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
+        expect(fs.readFileSync('/dest', 'utf8')).toBe('TRY_TO_OVERWRITE_ME');
+      });
+
+      it('symbolic link -> directory', () => {
+        fs.writeFileSync('/sourceReal', 'DATA');
+        fs.symlinkSync('/sourceReal', '/source');
+        fs.mkdirSync('/dest');
+
+        expectFsError('EEXIST', () => fs.linkSync('/source', '/dest'));
+
+        expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
+        expect(fs.statSync('/dest').isDirectory()).toBe(true);
+      });
+
+      it('symbolic link -> symbolic link', () => {
+        fs.writeFileSync('/sourceReal', 'DATA');
+        fs.symlinkSync('/sourceReal', '/source');
+        fs.writeFileSync('/destReal', 'TRY_TO_OVERWRITE_ME');
+        fs.symlinkSync('/destReal', '/dest');
+
+        expectFsError('EEXIST', () => fs.linkSync('/source', '/dest'));
+
+        expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
+        expect(fs.readlinkSync('/dest')).toBe('/destReal');
+        expect(fs.readFileSync('/dest', 'utf8')).toBe('TRY_TO_OVERWRITE_ME');
+      });
+
+      it('symbolic link -> itself', () => {
+        fs.writeFileSync('/sourceReal', 'DATA');
+        fs.symlinkSync('/sourceReal', '/source');
+
+        expectFsError('EEXIST', () => fs.linkSync('/source', '/source'));
+
+        expect(fs.readFileSync('/source', 'utf8')).toBe('DATA');
+        expect(fs.readlinkSync('/source')).toBe('/sourceReal');
+      });
+    });
+
+    describe('errors when source is a directory', () => {
+      it('directory -> file', () => {
+        fs.mkdirSync('/source');
+        fs.writeFileSync('/dest', 'TRY_TO_OVERWRITE_ME');
+
+        expectFsError('EPERM', () => fs.linkSync('/source', '/dest'));
+        expect(fs.statSync('/source').isDirectory()).toBe(true);
+        expect(fs.readFileSync('/dest', 'utf8')).toBe('TRY_TO_OVERWRITE_ME');
+      });
+
+      it('directory -> symbolic link', () => {
+        fs.mkdirSync('/source');
+        fs.writeFileSync('/destReal', 'TRY_TO_OVERWRITE_ME');
+        fs.symlinkSync('/destReal', '/dest');
+
+        expectFsError('EPERM', () => fs.linkSync('/source', '/dest'));
+        expect(fs.statSync('/source').isDirectory()).toBe(true);
+        expect(fs.readFileSync('/dest', 'utf8')).toBe('TRY_TO_OVERWRITE_ME');
+        expect(fs.readlinkSync('/dest')).toBe('/destReal');
+      });
+
+      it('directory -> empty directory', () => {
+        fs.mkdirSync('/source');
+        fs.writeFileSync('/source/data', 'DATA');
+        fs.mkdirSync('/dest');
+
+        expectFsError('EPERM', () => fs.linkSync('/source', '/dest'));
+        expect(fs.readFileSync('/source/data', 'utf8')).toBe('DATA');
+        expect(fs.existsSync('/dest/data')).toBe(false);
+      });
+
+      it('directory -> non-empty directory', () => {
+        fs.mkdirSync('/source');
+        fs.writeFileSync('/source/data', 'DATA');
+        fs.mkdirSync('/dest');
+        fs.writeFileSync('/dest/nope', 'TRY_TO_OVERWRITE_ME');
+
+        expectFsError('EPERM', () => fs.linkSync('/source', '/dest'));
+        expect(fs.readFileSync('/source/data', 'utf8')).toBe('DATA');
+        expect(fs.readFileSync('/dest/nope', 'utf8')).toBe(
+          'TRY_TO_OVERWRITE_ME',
+        );
+      });
+
+      it('directory -> itself', () => {
+        fs.mkdirSync('/source');
+        fs.writeFileSync('/source/data', 'DATA');
+
+        expectFsError('EPERM', () => fs.linkSync('/source', '/source'));
         expect(fs.readFileSync('/source/data', 'utf8')).toBe('DATA');
       });
     });
