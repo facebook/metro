@@ -605,6 +605,18 @@ describe('posix support', () => {
       watcher.close();
     });
 
+    it('reports truncated files', () => {
+      const changedPaths = [];
+      fs.writeFileSync('/bar.txt', 'text');
+      const watcher = collectWatchEvents('/', {}, changedPaths);
+      fs.truncateSync('/bar.txt');
+      expect(changedPaths).toEqual(
+        // TODO: Emit exactly one change event
+        expect.arrayContaining([['change', 'bar.txt']]),
+      );
+      watcher.close();
+    });
+
     function collectWatchEvents(entPath, options, events) {
       return fs.watch(entPath, options, (eventName, filePath) => {
         events.push([eventName, filePath]);
@@ -1231,6 +1243,122 @@ describe('posix support', () => {
 
         expectFsError('EPERM', () => fs.linkSync('/source', '/source'));
         expect(fs.readFileSync('/source/data', 'utf8')).toBe('DATA');
+      });
+    });
+  });
+
+  describe('truncateSync', () => {
+    it('errors on truncating a directory', () => {
+      fs.mkdirSync('/foo');
+
+      expectFsError('EISDIR', () => fs.truncateSync('/foo'));
+    });
+
+    it('truncates an empty file', () => {
+      fs.writeFileSync('/foo', Buffer.from([]));
+      fs.truncateSync('/foo');
+      expect(fs.readFileSync('/foo')).toEqual(Buffer.from([]));
+    });
+
+    it('truncates a non-empty file', () => {
+      fs.writeFileSync('/foo', Buffer.from([42, 1337]));
+      fs.truncateSync('/foo');
+      expect(fs.readFileSync('/foo')).toEqual(Buffer.from([]));
+    });
+
+    it('zero pads an empty file to the specified length', () => {
+      fs.writeFileSync('/foo', Buffer.from([]));
+      fs.truncateSync('/foo', 3);
+      expect(fs.readFileSync('/foo')).toEqual(Buffer.from([0, 0, 0]));
+    });
+
+    it('zero pads a non-empty file to the specified length', () => {
+      fs.writeFileSync('/foo', Buffer.from([42]));
+      fs.truncateSync('/foo', 3);
+      expect(fs.readFileSync('/foo')).toEqual(Buffer.from([42, 0, 0]));
+    });
+
+    it('truncates a non-empty file to the specified length', () => {
+      fs.writeFileSync('/foo', Buffer.from([0xfa, 0xce, 0xb0, 0x0c]));
+      fs.truncateSync('/foo', 2);
+      expect(fs.readFileSync('/foo')).toEqual(Buffer.from([0xfa, 0xce]));
+    });
+
+    it('truncates a non-empty file to its current length', () => {
+      fs.writeFileSync('/foo', Buffer.from([42, 1337]));
+      fs.truncateSync('/foo', 2);
+      expect(fs.readFileSync('/foo')).toEqual(Buffer.from([42, 1337]));
+    });
+
+    it('explicitly specifying length 0 works', () => {
+      fs.writeFileSync('/foo', Buffer.from([42, 1337]));
+      fs.truncateSync('/foo', 0);
+      expect(fs.readFileSync('/foo')).toEqual(Buffer.from([]));
+    });
+
+    describe('with file descriptor', () => {
+      it('errors on truncating a a non-writable file', () => {
+        fs.writeFileSync('/foo', '');
+        const fd = fs.openSync('/foo', 'r');
+
+        expectFsError('EBADF', () => fs.truncateSync(fd));
+
+        fs.closeSync(fd);
+      });
+
+      it('errors on a nonexistent file descriptor', () => {
+        expectFsError('EBADF', () => fs.truncateSync(42));
+      });
+
+      it('errors on a closed file descriptor', () => {
+        fs.writeFileSync('/foo', 'DATA');
+        const fd = fs.openSync('/foo', 'r');
+        fs.closeSync(fd);
+        expectFsError('EBADF', () => fs.truncateSync(fd));
+        expect(fs.readFileSync('/foo', 'utf8')).toBe('DATA');
+      });
+
+      it('truncates a non-empty file to the specified length', () => {
+        fs.writeFileSync('/foo', Buffer.from([0xfa, 0xce, 0xb0, 0x0c]));
+        const fd = fs.openSync('/foo', 'r+');
+        const buf = Buffer.alloc(100);
+
+        fs.truncateSync(fd, 2);
+        const bytesRead = fs.readSync(fd, buf, 0, buf.length, 0);
+        expect(buf.slice(0, bytesRead)).toEqual(Buffer.from([0xfa, 0xce]));
+
+        fs.closeSync(fd);
+      });
+
+      it('truncates without changing the current read position', () => {
+        fs.writeFileSync('/foo', Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]));
+        const fd = fs.openSync('/foo', 'r+');
+        const buf = Buffer.alloc(100);
+
+        // Advance the position by 2
+        fs.readSync(fd, buf, 0, 2);
+        // Truncate to the first 4 bytes
+        fs.truncateSync(fd, 4);
+        // Read 2 bytes and reach the end
+        const bytesRead = fs.readSync(fd, buf, 0, 6);
+        expect(buf.slice(0, bytesRead)).toEqual(Buffer.from([3, 4]));
+
+        fs.closeSync(fd);
+      });
+
+      it('truncates without changing the current write position', () => {
+        fs.writeFileSync('/foo', Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]));
+        const fd = fs.openSync('/foo', 'r+');
+
+        // Advance the position by 2
+        fs.writeSync(fd, Buffer.from([10, 20]));
+        // Truncate to the first 4 bytes
+        fs.truncateSync(fd, 4);
+        // Write 1 more byte
+        fs.writeSync(fd, Buffer.from([30]));
+        fs.closeSync(fd);
+
+        expect(fs.readFileSync('/foo')).toEqual(Buffer.from([10, 20, 30, 4]));
       });
     });
   });

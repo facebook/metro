@@ -82,8 +82,12 @@ type Descriptor = {|
 
 type FilePath = string | Buffer;
 
+const kWritableMustExist = Symbol('kWritableMustExist');
+
+type InternalOpenFlags = string | typeof kWritableMustExist;
+
 const FLAGS_SPECS: {
-  [string]: {
+  [InternalOpenFlags]: {
     exclusive?: true,
     mustExist?: true,
     readable?: true,
@@ -100,6 +104,8 @@ const FLAGS_SPECS: {
   wx: {exclusive: true, truncate: true, writable: true},
   'w+': {readable: true, truncate: true, writable: true},
   'wx+': {exclusive: true, readable: true, truncate: true, writable: true},
+  // $FlowIssue: Symbol support is incomplete
+  [kWritableMustExist]: {mustExist: true, writable: true},
 };
 
 const ASYNC_FUNC_NAMES = [
@@ -120,6 +126,7 @@ const ASYNC_FUNC_NAMES = [
   'realpath',
   'rename',
   'stat',
+  'truncate',
   'unlink',
   'write',
   'writeFile',
@@ -899,6 +906,38 @@ class MemoryFs {
     });
   };
 
+  truncateSync: (filePathOrFd: FilePath | number, length?: number) => void = (
+    filePathOrFd: FilePath | number,
+    length: number = 0,
+  ): void => {
+    const fd: number =
+      typeof filePathOrFd === 'number'
+        ? filePathOrFd
+        : this._open(pathStr(filePathOrFd), kWritableMustExist);
+    try {
+      const desc = this._getDesc(fd);
+      if (!desc.writable) {
+        throw makeError('EBADF', null, 'file descriptor cannot be written to');
+      }
+      const {node, nodePath} = desc;
+      const oldContent = node.content;
+      node.content = Buffer.alloc(length, 0);
+      oldContent.copy(
+        node.content,
+        0,
+        0,
+        Math.max(0, Math.min(length, oldContent.length)),
+      );
+      this._emitFileChange(nodePath.slice(), {
+        eventType: 'change',
+      });
+    } finally {
+      if (typeof filePathOrFd !== 'number') {
+        this.closeSync(fd);
+      }
+    }
+  };
+
   createWriteStream: (
     filePath: FilePath,
     options?:
@@ -1017,13 +1056,13 @@ class MemoryFs {
     return ++this._nextId;
   }
 
-  _open(filePath: string, flags: string, mode: ?number): number {
+  _open(filePath: string, flags: InternalOpenFlags, mode: ?number): number {
     if (mode == null) {
       mode = 0o666;
     }
     const spec = FLAGS_SPECS[flags];
     if (spec == null) {
-      throw new Error(`flags not supported: \`${flags}\``);
+      throw new Error(`flags not supported: \`${flags.toString()}\``);
     }
     const {writable = false, readable = false} = spec;
     const {exclusive, mustExist, truncate} = spec;

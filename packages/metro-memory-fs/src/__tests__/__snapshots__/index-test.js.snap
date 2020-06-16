@@ -83,3 +83,11 @@ exports[`posix support throws when trying to write to a read-only file descripto
 exports[`posix support throws when trying to write to a win32-style path 1`] = `"ENOENT: \`C:\\\\foo.txt\`: no such file or directory"`;
 
 exports[`posix support throws when trying to write to an inexistent file descriptor 1`] = `"EBADF: file descriptor is not open"`;
+
+exports[`posix support truncateSync errors on truncating a directory 1`] = `"EISDIR: \`/foo\`: cannot read/write to a directory"`;
+
+exports[`posix support truncateSync with file descriptor errors on a closed file descriptor 1`] = `"EBADF: file descriptor is not open"`;
+
+exports[`posix support truncateSync with file descriptor errors on a nonexistent file descriptor 1`] = `"EBADF: file descriptor is not open"`;
+
+exports[`posix support truncateSync with file descriptor errors on truncating a a non-writable file 1`] = `"EBADF: file descriptor cannot be written to"`;
