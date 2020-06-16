@@ -134,4 +134,21 @@ describe('loadConfig', () => {
       expect(stripAnsi(error.message)).toMatchSnapshot();
     }
   });
+
+  it('injects `metro-cache` into the `cacheStores` callback', async () => {
+    const config = {
+      reporter: null,
+      maxWorkers: 2,
+      cacheStores: jest.fn(() => []),
+      transformerPath: '',
+    };
+
+    cosmiconfig.setResolvedConfig(config);
+
+    const result = await loadConfig({});
+
+    expect(result).toMatchSnapshot();
+    expect(result.cacheStores).toEqual([]);
+    expect(config.cacheStores).toBeCalledWith(require('metro-cache'));
+  });
 });

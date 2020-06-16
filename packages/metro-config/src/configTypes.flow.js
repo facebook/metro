@@ -11,6 +11,7 @@
 'use strict';
 
 import type {IncomingMessage, ServerResponse} from 'http';
+import typeof MetroCache from 'metro-cache';
 import type {CacheStore} from 'metro-cache';
 import type {CustomResolver} from 'metro-resolver';
 import type {BasicSourceMap, MixedSourceMap} from 'metro-source-map';
@@ -153,6 +154,9 @@ type SymbolicatorConfigT = {|
 export type InputConfigT = $Shape<{|
   ...MetalConfigT,
   ...$ReadOnly<{|
+    cacheStores:
+      | $ReadOnlyArray<CacheStore<TransformResult<>>>
+      | (MetroCache => $ReadOnlyArray<CacheStore<TransformResult<>>>),
     resolver: $Shape<ResolverConfigT>,
     server: $Shape<ServerConfigT>,
     serializer: $Shape<SerializerConfigT>,

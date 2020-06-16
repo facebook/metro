@@ -10,6 +10,8 @@
 
 'use strict';
 
+const MetroCache = require('metro-cache');
+
 const cosmiconfig = require('cosmiconfig');
 const getDefaultConfig = require('./defaults');
 const validConfig = require('./defaults/validConfig');
@@ -90,6 +92,13 @@ function mergeConfig<T: InputConfigT>(
     (totalConfig, nextConfig) => ({
       ...totalConfig,
       ...nextConfig,
+
+      cacheStores:
+        nextConfig.cacheStores != null
+          ? typeof nextConfig.cacheStores === 'function'
+            ? nextConfig.cacheStores(MetroCache)
+            : nextConfig.cacheStores
+          : totalConfig.cacheStores,
 
       resolver: {
         /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses
