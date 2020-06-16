@@ -117,6 +117,7 @@ const ASYNC_FUNC_NAMES = [
   'readFile',
   'readlink',
   'realpath',
+  'rename',
   'stat',
   'unlink',
   'write',
@@ -794,6 +795,73 @@ class MemoryFs {
     }
     dirNode.entries.delete(basename);
     this._emitFileChange(dirPath.concat([[basename, node]]), {
+      eventType: 'rename',
+    });
+  };
+
+  renameSync: (oldPath: FilePath, newPath: FilePath) => void = (
+    oldPath,
+    newPath,
+  ) => {
+    oldPath = pathStr(oldPath);
+    newPath = pathStr(newPath);
+    const {
+      basename: oldBasename,
+      dirNode: oldDirNode,
+      dirPath: oldDirPath,
+      node: node,
+    } = this._resolve(oldPath, {
+      keepFinalSymlink: true,
+    });
+    if (node == null) {
+      throw makeError('ENOENT', oldPath, 'no such file or directory');
+    }
+    const {
+      basename: newBasename,
+      dirNode: newDirNode,
+      dirPath: newDirPath,
+      node: existingDestNode,
+    } = this._resolve(newPath, {keepFinalSymlink: true});
+    if (existingDestNode === node) {
+      return;
+    }
+    if (newDirPath.some(([, nodeInNewPath]) => nodeInNewPath === node)) {
+      throw makeError(
+        'EINVAL',
+        newPath,
+        'cannot make a directory a subdirectory of itself',
+      );
+    }
+    if (existingDestNode) {
+      if (existingDestNode.type === 'directory') {
+        if (existingDestNode.entries.size) {
+          throw makeError('ENOTEMPTY', newPath, 'directory not empty');
+        }
+      } else if (node.type === 'directory') {
+        throw makeError(
+          'EISDIR',
+          newPath,
+          'cannot overwrite a directory with a non-directory',
+        );
+      }
+    }
+    newDirNode.entries.set(newBasename, node);
+    if (existingDestNode) {
+      // The existing node has been removed.
+      this._emitFileChange(
+        newDirPath.concat([[newBasename, existingDestNode]]),
+        {
+          eventType: 'rename',
+        },
+      );
+    }
+    // The source node has been linked at the new path.
+    this._emitFileChange(newDirPath.concat([[newBasename, node]]), {
+      eventType: 'rename',
+    });
+    oldDirNode.entries.delete(oldBasename);
+    // The source node has been unlinked at the old path.
+    this._emitFileChange(oldDirPath.concat([[oldBasename, node]]), {
       eventType: 'rename',
     });
   };

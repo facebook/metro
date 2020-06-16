@@ -6,6 +6,22 @@ exports[`posix support accessSync check owned file cannot be written to 1`] = `"
 
 exports[`posix support readlink throws when trying to read a regular file 1`] = `"EINVAL: \`/foo.txt\`: entity is not a symlink"`;
 
+exports[`posix support renameSync errors when making a directory its own subdirectory 1`] = `"EINVAL: \`/source/subdir\`: cannot make a directory a subdirectory of itself"`;
+
+exports[`posix support renameSync errors when the destination is in a nonexistent directory 1`] = `"ENOENT: \`/bad/dest\`: no such file or directory"`;
+
+exports[`posix support renameSync errors when the source does not exist 1`] = `"ENOENT: \`/source\`: no such file or directory"`;
+
+exports[`posix support renameSync errors when using a file as a directory in the destination path 1`] = `"ENOTDIR: \`/dest/nope\`: not a directory"`;
+
+exports[`posix support renameSync errors when using a file as a directory in the source path 1`] = `"ENOTDIR: \`/source/nope\`: not a directory"`;
+
+exports[`posix support renameSync when the source is valid and the destination exists directory -> file errors 1`] = `"EISDIR: \`/dest\`: cannot overwrite a directory with a non-directory"`;
+
+exports[`posix support renameSync when the source is valid and the destination exists directory -> non-empty directory errors 1`] = `"ENOTEMPTY: \`/dest\`: directory not empty"`;
+
+exports[`posix support renameSync when the source is valid and the destination exists directory -> symbolic link errors 1`] = `"EISDIR: \`/dest\`: cannot overwrite a directory with a non-directory"`;
+
 exports[`posix support supports COPYFILE_EXCL for copyFile 1`] = `"EEXIST: \`/dest-file\`: directory or file already exists"`;
 
 exports[`posix support throws when finding a symlink loop 1`] = `"ELOOP: \`/foo.txt\`: too many levels of symbolic links"`;
