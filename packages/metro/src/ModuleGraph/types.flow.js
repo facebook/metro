@@ -10,7 +10,6 @@
 
 'use strict';
 
-import type {Ast} from '@babel/core';
 import type {
   MixedSourceMap,
   FBSourceFunctionMap,
@@ -125,12 +124,6 @@ export type PackageData = {|
 |};
 
 export type ResolveFn = (id: string, source: ?string) => string;
-
-export type TransformerResult = {|
-  ast: ?Ast,
-  code: string,
-  map: ?BasicSourceMap,
-|};
 
 export type TransformResult = {|
   code: string,
