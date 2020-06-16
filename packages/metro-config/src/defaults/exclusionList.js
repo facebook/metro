@@ -11,12 +11,7 @@
 
 var path = require('path');
 
-var list = [
-  /node_modules\/react\/dist\/.*/,
-  /website\/node_modules\/.*/,
-  /heapCapture\/bundle\.js/,
-  /.*\/__tests__\/.*/,
-];
+var list = [/website\/node_modules\/.*/, /.*\/__tests__\/.*/];
 
 function escapeRegExp(pattern) {
   if (Object.prototype.toString.call(pattern) === '[object RegExp]') {
