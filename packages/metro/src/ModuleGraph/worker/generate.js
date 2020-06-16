@@ -18,13 +18,12 @@ function generate(
   ast: Ast,
   filename: string,
   sourceCode: string,
-  compact: boolean,
 ): GeneratorResult {
   const generated = babelGenerate(
     ast,
     {
       comments: false,
-      compact,
+      compact: true,
       filename,
       sourceFileName: filename,
       sourceMaps: true,

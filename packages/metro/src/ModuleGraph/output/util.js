@@ -151,12 +151,7 @@ function inlineModuleIds(
     ],
   });
 
-  const {code: generatedCode, map: generatedMap} = generate(
-    ast,
-    path,
-    '',
-    true,
-  );
+  const {code: generatedCode, map: generatedMap} = generate(ast, path, '');
 
   return {
     moduleCode: addParamsToDefineCall(generatedCode, fileId),
