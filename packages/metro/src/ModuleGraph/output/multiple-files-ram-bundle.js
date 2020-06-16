@@ -23,6 +23,7 @@ import type {IndexMap} from 'metro-source-map';
 import type {Module, OutputFn, OutputFnArg, OutputResult} from '../types.flow';
 
 function asMultipleFilesRamBundle({
+  dependencyMapReservedName,
   filename,
   idsForPath,
   modules,
@@ -33,7 +34,7 @@ function asMultipleFilesRamBundle({
   const [startup, deferred] = partition(modules, preloadedModules);
   const startupModules = [...startup, ...requireCalls];
   const deferredModules = deferred.map((m: Module) =>
-    toModuleTransport(m, idsForPath),
+    toModuleTransport(m, idsForPath, {dependencyMapReservedName}),
   );
   const magicFileContents = Buffer.alloc(4);
 
@@ -41,7 +42,10 @@ function asMultipleFilesRamBundle({
   const code = startupModules
     .map(
       (m: Module) =>
-        getModuleCodeAndMap(m, idForPath, {enableIDInlining: true}).moduleCode,
+        getModuleCodeAndMap(m, idForPath, {
+          dependencyMapReservedName,
+          enableIDInlining: true,
+        }).moduleCode,
     )
     .join('\n');
 
@@ -67,7 +71,7 @@ function asMultipleFilesRamBundle({
     lazyModules: deferredModules,
     moduleGroups: null,
     startupModules: startupModules.map((m: Module) =>
-      toModuleTransport(m, idsForPath),
+      toModuleTransport(m, idsForPath, {dependencyMapReservedName}),
     ),
   });
 

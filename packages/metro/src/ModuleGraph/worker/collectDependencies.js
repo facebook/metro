@@ -63,6 +63,7 @@ type State = {|
 
 export type Options = {|
   +asyncRequireModulePath: string,
+  +dependencyMapName?: string,
   +dynamicRequires: DynamicRequiresBehavior,
   +inlineableCalls: $ReadOnlyArray<string>,
   +keepRequireNames: boolean,
@@ -188,9 +189,15 @@ function collectDependencies(
         options.asyncRequireModulePath,
       );
 
-      state.dependencyMapIdentifier = path.scope.generateUidIdentifier(
-        'dependencyMap',
-      );
+      if (options.dependencyMapName != null) {
+        state.dependencyMapIdentifier = types.identifier(
+          options.dependencyMapName,
+        );
+      } else {
+        state.dependencyMapIdentifier = path.scope.generateUidIdentifier(
+          'dependencyMap',
+        );
+      }
 
       state.dependencyCalls = new Set(['require', ...options.inlineableCalls]);
     },

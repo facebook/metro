@@ -19,6 +19,7 @@ import type {OutputFn} from '../types.flow';
 import type {MixedSourceMap} from 'metro-source-map';
 
 function asPlainBundle({
+  dependencyMapReservedName,
   filename,
   idsForPath,
   modules,
@@ -35,6 +36,7 @@ function asPlainBundle({
 
   for (const module of concat(modules, requireCalls)) {
     const {moduleCode, moduleMap} = getModuleCodeAndMap(module, modIdForPath, {
+      dependencyMapReservedName,
       enableIDInlining,
     });
 

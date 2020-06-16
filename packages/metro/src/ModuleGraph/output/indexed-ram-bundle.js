@@ -24,6 +24,7 @@ import type {Module, OutputFn, OutputFnArg} from '../types.flow';
 import type {IndexMap} from 'metro-source-map';
 
 function asIndexedRamBundle({
+  dependencyMapReservedName,
   filename,
   idsForPath,
   modules,
@@ -39,7 +40,7 @@ function asIndexedRamBundle({
   const [startup, deferred] = partition(modules, preloadedModules);
   const startupModules = [...startup, ...requireCalls];
   const deferredModules = deferred.map((m: Module) =>
-    toModuleTransport(m, idsForPath),
+    toModuleTransport(m, idsForPath, {dependencyMapReservedName}),
   );
   for (const m of deferredModules) {
     invariant(
@@ -59,8 +60,10 @@ function asIndexedRamBundle({
     startupModules
       .map(
         (m: Module) =>
-          getModuleCodeAndMap(m, idForPath, {enableIDInlining: true})
-            .moduleCode,
+          getModuleCodeAndMap(m, idForPath, {
+            dependencyMapReservedName,
+            enableIDInlining: true,
+          }).moduleCode,
       )
       .join('\n'),
     deferredModules,
@@ -75,7 +78,7 @@ function asIndexedRamBundle({
       lazyModules: deferredModules,
       moduleGroups,
       startupModules: startupModules.map((m: Module) =>
-        toModuleTransport(m, idsForPath),
+        toModuleTransport(m, idsForPath, {dependencyMapReservedName}),
       ),
     }),
   };

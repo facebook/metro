@@ -98,6 +98,7 @@ export type PostProcessModules = (
 ) => $ReadOnlyArray<Module>;
 
 export type OutputFnArg = {|
+  dependencyMapReservedName?: string,
   filename: string,
   idsForPath: IdsForPathFn,
   modules: Iterable<Module>,

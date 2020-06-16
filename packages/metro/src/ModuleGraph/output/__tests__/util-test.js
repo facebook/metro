@@ -76,8 +76,10 @@ describe('`inlineModuleIds`:', () => {
 
   const reUsedVariableCode = `
     __d(function(require, depMap) {
+      require(depMap[0]);
+      require(depMap[1]);
       function anotherScope(depMap) {
-        return depMap++;
+        return depMap[1337];
       }
     });
   `;
@@ -113,11 +115,63 @@ describe('`inlineModuleIds`:', () => {
     );
   });
 
-  it('avoids inlining if the variable is in a different scope', () => {
-    const module = createReUsedVariableModule();
+  it('inlines module ids using a globally reserved name for depMap', () => {
+    const dependencies = [
+      {id: 'a', path: 'path/to/a.js'},
+      {id: 'b', path: 'location/of/b.js'},
+    ];
 
-    expect(inlineModuleIds(module, () => 98).moduleCode).toEqual(
-      '__d(function(require,depMap){function anotherScope(depMap){return depMap++;}},98);',
+    const module = createModule(dependencies);
+
+    const idForPath = jest.fn().mockImplementation(({path: inputPath}) => {
+      switch (inputPath) {
+        case path:
+          return 12;
+        case dependencies[0].path:
+          return 345;
+        case dependencies[1].path:
+          return 6;
+      }
+
+      throw new Error(`Unexpected path: ${inputPath}`);
+    });
+
+    expect(
+      inlineModuleIds(module, idForPath, {dependencyMapReservedName: 'depMap'})
+        .moduleCode,
+    ).toMatchInlineSnapshot(`
+      "
+          __d(function(require, depMap) {
+            require(345      );
+            require(6        );
+          },12);
+        "
+    `);
+  });
+
+  it('does not inline false positives, when not using a globally reserved name for dep map', () => {
+    const dependencies = [
+      {id: 'a', path: 'path/to/a.js'},
+      {id: 'b', path: 'location/of/b.js'},
+    ];
+
+    const module = createReUsedVariableModule(dependencies);
+
+    const idForPath = jest.fn().mockImplementation(({path: inputPath}) => {
+      switch (inputPath) {
+        case path:
+          return 12;
+        case dependencies[0].path:
+          return 345;
+        case dependencies[1].path:
+          return 6;
+      }
+
+      throw new Error(`Unexpected path: ${inputPath}`);
+    });
+
+    expect(inlineModuleIds(module, idForPath).moduleCode).toMatchInlineSnapshot(
+      '"__d(function(require,depMap){require(345);require(6);function anotherScope(depMap){return depMap[1337];}},12);"',
     );
   });
 });

@@ -278,6 +278,7 @@ function makeDependency(name) {
 
 function expectedCodeAndMap(module) {
   return getModuleCodeAndMap(module, x => idsForPath(x).moduleId, {
+    dependencyMapReservedName: undefined,
     enableIDInlining: true,
   });
 }

@@ -58,6 +58,37 @@ it('collects unique dependency identifiers and transforms the AST', () => {
   );
 });
 
+it('uses dependencyMapName parameter as-is if provided', () => {
+  const ast = astFromCode(`
+    const a = require('b/lib/a');
+    exports.do = () => require("do");
+    if (!something) {
+      require("setup/something");
+    }
+    require('do');
+  `);
+  const {dependencies, dependencyMapName} = collectDependencies(ast, {
+    ...opts,
+    dependencyMapName: '_$$_TEST_DEP_MAP',
+  });
+  expect(dependencyMapName).toBe('_$$_TEST_DEP_MAP');
+  expect(dependencies).toEqual([
+    {name: 'b/lib/a', data: objectContaining({asyncType: null})},
+    {name: 'do', data: objectContaining({asyncType: null})},
+    {name: 'setup/something', data: objectContaining({asyncType: null})},
+  ]);
+  expect(codeFromAst(ast)).toEqual(
+    comparableCode(`
+      const a = require(_$$_TEST_DEP_MAP[0], "b/lib/a");
+      exports.do = () => require(_$$_TEST_DEP_MAP[1], "do");
+      if (!something) {
+        require(_$$_TEST_DEP_MAP[2], "setup/something");
+      }
+      require(_$$_TEST_DEP_MAP[1], "do");
+    `),
+  );
+});
+
 it('collects asynchronous dependencies', () => {
   const ast = astFromCode(`
     import("some/async/module").then(foo => {});
