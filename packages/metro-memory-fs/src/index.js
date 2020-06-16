@@ -182,6 +182,7 @@ class MemoryFs {
   _cwd: ?() => string;
   constants: any = constants;
   promises: {[funcName: string]: (...args: Array<*>) => Promise<*>, ...};
+  Dirent: typeof Dirent = Dirent;
 
   close: (fd: number, callback: (error: ?Error) => mixed) => void;
   copyFile: ((
@@ -411,16 +412,16 @@ class MemoryFs {
 
   readdirSync: (
     filePath: FilePath,
-    options?: {encoding?: Encoding, ...} | Encoding,
-  ) => Array<string | Buffer> = (
+    options?: {encoding?: Encoding, withFileTypes?: boolean, ...} | Encoding,
+  ) => Array<string | Buffer | Dirent> = (
     filePath: FilePath,
-    options?: {encoding?: Encoding, ...} | Encoding,
-  ): Array<string | Buffer> => {
-    let encoding;
+    options?: {encoding?: Encoding, withFileTypes?: boolean, ...} | Encoding,
+  ): Array<string | Buffer | Dirent> => {
+    let encoding, withFileTypes;
     if (typeof options === 'string') {
       encoding = options;
     } else if (options != null) {
-      ({encoding} = options);
+      ({encoding, withFileTypes} = options);
     }
     filePath = pathStr(filePath);
     const {node} = this._resolve(filePath);
@@ -431,14 +432,21 @@ class MemoryFs {
       throw makeError('ENOTDIR', filePath, 'not a directory');
     }
     return Array.from(node.entries.keys()).map(str => {
+      let name;
       if (encoding === 'utf8') {
-        return str;
+        name = str;
+      } else {
+        const buffer = Buffer.from(str);
+        if (encoding === 'buffer') {
+          name = buffer;
+        } else {
+          name = buffer.toString(encoding);
+        }
       }
-      const buffer = Buffer.from(str);
-      if (encoding === 'buffer') {
-        return buffer;
+      if (withFileTypes) {
+        return new Dirent(nullthrows(node.entries.get(str)), name);
       }
-      return buffer.toString(encoding);
+      return name;
     });
   };
 
@@ -1410,6 +1418,47 @@ class FSWatcher extends EventEmitter {
       this.emit('error', error);
     }
   };
+}
+
+class Dirent {
+  +_stats: Stats;
+  +name: string | Buffer;
+
+  /**
+   * Don't keep a reference to the node as it may get mutated over time.
+   */
+  constructor(node: EntityNode, name: string | Buffer) {
+    this._stats = new Stats(node);
+    this.name = name;
+  }
+
+  isBlockDevice(): boolean {
+    return this._stats.isBlockDevice();
+  }
+
+  isCharacterDevice(): boolean {
+    return this._stats.isCharacterDevice();
+  }
+
+  isDirectory(): boolean {
+    return this._stats.isDirectory();
+  }
+
+  isFIFO(): boolean {
+    return this._stats.isFIFO();
+  }
+
+  isFile(): boolean {
+    return this._stats.isFile();
+  }
+
+  isSocket(): boolean {
+    return this._stats.isSocket();
+  }
+
+  isSymbolicLink(): boolean {
+    return this._stats.isSymbolicLink();
+  }
 }
 
 function checkPathLength(entNames, filePath) {

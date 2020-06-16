@@ -400,12 +400,103 @@ describe('posix support', () => {
     });
   });
 
-  it('able to list files of a directory', () => {
-    fs.mkdirSync('/baz');
-    fs.writeFileSync('/baz/foo.txt', 'test');
-    fs.writeFileSync('/baz/bar.txt', 'boop');
-    fs.symlinkSync('glo', '/baz/glo.txt');
-    expect(fs.readdirSync('/baz')).toEqual(['foo.txt', 'bar.txt', 'glo.txt']);
+  describe('readdirsync', () => {
+    it('able to list files of a directory', () => {
+      fs.mkdirSync('/baz');
+      fs.writeFileSync('/baz/foo.txt', 'test');
+      fs.writeFileSync('/baz/bar.txt', 'boop');
+      fs.symlinkSync('glo', '/baz/glo.txt');
+      expect(fs.readdirSync('/baz')).toEqual(['foo.txt', 'bar.txt', 'glo.txt']);
+    });
+
+    describe('withFileTypes', () => {
+      let entries: Array<fs.Dirent>;
+
+      beforeEach(() => {
+        fs.mkdirSync('/baz');
+        fs.writeFileSync('/baz/foo.txt', 'test');
+        fs.writeFileSync('/baz/bar.txt', 'boop');
+        fs.symlinkSync('glo', '/baz/glo.txt');
+        fs.mkdirSync('/baz/subdir');
+        entries = (fs.readdirSync('/baz', {
+          withFileTypes: true,
+        }): $FlowFixMe);
+      });
+
+      it('returns Dirent objects', () => {
+        expect.assertions(4);
+        for (const entry of entries) {
+          expect(entry).toBeInstanceOf(fs.Dirent);
+        }
+      });
+
+      it('regular file', () => {
+        const entry = entries[0];
+        expect(entry.name).toBe('foo.txt');
+        expect(entry.isFile()).toBe(true);
+        expect(entry.isSymbolicLink()).toBe(false);
+        expect(entry.isDirectory()).toBe(false);
+        expect(entry.isBlockDevice()).toBe(false);
+        expect(entry.isCharacterDevice()).toBe(false);
+        expect(entry.isFIFO()).toBe(false);
+        expect(entry.isSocket()).toBe(false);
+      });
+
+      it('target of a symlink', () => {
+        const entry = entries[1];
+        expect(entry.name).toBe('bar.txt');
+        expect(entry.isFile()).toBe(true);
+        expect(entry.isSymbolicLink()).toBe(false);
+        expect(entry.isDirectory()).toBe(false);
+        expect(entry.isBlockDevice()).toBe(false);
+        expect(entry.isCharacterDevice()).toBe(false);
+        expect(entry.isFIFO()).toBe(false);
+        expect(entry.isSocket()).toBe(false);
+      });
+
+      it('symlink', () => {
+        const entry = entries[2];
+        expect(entry.name).toBe('glo.txt');
+        expect(entry.isFile()).toBe(false);
+        expect(entry.isSymbolicLink()).toBe(true);
+        expect(entry.isDirectory()).toBe(false);
+        expect(entry.isBlockDevice()).toBe(false);
+        expect(entry.isCharacterDevice()).toBe(false);
+        expect(entry.isFIFO()).toBe(false);
+        expect(entry.isSocket()).toBe(false);
+      });
+
+      it('subdirectory', () => {
+        const entry = entries[3];
+        expect(entry.name).toBe('subdir');
+        expect(entry.isFile()).toBe(false);
+        expect(entry.isSymbolicLink()).toBe(false);
+        expect(entry.isDirectory()).toBe(true);
+        expect(entry.isBlockDevice()).toBe(false);
+        expect(entry.isCharacterDevice()).toBe(false);
+        expect(entry.isFIFO()).toBe(false);
+        expect(entry.isSocket()).toBe(false);
+      });
+
+      it('Buffer support', () => {
+        const entriesWithBuffers: Array<fs.Dirent> = (fs.readdirSync('/baz', {
+          withFileTypes: true,
+          encoding: 'buffer',
+        }): $FlowFixMe);
+        for (const [i, name] of [
+          'foo.txt',
+          'bar.txt',
+          'glo.txt',
+          'subdir',
+        ].entries()) {
+          expect(entriesWithBuffers[i]).toBeInstanceOf(fs.Dirent);
+          expect(entriesWithBuffers[i]).toHaveProperty(
+            'name',
+            Buffer.from(name, 'utf8'),
+          );
+        }
+      });
+    });
   });
 
   describe('watch', () => {
