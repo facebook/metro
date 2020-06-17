@@ -13,7 +13,9 @@
 const MetroCache = require('metro-cache');
 
 const cosmiconfig = require('cosmiconfig');
+const fs = require('fs');
 const getDefaultConfig = require('./defaults');
+const path = require('path');
 const validConfig = require('./defaults/validConfig');
 
 const {validate} = require('jest-validate');
@@ -44,12 +46,7 @@ function overrideArgument<T>(arg: Array<T> | T): T {
 }
 
 const explorer = cosmiconfig('metro', {
-  searchPlaces: [
-    'metro.config.js',
-    'metro.config.json',
-    'package.json',
-    'rn-cli.config.js',
-  ],
+  searchPlaces: ['metro.config.js', 'metro.config.json', 'package.json'],
 
   loaders: {
     '.json': cosmiconfig.loadJson,
@@ -61,12 +58,22 @@ const explorer = cosmiconfig('metro', {
   },
 });
 
+const isFile = filePath =>
+  fs.existsSync(filePath) && !fs.lstatSync(filePath).isDirectory();
+
 async function resolveConfig(
-  path?: string,
+  filePath?: string,
   cwd?: string,
 ): Promise<CosmiConfigResult> {
-  if (path) {
-    return explorer.load(path);
+  if (filePath) {
+    if (!path.isAbsolute(filePath)) {
+      const possiblePath = path.resolve(process.cwd(), filePath);
+      if (!isFile(possiblePath)) {
+        filePath = require.resolve(filePath);
+      }
+    }
+
+    return explorer.load(filePath);
   }
 
   const result = await explorer.search(cwd);

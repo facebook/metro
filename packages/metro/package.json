@@ -57,7 +57,6 @@
     "mkdirp": "^0.5.1",
     "node-fetch": "^2.2.0",
     "nullthrows": "^1.1.1",
-    "resolve": "^1.15.1",
     "rimraf": "^2.5.4",
     "serialize-error": "^2.1.0",
     "source-map": "^0.5.6",

@@ -73,6 +73,7 @@ describe('loadConfig', () => {
   it('can load the config with a path', async () => {
     const config = defaultConfig => ({
       ...defaultConfig,
+      projectRoot: '/',
       reporter: null,
       maxWorkers: 2,
       cacheStores: [],
@@ -81,7 +82,9 @@ describe('loadConfig', () => {
 
     cosmiconfig.setResolvedConfig(config);
 
-    const result = await loadConfig({config: '/metro.config.js'});
+    // We don't actually use the specified file in this test but it needs to
+    // resolve to a real file on the file system.
+    const result = await loadConfig({config: './__tests__/loadConfig-test.js'});
 
     expect(result).toMatchSnapshot();
     expect(cosmiconfig.hasLoadBeenCalled()).toBeTruthy();
