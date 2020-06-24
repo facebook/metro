@@ -50,6 +50,7 @@ module.exports = {
       files: ['scripts/**/*.js'],
       rules: {
         'babel/func-params-comma-dangle': 'off',
+        'import/no-extraneous-dependencies': 'off',
       },
     },
   ],
