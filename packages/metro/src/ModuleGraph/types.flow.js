@@ -125,7 +125,9 @@ export type PackageData = {|
 
 export type ResolveFn = (id: string, source: ?string) => string;
 
-export type TransformResult = {|
+export type TransformResult = ConcreteTransformResult | LinkedTransformResult;
+
+export type ConcreteTransformResult = {
   code: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   dependencyMapName?: string,
@@ -138,9 +140,14 @@ export type TransformResult = {|
     ...
   },
   isESModule?: true,
-|};
+};
 
-export type TransformResults = {[string]: TransformResult, ...};
+export type LinkedTransformResult = $ReadOnly<{sourceVariantName: string}>;
+
+export type TransformResults = {
+  +[string]: TransformResult,
+  ...,
+};
 
 export type TransformVariants = {+[name: string]: {...}, ...};
 
