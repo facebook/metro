@@ -17,24 +17,34 @@ opaque type Code = string;
 opaque type Plugin = () => {};
 opaque type Options = {};
 
+function makeTransformOptions(plugins, options) {
+  return {
+    ast: true,
+    babelrc: false,
+    code: false,
+    compact: true,
+    configFile: false,
+    plugins: plugins.length
+      ? plugins.map(plugin => [plugin, options])
+      : [() => ({visitor: {}})],
+    sourceType: 'module',
+  };
+}
+
+function transformToAst(
+  plugins: $ReadOnlyArray<Plugin>,
+  code: Code,
+  options: Options = {},
+) {
+  return transformSync(code, makeTransformOptions(plugins, options)).ast;
+}
+
 function transform(
   code: Code,
   plugins: $ReadOnlyArray<Plugin>,
   options: Options,
 ) {
-  return generate(
-    transformSync(code, {
-      ast: true,
-      babelrc: false,
-      code: false,
-      compact: true,
-      configFile: false,
-      plugins: plugins.length
-        ? plugins.map(plugin => [plugin, options])
-        : [() => ({visitor: {}})],
-      sourceType: 'module',
-    }).ast,
-  ).code;
+  return generate(transformToAst(plugins, code, options)).code;
 }
 
 exports.compare = function(
@@ -45,3 +55,5 @@ exports.compare = function(
 ) {
   expect(transform(code, plugins, options)).toBe(transform(expected, [], {}));
 };
+
+exports.transformToAst = transformToAst;

@@ -10,9 +10,11 @@
 
 'use strict';
 
+const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
 const importExportPlugin = require('../import-export-plugin');
 
-const {compare} = require('../__mocks__/test-helpers');
+const {compare, transformToAst} = require('../__mocks__/test-helpers');
+const {codeFrameColumns} = require('@babel/code-frame');
 
 const opts = {
   importAll: '_$$_IMPORT_ALL',
@@ -37,6 +39,20 @@ it('correctly transforms and extracts "import" statements', () => {
   `;
 
   compare([importExportPlugin], code, expected, opts);
+
+  expect(showTransformedDeps(code)).toMatchInlineSnapshot(`
+    "
+    > 6 |     import 'side-effect';
+        |     ^^^^^^^^^^^^^^^^^^^^^ dep #0 (side-effect)
+    > 5 |     import {y as z} from 'qux';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #1 (qux)
+    > 4 |     import {x} from 'baz';
+        |     ^^^^^^^^^^^^^^^^^^^^^^ dep #2 (baz)
+    > 3 |     import * as w from 'bar';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3 (bar)
+    > 2 |     import v from 'foo';
+        |     ^^^^^^^^^^^^^^^^^^^^ dep #4 (foo)"
+  `);
 });
 
 it('correctly transforms complex patterns', () => {
@@ -57,6 +73,20 @@ it('correctly transforms complex patterns', () => {
   `;
 
   compare([importExportPlugin], code, expected, opts);
+
+  expect(showTransformedDeps(code)).toMatchInlineSnapshot(`
+    "
+    > 3 |     import c, {d as e, f} from 'bar';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (bar)
+    > 3 |     import c, {d as e, f} from 'bar';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (bar)
+    > 4 |     import {g} from 'baz';
+        |     ^^^^^^^^^^^^^^^^^^^^^^ dep #1 (baz)
+    > 2 |     import a, * as b from 'foo';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #2 (foo)
+    > 2 |     import a, * as b from 'foo';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #2 (foo)"
+  `);
 });
 
 it('hoists declarations to the top', () => {
@@ -71,6 +101,12 @@ it('hoists declarations to the top', () => {
   `;
 
   compare([importExportPlugin], code, expected, opts);
+
+  expect(showTransformedDeps(code)).toMatchInlineSnapshot(`
+    "
+    > 3 |     import {foo} from 'bar';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (bar)"
+  `);
 });
 
 it('exports members of another module directly from an import (as named)', () => {
@@ -86,6 +122,12 @@ it('exports members of another module directly from an import (as named)', () =>
   `;
 
   compare([importExportPlugin], code, expected, opts);
+
+  expect(showTransformedDeps(code)).toMatchInlineSnapshot(`
+    "
+    > 2 |     export {default as foo} from 'bar';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (bar)"
+  `);
 });
 
 it('exports members of another module directly from an import (as default)', () => {
@@ -103,6 +145,14 @@ it('exports members of another module directly from an import (as default)', () 
   `;
 
   compare([importExportPlugin], code, expected, opts);
+
+  expect(showTransformedDeps(code)).toMatchInlineSnapshot(`
+    "
+    > 2 |     export {foo as default, baz} from 'bar';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (bar)
+    > 2 |     export {foo as default, baz} from 'bar';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (bar)"
+  `);
 });
 
 it('exports named members', () => {
@@ -165,6 +215,12 @@ it('exports members of another module directly from an import (as all)', () => {
   `;
 
   compare([importExportPlugin], code, expected, opts);
+
+  expect(showTransformedDeps(code)).toMatchInlineSnapshot(`
+    "
+    > 2 |     export * from 'bar';
+        |     ^^^^^^^^^^^^^^^^^^^^ dep #0 (bar)"
+  `);
 });
 
 it('enables module exporting when something is exported', () => {
@@ -185,6 +241,12 @@ it('enables module exporting when something is exported', () => {
   `;
 
   compare([importExportPlugin], code, expected, opts);
+
+  expect(showTransformedDeps(code)).toMatchInlineSnapshot(`
+    "
+    > 3 |     import {foo} from 'bar';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (bar)"
+  `);
 });
 
 it('supports `import {default as LocalName}`', () => {
@@ -201,4 +263,73 @@ it('supports `import {default as LocalName}`', () => {
   `;
 
   compare([importExportPlugin], code, expected, opts);
+
+  expect(showTransformedDeps(code)).toMatchInlineSnapshot(`
+    "
+    > 2 |     import {
+        |     ^^^^^^^^
+    > 3 |       Platform,
+        | ^^^^^^^^^^^^^^^
+    > 4 |       default as ReactNative,
+        | ^^^^^^^^^^^^^^^
+    > 5 |     } from 'react-native';
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (react-native)
+    > 2 |     import {
+        |     ^^^^^^^^
+    > 3 |       Platform,
+        | ^^^^^^^^^^^^^^^
+    > 4 |       default as ReactNative,
+        | ^^^^^^^^^^^^^^^
+    > 5 |     } from 'react-native';
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (react-native)"
+  `);
 });
+
+function showTransformedDeps(code) {
+  const {dependencies} = collectDependencies(
+    transformToAst([importExportPlugin], code, opts),
+    {
+      asyncRequireModulePath: 'asyncRequire',
+      dynamicRequires: 'reject',
+      inlineableCalls: [opts.importAll, opts.importDefault],
+      keepRequireNames: true,
+      allowOptionalDependencies: false,
+    },
+  );
+
+  return formatDependencyLocs(dependencies, code);
+}
+
+function formatDependencyLocs(dependencies, code) {
+  return (
+    '\n' +
+    dependencies
+      .map((dep, depIndex) =>
+        dep.data.locs.length
+          ? dep.data.locs
+              .map(loc => formatLoc(loc, depIndex, dep, code))
+              .join('\n')
+          : `dep #${depIndex} (${dep.name}): no location recorded`,
+      )
+      .join('\n')
+  );
+}
+
+function adjustPosForCodeFrame(pos) {
+  return pos ? {...pos, column: pos.column + 1} : pos;
+}
+
+function adjustLocForCodeFrame(loc) {
+  return {
+    start: adjustPosForCodeFrame(loc.start),
+    end: adjustPosForCodeFrame(loc.end),
+  };
+}
+
+function formatLoc(loc, depIndex, dep, code) {
+  return codeFrameColumns(code, adjustLocForCodeFrame(loc), {
+    message: `dep #${depIndex} (${dep.name})`,
+    linesAbove: 0,
+    linesBelow: 0,
+  });
+}

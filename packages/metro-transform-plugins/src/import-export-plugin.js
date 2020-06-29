@@ -18,11 +18,12 @@ import type {Path} from '@babel/traverse';
 import type {Types} from '@babel/types';
 
 type State = {
-  exportAll: Array<{file: string, ...}>,
-  exportDefault: Array<{local: string, ...}>,
+  exportAll: Array<{file: string, loc: BabelSourceLocation, ...}>,
+  exportDefault: Array<{local: string, loc: BabelSourceLocation, ...}>,
   exportNamed: Array<{
     local: string,
     remote: string,
+    loc: BabelSourceLocation,
     ...
   }>,
   importDefault: Ast,
@@ -123,6 +124,28 @@ function resolvePath(node: {value: string, ...}, resolve: boolean) {
   });
 }
 
+declare function withLocation(
+  node: BabelNode,
+  loc: BabelSourceLocation,
+): BabelNode;
+
+// eslint-disable-next-line no-redeclare
+declare function withLocation(
+  node: $ReadOnlyArray<BabelNode>,
+  loc: BabelSourceLocation,
+): Array<BabelNode>;
+
+// eslint-disable-next-line no-redeclare
+function withLocation(node, loc) {
+  if (Array.isArray(node)) {
+    return node.map(n => withLocation(n, loc));
+  }
+  if (!node.loc) {
+    return {...node, loc};
+  }
+  return node;
+}
+
 function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
   return {
     visitor: {
@@ -133,6 +156,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
 
         state.exportAll.push({
           file: path.get('source').node.value,
+          loc: path.node.loc,
         });
 
         path.remove();
@@ -149,15 +173,21 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
 
         node.id = id;
 
+        const loc = path.node.loc;
+
         state.exportDefault.push({
           local: id.name,
+          loc,
         });
 
         if (t.isDeclaration(declaration)) {
-          path.insertBefore(node);
+          path.insertBefore(withLocation(node, loc));
         } else {
           path.insertBefore(
-            t.variableDeclaration('var', [t.variableDeclarator(id, node)]),
+            withLocation(
+              t.variableDeclaration('var', [t.variableDeclarator(id, node)]),
+              loc,
+            ),
           );
         }
 
@@ -171,6 +201,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
 
         const declaration = path.get('declaration');
         const specifiers = path.get('specifiers');
+        const loc = path.node.loc;
 
         if (declaration.node) {
           if (t.isVariableDeclaration(declaration)) {
@@ -181,7 +212,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                     const properties = d.get('id').get('properties');
                     properties.forEach(p => {
                       const name = p.get('key').node.name;
-                      state.exportNamed.push({local: name, remote: name});
+                      state.exportNamed.push({local: name, remote: name, loc});
                     });
                   }
                   break;
@@ -190,14 +221,14 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                     const elements = d.get('id').get('elements');
                     elements.forEach(e => {
                       const name = e.node.name;
-                      state.exportNamed.push({local: name, remote: name});
+                      state.exportNamed.push({local: name, remote: name, loc});
                     });
                   }
                   break;
                 default:
                   {
                     const name = d.get('id').node.name;
-                    state.exportNamed.push({local: name, remote: name});
+                    state.exportNamed.push({local: name, remote: name, loc});
                   }
                   break;
               }
@@ -208,7 +239,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
             const name = id.name;
 
             declaration.node.id = id;
-            state.exportNamed.push({local: name, remote: name});
+            state.exportNamed.push({local: name, remote: name, loc});
           }
 
           path.insertBefore(declaration.node);
@@ -224,42 +255,60 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
 
               if (local.name === 'default') {
                 path.insertBefore(
-                  importTemplate({
-                    IMPORT: state.importDefault,
-                    FILE: resolvePath(path.node.source, state.opts.resolve),
-                    LOCAL: temp,
-                  }),
+                  withLocation(
+                    importTemplate({
+                      IMPORT: state.importDefault,
+                      FILE: resolvePath(path.node.source, state.opts.resolve),
+                      LOCAL: temp,
+                    }),
+                    loc,
+                  ),
                 );
 
-                state.exportNamed.push({local: temp.name, remote: remote.name});
+                state.exportNamed.push({
+                  local: temp.name,
+                  remote: remote.name,
+                  loc,
+                });
               } else if (remote.name === 'default') {
                 path.insertBefore(
-                  importNamedTemplate({
-                    FILE: resolvePath(path.node.source, state.opts.resolve),
-                    LOCAL: temp,
-                    REMOTE: local,
-                  }),
+                  withLocation(
+                    importNamedTemplate({
+                      FILE: resolvePath(path.node.source, state.opts.resolve),
+                      LOCAL: temp,
+                      REMOTE: local,
+                    }),
+                    loc,
+                  ),
                 );
 
-                state.exportDefault.push({local: temp.name});
+                state.exportDefault.push({local: temp.name, loc});
               } else {
                 path.insertBefore(
-                  importNamedTemplate({
-                    FILE: resolvePath(path.node.source, state.opts.resolve),
-                    LOCAL: temp,
-                    REMOTE: local,
-                  }),
+                  withLocation(
+                    importNamedTemplate({
+                      FILE: resolvePath(path.node.source, state.opts.resolve),
+                      LOCAL: temp,
+                      REMOTE: local,
+                    }),
+                    loc,
+                  ),
                 );
 
-                state.exportNamed.push({local: temp.name, remote: remote.name});
+                state.exportNamed.push({
+                  local: temp.name,
+                  remote: remote.name,
+                  loc,
+                });
               }
             } else {
               if (remote.name === 'default') {
-                state.exportDefault.push({local: local.name});
+                state.exportDefault.push({local: local.name, loc});
               } else {
                 state.exportNamed.push({
                   local: local.name,
                   remote: remote.name,
+                  loc,
                 });
               }
             }
@@ -277,12 +326,16 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
         const file = path.get('source').node;
         const specifiers = path.get('specifiers');
         const anchor = path.scope.path.get('body.0');
+        const loc = path.node.loc;
 
         if (!specifiers.length) {
           anchor.insertBefore(
-            importSideEffectTemplate({
-              FILE: resolvePath(file, state.opts.resolve),
-            }),
+            withLocation(
+              importSideEffectTemplate({
+                FILE: resolvePath(file, state.opts.resolve),
+              }),
+              loc,
+            ),
           );
         } else {
           let sharedModuleImport = null;
@@ -298,9 +351,12 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
             );
             path.scope.push({
               id: sharedModuleImport,
-              init: t.callExpression(t.identifier('require'), [
-                resolvePath(file, state.opts.resolve),
-              ]),
+              init: withLocation(
+                t.callExpression(t.identifier('require'), [
+                  resolvePath(file, state.opts.resolve),
+                ]),
+                loc,
+              ),
             });
           }
 
@@ -311,45 +367,60 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
             switch (s.node.type) {
               case 'ImportNamespaceSpecifier':
                 anchor.insertBefore(
-                  importTemplate({
-                    IMPORT: state.importAll,
-                    FILE: resolvePath(file, state.opts.resolve),
-                    LOCAL: local,
-                  }),
+                  withLocation(
+                    importTemplate({
+                      IMPORT: state.importAll,
+                      FILE: resolvePath(file, state.opts.resolve),
+                      LOCAL: local,
+                    }),
+                    loc,
+                  ),
                 );
                 break;
 
               case 'ImportDefaultSpecifier':
                 anchor.insertBefore(
-                  importTemplate({
-                    IMPORT: state.importDefault,
-                    FILE: resolvePath(file, state.opts.resolve),
-                    LOCAL: local,
-                  }),
+                  withLocation(
+                    importTemplate({
+                      IMPORT: state.importDefault,
+                      FILE: resolvePath(file, state.opts.resolve),
+                      LOCAL: local,
+                    }),
+                    loc,
+                  ),
                 );
                 break;
 
               case 'ImportSpecifier':
                 if (imported.name === 'default') {
                   anchor.insertBefore(
-                    importTemplate({
-                      IMPORT: state.importDefault,
-                      FILE: resolvePath(file, state.opts.resolve),
-                      LOCAL: local,
-                    }),
+                    withLocation(
+                      importTemplate({
+                        IMPORT: state.importDefault,
+                        FILE: resolvePath(file, state.opts.resolve),
+                        LOCAL: local,
+                      }),
+                      loc,
+                    ),
                   );
                 } else if (sharedModuleImport != null) {
                   path.scope.push({
                     id: local,
-                    init: t.memberExpression(sharedModuleImport, imported),
+                    init: withLocation(
+                      t.memberExpression(sharedModuleImport, imported),
+                      loc,
+                    ),
                   });
                 } else {
                   anchor.insertBefore(
-                    importNamedTemplate({
-                      FILE: resolvePath(file, state.opts.resolve),
-                      LOCAL: local,
-                      REMOTE: imported,
-                    }),
+                    withLocation(
+                      importNamedTemplate({
+                        FILE: resolvePath(file, state.opts.resolve),
+                        LOCAL: local,
+                        REMOTE: imported,
+                      }),
+                      loc,
+                    ),
                   );
                 }
                 break;
@@ -376,32 +447,53 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
         exit(path: Path, state: State): void {
           const body = path.node.body;
 
-          state.exportDefault.forEach((e: {local: string, ...}) => {
-            body.push(
-              exportTemplate({
-                LOCAL: t.identifier(e.local),
-                REMOTE: t.identifier('default'),
-              }),
-            );
-          });
+          state.exportDefault.forEach(
+            (e: {local: string, loc: BabelSourceLocation, ...}) => {
+              body.push(
+                withLocation(
+                  exportTemplate({
+                    LOCAL: t.identifier(e.local),
+                    REMOTE: t.identifier('default'),
+                  }),
+                  e.loc,
+                ),
+              );
+            },
+          );
 
-          state.exportAll.forEach((e: {file: string, ...}) => {
-            body.push(
-              ...exportAllTemplate({
-                FILE: resolvePath(t.stringLiteral(e.file), state.opts.resolve),
-                REQUIRED: path.scope.generateUidIdentifier(e.file),
-                KEY: path.scope.generateUidIdentifier('key'),
-              }),
-            );
-          });
+          state.exportAll.forEach(
+            (e: {file: string, loc: BabelSourceLocation, ...}) => {
+              body.push(
+                ...withLocation(
+                  exportAllTemplate({
+                    FILE: resolvePath(
+                      t.stringLiteral(e.file),
+                      state.opts.resolve,
+                    ),
+                    REQUIRED: path.scope.generateUidIdentifier(e.file),
+                    KEY: path.scope.generateUidIdentifier('key'),
+                  }),
+                  e.loc,
+                ),
+              );
+            },
+          );
 
           state.exportNamed.forEach(
-            (e: {local: string, remote: string, ...}) => {
+            (e: {
+              local: string,
+              remote: string,
+              loc: BabelSourceLocation,
+              ...
+            }) => {
               body.push(
-                exportTemplate({
-                  LOCAL: t.identifier(e.local),
-                  REMOTE: t.identifier(e.remote),
-                }),
+                withLocation(
+                  exportTemplate({
+                    LOCAL: t.identifier(e.local),
+                    REMOTE: t.identifier(e.remote),
+                  }),
+                  e.loc,
+                ),
               );
             },
           );
