@@ -233,7 +233,7 @@ Object {
     "assetPlugins": Array [],
     "assetRegistryPath": "missing-asset-registry-path",
     "asyncRequireModulePath": "metro/src/lib/bundle-modules/asyncRequire",
-    "babelTransformerPath": "metro-babel-transformer",
+    "babelTransformerPath": "metro-babel-transformer/src/index.js",
     "dynamicDepsInPackages": "throwAtRuntime",
     "enableBabelRCLookup": true,
     "enableBabelRuntime": true,

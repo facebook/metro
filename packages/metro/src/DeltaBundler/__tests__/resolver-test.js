@@ -77,6 +77,7 @@ let resolver;
     maxWorkers: 1,
     projectRoot: p('/root'),
     reporter: require('../../lib/reporting').nullReporter,
+    transformer: {},
     watch: true,
     watchFolders: [p('/root')],
   };

@@ -19,7 +19,7 @@ const path = require('path');
 const validConfig = require('./defaults/validConfig');
 
 const {validate} = require('jest-validate');
-const {dirname, resolve, join} = require('path');
+const {dirname, join} = require('path');
 
 import type {ConfigT, InputConfigT, YargArguments} from './configTypes.flow';
 
@@ -61,19 +61,30 @@ const explorer = cosmiconfig('metro', {
 const isFile = filePath =>
   fs.existsSync(filePath) && !fs.lstatSync(filePath).isDirectory();
 
+const resolve = filePath => {
+  if (!path.isAbsolute(filePath)) {
+    try {
+      return require.resolve(filePath);
+    } catch (error) {
+      if (error.code !== 'MODULE_NOT_FOUND') {
+        throw error;
+      }
+    }
+
+    const possiblePath = path.resolve(process.cwd(), filePath);
+    if (isFile(possiblePath)) {
+      return possiblePath;
+    }
+  }
+  return filePath;
+};
+
 async function resolveConfig(
   filePath?: string,
   cwd?: string,
 ): Promise<CosmiConfigResult> {
   if (filePath) {
-    if (!path.isAbsolute(filePath)) {
-      const possiblePath = path.resolve(process.cwd(), filePath);
-      if (!isFile(possiblePath)) {
-        filePath = require.resolve(filePath);
-      }
-    }
-
-    return explorer.load(filePath);
+    return explorer.load(resolve(filePath));
   }
 
   const result = await explorer.search(cwd);
@@ -113,6 +124,14 @@ function mergeConfig<T: InputConfigT>(
          * delete this comment and run Flow. */
         ...totalConfig.resolver,
         ...(nextConfig.resolver || {}),
+        dependencyExtractor:
+          nextConfig.resolver && nextConfig.resolver.dependencyExtractor != null
+            ? resolve(nextConfig.resolver.dependencyExtractor)
+            : totalConfig.resolver.dependencyExtractor,
+        hasteImplModulePath:
+          nextConfig.resolver && nextConfig.resolver.hasteImplModulePath != null
+            ? resolve(nextConfig.resolver.hasteImplModulePath)
+            : totalConfig.resolver.hasteImplModulePath,
       },
       serializer: {
         /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses
@@ -127,6 +146,11 @@ function mergeConfig<T: InputConfigT>(
          * delete this comment and run Flow. */
         ...totalConfig.transformer,
         ...(nextConfig.transformer || {}),
+        babelTransformerPath:
+          nextConfig.transformer &&
+          nextConfig.transformer.babelTransformerPath != null
+            ? resolve(nextConfig.transformer.babelTransformerPath)
+            : totalConfig.transformer.babelTransformerPath,
       },
       server: {
         /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses
@@ -220,7 +244,7 @@ function overrideConfigWithArguments(
   }
 
   if (argv.transformer != null) {
-    output.transformer.babelTransformerPath = resolve(argv.transformer);
+    output.transformer.babelTransformerPath = argv.transformer;
   }
 
   if (argv['reset-cache'] != null) {

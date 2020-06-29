@@ -16,6 +16,7 @@ jest.mock('cosmiconfig');
 const {loadConfig} = require('../loadConfig');
 const getDefaultConfig = require('../defaults');
 const cosmiconfig = require('cosmiconfig');
+const path = require('path');
 const prettyFormat = require('pretty-format');
 const stripAnsi = require('strip-ansi');
 
@@ -86,7 +87,23 @@ describe('loadConfig', () => {
     // resolve to a real file on the file system.
     const result = await loadConfig({config: './__tests__/loadConfig-test.js'});
 
-    expect(result).toMatchSnapshot();
+    const relativizedResult = {
+      ...result,
+      transformer: {
+        ...result.transformer,
+        // Remove absolute paths from the result.
+        babelTransformerPath: path.relative(
+          path.join(
+            require.resolve('metro-babel-transformer'),
+            '..',
+            '..',
+            '..',
+          ),
+          result.transformer.babelTransformerPath,
+        ),
+      },
+    };
+    expect(relativizedResult).toMatchSnapshot();
     expect(cosmiconfig.hasLoadBeenCalled()).toBeTruthy();
   });
 
