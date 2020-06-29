@@ -64,9 +64,13 @@ class DelegatingConsumer implements IConsumer {
     return this._rootConsumer.eachMapping(callback, context, order);
   }
 
-  // flowlint unsafe-getters-setters:off
+  // flowlint-next-line unsafe-getters-setters:off
   get file(): ?string {
     return this._rootConsumer.file;
+  }
+
+  sourceContentFor(source: string, nullOnMissing: true): ?string {
+    return this._rootConsumer.sourceContentFor(source, nullOnMissing);
   }
 }
 

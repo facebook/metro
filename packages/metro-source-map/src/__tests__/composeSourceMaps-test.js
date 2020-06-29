@@ -156,6 +156,40 @@ describe('composeSourceMaps', () => {
     ]);
   });
 
+  it('preserves sourcesContent', () => {
+    const map1 = {
+      version: 3,
+      sections: [
+        {
+          offset: {line: 0, column: 0},
+          map: {
+            version: 3,
+            sources: ['1.js', '2.js'],
+            sourcesContent: ['content of 1.js', 'content of 2.js'],
+            names: [],
+            // One column from 2.js, one column from 1.js
+            mappings: 'ACAA,CDAA',
+          },
+        },
+      ],
+    };
+
+    const map2 = {
+      version: 3,
+      sources: ['transformed.js'],
+      names: [],
+      // Two consecutive columns from transformed.js
+      mappings: 'AAAA,CAAC',
+    };
+
+    const mergedMap = composeSourceMaps([map1, map2]);
+
+    expect(mergedMap.sourcesContent).toEqual([
+      'content of 2.js',
+      'content of 1.js',
+    ]);
+  });
+
   it('merges two maps', () => {
     const mergedMap = composeSourceMaps([
       fixtures['1.json'],

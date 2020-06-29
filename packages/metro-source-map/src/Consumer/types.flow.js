@@ -59,6 +59,12 @@ export interface IConsumer {
     order?: IterationOrder,
   ): void;
 
-  // flowlint unsafe-getters-setters:off
+  // flowlint-next-line unsafe-getters-setters:off
   get file(): ?string;
+
+  sourceContentFor(
+    source: string,
+    /* nullOnMissing = false behaves inconsistently upstream, so we don't support it */
+    nullOnMissing: true,
+  ): ?string;
 }
