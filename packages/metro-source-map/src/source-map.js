@@ -74,11 +74,12 @@ export type IndexMapSection = {
 export type IndexMap = {|
   +file?: string,
   +mappings?: void, // avoids SourceMap being a disjoint union
+  +sourcesContent?: void,
   +sections: Array<IndexMapSection>,
   +version: number,
   +x_facebook_offsets?: Array<number>,
   +x_metro_module_paths?: Array<string>,
-  +x_facebook_sources?: FBSourcesArray,
+  +x_facebook_sources?: void,
   +x_facebook_segments?: FBSegmentMap,
   +x_hermes_function_offsets?: HermesFunctionOffsets,
 |};

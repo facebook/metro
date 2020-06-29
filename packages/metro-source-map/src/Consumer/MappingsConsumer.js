@@ -33,6 +33,7 @@ import type {
   Mapping,
   IConsumer,
 } from './types.flow';
+import type {Number0} from 'ob1';
 
 /**
  * A source map consumer that supports "basic" source maps (that have a
@@ -191,6 +192,28 @@ class MappingsConsumer extends AbstractConsumer implements IConsumer {
 
   generatedMappings(): Iterable<Mapping> {
     return this._decodeAndCacheMappings();
+  }
+
+  _indexOfSource(source: string): ?Number0 {
+    const idx = this._normalizeAndCacheSources().indexOf(
+      normalizeSourcePath(source, this._sourceMap),
+    );
+    if (idx === -1) {
+      return null;
+    }
+    return add0(idx);
+  }
+
+  sourceContentFor(source: string, nullOnMissing: true): ?string {
+    const {sourcesContent} = this._sourceMap;
+    if (!sourcesContent) {
+      return null;
+    }
+    const idx = this._indexOfSource(source);
+    if (idx == null) {
+      return null;
+    }
+    return sourcesContent[get0(idx)] ?? null;
   }
 }
 

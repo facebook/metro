@@ -111,6 +111,16 @@ class SectionsConsumer extends AbstractConsumer implements IConsumer {
     );
     return index != null ? this._consumers[index] : null;
   }
+
+  sourceContentFor(source: string, nullOnMissing: true): ?string {
+    for (const [_, consumer] of this._consumers) {
+      const content = consumer.sourceContentFor(source, nullOnMissing);
+      if (content != null) {
+        return content;
+      }
+    }
+    return null;
+  }
 }
 
 module.exports = SectionsConsumer;

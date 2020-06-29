@@ -66,6 +66,12 @@ function composeSourceMaps(
 
   const composedMap = generator.toJSON();
 
+  composedMap.sourcesContent = composedMap.sources.map(source =>
+    consumers[consumers.length - 1].sourceContentFor(source, true),
+  );
+  if (composedMap.sourcesContent.every(content => content == null)) {
+    delete composedMap.sourcesContent;
+  }
   const metadataConsumer = new SourceMetadataMapConsumer(firstMap);
   composedMap.x_facebook_sources = metadataConsumer.toArray(
     composedMap.sources,

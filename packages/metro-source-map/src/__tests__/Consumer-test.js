@@ -194,6 +194,51 @@ describe('basic maps', () => {
       `);
     });
   });
+
+  describe('sourceContentFor', () => {
+    test('missing sourcesContent', () => {
+      const consumer = new Consumer({
+        version: 3,
+        mappings: '',
+        names: [],
+        sources: [],
+      });
+      expect(consumer.sourceContentFor('a.js', true)).toBeNull();
+    });
+
+    test('null in sourcesContent', () => {
+      const consumer = new Consumer({
+        version: 3,
+        mappings: '',
+        names: [],
+        sources: ['a.js'],
+        sourcesContent: [null],
+      });
+      expect(consumer.sourceContentFor('a.js', true)).toBeNull();
+    });
+
+    test('sourcesContent too short', () => {
+      const consumer = new Consumer({
+        version: 3,
+        mappings: '',
+        names: [],
+        sources: ['a.js'],
+        sourcesContent: [],
+      });
+      expect(consumer.sourceContentFor('a.js', true)).toBeNull();
+    });
+
+    test('string in sourcesContent', () => {
+      const consumer = new Consumer({
+        version: 3,
+        mappings: '',
+        names: [],
+        sources: ['a.js'],
+        sourcesContent: ['content of a.js'],
+      });
+      expect(consumer.sourceContentFor('a.js', true)).toBe('content of a.js');
+    });
+  });
 });
 
 describe('indexed (sectioned) maps', () => {
@@ -372,6 +417,64 @@ describe('indexed (sectioned) maps', () => {
           "source": "section2_source0",
         }
       `);
+    });
+  });
+
+  describe('sourceContentFor', () => {
+    test('empty map', () => {
+      const consumer = new Consumer({
+        version: 3,
+        sections: [],
+      });
+      expect(consumer.sourceContentFor('a.js', true)).toBeNull();
+    });
+
+    test('found in section', () => {
+      const consumer = new Consumer({
+        version: 3,
+        sections: [
+          {
+            offset: {line: 0, column: 0},
+            map: {
+              version: 3,
+              mappings: '',
+              names: [],
+              sources: ['a.js'],
+              sourcesContent: ['content of a.js'],
+            },
+          },
+        ],
+      });
+      expect(consumer.sourceContentFor('a.js', true)).toBe('content of a.js');
+    });
+
+    test('found in multiple sections', () => {
+      const consumer = new Consumer({
+        version: 3,
+        sections: [
+          {
+            offset: {line: 0, column: 0},
+            map: {
+              version: 3,
+              mappings: '',
+              names: [],
+              sources: ['a.js'],
+              sourcesContent: [null],
+            },
+          },
+          {
+            offset: {line: 1, column: 0},
+            map: {
+              version: 3,
+              mappings: '',
+              names: [],
+              sources: ['a.js'],
+              sourcesContent: ['content of a.js'],
+            },
+          },
+        ],
+      });
+      expect(consumer.sourceContentFor('a.js', true)).toBe('content of a.js');
     });
   });
 });

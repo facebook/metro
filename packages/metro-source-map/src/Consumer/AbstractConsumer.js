@@ -54,9 +54,13 @@ class AbstractConsumer implements IConsumer {
     }
   }
 
-  // flowlint unsafe-getters-setters:off
+  // flowlint-next-line unsafe-getters-setters:off
   get file(): ?string {
     return this._sourceMap.file;
+  }
+
+  sourceContentFor(source: string, nullOnMissing: true): ?string {
+    invariant(false, 'Not implemented');
   }
 }
 
