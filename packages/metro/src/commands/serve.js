@@ -28,8 +28,7 @@ module.exports = (): ({|
 |}) => ({
   command: 'serve',
 
-  description:
-    'Starts a Metro server on the given port, building bundles on the fly',
+  description: 'Starts Metro on the given port, building bundles on the fly',
 
   builder: (yargs: Yargs): void => {
     yargs.option('project-roots', {

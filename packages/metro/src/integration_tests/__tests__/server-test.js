@@ -33,9 +33,7 @@ describe('Metro development server serves bundles via HTTP', () => {
     if (!response.ok) {
       console.error(body);
 
-      throw new Error(
-        'Metro server responded with status code: ' + response.status,
-      );
+      throw new Error('Metro responded with status code: ' + response.status);
     }
 
     return execBundle(body);

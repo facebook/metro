@@ -28,7 +28,7 @@ Generates a JavaScript bundle containing the specified entrypoint and its descen
 
 ## `serve`
 
-Starts a Metro server on the given port, building bundles on the fly.
+Starts Metro on the given port, building bundles on the fly.
 
 ## `get-dependencies`
 
