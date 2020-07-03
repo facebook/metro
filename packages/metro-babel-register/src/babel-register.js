@@ -14,15 +14,7 @@ const path = require('path');
 
 let _only = [];
 
-const plugins = [
-  [require('@babel/plugin-transform-flow-strip-types').default],
-  [require('@babel/plugin-proposal-class-properties').default],
-  [require('@babel/plugin-transform-modules-commonjs').default],
-  [require('@babel/plugin-proposal-nullish-coalescing-operator').default],
-  [require('@babel/plugin-proposal-optional-chaining').default],
-];
-
-function registerOnly(onlyList) {
+function register(onlyList) {
   // This prevents `babel-register` from transforming the code of the
   // plugins/presets that we are require-ing themselves before setting up the
   // actual config.
@@ -30,7 +22,7 @@ function registerOnly(onlyList) {
   require('@babel/register')(config(onlyList));
 }
 
-function config(onlyList) {
+function config(onlyList, options) {
   _only = _only.concat(onlyList);
   return {
     babelrc: false,
@@ -38,7 +30,18 @@ function config(onlyList) {
     configFile: false,
     ignore: null,
     only: _only,
-    plugins,
+    plugins: [
+      [require('@babel/plugin-transform-flow-strip-types').default],
+      [require('@babel/plugin-proposal-class-properties').default],
+      [
+        require('@babel/plugin-transform-modules-commonjs').default,
+        {
+          lazy: options && options.lazy,
+        },
+      ],
+      [require('@babel/plugin-proposal-nullish-coalescing-operator').default],
+      [require('@babel/plugin-proposal-optional-chaining').default],
+    ],
     presets: [],
     retainLines: true,
     sourceMaps: 'inline',
@@ -68,6 +71,6 @@ function buildRegExps(basePath, dirPaths) {
   );
 }
 
-module.exports = registerOnly;
+module.exports = register;
 module.exports.config = config;
 module.exports.buildRegExps = buildRegExps;
