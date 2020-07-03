@@ -15,6 +15,7 @@ const MetroHmrServer = require('./HmrServer');
 const MetroServer = require('./Server');
 
 const attachWebsocketServer = require('./lib/attachWebsocketServer');
+const chalk = require('chalk');
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
@@ -52,9 +53,10 @@ export type RunServerOptions = {|
   onError?: (Error & {|code?: string|}) => void,
   onReady?: (server: HttpServer | HttpsServer) => void,
   runInspectorProxy?: boolean,
-  secure?: boolean,
-  secureCert?: string,
-  secureKey?: string,
+  secureServerOptions?: Object,
+  secure?: boolean, // deprecated
+  secureCert?: string, // deprecated
+  secureKey?: string, // deprecated
 |};
 
 type BuildGraphOptions = {|
@@ -171,11 +173,21 @@ exports.runServer = async (
     host,
     onError,
     onReady,
-    secure = false,
-    secureCert,
-    secureKey,
+    secureServerOptions,
+    secure, //deprecated
+    secureCert, // deprecated
+    secureKey, // deprecated
   }: RunServerOptions,
 ): Promise<HttpServer | HttpsServer> => {
+  if (secure != null || secureCert != null || secureKey != null) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      chalk.inverse.yellow.bold(' DEPRECATED '),
+      'The `secure`, `secureCert`, and `secureKey` options are now deprecated. ' +
+        'Please use the `secureServerOptions` object instead to pass options to ' +
+        "Metro's https development server.",
+    );
+  }
   // Lazy require
   const connect = require('connect');
 
@@ -198,18 +210,18 @@ exports.runServer = async (
 
   let httpServer;
 
-  if (
-    secure &&
-    typeof secureKey === 'string' &&
-    typeof secureCert === 'string'
-  ) {
-    httpServer = https.createServer(
-      {
-        key: fs.readFileSync(secureKey),
-        cert: fs.readFileSync(secureCert),
-      },
-      serverApp,
-    );
+  if (secure || secureServerOptions != null) {
+    let options = secureServerOptions;
+    if (typeof secureKey === 'string' && typeof secureCert === 'string') {
+      options = Object.assign(
+        {
+          key: fs.readFileSync(secureKey),
+          cert: fs.readFileSync(secureCert),
+        },
+        secureServerOptions,
+      );
+    }
+    httpServer = https.createServer(options, serverApp);
   } else {
     httpServer = http.createServer(serverApp);
   }

@@ -83,15 +83,31 @@ We recommend using `runMetro` instead of `runServer`, `runMetro` calls this func
 
 * `host (string)`: Where to host the server on.
 * `onReady (Function)`: Called when the server is ready to serve requests.
-* `secure (boolean)`: Whether the server should run on `https` instead of `http`.
-* `secureKey (string)`: The key to use for `https` when `secure` is on.
-* `secureCert (string)`: The cert to use for `https` when `secure` is on.
+* `secure (boolean)`: **DEPRECATED** Whether the server should run on `https` instead of `http`.
+* `secureKey (string)`: **DEPRECATED** The key to use for `https` when `secure` is on.
+* `secureCert (string)`: **DEPRECATED** The cert to use for `https` when `secure` is on.
+* `secureServerOptions (Object)`: The options object to pass to the Metro's https server. The presence of this object will make Metro's server run on `https`. Refer to the [nodejs docs](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener) for valid options.
 
 ```js
 const config = await Metro.loadConfig();
 
 await Metro.runServer(config, {
   port: 8080,
+});
+```
+
+```js
+const fs = require('fs');
+
+const config = await Metro.loadConfig();
+
+await Metro.runServer(config, {
+  port: 8080,
+  secureServerOptions: {
+    ca: fs.readFileSync('path/to/ca'),
+    cert: fs.readFileSync('path/to/cert'),
+    key: fs.readFileSync('path/to/key'),
+  }
 });
 ```
 

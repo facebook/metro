@@ -74,9 +74,11 @@ Bundles `entry` for the given `platform`, and saves it to location `out`. If `so
 
 ### `async runServer(config, <options>)`
 
-**Basic options:** `host`, `port`, `secure`, `secureKey`, `secureCert`, `hmrEnabled`
+**Basic options:** `host`, `port`, `secureServerOptions`, `secure (DEPRECATED)`, `secureKey (DEPRECATED)`, `secureCert (DEPRECATED)`
 
-Starts a full Metro HTTP server. It will listen on the specified `host:port`, and can then be queried to retrieve bundles for various entry points. If the `secure` family of options are present, the server will be exposed over HTTPS. If `hmrEnabled` is set, the server will also expose a websocket server and inject the HMR client into the generated bundles.
+Starts a full Metro HTTP server. It will listen on the specified `host:port`, and can then be queried to retrieve bundles for various entry points. If the `secureServerOptions` family of options are present, the server will be exposed over HTTPS.
+
+`secure`, `secureKey`, `secureCert` are now deprecated and will be removed in a later release. The presence of `secureServerOptions`, along with its options will make Metro run over https.
 
 ### `createConnectMiddleware(config, <options>)`
 

@@ -42,9 +42,14 @@ module.exports = (): ({|
 
     yargs.option('max-workers', {alias: 'j', type: 'number'});
 
-    yargs.option('secure', {type: 'boolean'});
-    yargs.option('secure-key', {type: 'string'});
-    yargs.option('secure-cert', {type: 'string'});
+    yargs.option('secure', {type: 'boolean', describe: '(deprecated)'});
+    yargs.option('secure-key', {type: 'string', describe: '(deprecated)'});
+    yargs.option('secure-cert', {type: 'string', describe: '(deprecated)'});
+    yargs.option('secure-server-options', {
+      alias: 's',
+      type: 'string',
+      describe: 'Use dot notation for object path',
+    });
 
     yargs.option('hmr-enabled', {alias: 'hmr', type: 'boolean'});
 
@@ -52,6 +57,12 @@ module.exports = (): ({|
 
     // Deprecated
     yargs.option('reset-cache', {type: 'boolean'});
+
+    // Examples
+    yargs.example(
+      'secure-server-options',
+      '-s.cert="$(cat path/to/cert)" -s.key="$(cat path/to/key")',
+    );
   },
 
   handler: makeAsyncCommand(async (argv: YargArguments) => {
