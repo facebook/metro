@@ -50,9 +50,7 @@ jobs:
       - checkout
       - yarn_install
       - yarn_run:
-          command: jest
-          environment: 
-            NODE_OPTIONS: --max_old_space_size=4096
+          command: jest -w 4
 
   publish-to-npm:
     docker:
