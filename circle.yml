@@ -51,6 +51,8 @@ jobs:
       - yarn_install
       - yarn_run:
           command: jest
+          environment: 
+            NODE_OPTIONS: --max_old_space_size=4096
 
   publish-to-npm:
     docker:
