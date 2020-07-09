@@ -50,7 +50,7 @@ jobs:
       - checkout
       - yarn_install
       - yarn_run:
-          command: jest
+          command: jest -w 4
 
   publish-to-npm:
     docker:
