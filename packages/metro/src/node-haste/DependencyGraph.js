@@ -83,6 +83,36 @@ class DependencyGraph extends EventEmitter {
     this._createModuleResolver();
   }
 
+  static _getIgnorePattern(config: ConfigT): RegExp {
+    /*
+      For now we support both blockList and blacklistRE options
+    */
+    const {blockList, blacklistRE} = config.resolver;
+
+    const combine = regexes =>
+      new RegExp(
+        regexes
+          .map(regex => '(' + regex.source.replace(/\//g, path.sep) + ')')
+          .join('|'),
+      );
+
+    // If `blacklistRE` is set - use it,
+    // if `blockList` is set - use it
+    const ignorePattern = blacklistRE || blockList;
+
+    // If neither option has been set, use default pattern
+    if (!ignorePattern) {
+      return / ^/;
+    }
+
+    // If ignorePattern is an array, merge it into one
+    if (Array.isArray(ignorePattern)) {
+      return combine(ignorePattern);
+    }
+
+    return ignorePattern;
+  }
+
   static _createHaste(config: ConfigT, watch?: boolean): JestHasteMap {
     const haste = new JestHasteMap({
       cacheDirectory: config.hasteMapCacheDirectory,
@@ -91,7 +121,7 @@ class DependencyGraph extends EventEmitter {
       extensions: config.resolver.sourceExts.concat(config.resolver.assetExts),
       forceNodeFilesystemAPI: !config.resolver.useWatchman,
       hasteImplModulePath: config.resolver.hasteImplModulePath,
-      ignorePattern: config.resolver.blacklistRE || / ^/,
+      ignorePattern: this._getIgnorePattern(config),
       maxWorkers: config.maxWorkers,
       mocksPattern: '',
       name: 'metro-' + JEST_HASTE_MAP_CACHE_BREAKER,
@@ -226,7 +256,10 @@ class DependencyGraph extends EventEmitter {
 
     if (!sha1) {
       throw new ReferenceError(
-        `SHA-1 for file ${filename} (${resolvedPath}) is not computed`,
+        `SHA-1 for file ${filename} (${resolvedPath}) is not computed.
+         Potential causes:
+           1) You have symlinks in your project - watchman does not follow symlinks.
+           2) Check \`blockList\` in your metro.config.js and make sure it isn't excluding the file path.`,
       );
     }
 

@@ -245,11 +245,11 @@ If set to `false`, it'll prevent Metro from using watchman (even if it's install
 
 These options are only useful with React Native projects.
 
-#### `blacklistRE`
+#### `blockList`
 
-Type: `RegExp`
+Type: `RegExp` or `Array<RegExp>`
 
-A RegEx defining which paths to ignore.
+A RegEx defining which paths to ignore, however if a blocklisted file is required it will be brought into the dependency graph.
 
 #### `hasteImplModulePath`
 

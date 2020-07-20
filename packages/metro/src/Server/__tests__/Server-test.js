@@ -70,7 +70,7 @@ describe('processRequest', () => {
   const config = getDefaultValues('/');
   config.projectRoot = '/root';
   config.watchFolders = ['/root'];
-  config.resolver.blacklistRE = null;
+  config.resolver.blockList = null;
   config.cacheVersion = null;
   config.serializer.getRunModuleStatement = moduleId =>
     `require(${JSON.stringify(moduleId)});`;

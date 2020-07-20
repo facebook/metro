@@ -81,7 +81,8 @@ export type Middleware = (
 type ResolverConfigT = {|
   assetExts: $ReadOnlyArray<string>,
   assetResolutions: $ReadOnlyArray<string>,
-  blacklistRE: RegExp,
+  blacklistRE?: RegExp | Array<RegExp>,
+  blockList: RegExp | Array<RegExp>,
   dependencyExtractor: ?string,
   extraNodeModules: {[name: string]: string, ...},
   hasteImplModulePath: ?string,

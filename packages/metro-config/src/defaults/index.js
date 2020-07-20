@@ -41,7 +41,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     extraNodeModules: {},
     resolveRequest: null,
     hasteImplModulePath: undefined,
-    blacklistRE: exclusionList(),
+    blockList: exclusionList(),
     useWatchman: true,
   },
 
