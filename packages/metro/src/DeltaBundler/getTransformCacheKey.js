@@ -49,6 +49,7 @@ function getTransformCacheKey(opts: {|
         path.relative(path.join(__dirname, '../../..'), opts.projectRoot),
         getKeyFromFiles([require.resolve(transformerPath)]),
         transformerKey,
+        transformerConfig.globalPrefix,
       ].join('$'),
     )
     .digest('hex');

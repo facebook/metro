@@ -98,6 +98,7 @@ function createRamBundle(preloadedModules = new Set(), ramGroups?) {
   );
   const result = build({
     filename: 'arbitrary/filename.js',
+    globalPrefix: '',
     idsForPath,
     modules,
     requireCalls: [requireCall],
@@ -163,6 +164,7 @@ function expectedCodeAndMap(module) {
   return getModuleCodeAndMap(module, x => idsForPath(x).moduleId, {
     dependencyMapReservedName: undefined,
     enableIDInlining: true,
+    globalPrefix: '',
   });
 }
 

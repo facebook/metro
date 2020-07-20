@@ -14,6 +14,7 @@
 /* eslint-disable no-bitwise */
 
 declare var __DEV__: boolean;
+declare var __METRO_GLOBAL_PREFIX__: string;
 
 type DependencyMap = Array<ModuleID>;
 type Exports = any;
@@ -64,7 +65,7 @@ type VerboseModuleNameForDev = string;
 type ModuleDefiner = (moduleId: ModuleID) => void;
 
 global.__r = metroRequire;
-global.__d = define;
+global[`${__METRO_GLOBAL_PREFIX__}__d`] = define;
 global.__c = clear;
 global.__registerSegment = registerSegment;
 

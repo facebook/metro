@@ -89,6 +89,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
       preloadedModules: false,
       ramGroups: [],
     }),
+    globalPrefix: '',
     minifierConfig: {
       mangle: {
         toplevel: false,

@@ -25,6 +25,7 @@ import type {Module, OutputFn, OutputFnArg, OutputResult} from '../types.flow';
 function asMultipleFilesRamBundle({
   dependencyMapReservedName,
   filename,
+  globalPrefix,
   idsForPath,
   modules,
   requireCalls,
@@ -34,7 +35,7 @@ function asMultipleFilesRamBundle({
   const [startup, deferred] = partition(modules, preloadedModules);
   const startupModules = [...startup, ...requireCalls];
   const deferredModules = deferred.map((m: Module) =>
-    toModuleTransport(m, idsForPath, {dependencyMapReservedName}),
+    toModuleTransport(m, idsForPath, {dependencyMapReservedName, globalPrefix}),
   );
   const magicFileContents = Buffer.alloc(4);
 
@@ -45,6 +46,7 @@ function asMultipleFilesRamBundle({
         getModuleCodeAndMap(m, idForPath, {
           dependencyMapReservedName,
           enableIDInlining: true,
+          globalPrefix,
         }).moduleCode,
     )
     .join('\n');
@@ -71,7 +73,10 @@ function asMultipleFilesRamBundle({
     lazyModules: deferredModules,
     moduleGroups: null,
     startupModules: startupModules.map((m: Module) =>
-      toModuleTransport(m, idsForPath, {dependencyMapReservedName}),
+      toModuleTransport(m, idsForPath, {
+        dependencyMapReservedName,
+        globalPrefix,
+      }),
     ),
   });
 

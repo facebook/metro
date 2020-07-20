@@ -99,6 +99,7 @@ export type PostProcessModules = (
 export type OutputFnArg = {|
   dependencyMapReservedName?: string,
   filename: string,
+  globalPrefix: string,
   idsForPath: IdsForPathFn,
   modules: Iterable<Module>,
   requireCalls: Iterable<Module>,

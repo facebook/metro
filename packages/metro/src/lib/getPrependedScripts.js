@@ -65,11 +65,24 @@ async function getPrependedScripts(
     },
   );
 
-  return [_getPrelude({dev: options.dev}), ...dependencies.values()];
+  return [
+    _getPrelude({
+      dev: options.dev,
+      globalPrefix: config.transformer.globalPrefix,
+    }),
+    ...dependencies.values(),
+  ];
 }
 
-function _getPrelude({dev}: {dev: boolean, ...}): Module<> {
-  const code = getPreludeCode({isDev: dev});
+function _getPrelude({
+  dev,
+  globalPrefix,
+}: {
+  dev: boolean,
+  globalPrefix: string,
+  ...
+}): Module<> {
+  const code = getPreludeCode({isDev: dev, globalPrefix});
   const name = '__prelude__';
 
   return {

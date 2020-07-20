@@ -17,20 +17,31 @@ const vm = require('vm');
 ['development', 'production'].forEach((mode: string) => {
   describe(`${mode} mode`, () => {
     const isDev = mode === 'development';
+    const globalPrefix = '';
 
     it('sets up `process.env.NODE_ENV` and `__DEV__`', () => {
       const sandbox: $FlowFixMe = {};
       vm.createContext(sandbox);
-      vm.runInContext(getPreludeCode({isDev}), sandbox);
+      vm.runInContext(getPreludeCode({isDev, globalPrefix}), sandbox);
       expect(sandbox.process.env.NODE_ENV).toEqual(mode);
       expect(sandbox.__DEV__).toEqual(isDev);
+    });
+
+    it('sets up `__METRO_GLOBAL_PREFIX__`', () => {
+      const sandbox: $FlowFixMe = {};
+      vm.createContext(sandbox);
+      vm.runInContext(
+        getPreludeCode({isDev, globalPrefix: '__metro'}),
+        sandbox,
+      );
+      expect(sandbox.__METRO_GLOBAL_PREFIX__).toBe('__metro');
     });
 
     it('does not override an existing `process.env`', () => {
       const nextTick = () => {};
       const sandbox: $FlowFixMe = {process: {nextTick, env: {FOOBAR: 123}}};
       vm.createContext(sandbox);
-      vm.runInContext(getPreludeCode({isDev}), sandbox);
+      vm.runInContext(getPreludeCode({isDev, globalPrefix}), sandbox);
       expect(sandbox.process.env.NODE_ENV).toEqual(mode);
       expect(sandbox.process.env.FOOBAR).toEqual(123);
       expect(sandbox.process.nextTick).toEqual(nextTick);
@@ -41,7 +52,10 @@ const vm = require('vm');
       const FOO = '1';
       const BAR = 2;
       vm.createContext(sandbox);
-      vm.runInContext(getPreludeCode({isDev, extraVars: {FOO, BAR}}), sandbox);
+      vm.runInContext(
+        getPreludeCode({isDev, globalPrefix, extraVars: {FOO, BAR}}),
+        sandbox,
+      );
       expect(sandbox.FOO).toBe(FOO);
       expect(sandbox.BAR).toBe(BAR);
     });
@@ -50,7 +64,7 @@ const vm = require('vm');
       const sandbox: $FlowFixMe = {};
       vm.createContext(sandbox);
       vm.runInContext(
-        getPreludeCode({isDev, extraVars: {__DEV__: 123}}),
+        getPreludeCode({isDev, globalPrefix, extraVars: {__DEV__: 123}}),
         sandbox,
       );
       expect(sandbox.__DEV__).toBe(isDev);

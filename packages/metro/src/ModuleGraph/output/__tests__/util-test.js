@@ -110,9 +110,9 @@ describe('`inlineModuleIds`:', () => {
       throw new Error(`Unexpected path: ${inputPath}`);
     });
 
-    expect(inlineModuleIds(module, idForPath).moduleCode).toEqual(
-      '__d(function(require,depMap){require(345);require(6);},12);',
-    );
+    expect(
+      inlineModuleIds(module, idForPath, {globalPrefix: ''}).moduleCode,
+    ).toEqual('__d(function(require,depMap){require(345);require(6);},12);');
   });
 
   it('inlines module ids using a globally reserved name for depMap', () => {
@@ -170,7 +170,9 @@ describe('`inlineModuleIds`:', () => {
       throw new Error(`Unexpected path: ${inputPath}`);
     });
 
-    expect(inlineModuleIds(module, idForPath).moduleCode).toMatchInlineSnapshot(
+    expect(
+      inlineModuleIds(module, idForPath, {globalPrefix: ''}).moduleCode,
+    ).toMatchInlineSnapshot(
       '"__d(function(require,depMap){require(345);require(6);function anotherScope(depMap){return depMap[1337];}},12);"',
     );
   });

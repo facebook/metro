@@ -16,6 +16,7 @@ import type {Types} from '@babel/types';
 type State = {|
   opts: {|
     +dependencyIds: $ReadOnlyArray<number>,
+    +globalPrefix: string,
   |},
 |};
 
@@ -30,7 +31,7 @@ function reverseDependencyMapReferences({
       CallExpression(path: Path, state: State) {
         const {node} = path;
 
-        if (node.callee.name === '__d') {
+        if (node.callee.name === `${state.opts.globalPrefix}__d`) {
           const lastArg = node.arguments[0].params.slice(-1)[0];
           const depMapName = lastArg && lastArg.name;
 

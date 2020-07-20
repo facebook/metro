@@ -26,6 +26,7 @@ import type {IndexMap} from 'metro-source-map';
 function asIndexedRamBundle({
   dependencyMapReservedName,
   filename,
+  globalPrefix,
   idsForPath,
   modules,
   preloadedModules,
@@ -40,7 +41,7 @@ function asIndexedRamBundle({
   const [startup, deferred] = partition(modules, preloadedModules);
   const startupModules = [...startup, ...requireCalls];
   const deferredModules = deferred.map((m: Module) =>
-    toModuleTransport(m, idsForPath, {dependencyMapReservedName}),
+    toModuleTransport(m, idsForPath, {dependencyMapReservedName, globalPrefix}),
   );
   for (const m of deferredModules) {
     invariant(
@@ -63,6 +64,7 @@ function asIndexedRamBundle({
           getModuleCodeAndMap(m, idForPath, {
             dependencyMapReservedName,
             enableIDInlining: true,
+            globalPrefix,
           }).moduleCode,
       )
       .join('\n'),
@@ -78,7 +80,10 @@ function asIndexedRamBundle({
       lazyModules: deferredModules,
       moduleGroups,
       startupModules: startupModules.map((m: Module) =>
-        toModuleTransport(m, idsForPath, {dependencyMapReservedName}),
+        toModuleTransport(m, idsForPath, {
+          dependencyMapReservedName,
+          globalPrefix,
+        }),
       ),
     }),
   };

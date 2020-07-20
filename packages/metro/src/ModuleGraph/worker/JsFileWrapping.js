@@ -30,6 +30,7 @@ function wrapModule(
   importDefaultName: string,
   importAllName: string,
   dependencyMapName: string,
+  globalPrefix: string,
 ): {
   ast: Ast,
   requireName: string,
@@ -41,7 +42,7 @@ function wrapModule(
     dependencyMapName,
   );
   const factory = functionFromProgram(fileAst.program, params);
-  const def = t.callExpression(t.identifier('__d'), [factory]);
+  const def = t.callExpression(t.identifier(`${globalPrefix}__d`), [factory]);
   const ast = t.file(t.program([t.expressionStatement(def)]));
 
   const requireName = renameRequires(ast);
@@ -56,7 +57,7 @@ function wrapPolyfill(fileAst: Ast): Ast {
   return t.file(t.program([t.expressionStatement(iife)]));
 }
 
-function wrapJson(source: string): string {
+function wrapJson(source: string, globalPrefix: string): string {
   // Unused parameters; remember that's wrapping JSON.
   const moduleFactoryParameters = buildParameters(
     '_aUnused',
@@ -65,7 +66,7 @@ function wrapJson(source: string): string {
   );
 
   return [
-    `__d(function(${moduleFactoryParameters.join(', ')}) {`,
+    `${globalPrefix}__d(function(${moduleFactoryParameters.join(', ')}) {`,
     `  module.exports = ${source};`,
     '});',
   ].join('\n');

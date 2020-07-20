@@ -23,6 +23,8 @@ const {WRAP_NAME} = JsFileWrapping;
 const BABEL_RENAMED = '_' + WRAP_NAME;
 const BABEL_RENAMED2 = '_' + WRAP_NAME + '2';
 
+const defaultGlobalPrefix = '';
+
 it('wraps a module correctly', () => {
   const dependencyMapName = '_dependencyMapName';
 
@@ -40,6 +42,7 @@ it('wraps a module correctly', () => {
     '_$$_IMPORT_DEFAULT',
     '_$$_IMPORT_ALL',
     dependencyMapName,
+    defaultGlobalPrefix,
   );
 
   expect(requireName).toBe(BABEL_RENAMED);
@@ -53,6 +56,30 @@ it('wraps a module correctly', () => {
           ${BABEL_RENAMED}("setup/something");
         }
         ${BABEL_RENAMED}.blah('do');
+      });`),
+  );
+});
+
+it('wraps a module correctly with global prefix', () => {
+  const dependencyMapName = '_dependencyMapName';
+
+  const originalAst = astFromCode(`
+    const dynamicRequire = require;
+  `);
+  const globalPrefix = '__metro';
+  const {ast, requireName} = JsFileWrapping.wrapModule(
+    originalAst,
+    '_$$_IMPORT_DEFAULT',
+    '_$$_IMPORT_ALL',
+    dependencyMapName,
+    globalPrefix,
+  );
+
+  expect(requireName).toBe(BABEL_RENAMED);
+  expect(codeFromAst(ast)).toEqual(
+    comparableCode(`
+      ${globalPrefix}__d(function (global, ${BABEL_RENAMED}, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMapName) {
+        const dynamicRequire = ${BABEL_RENAMED};
       });`),
   );
 });
@@ -78,6 +105,7 @@ describe('safe renaming of require', () => {
           '_$$_IMPORT_DEFAULT',
           '_$$_IMPORT_ALL',
           dependencyMapName,
+          defaultGlobalPrefix,
         );
 
         expect(requireName).toBe(BABEL_RENAMED);
@@ -114,6 +142,7 @@ describe('safe renaming of require', () => {
           '_$$_IMPORT_DEFAULT',
           '_$$_IMPORT_ALL',
           dependencyMapName,
+          defaultGlobalPrefix,
         );
 
         expect(requireName).toBe(BABEL_RENAMED2);
@@ -153,6 +182,7 @@ describe('safe renaming of require', () => {
           '_$$_IMPORT_DEFAULT',
           '_$$_IMPORT_ALL',
           dependencyMapName,
+          defaultGlobalPrefix,
         );
 
         expect(requireName).toBe(BABEL_RENAMED2);
@@ -209,7 +239,7 @@ it('wraps a JSON file correctly', () => {
     2,
   );
 
-  const wrappedJson = JsFileWrapping.wrapJson(source);
+  const wrappedJson = JsFileWrapping.wrapJson(source, defaultGlobalPrefix);
 
   expect(comparableCode(wrappedJson)).toEqual(
     comparableCode(

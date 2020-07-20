@@ -21,6 +21,7 @@ import type {MixedSourceMap} from 'metro-source-map';
 function asPlainBundle({
   dependencyMapReservedName,
   filename,
+  globalPrefix,
   idsForPath,
   modules,
   requireCalls,
@@ -38,6 +39,7 @@ function asPlainBundle({
     const {moduleCode, moduleMap} = getModuleCodeAndMap(module, modIdForPath, {
       dependencyMapReservedName,
       enableIDInlining,
+      globalPrefix,
     });
 
     builder.append(moduleCode + '\n', moduleMap);

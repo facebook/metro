@@ -103,6 +103,7 @@ Object {
     "enableBabelRuntime": true,
     "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
+    "globalPrefix": "",
     "minifierConfig": Object {
       "compress": Object {
         "reduce_funcs": false,
@@ -239,6 +240,7 @@ Object {
     "enableBabelRuntime": true,
     "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
+    "globalPrefix": "",
     "minifierConfig": Object {
       "compress": Object {
         "reduce_funcs": false,
@@ -375,6 +377,7 @@ Object {
     "enableBabelRuntime": true,
     "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
+    "globalPrefix": "",
     "minifierConfig": Object {
       "compress": Object {
         "reduce_funcs": false,

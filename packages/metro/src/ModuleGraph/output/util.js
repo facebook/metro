@@ -60,7 +60,8 @@ function inlineModuleIds(
   idForPath: ({path: string, ...}) => number,
   {
     dependencyMapReservedName = undefined,
-  }: {dependencyMapReservedName: ?string} = {},
+    globalPrefix,
+  }: {dependencyMapReservedName: ?string, globalPrefix: string} = {},
 ): {
   moduleCode: string,
   moduleMap: ?BasicSourceMap,
@@ -139,7 +140,6 @@ function inlineModuleIds(
       moduleMap: map,
     };
   }
-
   const {ast} = transformSync(code, {
     ast: true,
     babelrc: false,
@@ -147,7 +147,7 @@ function inlineModuleIds(
     configFile: false,
     plugins: [
       ...passthroughSyntaxPlugins,
-      [reverseDependencyMapReferences, {dependencyIds}],
+      [reverseDependencyMapReferences, {dependencyIds, globalPrefix}],
     ],
   });
 
@@ -179,6 +179,7 @@ function getModuleCodeAndMap(
   options: $ReadOnly<{
     enableIDInlining: boolean,
     dependencyMapReservedName: ?string,
+    globalPrefix: string,
     ...
   }>,
 ): {|
@@ -197,6 +198,7 @@ function getModuleCodeAndMap(
   } else {
     ({moduleCode, moduleMap} = inlineModuleIds(module, idForPath, {
       dependencyMapReservedName: options.dependencyMapReservedName,
+      globalPrefix: options.globalPrefix,
     }));
   }
   if (moduleMap && moduleMap.sources) {
@@ -272,7 +274,10 @@ exports.partition = (
 function toModuleTransport(
   module: Module,
   idsForPath: IdsForPathFn,
-  {dependencyMapReservedName}: {dependencyMapReservedName: ?string},
+  {
+    dependencyMapReservedName,
+    globalPrefix,
+  }: {dependencyMapReservedName: ?string, globalPrefix: string},
 ): {
   code: string,
   dependencies: Array<Dependency>,
@@ -289,6 +294,7 @@ function toModuleTransport(
     {
       dependencyMapReservedName,
       enableIDInlining: true,
+      globalPrefix,
     },
   );
 

@@ -43,6 +43,7 @@ describe('require', () => {
   const createModuleSystem = new Function(
     'global',
     '__DEV__',
+    '__METRO_GLOBAL_PREFIX__',
     moduleSystemCode,
   );
 
@@ -88,7 +89,7 @@ describe('require', () => {
   });
 
   it('works with plain bundles', () => {
-    createModuleSystem(moduleSystem, false);
+    createModuleSystem(moduleSystem, false, '');
     expect(moduleSystem.__r).not.toBeUndefined();
     expect(moduleSystem.__d).not.toBeUndefined();
 
@@ -119,6 +120,12 @@ describe('require', () => {
     expect(mockFactory.mock.calls[0][6]).toEqual([2, 3]);
   });
 
+  it('properly prefixes __d with global prefix', () => {
+    createModuleSystem(moduleSystem, false, '__metro');
+    expect(moduleSystem.__d).toBeUndefined();
+    expect(moduleSystem.__metro__d).not.toBeUndefined();
+  });
+
   it('works with Random Access Modules (RAM) bundles', () => {
     const mockExports = {foo: 'bar'};
     const mockFactory = jest
@@ -143,7 +150,7 @@ describe('require', () => {
         // eslint-disable-next-line no-bitwise
         moduleSystem.__d(mockFactory, (bundleId << 16) + localId, [2, 3]);
       });
-    createModuleSystem(moduleSystem, false);
+    createModuleSystem(moduleSystem, false, '');
     expect(moduleSystem.__r).not.toBeUndefined();
     expect(moduleSystem.__d).not.toBeUndefined();
 
@@ -240,7 +247,7 @@ describe('require', () => {
       ]),
     };
 
-    createModuleSystem(moduleSystem, false);
+    createModuleSystem(moduleSystem, false, '');
 
     const {__r, __registerSegment} = moduleSystem;
 
@@ -301,7 +308,7 @@ describe('require', () => {
 
   describe('functionality tests', () => {
     it('module.exports === exports', done => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       createModule(
         moduleSystem,
@@ -317,7 +324,7 @@ describe('require', () => {
     });
 
     it('exports values correctly via the module.exports variable', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       createModule(
         moduleSystem,
@@ -332,7 +339,7 @@ describe('require', () => {
     });
 
     it('exports values correctly via the exports variable', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       createModule(
         moduleSystem,
@@ -347,7 +354,7 @@ describe('require', () => {
     });
 
     it('exports an empty object by default', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       createModule(
         moduleSystem,
@@ -362,7 +369,7 @@ describe('require', () => {
     });
 
     it('has the same reference to exports and module.exports', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       createModule(
         moduleSystem,
@@ -378,7 +385,7 @@ describe('require', () => {
     });
 
     it('exposes the verboseName in dev mode', done => {
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
 
       createModule(moduleSystem, 0, 'index.js', (global, require) => {
         expect(require.getModules()[0].verboseName).toEqual('index.js');
@@ -389,7 +396,7 @@ describe('require', () => {
     });
 
     it('exposes module.id as moduleId on the module in dev mode', () => {
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
 
       createModule(
         moduleSystem,
@@ -404,7 +411,7 @@ describe('require', () => {
     });
 
     it('exposes module.id as moduleId on the module in prod mode', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       createModule(
         moduleSystem,
@@ -419,7 +426,7 @@ describe('require', () => {
     });
 
     it('handles requires/exports correctly', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       createModule(
         moduleSystem,
@@ -445,7 +452,7 @@ describe('require', () => {
     });
 
     it('only evaluates a module once', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       const fn = jest.fn();
 
@@ -467,7 +474,7 @@ describe('require', () => {
     });
 
     it('throws an error when trying to require an unknown module', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       createModule(
         moduleSystem,
@@ -484,7 +491,7 @@ describe('require', () => {
     });
 
     it('throws an error when a module throws an error', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       createModule(
         moduleSystem,
@@ -505,7 +512,7 @@ describe('require', () => {
     });
 
     it('can make use of the dependencyMap correctly', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       createModule(
         moduleSystem,
@@ -537,7 +544,7 @@ describe('require', () => {
     });
 
     it('allows to require verboseNames in dev mode', () => {
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
 
       createModule(
         moduleSystem,
@@ -560,7 +567,7 @@ describe('require', () => {
     });
 
     it('throws an error when requiring an incorrect verboseNames in dev mode', () => {
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
 
       createModule(
         moduleSystem,
@@ -592,7 +599,7 @@ describe('require', () => {
         createModule(moduleSystem, 0, 'foo.js', factory);
       }
 
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       // The clearing function exists.
       expect(moduleSystem.__c).toBeInstanceOf(Function);
@@ -630,7 +637,7 @@ describe('require', () => {
 
   describe('cyclic dependencies', () => {
     it('logs a warning when there is a cyclic dependency in dev mode', () => {
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
 
       createModule(moduleSystem, 0, 'foo.js', (global, require) => {
         require(1);
@@ -660,7 +667,7 @@ describe('require', () => {
     });
 
     it('sets the exports value to their current value', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       createModule(
         moduleSystem,
@@ -686,7 +693,7 @@ describe('require', () => {
     });
 
     it('handles well requires on previously defined exports', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       createModule(
         moduleSystem,
@@ -719,7 +726,7 @@ describe('require', () => {
     });
 
     it('handles well requires when redefining module.exports', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       createModule(
         moduleSystem,
@@ -750,7 +757,7 @@ describe('require', () => {
 
   describe('ES6 module support with Babel interoperability', () => {
     it('supports default imports from ES6 modules', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       createModule(
         moduleSystem,
@@ -776,7 +783,7 @@ describe('require', () => {
     });
 
     it('supports default imports from non-ES6 modules', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       createModule(
         moduleSystem,
@@ -811,7 +818,7 @@ describe('require', () => {
     });
 
     it('supports named imports', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       createModule(
         moduleSystem,
@@ -836,7 +843,7 @@ describe('require', () => {
     });
 
     it('supports wildcard imports from ES6 modules', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       createModule(
         moduleSystem,
@@ -863,7 +870,7 @@ describe('require', () => {
     });
 
     it('supports wildcard imports from non-ES6 modules', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       createModule(
         moduleSystem,
@@ -893,7 +900,7 @@ describe('require', () => {
 
   describe('packModuleId and unpackModuleId', () => {
     it('packModuleId and unpackModuleId are inverse operations', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
 
       const resultSet = new Set();
       // eslint-disable-next-line no-bitwise
@@ -908,7 +915,7 @@ describe('require', () => {
 
   describe('hot reloading', () => {
     it('is disabled in production', () => {
-      createModuleSystem(moduleSystem, false);
+      createModuleSystem(moduleSystem, false, '');
       createModule(
         moduleSystem,
         0,
@@ -925,7 +932,7 @@ describe('require', () => {
     // We don't use it for Fast Refresh but there might be external consumers.
     it('propagates a hot update to closest accepted module for legacy API', () => {
       let log = [];
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
       createModule(
         moduleSystem,
         0,
@@ -982,7 +989,7 @@ describe('require', () => {
     // We don't use it for Fast Refresh but there might be external consumers.
     it('runs custom accept and dispose handlers for the legacy API', () => {
       let log = [];
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
       createModule(
         moduleSystem,
         0,
@@ -1027,7 +1034,7 @@ describe('require', () => {
 
     it('re-runs accepted modules', () => {
       let log = [];
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
       const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
@@ -1088,7 +1095,7 @@ describe('require', () => {
 
     it('propagates a hot update to closest accepted module', () => {
       let log = [];
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
       const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
@@ -1177,7 +1184,7 @@ describe('require', () => {
 
     it('propagates hot update to all inverse dependencies', () => {
       let log = [];
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
       const Refresh = createReactRefreshMock(moduleSystem);
 
       // This is the module graph:
@@ -1347,7 +1354,7 @@ describe('require', () => {
 
     it('runs dependencies before dependents', () => {
       let log = [];
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
       const Refresh = createReactRefreshMock(moduleSystem);
 
       // This is the module graph:
@@ -1446,7 +1453,7 @@ describe('require', () => {
 
     it('provides fresh value for module.exports in parents', () => {
       let log = [];
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
       const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
@@ -1538,7 +1545,7 @@ describe('require', () => {
 
     it('provides fresh value for exports.* in parents', () => {
       let log = [];
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
       const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
@@ -1630,7 +1637,7 @@ describe('require', () => {
 
     it('provides fresh value for ES6 named import in parents', () => {
       let log = [];
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
       const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
@@ -1728,7 +1735,7 @@ describe('require', () => {
 
     it('provides fresh value for ES6 default import in parents', () => {
       let log = [];
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
       const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
@@ -1833,7 +1840,7 @@ describe('require', () => {
       };
 
       let log = [];
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
       const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
@@ -1946,7 +1953,7 @@ describe('require', () => {
       };
 
       let log = [];
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
       const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
@@ -2057,7 +2064,7 @@ describe('require', () => {
       };
 
       let log = [];
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
       const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
@@ -2163,7 +2170,7 @@ describe('require', () => {
 
     it('does not accumulate stale exports over time', () => {
       let log = [];
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
       const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
@@ -2274,7 +2281,7 @@ describe('require', () => {
     it('bails out if update bubbles to the root via the only path', () => {
       let log = [];
 
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
       const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
@@ -2320,7 +2327,7 @@ describe('require', () => {
     it('bails out if the update bubbles to the root via one of the paths', () => {
       let log = [];
 
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
       const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
@@ -2411,7 +2418,7 @@ describe('require', () => {
 
     it('propagates a module that stops accepting in next version', () => {
       let log = [];
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
       const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,
@@ -2512,7 +2519,7 @@ describe('require', () => {
 
     it('can replace a module before it is loaded', () => {
       let log = [];
-      createModuleSystem(moduleSystem, true);
+      createModuleSystem(moduleSystem, true, '');
       const Refresh = createReactRefreshMock(moduleSystem);
       createModule(
         moduleSystem,

@@ -85,6 +85,7 @@ export type JsTransformerConfig = $ReadOnly<{|
   enableBabelRCLookup: boolean,
   enableBabelRuntime: boolean,
   experimentalImportBundleSupport: boolean,
+  globalPrefix: string,
   minifierConfig: MinifierConfig,
   minifierPath: string,
   optimizationSizeLimit: number,
@@ -244,7 +245,7 @@ module.exports = {
     }
 
     if (filename.endsWith('.json')) {
-      let code = JsFileWrapping.wrapJson(sourceCode);
+      let code = JsFileWrapping.wrapJson(sourceCode, config.globalPrefix);
       let map = [];
 
       if (options.minify) {
@@ -421,6 +422,7 @@ module.exports = {
         importDefault,
         importAll,
         dependencyMapName,
+        config.globalPrefix,
       ));
     }
 
