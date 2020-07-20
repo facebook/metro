@@ -26,6 +26,7 @@ type State = {
     loc: BabelSourceLocation,
     ...
   }>,
+  imports: Array<{node: BabelNode}>,
   importDefault: Ast,
   importAll: Ast,
   opts: {
@@ -325,18 +326,17 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
 
         const file = path.get('source').node;
         const specifiers = path.get('specifiers');
-        const anchor = path.scope.path.get('body.0');
         const loc = path.node.loc;
 
         if (!specifiers.length) {
-          anchor.insertBefore(
-            withLocation(
+          state.imports.push({
+            node: withLocation(
               importSideEffectTemplate({
                 FILE: resolvePath(file, state.opts.resolve),
               }),
               loc,
             ),
-          );
+          });
         } else {
           let sharedModuleImport = null;
           if (
@@ -366,8 +366,8 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
 
             switch (s.node.type) {
               case 'ImportNamespaceSpecifier':
-                anchor.insertBefore(
-                  withLocation(
+                state.imports.push({
+                  node: withLocation(
                     importTemplate({
                       IMPORT: state.importAll,
                       FILE: resolvePath(file, state.opts.resolve),
@@ -375,12 +375,12 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                     }),
                     loc,
                   ),
-                );
+                });
                 break;
 
               case 'ImportDefaultSpecifier':
-                anchor.insertBefore(
-                  withLocation(
+                state.imports.push({
+                  node: withLocation(
                     importTemplate({
                       IMPORT: state.importDefault,
                       FILE: resolvePath(file, state.opts.resolve),
@@ -388,13 +388,13 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                     }),
                     loc,
                   ),
-                );
+                });
                 break;
 
               case 'ImportSpecifier':
                 if (imported.name === 'default') {
-                  anchor.insertBefore(
-                    withLocation(
+                  state.imports.push({
+                    node: withLocation(
                       importTemplate({
                         IMPORT: state.importDefault,
                         FILE: resolvePath(file, state.opts.resolve),
@@ -402,7 +402,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                       }),
                       loc,
                     ),
-                  );
+                  });
                 } else if (sharedModuleImport != null) {
                   path.scope.push({
                     id: local,
@@ -412,8 +412,8 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                     ),
                   });
                 } else {
-                  anchor.insertBefore(
-                    withLocation(
+                  state.imports.push({
+                    node: withLocation(
                       importNamedTemplate({
                         FILE: resolvePath(file, state.opts.resolve),
                         LOCAL: local,
@@ -421,7 +421,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                       }),
                       loc,
                     ),
-                  );
+                  });
                 }
                 break;
 
@@ -440,12 +440,19 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
           state.exportDefault = [];
           state.exportNamed = [];
 
+          state.imports = [];
           state.importAll = t.identifier(state.opts.importAll);
           state.importDefault = t.identifier(state.opts.importDefault);
         },
 
         exit(path: Path, state: State): void {
           const body = path.node.body;
+
+          // state.imports = [node1, node2, node3, ...nodeN]
+          state.imports.reverse().forEach((e: {node: BabelNode}) => {
+            // import nodes are added to the top of the program body
+            body.unshift(e.node);
+          });
 
           state.exportDefault.forEach(
             (e: {local: string, loc: BabelSourceLocation, ...}) => {

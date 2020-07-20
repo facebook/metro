@@ -31,27 +31,27 @@ it('correctly transforms and extracts "import" statements', () => {
   `;
 
   const expected = `
-    require('side-effect');
-    var z = require('qux').y;
-    var x = require('baz').x;
-    var w = _$$_IMPORT_ALL('bar');
     var v = _$$_IMPORT_DEFAULT('foo');
+    var w = _$$_IMPORT_ALL('bar');
+    var x = require('baz').x;
+    var z = require('qux').y;
+    require('side-effect');
   `;
 
   compare([importExportPlugin], code, expected, opts);
 
   expect(showTransformedDeps(code)).toMatchInlineSnapshot(`
     "
-    > 6 |     import 'side-effect';
-        |     ^^^^^^^^^^^^^^^^^^^^^ dep #0 (side-effect)
-    > 5 |     import {y as z} from 'qux';
-        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #1 (qux)
+    > 2 |     import v from 'foo';
+        |     ^^^^^^^^^^^^^^^^^^^^ dep #0 (foo)
+    > 3 |     import * as w from 'bar';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^ dep #1 (bar)
     > 4 |     import {x} from 'baz';
         |     ^^^^^^^^^^^^^^^^^^^^^^ dep #2 (baz)
-    > 3 |     import * as w from 'bar';
-        |     ^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3 (bar)
-    > 2 |     import v from 'foo';
-        |     ^^^^^^^^^^^^^^^^^^^^ dep #4 (foo)"
+    > 5 |     import {y as z} from 'qux';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #3 (qux)
+    > 6 |     import 'side-effect';
+        |     ^^^^^^^^^^^^^^^^^^^^^ dep #4 (side-effect)"
   `);
 });
 
@@ -64,12 +64,12 @@ it('correctly transforms complex patterns', () => {
 
   const expected = `
     var _bar = require('bar'),
-        e = _bar.d,
-        f = _bar.f;
-    var g = require('baz').g;
-    var c = _$$_IMPORT_DEFAULT('bar');
+      e = _bar.d,
+      f = _bar.f;
     var a = _$$_IMPORT_DEFAULT('foo');
     var b = _$$_IMPORT_ALL('foo');
+    var c = _$$_IMPORT_DEFAULT('bar');
+    var g = require('baz').g;
   `;
 
   compare([importExportPlugin], code, expected, opts);
@@ -80,12 +80,12 @@ it('correctly transforms complex patterns', () => {
         |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (bar)
     > 3 |     import c, {d as e, f} from 'bar';
         |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #0 (bar)
+    > 2 |     import a, * as b from 'foo';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #1 (foo)
+    > 2 |     import a, * as b from 'foo';
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #1 (foo)
     > 4 |     import {g} from 'baz';
-        |     ^^^^^^^^^^^^^^^^^^^^^^ dep #1 (baz)
-    > 2 |     import a, * as b from 'foo';
-        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #2 (foo)
-    > 2 |     import a, * as b from 'foo';
-        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ dep #2 (foo)"
+        |     ^^^^^^^^^^^^^^^^^^^^^^ dep #2 (baz)"
   `);
 });
 
