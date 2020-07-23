@@ -298,6 +298,7 @@ module.exports = {
         ...options,
         enableBabelRCLookup: config.enableBabelRCLookup,
         enableBabelRuntime: config.enableBabelRuntime,
+        globalPrefix: config.globalPrefix,
         // Inline requires are now performed at a secondary step. We cannot
         // unfortunately remove it from the internal transformer, since this one
         // is used by other tooling, and this would affect it.

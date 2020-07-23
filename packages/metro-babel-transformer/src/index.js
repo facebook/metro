@@ -40,6 +40,7 @@ type BabelTransformerOptions = $ReadOnly<{
   projectRoot: string,
   publicPath: string,
   unstable_transformProfile?: TransformProfile,
+  globalPrefix: string,
   ...
 }>;
 
