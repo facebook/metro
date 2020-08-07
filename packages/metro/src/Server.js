@@ -102,6 +102,7 @@ type ProcessEndContext<T> = {|
 
 export type ServerOptions = $ReadOnly<{|
   hasReducedPerformance?: boolean,
+  onBundleBuilt?: (bundlePath: string) => void,
   watch?: boolean,
 |}>;
 
@@ -117,9 +118,11 @@ class Server {
   _nextBundleBuildID: number;
   _platforms: Set<string>;
   _reporter: Reporter;
+  _serverOptions: ServerOptions | void;
 
   constructor(config: ConfigT, options?: ServerOptions) {
     this._config = config;
+    this._serverOptions = options;
 
     if (this._config.resetCache) {
       this._config.cacheStores.forEach((store: CacheStore<TransformResult<>>) =>
@@ -446,6 +449,10 @@ class Server {
         await this._processBytecodeBundleRequest(req, res, options);
       } else {
         await this._processBundleRequest(req, res, options);
+      }
+
+      if (this._serverOptions && this._serverOptions.onBundleBuilt) {
+        this._serverOptions.onBundleBuilt(pathname);
       }
     } else if (pathname.endsWith('.map')) {
       // Chrome dev tools may need to access the source maps.
