@@ -18,7 +18,7 @@ const babylon = require('@babel/parser');
 const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
 const generateImportNames = require('metro/src/ModuleGraph/worker/generateImportNames');
 const generate = require('@babel/generator').default;
-const getKeyFromFiles = require('metro/src/lib/getKeyFromFiles');
+const getCacheKey = require('metro-cache-key');
 const getMinifier = require('./utils/getMinifier');
 const {
   constantFoldingPlugin,
@@ -493,7 +493,7 @@ module.exports = {
   getCacheKey: (config: JsTransformerConfig): string => {
     const {babelTransformerPath, minifierPath, ...remainingConfig} = config;
 
-    const filesKey = getKeyFromFiles([
+    const filesKey = getCacheKey([
       require.resolve(babelTransformerPath),
       require.resolve(minifierPath),
       require.resolve('./utils/getMinifier'),

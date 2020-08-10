@@ -11,7 +11,7 @@
 'use strict';
 
 const crypto = require('crypto');
-const getKeyFromFiles = require('../lib/getKeyFromFiles');
+const getCacheKey = require('metro-cache-key');
 const path = require('path');
 
 const VERSION = require('../../package.json').version;
@@ -47,7 +47,7 @@ function getTransformCacheKey(opts: {|
         VERSION,
         opts.cacheVersion,
         path.relative(path.join(__dirname, '../../..'), opts.projectRoot),
-        getKeyFromFiles([require.resolve(transformerPath)]),
+        getCacheKey([require.resolve(transformerPath)]),
         transformerKey,
         transformerConfig.globalPrefix,
       ].join('$'),

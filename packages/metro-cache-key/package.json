@@ -1,0 +1,18 @@
+{
+  "name": "metro-cache-key",
+  "version": "0.62.0",
+  "description": "🚇 Cache key utility.",
+  "main": "src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:facebook/metro.git"
+  },
+  "scripts": {
+    "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",
+    "cleanup-release": "test ! -e build && mv src build && mv src.real src"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "ob1": "0.62.0"
+  }
+}

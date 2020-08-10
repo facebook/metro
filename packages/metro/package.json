@@ -41,6 +41,7 @@
     "metro-babel-register": "0.62.0",
     "metro-babel-transformer": "0.62.0",
     "metro-cache": "0.62.0",
+    "metro-cache-key": "0.62.0",
     "metro-config": "0.62.0",
     "metro-core": "0.62.0",
     "metro-hermes-compiler": "0.62.0",
