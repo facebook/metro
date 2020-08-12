@@ -1,7 +1,7 @@
 {
   "name": "metro-transform-worker",
   "version": "0.62.0",
-  "description": "🚇 Transform worker for Metro",
+  "description": "🚇 Transform worker for Metro.",
   "main": "src/index.js",
   "repository": {
     "type": "git",

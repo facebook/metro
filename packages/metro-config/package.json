@@ -1,7 +1,7 @@
 {
   "name": "metro-config",
   "version": "0.62.0",
-  "description": "🚇 Config parser for Metro",
+  "description": "🚇 Config parser for Metro.",
   "main": "src/index.js",
   "repository": {
     "type": "git",

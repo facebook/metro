@@ -1,6 +1,6 @@
 {
-  "version": "0.62.0",
   "name": "metro",
+  "version": "0.62.0",
   "description": "🚇 The JavaScript bundler for React Native.",
   "main": "src/index.js",
   "bin": "src/cli.js",

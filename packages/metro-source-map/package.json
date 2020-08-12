@@ -1,6 +1,6 @@
 {
-  "version": "0.62.0",
   "name": "metro-source-map",
+  "version": "0.62.0",
   "description": "🚇 Source map generator for Metro.",
   "main": "src/source-map.js",
   "repository": {

@@ -1,7 +1,7 @@
 {
-  "version": "0.62.0",
   "name": "metro-core",
-  "description": "🚇 Core files for Metro",
+  "version": "0.62.0",
+  "description": "🚇 Metro's core package.",
   "main": "src/index.js",
   "repository": {
     "type": "git",

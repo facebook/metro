@@ -1,7 +1,7 @@
 {
-  "version": "0.62.0",
   "name": "metro-cache",
-  "description": "� Cache layers for Metro",
+  "version": "0.62.0",
+  "description": "🚇 Cache layers for Metro.",
   "main": "src/index.js",
   "repository": {
     "type": "git",

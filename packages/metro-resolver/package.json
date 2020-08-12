@@ -1,7 +1,7 @@
 {
-  "version": "0.62.0",
   "name": "metro-resolver",
-  "description": "🚇 Metro resolution logic",
+  "version": "0.62.0",
+  "description": "🚇 Implementation of Metro's resolution logic.",
   "main": "src",
   "repository": {
     "type": "git",
