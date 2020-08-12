@@ -28,10 +28,8 @@ const supportLinks = [
         [#metro](https://discordapp.com/channels/102860784329052160/103622435865104384)
         channel on [Reactiflux](http://www.reactiflux.com/), a Discord
         community.\n- Many members of the community use Stack Overflow. Read
-        through the [existing
-        questions](https://stackoverflow.com/questions/tagged/metrojs)
-        tagged with **metrojs** or [ask your
-        own](https://stackoverflow.com/questions/ask)!`,
+        through the [existing questions](https://stackoverflow.com/search?q=metro+bundler)
+        or [ask your own](https://stackoverflow.com/questions/ask)!`,
     title: 'Join the community',
   },
   {
