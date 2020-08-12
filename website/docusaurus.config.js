@@ -39,7 +39,7 @@ const siteConfig = {
         alt: 'Metro Logo',
         src: 'img/metro.svg',
       },
-      links: [
+      items: [
         {label: 'Docs', to: 'docs/getting-started'},
         {label: 'API', to: 'docs/api'},
         {label: 'Help', to: 'help'},
@@ -93,7 +93,7 @@ const siteConfig = {
     },
     image: 'img/opengraph.png',
     algolia: {
-      apiKey: process.env.ALGOLIA_METRO_API_KEY,
+      apiKey: process.env.ALGOLIA_METRO_API_KEY || ' ',
       indexName: 'metro',
     },
     gtag: {
