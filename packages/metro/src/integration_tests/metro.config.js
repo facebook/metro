@@ -19,7 +19,7 @@ module.exports = {
   maxWorkers: 1,
   projectRoot: ROOT_PATH,
   reporter: {update() {}},
-  watchFolders: [path.resolve(__dirname, '../../')],
+  watchFolders: [path.resolve(__dirname, '../../../')],
   server: {port: 10028},
   resolver: {
     useWatchman: false,
@@ -27,7 +27,7 @@ module.exports = {
   transformer: {
     assetRegistryPath: path.join(ROOT_PATH, 'AssetRegistry'),
     asyncRequireModulePath: require.resolve(
-      'metro/src/lib/bundle-modules/asyncRequire',
+      'metro-runtime/src/modules/asyncRequire',
     ),
     babelTransformerPath: require.resolve(
       'metro-react-native-babel-transformer',

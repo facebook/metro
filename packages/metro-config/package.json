@@ -17,7 +17,8 @@
     "jest-validate": "^26.0.1",
     "metro": "0.62.0",
     "metro-cache": "0.62.0",
-    "metro-core": "0.62.0"
+    "metro-core": "0.62.0",
+    "metro-runtime": "0.62.0"
   },
   "devDependencies": {
     "pretty-format": "^26.0.1",

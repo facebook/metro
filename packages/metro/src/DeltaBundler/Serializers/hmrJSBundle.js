@@ -17,8 +17,8 @@ const {isJsModule, wrapModule} = require('./helpers/js');
 const {addParamsToDefineCall} = require('metro-transform-plugins');
 
 import type {EntryPointURL} from '../../HmrServer';
-import type {HmrModule} from '../../lib/bundle-modules/types.flow';
 import type {DeltaResult, Graph, Module} from '../types.flow';
+import type {HmrModule} from 'metro-runtime/src/modules/types.flow';
 
 type Options = {
   +clientUrl: EntryPointURL,

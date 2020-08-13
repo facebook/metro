@@ -10,7 +10,7 @@
 
 'use strict';
 
-import type {DeltaBundle} from '../lib/bundle-modules/types.flow';
+import type {DeltaBundle} from 'metro-runtime/src/modules/types.flow';
 
 function mergeDeltas(delta1: DeltaBundle, delta2: DeltaBundle): DeltaBundle {
   const added1 = new Map(delta1.added);

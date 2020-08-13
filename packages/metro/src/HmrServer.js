@@ -30,13 +30,13 @@ const {
 const {VERSION: BYTECODE_VERSION} = require('metro-hermes-compiler');
 
 import type {RevisionId} from './IncrementalBundler';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {
   HmrMessage,
   HmrClientMessage,
   HmrUpdateMessage,
   HmrErrorMessage,
-} from './lib/bundle-modules/types.flow';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+} from 'metro-runtime/src/modules/types.flow';
 
 type $ReturnType<F> = $Call<<A, R>((...A) => R) => R, F>;
 export type EntryPointURL = $ReturnType<typeof url.parse>;

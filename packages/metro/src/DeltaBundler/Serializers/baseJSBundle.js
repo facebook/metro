@@ -13,13 +13,13 @@
 const getAppendScripts = require('../../lib/getAppendScripts');
 const processModules = require('./helpers/processModules');
 
-import type {Bundle} from '../../lib/bundle-modules/types.flow';
 import type {
   Graph,
   MixedOutput,
   Module,
   SerializerOptions,
 } from '../types.flow';
+import type {Bundle} from 'metro-runtime/src/modules/types.flow';
 
 function baseJSBundle(
   entryPoint: string,

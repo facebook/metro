@@ -10,7 +10,10 @@
 
 'use strict';
 
-import type {Bundle, BundleMetadata} from './bundle-modules/types.flow';
+import type {
+  Bundle,
+  BundleMetadata,
+} from 'metro-runtime/src/modules/types.flow';
 
 /**
  * Serializes a bundle into a plain JS bundle.

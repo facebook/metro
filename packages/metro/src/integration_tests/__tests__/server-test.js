@@ -53,7 +53,7 @@ describe('Metro development server serves bundles via HTTP', () => {
     httpServer.close(done);
   });
 
-  it('should serve deveopment bundles', async () => {
+  it('should serve development bundles', async () => {
     expect(
       await downloadAndExec(
         '/TestBundle.bundle?platform=ios&dev=true&minify=false',

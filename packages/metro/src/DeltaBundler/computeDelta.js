@@ -10,7 +10,10 @@
 
 'use strict';
 
-import type {ModuleMap, DeltaBundle} from '../lib/bundle-modules/types.flow';
+import type {
+  ModuleMap,
+  DeltaBundle,
+} from 'metro-runtime/src/modules/types.flow';
 
 function computeDelta(entries1: ModuleMap, entries2: ModuleMap): DeltaBundle {
   const modules1 = new Map(entries1);

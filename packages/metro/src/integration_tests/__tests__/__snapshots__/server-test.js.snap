@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Metro development server serves bundles via HTTP should serve deveopment bundles 1`] = `
+exports[`Metro development server serves bundles via HTTP should serve development bundles 1`] = `
 Object {
   "Bar": Object {
     "foo": "foo",

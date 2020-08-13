@@ -10,7 +10,7 @@
 
 'use strict';
 
-const EventEmitter = require('eventemitter3');
+const EventEmitter = require('./vendor/eventemitter3');
 
 import type {HmrMessage, HmrUpdate} from './types.flow';
 

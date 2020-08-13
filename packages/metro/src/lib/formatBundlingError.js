@@ -24,7 +24,7 @@ const {
 const {codeFrameColumns} = require('@babel/code-frame');
 const {AmbiguousModuleResolutionError} = require('metro-core');
 
-import type {FormattedError} from './bundle-modules/types.flow';
+import type {FormattedError} from 'metro-runtime/src/modules/types.flow';
 
 export type CustomError = Error & {
   type?: string,

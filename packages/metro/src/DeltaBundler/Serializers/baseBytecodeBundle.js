@@ -16,13 +16,13 @@ const processBytecodeModules = require('./helpers/processBytecodeModules');
 const {getJsOutput} = require('./helpers/js');
 const {compile} = require('metro-hermes-compiler');
 
-import type {BytecodeBundle} from '../../lib/bundle-modules/types.flow';
 import type {
   Graph,
   MixedOutput,
   Module,
   SerializerOptions,
 } from '../types.flow';
+import type {BytecodeBundle} from 'metro-runtime/src/modules/types.flow';
 
 function baseBytecodeBundle(
   entryPoint: string,
