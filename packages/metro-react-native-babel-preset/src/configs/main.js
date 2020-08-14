@@ -37,7 +37,6 @@ const defaultPlugins = [
   [require('@babel/plugin-transform-function-name')],
   [require('@babel/plugin-transform-literals')],
   [require('@babel/plugin-transform-parameters')],
-  [require('@babel/plugin-transform-shorthand-properties')],
   [require('@babel/plugin-transform-regenerator')],
   [require('@babel/plugin-transform-sticky-regex')],
   [require('@babel/plugin-transform-unicode-regex')],
@@ -55,6 +54,9 @@ const es2015TemplateLiterals = [
 ];
 const exponentiationOperator = [
   require('@babel/plugin-transform-exponentiation-operator'),
+];
+const shorthandProperties = [
+  require('@babel/plugin-transform-shorthand-properties'),
 ];
 const objectAssign = [require('@babel/plugin-transform-object-assign')];
 const objectRestSpread = [
@@ -127,7 +129,10 @@ const getPreset = (src, options) => {
     extraPlugins.push(es2015Spread);
     extraPlugins.push(objectRestSpread);
   }
-  if (isNull || src.indexOf('`') !== -1) {
+  if (
+    transformProfile !== 'hermes-canary' &&
+    (isNull || src.indexOf('`') !== -1)
+  ) {
     extraPlugins.push(es2015TemplateLiterals);
   }
   if (isNull || src.indexOf('**') !== -1) {
@@ -155,6 +160,9 @@ const getPreset = (src, options) => {
   }
   if (isNull || src.indexOf('??') !== -1) {
     extraPlugins.push(nullishCoalescingOperator);
+  }
+  if (transformProfile !== 'hermes-canary') {
+    extraPlugins.push(shorthandProperties);
   }
 
   if (options && options.dev && !options.useTransformReactJSXExperimental) {
