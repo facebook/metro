@@ -183,33 +183,28 @@ class TerminalReporter {
 
   _logInitializing(port: number, hasReducedPerformance: boolean): void {
     const logo = [
-      '                                                          ',
-      '               ######                ######               ',
-      '             ###     ####        ####     ###             ',
-      '            ##          ###    ###          ##            ',
-      '            ##             ####             ##            ',
-      '            ##             ####             ##            ',
-      '            ##           ##    ##           ##            ',
-      '            ##         ###      ###         ##            ',
-      '             ##  ########################  ##             ',
-      '          ######    ###            ###    ######          ',
-      '      ###     ##    ##              ##    ##     ###      ',
-      '   ###         ## ###      ####      ### ##         ###   ',
-      '  ##           ####      ########      ####           ##  ',
-      ' ##             ###     ##########     ###             ## ',
-      '  ##           ####      ########      ####           ##  ',
-      '   ###         ## ###      ####      ### ##         ###   ',
-      '      ###     ##    ##              ##    ##     ###      ',
-      '          ######    ###            ###    ######          ',
-      '             ##  ########################  ##             ',
-      '            ##         ###      ###         ##            ',
-      '            ##           ##    ##           ##            ',
-      '            ##             ####             ##            ',
-      '            ##             ####             ##            ',
-      '            ##          ###    ###          ##            ',
-      '             ###     ####        ####     ###             ',
-      '               ######                ######               ',
-      '                                                          ',
+      '                                                      ',
+      '                        #######                       ',
+      '                   ################                   ',
+      '                #########     #########               ',
+      '            #########             ##########          ',
+      '        #########        ######        #########      ',
+      '       ##########################################     ',
+      '      #####      #####################       #####    ',
+      '      #####          ##############          #####    ',
+      '      #####    ###       ######       ###    #####    ',
+      '      #####    #######            #######    #####    ',
+      '      #####    ###########    ###########    #####    ',
+      '      #####    ##########################    #####    ',
+      '      #####    ##########################    #####    ',
+      '      #####      ######################     ######    ',
+      '       ######        #############        #######     ',
+      '         #########        ####       #########        ',
+      '              #########          #########            ',
+      '                  ######### #########                 ',
+      '                       #########                      ',
+      '                                                      ',
+      '                                                      ',
     ];
 
     const color = hasReducedPerformance ? chalk.red : chalk.blue;
@@ -280,11 +275,10 @@ class TerminalReporter {
         logToConsole(this.terminal, event.level, ...event.data);
         break;
       case 'dep_graph_loading':
-        // IMPORTANT: Keep this in sync with `nuclide-metro-rpc/lib/parseMessages.tsx`
         const color = event.hasReducedPerformance ? chalk.red : chalk.blue;
         this.terminal.log(
-          color.bold('                 Welcome to React Native!\n') +
-            chalk.dim('                Learn once, write anywhere\n\n'),
+          color.bold('                    Welcome to Metro!\n') +
+            chalk.dim('              Fast - Scalable - Integrated\n\n'),
         );
 
         if (event.hasReducedPerformance) {
