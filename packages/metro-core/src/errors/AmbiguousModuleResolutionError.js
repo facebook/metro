@@ -15,10 +15,12 @@ const {DuplicateHasteCandidatesError} = (require('jest-haste-map')
 
 class AmbiguousModuleResolutionError extends Error {
   fromModulePath: string;
+  // $FlowFixMe[value-as-type]
   hasteError: DuplicateHasteCandidatesError;
 
   constructor(
     fromModulePath: string,
+    // $FlowFixMe[value-as-type]
     hasteError: DuplicateHasteCandidatesError,
   ) {
     super(

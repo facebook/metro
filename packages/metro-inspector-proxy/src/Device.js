@@ -37,6 +37,7 @@ const FILE_PREFIX = 'file://';
 
 type DebuggerInfo = {
   // Debugger web socket connection
+  // $FlowFixMe[value-as-type]
   socket: WS,
   // If we replaced address (like '10.0.2.2') to localhost we need to store original
   // address because Chrome uses URL or urlRegex params (instead of scriptId) to set breakpoints.
@@ -68,6 +69,7 @@ class Device {
   _app: string;
 
   // Stores socket connection between Inspector Proxy and device.
+  // $FlowFixMe[value-as-type]
   _deviceSocket: WS;
 
   // Stores last list of device's pages.
@@ -97,6 +99,7 @@ class Device {
     id: number,
     name: string,
     app: string,
+    // $FlowFixMe[value-as-type]
     socket: WS,
     projectRoot: string,
   ) {
@@ -150,6 +153,7 @@ class Device {
   // 1. Sends connect event to device
   // 2. Forwards all messages from the debugger to device as wrappedEvent
   // 3. Sends disconnect event to device when debugger connection socket closes.
+  // $FlowFixMe[value-as-type]
   handleDebuggerConnection(socket: WS, pageId: string) {
     // Disconnect current debugger if we already have debugger connected.
     if (this._debuggerConnection) {

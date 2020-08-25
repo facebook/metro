@@ -157,6 +157,7 @@ class InspectorProxy {
       path: WS_DEVICE_URL,
       perMessageDeflate: true,
     });
+    // $FlowFixMe[value-as-type]
     wss.on('connection', async (socket: WS) => {
       try {
         const query = url.parse(socket.upgradeReq.url || '', true).query || {};
@@ -192,6 +193,7 @@ class InspectorProxy {
       path: WS_DEBUGGER_URL,
       perMessageDeflate: false,
     });
+    // $FlowFixMe[value-as-type]
     wss.on('connection', async (socket: WS) => {
       try {
         const query = url.parse(socket.upgradeReq.url || '', true).query || {};

@@ -25,6 +25,7 @@ const term = new Terminal(process.stdout);
 const updateReporter = new TerminalReporter(term);
 
 module.exports = (): ({|
+  // $FlowFixMe[value-as-type]
   builder: (yargs: Yargs) => void,
   command: string,
   description: string,
@@ -35,6 +36,7 @@ module.exports = (): ({|
   description:
     'Generates a JavaScript bundle containing the specified entrypoint and its descendants',
 
+  // $FlowFixMe[value-as-type]
   builder: (yargs: Yargs): void => {
     yargs.option('project-roots', {
       alias: 'P',

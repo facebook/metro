@@ -51,6 +51,7 @@ function getOrCreate<T>(
 class DependencyGraph extends EventEmitter {
   _assetExtensions: Set<string>;
   _config: ConfigT;
+  // $FlowFixMe[value-as-type]
   _haste: JestHasteMap;
   _hasteFS: HasteFS;
   _moduleCache: ModuleCache;
@@ -65,6 +66,7 @@ class DependencyGraph extends EventEmitter {
     initialModuleMap,
   }: {|
     +config: ConfigT,
+    // $FlowFixMe[value-as-type]
     +haste: JestHasteMap,
     +initialHasteFS: HasteFS,
     +initialModuleMap: ModuleMap,
@@ -113,6 +115,7 @@ class DependencyGraph extends EventEmitter {
     return ignorePattern;
   }
 
+  // $FlowFixMe[value-as-type]
   static _createHaste(config: ConfigT, watch?: boolean): JestHasteMap {
     const haste = new JestHasteMap({
       cacheDirectory: config.hasteMapCacheDirectory,
@@ -266,6 +269,7 @@ class DependencyGraph extends EventEmitter {
     return sha1;
   }
 
+  // $FlowFixMe[value-as-type]
   getWatcher(): JestHasteMap {
     return this._haste;
   }

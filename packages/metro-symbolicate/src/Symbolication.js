@@ -398,6 +398,7 @@ class SymbolicationContext<ModuleIdsT> {
 class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModuleIds> {
   +_segments: {
     +[id: string]: {|
+      // $FlowFixMe[value-as-type]
       +consumer: SourceMapConsumer,
       +moduleOffsets: $ReadOnlyArray<number>,
       +sourceFunctionsConsumer: ?SourceMetadataMapConsumer,
@@ -406,9 +407,11 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
     ...,
   };
   +_hasLegacySegments: boolean;
+  // $FlowFixMe[value-as-type]
   +_SourceMapConsumer: SourceMapConsumer;
 
   constructor(
+    // $FlowFixMe[value-as-type]
     SourceMapConsumer: SourceMapConsumer,
     sourceMapContent: string | MixedSourceMap,
     options: ContextOptionsInput = {},
@@ -575,9 +578,11 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
 class DirectorySymbolicationContext extends SymbolicationContext<string> {
   +_fileMaps: Map<string, SingleMapSymbolicationContext>;
   +_rootDir: string;
+  // $FlowFixMe[value-as-type]
   +_SourceMapConsumer: SourceMapConsumer;
 
   constructor(
+    // $FlowFixMe[value-as-type]
     SourceMapConsumer: SourceMapConsumer,
     rootDir: string,
     options: ContextOptionsInput = {},
@@ -680,6 +685,7 @@ function parseSingleMapFileName(str: string): SingleMapModuleIds {
 }
 
 function createContext(
+  // $FlowFixMe[value-as-type]
   SourceMapConsumer: SourceMapConsumer,
   sourceMapContent: string | MixedSourceMap,
   options: ContextOptionsInput = {},
@@ -692,6 +698,7 @@ function createContext(
 }
 
 function unstable_createDirectoryContext(
+  // $FlowFixMe[value-as-type]
   SourceMapConsumer: SourceMapConsumer,
   rootDir: string,
   options: ContextOptionsInput = {},

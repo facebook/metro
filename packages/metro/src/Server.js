@@ -83,6 +83,7 @@ type ProcessStartContext = {|
   +bundleOptions: BundleOptions,
   +graphId: GraphId,
   +graphOptions: GraphOptions,
+  // $FlowFixMe[value-as-type]
   +mres: MultipartResponse,
   +req: IncomingMessage,
   +revisionId?: ?RevisionId,
