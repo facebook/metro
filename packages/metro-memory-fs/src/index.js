@@ -110,11 +110,14 @@ const FLAGS_SPECS: {
 
 const ASYNC_FUNC_NAMES = [
   'access',
+  'chmod',
   'close',
   'copyFile',
+  'fchmod',
   'fstat',
   'fsync',
   'fdatasync',
+  'lchmod',
   'link',
   'lstat',
   'mkdir',
@@ -358,6 +361,19 @@ class MemoryFs {
     }
   };
 
+  chmodSync: (filePath: FilePath, mode: string | number) => void = (
+    filePath: FilePath,
+    mode: string | number,
+  ): void => {
+    filePath = pathStr(filePath);
+    mode = parseFileMode(mode);
+    const {node} = this._resolve(filePath);
+    if (node == null) {
+      throw makeError('ENOENT', filePath, 'no such file or directory');
+    }
+    node.mode = mode;
+  };
+
   closeSync: (fd: number) => void = (fd: number): void => {
     const desc = this._getDesc(fd);
     if (desc.writable) {
@@ -375,12 +391,34 @@ class MemoryFs {
     this.writeFileSync(dest, this.readFileSync(src), options);
   };
 
+  fchmodSync: (fd: number, mode: string | number) => void = (
+    fd: number,
+    mode: string | number,
+  ): void => {
+    mode = parseFileMode(mode);
+    const {node} = this._getDesc(fd);
+    node.mode = mode;
+  };
+
   fsyncSync: (fd: number) => void = (fd: number): void => {
     this._getDesc(fd);
   };
 
   fdatasyncSync: (fd: number) => void = (fd: number): void => {
     this._getDesc(fd);
+  };
+
+  lchmodSync: (filePath: FilePath, mode: string | number) => void = (
+    filePath: FilePath,
+    mode: string | number,
+  ): void => {
+    filePath = pathStr(filePath);
+    mode = parseFileMode(mode);
+    const {node} = this._resolve(filePath, {keepFinalSymlink: true});
+    if (node == null) {
+      throw makeError('ENOENT', filePath, 'no such file or directory');
+    }
+    node.mode = mode;
   };
 
   openSync: (
@@ -1650,6 +1688,13 @@ function getgid(): number {
 
 function getuid(): number {
   return process.getuid != null ? process.getuid() : -1;
+}
+
+function parseFileMode(mode: string | number): number {
+  if (typeof mode === 'string') {
+    return Number.parseInt(mode, 8);
+  }
+  return mode;
 }
 
 module.exports = MemoryFs;

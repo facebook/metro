@@ -1370,6 +1370,69 @@ describe('posix support', () => {
       });
     });
   });
+
+  describe('chmod', () => {
+    describe('chmodSync', () => {
+      it('sets the file mode', () => {
+        fs.writeFileSync('/foo.txt', 'test', {mode: 0o700});
+        expect(fs.statSync('/foo.txt').mode).toBe(0o700);
+        fs.chmodSync('/foo.txt', 0o400);
+        expect(fs.statSync('/foo.txt').mode).toBe(0o400);
+      });
+
+      it('parses strings as octal integers', () => {
+        fs.writeFileSync('/foo.txt', 'test');
+        fs.chmodSync('/foo.txt', '400');
+        expect(fs.statSync('/foo.txt').mode).toBe(0o400);
+      });
+
+      it('follows symlinks', () => {
+        fs.writeFileSync('/foo.txt', 'test');
+        fs.symlinkSync('/foo.txt', '/link.txt');
+        fs.chmodSync('/link.txt', '400');
+        expect(fs.statSync('/foo.txt').mode).toBe(0o400);
+        expect(fs.lstatSync('/link.txt').mode).not.toBe(0o400);
+      });
+    });
+
+    describe('lchmodSync', () => {
+      it('sets the file mode', () => {
+        fs.writeFileSync('/foo.txt', 'test', {mode: 0o700});
+        expect(fs.statSync('/foo.txt').mode).toBe(0o700);
+        fs.lchmodSync('/foo.txt', 0o400);
+        expect(fs.statSync('/foo.txt').mode).toBe(0o400);
+      });
+
+      it('parses strings as octal integers', () => {
+        fs.writeFileSync('/foo.txt', 'test');
+        fs.lchmodSync('/foo.txt', '400');
+        expect(fs.statSync('/foo.txt').mode).toBe(0o400);
+      });
+
+      it('does not follow symlinks', () => {
+        fs.writeFileSync('/foo.txt', 'test');
+        fs.symlinkSync('/foo.txt', '/link.txt');
+        fs.lchmodSync('/link.txt', '400');
+        expect(fs.statSync('/foo.txt').mode).not.toBe(0o400);
+        expect(fs.lstatSync('/link.txt').mode).toBe(0o400);
+      });
+    });
+
+    describe('fchmodSync', () => {
+      it('sets the file mode', () => {
+        const fd = fs.openSync('/foo.txt', 'w', 0o700);
+        expect(fs.fstatSync(fd).mode).toBe(0o700);
+        fs.fchmodSync(fd, 0o400);
+        expect(fs.fstatSync(fd).mode).toBe(0o400);
+      });
+
+      it('parses strings as octal integers', () => {
+        const fd = fs.openSync('/foo.txt', 'w');
+        fs.fchmodSync(fd, '400');
+        expect(fs.fstatSync(fd).mode).toBe(0o400);
+      });
+    });
+  });
 });
 
 describe('win32 support', () => {
