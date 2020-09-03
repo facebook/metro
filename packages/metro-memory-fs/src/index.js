@@ -121,6 +121,7 @@ const ASYNC_FUNC_NAMES = [
   'link',
   'lstat',
   'mkdir',
+  'mkdtemp',
   'open',
   'read',
   'readdir',
@@ -688,6 +689,40 @@ class MemoryFs {
       throw makeError('EEXIST', dirPath, 'directory or file already exists');
     }
     dirNode.entries.set(basename, this._makeDir(mode));
+  };
+
+  mkdtempSync: (
+    prefix: string,
+    options?:
+      | {
+          encoding?: ?Encoding,
+          ...
+        }
+      | Encoding,
+  ) => string = (
+    prefix: string,
+    options?:
+      | {
+          encoding?: ?Encoding,
+          ...
+        }
+      | Encoding,
+  ): string => {
+    const encoding =
+      (typeof options === 'string' ? options : options?.encoding) ?? 'utf8';
+    const ALPHABET =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_';
+    const RANDOM_PART_LENGTH = 6;
+    let dirPath = '';
+    do {
+      let randomPart = '';
+      for (let i = 0; i < RANDOM_PART_LENGTH; ++i) {
+        randomPart += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
+      }
+      dirPath = prefix + randomPart;
+    } while (this.existsSync(dirPath));
+    this.mkdirSync(dirPath, 0o700);
+    return Buffer.from(dirPath, 'utf8').toString(encoding);
   };
 
   rmdirSync: (dirPath: string | Buffer) => void = (

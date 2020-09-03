@@ -16,6 +16,7 @@
 jest.useRealTimers();
 
 const MemoryFs = require('../index');
+const path = require('path');
 
 let fs;
 
@@ -1433,6 +1434,51 @@ describe('posix support', () => {
       });
     });
   });
+
+  describe('mkdtemp', () => {
+    it('creates a directory', () => {
+      const name = fs.mkdtempSync('/');
+      expect(fs.statSync(name).isDirectory()).toBe(true);
+    });
+
+    it('creates the directory with mode 0700', () => {
+      const name = fs.mkdtempSync('/');
+      expect(fs.statSync(name).mode).toBe(0o700);
+    });
+
+    it('concatenates a random suffix to the given prefix', () => {
+      fs.mkdirSync('/tmp');
+      const name = fs.mkdtempSync('/tmp/prefix');
+      expect(path.posix.dirname(name)).toBe('/tmp');
+      expect(path.posix.basename(name)).toMatch(/^prefix.{6}$/);
+    });
+
+    it('fails to create in a nonexistent directory', () => {
+      expectFsError(
+        'ENOENT',
+        () => {
+          fs.mkdtempSync('/doesnotexist/');
+        },
+        {
+          // The message will contain a random part so we can't snapshot it.
+          noSnapshot: true,
+        },
+      );
+    });
+
+    it('returns a different name every time', () => {
+      const name1 = fs.mkdtempSync('/');
+      const name2 = fs.mkdtempSync('/');
+      expect(name2).not.toBe(name1);
+    });
+
+    it('returns the directory name interpreted in the requested encoding', () => {
+      const nameHex = fs.mkdtempSync('/', {encoding: 'hex'});
+      const name = Buffer.from(nameHex, 'hex').toString('utf8');
+      expect(name).toMatch(/^\/.{6}$/);
+      expect(fs.statSync(name).isDirectory()).toBe(true);
+    });
+  });
 });
 
 describe('win32 support', () => {
@@ -1487,7 +1533,7 @@ describe('promises', () => {
   });
 });
 
-function expectFsError(code, handler) {
+function expectFsError(code, handler, {noSnapshot} = {}) {
   try {
     handler();
     throw new Error('an error was expected but did not happen');
@@ -1495,7 +1541,9 @@ function expectFsError(code, handler) {
     if (error.code !== code) {
       throw error;
     }
-    expect(error.message).toMatchSnapshot();
+    if (!noSnapshot) {
+      expect(error.message).toMatchSnapshot();
+    }
     expect(typeof error.errno).toBe('number');
   }
 }
