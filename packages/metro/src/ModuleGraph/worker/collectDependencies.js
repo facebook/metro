@@ -26,60 +26,62 @@ import type {
 opaque type Identifier = any;
 opaque type Path = any;
 
-type DepOptions = {|
-  +prefetchOnly: boolean,
-  +jsResource?: boolean,
-  +isOptional?: boolean,
-|};
+type DepOptions = $ReadOnly<{
+  prefetchOnly: boolean,
+  jsResource?: boolean,
+  isOptional?: boolean,
+}>;
 
-type InternalDependency<D> = {|
-  +data: D,
-  +name: string,
-|};
+type Dependency = $ReadOnly<{
+  data: DependencyData,
+  name: string,
+}>;
 
-type InternalDependencyData = {|
+type DependencyData = {
+  // If null, then the dependency is synchronous.
+  // (ex. `require('foo')`)
   asyncType: AsyncDependencyType | null,
   isOptional?: boolean,
   locs: Array<BabelSourceLocation>,
-|};
+};
 
-type InternalDependencyInfo = {|
+type InternalDependency = $ReadOnly<{
+  ...Dependency,
   data: InternalDependencyData,
-  index: number,
-|};
+}>;
 
-type State = {|
+type InternalDependencyData = {
+  ...DependencyData,
+  index: number,
+};
+
+type State = {
   asyncRequireModulePathStringLiteral: ?Identifier,
   nextDependencyIndex: number,
   dependencyCalls: Set<string>,
   dependencyData: Map<string, InternalDependencyData>,
-  dependencyIndexes: Map<string, number>,
   dynamicRequires: DynamicRequiresBehavior,
   dependencyMapIdentifier: ?Identifier,
   keepRequireNames: boolean,
   disableRequiresTransform: boolean,
   allowOptionalDependencies: AllowOptionalDependencies,
-|};
+};
 
-export type Options = {|
-  +asyncRequireModulePath: string,
-  +dependencyMapName?: string,
-  +dynamicRequires: DynamicRequiresBehavior,
-  +inlineableCalls: $ReadOnlyArray<string>,
-  +keepRequireNames: boolean,
-  +disableRequiresTransform?: boolean,
-  +allowOptionalDependencies: AllowOptionalDependencies,
-|};
+export type Options = $ReadOnly<{
+  asyncRequireModulePath: string,
+  dependencyMapName?: string,
+  dynamicRequires: DynamicRequiresBehavior,
+  inlineableCalls: $ReadOnlyArray<string>,
+  keepRequireNames: boolean,
+  disableRequiresTransform?: boolean,
+  allowOptionalDependencies: AllowOptionalDependencies,
+}>;
 
-export type CollectedDependencies = {|
+type CollectedDependencies = {
   +ast: Ast,
   +dependencyMapName: string,
   +dependencies: $ReadOnlyArray<Dependency>,
-|};
-
-export type DependencyData = $ReadOnly<InternalDependencyData>;
-
-export type Dependency = InternalDependency<DependencyData>;
+};
 
 export type DynamicRequiresBehavior = 'throwAtRuntime' | 'reject';
 
@@ -132,7 +134,6 @@ function collectDependencies(
     nextDependencyIndex: 0,
     dependencyCalls: new Set(),
     dependencyData: new Map(),
-    dependencyIndexes: new Map(),
     dependencyMapIdentifier: null,
     dynamicRequires: options.dynamicRequires,
     keepRequireNames: options.keepRequireNames,
@@ -208,8 +209,11 @@ function collectDependencies(
   // Compute the list of dependencies.
   const dependencies = new Array(state.nextDependencyIndex);
 
-  for (const [name, data] of state.dependencyData) {
-    dependencies[nullthrows(state.dependencyIndexes.get(name))] = {name, data};
+  for (const [name, {index, ...dependencyData}] of state.dependencyData) {
+    dependencies[index] = {
+      name,
+      data: dependencyData,
+    };
   }
 
   return {
@@ -221,7 +225,7 @@ function collectDependencies(
 
 function collectImports(path: Path, state: State) {
   if (path.node.source) {
-    const dep = getDependency(
+    const dep = registerDependency(
       state,
       path.node.source.value,
       {
@@ -245,7 +249,7 @@ function processImportCall(path: Path, state: State, opts: DepOptions): Path {
     ...opts,
     isOptional: isOptionalDependency(name, path, state),
   };
-  const dep = getDependency(state, name, options, path);
+  const dep = registerDependency(state, name, options, path);
   if (!options.prefetchOnly && dep.data.asyncType === 'prefetch') {
     dep.data.asyncType = 'async';
   }
@@ -256,7 +260,7 @@ function processImportCall(path: Path, state: State, opts: DepOptions): Path {
   const ASYNC_REQUIRE_MODULE_PATH = state.asyncRequireModulePathStringLiteral;
   const MODULE_ID = types.memberExpression(
     state.dependencyMapIdentifier,
-    types.numericLiteral(dep.index),
+    types.numericLiteral(dep.data.index),
     true,
   );
   const MODULE_NAME = types.stringLiteral(name);
@@ -306,7 +310,7 @@ function processRequireCall(path: Path, state: State): Path {
     return path;
   }
 
-  const dep = getDependency(
+  const dep = registerDependency(
     state,
     name,
     {prefetchOnly: false, isOptional: isOptionalDependency(name, path, state)},
@@ -320,7 +324,7 @@ function processRequireCall(path: Path, state: State): Path {
 
   const moduleIDExpression = types.memberExpression(
     state.dependencyMapIdentifier,
-    types.numericLiteral(dep.index),
+    types.numericLiteral(dep.data.index),
     true,
   );
 
@@ -338,19 +342,18 @@ function getNearestLocFromPath(path: Path): ?BabelSourceLocation {
   return path?.node.loc;
 }
 
-function getDependency(
+function registerDependency(
   state: State,
   name: string,
   options: DepOptions,
   path: Path,
-): InternalDependencyInfo {
+): InternalDependency {
   const loc = getNearestLocFromPath(path);
-  let index = state.dependencyIndexes.get(name);
   let data: ?InternalDependencyData = state.dependencyData.get(name);
 
   if (!data) {
-    index = state.nextDependencyIndex++;
-    data = {asyncType: 'async', locs: []};
+    const index = state.nextDependencyIndex++;
+    data = {asyncType: 'async', locs: [], index};
 
     if (options.prefetchOnly) {
       data.asyncType = 'prefetch';
@@ -360,7 +363,6 @@ function getDependency(
       data.isOptional = true;
     }
 
-    state.dependencyIndexes.set(name, index);
     state.dependencyData.set(name, data);
   }
 
@@ -368,7 +370,7 @@ function getDependency(
     data.locs.push(loc);
   }
 
-  return {index: nullthrows(index), data: nullthrows(data)};
+  return {name, data};
 }
 
 const isOptionalDependency = (
