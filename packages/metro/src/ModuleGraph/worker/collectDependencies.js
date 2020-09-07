@@ -50,7 +50,7 @@ type InternalDependencyInfo = {|
 
 type State = {|
   asyncRequireModulePathStringLiteral: ?Identifier,
-  dependency: number,
+  nextDependencyIndex: number,
   dependencyCalls: Set<string>,
   dependencyData: Map<string, InternalDependencyData>,
   dependencyIndexes: Map<string, number>,
@@ -129,7 +129,7 @@ function collectDependencies(
 
   const state: State = {
     asyncRequireModulePathStringLiteral: null,
-    dependency: 0,
+    nextDependencyIndex: 0,
     dependencyCalls: new Set(),
     dependencyData: new Map(),
     dependencyIndexes: new Map(),
@@ -206,7 +206,7 @@ function collectDependencies(
   traverse(ast, visitor, null, state);
 
   // Compute the list of dependencies.
-  const dependencies = new Array(state.dependency);
+  const dependencies = new Array(state.nextDependencyIndex);
 
   for (const [name, data] of state.dependencyData) {
     dependencies[nullthrows(state.dependencyIndexes.get(name))] = {name, data};
@@ -349,7 +349,7 @@ function getDependency(
   let data: ?InternalDependencyData = state.dependencyData.get(name);
 
   if (!data) {
-    index = state.dependency++;
+    index = state.nextDependencyIndex++;
     data = {asyncType: 'async', locs: []};
 
     if (options.prefetchOnly) {
