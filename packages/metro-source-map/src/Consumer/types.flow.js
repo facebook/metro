@@ -8,9 +8,6 @@
  * @format
  */
 
-// NOTE: The linter and formatter are fighting over the following lint rule.
-/* eslint-disable flowtype/object-type-delimiter */
-
 'use strict';
 
 import type {IterationOrder, LookupBias} from './constants';

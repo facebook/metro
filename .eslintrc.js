@@ -35,6 +35,7 @@ module.exports = {
     'prefer-const': ['warn', {destructuring: 'all'}],
     'prettier/prettier': ['error', 'fb', '@format'],
     'sort-keys': 'off',
+    'flowtype/object-type-delimiter': 'off',
   },
   overrides: [
     {

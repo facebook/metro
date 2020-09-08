@@ -63,10 +63,8 @@ type HasteMapOptions = {|
   preferNativePlatform: true,
 |};
 
-/* eslint-disable flowtype/object-type-delimiter */
 declare class HasteMap {
   // node-haste/DependencyGraph/HasteMap.js
   build(): Promise<Object>;
   constructor(options: HasteMapOptions): void;
 }
-/* eslint-enable flowtype/object-type-delimiter */
