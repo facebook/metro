@@ -26,10 +26,9 @@ import type {
 opaque type Identifier = any;
 opaque type Path = any;
 
-type DepOptions = $ReadOnly<{
-  prefetchOnly: boolean,
+type ImportDependencyOptions = $ReadOnly<{
+  asyncType: AsyncDependencyType,
   jsResource?: boolean,
-  isOptional?: boolean,
 }>;
 
 type Dependency = $ReadOnly<{
@@ -37,29 +36,31 @@ type Dependency = $ReadOnly<{
   name: string,
 }>;
 
-type DependencyData = {
+type DependencyData = $ReadOnly<{
   // If null, then the dependency is synchronous.
   // (ex. `require('foo')`)
   asyncType: AsyncDependencyType | null,
   isOptional?: boolean,
   locs: Array<BabelSourceLocation>,
-};
+}>;
 
 type InternalDependency = $ReadOnly<{
   ...Dependency,
   data: InternalDependencyData,
 }>;
 
-type InternalDependencyData = {
+type MutableInternalDependencyData = {
   ...DependencyData,
   index: number,
+  name: string,
 };
+
+type InternalDependencyData = $ReadOnly<MutableInternalDependencyData>;
 
 type State = {
   asyncRequireModulePathStringLiteral: ?Identifier,
-  nextDependencyIndex: number,
   dependencyCalls: Set<string>,
-  dependencyData: Map<string, InternalDependencyData>,
+  dependencyRegistry: ModuleDependencyRegistry,
   dynamicRequires: DynamicRequiresBehavior,
   dependencyMapIdentifier: ?Identifier,
   keepRequireNames: boolean,
@@ -77,11 +78,18 @@ export type Options = $ReadOnly<{
   allowOptionalDependencies: AllowOptionalDependencies,
 }>;
 
-type CollectedDependencies = {
-  +ast: Ast,
-  +dependencyMapName: string,
-  +dependencies: $ReadOnlyArray<Dependency>,
-};
+type CollectedDependencies = $ReadOnly<{
+  ast: Ast,
+  dependencyMapName: string,
+  dependencies: $ReadOnlyArray<Dependency>,
+}>;
+
+// Registry for the dependency of a module.
+// Defines what makes a dependency unique.
+interface ModuleDependencyRegistry {
+  registerDependency(qualifier: ImportQualifier): InternalDependencyData;
+  getDependencies(): Array<InternalDependencyData>;
+}
 
 export type DynamicRequiresBehavior = 'throwAtRuntime' | 'reject';
 
@@ -131,9 +139,8 @@ function collectDependencies(
 
   const state: State = {
     asyncRequireModulePathStringLiteral: null,
-    nextDependencyIndex: 0,
     dependencyCalls: new Set(),
-    dependencyData: new Map(),
+    dependencyRegistry: new DefaultModuleDependencyRegistry(),
     dependencyMapIdentifier: null,
     dynamicRequires: options.dynamicRequires,
     keepRequireNames: options.keepRequireNames,
@@ -152,14 +159,14 @@ function collectDependencies(
 
       if (callee.isImport()) {
         processImportCall(path, state, {
-          prefetchOnly: false,
+          asyncType: 'async',
         });
         return;
       }
 
       if (name === '__prefetchImport' && !path.scope.getBinding(name)) {
         processImportCall(path, state, {
-          prefetchOnly: true,
+          asyncType: 'prefetch',
         });
         return;
       }
@@ -170,7 +177,7 @@ function collectDependencies(
         !path.scope.getBinding(name)
       ) {
         processImportCall(path, state, {
-          prefetchOnly: false,
+          asyncType: 'async',
           jsResource: true,
         });
         return;
@@ -206,10 +213,11 @@ function collectDependencies(
 
   traverse(ast, visitor, null, state);
 
+  const collectedDependencies = state.dependencyRegistry.getDependencies();
   // Compute the list of dependencies.
-  const dependencies = new Array(state.nextDependencyIndex);
+  const dependencies = new Array(collectedDependencies.length);
 
-  for (const [name, {index, ...dependencyData}] of state.dependencyData) {
+  for (const {index, name, ...dependencyData} of collectedDependencies) {
     dependencies[index] = {
       name,
       data: dependencyData,
@@ -225,34 +233,39 @@ function collectDependencies(
 
 function collectImports(path: Path, state: State) {
   if (path.node.source) {
-    const dep = registerDependency(
+    registerDependency(
       state,
-      path.node.source.value,
       {
-        prefetchOnly: false,
+        name: path.node.source.value,
+        asyncType: null,
+        optional: false,
       },
       path,
     );
-
-    dep.data.asyncType = null;
   }
 }
 
-function processImportCall(path: Path, state: State, opts: DepOptions): Path {
+function processImportCall(
+  path: Path,
+  state: State,
+  options: ImportDependencyOptions,
+): Path {
   const name = getModuleNameFromCallArgs(path);
 
   if (name == null) {
     throw new InvalidRequireCallError(path);
   }
 
-  const options = {
-    ...opts,
-    isOptional: isOptionalDependency(name, path, state),
-  };
-  const dep = registerDependency(state, name, options, path);
-  if (!options.prefetchOnly && dep.data.asyncType === 'prefetch') {
-    dep.data.asyncType = 'async';
-  }
+  const dep = registerDependency(
+    state,
+    {
+      name,
+      asyncType: options.asyncType,
+      optional: isOptionalDependency(name, path, state),
+    },
+    path,
+  );
+
   if (state.disableRequiresTransform) {
     return path;
   }
@@ -273,7 +286,7 @@ function processImportCall(path: Path, state: State, opts: DepOptions): Path {
         MODULE_NAME,
       }),
     );
-  } else if (!options.prefetchOnly) {
+  } else if (options.asyncType === 'async') {
     path.replaceWith(
       makeAsyncRequireTemplate({
         ASYNC_REQUIRE_MODULE_PATH,
@@ -312,11 +325,13 @@ function processRequireCall(path: Path, state: State): Path {
 
   const dep = registerDependency(
     state,
-    name,
-    {prefetchOnly: false, isOptional: isOptionalDependency(name, path, state)},
+    {
+      name,
+      asyncType: null,
+      optional: isOptionalDependency(name, path, state),
+    },
     path,
   );
-  dep.data.asyncType = null;
 
   if (state.disableRequiresTransform) {
     return path;
@@ -342,35 +357,25 @@ function getNearestLocFromPath(path: Path): ?BabelSourceLocation {
   return path?.node.loc;
 }
 
+type ImportQualifier = $ReadOnly<{
+  name: string,
+  asyncType: AsyncDependencyType | null,
+  optional: boolean,
+}>;
+
 function registerDependency(
   state: State,
-  name: string,
-  options: DepOptions,
+  qualifier: ImportQualifier,
   path: Path,
 ): InternalDependency {
+  const dependencyData = state.dependencyRegistry.registerDependency(qualifier);
+
   const loc = getNearestLocFromPath(path);
-  let data: ?InternalDependencyData = state.dependencyData.get(name);
-
-  if (!data) {
-    const index = state.nextDependencyIndex++;
-    data = {asyncType: 'async', locs: [], index};
-
-    if (options.prefetchOnly) {
-      data.asyncType = 'prefetch';
-    }
-
-    if (options.isOptional) {
-      data.isOptional = true;
-    }
-
-    state.dependencyData.set(name, data);
-  }
-
   if (loc != null) {
-    data.locs.push(loc);
+    dependencyData.locs.push(loc);
   }
 
-  return {name, data};
+  return {name: qualifier.name, data: dependencyData};
 }
 
 const isOptionalDependency = (
@@ -379,6 +384,11 @@ const isOptionalDependency = (
   state: State,
 ): boolean => {
   const {allowOptionalDependencies} = state;
+
+  // The async require module is a 'built-in'. Resolving should never fail -> treat it as non-optional.
+  if (name === state.asyncRequireModulePathStringLiteral?.name) {
+    return false;
+  }
 
   const isExcluded = () =>
     Array.isArray(allowOptionalDependencies.exclude) &&
@@ -434,5 +444,75 @@ class InvalidRequireCallError extends Error {
 }
 
 collectDependencies.InvalidRequireCallError = InvalidRequireCallError;
+
+class DefaultModuleDependencyRegistry implements ModuleDependencyRegistry {
+  _dependencies = new Map<string, InternalDependencyData>();
+
+  registerDependency(qualifier: ImportQualifier): InternalDependencyData {
+    let dependencyData: ?InternalDependencyData = this._dependencies.get(
+      qualifier.name,
+    );
+
+    if (dependencyData == null) {
+      const newDependencyData: MutableInternalDependencyData = {
+        name: qualifier.name,
+        asyncType: qualifier.asyncType,
+        locs: [],
+        index: this._dependencies.size,
+      };
+
+      if (qualifier.optional) {
+        newDependencyData.isOptional = true;
+      }
+
+      this._dependencies.set(qualifier.name, newDependencyData);
+      dependencyData = newDependencyData;
+    } else {
+      const original = dependencyData;
+      dependencyData = collapseDependencies(original, qualifier);
+      if (original !== dependencyData) {
+        this._dependencies.set(qualifier.name, dependencyData);
+      }
+    }
+
+    return dependencyData;
+  }
+
+  getDependencies(): Array<InternalDependencyData> {
+    return Array.from(this._dependencies.values());
+  }
+}
+
+function collapseDependencies(
+  dependency: InternalDependencyData,
+  qualifier: ImportQualifier,
+): InternalDependencyData {
+  let collapsed = dependency;
+
+  // A previously optionally required dependency was required non-optionaly.
+  // Mark it non optional for the whole module
+  if (collapsed.isOptional && !qualifier.optional) {
+    collapsed = {
+      ...dependency,
+      isOptional: false,
+    };
+  }
+
+  // A previously asynchronously (or prefetch) required module was required synchronously.
+  // Make the dependency sync.
+  if (collapsed.asyncType != null && qualifier.asyncType == null) {
+    collapsed = {...dependency, asyncType: null};
+  }
+
+  // A prefetched dependency was required async in the module. Mark it as async.
+  if (collapsed.asyncType === 'prefetch' && qualifier.asyncType === 'async') {
+    collapsed = {
+      ...dependency,
+      asyncType: 'async',
+    };
+  }
+
+  return collapsed;
+}
 
 module.exports = collectDependencies;
