@@ -1,9 +1,22 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`directory context does not read source maps outside the root dir, with relative or absolute paths 1`] = `
+"<testDir>/__fixtures__/testfile.js:1:null
+../testfile.js:1:null
+"
+`;
+
 exports[`directory context symbolicating a stack trace 1`] = `
 "/js/react-native-github/Libraries/BatchedBridge/BatchedBridge.js:23:Object
 /js/react-native-github/Libraries/BatchedBridge/MessageQueue.js:89:null
 fileThatDoesntExist.js:10:null
+"
+`;
+
+exports[`directory context symbolicating a stack trace with absolute paths 1`] = `
+"/js/react-native-github/Libraries/BatchedBridge/BatchedBridge.js:23:Object
+/js/react-native-github/Libraries/BatchedBridge/MessageQueue.js:89:null
+<testDir>/__fixtures__/directory/fileThatDoesntExist.js:10:null
 "
 `;
 

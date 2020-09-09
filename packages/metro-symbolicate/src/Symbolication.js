@@ -624,8 +624,16 @@ class DirectorySymbolicationContext extends SymbolicationContext<string> {
       filename != null,
       'filename is required for DirectorySymbolicationContext',
     );
-    const mapFilename = path.join(this._rootDir, filename + '.map');
-    if (!fs.existsSync(mapFilename)) {
+    let mapFilename;
+    const relativeFilename = path.relative(
+      this._rootDir,
+      path.resolve(this._rootDir, filename),
+    );
+    // Lock down access to files outside the root dir.
+    if (!relativeFilename.startsWith('..')) {
+      mapFilename = path.join(this._rootDir, relativeFilename + '.map');
+    }
+    if (mapFilename == null || !fs.existsSync(mapFilename)) {
       // Adjust arguments to the output coordinates
       lineNumber =
         lineNumber != null
