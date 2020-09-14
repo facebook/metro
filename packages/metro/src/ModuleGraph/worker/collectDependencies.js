@@ -66,10 +66,12 @@ type State<TSplitCondition> = {
   asyncRequireModulePathStringLiteral: ?Identifier,
   dependencyCalls: Set<string>,
   dependencyRegistry: ModuleDependencyRegistry<TSplitCondition>,
+  // Transformer used to transform dependency statements, e.g. a require call.
+  // Set to `null` to disable the dependency transformation
+  dependencyTransformer: ?DependencyTransformer<TSplitCondition>,
   dynamicRequires: DynamicRequiresBehavior,
   dependencyMapIdentifier: ?Identifier,
   keepRequireNames: boolean,
-  disableRequiresTransform: boolean,
   allowOptionalDependencies: AllowOptionalDependencies,
 };
 
@@ -83,7 +85,7 @@ export type Options = $ReadOnly<{
   allowOptionalDependencies: AllowOptionalDependencies,
 }>;
 
-type CollectedDependencies<TSplitCondition> = $ReadOnly<{
+type CollectedDependencies<+TSplitCondition> = $ReadOnly<{
   ast: Ast,
   dependencyMapName: string,
   dependencies: $ReadOnlyArray<Dependency<TSplitCondition>>,
@@ -93,43 +95,41 @@ type CollectedDependencies<TSplitCondition> = $ReadOnly<{
 // Defines when dependencies should be collapsed.
 // E.g. should a module that's once required optinally and once not
 // be tretaed as the smae or different dependencies.
-interface ModuleDependencyRegistry<TSplitCondition> {
+interface ModuleDependencyRegistry<+TSplitCondition> {
   registerDependency(
     qualifier: ImportQualifier,
   ): InternalDependencyData<TSplitCondition>;
   getDependencies(): Array<InternalDependencyData<TSplitCondition>>;
 }
 
+interface DependencyTransformer<-TSplitCondition> {
+  transformSyncRequire(
+    path: Path,
+    dependency: InternalDependencyData<TSplitCondition>,
+    state: State<TSplitCondition>,
+  ): void;
+  transformImportCall(
+    path: Path,
+    dependency: InternalDependencyData<TSplitCondition>,
+    state: State<TSplitCondition>,
+  ): void;
+  transformJSResource(
+    path: Path,
+    dependency: InternalDependencyData<TSplitCondition>,
+    state: State<TSplitCondition>,
+  ): void;
+  transformPrefetch(
+    path: Path,
+    dependency: InternalDependencyData<TSplitCondition>,
+    state: State<TSplitCondition>,
+  ): void;
+  transformIllegalDynamicRequire(
+    path: Path,
+    state: State<TSplitCondition>,
+  ): void;
+}
+
 export type DynamicRequiresBehavior = 'throwAtRuntime' | 'reject';
-
-/**
- * Produces a Babel template that will throw at runtime when the require call
- * is reached. This makes dynamic require errors catchable by libraries that
- * want to use them.
- */
-const dynamicRequireErrorTemplate = template(`
-  (function(line) {
-    throw new Error(
-      'Dynamic require defined at line ' + line + '; not supported by Metro',
-    );
-  })(LINE)
-`);
-
-/**
- * Produces a Babel template that transforms an "import(...)" call into a
- * "require(...)" call to the asyncRequire specified.
- */
-const makeAsyncRequireTemplate = template(`
-  require(ASYNC_REQUIRE_MODULE_PATH)(MODULE_ID, MODULE_NAME)
-`);
-
-const makeAsyncPrefetchTemplate = template(`
-  require(ASYNC_REQUIRE_MODULE_PATH).prefetch(MODULE_ID, MODULE_NAME)
-`);
-
-const makeJSResourceTemplate = template(`
-  require(ASYNC_REQUIRE_MODULE_PATH).resource(MODULE_ID, MODULE_NAME)
-`);
 
 /**
  * Transform all the calls to `require()` and `import()` in a file into ID-
@@ -150,10 +150,13 @@ function collectDependencies(
     asyncRequireModulePathStringLiteral: null,
     dependencyCalls: new Set(),
     dependencyRegistry: new DefaultModuleDependencyRegistry(),
+    dependencyTransformer:
+      options.disableRequiresTransform === true
+        ? null
+        : DefaultDependencyTransformer,
     dependencyMapIdentifier: null,
     dynamicRequires: options.dynamicRequires,
     keepRequireNames: options.keepRequireNames,
-    disableRequiresTransform: !!options.disableRequiresTransform,
     allowOptionalDependencies: options.allowOptionalDependencies,
   };
 
@@ -201,7 +204,8 @@ function collectDependencies(
       }
 
       if (state.dependencyCalls.has(name) && !path.scope.getBinding(name)) {
-        visited.add(processRequireCall(path, state).node);
+        processRequireCall(path, state);
+        visited.add(path.node);
       }
     },
 
@@ -269,7 +273,7 @@ function processImportCall<TSplitCondition>(
   path: Path,
   state: State<TSplitCondition>,
   options: ImportDependencyOptions,
-): Path {
+): void {
   const name = getModuleNameFromCallArgs(path);
 
   if (name == null) {
@@ -287,64 +291,39 @@ function processImportCall<TSplitCondition>(
     path,
   );
 
-  if (state.disableRequiresTransform) {
-    return path;
+  const transformer = state.dependencyTransformer;
+  if (transformer == null) {
+    return;
   }
-
-  const ASYNC_REQUIRE_MODULE_PATH = state.asyncRequireModulePathStringLiteral;
-  const MODULE_ID = types.memberExpression(
-    state.dependencyMapIdentifier,
-    types.numericLiteral(dep.data.index),
-    true,
-  );
-  const MODULE_NAME = types.stringLiteral(name);
 
   if (options.jsResource) {
-    path.replaceWith(
-      makeJSResourceTemplate({
-        ASYNC_REQUIRE_MODULE_PATH,
-        MODULE_ID,
-        MODULE_NAME,
-      }),
-    );
+    transformer.transformJSResource(path, dep.data, state);
   } else if (options.asyncType === 'async') {
-    path.replaceWith(
-      makeAsyncRequireTemplate({
-        ASYNC_REQUIRE_MODULE_PATH,
-        MODULE_ID,
-        MODULE_NAME,
-      }),
-    );
+    transformer.transformImportCall(path, dep.data, state);
   } else {
-    path.replaceWith(
-      makeAsyncPrefetchTemplate({
-        ASYNC_REQUIRE_MODULE_PATH,
-        MODULE_ID,
-        MODULE_NAME,
-      }),
-    );
+    transformer.transformPrefetch(path, dep.data, state);
   }
-
-  return path;
 }
 
 function processRequireCall<TSplitCondition>(
   path: Path,
   state: State<TSplitCondition>,
-): Path {
+): void {
   const name = getModuleNameFromCallArgs(path);
+
+  const transformer = state.dependencyTransformer;
 
   if (name == null) {
     if (state.dynamicRequires === 'reject') {
       throw new InvalidRequireCallError(path);
     }
 
-    path.replaceWith(
-      dynamicRequireErrorTemplate({
-        LINE: '' + path.node.loc.start.line,
-      }),
-    );
-    return path;
+    if (transformer == null) {
+      return;
+    }
+
+    transformer.transformIllegalDynamicRequire(path, state);
+    return;
   }
 
   const dep = registerDependency(
@@ -357,21 +336,11 @@ function processRequireCall<TSplitCondition>(
     path,
   );
 
-  if (state.disableRequiresTransform) {
-    return path;
+  if (transformer == null) {
+    return;
   }
 
-  const moduleIDExpression = types.memberExpression(
-    state.dependencyMapIdentifier,
-    types.numericLiteral(dep.data.index),
-    true,
-  );
-
-  path.node.arguments = state.keepRequireNames
-    ? [moduleIDExpression, types.stringLiteral(name)]
-    : [moduleIDExpression];
-
-  return path;
+  transformer.transformSyncRequire(path, dep.data, state);
 }
 
 function getNearestLocFromPath(path: Path): ?BabelSourceLocation {
@@ -469,6 +438,113 @@ class InvalidRequireCallError extends Error {
 }
 
 collectDependencies.InvalidRequireCallError = InvalidRequireCallError;
+
+/**
+ * Produces a Babel template that will throw at runtime when the require call
+ * is reached. This makes dynamic require errors catchable by libraries that
+ * want to use them.
+ */
+const dynamicRequireErrorTemplate = template(`
+  (function(line) {
+    throw new Error(
+      'Dynamic require defined at line ' + line + '; not supported by Metro',
+    );
+  })(LINE)
+`);
+
+/**
+ * Produces a Babel template that transforms an "import(...)" call into a
+ * "require(...)" call to the asyncRequire specified.
+ */
+const makeAsyncRequireTemplate = template(`
+  require(ASYNC_REQUIRE_MODULE_PATH)(MODULE_ID, MODULE_NAME)
+`);
+
+const makeAsyncPrefetchTemplate = template(`
+  require(ASYNC_REQUIRE_MODULE_PATH).prefetch(MODULE_ID, MODULE_NAME)
+`);
+
+const makeJSResourceTemplate = template(`
+  require(ASYNC_REQUIRE_MODULE_PATH).resource(MODULE_ID, MODULE_NAME)
+`);
+
+const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
+  transformSyncRequire(
+    path: Path,
+    dependency: InternalDependencyData<mixed>,
+    state: State<mixed>,
+  ): void {
+    const moduleIDExpression = createModuleIDExpression(dependency, state);
+    path.node.arguments = state.keepRequireNames
+      ? [moduleIDExpression, types.stringLiteral(dependency.name)]
+      : [moduleIDExpression];
+  },
+
+  transformImportCall(
+    path: Path,
+    dependency: InternalDependencyData<mixed>,
+    state: State<mixed>,
+  ): void {
+    path.replaceWith(
+      makeAsyncRequireTemplate({
+        ASYNC_REQUIRE_MODULE_PATH: state.asyncRequireModulePathStringLiteral,
+        MODULE_ID: createModuleIDExpression(dependency, state),
+        MODULE_NAME: createModuleNameLiteral(dependency),
+      }),
+    );
+  },
+
+  transformJSResource(
+    path: Path,
+    dependency: InternalDependencyData<mixed>,
+    state: State<mixed>,
+  ): void {
+    path.replaceWith(
+      makeJSResourceTemplate({
+        ASYNC_REQUIRE_MODULE_PATH: state.asyncRequireModulePathStringLiteral,
+        MODULE_ID: createModuleIDExpression(dependency, state),
+        MODULE_NAME: createModuleNameLiteral(dependency),
+      }),
+    );
+  },
+
+  transformPrefetch(
+    path: Path,
+    dependency: InternalDependencyData<mixed>,
+    state: State<mixed>,
+  ): void {
+    path.replaceWith(
+      makeAsyncPrefetchTemplate({
+        ASYNC_REQUIRE_MODULE_PATH: state.asyncRequireModulePathStringLiteral,
+        MODULE_ID: createModuleIDExpression(dependency, state),
+        MODULE_NAME: createModuleNameLiteral(dependency),
+      }),
+    );
+  },
+
+  transformIllegalDynamicRequire(path: Path, state: State<mixed>): void {
+    path.replaceWith(
+      dynamicRequireErrorTemplate({
+        LINE: '' + path.node.loc.start.line,
+      }),
+    );
+  },
+};
+
+function createModuleIDExpression(
+  dependency: InternalDependencyData<mixed>,
+  state: State<mixed>,
+) {
+  return types.memberExpression(
+    state.dependencyMapIdentifier,
+    types.numericLiteral(dependency.index),
+    true,
+  );
+}
+
+function createModuleNameLiteral(dependency: InternalDependencyData<mixed>) {
+  return types.stringLiteral(dependency.name);
+}
 
 class DefaultModuleDependencyRegistry
   implements ModuleDependencyRegistry<void> {
