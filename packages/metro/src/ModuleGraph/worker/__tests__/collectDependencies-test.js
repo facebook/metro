@@ -14,11 +14,22 @@
 const babylon = require('@babel/parser');
 const collectDependencies = require('../collectDependencies');
 const dedent = require('dedent');
+const t = require('@babel/types');
 
 const {codeFromAst, comparableCode} = require('../../test-helpers');
 const {codeFrameColumns} = require('@babel/code-frame');
 
-import type {Options} from '../collectDependencies';
+import type {
+  Options,
+  State,
+  ModuleDependencyRegistry,
+  MutableInternalDependency,
+  ImportQualifier,
+  InternalDependency,
+  DependencyTransformer,
+} from '../collectDependencies';
+
+opaque type Path = any;
 
 const {any, objectContaining} = expect;
 
@@ -281,7 +292,7 @@ describe('Evaluating static arguments', () => {
     ]);
     expect(codeFromAst(ast)).toEqual(
       comparableCode(
-        `const myVar = \"my\"; require(${dependencyMapName}[0], "foo_my");`,
+        `const myVar = "my"; require(${dependencyMapName}[0], "foo_my");`,
       ),
     );
   });
@@ -460,7 +471,7 @@ it('records locations of dependencies', () => {
 });
 
 describe('optional dependencies', () => {
-  const opts: Options = {
+  const opts: Options<> = {
     asyncRequireModulePath: 'asyncRequire',
     dynamicRequires: 'reject',
     inlineableCalls: [],
@@ -618,6 +629,74 @@ describe('optional dependencies', () => {
   });
 });
 
+it('uses the dependency transformer specified in the options to transform the dependency calls', () => {
+  const ast = astFromCode(`
+    const a = require('b/lib/a');
+    require(1)
+    import b from 'b/lib/b';
+    export {Banana} from 'Banana';
+
+    import("some/async/module").then(foo => {});
+    __jsResource("some/async/module");
+    __conditionallySplitJSResource("some/async/module", {mobileConfigName: 'aaa'});
+    __prefetchImport("some/async/module");
+  `);
+
+  const {ast: transformedAst} = collectDependencies(ast, {
+    ...opts,
+    dynamicRequires: 'throwAtRuntime',
+    dependencyTransformer: MockDependencyTransformer,
+  });
+
+  expect(codeFromAst(transformedAst)).toEqual(
+    comparableCode(`
+      const a = require(_dependencyMap[0], "b/lib/a");
+      requireIllegalDynamicRequire();
+      import b from 'b/lib/b';
+      export { Banana } from 'Banana';
+      require("asyncRequire").async(_dependencyMap[3], "some/async/module").then(foo => {});
+      require("asyncRequire").jsresource(_dependencyMap[3], "some/async/module");
+      require("asyncRequire").jsresource(_dependencyMap[3], "some/async/module");
+      require("asyncRequire").prefetch(_dependencyMap[3], "some/async/module");
+      `),
+  );
+});
+
+it('uses the dependency registry specified in the options to register dependencies', () => {
+  const ast = astFromCode(`
+      const a = require('b/lib/a');
+      import b from 'b/lib/b';
+      export {Banana} from 'Banana';
+
+      import("some/async/module").then(foo => {});
+      __jsResource("a/jsresouce");
+      __conditionallySplitJSResource("a/conditional/jsresource", {mobileConfigName: 'aaa'});
+      __prefetchImport("a/prefetch/module");
+    `);
+
+  const {dependencies} = collectDependencies(ast, {
+    ...opts,
+    dependencyTransformer: MockDependencyTransformer,
+    dependencyRegistry: new MockModuleDependencyRegistry(),
+  });
+
+  expect(dependencies).toEqual([
+    {name: 'b/lib/a', data: objectContaining({asyncType: null})},
+    {name: 'b/lib/b', data: objectContaining({asyncType: null})},
+    {name: 'Banana', data: objectContaining({asyncType: null})},
+    {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
+    {name: 'a/jsresouce', data: objectContaining({asyncType: 'async'})},
+    {
+      name: 'a/conditional/jsresource',
+      data: objectContaining({splitCondition: {mobileConfigName: 'aaa'}}),
+    },
+    {
+      name: 'a/prefetch/module',
+      data: objectContaining({asyncType: 'prefetch'}),
+    },
+  ]);
+});
+
 function formatDependencyLocs(dependencies, code) {
   return (
     '\n' +
@@ -657,4 +736,122 @@ function astFromCode(code: string) {
     plugins: ['dynamicImport', 'flow'],
     sourceType: 'module',
   });
+}
+
+// Mock registry that collects *all* `registerDependency` calls.
+// Allows to verify that the `registerDependency` function was called for each
+// extracted dependency. Collapsing dependencies is implemented by specific
+// `collectDependencies` implementations and should be tested there.
+class MockModuleDependencyRegistry<TSplitCondition>
+  implements ModuleDependencyRegistry<TSplitCondition> {
+  _dependencies: Array<InternalDependency<TSplitCondition>> = [];
+
+  registerDependency(
+    qualifier: ImportQualifier,
+  ): InternalDependency<TSplitCondition> {
+    const data: MutableInternalDependency<TSplitCondition> = {
+      index: this._dependencies.length,
+      name: qualifier.name,
+      asyncType: qualifier.asyncType,
+      isOptional: qualifier.optional ?? false,
+      locs: [],
+    };
+
+    if (qualifier.splitCondition) {
+      data.splitCondition = qualifier.splitCondition.evaluate().value;
+    }
+
+    this._dependencies.push(data);
+    return data;
+  }
+
+  getDependencies(): Array<InternalDependency<TSplitCondition>> {
+    return this._dependencies;
+  }
+}
+
+// Mock transformer for dependencies. Uses a "readable" format
+// require() -> require(id, module name)
+// import() -> require(async moudle name).async(id, module name)
+// jsresource -> require(async moudle name).jsresource(id, module name)
+// prefetch -> require(async moudle name).prefetch(id, module name)
+const MockDependencyTransformer: DependencyTransformer<mixed> = {
+  transformSyncRequire(
+    path: Path,
+    dependency: InternalDependency<mixed>,
+    state: State<mixed>,
+  ): void {
+    path.replaceWith(
+      t.callExpression(t.identifier('require'), [
+        createModuleIDExpression(dependency, state),
+        t.stringLiteral(dependency.name),
+      ]),
+    );
+  },
+
+  transformImportCall(
+    path: Path,
+    dependency: InternalDependency<mixed>,
+    state: State<mixed>,
+  ): void {
+    transformAsyncRequire(path, dependency, state, 'async');
+  },
+
+  transformJSResource(
+    path: Path,
+    dependency: InternalDependency<mixed>,
+    state: State<mixed>,
+  ): void {
+    transformAsyncRequire(path, dependency, state, 'jsresource');
+  },
+
+  transformPrefetch(
+    path: Path,
+    dependency: InternalDependency<mixed>,
+    state: State<mixed>,
+  ): void {
+    transformAsyncRequire(path, dependency, state, 'prefetch');
+  },
+
+  transformIllegalDynamicRequire(path: Path, state: State<mixed>): void {
+    path.replaceWith(
+      t.callExpression(t.identifier('requireIllegalDynamicRequire'), []),
+    );
+  },
+};
+
+function createModuleIDExpression(
+  dependency: InternalDependency<mixed>,
+  state: State<mixed>,
+) {
+  return t.memberExpression(
+    state.dependencyMapIdentifier,
+    t.numericLiteral(dependency.index),
+    true,
+  );
+}
+
+function transformAsyncRequire(
+  path: Path,
+  dependency: InternalDependency<mixed>,
+  state: State<mixed>,
+  methodName: string,
+): void {
+  const moduleID = createModuleIDExpression(dependency, state);
+
+  const asyncRequireCall = t.callExpression(t.identifier('require'), [
+    state.asyncRequireModulePathStringLiteral,
+  ]);
+
+  path.replaceWith(
+    t.callExpression(
+      t.memberExpression(asyncRequireCall, t.identifier(methodName)),
+      [moduleID, t.stringLiteral(dependency.name)],
+    ),
+  );
+
+  // Don't transform e.g. the require('asyncRequire') calls. Requiring the transformation of the
+  // `require(asyncrRequireModule) is an implementation detail of the requires transformer and should
+  // be tested with the concrete implementations.
+  path.skip();
 }

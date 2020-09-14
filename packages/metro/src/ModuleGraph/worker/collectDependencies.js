@@ -32,7 +32,7 @@ type ImportDependencyOptions = $ReadOnly<{
   splitCondition?: Path,
 }>;
 
-type Dependency<TSplitCondition> = $ReadOnly<{
+export type Dependency<TSplitCondition> = $ReadOnly<{
   data: DependencyData<TSplitCondition>,
   name: string,
 }>;
@@ -47,22 +47,17 @@ type DependencyData<TSplitCondition> = $ReadOnly<{
   locs: Array<BabelSourceLocation>,
 }>;
 
-type InternalDependency<TSplitCondition> = $ReadOnly<{
-  ...Dependency<TSplitCondition>,
-  data: InternalDependencyData<TSplitCondition>,
-}>;
-
-type MutableInternalDependencyData<TSplitCondition> = {
+export type MutableInternalDependency<TSplitCondition> = {
   ...DependencyData<TSplitCondition>,
   index: number,
   name: string,
 };
 
-type InternalDependencyData<TSplitCondition> = $ReadOnly<
-  MutableInternalDependencyData<TSplitCondition>,
+export type InternalDependency<TSplitCondition> = $ReadOnly<
+  MutableInternalDependency<TSplitCondition>,
 >;
 
-type State<TSplitCondition> = {
+export type State<TSplitCondition> = {
   asyncRequireModulePathStringLiteral: ?Identifier,
   dependencyCalls: Set<string>,
   dependencyRegistry: ModuleDependencyRegistry<TSplitCondition>,
@@ -75,7 +70,7 @@ type State<TSplitCondition> = {
   allowOptionalDependencies: AllowOptionalDependencies,
 };
 
-export type Options = $ReadOnly<{
+export type Options<TSplitCondition = void> = $ReadOnly<{
   asyncRequireModulePath: string,
   dependencyMapName?: string,
   dynamicRequires: DynamicRequiresBehavior,
@@ -83,9 +78,11 @@ export type Options = $ReadOnly<{
   keepRequireNames: boolean,
   disableRequiresTransform?: boolean,
   allowOptionalDependencies: AllowOptionalDependencies,
+  dependencyRegistry?: ModuleDependencyRegistry<TSplitCondition>,
+  dependencyTransformer?: DependencyTransformer<TSplitCondition>,
 }>;
 
-type CollectedDependencies<+TSplitCondition> = $ReadOnly<{
+export type CollectedDependencies<+TSplitCondition> = $ReadOnly<{
   ast: Ast,
   dependencyMapName: string,
   dependencies: $ReadOnlyArray<Dependency<TSplitCondition>>,
@@ -95,32 +92,32 @@ type CollectedDependencies<+TSplitCondition> = $ReadOnly<{
 // Defines when dependencies should be collapsed.
 // E.g. should a module that's once required optinally and once not
 // be tretaed as the smae or different dependencies.
-interface ModuleDependencyRegistry<+TSplitCondition> {
+export interface ModuleDependencyRegistry<+TSplitCondition> {
   registerDependency(
     qualifier: ImportQualifier,
-  ): InternalDependencyData<TSplitCondition>;
-  getDependencies(): Array<InternalDependencyData<TSplitCondition>>;
+  ): InternalDependency<TSplitCondition>;
+  getDependencies(): Array<InternalDependency<TSplitCondition>>;
 }
 
-interface DependencyTransformer<-TSplitCondition> {
+export interface DependencyTransformer<-TSplitCondition> {
   transformSyncRequire(
     path: Path,
-    dependency: InternalDependencyData<TSplitCondition>,
+    dependency: InternalDependency<TSplitCondition>,
     state: State<TSplitCondition>,
   ): void;
   transformImportCall(
     path: Path,
-    dependency: InternalDependencyData<TSplitCondition>,
+    dependency: InternalDependency<TSplitCondition>,
     state: State<TSplitCondition>,
   ): void;
   transformJSResource(
     path: Path,
-    dependency: InternalDependencyData<TSplitCondition>,
+    dependency: InternalDependency<TSplitCondition>,
     state: State<TSplitCondition>,
   ): void;
   transformPrefetch(
     path: Path,
-    dependency: InternalDependencyData<TSplitCondition>,
+    dependency: InternalDependency<TSplitCondition>,
     state: State<TSplitCondition>,
   ): void;
   transformIllegalDynamicRequire(
@@ -140,20 +137,21 @@ export type DynamicRequiresBehavior = 'throwAtRuntime' | 'reject';
  *
  * The second argument is only provided for debugging purposes.
  */
-function collectDependencies(
+function collectDependencies<TSplitCondition = void>(
   ast: Ast,
-  options: Options,
-): CollectedDependencies<void> {
+  options: Options<TSplitCondition>,
+): CollectedDependencies<TSplitCondition> {
   const visited = new WeakSet();
 
-  const state: State<void> = {
+  const state: State<TSplitCondition> = {
     asyncRequireModulePathStringLiteral: null,
     dependencyCalls: new Set(),
-    dependencyRegistry: new DefaultModuleDependencyRegistry(),
+    dependencyRegistry:
+      options.dependencyRegistry ?? new DefaultModuleDependencyRegistry(),
     dependencyTransformer:
       options.disableRequiresTransform === true
         ? null
-        : DefaultDependencyTransformer,
+        : options.dependencyTransformer ?? DefaultDependencyTransformer,
     dependencyMapIdentifier: null,
     dynamicRequires: options.dynamicRequires,
     keepRequireNames: options.keepRequireNames,
@@ -161,7 +159,7 @@ function collectDependencies(
   };
 
   const visitor = {
-    CallExpression(path: Path, state: State<void>) {
+    CallExpression(path: Path, state: State<TSplitCondition>) {
       if (visited.has(path.node)) {
         return;
       }
@@ -213,7 +211,7 @@ function collectDependencies(
     ExportNamedDeclaration: collectImports,
     ExportAllDeclaration: collectImports,
 
-    Program(path: Path, state: State<void>) {
+    Program(path: Path, state: State<TSplitCondition>) {
       state.asyncRequireModulePathStringLiteral = types.stringLiteral(
         options.asyncRequireModulePath,
       );
@@ -297,11 +295,11 @@ function processImportCall<TSplitCondition>(
   }
 
   if (options.jsResource) {
-    transformer.transformJSResource(path, dep.data, state);
+    transformer.transformJSResource(path, dep, state);
   } else if (options.asyncType === 'async') {
-    transformer.transformImportCall(path, dep.data, state);
+    transformer.transformImportCall(path, dep, state);
   } else {
-    transformer.transformPrefetch(path, dep.data, state);
+    transformer.transformPrefetch(path, dep, state);
   }
 }
 
@@ -340,7 +338,7 @@ function processRequireCall<TSplitCondition>(
     return;
   }
 
-  transformer.transformSyncRequire(path, dep.data, state);
+  transformer.transformSyncRequire(path, dep, state);
 }
 
 function getNearestLocFromPath(path: Path): ?BabelSourceLocation {
@@ -350,7 +348,7 @@ function getNearestLocFromPath(path: Path): ?BabelSourceLocation {
   return path?.node.loc;
 }
 
-type ImportQualifier = $ReadOnly<{
+export type ImportQualifier = $ReadOnly<{
   name: string,
   asyncType: AsyncDependencyType | null,
   splitCondition?: Path,
@@ -362,14 +360,14 @@ function registerDependency<TSplitCondition>(
   qualifier: ImportQualifier,
   path: Path,
 ): InternalDependency<TSplitCondition> {
-  const dependencyData = state.dependencyRegistry.registerDependency(qualifier);
+  const dependency = state.dependencyRegistry.registerDependency(qualifier);
 
   const loc = getNearestLocFromPath(path);
   if (loc != null) {
-    dependencyData.locs.push(loc);
+    dependency.locs.push(loc);
   }
 
-  return {name: qualifier.name, data: dependencyData};
+  return dependency;
 }
 
 function isOptionalDependency<TSplitCondition>(
@@ -471,7 +469,7 @@ const makeJSResourceTemplate = template(`
 const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
   transformSyncRequire(
     path: Path,
-    dependency: InternalDependencyData<mixed>,
+    dependency: InternalDependency<mixed>,
     state: State<mixed>,
   ): void {
     const moduleIDExpression = createModuleIDExpression(dependency, state);
@@ -482,7 +480,7 @@ const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
 
   transformImportCall(
     path: Path,
-    dependency: InternalDependencyData<mixed>,
+    dependency: InternalDependency<mixed>,
     state: State<mixed>,
   ): void {
     path.replaceWith(
@@ -496,7 +494,7 @@ const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
 
   transformJSResource(
     path: Path,
-    dependency: InternalDependencyData<mixed>,
+    dependency: InternalDependency<mixed>,
     state: State<mixed>,
   ): void {
     path.replaceWith(
@@ -510,7 +508,7 @@ const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
 
   transformPrefetch(
     path: Path,
-    dependency: InternalDependencyData<mixed>,
+    dependency: InternalDependency<mixed>,
     state: State<mixed>,
   ): void {
     path.replaceWith(
@@ -532,7 +530,7 @@ const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
 };
 
 function createModuleIDExpression(
-  dependency: InternalDependencyData<mixed>,
+  dependency: InternalDependency<mixed>,
   state: State<mixed>,
 ) {
   return types.memberExpression(
@@ -542,21 +540,23 @@ function createModuleIDExpression(
   );
 }
 
-function createModuleNameLiteral(dependency: InternalDependencyData<mixed>) {
+function createModuleNameLiteral(dependency: InternalDependency<mixed>) {
   return types.stringLiteral(dependency.name);
 }
 
-class DefaultModuleDependencyRegistry
-  implements ModuleDependencyRegistry<void> {
-  _dependencies = new Map<string, InternalDependencyData<void>>();
+class DefaultModuleDependencyRegistry<TSplitCondition = void>
+  implements ModuleDependencyRegistry<TSplitCondition> {
+  _dependencies: Map<string, InternalDependency<TSplitCondition>> = new Map();
 
-  registerDependency(qualifier: ImportQualifier): InternalDependencyData<void> {
-    let dependencyData: ?InternalDependencyData<void> = this._dependencies.get(
+  registerDependency(
+    qualifier: ImportQualifier,
+  ): InternalDependency<TSplitCondition> {
+    let dependency: ?InternalDependency<TSplitCondition> = this._dependencies.get(
       qualifier.name,
     );
 
-    if (dependencyData == null) {
-      const newDependencyData: MutableInternalDependencyData<void> = {
+    if (dependency == null) {
+      const newDependency: MutableInternalDependency<TSplitCondition> = {
         name: qualifier.name,
         asyncType: qualifier.asyncType,
         locs: [],
@@ -564,31 +564,31 @@ class DefaultModuleDependencyRegistry
       };
 
       if (qualifier.optional) {
-        newDependencyData.isOptional = true;
+        newDependency.isOptional = true;
       }
 
-      dependencyData = newDependencyData;
-      this._dependencies.set(qualifier.name, newDependencyData);
+      dependency = newDependency;
+      this._dependencies.set(qualifier.name, dependency);
     } else {
-      const original = dependencyData;
-      dependencyData = collapseDependencies(original, qualifier);
-      if (original !== dependencyData) {
-        this._dependencies.set(qualifier.name, dependencyData);
+      const original = dependency;
+      dependency = collapseDependencies(original, qualifier);
+      if (original !== dependency) {
+        this._dependencies.set(qualifier.name, dependency);
       }
     }
 
-    return dependencyData;
+    return dependency;
   }
 
-  getDependencies(): Array<InternalDependencyData<void>> {
+  getDependencies(): Array<InternalDependency<TSplitCondition>> {
     return Array.from(this._dependencies.values());
   }
 }
 
-function collapseDependencies(
-  dependency: InternalDependencyData<void>,
+function collapseDependencies<TSplitCondition>(
+  dependency: InternalDependency<TSplitCondition>,
   qualifier: ImportQualifier,
-): InternalDependencyData<void> {
+): InternalDependency<TSplitCondition> {
   let collapsed = dependency;
 
   // A previously optionally required dependency was required non-optionaly.
