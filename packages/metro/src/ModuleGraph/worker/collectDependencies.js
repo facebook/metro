@@ -18,49 +18,54 @@ const traverse = require('@babel/traverse').default;
 const types = require('@babel/types');
 
 import type {Ast} from '@babel/core';
+import type {Path} from '@babel/traverse';
 import type {
   AllowOptionalDependencies,
   AsyncDependencyType,
 } from 'metro/src/DeltaBundler/types.flow.js';
 
 opaque type Identifier = any;
-opaque type Path = any;
 
 type ImportDependencyOptions = $ReadOnly<{
   asyncType: AsyncDependencyType,
   jsResource?: boolean,
+  splitCondition?: Path,
 }>;
 
-type Dependency = $ReadOnly<{
-  data: DependencyData,
+type Dependency<TSplitCondition> = $ReadOnly<{
+  data: DependencyData<TSplitCondition>,
   name: string,
 }>;
 
-type DependencyData = $ReadOnly<{
+type DependencyData<TSplitCondition> = $ReadOnly<{
   // If null, then the dependency is synchronous.
   // (ex. `require('foo')`)
   asyncType: AsyncDependencyType | null,
   isOptional?: boolean,
+  // If left unspecified, then the dependency is unconditionally split.
+  splitCondition?: TSplitCondition,
   locs: Array<BabelSourceLocation>,
 }>;
 
-type InternalDependency = $ReadOnly<{
-  ...Dependency,
-  data: InternalDependencyData,
+type InternalDependency<TSplitCondition> = $ReadOnly<{
+  ...Dependency<TSplitCondition>,
+  data: InternalDependencyData<TSplitCondition>,
 }>;
 
-type MutableInternalDependencyData = {
-  ...DependencyData,
+type MutableInternalDependencyData<TSplitCondition> = {
+  ...DependencyData<TSplitCondition>,
   index: number,
   name: string,
 };
 
-type InternalDependencyData = $ReadOnly<MutableInternalDependencyData>;
+type InternalDependencyData<TSplitCondition> = $ReadOnly<
+  MutableInternalDependencyData<TSplitCondition>,
+>;
 
-type State = {
+type State<TSplitCondition> = {
   asyncRequireModulePathStringLiteral: ?Identifier,
   dependencyCalls: Set<string>,
-  dependencyRegistry: ModuleDependencyRegistry,
+  dependencyRegistry: ModuleDependencyRegistry<TSplitCondition>,
   dynamicRequires: DynamicRequiresBehavior,
   dependencyMapIdentifier: ?Identifier,
   keepRequireNames: boolean,
@@ -78,17 +83,21 @@ export type Options = $ReadOnly<{
   allowOptionalDependencies: AllowOptionalDependencies,
 }>;
 
-type CollectedDependencies = $ReadOnly<{
+type CollectedDependencies<TSplitCondition> = $ReadOnly<{
   ast: Ast,
   dependencyMapName: string,
-  dependencies: $ReadOnlyArray<Dependency>,
+  dependencies: $ReadOnlyArray<Dependency<TSplitCondition>>,
 }>;
 
 // Registry for the dependency of a module.
-// Defines what makes a dependency unique.
-interface ModuleDependencyRegistry {
-  registerDependency(qualifier: ImportQualifier): InternalDependencyData;
-  getDependencies(): Array<InternalDependencyData>;
+// Defines when dependencies should be collapsed.
+// E.g. should a module that's once required optinally and once not
+// be tretaed as the smae or different dependencies.
+interface ModuleDependencyRegistry<TSplitCondition> {
+  registerDependency(
+    qualifier: ImportQualifier,
+  ): InternalDependencyData<TSplitCondition>;
+  getDependencies(): Array<InternalDependencyData<TSplitCondition>>;
 }
 
 export type DynamicRequiresBehavior = 'throwAtRuntime' | 'reject';
@@ -134,10 +143,10 @@ const makeJSResourceTemplate = template(`
 function collectDependencies(
   ast: Ast,
   options: Options,
-): CollectedDependencies {
+): CollectedDependencies<void> {
   const visited = new WeakSet();
 
-  const state: State = {
+  const state: State<void> = {
     asyncRequireModulePathStringLiteral: null,
     dependencyCalls: new Set(),
     dependencyRegistry: new DefaultModuleDependencyRegistry(),
@@ -149,7 +158,7 @@ function collectDependencies(
   };
 
   const visitor = {
-    CallExpression(path: Path, state: State) {
+    CallExpression(path: Path, state: State<void>) {
       if (visited.has(path.node)) {
         return;
       }
@@ -171,14 +180,22 @@ function collectDependencies(
         return;
       }
 
+      if (name === '__jsResource' && !path.scope.getBinding(name)) {
+        processImportCall(path, state, {
+          asyncType: 'async',
+          jsResource: true,
+        });
+        return;
+      }
+
       if (
-        (name === '__jsResource' ||
-          name === '__conditionallySplitJSResource') &&
+        name === '__conditionallySplitJSResource' &&
         !path.scope.getBinding(name)
       ) {
         processImportCall(path, state, {
           asyncType: 'async',
           jsResource: true,
+          splitCondition: path.get('arguments')[1],
         });
         return;
       }
@@ -192,7 +209,7 @@ function collectDependencies(
     ExportNamedDeclaration: collectImports,
     ExportAllDeclaration: collectImports,
 
-    Program(path: Path, state: State) {
+    Program(path: Path, state: State<void>) {
       state.asyncRequireModulePathStringLiteral = types.stringLiteral(
         options.asyncRequireModulePath,
       );
@@ -231,7 +248,10 @@ function collectDependencies(
   };
 }
 
-function collectImports(path: Path, state: State) {
+function collectImports<TSplitCondition>(
+  path: Path,
+  state: State<TSplitCondition>,
+) {
   if (path.node.source) {
     registerDependency(
       state,
@@ -245,9 +265,9 @@ function collectImports(path: Path, state: State) {
   }
 }
 
-function processImportCall(
+function processImportCall<TSplitCondition>(
   path: Path,
-  state: State,
+  state: State<TSplitCondition>,
   options: ImportDependencyOptions,
 ): Path {
   const name = getModuleNameFromCallArgs(path);
@@ -261,6 +281,7 @@ function processImportCall(
     {
       name,
       asyncType: options.asyncType,
+      splitCondition: options.splitCondition,
       optional: isOptionalDependency(name, path, state),
     },
     path,
@@ -307,7 +328,10 @@ function processImportCall(
   return path;
 }
 
-function processRequireCall(path: Path, state: State): Path {
+function processRequireCall<TSplitCondition>(
+  path: Path,
+  state: State<TSplitCondition>,
+): Path {
   const name = getModuleNameFromCallArgs(path);
 
   if (name == null) {
@@ -360,14 +384,15 @@ function getNearestLocFromPath(path: Path): ?BabelSourceLocation {
 type ImportQualifier = $ReadOnly<{
   name: string,
   asyncType: AsyncDependencyType | null,
+  splitCondition?: Path,
   optional: boolean,
 }>;
 
-function registerDependency(
-  state: State,
+function registerDependency<TSplitCondition>(
+  state: State<TSplitCondition>,
   qualifier: ImportQualifier,
   path: Path,
-): InternalDependency {
+): InternalDependency<TSplitCondition> {
   const dependencyData = state.dependencyRegistry.registerDependency(qualifier);
 
   const loc = getNearestLocFromPath(path);
@@ -378,11 +403,11 @@ function registerDependency(
   return {name: qualifier.name, data: dependencyData};
 }
 
-const isOptionalDependency = (
+function isOptionalDependency<TSplitCondition>(
   name: string,
   path: Path,
-  state: State,
-): boolean => {
+  state: State<TSplitCondition>,
+): boolean {
   const {allowOptionalDependencies} = state;
 
   // The async require module is a 'built-in'. Resolving should never fail -> treat it as non-optional.
@@ -414,7 +439,7 @@ const isOptionalDependency = (
   }
 
   return false;
-};
+}
 
 function getModuleNameFromCallArgs(path: Path): ?string {
   const expectedCount =
@@ -445,16 +470,17 @@ class InvalidRequireCallError extends Error {
 
 collectDependencies.InvalidRequireCallError = InvalidRequireCallError;
 
-class DefaultModuleDependencyRegistry implements ModuleDependencyRegistry {
-  _dependencies = new Map<string, InternalDependencyData>();
+class DefaultModuleDependencyRegistry
+  implements ModuleDependencyRegistry<void> {
+  _dependencies = new Map<string, InternalDependencyData<void>>();
 
-  registerDependency(qualifier: ImportQualifier): InternalDependencyData {
-    let dependencyData: ?InternalDependencyData = this._dependencies.get(
+  registerDependency(qualifier: ImportQualifier): InternalDependencyData<void> {
+    let dependencyData: ?InternalDependencyData<void> = this._dependencies.get(
       qualifier.name,
     );
 
     if (dependencyData == null) {
-      const newDependencyData: MutableInternalDependencyData = {
+      const newDependencyData: MutableInternalDependencyData<void> = {
         name: qualifier.name,
         asyncType: qualifier.asyncType,
         locs: [],
@@ -465,8 +491,8 @@ class DefaultModuleDependencyRegistry implements ModuleDependencyRegistry {
         newDependencyData.isOptional = true;
       }
 
-      this._dependencies.set(qualifier.name, newDependencyData);
       dependencyData = newDependencyData;
+      this._dependencies.set(qualifier.name, newDependencyData);
     } else {
       const original = dependencyData;
       dependencyData = collapseDependencies(original, qualifier);
@@ -478,15 +504,15 @@ class DefaultModuleDependencyRegistry implements ModuleDependencyRegistry {
     return dependencyData;
   }
 
-  getDependencies(): Array<InternalDependencyData> {
+  getDependencies(): Array<InternalDependencyData<void>> {
     return Array.from(this._dependencies.values());
   }
 }
 
 function collapseDependencies(
-  dependency: InternalDependencyData,
+  dependency: InternalDependencyData<void>,
   qualifier: ImportQualifier,
-): InternalDependencyData {
+): InternalDependencyData<void> {
   let collapsed = dependency;
 
   // A previously optionally required dependency was required non-optionaly.
