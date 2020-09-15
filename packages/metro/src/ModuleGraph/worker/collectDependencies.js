@@ -61,9 +61,7 @@ export type State<TSplitCondition> = {
   asyncRequireModulePathStringLiteral: ?Identifier,
   dependencyCalls: Set<string>,
   dependencyRegistry: ModuleDependencyRegistry<TSplitCondition>,
-  // Transformer used to transform dependency statements, e.g. a require call.
-  // Set to `null` to disable the dependency transformation
-  dependencyTransformer: ?DependencyTransformer<TSplitCondition>,
+  dependencyTransformer: DependencyTransformer<TSplitCondition>,
   dynamicRequires: DynamicRequiresBehavior,
   dependencyMapIdentifier: ?Identifier,
   keepRequireNames: boolean,
@@ -76,7 +74,6 @@ export type Options<TSplitCondition = void> = $ReadOnly<{
   dynamicRequires: DynamicRequiresBehavior,
   inlineableCalls: $ReadOnlyArray<string>,
   keepRequireNames: boolean,
-  disableRequiresTransform?: boolean,
   allowOptionalDependencies: AllowOptionalDependencies,
   dependencyRegistry?: ModuleDependencyRegistry<TSplitCondition>,
   dependencyTransformer?: DependencyTransformer<TSplitCondition>,
@@ -149,9 +146,7 @@ function collectDependencies<TSplitCondition = void>(
     dependencyRegistry:
       options.dependencyRegistry ?? new DefaultModuleDependencyRegistry(),
     dependencyTransformer:
-      options.disableRequiresTransform === true
-        ? null
-        : options.dependencyTransformer ?? DefaultDependencyTransformer,
+      options.dependencyTransformer ?? DefaultDependencyTransformer,
     dependencyMapIdentifier: null,
     dynamicRequires: options.dynamicRequires,
     keepRequireNames: options.keepRequireNames,
@@ -290,9 +285,6 @@ function processImportCall<TSplitCondition>(
   );
 
   const transformer = state.dependencyTransformer;
-  if (transformer == null) {
-    return;
-  }
 
   if (options.jsResource) {
     transformer.transformJSResource(path, dep, state);
@@ -316,10 +308,6 @@ function processRequireCall<TSplitCondition>(
       throw new InvalidRequireCallError(path);
     }
 
-    if (transformer == null) {
-      return;
-    }
-
     transformer.transformIllegalDynamicRequire(path, state);
     return;
   }
@@ -333,10 +321,6 @@ function processRequireCall<TSplitCondition>(
     },
     path,
   );
-
-  if (transformer == null) {
-    return;
-  }
 
   transformer.transformSyncRequire(path, dep, state);
 }
