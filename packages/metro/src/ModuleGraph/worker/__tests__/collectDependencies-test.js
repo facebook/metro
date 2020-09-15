@@ -28,8 +28,7 @@ import type {
   InternalDependency,
   DependencyTransformer,
 } from '../collectDependencies';
-
-opaque type Path = any;
+import type {Path} from '@babel/traverse';
 
 const {any, objectContaining} = expect;
 

@@ -21,11 +21,12 @@ const path = require('path');
 const {parseSync, transformFromAstSync} = require('@babel/core');
 const {generateFunctionMap} = require('metro-source-map');
 
-import type {Plugins, Presets} from '@babel/core';
+import type {Ast, Plugins, Presets} from '@babel/core';
 import type {
   BabelTransformer,
   BabelTransformerArgs,
 } from 'metro-babel-transformer';
+import type {FBSourceFunctionMap} from 'metro-source-map/src/source-map';
 
 const cacheKeyParts = [
   fs.readFileSync(__filename),
@@ -158,7 +159,12 @@ function buildBabelConfig(filename, options, plugins?: Plugins = []) {
   return Object.assign({}, babelRC, config);
 }
 
-function transform({filename, options, src, plugins}: BabelTransformerArgs) {
+function transform({
+  filename,
+  options,
+  src,
+  plugins,
+}: BabelTransformerArgs): {ast: Ast, functionMap: ?FBSourceFunctionMap, ...} {
   const OLD_BABEL_ENV = process.env.BABEL_ENV;
   process.env.BABEL_ENV = options.dev
     ? 'development'
@@ -181,6 +187,8 @@ function transform({filename, options, src, plugins}: BabelTransformerArgs) {
 
     // The result from `transformFromAstSync` can be null (if the file is ignored)
     if (!result) {
+      // $FlowFixMe BabelTransformer specifies that the `ast` can never be null but
+      // the function returns here. Discovered when typing `BabelNode`.
       return {ast: null, functionMap};
     }
 

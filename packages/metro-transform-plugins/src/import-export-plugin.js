@@ -15,7 +15,7 @@ const {expression} = require('@babel/template');
 
 import type {Ast} from '@babel/core';
 import type {Path} from '@babel/traverse';
-import type {Types} from '@babel/types';
+import type {BabelNode, Types} from '@babel/types';
 
 type State = {
   exportAll: Array<{file: string, loc: BabelSourceLocation, ...}>,
