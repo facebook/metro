@@ -13,6 +13,6 @@
 
 const meta = require('../meta');
 
-it('exports the blacklist creator', () => {
+it('exports the block list creator', () => {
   expect(meta('some formatted code', 'utf8')).toMatchSnapshot();
 });

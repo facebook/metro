@@ -53,7 +53,7 @@ type ExtraTransformOptions = {
   +ramGroups: Array<string>,
   +transform: {|
     +experimentalImportSupport: boolean,
-    +inlineRequires: {+blacklist: {[string]: true, ...}, ...} | boolean,
+    +inlineRequires: {+blockList: {[string]: true, ...}, ...} | boolean,
     +nonInlinedRequires?: $ReadOnlyArray<string>,
     +unstable_disableES6Transforms?: boolean,
   |},
