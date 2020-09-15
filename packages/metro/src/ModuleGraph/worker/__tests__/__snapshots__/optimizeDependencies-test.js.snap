@@ -1,3 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`throws if an invalid require() call is encountered 1`] = `"Post-transform calls to require() expect 2 arguments, the first of which has the shape \`_dependencyMapName[123]\`, but this was found: \`require(arbitrary[1])\`"`;
