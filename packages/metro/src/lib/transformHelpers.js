@@ -18,7 +18,7 @@ import type DeltaBundler, {TransformFn} from '../DeltaBundler';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {Type} from 'metro-transform-worker';
 
-type InlineRequiresRaw = {+blacklist: {[string]: true, ...}, ...} | boolean;
+type InlineRequiresRaw = {+blockList: {[string]: true, ...}, ...} | boolean;
 
 export type TransformInputOptions = $Diff<
   TransformOptions,
@@ -99,12 +99,12 @@ async function calcTransformerOptions(
   };
 }
 
-function removeInlineRequiresBlacklistFromOptions(
+function removeInlineRequiresBlockListFromOptions(
   path: string,
   inlineRequires: InlineRequiresRaw,
 ): boolean {
   if (typeof inlineRequires === 'object') {
-    return !(path in inlineRequires.blacklist);
+    return !(path in inlineRequires.blockList);
   }
 
   return inlineRequires;
@@ -129,7 +129,7 @@ async function getTransformFn(
     return await bundler.transformFile(path, {
       ...transformOptions,
       type: getType(transformOptions.type, path, config.resolver.assetExts),
-      inlineRequires: removeInlineRequiresBlacklistFromOptions(
+      inlineRequires: removeInlineRequiresBlockListFromOptions(
         path,
         inlineRequires,
       ),

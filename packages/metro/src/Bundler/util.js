@@ -47,7 +47,7 @@ type SubTree<T: ModuleTransportLike> = (
   moduleTransportsByPath: Map<string, T>,
 ) => Iterable<number>;
 
-const assetPropertyBlacklist = new Set(['files', 'fileSystemLocation', 'path']);
+const assetPropertyBlockList = new Set(['files', 'fileSystemLocation', 'path']);
 
 function generateAssetCodeFileAst(
   assetRegistryPath: string,
@@ -55,7 +55,7 @@ function generateAssetCodeFileAst(
 ): Ast {
   const properDescriptor = filterObject(
     assetDescriptor,
-    assetPropertyBlacklist,
+    assetPropertyBlockList,
   );
 
   // {...}
@@ -153,10 +153,10 @@ function isAssetTypeAnImage(type: string): boolean {
 
 function filterObject(
   object: AssetDataWithoutFiles,
-  blacklist: Set<string>,
+  blockList: Set<string>,
 ): AssetDataFiltered {
   const copied = Object.assign({}, object);
-  for (const key of blacklist) {
+  for (const key of blockList) {
     delete copied[key];
   }
   return copied;

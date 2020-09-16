@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`exports the blacklist creator 1`] = `
+exports[`exports the block list creator 1`] = `
 Object {
   "data": Array [
     56,
