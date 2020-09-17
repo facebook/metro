@@ -33,6 +33,8 @@ function generateImportNames(
     Program(path) {
       importAll = path.scope.generateUid('$$_IMPORT_ALL');
       importDefault = path.scope.generateUid('$$_IMPORT_DEFAULT');
+
+      path.stop();
     },
   });
 
