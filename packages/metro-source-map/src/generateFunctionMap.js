@@ -198,6 +198,9 @@ function getNameForPath(path: Path): string {
         }
       }
     }
+    if (t.isTypeCastExpression(parent) && parent.expression === node) {
+      return getNameForPath(parentPath);
+    }
     return ANONYMOUS_NAME;
   }
 

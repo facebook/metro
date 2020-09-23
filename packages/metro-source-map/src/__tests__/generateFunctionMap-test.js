@@ -1080,11 +1080,59 @@ function parent2() {
     `);
   });
 
+  it('derive name from assignment target of a typecast', () => {
+    const ast = getAst(`
+      const foo = (() => {}: Bar);
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      foo from 2:19
+      <global> from 2:27
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;mBCC,QD",
+        "names": Array [
+          "<global>",
+          "foo",
+        ],
+      }
+    `);
+  });
+
   it('skip Object.freeze when inferring object name', () => {
     const ast = getAst(`
       var a = Object.freeze({
         b: () => {}
       })
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      a.b from 3:11
+      <global> from 3:19
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;WCE,QD",
+        "names": Array [
+          "<global>",
+          "a.b",
+        ],
+      }
+    `);
+  });
+
+  it('skip typecast when inferring object name', () => {
+    const ast = getAst(`
+      var a = ({
+        b: () => {}
+      }: Type)
     `);
 
     expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
