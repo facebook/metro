@@ -128,6 +128,11 @@ export type ResolveFn = (id: string, source: ?string) => string;
 
 export type TransformResult = ConcreteTransformResult | LinkedTransformResult;
 
+export type ImportNames = {
+  all: string,
+  default: string,
+};
+
 export type ConcreteTransformResult = {
   code: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
@@ -135,11 +140,7 @@ export type ConcreteTransformResult = {
   map: ?BasicSourceMap,
   requireName: string,
   soundResources?: ?Array<string>,
-  importNames?: {
-    all: string,
-    default: string,
-    ...
-  },
+  importNames?: ImportNames,
   isESModule?: true,
 };
 
