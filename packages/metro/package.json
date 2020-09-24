@@ -69,6 +69,7 @@
     "@babel/plugin-transform-flow-strip-types": "^7.0.0",
     "acorn": "^5.1.2",
     "dedent": "^0.7.0",
+    "jest-snapshot": "^26.0.1",
     "metro-memory-fs": "0.63.0",
     "metro-react-native-babel-preset": "0.63.0",
     "metro-react-native-babel-transformer": "0.63.0",

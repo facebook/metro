@@ -50,7 +50,7 @@ type BabelNode = BabelTypesNode;
 
 type BabelPath = {
   node: BabelNode,
-  [property: string]: any
+  [property: string]: any,
 };
 
 export type GeneratorResult = {
@@ -59,8 +59,6 @@ export type GeneratorResult = {
   rawMappings: ?Array<_BabelSourceMapSegment>,
   ...
 };
-
-type BabelVisitor = {...};
 
 type _BabelSourceMapSegment = {
   generated: {column: number, line: number, ...},
@@ -176,6 +174,8 @@ type ParseCallback = (Error => void) | ((void, BabelNode) => void);
 type void_DO_NOT_USE_SYNC = void;
 
 declare module '@babel/core' {
+  import type {Visitor} from '@babel/traverse';
+
   declare type Ast = BabelNode;
   declare type BabelSourceMap = _BabelSourceMap;
   declare type Plugins = _Plugins;
@@ -220,6 +220,12 @@ declare module '@babel/core' {
     code: string,
     options?: BabelCoreOptions,
   ): BabelNode;
+
+  declare type PluginObj<TState> = {
+    name?: string,
+    inherits?: any,
+    visitor: Visitor<TState>,
+  };
 }
 
 declare module '@babel/generator' {
@@ -274,9 +280,18 @@ declare module '@babel/types' {
 declare module '@babel/traverse' {
   declare export type Path = BabelPath;
 
+  declare export type Visitor<TState> = {
+    [prop: string]:
+      | ((path: Path, state: TState) => void)
+      | {
+          enter?: (path: Path, state: TState) => void,
+          exit?: (path: Path, state: TState) => void,
+        },
+  };
+
   declare export default (
     ast: BabelNode | Array<BabelNode>,
-    visitor: BabelVisitor,
+    visitor: BabelVisitor<any>,
     scope?: ?Object,
     state?: ?Object,
     parentPath?: ?Object,
