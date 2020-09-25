@@ -34,7 +34,6 @@ function wrapModule(
 ): {
   ast: Ast,
   requireName: string,
-  ...
 } {
   const params = buildParameters(
     importDefaultName,
@@ -103,6 +102,11 @@ function buildParameters(
   ];
 }
 
+// Renaming requires should ideally only be done when generating for the target
+// that expects the custom require name in the optimize step.
+// This visitor currently renames all `require` references even if the module
+// contains a custom `require` declaration. This should be fixed by only renaming
+// if the `require` symbol hasn't been redeclared.
 function renameRequires(ast: Ast): string {
   let newRequireName = WRAP_NAME;
 

@@ -24,7 +24,6 @@ function generateImportNames(
 ): {
   importAll: string,
   importDefault: string,
-  ...
 } {
   let importDefault;
   let importAll;
