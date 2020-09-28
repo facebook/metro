@@ -243,7 +243,7 @@ it('wraps a JSON file correctly', () => {
 
   expect(comparableCode(wrappedJson)).toEqual(
     comparableCode(
-      `__d(function(global, require, _aUnused, _bUnused, module, exports, _cUnused) {
+      `__d(function(global, require, _importDefaultUnused, _importAllUnused, module, exports, _dependencyMapUnused) {
       module.exports = {
         "foo": "foo",
         "bar": "bar",

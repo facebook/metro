@@ -341,7 +341,7 @@ it('minifies a JSON file', async () => {
     ).output[0].data.code,
   ).toBe(
     [
-      '__d(function(global, require, _aUnused, _bUnused, module, exports, _cUnused) {',
+      '__d(function(global, require, _importDefaultUnused, _importAllUnused, module, exports, _dependencyMapUnused) {',
       '  module.exports = minified(code);;',
       '});',
     ].join('\n'),

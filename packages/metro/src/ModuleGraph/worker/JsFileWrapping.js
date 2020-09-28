@@ -56,17 +56,21 @@ function wrapPolyfill(fileAst: Ast): Ast {
   return t.file(t.program([t.expressionStatement(iife)]));
 }
 
+function jsonToCommonJS(source: string): string {
+  return `module.exports = ${source};`;
+}
+
 function wrapJson(source: string, globalPrefix: string): string {
   // Unused parameters; remember that's wrapping JSON.
   const moduleFactoryParameters = buildParameters(
-    '_aUnused',
-    '_bUnused',
-    '_cUnused',
+    '_importDefaultUnused',
+    '_importAllUnused',
+    '_dependencyMapUnused',
   );
 
   return [
     `${globalPrefix}__d(function(${moduleFactoryParameters.join(', ')}) {`,
-    `  module.exports = ${source};`,
+    `  ${jsonToCommonJS(source)}`,
     '});',
   ].join('\n');
 }
@@ -76,7 +80,7 @@ function functionFromProgram(
   parameters: $ReadOnlyArray<string>,
 ): Ast {
   return t.functionExpression(
-    t.identifier(''),
+    null,
     parameters.map(makeIdentifier),
     t.blockStatement(program.body, program.directives),
   );
@@ -126,6 +130,7 @@ module.exports = {
   WRAP_NAME,
 
   wrapJson,
+  jsonToCommonJS,
   wrapModule,
   wrapPolyfill,
 };
