@@ -39,7 +39,23 @@ describe('inline constants', () => {
       }
     `;
 
-    compare([inlinePlugin], code, code, {dev: true});
+    compare([inlinePlugin], code, code, {dev: false});
+  });
+
+  it("doesn't replace __DEV__ in an object property key", () => {
+    const code = `
+      const x = {
+        __DEV__: __DEV__
+      };
+    `;
+
+    const expected = `
+      const x = {
+        __DEV__: false
+      };
+    `;
+
+    compare([inlinePlugin], code, expected, {dev: false});
   });
 
   it('replaces Platform.OS in the code if Platform is a global', () => {

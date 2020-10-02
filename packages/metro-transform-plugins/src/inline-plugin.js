@@ -70,7 +70,9 @@ function inlinePlugin(
   const isDev = (node: Ast, parent, scope) =>
     t.isIdentifier(node, dev) &&
     isGlobalOrFlowDeclared(scope.getBinding(dev.name)) &&
-    !t.isMemberExpression(parent);
+    !t.isMemberExpression(parent) &&
+    // not { __DEV__: 'value'}
+    (!t.isObjectProperty(parent) || parent.value === node);
 
   function findProperty(objectExpression, key: string, fallback) {
     const property = objectExpression.properties.find(p => {
