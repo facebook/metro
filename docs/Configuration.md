@@ -59,8 +59,8 @@ The root folder of your project.
 
 Type: `Array<string>`
 
-Specify any additional (to projectRoot) watch folders, this is used to know which files to watch.
-(By default the file watching is disabled in CI environments. Also it can be manually disabled by setting the env variable `CI=true`)
+Specify any additional (to projectRoot) watch folders, this is used to know which files to watch. The code within those folders would be considered a part of your source files - it will be transformed and bundled. 
+(By default the file watching is disabled in CI environments (But the folders are still bundled). Also it can be manually disabled by setting the env variable `CI=true`)
 
 #### `transformerPath`
 
