@@ -14,6 +14,7 @@ const SourceMetadataMapConsumer = require('./SourceMetadataMapConsumer');
 
 const fs = require('fs');
 const invariant = require('invariant');
+const nullthrows = require('nullthrows');
 const path = require('path');
 
 import type {MixedSourceMap, HermesFunctionOffsets} from 'metro-source-map';
@@ -69,7 +70,9 @@ type HermesMinidumpCrashInfo = {
 type HermesMinidumpStackFrame = $ReadOnly<{|
   ByteCodeOffset: number,
   FunctionID: number,
-  CJSModuleOffset: number,
+  // NOTE: CJSModuleOffset has been renamed to SegmentID. Support both formats for now.
+  CJSModuleOffset?: number,
+  SegmentID?: number,
   SourceURL: string,
   StackFrameRegOffs: string,
   SourceLocation?: string,
@@ -468,14 +471,20 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
         } else {
           const {
             CJSModuleOffset,
+            SegmentID,
             SourceURL,
             FunctionID,
             ByteCodeOffset: localOffset,
           } = stackItem;
+          const cjsModuleOffsetOrSegmentID = nullthrows(
+            CJSModuleOffset ?? SegmentID,
+            'Either CJSModuleOffset or SegmentID must be specified in the Hermes stack frame',
+          );
           const moduleInformation = this._hasLegacySegments
             ? this.parseFileName(SourceURL)
             : UNKNOWN_MODULE_IDS;
-          const generatedLine = CJSModuleOffset + this.options.inputLineStart;
+          const generatedLine =
+            cjsModuleOffsetOrSegmentID + this.options.inputLineStart;
           const segment = this._segments[
             moduleInformation.segmentId.toString()
           ];
@@ -489,7 +498,8 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
               name: null,
             });
           } else {
-            const segmentOffsets = hermesOffsets[Number(CJSModuleOffset)];
+            const segmentOffsets =
+              hermesOffsets[Number(cjsModuleOffsetOrSegmentID)];
             const generatedColumn =
               segmentOffsets[FunctionID] +
               localOffset +

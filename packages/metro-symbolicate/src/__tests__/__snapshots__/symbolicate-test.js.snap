@@ -99,6 +99,42 @@ Array [
 ]
 `;
 
+exports[`symbolicating a hermes stack trace CJS with SegmentID 1`] = `
+Array [
+  Object {
+    "column": 36,
+    "functionName": "result.clearExceptTimespans",
+    "line": 160,
+    "name": null,
+    "source": "/js/react-native-github/Libraries/Utilities/createPerformanceLogger.js",
+  },
+  Object {
+    "column": 2,
+    "functionName": "getValue",
+    "line": 13,
+    "name": null,
+    "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
+  },
+  Object {
+    "column": 2,
+    "functionName": "getValue",
+    "line": 13,
+    "name": null,
+    "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
+  },
+  Object {
+    "column": 2,
+    "functionName": "getValue",
+    "line": 13,
+    "name": null,
+    "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
+  },
+  Object {
+    "NativeCode": true,
+  },
+]
+`;
+
 exports[`symbolicating a profiler map 1`] = `
 "JS_0000_xxxxxxxxxxxxxxxxxxxxxx throws0::thrower.js:48:11
 JS_0001_xxxxxxxxxxxxxxxxxxxxxx throws6::thrower.js:35:38

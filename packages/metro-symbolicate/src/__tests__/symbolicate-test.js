@@ -115,6 +115,16 @@ test('symbolicating a hermes stack trace CJS', async () => {
   expect(output).toMatchSnapshot();
 });
 
+test('symbolicating a hermes stack trace CJS with SegmentID', async () => {
+  const output = JSON.parse(
+    await execute(
+      [HERMES_MAP_CJS, '--hermes-crash'],
+      read('hermesStackTraceCJS-SegmentID.json'),
+    ),
+  );
+  expect(output).toMatchSnapshot();
+});
+
 test('symbolicating a stack trace', async () =>
   await expect(
     execute([TESTFILE_MAP], read('testfile.stack')),
