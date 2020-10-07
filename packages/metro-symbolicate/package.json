@@ -3,8 +3,8 @@
   "version": "0.63.0",
   "description": "🚇 A tool to find the source location from JS bundles and stack traces.",
   "license": "MIT",
-  "main": "./src/symbolicate.js",
-  "bin": "./src/symbolicate.js",
+  "main": "./src/index.js",
+  "bin": "./src/index.js",
   "repository": {
     "type": "git",
     "url": "git@github.com:facebook/metro.git"

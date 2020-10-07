@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
@@ -226,10 +225,6 @@ function waitForStream(stream) {
   return new Promise(resolve => {
     stream.on('finish', resolve);
   });
-}
-
-if (require.main === module) {
-  main().then(code => process.exit(code));
 }
 
 module.exports = main;
