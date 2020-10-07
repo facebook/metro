@@ -14,14 +14,14 @@
   "license": "MIT",
   "dependencies": {
     "cosmiconfig": "^5.0.5",
-    "jest-validate": "^26.4.2",
+    "jest-validate": "^26.5.2",
     "metro": "0.63.0",
     "metro-cache": "0.63.0",
     "metro-core": "0.63.0",
     "metro-runtime": "0.63.0"
   },
   "devDependencies": {
-    "pretty-format": "^26.4.2",
+    "pretty-format": "^26.5.2",
     "strip-ansi": "^6.0.0"
   }
 }
