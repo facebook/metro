@@ -9,5 +9,4 @@
 
 'use strict';
 
-require('core-js/fn/array/flat-map');
 global.Promise = require('promise');
