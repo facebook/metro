@@ -10,23 +10,36 @@
 
 'use strict';
 
-const template = require('@babel/template').default;
+const nullthrows = require('nullthrows');
+const template = require('@babel/template');
+
 const {expression} = require('@babel/template');
 
 import type {Ast} from '@babel/core';
-import type {Path} from '@babel/traverse';
-import type {BabelNode, Types} from '@babel/types';
+import type {NodePath} from '@babel/traverse';
+// Type only dependency. This is not a runtime dependency
+// eslint-disable-next-line import/no-extraneous-dependencies
+import typeof * as Types from '@babel/types';
+import type {
+  Node,
+  ExportAllDeclaration,
+  ExportDefaultDeclaration,
+  ExportNamedDeclaration,
+  ImportDeclaration,
+  Statement,
+  Program,
+} from '@babel/types';
 
 type State = {
-  exportAll: Array<{file: string, loc: BabelSourceLocation, ...}>,
-  exportDefault: Array<{local: string, loc: BabelSourceLocation, ...}>,
+  exportAll: Array<{file: string, loc: ?BabelSourceLocation, ...}>,
+  exportDefault: Array<{local: string, loc: ?BabelSourceLocation, ...}>,
   exportNamed: Array<{
     local: string,
     remote: string,
-    loc: BabelSourceLocation,
+    loc: ?BabelSourceLocation,
     ...
   }>,
-  imports: Array<{node: BabelNode}>,
+  imports: Array<{node: Statement}>,
   importDefault: Ast,
   importAll: Ast,
   opts: {
@@ -41,13 +54,25 @@ type State = {
 
 export type Visitors = {|
   visitor: {|
-    ExportAllDeclaration: (path: Path, state: State) => void,
-    ExportDefaultDeclaration: (path: Path, state: State) => void,
-    ExportNamedDeclaration: (path: Path, state: State) => void,
-    ImportDeclaration: (path: Path, state: State) => void,
+    ExportAllDeclaration: (
+      path: NodePath<ExportAllDeclaration>,
+      state: State,
+    ) => void,
+    ExportDefaultDeclaration: (
+      path: NodePath<ExportDefaultDeclaration>,
+      state: State,
+    ) => void,
+    ExportNamedDeclaration: (
+      path: NodePath<ExportNamedDeclaration>,
+      state: State,
+    ) => void,
+    ImportDeclaration: (
+      path: NodePath<ImportDeclaration>,
+      state: State,
+    ) => void,
     Program: {|
-      enter: (path: Path, state: State) => void,
-      exit: (path: Path, state: State) => void,
+      enter: (path: NodePath<Program>, state: State) => void,
+      exit: (path: NodePath<Program>, state: State) => void,
     |},
   |},
 |};
@@ -57,7 +82,7 @@ export type Visitors = {|
  * "import x from ..." call into a "const x = importAll(...)" call with the
  * corresponding id in it.
  */
-const importTemplate = template(`
+const importTemplate = template.statement(`
   var LOCAL = IMPORT(FILE);
 `);
 
@@ -65,7 +90,7 @@ const importTemplate = template(`
  * Produces a Babel template that transforms an "import {x as y} from ..." into
  * "const y = require(...).x" call with the corresponding id in it.
  */
-const importNamedTemplate = template(`
+const importNamedTemplate = template.statement(`
   var LOCAL = require(FILE).REMOTE;
 `);
 
@@ -73,7 +98,7 @@ const importNamedTemplate = template(`
  * Produces a Babel template that transforms an "import ..." into
  * "require(...)", which is considered a side-effect call.
  */
-const importSideEffectTemplate = template(`
+const importSideEffectTemplate = template.statement(`
   require(FILE);
 `);
 
@@ -81,7 +106,7 @@ const importSideEffectTemplate = template(`
  * Produces an "export all" template that traverses all exported symbols and
  * re-exposes them.
  */
-const exportAllTemplate = template(`
+const exportAllTemplate = template.statements(`
   var REQUIRED = require(FILE);
 
   for (var KEY in REQUIRED) {
@@ -93,7 +118,7 @@ const exportAllTemplate = template(`
  * Produces a "named export" or "default export" template to export a single
  * symbol.
  */
-const exportTemplate = template(`
+const exportTemplate = template.statement(`
   exports.REMOTE = LOCAL;
 `);
 
@@ -101,7 +126,7 @@ const exportTemplate = template(`
  * Flags the exported module as a transpiled ES module. Needs to be kept in 1:1
  * compatibility with Babel.
  */
-const esModuleExportTemplate = template(`
+const esModuleExportTemplate = template.statement(`
   Object.defineProperty(exports, '__esModule', {value: true});
 `);
 
@@ -115,7 +140,10 @@ const resolveTemplate = expression(`
 /**
  * Enforces the resolution of a path to a fully-qualified one, if set.
  */
-function resolvePath(node: {value: string, ...}, resolve: boolean) {
+function resolvePath<TNode: Node>(
+  node: TNode,
+  resolve: boolean,
+): BabelNodeExpression | TNode {
   if (!resolve) {
     return node;
   }
@@ -125,16 +153,16 @@ function resolvePath(node: {value: string, ...}, resolve: boolean) {
   });
 }
 
-declare function withLocation(
-  node: BabelNode,
-  loc: BabelSourceLocation,
-): BabelNode;
+declare function withLocation<TNode: BabelNode>(
+  node: TNode,
+  loc: ?BabelSourceLocation,
+): TNode;
 
 // eslint-disable-next-line no-redeclare
-declare function withLocation(
-  node: $ReadOnlyArray<BabelNode>,
-  loc: BabelSourceLocation,
-): Array<BabelNode>;
+declare function withLocation<TNode: BabelNode>(
+  node: $ReadOnlyArray<TNode>,
+  loc: ?BabelSourceLocation,
+): Array<TNode>;
 
 // eslint-disable-next-line no-redeclare
 function withLocation(node, loc) {
@@ -148,31 +176,32 @@ function withLocation(node, loc) {
 }
 
 function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
+  const {isDeclaration, isVariableDeclaration} = t;
+
   return {
     visitor: {
-      ExportAllDeclaration(path: Path, state: State): void {
-        if (path.node.exportKind && path.node.exportKind !== 'value') {
-          return;
-        }
-
+      ExportAllDeclaration(
+        path: NodePath<BabelNodeExportAllDeclaration>,
+        state: State,
+      ): void {
         state.exportAll.push({
-          file: path.get('source').node.value,
+          file: path.node.source.value,
           loc: path.node.loc,
         });
 
         path.remove();
       },
 
-      ExportDefaultDeclaration(path: Path, state: State): void {
-        if (path.node.exportKind && path.node.exportKind !== 'value') {
-          return;
-        }
+      ExportDefaultDeclaration(
+        path: NodePath<BabelNodeExportDefaultDeclaration>,
+        state: State,
+      ): void {
+        const declaration = path.node.declaration;
+        const id =
+          declaration.id || path.scope.generateUidIdentifier('default');
 
-        const declaration = path.get('declaration');
-        const node = declaration.node;
-        const id = node.id || path.scope.generateUidIdentifier('default');
-
-        node.id = id;
+        // $FlowFixMe Flow error uncovered by typing Babel more strictly
+        declaration.id = id;
 
         const loc = path.node.loc;
 
@@ -181,12 +210,14 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
           loc,
         });
 
-        if (t.isDeclaration(declaration)) {
-          path.insertBefore(withLocation(node, loc));
+        if (isDeclaration(declaration)) {
+          path.insertBefore(withLocation(declaration, loc));
         } else {
           path.insertBefore(
             withLocation(
-              t.variableDeclaration('var', [t.variableDeclarator(id, node)]),
+              t.variableDeclaration('var', [
+                t.variableDeclarator(id, declaration),
+              ]),
               loc,
             ),
           );
@@ -195,61 +226,69 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
         path.remove();
       },
 
-      ExportNamedDeclaration(path: Path, state: State): void {
+      ExportNamedDeclaration(
+        path: NodePath<ExportNamedDeclaration>,
+        state: State,
+      ): void {
         if (path.node.exportKind && path.node.exportKind !== 'value') {
           return;
         }
 
-        const declaration = path.get('declaration');
-        const specifiers = path.get('specifiers');
+        const declaration = path.node.declaration;
         const loc = path.node.loc;
 
-        if (declaration.node) {
-          if (t.isVariableDeclaration(declaration)) {
-            declaration.get('declarations').forEach(d => {
-              switch (d.get('id').node.type) {
+        if (declaration) {
+          if (isVariableDeclaration(declaration)) {
+            declaration.declarations.forEach(d => {
+              switch (d.id.type) {
                 case 'ObjectPattern':
                   {
-                    const properties = d.get('id').get('properties');
+                    const properties = d.id.properties;
                     properties.forEach(p => {
-                      const name = p.get('key').node.name;
+                      // $FlowFixMe Flow error uncovered by typing Babel more strictly
+                      const name = p.key.name;
                       state.exportNamed.push({local: name, remote: name, loc});
                     });
                   }
                   break;
                 case 'ArrayPattern':
                   {
-                    const elements = d.get('id').get('elements');
+                    const elements = d.id.elements;
                     elements.forEach(e => {
-                      const name = e.node.name;
+                      // $FlowFixMe Flow error uncovered by typing Babel more strictly
+                      const name = e.name;
                       state.exportNamed.push({local: name, remote: name, loc});
                     });
                   }
                   break;
                 default:
                   {
-                    const name = d.get('id').node.name;
+                    // $FlowFixMe Flow error uncovered by typing Babel more strictly
+                    const name = d.id.name;
                     state.exportNamed.push({local: name, remote: name, loc});
                   }
                   break;
               }
             });
           } else {
-            const id =
-              declaration.node.id || path.scope.generateUidIdentifier();
+            const id = declaration.id || path.scope.generateUidIdentifier();
+            // $FlowFixMe Flow error uncovered by typing Babel more strictly
             const name = id.name;
 
-            declaration.node.id = id;
+            // $FlowFixMe Flow error uncovered by typing Babel more strictly
+            declaration.id = id;
             state.exportNamed.push({local: name, remote: name, loc});
           }
 
-          path.insertBefore(declaration.node);
+          path.insertBefore(declaration);
         }
 
+        const specifiers = path.node.specifiers;
         if (specifiers) {
           specifiers.forEach(s => {
-            const local = s.node.local;
-            const remote = s.node.exported;
+            // $FlowFixMe Flow error uncovered by typing Babel more strictly
+            const local = s.local;
+            const remote = s.exported;
 
             if (path.node.source) {
               const temp = path.scope.generateUidIdentifier(local.name);
@@ -259,7 +298,10 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                   withLocation(
                     importTemplate({
                       IMPORT: state.importDefault,
-                      FILE: resolvePath(path.node.source, state.opts.resolve),
+                      FILE: resolvePath(
+                        nullthrows(path.node.source),
+                        state.opts.resolve,
+                      ),
                       LOCAL: temp,
                     }),
                     loc,
@@ -275,7 +317,10 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                 path.insertBefore(
                   withLocation(
                     importNamedTemplate({
-                      FILE: resolvePath(path.node.source, state.opts.resolve),
+                      FILE: resolvePath(
+                        nullthrows(path.node.source),
+                        state.opts.resolve,
+                      ),
                       LOCAL: temp,
                       REMOTE: local,
                     }),
@@ -288,7 +333,10 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                 path.insertBefore(
                   withLocation(
                     importNamedTemplate({
-                      FILE: resolvePath(path.node.source, state.opts.resolve),
+                      FILE: resolvePath(
+                        nullthrows(path.node.source),
+                        state.opts.resolve,
+                      ),
                       LOCAL: temp,
                       REMOTE: local,
                     }),
@@ -319,13 +367,13 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
         path.remove();
       },
 
-      ImportDeclaration(path: Path, state: State): void {
+      ImportDeclaration(path: NodePath<ImportDeclaration>, state: State): void {
         if (path.node.importKind && path.node.importKind !== 'value') {
           return;
         }
 
-        const file = path.get('source').node;
-        const specifiers = path.get('specifiers');
+        const file = path.node.source;
+        const specifiers = path.node.specifiers;
         const loc = path.node.loc;
 
         if (!specifiers.length) {
@@ -342,8 +390,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
           if (
             specifiers.filter(
               s =>
-                s.node.type === 'ImportSpecifier' &&
-                s.get('imported').node.name !== 'default',
+                s.type === 'ImportSpecifier' && s.imported.name !== 'default',
             ).length > 1
           ) {
             sharedModuleImport = path.scope.generateUidIdentifierBasedOnNode(
@@ -361,10 +408,11 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
           }
 
           specifiers.forEach(s => {
-            const imported = s.get('imported').node;
-            const local = s.get('local').node;
+            // $FlowFixMe Flow error uncovered by typing Babel more strictly
+            const imported = s.imported;
+            const local = s.local;
 
-            switch (s.node.type) {
+            switch (s.type) {
               case 'ImportNamespaceSpecifier':
                 state.imports.push({
                   node: withLocation(
@@ -426,7 +474,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                 break;
 
               default:
-                throw new TypeError('Unknown import type: ' + s.node.type);
+                throw new TypeError('Unknown import type: ' + s.type);
             }
           });
         }
@@ -435,7 +483,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
       },
 
       Program: {
-        enter(path: Path, state: State): void {
+        enter(path: NodePath<Program>, state: State): void {
           state.exportAll = [];
           state.exportDefault = [];
           state.exportNamed = [];
@@ -445,17 +493,17 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
           state.importDefault = t.identifier(state.opts.importDefault);
         },
 
-        exit(path: Path, state: State): void {
+        exit(path: NodePath<Program>, state: State): void {
           const body = path.node.body;
 
           // state.imports = [node1, node2, node3, ...nodeN]
-          state.imports.reverse().forEach((e: {node: BabelNode}) => {
+          state.imports.reverse().forEach((e: {node: Statement}) => {
             // import nodes are added to the top of the program body
             body.unshift(e.node);
           });
 
           state.exportDefault.forEach(
-            (e: {local: string, loc: BabelSourceLocation, ...}) => {
+            (e: {local: string, loc: ?BabelSourceLocation, ...}) => {
               body.push(
                 withLocation(
                   exportTemplate({
@@ -469,7 +517,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
           );
 
           state.exportAll.forEach(
-            (e: {file: string, loc: BabelSourceLocation, ...}) => {
+            (e: {file: string, loc: ?BabelSourceLocation, ...}) => {
               body.push(
                 ...withLocation(
                   exportAllTemplate({
@@ -490,7 +538,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
             (e: {
               local: string,
               remote: string,
-              loc: BabelSourceLocation,
+              loc: ?BabelSourceLocation,
               ...
             }) => {
               body.push(

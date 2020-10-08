@@ -10,8 +10,9 @@
 
 'use strict';
 
-import type {Path} from '@babel/traverse';
-import type {Types} from '@babel/types';
+import type {NodePath} from '@babel/traverse';
+import typeof * as Types from '@babel/types';
+import type {CallExpression} from '@babel/types';
 
 type State = {|
   opts: {|
@@ -25,20 +26,27 @@ function reverseDependencyMapReferences({
 }: {
   types: Types,
   ...
-}): {|visitor: {|CallExpression: (path: Path, state: State) => void|}|} {
+}): {|
+  visitor: {|
+    CallExpression: (path: NodePath<CallExpression>, state: State) => void,
+  |},
+|} {
   return {
     visitor: {
-      CallExpression(path: Path, state: State) {
+      CallExpression(path: NodePath<CallExpression>, state: State) {
         const {node} = path;
 
         if (node.callee.name === `${state.opts.globalPrefix}__d`) {
+          // $FlowFixMe Flow error uncovered by typing Babel more strictly
           const lastArg = node.arguments[0].params.slice(-1)[0];
+          // $FlowFixMe Flow error uncovered by typing Babel more strictly
           const depMapName = lastArg && lastArg.name;
 
           if (!depMapName) {
             return;
           }
 
+          // $FlowFixMe Flow error uncovered by typing Babel more strictly
           const scope = path.get('arguments.0.body').scope;
           const binding = scope.getBinding(depMapName);
 

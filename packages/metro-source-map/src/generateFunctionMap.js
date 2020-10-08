@@ -13,12 +13,39 @@
 const B64Builder = require('./B64Builder');
 
 const fsPath = require('path');
+const nullthrows = require('nullthrows');
 const t = require('@babel/types');
 
 import type {FBSourceFunctionMap} from './source-map';
 import type {Ast} from '@babel/core';
 import traverse from '@babel/traverse';
-import type {Path} from '@babel/traverse';
+import type {NodePath} from '@babel/traverse';
+import {
+  isProgram,
+  isIdentifier,
+  isJSXIdentifier,
+  isCallExpression,
+  isNewExpression,
+  isTypeCastExpression,
+  isRegExpLiteral,
+  isTemplateLiteral,
+  isLiteral,
+  isObjectMethod,
+  isClassMethod,
+  isObjectProperty,
+  isClassProperty,
+  isVariableDeclarator,
+  isAssignmentExpression,
+  isJSXExpressionContainer,
+  isJSXElement,
+  isJSXAttribute,
+  isNullLiteral,
+  isImport,
+  isClassBody,
+  isObjectExpression,
+} from '@babel/types';
+import type {Node} from '@babel/types';
+
 type Position = {
   line: number,
   column: number,
@@ -89,7 +116,7 @@ function forEachMapping(
     tailPos = pos;
   }
 
-  function pushFrame(name, loc) {
+  function pushFrame(name: string, loc: BabelNodeSourceLocation) {
     advanceToPos(loc.start);
     nameStack.unshift({name, loc});
   }
@@ -111,19 +138,24 @@ function forEachMapping(
     ? fsPath.basename(context.filename).replace(/\..+$/, '')
     : null;
 
-  traverse(ast, {
-    'Function|Program|Class': {
-      enter(path) {
-        let name = getNameForPath(path);
-        if (basename) {
-          name = removeNamePrefix(name, basename);
-        }
-        pushFrame(name, path.node.loc);
-      },
-      exit(path) {
-        popFrame();
-      },
+  const visitor = {
+    enter(path): void {
+      let name = getNameForPath(path);
+      if (basename) {
+        name = removeNamePrefix(name, basename);
+      }
+
+      pushFrame(name, nullthrows(path.node.loc));
     },
+    exit(path): void {
+      popFrame();
+    },
+  };
+
+  traverse(ast, {
+    Function: visitor,
+    Program: visitor,
+    Class: visitor,
   });
 }
 
@@ -134,48 +166,53 @@ const CALLEES_TO_SKIP = ['Object.freeze'];
  * Derive a contextual name for the given AST node (Function, Program, Class or
  * ObjectExpression).
  */
-function getNameForPath(path: Path): string {
+function getNameForPath(path: NodePath<>): string {
   const {node, parent, parentPath} = path;
-  if (t.isProgram(node)) {
+  if (isProgram(node)) {
     return '<global>';
   }
-  let {id} = path;
+
+  let {id} = (path: any);
   // has an `id` so we don't need to infer one
   if (node.id) {
+    // $FlowFixMe Flow error uncovered by typing Babel more strictly
     return node.id.name;
   }
   let propertyPath;
   let kind = '';
-  if (t.isObjectMethod(node) || t.isClassMethod(node)) {
+  if (isObjectMethod(node) || isClassMethod(node)) {
     id = node.key;
     if (node.kind !== 'method' && node.kind !== 'constructor') {
       kind = node.kind;
     }
     propertyPath = path;
-  } else if (t.isObjectProperty(parent) || t.isClassProperty(parent)) {
+  } else if (isObjectProperty(parent) || isClassProperty(parent)) {
     // { foo() {} };
     id = parent.key;
     propertyPath = parentPath;
-  } else if (t.isVariableDeclarator(parent)) {
+  } else if (isVariableDeclarator(parent)) {
     // let foo = function () {};
     id = parent.id;
-  } else if (t.isAssignmentExpression(parent)) {
+  } else if (isAssignmentExpression(parent)) {
     // foo = function () {};
     id = parent.left;
-  } else if (t.isJSXExpressionContainer(parent)) {
-    if (t.isJSXElement(parentPath.parentPath.node)) {
+  } else if (isJSXExpressionContainer(parent)) {
+    if (isJSXElement(parentPath.parentPath.node)) {
       // <foo>{function () {}}</foo>
       const openingElement = parentPath.parentPath.node.openingElement;
-      id = t.JSXMemberExpression(
-        t.JSXMemberExpression(openingElement.name, t.JSXIdentifier('props')),
-        t.JSXIdentifier('children'),
+      id = t.jsxMemberExpression(
+        // $FlowFixMe Flow error uncovered by typing Babel more strictly
+        t.jsxMemberExpression(openingElement.name, t.jsxIdentifier('props')),
+        t.jsxIdentifier('children'),
       );
-    } else if (t.isJSXAttribute(parentPath.parentPath.node)) {
+    } else if (isJSXAttribute(parentPath.parentPath.node)) {
       // <foo bar={function () {}} />
       const openingElement = parentPath.parentPath.parentPath.node;
       const prop = parentPath.parentPath.node;
-      id = t.JSXMemberExpression(
-        t.JSXMemberExpression(openingElement.name, t.JSXIdentifier('props')),
+      id = t.jsxMemberExpression(
+        // $FlowFixMe Flow error uncovered by typing Babel more strictly
+        t.jsxMemberExpression(openingElement.name, t.jsxIdentifier('props')),
+        // $FlowFixMe Flow error uncovered by typing Babel more strictly
         prop.name,
       );
     }
@@ -184,7 +221,7 @@ function getNameForPath(path: Path): string {
   let name = getNameFromId(id);
 
   if (name == null) {
-    if (t.isCallExpression(parent) || t.isNewExpression(parent)) {
+    if (isCallExpression(parent) || isNewExpression(parent)) {
       // foo(function () {})
       const argIndex = parent.arguments.indexOf(node);
       if (argIndex !== -1) {
@@ -198,7 +235,7 @@ function getNameForPath(path: Path): string {
         }
       }
     }
-    if (t.isTypeCastExpression(parent) && parent.expression === node) {
+    if (isTypeCastExpression(parent) && parent.expression === node) {
       return getNameForPath(parentPath);
     }
     return ANONYMOUS_NAME;
@@ -209,13 +246,14 @@ function getNameForPath(path: Path): string {
   }
 
   if (propertyPath) {
-    if (t.isClassBody(propertyPath.parent)) {
+    if (isClassBody(propertyPath.parent)) {
       const className = getNameForPath(propertyPath.parentPath.parentPath);
       if (className !== ANONYMOUS_NAME) {
+        // $FlowFixMe Flow error uncovered by typing Babel more strictly
         const separator = propertyPath.node.static ? '.' : '#';
         name = className + separator + name;
       }
-    } else if (t.isObjectExpression(propertyPath.parent)) {
+    } else if (isObjectExpression(propertyPath.parent)) {
       const objectName = getNameForPath(propertyPath.parentPath);
       if (objectName !== ANONYMOUS_NAME) {
         name = objectName + '.' + name;
@@ -226,15 +264,17 @@ function getNameForPath(path: Path): string {
   return name;
 }
 
-function isAnyMemberExpression(node: Ast): boolean {
-  return t.isMemberExpression(node) || t.isJSXMemberExpression(node);
+function isAnyMemberExpression(node: Node): boolean %checks {
+  return (
+    node.type === 'MemberExpression' || node.type === 'JSXMemberExpression'
+  );
 }
 
-function isAnyIdentifier(node: Ast): boolean {
-  return t.isIdentifier(node) || t.isJSXIdentifier(node);
+function isAnyIdentifier(node: Node): boolean %checks {
+  return isIdentifier(node) || isJSXIdentifier(node);
 }
 
-function getNameFromId(id: Ast): ?string {
+function getNameFromId(id: Node): ?string {
   const parts = getNamePartsFromId(id);
 
   if (!parts.length) {
@@ -254,16 +294,16 @@ function getNameFromId(id: Ast): ?string {
   return parts.join('.');
 }
 
-function getNamePartsFromId(id: Ast): $ReadOnlyArray<string> {
+function getNamePartsFromId(id: Node): $ReadOnlyArray<string> {
   if (!id) {
     return [];
   }
 
-  if (t.isCallExpression(id) || t.isNewExpression(id)) {
+  if (isCallExpression(id) || isNewExpression(id)) {
     return getNamePartsFromId(id.callee);
   }
 
-  if (t.isTypeCastExpression(id)) {
+  if (isTypeCastExpression(id)) {
     return getNamePartsFromId(id.expression);
   }
 
@@ -271,21 +311,21 @@ function getNamePartsFromId(id: Ast): $ReadOnlyArray<string> {
 
   if (isAnyIdentifier(id)) {
     name = id.name;
-  } else if (t.isNullLiteral(id)) {
+  } else if (isNullLiteral(id)) {
     name = 'null';
-  } else if (t.isRegExpLiteral(id)) {
-    name = `_${id.pattern}_${id.flags}`;
-  } else if (t.isTemplateLiteral(id)) {
+  } else if (isRegExpLiteral(id)) {
+    name = `_${id.pattern}_${id.flags ?? ''}`;
+  } else if (isTemplateLiteral(id)) {
     name = id.quasis.map(quasi => quasi.value.raw).join('');
-  } else if (t.isLiteral(id) && id.value != null) {
-    name = id.value + '';
+  } else if (isLiteral(id) && id.value != null) {
+    name = String(id.value);
   }
 
   if (name != null) {
     return [t.toBindingIdentifierName(name)];
   }
 
-  if (t.isImport(id)) {
+  if (isImport(id)) {
     name = 'import';
   }
 
@@ -297,7 +337,7 @@ function getNamePartsFromId(id: Ast): $ReadOnlyArray<string> {
     if (
       isAnyIdentifier(id.object) &&
       id.object.name === 'Symbol' &&
-      (isAnyIdentifier(id.property) || t.isLiteral(id.property))
+      (isAnyIdentifier(id.property) || isLiteral(id.property))
     ) {
       const propertyName = getNameFromId(id.property);
       if (propertyName) {

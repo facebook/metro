@@ -12,9 +12,17 @@
 
 const createInlinePlatformChecks = require('./utils/createInlinePlatformChecks');
 
-import type {Ast} from '@babel/core';
-import type {Path} from '@babel/traverse';
-import type {Types} from '@babel/types';
+import type {NodePath} from '@babel/traverse';
+// type only import. No runtime dependency
+// eslint-disable-next-line import/no-extraneous-dependencies
+import typeof * as Types from '@babel/types';
+import type {
+  Node,
+  CallExpression,
+  Identifier,
+  MemberExpression,
+  ObjectExpression,
+} from '@babel/types';
 
 export type Options = {
   dev: boolean,
@@ -29,9 +37,9 @@ type State = {opts: Options, ...};
 
 export type Visitors = {|
   visitor: {|
-    CallExpression: (path: Path, state: State) => void,
-    Identifier: (path: Path, state: State) => void,
-    MemberExpression: (path: Path, state: State) => void,
+    CallExpression: (path: NodePath<CallExpression>, state: State) => void,
+    Identifier: (path: NodePath<Identifier>, state: State) => void,
+    MemberExpression: (path: NodePath<MemberExpression>, state: State) => void,
   |},
 |};
 
@@ -45,6 +53,15 @@ function inlinePlugin(
   {types: t}: {types: Types, ...},
   options: Options,
 ): Visitors {
+  const {
+    isAssignmentExpression,
+    isIdentifier,
+    isStringLiteral,
+    isMemberExpression,
+    isObjectProperty,
+    isSpreadElement,
+    isObjectExpression,
+  } = t;
   const {isPlatformNode, isPlatformSelectNode} = createInlinePlatformChecks(
     t,
     options.requireName || 'require',
@@ -57,60 +74,65 @@ function inlinePlugin(
   const isGlobalOrFlowDeclared = binding =>
     isGlobal(binding) || isFlowDeclared(binding);
 
-  const isLeftHandSideOfAssignmentExpression = (node: Ast, parent) =>
-    t.isAssignmentExpression(parent) && parent.left === node;
+  const isLeftHandSideOfAssignmentExpression = (node: Node, parent: Node) =>
+    isAssignmentExpression(parent) && parent.left === node;
 
-  const isProcessEnvNodeEnv = (node: Ast, scope) =>
-    t.isIdentifier(node.property, nodeEnv) &&
-    t.isMemberExpression(node.object) &&
-    t.isIdentifier(node.object.property, env) &&
-    t.isIdentifier(node.object.object, processId) &&
+  const isProcessEnvNodeEnv = (node: MemberExpression, scope) =>
+    isIdentifier(node.property, nodeEnv) &&
+    isMemberExpression(node.object) &&
+    isIdentifier(node.object.property, env) &&
+    isIdentifier(node.object.object, processId) &&
     isGlobal(scope.getBinding(processId.name));
 
-  const isDev = (node: Ast, parent, scope) =>
-    t.isIdentifier(node, dev) &&
+  const isDev = (node: Identifier, parent: Node, scope) =>
+    isIdentifier(node, dev) &&
     isGlobalOrFlowDeclared(scope.getBinding(dev.name)) &&
-    !t.isMemberExpression(parent) &&
+    !isMemberExpression(parent) &&
     // not { __DEV__: 'value'}
-    (!t.isObjectProperty(parent) || parent.value === node);
+    (!isObjectProperty(parent) || parent.value === node);
 
-  function findProperty(objectExpression, key: string, fallback) {
-    const property = objectExpression.properties.find(p => {
-      if (t.isIdentifier(p.key) && p.key.name === key) {
-        return true;
+  function findProperty(
+    objectExpression: ObjectExpression,
+    key: string,
+    fallback,
+  ) {
+    let value = null;
+
+    for (const p of objectExpression.properties) {
+      if (!isObjectProperty(p)) {
+        continue;
       }
 
-      if (t.isStringLiteral(p.key) && p.key.value === key) {
-        return true;
+      if (
+        (isIdentifier(p.key) && p.key.name === key) ||
+        (isStringLiteral(p.key) && p.key.value === key)
+      ) {
+        value = p.value;
+        break;
       }
-
-      return false;
-    });
-    return property ? property.value : fallback();
-  }
-
-  function hasStaticProperties(objectExpression): boolean {
-    if (!t.isObjectExpression(objectExpression)) {
-      return false;
     }
 
+    return value ?? fallback();
+  }
+
+  function hasStaticProperties(objectExpression: ObjectExpression): boolean {
     return objectExpression.properties.every(p => {
-      if (p.computed) {
+      if (p.computed || isSpreadElement(p)) {
         return false;
       }
 
-      return t.isIdentifier(p.key) || t.isStringLiteral(p.key);
+      return isIdentifier(p.key) || isStringLiteral(p.key);
     });
   }
 
   return {
     visitor: {
-      Identifier(path: Path, state: State): void {
+      Identifier(path: NodePath<Identifier>, state: State): void {
         if (!state.opts.dev && isDev(path.node, path.parent, path.scope)) {
           path.replaceWith(t.booleanLiteral(state.opts.dev));
         }
       },
-      MemberExpression(path: Path, state: State): void {
+      MemberExpression(path: NodePath<MemberExpression>, state: State): void {
         const node = path.node;
         const scope = path.scope;
         const opts = state.opts;
@@ -128,7 +150,7 @@ function inlinePlugin(
           }
         }
       },
-      CallExpression(path: Path, state: State): void {
+      CallExpression(path: NodePath<CallExpression>, state: State): void {
         const node = path.node;
         const scope = path.scope;
         const arg = node.arguments[0];
@@ -136,7 +158,8 @@ function inlinePlugin(
 
         if (
           opts.inlinePlatform &&
-          isPlatformSelectNode(node, scope, !!opts.isWrapped)
+          isPlatformSelectNode(node, scope, !!opts.isWrapped) &&
+          isObjectExpression(arg)
         ) {
           if (hasStaticProperties(arg)) {
             const fallback = () =>

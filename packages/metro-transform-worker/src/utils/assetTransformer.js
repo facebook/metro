@@ -15,14 +15,14 @@ const path = require('path');
 const {getAssetData} = require('metro/src/Assets');
 const {generateAssetCodeFileAst} = require('metro/src/Bundler/util');
 
-import type {Ast} from '@babel/core';
+import type {File} from '@babel/types';
 import type {BabelTransformerArgs} from 'metro-babel-transformer';
 
 async function transform(
   {filename, options, src}: BabelTransformerArgs,
   assetRegistryPath: string,
   assetDataPlugins: $ReadOnlyArray<string>,
-): Promise<{ast: Ast, ...}> {
+): Promise<{ast: File, ...}> {
   options = options || {
     platform: '',
     projectRoot: '',

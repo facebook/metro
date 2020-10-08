@@ -14,6 +14,7 @@
 const babylon = require('@babel/parser');
 const collectDependencies = require('../collectDependencies');
 const dedent = require('dedent');
+const nullthrows = require('nullthrows');
 const t = require('@babel/types');
 
 const {codeFromAst, comparableCode} = require('../../test-helpers');
@@ -28,7 +29,7 @@ import type {
   InternalDependency,
   DependencyTransformer,
 } from '../collectDependencies';
-import type {Path} from '@babel/traverse';
+import type {NodePath} from '@babel/traverse';
 
 const {any, objectContaining} = expect;
 
@@ -776,7 +777,7 @@ class MockModuleDependencyRegistry<TSplitCondition>
 // prefetch -> require(async moudle name).prefetch(id, module name)
 const MockDependencyTransformer: DependencyTransformer<mixed> = {
   transformSyncRequire(
-    path: Path,
+    path: NodePath<>,
     dependency: InternalDependency<mixed>,
     state: State<mixed>,
   ): void {
@@ -789,7 +790,7 @@ const MockDependencyTransformer: DependencyTransformer<mixed> = {
   },
 
   transformImportCall(
-    path: Path,
+    path: NodePath<>,
     dependency: InternalDependency<mixed>,
     state: State<mixed>,
   ): void {
@@ -797,7 +798,7 @@ const MockDependencyTransformer: DependencyTransformer<mixed> = {
   },
 
   transformJSResource(
-    path: Path,
+    path: NodePath<>,
     dependency: InternalDependency<mixed>,
     state: State<mixed>,
   ): void {
@@ -805,14 +806,14 @@ const MockDependencyTransformer: DependencyTransformer<mixed> = {
   },
 
   transformPrefetch(
-    path: Path,
+    path: NodePath<>,
     dependency: InternalDependency<mixed>,
     state: State<mixed>,
   ): void {
     transformAsyncRequire(path, dependency, state, 'prefetch');
   },
 
-  transformIllegalDynamicRequire(path: Path, state: State<mixed>): void {
+  transformIllegalDynamicRequire(path: NodePath<>, state: State<mixed>): void {
     path.replaceWith(
       t.callExpression(t.identifier('requireIllegalDynamicRequire'), []),
     );
@@ -824,14 +825,14 @@ function createModuleIDExpression(
   state: State<mixed>,
 ) {
   return t.memberExpression(
-    state.dependencyMapIdentifier,
+    nullthrows(state.dependencyMapIdentifier),
     t.numericLiteral(dependency.index),
     true,
   );
 }
 
 function transformAsyncRequire(
-  path: Path,
+  path: NodePath<>,
   dependency: InternalDependency<mixed>,
   state: State<mixed>,
   methodName: string,
@@ -839,7 +840,7 @@ function transformAsyncRequire(
   const moduleID = createModuleIDExpression(dependency, state);
 
   const asyncRequireCall = t.callExpression(t.identifier('require'), [
-    state.asyncRequireModulePathStringLiteral,
+    nullthrows(state.asyncRequireModulePathStringLiteral),
   ]);
 
   path.replaceWith(

@@ -10,26 +10,33 @@
 
 'use strict';
 
+const invariant = require('invariant');
 const nullthrows = require('nullthrows');
 
 const generate = require('@babel/generator').default;
-const template = require('@babel/template').default;
+const template = require('@babel/template');
 const traverse = require('@babel/traverse').default;
 const types = require('@babel/types');
 
+const {isImport} = types;
+
 import type {Ast} from '@babel/core';
-import type {Path} from '@babel/traverse';
+import type {NodePath} from '@babel/traverse';
+import type {
+  CallExpression,
+  Program,
+  Identifier,
+  StringLiteral,
+} from '@babel/types';
 import type {
   AllowOptionalDependencies,
   AsyncDependencyType,
 } from 'metro/src/DeltaBundler/types.flow.js';
 
-opaque type Identifier = any;
-
 type ImportDependencyOptions = $ReadOnly<{
   asyncType: AsyncDependencyType,
   jsResource?: boolean,
-  splitCondition?: Path,
+  splitCondition?: NodePath<>,
 }>;
 
 export type Dependency<TSplitCondition> = $ReadOnly<{
@@ -58,7 +65,7 @@ export type InternalDependency<TSplitCondition> = $ReadOnly<
 >;
 
 export type State<TSplitCondition> = {
-  asyncRequireModulePathStringLiteral: ?Identifier,
+  asyncRequireModulePathStringLiteral: ?StringLiteral,
   dependencyCalls: Set<string>,
   dependencyRegistry: ModuleDependencyRegistry<TSplitCondition>,
   dependencyTransformer: DependencyTransformer<TSplitCondition>,
@@ -98,27 +105,27 @@ export interface ModuleDependencyRegistry<+TSplitCondition> {
 
 export interface DependencyTransformer<-TSplitCondition> {
   transformSyncRequire(
-    path: Path,
+    path: NodePath<CallExpression>,
     dependency: InternalDependency<TSplitCondition>,
     state: State<TSplitCondition>,
   ): void;
   transformImportCall(
-    path: Path,
+    path: NodePath<>,
     dependency: InternalDependency<TSplitCondition>,
     state: State<TSplitCondition>,
   ): void;
   transformJSResource(
-    path: Path,
+    path: NodePath<>,
     dependency: InternalDependency<TSplitCondition>,
     state: State<TSplitCondition>,
   ): void;
   transformPrefetch(
-    path: Path,
+    path: NodePath<>,
     dependency: InternalDependency<TSplitCondition>,
     state: State<TSplitCondition>,
   ): void;
   transformIllegalDynamicRequire(
-    path: Path,
+    path: NodePath<>,
     state: State<TSplitCondition>,
   ): void;
 }
@@ -154,15 +161,18 @@ function collectDependencies<TSplitCondition = void>(
   };
 
   const visitor = {
-    CallExpression(path: Path, state: State<TSplitCondition>) {
+    CallExpression(
+      path: NodePath<CallExpression>,
+      state: State<TSplitCondition>,
+    ): void {
       if (visited.has(path.node)) {
         return;
       }
 
-      const callee = path.get('callee');
-      const name = callee.node.name;
+      const callee = path.node.callee;
+      const name = callee.type === 'Identifier' ? callee.name : null;
 
-      if (callee.isImport()) {
+      if (isImport(callee)) {
         processImportCall(path, state, {
           asyncType: 'async',
         });
@@ -188,15 +198,22 @@ function collectDependencies<TSplitCondition = void>(
         name === '__conditionallySplitJSResource' &&
         !path.scope.getBinding(name)
       ) {
+        const args = path.get('arguments');
+        invariant(Array.isArray(args), 'Expected arguments to be an array');
+
         processImportCall(path, state, {
           asyncType: 'async',
           jsResource: true,
-          splitCondition: path.get('arguments')[1],
+          splitCondition: args[1],
         });
         return;
       }
 
-      if (state.dependencyCalls.has(name) && !path.scope.getBinding(name)) {
+      if (
+        name != null &&
+        state.dependencyCalls.has(name) &&
+        !path.scope.getBinding(name)
+      ) {
         processRequireCall(path, state);
         visited.add(path.node);
       }
@@ -206,7 +223,7 @@ function collectDependencies<TSplitCondition = void>(
     ExportNamedDeclaration: collectImports,
     ExportAllDeclaration: collectImports,
 
-    Program(path: Path, state: State<TSplitCondition>) {
+    Program(path: NodePath<Program>, state: State<TSplitCondition>): void {
       state.asyncRequireModulePathStringLiteral = types.stringLiteral(
         options.asyncRequireModulePath,
       );
@@ -246,9 +263,9 @@ function collectDependencies<TSplitCondition = void>(
 }
 
 function collectImports<TSplitCondition>(
-  path: Path,
+  path: NodePath<>,
   state: State<TSplitCondition>,
-) {
+): void {
   if (path.node.source) {
     registerDependency(
       state,
@@ -263,7 +280,7 @@ function collectImports<TSplitCondition>(
 }
 
 function processImportCall<TSplitCondition>(
-  path: Path,
+  path: NodePath<CallExpression>,
   state: State<TSplitCondition>,
   options: ImportDependencyOptions,
 ): void {
@@ -296,7 +313,7 @@ function processImportCall<TSplitCondition>(
 }
 
 function processRequireCall<TSplitCondition>(
-  path: Path,
+  path: NodePath<CallExpression>,
   state: State<TSplitCondition>,
 ): void {
   const name = getModuleNameFromCallArgs(path);
@@ -325,7 +342,7 @@ function processRequireCall<TSplitCondition>(
   transformer.transformSyncRequire(path, dep, state);
 }
 
-function getNearestLocFromPath(path: Path): ?BabelSourceLocation {
+function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
   while (path && !path.node.loc) {
     path = path.parentPath;
   }
@@ -335,14 +352,14 @@ function getNearestLocFromPath(path: Path): ?BabelSourceLocation {
 export type ImportQualifier = $ReadOnly<{
   name: string,
   asyncType: AsyncDependencyType | null,
-  splitCondition?: Path,
+  splitCondition?: NodePath<>,
   optional: boolean,
 }>;
 
 function registerDependency<TSplitCondition>(
   state: State<TSplitCondition>,
   qualifier: ImportQualifier,
-  path: Path,
+  path: NodePath<>,
 ): InternalDependency<TSplitCondition> {
   const dependency = state.dependencyRegistry.registerDependency(qualifier);
 
@@ -356,13 +373,13 @@ function registerDependency<TSplitCondition>(
 
 function isOptionalDependency<TSplitCondition>(
   name: string,
-  path: Path,
+  path: NodePath<>,
   state: State<TSplitCondition>,
 ): boolean {
   const {allowOptionalDependencies} = state;
 
   // The async require module is a 'built-in'. Resolving should never fail -> treat it as non-optional.
-  if (name === state.asyncRequireModulePathStringLiteral?.name) {
+  if (name === state.asyncRequireModulePathStringLiteral?.value) {
     return false;
   }
 
@@ -392,14 +409,15 @@ function isOptionalDependency<TSplitCondition>(
   return false;
 }
 
-function getModuleNameFromCallArgs(path: Path): ?string {
+function getModuleNameFromCallArgs(path: NodePath<CallExpression>): ?string {
   const expectedCount =
     path.node.callee.name === '__conditionallySplitJSResource' ? 2 : 1;
-  if (path.get('arguments').length !== expectedCount) {
+  const args = path.get('arguments');
+  if (!Array.isArray(args) || args.length !== expectedCount) {
     throw new InvalidRequireCallError(path);
   }
 
-  const result = path.get('arguments.0').evaluate();
+  const result = args[0].evaluate();
 
   if (result.confident && typeof result.value === 'string') {
     return result.value;
@@ -426,7 +444,7 @@ collectDependencies.InvalidRequireCallError = InvalidRequireCallError;
  * is reached. This makes dynamic require errors catchable by libraries that
  * want to use them.
  */
-const dynamicRequireErrorTemplate = template(`
+const dynamicRequireErrorTemplate = template.statement(`
   (function(line) {
     throw new Error(
       'Dynamic require defined at line ' + line + '; not supported by Metro',
@@ -438,21 +456,21 @@ const dynamicRequireErrorTemplate = template(`
  * Produces a Babel template that transforms an "import(...)" call into a
  * "require(...)" call to the asyncRequire specified.
  */
-const makeAsyncRequireTemplate = template(`
+const makeAsyncRequireTemplate = template.statement(`
   require(ASYNC_REQUIRE_MODULE_PATH)(MODULE_ID, MODULE_NAME)
 `);
 
-const makeAsyncPrefetchTemplate = template(`
+const makeAsyncPrefetchTemplate = template.statement(`
   require(ASYNC_REQUIRE_MODULE_PATH).prefetch(MODULE_ID, MODULE_NAME)
 `);
 
-const makeJSResourceTemplate = template(`
+const makeJSResourceTemplate = template.statement(`
   require(ASYNC_REQUIRE_MODULE_PATH).resource(MODULE_ID, MODULE_NAME)
 `);
 
 const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
   transformSyncRequire(
-    path: Path,
+    path: NodePath<CallExpression>,
     dependency: InternalDependency<mixed>,
     state: State<mixed>,
   ): void {
@@ -463,13 +481,15 @@ const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
   },
 
   transformImportCall(
-    path: Path,
+    path: NodePath<>,
     dependency: InternalDependency<mixed>,
     state: State<mixed>,
   ): void {
     path.replaceWith(
       makeAsyncRequireTemplate({
-        ASYNC_REQUIRE_MODULE_PATH: state.asyncRequireModulePathStringLiteral,
+        ASYNC_REQUIRE_MODULE_PATH: nullthrows(
+          state.asyncRequireModulePathStringLiteral,
+        ),
         MODULE_ID: createModuleIDExpression(dependency, state),
         MODULE_NAME: createModuleNameLiteral(dependency),
       }),
@@ -477,13 +497,15 @@ const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
   },
 
   transformJSResource(
-    path: Path,
+    path: NodePath<>,
     dependency: InternalDependency<mixed>,
     state: State<mixed>,
   ): void {
     path.replaceWith(
       makeJSResourceTemplate({
-        ASYNC_REQUIRE_MODULE_PATH: state.asyncRequireModulePathStringLiteral,
+        ASYNC_REQUIRE_MODULE_PATH: nullthrows(
+          state.asyncRequireModulePathStringLiteral,
+        ),
         MODULE_ID: createModuleIDExpression(dependency, state),
         MODULE_NAME: createModuleNameLiteral(dependency),
       }),
@@ -491,23 +513,25 @@ const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
   },
 
   transformPrefetch(
-    path: Path,
+    path: NodePath<>,
     dependency: InternalDependency<mixed>,
     state: State<mixed>,
   ): void {
     path.replaceWith(
       makeAsyncPrefetchTemplate({
-        ASYNC_REQUIRE_MODULE_PATH: state.asyncRequireModulePathStringLiteral,
+        ASYNC_REQUIRE_MODULE_PATH: nullthrows(
+          state.asyncRequireModulePathStringLiteral,
+        ),
         MODULE_ID: createModuleIDExpression(dependency, state),
         MODULE_NAME: createModuleNameLiteral(dependency),
       }),
     );
   },
 
-  transformIllegalDynamicRequire(path: Path, state: State<mixed>): void {
+  transformIllegalDynamicRequire(path: NodePath<>, state: State<mixed>): void {
     path.replaceWith(
       dynamicRequireErrorTemplate({
-        LINE: '' + path.node.loc.start.line,
+        LINE: types.numericLiteral(path.node.loc?.start.line ?? 0),
       }),
     );
   },
@@ -518,7 +542,7 @@ function createModuleIDExpression(
   state: State<mixed>,
 ) {
   return types.memberExpression(
-    state.dependencyMapIdentifier,
+    nullthrows(state.dependencyMapIdentifier),
     types.numericLiteral(dependency.index),
     true,
   );

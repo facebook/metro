@@ -17,7 +17,9 @@ import type {
   Options as InlinePluginOptions,
 } from './inline-plugin';
 import type {Ast} from '@babel/core';
-import type {Types} from '@babel/types';
+// Type only import, no runtime dependency
+// eslint-disable-next-line import/no-extraneous-dependencies
+import typeof * as Types from '@babel/types';
 
 type BabelPlugin<VisitorT, OptionsT> = (
   context: {types: Types, ...},

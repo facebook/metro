@@ -10,13 +10,14 @@
 
 'use strict';
 
-const template = require('@babel/template').default;
 const babelTypes = require('@babel/types');
 const babylon = require('@babel/parser');
+const nullthrows = require('nullthrows');
+const template = require('@babel/template');
 
 import type {AssetDataFiltered, AssetDataWithoutFiles} from '../Assets';
 import type {ModuleTransportLike} from '../shared/types.flow';
-import type {Ast} from '@babel/core';
+import type {File} from '@babel/types';
 
 // Structure of the object: dir.name.scale = asset
 export type RemoteFileMap = {
@@ -52,7 +53,7 @@ const assetPropertyBlockList = new Set(['files', 'fileSystemLocation', 'path']);
 function generateAssetCodeFileAst(
   assetRegistryPath: string,
   assetDescriptor: AssetDataWithoutFiles,
-): Ast {
+): File {
   const properDescriptor = filterObject(
     assetDescriptor,
     assetPropertyBlockList,
@@ -65,7 +66,7 @@ function generateAssetCodeFileAst(
   const t = babelTypes;
 
   // require('AssetRegistry').registerAsset({...})
-  const buildRequire = template(`
+  const buildRequire = template.statement(`
     module.exports = require(ASSET_REGISTRY_PATH).registerAsset(DESCRIPTOR_AST)
   `);
 
@@ -89,7 +90,7 @@ function generateRemoteAssetCodeFileAst(
   assetDescriptor: AssetDataWithoutFiles,
   remoteServer: string,
   remoteFileMap: RemoteFileMap,
-): ?Ast {
+): ?File {
   const t = babelTypes;
 
   const file = remoteFileMap[assetDescriptor.fileSystemLocation];
@@ -111,10 +112,10 @@ function generateRemoteAssetCodeFileAst(
   const URI = t.stringLiteral(remoteServer);
 
   // Size numbers.
-  const WIDTH = t.numericLiteral(assetDescriptor.width);
-  const HEIGHT = t.numericLiteral(assetDescriptor.height);
+  const WIDTH = t.numericLiteral(nullthrows(assetDescriptor.width));
+  const HEIGHT = t.numericLiteral(nullthrows(assetDescriptor.height));
 
-  const buildRequire = template(`
+  const buildRequire = template.statement(`
     module.exports = {
       "width": WIDTH,
       "height": HEIGHT,

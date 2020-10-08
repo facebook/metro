@@ -10,45 +10,66 @@
 
 'use strict';
 
-import type {Types} from '@babel/types';
+import type {Scope} from '@babel/traverse';
+// Type only import. No runtime dependency
+// eslint-disable-next-line import/no-extraneous-dependencies
+import typeof * as Types from '@babel/types';
+import type {MemberExpression, CallExpression} from '@babel/types';
 
 const importMap = new Map([['ReactNative', 'react-native']]);
+
+type PlatformChecks = {
+  isPlatformNode: (
+    node: MemberExpression,
+    scope: Scope,
+    isWrappedModule: boolean,
+  ) => boolean,
+  isPlatformSelectNode: (
+    node: CallExpression,
+    scope: Scope,
+    isWrappedModule: boolean,
+  ) => boolean,
+};
 
 function createInlinePlatformChecks(
   t: Types,
   requireName: string = 'require',
-): {|
-  isPlatformNode: (node: any, scope: any, isWrappedModule: boolean) => boolean,
-  isPlatformSelectNode: (
-    node: any,
-    scope: any,
-    isWrappedModule: boolean,
-  ) => boolean,
-|} {
+): PlatformChecks {
+  const {
+    isIdentifier,
+    isStringLiteral,
+    isNumericLiteral,
+    isMemberExpression,
+    isCallExpression,
+  } = t;
   const isPlatformNode = (
-    node: Object,
-    scope: Object,
+    node: MemberExpression,
+    scope: Scope,
     isWrappedModule: boolean,
   ): boolean =>
     isPlatformOS(node, scope, isWrappedModule) ||
     isReactPlatformOS(node, scope, isWrappedModule);
 
   const isPlatformSelectNode = (
-    node: Object,
-    scope: Object,
+    node: CallExpression,
+    scope: Scope,
     isWrappedModule: boolean,
   ): boolean =>
     isPlatformSelect(node, scope, isWrappedModule) ||
     isReactPlatformSelect(node, scope, isWrappedModule);
 
-  const isPlatformOS = (node, scope, isWrappedModule: boolean): boolean =>
-    t.isIdentifier(node.property, {name: 'OS'}) &&
+  const isPlatformOS = (
+    node: MemberExpression,
+    scope,
+    isWrappedModule: boolean,
+  ): boolean =>
+    isIdentifier(node.property, {name: 'OS'}) &&
     isImportOrGlobal(node.object, scope, [{name: 'Platform'}], isWrappedModule);
 
   const isReactPlatformOS = (node, scope, isWrappedModule: boolean): boolean =>
-    t.isIdentifier(node.property, {name: 'OS'}) &&
-    t.isMemberExpression(node.object) &&
-    t.isIdentifier(node.object.property, {name: 'Platform'}) &&
+    isIdentifier(node.property, {name: 'OS'}) &&
+    isMemberExpression(node.object) &&
+    isIdentifier(node.object.property, {name: 'Platform'}) &&
     isImportOrGlobal(
       node.object.object,
       scope,
@@ -57,8 +78,8 @@ function createInlinePlatformChecks(
     );
 
   const isPlatformSelect = (node, scope, isWrappedModule: boolean): boolean =>
-    t.isMemberExpression(node.callee) &&
-    t.isIdentifier(node.callee.property, {name: 'select'}) &&
+    isMemberExpression(node.callee) &&
+    isIdentifier(node.callee.property, {name: 'select'}) &&
     isImportOrGlobal(
       node.callee.object,
       scope,
@@ -67,14 +88,14 @@ function createInlinePlatformChecks(
     );
 
   const isReactPlatformSelect = (
-    node,
-    scope,
+    node: CallExpression,
+    scope: Scope,
     isWrappedModule: boolean,
   ): boolean =>
-    t.isMemberExpression(node.callee) &&
-    t.isIdentifier(node.callee.property, {name: 'select'}) &&
-    t.isMemberExpression(node.callee.object) &&
-    t.isIdentifier(node.callee.object.property, {name: 'Platform'}) &&
+    isMemberExpression(node.callee) &&
+    isIdentifier(node.callee.property, {name: 'select'}) &&
+    isMemberExpression(node.callee.object) &&
+    isIdentifier(node.callee.object.property, {name: 'Platform'}) &&
     isImportOrGlobal(
       node.callee.object.object,
       scope,
@@ -85,8 +106,8 @@ function createInlinePlatformChecks(
   const isGlobal = (binding): boolean => !binding;
 
   const isRequireCall = (node, dependencyId: string, scope): boolean =>
-    t.isCallExpression(node) &&
-    t.isIdentifier(node.callee, {name: requireName}) &&
+    isCallExpression(node) &&
+    isIdentifier(node.callee, {name: requireName}) &&
     checkRequireArgs(node.arguments, dependencyId);
 
   const isImport = (node, scope, patterns: Array<{|name: string|}>): boolean =>
@@ -102,7 +123,7 @@ function createInlinePlatformChecks(
     isWrappedModule: boolean,
   ): boolean => {
     const identifier = patterns.find((pattern: {|name: string|}) =>
-      t.isIdentifier(node, pattern),
+      isIdentifier(node, pattern),
     );
     return (
       (!!identifier &&
@@ -117,10 +138,10 @@ function createInlinePlatformChecks(
   const checkRequireArgs = (args, dependencyId: string): boolean => {
     const pattern = t.stringLiteral(dependencyId);
     return (
-      t.isStringLiteral(args[0], pattern) ||
-      (t.isMemberExpression(args[0]) &&
-        t.isNumericLiteral(args[0].property) &&
-        t.isStringLiteral(args[1], pattern))
+      isStringLiteral(args[0], pattern) ||
+      (isMemberExpression(args[0]) &&
+        isNumericLiteral(args[0].property) &&
+        isStringLiteral(args[1], pattern))
     );
   };
 

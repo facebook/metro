@@ -10,7 +10,7 @@
 
 'use strict';
 
-import type {BabelNode as BabelTypesNode} from '@babel/types';
+declare type BabelNode_DEPRECATED = any;
 
 type _BabelSourceMap = $ReadOnly<{
   file?: string,
@@ -45,13 +45,6 @@ type InlinePlugin = string | {...} | (() => {...});
 type _Plugins = Array<string | Object | [InlinePlugin] | [InlinePlugin, mixed]>;
 type InlinePreset = string | {...} | (() => {...});
 type _Presets = Array<string | Object | [InlinePreset] | [InlinePreset, mixed]>;
-
-type BabelNode = BabelTypesNode;
-
-type BabelPath = {
-  node: BabelNode,
-  [property: string]: any,
-};
 
 export type GeneratorResult = {
   code: string,
@@ -243,57 +236,34 @@ declare module '@babel/generator' {
 }
 
 declare module '@babel/template' {
-  declare type TemplateArgs = {[tokenName: string]: mixed, ...};
-  declare type Templatable = (args?: TemplateArgs) => BabelNode;
-  declare export default (
+  import type {Node, Statement, Expression, Program} from '@babel/types';
+  declare type TemplateArgs = {[tokenName: string]: Node};
+  declare type Templatable<TResult> = (args?: TemplateArgs) => TResult;
+
+  declare export function smart(
     template: string,
     options?: TemplateOptions,
-  ) => Templatable;
+  ): Templatable<Statement | Array<Statement>>;
+
+  declare export default typeof smart;
+
   declare export function expression(
     template: string,
     options?: TemplateOptions,
-  ): Templatable;
+  ): Templatable<Expression>;
+
+  declare export function statement(
+    template: string,
+    options?: TemplateOptions,
+  ): Templatable<Statement>;
+
   declare export function statements(
     template: string,
     options?: TemplateOptions,
-  ): Templatable;
-}
+  ): Templatable<Array<Statement>>;
 
-declare module '@babel/types' {
-  declare export type BabelNode = {
-    leadingComments?: Array<BabelNodeComment>,
-    innerComments?: Array<BabelNodeComment>,
-    trailingComments?: Array<BabelNodeComment>,
-    start: ?number,
-    end: ?number,
-    loc: ?BabelNodeSourceLocation,
-    [property: string]: any,
-  };
-
-  declare export type Types = {
-    [key: string]: Function,
-  };
-
-  declare module.exports: Types;
-}
-
-declare module '@babel/traverse' {
-  declare export type Path = BabelPath;
-
-  declare export type Visitor<TState> = {
-    [prop: string]:
-      | ((path: Path, state: TState) => void)
-      | {
-          enter?: (path: Path, state: TState) => void,
-          exit?: (path: Path, state: TState) => void,
-        },
-  };
-
-  declare export default (
-    ast: BabelNode | Array<BabelNode>,
-    visitor: BabelVisitor<any>,
-    scope?: ?Object,
-    state?: ?Object,
-    parentPath?: ?Object,
-  ) => void;
+  declare export function program(
+    template: string,
+    options?: TemplateOptions,
+  ): Templatable<Program>;
 }

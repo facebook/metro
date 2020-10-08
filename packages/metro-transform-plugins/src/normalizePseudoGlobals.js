@@ -13,27 +13,31 @@
 const traverse = require('@babel/traverse').default;
 
 import type {Ast} from '@babel/core';
-import type {Path} from '@babel/traverse';
+import type {NodePath} from '@babel/traverse';
+import type {Program} from '@babel/types';
 
 function normalizePseudoglobals(ast: Ast): $ReadOnlyArray<string> {
-  let pseudoglobals = [];
+  let pseudoglobals: Array<string> = [];
   const reserved = [];
   let params = null;
-  let body = null;
+  let body: ?NodePath<> = null;
 
   traverse(ast, {
     Program: {
-      enter(path: Path): void {
+      enter(path: NodePath<Program>): void {
         params = path.get('body.0.expression.arguments.0.params');
-        body = path.get('body.0.expression.arguments.0.body');
+        const bodyPath = path.get('body.0.expression.arguments.0.body');
 
-        if (!body || !(params instanceof Array)) {
+        if (!bodyPath || Array.isArray(bodyPath) || !Array.isArray(params)) {
           params = null;
           body = null;
 
           return;
+        } else {
+          body = bodyPath;
         }
 
+        // $FlowFixMe Flow error uncovered by typing Babel more strictly
         pseudoglobals = params.map(path => path.node.name);
 
         for (let i = 0; i < pseudoglobals.length; i++) {
@@ -66,7 +70,7 @@ function normalizePseudoglobals(ast: Ast): $ReadOnlyArray<string> {
         }
       },
 
-      exit(path: Path): void {
+      exit(path: NodePath<>): void {
         reserved.forEach((shortName: string, i: number) => {
           if (pseudoglobals[i] && shortName && body && params) {
             body.scope.rename(pseudoglobals[i], shortName);
@@ -75,7 +79,7 @@ function normalizePseudoglobals(ast: Ast): $ReadOnlyArray<string> {
       },
     },
 
-    Scope(path: Path): void {
+    Scope(path: NodePath<>): void {
       path.scope.crawl();
 
       if (body && params && path.node !== body.node) {

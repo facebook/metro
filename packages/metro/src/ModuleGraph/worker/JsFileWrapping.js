@@ -10,31 +10,34 @@
 
 'use strict';
 
+const invariant = require('invariant');
 const t = require('@babel/types');
-const template = require('@babel/template').default;
+const template = require('@babel/template');
 const traverse = require('@babel/traverse').default;
 
 import type {Ast} from '@babel/core';
+import type {Program, FunctionExpression, Identifier} from '@babel/types';
 
 const WRAP_NAME = '$$_REQUIRE'; // note: babel will prefix this with _
 
 // Check first the `global` variable as the global object. This way serializers
 // can create a local variable called global to fake it as a global object
 // without having to pollute the window object on web.
-const IIFE_PARAM = template(
+const IIFE_PARAM = template.expression(
   "typeof globalThis !== 'undefined' ? globalThis : typeof global !== 'undefined' ? global : typeof window !== 'undefined' ? window : this",
 );
 
 function wrapModule(
-  fileAst: Ast,
+  fileAst: BabelNode,
   importDefaultName: string,
   importAllName: string,
   dependencyMapName: string,
   globalPrefix: string,
 ): {
-  ast: Ast,
+  ast: BabelNode,
   requireName: string,
 } {
+  invariant(fileAst.type === 'File', 'Expected file ast node');
   const params = buildParameters(
     importDefaultName,
     importAllName,
@@ -49,10 +52,11 @@ function wrapModule(
   return {ast, requireName};
 }
 
-function wrapPolyfill(fileAst: Ast): Ast {
+function wrapPolyfill(fileAst: BabelNode): Ast {
+  invariant(fileAst.type === 'File', 'Expected file ast node');
   const factory = functionFromProgram(fileAst.program, ['global']);
 
-  const iife = t.callExpression(factory, [IIFE_PARAM().expression]);
+  const iife = t.callExpression(factory, [IIFE_PARAM()]);
   return t.file(t.program([t.expressionStatement(iife)]));
 }
 
@@ -76,17 +80,17 @@ function wrapJson(source: string, globalPrefix: string): string {
 }
 
 function functionFromProgram(
-  program: Ast,
+  program: Program,
   parameters: $ReadOnlyArray<string>,
-): Ast {
+): FunctionExpression {
   return t.functionExpression(
-    null,
+    undefined,
     parameters.map(makeIdentifier),
     t.blockStatement(program.body, program.directives),
   );
 }
 
-function makeIdentifier(name: string): Ast {
+function makeIdentifier(name: string): Identifier {
   return t.identifier(name);
 }
 
