@@ -50,12 +50,12 @@ function config(onlyList, options) {
 
 /**
  * We use absolute paths for matching only the top-level folders reliably. For
- * example, we would not want to match some deeply nested forder that happens to
+ * example, we would not want to match some deeply nested folder that happens to
  * have the same name as one of `BABEL_ENABLED_PATHS`.
  */
 function buildRegExps(basePath, dirPaths) {
   return dirPaths.map(folderPath =>
-    // Babel cares about windows/unix paths since v7b44
+    // Babel cares about Windows/Unix paths since v7b44
     // https://github.com/babel/babel/issues/8184
     // basePath + path.sep + dirPath/dirRegex
     // /home/name/webroot/js + / + relative/path/to/exclude
@@ -63,7 +63,7 @@ function buildRegExps(basePath, dirPaths) {
     folderPath instanceof RegExp
       ? new RegExp(
           `^${escapeRegExp(path.resolve(basePath, '.') + path.sep)}${
-            folderPath.source // This is actual regex, don't escape it
+            folderPath.source // This is an actual regex value, don't escape it.
           }`,
           folderPath.flags,
         )
