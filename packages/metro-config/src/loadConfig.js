@@ -62,21 +62,18 @@ const isFile = filePath =>
   fs.existsSync(filePath) && !fs.lstatSync(filePath).isDirectory();
 
 const resolve = filePath => {
-  if (!path.isAbsolute(filePath)) {
-    try {
-      return require.resolve(filePath);
-    } catch (error) {
-      if (error.code !== 'MODULE_NOT_FOUND') {
-        throw error;
-      }
-    }
-
-    const possiblePath = path.resolve(process.cwd(), filePath);
-    if (isFile(possiblePath)) {
-      return possiblePath;
+  // Attempt to resolve the path with the node resolution algorithm but fall back to resolving
+  // the file relative to the current working directory if the input is not an absolute path.
+  try {
+    return require.resolve(filePath);
+  } catch (error) {
+    if (path.isAbsolute(filePath) || error.code !== 'MODULE_NOT_FOUND') {
+      throw error;
     }
   }
-  return filePath;
+
+  const possiblePath = path.resolve(process.cwd(), filePath);
+  return isFile(possiblePath) ? possiblePath : filePath;
 };
 
 async function resolveConfig(

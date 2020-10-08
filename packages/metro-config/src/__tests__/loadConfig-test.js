@@ -71,7 +71,7 @@ describe('loadConfig', () => {
     });
   });
 
-  it('can load the config with a path', async () => {
+  it('can load the config from a path', async () => {
     const config = defaultConfig => ({
       ...defaultConfig,
       projectRoot: '/',
@@ -86,6 +86,42 @@ describe('loadConfig', () => {
     // We don't actually use the specified file in this test but it needs to
     // resolve to a real file on the file system.
     const result = await loadConfig({config: './__tests__/loadConfig-test.js'});
+
+    const relativizedResult = {
+      ...result,
+      transformer: {
+        ...result.transformer,
+        // Remove absolute paths from the result.
+        babelTransformerPath: path.relative(
+          path.join(
+            require.resolve('metro-babel-transformer'),
+            '..',
+            '..',
+            '..',
+          ),
+          result.transformer.babelTransformerPath,
+        ),
+      },
+    };
+    expect(relativizedResult).toMatchSnapshot();
+    expect(cosmiconfig.hasLoadBeenCalled()).toBeTruthy();
+  });
+
+  it('can load the config from a path pointing to a directory', async () => {
+    const config = defaultConfig => ({
+      ...defaultConfig,
+      projectRoot: '/',
+      reporter: null,
+      maxWorkers: 2,
+      cacheStores: [],
+      transformerPath: '',
+    });
+
+    cosmiconfig.setResolvedConfig(config);
+
+    // We don't actually use the specified file in this test but it needs to
+    // resolve to a real file on the file system.
+    const result = await loadConfig({config: path.resolve(__dirname, '../')});
 
     const relativizedResult = {
       ...result,
