@@ -4,8 +4,6 @@
 [options]
 emoji=true
 
-esproposal.optional_chaining=enable
-
 exact_by_default=true
 
 munge_underscores=true
@@ -18,8 +16,6 @@ suppress_type=$FlowFixMeProps
 suppress_type=$FlowFixMeState
 suppress_type=$FlowFixMeEmpty
 
-well_formed_exports=true
-types_first=true
 experimental.abstract_locations=true
 
 [lints]
