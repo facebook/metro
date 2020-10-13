@@ -13,6 +13,8 @@
 import type {NodePath} from '@babel/traverse';
 import typeof * as Types from '@babel/types';
 import type {CallExpression} from '@babel/types';
+import invariant from 'invariant';
+import nullthrows from 'nullthrows';
 
 type State = {|
   opts: {|
@@ -40,28 +42,33 @@ function reverseDependencyMapReferences({
           // $FlowFixMe Flow error uncovered by typing Babel more strictly
           const lastArg = node.arguments[0].params.slice(-1)[0];
           // $FlowFixMe Flow error uncovered by typing Babel more strictly
-          const depMapName = lastArg && lastArg.name;
+          const depMapName: ?string = lastArg && lastArg.name;
 
-          if (!depMapName) {
+          if (depMapName == null) {
             return;
           }
 
-          // $FlowFixMe Flow error uncovered by typing Babel more strictly
-          const scope = path.get('arguments.0.body').scope;
-          const binding = scope.getBinding(depMapName);
+          const body = path.get('arguments.0.body');
+          invariant(
+            !Array.isArray(body),
+            'meetro: Expected `body` to be a single path.',
+          );
+
+          const scope = body.scope;
+          const binding = nullthrows(scope.getBinding(depMapName));
 
           binding.referencePaths.forEach(({parentPath}) => {
-            const memberNode = parentPath.node;
+            const memberNode = parentPath?.node;
 
             if (
+              memberNode != null &&
               memberNode.type === 'MemberExpression' &&
               memberNode.property.type === 'NumericLiteral'
             ) {
-              parentPath.replaceWith(
-                t.numericLiteral(
-                  state.opts.dependencyIds[memberNode.property.value],
-                ),
+              const numericLiteral = t.numericLiteral(
+                state.opts.dependencyIds[memberNode.property.value],
               );
+              nullthrows(parentPath).replaceWith(numericLiteral);
             }
           });
         }

@@ -139,7 +139,7 @@ function forEachMapping(
     : null;
 
   const visitor = {
-    enter(path): void {
+    enter(path) {
       let name = getNameForPath(path);
       if (basename) {
         name = removeNamePrefix(name, basename);
@@ -147,6 +147,7 @@ function forEachMapping(
 
       pushFrame(name, nullthrows(path.node.loc));
     },
+
     exit(path): void {
       popFrame();
     },
@@ -197,18 +198,19 @@ function getNameForPath(path: NodePath<>): string {
     // foo = function () {};
     id = parent.left;
   } else if (isJSXExpressionContainer(parent)) {
-    if (isJSXElement(parentPath.parentPath.node)) {
+    const grandParentNode = parentPath?.parentPath?.node;
+    if (isJSXElement(grandParentNode)) {
       // <foo>{function () {}}</foo>
-      const openingElement = parentPath.parentPath.node.openingElement;
+      const openingElement = grandParentNode.openingElement;
       id = t.jsxMemberExpression(
         // $FlowFixMe Flow error uncovered by typing Babel more strictly
         t.jsxMemberExpression(openingElement.name, t.jsxIdentifier('props')),
         t.jsxIdentifier('children'),
       );
-    } else if (isJSXAttribute(parentPath.parentPath.node)) {
+    } else if (isJSXAttribute(grandParentNode)) {
       // <foo bar={function () {}} />
-      const openingElement = parentPath.parentPath.parentPath.node;
-      const prop = parentPath.parentPath.node;
+      const openingElement = parentPath?.parentPath?.parentPath?.node;
+      const prop = grandParentNode;
       id = t.jsxMemberExpression(
         // $FlowFixMe Flow error uncovered by typing Babel more strictly
         t.jsxMemberExpression(openingElement.name, t.jsxIdentifier('props')),
@@ -228,7 +230,7 @@ function getNameForPath(path: NodePath<>): string {
         const calleeName = getNameFromId(parent.callee);
         // var f = Object.freeze(function () {})
         if (CALLEES_TO_SKIP.indexOf(calleeName) !== -1) {
-          return getNameForPath(parentPath);
+          return getNameForPath(nullthrows(parentPath));
         }
         if (calleeName) {
           return `${calleeName}$argument_${argIndex}`;
@@ -236,7 +238,7 @@ function getNameForPath(path: NodePath<>): string {
       }
     }
     if (isTypeCastExpression(parent) && parent.expression === node) {
-      return getNameForPath(parentPath);
+      return getNameForPath(nullthrows(parentPath));
     }
     return ANONYMOUS_NAME;
   }
@@ -247,6 +249,7 @@ function getNameForPath(path: NodePath<>): string {
 
   if (propertyPath) {
     if (isClassBody(propertyPath.parent)) {
+      // $FlowFixMe Disvoered when typing babel-traverse
       const className = getNameForPath(propertyPath.parentPath.parentPath);
       if (className !== ANONYMOUS_NAME) {
         // $FlowFixMe Flow error uncovered by typing Babel more strictly
@@ -254,7 +257,7 @@ function getNameForPath(path: NodePath<>): string {
         name = className + separator + name;
       }
     } else if (isObjectExpression(propertyPath.parent)) {
-      const objectName = getNameForPath(propertyPath.parentPath);
+      const objectName = getNameForPath(nullthrows(propertyPath.parentPath));
       if (objectName !== ANONYMOUS_NAME) {
         name = objectName + '.' + name;
       }

@@ -22,12 +22,7 @@ const {isImport} = types;
 
 import type {Ast} from '@babel/core';
 import type {NodePath} from '@babel/traverse';
-import type {
-  CallExpression,
-  Program,
-  Identifier,
-  StringLiteral,
-} from '@babel/types';
+import type {CallExpression, Identifier, StringLiteral} from '@babel/types';
 import type {
   AllowOptionalDependencies,
   AsyncDependencyType,
@@ -161,10 +156,7 @@ function collectDependencies<TSplitCondition = void>(
   };
 
   const visitor = {
-    CallExpression(
-      path: NodePath<CallExpression>,
-      state: State<TSplitCondition>,
-    ): void {
+    CallExpression(path, state): void {
       if (visited.has(path.node)) {
         return;
       }
@@ -223,7 +215,7 @@ function collectDependencies<TSplitCondition = void>(
     ExportNamedDeclaration: collectImports,
     ExportAllDeclaration: collectImports,
 
-    Program(path: NodePath<Program>, state: State<TSplitCondition>): void {
+    Program(path, state) {
       state.asyncRequireModulePathStringLiteral = types.stringLiteral(
         options.asyncRequireModulePath,
       );
@@ -343,10 +335,11 @@ function processRequireCall<TSplitCondition>(
 }
 
 function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
-  while (path && !path.node.loc) {
-    path = path.parentPath;
+  let current = path;
+  while (current && !current.node.loc) {
+    current = current.parentPath;
   }
-  return path?.node.loc;
+  return current?.node.loc;
 }
 
 export type ImportQualifier = $ReadOnly<{
@@ -399,7 +392,11 @@ function isOptionalDependency<TSplitCondition>(
       if (p.node.type === 'BlockStatement') {
         // A single-level should have the tryStatement immediately followed BlockStatement
         // with the key 'block' to distinguish from the finally block, which has key = 'finalizer'
-        return p.parentPath.node.type === 'TryStatement' && p.key === 'block';
+        return (
+          p.parentPath != null &&
+          p.parentPath.node.type === 'TryStatement' &&
+          p.key === 'block'
+        );
       }
       sCount += 1;
     }

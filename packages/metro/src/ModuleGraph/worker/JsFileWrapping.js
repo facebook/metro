@@ -122,6 +122,11 @@ function renameRequires(ast: Ast): string {
     Program(path) {
       const body = path.get('body.0.expression.arguments.0.body');
 
+      invariant(
+        !Array.isArray(body),
+        'metro: Expected `body` to be a single path.',
+      );
+
       newRequireName = body.scope.generateUid(WRAP_NAME);
       body.scope.rename('require', newRequireName);
     },

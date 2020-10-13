@@ -10,48 +10,49 @@
 
 'use strict';
 
-import type {NodePath, Visitor} from '@babel/traverse';
+import type {NodePath, Visitor, VisitNode} from '@babel/traverse';
 // This is only a typeof import, no runtime dependency exists
 // eslint-disable-next-line import/no-extraneous-dependencies
 import typeof * as Types from '@babel/types';
 
+type State = {stripped: boolean};
 export type Visitors = {|
-  visitor: Visitor<any>,
+  visitor: Visitor<State>,
 |};
 
 function constantFoldingPlugin(context: {types: Types, ...}): Visitors {
   const t = context.types;
   const {isVariableDeclarator} = t;
 
-  const evaluate = function(path: NodePath<>) {
+  const evaluate = function(
+    path: NodePath<>,
+  ): {confident: boolean, value: mixed} {
     const state = {safe: true};
-    const unsafe = (path: NodePath<>, state: typeof state): void => {
+    const unsafe = (path, state) => {
       state.safe = false;
     };
 
     path.traverse(
       {
-        CallExpression: (
-          path: NodePath<BabelNodeCallExpression>,
-          state,
-        ): void => unsafe(path, state),
-        AssignmentExpression: (
-          path: NodePath<BabelNodeAssignmentExpression>,
-          state,
-        ): void => unsafe(path, state),
+        CallExpression: unsafe,
+        AssignmentExpression: unsafe,
       },
       state,
     );
 
     try {
-      return state.safe ? path.evaluate() : {confident: false, value: null};
-    } catch (err) {
+      if (!state.safe) {
+        return {confident: false, value: null};
+      }
+      const evaluated = path.evaluate();
+      return {confident: evaluated.confident, value: evaluated.value};
+    } catch {
       return {confident: false, value: null};
     }
   };
 
   const FunctionDeclaration = {
-    exit(path: NodePath<BabelNodeFunctionDeclaration>, state: Object): void {
+    exit(path, state): void {
       const binding =
         path.node.id != null && path.scope.getBinding(path.node.id.name);
 
@@ -62,29 +63,30 @@ function constantFoldingPlugin(context: {types: Types, ...}): Visitors {
     },
   };
 
-  const FunctionExpression = {
-    exit(
-      path: NodePath<
-        BabelNodeFunctionExpression | BabelNodeArrowFunctionExpression,
-      >,
-      state: Object,
-    ): void {
+  const FunctionExpression: VisitNode<
+    BabelNodeFunctionExpression | BabelNodeArrowFunctionExpression,
+    State,
+  > = {
+    exit(path, state) {
       const parentPath = path.parentPath;
-      const parentNode = parentPath.node;
+      const parentNode = parentPath?.node;
 
       if (isVariableDeclarator(parentNode) && parentNode.id.name != null) {
-        const binding = parentPath.scope.getBinding(parentNode.id.name);
+        const binding = parentPath?.scope.getBinding(parentNode.id.name);
 
         if (binding && !binding.referenced) {
           state.stripped = true;
-          parentPath.remove();
+          parentPath?.remove();
         }
       }
     },
   };
 
-  const Conditional = {
-    exit(path: NodePath<BabelNodeConditional>, state: Object): void {
+  const Conditional: VisitNode<
+    BabelNodeIfStatement | BabelNodeConditionalExpression,
+    State,
+  > = {
+    exit(path, state): void {
       const node = path.node;
       const result = evaluate(path.get('test'));
 
@@ -101,10 +103,11 @@ function constantFoldingPlugin(context: {types: Types, ...}): Visitors {
     },
   };
 
-  const Expression = {
-    exit(
-      path: NodePath<BabelNodeBinaryExpression | BabelNodeUnaryExpression>,
-    ): void {
+  const Expression: VisitNode<
+    BabelNodeUnaryExpression | BabelNodeBinaryExpression,
+    State,
+  > = {
+    exit(path) {
       const result = evaluate(path);
 
       if (result.confident) {
@@ -115,7 +118,7 @@ function constantFoldingPlugin(context: {types: Types, ...}): Visitors {
   };
 
   const LogicalExpression = {
-    exit(path: NodePath<BabelNodeLogicalExpression>): void {
+    exit(path) {
       const node = path.node;
       const result = evaluate(path.get('left'));
 
@@ -140,11 +143,11 @@ function constantFoldingPlugin(context: {types: Types, ...}): Visitors {
   };
 
   const Program = {
-    enter(path: NodePath<BabelNodeProgram>, state: Object): void {
+    enter(path, state): void {
       state.stripped = false;
     },
 
-    exit(path: NodePath<BabelNodeProgram>, state: Object): void {
+    exit(path, state): void {
       path.traverse(
         {
           ArrowFunctionExpression: FunctionExpression,
@@ -162,25 +165,17 @@ function constantFoldingPlugin(context: {types: Types, ...}): Visitors {
         // Re-traverse all program, if we removed any blocks. Manually re-call
         // enter and exit, because traversing a Program node won't call them.
         Program.enter(path, state);
-        path.traverse(visitor);
+        path.traverse(visitor, {stripped: false});
         Program.exit(path, state);
       }
     },
   };
 
-  const visitor = {
-    BinaryExpression: {
-      exit: (expr: NodePath<BabelNodeBinaryExpression>) => {
-        return Expression.exit(expr);
-      },
-    },
+  const visitor: Visitor<State> = {
+    BinaryExpression: Expression,
     LogicalExpression,
     Program: {...Program}, // Babel mutates objects passed.
-    UnaryExpression: {
-      exit: (expr: NodePath<BabelNodeUnaryExpression>) => {
-        return Expression.exit(expr);
-      },
-    },
+    UnaryExpression: Expression,
   };
 
   return {visitor};

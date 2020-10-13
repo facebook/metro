@@ -67,11 +67,11 @@ function inlinePlugin(
     options.requireName || 'require',
   );
 
-  const isGlobal = binding => !binding;
+  const isGlobal = (binding): boolean %checks => !binding;
 
   const isFlowDeclared = binding => t.isDeclareVariable(binding.path);
 
-  const isGlobalOrFlowDeclared = binding =>
+  const isGlobalOrFlowDeclared = (binding): boolean %checks =>
     isGlobal(binding) || isFlowDeclared(binding);
 
   const isLeftHandSideOfAssignmentExpression = (node: Node, parent: Node) =>

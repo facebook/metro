@@ -103,7 +103,7 @@ function createInlinePlatformChecks(
       isWrappedModule,
     );
 
-  const isGlobal = (binding): boolean => !binding;
+  const isGlobal = (binding): boolean %checks => !binding;
 
   const isRequireCall = (node, dependencyId: string, scope): boolean =>
     isCallExpression(node) &&
