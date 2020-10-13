@@ -12,10 +12,10 @@
 
 const babelGenerate = require('@babel/generator').default;
 
-import type {Ast} from '@babel/core';
+import type {GeneratorResult} from '@babel/generator';
 
 function generate(
-  ast: Ast,
+  ast: BabelNode,
   filename: string,
   sourceCode: string,
 ): GeneratorResult {

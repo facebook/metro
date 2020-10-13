@@ -10,13 +10,11 @@
 
 'use strict';
 
-const invariant = require('invariant');
-const t = require('@babel/types');
-const template = require('@babel/template');
-const traverse = require('@babel/traverse').default;
-
-import type {Ast} from '@babel/core';
+import template from '@babel/template';
+import traverse from '@babel/traverse';
+import * as t from '@babel/types';
 import type {Program, FunctionExpression, Identifier} from '@babel/types';
+import invariant from 'invariant';
 
 const WRAP_NAME = '$$_REQUIRE'; // note: babel will prefix this with _
 
@@ -28,16 +26,15 @@ const IIFE_PARAM = template.expression(
 );
 
 function wrapModule(
-  fileAst: BabelNode,
+  fileAst: BabelNodeFile,
   importDefaultName: string,
   importAllName: string,
   dependencyMapName: string,
   globalPrefix: string,
 ): {
-  ast: BabelNode,
+  ast: BabelNodeFile,
   requireName: string,
 } {
-  invariant(fileAst.type === 'File', 'Expected file ast node');
   const params = buildParameters(
     importDefaultName,
     importAllName,
@@ -52,8 +49,7 @@ function wrapModule(
   return {ast, requireName};
 }
 
-function wrapPolyfill(fileAst: BabelNode): Ast {
-  invariant(fileAst.type === 'File', 'Expected file ast node');
+function wrapPolyfill(fileAst: BabelNodeFile): BabelNodeFile {
   const factory = functionFromProgram(fileAst.program, ['global']);
 
   const iife = t.callExpression(factory, [IIFE_PARAM()]);
@@ -115,7 +111,7 @@ function buildParameters(
 // This visitor currently renames all `require` references even if the module
 // contains a custom `require` declaration. This should be fixed by only renaming
 // if the `require` symbol hasn't been redeclared.
-function renameRequires(ast: Ast): string {
+function renameRequires(ast: BabelNodeFile): string {
   let newRequireName = WRAP_NAME;
 
   traverse(ast, {

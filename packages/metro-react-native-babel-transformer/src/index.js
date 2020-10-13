@@ -16,12 +16,13 @@ const crypto = require('crypto');
 const fs = require('fs');
 const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
 const makeHMRConfig = require('metro-react-native-babel-preset/src/configs/hmr');
+const nullthrows = require('nullthrows');
 const path = require('path');
 
 const {parseSync, transformFromAstSync} = require('@babel/core');
 const {generateFunctionMap} = require('metro-source-map');
 
-import type {Ast, Plugins, Presets} from '@babel/core';
+import type {BabelCoreOptions, Plugins} from '@babel/core';
 import type {
   BabelTransformer,
   BabelTransformerArgs,
@@ -39,12 +40,7 @@ const cacheKeyParts = [
  * default RN babelrc file and uses that.
  */
 const getBabelRC = (function() {
-  let babelRC: ?{
-    presets?: Presets,
-    extends?: string,
-    plugins: Plugins,
-    ...
-  } = null;
+  let babelRC: ?BabelCoreOptions = null;
 
   return function _getBabelRC({
     projectRoot,
@@ -55,7 +51,10 @@ const getBabelRC = (function() {
       return babelRC;
     }
 
-    babelRC = {plugins: [], extends: extendsBabelConfigPath};
+    babelRC = ({
+      plugins: [],
+      extends: extendsBabelConfigPath,
+    }: BabelCoreOptions);
 
     if (extendsBabelConfigPath) {
       return babelRC;
@@ -116,10 +115,14 @@ const getBabelRC = (function() {
  * Given a filename and options, build a Babel
  * config object with the appropriate plugins.
  */
-function buildBabelConfig(filename, options, plugins?: Plugins = []) {
+function buildBabelConfig(
+  filename,
+  options,
+  plugins?: Plugins = [],
+): BabelCoreOptions {
   const babelRC = getBabelRC(options);
 
-  const extraConfig = {
+  const extraConfig: BabelCoreOptions = {
     babelrc:
       typeof options.enableBabelRCLookup === 'boolean'
         ? options.enableBabelRCLookup
@@ -129,7 +132,10 @@ function buildBabelConfig(filename, options, plugins?: Plugins = []) {
     highlightCode: true,
   };
 
-  let config = Object.assign({}, babelRC, extraConfig);
+  let config: BabelCoreOptions = {
+    ...babelRC,
+    ...extraConfig,
+  };
 
   // Add extra plugins
   const extraPlugins = [];
@@ -138,7 +144,10 @@ function buildBabelConfig(filename, options, plugins?: Plugins = []) {
     extraPlugins.push(inlineRequiresPlugin);
   }
 
-  config.plugins = extraPlugins.concat(config.plugins, plugins);
+  const withExtrPlugins = (config.plugins = extraPlugins.concat(
+    config.plugins,
+    plugins,
+  ));
 
   if (options.dev && options.hot) {
     // Note: this intentionally doesn't include the path separator because
@@ -151,12 +160,15 @@ function buildBabelConfig(filename, options, plugins?: Plugins = []) {
 
     if (mayContainEditableReactComponents) {
       const hmrConfig = makeHMRConfig();
-      hmrConfig.plugins = config.plugins.concat(hmrConfig.plugins);
+      hmrConfig.plugins = withExtrPlugins.concat(hmrConfig.plugins);
       config = Object.assign({}, config, hmrConfig);
     }
   }
 
-  return Object.assign({}, babelRC, config);
+  return {
+    ...babelRC,
+    ...config,
+  };
 }
 
 function transform({
@@ -164,7 +176,11 @@ function transform({
   options,
   src,
   plugins,
-}: BabelTransformerArgs): {ast: Ast, functionMap: ?FBSourceFunctionMap, ...} {
+}: BabelTransformerArgs): {
+  ast: BabelNodeFile,
+  functionMap: ?FBSourceFunctionMap,
+  ...
+} {
   const OLD_BABEL_ENV = process.env.BABEL_ENV;
   process.env.BABEL_ENV = options.dev
     ? 'development'
@@ -192,7 +208,7 @@ function transform({
       return {ast: null, functionMap};
     }
 
-    return {ast: result.ast, functionMap};
+    return {ast: nullthrows(result.ast), functionMap};
   } finally {
     if (OLD_BABEL_ENV) {
       process.env.BABEL_ENV = OLD_BABEL_ENV;

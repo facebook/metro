@@ -17,7 +17,6 @@ const nullthrows = require('nullthrows');
 const t = require('@babel/types');
 
 import type {FBSourceFunctionMap} from './source-map';
-import type {Ast} from '@babel/core';
 import traverse from '@babel/traverse';
 import type {NodePath} from '@babel/traverse';
 import {
@@ -66,7 +65,10 @@ type Context = {filename?: string, ...};
  * The output is encoded for use in a source map. For details about the format,
  * see MappingEncoder below.
  */
-function generateFunctionMap(ast: Ast, context?: Context): FBSourceFunctionMap {
+function generateFunctionMap(
+  ast: BabelNode,
+  context?: Context,
+): FBSourceFunctionMap {
   const encoder = new MappingEncoder();
   forEachMapping(ast, context, mapping => encoder.push(mapping));
   return encoder.getResult();
@@ -79,7 +81,7 @@ function generateFunctionMap(ast: Ast, context?: Context): FBSourceFunctionMap {
  * Lines are 1-based and columns are 0-based.
  */
 function generateFunctionMappingsArray(
-  ast: Ast,
+  ast: BabelNode,
   context?: Context,
 ): $ReadOnlyArray<RangeMapping> {
   const mappings = [];
@@ -94,7 +96,7 @@ function generateFunctionMappingsArray(
  * mappings, one at a time.
  */
 function forEachMapping(
-  ast: Ast,
+  ast: BabelNode,
   context: ?Context,
   pushMapping: RangeMapping => void,
 ) {

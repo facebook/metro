@@ -11,11 +11,8 @@
 'use strict';
 
 const nullthrows = require('nullthrows');
-const template = require('@babel/template');
+const template = require('@babel/template').default;
 
-const {expression} = require('@babel/template');
-
-import type {Ast} from '@babel/core';
 import type {NodePath} from '@babel/traverse';
 // Type only dependency. This is not a runtime dependency
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -40,8 +37,8 @@ type State = {
     ...
   }>,
   imports: Array<{node: Statement}>,
-  importDefault: Ast,
-  importAll: Ast,
+  importDefault: BabelNode,
+  importAll: BabelNode,
   opts: {
     importDefault: string,
     importAll: string,
@@ -133,7 +130,7 @@ const esModuleExportTemplate = template.statement(`
 /**
  * Resolution template in case it is requested.
  */
-const resolveTemplate = expression(`
+const resolveTemplate = template.expression(`
   require.resolve(NODE)
 `);
 

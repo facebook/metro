@@ -17,6 +17,7 @@ const assetTransformer = require('./utils/assetTransformer');
 const babylon = require('@babel/parser');
 const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
 const generateImportNames = require('metro/src/ModuleGraph/worker/generateImportNames');
+const nullthrows = require('nullthrows');
 const generate = require('@babel/generator').default;
 const getCacheKey = require('metro-cache-key');
 const getMinifier = require('./utils/getMinifier');
@@ -372,17 +373,19 @@ module.exports = {
 
     plugins.push([inlinePlugin, opts]);
 
-    ({ast} = transformFromAstSync(ast, '', {
-      ast: true,
-      babelrc: false,
-      code: false,
-      configFile: false,
-      comments: false,
-      compact: false,
-      filename,
-      plugins,
-      sourceMaps: false,
-    }));
+    ast = nullthrows(
+      transformFromAstSync(ast, '', {
+        ast: true,
+        babelrc: false,
+        code: false,
+        configFile: false,
+        comments: false,
+        compact: false,
+        filename,
+        plugins,
+        sourceMaps: false,
+      }).ast,
+    );
 
     let dependencyMapName = '';
     let dependencies;

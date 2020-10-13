@@ -13,7 +13,7 @@
 const babelTypes = require('@babel/types');
 const babylon = require('@babel/parser');
 const nullthrows = require('nullthrows');
-const template = require('@babel/template');
+const template = require('@babel/template').default;
 
 import type {AssetDataFiltered, AssetDataWithoutFiles} from '../Assets';
 import type {ModuleTransportLike} from '../shared/types.flow';

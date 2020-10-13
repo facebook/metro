@@ -13,14 +13,12 @@
 const nullthrows = require('nullthrows');
 const traverse = require('@babel/traverse').default;
 
-import type {Ast} from '@babel/core';
-
 /**
  * Select unused names for "metroImportDefault" and "metroImportAll", by
  * calling "generateUid".
  */
 function generateImportNames(
-  ast: Ast,
+  ast: BabelNode,
 ): {
   importAll: string,
   importDefault: string,

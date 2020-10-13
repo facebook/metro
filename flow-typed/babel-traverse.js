@@ -1519,7 +1519,6 @@ declare module '@babel/traverse' {
     ExpressionStatement?: VisitNode<BabelNodeExpressionStatement, TState>,
     ExpressionWrapper?: VisitNode<BabelNodeExpressionWrapper, TState>,
     ExpressionWrapper?: VisitNode<BabelNodeExpressionWrapper, TState>,
-    File?: VisitNode<BabelNodeFile, TState>,
     Flow?: VisitNode<BabelNodeFlow, TState>,
     Flow?: VisitNode<BabelNodeFlow, TState>,
     FlowBaseAnnotation?: VisitNode<BabelNodeFlowBaseAnnotation, TState>,

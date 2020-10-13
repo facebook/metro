@@ -50,7 +50,17 @@ content = replaceGeneratedBlock(
 fs.writeFileSync(declarationFileName, content);
 
 function generateVisitorMethods() {
-  const types = [...t.TYPES, ...Object.keys(t.FLIPPED_ALIAS_KEYS)];
+  const types = [...t.TYPES, ...Object.keys(t.FLIPPED_ALIAS_KEYS)].filter(
+    type => {
+      if (type === 'File') {
+        // The file node can not be visited using a visitor because traverse(node) only visits the
+        // children of the passed in node and File has no parent node.
+        return false;
+      }
+
+      return true;
+    },
+  );
 
   types.sort();
 

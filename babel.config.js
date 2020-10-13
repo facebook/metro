@@ -13,6 +13,11 @@
 const crypto = require('crypto');
 const fs = require('fs');
 
+// eslint-disable-next-line prettier/prettier
+/*::
+import type {BabelCoreOptions} from '@babel/core';
+*/
+
 const plugins = [
   '@babel/plugin-proposal-object-rest-spread',
   '@babel/plugin-transform-async-to-generator',
@@ -31,8 +36,6 @@ const plugins = [
 ];
 
 const presets = ['babel-preset-jest'];
-
-/* import type {BabelCoreOptions} from '@babel/core'; */
 
 function getConfig(api /*: any */) /*: BabelCoreOptions */ {
   api.cache.never();

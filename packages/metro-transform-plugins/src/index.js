@@ -16,7 +16,6 @@ import type {
   Visitors as InlinePluginVisitors,
   Options as InlinePluginOptions,
 } from './inline-plugin';
-import type {Ast} from '@babel/core';
 // Type only import, no runtime dependency
 // eslint-disable-next-line import/no-extraneous-dependencies
 import typeof * as Types from '@babel/types';
@@ -31,7 +30,7 @@ type TransformPlugins = {
   constantFoldingPlugin: BabelPlugin<ConstantFoldingPluginVisitors, {}>,
   importExportPlugin: BabelPlugin<ImportExportPluginVisitors, {}>,
   inlinePlugin: BabelPlugin<InlinePluginVisitors, InlinePluginOptions>,
-  normalizePseudoGlobals(ast: Ast): $ReadOnlyArray<string>,
+  normalizePseudoGlobals(ast: BabelNode): $ReadOnlyArray<string>,
   getTransformPluginCacheKeyFiles(): $ReadOnlyArray<string>,
 };
 

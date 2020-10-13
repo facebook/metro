@@ -140,16 +140,18 @@ function inlineModuleIds(
       moduleMap: map,
     };
   }
-  const {ast} = transformSync(code, {
-    ast: true,
-    babelrc: false,
-    code: false,
-    configFile: false,
-    plugins: [
-      ...passthroughSyntaxPlugins,
-      [reverseDependencyMapReferences, {dependencyIds, globalPrefix}],
-    ],
-  });
+  const ast = nullthrows(
+    transformSync(code, {
+      ast: true,
+      babelrc: false,
+      code: false,
+      configFile: false,
+      plugins: [
+        ...passthroughSyntaxPlugins,
+        [reverseDependencyMapReferences, {dependencyIds, globalPrefix}],
+      ],
+    }).ast,
+  );
 
   const {code: generatedCode, map: generatedMap} = generate(ast, path, '');
 

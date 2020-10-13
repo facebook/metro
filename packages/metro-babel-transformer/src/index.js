@@ -10,10 +10,12 @@
 
 'use strict';
 
+const nullthrows = require('nullthrows');
+
 const {parseSync, transformFromAstSync} = require('@babel/core');
 const {generateFunctionMap} = require('metro-source-map');
 
-import type {Ast, Plugins} from '@babel/core';
+import type {BabelCoreOptions} from '@babel/core';
 import type {FBSourceFunctionMap} from 'metro-source-map';
 
 export type CustomTransformOptions = {
@@ -47,13 +49,13 @@ type BabelTransformerOptions = $ReadOnly<{
 export type BabelTransformerArgs = $ReadOnly<{|
   filename: string,
   options: BabelTransformerOptions,
-  plugins?: Plugins,
+  plugins?: $PropertyType<BabelCoreOptions, 'plugins'>,
   src: string,
 |}>;
 
 export type BabelTransformer = {|
   transform: BabelTransformerArgs => {
-    ast: Ast,
+    ast: BabelNodeFile,
     functionMap: ?FBSourceFunctionMap,
     ...
   },
@@ -81,7 +83,7 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
     const {ast} = transformFromAstSync(sourceAst, src, babelConfig);
     const functionMap = generateFunctionMap(sourceAst, {filename});
 
-    return {ast, functionMap};
+    return {ast: nullthrows(ast), functionMap};
   } finally {
     if (OLD_BABEL_ENV) {
       process.env.BABEL_ENV = OLD_BABEL_ENV;

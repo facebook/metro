@@ -15,11 +15,16 @@ const createCacheKeyFunction = require('@jest/create-cache-key-function')
 
 const {transformSync: babelTransformSync} = require('@babel/core');
 
+// eslint-disable-next-line prettier/prettier
+/*::
+import type {TransformResult} from '@babel/core';
+*/
+
 const BABEL_CONFIG_PATH = require.resolve('../babel.config.js');
 const babelConfigCacheKey = require('../babel.config.js').getCacheKey();
 
 module.exports = {
-  process(src /*: string */, file /*: string */) /*: Transform7Result */ {
+  process(src /*: string */, file /*: string */) /*: TransformResult */ {
     return babelTransformSync(src, {
       compact: false,
       configFile: BABEL_CONFIG_PATH,

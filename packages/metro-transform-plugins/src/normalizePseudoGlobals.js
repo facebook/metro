@@ -12,11 +12,10 @@
 
 const traverse = require('@babel/traverse').default;
 
-import type {Ast} from '@babel/core';
 import type {NodePath} from '@babel/traverse';
 import type {Program} from '@babel/types';
 
-function normalizePseudoglobals(ast: Ast): $ReadOnlyArray<string> {
+function normalizePseudoglobals(ast: BabelNode): $ReadOnlyArray<string> {
   let pseudoglobals: Array<string> = [];
   const reserved = [];
   let params = null;

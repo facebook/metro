@@ -14,13 +14,12 @@ const invariant = require('invariant');
 const nullthrows = require('nullthrows');
 
 const generate = require('@babel/generator').default;
-const template = require('@babel/template');
+const template = require('@babel/template').default;
 const traverse = require('@babel/traverse').default;
 const types = require('@babel/types');
 
 const {isImport} = types;
 
-import type {Ast} from '@babel/core';
 import type {NodePath} from '@babel/traverse';
 import type {CallExpression, Identifier, StringLiteral} from '@babel/types';
 import type {
@@ -82,7 +81,7 @@ export type Options<TSplitCondition = void> = $ReadOnly<{
 }>;
 
 export type CollectedDependencies<+TSplitCondition> = $ReadOnly<{
-  ast: Ast,
+  ast: BabelNodeFile,
   dependencyMapName: string,
   dependencies: $ReadOnlyArray<Dependency<TSplitCondition>>,
 }>;
@@ -137,7 +136,7 @@ export type DynamicRequiresBehavior = 'throwAtRuntime' | 'reject';
  * The second argument is only provided for debugging purposes.
  */
 function collectDependencies<TSplitCondition = void>(
-  ast: Ast,
+  ast: BabelNodeFile,
   options: Options<TSplitCondition>,
 ): CollectedDependencies<TSplitCondition> {
   const visited = new WeakSet();

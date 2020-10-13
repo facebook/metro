@@ -425,6 +425,7 @@ it('records locations of dependencies', () => {
   const ast = astFromCode(code);
 
   // Babel does not guarantee a loc on generated `require()`s.
+  // $FlowFixMe Discovered when typing @babel/parser
   delete ast.program.body[ast.program.body.length - 1].expression.arguments[0]
     .loc;
 
@@ -731,7 +732,7 @@ function formatLoc(loc, depIndex, dep, code) {
   });
 }
 
-function astFromCode(code: string) {
+function astFromCode(code: string): BabelNodeFile {
   return babylon.parse(code, {
     plugins: ['dynamicImport', 'flow'],
     sourceType: 'module',
