@@ -131,6 +131,7 @@ const getPreset = (src, options) => {
   }
   if (
     transformProfile !== 'hermes-canary' &&
+    transformProfile !== 'hermes-stable' &&
     (isNull || src.indexOf('`') !== -1)
   ) {
     extraPlugins.push(es2015TemplateLiterals);
@@ -161,7 +162,10 @@ const getPreset = (src, options) => {
   if (isNull || src.indexOf('??') !== -1) {
     extraPlugins.push(nullishCoalescingOperator);
   }
-  if (transformProfile !== 'hermes-canary') {
+  if (
+    transformProfile !== 'hermes-stable' &&
+    transformProfile !== 'hermes-canary'
+  ) {
     extraPlugins.push(shorthandProperties);
   }
 
