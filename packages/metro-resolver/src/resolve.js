@@ -96,14 +96,14 @@ function resolve(
   }
 
   const dirPaths = [];
-  for (
-    let currDir = path.dirname(originModulePath);
-    currDir !== '.' && currDir !== path.parse(originModulePath).root;
-    currDir = path.dirname(currDir)
-  ) {
-    const searchPath = path.join(currDir, 'node_modules');
+  let next = path.dirname(originModulePath);
+  let candidate;
+  do {
+    candidate = next;
+    const searchPath = path.join(candidate, 'node_modules');
     dirPaths.push(path.join(searchPath, realModuleName));
-  }
+    next = path.dirname(candidate);
+  } while (candidate !== next);
 
   const extraPaths = [];
   const {extraNodeModules} = context;

@@ -49,6 +49,12 @@ const CONTEXT: ResolutionContext = (() => {
           },
         },
       },
+      node_modules: {
+        'root-module': {
+          'package.json': true,
+          'main.js': true,
+        },
+      },
     },
     '/',
   );
@@ -136,4 +142,11 @@ it('throws on invalid node package', () => {
       '/root/node_modules/invalid/package.json',
     );
   }
+});
+
+it('resolves node_modules up to the root', () => {
+  expect(Resolver.resolve(CONTEXT, 'root-module', null)).toEqual({
+    type: 'sourceFile',
+    filePath: '/node_modules/root-module/main.js',
+  });
 });
