@@ -119,6 +119,14 @@ Type: `{[name:string]:string}`
 
 Which other `node_modules` to include besides the ones relative to the project directory. This is keyed by dependency name.
 
+#### `nodeModulesPaths`
+
+Type: `Array<string>`
+
+This option can be used to add additional `node_modules` folders for Metro to locate third-party dependencies when resolving modules. This is useful if third-party dependencies are installed in a different location outside of the direct path of source files.
+
+This option works similarly to how [$NODE_PATHS](https://nodejs.org/api/modules.html#modules_addenda_package_manager_tips) works for Node.js based tooling.
+
 #### `resolveRequest`
 
 Type: `?CustomResolver`

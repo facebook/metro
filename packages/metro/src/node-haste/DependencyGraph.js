@@ -215,6 +215,7 @@ class DependencyGraph extends EventEmitter {
       mainFields: this._config.resolver.resolverMainFields,
       moduleCache: this._moduleCache,
       moduleMap: this._moduleMap,
+      nodeModulesPaths: this._config.resolver.nodeModulesPaths,
       preferNativePlatform: true,
       projectRoot: this._config.projectRoot,
       resolveAsset: (dirPath: string, assetName: string, extension: string) => {

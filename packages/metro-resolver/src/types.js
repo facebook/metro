@@ -64,6 +64,7 @@ export type ResolveAsset = (
 export type FileContext = {
   +doesFileExist: DoesFileExist,
   +isAssetFile: IsAssetFile,
+  +nodeModulesPaths: $ReadOnlyArray<string>,
   +preferNativePlatform: boolean,
   +redirectModulePath: (modulePath: string) => string | false,
   +resolveAsset: ResolveAsset,

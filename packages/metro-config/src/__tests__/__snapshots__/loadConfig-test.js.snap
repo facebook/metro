@@ -50,6 +50,7 @@ Object {
     "dependencyExtractor": undefined,
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
+    "nodeModulesPaths": Array [],
     "platforms": Array [
       "ios",
       "android",
@@ -187,6 +188,7 @@ Object {
     "dependencyExtractor": undefined,
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
+    "nodeModulesPaths": Array [],
     "platforms": Array [
       "ios",
       "android",
@@ -324,6 +326,7 @@ Object {
     "dependencyExtractor": undefined,
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
+    "nodeModulesPaths": Array [],
     "platforms": Array [
       "ios",
       "android",
@@ -461,6 +464,7 @@ Object {
     "dependencyExtractor": undefined,
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
+    "nodeModulesPaths": Array [],
     "platforms": Array [
       "ios",
       "android",

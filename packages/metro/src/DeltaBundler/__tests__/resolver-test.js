@@ -69,6 +69,7 @@ let resolver;
       assetResolutions: ['1', '1.5', '2', '3', '4'],
       // This pattern is not expected to match anything.
       blockList: /.^/,
+      nodeModulesPaths: [],
       platforms: ['ios', 'android'],
       resolverMainFields: ['react-native', 'browser', 'main'],
       sourceExts: ['js', 'json'],

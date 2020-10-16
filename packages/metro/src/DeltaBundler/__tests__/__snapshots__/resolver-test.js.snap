@@ -63,7 +63,8 @@ If you are sure the module exists, try these steps:
 `;
 
 exports[`linux hasteImpl config param does not resolve haste names in node_modules folders 1`] = `
-"Unable to resolve module hasteModule from /root/index.js: hasteModule could not be found within the project.
+"Unable to resolve module hasteModule from /root/index.js: hasteModule could not be found within the project or in these directories:
+  node_modules
 
 If you are sure the module exists, try these steps:
  1. Clear watchman watches: watchman watch-del-all
@@ -117,7 +118,8 @@ None of these files exist:
 `;
 
 exports[`linux packages in node_modules/ browser field in package.json resolves mappings to other packages 1`] = `
-"Unable to resolve module left-pad/main from /root/node_modules/aPackage/index.js: left-pad/main could not be found within the project.
+"Unable to resolve module left-pad/main from /root/node_modules/aPackage/index.js: left-pad/main could not be found within the project or in these directories:
+  node_modules
 
 If you are sure the module exists, try these steps:
  1. Clear watchman watches: watchman watch-del-all
@@ -131,7 +133,8 @@ If you are sure the module exists, try these steps:
 `;
 
 exports[`linux packages in node_modules/ finds nested packages in node_modules 1`] = `
-"Unable to resolve module qux from /root/index.js: qux could not be found within the project.
+"Unable to resolve module qux from /root/index.js: qux could not be found within the project or in these directories:
+  node_modules
 
 If you are sure the module exists, try these steps:
  1. Clear watchman watches: watchman watch-del-all
@@ -157,7 +160,8 @@ None of these files exist:
 `;
 
 exports[`linux packages in node_modules/ react-native field in package.json resolves mappings to other packages 1`] = `
-"Unable to resolve module left-pad/main from /root/node_modules/aPackage/index.js: left-pad/main could not be found within the project.
+"Unable to resolve module left-pad/main from /root/node_modules/aPackage/index.js: left-pad/main could not be found within the project or in these directories:
+  node_modules
 
 If you are sure the module exists, try these steps:
  1. Clear watchman watches: watchman watch-del-all
@@ -171,7 +175,8 @@ If you are sure the module exists, try these steps:
 `;
 
 exports[`linux packages in node_modules/ uses the folder name and not the name in the package.json 1`] = `
-"Unable to resolve module invalidName from /root/index.js: invalidName could not be found within the project.
+"Unable to resolve module invalidName from /root/index.js: invalidName could not be found within the project or in these directories:
+  node_modules
 
 If you are sure the module exists, try these steps:
  1. Clear watchman watches: watchman watch-del-all
@@ -285,7 +290,8 @@ If you are sure the module exists, try these steps:
 `;
 
 exports[`win32 hasteImpl config param does not resolve haste names in node_modules folders 1`] = `
-"Unable to resolve module hasteModule from C:\\\\root\\\\index.js: hasteModule could not be found within the project.
+"Unable to resolve module hasteModule from C:\\\\root\\\\index.js: hasteModule could not be found within the project or in these directories:
+  node_modules
 
 If you are sure the module exists, try these steps:
  1. Clear watchman watches: watchman watch-del-all
@@ -339,7 +345,8 @@ None of these files exist:
 `;
 
 exports[`win32 packages in node_modules/ browser field in package.json resolves mappings to other packages 1`] = `
-"Unable to resolve module left-pad/main from C:\\\\root\\\\node_modules\\\\aPackage\\\\index.js: left-pad/main could not be found within the project.
+"Unable to resolve module left-pad/main from C:\\\\root\\\\node_modules\\\\aPackage\\\\index.js: left-pad/main could not be found within the project or in these directories:
+  node_modules
 
 If you are sure the module exists, try these steps:
  1. Clear watchman watches: watchman watch-del-all
@@ -353,7 +360,8 @@ If you are sure the module exists, try these steps:
 `;
 
 exports[`win32 packages in node_modules/ finds nested packages in node_modules 1`] = `
-"Unable to resolve module qux from C:\\\\root\\\\index.js: qux could not be found within the project.
+"Unable to resolve module qux from C:\\\\root\\\\index.js: qux could not be found within the project or in these directories:
+  node_modules
 
 If you are sure the module exists, try these steps:
  1. Clear watchman watches: watchman watch-del-all
@@ -379,7 +387,8 @@ None of these files exist:
 `;
 
 exports[`win32 packages in node_modules/ react-native field in package.json resolves mappings to other packages 1`] = `
-"Unable to resolve module left-pad/main from C:\\\\root\\\\node_modules\\\\aPackage\\\\index.js: left-pad/main could not be found within the project.
+"Unable to resolve module left-pad/main from C:\\\\root\\\\node_modules\\\\aPackage\\\\index.js: left-pad/main could not be found within the project or in these directories:
+  node_modules
 
 If you are sure the module exists, try these steps:
  1. Clear watchman watches: watchman watch-del-all
@@ -393,7 +402,8 @@ If you are sure the module exists, try these steps:
 `;
 
 exports[`win32 packages in node_modules/ uses the folder name and not the name in the package.json 1`] = `
-"Unable to resolve module invalidName from C:\\\\root\\\\index.js: invalidName could not be found within the project.
+"Unable to resolve module invalidName from C:\\\\root\\\\index.js: invalidName could not be found within the project or in these directories:
+  node_modules
 
 If you are sure the module exists, try these steps:
  1. Clear watchman watches: watchman watch-del-all

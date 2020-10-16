@@ -40,7 +40,7 @@ const CONTEXT: ResolutionContext = (() => {
           'beep.js': true,
         },
         node_modules: {
-          tadam: {
+          apple: {
             'package.json': true,
             'main.js': true,
           },
@@ -55,6 +55,14 @@ const CONTEXT: ResolutionContext = (() => {
           'main.js': true,
         },
       },
+      'other-root': {
+        node_modules: {
+          banana: {
+            'package.json': true,
+            'main.js': true,
+          },
+        },
+      },
     },
     '/',
   );
@@ -64,6 +72,7 @@ const CONTEXT: ResolutionContext = (() => {
     extraNodeModules: null,
     getPackageMainPath: dirPath => path.join(path.dirname(dirPath), 'main'),
     isAssetFile: () => false,
+    nodeModulesPaths: [],
     originModulePath: '/root/project/foo.js',
     preferNativePlatform: false,
     redirectModulePath: filePath => filePath,
@@ -74,30 +83,30 @@ const CONTEXT: ResolutionContext = (() => {
   };
 })();
 
-it('resolves relative path', () => {
+it('resolves a relative path', () => {
   expect(Resolver.resolve(CONTEXT, './bar', null)).toEqual({
     type: 'sourceFile',
     filePath: '/root/project/bar.js',
   });
 });
 
-it('resolves relative path in another folder', () => {
+it('resolves a relative path in another folder', () => {
   expect(Resolver.resolve(CONTEXT, '../smth/beep', null)).toEqual({
     type: 'sourceFile',
     filePath: '/root/smth/beep.js',
   });
 });
 
-it('resolves a simple node_modules', () => {
-  expect(Resolver.resolve(CONTEXT, 'tadam', null)).toEqual({
+it('resolves a package in `node_modules`', () => {
+  expect(Resolver.resolve(CONTEXT, 'apple', null)).toEqual({
     type: 'sourceFile',
-    filePath: '/root/node_modules/tadam/main.js',
+    filePath: '/root/node_modules/apple/main.js',
   });
 });
 
-it('fails to resolve relative path', () => {
+it('fails to resolve a relative path', () => {
   try {
-    Resolver.resolve(CONTEXT, './tadam', null);
+    Resolver.resolve(CONTEXT, './apple', null);
     throw new Error('should not reach');
   } catch (error) {
     if (!(error instanceof FailedToResolvePathError)) {
@@ -106,19 +115,19 @@ it('fails to resolve relative path', () => {
     expect(error.candidates).toEqual({
       dir: {
         candidateExts: ['', '.js'],
-        filePathPrefix: '/root/project/tadam/index',
+        filePathPrefix: '/root/project/apple/index',
         type: 'sourceFile',
       },
       file: {
         candidateExts: ['', '.js'],
-        filePathPrefix: '/root/project/tadam',
+        filePathPrefix: '/root/project/apple',
         type: 'sourceFile',
       },
     });
   }
 });
 
-it('throws on invalid node package', () => {
+it('throws on invalid package name', () => {
   try {
     Resolver.resolve(CONTEXT, 'invalid', null);
     throw new Error('should have thrown');
@@ -144,9 +153,49 @@ it('throws on invalid node package', () => {
   }
 });
 
-it('resolves node_modules up to the root', () => {
+it('resolves `node_modules` up to the root', () => {
   expect(Resolver.resolve(CONTEXT, 'root-module', null)).toEqual({
     type: 'sourceFile',
     filePath: '/node_modules/root-module/main.js',
   });
+
+  expect(() => Resolver.resolve(CONTEXT, 'non-existent-module', null))
+    .toThrowErrorMatchingInlineSnapshot(`
+    "Module does not exist in the Haste module map or in these directories:
+      /root/project/node_modules
+      /root/node_modules
+      /node_modules
+    "
+  `);
+});
+
+it('does not resolve to additional `node_modules` if `nodeModulesPaths` is not specified', () => {
+  expect(() => Resolver.resolve(CONTEXT, 'banana', null))
+    .toThrowErrorMatchingInlineSnapshot(`
+    "Module does not exist in the Haste module map or in these directories:
+      /root/project/node_modules
+      /root/node_modules
+      /node_modules
+    "
+  `);
+});
+
+it('uses `nodeModulesPaths` to find additional node_modules not in the direct path', () => {
+  const context = Object.assign({}, CONTEXT, {
+    nodeModulesPaths: ['/other-root/node_modules'],
+  });
+  expect(Resolver.resolve(context, 'banana', null)).toEqual({
+    type: 'sourceFile',
+    filePath: '/other-root/node_modules/banana/main.js',
+  });
+
+  expect(() => Resolver.resolve(context, 'kiwi', null))
+    .toThrowErrorMatchingInlineSnapshot(`
+    "Module does not exist in the Haste module map or in these directories:
+      /other-root/node_modules
+      /root/project/node_modules
+      /root/node_modules
+      /node_modules
+    "
+  `);
 });

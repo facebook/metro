@@ -86,9 +86,10 @@ type ResolverConfigT = {|
   dependencyExtractor: ?string,
   extraNodeModules: {[name: string]: string, ...},
   hasteImplModulePath: ?string,
+  nodeModulesPaths: $ReadOnlyArray<string>,
   platforms: $ReadOnlyArray<string>,
-  resolverMainFields: $ReadOnlyArray<string>,
   resolveRequest: ?CustomResolver,
+  resolverMainFields: $ReadOnlyArray<string>,
   sourceExts: $ReadOnlyArray<string>,
   useWatchman: boolean,
 |};

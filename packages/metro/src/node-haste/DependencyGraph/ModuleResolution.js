@@ -80,9 +80,10 @@ type Options<TModule, TPackage> = {|
   +isAssetFile: IsAssetFile,
   +mainFields: $ReadOnlyArray<string>,
   +moduleCache: ModuleishCache<TModule, TPackage>,
-  +projectRoot: string,
-  +preferNativePlatform: boolean,
   +moduleMap: ModuleMap,
+  +nodeModulesPaths: $ReadOnlyArray<string>,
+  +preferNativePlatform: boolean,
+  +projectRoot: string,
   +resolveAsset: ResolveAsset,
   +resolveRequest: ?CustomResolver,
   +sourceExts: $ReadOnlyArray<string>,
@@ -209,14 +210,13 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
           .concat(extraPaths);
 
         const hint = displayDirPaths.length ? ' or in these directories:' : '';
+
         throw new UnableToResolveError(
           fromModule.path,
           moduleName,
           [
             `${moduleName} could not be found within the project${hint || '.'}`,
-            ...displayDirPaths.map(
-              (dirPath: string) => `  ${path.dirname(dirPath)}`,
-            ),
+            ...displayDirPaths.map((dirPath: string) => `  ${dirPath}`),
             '\nIf you are sure the module exists, try these steps:',
             ' 1. Clear watchman watches: watchman watch-del-all',
             ' 2. Delete node_modules and run yarn install',

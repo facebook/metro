@@ -29,14 +29,15 @@ import type {Extensions, Path} from './node-haste.flow';
 import type {CustomResolver} from 'metro-resolver';
 
 type ResolveOptions = {|
+  +platform: string,
+  +sourceExts: Extensions,
   assetExts: Extensions,
   assetResolutions: $ReadOnlyArray<string>,
   extraNodeModules: {[id: string]: string, ...},
   mainFields: $ReadOnlyArray<string>,
+  nodeModulesPaths: $ReadOnlyArray<string>,
   resolveRequest?: ?CustomResolver,
-  +sourceExts: Extensions,
   transformedFiles: {[path: Path]: TransformedCodeFile, ...},
-  +platform: string,
 |};
 
 const platforms = new Set(defaults.platforms);
@@ -147,6 +148,7 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
       mocks: new Map(),
       rootDir: '',
     }),
+    nodeModulesPaths: options.nodeModulesPaths,
     preferNativePlatform: true,
     projectRoot: '',
     resolveAsset: (

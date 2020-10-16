@@ -95,13 +95,12 @@ function resolve(
     } catch (error) {}
   }
 
-  const dirPaths = [];
+  const nodeModulesPaths = Array.from(context.nodeModulesPaths);
   let next = path.dirname(originModulePath);
   let candidate;
   do {
     candidate = next;
-    const searchPath = path.join(candidate, 'node_modules');
-    dirPaths.push(path.join(searchPath, realModuleName));
+    nodeModulesPaths.push(path.join(candidate, 'node_modules'));
     next = path.dirname(candidate);
   } while (candidate !== next);
 
@@ -123,15 +122,18 @@ function resolve(
     }
   }
 
-  const allDirPaths = dirPaths.concat(extraPaths);
+  const allDirPaths = nodeModulesPaths
+    .map(nodeModulePath => path.join(nodeModulePath, realModuleName))
+    .concat(extraPaths);
   for (let i = 0; i < allDirPaths.length; ++i) {
-    const realModuleName = context.redirectModulePath(allDirPaths[i]);
-    const result = resolveFileOrDir(context, realModuleName, platform);
+    const candidate = context.redirectModulePath(allDirPaths[i]);
+    const result = resolveFileOrDir(context, candidate, platform);
     if (result.type === 'resolved') {
       return result.resolution;
     }
   }
-  throw new FailedToResolveNameError(dirPaths, extraPaths);
+
+  throw new FailedToResolveNameError(nodeModulesPaths, extraPaths);
 }
 
 /**

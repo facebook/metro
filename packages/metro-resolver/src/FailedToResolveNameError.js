@@ -10,8 +10,6 @@
 
 'use strict';
 
-const path = require('path');
-
 class FailedToResolveNameError extends Error {
   dirPaths: $ReadOnlyArray<string>;
   extraPaths: $ReadOnlyArray<string>;
@@ -24,9 +22,7 @@ class FailedToResolveNameError extends Error {
     const hint = displayDirPaths.length ? ' or in these directories:' : '';
     super(
       `Module does not exist in the Haste module map${hint}\n` +
-        displayDirPaths
-          .map(dirPath => `  ${path.dirname(dirPath)}\n`)
-          .join(', ') +
+        displayDirPaths.map(dirPath => `  ${dirPath}`).join('\n') +
         '\n',
     );
 
