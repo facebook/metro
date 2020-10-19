@@ -23,6 +23,7 @@ export type Callback<A = void, B = void> = (Error => void) &
   ((null | void, A, B) => void);
 
 export type Dependency = {|
+  // The module name or path used to require the dependency
   id: string,
   +isAsync: boolean,
   +isPrefetchOnly: boolean,
