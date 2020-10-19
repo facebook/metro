@@ -12,7 +12,7 @@
 
 const {
   addModuleIdsToModuleWrapper,
-  inlineModuleIds,
+  inlineModuleIdsAndAddParamsToDefineCall,
   createIdForPathFn,
   getModuleCodeAndMap,
 } = require('../util');
@@ -111,7 +111,9 @@ describe('`inlineModuleIds`:', () => {
     });
 
     expect(
-      inlineModuleIds(module, idForPath, {globalPrefix: ''}).moduleCode,
+      inlineModuleIdsAndAddParamsToDefineCall(module, idForPath, {
+        globalPrefix: '',
+      }).moduleCode,
     ).toEqual('__d(function(require,depMap){require(345);require(6);},12);');
   });
 
@@ -137,8 +139,9 @@ describe('`inlineModuleIds`:', () => {
     });
 
     expect(
-      inlineModuleIds(module, idForPath, {dependencyMapReservedName: 'depMap'})
-        .moduleCode,
+      inlineModuleIdsAndAddParamsToDefineCall(module, idForPath, {
+        dependencyMapReservedName: 'depMap',
+      }).moduleCode,
     ).toMatchInlineSnapshot(`
       "
           __d(function(require, depMap) {
@@ -171,7 +174,9 @@ describe('`inlineModuleIds`:', () => {
     });
 
     expect(
-      inlineModuleIds(module, idForPath, {globalPrefix: ''}).moduleCode,
+      inlineModuleIdsAndAddParamsToDefineCall(module, idForPath, {
+        globalPrefix: '',
+      }).moduleCode,
     ).toMatchInlineSnapshot(
       '"__d(function(require,depMap){require(345);require(6);function anotherScope(depMap){return depMap[1337];}},12);"',
     );
