@@ -135,6 +135,7 @@ export type ImportNames = {
 };
 
 export type ConcreteTransformResult = {
+  type: 'concrete',
   code: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   dependencyMapName?: string,
@@ -145,14 +146,16 @@ export type ConcreteTransformResult = {
   isESModule?: true,
 };
 
-export type LinkedTransformResult = $ReadOnly<{sourceVariantName: string}>;
+export type LinkedTransformResult = $ReadOnly<{
+  type: 'linked',
+  sourceVariantName: string,
+}>;
 
 export type TransformResults = {
   +[string]: TransformResult,
-  ...,
 };
 
-export type TransformVariants = {+[name: string]: {...}, ...};
+export type TransformVariants = {+[name: string]: {...}};
 
 export type TransformedCodeFile = {|
   +file: string,
