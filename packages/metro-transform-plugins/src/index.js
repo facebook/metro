@@ -20,6 +20,8 @@ import type {
 // eslint-disable-next-line import/no-extraneous-dependencies
 import typeof * as Types from '@babel/types';
 
+export type {Options as InlinePluginOptions} from './inline-plugin';
+
 type BabelPlugin<VisitorT, OptionsT> = (
   context: {types: Types, ...},
   options: OptionsT,
