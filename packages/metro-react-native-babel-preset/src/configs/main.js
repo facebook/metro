@@ -136,10 +136,10 @@ const getPreset = (src, options) => {
   if (!isHermes && (isNull || src.indexOf('`') !== -1)) {
     extraPlugins.push(es2015TemplateLiterals);
   }
-  if (isNull || src.indexOf('**') !== -1) {
+  if (!isHermesCanary && (isNull || src.indexOf('**') !== -1)) {
     extraPlugins.push(exponentiationOperator);
   }
-  if (isNull || src.indexOf('Object.assign') !== -1) {
+  if (!isHermesCanary && (isNull || src.indexOf('Object.assign')) !== -1) {
     extraPlugins.push(objectAssign);
   }
   if (hasForOf) {
