@@ -32,7 +32,6 @@ const defaultPlugins = [
   [require('@babel/plugin-syntax-dynamic-import')],
   [require('@babel/plugin-syntax-export-default-from')],
   ...passthroughSyntaxPlugins,
-  [require('@babel/plugin-transform-computed-properties')],
   [require('@babel/plugin-transform-destructuring')],
   [require('@babel/plugin-transform-function-name')],
   [require('@babel/plugin-transform-literals')],
@@ -47,6 +46,9 @@ const es2015ArrowFunctions = [
 ];
 const es2015Classes = [require('@babel/plugin-transform-classes')];
 const es2015ForOf = [require('@babel/plugin-transform-for-of'), {loose: true}];
+const es2015ComputedProperty = [
+  require('@babel/plugin-transform-computed-properties'),
+];
 const es2015Spread = [require('@babel/plugin-transform-spread')];
 const es2015TemplateLiterals = [
   require('@babel/plugin-transform-template-literals'),
@@ -129,7 +131,10 @@ const getPreset = (src, options) => {
   // and patch react-refresh to not depend on this transform.
   extraPlugins.push(es2015ArrowFunctions);
 
-  if (isNull || hasClass || src.indexOf('...') !== -1) {
+  if (!isHermesCanary) {
+    extraPlugins.push(es2015ComputedProperty);
+  }
+  if (!isHermesCanary && (isNull || hasClass || src.indexOf('...') !== -1)) {
     extraPlugins.push(es2015Spread);
     extraPlugins.push(objectRestSpread);
   }
