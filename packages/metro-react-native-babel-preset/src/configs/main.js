@@ -89,6 +89,10 @@ const babelRuntime = [
 const getPreset = (src, options) => {
   const transformProfile =
     (options && options.unstable_transformProfile) || 'default';
+  const isHermesStable = transformProfile === 'hermes-stable';
+  const isHermesCanary = transformProfile === 'hermes-canary';
+  const isHermes = isHermesStable || isHermesCanary;
+
   const isNull = src == null;
   const hasClass = isNull || src.indexOf('class') !== -1;
   const hasForOf =
@@ -129,11 +133,7 @@ const getPreset = (src, options) => {
     extraPlugins.push(es2015Spread);
     extraPlugins.push(objectRestSpread);
   }
-  if (
-    transformProfile !== 'hermes-canary' &&
-    transformProfile !== 'hermes-stable' &&
-    (isNull || src.indexOf('`') !== -1)
-  ) {
+  if (!isHermes && (isNull || src.indexOf('`') !== -1)) {
     extraPlugins.push(es2015TemplateLiterals);
   }
   if (isNull || src.indexOf('**') !== -1) {
@@ -152,20 +152,13 @@ const getPreset = (src, options) => {
   ) {
     extraPlugins.push(reactDisplayName);
   }
-  if (
-    transformProfile !== 'hermes-stable' &&
-    transformProfile !== 'hermes-canary' &&
-    (isNull || src.indexOf('?.') !== -1)
-  ) {
+  if (!isHermes && (isNull || src.indexOf('?.') !== -1)) {
     extraPlugins.push(optionalChaining);
   }
   if (isNull || src.indexOf('??') !== -1) {
     extraPlugins.push(nullishCoalescingOperator);
   }
-  if (
-    transformProfile !== 'hermes-stable' &&
-    transformProfile !== 'hermes-canary'
-  ) {
+  if (!isHermes) {
     extraPlugins.push(shorthandProperties);
   }
 
