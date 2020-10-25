@@ -92,6 +92,12 @@ Type: `number`
 
 The number of workers we should parallelize the transformer on.
 
+#### `hasteMapCacheDirectory`
+
+Type: `string`
+
+The path to the haste map cache directory, default to `os.tmpdir()`
+
 ---
 ### Resolver Options
 
