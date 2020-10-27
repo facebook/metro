@@ -9,6 +9,4 @@
 
 'use strict';
 
-// Polyfilling Array.prototype.flatmap for node 10 environment.
-require('core-js/fn/array/flat-map');
 global.Promise = require('promise');
