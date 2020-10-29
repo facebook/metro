@@ -24,9 +24,9 @@ function escapeRegExp(pattern) {
     // hence the '\\' prefix.
     return pattern.source.replace(/\/|\\\//g, '\\' + path.sep);
   } else if (typeof pattern === 'string') {
-    // escape back slashes in regular expression so that when
-    // it's used in RegExp constructor, the back slashes are preserved.
-    var escaped = pattern.replace(/\\/g, '\\$&');
+    // Make sure all the special characters used by regular expression are properly
+    // escaped. The string inputs are supposed to match as is.
+    var escaped = pattern.replace(/[\-\[\]\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&');
     // convert the '/' into an escaped local file separator. The separator needs
     // to be escaped in the regular expression source string, hence the '\\' prefix.
     return escaped.replace(/\//g, '\\' + path.sep);

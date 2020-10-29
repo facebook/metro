@@ -20,7 +20,7 @@ describe('exclusionList', () => {
   function setPathSeperator(sep: string) {
     // $FlowFixMe: property sep is not writable.
     path.sep = sep;
-  };
+  }
 
   beforeEach(() => {
     originalSeparator = path.sep;
@@ -47,7 +47,9 @@ describe('exclusionList', () => {
       // Regular expression that already considered OS specific path separator.
       // When explictly construct RegExp instance, the string needs to be escaped first.
       // eg. /.*[/\\]foo[/\\]bar/ => '.*[/\\\\]foo[/\\\\]bar'
-      expect('/foo/bar').toMatch(exclusionList([new RegExp('.*[/\\\\]foo[/\\\\]bar')]));
+      expect('/foo/bar').toMatch(
+        exclusionList([new RegExp('.*[/\\\\]foo[/\\\\]bar')]),
+      );
       expect('/foo/bar').toMatch(exclusionList([/.*[/\\]foo[/\\]bar/]));
     });
 
@@ -55,9 +57,10 @@ describe('exclusionList', () => {
       setPathSeperator('/');
       // Simple case
       expect('a/b/c').toMatch(exclusionList(['a/b/c']));
-      expect('a/b/c').toMatch(exclusionList(['a[/]b[/]c']));
-      // Strings that already considered OS specific path separator.
-      expect('/foo/bar').toMatch(exclusionList(['.*[/\\]foo[/\\]bar']));
+      // Make sure the special characters are escaped properly
+      expect('^.*[/\\1-9]{3}(foo)s+[/\\]bars?$').toMatch(
+        exclusionList(['^.*[/\\1-9]{3}(foo)s+[/\\]bars?$']),
+      );
     });
 
     it('converts forward slashes in the RegExp to the OS specific path separator for macOS/linux in nodejs 10 or below', () => {
@@ -69,7 +72,9 @@ describe('exclusionList', () => {
       // Regular expression that already considered OS specific path separator.
       // When explictly construct RegExp instance, the string needs to be escaped first.
       // eg. /.*[\/\\]foo[\/\\]bar/ => '.*[\\/\\\\]foo[\\/\\\\]bar'
-      expect('/foo/bar').toMatch(exclusionList([new RegExp('.*[\\/\\\\]foo[\\/\\\\]bar')]));
+      expect('/foo/bar').toMatch(
+        exclusionList([new RegExp('.*[\\/\\\\]foo[\\/\\\\]bar')]),
+      );
       expect('/foo/bar').toMatch(exclusionList([/.*[\/\\]foo[\/\\]bar/]));
     });
   });
@@ -83,7 +88,9 @@ describe('exclusionList', () => {
       // Regular expression that already considered OS specific path separator.
       // When explictly construct RegExp instance, the string needs to be escaped first.
       // eg. /.*[/\\]foo[/\\]bar/ => '.*[/\\\\]foo[/\\\\]bar'
-      expect('\\foo\\bar').toMatch(exclusionList([new RegExp('.*[/\\\\]foo[/\\\\]bar')]));
+      expect('\\foo\\bar').toMatch(
+        exclusionList([new RegExp('.*[/\\\\]foo[/\\\\]bar')]),
+      );
       expect('\\foo\\bar').toMatch(exclusionList([/.*[/\\]foo[/\\]bar/]));
     });
 
@@ -91,9 +98,10 @@ describe('exclusionList', () => {
       setPathSeperator('\\');
       // Simple case
       expect('a\\b\\c').toMatch(exclusionList(['a/b/c']));
-      expect('a\\b\\c').toMatch(exclusionList(['a[/]b[/]c']));
-      // Strings that already considered OS specific path separator.
-      expect('\\foo\\bar').toMatch(exclusionList(['.*[/\\]foo[/\\]bar']));
+      // Make sure the special characters are escaped properly
+      expect('^.*[\\\\1-9]{3}(foo)s+[\\\\]bars?$').toMatch(
+        exclusionList(['^.*[/\\1-9]{3}(foo)s+[/\\]bars?$']),
+      );
     });
 
     it('converts forward slashes in the RegExp to the OS specific path separator for windows in nodejs 10 or below', () => {
@@ -105,8 +113,10 @@ describe('exclusionList', () => {
       // Regular expression that already considered OS specific path separator.
       // When explictly construct RegExp instance, the string needs to be escaped first.
       // eg. /.*[\/\\]foo[\/\\]bar/ => '.*[\\/\\\\]foo[\\/\\\\]bar'
-      expect('\\foo\\bar').toMatch(exclusionList([new RegExp('.*[\\/\\\\]foo[\\/\\\\]bar')]));
+      expect('\\foo\\bar').toMatch(
+        exclusionList([new RegExp('.*[\\/\\\\]foo[\\/\\\\]bar')]),
+      );
       expect('\\foo\\bar').toMatch(exclusionList([/.*[\/\\]foo[\/\\]bar/]));
     });
-  })
+  });
 });
