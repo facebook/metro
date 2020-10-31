@@ -76,7 +76,7 @@ describe('exclusionList', () => {
 
   describe('simulate windows enviornment', () => {
     beforeEach(() => setPathSeperator('\\'));
-    
+
     it('converts forward slashes in the RegExp to the OS specific path separator', () => {
       // Simple case
       expect('a\\b\\c').toMatch(exclusionList([new RegExp('a/b/c')]));
