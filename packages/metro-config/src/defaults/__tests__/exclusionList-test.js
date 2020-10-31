@@ -39,22 +39,20 @@ describe('exclusionList', () => {
   });
 
   describe('simulate macOS/linux enviornment', () => {
-    it('converts forward slashes in the RegExp to the OS specific path separator in macOS/linux', () => {
-      setPathSeperator('/');
+    beforeEach(() => setPathSeperator('/'));
+
+    it('converts forward slashes in the RegExp to the OS specific path separator', () => {
       // Simple case
       expect('a/b/c').toMatch(exclusionList([new RegExp('a/b/c')]));
       expect('a/b/c').toMatch(exclusionList([/a\/b\/c/]));
       // Regular expression that already considered OS specific path separator.
-      // When explictly construct RegExp instance, the string needs to be escaped first.
-      // eg. /.*[/\\]foo[/\\]bar/ => '.*[/\\\\]foo[/\\\\]bar'
       expect('/foo/bar').toMatch(
         exclusionList([new RegExp('.*[/\\\\]foo[/\\\\]bar')]),
       );
       expect('/foo/bar').toMatch(exclusionList([/.*[/\\]foo[/\\]bar/]));
     });
 
-    it('converts forward slashes in the string to the OS specific path separator in macOS/linux', () => {
-      setPathSeperator('/');
+    it('converts forward slashes in the string to the OS specific path separator', () => {
       // Simple case
       expect('a/b/c').toMatch(exclusionList(['a/b/c']));
       // Make sure the special characters are escaped properly
@@ -63,15 +61,12 @@ describe('exclusionList', () => {
       );
     });
 
-    it('converts forward slashes in the RegExp to the OS specific path separator for macOS/linux in nodejs 10 or below', () => {
+    it('converts forward slashes in the RegExp to the OS specific path separator in nodejs 10 or below', () => {
       // In node version 10 or below, the forward slash in brackets are escaped automatically.
       // eg. /[/\\]/ => /[\/\\]/
       // Ideally this test case should be removed and instead the whole test should run in
       // multiple node versions.
-      setPathSeperator('/');
       // Regular expression that already considered OS specific path separator.
-      // When explictly construct RegExp instance, the string needs to be escaped first.
-      // eg. /.*[\/\\]foo[\/\\]bar/ => '.*[\\/\\\\]foo[\\/\\\\]bar'
       expect('/foo/bar').toMatch(
         exclusionList([new RegExp('.*[\\/\\\\]foo[\\/\\\\]bar')]),
       );
@@ -80,22 +75,20 @@ describe('exclusionList', () => {
   });
 
   describe('simulate windows enviornment', () => {
-    it('converts forward slashes in the RegExp to the OS specific path separator in windows', () => {
-      setPathSeperator('\\');
+    beforeEach(() => setPathSeperator('\\'));
+    
+    it('converts forward slashes in the RegExp to the OS specific path separator', () => {
       // Simple case
       expect('a\\b\\c').toMatch(exclusionList([new RegExp('a/b/c')]));
       expect('a\\b\\c').toMatch(exclusionList([/a\/b\/c/]));
       // Regular expression that already considered OS specific path separator.
-      // When explictly construct RegExp instance, the string needs to be escaped first.
-      // eg. /.*[/\\]foo[/\\]bar/ => '.*[/\\\\]foo[/\\\\]bar'
       expect('\\foo\\bar').toMatch(
         exclusionList([new RegExp('.*[/\\\\]foo[/\\\\]bar')]),
       );
       expect('\\foo\\bar').toMatch(exclusionList([/.*[/\\]foo[/\\]bar/]));
     });
 
-    it('converts forward slashes in the string to the OS specific path separator in windows', () => {
-      setPathSeperator('\\');
+    it('converts forward slashes in the string to the OS specific path separator', () => {
       // Simple case
       expect('a\\b\\c').toMatch(exclusionList(['a/b/c']));
       // Make sure the special characters are escaped properly
@@ -104,15 +97,12 @@ describe('exclusionList', () => {
       );
     });
 
-    it('converts forward slashes in the RegExp to the OS specific path separator for windows in nodejs 10 or below', () => {
+    it('converts forward slashes in the RegExp to the OS specific path separator in nodejs 10 or below', () => {
       // In node version 10 or below, the forward slash in brackets are escaped automatically.
       // eg. /[/\\]/ => /[\/\\]/
       // Ideally this test case should be removed and instead the whole test should run in
       // multiple node versions.
-      setPathSeperator('\\');
       // Regular expression that already considered OS specific path separator.
-      // When explictly construct RegExp instance, the string needs to be escaped first.
-      // eg. /.*[\/\\]foo[\/\\]bar/ => '.*[\\/\\\\]foo[\\/\\\\]bar'
       expect('\\foo\\bar').toMatch(
         exclusionList([new RegExp('.*[\\/\\\\]foo[\\/\\\\]bar')]),
       );
