@@ -24,6 +24,9 @@ function mergeSourceMaps(
   const inputMap = new sourceMap.SourceMapConsumer(originalMap);
 
   new sourceMap.SourceMapConsumer(secondMap).eachMapping(mapping => {
+    if (mapping.originalLine == null) {
+      return;
+    }
     const original = inputMap.originalPositionFor({
       line: mapping.originalLine,
       column: mapping.originalColumn,
