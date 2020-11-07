@@ -13,6 +13,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "terser": "^4.6.3"
+    "terser": "^5.3.8"
   }
 }

@@ -73,7 +73,9 @@ export type MinifierResult = {
   ...
 };
 
-export type Minifier = MinifierOptions => MinifierResult;
+export type Minifier = MinifierOptions =>
+  | Promise<MinifierResult>
+  | MinifierResult;
 
 export type Type = 'script' | 'module' | 'asset';
 
@@ -170,7 +172,7 @@ const minifyCode = async (
   const minify = getMinifier(config.minifierPath);
 
   try {
-    const minified = minify({
+    const minified = await minify({
       code,
       map: sourceMap,
       filename,
