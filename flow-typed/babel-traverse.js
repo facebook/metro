@@ -142,7 +142,7 @@ declare module '@babel/traverse' {
       id: {},
     ): void;
 
-    rename(oldName: string, newName: string, block?: BabelNode): void;
+    rename(oldName: string, newName?: string, block?: BabelNode): void;
 
     dump(): void;
 
