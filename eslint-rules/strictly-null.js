@@ -121,5 +121,6 @@ function isVoidNode(node) {
 
 rule.messages = messages;
 rule.schema = []; // none, but mandatory field
+rule.meta = {fixable: 'code'};
 
 module.exports = rule;
