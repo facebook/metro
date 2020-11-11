@@ -96,7 +96,7 @@ The number of workers we should parallelize the transformer on.
 
 Type: `string`
 
-The path to the haste map cache directory, default to `os.tmpdir()`
+The path to the haste map cache directory, defaults to `os.tmpdir()`.
 
 ---
 ### Resolver Options
