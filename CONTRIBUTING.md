@@ -28,10 +28,10 @@ The core team will be monitoring for pull requests. When we get one, we'll run s
    git checkout -b my_branch
    ```
 
-2. Run `npm install`. We recommend that you use `npm` version 3 or later.
+2. Run `yarn`.
 
     ```sh
-    npm install
+    yarn
     ```
 
 3. Run `lerna bootstrap`.
