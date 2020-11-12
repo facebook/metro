@@ -131,10 +131,10 @@ const getPreset = (src, options) => {
   // and patch react-refresh to not depend on this transform.
   extraPlugins.push(es2015ArrowFunctions);
 
-  if (!isHermesCanary) {
+  if (!isHermes) {
     extraPlugins.push(es2015ComputedProperty);
   }
-  if (!isHermesCanary && (isNull || hasClass || src.indexOf('...') !== -1)) {
+  if (!isHermes && (isNull || hasClass || src.indexOf('...') !== -1)) {
     extraPlugins.push(es2015Spread);
     extraPlugins.push(objectRestSpread);
   }
