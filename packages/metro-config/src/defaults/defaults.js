@@ -38,7 +38,6 @@ exports.assetExts = [
   'wav',
   // Document formats
   'html',
-  'json',
   'pdf',
   'yaml',
   'yml',
