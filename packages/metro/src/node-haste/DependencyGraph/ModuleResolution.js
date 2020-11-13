@@ -317,7 +317,7 @@ class UnableToResolveError extends Error {
     try {
       file = fs.readFileSync(this.originModulePath, 'utf8');
     } catch (error) {
-      if (error.code === 'ENOENT') {
+      if (error.code === 'ENOENT' || error.code === 'EISDIR') {
         // We're probably dealing with a virtualised file system where
         // `this.originModulePath` doesn't actually exist on disk.
         // We can't show a code frame, but there's no need to let this I/O
