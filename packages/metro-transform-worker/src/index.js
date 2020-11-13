@@ -324,7 +324,7 @@ module.exports = {
           }
         : await transformer.transform(transformerArgs);
 
-    // Transformers can ouptut null ASTs (if they ignore the file). In that case
+    // Transformers can output null ASTs (if they ignore the file). In that case
     // we need to parse the module source code to get their AST.
     let ast =
       transformResult.ast ||
