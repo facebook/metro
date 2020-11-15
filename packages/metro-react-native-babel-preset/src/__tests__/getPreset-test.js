@@ -16,8 +16,8 @@ describe('getPreset', () => {
     const defaultPlugins = preset.overrides[1].plugins;
     const extraPlugins = preset.overrides[4].plugins;
 
-    expect(defaultPlugins.length).toBe(16);
-    expect(extraPlugins.length).toBe(16);
+    expect(defaultPlugins.length).toBe(15);
+    expect(extraPlugins.length).toBe(17);
 
     expect(defaultPlugins.some(plugin => plugin[0] === transformBlockScoping)).toBe(true);
     expect(defaultPlugins.some(plugin => plugin[0] === transformRegenerator)).toBe(true);
