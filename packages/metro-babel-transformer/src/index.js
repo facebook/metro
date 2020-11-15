@@ -24,7 +24,11 @@ export type CustomTransformOptions = {
   ...
 };
 
-export type TransformProfile = 'default' | 'hermes-stable' | 'hermes-canary';
+export type TransformProfile =
+  | 'default'
+  | 'hermes-stable'
+  | 'hermes-canary'
+  | 'jsc-ios10.3';
 
 type BabelTransformerOptions = $ReadOnly<{
   customTransformOptions?: CustomTransformOptions,

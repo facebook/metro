@@ -9,6 +9,7 @@
 
 'use strict';
 
+const filterES2015Plugins = require('./filter-es2015');
 const lazyImports = require('./lazy-imports');
 const passthroughSyntaxPlugins = require('../passthrough-syntax-plugins');
 
@@ -20,7 +21,7 @@ function isTSXSource(fileName) {
   return !!fileName && fileName.endsWith('.tsx');
 }
 
-const defaultPlugins = [
+const defaultPluginsList = [
   [require('@babel/plugin-syntax-flow')],
   [require('@babel/plugin-proposal-optional-catch-binding')],
   [require('@babel/plugin-transform-block-scoping')],
@@ -100,7 +101,8 @@ const getPreset = (src, options) => {
   const hasForOf =
     isNull || (src.indexOf('for') !== -1 && src.indexOf('of') !== -1);
 
-  const extraPlugins = [];
+  let defaultPlugins = defaultPluginsList;
+  let extraPlugins = [];
   if (!options.useTransformReactJSXExperimental) {
     extraPlugins.push([require('@babel/plugin-transform-react-jsx')]);
   }
@@ -174,6 +176,11 @@ const getPreset = (src, options) => {
 
   if (!options || options.enableBabelRuntime !== false) {
     extraPlugins.push(babelRuntime);
+  }
+
+  if (transformProfile === 'jsc-ios10.3') {
+    defaultPlugins = filterES2015Plugins(defaultPlugins);
+    extraPlugins = filterES2015Plugins(extraPlugins);
   }
 
   return {

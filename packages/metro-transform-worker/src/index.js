@@ -451,6 +451,16 @@ module.exports = {
     let map = result.rawMappings ? result.rawMappings.map(toSegmentTuple) : [];
     let code = result.code;
 
+    // Make the minifier aware of the modern JS syntax
+    if (options.minify && options.unstable_transformProfile === 'jsc-ios10.3') {
+      const minifierConfig = {
+        ...config.minifierConfig,
+        ecma: 2015,
+        safari10: true,
+      };
+      config = {...config, minifierConfig};
+    }
+
     if (options.minify) {
       ({map, code} = await minifyCode(
         config,
