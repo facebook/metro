@@ -32,7 +32,7 @@
     "eslint-plugin-prettier": "2.6.2",
     "eslint-plugin-react": "7.21.5",
     "eslint-plugin-relay": "1.8.1",
-    "flow-bin": "^0.137.0",
+    "flow-bin": "^0.138.0",
     "glob": "^7.1.1",
     "istanbul-api": "3.0.0",
     "istanbul-lib-coverage": "3.0.0",
