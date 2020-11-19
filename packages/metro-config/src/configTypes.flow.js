@@ -38,13 +38,12 @@ export type PostMinifyProcess = ({
 };
 
 export type PostProcessBundleSourcemap = ({
-  code: Buffer | string,
+  code: string,
   map: MixedSourceMap,
-  outFileName: string,
   ...
 }) => {
-  code: Buffer | string,
-  map: MixedSourceMap | string,
+  code: string,
+  map: MixedSourceMap,
   ...
 };
 

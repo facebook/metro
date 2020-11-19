@@ -51,7 +51,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     getRunModuleStatement: (moduleId: number | string) =>
       `__r(${JSON.stringify(moduleId)});`,
     getPolyfills: () => [],
-    postProcessBundleSourcemap: ({code, map, outFileName}) => ({code, map}),
+    postProcessBundleSourcemap: ({code, map}) => ({code, map}),
     getModulesRunBeforeMainModule: () => [],
     processModuleFilter: module => true,
     createModuleIdFactory: defaultCreateModuleIdFactory,
