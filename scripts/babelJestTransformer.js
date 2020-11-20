@@ -19,7 +19,6 @@ const {transformSync: babelTransformSync} = require('@babel/core');
 /*::
 import type {TransformResult} from '@babel/core';
 */
-
 const BABEL_CONFIG_PATH = require.resolve('../babel.config.js');
 const babelConfigCacheKey = require('../babel.config.js').getCacheKey();
 
