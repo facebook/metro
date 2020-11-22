@@ -207,7 +207,7 @@ Mandatory method that will transform code. The object received has information a
 const babylon = require('@babel/parser');
 
 module.exports.transform = (file: {filename: string, src: string}) => {
-  const ast = babylon.parse(code, {sourceType: 'module'});
+  const ast = babylon.parse(file.src, {sourceType: 'module'});
 
   return {ast};
 };
