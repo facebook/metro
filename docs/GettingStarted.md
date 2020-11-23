@@ -134,6 +134,7 @@ Given a configuration and a set of options that you would typically pass to a se
 const config = await Metro.loadConfig();
 
 await Metro.runBuild(config, {
+  entry: 'index.js',
   platform: 'ios',
   minify: true,
   out: '/Users/Metro/metro-ios.js'
