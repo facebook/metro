@@ -27,7 +27,7 @@ describe('AutoCleanFileStore', () => {
     jest.spyOn(fs, 'unlinkSync');
   });
 
-  it('sets and writes into the cache', () => {
+  it('sets and writes into the cache', async () => {
     const fileStore = new AutoCleanFileStore({
       root: '/root',
       intervalMs: 49,
@@ -35,24 +35,24 @@ describe('AutoCleanFileStore', () => {
     });
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
 
-    fileStore.set(cache, {foo: 42});
-    expect(fileStore.get(cache)).toEqual({foo: 42});
+    await fileStore.set(cache, {foo: 42});
+    expect(await fileStore.get(cache)).toEqual({foo: 42});
 
     jest.runTimersToTime(30);
 
-    expect(fileStore.get(cache)).toEqual({foo: 42});
+    expect(await fileStore.get(cache)).toEqual({foo: 42});
 
     jest.runTimersToTime(40);
 
     // mtime doesn't work very well in in-memory-store, so we couldn't test that
     // functionality
-    expect(fileStore.get(cache)).toEqual(null);
+    expect(await fileStore.get(cache)).toEqual(null);
   });
 
-  it('returns null when reading a non-existing file', () => {
+  it('returns null when reading a non-existing file', async () => {
     const fileStore = new AutoCleanFileStore({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
 
-    expect(fileStore.get(cache)).toEqual(null);
+    expect(await fileStore.get(cache)).toEqual(null);
   });
 });

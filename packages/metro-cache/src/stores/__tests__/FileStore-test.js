@@ -26,46 +26,46 @@ describe('FileStore', () => {
     jest.spyOn(fs, 'unlinkSync');
   });
 
-  it('sets and writes into the cache', () => {
+  it('sets and writes into the cache', async () => {
     const fileStore = new FileStore({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
 
-    fileStore.set(cache, {foo: 42});
-    expect(fileStore.get(cache)).toEqual({foo: 42});
+    await fileStore.set(cache, {foo: 42});
+    expect(await fileStore.get(cache)).toEqual({foo: 42});
   });
 
-  it('returns null when reading a non-existing file', () => {
+  it('returns null when reading a non-existing file', async () => {
     const fileStore = new FileStore({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
 
-    expect(fileStore.get(cache)).toEqual(null);
+    expect(await fileStore.get(cache)).toEqual(null);
   });
 
-  it('returns null when reading a empty file', () => {
+  it('returns null when reading a empty file', async () => {
     const fileStore = new FileStore({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
     const filePath = fileStore._getFilePath(cache);
 
     fs.writeFileSync(filePath, '');
-    expect(fileStore.get(cache)).toEqual(null);
+    expect(await fileStore.get(cache)).toEqual(null);
   });
 
-  it('writes into cache if folder is missing', () => {
+  it('writes into cache if folder is missing', async () => {
     const fileStore = new FileStore({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
     const data = Buffer.from([0xca, 0xc4, 0xe5]);
 
     require('rimraf').sync('/root');
-    fileStore.set(cache, data);
-    expect(fileStore.get(cache)).toEqual(data);
+    await fileStore.set(cache, data);
+    expect(await fileStore.get(cache)).toEqual(data);
   });
 
-  it('reads and writes binary data', () => {
+  it('reads and writes binary data', async () => {
     const fileStore = new FileStore({root: '/root'});
     const cache = Buffer.from([0xfa, 0xce, 0xb0, 0x0c]);
     const data = Buffer.from([0xca, 0xc4, 0xe5]);
 
-    fileStore.set(cache, data);
-    expect(fileStore.get(cache)).toEqual(data);
+    await fileStore.set(cache, data);
+    expect(await fileStore.get(cache)).toEqual(data);
   });
 });
