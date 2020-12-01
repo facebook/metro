@@ -45,7 +45,7 @@ it('minimizes arguments given', () => {
 
       (function() {
         {
-          const r = 1; // _$$_REQUIRE will be renamed to "r".
+          const r = 1; // _$$_REQUIRE will be renamed to "_r".
           return r++;
         }
       })();
@@ -57,16 +57,16 @@ it('minimizes arguments given', () => {
     })
   `);
 
-  expect(result.reserved).toEqual(['g', 'r', 'm', 'e', 'd']);
+  expect(result.reserved).toEqual(['g', '_r', 'm', 'e', 'd']);
   expect(result.code).toMatchInlineSnapshot(`
-    "__d(function (g, r, m, e, d) {
-      r(27).foo();
+    "__d(function (g, _r, m, e, d) {
+      _r(27).foo();
 
       (function () {
         {
-          const _r4 = 1; // _$$_REQUIRE will be renamed to \\"r\\".
+          const r = 1; // _$$_REQUIRE will be renamed to \\"_r\\".
 
-          return _r4++;
+          return r++;
         }
       })();
 
