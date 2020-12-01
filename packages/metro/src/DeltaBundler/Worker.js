@@ -13,6 +13,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const traverse = require('@babel/traverse').default;
 
 import type {TransformResult} from './types.flow';
 import type {LogEntry} from 'metro-core/src/Logger';
@@ -83,6 +84,14 @@ async function transform(
     data,
     transformOptions,
   );
+
+  // The babel cache caches scopes and pathes for already traversed AST nodes.
+  // Clearing the cache here since the nodes of the transformed file are no longer referenced.
+  // This isn't stritcly necessary since the cache uses a WeakMap. However, WeakMap only permit
+  // that unreferenced keys are collected but the values still hold references to the Scope and NodePaths.
+  // Manually clearing the cache allows the GC to collect the Scope and NodePaths without checking if there
+  // exist any other references to the keys.
+  traverse.cache.clear();
 
   const transformFileEndLogEntry = getEndLogEntry(
     transformFileStartLogEntry,
