@@ -13,21 +13,13 @@
 const HermesCompiler = require('metro-hermes-compiler');
 const JsFileWrapping = require('metro/src/ModuleGraph/worker/JsFileWrapping');
 
-const assetTransformer = require('./utils/assetTransformer');
 const babylon = require('@babel/parser');
 const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
 const generateImportNames = require('metro/src/ModuleGraph/worker/generateImportNames');
 const generate = require('@babel/generator').default;
 const getCacheKey = require('metro-cache-key');
 const getMinifier = require('./utils/getMinifier');
-const {
-  constantFoldingPlugin,
-  getTransformPluginCacheKeyFiles,
-  importExportPlugin,
-  inlinePlugin,
-  normalizePseudoGlobals,
-} = require('metro-transform-plugins');
-const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
+const metroTransformPlugins = require('metro-transform-plugins');
 const {transformFromAstSync} = require('@babel/core');
 const {stableHash} = require('metro-cache');
 const types = require('@babel/types');
@@ -289,9 +281,6 @@ module.exports = {
       };
     }
 
-    // $FlowFixMe TODO t26372934 Plugin system
-    const transformer: Transformer<*> = require(config.babelTransformerPath);
-
     const transformerArgs = {
       filename,
       options: {
@@ -311,17 +300,24 @@ module.exports = {
       src: sourceCode,
     };
 
-    const transformResult =
-      type === 'js/module/asset'
-        ? {
-            ...(await assetTransformer.transform(
-              transformerArgs,
-              config.assetRegistryPath,
-              config.assetPlugins,
-            )),
-            functionMap: null,
-          }
-        : await transformer.transform(transformerArgs);
+    let transformResult;
+
+    if (type === 'js/module/asset') {
+      const assetTransformer = require('./utils/assetTransformer');
+
+      transformResult = {
+        ...(await assetTransformer.transform(
+          transformerArgs,
+          config.assetRegistryPath,
+          config.assetPlugins,
+        )),
+        functionMap: null,
+      };
+    } else {
+      // $FlowFixMe TODO t26372934 Plugin system
+      const transformer: Transformer<*> = require(config.babelTransformerPath);
+      transformResult = await transformer.transform(transformerArgs);
+    }
 
     // Transformers can output null ASTs (if they ignore the file). In that case
     // we need to parse the module source code to get their AST.
@@ -353,12 +349,12 @@ module.exports = {
     };
 
     if (options.experimentalImportSupport) {
-      plugins.push([importExportPlugin, opts]);
+      plugins.push([metroTransformPlugins.importExportPlugin, opts]);
     }
 
     if (options.inlineRequires) {
       plugins.push([
-        inlineRequiresPlugin,
+        require('babel-preset-fbjs/plugins/inline-requires'),
         {
           ...opts,
           ignoredRequires: options.nonInlinedRequires,
@@ -367,10 +363,10 @@ module.exports = {
     }
 
     if (!options.dev) {
-      plugins.push([constantFoldingPlugin, opts]);
+      plugins.push([metroTransformPlugins.constantFoldingPlugin, opts]);
     }
 
-    plugins.push([inlinePlugin, opts]);
+    plugins.push([metroTransformPlugins.inlinePlugin, opts]);
 
     transformFromAstSync(ast, '', {
       ast: true,
@@ -430,7 +426,7 @@ module.exports = {
 
     const reserved =
       options.minify && data.length <= config.optimizationSizeLimit
-        ? normalizePseudoGlobals(wrappedAst)
+        ? metroTransformPlugins.normalizePseudoGlobals(wrappedAst)
         : [];
 
     const result = generate(
@@ -502,7 +498,7 @@ module.exports = {
       require.resolve('metro/src/ModuleGraph/worker/collectDependencies'),
       require.resolve('metro/src/ModuleGraph/worker/generateImportNames'),
       require.resolve('metro/src/ModuleGraph/worker/JsFileWrapping'),
-      ...getTransformPluginCacheKeyFiles(),
+      ...metroTransformPlugins.getTransformPluginCacheKeyFiles(),
     ]);
 
     const babelTransformer = require(babelTransformerPath);

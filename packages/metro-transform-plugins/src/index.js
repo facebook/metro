@@ -37,11 +37,26 @@ type TransformPlugins = {
 };
 
 module.exports = ({
-  addParamsToDefineCall: require('./addParamsToDefineCall'),
-  constantFoldingPlugin: require('./constant-folding-plugin'),
-  importExportPlugin: require('./import-export-plugin'),
-  inlinePlugin: require('./inline-plugin'),
-  normalizePseudoGlobals: require('./normalizePseudoGlobals'),
+  // $FlowIgnore[unsafe-getters-setters]
+  get addParamsToDefineCall() {
+    return require('./addParamsToDefineCall');
+  },
+  // $FlowIgnore[unsafe-getters-setters]
+  get constantFoldingPlugin() {
+    return require('./constant-folding-plugin');
+  },
+  // $FlowIgnore[unsafe-getters-setters]
+  get importExportPlugin() {
+    return require('./import-export-plugin');
+  },
+  // $FlowIgnore[unsafe-getters-setters]
+  get inlinePlugin() {
+    return require('./inline-plugin');
+  },
+  // $FlowIgnore[unsafe-getters-setters]
+  get normalizePseudoGlobals() {
+    return require('./normalizePseudoGlobals');
+  },
   getTransformPluginCacheKeyFiles: () => [
     require.resolve(__filename),
     require.resolve('./constant-folding-plugin'),
