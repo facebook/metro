@@ -124,7 +124,7 @@ describe('Buck worker:', () => {
       fs.createWriteStream = (...args) => {
         const writeStream = createWriteStreamImpl(...args);
         ++openedStreams;
-        writeStream.on('close', () => --openedStreams);
+        writeStream.on('finish', () => --openedStreams);
         return writeStream;
       };
     });
