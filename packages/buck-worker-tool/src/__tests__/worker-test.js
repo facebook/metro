@@ -109,7 +109,8 @@ describe('Buck worker:', () => {
   });
 
   describe('commands:', () => {
-    let createWriteStreamImpl, streamFinishedPromises = [];
+    let createWriteStreamImpl;
+    let streamClosedPromises = [];
 
     function mockFiles(files) {
       writeFiles(files, '/');
@@ -130,11 +131,16 @@ describe('Buck worker:', () => {
 
     beforeAll(() => {
       createWriteStreamImpl = fs.createWriteStream;
-      fs.createWriteStream = (...args) => {
-        const writeStream = createWriteStreamImpl(...args);
-        streamFinishedPromises.push(new Promise((resolve) => {
-          writeStream.on('finish', resolve);
-        }));
+      fs.createWriteStream = (path, options) => {
+        const writeStream = createWriteStreamImpl(path, {
+          ...options,
+          emitClose: true,
+        });
+        streamClosedPromises.push(
+          new Promise(resolve => {
+            writeStream.on('close', resolve);
+          }),
+        );
 
         return writeStream;
       };
@@ -146,7 +152,7 @@ describe('Buck worker:', () => {
 
     beforeEach(() => {
       fs.reset();
-      streamFinishedPromises = [];
+      streamClosedPromises = [];
       mockFiles({
         arbitrary: {
           args: '',
@@ -162,7 +168,7 @@ describe('Buck worker:', () => {
     });
 
     afterEach(function assertThatAllWriteStreamsWereClosed() {
-      return Promise.all(streamFinishedPromises);
+      return Promise.all(streamClosedPromises);
     });
 
     it('errors if `args_path` cannot be opened', () => {
