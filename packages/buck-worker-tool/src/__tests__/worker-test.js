@@ -11,7 +11,16 @@
 'use strict';
 
 jest
-  .mock('console')
+  .mock('console', () => {
+    // Automocking is no longer working with jest after https://github.com/nodejs/node/pull/35399
+    // because the typeof console is now 'console' and no longer Object.
+    const mock = jest.fn();
+    const Console = mock;
+
+    Console.prototype.error = mock;
+
+    return {Console};
+  })
   .mock('fs', () => new (require('metro-memory-fs'))())
   .mock('temp', () => ({
     path() {
@@ -100,7 +109,8 @@ describe('Buck worker:', () => {
   });
 
   describe('commands:', () => {
-    let createWriteStreamImpl, openedStreams;
+    let createWriteStreamImpl;
+    let streamClosedPromises = [];
 
     function mockFiles(files) {
       writeFiles(files, '/');
@@ -121,10 +131,17 @@ describe('Buck worker:', () => {
 
     beforeAll(() => {
       createWriteStreamImpl = fs.createWriteStream;
-      fs.createWriteStream = (...args) => {
-        const writeStream = createWriteStreamImpl(...args);
-        ++openedStreams;
-        writeStream.on('finish', () => --openedStreams);
+      fs.createWriteStream = (path, options) => {
+        const writeStream = createWriteStreamImpl(path, {
+          ...options,
+          emitClose: true,
+        });
+        streamClosedPromises.push(
+          new Promise(resolve => {
+            writeStream.on('close', resolve);
+          }),
+        );
+
         return writeStream;
       };
     });
@@ -135,7 +152,7 @@ describe('Buck worker:', () => {
 
     beforeEach(() => {
       fs.reset();
-      openedStreams = 0;
+      streamClosedPromises = [];
       mockFiles({
         arbitrary: {
           args: '',
@@ -151,7 +168,7 @@ describe('Buck worker:', () => {
     });
 
     afterEach(function assertThatAllWriteStreamsWereClosed() {
-      expect(openedStreams).toBe(0);
+      return Promise.all(streamClosedPromises);
     });
 
     it('errors if `args_path` cannot be opened', () => {
@@ -304,7 +321,7 @@ describe('Buck worker:', () => {
       );
     });
 
-    it('passes arguments to an existing command', () => {
+    it('passes arguments to an existing command', async () => {
       commands.transform = jest.fn();
       const args = 'foo  bar baz\tmore';
       mockFiles({
@@ -319,12 +336,11 @@ describe('Buck worker:', () => {
         }),
       );
 
-      return end(1).then(() =>
-        expect(commands.transform).toBeCalledWith(
-          args.split(/\s+/),
-          null,
-          anything(),
-        ),
+      await end(1);
+      expect(commands.transform).toBeCalledWith(
+        args.split(/\s+/),
+        null,
+        anything(),
       );
     });
 
