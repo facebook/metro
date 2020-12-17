@@ -988,25 +988,30 @@ class Server {
     const getCodeFrame = (urls, symbolicatedStack) => {
       for (let i = 0; i < symbolicatedStack.length; i++) {
         const {collapse, column, file, lineNumber} = symbolicatedStack[i];
-        if (collapse || lineNumber == null || urls.has(file)) {
+        const entryPoint = path.resolve(this._config.projectRoot, file);
+        if (collapse || lineNumber == null || urls.has(entryPoint)) {
           continue;
         }
 
-        return {
-          content: codeFrameColumns(
-            fs.readFileSync(file, 'utf8'),
-            {
-              // Metro returns 0 based columns but codeFrameColumns expects 1-based columns
-              start: {column: column + 1, line: lineNumber},
+        try {
+          return {
+            content: codeFrameColumns(
+              fs.readFileSync(entryPoint, 'utf8'),
+              {
+                // Metro returns 0 based columns but codeFrameColumns expects 1-based columns
+                start: {column: column + 1, line: lineNumber},
+              },
+              {forceColor: true},
+            ),
+            location: {
+              row: lineNumber,
+              column,
             },
-            {forceColor: true},
-          ),
-          location: {
-            row: lineNumber,
-            column,
-          },
-          fileName: file,
-        };
+            fileName: file,
+          };
+        } catch (error) {
+          console.error(error);
+        }
       }
 
       return null;
