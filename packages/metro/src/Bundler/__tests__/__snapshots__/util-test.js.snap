@@ -22,6 +22,6 @@ exports[`Util generates a remote asset for a given descriptor 1`] = `
     \\"3\\": \\"GMEgUgG9llQL8EUBAAAAAAB2uXdrbnsvAAAZ\\",
     \\"4\\": \\"GFleUAEiuVDxD5wGAAAAAAZWLd1dbnsvAAAZ\\",
     \\"1.5\\": \\"GAdeUAEMbQH8hyQGAAAAAAC9H193bnsvAAAZ\\"
-  }[require(\\"react-native-module/asset-resolver\\").pickScale([1, 1.5, 2, 3, 4])]
+  }[require(\\"react-native-module/asset-source-pick-scale\\")([1, 1.5, 2, 3, 4])]
 };"
 `;

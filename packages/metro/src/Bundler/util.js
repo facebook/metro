@@ -86,7 +86,7 @@ function generateAssetCodeFileAst(
  * standard asset.
  */
 function generateRemoteAssetCodeFileAst(
-  assetSourceResolverPath: string,
+  assetSourcePickScale: string,
   assetDescriptor: AssetDataWithoutFiles,
   remoteServer: string,
   remoteFileMap: RemoteFileMap,
@@ -119,7 +119,7 @@ function generateRemoteAssetCodeFileAst(
     module.exports = {
       "width": WIDTH,
       "height": HEIGHT,
-      "uri": URI + OBJECT_AST[require(ASSET_SOURCE_RESOLVER_PATH).pickScale(SCALE_ARRAY)]
+      "uri": URI + OBJECT_AST[require(ASSET_SOURCE_PICK_SCALE_PATH)(SCALE_ARRAY)]
     };
   `);
 
@@ -130,7 +130,7 @@ function generateRemoteAssetCodeFileAst(
         HEIGHT,
         URI,
         OBJECT_AST: astData,
-        ASSET_SOURCE_RESOLVER_PATH: t.stringLiteral(assetSourceResolverPath),
+        ASSET_SOURCE_PICK_SCALE_PATH: t.stringLiteral(assetSourcePickScale),
         SCALE_ARRAY: t.arrayExpression(
           Object.keys(descriptor)
             .map(Number)
