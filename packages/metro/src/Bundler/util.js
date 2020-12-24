@@ -86,7 +86,7 @@ function generateAssetCodeFileAst(
  * standard asset.
  */
 function generateRemoteAssetCodeFileAst(
-  assetSourcePickScale: string,
+  assetUtilsPath: string,
   assetDescriptor: AssetDataWithoutFiles,
   remoteServer: string,
   remoteFileMap: RemoteFileMap,
@@ -115,30 +115,29 @@ function generateRemoteAssetCodeFileAst(
   const WIDTH = t.numericLiteral(nullthrows(assetDescriptor.width));
   const HEIGHT = t.numericLiteral(nullthrows(assetDescriptor.height));
 
-  const buildRequire = template.statement(`
+  const buildRequire = template.program(`
+    const {pickScale, getUrlCacheBreaker}= require(ASSET_UTILS_PATH);
     module.exports = {
       "width": WIDTH,
       "height": HEIGHT,
-      "uri": URI + OBJECT_AST[require(ASSET_SOURCE_PICK_SCALE_PATH)(SCALE_ARRAY)]
+      "uri": URI + OBJECT_AST[pickScale(SCALE_ARRAY)] + getUrlCacheBreaker()
     };
   `);
 
   return t.file(
-    t.program([
-      buildRequire({
-        WIDTH,
-        HEIGHT,
-        URI,
-        OBJECT_AST: astData,
-        ASSET_SOURCE_PICK_SCALE_PATH: t.stringLiteral(assetSourcePickScale),
-        SCALE_ARRAY: t.arrayExpression(
-          Object.keys(descriptor)
-            .map(Number)
-            .sort((a: number, b: number) => a - b)
-            .map((scale: number) => t.numericLiteral(scale)),
-        ),
-      }),
-    ]),
+    buildRequire({
+      WIDTH,
+      HEIGHT,
+      URI,
+      OBJECT_AST: astData,
+      ASSET_UTILS_PATH: t.stringLiteral(assetUtilsPath),
+      SCALE_ARRAY: t.arrayExpression(
+        Object.keys(descriptor)
+          .map(Number)
+          .sort((a: number, b: number) => a - b)
+          .map((scale: number) => t.numericLiteral(scale)),
+      ),
+    }),
   );
 }
 
