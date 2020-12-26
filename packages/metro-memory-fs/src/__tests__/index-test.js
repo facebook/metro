@@ -103,17 +103,20 @@ describe('posix support', () => {
 
   describe('createWriteStream', () => {
     it('writes a file', done => {
-      const st = fs.createWriteStream('/foo.txt');
+      const st = fs.createWriteStream('/foo.txt', {emitClose: true});
       let opened = false;
       let closed = false;
       st.on('open', () => (opened = true));
       st.on('close', () => (closed = true));
       st.write('test');
       st.write(' foo');
-      st.end(() => {
+      st.end();
+
+      st.on('close', () => {
         expect(opened).toBe(true);
         expect(closed).toBe(true);
         expect(fs.readFileSync('/foo.txt', 'utf8')).toEqual('test foo');
+
         done();
       });
     });
@@ -121,14 +124,11 @@ describe('posix support', () => {
     it('writes a file, as buffer', done => {
       const st = fs.createWriteStream('/foo.txt');
       let opened = false;
-      let closed = false;
       st.on('open', () => (opened = true));
-      st.on('close', () => (closed = true));
       st.write(Buffer.from('test'));
       st.write(Buffer.from(' foo'));
       st.end(() => {
         expect(opened).toBe(true);
-        expect(closed).toBe(true);
         expect(fs.readFileSync('/foo.txt', 'utf8')).toEqual('test foo');
         done();
       });
@@ -138,13 +138,10 @@ describe('posix support', () => {
       fs.writeFileSync('/foo.txt', 'test bar');
       const st = fs.createWriteStream('/foo.txt', {start: 5, flags: 'r+'});
       let opened = false;
-      let closed = false;
       st.on('open', () => (opened = true));
-      st.on('close', () => (closed = true));
       st.write('beep');
       st.end(() => {
         expect(opened).toBe(true);
-        expect(closed).toBe(true);
         expect(fs.readFileSync('/foo.txt', 'utf8')).toEqual('test beep');
         done();
       });
@@ -154,13 +151,10 @@ describe('posix support', () => {
       const fd = fs.openSync('/bar.txt', 'w');
       const st = fs.createWriteStream('/foo.txt', {fd});
       let opened = false;
-      let closed = false;
       st.on('open', () => (opened = true));
-      st.on('close', () => (closed = true));
       st.write('beep boop');
       st.end(() => {
         expect(opened).toBe(false);
-        expect(closed).toBe(true);
         expect(fs.readFileSync('/bar.txt', 'utf8')).toEqual('beep boop');
         done();
       });

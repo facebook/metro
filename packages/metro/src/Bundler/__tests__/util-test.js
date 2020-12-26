@@ -69,7 +69,7 @@ describe('Util', () => {
   it('generates a remote asset for a given descriptor', () => {
     const {code} = babelGenerate(
       generateRemoteAssetCodeFileAst(
-        'react-native-module/asset-resolver',
+        'react-native-module/asset-utils',
         assetDescriptor,
         'https://example.com',
         remoteFileMap,
@@ -81,7 +81,7 @@ describe('Util', () => {
 
   it('returns null if the asset is not present on the map', () => {
     const asset = generateRemoteAssetCodeFileAst(
-      'react-native-module/asset-resolver',
+      'react-native-module/asset-utils',
       assetDescriptor,
       'https://example.com',
       {},
