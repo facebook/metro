@@ -56,11 +56,12 @@ function inlinePlugin(
   const {
     isAssignmentExpression,
     isIdentifier,
-    isStringLiteral,
     isMemberExpression,
+    isObjectExpression,
+    isObjectMethod,
     isObjectProperty,
     isSpreadElement,
-    isObjectExpression,
+    isStringLiteral,
   } = t;
   const {isPlatformNode, isPlatformSelectNode} = createInlinePlatformChecks(
     t,
@@ -99,16 +100,20 @@ function inlinePlugin(
     let value = null;
 
     for (const p of objectExpression.properties) {
-      if (!isObjectProperty(p)) {
+      if (!isObjectProperty(p) && !isObjectMethod(p)) {
         continue;
       }
-
       if (
         (isIdentifier(p.key) && p.key.name === key) ||
         (isStringLiteral(p.key) && p.key.value === key)
       ) {
-        value = p.value;
-        break;
+        if (isObjectProperty(p)) {
+          value = p.value;
+          break;
+        } else if (isObjectMethod(p)) {
+          value = t.toExpression(p);
+          break;
+        }
       }
     }
 
@@ -118,6 +123,9 @@ function inlinePlugin(
   function hasStaticProperties(objectExpression: ObjectExpression): boolean {
     return objectExpression.properties.every(p => {
       if (p.computed || isSpreadElement(p)) {
+        return false;
+      }
+      if (isObjectMethod(p) && p.kind !== 'method') {
         return false;
       }
 
