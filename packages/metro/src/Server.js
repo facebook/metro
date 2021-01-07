@@ -331,6 +331,7 @@ class Server {
       transformOptions.platform ||
       parsePlatformFilePath(entryFile, this._platforms).platform;
 
+    // $FlowFixMe[incompatible-return]
     return await getAllFiles(prepend, graph, {
       platform,
       processModuleFilter: this._config.serializer.processModuleFilter,
@@ -988,6 +989,7 @@ class Server {
     const getCodeFrame = (urls, symbolicatedStack) => {
       for (let i = 0; i < symbolicatedStack.length; i++) {
         const {collapse, column, file, lineNumber} = symbolicatedStack[i];
+        // $FlowFixMe[incompatible-call]
         const entryPoint = path.resolve(this._config.projectRoot, file);
         if (collapse || lineNumber == null || urls.has(entryPoint)) {
           continue;
@@ -999,6 +1001,7 @@ class Server {
               fs.readFileSync(entryPoint, 'utf8'),
               {
                 // Metro returns 0 based columns but codeFrameColumns expects 1-based columns
+                // $FlowFixMe[unsafe-addition]
                 start: {column: column + 1, line: lineNumber},
               },
               {forceColor: true},

@@ -333,8 +333,10 @@ module.exports = {
 
     if (
       ast.program.sourceType === 'module' &&
+      // $FlowFixMe[incompatible-use]
       directives.findIndex(d => d.value.value === 'use strict') === -1
     ) {
+      // $FlowFixMe[incompatible-use]
       directives.push(types.directive(types.directiveLiteral('use strict')));
     }
 
