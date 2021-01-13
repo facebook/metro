@@ -231,7 +231,7 @@ async function applyAssetDataPlugins(
   assetDataPlugins: $ReadOnlyArray<string>,
   assetData: AssetData,
 ): Promise<AssetData> {
-  if (!assetDataPlugins.length) {
+  if (!assetDataPlugins || !assetDataPlugins.length) {
     return assetData;
   }
 
