@@ -1166,6 +1166,10 @@ declare module '@babel/generator' {
      * The filename for the source code (i.e. the code in the code argument). This will only be used if code is a string.
      */
     sourceFileName?: string,
+    /**
+     * The filename of the generated code that the source map will be associated with
+     */
+    sourceMapTarget?: string,
   };
 
   declare export default (
@@ -1176,7 +1180,7 @@ declare module '@babel/generator' {
 
   declare export default (
     ast: BabelNode,
-    options?: GeneratorOptions,
+    options?: Options,
     code?: string | {|[filename: string]: string|},
   ) => GeneratorResult;
 }
