@@ -137,6 +137,15 @@ async function main(
       }
     } else if (argv[0].endsWith('.profmap')) {
       stdout.write(context.symbolicateProfilerMap(argv[0]));
+    } else if (
+      argv[0].endsWith('.heapsnapshot') ||
+      argv[0].endsWith('.heaptimeline')
+    ) {
+      stdout.write(
+        JSON.stringify(
+          context.symbolicateHeapSnapshot(fs.readFileSync(argv[0], 'utf8')),
+        ),
+      );
     } else if (argv[0] === '--attribution') {
       let buffer = '';
       await waitForStream(

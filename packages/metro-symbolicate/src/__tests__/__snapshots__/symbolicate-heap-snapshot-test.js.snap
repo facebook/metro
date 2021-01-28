@@ -1,0 +1,31 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`heap snapshots/timelines symbolicating allocation stacks: symbolicated 1`] = `
+"<global> @ /js/RKJSModules/Apps/GenSampleHeapSnapshot/GenSampleHeapSnapshot.js:10:20
+loadModuleImplementation @ /js/node_modules/metro-runtime/src/polyfills/require.js:409:12
+metroRequire @ /js/node_modules/metro-runtime/src/polyfills/require.js:193:20
+metroRequire @ /js/node_modules/metro-runtime/src/polyfills/require.js:193:20
+metroImportDefault @ /js/node_modules/metro-runtime/src/polyfills/require.js:212:31
+<global> @ /js/RKJSModules/EntryPoints/GenSampleHeapSnapshotBundle.js:12:1
+loadModuleImplementation @ /js/node_modules/metro-runtime/src/polyfills/require.js:409:12
+guardedLoadModule @ /js/node_modules/metro-runtime/src/polyfills/require.js:271:45
+metroRequire @ /js/node_modules/metro-runtime/src/polyfills/require.js:193:20
+global @ ./GenSampleHeapSnapshotBundle.js:26:4
+global @ ./GenSampleHeapSnapshotBundle.js:1:1
+(root) @ :0:0"
+`;
+
+exports[`heap snapshots/timelines symbolicating allocation stacks: unsymbolicated 1`] = `
+"(anonymous) @ ./GenSampleHeapSnapshotBundle.js:25:231
+loadModuleImplementation @ ./GenSampleHeapSnapshotBundle.js:10:6144
+metroRequire @ ./GenSampleHeapSnapshotBundle.js:10:2060
+metroRequire @ ./GenSampleHeapSnapshotBundle.js:10:2060
+metroImportDefault @ ./GenSampleHeapSnapshotBundle.js:10:2452
+(anonymous) @ ./GenSampleHeapSnapshotBundle.js:15:139
+loadModuleImplementation @ ./GenSampleHeapSnapshotBundle.js:10:6144
+guardedLoadModule @ ./GenSampleHeapSnapshotBundle.js:10:3528
+metroRequire @ ./GenSampleHeapSnapshotBundle.js:10:2060
+global @ ./GenSampleHeapSnapshotBundle.js:26:4
+global @ ./GenSampleHeapSnapshotBundle.js:1:1
+(root) @ :0:0"
+`;

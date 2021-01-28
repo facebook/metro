@@ -6,6 +6,7 @@
  *
  * @emails oncall+js_symbolication
  * @format
+ * @flow strict-local
  */
 
 'use strict';
@@ -18,30 +19,33 @@ const {PassThrough} = require('stream');
 const resolve = fileName => path.resolve(__dirname, '__fixtures__', fileName);
 const read = fileName => fs.readFileSync(resolve(fileName), 'utf8');
 
-const execute = async (args: Array<string>, stdin: string): Promise<string> => {
+const execute = async (
+  args: Array<string>,
+  stdin?: string,
+): Promise<string> => {
   const streams = {
     stdin: new PassThrough(),
     stdout: new PassThrough(),
     stderr: new PassThrough(),
   };
   const stdout = [];
-  const output = ['Process failed with the following output:\n======\n'];
+  const errorMessage = ['Process failed with the following output:\n======\n'];
   streams.stdout.on('data', data => {
-    output.push(data);
+    errorMessage.push(data);
     stdout.push(data);
   });
   streams.stderr.on('data', data => {
-    output.push(data);
+    errorMessage.push(data);
   });
-  if (stdin) {
+  if (stdin != null) {
     streams.stdin.write(stdin);
     streams.stdin.end();
   }
   const code = await symbolicate(args, streams);
 
   if (code !== 0) {
-    output.push('======\n');
-    throw new Error(output.join(''));
+    errorMessage.push('======\n');
+    throw new Error(errorMessage.join(''));
   }
   return stdout.join('');
 };

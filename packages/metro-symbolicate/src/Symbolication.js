@@ -17,6 +17,9 @@ const invariant = require('invariant');
 const nullthrows = require('nullthrows');
 const path = require('path');
 
+const {ChromeHeapSnapshotProcessor} = require('./ChromeHeapSnapshot');
+
+import type {ChromeHeapSnapshot} from './ChromeHeapSnapshot';
 import type {MixedSourceMap, HermesFunctionOffsets} from 'metro-source-map';
 // flowlint-next-line untyped-type-import:off
 import {typeof SourceMapConsumer} from 'source-map';
@@ -378,6 +381,62 @@ class SymbolicationContext<ModuleIdsT> {
     crashInfo: HermesMinidumpCrashInfo,
   ): SymbolicatedStackTrace {
     throw new Error('Not implemented');
+  }
+
+  /**
+   * Symbolicates heap alloction stacks in a Chrome-formatted heap
+   * snapshot/timeline.
+   * Line and column offsets in options (both input and output) are _ignored_,
+   * because this format has a well-defined convention (1-based lines and
+   * columns).
+   */
+  symbolicateHeapSnapshot(
+    snapshotContents: string | ChromeHeapSnapshot,
+  ): ChromeHeapSnapshot {
+    const snapshotData: ChromeHeapSnapshot =
+      typeof snapshotContents === 'string'
+        ? JSON.parse(snapshotContents)
+        : snapshotContents;
+    const processor = new ChromeHeapSnapshotProcessor(snapshotData);
+    for (const frame of processor.traceFunctionInfos()) {
+      const moduleIds = this.parseFileName(frame.getString('script_name'));
+      const generatedLine = frame.getNumber('line');
+      const generatedColumn = frame.getNumber('column');
+      if (generatedLine === 0 && generatedColumn === 0) {
+        continue;
+      }
+      const {
+        line: originalLine,
+        column: originalColumn,
+        source: originalSource,
+        functionName: originalFunctionName,
+      } = this.getOriginalPositionDetailsFor(
+        frame.getNumber('line') - 1 + this.options.inputLineStart,
+        frame.getNumber('column') - 1 + this.options.inputColumnStart,
+        moduleIds,
+      );
+      if (originalSource != null) {
+        frame.setString('script_name', originalSource);
+        if (originalLine != null) {
+          frame.setNumber(
+            'line',
+            originalLine - this.options.outputLineStart + 1,
+          );
+        } else {
+          frame.setNumber('line', 0);
+        }
+        if (originalColumn != null) {
+          frame.setNumber(
+            'column',
+            originalColumn - this.options.outputColumnStart + 1,
+          );
+        } else {
+          frame.setNumber('column', 0);
+        }
+      }
+      frame.setString('name', originalFunctionName ?? frame.getString('name'));
+    }
+    return snapshotData;
   }
 
   /*
