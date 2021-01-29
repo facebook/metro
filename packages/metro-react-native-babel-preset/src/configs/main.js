@@ -20,7 +20,7 @@ function isTSXSource(fileName) {
   return !!fileName && fileName.endsWith('.tsx');
 }
 
-const defaultPlugins = [
+const defaultPluginsBeforeRegenerator = [
   [require('@babel/plugin-syntax-flow')],
   [require('@babel/plugin-proposal-optional-catch-binding')],
   [require('@babel/plugin-transform-block-scoping')],
@@ -36,7 +36,9 @@ const defaultPlugins = [
   [require('@babel/plugin-transform-function-name')],
   [require('@babel/plugin-transform-literals')],
   [require('@babel/plugin-transform-parameters')],
-  [require('@babel/plugin-transform-regenerator')],
+];
+
+const defaultPluginsAfterRegenerator = [
   [require('@babel/plugin-transform-sticky-regex')],
   [require('@babel/plugin-transform-unicode-regex')],
 ];
@@ -103,6 +105,9 @@ const getPreset = (src, options) => {
       {loose: true}, // dont 'a'.concat('b'), just use 'a'+'b'
     ]);
   }
+  if (isHermesCanary && (isNull || src.indexOf('async') !== -1)) {
+    extraPlugins.push([require('@babel/plugin-transform-async-to-generator')]);
+  }
   if (!isHermes && (isNull || src.indexOf('**') !== -1)) {
     extraPlugins.push([
       require('@babel/plugin-transform-exponentiation-operator'),
@@ -152,7 +157,7 @@ const getPreset = (src, options) => {
       require('@babel/plugin-transform-runtime'),
       {
         helpers: true,
-        regenerator: true,
+        regenerator: !isHermesCanary,
       },
     ]);
   }
@@ -167,7 +172,13 @@ const getPreset = (src, options) => {
         plugins: [require('@babel/plugin-transform-flow-strip-types')],
       },
       {
-        plugins: defaultPlugins,
+        plugins: [
+          ...defaultPluginsBeforeRegenerator,
+          isHermesCanary
+            ? null
+            : require('@babel/plugin-transform-regenerator'),
+          ...defaultPluginsAfterRegenerator,
+        ].filter(Boolean),
       },
       {
         test: isTypeScriptSource,
