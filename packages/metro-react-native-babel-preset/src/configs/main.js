@@ -86,18 +86,12 @@ const getPreset = (src, options) => {
   // and patch react-refresh to not depend on this transform.
   extraPlugins.push([require('@babel/plugin-transform-arrow-functions')]);
 
-  if (!isHermes) {
-    extraPlugins.push([require('@babel/plugin-transform-computed-properties')]);
-  }
   if (!isHermes && (isNull || hasClass || src.indexOf('...') !== -1)) {
-    extraPlugins.push(
-      [require('@babel/plugin-transform-spread')],
-      [
-        require('@babel/plugin-proposal-object-rest-spread'),
-        // Assume no dependence on getters or evaluation order. See https://github.com/babel/babel/pull/11520
-        {loose: true},
-      ],
-    );
+    extraPlugins.push([
+      require('@babel/plugin-proposal-object-rest-spread'),
+      // Assume no dependence on getters or evaluation order. See https://github.com/babel/babel/pull/11520
+      {loose: true},
+    ]);
   }
   if (!isHermes && (isNull || src.indexOf('`') !== -1)) {
     extraPlugins.push([
@@ -107,14 +101,6 @@ const getPreset = (src, options) => {
   }
   if (isHermesCanary && (isNull || src.indexOf('async') !== -1)) {
     extraPlugins.push([require('@babel/plugin-transform-async-to-generator')]);
-  }
-  if (!isHermes && (isNull || src.indexOf('**') !== -1)) {
-    extraPlugins.push([
-      require('@babel/plugin-transform-exponentiation-operator'),
-    ]);
-  }
-  if (!isHermes && (isNull || src.indexOf('Object.assign')) !== -1) {
-    extraPlugins.push([require('@babel/plugin-transform-object-assign')]);
   }
   if (hasForOf) {
     extraPlugins.push([
@@ -139,11 +125,6 @@ const getPreset = (src, options) => {
     extraPlugins.push([
       require('@babel/plugin-proposal-nullish-coalescing-operator'),
       {loose: true},
-    ]);
-  }
-  if (!isHermes) {
-    extraPlugins.push([
-      require('@babel/plugin-transform-shorthand-properties'),
     ]);
   }
 
