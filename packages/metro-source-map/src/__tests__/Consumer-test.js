@@ -37,6 +37,29 @@ describe('basic maps', () => {
       `);
     });
 
+    test('empty position is a mutable object', () => {
+      const consumer = new Consumer({
+        version: 3,
+        mappings: '',
+        names: [],
+        sources: [],
+      });
+      const empty1 = consumer.originalPositionFor({
+        line: add1(0),
+        column: add0(0),
+      });
+      const empty2 = consumer.originalPositionFor({
+        line: add1(0),
+        column: add0(0),
+      });
+      expect(empty1).not.toBe(empty2);
+      expect(() => {
+        empty1.name = 'foo';
+        // $FlowIgnore[prop-missing]
+        empty1.someProp = 'bar';
+      }).not.toThrow();
+    });
+
     test('single full mapping', () => {
       const consumer = new Consumer({
         version: 3,
@@ -257,6 +280,27 @@ describe('indexed (sectioned) maps', () => {
           "source": null,
         }
       `);
+    });
+
+    test('empty position is a mutable object', () => {
+      const consumer = new Consumer({
+        version: 3,
+        sections: [],
+      });
+      const empty1 = consumer.originalPositionFor({
+        line: add1(0),
+        column: add0(0),
+      });
+      const empty2 = consumer.originalPositionFor({
+        line: add1(0),
+        column: add0(0),
+      });
+      expect(empty1).not.toBe(empty2);
+      expect(() => {
+        empty1.name = 'foo';
+        // $FlowIgnore[prop-missing]
+        empty1.someProp = 'bar';
+      }).not.toThrow();
     });
 
     test('section per column', () => {

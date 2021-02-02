@@ -15,10 +15,10 @@ import type {Number0, Number1} from 'ob1';
 export type {IterationOrder, LookupBias};
 export type GeneratedOffset = {|+lines: Number0, +columns: Number0|};
 export type SourcePosition = {
-  +source: ?string,
-  +line: ?Number1,
-  +column: ?Number0,
-  +name: ?string,
+  source: ?string,
+  line: ?Number1,
+  column: ?Number0,
+  name: ?string,
   ...
 };
 export type GeneratedPosition = {
