@@ -321,6 +321,68 @@ describe('indexed (sectioned) maps', () => {
       `);
     });
 
+    test('column offset only applies to first line of section', () => {
+      const consumer = new Consumer({
+        version: 3,
+        sections: [
+          {
+            offset: {line: 5, column: 1000},
+            map: {
+              version: 3,
+              names: ['section0_name0', 'section0_name1'],
+              sources: ['section0_source0', 'section0_source1'],
+              mappings: 'AAEEA,G;ECAAC,C;C',
+            },
+          },
+        ],
+      });
+      expect(consumer.originalPositionFor({line: add1(5), column: add0(1002)}))
+        .toMatchInlineSnapshot(`
+        Object {
+          "column": 2,
+          "line": 3,
+          "name": "section0_name0",
+          "source": "section0_source0",
+        }
+      `);
+      expect(consumer.originalPositionFor({line: add1(5), column: add0(1003)}))
+        .toMatchInlineSnapshot(`
+        Object {
+          "column": null,
+          "line": null,
+          "name": null,
+          "source": null,
+        }
+      `);
+      expect(consumer.originalPositionFor({line: add1(6), column: add0(2)}))
+        .toMatchInlineSnapshot(`
+        Object {
+          "column": 2,
+          "line": 3,
+          "name": "section0_name1",
+          "source": "section0_source1",
+        }
+      `);
+      expect(consumer.originalPositionFor({line: add1(6), column: add0(3)}))
+        .toMatchInlineSnapshot(`
+        Object {
+          "column": null,
+          "line": null,
+          "name": null,
+          "source": null,
+        }
+      `);
+      expect(consumer.originalPositionFor({line: add1(6), column: add0(1002)}))
+        .toMatchInlineSnapshot(`
+        Object {
+          "column": null,
+          "line": null,
+          "name": null,
+          "source": null,
+        }
+      `);
+    });
+
     test('unmapped regions', () => {
       const consumer = new Consumer({
         version: 3,
