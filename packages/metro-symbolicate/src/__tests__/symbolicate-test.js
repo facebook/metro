@@ -62,71 +62,122 @@ const TESTFILE_RAM_MAP = resolve('testfile.ram.js.map');
 const HERMES_MAP = resolve('hermes.js.hbc.map');
 const HERMES_MAP_CJS = resolve('hermescjs.js.hbc.map');
 
-test('symbolicating a hermes stack trace', async () => {
-  const output = JSON.parse(
-    await execute(
-      [HERMES_MAP, '--hermes-crash'],
-      read('hermesStackTrace.json'),
-    ),
-  );
-  expect(output).toMatchSnapshot();
+describe('hermes-crash option', () => {
+  test('symbolicating a hermes stack trace', async () => {
+    const output = JSON.parse(
+      await execute(
+        [HERMES_MAP, '--hermes-crash'],
+        read('hermesStackTrace.json'),
+      ),
+    );
+    expect(output).toMatchSnapshot();
+  });
+
+  test('symbolicating a hermes stack trace with input-line-start and input-column-start', async () => {
+    const output0Based = JSON.parse(
+      await execute(
+        [
+          HERMES_MAP,
+          '--hermes-crash',
+          '--input-line-start',
+          '0',
+          '--input-column-start',
+          '0',
+        ],
+        read('hermesStackTrace.json'),
+      ),
+    );
+    const output1Based = JSON.parse(
+      await execute(
+        [
+          HERMES_MAP,
+          '--hermes-crash',
+          '--input-line-start',
+          '1',
+          '--input-column-start',
+          '1',
+        ],
+        read('hermesStackTrace.json'),
+      ),
+    );
+    const outputNoFlag = JSON.parse(
+      await execute(
+        [HERMES_MAP, '--hermes-crash'],
+        read('hermesStackTrace.json'),
+      ),
+    );
+    expect(outputNoFlag).toMatchObject(output0Based);
+    expect(outputNoFlag).toMatchObject(output1Based);
+  });
+
+  test('symbolicating a hermes stack trace CJS', async () => {
+    const output = JSON.parse(
+      await execute(
+        [HERMES_MAP_CJS, '--hermes-crash'],
+        read('hermesStackTraceCJS.json'),
+      ),
+    );
+    expect(output).toMatchSnapshot();
+  });
+
+  test('symbolicating a hermes stack trace CJS with SegmentID', async () => {
+    const output = JSON.parse(
+      await execute(
+        [HERMES_MAP_CJS, '--hermes-crash'],
+        read('hermesStackTraceCJS-SegmentID.json'),
+      ),
+    );
+    expect(output).toMatchSnapshot();
+  });
 });
 
-test('symbolicating a hermes stack trace with input-line-start and input-column-start', async () => {
-  const output0Based = JSON.parse(
-    await execute(
-      [
-        HERMES_MAP,
-        '--hermes-crash',
-        '--input-line-start',
-        '0',
-        '--input-column-start',
-        '0',
-      ],
-      read('hermesStackTrace.json'),
-    ),
-  );
-  const output1Based = JSON.parse(
-    await execute(
-      [
-        HERMES_MAP,
-        '--hermes-crash',
-        '--input-line-start',
-        '1',
-        '--input-column-start',
-        '1',
-      ],
-      read('hermesStackTrace.json'),
-    ),
-  );
-  const outputNoFlag = JSON.parse(
-    await execute(
-      [HERMES_MAP, '--hermes-crash'],
-      read('hermesStackTrace.json'),
-    ),
-  );
-  expect(outputNoFlag).toMatchObject(output0Based);
-  expect(outputNoFlag).toMatchObject(output1Based);
-});
+describe('coverage option', () => {
+  test('ignores input-line-start and input-column-start', async () => {
+    const output0Based = JSON.parse(
+      await execute(
+        [
+          HERMES_MAP_CJS,
+          '--hermes-coverage',
+          '--input-line-start',
+          '0',
+          '--input-column-start',
+          '0',
+        ],
+        read('coverageStackTraceCJS.json'),
+      ),
+    );
+    const output1Based = JSON.parse(
+      await execute(
+        [
+          HERMES_MAP_CJS,
+          '--hermes-coverage',
+          '--input-line-start',
+          '1',
+          '--input-column-start',
+          '1',
+        ],
+        read('coverageStackTraceCJS.json'),
+      ),
+    );
+    const outputNoFlag = JSON.parse(
+      await execute(
+        [HERMES_MAP_CJS, '--hermes-coverage'],
+        read('coverageStackTraceCJS.json'),
+      ),
+    );
+    expect(outputNoFlag).toMatchObject(output0Based);
+    expect(outputNoFlag).toMatchObject(output1Based);
+  });
 
-test('symbolicating a hermes stack trace CJS', async () => {
-  const output = JSON.parse(
-    await execute(
-      [HERMES_MAP_CJS, '--hermes-crash'],
-      read('hermesStackTraceCJS.json'),
-    ),
-  );
-  expect(output).toMatchSnapshot();
-});
-
-test('symbolicating a hermes stack trace CJS with SegmentID', async () => {
-  const output = JSON.parse(
-    await execute(
-      [HERMES_MAP_CJS, '--hermes-crash'],
-      read('hermesStackTraceCJS-SegmentID.json'),
-    ),
-  );
-  expect(output).toMatchSnapshot();
+  test('symbolicating a coverage stack trace CJS', async () => {
+    const output = JSON.parse(
+      await execute(
+        [HERMES_MAP_CJS, '--hermes-coverage'],
+        read('coverageStackTraceCJS.json'),
+      ),
+    );
+    expect(output).toMatchSnapshot();
+  });
 });
 
 test('symbolicating a stack trace', async () =>

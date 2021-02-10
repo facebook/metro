@@ -1,5 +1,24 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`coverage option symbolicating a coverage stack trace CJS 1`] = `
+Array [
+  Object {
+    "column": 2,
+    "functionName": "<global>",
+    "line": 16,
+    "name": null,
+    "source": "/js/react-native-github/Libraries/Utilities/createPerformanceLogger.js",
+  },
+  Object {
+    "column": 2,
+    "functionName": "<global>",
+    "line": 25,
+    "name": null,
+    "source": "/js/RKJSModules/Libraries/MobileConfig/MobileConfig.js",
+  },
+]
+`;
+
 exports[`directory context does not read source maps outside the root dir, with relative or absolute paths 1`] = `
 "<testDir>/__fixtures__/testfile.js:1:null
 ../testfile.js:1:null
@@ -20,7 +39,7 @@ exports[`directory context symbolicating a stack trace with absolute paths 1`] =
 "
 `;
 
-exports[`symbolicating a hermes stack trace 1`] = `
+exports[`hermes-crash option symbolicating a hermes stack trace 1`] = `
 Array [
   Object {
     "column": 21,
@@ -63,7 +82,7 @@ Array [
 ]
 `;
 
-exports[`symbolicating a hermes stack trace CJS 1`] = `
+exports[`hermes-crash option symbolicating a hermes stack trace CJS 1`] = `
 Array [
   Object {
     "column": 36,
@@ -99,7 +118,7 @@ Array [
 ]
 `;
 
-exports[`symbolicating a hermes stack trace CJS with SegmentID 1`] = `
+exports[`hermes-crash option symbolicating a hermes stack trace CJS with SegmentID 1`] = `
 Array [
   Object {
     "column": 36,

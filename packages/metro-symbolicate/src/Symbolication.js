@@ -8,8 +8,6 @@
  * @format
  */
 
-'use strict';
-
 const SourceMetadataMapConsumer = require('./SourceMetadataMapConsumer');
 
 const fs = require('fs');
@@ -80,6 +78,15 @@ type HermesMinidumpStackFrame = $ReadOnly<{|
   StackFrameRegOffs: string,
   SourceLocation?: string,
 |}>;
+
+type HermesCoverageInfo = {
+  +executedFunctions: $ReadOnlyArray<HermesCoverageStackFrame>,
+};
+
+type HermesCoverageStackFrame = $ReadOnly<{
+  SegmentID: number,
+  VirtualOffset: number,
+}>;
 
 type NativeCodeStackFrame = $ReadOnly<{|
   NativeCode: true,
@@ -440,6 +447,32 @@ class SymbolicationContext<ModuleIdsT> {
   }
 
   /*
+   * Symbolicates the JavaScript stack trace extracted from the coverage information
+   * produced by HermesRuntime::getExecutedFunctions.
+   */
+  symbolicateHermesCoverageTrace(
+    coverageInfo: HermesCoverageInfo,
+  ): SymbolicatedStackTrace {
+    const symbolicatedTrace = [];
+    const {executedFunctions} = coverageInfo;
+
+    if (executedFunctions != null) {
+      for (const stackItem of executedFunctions) {
+        const {SegmentID, VirtualOffset: localOffset} = stackItem;
+        const generatedLine = SegmentID + this.options.inputLineStart;
+        const generatedColumn = localOffset + this.options.inputColumnStart;
+
+        const originalPosition = this.getOriginalPositionDetailsFor(
+          generatedLine,
+          generatedColumn,
+        );
+        symbolicatedTrace.push(originalPosition);
+      }
+    }
+    return symbolicatedTrace;
+  }
+
+  /*
    * An internal helper function similar to getOriginalPositionFor. This one
    * returns both `name` and `functionName` fields so callers can distinguish the
    * source of the name.
@@ -571,6 +604,28 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
             symbolicatedTrace.push(originalPosition);
           }
         }
+      }
+    }
+    return symbolicatedTrace;
+  }
+
+  symbolicateHermesCoverageTrace(
+    coverageInfo: HermesCoverageInfo,
+  ): SymbolicatedStackTrace {
+    const symbolicatedTrace = [];
+    const {executedFunctions} = coverageInfo;
+
+    if (executedFunctions != null) {
+      for (const stackItem of executedFunctions) {
+        const {SegmentID, VirtualOffset: localOffset} = stackItem;
+        const generatedLine = SegmentID + this.options.inputLineStart;
+        const generatedColumn = localOffset + this.options.inputColumnStart;
+
+        const originalPosition = this.getOriginalPositionDetailsFor(
+          generatedLine,
+          generatedColumn,
+        );
+        symbolicatedTrace.push(originalPosition);
       }
     }
     return symbolicatedTrace;
