@@ -185,6 +185,11 @@ type ChromeHeapSnapshotFieldType =
   // type name
   | string;
 
+// The input type to functions that accept record objects.
+type DenormalizedRecordInput = $ReadOnly<{
+  [field: string]: string | number | $ReadOnlyArray<DenormalizedRecordInput>,
+}>;
+
 // A cursor pointing to a record-aligned position in a 1D array of N records
 // each with K fields in a fixed order. Supports encoding/decoding field values
 // in the raw array according to a schema passed to the constructor.
@@ -352,6 +357,56 @@ class ChromeHeapSnapshotRecordAccessor {
     this._moveToPosition(recordIndex * this._recordSize);
   }
 
+  // Appends a new record at the end of the buffer.
+  //
+  // Returns the index of the appended record. All fields must be specified and
+  // have values of the correct types. The cursor may move while writing, but
+  // is guaranteed to return to its initial position when this function returns
+  // (or throws).
+  append(record: DenormalizedRecordInput): number {
+    const savedPosition = this._position;
+    try {
+      return this.moveAndInsert(this._buffer.length / this._recordSize, record);
+    } finally {
+      this._position = savedPosition;
+    }
+  }
+
+  // Moves the cursor to a given index in the buffer (expressed in # of
+  // records, NOT fields) and inserts a record.
+  //
+  // Returns the index of the inserted record. All fields must be specified and
+  // have values of the correct types. The given index may be the end of the
+  // buffer; otherwise existing records starting at the given index will be
+  // shifted to the right to accommodate the new record.
+  //
+  // NOTE: Inserting is a risky, low-level operation. Care must be taken not to
+  // desync buffers that implicitly or explicitly depend on one another (e.g.
+  // edge.to_node -> node position, cumulative node.edge_count -> edge indices).
+  moveAndInsert(recordIndex: number, record: DenormalizedRecordInput): number {
+    this._moveToPosition(recordIndex * this._recordSize, /* allowEnd */ true);
+    let didResizeBuffer = false;
+    try {
+      for (const field of this._fieldToOffset.keys()) {
+        if (!Object.prototype.hasOwnProperty.call(record, field)) {
+          throw new Error('Missing value for field: ' + field);
+        }
+      }
+      this._buffer.splice(this._position, 0, ...new Array(this._recordSize));
+      didResizeBuffer = true;
+      for (const field of Object.keys(record)) {
+        this._set(field, record[field]);
+      }
+      return this._position / this._recordSize;
+    } catch (e) {
+      if (didResizeBuffer) {
+        // Roll back the write
+        this._buffer.splice(this._position, this._recordSize);
+      }
+      throw e;
+    }
+  }
+
   /** "Protected" methods (please don't use) */
 
   // Return true if we can advance the position by one record (including from
@@ -406,14 +461,45 @@ class ChromeHeapSnapshotRecordAccessor {
     return rawValue;
   }
 
-  // Writes the raw numeric value of a field.
-  _setRaw(field: string, rawValue: number) {
+  // Writes the raw value of a field.
+  _setRaw(field: string, rawValue: number | RawBuffer) {
     this._validatePosition();
     const offset = this._fieldToOffset.get(field);
     if (offset == null) {
       throw new Error('Unknown field: ' + field);
     }
     this._buffer[this._position + offset] = rawValue;
+  }
+
+  // Writes a scalar or children value to `field`, inferring the intended type
+  // based on the runtime type of `value`.
+  _set(
+    field: string,
+    value: string | number | $ReadOnlyArray<DenormalizedRecordInput>,
+  ) {
+    if (typeof value === 'string') {
+      this.setString(field, value);
+    } else if (typeof value === 'number') {
+      this.setNumber(field, value);
+    } else if (Array.isArray(value)) {
+      this._setChildren(field, value);
+    } else {
+      throw new Error('Unsupported value for field: ' + field);
+    }
+  }
+
+  // Writes a children array to `field` by appending each element of `value` to
+  // a new buffer using `append()`s semantics.
+  _setChildren(field: string, value: $ReadOnlyArray<DenormalizedRecordInput>) {
+    const fieldType = this._fieldToType.get(field);
+    if (fieldType !== CHILDREN_FIELD_TYPE) {
+      throw new Error('Not a children field: ' + field);
+    }
+    this._setRaw(field, []);
+    const childIt = this.getChildren(field);
+    for (const child of value) {
+      childIt.append(child);
+    }
   }
 
   // Encodes a string value according to its field schema.
