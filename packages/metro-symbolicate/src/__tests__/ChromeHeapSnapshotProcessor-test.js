@@ -115,7 +115,7 @@ describe('ChromeHeapSnapshotProcessor', () => {
       const it = processor.edges();
       expect(() => {
         it.getString('type');
-      }).toThrowError('Iterator not started with next() yet');
+      }).toThrowError('Position -3 is out of range');
     });
 
     test('accessing data after end', () => {
@@ -124,7 +124,7 @@ describe('ChromeHeapSnapshotProcessor', () => {
       expect(it.next().done).toBe(true);
       expect(() => {
         it.getString('type');
-      }).toThrowError('Position 0 is out of range');
+      }).toThrowError('Position -3 is out of range');
     });
 
     test('using the iterator protocol', () => {
