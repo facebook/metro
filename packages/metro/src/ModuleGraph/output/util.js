@@ -65,6 +65,7 @@ function inlineModuleIds(
   module: Module,
   idForPath: ({path: string, ...}) => number,
   {
+    // $FlowFixMe[incompatible-type]
     dependencyMapReservedName = undefined,
     globalPrefix,
     ignoreMissingDependencyMapReference = false,
