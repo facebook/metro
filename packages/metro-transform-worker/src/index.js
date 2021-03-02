@@ -24,6 +24,7 @@ const {transformFromAstSync} = require('@babel/core');
 const {stableHash} = require('metro-cache');
 const types = require('@babel/types');
 const countLines = require('metro/src/lib/countLines');
+const nullthrows = require('nullthrows');
 
 const {
   fromRawMappings,
@@ -370,18 +371,25 @@ module.exports = {
 
     plugins.push([metroTransformPlugins.inlinePlugin, opts]);
 
-    transformFromAstSync(ast, '', {
-      ast: true,
-      babelrc: false,
-      code: false,
-      configFile: false,
-      comments: false,
-      compact: false,
-      filename,
-      plugins,
-      sourceMaps: false,
-      cloneInputAst: false,
-    });
+    ast = nullthrows(
+      transformFromAstSync(ast, '', {
+        ast: true,
+        babelrc: false,
+        code: false,
+        configFile: false,
+        comments: false,
+        compact: false,
+        filename,
+        plugins,
+        sourceMaps: false,
+        // Not-Cloning the input AST here should be safe because other code paths above this call
+        // are mutating the AST as well and no code is depending on the original AST.
+        // However, switching the flag to false caused issues with ES Modules if `experimentalImportSupport` isn't used https://github.com/facebook/metro/issues/641
+        // either because one of the plugins is doing something funky or Babel messes up some caches.
+        // Make sure to test the above mentioned case before flipping the flag back to false.
+        cloneInputAst: true,
+      }).ast,
+    );
 
     let dependencyMapName = '';
     let dependencies;
