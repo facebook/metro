@@ -178,6 +178,16 @@ describe('coverage option', () => {
     );
     expect(output).toMatchSnapshot();
   });
+
+  test('symbolicating a CJS stack trace ignores the module id of the file name', async () => {
+    const output = await execute([HERMES_MAP_CJS, '5.js', '52', '83']);
+    expect(output).toMatchSnapshot();
+  });
+
+  test('symbolicating a CJS stack trace ignores the segment id of the file name', async () => {
+    const output = await execute([HERMES_MAP_CJS, 'seg-5.js', '52', '83']);
+    expect(output).toMatchSnapshot();
+  });
 });
 
 test('symbolicating a stack trace', async () =>

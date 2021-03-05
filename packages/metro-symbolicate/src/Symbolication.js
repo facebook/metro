@@ -501,7 +501,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
     |},
     ...,
   };
-  +_hasLegacySegments: boolean;
+  +_legacyFormat: boolean;
   // $FlowFixMe[value-as-type]
   +_SourceMapConsumer: SourceMapConsumer;
 
@@ -526,7 +526,9 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
         segments[key] = this._initSegment(map);
       }
     }
-    this._hasLegacySegments = sourceMapJson.x_facebook_segments != null;
+    this._legacyFormat =
+      sourceMapJson.x_facebook_segments != null ||
+      sourceMapJson.x_facebook_offsets != null;
     this._segments = segments;
   }
 
@@ -572,9 +574,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
             CJSModuleOffset ?? SegmentID,
             'Either CJSModuleOffset or SegmentID must be specified in the Hermes stack frame',
           );
-          const moduleInformation = this._hasLegacySegments
-            ? this.parseFileName(SourceURL)
-            : UNKNOWN_MODULE_IDS;
+          const moduleInformation = this.parseFileName(SourceURL);
           const generatedLine =
             cjsModuleOffsetOrSegmentID + this.options.inputLineStart;
           const segment = this._segments[
@@ -695,7 +695,11 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
   }
 
   parseFileName(str: string): SingleMapModuleIds {
-    return parseSingleMapFileName(str);
+    if (this._legacyFormat) {
+      return parseSingleMapFileName(str);
+    }
+
+    return UNKNOWN_MODULE_IDS;
   }
 }
 

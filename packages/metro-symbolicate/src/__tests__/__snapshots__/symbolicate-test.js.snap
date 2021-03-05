@@ -1,5 +1,15 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`coverage option symbolicating a CJS stack trace ignores the module id of the file name 1`] = `
+"/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js:13:getValue
+"
+`;
+
+exports[`coverage option symbolicating a CJS stack trace ignores the segment id of the file name 1`] = `
+"/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js:13:getValue
+"
+`;
+
 exports[`coverage option symbolicating a coverage stack trace CJS 1`] = `
 Array [
   Object {
