@@ -259,6 +259,7 @@ function getNameForPath(path: NodePath<>): string {
         name = className + separator + name;
       }
     } else if (isObjectExpression(propertyPath.parent)) {
+      // $FlowFixMe[incompatible-use]
       const objectName = getNameForPath(nullthrows(propertyPath.parentPath));
       if (objectName !== ANONYMOUS_NAME) {
         name = objectName + '.' + name;

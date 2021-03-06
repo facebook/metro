@@ -75,12 +75,14 @@ const getBabelRC = (function() {
       }
 
       // babel.config.js
+      // $FlowFixMe[incompatible-call]
       if (!fs.existsSync(projectBabelRCPath)) {
         projectBabelRCPath = path.resolve(projectRoot, 'babel.config.js');
       }
 
       // If we found a babel config file, extend our config off of it
       // otherwise the default config will be used
+      // $FlowFixMe[incompatible-call]
       if (fs.existsSync(projectBabelRCPath)) {
         babelRC.extends = projectBabelRCPath;
       }

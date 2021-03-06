@@ -245,6 +245,7 @@ function getModuleCodeAndMap(
     }
     moduleMap = {...moduleMap, x_facebook_sources};
   }
+  // $FlowFixMe[incompatible-return]
   return {moduleCode, moduleMap};
 }
 
