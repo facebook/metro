@@ -88,6 +88,7 @@ class Transformer {
     } = transformerOptions;
 
     for (const key in extra) {
+      // $FlowFixMe[cannot-resolve-name]
       if (hasOwnProperty.call(extra, key)) {
         throw new Error(
           'Extra keys detected: ' + Object.keys(extra).join(', '),
