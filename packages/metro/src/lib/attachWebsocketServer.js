@@ -13,7 +13,7 @@
 import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
 
-type WebsocketServiceInterface<T> = {
+type WebsocketServiceInterface<T> = interface {
   +onClientConnect: (
     url: string,
     sendFn: (data: string) => void,
@@ -25,7 +25,6 @@ type WebsocketServiceInterface<T> = {
     message: string,
     sendFn: (data: string) => void,
   ) => mixed,
-  ...
 };
 
 type HMROptions<TClient> = {
