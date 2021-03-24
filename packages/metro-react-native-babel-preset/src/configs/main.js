@@ -105,7 +105,7 @@ const getPreset = (src, options) => {
       {loose: true}, // dont 'a'.concat('b'), just use 'a'+'b'
     ]);
   }
-  if (isHermesCanary && (isNull || src.indexOf('async') !== -1)) {
+  if (isHermes && (isNull || src.indexOf('async') !== -1)) {
     extraPlugins.push([require('@babel/plugin-transform-async-to-generator')]);
   }
   if (!isHermes && (isNull || src.indexOf('**') !== -1)) {
@@ -157,7 +157,7 @@ const getPreset = (src, options) => {
       require('@babel/plugin-transform-runtime'),
       {
         helpers: true,
-        regenerator: !isHermesCanary,
+        regenerator: !isHermes,
       },
     ]);
   }
@@ -174,9 +174,7 @@ const getPreset = (src, options) => {
       {
         plugins: [
           ...defaultPluginsBeforeRegenerator,
-          isHermesCanary
-            ? null
-            : require('@babel/plugin-transform-regenerator'),
+          isHermes ? null : require('@babel/plugin-transform-regenerator'),
           ...defaultPluginsAfterRegenerator,
         ].filter(Boolean),
       },
