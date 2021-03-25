@@ -39,7 +39,7 @@ module.exports = {
 
 #### `cacheStores`
 
-Type: `Array<CacheStore<TransformResult<>>`
+Type: `Array<CacheStore<TransformResult<>>>`
 
 List where we store our [caches](./Caching.md).
 
