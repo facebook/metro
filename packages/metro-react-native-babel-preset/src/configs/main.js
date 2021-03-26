@@ -116,7 +116,7 @@ const getPreset = (src, options) => {
   if (!isHermes && (isNull || src.indexOf('Object.assign')) !== -1) {
     extraPlugins.push([require('@babel/plugin-transform-object-assign')]);
   }
-  if (hasForOf) {
+  if (!isHermesCanary && hasForOf) {
     extraPlugins.push([
       require('@babel/plugin-transform-for-of'),
       {loose: true},
