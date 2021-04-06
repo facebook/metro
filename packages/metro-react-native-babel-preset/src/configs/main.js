@@ -116,7 +116,7 @@ const getPreset = (src, options) => {
   if (!isHermes && (isNull || src.indexOf('Object.assign')) !== -1) {
     extraPlugins.push([require('@babel/plugin-transform-object-assign')]);
   }
-  if (hasForOf) {
+  if (!isHermes && hasForOf) {
     extraPlugins.push([
       require('@babel/plugin-transform-for-of'),
       {loose: true},
@@ -135,7 +135,7 @@ const getPreset = (src, options) => {
       {loose: true},
     ]);
   }
-  if (!isHermesCanary && (isNull || src.indexOf('??') !== -1)) {
+  if (!isHermes && (isNull || src.indexOf('??') !== -1)) {
     extraPlugins.push([
       require('@babel/plugin-proposal-nullish-coalescing-operator'),
       {loose: true},
