@@ -8,8 +8,6 @@
  * @format
  */
 
-'use strict';
-
 import type {
   Page,
   MessageFromDevice,
@@ -37,8 +35,7 @@ const FILE_PREFIX = 'file://';
 
 type DebuggerInfo = {
   // Debugger web socket connection
-  // $FlowFixMe[value-as-type]
-  socket: WS,
+  socket: typeof WS,
   // If we replaced address (like '10.0.2.2') to localhost we need to store original
   // address because Chrome uses URL or urlRegex params (instead of scriptId) to set breakpoints.
   originalSourceURLAddress?: string,
@@ -47,12 +44,7 @@ type DebuggerInfo = {
   ...
 };
 
-const REACT_NATIVE_RELOADABLE_PAGE = {
-  id: '-1',
-  title: 'React Native Experimental (Improved Chrome Reloads)',
-  vm: "don't use",
-  app: "don't use",
-};
+const REACT_NATIVE_RELOADABLE_PAGE_ID = '-1';
 
 /**
  * Device class represents single device connection to Inspector Proxy. Each device
@@ -69,8 +61,7 @@ class Device {
   _app: string;
 
   // Stores socket connection between Inspector Proxy and device.
-  // $FlowFixMe[value-as-type]
-  _deviceSocket: WS;
+  _deviceSocket: typeof WS;
 
   // Stores last list of device's pages.
   _pages: Array<Page>;
@@ -99,8 +90,7 @@ class Device {
     id: number,
     name: string,
     app: string,
-    // $FlowFixMe[value-as-type]
-    socket: WS,
+    socket: typeof WS,
     projectRoot: string,
   ) {
     this._id = id;
@@ -143,7 +133,13 @@ class Device {
 
   getPagesList(): Array<Page> {
     if (this._lastReactNativePageId) {
-      return this._pages.concat(REACT_NATIVE_RELOADABLE_PAGE);
+      const reactNativeReloadablePage = {
+        id: REACT_NATIVE_RELOADABLE_PAGE_ID,
+        title: 'React Native Experimental (Improved Chrome Reloads)',
+        vm: "don't use",
+        app: this._app,
+      };
+      return this._pages.concat(reactNativeReloadablePage);
     } else {
       return this._pages;
     }
@@ -153,8 +149,7 @@ class Device {
   // 1. Sends connect event to device
   // 2. Forwards all messages from the debugger to device as wrappedEvent
   // 3. Sends disconnect event to device when debugger connection socket closes.
-  // $FlowFixMe[value-as-type]
-  handleDebuggerConnection(socket: WS, pageId: string) {
+  handleDebuggerConnection(socket: typeof WS, pageId: string) {
     // Disconnect current debugger if we already have debugger connected.
     if (this._debuggerConnection) {
       this._debuggerConnection.socket.close();
@@ -249,7 +244,7 @@ class Device {
       if (debuggerSocket && debuggerSocket.readyState === WS.OPEN) {
         if (
           this._debuggerConnection != null &&
-          this._debuggerConnection.pageId !== REACT_NATIVE_RELOADABLE_PAGE.id
+          this._debuggerConnection.pageId !== REACT_NATIVE_RELOADABLE_PAGE_ID
         ) {
           debug(`Page ${pageId} is reloading.`);
           debuggerSocket.send(JSON.stringify({method: 'reload'}));
@@ -304,7 +299,7 @@ class Device {
     debug(`React Native page updated to ${pageId}`);
     if (
       this._debuggerConnection == null ||
-      this._debuggerConnection.pageId !== REACT_NATIVE_RELOADABLE_PAGE.id
+      this._debuggerConnection.pageId !== REACT_NATIVE_RELOADABLE_PAGE_ID
     ) {
       // We can just remember new page ID without any further actions if no
       // debugger is currently attached or attached debugger is not
@@ -396,7 +391,7 @@ class Device {
         }
       }
 
-      if (debuggerInfo.pageId == REACT_NATIVE_RELOADABLE_PAGE.id) {
+      if (debuggerInfo.pageId == REACT_NATIVE_RELOADABLE_PAGE_ID) {
         // Chrome won't use the source map unless it appears to be new.
         if (payload.params.sourceMapURL) {
           payload.params.sourceMapURL +=
@@ -512,7 +507,7 @@ class Device {
 
   _getPageId(pageId: string): string {
     if (
-      pageId === REACT_NATIVE_RELOADABLE_PAGE.id &&
+      pageId === REACT_NATIVE_RELOADABLE_PAGE_ID &&
       this._lastReactNativePageId != null
     ) {
       return this._lastReactNativePageId;
