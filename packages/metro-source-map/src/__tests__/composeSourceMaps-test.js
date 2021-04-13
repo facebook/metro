@@ -19,7 +19,7 @@ const composeSourceMaps = require('../composeSourceMaps');
 const fs = require('fs');
 const invariant = require('invariant');
 const path = require('path');
-const uglifyEs = require('uglify-es');
+const uglifyEs = require('uglify-js');
 
 const {add0, add1} = require('ob1');
 
