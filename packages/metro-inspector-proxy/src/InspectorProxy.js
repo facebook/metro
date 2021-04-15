@@ -98,7 +98,7 @@ class InspectorProxy {
   addWebSocketListener(server: HttpServer | HttpsServer) {
     const {port} = server.address();
     if (server.address().family === 'IPv6') {
-      this._serverAddressWithPort = `[::]:${port}`;
+      this._serverAddressWithPort = `[::1]:${port}`;
     } else {
       this._serverAddressWithPort = `localhost:${port}`;
     }
