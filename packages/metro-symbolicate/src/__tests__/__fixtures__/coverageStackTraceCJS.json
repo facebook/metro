@@ -1,12 +1,16 @@
 {
   "executedFunctions": [
     {
-      "SegmentID": 0,
-      "VirtualOffset": 23819
+      "line": 0,
+      "column": 23819
     },
     {
-      "SegmentID": 0,
-      "VirtualOffset": 22579
+      "line": 0,
+      "column": 22579
+    },
+    {
+      "line": 51,
+      "column": 27
     }
   ]
 }

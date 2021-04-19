@@ -26,6 +26,39 @@ Array [
     "name": null,
     "source": "/js/RKJSModules/Libraries/MobileConfig/MobileConfig.js",
   },
+  Object {
+    "column": 0,
+    "functionName": "<global>",
+    "line": 8,
+    "name": null,
+    "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
+  },
+]
+`;
+
+exports[`coverage option symbolicating a coverage stack trace Classic 1`] = `
+Array [
+  Object {
+    "column": 9,
+    "functionName": "<anonymous>",
+    "line": 162,
+    "name": "param",
+    "source": "/js/RKJSModules/Libraries/MobileConfig/MobileConfig.js",
+  },
+  Object {
+    "column": 21,
+    "functionName": "<anonymous>",
+    "line": 100,
+    "name": null,
+    "source": "/js/RKJSModules/Libraries/MobileConfig/MobileConfig.js",
+  },
+  Object {
+    "column": 15,
+    "functionName": "getValue",
+    "line": 10,
+    "name": "getValue",
+    "source": "/js/RKJSModules/Apps/HermesModulesTest/HMTLazyFetched.js",
+  },
 ]
 `;
 
