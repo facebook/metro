@@ -9,13 +9,13 @@
     "deploy": "docusaurus deploy"
   },
   "dependencies": {
-    "@docusaurus/core": "2.0.0-alpha.61",
-    "@docusaurus/preset-classic":"2.0.0-alpha.61",
-    "classnames": "2.2.6",
-    "react": "16.13.0",
-    "react-dom": "16.13.0",
-    "react-github-btn": "1.1.1",
-    "react-markdown":"4.3.1"
+    "@docusaurus/core": "2.0.0-alpha.adf2a526e5",
+    "@docusaurus/preset-classic": "2.0.0-alpha.adf2a526e5",
+    "classnames": "^2.3.1",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-github-btn": "^1.2.0",
+    "react-markdown": "^6.0.1"
   },
   "devDependencies": {
     "prettier": "1.19.1"
