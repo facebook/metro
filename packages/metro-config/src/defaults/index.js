@@ -91,6 +91,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
       ramGroups: [],
     }),
     globalPrefix: '',
+    hermesParser: false,
     minifierConfig: {
       mangle: {
         toplevel: false,

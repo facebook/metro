@@ -104,6 +104,7 @@ Object {
     "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
+    "hermesParser": false,
     "minifierConfig": Object {
       "compress": Object {
         "reduce_funcs": false,
@@ -241,6 +242,7 @@ Object {
     "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
+    "hermesParser": false,
     "minifierConfig": Object {
       "compress": Object {
         "reduce_funcs": false,
@@ -378,6 +380,7 @@ Object {
     "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
+    "hermesParser": false,
     "minifierConfig": Object {
       "compress": Object {
         "reduce_funcs": false,
@@ -515,6 +518,7 @@ Object {
     "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
+    "hermesParser": false,
     "minifierConfig": Object {
       "compress": Object {
         "reduce_funcs": false,

@@ -116,7 +116,7 @@ it('transforms a simple module', async () => {
 
 it('transforms a module with dependencies', async () => {
   const contents = [
-    "'use strict';",
+    '"use strict";',
     'require("./a");',
     'arbitrary(code);',
     'const b = require("b");',
@@ -138,7 +138,7 @@ it('transforms a module with dependencies', async () => {
   expect(result.output[0].data.code).toBe(
     [
       HEADER_DEV,
-      "  'use strict';",
+      '  "use strict";',
       '',
       '  var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0], "@babel/runtime/helpers/interopRequireDefault");',
       '',

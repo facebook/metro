@@ -3315,6 +3315,11 @@ has@^1.0.3:
   dependencies:
     function-bind "^1.1.1"
 
+hermes-parser@0.4.4:
+  version "0.4.4"
+  resolved "https://registry.yarnpkg.com/hermes-parser/-/hermes-parser-0.4.4.tgz#336daefc13e6e33f99f077bb02e774cbc106102a"
+  integrity sha512-snOGv52IJkmaWcnOWdqL2n06bndhZPp8wjTRsfx/8DcamsB3EZUUp2nMLjhbbcDqDXJX/OggHwQYnqUvC0zMQA==
+
 hosted-git-info@^2.1.4, hosted-git-info@^2.5.0:
   version "2.8.8"
   resolved "https://registry.yarnpkg.com/hosted-git-info/-/hosted-git-info-2.8.8.tgz#7539bd4bc1e0e0a895815a2e0262420b12858488"
