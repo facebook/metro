@@ -32,7 +32,6 @@ const defaultPluginsBeforeRegenerator = [
   [require('@babel/plugin-syntax-dynamic-import')],
   [require('@babel/plugin-syntax-export-default-from')],
   ...passthroughSyntaxPlugins,
-  [require('@babel/plugin-transform-destructuring')],
   [require('@babel/plugin-transform-function-name')],
   [require('@babel/plugin-transform-literals')],
   [require('@babel/plugin-transform-parameters')],
@@ -88,6 +87,9 @@ const getPreset = (src, options) => {
 
   if (!isHermes) {
     extraPlugins.push([require('@babel/plugin-transform-computed-properties')]);
+  }
+  if (!isHermesCanary) {
+    extraPlugins.push([require('@babel/plugin-transform-destructuring')]);
   }
   if (!isHermes && (isNull || hasClass || src.indexOf('...') !== -1)) {
     extraPlugins.push(

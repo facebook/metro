@@ -79,6 +79,7 @@ export type JsTransformerConfig = $ReadOnly<{|
   enableBabelRuntime: boolean,
   experimentalImportBundleSupport: boolean,
   globalPrefix: string,
+  hermesParser: boolean,
   minifierConfig: MinifierConfig,
   minifierPath: string,
   optimizationSizeLimit: number,
@@ -289,6 +290,7 @@ module.exports = {
         enableBabelRCLookup: config.enableBabelRCLookup,
         enableBabelRuntime: config.enableBabelRuntime,
         globalPrefix: config.globalPrefix,
+        hermesParser: config.hermesParser,
         // Inline requires are now performed at a secondary step. We cannot
         // unfortunately remove it from the internal transformer, since this one
         // is used by other tooling, and this would affect it.

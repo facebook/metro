@@ -10,6 +10,8 @@
 
 'use strict';
 
+const HermesParser = require('hermes-parser');
+
 const nullthrows = require('nullthrows');
 
 const {parseSync, transformFromAstSync} = require('@babel/core');
@@ -33,6 +35,7 @@ type BabelTransformerOptions = $ReadOnly<{
   enableBabelRuntime: boolean,
   extendsBabelConfigPath?: string,
   experimentalImportSupport?: boolean,
+  hermesParser?: boolean,
   hot: boolean,
   inlineRequires: boolean,
   nonInlinedRequires?: $ReadOnlyArray<string>,
@@ -79,7 +82,12 @@ function transform({filename, options, plugins, src}: BabelTransformerArgs) {
       plugins,
       sourceType: 'module',
     };
-    const sourceAst = parseSync(src, babelConfig);
+    const sourceAst = options.hermesParser
+      ? HermesParser.parse(src, {
+          babel: true,
+          sourceType: babelConfig.sourceType,
+        })
+      : parseSync(src, babelConfig);
     const {ast} = transformFromAstSync(sourceAst, src, babelConfig);
     const functionMap = generateFunctionMap(sourceAst, {filename});
 

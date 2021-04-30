@@ -223,6 +223,12 @@ Type: `GetTransformOptions`
 
 Get the transform options.
 
+#### `hermesParser`
+
+Type: `boolean` (default: `false`)
+
+Use the hermes-parser package to use call Hermes parser via WASM instead of the Babel parser.
+
 #### `postMinifyProcess`
 
 Type: `PostMinifyProcess`

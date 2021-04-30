@@ -20,6 +20,7 @@
   "dependencies": {
     "@babel/core": "^7.0.0",
     "babel-preset-fbjs": "^3.3.0",
+    "hermes-parser": "0.4.4",
     "metro-babel-transformer": "0.66.0",
     "metro-react-native-babel-preset": "0.66.0",
     "metro-source-map": "0.66.0",

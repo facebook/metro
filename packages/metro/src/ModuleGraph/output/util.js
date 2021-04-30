@@ -20,7 +20,8 @@ const virtualModule = require('../module').virtual;
 
 // flowlint-next-line untyped-import:off
 const {passthroughSyntaxPlugins} = require('metro-react-native-babel-preset');
-const {transformSync} = require('@babel/core');
+const {parseSync, transformFromAstSync} = require('@babel/core');
+const HermesParser = require('hermes-parser');
 
 import type {Dependency, IdsForPathFn, Module} from '../types.flow';
 import type {BasicSourceMap} from 'metro-source-map';
@@ -59,7 +60,17 @@ type InlineModuleIdsOptions = {
   dependencyMapReservedName: ?string,
   globalPrefix: string,
   ignoreMissingDependencyMapReference?: boolean,
+  hermesParser?: boolean,
 };
+
+// TS detection conditions copied from metro-react-native-babel-preset
+function isTypeScriptSource(fileName) {
+  return !!fileName && fileName.endsWith('.ts');
+}
+
+function isTSXSource(fileName) {
+  return !!fileName && fileName.endsWith('.tsx');
+}
 
 function inlineModuleIds(
   module: Module,
@@ -69,6 +80,7 @@ function inlineModuleIds(
     dependencyMapReservedName = undefined,
     globalPrefix,
     ignoreMissingDependencyMapReference = false,
+    hermesParser = false,
   }: InlineModuleIdsOptions,
 ): {
   moduleCode: string,
@@ -153,17 +165,28 @@ function inlineModuleIds(
       moduleMap: map,
     };
   }
+
+  const babelConfig = {
+    ast: true,
+    babelrc: false,
+    code: false,
+    configFile: false,
+    plugins: [
+      ...passthroughSyntaxPlugins,
+      [reverseDependencyMapReferences, {dependencyIds, globalPrefix}],
+    ],
+  };
+
+  const sourceAst =
+    isTypeScriptSource(path) || isTSXSource(path) || !hermesParser
+      ? parseSync(code, babelConfig)
+      : HermesParser.parse(code, {
+          babel: true,
+          sourceType: babelConfig.sourceType,
+        });
+
   const ast = nullthrows(
-    transformSync(code, {
-      ast: true,
-      babelrc: false,
-      code: false,
-      configFile: false,
-      plugins: [
-        ...passthroughSyntaxPlugins,
-        [reverseDependencyMapReferences, {dependencyIds, globalPrefix}],
-      ],
-    }).ast,
+    transformFromAstSync(sourceAst, code, babelConfig).ast,
   );
 
   const {code: generatedCode, map: generatedMap} = generate(ast, path, '');
