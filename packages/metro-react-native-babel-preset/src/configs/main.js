@@ -22,7 +22,6 @@ function isTSXSource(fileName) {
 
 const defaultPluginsBeforeRegenerator = [
   [require('@babel/plugin-syntax-flow')],
-  [require('@babel/plugin-proposal-optional-catch-binding')],
   [require('@babel/plugin-transform-block-scoping')],
   [
     require('@babel/plugin-proposal-class-properties'),
@@ -32,13 +31,9 @@ const defaultPluginsBeforeRegenerator = [
   [require('@babel/plugin-syntax-dynamic-import')],
   [require('@babel/plugin-syntax-export-default-from')],
   ...passthroughSyntaxPlugins,
-  [require('@babel/plugin-transform-function-name')],
-  [require('@babel/plugin-transform-literals')],
-  [require('@babel/plugin-transform-parameters')],
 ];
 
 const defaultPluginsAfterRegenerator = [
-  [require('@babel/plugin-transform-sticky-regex')],
   [require('@babel/plugin-transform-unicode-regex')],
 ];
 
@@ -87,6 +82,16 @@ const getPreset = (src, options) => {
 
   if (!isHermes) {
     extraPlugins.push([require('@babel/plugin-transform-computed-properties')]);
+    extraPlugins.push([require('@babel/plugin-transform-parameters')]);
+    extraPlugins.push([
+      require('@babel/plugin-transform-shorthand-properties'),
+    ]);
+    extraPlugins.push([
+      require('@babel/plugin-proposal-optional-catch-binding'),
+    ]);
+    extraPlugins.push([require('@babel/plugin-transform-function-name')]);
+    extraPlugins.push([require('@babel/plugin-transform-literals')]);
+    extraPlugins.push([require('@babel/plugin-transform-sticky-regex')]);
   }
   if (!isHermesCanary) {
     extraPlugins.push([require('@babel/plugin-transform-destructuring')]);
@@ -141,11 +146,6 @@ const getPreset = (src, options) => {
     extraPlugins.push([
       require('@babel/plugin-proposal-nullish-coalescing-operator'),
       {loose: true},
-    ]);
-  }
-  if (!isHermes) {
-    extraPlugins.push([
-      require('@babel/plugin-transform-shorthand-properties'),
     ]);
   }
 
