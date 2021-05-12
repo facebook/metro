@@ -14,7 +14,7 @@ jest
   .setMock('jest-worker', () => ({}))
   .mock('fs', () => new (require('metro-memory-fs'))())
   .mock('assert')
-  .mock('../getTransformCacheKey', () => () => 'hash')
+  .mock('../getTransformCacheKey', () => jest.fn(() => 'hash'))
   .mock('../WorkerFarm')
   .mock('/path/to/transformer.js', () => ({}), {virtual: true});
 
@@ -57,6 +57,8 @@ describe('Transformer', function() {
     mkdirp.sync('/path/to');
     mkdirp.sync('/root');
     fs.writeFileSync('/path/to/transformer.js', '');
+
+    require('../getTransformCacheKey').mockClear();
   });
 
   it('uses new cache layers when transforming if requested to do so', async () => {
@@ -99,5 +101,25 @@ describe('Transformer', function() {
     expect(get.mock.calls[0][0].toString('hex').substr(0, 32)).toBe(
       set.mock.calls[0][0].toString('hex').substr(0, 32),
     );
+  });
+
+  it('short-circuits the transformer cache key when the cache is disabled', async () => {
+    const transformerInstance = new Transformer(
+      {
+        ...commonOptions,
+        cacheStores: [],
+        watchFolders,
+      },
+      getSha1,
+    );
+
+    require('../WorkerFarm').prototype.transform.mockReturnValue({
+      sha1: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
+      result: {},
+    });
+
+    await transformerInstance.transformFile('./foo.js', {});
+
+    expect(require('../getTransformCacheKey')).not.toBeCalled();
   });
 });

@@ -102,6 +102,13 @@ class Cache<T> {
       });
     });
   }
+
+  // Returns true if the current configuration disables the cache, such that
+  // writing to the cache is a no-op and reading from the cache will always
+  // return null.
+  get isDisabled(): boolean {
+    return this._stores.length === 0;
+  }
 }
 
 module.exports = Cache;
