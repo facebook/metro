@@ -229,12 +229,6 @@ Type: `boolean` (default: `false`)
 
 Use the hermes-parser package to use call Hermes parser via WASM instead of the Babel parser.
 
-#### `postMinifyProcess`
-
-Type: `PostMinifyProcess`
-
-What happens after minification.
-
 #### `minifierPath`
 
 Type: `string`

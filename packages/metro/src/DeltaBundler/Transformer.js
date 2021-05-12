@@ -42,7 +42,6 @@ class Transformer {
     // can treat the transformer config params as opaque.
     const {
       getTransformOptions: _getTransformOptions,
-      postMinifyProcess: _postMinifyProcess,
       transformVariants: _transformVariants,
       workerPath: _workerPath,
       ...transformerConfig

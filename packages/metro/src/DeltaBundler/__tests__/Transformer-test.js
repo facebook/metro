@@ -39,7 +39,6 @@ describe('Transformer', function() {
       transformer: {
         assetRegistryPath: '/AssetRegistry.js',
         enableBabelRCLookup: true,
-        postMinifyProcess: e => e,
       },
       cacheStores: [],
       cacheVersion: 'smth',
