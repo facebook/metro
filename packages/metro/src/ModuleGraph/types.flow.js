@@ -161,7 +161,7 @@ export type TransformedCodeFile = {|
   +file: string,
   +functionMap: ?FBSourceFunctionMap,
   +hasteID: ?string,
-  package?: PackageData,
+  +package?: PackageData,
   +transformed: TransformResults,
   +type: CodeFileTypes,
 |};
