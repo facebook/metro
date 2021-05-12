@@ -96,7 +96,7 @@ type _SourceMapOptions =
 type _Error = {|error: Error|};
 type _Result = {|code: string, warnings?: Array<string>|};
 
-declare module 'uglify-es' {
+declare module 'uglify-js' {
   declare function minify(code: _Input, options?: _Options): _Error | _Result;
   declare function minify(
     code: _Input,

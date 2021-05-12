@@ -10,7 +10,7 @@
 
 'use strict';
 
-const uglify = require('uglify-es');
+const uglify = require('uglify-js');
 
 import type {BasicSourceMap} from 'metro-source-map';
 import type {MinifierResult, MinifierOptions} from 'metro-transform-worker';
