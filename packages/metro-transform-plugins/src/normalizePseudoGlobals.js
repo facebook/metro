@@ -16,7 +16,7 @@ const nullthrows = require('nullthrows');
 import type {NodePath, Scope} from '@babel/traverse';
 import type {Program} from '@babel/types';
 
-type Options = {
+export type Options = {
   reservedNames: $ReadOnlyArray<string>,
 };
 

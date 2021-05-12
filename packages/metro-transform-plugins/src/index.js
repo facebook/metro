@@ -16,6 +16,7 @@ import type {
   Visitors as InlinePluginVisitors,
   Options as InlinePluginOptions,
 } from './inline-plugin';
+import typeof NormalizePseudoGlobalsFn from './normalizePseudoGlobals';
 // Type only import, no runtime dependency
 // eslint-disable-next-line import/no-extraneous-dependencies
 import typeof * as Types from '@babel/types';
@@ -27,14 +28,14 @@ type BabelPlugin<VisitorT, OptionsT> = (
   options: OptionsT,
 ) => VisitorT;
 
-type TransformPlugins = {
+type TransformPlugins = $ReadOnly<{
   addParamsToDefineCall(string, ...Array<mixed>): string,
   constantFoldingPlugin: BabelPlugin<ConstantFoldingPluginVisitors, {}>,
   importExportPlugin: BabelPlugin<ImportExportPluginVisitors, {}>,
   inlinePlugin: BabelPlugin<InlinePluginVisitors, InlinePluginOptions>,
-  normalizePseudoGlobals(ast: BabelNode): $ReadOnlyArray<string>,
+  normalizePseudoGlobals: NormalizePseudoGlobalsFn,
   getTransformPluginCacheKeyFiles(): $ReadOnlyArray<string>,
-};
+}>;
 
 module.exports = ({
   // $FlowIgnore[unsafe-getters-setters]
