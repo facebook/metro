@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  */
 
@@ -44,6 +44,7 @@ import type {
   Options as HermesCompilerOptions,
 } from 'metro-hermes-compiler';
 import type {
+  BabelTransformer,
   CustomTransformOptions,
   TransformProfile,
 } from 'metro-babel-transformer';
@@ -189,10 +190,11 @@ const minifyCode = async (
 };
 
 const compileToBytecode = (
-  code: string,
+  rawCode: string,
   type: string,
   options: HermesCompilerOptions,
 ): HermesCompilerResult => {
+  let code = rawCode;
   if (type.startsWith('js/module')) {
     const index = code.lastIndexOf(')');
     code =
@@ -259,7 +261,7 @@ module.exports = {
           type,
         },
       ];
-      if (options.runtimeBytecodeVersion) {
+      if (options.runtimeBytecodeVersion != null) {
         output.push({
           data: (compileToBytecode(code, type, {
             sourceURL: filename,
@@ -317,8 +319,8 @@ module.exports = {
         functionMap: null,
       };
     } else {
-      // $FlowFixMe TODO t26372934 Plugin system
-      const transformer: Transformer<*> = require(config.babelTransformerPath);
+      // $FlowFixMe[unsupported-syntax] dynamic require
+      const transformer: BabelTransformer = require(config.babelTransformerPath);
       transformResult = await transformer.transform(transformerArgs);
     }
 
@@ -336,10 +338,9 @@ module.exports = {
 
     if (
       ast.program.sourceType === 'module' &&
-      // $FlowFixMe[incompatible-use]
+      directives != null &&
       directives.findIndex(d => d.value.value === 'use strict') === -1
     ) {
-      // $FlowFixMe[incompatible-use]
       directives.push(types.directive(types.directiveLiteral('use strict')));
     }
 
@@ -353,12 +354,13 @@ module.exports = {
       importAll,
     };
 
-    if (options.experimentalImportSupport) {
+    if (options.experimentalImportSupport === true) {
       plugins.push([metroTransformPlugins.importExportPlugin, opts]);
     }
 
     if (options.inlineRequires) {
       plugins.push([
+        // $FlowFixMe[untyped-import] Untyped dependency
         require('babel-preset-fbjs/plugins/inline-requires'),
         {
           ...opts,
@@ -481,7 +483,7 @@ module.exports = {
       },
     ];
 
-    if (options.runtimeBytecodeVersion) {
+    if (options.runtimeBytecodeVersion != null) {
       output.push({
         data: (compileToBytecode(code, type, {
           sourceURL: filename,
