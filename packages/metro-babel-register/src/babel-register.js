@@ -28,6 +28,7 @@ function config(onlyList, options) {
     babelrc: false,
     compact: false,
     configFile: false,
+    browserslistConfigFile: false,
     ignore: null,
     only: _only,
     plugins: [

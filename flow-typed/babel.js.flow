@@ -625,6 +625,41 @@ declare module '@babel/core' {
      */
     passPerPreset?: boolean,
 
+    // Output targets
+
+    /**
+     * Describes the environments you support/target for your project.
+     * When no targets are specified: Babel will assume you are targeting the oldest browsers possible. For example, @babel/preset-env will transform all ES2015-ES2020 code to be ES5 compatible.
+     */
+    targets?:
+      | string
+      | Array<string>
+      | {[env: string]: string}
+      | {
+          esmodules?: boolean,
+          node?: string | 'current' | true,
+          safari?: string | 'tp',
+          browsers?: string | Array<string>,
+        },
+
+    /**
+     * Toggles whether or not browserslist config sources are used,
+     * which includes searching for any browserslist files or referencing the browserslist key inside package.json.
+     * This is useful for projects that use a browserslist config for files that won't be compiled with Babel.
+     *
+     * If a string is specified, it must represent the path of a browserslist configuration file.
+     * Relative paths are resolved relative to the configuration file which specifies this option,
+     * or to cwd when it's passed as part of the programmatic options.
+     */
+    browserslistConfigFile?: boolean | string,
+
+    /**
+     * The Browserslist environment to use.
+     *
+     * @see https://github.com/browserslist/browserslist#configuring-for-different-environments
+     */
+    browserslistEnv?: string | void,
+
     // Config Merging options
 
     /**
@@ -780,6 +815,12 @@ declare module '@babel/core' {
      * @default true
      */
     highlightCode?: boolean,
+
+    /**
+     * Set assumptions that Babel can make in order to produce smaller output
+     * @see https://babel.dev/assumptions
+     */
+    assumptions?: {[assumption: string]: boolean},
 
     /**
      * Allows users to add a wrapper on each visitor in order to inspect the visitor process as Babel executes the plugins.

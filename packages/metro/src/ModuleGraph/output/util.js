@@ -169,6 +169,7 @@ function inlineModuleIds(
   const babelConfig = {
     ast: true,
     babelrc: false,
+    browserslistConfigFile: false,
     code: false,
     configFile: false,
     plugins: [

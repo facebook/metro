@@ -18,6 +18,7 @@ function normalizePseudoglobalsCall(source, options) {
   const {ast} = transformSync(source, {
     ast: true,
     babelrc: false,
+    browserslistConfigFile: false,
     code: false,
     compact: false,
     configFile: false,
@@ -29,6 +30,7 @@ function normalizePseudoglobalsCall(source, options) {
   const {code} = transformFromAstSync(ast, source, {
     ast: false,
     babelrc: false,
+    browserslistConfigFile: false,
     code: true,
     compact: false,
     configFile: false,

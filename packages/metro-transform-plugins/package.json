@@ -13,10 +13,10 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@babel/core": "^7.0.0",
-    "@babel/generator": "^7.5.0",
+    "@babel/core": "^7.14.0",
+    "@babel/generator": "^7.14.0",
     "@babel/template": "^7.0.0",
-    "@babel/traverse": "^7.0.0",
+    "@babel/traverse": "^7.14.0",
     "nullthrows": "^1.1.1"
   },
   "devDependencies": {

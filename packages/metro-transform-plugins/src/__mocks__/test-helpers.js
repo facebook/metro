@@ -21,6 +21,7 @@ function makeTransformOptions(plugins, options) {
   return {
     ast: true,
     babelrc: false,
+    browserslistConfigFile: false,
     code: false,
     compact: true,
     configFile: false,

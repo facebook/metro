@@ -13,9 +13,9 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@babel/core": "^7.0.0",
-    "@babel/generator": "^7.5.0",
-    "@babel/parser": "^7.0.0",
+    "@babel/core": "^7.14.0",
+    "@babel/generator": "^7.14.0",
+    "@babel/parser": "^7.14.0",
     "@babel/types": "^7.0.0",
     "babel-preset-fbjs": "^3.3.0",
     "metro": "0.66.0",
