@@ -106,6 +106,30 @@ export type JsTransformOptions = $ReadOnly<{|
   unstable_transformProfile: TransformProfile,
 |}>;
 
+export type BytecodeFileType =
+  | 'bytecode/module'
+  | 'bytecode/module/asset'
+  | 'bytecode/script';
+
+opaque type Path = string;
+
+type FileType = 'js/script' | 'js/module' | 'js/module/asset';
+
+type JSFile = $ReadOnly<{
+  ast?: ?BabelNodeFile,
+  code: string,
+  filename: Path,
+  inputFileSize: number,
+  type: FileType,
+  functionMap: FBSourceFunctionMap | null,
+}>;
+
+type TransformationContext = $ReadOnly<{
+  config: JsTransformerConfig,
+  projectRoot: Path,
+  options: JsTransformOptions,
+}>;
+
 export type JsOutput = $ReadOnly<{|
   data: $ReadOnly<{|
     code: string,
@@ -113,18 +137,18 @@ export type JsOutput = $ReadOnly<{|
     map: Array<MetroSourceMapSegmentTuple>,
     functionMap: ?FBSourceFunctionMap,
   |}>,
-  type: string,
+  type: FileType,
 |}>;
 
 export type BytecodeOutput = $ReadOnly<{|
   data: HermesCompilerResult,
-  type: 'bytecode/module' | 'bytecode/module/asset' | 'bytecode/script',
+  type: BytecodeFileType,
 |}>;
 
-type Result = {|
+type TransformResponse = $ReadOnly<{
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   output: $ReadOnlyArray<JsOutput | BytecodeOutput>,
-|};
+}>;
 
 function getDynamicDepsBehavior(
   inPackages: DynamicRequiresBehavior,
@@ -219,6 +243,206 @@ class InvalidRequireCallError extends Error {
   }
 }
 
+async function transformJS(
+  file: JSFile,
+  {config, options, projectRoot}: TransformationContext,
+): Promise<TransformResponse> {
+  // Transformers can output null ASTs (if they ignore the file). In that case
+  // we need to parse the module source code to get their AST.
+  let ast = file.ast ?? babylon.parse(file.code, {sourceType: 'unambiguous'});
+
+  const {importDefault, importAll} = generateImportNames(ast);
+
+  // Add "use strict" if the file was parsed as a module, and the directive did
+  // not exist yet.
+  const {directives} = ast.program;
+
+  if (
+    ast.program.sourceType === 'module' &&
+    directives != null &&
+    directives.findIndex(d => d.value.value === 'use strict') === -1
+  ) {
+    directives.push(types.directive(types.directiveLiteral('use strict')));
+  }
+
+  // Perform the import-export transform (in case it's still needed), then
+  // fold requires and perform constant folding (if in dev).
+  const plugins = [];
+  const babelPluginOpts = {
+    ...options,
+    inlineableCalls: [importDefault, importAll],
+    importDefault,
+    importAll,
+  };
+
+  if (options.experimentalImportSupport === true) {
+    plugins.push([metroTransformPlugins.importExportPlugin, babelPluginOpts]);
+  }
+
+  if (options.inlineRequires) {
+    plugins.push([
+      // $FlowFixMe[untyped-import] untyped module
+      require('babel-preset-fbjs/plugins/inline-requires'),
+      {
+        ...babelPluginOpts,
+        ignoredRequires: options.nonInlinedRequires,
+      },
+    ]);
+  }
+
+  if (!options.dev) {
+    plugins.push([
+      metroTransformPlugins.constantFoldingPlugin,
+      babelPluginOpts,
+    ]);
+  }
+
+  plugins.push([metroTransformPlugins.inlinePlugin, babelPluginOpts]);
+
+  ast = nullthrows(
+    transformFromAstSync(ast, '', {
+      ast: true,
+      babelrc: false,
+      code: false,
+      configFile: false,
+      comments: false,
+      compact: false,
+      filename: file.filename,
+      plugins,
+      sourceMaps: false,
+      // Not-Cloning the input AST here should be safe because other code paths above this call
+      // are mutating the AST as well and no code is depending on the original AST.
+      // However, switching the flag to false caused issues with ES Modules if `experimentalImportSupport` isn't used https://github.com/facebook/metro/issues/641
+      // either because one of the plugins is doing something funky or Babel messes up some caches.
+      // Make sure to test the above mentioned case before flipping the flag back to false.
+      cloneInputAst: true,
+    }).ast,
+  );
+
+  let dependencyMapName = '';
+  let dependencies;
+  let wrappedAst;
+
+  // If the module to transform is a script (meaning that is not part of the
+  // dependency graph and it code will just be prepended to the bundle modules),
+  // we need to wrap it differently than a commonJS module (also, scripts do
+  // not have dependencies).
+  if (file.type === 'js/script') {
+    dependencies = [];
+    wrappedAst = JsFileWrapping.wrapPolyfill(ast);
+  } else {
+    try {
+      const opts = {
+        asyncRequireModulePath: config.asyncRequireModulePath,
+        dynamicRequires: getDynamicDepsBehavior(
+          config.dynamicDepsInPackages,
+          file.filename,
+        ),
+        inlineableCalls: [importDefault, importAll],
+        keepRequireNames: options.dev,
+        allowOptionalDependencies: config.allowOptionalDependencies,
+      };
+      ({ast, dependencies, dependencyMapName} = collectDependencies(ast, opts));
+    } catch (error) {
+      if (error instanceof collectDependencies.InvalidRequireCallError) {
+        throw new InvalidRequireCallError(error, file.filename);
+      }
+      throw error;
+    }
+
+    ({ast: wrappedAst} = JsFileWrapping.wrapModule(
+      ast,
+      importDefault,
+      importAll,
+      dependencyMapName,
+      config.globalPrefix,
+    ));
+  }
+
+  const reserved =
+    options.minify && file.inputFileSize <= config.optimizationSizeLimit
+      ? metroTransformPlugins.normalizePseudoGlobals(wrappedAst)
+      : [];
+
+  const result = generate(
+    wrappedAst,
+    {
+      comments: false,
+      compact: false,
+      filename: file.filename,
+      retainLines: false,
+      sourceFileName: file.filename,
+      sourceMaps: true,
+    },
+    file.code,
+  );
+
+  let map = result.rawMappings ? result.rawMappings.map(toSegmentTuple) : [];
+  let code = result.code;
+
+  if (options.minify) {
+    ({map, code} = await minifyCode(
+      config,
+      projectRoot,
+      file.filename,
+      result.code,
+      file.code,
+      map,
+      reserved,
+    ));
+  }
+
+  const output = [
+    {
+      data: {
+        code,
+        lineCount: countLines(code),
+        map,
+        functionMap: file.functionMap,
+      },
+      type: file.type,
+    },
+  ];
+
+  if (options.runtimeBytecodeVersion != null) {
+    output.push({
+      data: (compileToBytecode(code, file.type, {
+        sourceURL: file.filename,
+        sourceMap: fromRawMappings([
+          {
+            code,
+            source: file.code,
+            map,
+            functionMap: null,
+            path: file.filename,
+          },
+        ]).toString(),
+      }): HermesCompilerResult),
+      type: getBytecodeFileType(file.type),
+    });
+  }
+
+  return {
+    dependencies,
+    output,
+  };
+}
+
+/**
+ * Returns the bytecode type for a file type
+ */
+function getBytecodeFileType(type: FileType): BytecodeFileType {
+  switch (type) {
+    case 'js/module/asset':
+      return 'bytecode/module/asset';
+    case 'js/script':
+      return 'bytecode/script';
+    default:
+      (type: 'js/module');
+      return 'bytecode/module';
+  }
+}
+
 module.exports = {
   transform: async (
     config: JsTransformerConfig,
@@ -226,18 +450,15 @@ module.exports = {
     filename: string,
     data: Buffer,
     options: JsTransformOptions,
-  ): Promise<Result> => {
+  ): Promise<TransformResponse> => {
     const sourceCode = data.toString('utf8');
     let type = 'js/module';
-    let bytecodeType = 'bytecode/module';
 
     if (options.type === 'asset') {
       type = 'js/module/asset';
-      bytecodeType = 'bytecode/module/asset';
     }
     if (options.type === 'script') {
       type = 'js/script';
-      bytecodeType = 'bytecode/script';
     }
 
     if (filename.endsWith('.json')) {
@@ -275,7 +496,7 @@ module.exports = {
               },
             ]).toString(),
           }): HermesCompilerResult),
-          type: bytecodeType,
+          type: getBytecodeFileType(type),
         });
       }
 
@@ -324,181 +545,22 @@ module.exports = {
       transformResult = await transformer.transform(transformerArgs);
     }
 
-    // Transformers can output null ASTs (if they ignore the file). In that case
-    // we need to parse the module source code to get their AST.
-    let ast =
-      transformResult.ast ||
-      babylon.parse(sourceCode, {sourceType: 'unambiguous'});
-
-    const {importDefault, importAll} = generateImportNames(ast);
-
-    // Add "use strict" if the file was parsed as a module, and the directive did
-    // not exist yet.
-    const {directives} = ast.program;
-
-    if (
-      ast.program.sourceType === 'module' &&
-      directives != null &&
-      directives.findIndex(d => d.value.value === 'use strict') === -1
-    ) {
-      directives.push(types.directive(types.directiveLiteral('use strict')));
-    }
-
-    // Perform the import-export transform (in case it's still needed), then
-    // fold requires and perform constant folding (if in dev).
-    const plugins = [];
-    const opts = {
-      ...options,
-      inlineableCalls: [importDefault, importAll],
-      importDefault,
-      importAll,
+    const context: TransformationContext = {
+      config,
+      projectRoot,
+      options,
     };
 
-    if (options.experimentalImportSupport === true) {
-      plugins.push([metroTransformPlugins.importExportPlugin, opts]);
-    }
-
-    if (options.inlineRequires) {
-      plugins.push([
-        // $FlowFixMe[untyped-import] Untyped dependency
-        require('babel-preset-fbjs/plugins/inline-requires'),
-        {
-          ...opts,
-          ignoredRequires: options.nonInlinedRequires,
-        },
-      ]);
-    }
-
-    if (!options.dev) {
-      plugins.push([metroTransformPlugins.constantFoldingPlugin, opts]);
-    }
-
-    plugins.push([metroTransformPlugins.inlinePlugin, opts]);
-
-    ast = nullthrows(
-      transformFromAstSync(ast, '', {
-        ast: true,
-        babelrc: false,
-        code: false,
-        configFile: false,
-        comments: false,
-        compact: false,
-        filename,
-        plugins,
-        sourceMaps: false,
-        // Not-Cloning the input AST here should be safe because other code paths above this call
-        // are mutating the AST as well and no code is depending on the original AST.
-        // However, switching the flag to false caused issues with ES Modules if `experimentalImportSupport` isn't used https://github.com/facebook/metro/issues/641
-        // either because one of the plugins is doing something funky or Babel messes up some caches.
-        // Make sure to test the above mentioned case before flipping the flag back to false.
-        cloneInputAst: true,
-      }).ast,
-    );
-
-    let dependencyMapName = '';
-    let dependencies;
-    let wrappedAst;
-
-    // If the module to transform is a script (meaning that is not part of the
-    // dependency graph and it code will just be prepended to the bundle modules),
-    // we need to wrap it differently than a commonJS module (also, scripts do
-    // not have dependencies).
-    if (type === 'js/script') {
-      dependencies = [];
-      wrappedAst = JsFileWrapping.wrapPolyfill(ast);
-    } else {
-      try {
-        const opts = {
-          asyncRequireModulePath: config.asyncRequireModulePath,
-          dynamicRequires: getDynamicDepsBehavior(
-            config.dynamicDepsInPackages,
-            filename,
-          ),
-          inlineableCalls: [importDefault, importAll],
-          keepRequireNames: options.dev,
-          allowOptionalDependencies: config.allowOptionalDependencies,
-        };
-        ({ast, dependencies, dependencyMapName} = collectDependencies(
-          ast,
-          opts,
-        ));
-      } catch (error) {
-        if (error instanceof collectDependencies.InvalidRequireCallError) {
-          throw new InvalidRequireCallError(error, filename);
-        }
-        throw error;
-      }
-
-      ({ast: wrappedAst} = JsFileWrapping.wrapModule(
-        ast,
-        importDefault,
-        importAll,
-        dependencyMapName,
-        config.globalPrefix,
-      ));
-    }
-
-    const reserved =
-      options.minify && data.length <= config.optimizationSizeLimit
-        ? metroTransformPlugins.normalizePseudoGlobals(wrappedAst)
-        : [];
-
-    const result = generate(
-      wrappedAst,
-      {
-        comments: false,
-        compact: false,
-        filename,
-        retainLines: false,
-        sourceFileName: filename,
-        sourceMaps: true,
-      },
-      sourceCode,
-    );
-
-    let map = result.rawMappings ? result.rawMappings.map(toSegmentTuple) : [];
-    let code = result.code;
-
-    if (options.minify) {
-      ({map, code} = await minifyCode(
-        config,
-        projectRoot,
-        filename,
-        result.code,
-        sourceCode,
-        map,
-        reserved,
-      ));
-    }
-
-    const output = [
-      {
-        data: {
-          code,
-          lineCount: countLines(code),
-          map,
-          functionMap: transformResult.functionMap,
-        },
-        type,
-      },
-    ];
-
-    if (options.runtimeBytecodeVersion != null) {
-      output.push({
-        data: (compileToBytecode(code, type, {
-          sourceURL: filename,
-          sourceMap: fromRawMappings([
-            {code, source: sourceCode, map, functionMap: null, path: filename},
-          ]).toString(),
-        }): HermesCompilerResult),
-        type: bytecodeType,
-      });
-    }
-
-    return {
-      dependencies,
-      output,
+    const file: JSFile = {
+      filename,
+      inputFileSize: data.length,
+      code: sourceCode,
+      type,
+      ast: transformResult.ast,
+      functionMap: transformResult.functionMap ?? null,
     };
+
+    return await transformJS(file, context);
   },
 
   getCacheKey: (config: JsTransformerConfig): string => {
