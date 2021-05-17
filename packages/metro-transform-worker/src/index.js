@@ -45,6 +45,7 @@ import type {
 } from 'metro-hermes-compiler';
 import type {
   BabelTransformer,
+  BabelTransformerArgs,
   CustomTransformOptions,
   TransformProfile,
 } from 'metro-babel-transformer';
@@ -115,11 +116,20 @@ opaque type Path = string;
 
 type FileType = 'js/script' | 'js/module' | 'js/module/asset';
 
-type JSFile = $ReadOnly<{
-  ast?: ?BabelNodeFile,
+type File = $ReadOnly<{
   code: string,
   filename: Path,
   inputFileSize: number,
+}>;
+
+type AssetFile = $ReadOnly<{
+  ...File,
+  type: 'asset',
+}>;
+
+type JSFile = $ReadOnly<{
+  ...File,
+  ast?: ?BabelNodeFile,
   type: FileType,
   functionMap: FBSourceFunctionMap | null,
 }>;
@@ -428,6 +438,29 @@ async function transformJS(
   };
 }
 
+async function transformAsset(
+  file: AssetFile,
+  context: TransformationContext,
+): Promise<TransformResponse> {
+  const assetTransformer = require('./utils/assetTransformer');
+  const {assetRegistryPath, assetPlugins} = context.config;
+
+  const result = await assetTransformer.transform(
+    getBabelTransformArgs(file, context),
+    assetRegistryPath,
+    assetPlugins,
+  );
+
+  const jsFile = {
+    ...file,
+    type: 'js/module/asset',
+    ast: result.ast,
+    functionMap: null,
+  };
+
+  return transformJS(jsFile, context);
+}
+
 /**
  * Returns the bytecode type for a file type
  */
@@ -441,6 +474,31 @@ function getBytecodeFileType(type: FileType): BytecodeFileType {
       (type: 'js/module');
       return 'bytecode/module';
   }
+}
+
+function getBabelTransformArgs(
+  file: $ReadOnly<{filename: Path, code: string, ...}>,
+  {options, config, projectRoot}: TransformationContext,
+): BabelTransformerArgs {
+  return {
+    filename: file.filename,
+    options: {
+      ...options,
+      enableBabelRCLookup: config.enableBabelRCLookup,
+      enableBabelRuntime: config.enableBabelRuntime,
+      globalPrefix: config.globalPrefix,
+      hermesParser: config.hermesParser,
+      // Inline requires are now performed at a secondary step. We cannot
+      // unfortunately remove it from the internal transformer, since this one
+      // is used by other tooling, and this would affect it.
+      inlineRequires: false,
+      nonInlinedRequires: [],
+      projectRoot,
+      publicPath: config.publicPath,
+    },
+    plugins: [],
+    src: file.code,
+  };
 }
 
 module.exports = {
@@ -506,50 +564,28 @@ module.exports = {
       };
     }
 
-    const transformerArgs = {
-      filename,
-      options: {
-        ...options,
-        enableBabelRCLookup: config.enableBabelRCLookup,
-        enableBabelRuntime: config.enableBabelRuntime,
-        globalPrefix: config.globalPrefix,
-        hermesParser: config.hermesParser,
-        // Inline requires are now performed at a secondary step. We cannot
-        // unfortunately remove it from the internal transformer, since this one
-        // is used by other tooling, and this would affect it.
-        inlineRequires: false,
-        nonInlinedRequires: [],
-        projectRoot,
-        publicPath: config.publicPath,
-      },
-      plugins: [],
-      src: sourceCode,
-    };
-
-    let transformResult;
-
-    if (type === 'js/module/asset') {
-      const assetTransformer = require('./utils/assetTransformer');
-
-      transformResult = {
-        ...(await assetTransformer.transform(
-          transformerArgs,
-          config.assetRegistryPath,
-          config.assetPlugins,
-        )),
-        functionMap: null,
-      };
-    } else {
-      // $FlowFixMe[unsupported-syntax] dynamic require
-      const transformer: BabelTransformer = require(config.babelTransformerPath);
-      transformResult = await transformer.transform(transformerArgs);
-    }
-
     const context: TransformationContext = {
       config,
       projectRoot,
       options,
     };
+
+    if (options.type === 'asset') {
+      const assetFile: AssetFile = {
+        filename,
+        inputFileSize: data.length,
+        code: sourceCode,
+        type: 'asset',
+      };
+
+      return await transformAsset(assetFile, context);
+    }
+
+    // $FlowFixMe[unsupported-syntax] dynamic require
+    const transformer: BabelTransformer = require(config.babelTransformerPath);
+    const transformResult = await transformer.transform(
+      getBabelTransformArgs({filename, code: sourceCode}, context),
+    );
 
     const file: JSFile = {
       filename,
