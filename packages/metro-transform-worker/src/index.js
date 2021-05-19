@@ -134,6 +134,11 @@ type JSFile = $ReadOnly<{
   functionMap: FBSourceFunctionMap | null,
 }>;
 
+type JSONFile = {
+  ...BaseFile,
+  type: Type,
+};
+
 type TransformationContext = $ReadOnly<{
   config: JsTransformerConfig,
   projectRoot: Path,
@@ -489,6 +494,65 @@ async function transformJSWithBabel(
   return await transformJS(jsFile, context);
 }
 
+async function transformJSON(
+  file: JSONFile,
+  {options, config, projectRoot}: TransformationContext,
+): Promise<TransformResponse> {
+  let code = JsFileWrapping.wrapJson(file.code, config.globalPrefix);
+  let map = [];
+
+  if (options.minify) {
+    ({map, code} = await minifyCode(
+      config,
+      projectRoot,
+      file.filename,
+      code,
+      file.code,
+      map,
+    ));
+  }
+
+  let jsType: JSFileType;
+
+  if (file.type === 'asset') {
+    jsType = 'js/module/asset';
+  } else if (file.type === 'script') {
+    jsType = 'js/script';
+  } else {
+    jsType = 'js/module';
+  }
+
+  const output = [
+    {
+      data: {code, lineCount: countLines(code), map, functionMap: null},
+      type: jsType,
+    },
+  ];
+
+  if (options.runtimeBytecodeVersion != null) {
+    output.push({
+      data: (compileToBytecode(code, jsType, {
+        sourceURL: file.filename,
+        sourceMap: fromRawMappings([
+          {
+            code,
+            source: file.code,
+            map,
+            functionMap: null,
+            path: file.filename,
+          },
+        ]).toString(),
+      }): HermesCompilerResult),
+      type: getBytecodeFileType(jsType),
+    });
+  }
+
+  return {
+    dependencies: [],
+    output,
+  };
+}
+
 /**
  * Returns the bytecode type for a file type
  */
@@ -537,67 +601,23 @@ module.exports = {
     data: Buffer,
     options: JsTransformOptions,
   ): Promise<TransformResponse> => {
-    const sourceCode = data.toString('utf8');
-
-    let type: JSFileType;
-    if (options.type === 'asset') {
-      type = 'js/module/asset';
-    } else if (options.type === 'script') {
-      type = 'js/script';
-    } else {
-      type = 'js/module';
-    }
-
-    if (filename.endsWith('.json')) {
-      let code = JsFileWrapping.wrapJson(sourceCode, config.globalPrefix);
-      let map = [];
-
-      if (options.minify) {
-        ({map, code} = await minifyCode(
-          config,
-          projectRoot,
-          filename,
-          code,
-          sourceCode,
-          map,
-        ));
-      }
-
-      const output = [
-        {
-          data: {code, lineCount: countLines(code), map, functionMap: null},
-          type,
-        },
-      ];
-      if (options.runtimeBytecodeVersion != null) {
-        output.push({
-          data: (compileToBytecode(code, type, {
-            sourceURL: filename,
-            sourceMap: fromRawMappings([
-              {
-                code,
-                source: sourceCode,
-                map,
-                functionMap: null,
-                path: filename,
-              },
-            ]).toString(),
-          }): HermesCompilerResult),
-          type: getBytecodeFileType(type),
-        });
-      }
-
-      return {
-        dependencies: [],
-        output,
-      };
-    }
-
     const context: TransformationContext = {
       config,
       projectRoot,
       options,
     };
+    const sourceCode = data.toString('utf8');
+
+    if (filename.endsWith('.json')) {
+      const jsonFile: JSONFile = {
+        filename,
+        inputFileSize: data.length,
+        code: sourceCode,
+        type: options.type,
+      };
+
+      return await transformJSON(jsonFile, context);
+    }
 
     if (options.type === 'asset') {
       const file: AssetFile = {
