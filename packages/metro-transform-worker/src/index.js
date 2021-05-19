@@ -114,23 +114,23 @@ export type BytecodeFileType =
 
 opaque type Path = string;
 
-type FileType = 'js/script' | 'js/module' | 'js/module/asset';
-
-type File = $ReadOnly<{
+type BaseFile = $ReadOnly<{
   code: string,
   filename: Path,
   inputFileSize: number,
 }>;
 
 type AssetFile = $ReadOnly<{
-  ...File,
+  ...BaseFile,
   type: 'asset',
 }>;
 
+type JSFileType = 'js/script' | 'js/module' | 'js/module/asset';
+
 type JSFile = $ReadOnly<{
-  ...File,
+  ...BaseFile,
   ast?: ?BabelNodeFile,
-  type: FileType,
+  type: JSFileType,
   functionMap: FBSourceFunctionMap | null,
 }>;
 
@@ -147,7 +147,7 @@ export type JsOutput = $ReadOnly<{|
     map: Array<MetroSourceMapSegmentTuple>,
     functionMap: ?FBSourceFunctionMap,
   |}>,
-  type: FileType,
+  type: JSFileType,
 |}>;
 
 export type BytecodeOutput = $ReadOnly<{|
@@ -438,6 +438,9 @@ async function transformJS(
   };
 }
 
+/**
+ * Transforms an asset file
+ */
 async function transformAsset(
   file: AssetFile,
   context: TransformationContext,
@@ -462,9 +465,34 @@ async function transformAsset(
 }
 
 /**
+ * Transforms a JavaScript file with Babel before processing the file with
+ * the generic JavaScript transformation.
+ */
+async function transformJSWithBabel(
+  file: JSFile,
+  context: TransformationContext,
+): Promise<TransformResponse> {
+  const {babelTransformerPath} = context.config;
+  // $FlowFixMe[unsupported-syntax] dynamic require
+  const transformer: BabelTransformer = require(babelTransformerPath);
+
+  const transformResult = await transformer.transform(
+    getBabelTransformArgs(file, context),
+  );
+
+  const jsFile: JSFile = {
+    ...file,
+    ast: transformResult.ast,
+    functionMap: transformResult.functionMap ?? null,
+  };
+
+  return await transformJS(jsFile, context);
+}
+
+/**
  * Returns the bytecode type for a file type
  */
-function getBytecodeFileType(type: FileType): BytecodeFileType {
+function getBytecodeFileType(type: JSFileType): BytecodeFileType {
   switch (type) {
     case 'js/module/asset':
       return 'bytecode/module/asset';
@@ -510,13 +538,14 @@ module.exports = {
     options: JsTransformOptions,
   ): Promise<TransformResponse> => {
     const sourceCode = data.toString('utf8');
-    let type = 'js/module';
 
+    let type: JSFileType;
     if (options.type === 'asset') {
       type = 'js/module/asset';
-    }
-    if (options.type === 'script') {
+    } else if (options.type === 'script') {
       type = 'js/script';
+    } else {
+      type = 'js/module';
     }
 
     if (filename.endsWith('.json')) {
@@ -571,32 +600,25 @@ module.exports = {
     };
 
     if (options.type === 'asset') {
-      const assetFile: AssetFile = {
+      const file: AssetFile = {
         filename,
         inputFileSize: data.length,
         code: sourceCode,
-        type: 'asset',
+        type: options.type,
       };
 
-      return await transformAsset(assetFile, context);
+      return await transformAsset(file, context);
     }
-
-    // $FlowFixMe[unsupported-syntax] dynamic require
-    const transformer: BabelTransformer = require(config.babelTransformerPath);
-    const transformResult = await transformer.transform(
-      getBabelTransformArgs({filename, code: sourceCode}, context),
-    );
 
     const file: JSFile = {
       filename,
       inputFileSize: data.length,
       code: sourceCode,
-      type,
-      ast: transformResult.ast,
-      functionMap: transformResult.functionMap ?? null,
+      type: options.type === 'script' ? 'js/script' : 'js/module',
+      functionMap: null,
     };
 
-    return await transformJS(file, context);
+    return await transformJSWithBabel(file, context);
   },
 
   getCacheKey: (config: JsTransformerConfig): string => {
