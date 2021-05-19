@@ -39,7 +39,7 @@ module.exports = {
 
 #### `cacheStores`
 
-Type: `Array<CacheStore<TransformResult<>>`
+Type: `Array<CacheStore<TransformResult<>>>`
 
 List where we store our [caches](./Caching.md).
 
@@ -223,11 +223,11 @@ Type: `GetTransformOptions`
 
 Get the transform options.
 
-#### `postMinifyProcess`
+#### `hermesParser`
 
-Type: `PostMinifyProcess`
+Type: `boolean` (default: `false`)
 
-What happens after minification.
+Use the hermes-parser package to use call Hermes parser via WASM instead of the Babel parser.
 
 #### `minifierPath`
 

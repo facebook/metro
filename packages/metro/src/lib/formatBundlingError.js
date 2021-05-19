@@ -26,18 +26,18 @@ const {AmbiguousModuleResolutionError} = require('metro-core');
 
 import type {FormattedError} from 'metro-runtime/src/modules/types.flow';
 
-export type CustomError = Error & {
-  type?: string,
-  filename?: string,
-  lineNumber?: number,
-  errors?: Array<{
-    description: string,
-    filename: string,
-    lineNumber: number,
-    ...
-  }>,
-  ...
-};
+export type CustomError = Error &
+  interface {
+    type?: string,
+    filename?: string,
+    lineNumber?: number,
+    errors?: Array<{
+      description: string,
+      filename: string,
+      lineNumber: number,
+      ...
+    }>,
+  };
 
 function formatBundlingError(error: CustomError): FormattedError {
   if (error instanceof AmbiguousModuleResolutionError) {

@@ -827,10 +827,10 @@ describe('processRequest', () => {
       expect(JSON.parse(response.body)).toMatchInlineSnapshot(`
         Object {
           "codeFrame": Object {
-            "content": "[0m[31m[1m>[22m[39m[90m 1 | [39m[36mthis[39m[0m
-        [0m [90m   | [39m[31m[1m^[22m[39m[0m
-        [0m [90m 2 | [39mis[0m
-        [0m [90m 3 | [39mjust an example and it is all fake data[33m,[39m yay[33m![39m[0m",
+            "content": "[0m[31m[1m>[22m[39m[90m 1 |[39m [36mthis[39m[0m
+        [0m [90m   |[39m [31m[1m^[22m[39m[0m
+        [0m [90m 2 |[39m is[0m
+        [0m [90m 3 |[39m just an example and it is all fake data[33m,[39m yay[33m![39m[0m",
             "fileName": "/root/mybundle.js",
             "location": Object {
               "column": 0,
@@ -995,10 +995,10 @@ describe('processRequest', () => {
       expect(JSON.parse(response.body)).toMatchInlineSnapshot(`
         Object {
           "codeFrame": Object {
-            "content": "[0m[31m[1m>[22m[39m[90m 1 | [39m[36mthis[39m[0m
-        [0m [90m   | [39m[31m[1m^[22m[39m[0m
-        [0m [90m 2 | [39mis[0m
-        [0m [90m 3 | [39mjust an example and it is all fake data[33m,[39m yay[33m![39m[0m",
+            "content": "[0m[31m[1m>[22m[39m[90m 1 |[39m [36mthis[39m[0m
+        [0m [90m   |[39m [31m[1m^[22m[39m[0m
+        [0m [90m 2 |[39m is[0m
+        [0m [90m 3 |[39m just an example and it is all fake data[33m,[39m yay[33m![39m[0m",
             "fileName": "/root/mybundle.js",
             "location": Object {
               "column": 0,

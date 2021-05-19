@@ -22,7 +22,6 @@ function isTSXSource(fileName) {
 
 const defaultPluginsBeforeRegenerator = [
   [require('@babel/plugin-syntax-flow')],
-  [require('@babel/plugin-proposal-optional-catch-binding')],
   [require('@babel/plugin-transform-block-scoping')],
   [
     require('@babel/plugin-proposal-class-properties'),
@@ -32,14 +31,9 @@ const defaultPluginsBeforeRegenerator = [
   [require('@babel/plugin-syntax-dynamic-import')],
   [require('@babel/plugin-syntax-export-default-from')],
   ...passthroughSyntaxPlugins,
-  [require('@babel/plugin-transform-destructuring')],
-  [require('@babel/plugin-transform-function-name')],
-  [require('@babel/plugin-transform-literals')],
-  [require('@babel/plugin-transform-parameters')],
 ];
 
 const defaultPluginsAfterRegenerator = [
-  [require('@babel/plugin-transform-sticky-regex')],
   [require('@babel/plugin-transform-unicode-regex')],
 ];
 
@@ -52,8 +46,6 @@ const getPreset = (src, options) => {
 
   const isNull = src == null;
   const hasClass = isNull || src.indexOf('class') !== -1;
-  const hasForOf =
-    isNull || (src.indexOf('for') !== -1 && src.indexOf('of') !== -1);
 
   const extraPlugins = [];
   if (!options.useTransformReactJSXExperimental) {
@@ -86,6 +78,14 @@ const getPreset = (src, options) => {
   // and patch react-refresh to not depend on this transform.
   extraPlugins.push([require('@babel/plugin-transform-arrow-functions')]);
 
+  if (!isHermes) {
+    extraPlugins.push([
+      require('@babel/plugin-proposal-optional-catch-binding'),
+    ]);
+  }
+  if (!isHermesCanary) {
+    extraPlugins.push([require('@babel/plugin-transform-destructuring')]);
+  }
   if (!isHermes && (isNull || hasClass || src.indexOf('...') !== -1)) {
     extraPlugins.push([
       require('@babel/plugin-proposal-object-rest-spread'),
@@ -99,14 +99,8 @@ const getPreset = (src, options) => {
       {loose: true}, // dont 'a'.concat('b'), just use 'a'+'b'
     ]);
   }
-  if (isHermesCanary && (isNull || src.indexOf('async') !== -1)) {
+  if (isHermes && (isNull || src.indexOf('async') !== -1)) {
     extraPlugins.push([require('@babel/plugin-transform-async-to-generator')]);
-  }
-  if (hasForOf) {
-    extraPlugins.push([
-      require('@babel/plugin-transform-for-of'),
-      {loose: true},
-    ]);
   }
   if (
     isNull ||
@@ -121,7 +115,7 @@ const getPreset = (src, options) => {
       {loose: true},
     ]);
   }
-  if (isNull || src.indexOf('??') !== -1) {
+  if (!isHermes && (isNull || src.indexOf('??') !== -1)) {
     extraPlugins.push([
       require('@babel/plugin-proposal-nullish-coalescing-operator'),
       {loose: true},
@@ -138,7 +132,7 @@ const getPreset = (src, options) => {
       require('@babel/plugin-transform-runtime'),
       {
         helpers: true,
-        regenerator: !isHermesCanary,
+        regenerator: !isHermes,
       },
     ]);
   }
@@ -155,9 +149,7 @@ const getPreset = (src, options) => {
       {
         plugins: [
           ...defaultPluginsBeforeRegenerator,
-          isHermesCanary
-            ? null
-            : require('@babel/plugin-transform-regenerator'),
+          isHermes ? null : require('@babel/plugin-transform-regenerator'),
           ...defaultPluginsAfterRegenerator,
         ].filter(Boolean),
       },

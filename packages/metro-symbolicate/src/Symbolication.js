@@ -8,8 +8,6 @@
  * @format
  */
 
-'use strict';
-
 const SourceMetadataMapConsumer = require('./SourceMetadataMapConsumer');
 
 const fs = require('fs');
@@ -80,6 +78,16 @@ type HermesMinidumpStackFrame = $ReadOnly<{|
   StackFrameRegOffs: string,
   SourceLocation?: string,
 |}>;
+
+type HermesCoverageInfo = {
+  +executedFunctions: $ReadOnlyArray<HermesCoverageStackFrame>,
+};
+
+type HermesCoverageStackFrame = $ReadOnly<{
+  line: number, // SegmentID or zero-based line,
+  column: number, // VirtualOffset or zero-based column,
+  SourceURL: ?string,
+}>;
 
 type NativeCodeStackFrame = $ReadOnly<{|
   NativeCode: true,
@@ -440,6 +448,31 @@ class SymbolicationContext<ModuleIdsT> {
   }
 
   /*
+   * Symbolicates the JavaScript stack trace extracted from the coverage information
+   * produced by HermesRuntime::getExecutedFunctions.
+   */
+  symbolicateHermesCoverageTrace(
+    coverageInfo: HermesCoverageInfo,
+  ): SymbolicatedStackTrace {
+    const symbolicatedTrace = [];
+    const {executedFunctions} = coverageInfo;
+
+    if (executedFunctions != null) {
+      for (const stackItem of executedFunctions) {
+        const {line, column, SourceURL} = stackItem;
+        const generatedLine = line + this.options.inputLineStart;
+        const generatedColumn = column + this.options.inputColumnStart;
+        const originalPosition = this.getOriginalPositionDetailsFor(
+          generatedLine,
+          generatedColumn,
+          this.parseFileName(SourceURL || ''),
+        );
+        symbolicatedTrace.push(originalPosition);
+      }
+    }
+    return symbolicatedTrace;
+  }
+  /*
    * An internal helper function similar to getOriginalPositionFor. This one
    * returns both `name` and `functionName` fields so callers can distinguish the
    * source of the name.
@@ -468,7 +501,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
     |},
     ...,
   };
-  +_hasLegacySegments: boolean;
+  +_legacyFormat: boolean;
   // $FlowFixMe[value-as-type]
   +_SourceMapConsumer: SourceMapConsumer;
 
@@ -493,7 +526,9 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
         segments[key] = this._initSegment(map);
       }
     }
-    this._hasLegacySegments = sourceMapJson.x_facebook_segments != null;
+    this._legacyFormat =
+      sourceMapJson.x_facebook_segments != null ||
+      sourceMapJson.x_facebook_offsets != null;
     this._segments = segments;
   }
 
@@ -539,9 +574,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
             CJSModuleOffset ?? SegmentID,
             'Either CJSModuleOffset or SegmentID must be specified in the Hermes stack frame',
           );
-          const moduleInformation = this._hasLegacySegments
-            ? this.parseFileName(SourceURL)
-            : UNKNOWN_MODULE_IDS;
+          const moduleInformation = this.parseFileName(SourceURL);
           const generatedLine =
             cjsModuleOffsetOrSegmentID + this.options.inputLineStart;
           const segment = this._segments[
@@ -571,6 +604,28 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
             symbolicatedTrace.push(originalPosition);
           }
         }
+      }
+    }
+    return symbolicatedTrace;
+  }
+
+  symbolicateHermesCoverageTrace(
+    coverageInfo: HermesCoverageInfo,
+  ): SymbolicatedStackTrace {
+    const symbolicatedTrace = [];
+    const {executedFunctions} = coverageInfo;
+
+    if (executedFunctions != null) {
+      for (const stackItem of executedFunctions) {
+        const {line, column, SourceURL} = stackItem;
+        const generatedLine = line + this.options.inputLineStart;
+        const generatedColumn = column + this.options.inputColumnStart;
+        const originalPosition = this.getOriginalPositionDetailsFor(
+          generatedLine,
+          generatedColumn,
+          this.parseFileName(SourceURL || ''),
+        );
+        symbolicatedTrace.push(originalPosition);
       }
     }
     return symbolicatedTrace;
@@ -640,7 +695,11 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
   }
 
   parseFileName(str: string): SingleMapModuleIds {
-    return parseSingleMapFileName(str);
+    if (this._legacyFormat) {
+      return parseSingleMapFileName(str);
+    }
+
+    return UNKNOWN_MODULE_IDS;
   }
 }
 

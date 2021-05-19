@@ -91,6 +91,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
       ramGroups: [],
     }),
     globalPrefix: '',
+    hermesParser: false,
     minifierConfig: {
       mangle: {
         toplevel: false,
@@ -111,7 +112,6 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     },
     minifierPath: DEFAULT_METRO_MINIFIER_PATH,
     optimizationSizeLimit: 150 * 1024, // 150 KiB.
-    postMinifyProcess: x => x,
     transformVariants: {default: {}},
     workerPath: 'metro/src/DeltaBundler/Worker',
     publicPath: '/assets',

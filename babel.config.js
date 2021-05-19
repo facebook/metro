@@ -17,7 +17,6 @@ const fs = require('fs');
 /*::
 import type {BabelCoreOptions} from '@babel/core';
 */
-
 const plugins = [
   '@babel/plugin-transform-flow-strip-types',
   '@babel/plugin-proposal-nullish-coalescing-operator', // Node 14
@@ -33,6 +32,7 @@ function getConfig(api /*: any */) /*: BabelCoreOptions */ {
 
   return {
     babelrc: false,
+    browserslistConfigFile: false,
     presets: presets.map(preset => require.resolve(preset)),
     plugins: plugins.map(plugin => require.resolve(plugin)),
   };

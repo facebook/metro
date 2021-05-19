@@ -14,7 +14,7 @@ import type {IncomingMessage, ServerResponse} from 'http';
 import typeof MetroCache from 'metro-cache';
 import type {CacheStore} from 'metro-cache';
 import type {CustomResolver} from 'metro-resolver';
-import type {BasicSourceMap, MixedSourceMap} from 'metro-source-map';
+import type {MixedSourceMap} from 'metro-source-map';
 import type {JsTransformerConfig} from 'metro-transform-worker';
 import type {
   DeltaResult,
@@ -26,16 +26,6 @@ import type {TransformResult} from 'metro/src/DeltaBundler';
 import type {TransformVariants} from 'metro/src/ModuleGraph/types.flow.js';
 import type Server from 'metro/src/Server';
 import type {Reporter} from 'metro/src/lib/reporting';
-
-export type PostMinifyProcess = ({
-  code: string,
-  map: ?BasicSourceMap,
-  ...
-}) => {
-  code: string,
-  map: ?BasicSourceMap,
-  ...
-};
 
 export type PostProcessBundleSourcemap = ({
   code: Buffer | string,
@@ -114,7 +104,6 @@ type SerializerConfigT = {|
 type TransformerConfigT = {|
   ...JsTransformerConfig,
   getTransformOptions: GetTransformOptions,
-  postMinifyProcess: PostMinifyProcess,
   transformVariants: TransformVariants,
   workerPath: string,
   publicPath: string,

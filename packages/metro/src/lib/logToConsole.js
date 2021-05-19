@@ -13,6 +13,7 @@
 'use strict';
 
 const chalk = require('chalk');
+const util = require('util');
 
 import type {Terminal} from 'metro-core';
 
@@ -61,7 +62,11 @@ module.exports = (terminal: Terminal, level: string, ...data: Array<mixed>) => {
     terminal.log(
       color.bold(` ${logFunction.toUpperCase()} `) +
         ''.padEnd(groupStack.length * 2, ' '),
-      ...data,
+      // `util.format` actually accepts any arguments.
+      // If the first argument is a string, it tries to format it.
+      // Otherwise, it just concatenates all arguments.
+      // $FlowIssue[incompatible-call] util.format expected the first argument to be a string
+      util.format(...data),
     );
   }
 };

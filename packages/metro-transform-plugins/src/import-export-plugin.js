@@ -17,10 +17,9 @@ import type {NodePath} from '@babel/traverse';
 // Type only dependency. This is not a runtime dependency
 // eslint-disable-next-line import/no-extraneous-dependencies
 import typeof * as Types from '@babel/types';
+import type {PluginObj} from '@babel/core';
 import type {
   Node,
-  ExportAllDeclaration,
-  ExportDefaultDeclaration,
   ExportNamedDeclaration,
   ImportDeclaration,
   Statement,
@@ -48,31 +47,6 @@ type State = {
   },
   ...
 };
-
-export type Visitors = {|
-  visitor: {|
-    ExportAllDeclaration: (
-      path: NodePath<ExportAllDeclaration>,
-      state: State,
-    ) => void,
-    ExportDefaultDeclaration: (
-      path: NodePath<ExportDefaultDeclaration>,
-      state: State,
-    ) => void,
-    ExportNamedDeclaration: (
-      path: NodePath<ExportNamedDeclaration>,
-      state: State,
-    ) => void,
-    ImportDeclaration: (
-      path: NodePath<ImportDeclaration>,
-      state: State,
-    ) => void,
-    Program: {|
-      enter: (path: NodePath<Program>, state: State) => void,
-      exit: (path: NodePath<Program>, state: State) => void,
-    |},
-  |},
-|};
 
 /**
  * Produces a Babel template that transforms an "import * as x from ..." or an
@@ -172,7 +146,7 @@ function withLocation(node, loc) {
   return node;
 }
 
-function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
+function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
   const {isDeclaration, isVariableDeclaration} = t;
 
   return {
@@ -287,6 +261,13 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
             const local = s.local;
             const remote = s.exported;
 
+            if (remote.type === 'StringLiteral') {
+              // https://babeljs.io/docs/en/babel-plugin-syntax-module-string-names
+              throw path.buildCodeFrameError(
+                'Module string names are not supported',
+              );
+            }
+
             if (path.node.source) {
               const temp = path.scope.generateUidIdentifier(local.name);
 
@@ -387,7 +368,9 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
           if (
             specifiers.filter(
               s =>
-                s.type === 'ImportSpecifier' && s.imported.name !== 'default',
+                s.type === 'ImportSpecifier' &&
+                (s.imported.type === 'StringLiteral' ||
+                  s.imported.name !== 'default'),
             ).length > 1
           ) {
             sharedModuleImport = path.scope.generateUidIdentifierBasedOnNode(

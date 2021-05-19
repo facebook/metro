@@ -6,6 +6,8 @@ emoji=true
 
 exact_by_default=true
 
+format.bracket_spacing=false
+
 munge_underscores=true
 
 module.name_mapper='\(metro-[^/]*\)' -> '<PROJECT_ROOT>/packages/\1/src/index.js'
@@ -15,8 +17,6 @@ suppress_type=$FlowFixMe
 suppress_type=$FlowFixMeProps
 suppress_type=$FlowFixMeState
 suppress_type=$FlowFixMeEmpty
-
-experimental.abstract_locations=true
 
 [lints]
 sketchy-null-number=warn
@@ -39,4 +39,4 @@ untyped-import
 untyped-type-import
 
 [version]
-^0.144.0
+^0.151.0

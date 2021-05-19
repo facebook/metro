@@ -42,6 +42,7 @@ import {
   isImport,
   isClassBody,
   isObjectExpression,
+  isExportDefaultDeclaration,
 } from '@babel/types';
 import type {Node} from '@babel/types';
 
@@ -183,15 +184,23 @@ function getNameForPath(path: NodePath<>): string {
   }
   let propertyPath;
   let kind = '';
+
+  // Find or construct an AST node that names the current node.
   if (isObjectMethod(node) || isClassMethod(node)) {
+    // ({ foo() {} });
     id = node.key;
     if (node.kind !== 'method' && node.kind !== 'constructor') {
+      // Store the method's kind so we can add it to the final name.
       kind = node.kind;
     }
+    // Also store the path to the property so we can find its context
+    // (object/class) later and add _its_ name to the result.
     propertyPath = path;
   } else if (isObjectProperty(parent) || isClassProperty(parent)) {
-    // { foo() {} };
+    // ({ foo: function() {} });
     id = parent.key;
+    // Also store the path to the property so we can find its context
+    // (object/class) later and add _its_ name to the result.
     propertyPath = parentPath;
   } else if (isVariableDeclarator(parent)) {
     // let foo = function () {};
@@ -222,9 +231,11 @@ function getNameForPath(path: NodePath<>): string {
     }
   }
 
+  // Collapse the name AST, if any, into a string.
   let name = getNameFromId(id);
 
   if (name == null) {
+    // We couldn't find a name directly. Try the parent in certain cases.
     if (isCallExpression(parent) || isNewExpression(parent)) {
       // foo(function () {})
       const argIndex = parent.arguments.indexOf(node);
@@ -242,13 +253,19 @@ function getNameForPath(path: NodePath<>): string {
     if (isTypeCastExpression(parent) && parent.expression === node) {
       return getNameForPath(nullthrows(parentPath));
     }
+    if (isExportDefaultDeclaration(parent)) {
+      return 'default';
+    }
+    // We couldn't infer a name at all.
     return ANONYMOUS_NAME;
   }
 
+  // Annotate getters and setters.
   if (kind) {
     name = kind + '__' + name;
   }
 
+  // Annotate members with the name of their containing object/class.
   if (propertyPath) {
     if (isClassBody(propertyPath.parent)) {
       // $FlowFixMe Disvoered when typing babel-traverse
@@ -259,6 +276,7 @@ function getNameForPath(path: NodePath<>): string {
         name = className + separator + name;
       }
     } else if (isObjectExpression(propertyPath.parent)) {
+      // $FlowFixMe[incompatible-use]
       const objectName = getNameForPath(nullthrows(propertyPath.parentPath));
       if (objectName !== ANONYMOUS_NAME) {
         name = objectName + '.' + name;

@@ -214,4 +214,32 @@ describe('Cache', () => {
       {a: 'Cache set', l: 'Network::666f6f', p: undefined},
     ]);
   });
+
+  describe('disabled cache', () => {
+    it('returns null for reads', async () => {
+      const cache = new Cache([]);
+
+      const result = await cache.get(Buffer.from('foo'));
+
+      expect(result).toBe(null);
+    });
+
+    it('ignores writes', async () => {
+      const cache = new Cache([]);
+
+      await cache.set(Buffer.from('foo'), 'value');
+      const result = await cache.get(Buffer.from('foo'));
+
+      expect(result).toBe(null);
+    });
+
+    it('logs nothing', async () => {
+      const cache = new Cache([]);
+
+      await cache.set(Buffer.from('foo'), 'value');
+      await cache.get(Buffer.from('foo'));
+
+      expect(log).toEqual([]);
+    });
+  });
 });

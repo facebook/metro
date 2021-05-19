@@ -1,6 +1,6 @@
 {
   "name": "metro-react-native-babel-preset",
-  "version": "0.65.0",
+  "version": "0.66.0",
   "description": "Babel preset for React Native applications",
   "main": "src/index.js",
   "repository": {
@@ -18,7 +18,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@babel/core": "^7.0.0",
+    "@babel/core": "^7.14.0",
     "@babel/plugin-proposal-class-properties": "^7.0.0",
     "@babel/plugin-proposal-export-default-from": "^7.0.0",
     "@babel/plugin-proposal-nullish-coalescing-operator": "^7.0.0",
@@ -35,11 +35,7 @@
     "@babel/plugin-transform-classes": "^7.0.0",
     "@babel/plugin-transform-destructuring": "^7.0.0",
     "@babel/plugin-transform-flow-strip-types": "^7.0.0",
-    "@babel/plugin-transform-for-of": "^7.0.0",
-    "@babel/plugin-transform-function-name": "^7.0.0",
-    "@babel/plugin-transform-literals": "^7.0.0",
     "@babel/plugin-transform-modules-commonjs": "^7.0.0",
-    "@babel/plugin-transform-parameters": "^7.0.0",
     "@babel/plugin-transform-react-display-name": "^7.0.0",
     "@babel/plugin-transform-react-jsx": "^7.0.0",
     "@babel/plugin-transform-react-jsx-self": "^7.0.0",

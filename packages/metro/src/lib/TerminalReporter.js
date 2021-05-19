@@ -45,11 +45,11 @@ export type TerminalReportableEvent =
 
 type BuildPhase = 'in_progress' | 'done' | 'failed';
 
-type SnippetError = ErrnoError & {
-  filename?: string,
-  snippet?: string,
-  ...
-};
+type SnippetError = ErrnoError &
+  interface {
+    filename?: string,
+    snippet?: string,
+  };
 
 const GLOBAL_CACHE_DISABLED_MESSAGE_FORMAT =
   'The global cache is now disabled because %s';
