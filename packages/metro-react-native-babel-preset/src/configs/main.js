@@ -20,7 +20,7 @@ function isTSXSource(fileName) {
   return !!fileName && fileName.endsWith('.tsx');
 }
 
-const defaultPluginsBeforeRegenerator = [
+const defaultPlugins = [
   [require('@babel/plugin-syntax-flow')],
   [require('@babel/plugin-transform-block-scoping')],
   [
@@ -31,9 +31,6 @@ const defaultPluginsBeforeRegenerator = [
   [require('@babel/plugin-syntax-dynamic-import')],
   [require('@babel/plugin-syntax-export-default-from')],
   ...passthroughSyntaxPlugins,
-];
-
-const defaultPluginsAfterRegenerator = [
   [require('@babel/plugin-transform-unicode-regex')],
 ];
 
@@ -99,7 +96,7 @@ const getPreset = (src, options) => {
       {loose: true}, // dont 'a'.concat('b'), just use 'a'+'b'
     ]);
   }
-  if (isHermes && (isNull || src.indexOf('async') !== -1)) {
+  if (isNull || src.indexOf('async') !== -1) {
     extraPlugins.push([require('@babel/plugin-transform-async-to-generator')]);
   }
   if (
@@ -132,7 +129,7 @@ const getPreset = (src, options) => {
       require('@babel/plugin-transform-runtime'),
       {
         helpers: true,
-        regenerator: !isHermes,
+        regenerator: false,
       },
     ]);
   }
@@ -147,11 +144,7 @@ const getPreset = (src, options) => {
         plugins: [require('@babel/plugin-transform-flow-strip-types')],
       },
       {
-        plugins: [
-          ...defaultPluginsBeforeRegenerator,
-          isHermes ? null : require('@babel/plugin-transform-regenerator'),
-          ...defaultPluginsAfterRegenerator,
-        ].filter(Boolean),
+        plugins: defaultPlugins,
       },
       {
         test: isTypeScriptSource,
