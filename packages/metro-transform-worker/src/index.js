@@ -14,8 +14,11 @@ const HermesCompiler = require('metro-hermes-compiler');
 const JsFileWrapping = require('metro/src/ModuleGraph/worker/JsFileWrapping');
 
 const babylon = require('@babel/parser');
-const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
 const generateImportNames = require('metro/src/ModuleGraph/worker/generateImportNames');
+
+const {
+  InvalidRequireCallError: InternalInvalidRequireCallError,
+} = require('metro/src/ModuleGraph/worker/collectDependencies');
 const generate = require('@babel/generator').default;
 const getCacheKey = require('metro-cache-key');
 const getMinifier = require('./utils/getMinifier');
@@ -49,6 +52,7 @@ import type {
   CustomTransformOptions,
   TransformProfile,
 } from 'metro-babel-transformer';
+import typeof CollectDependenciesFn from 'metro/src/ModuleGraph/worker/collectDependencies';
 
 type MinifierConfig = $ReadOnly<{[string]: mixed, ...}>;
 
@@ -87,6 +91,7 @@ export type JsTransformerConfig = $ReadOnly<{|
   optimizationSizeLimit: number,
   publicPath: string,
   allowOptionalDependencies: AllowOptionalDependencies,
+  unstable_collectDependenciesPath: string,
 |}>;
 
 export type {CustomTransformOptions} from 'metro-babel-transformer';
@@ -159,6 +164,11 @@ export type BytecodeOutput = $ReadOnly<{|
   data: HermesCompilerResult,
   type: BytecodeFileType,
 |}>;
+
+type DependencySplitCondition = $PropertyType<
+  $PropertyType<TransformResultDependency, 'data'>,
+  'splitCondition',
+>;
 
 type TransformResponse = $ReadOnly<{
   dependencies: $ReadOnlyArray<TransformResultDependency>,
@@ -245,13 +255,10 @@ const compileToBytecode = (
 };
 
 class InvalidRequireCallError extends Error {
-  innerError: collectDependencies.InvalidRequireCallError;
+  innerError: InternalInvalidRequireCallError;
   filename: string;
 
-  constructor(
-    innerError: collectDependencies.InvalidRequireCallError,
-    filename: string,
-  ) {
+  constructor(innerError: InternalInvalidRequireCallError, filename: string) {
     super(`${filename}:${innerError.message}`);
     this.innerError = innerError;
     this.filename = filename;
@@ -357,9 +364,11 @@ async function transformJS(
         keepRequireNames: options.dev,
         allowOptionalDependencies: config.allowOptionalDependencies,
       };
+      // $FlowFixMe[unsupported-syntax] dynamic require
+      const collectDependencies: CollectDependenciesFn<DependencySplitCondition> = require(config.unstable_collectDependenciesPath);
       ({ast, dependencies, dependencyMapName} = collectDependencies(ast, opts));
     } catch (error) {
-      if (error instanceof collectDependencies.InvalidRequireCallError) {
+      if (error instanceof InternalInvalidRequireCallError) {
         throw new InvalidRequireCallError(error, file.filename);
       }
       throw error;
@@ -642,14 +651,19 @@ module.exports = {
   },
 
   getCacheKey: (config: JsTransformerConfig): string => {
-    const {babelTransformerPath, minifierPath, ...remainingConfig} = config;
+    const {
+      babelTransformerPath,
+      minifierPath,
+      unstable_collectDependenciesPath,
+      ...remainingConfig
+    } = config;
 
     const filesKey = getCacheKey([
       require.resolve(babelTransformerPath),
       require.resolve(minifierPath),
       require.resolve('./utils/getMinifier'),
       require.resolve('./utils/assetTransformer'),
-      require.resolve('metro/src/ModuleGraph/worker/collectDependencies'),
+      require.resolve(unstable_collectDependenciesPath),
       require.resolve('metro/src/ModuleGraph/worker/generateImportNames'),
       require.resolve('metro/src/ModuleGraph/worker/JsFileWrapping'),
       ...metroTransformPlugins.getTransformPluginCacheKeyFiles(),
