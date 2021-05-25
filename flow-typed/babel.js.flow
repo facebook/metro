@@ -334,7 +334,10 @@ declare module '@babel/core' {
     path: NodePath<> | null;
     metadata: BabelFileMetadata;
 
-    constructor(options: BabelCoreOptions, passes: Array<mixed>): File;
+    constructor(
+      options: BabelCoreOptions,
+      input: $ReadOnly<{ast: BabelNode, code: string, inputMap: any}>,
+    ): File;
 
     getMetadata(): void;
 
