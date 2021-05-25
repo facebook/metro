@@ -518,3 +518,43 @@ it('allows emitting compact code when not minifying', async () => {
     `"__d(function(global,_$$_REQUIRE,_$$_IMPORT_DEFAULT,_$$_IMPORT_ALL,module,exports,_dependencyMap){arbitrary(code);});"`,
   );
 });
+
+it('skips minification in Hermes stable transform profile', async () => {
+  const result = await Transformer.transform(
+    baseConfig,
+    '/root',
+    'local/file.js',
+    'arbitrary(code);',
+    {
+      dev: false,
+      minify: true,
+      type: 'module',
+      unstable_transformProfile: 'hermes-canary',
+    },
+  );
+  expect(result.output[0].data.code).toMatchInlineSnapshot(`
+    "__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+      arbitrary(code);
+    });"
+  `);
+});
+
+it('skips minification in Hermes canary transform profile', async () => {
+  const result = await Transformer.transform(
+    baseConfig,
+    '/root',
+    'local/file.js',
+    'arbitrary(code);',
+    {
+      dev: false,
+      minify: true,
+      type: 'module',
+      unstable_transformProfile: 'hermes-canary',
+    },
+  );
+  expect(result.output[0].data.code).toMatchInlineSnapshot(`
+    "__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+      arbitrary(code);
+    });"
+  `);
+});

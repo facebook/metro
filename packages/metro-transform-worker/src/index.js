@@ -386,12 +386,17 @@ async function transformJS(
     ));
   }
 
+  const minify =
+    options.minify &&
+    options.unstable_transformProfile !== 'hermes-canary' &&
+    options.unstable_transformProfile !== 'hermes-stable';
+
   const reserved = [];
   if (config.unstable_dependencyMapReservedName != null) {
     reserved.push(config.unstable_dependencyMapReservedName);
   }
   if (
-    options.minify &&
+    minify &&
     file.inputFileSize <= config.optimizationSizeLimit &&
     !config.unstable_disableNormalizePseudoGlobals
   ) {
@@ -418,7 +423,7 @@ async function transformJS(
   let map = result.rawMappings ? result.rawMappings.map(toSegmentTuple) : [];
   let code = result.code;
 
-  if (options.minify) {
+  if (minify) {
     ({map, code} = await minifyCode(
       config,
       projectRoot,
@@ -524,7 +529,13 @@ async function transformJSON(
   let code = JsFileWrapping.wrapJson(file.code, config.globalPrefix);
   let map = [];
 
-  if (options.minify) {
+  // TODO: When we can reuse transformJS for JSON, we should not derive `minify` separately.
+  const minify =
+    options.minify &&
+    options.unstable_transformProfile !== 'hermes-canary' &&
+    options.unstable_transformProfile !== 'hermes-stable';
+
+  if (minify) {
     ({map, code} = await minifyCode(
       config,
       projectRoot,
