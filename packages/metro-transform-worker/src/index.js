@@ -92,6 +92,7 @@ export type JsTransformerConfig = $ReadOnly<{|
   publicPath: string,
   allowOptionalDependencies: AllowOptionalDependencies,
   unstable_collectDependenciesPath: string,
+  unstable_dependencyMapReservedName: ?string,
 |}>;
 
 export type {CustomTransformOptions} from 'metro-babel-transformer';
@@ -363,6 +364,7 @@ async function transformJS(
         inlineableCalls: [importDefault, importAll],
         keepRequireNames: options.dev,
         allowOptionalDependencies: config.allowOptionalDependencies,
+        dependencyMapName: config.unstable_dependencyMapReservedName,
       };
       // $FlowFixMe[unsupported-syntax] dynamic require
       const collectDependencies: CollectDependenciesFn<DependencySplitCondition> = require(config.unstable_collectDependenciesPath);
@@ -383,10 +385,17 @@ async function transformJS(
     ));
   }
 
-  const reserved =
-    options.minify && file.inputFileSize <= config.optimizationSizeLimit
-      ? metroTransformPlugins.normalizePseudoGlobals(wrappedAst)
-      : [];
+  const reserved = [];
+  if (config.unstable_dependencyMapReservedName != null) {
+    reserved.push(config.unstable_dependencyMapReservedName);
+  }
+  if (options.minify && file.inputFileSize <= config.optimizationSizeLimit) {
+    reserved.push(
+      ...metroTransformPlugins.normalizePseudoGlobals(wrappedAst, {
+        reservedNames: reserved,
+      }),
+    );
+  }
 
   const result = generate(
     wrappedAst,
@@ -616,6 +625,19 @@ module.exports = {
       options,
     };
     const sourceCode = data.toString('utf8');
+
+    const {unstable_dependencyMapReservedName} = config;
+    if (unstable_dependencyMapReservedName != null) {
+      const position = sourceCode.indexOf(unstable_dependencyMapReservedName);
+      if (position > -1) {
+        throw new SyntaxError(
+          'Source code contains the reserved string `' +
+            unstable_dependencyMapReservedName +
+            '` at character offset ' +
+            position,
+        );
+      }
+    }
 
     if (filename.endsWith('.json')) {
       const jsonFile: JSONFile = {

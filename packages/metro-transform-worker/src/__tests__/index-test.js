@@ -11,6 +11,8 @@
 
 'use strict';
 
+import type {JsTransformerConfig} from '../index';
+
 jest
   .mock('../utils/getMinifier', () => () => ({code, map}) => ({
     code: code.replace('arbitrary(code)', 'minified(code)'),
@@ -40,21 +42,25 @@ let fs;
 let mkdirp;
 let Transformer;
 
-const baseConfig = {
+const baseConfig: JsTransformerConfig = {
   allowOptionalDependencies: false,
-  assetExts: [],
   assetPlugins: [],
   assetRegistryPath: '',
   asyncRequireModulePath: 'asyncRequire',
   babelTransformerPath,
   dynamicDepsInPackages: 'reject',
+  enableBabelRCLookup: false,
   enableBabelRuntime: true,
+  experimentalImportBundleSupport: false,
   globalPrefix: '',
+  hermesParser: false,
   minifierConfig: {},
   minifierPath: 'minifyModulePath',
   optimizationSizeLimit: 100000,
+  publicPath: '/assets',
   unstable_collectDependenciesPath:
     'metro/src/ModuleGraph/worker/collectDependencies',
+  unstable_dependencyMapReservedName: null,
 };
 
 beforeEach(() => {
@@ -430,9 +436,47 @@ it('allows replacing the collectDependencies implementation', async () => {
       dynamicRequires: 'reject',
       inlineableCalls: ['_$$_IMPORT_DEFAULT', '_$$_IMPORT_ALL'],
       keepRequireNames: options.dev,
+      dependencyMapName: null,
     },
   );
   expect(result.dependencies).toEqual([
     expect.objectContaining({name: 'modified_foo'}),
   ]);
+});
+
+it('uses a reserved dependency map name and prevents it from being minified', async () => {
+  const result = await Transformer.transform(
+    {...baseConfig, unstable_dependencyMapReservedName: 'THE_DEP_MAP'},
+    '/root',
+    'local/file.js',
+    'arbitrary(code);',
+    {
+      dev: false,
+      minify: true,
+      type: 'module',
+    },
+  );
+  expect(result.output[0].data.code).toMatchInlineSnapshot(`
+    "__d(function (g, r, i, a, m, e, THE_DEP_MAP) {
+      minified(code);
+    });"
+  `);
+});
+
+it('throws if the reserved dependency map name appears in the input', async () => {
+  await expect(
+    Transformer.transform(
+      {...baseConfig, unstable_dependencyMapReservedName: 'THE_DEP_MAP'},
+      '/root',
+      'local/file.js',
+      'arbitrary(code); /* the code is not allowed to mention THE_DEP_MAP, even in a comment */',
+      {
+        dev: false,
+        minify: true,
+        type: 'module',
+      },
+    ),
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `"Source code contains the reserved string \`THE_DEP_MAP\` at character offset 55"`,
+  );
 });

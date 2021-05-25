@@ -40,6 +40,7 @@ const opts = {
   inlineableCalls: [],
   keepRequireNames: true,
   allowOptionalDependencies: false,
+  dependencyMapName: null,
 };
 
 it('collects unique dependency identifiers and transforms the AST', () => {
@@ -318,6 +319,7 @@ describe('Evaluating static arguments', () => {
       inlineableCalls: [],
       keepRequireNames: true,
       allowOptionalDependencies: false,
+      dependencyMapName: null,
     };
     const {dependencies} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([]);
@@ -478,6 +480,7 @@ describe('optional dependencies', () => {
     inlineableCalls: [],
     keepRequireNames: true,
     allowOptionalDependencies: true,
+    dependencyMapName: null,
   };
   const validateDependencies = (dependencies, expectedCount) => {
     let hasAsync = false;
