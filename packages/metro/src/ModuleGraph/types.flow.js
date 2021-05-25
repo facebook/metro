@@ -138,12 +138,15 @@ export type ConcreteTransformResult = {
   type: 'concrete',
   code: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
-  dependencyMapName?: string,
   map: ?BasicSourceMap,
-  requireName: string,
   soundResources?: ?Array<string>,
+
+  // NOTE: requireName, importNames and dependencyMapName are only used by the
+  // optimizer. They are deleted when the transform result is serialized to
+  // JSON.
+  dependencyMapName?: string,
+  requireName?: string,
   importNames?: ImportNames,
-  isESModule?: true,
 };
 
 export type LinkedTransformResult = $ReadOnly<{
