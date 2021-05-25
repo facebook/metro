@@ -61,6 +61,8 @@ const baseConfig: JsTransformerConfig = {
   unstable_collectDependenciesPath:
     'metro/src/ModuleGraph/worker/collectDependencies',
   unstable_dependencyMapReservedName: null,
+  unstable_compactOutput: false,
+  unstable_disableNormalizePseudoGlobals: false,
 };
 
 beforeEach(() => {
@@ -478,5 +480,41 @@ it('throws if the reserved dependency map name appears in the input', async () =
     ),
   ).rejects.toThrowErrorMatchingInlineSnapshot(
     `"Source code contains the reserved string \`THE_DEP_MAP\` at character offset 55"`,
+  );
+});
+
+it('allows disabling the normalizePseudoGlobals pass when minifying', async () => {
+  const result = await Transformer.transform(
+    {...baseConfig, unstable_disableNormalizePseudoGlobals: true},
+    '/root',
+    'local/file.js',
+    'arbitrary(code);',
+    {
+      dev: false,
+      minify: true,
+      type: 'module',
+    },
+  );
+  expect(result.output[0].data.code).toMatchInlineSnapshot(`
+    "__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+      minified(code);
+    });"
+  `);
+});
+
+it('allows emitting compact code when not minifying', async () => {
+  const result = await Transformer.transform(
+    {...baseConfig, unstable_compactOutput: true},
+    '/root',
+    'local/file.js',
+    'arbitrary(code);',
+    {
+      dev: false,
+      minify: false,
+      type: 'module',
+    },
+  );
+  expect(result.output[0].data.code).toMatchInlineSnapshot(
+    `"__d(function(global,_$$_REQUIRE,_$$_IMPORT_DEFAULT,_$$_IMPORT_ALL,module,exports,_dependencyMap){arbitrary(code);});"`,
   );
 });

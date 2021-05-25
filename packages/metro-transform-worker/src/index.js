@@ -93,6 +93,8 @@ export type JsTransformerConfig = $ReadOnly<{|
   allowOptionalDependencies: AllowOptionalDependencies,
   unstable_collectDependenciesPath: string,
   unstable_dependencyMapReservedName: ?string,
+  unstable_disableNormalizePseudoGlobals: boolean,
+  unstable_compactOutput: boolean,
 |}>;
 
 export type {CustomTransformOptions} from 'metro-babel-transformer';
@@ -329,7 +331,6 @@ async function transformJS(
       code: false,
       configFile: false,
       comments: false,
-      compact: false,
       filename: file.filename,
       plugins,
       sourceMaps: false,
@@ -389,7 +390,11 @@ async function transformJS(
   if (config.unstable_dependencyMapReservedName != null) {
     reserved.push(config.unstable_dependencyMapReservedName);
   }
-  if (options.minify && file.inputFileSize <= config.optimizationSizeLimit) {
+  if (
+    options.minify &&
+    file.inputFileSize <= config.optimizationSizeLimit &&
+    !config.unstable_disableNormalizePseudoGlobals
+  ) {
     reserved.push(
       ...metroTransformPlugins.normalizePseudoGlobals(wrappedAst, {
         reservedNames: reserved,
@@ -401,7 +406,7 @@ async function transformJS(
     wrappedAst,
     {
       comments: false,
-      compact: false,
+      compact: config.unstable_compactOutput,
       filename: file.filename,
       retainLines: false,
       sourceFileName: file.filename,

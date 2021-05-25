@@ -119,6 +119,8 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     unstable_collectDependenciesPath:
       'metro/src/ModuleGraph/worker/collectDependencies.js',
     unstable_dependencyMapReservedName: null,
+    unstable_disableNormalizePseudoGlobals: false,
+    unstable_compactOutput: false,
   },
   cacheStores: [
     new FileStore({
