@@ -56,12 +56,12 @@ function addModuleIdsToModuleWrapper(
 
 exports.addModuleIdsToModuleWrapper = addModuleIdsToModuleWrapper;
 
-type InlineModuleIdsOptions = {
+type InlineModuleIdsOptions = $ReadOnly<{
   dependencyMapReservedName: ?string,
   globalPrefix: string,
   ignoreMissingDependencyMapReference?: boolean,
   hermesParser?: boolean,
-};
+}>;
 
 // TS detection conditions copied from metro-react-native-babel-preset
 function isTypeScriptSource(fileName) {
@@ -76,8 +76,7 @@ function inlineModuleIds(
   module: Module,
   idForPath: ({path: string, ...}) => number,
   {
-    // $FlowFixMe[incompatible-type]
-    dependencyMapReservedName = undefined,
+    dependencyMapReservedName,
     globalPrefix,
     ignoreMissingDependencyMapReference = false,
     hermesParser = false,

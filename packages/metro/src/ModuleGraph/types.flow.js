@@ -98,7 +98,7 @@ export type PostProcessModules = (
 ) => $ReadOnlyArray<Module>;
 
 export type OutputFnArg = {|
-  dependencyMapReservedName?: string,
+  dependencyMapReservedName?: ?string,
   filename: string,
   globalPrefix: string,
   idsForPath: IdsForPathFn,
