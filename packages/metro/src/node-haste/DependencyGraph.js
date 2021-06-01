@@ -79,6 +79,7 @@ class DependencyGraph extends EventEmitter {
     this._assetExtensions = new Set(
       config.resolver.assetExts.map(asset => '.' + asset),
     );
+    // $FlowFixMe[method-unbinding] added when improving typing for this parameters
     this._haste.on('change', this._onHasteChange.bind(this));
     this._resolutionCache = new Map();
     this._moduleCache = this._createModuleCache();
@@ -235,6 +236,7 @@ class DependencyGraph extends EventEmitter {
 
   _createModuleCache() {
     return new ModuleCache({
+      // $FlowFixMe[method-unbinding] added when improving typing for this parameters
       getClosestPackage: this._getClosestPackage.bind(this),
     });
   }

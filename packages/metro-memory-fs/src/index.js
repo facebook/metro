@@ -1061,6 +1061,7 @@ class MemoryFs {
     const ffd = fd;
     const ropt = {
       fd,
+      // $FlowFixMe[method-unbinding] added when improving typing for this parameters
       writeSync: this._write.bind(this),
       filePath,
       start,

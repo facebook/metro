@@ -50,6 +50,7 @@ class Cache<T> {
       try {
         const valueOrPromise = store.get(key);
 
+        // $FlowFixMe[method-unbinding] added when improving typing for this parameters
         if (valueOrPromise && typeof valueOrPromise.then === 'function') {
           value = await valueOrPromise;
         } else {

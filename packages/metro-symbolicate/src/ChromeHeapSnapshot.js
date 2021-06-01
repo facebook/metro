@@ -388,6 +388,7 @@ class ChromeHeapSnapshotRecordAccessor {
     let didResizeBuffer = false;
     try {
       for (const field of this._fieldToOffset.keys()) {
+        // $FlowFixMe[method-unbinding] added when improving typing for this parameters
         if (!Object.prototype.hasOwnProperty.call(record, field)) {
           throw new Error('Missing value for field: ' + field);
         }

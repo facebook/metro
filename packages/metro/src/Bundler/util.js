@@ -203,6 +203,7 @@ function createRamBundleGroups<T: ModuleTransportLike>(
     // find all module IDs that are part of more than one group
     const doubles = filter(all, ([, parents]) => parents.length > 1);
     for (const [moduleId, parents] of doubles) {
+      // $FlowFixMe[method-unbinding] added when improving typing for this parameters
       const parentNames = parents.map(byId.get, byId);
       const lastName = parentNames.pop();
       throw new Error(

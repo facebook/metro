@@ -250,6 +250,7 @@ exports.runServer = async (
           // TODO(hypuk): Refactor inspectorProxy.processRequest into separate request handlers
           // so that we could provide routes (/json/list and /json/version) here.
           // Currently this causes Metro to give warning about T31407894.
+          // $FlowFixMe[method-unbinding] added when improving typing for this parameters
           serverApp.use(inspectorProxy.processRequest.bind(inspectorProxy));
         }
 
