@@ -11,6 +11,8 @@
 'use strict';
 
 const generate = require('@babel/generator').default;
+const t = require('@babel/types');
+
 const {transformSync} = require('@babel/core');
 
 opaque type Code = string;
@@ -32,12 +34,29 @@ function makeTransformOptions(plugins, options) {
   };
 }
 
+function validateOutputAst(ast) {
+  const seenNodes = new Set();
+  t.traverseFast(ast, function enter(node) {
+    if (seenNodes.has(node)) {
+      throw new Error(
+        'Found a duplicate ' +
+          node.type +
+          ' node in the output, which can cause' +
+          ' undefined behavior in Babel.',
+      );
+    }
+    seenNodes.add(node);
+  });
+}
+
 function transformToAst(
   plugins: $ReadOnlyArray<Plugin>,
   code: Code,
   options: Options = {},
 ) {
-  return transformSync(code, makeTransformOptions(plugins, options)).ast;
+  const ast = transformSync(code, makeTransformOptions(plugins, options)).ast;
+  validateOutputAst(ast);
+  return ast;
 }
 
 function transform(

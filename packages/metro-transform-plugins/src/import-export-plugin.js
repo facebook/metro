@@ -275,9 +275,9 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
                 path.insertBefore(
                   withLocation(
                     importTemplate({
-                      IMPORT: state.importDefault,
+                      IMPORT: t.cloneNode(state.importDefault),
                       FILE: resolvePath(
-                        nullthrows(path.node.source),
+                        t.cloneNode(nullthrows(path.node.source)),
                         state.opts.resolve,
                       ),
                       LOCAL: temp,
@@ -296,7 +296,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
                   withLocation(
                     importNamedTemplate({
                       FILE: resolvePath(
-                        nullthrows(path.node.source),
+                        t.cloneNode(nullthrows(path.node.source)),
                         state.opts.resolve,
                       ),
                       LOCAL: temp,
@@ -312,7 +312,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
                   withLocation(
                     importNamedTemplate({
                       FILE: resolvePath(
-                        nullthrows(path.node.source),
+                        t.cloneNode(nullthrows(path.node.source)),
                         state.opts.resolve,
                       ),
                       LOCAL: temp,
@@ -358,7 +358,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
           state.imports.push({
             node: withLocation(
               importSideEffectTemplate({
-                FILE: resolvePath(file, state.opts.resolve),
+                FILE: resolvePath(t.cloneNode(file), state.opts.resolve),
               }),
               loc,
             ),
@@ -380,7 +380,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
               id: sharedModuleImport,
               init: withLocation(
                 t.callExpression(t.identifier('require'), [
-                  resolvePath(file, state.opts.resolve),
+                  resolvePath(t.cloneNode(file), state.opts.resolve),
                 ]),
                 loc,
               ),
@@ -397,9 +397,9 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
                 state.imports.push({
                   node: withLocation(
                     importTemplate({
-                      IMPORT: state.importAll,
-                      FILE: resolvePath(file, state.opts.resolve),
-                      LOCAL: local,
+                      IMPORT: t.cloneNode(state.importAll),
+                      FILE: resolvePath(t.cloneNode(file), state.opts.resolve),
+                      LOCAL: t.cloneNode(local),
                     }),
                     loc,
                   ),
@@ -410,9 +410,9 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
                 state.imports.push({
                   node: withLocation(
                     importTemplate({
-                      IMPORT: state.importDefault,
-                      FILE: resolvePath(file, state.opts.resolve),
-                      LOCAL: local,
+                      IMPORT: t.cloneNode(state.importDefault),
+                      FILE: resolvePath(t.cloneNode(file), state.opts.resolve),
+                      LOCAL: t.cloneNode(local),
                     }),
                     loc,
                   ),
@@ -424,9 +424,12 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
                   state.imports.push({
                     node: withLocation(
                       importTemplate({
-                        IMPORT: state.importDefault,
-                        FILE: resolvePath(file, state.opts.resolve),
-                        LOCAL: local,
+                        IMPORT: t.cloneNode(state.importDefault),
+                        FILE: resolvePath(
+                          t.cloneNode(file),
+                          state.opts.resolve,
+                        ),
+                        LOCAL: t.cloneNode(local),
                       }),
                       loc,
                     ),
@@ -435,7 +438,10 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
                   path.scope.push({
                     id: local,
                     init: withLocation(
-                      t.memberExpression(sharedModuleImport, imported),
+                      t.memberExpression(
+                        t.cloneNode(sharedModuleImport),
+                        t.cloneNode(imported),
+                      ),
                       loc,
                     ),
                   });
@@ -443,9 +449,12 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
                   state.imports.push({
                     node: withLocation(
                       importNamedTemplate({
-                        FILE: resolvePath(file, state.opts.resolve),
-                        LOCAL: local,
-                        REMOTE: imported,
+                        FILE: resolvePath(
+                          t.cloneNode(file),
+                          state.opts.resolve,
+                        ),
+                        LOCAL: t.cloneNode(local),
+                        REMOTE: t.cloneNode(imported),
                       }),
                       loc,
                     ),
