@@ -151,6 +151,7 @@ exports.createConnectMiddleware = async function(
       attachWebsocketServer({
         httpServer,
         path: '/hot',
+        // $FlowFixMe[method-unbinding]
         websocketServer: new MetroHmrServer(
           metroServer.getBundler(),
           metroServer.getCreateModuleId(),
