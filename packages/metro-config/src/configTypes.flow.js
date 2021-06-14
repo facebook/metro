@@ -46,6 +46,7 @@ type ExtraTransformOptions = {
     +inlineRequires: {+blockList: {[string]: true, ...}, ...} | boolean,
     +nonInlinedRequires?: $ReadOnlyArray<string>,
     +unstable_disableES6Transforms?: boolean,
+    +unstable_disableModuleWrapping?: boolean,
   |},
   ...
 };

@@ -266,6 +266,25 @@ it('does not add "use strict" on non-modules', async () => {
   );
 });
 
+it('preserves require() calls when module wrapping is disabled', async () => {
+  const contents = ['require("./c");'].join('\n');
+
+  const result = await Transformer.transform(
+    baseConfig,
+    '/root',
+    'local/file.js',
+    contents,
+    {
+      dev: true,
+      unstable_disableModuleWrapping: true,
+      type: 'module',
+    },
+  );
+
+  expect(result.output[0].type).toBe('js/module');
+  expect(result.output[0].data.code).toBe('require("./c");');
+});
+
 it('reports filename when encountering unsupported dynamic dependency', async () => {
   const contents = [
     'require("./a");',
