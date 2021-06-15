@@ -18,7 +18,12 @@ const {
 const {EventEmitter} = require('events');
 
 import type DependencyGraph from '../node-haste/DependencyGraph';
-import type {DeltaResult, Graph, Options} from './types.flow';
+import type {
+  DeltaResult,
+  Graph,
+  Options,
+  TransformInputOptions,
+} from './types.flow';
 
 /**
  * This class is in charge of calculating the delta of changed modules that
@@ -28,6 +33,7 @@ import type {DeltaResult, Graph, Options} from './types.flow';
  */
 class DeltaCalculator<T> extends EventEmitter {
   _dependencyGraph: DependencyGraph;
+  _transformOptions: TransformInputOptions;
   _options: Options<T>;
 
   _currentBuildPromise: ?Promise<DeltaResult<T>>;
@@ -39,10 +45,12 @@ class DeltaCalculator<T> extends EventEmitter {
   constructor(
     entryPoints: $ReadOnlyArray<string>,
     dependencyGraph: DependencyGraph,
+    transformOptions: TransformInputOptions,
     options: Options<T>,
   ) {
     super();
 
+    this._transformOptions = transformOptions;
     this._options = options;
     this._dependencyGraph = dependencyGraph;
 
@@ -50,6 +58,7 @@ class DeltaCalculator<T> extends EventEmitter {
       dependencies: new Map(),
       entryPoints,
       importBundleNames: new Set(),
+      transformOptions: this._transformOptions,
     };
 
     this._dependencyGraph
@@ -72,6 +81,7 @@ class DeltaCalculator<T> extends EventEmitter {
       dependencies: new Map(),
       entryPoints: this._graph.entryPoints,
       importBundleNames: new Set(),
+      transformOptions: this._transformOptions,
     };
     this._modifiedFiles = new Set();
     this._deletedFiles = new Set();

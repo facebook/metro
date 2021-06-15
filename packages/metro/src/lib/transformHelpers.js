@@ -17,17 +17,9 @@ import type {TransformOptions} from '../DeltaBundler/Worker';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {Type} from 'metro-transform-worker';
+import type {TransformInputOptions} from '../DeltaBundler/types.flow';
 
 type InlineRequiresRaw = {+blockList: {[string]: true, ...}, ...} | boolean;
-
-export type TransformInputOptions = $Diff<
-  TransformOptions,
-  {
-    inlinePlatform: boolean,
-    inlineRequires: boolean,
-    ...
-  },
->;
 
 type TransformOptionsWithRawInlines = {|
   ...TransformOptions,
@@ -66,7 +58,7 @@ async function calcTransformerOptions(
   }
 
   const getDependencies = async (path: string) => {
-    const dependencies = await deltaBundler.getDependencies([path], {
+    const dependencies = await deltaBundler.getDependencies([path], options, {
       resolve: await getResolveDependencyFn(bundler, options.platform),
       transform: await getTransformFn([path], bundler, deltaBundler, config, {
         ...options,

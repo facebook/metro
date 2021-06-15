@@ -23,11 +23,11 @@ const transformHelpers = require('./lib/transformHelpers');
 
 import type {
   Options as DeltaBundlerOptions,
+  TransformInputOptions,
   Dependencies,
 } from './DeltaBundler/types.flow';
 import type {DeltaResult, Module, Graph} from './DeltaBundler';
 import type {GraphId} from './lib/getGraphId';
-import type {TransformInputOptions} from './lib/transformHelpers';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 export opaque type RevisionId: string = string;
@@ -109,23 +109,27 @@ class IncrementalBundler {
   ): Promise<OutputGraph> {
     const absoluteEntryFiles = await this._getAbsoluteEntryFiles(entryFiles);
 
-    const graph = await this._deltaBundler.buildGraph(absoluteEntryFiles, {
-      resolve: await transformHelpers.getResolveDependencyFn(
-        this._bundler,
-        transformOptions.platform,
-      ),
-      transform: await transformHelpers.getTransformFn(
-        absoluteEntryFiles,
-        this._bundler,
-        this._deltaBundler,
-        this._config,
-        transformOptions,
-      ),
-      onProgress: otherOptions.onProgress,
-      experimentalImportBundleSupport: this._config.transformer
-        .experimentalImportBundleSupport,
-      shallow: otherOptions.shallow,
-    });
+    const graph = await this._deltaBundler.buildGraph(
+      absoluteEntryFiles,
+      transformOptions,
+      {
+        resolve: await transformHelpers.getResolveDependencyFn(
+          this._bundler,
+          transformOptions.platform,
+        ),
+        transform: await transformHelpers.getTransformFn(
+          absoluteEntryFiles,
+          this._bundler,
+          this._deltaBundler,
+          this._config,
+          transformOptions,
+        ),
+        onProgress: otherOptions.onProgress,
+        experimentalImportBundleSupport: this._config.transformer
+          .experimentalImportBundleSupport,
+        shallow: otherOptions.shallow,
+      },
+    );
 
     this._config.serializer.experimentalSerializerHook(graph, {
       added: graph.dependencies,
@@ -149,6 +153,7 @@ class IncrementalBundler {
 
     const dependencies = await this._deltaBundler.getDependencies(
       absoluteEntryFiles,
+      transformOptions,
       {
         resolve: await transformHelpers.getResolveDependencyFn(
           this._bundler,

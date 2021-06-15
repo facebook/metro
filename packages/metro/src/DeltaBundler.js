@@ -21,6 +21,7 @@ import type {
   MixedOutput,
   Options,
 } from './DeltaBundler/types.flow';
+import type {TransformInputOptions} from './DeltaBundler/types.flow';
 
 export type {
   DeltaResult,
@@ -57,11 +58,17 @@ class DeltaBundler<T = MixedOutput> {
 
   async getDependencies(
     entryPoints: $ReadOnlyArray<string>,
+    transformOptions: TransformInputOptions,
     options: Options<T>,
   ): Promise<Dependencies<T>> {
     const depGraph = await this._bundler.getDependencyGraph();
 
-    const deltaCalculator = new DeltaCalculator(entryPoints, depGraph, options);
+    const deltaCalculator = new DeltaCalculator(
+      entryPoints,
+      depGraph,
+      transformOptions,
+      options,
+    );
 
     await deltaCalculator.getDelta({reset: true, shallow: options.shallow});
     const graph = deltaCalculator.getGraph();
@@ -75,11 +82,17 @@ class DeltaBundler<T = MixedOutput> {
   // To get just the dependencies, use getDependencies which will not leak graphs.
   async buildGraph(
     entryPoints: $ReadOnlyArray<string>,
+    transformOptions: TransformInputOptions,
     options: Options<T>,
   ): Promise<Graph<T>> {
     const depGraph = await this._bundler.getDependencyGraph();
 
-    const deltaCalculator = new DeltaCalculator(entryPoints, depGraph, options);
+    const deltaCalculator = new DeltaCalculator(
+      entryPoints,
+      depGraph,
+      transformOptions,
+      options,
+    );
 
     await deltaCalculator.getDelta({reset: true, shallow: options.shallow});
     const graph = deltaCalculator.getGraph();
