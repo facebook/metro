@@ -213,6 +213,7 @@ class HmrServer<TClient: Client> {
             type: 'client_log',
             level: data.level,
             data: data.data,
+            mode: data.mode,
           });
           break;
         case 'log-opt-in':

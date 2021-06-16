@@ -20,7 +20,12 @@ import type {Terminal} from 'metro-core';
 const groupStack = [];
 let collapsedGuardTimer;
 
-module.exports = (terminal: Terminal, level: string, ...data: Array<mixed>) => {
+module.exports = (
+  terminal: Terminal,
+  level: string,
+  mode: 'BRIDGE' | 'NOBRIDGE',
+  ...data: Array<mixed>
+) => {
   const logFunction = console[level] && level !== 'trace' ? level : 'log';
   const color =
     level === 'error'
@@ -59,8 +64,10 @@ module.exports = (terminal: Terminal, level: string, ...data: Array<mixed>) => {
     if (typeof lastItem === 'string') {
       data[data.length - 1] = lastItem.trimEnd();
     }
+
+    const modePrefix = mode == 'BRIDGE' ? '' : `(${mode.toUpperCase()}) `;
     terminal.log(
-      color.bold(` ${logFunction.toUpperCase()} `) +
+      color.bold(` ${modePrefix}${logFunction.toUpperCase()} `) +
         ''.padEnd(groupStack.length * 2, ' '),
       // `util.format` actually accepts any arguments.
       // If the first argument is a string, it tries to format it.
