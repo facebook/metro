@@ -20,8 +20,8 @@ import type {
   // eslint-disable-next-line no-unused-vars
   MixedOutput,
   Options,
+  TransformInputOptions,
 } from './DeltaBundler/types.flow';
-import type {TransformInputOptions} from './DeltaBundler/types.flow';
 
 export type {
   DeltaResult,
