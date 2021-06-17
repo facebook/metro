@@ -315,13 +315,6 @@ async function transformJS(
     ]);
   }
 
-  if (!options.dev) {
-    plugins.push([
-      metroTransformPlugins.constantFoldingPlugin,
-      babelPluginOpts,
-    ]);
-  }
-
   plugins.push([metroTransformPlugins.inlinePlugin, babelPluginOpts]);
 
   ast = nullthrows(
@@ -342,6 +335,27 @@ async function transformJS(
       cloneInputAst: true,
     }).ast,
   );
+
+  if (!options.dev) {
+    // Run the constant folding plugin in its own pass, avoiding race conditions
+    // with other plugins that have exit() visitors on Program (e.g. the ESM
+    // transform).
+    ast = nullthrows(
+      transformFromAstSync(ast, '', {
+        ast: true,
+        babelrc: false,
+        code: false,
+        configFile: false,
+        comments: false,
+        filename: file.filename,
+        plugins: [
+          [metroTransformPlugins.constantFoldingPlugin, babelPluginOpts],
+        ],
+        sourceMaps: false,
+        cloneInputAst: false,
+      }).ast,
+    );
+  }
 
   let dependencyMapName = '';
   let dependencies;
