@@ -78,7 +78,7 @@ export type Graph<T = MixedOutput> = {|
   dependencies: Dependencies<T>,
   importBundleNames: Set<string>,
   +entryPoints: $ReadOnlyArray<string>,
-  transformOptions: TransformInputOptions,
+  +transformOptions: TransformInputOptions,
 |};
 
 export type TransformResult<T = MixedOutput> = $ReadOnly<{|
@@ -104,6 +104,7 @@ export type AllowOptionalDependencies =
 export type Options<T = MixedOutput> = {|
   +resolve: (from: string, to: string) => string,
   +transform: TransformFn<T>,
+  +transformOptions: TransformInputOptions,
   +onProgress: ?(numProcessed: number, total: number) => mixed,
   +experimentalImportBundleSupport: boolean,
   +shallow: boolean,

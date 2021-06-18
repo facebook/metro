@@ -109,27 +109,24 @@ class IncrementalBundler {
   ): Promise<OutputGraph> {
     const absoluteEntryFiles = await this._getAbsoluteEntryFiles(entryFiles);
 
-    const graph = await this._deltaBundler.buildGraph(
-      absoluteEntryFiles,
+    const graph = await this._deltaBundler.buildGraph(absoluteEntryFiles, {
+      resolve: await transformHelpers.getResolveDependencyFn(
+        this._bundler,
+        transformOptions.platform,
+      ),
+      transform: await transformHelpers.getTransformFn(
+        absoluteEntryFiles,
+        this._bundler,
+        this._deltaBundler,
+        this._config,
+        transformOptions,
+      ),
       transformOptions,
-      {
-        resolve: await transformHelpers.getResolveDependencyFn(
-          this._bundler,
-          transformOptions.platform,
-        ),
-        transform: await transformHelpers.getTransformFn(
-          absoluteEntryFiles,
-          this._bundler,
-          this._deltaBundler,
-          this._config,
-          transformOptions,
-        ),
-        onProgress: otherOptions.onProgress,
-        experimentalImportBundleSupport: this._config.transformer
-          .experimentalImportBundleSupport,
-        shallow: otherOptions.shallow,
-      },
-    );
+      onProgress: otherOptions.onProgress,
+      experimentalImportBundleSupport: this._config.transformer
+        .experimentalImportBundleSupport,
+      shallow: otherOptions.shallow,
+    });
 
     this._config.serializer.experimentalSerializerHook(graph, {
       added: graph.dependencies,
@@ -153,7 +150,6 @@ class IncrementalBundler {
 
     const dependencies = await this._deltaBundler.getDependencies(
       absoluteEntryFiles,
-      transformOptions,
       {
         resolve: await transformHelpers.getResolveDependencyFn(
           this._bundler,
@@ -166,6 +162,7 @@ class IncrementalBundler {
           this._config,
           transformOptions,
         ),
+        transformOptions,
         onProgress: otherOptions.onProgress,
         experimentalImportBundleSupport: this._config.transformer
           .experimentalImportBundleSupport,

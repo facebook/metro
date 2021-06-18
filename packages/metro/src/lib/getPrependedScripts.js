@@ -46,7 +46,6 @@ async function getPrependedScripts(
 
   const dependencies = await deltaBundler.getDependencies(
     [defaults.moduleSystem, ...polyfillModuleNames],
-    transformOptions,
     {
       resolve: await transformHelpers.getResolveDependencyFn(
         bundler,
@@ -59,6 +58,7 @@ async function getPrependedScripts(
         config,
         transformOptions,
       ),
+      transformOptions,
       onProgress: null,
       experimentalImportBundleSupport:
         config.transformer.experimentalImportBundleSupport,

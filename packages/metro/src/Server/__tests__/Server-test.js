@@ -119,7 +119,7 @@ describe('processRequest', () => {
   beforeEach(() => {
     const currentGraphs = new Set();
     DeltaBundler.prototype.buildGraph.mockImplementation(
-      async (entryPoints, transformOptions, options) => {
+      async (entryPoints, options) => {
         dependencies = new Map([
           [
             '/root/mybundle.js',
@@ -187,7 +187,7 @@ describe('processRequest', () => {
           entryPoints: ['/root/mybundle.js'],
           dependencies,
           importBundleNames: new Set(),
-          transformOptions,
+          transformOptions: options.transformOptions,
         };
         currentGraphs.add(graph);
 
@@ -611,21 +611,21 @@ describe('processRequest', () => {
     expect(DeltaBundler.prototype.buildGraph).toBeCalledWith(
       ['/root/index.js'],
       {
-        customTransformOptions: {},
-        dev: true,
-        hot: true,
-        minify: false,
-        platform: 'ios',
-        runtimeBytecodeVersion: null,
-        type: 'module',
-        unstable_transformProfile: 'default',
-      },
-      {
         experimentalImportBundleSupport: false,
         onProgress: expect.any(Function),
         resolve: expect.any(Function),
         shallow: false,
         transform: expect.any(Function),
+        transformOptions: {
+          customTransformOptions: {},
+          dev: true,
+          hot: true,
+          minify: false,
+          platform: 'ios',
+          runtimeBytecodeVersion: null,
+          type: 'module',
+          unstable_transformProfile: 'default',
+        },
       },
     );
   });
@@ -647,21 +647,21 @@ describe('processRequest', () => {
     expect(DeltaBundler.prototype.buildGraph).toBeCalledWith(
       ['/root/index.js'],
       {
-        customTransformOptions: {},
-        dev: true,
-        hot: true,
-        minify: false,
-        platform: null,
-        runtimeBytecodeVersion: null,
-        type: 'module',
-        unstable_transformProfile: 'hermes-stable',
-      },
-      {
         experimentalImportBundleSupport: false,
         onProgress: expect.any(Function),
         resolve: expect.any(Function),
         shallow: false,
         transform: expect.any(Function),
+        transformOptions: {
+          customTransformOptions: {},
+          dev: true,
+          hot: true,
+          minify: false,
+          platform: null,
+          runtimeBytecodeVersion: null,
+          type: 'module',
+          unstable_transformProfile: 'hermes-stable',
+        },
       },
     );
   });
@@ -811,21 +811,21 @@ describe('processRequest', () => {
       expect(DeltaBundler.prototype.buildGraph).toBeCalledWith(
         ['/root/foo file'],
         {
-          customTransformOptions: {},
-          dev: true,
-          hot: false,
-          minify: false,
-          platform: undefined,
-          runtimeBytecodeVersion: null,
-          type: 'module',
-          unstable_transformProfile: 'default',
-        },
-        {
           experimentalImportBundleSupport: false,
           onProgress: null,
           resolve: expect.any(Function),
           shallow: false,
           transform: expect.any(Function),
+          transformOptions: {
+            customTransformOptions: {},
+            dev: true,
+            hot: false,
+            minify: false,
+            platform: undefined,
+            runtimeBytecodeVersion: null,
+            type: 'module',
+            unstable_transformProfile: 'default',
+          },
         },
       );
     });
