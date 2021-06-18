@@ -215,4 +215,35 @@ describe('getGraphId', () => {
       ),
     );
   });
+
+  it('generates a unique id with unstable_disableModuleWrapping', () => {
+    const transformOptions = {
+      dev: true,
+      hot: true,
+      minify: true,
+      type: 'module',
+      platform: 'web',
+      runtimeBytecodeVersion: null,
+      unstable_transformProfile: 'default',
+    };
+    expect(
+      getGraphId(
+        '/root/waddup',
+        {
+          ...transformOptions,
+          unstable_disableModuleWrapping: false,
+        },
+        {shallow: false, experimentalImportBundleSupport: false},
+      ),
+    ).not.toBe(
+      getGraphId(
+        '/root/waddup',
+        {
+          ...transformOptions,
+          unstable_disableModuleWrapping: true,
+        },
+        {shallow: false, experimentalImportBundleSupport: false},
+      ),
+    );
+  });
 });
