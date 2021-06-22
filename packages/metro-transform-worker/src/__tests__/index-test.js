@@ -379,6 +379,24 @@ it('minifies a JSON file', async () => {
   );
 });
 
+it('does not wrap a JSON file when disableModuleWrapping is enabled', async () => {
+  expect(
+    (
+      await Transformer.transform(
+        baseConfig,
+        '/root',
+        'local/file.json',
+        'arbitrary(code);',
+        {
+          dev: true,
+          unstable_disableModuleWrapping: true,
+          type: 'module',
+        },
+      )
+    ).output[0].data.code,
+  ).toBe('module.exports = arbitrary(code);;');
+});
+
 it('transforms a script to JS source and bytecode', async () => {
   const result = await Transformer.transform(
     baseConfig,
