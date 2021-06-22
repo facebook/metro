@@ -560,7 +560,10 @@ async function transformJSON(
   file: JSONFile,
   {options, config, projectRoot}: TransformationContext,
 ): Promise<TransformResponse> {
-  let code = JsFileWrapping.wrapJson(file.code, config.globalPrefix);
+  let code =
+    options.unstable_disableModuleWrapping === true
+      ? JsFileWrapping.jsonToCommonJS(file.code)
+      : JsFileWrapping.wrapJson(file.code, config.globalPrefix);
   let map = [];
 
   // TODO: When we can reuse transformJS for JSON, we should not derive `minify` separately.
