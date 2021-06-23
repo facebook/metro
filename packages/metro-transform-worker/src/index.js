@@ -96,6 +96,7 @@ export type JsTransformerConfig = $ReadOnly<{|
   allowOptionalDependencies: AllowOptionalDependencies,
   unstable_collectDependenciesPath: string,
   unstable_dependencyMapReservedName: ?string,
+  unstable_disableModuleWrapping: boolean,
   unstable_disableNormalizePseudoGlobals: boolean,
   unstable_compactOutput: boolean,
 |}>;
@@ -115,7 +116,6 @@ export type JsTransformOptions = $ReadOnly<{|
   runtimeBytecodeVersion: ?number,
   type: Type,
   unstable_disableES6Transforms?: boolean,
-  unstable_disableModuleWrapping?: boolean,
   unstable_transformProfile: TransformProfile,
 |}>;
 
@@ -385,7 +385,7 @@ async function transformJS(
       const opts = {
         asyncRequireModulePath: config.asyncRequireModulePath,
         dependencyTransformer:
-          options.unstable_disableModuleWrapping === true
+          config.unstable_disableModuleWrapping === true
             ? disabledDependencyTransformer
             : undefined,
         dynamicRequires: getDynamicDepsBehavior(
@@ -407,7 +407,7 @@ async function transformJS(
       throw error;
     }
 
-    if (options.unstable_disableModuleWrapping === true) {
+    if (config.unstable_disableModuleWrapping === true) {
       wrappedAst = ast;
     } else {
       ({ast: wrappedAst} = JsFileWrapping.wrapModule(
@@ -561,7 +561,7 @@ async function transformJSON(
   {options, config, projectRoot}: TransformationContext,
 ): Promise<TransformResponse> {
   let code =
-    options.unstable_disableModuleWrapping === true
+    config.unstable_disableModuleWrapping === true
       ? JsFileWrapping.jsonToCommonJS(file.code)
       : JsFileWrapping.wrapJson(file.code, config.globalPrefix);
   let map = [];

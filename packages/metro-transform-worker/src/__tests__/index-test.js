@@ -62,6 +62,7 @@ const baseConfig: JsTransformerConfig = {
     'metro/src/ModuleGraph/worker/collectDependencies',
   unstable_dependencyMapReservedName: null,
   unstable_compactOutput: false,
+  unstable_disableModuleWrapping: false,
   unstable_disableNormalizePseudoGlobals: false,
 };
 
@@ -270,13 +271,15 @@ it('preserves require() calls when module wrapping is disabled', async () => {
   const contents = ['require("./c");'].join('\n');
 
   const result = await Transformer.transform(
-    baseConfig,
+    {
+      ...baseConfig,
+      unstable_disableModuleWrapping: true,
+    },
     '/root',
     'local/file.js',
     contents,
     {
       dev: true,
-      unstable_disableModuleWrapping: true,
       type: 'module',
     },
   );
@@ -383,13 +386,15 @@ it('does not wrap a JSON file when disableModuleWrapping is enabled', async () =
   expect(
     (
       await Transformer.transform(
-        baseConfig,
+        {
+          ...baseConfig,
+          unstable_disableModuleWrapping: true,
+        },
         '/root',
         'local/file.json',
         'arbitrary(code);',
         {
           dev: true,
-          unstable_disableModuleWrapping: true,
           type: 'module',
         },
       )

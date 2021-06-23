@@ -84,7 +84,6 @@ class Transformer {
       runtimeBytecodeVersion,
       type,
       unstable_disableES6Transforms,
-      unstable_disableModuleWrapping,
       unstable_transformProfile,
       ...extra
     } = transformerOptions;
@@ -119,7 +118,6 @@ class Transformer {
       runtimeBytecodeVersion,
       type,
       unstable_disableES6Transforms,
-      unstable_disableModuleWrapping,
       unstable_transformProfile,
     ]);
 

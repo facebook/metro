@@ -41,7 +41,6 @@ function getGraphId(
         hot: options.hot,
         minify: options.minify,
         unstable_disableES6Transforms: options.unstable_disableES6Transforms,
-        unstable_disableModuleWrapping: options.unstable_disableModuleWrapping,
         platform: options.platform != null ? options.platform : null,
         runtimeBytecodeVersion: options.runtimeBytecodeVersion,
         type: options.type,

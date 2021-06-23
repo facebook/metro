@@ -86,7 +86,6 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
         experimentalImportSupport: false,
         inlineRequires: false,
         unstable_disableES6Transforms: false,
-        unstable_disableModuleWrapping: false,
       },
       preloadedModules: false,
       ramGroups: [],
@@ -120,6 +119,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     unstable_collectDependenciesPath:
       'metro/src/ModuleGraph/worker/collectDependencies.js',
     unstable_dependencyMapReservedName: null,
+    unstable_disableModuleWrapping: false,
     unstable_disableNormalizePseudoGlobals: false,
     unstable_compactOutput: false,
   },

@@ -93,8 +93,6 @@ async function calcTransformerOptions(
     experimentalImportSupport: transform.experimentalImportSupport || false,
     unstable_disableES6Transforms:
       transform.unstable_disableES6Transforms || false,
-    unstable_disableModuleWrapping:
-      transform.unstable_disableModuleWrapping || false,
     nonInlinedRequires:
       transform.nonInlinedRequires || baseIgnoredInlineRequires,
     type: 'module',
@@ -167,7 +165,6 @@ async function getResolveDependencyFn(
 }
 
 module.exports = {
-  calcTransformerOptions,
   getTransformFn,
   getResolveDependencyFn,
 };
