@@ -41,7 +41,9 @@ const getPreset = (src, options) => {
   const transformProfile =
     (options && options.unstable_transformProfile) || 'default';
   const isHermesStable = transformProfile === 'hermes-stable';
-  const isHermesCanary = transformProfile === 'hermes-canary';
+  // Temporarily treating canary profile as "ES5 Hermes".
+  // TODO(jsx): Restore check for transformProfile === 'hermes-canary'
+  const isHermesCanary = false;
   const isHermes = isHermesStable || isHermesCanary;
 
   const isNull = src == null;
