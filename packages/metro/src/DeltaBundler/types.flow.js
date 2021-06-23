@@ -78,6 +78,7 @@ export type Graph<T = MixedOutput> = {|
   dependencies: Dependencies<T>,
   importBundleNames: Set<string>,
   +entryPoints: $ReadOnlyArray<string>,
+  // Unused in core but useful for custom serializers / experimentalSerializerHook
   +transformOptions: TransformInputOptions,
 |};
 
