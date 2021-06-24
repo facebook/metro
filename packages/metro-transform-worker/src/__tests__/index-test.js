@@ -62,6 +62,7 @@ const baseConfig: JsTransformerConfig = {
     'metro/src/ModuleGraph/worker/collectDependencies',
   unstable_dependencyMapReservedName: null,
   unstable_compactOutput: false,
+  unstable_disableModuleWrapping: false,
   unstable_disableNormalizePseudoGlobals: false,
 };
 
@@ -266,6 +267,27 @@ it('does not add "use strict" on non-modules', async () => {
   );
 });
 
+it('preserves require() calls when module wrapping is disabled', async () => {
+  const contents = ['require("./c");'].join('\n');
+
+  const result = await Transformer.transform(
+    {
+      ...baseConfig,
+      unstable_disableModuleWrapping: true,
+    },
+    '/root',
+    'local/file.js',
+    contents,
+    {
+      dev: true,
+      type: 'module',
+    },
+  );
+
+  expect(result.output[0].type).toBe('js/module');
+  expect(result.output[0].data.code).toBe('require("./c");');
+});
+
 it('reports filename when encountering unsupported dynamic dependency', async () => {
   const contents = [
     'require("./a");',
@@ -358,6 +380,26 @@ it('minifies a JSON file', async () => {
       '});',
     ].join('\n'),
   );
+});
+
+it('does not wrap a JSON file when disableModuleWrapping is enabled', async () => {
+  expect(
+    (
+      await Transformer.transform(
+        {
+          ...baseConfig,
+          unstable_disableModuleWrapping: true,
+        },
+        '/root',
+        'local/file.json',
+        'arbitrary(code);',
+        {
+          dev: true,
+          type: 'module',
+        },
+      )
+    ).output[0].data.code,
+  ).toBe('module.exports = arbitrary(code);;');
 });
 
 it('transforms a script to JS source and bytecode', async () => {

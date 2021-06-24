@@ -36,7 +36,10 @@ const {
 } = require('metro-source-map');
 import type {TransformResultDependency} from 'metro/src/DeltaBundler';
 import type {AllowOptionalDependencies} from 'metro/src/DeltaBundler/types.flow.js';
-import type {DynamicRequiresBehavior} from 'metro/src/ModuleGraph/worker/collectDependencies';
+import type {
+  DependencyTransformer,
+  DynamicRequiresBehavior,
+} from 'metro/src/ModuleGraph/worker/collectDependencies';
 import type {
   BasicSourceMap,
   FBSourceFunctionMap,
@@ -93,6 +96,7 @@ export type JsTransformerConfig = $ReadOnly<{|
   allowOptionalDependencies: AllowOptionalDependencies,
   unstable_collectDependenciesPath: string,
   unstable_dependencyMapReservedName: ?string,
+  unstable_disableModuleWrapping: boolean,
   unstable_disableNormalizePseudoGlobals: boolean,
   unstable_compactOutput: boolean,
 |}>;
@@ -257,6 +261,14 @@ const compileToBytecode = (
   return HermesCompiler.compile(code, options);
 };
 
+const disabledDependencyTransformer: DependencyTransformer<mixed> = {
+  transformSyncRequire: () => void 0,
+  transformImportCall: () => void 0,
+  transformJSResource: () => void 0,
+  transformPrefetch: () => void 0,
+  transformIllegalDynamicRequire: () => void 0,
+};
+
 class InvalidRequireCallError extends Error {
   innerError: InternalInvalidRequireCallError;
   filename: string;
@@ -372,6 +384,10 @@ async function transformJS(
     try {
       const opts = {
         asyncRequireModulePath: config.asyncRequireModulePath,
+        dependencyTransformer:
+          config.unstable_disableModuleWrapping === true
+            ? disabledDependencyTransformer
+            : undefined,
         dynamicRequires: getDynamicDepsBehavior(
           config.dynamicDepsInPackages,
           file.filename,
@@ -391,13 +407,17 @@ async function transformJS(
       throw error;
     }
 
-    ({ast: wrappedAst} = JsFileWrapping.wrapModule(
-      ast,
-      importDefault,
-      importAll,
-      dependencyMapName,
-      config.globalPrefix,
-    ));
+    if (config.unstable_disableModuleWrapping === true) {
+      wrappedAst = ast;
+    } else {
+      ({ast: wrappedAst} = JsFileWrapping.wrapModule(
+        ast,
+        importDefault,
+        importAll,
+        dependencyMapName,
+        config.globalPrefix,
+      ));
+    }
   }
 
   const minify =
@@ -540,7 +560,10 @@ async function transformJSON(
   file: JSONFile,
   {options, config, projectRoot}: TransformationContext,
 ): Promise<TransformResponse> {
-  let code = JsFileWrapping.wrapJson(file.code, config.globalPrefix);
+  let code =
+    config.unstable_disableModuleWrapping === true
+      ? JsFileWrapping.jsonToCommonJS(file.code)
+      : JsFileWrapping.wrapJson(file.code, config.globalPrefix);
   let map = [];
 
   // TODO: When we can reuse transformJS for JSON, we should not derive `minify` separately.
