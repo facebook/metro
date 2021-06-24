@@ -190,7 +190,7 @@ export type AssetFileVariant = $ReadOnly<{
   filePath: string,
   /**
    * If the asset is an image, this contain the size in physical pixels (ie.
-   * regarless of whether it's a `@2x` or `@3x` version of a smaller image).
+   * scale * logical pixels).
    */
   physicalSize: ?ImageSize,
   /**
