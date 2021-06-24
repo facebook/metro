@@ -72,7 +72,7 @@ class Device {
   // Last known Page ID of the React Native page.
   // This is used by debugger connections that don't have PageID specified
   // (and will interact with the latest React Native page).
-  _lastReactNativePageId: ?string = null;
+  _lastConnectedReactNativePage: ?Page = null;
 
   // Whether we are in the middle of a reload in the REACT_NATIVE_RELOADABLE_PAGE.
   _isReloading: boolean = false;
@@ -132,7 +132,7 @@ class Device {
   }
 
   getPagesList(): Array<Page> {
-    if (this._lastReactNativePageId) {
+    if (this._lastConnectedReactNativePage) {
       const reactNativeReloadablePage = {
         id: REACT_NATIVE_RELOADABLE_PAGE_ID,
         title: 'React Native Experimental (Improved Chrome Reloads)',
@@ -228,8 +228,8 @@ class Device {
       // created instead of manually checking this on every getPages result.
       for (let i = 0; i < this._pages.length; ++i) {
         if (this._pages[i].title.indexOf('React') >= 0) {
-          if (this._pages[i].id != this._lastReactNativePageId) {
-            this._newReactNativePage(this._pages[i].id);
+          if (this._pages[i].id != this._lastConnectedReactNativePage?.id) {
+            this._newReactNativePage(this._pages[i]);
             break;
           }
         }
@@ -295,8 +295,8 @@ class Device {
   }
 
   // We received new React Native Page ID.
-  _newReactNativePage(pageId: string) {
-    debug(`React Native page updated to ${pageId}`);
+  _newReactNativePage(page: Page) {
+    debug(`React Native page updated to ${page.id}`);
     if (
       this._debuggerConnection == null ||
       this._debuggerConnection.pageId !== REACT_NATIVE_RELOADABLE_PAGE_ID
@@ -304,11 +304,11 @@ class Device {
       // We can just remember new page ID without any further actions if no
       // debugger is currently attached or attached debugger is not
       // "Reloadable React Native" connection.
-      this._lastReactNativePageId = pageId;
+      this._lastConnectedReactNativePage = page;
       return;
     }
-    const oldPageId = this._lastReactNativePageId;
-    this._lastReactNativePageId = pageId;
+    const oldPageId = this._lastConnectedReactNativePage?.id;
+    this._lastConnectedReactNativePage = page;
     this._isReloading = true;
 
     // We already had a debugger connected to React Native page and a
@@ -328,7 +328,7 @@ class Device {
     this._sendMessageToDevice({
       event: 'connect',
       payload: {
-        pageId,
+        pageId: page.id,
       },
     });
 
@@ -341,7 +341,7 @@ class Device {
       this._sendMessageToDevice({
         event: 'wrappedEvent',
         payload: {
-          pageId: this._mapToDevicePageId(pageId),
+          pageId: this._mapToDevicePageId(page.id),
           wrappedEvent: JSON.stringify(message),
         },
       });
@@ -508,9 +508,9 @@ class Device {
   _mapToDevicePageId(pageId: string): string {
     if (
       pageId === REACT_NATIVE_RELOADABLE_PAGE_ID &&
-      this._lastReactNativePageId != null
+      this._lastConnectedReactNativePage != null
     ) {
-      return this._lastReactNativePageId;
+      return this._lastConnectedReactNativePage.id;
     } else {
       return pageId;
     }
