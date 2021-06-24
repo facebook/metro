@@ -168,7 +168,7 @@ class Device {
     this._sendMessageToDevice({
       event: 'connect',
       payload: {
-        pageId: this._getPageId(pageId),
+        pageId: this._mapToDevicePageId(pageId),
       },
     });
 
@@ -186,7 +186,7 @@ class Device {
         this._sendMessageToDevice({
           event: 'wrappedEvent',
           payload: {
-            pageId: this._getPageId(pageId),
+            pageId: this._mapToDevicePageId(pageId),
             wrappedEvent: JSON.stringify(debuggerRequest),
           },
         });
@@ -197,7 +197,7 @@ class Device {
       this._sendMessageToDevice({
         event: 'disconnect',
         payload: {
-          pageId: this._getPageId(pageId),
+          pageId: this._mapToDevicePageId(pageId),
         },
       });
       this._debuggerConnection = null;
@@ -341,7 +341,7 @@ class Device {
       this._sendMessageToDevice({
         event: 'wrappedEvent',
         payload: {
-          pageId: this._getPageId(pageId),
+          pageId: this._mapToDevicePageId(pageId),
           wrappedEvent: JSON.stringify(message),
         },
       });
@@ -395,11 +395,11 @@ class Device {
         // Chrome won't use the source map unless it appears to be new.
         if (payload.params.sourceMapURL) {
           payload.params.sourceMapURL +=
-            '&cachePrevention=' + this._getPageId(debuggerInfo.pageId);
+            '&cachePrevention=' + this._mapToDevicePageId(debuggerInfo.pageId);
         }
         if (payload.params.url) {
           payload.params.url +=
-            '&cachePrevention=' + this._getPageId(debuggerInfo.pageId);
+            '&cachePrevention=' + this._mapToDevicePageId(debuggerInfo.pageId);
         }
       }
     }
@@ -425,7 +425,7 @@ class Device {
       this._sendMessageToDevice({
         event: 'wrappedEvent',
         payload: {
-          pageId: this._getPageId(debuggerInfo.pageId),
+          pageId: this._mapToDevicePageId(debuggerInfo.pageId),
           wrappedEvent: JSON.stringify({method: 'Debugger.resume', id: 0}),
         },
       });
@@ -505,7 +505,7 @@ class Device {
     };
   }
 
-  _getPageId(pageId: string): string {
+  _mapToDevicePageId(pageId: string): string {
     if (
       pageId === REACT_NATIVE_RELOADABLE_PAGE_ID &&
       this._lastReactNativePageId != null
