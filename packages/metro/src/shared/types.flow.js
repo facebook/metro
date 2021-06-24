@@ -10,8 +10,10 @@
 
 'use strict';
 
-import type {Options as DeltaBundlerOptions} from '../DeltaBundler/types.flow';
-import type {TransformInputOptions} from '../lib/transformHelpers';
+import type {
+  Options as DeltaBundlerOptions,
+  TransformInputOptions,
+} from '../DeltaBundler/types.flow';
 import type {TransformProfile} from 'metro-babel-transformer';
 import type {
   MixedSourceMap,

@@ -187,6 +187,7 @@ describe('processRequest', () => {
           entryPoints: ['/root/mybundle.js'],
           dependencies,
           importBundleNames: new Set(),
+          transformOptions: options.transformOptions,
         };
         currentGraphs.add(graph);
 
@@ -615,6 +616,16 @@ describe('processRequest', () => {
         resolve: expect.any(Function),
         shallow: false,
         transform: expect.any(Function),
+        transformOptions: {
+          customTransformOptions: {},
+          dev: true,
+          hot: true,
+          minify: false,
+          platform: 'ios',
+          runtimeBytecodeVersion: null,
+          type: 'module',
+          unstable_transformProfile: 'default',
+        },
       },
     );
   });
@@ -641,6 +652,16 @@ describe('processRequest', () => {
         resolve: expect.any(Function),
         shallow: false,
         transform: expect.any(Function),
+        transformOptions: {
+          customTransformOptions: {},
+          dev: true,
+          hot: true,
+          minify: false,
+          platform: null,
+          runtimeBytecodeVersion: null,
+          type: 'module',
+          unstable_transformProfile: 'hermes-stable',
+        },
       },
     );
   });
@@ -795,6 +816,16 @@ describe('processRequest', () => {
           resolve: expect.any(Function),
           shallow: false,
           transform: expect.any(Function),
+          transformOptions: {
+            customTransformOptions: {},
+            dev: true,
+            hot: false,
+            minify: false,
+            platform: undefined,
+            runtimeBytecodeVersion: null,
+            type: 'module',
+            unstable_transformProfile: 'default',
+          },
         },
       );
     });
