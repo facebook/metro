@@ -15,8 +15,9 @@ const acorn = require('acorn');
 const vm = require('vm');
 
 module.exports = function execBundle(code: string, context: {...} = {}): mixed {
-  // Verify the code can run on older VMs by parsing it as ES5 (versus ES6+).
-  acorn.parse(code, {ecmaVersion: 5});
+  // The tests are configured to use the React Native babel preset,
+  // which supports modern JavaScriptCore and Hermes.
+  acorn.parse(code, {ecmaVersion: 2015});
 
   return vm.runInNewContext(code, context);
 };

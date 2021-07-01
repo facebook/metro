@@ -178,7 +178,7 @@ it('transforms a module with dependencies', async () => {
   ]);
 });
 
-it('transforms an es module with regenerator', async () => {
+it('transforms an es module with async-to-generator', async () => {
   const result = await Transformer.transform(
     baseConfig,
     '/root',
@@ -192,12 +192,9 @@ it('transforms an es module with regenerator', async () => {
 
   expect(result.output[0].type).toBe('js/module');
   const code = result.output[0].data.code.split('\n');
-  // Ignore a small difference in regenerator output
-  if (code[code.length - 3] === '    }, null, null, null, Promise);') {
-    code[code.length - 3] = '    }, null, this);';
-  }
+
   expect(code.join('\n')).toMatchSnapshot();
-  expect(result.output[0].data.map).toHaveLength(13);
+  expect(result.output[0].data.map).toHaveLength(6);
   expect(result.output[0].data.functionMap).toMatchSnapshot();
   expect(result.dependencies).toEqual([
     {
@@ -206,7 +203,7 @@ it('transforms an es module with regenerator', async () => {
     },
     {
       data: expect.objectContaining({asyncType: null}),
-      name: '@babel/runtime/regenerator',
+      name: '@babel/runtime/helpers/asyncToGenerator',
     },
   ]);
 });

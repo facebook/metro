@@ -20,7 +20,7 @@ function isTSXSource(fileName) {
   return !!fileName && fileName.endsWith('.tsx');
 }
 
-const defaultPluginsBeforeRegenerator = [
+const defaultPlugins = [
   [require('@babel/plugin-syntax-flow')],
   [require('@babel/plugin-transform-block-scoping')],
   [
@@ -31,9 +31,6 @@ const defaultPluginsBeforeRegenerator = [
   [require('@babel/plugin-syntax-dynamic-import')],
   [require('@babel/plugin-syntax-export-default-from')],
   ...passthroughSyntaxPlugins,
-];
-
-const defaultPluginsAfterRegenerator = [
   [require('@babel/plugin-transform-unicode-regex')],
 ];
 
@@ -48,8 +45,6 @@ const getPreset = (src, options) => {
 
   const isNull = src == null;
   const hasClass = isNull || src.indexOf('class') !== -1;
-  const hasForOf =
-    isNull || (src.indexOf('for') !== -1 && src.indexOf('of') !== -1);
 
   const extraPlugins = [];
   if (!options.useTransformReactJSXExperimental) {
@@ -83,30 +78,19 @@ const getPreset = (src, options) => {
   extraPlugins.push([require('@babel/plugin-transform-arrow-functions')]);
 
   if (!isHermes) {
-    extraPlugins.push([require('@babel/plugin-transform-computed-properties')]);
-    extraPlugins.push([require('@babel/plugin-transform-parameters')]);
-    extraPlugins.push([
-      require('@babel/plugin-transform-shorthand-properties'),
-    ]);
     extraPlugins.push([
       require('@babel/plugin-proposal-optional-catch-binding'),
     ]);
-    extraPlugins.push([require('@babel/plugin-transform-function-name')]);
-    extraPlugins.push([require('@babel/plugin-transform-literals')]);
-    extraPlugins.push([require('@babel/plugin-transform-sticky-regex')]);
   }
   if (!isHermesCanary) {
     extraPlugins.push([require('@babel/plugin-transform-destructuring')]);
   }
   if (!isHermes && (isNull || hasClass || src.indexOf('...') !== -1)) {
-    extraPlugins.push(
-      [require('@babel/plugin-transform-spread')],
-      [
-        require('@babel/plugin-proposal-object-rest-spread'),
-        // Assume no dependence on getters or evaluation order. See https://github.com/babel/babel/pull/11520
-        {loose: true},
-      ],
-    );
+    extraPlugins.push([
+      require('@babel/plugin-proposal-object-rest-spread'),
+      // Assume no dependence on getters or evaluation order. See https://github.com/babel/babel/pull/11520
+      {loose: true},
+    ]);
   }
   if (!isHermes && (isNull || src.indexOf('`') !== -1)) {
     extraPlugins.push([
@@ -114,22 +98,8 @@ const getPreset = (src, options) => {
       {loose: true}, // dont 'a'.concat('b'), just use 'a'+'b'
     ]);
   }
-  if (isHermes && (isNull || src.indexOf('async') !== -1)) {
+  if (isNull || src.indexOf('async') !== -1) {
     extraPlugins.push([require('@babel/plugin-transform-async-to-generator')]);
-  }
-  if (!isHermes && (isNull || src.indexOf('**') !== -1)) {
-    extraPlugins.push([
-      require('@babel/plugin-transform-exponentiation-operator'),
-    ]);
-  }
-  if (!isHermes && (isNull || src.indexOf('Object.assign')) !== -1) {
-    extraPlugins.push([require('@babel/plugin-transform-object-assign')]);
-  }
-  if (!isHermes && hasForOf) {
-    extraPlugins.push([
-      require('@babel/plugin-transform-for-of'),
-      {loose: true},
-    ]);
   }
   if (
     isNull ||
@@ -161,7 +131,7 @@ const getPreset = (src, options) => {
       require('@babel/plugin-transform-runtime'),
       {
         helpers: true,
-        regenerator: !isHermes,
+        regenerator: false,
       },
     ]);
   }
@@ -176,11 +146,7 @@ const getPreset = (src, options) => {
         plugins: [require('@babel/plugin-transform-flow-strip-types')],
       },
       {
-        plugins: [
-          ...defaultPluginsBeforeRegenerator,
-          isHermes ? null : require('@babel/plugin-transform-regenerator'),
-          ...defaultPluginsAfterRegenerator,
-        ].filter(Boolean),
+        plugins: defaultPlugins,
       },
       {
         test: isTypeScriptSource,
