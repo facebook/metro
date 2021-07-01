@@ -17,18 +17,18 @@ const fs = require('fs');
 const getCacheKey = require('../index');
 
 beforeAll(() => {
-  fs.writeFileSync('/a.txt', 'dummy content for a.txt');
-  fs.writeFileSync('/copy_of_a.txt', 'dummy content for a.txt');
-  fs.writeFileSync('/b.txt', 'dummy content for b.txt');
+  fs.writeFileSync('/a.txt', 'fake content for a.txt');
+  fs.writeFileSync('/copy_of_a.txt', 'fake content for a.txt');
+  fs.writeFileSync('/b.txt', 'fake content for b.txt');
 });
 
 test('calculates a cache key for a list of files', () => {
   expect(getCacheKey(['/a.txt'])).toMatchInlineSnapshot(
-    `"159acfc2c1c60c655a305cb711c7bd2c"`,
+    `"651e28171df9ff5d72a4115295dfce6b"`,
   );
 
   expect(getCacheKey(['/a.txt', '/b.txt'])).toMatchInlineSnapshot(
-    `"1e34c10b2663b4681858340ec5da03ce"`,
+    `"40457a98d325b546bed62a34c7d7cf96"`,
   );
 });
 
