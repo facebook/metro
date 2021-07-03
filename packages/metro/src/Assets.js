@@ -191,12 +191,9 @@ async function getAssetData(
   platform: ?string = null,
   publicPath: string,
 ): Promise<AssetData> {
-  // If the path of the asset is outside of the projectRoot, we don't want to
-  // use `path.join` since this will generate an incorrect URL path. In that
-  // case we just concatenate the publicPath with the relative path.
-  let assetUrlPath = localPath.startsWith('..')
-    ? publicPath.replace(/\/$/, '') + '/' + path.dirname(localPath)
-    : path.join(publicPath, path.dirname(localPath));
+  // OKHTTP (Android HTTP client) strips out any '..' from a URL so we replace them with 2 _'s.
+  const escapedLocalPath = localPath.replace(/\.\.\//g, '__/');
+  let assetUrlPath = path.join(publicPath, path.dirname(escapedLocalPath));
 
   // On Windows, change backslashes to slashes to get proper URL path from file path.
   if (path.sep === '\\') {
@@ -276,8 +273,11 @@ async function getAsset(
     relativePath,
     new Set(platform != null ? [platform] : []),
   );
-
-  const absolutePath = path.resolve(projectRoot, relativePath);
+  // Replaces __/ or __\ with ../ or ..\
+  const absolutePath = path.resolve(
+    projectRoot,
+    relativePath.replace(/__(\/|\\)/g, '..$1'),
+  );
 
   if (!assetExts.includes(assetData.type)) {
     throw new Error(
@@ -290,7 +290,6 @@ async function getAsset(
       `'${relativePath}' could not be found, because it cannot be found in the project root or any watch folder`,
     );
   }
-
   const record = await getAbsoluteAssetRecord(absolutePath, platform);
 
   for (let i = 0; i < record.scales.length; i++) {

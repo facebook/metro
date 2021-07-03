@@ -120,7 +120,7 @@ describe('getAsset', () => {
     ).toEqual(['b4 image', 'b4 ios image']);
   });
 
-  it('should find an image located on a watchFolder', async () => {
+  it('should find an image located on a watchFolder with encoded path', async () => {
     mkdirp.sync('/anotherfolder');
 
     writeImages({
@@ -129,7 +129,7 @@ describe('getAsset', () => {
 
     expect(
       await getAssetStr(
-        '../anotherfolder/b.png',
+        '__/anotherfolder/b.png',
         '/root',
         ['/anotherfolder'],
         null,
@@ -146,7 +146,7 @@ describe('getAsset', () => {
     });
 
     await expect(
-      getAssetStr('../anotherfolder/b.png', '/root', [], null, ['png']),
+      getAssetStr('__/anotherfolder/b.png', '/root', [], null, ['png']),
     ).rejects.toBeInstanceOf(Error);
   });
 });
@@ -189,6 +189,16 @@ describe('getAssetData', () => {
         }),
       );
     });
+  });
+
+  it('should escape out .. in assetData', () => {
+    fs.writeFileSync(path.join('/', 'b@1x.png'), 'b1 image');
+
+    return getAssetData('/b.png', '../../b.png', [], null, '/assets').then(
+      data => {
+        expect(data.httpServerLocation).toEqual('/assets/__/__');
+      },
+    );
   });
 
   it('should get assetData for non-png images', async () => {
