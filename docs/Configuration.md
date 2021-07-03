@@ -115,7 +115,7 @@ An array of source extensions to include in the bundle. For example, if you woul
 
 #### `resolverMainFields`
 
-Type: `Array<string>`
+Type: `Array<string>` (default: ['browser', 'main'])
 
 Specify the fields in package.json files that will be used by the module resolver to do redirections when requiring certain packages. For example, using `['browser', 'main']` will use the `browser` field if it exists and will default to `main` if it doesn't.
 
