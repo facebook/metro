@@ -145,7 +145,7 @@ function generateRemoteAssetCodeFileAst(
 // If it's not one of these, we won't treat it as an image.
 function isAssetTypeAnImage(type: string): boolean {
   return (
-    ['png', 'jpg', 'jpeg', 'bmp', 'gif', 'webp', 'psd', 'svg', 'tiff'].indexOf(
+    ['png', 'jpg', 'jpeg', 'bmp', 'gif', 'webp', 'psd', 'tiff'].indexOf(
       type,
     ) !== -1
   );
