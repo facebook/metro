@@ -15,10 +15,10 @@ import type {BasicSourceMap} from 'metro-source-map';
 
 jest.mock('terser', () => ({
   minify: jest.fn(code => {
-    return {
+    return Promise.resolve({
       code: code.replace(/(^|\W)\s+/g, '$1'),
       map: {},
-    };
+    });
   }),
 }));
 
@@ -57,12 +57,12 @@ describe('Minification:', () => {
     /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an
      * error found when Flow v0.99 was deployed. To see the error, delete this
      * comment and run Flow. */
-    terser.minify.mockReturnValue({code: '', map: '{}'});
+    terser.minify.mockResolvedValue({code: '', map: '{}'});
     map = getFakeMap();
   });
 
-  it('passes file name, code, and source map to `terser`', () => {
-    minify({
+  it('passes file name, code, and source map to `terser`', async () => {
+    await minify({
       ...baseOptions,
       code,
       map,
@@ -80,21 +80,21 @@ describe('Minification:', () => {
     );
   });
 
-  it('returns the code provided by terser', () => {
+  it('returns the code provided by terser', async () => {
     /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an
      * error found when Flow v0.99 was deployed. To see the error, delete this
      * comment and run Flow. */
-    terser.minify.mockReturnValue({code, map: '{}'});
-    const result = minify(baseOptions);
+    terser.minify.mockResolvedValue({code, map: '{}'});
+    const result = await minify(baseOptions);
     expect(result.code).toBe(code);
   });
 
-  it('parses the source map object provided by terser and sets the sources property', () => {
+  it('parses the source map object provided by terser and sets the sources property', async () => {
     /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an
      * error found when Flow v0.99 was deployed. To see the error, delete this
      * comment and run Flow. */
-    terser.minify.mockReturnValue({map: JSON.stringify(map), code: ''});
-    const result = minify({...baseOptions, filename});
+    terser.minify.mockResolvedValue({map: JSON.stringify(map), code: ''});
+    const result = await minify({...baseOptions, filename});
     expect(result.map).toEqual({...map, sources: [filename]});
   });
 });
