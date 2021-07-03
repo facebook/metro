@@ -130,7 +130,18 @@ export type RequestOptions = {|
   minify: boolean,
   platform: string,
   createModuleIdFactory?: () => (path: string) => number,
+  postProcessBundleSourcemap?: PostProcessBundleSourcemap,
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
 |};
 
 export type {MinifierOptions};
+
+export type PostProcessBundleSourcemap = ({
+  code: string,
+  map: MixedSourceMap,
+  ...
+}) => {
+  code: string,
+  map: MixedSourceMap,
+  ...
+};

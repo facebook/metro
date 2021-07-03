@@ -308,6 +308,7 @@ exports.runBuild = async (
       platform,
       sourceMapUrl: sourceMap === false ? undefined : sourceMapUrl,
       createModuleIdFactory: config.serializer.createModuleIdFactory,
+      postProcessBundleSourcemap: config.serializer.postProcessBundleSourcemap,
       onProgress,
     };
 
