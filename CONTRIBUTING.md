@@ -75,7 +75,7 @@ Facebook has a [bounty program](https://www.facebook.com/whitehat/) for the safe
 
 ## How to Get in Touch
 
-* Discord - [#metro](https://discordapp.com/channels/102860784329052160/103622435865104384) on [Reactiflux](http://www.reactiflux.com/)
+* Discord - [#help-react-native](https://discord.gg/JuTwWB8rsy) on [Reactiflux](http://www.reactiflux.com/)
 
 ### Code Conventions
 
