@@ -65,7 +65,8 @@ module.exports = (
       data[data.length - 1] = lastItem.trimEnd();
     }
 
-    const modePrefix = mode == 'BRIDGE' ? '' : `(${mode.toUpperCase()}) `;
+    const modePrefix =
+      !mode || mode == 'BRIDGE' ? '' : `(${mode.toUpperCase()}) `;
     terminal.log(
       color.bold(` ${modePrefix}${logFunction.toUpperCase()} `) +
         ''.padEnd(groupStack.length * 2, ' '),
