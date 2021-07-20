@@ -27,7 +27,7 @@ const PATH_RE = /^(.+?)(\.([^.]+))?\.([^.]+)$/;
  */
 function parsePlatformFilePath(
   filePath: string,
-  platforms: Set<string>,
+  platforms: $ReadOnlySet<string>,
 ): PlatformFilePathParts {
   const dirPath = path.dirname(filePath);
   const fileName = path.basename(filePath);

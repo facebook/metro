@@ -104,6 +104,7 @@ Object {
     "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
+    "hermesParser": false,
     "minifierConfig": Object {
       "compress": Object {
         "reduce_funcs": false,
@@ -123,11 +124,15 @@ Object {
     },
     "minifierPath": "metro-minify-uglify",
     "optimizationSizeLimit": 153600,
-    "postMinifyProcess": [Function],
     "publicPath": "/assets",
     "transformVariants": Object {
       "default": Object {},
     },
+    "unstable_collectDependenciesPath": "metro/src/ModuleGraph/worker/collectDependencies.js",
+    "unstable_compactOutput": false,
+    "unstable_dependencyMapReservedName": null,
+    "unstable_disableModuleWrapping": false,
+    "unstable_disableNormalizePseudoGlobals": false,
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
@@ -241,6 +246,7 @@ Object {
     "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
+    "hermesParser": false,
     "minifierConfig": Object {
       "compress": Object {
         "reduce_funcs": false,
@@ -260,11 +266,15 @@ Object {
     },
     "minifierPath": "metro-minify-uglify",
     "optimizationSizeLimit": 153600,
-    "postMinifyProcess": [Function],
     "publicPath": "/assets",
     "transformVariants": Object {
       "default": Object {},
     },
+    "unstable_collectDependenciesPath": "metro/src/ModuleGraph/worker/collectDependencies.js",
+    "unstable_compactOutput": false,
+    "unstable_dependencyMapReservedName": null,
+    "unstable_disableModuleWrapping": false,
+    "unstable_disableNormalizePseudoGlobals": false,
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
@@ -378,6 +388,7 @@ Object {
     "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
+    "hermesParser": false,
     "minifierConfig": Object {
       "compress": Object {
         "reduce_funcs": false,
@@ -397,11 +408,15 @@ Object {
     },
     "minifierPath": "metro-minify-uglify",
     "optimizationSizeLimit": 153600,
-    "postMinifyProcess": [Function],
     "publicPath": "/assets",
     "transformVariants": Object {
       "default": Object {},
     },
+    "unstable_collectDependenciesPath": "metro/src/ModuleGraph/worker/collectDependencies.js",
+    "unstable_compactOutput": false,
+    "unstable_dependencyMapReservedName": null,
+    "unstable_disableModuleWrapping": false,
+    "unstable_disableNormalizePseudoGlobals": false,
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",
@@ -515,6 +530,7 @@ Object {
     "experimentalImportBundleSupport": false,
     "getTransformOptions": [Function],
     "globalPrefix": "",
+    "hermesParser": false,
     "minifierConfig": Object {
       "compress": Object {
         "reduce_funcs": false,
@@ -534,11 +550,15 @@ Object {
     },
     "minifierPath": "metro-minify-uglify",
     "optimizationSizeLimit": 153600,
-    "postMinifyProcess": [Function],
     "publicPath": "/assets",
     "transformVariants": Object {
       "default": Object {},
     },
+    "unstable_collectDependenciesPath": "metro/src/ModuleGraph/worker/collectDependencies.js",
+    "unstable_compactOutput": false,
+    "unstable_dependencyMapReservedName": null,
+    "unstable_disableModuleWrapping": false,
+    "unstable_disableNormalizePseudoGlobals": false,
     "workerPath": "metro/src/DeltaBundler/Worker",
   },
   "transformerPath": "",

@@ -18,8 +18,8 @@ const transformHelpers = require('./transformHelpers');
 const {compile} = require('metro-hermes-compiler');
 
 import type Bundler from '../Bundler';
+import type {TransformInputOptions} from '../DeltaBundler/types.flow';
 import type DeltaBundler, {Module} from '../DeltaBundler';
-import type {TransformInputOptions} from '../lib/transformHelpers';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 async function getPrependedScripts(
@@ -58,6 +58,7 @@ async function getPrependedScripts(
         config,
         transformOptions,
       ),
+      transformOptions,
       onProgress: null,
       experimentalImportBundleSupport:
         config.transformer.experimentalImportBundleSupport,

@@ -116,7 +116,8 @@ class WorkerFarm {
 
     return new JestWorker(workerPath, {
       computeWorkerKey: this._config.stickyWorkers
-        ? this._computeWorkerKey
+        ? // $FlowFixMe[method-unbinding] added when improving typing for this parameters
+          this._computeWorkerKey
         : undefined,
       exposedMethods,
       forkOptions: {env},

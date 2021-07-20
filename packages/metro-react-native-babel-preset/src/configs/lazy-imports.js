@@ -26,8 +26,6 @@ module.exports = new Set([
   'KeyboardAvoidingView',
   'MaskedViewIOS',
   'Modal',
-  'Picker',
-  'PickerIOS',
   'Pressable',
   'ProgressBarAndroid',
   'ProgressViewIOS',

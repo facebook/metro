@@ -19,6 +19,7 @@ const InspectorProxy = require('./InspectorProxy');
 function runInspectorProxy(port: number, projectRoot: string) {
   const inspectorProxy = new InspectorProxy(projectRoot);
   const app = require('connect')();
+  // $FlowFixMe[method-unbinding] added when improving typing for this parameters
   app.use(inspectorProxy.processRequest.bind(inspectorProxy));
 
   const httpServer = require('http').createServer(app);

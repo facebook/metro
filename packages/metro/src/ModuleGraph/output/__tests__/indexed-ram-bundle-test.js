@@ -141,6 +141,7 @@ describe('Startup section optimization', () => {
     expect(map.x_facebook_offsets).toEqual([4, 5, undefined, undefined, 6]);
 
     expect(map.sections.slice(1)).toEqual(
+      // $FlowFixMe[method-unbinding] added when improving typing for this parameters
       modules.filter(not(Set.prototype.has), new Set(preloaded)).map(m => {
         const section = {
           map: expectedMap(m) || lineByLineMap(m.file.path),

@@ -95,7 +95,11 @@ const Index = () => {
                     styles.blockContainer,
                     'padding-horiz--md',
                   )}>
-                  <img src={image} className={classnames(styles.blockImage)} />
+                  <img
+                    src={image}
+                    className={classnames(styles.blockImage)}
+                    alt=""
+                  />
                   <h2>{title}</h2>
                   <p>{content}</p>
                 </div>

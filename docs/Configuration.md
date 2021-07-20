@@ -223,11 +223,11 @@ Type: `GetTransformOptions`
 
 Get the transform options.
 
-#### `postMinifyProcess`
+#### `hermesParser`
 
-Type: `PostMinifyProcess`
+Type: `boolean` (default: `false`)
 
-What happens after minification.
+Use the hermes-parser package to use call Hermes parser via WASM instead of the Babel parser.
 
 #### `minifierPath`
 

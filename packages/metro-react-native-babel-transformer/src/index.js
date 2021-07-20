@@ -12,6 +12,8 @@
 
 'use strict';
 
+const HermesParser = require('hermes-parser');
+
 const crypto = require('crypto');
 const fs = require('fs');
 const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
@@ -33,6 +35,15 @@ const cacheKeyParts = [
   fs.readFileSync(__filename),
   require('babel-preset-fbjs/package.json').version,
 ];
+
+// TS detection conditions copied from metro-react-native-babel-preset
+function isTypeScriptSource(fileName) {
+  return !!fileName && fileName.endsWith('.ts');
+}
+
+function isTSXSource(fileName) {
+  return !!fileName && fileName.endsWith('.tsx');
+}
 
 /**
  * Return a memoized function that checks for the existence of a
@@ -196,7 +207,15 @@ function transform({
       caller: {name: 'metro', bundler: 'metro', platform: options.platform},
       ast: true,
     };
-    const sourceAst = parseSync(src, babelConfig);
+    const sourceAst =
+      isTypeScriptSource(filename) ||
+      isTSXSource(filename) ||
+      !options.hermesParser
+        ? parseSync(src, babelConfig)
+        : HermesParser.parse(src, {
+            babel: true,
+            sourceType: babelConfig.sourceType,
+          });
     /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
      * error found when Flow v0.111 was deployed. To see the error, delete this
      * comment and run Flow. */

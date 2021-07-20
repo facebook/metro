@@ -11,20 +11,31 @@
 
 'use strict';
 
+jest.mock('fs', () => new (require('metro-memory-fs'))());
+
+const fs = require('fs');
 const getCacheKey = require('../index');
 
+beforeAll(() => {
+  fs.writeFileSync('/a.txt', 'fake content for a.txt');
+  fs.writeFileSync('/copy_of_a.txt', 'fake content for a.txt');
+  fs.writeFileSync('/b.txt', 'fake content for b.txt');
+});
+
 test('calculates a cache key for a list of files', () => {
-  expect(getCacheKey([require.resolve('../index')])).toEqual(
-    '00138583bedb3659eeb7d68bd47ebb6d',
+  expect(getCacheKey(['/a.txt'])).toMatchInlineSnapshot(
+    `"651e28171df9ff5d72a4115295dfce6b"`,
   );
 
-  expect(
-    getCacheKey([require.resolve('../index'), require.resolve('ob1')]),
-  ).toEqual('d835dbaaf1d751bba4dcb1ad92f90ff9');
+  expect(getCacheKey(['/a.txt', '/b.txt'])).toMatchInlineSnapshot(
+    `"40457a98d325b546bed62a34c7d7cf96"`,
+  );
 });
 
 test('generates different keys for different files', () => {
-  expect(getCacheKey([require.resolve('../index')])).not.toEqual(
-    getCacheKey([require.resolve('ob1')]),
-  );
+  expect(getCacheKey(['/a.txt'])).not.toEqual(getCacheKey(['/b.txt']));
+});
+
+test('generates identical keys for identical files', () => {
+  expect(getCacheKey(['/a.txt'])).toEqual(getCacheKey(['/copy_of_a.txt']));
 });

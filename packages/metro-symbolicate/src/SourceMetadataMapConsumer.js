@@ -132,6 +132,7 @@ class SourceMetadataMapConsumer {
     }
     let parsedFunctionMap = null;
     const metadataBySource = this._getMetadataBySource();
+    // $FlowFixMe[method-unbinding] added when improving typing for this parameters
     if (Object.prototype.hasOwnProperty.call(metadataBySource, source)) {
       const metadata = metadataBySource[source] || [];
       parsedFunctionMap = decodeFunctionMap(metadata[METADATA_FIELD_FUNCTIONS]);

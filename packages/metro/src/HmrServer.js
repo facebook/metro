@@ -172,6 +172,7 @@ class HmrServer<TClient: Client> {
       const unlisten = this._bundler.getDeltaBundler().listen(
         graph,
         debounceAsyncQueue(
+          // $FlowFixMe[method-unbinding] added when improving typing for this parameters
           this._handleFileChange.bind(this, clientGroup, {
             isInitialUpdate: false,
           }),
@@ -212,6 +213,7 @@ class HmrServer<TClient: Client> {
             type: 'client_log',
             level: data.level,
             data: data.data,
+            mode: data.mode,
           });
           break;
         case 'log-opt-in':

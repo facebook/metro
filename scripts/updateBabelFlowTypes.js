@@ -9,14 +9,13 @@
 
 /**
  * This script updates all flow types. Run it every time you upgrade babel
+ * @format
+ * @flow
  */
 
-'use strict';
-
-const fs = require('fs');
-const prettier = require('prettier');
-
-const {execSync} = require('child_process');
+import {execSync} from 'child_process';
+import fs from 'fs';
+import prettier from 'prettier';
 
 async function main() {
   const babelTraverseScriptPath = require.resolve('./updateBabelTraverseTypes');
@@ -24,8 +23,10 @@ async function main() {
     '../flow-typed/babel-traverse.js',
   );
 
+  const babelRegisterPath = require.resolve('../../babel-register.js');
+
   execSync(
-    `node ${babelTraverseScriptPath} ${babelTraverseFlowDefinitionPath}`,
+    `node ${babelRegisterPath} ${babelTraverseScriptPath} ${babelTraverseFlowDefinitionPath}`,
   );
   await formatWithPrettier(babelTraverseFlowDefinitionPath);
 
@@ -34,7 +35,9 @@ async function main() {
     '../flow-typed/babel-types.js.flow',
   );
 
-  execSync(`node ${babelTypesScriptPath} > ${babelTypesFlowDefinitionPath}`);
+  execSync(
+    `node ${babelRegisterPath} ${babelTypesScriptPath} > ${babelTypesFlowDefinitionPath}`,
+  );
 
   await formatWithPrettier(babelTypesFlowDefinitionPath);
 }

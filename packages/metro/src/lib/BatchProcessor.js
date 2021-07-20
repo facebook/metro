@@ -53,6 +53,7 @@ class BatchProcessor<TItem, TResult> {
     this._queue = [];
     this._timeoutHandle = null;
     this._currentProcessCount = 0;
+    // $FlowFixMe[method-unbinding] added when improving typing for this parameters
     (this: any)._processQueue = this._processQueue.bind(this);
   }
 
@@ -88,7 +89,9 @@ class BatchProcessor<TItem, TResult> {
       this._processBatch(
         jobs.map((job: QueueItem<TItem, TResult>) => job.item),
       ).then(
+        // $FlowFixMe[method-unbinding] added when improving typing for this parameters
         this._onBatchResults.bind(this, jobs),
+        // $FlowFixMe[method-unbinding] added when improving typing for this parameters
         this._onBatchError.bind(this, jobs),
       );
     }
@@ -97,11 +100,13 @@ class BatchProcessor<TItem, TResult> {
   _processQueueOnceReady(): void {
     if (this._queue.length >= this._options.maximumItems) {
       clearTimeout(this._timeoutHandle);
+      // $FlowFixMe[method-unbinding] added when improving typing for this parameters
       process.nextTick(this._processQueue);
       return;
     }
     if (this._timeoutHandle == null) {
       this._timeoutHandle = setTimeout(
+        // $FlowFixMe[method-unbinding] added when improving typing for this parameters
         this._processQueue,
         this._options.maximumDelayMs,
       );

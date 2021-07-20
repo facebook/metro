@@ -34,6 +34,7 @@ module.exports = {
     'prefer-arrow-callback': 'off',
     'prefer-const': ['warn', {destructuring: 'all'}],
     'prettier/prettier': ['error', 'fb', '@format'],
+    quotes: 'off',
     'sort-keys': 'off',
     'flowtype/object-type-delimiter': 'off',
   },
@@ -52,6 +53,20 @@ module.exports = {
       rules: {
         'babel/func-params-comma-dangle': 'off',
         'import/no-extraneous-dependencies': 'off',
+      },
+    },
+    {
+      files: ['**/__tests__/**/*.js'],
+      env: {
+        jest: true,
+      },
+      rules: {
+        'babel/quotes': [
+          'error',
+          'single',
+          {avoidEscape: true, allowTemplateLiterals: true},
+        ],
+        quotes: 'off',
       },
     },
   ],
