@@ -196,7 +196,7 @@ class MemoryFs {
   _pathSep: string;
   _cwd: ?() => string;
   constants: any = constants;
-  promises: {[funcName: string]: (...args: Array<*>) => Promise<*>, ...};
+  promises: {[funcName: string]: (...args: Array<any>) => Promise<any>, ...};
   Dirent: typeof Dirent = Dirent;
 
   close: (fd: number, callback: (error: ?Error) => mixed) => void;

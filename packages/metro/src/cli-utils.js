@@ -16,7 +16,7 @@ import type {YargArguments} from 'metro-config/src/configTypes.flow';
 
 exports.watchFile = async function(
   filename: string,
-  callback: () => *,
+  callback: () => any,
 ): Promise<void> {
   fs.watchFile(filename, () => {
     callback();
@@ -26,7 +26,7 @@ exports.watchFile = async function(
 };
 
 exports.makeAsyncCommand = (
-  command: (argv: YargArguments) => Promise<*>,
+  command: (argv: YargArguments) => Promise<mixed>,
 ): ((argv: YargArguments) => void) => (argv: YargArguments) => {
   Promise.resolve(command(argv)).catch(error => {
     console.error(error.stack);
