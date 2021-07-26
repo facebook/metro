@@ -10,12 +10,9 @@
 
 'use strict';
 
-const nullthrows = require('nullthrows');
+const newline = /\r\n?|\n|\u2028|\u2029/g;
 
-const reLine = /^/gm;
-
-function countLines(s: string): number {
-  return nullthrows(s.match(reLine)).length;
-}
+const countLines = (string: string): number =>
+  (string.match(newline) || []).length + 1;
 
 module.exports = countLines;

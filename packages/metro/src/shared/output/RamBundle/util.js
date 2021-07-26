@@ -20,10 +20,7 @@ import type {
   BasicSourceMap,
 } from 'metro-source-map';
 
-const newline = /\r\n?|\n|\u2028|\u2029/g;
-// fastest implementation
-const countLines = (string: string): number =>
-  (string.match(newline) || []).length + 1;
+import countLines from '../../../lib/countLines';
 
 function lineToLineSourceMap(
   source: string,
