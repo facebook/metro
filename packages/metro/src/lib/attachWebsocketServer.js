@@ -19,7 +19,7 @@ type WebsocketServiceInterface<T> = interface {
     sendFn: (data: string) => void,
   ) => Promise<?T>,
   +onClientDisconnect?: (client: T) => mixed,
-  +onClientError?: (client: T, e: ErrorEvent) => mixed,
+  +onClientError?: (client: T, e: Error) => mixed,
   +onClientMessage?: (
     client: T,
     message: string,
@@ -56,9 +56,9 @@ module.exports = function attachWebsocketServer<TClient: Object>({
     path,
   });
 
-  wss.on('connection', async (ws, req) => {
+  wss.on('connection', async ws => {
     let connected = true;
-    const url = req.url;
+    const url = ws.upgradeReq.url;
 
     const sendFn = (...args) => {
       if (connected) {

@@ -226,10 +226,10 @@ class HmrServer<TClient: Client> {
     return Promise.resolve();
   }
 
-  onClientError(client: TClient, e: ErrorEvent): void {
+  onClientError(client: TClient, e: Error): void {
     this._config.reporter.update({
       type: 'hmr_client_error',
-      error: e.error,
+      error: e,
     });
     this.onClientDisconnect(client);
   }
