@@ -76,7 +76,6 @@ module.exports = new Set([
   'PushNotificationIOS',
   'Settings',
   'Share',
-  'StatusBarIOS',
   'StyleSheet',
   'Systrace',
   'ToastAndroid',
