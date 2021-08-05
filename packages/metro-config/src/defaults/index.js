@@ -30,6 +30,12 @@ const {Terminal} = require('metro-core');
 
 import type {ConfigT} from '../configTypes.flow';
 
+let workerPath = 'metro/src/DeltaBundler/Worker';
+
+const setDefaultWorkerPath = (newWorkerPath: string) => {
+  workerPath = newWorkerPath;
+};
+
 const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   resolver: {
     assetExts,
@@ -113,7 +119,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     minifierPath: DEFAULT_METRO_MINIFIER_PATH,
     optimizationSizeLimit: 150 * 1024, // 150 KiB.
     transformVariants: {default: {}},
-    workerPath: 'metro/src/DeltaBundler/Worker',
+    workerPath,
     publicPath: '/assets',
     allowOptionalDependencies: false,
     unstable_collectDependenciesPath:
@@ -148,4 +154,5 @@ async function getDefaultConfig(rootPath: ?string): Promise<ConfigT> {
 }
 
 module.exports = getDefaultConfig;
+module.exports.setDefaultWorkerPath = setDefaultWorkerPath;
 module.exports.getDefaultValues = getDefaultValues;

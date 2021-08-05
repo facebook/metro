@@ -1,0 +1,10 @@
+#!/usr/bin/env node
+'use strict';
+
+const path = require('path');
+
+require('metro-babel-register')([path.join(__dirname, 'packages/')]);
+require('metro-config/src/defaults').setDefaultWorkerPath(
+  path.join(__dirname, 'devTransformWorker.js'),
+);
+require('metro/src/cli');
