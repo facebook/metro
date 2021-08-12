@@ -127,6 +127,7 @@ type ServerConfigT = {|
   enhanceMiddleware: (Middleware, Server) => Middleware,
   useGlobalHotkey: boolean,
   port: number,
+  unstable_serverRoot: ?string,
   rewriteRequestUrl: string => string,
   runInspectorProxy: boolean,
   verifyConnections: boolean,

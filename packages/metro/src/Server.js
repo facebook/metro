@@ -49,7 +49,11 @@ const {
 import type {AssetData} from './Assets';
 import type {ExplodedSourceMap} from './DeltaBundler/Serializers/getExplodedSourceMap';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
-import type {Graph, Module} from './DeltaBundler/types.flow';
+import type {
+  Graph,
+  Module,
+  TransformInputOptions,
+} from './DeltaBundler/types.flow';
 import type {MixedOutput, TransformResult} from './DeltaBundler/types.flow';
 import type {RevisionId} from './IncrementalBundler';
 import type {GraphId} from './lib/getGraphId';
@@ -188,12 +192,12 @@ class Server {
       },
     );
 
-    const entryPoint = path.resolve(this._config.projectRoot, entryFile);
+    const entryPoint = this._getEntryPointAbsolutePath(entryFile);
 
     const bundleOptions = {
       asyncRequireModulePath: await this._resolveRelativePath(
         this._config.transformer.asyncRequireModulePath,
-        {transformOptions},
+        {transformOptions, relativeTo: 'project'},
       ),
       processModuleFilter: this._config.serializer.processModuleFilter,
       createModuleId: this._createModuleId,
@@ -259,12 +263,12 @@ class Server {
       {onProgress, shallow: graphOptions.shallow},
     );
 
-    const entryPoint = path.resolve(this._config.projectRoot, entryFile);
+    const entryPoint = this._getEntryPointAbsolutePath(entryFile);
 
     return await getRamBundleInfo(entryPoint, prepend, graph, {
       asyncRequireModulePath: await this._resolveRelativePath(
         this._config.transformer.asyncRequireModulePath,
-        {transformOptions},
+        {transformOptions, relativeTo: 'project'},
       ),
       processModuleFilter: this._config.serializer.processModuleFilter,
       createModuleId: this._createModuleId,
@@ -300,7 +304,7 @@ class Server {
       processModuleFilter: this._config.serializer.processModuleFilter,
       assetPlugins: this._config.transformer.assetPlugins,
       platform: transformOptions.platform,
-      projectRoot: this._config.projectRoot,
+      projectRoot: this._getServerRootDir(),
       publicPath: this._config.transformer.publicPath,
     });
   }
@@ -384,7 +388,7 @@ class Server {
     try {
       const data = await getAsset(
         assetPath[1],
-        this._config.projectRoot,
+        this._getServerRootDir(),
         this._config.watchFolders,
         urlObj.query.platform,
         this._config.resolver.assetExts,
@@ -512,6 +516,7 @@ class Server {
        */
       const resolvedEntryFilePath = await this._resolveRelativePath(entryFile, {
         transformOptions,
+        relativeTo: 'server',
       });
       const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
         shallow: graphOptions.shallow,
@@ -724,7 +729,7 @@ class Server {
         {
           asyncRequireModulePath: await this._resolveRelativePath(
             this._config.transformer.asyncRequireModulePath,
-            {transformOptions},
+            {transformOptions, relativeTo: 'project'},
           ),
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
@@ -831,7 +836,7 @@ class Server {
         baseBytecodeBundle(entryFile, revision.prepend, revision.graph, {
           asyncRequireModulePath: await this._resolveRelativePath(
             this._config.transformer.asyncRequireModulePath,
-            {transformOptions},
+            {transformOptions, relativeTo: 'project'},
           ),
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
@@ -991,7 +996,7 @@ class Server {
       for (let i = 0; i < symbolicatedStack.length; i++) {
         const {collapse, column, file, lineNumber} = symbolicatedStack[i];
         // $FlowFixMe[incompatible-call]
-        const entryPoint = path.resolve(this._config.projectRoot, file);
+        const entryPoint = this._getEntryPointAbsolutePath(file);
         if (collapse || lineNumber == null || urls.has(entryPoint)) {
           continue;
         }
@@ -1104,6 +1109,7 @@ class Server {
      */
     const resolvedEntryFilePath = await this._resolveRelativePath(entryFile, {
       transformOptions,
+      relativeTo: 'server',
     });
 
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
@@ -1136,12 +1142,25 @@ class Server {
     );
   }
 
-  async _resolveRelativePath(filePath, {transformOptions}) {
+  async _resolveRelativePath(
+    filePath,
+    {
+      transformOptions,
+      relativeTo,
+    }: $ReadOnly<{
+      transformOptions: TransformInputOptions,
+      relativeTo: 'project' | 'server',
+    }>,
+  ) {
     const resolutionFn = await transformHelpers.getResolveDependencyFn(
       this._bundler.getBundler(),
       transformOptions.platform,
     );
-    return resolutionFn(`${this._config.projectRoot}/.`, filePath);
+    const rootDir =
+      relativeTo === 'server'
+        ? this._getServerRootDir()
+        : this._config.projectRoot;
+    return resolutionFn(`${rootDir}/.`, filePath);
   }
 
   getNewBuildID(): string {
@@ -1193,6 +1212,14 @@ class Server {
     sourceMapUrl: null,
     sourceUrl: null,
   };
+
+  _getServerRootDir() {
+    return this._config.server.unstable_serverRoot ?? this._config.projectRoot;
+  }
+
+  _getEntryPointAbsolutePath(entryFile: string) {
+    return path.resolve(this._getServerRootDir(), entryFile);
+  }
 }
 
 function* zip<X, Y>(xs: Iterable<X>, ys: Iterable<Y>): Iterable<[X, Y]> {
