@@ -75,9 +75,21 @@ function resolve(
   // that's not the case right now.
   if (context.allowHaste && !isDirectImport) {
     const normalizedName = normalizePath(realModuleName);
-    const result = resolveHasteName(context, normalizedName, platform);
-    if (result.type === 'resolved') {
-      return result.resolution;
+    let nameCandidates;
+    if (context.rewriteHasteRequest) {
+      nameCandidates = context.rewriteHasteRequest({
+        originModulePath,
+        moduleName: normalizedName,
+      });
+      if (nameCandidates != null && !Array.isArray(nameCandidates)) {
+        nameCandidates = [nameCandidates];
+      }
+    }
+    for (const candidate of nameCandidates ?? [normalizedName]) {
+      const result = resolveHasteName(context, candidate, platform);
+      if (result.type === 'resolved') {
+        return result.resolution;
+      }
     }
   }
 

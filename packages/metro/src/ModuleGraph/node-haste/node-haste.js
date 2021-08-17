@@ -26,7 +26,7 @@ const {ModuleMap} = require('jest-haste-map');
 import type {Moduleish} from '../../node-haste/DependencyGraph/ModuleResolution';
 import type {ResolveFn, TransformedCodeFile} from '../types.flow';
 import type {Extensions, Path} from './node-haste.flow';
-import type {CustomResolver} from 'metro-resolver';
+import type {CustomResolver, RewriteHasteRequest} from 'metro-resolver';
 
 type ResolveOptions = {|
   +platform: string,
@@ -38,6 +38,7 @@ type ResolveOptions = {|
   nodeModulesPaths: $ReadOnlyArray<string>,
   resolveRequest?: ?CustomResolver,
   transformedFiles: {[path: Path]: TransformedCodeFile, ...},
+  rewriteHasteRequest: ?RewriteHasteRequest,
 |};
 
 const platforms = new Set(defaults.platforms);
@@ -167,6 +168,7 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
       return assets.length ? assets : null;
     },
     resolveRequest: options.resolveRequest,
+    rewriteHasteRequest: options.rewriteHasteRequest,
     sourceExts,
   });
 
