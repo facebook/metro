@@ -67,6 +67,7 @@ Object {
       "ts",
       "tsx",
     ],
+    "unstable_rewriteHasteRequest": null,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -85,6 +86,7 @@ Object {
     "port": 8080,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
+    "unstable_serverRoot": null,
     "useGlobalHotkey": true,
     "verifyConnections": false,
   },
@@ -209,6 +211,7 @@ Object {
       "ts",
       "tsx",
     ],
+    "unstable_rewriteHasteRequest": null,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -227,6 +230,7 @@ Object {
     "port": 8080,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
+    "unstable_serverRoot": null,
     "useGlobalHotkey": true,
     "verifyConnections": false,
   },
@@ -351,6 +355,7 @@ Object {
       "ts",
       "tsx",
     ],
+    "unstable_rewriteHasteRequest": null,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -369,6 +374,7 @@ Object {
     "port": 8080,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
+    "unstable_serverRoot": null,
     "useGlobalHotkey": true,
     "verifyConnections": false,
   },
@@ -493,6 +499,7 @@ Object {
       "ts",
       "tsx",
     ],
+    "unstable_rewriteHasteRequest": null,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -511,6 +518,7 @@ Object {
     "port": 8080,
     "rewriteRequestUrl": [Function],
     "runInspectorProxy": true,
+    "unstable_serverRoot": null,
     "useGlobalHotkey": true,
     "verifyConnections": false,
   },

@@ -43,6 +43,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     nodeModulesPaths: [],
     resolveRequest: null,
     resolverMainFields: ['browser', 'main'],
+    unstable_rewriteHasteRequest: null,
     useWatchman: true,
   },
 
@@ -66,6 +67,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     rewriteRequestUrl: url => url,
     runInspectorProxy: true,
     verifyConnections: false,
+    unstable_serverRoot: null,
   },
 
   symbolicator: {

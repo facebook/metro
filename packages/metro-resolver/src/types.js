@@ -116,6 +116,7 @@ export type ResolutionContext = ModulePathContext &
     extraNodeModules: ?{[string]: string, ...},
     originModulePath: string,
     resolveRequest?: ?CustomResolver,
+    rewriteHasteRequest?: ?RewriteHasteRequest,
     ...
   };
 
@@ -125,3 +126,7 @@ export type CustomResolver = (
   string | null,
   string | null,
 ) => Resolution;
+
+export type RewriteHasteRequest = (
+  $ReadOnly<{originModulePath: string, moduleName: string}>,
+) => ?(string | Array<string>);

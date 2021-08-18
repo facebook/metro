@@ -22,6 +22,7 @@ export type {
   Resolution,
   ResolveAsset,
   Result,
+  RewriteHasteRequest,
 } from './types';
 
 const Resolver = {

@@ -18,6 +18,11 @@ module.exports = (async () => {
       ...defaultConfig.resolver,
       resolveRequest: function CustomResolver() {},
       hasteImplModulePath: './path',
+      unstable_rewriteHasteRequest: () => {},
+    },
+    server: {
+      ...defaultConfig.server,
+      unstable_serverRoot: '',
     },
     transformer: {
       ...defaultConfig.transformer,

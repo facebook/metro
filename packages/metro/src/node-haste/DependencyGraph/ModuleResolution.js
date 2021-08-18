@@ -26,6 +26,7 @@ import type {
   IsAssetFile,
   Resolution,
   ResolveAsset,
+  RewriteHasteRequest,
 } from 'metro-resolver';
 
 export type DirExistsFn = (filePath: string) => boolean;
@@ -84,6 +85,7 @@ type Options<TModule, TPackage> = {|
   +resolveAsset: ResolveAsset,
   +resolveRequest: ?CustomResolver,
   +sourceExts: $ReadOnlyArray<string>,
+  +rewriteHasteRequest: ?RewriteHasteRequest,
 |};
 
 class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {

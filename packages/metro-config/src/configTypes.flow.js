@@ -13,7 +13,7 @@
 import type {IncomingMessage, ServerResponse} from 'http';
 import typeof MetroCache from 'metro-cache';
 import type {CacheStore} from 'metro-cache';
-import type {CustomResolver} from 'metro-resolver';
+import type {CustomResolver, RewriteHasteRequest} from 'metro-resolver';
 import type {MixedSourceMap} from 'metro-source-map';
 import type {JsTransformerConfig} from 'metro-transform-worker';
 import type {
@@ -80,6 +80,7 @@ type ResolverConfigT = {|
   platforms: $ReadOnlyArray<string>,
   resolveRequest: ?CustomResolver,
   resolverMainFields: $ReadOnlyArray<string>,
+  unstable_rewriteHasteRequest: ?RewriteHasteRequest,
   sourceExts: $ReadOnlyArray<string>,
   useWatchman: boolean,
 |};
@@ -127,6 +128,7 @@ type ServerConfigT = {|
   enhanceMiddleware: (Middleware, Server) => Middleware,
   useGlobalHotkey: boolean,
   port: number,
+  unstable_serverRoot: ?string,
   rewriteRequestUrl: string => string,
   runInspectorProxy: boolean,
   verifyConnections: boolean,

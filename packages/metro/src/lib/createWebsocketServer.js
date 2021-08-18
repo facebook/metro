@@ -8,18 +8,14 @@
  * @format
  */
 
-'use strict';
-
-import type {Server as HttpServer} from 'http';
-import type {Server as HttpsServer} from 'https';
-
+import ws from 'ws';
 type WebsocketServiceInterface<T> = interface {
   +onClientConnect: (
     url: string,
     sendFn: (data: string) => void,
   ) => Promise<?T>,
   +onClientDisconnect?: (client: T) => mixed,
-  +onClientError?: (client: T, e: Error) => mixed,
+  +onClientError?: (client: T, e: ErrorEvent) => mixed,
   +onClientMessage?: (
     client: T,
     message: string,
@@ -28,14 +24,12 @@ type WebsocketServiceInterface<T> = interface {
 };
 
 type HMROptions<TClient> = {
-  httpServer: HttpServer | HttpsServer,
   websocketServer: WebsocketServiceInterface<TClient>,
-  path: string,
   ...
 };
 
 /**
- * Attach a websocket server to an already existing HTTP[S] server, and forward
+ * Returns a WebSocketServer to be attached to an existing HTTP instance. It forwards
  * the received events on the given "websocketServer" parameter. It must be an
  * object with the following fields:
  *
@@ -45,20 +39,16 @@ type HMROptions<TClient> = {
  *   - onClientDisconnect
  */
 
-module.exports = function attachWebsocketServer<TClient: Object>({
-  httpServer,
+module.exports = function createWebsocketServer<TClient: Object>({
   websocketServer,
-  path,
-}: HMROptions<TClient>): void {
-  const WebSocketServer = require('ws').Server;
-  const wss = new WebSocketServer({
-    server: httpServer,
-    path,
+}: HMROptions<TClient>): typeof ws.Server {
+  const wss = new ws.Server({
+    noServer: true,
   });
 
-  wss.on('connection', async ws => {
+  wss.on('connection', async (ws, req) => {
     let connected = true;
-    const url = ws.upgradeReq.url;
+    const url = req.url;
 
     const sendFn = (...args) => {
       if (connected) {
@@ -88,4 +78,5 @@ module.exports = function attachWebsocketServer<TClient: Object>({
         websocketServer.onClientMessage(client, message, sendFn);
     });
   });
+  return wss;
 };

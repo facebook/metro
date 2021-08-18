@@ -63,6 +63,11 @@ const CONTEXT: ResolutionContext = (() => {
           },
         },
       },
+      haste: {
+        'Foo.js': true,
+        'Bar.js': true,
+        'Override.js': true,
+      },
     },
     '/',
   );
@@ -77,7 +82,13 @@ const CONTEXT: ResolutionContext = (() => {
     preferNativePlatform: false,
     redirectModulePath: filePath => filePath,
     resolveAsset: filePath => null,
-    resolveHasteModule: name => null,
+    resolveHasteModule: name => {
+      const candidate = '/haste/' + name + '.js';
+      if (fileSet.has(candidate)) {
+        return candidate;
+      }
+      return null;
+    },
     resolveHastePackage: name => null,
     sourceExts: ['js'],
   };
@@ -198,4 +209,86 @@ it('uses `nodeModulesPaths` to find additional node_modules not in the direct pa
       /node_modules
     "
   `);
+});
+
+describe('rewriteHasteRequest', () => {
+  it('overrides Haste resolution', () => {
+    const rewriteHasteRequest = jest.fn(
+      ({originModulePath, moduleName}) => 'Override',
+    );
+    const context = Object.assign({}, CONTEXT, {
+      rewriteHasteRequest,
+    });
+    expect(Resolver.resolve(context, 'Foo', null)).toEqual({
+      type: 'sourceFile',
+      filePath: '/haste/Override.js',
+    });
+    expect(rewriteHasteRequest.mock.calls).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          Object {
+            "moduleName": "Foo",
+            "originModulePath": "/root/project/foo.js",
+          },
+        ],
+      ]
+    `);
+  });
+
+  it('overrides Haste resolution with multiple candidates', () => {
+    const rewriteHasteRequest = jest.fn(({originModulePath, moduleName}) => [
+      'NonExistentCandidate',
+      'Override',
+      moduleName,
+    ]);
+    const context = Object.assign({}, CONTEXT, {
+      rewriteHasteRequest,
+    });
+    expect(Resolver.resolve(context, 'Foo', null)).toEqual({
+      type: 'sourceFile',
+      filePath: '/haste/Override.js',
+    });
+    expect(rewriteHasteRequest.mock.calls).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          Object {
+            "moduleName": "Foo",
+            "originModulePath": "/root/project/foo.js",
+          },
+        ],
+      ]
+    `);
+  });
+
+  it('does not override a relative request', () => {
+    const rewriteHasteRequest = jest.fn(({originModulePath, moduleName}) => [
+      'NonExistentCandidate',
+      'Override',
+      moduleName,
+    ]);
+    const context = Object.assign({}, CONTEXT, {
+      rewriteHasteRequest,
+    });
+    expect(Resolver.resolve(context, '../../haste/Foo', null)).toEqual({
+      type: 'sourceFile',
+      filePath: '/haste/Foo.js',
+    });
+    expect(rewriteHasteRequest).not.toBeCalled();
+  });
+
+  it('does not override an absolute request', () => {
+    const rewriteHasteRequest = jest.fn(({originModulePath, moduleName}) => [
+      'NonExistentCandidate',
+      'Override',
+      moduleName,
+    ]);
+    const context = Object.assign({}, CONTEXT, {
+      rewriteHasteRequest,
+    });
+    expect(Resolver.resolve(context, '/haste/Foo', null)).toEqual({
+      type: 'sourceFile',
+      filePath: '/haste/Foo.js',
+    });
+    expect(rewriteHasteRequest).not.toBeCalled();
+  });
 });
