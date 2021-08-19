@@ -91,7 +91,9 @@ type Options<TModule, TPackage> = {|
 class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   _options: Options<TModule, TPackage>;
 
-  static EMPTY_MODULE: string = require.resolve('./assets/empty-module.js');
+  static EMPTY_MODULE: string = require.resolve(
+    'metro-runtime/src/modules/empty-module.js',
+  );
 
   constructor(options: Options<TModule, TPackage>) {
     this._options = options;
