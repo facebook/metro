@@ -121,7 +121,8 @@ class HmrServer<TClient: Client> {
       transformOptions.platform,
     );
     const resolvedEntryFilePath = resolutionFn(
-      this._config.projectRoot + '/.',
+      (this._config.server.unstable_serverRoot ?? this._config.projectRoot) +
+        '/.',
       entryFile,
     );
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
@@ -320,7 +321,8 @@ class HmrServer<TClient: Client> {
 
       const hmrUpdate = hmrJSBundle(delta, revision.graph, {
         createModuleId: this._createModuleId,
-        projectRoot: this._config.projectRoot,
+        projectRoot:
+          this._config.server.unstable_serverRoot ?? this._config.projectRoot,
         clientUrl: group.clientUrl,
       });
 
