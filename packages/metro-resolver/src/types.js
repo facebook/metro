@@ -121,10 +121,10 @@ export type ResolutionContext = ModulePathContext &
   };
 
 export type CustomResolver = (
-  ResolutionContext,
-  string,
-  string | null,
-  string | null,
+  context: ResolutionContext,
+  realModuleName: string,
+  platform: string | null,
+  moduleName: string,
 ) => Resolution;
 
 export type RewriteHasteRequest = (
