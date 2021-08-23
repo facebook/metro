@@ -67,6 +67,13 @@ const CONTEXT: ResolutionContext = (() => {
         'Foo.js': true,
         'Bar.js': true,
         'Override.js': true,
+        'some-package': {
+          'package.json': true,
+          subdir: {
+            'other-file.js': true,
+          },
+          'main.js': true,
+        },
       },
     },
     '/',
@@ -89,7 +96,13 @@ const CONTEXT: ResolutionContext = (() => {
       }
       return null;
     },
-    resolveHastePackage: name => null,
+    resolveHastePackage: name => {
+      const candidate = '/haste/' + name + '/package.json';
+      if (fileSet.has(candidate)) {
+        return candidate;
+      }
+      return null;
+    },
     sourceExts: ['js'],
   };
 })();
@@ -209,6 +222,243 @@ it('uses `nodeModulesPaths` to find additional node_modules not in the direct pa
       /node_modules
     "
   `);
+});
+
+it('resolves Haste modules', () => {
+  expect(Resolver.resolve(CONTEXT, 'Foo', null)).toEqual({
+    type: 'sourceFile',
+    filePath: '/haste/Foo.js',
+  });
+  expect(Resolver.resolve(CONTEXT, 'Bar', null)).toEqual({
+    type: 'sourceFile',
+    filePath: '/haste/Bar.js',
+  });
+});
+
+it('resolves a Haste package', () => {
+  expect(Resolver.resolve(CONTEXT, 'some-package', null)).toEqual({
+    type: 'sourceFile',
+    filePath: '/haste/some-package/main.js',
+  });
+});
+
+it('resolves a file inside a Haste package', () => {
+  expect(
+    Resolver.resolve(CONTEXT, 'some-package/subdir/other-file', null),
+  ).toEqual({
+    type: 'sourceFile',
+    filePath: '/haste/some-package/subdir/other-file.js',
+  });
+});
+
+it('throws a descriptive error when a file inside a Haste package cannot be resolved', () => {
+  expect(() => {
+    Resolver.resolve(CONTEXT, 'some-package/subdir/does-not-exist', null);
+  }).toThrowErrorMatchingInlineSnapshot(`
+    "While resolving module \`some-package/subdir/does-not-exist\`, the Haste package \`some-package\` was found. However the module \`subdir/does-not-exist\` could not be found within the package. Indeed, none of these files exist:
+
+      * \`/haste/some-package/subdir/does-not-exist(.js)\`
+      * \`/haste/some-package/subdir/does-not-exist/index(.js)\`"
+  `);
+});
+
+describe('redirectModulePath', () => {
+  const redirectModulePath = jest.fn();
+  const context = Object.assign({}, CONTEXT, {
+    redirectModulePath,
+  });
+
+  beforeEach(() => {
+    redirectModulePath.mockReset();
+    redirectModulePath.mockImplementation(filePath => false);
+  });
+
+  it('is used for relative path requests', () => {
+    expect(Resolver.resolve(context, './bar', null)).toMatchInlineSnapshot(`
+      Object {
+        "type": "empty",
+      }
+    `);
+    expect(redirectModulePath).toBeCalledTimes(1);
+    expect(redirectModulePath).toBeCalledWith('/root/project/bar');
+  });
+
+  it('is used for absolute path requests', () => {
+    expect(Resolver.resolve(context, '/bar', null)).toMatchInlineSnapshot(`
+      Object {
+        "type": "empty",
+      }
+    `);
+    expect(redirectModulePath).toBeCalledTimes(1);
+    expect(redirectModulePath).toBeCalledWith('/bar');
+  });
+
+  it('is used for non-Haste package requests', () => {
+    expect(Resolver.resolve(context, 'does-not-exist', null))
+      .toMatchInlineSnapshot(`
+      Object {
+        "type": "empty",
+      }
+    `);
+    expect(redirectModulePath).toBeCalledTimes(1);
+    expect(redirectModulePath).toBeCalledWith('does-not-exist');
+  });
+
+  it('can be used to redirect to an arbitrary relative module', () => {
+    redirectModulePath
+      .mockImplementationOnce(filePath => '../smth/beep')
+      .mockImplementationOnce(filePath => filePath);
+    expect(Resolver.resolve(context, 'does-not-exist', null))
+      .toMatchInlineSnapshot(`
+      Object {
+        "filePath": "/root/smth/beep.js",
+        "type": "sourceFile",
+      }
+    `);
+    expect(redirectModulePath).toBeCalledTimes(2);
+    expect(redirectModulePath).toBeCalledWith('does-not-exist');
+    expect(redirectModulePath).toBeCalledWith('/root/smth/beep');
+  });
+});
+
+describe('resolveRequest', () => {
+  const resolveRequest = jest.fn();
+  const context = Object.assign({}, CONTEXT, {resolveRequest});
+
+  beforeEach(() => {
+    resolveRequest.mockReset();
+    resolveRequest.mockImplementation(() => ({type: 'empty'}));
+  });
+
+  it('is called for non-Haste package requests', () => {
+    expect(Resolver.resolve(context, 'does-not-exist', null))
+      .toMatchInlineSnapshot(`
+      Object {
+        "type": "empty",
+      }
+    `);
+    expect(resolveRequest).toBeCalledTimes(1);
+    expect(resolveRequest).toBeCalledWith(
+      context,
+      'does-not-exist',
+      null,
+      'does-not-exist',
+    );
+  });
+
+  it('is called for relative path requests', () => {
+    expect(Resolver.resolve(context, './does-not-exist', null))
+      .toMatchInlineSnapshot(`
+      Object {
+        "type": "empty",
+      }
+    `);
+    expect(resolveRequest).toBeCalledTimes(1);
+    expect(resolveRequest).toBeCalledWith(
+      context,
+      './does-not-exist',
+      null,
+      './does-not-exist',
+    );
+  });
+
+  it('is called for absolute path requests', () => {
+    expect(Resolver.resolve(context, '/does-not-exist', null))
+      .toMatchInlineSnapshot(`
+      Object {
+        "type": "empty",
+      }
+    `);
+    expect(resolveRequest).toBeCalledTimes(1);
+    expect(resolveRequest).toBeCalledWith(
+      context,
+      '/does-not-exist',
+      null,
+      '/does-not-exist',
+    );
+  });
+
+  it('is not called for Haste packages', () => {
+    expect(Resolver.resolve(context, 'some-package', null))
+      .toMatchInlineSnapshot(`
+      Object {
+        "filePath": "/haste/some-package/main.js",
+        "type": "sourceFile",
+      }
+    `);
+    expect(resolveRequest).not.toBeCalled();
+  });
+
+  it('is not called for Haste modules', () => {
+    expect(Resolver.resolve(context, 'Foo', null)).toMatchInlineSnapshot(`
+      Object {
+        "filePath": "/haste/Foo.js",
+        "type": "sourceFile",
+      }
+    `);
+    expect(resolveRequest).not.toBeCalled();
+  });
+
+  it('is called with the platform and redirected module path', () => {
+    const contextWithRedirect = Object.assign({}, context, {
+      redirectModulePath: filePath => filePath + '.redirected',
+    });
+    expect(Resolver.resolve(contextWithRedirect, 'does-not-exist', 'android'))
+      .toMatchInlineSnapshot(`
+      Object {
+        "type": "empty",
+      }
+    `);
+    expect(resolveRequest).toBeCalledTimes(1);
+    expect(resolveRequest).toBeCalledWith(
+      contextWithRedirect,
+      'does-not-exist.redirected',
+      'android',
+      'does-not-exist',
+    );
+  });
+
+  it('is not called if redirectModulePath returns false', () => {
+    const contextWithRedirect = Object.assign({}, context, {
+      redirectModulePath: filePath => false,
+    });
+    expect(Resolver.resolve(contextWithRedirect, 'does-not-exist', 'android'))
+      .toMatchInlineSnapshot(`
+      Object {
+        "type": "empty",
+      }
+    `);
+    expect(resolveRequest).not.toBeCalled();
+  });
+
+  it('can forward requests to the standard resolver', () => {
+    // This test shows a common pattern for wrapping the standard resolver.
+    resolveRequest.mockImplementation(
+      (ctx, realModuleName, platform, moduleName) => {
+        return Resolver.resolve(
+          Object.assign({}, ctx, {resolveRequest: null}),
+          moduleName,
+          platform,
+        );
+      },
+    );
+    expect(() => {
+      Resolver.resolve(context, 'does-not-exist', 'android');
+    }).toThrowErrorMatchingInlineSnapshot(`
+      "Module does not exist in the Haste module map or in these directories:
+        /root/project/node_modules
+        /root/node_modules
+        /node_modules
+      "
+    `);
+    expect(resolveRequest).toBeCalledTimes(1);
+    expect(resolveRequest).toBeCalledWith(
+      context,
+      'does-not-exist',
+      'android',
+      'does-not-exist',
+    );
+  });
 });
 
 describe('rewriteHasteRequest', () => {
