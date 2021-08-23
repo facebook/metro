@@ -378,25 +378,30 @@ describe('resolveRequest', () => {
     );
   });
 
-  it('is not called for Haste packages', () => {
+  it('is called for Haste packages', () => {
     expect(Resolver.resolve(context, 'some-package', null))
       .toMatchInlineSnapshot(`
       Object {
-        "filePath": "/haste/some-package/main.js",
-        "type": "sourceFile",
+        "type": "empty",
       }
     `);
-    expect(resolveRequest).not.toBeCalled();
+    expect(resolveRequest).toBeCalledTimes(1);
+    expect(resolveRequest).toBeCalledWith(
+      context,
+      'some-package',
+      null,
+      'some-package',
+    );
   });
 
-  it('is not called for Haste modules', () => {
+  it('is called for Haste modules', () => {
     expect(Resolver.resolve(context, 'Foo', null)).toMatchInlineSnapshot(`
       Object {
-        "filePath": "/haste/Foo.js",
-        "type": "sourceFile",
+        "type": "empty",
       }
     `);
-    expect(resolveRequest).not.toBeCalled();
+    expect(resolveRequest).toBeCalledTimes(1);
+    expect(resolveRequest).toBeCalledWith(context, 'Foo', null, 'Foo');
   });
 
   it('is called with the platform and redirected module path', () => {
@@ -458,6 +463,26 @@ describe('resolveRequest', () => {
       'android',
       'does-not-exist',
     );
+  });
+
+  it('can forward Haste requests to the standard resolver', () => {
+    resolveRequest.mockImplementation(
+      (ctx, realModuleName, platform, moduleName) => {
+        return Resolver.resolve(
+          {...ctx, resolveRequest: null},
+          moduleName,
+          platform,
+        );
+      },
+    );
+    expect(Resolver.resolve(context, 'Foo', null)).toMatchInlineSnapshot(`
+      Object {
+        "filePath": "/haste/Foo.js",
+        "type": "sourceFile",
+      }
+    `);
+    expect(resolveRequest).toBeCalledTimes(1);
+    expect(resolveRequest).toBeCalledWith(context, 'Foo', null, 'Foo');
   });
 });
 
