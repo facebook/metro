@@ -781,6 +781,63 @@ describe('processRequest', () => {
         done();
       });
     });
+
+    it('should use unstable_path if provided', done => {
+      const req = scaffoldReq({url: '/assets?unstable_path=imgs/a.png'});
+      const res = {end: jest.fn(), setHeader: jest.fn()};
+
+      getAsset.mockReturnValue(Promise.resolve('i am image'));
+
+      server.processRequest(req, res);
+      res.end.mockImplementation(value => {
+        expect(value).toBe('i am image');
+        done();
+      });
+    });
+
+    it('should parse the platform option if tacked onto unstable_path', done => {
+      const req = scaffoldReq({
+        url: '/assets?unstable_path=imgs/a.png?platform=ios',
+      });
+      const res = {end: jest.fn(), setHeader: jest.fn()};
+
+      getAsset.mockReturnValue(Promise.resolve('i am image'));
+
+      server.processRequest(req, res);
+      res.end.mockImplementation(value => {
+        expect(getAsset).toBeCalledWith(
+          'imgs/a.png',
+          '/root',
+          ['/root'],
+          'ios',
+          expect.any(Array),
+        );
+        expect(value).toBe('i am image');
+        done();
+      });
+    });
+
+    it('unstable_path can escape from projectRoot', done => {
+      const req = scaffoldReq({
+        url: '/assets?unstable_path=../otherFolder/otherImage.png',
+      });
+      const res = {end: jest.fn(), setHeader: jest.fn()};
+
+      getAsset.mockReturnValue(Promise.resolve('i am image'));
+
+      server.processRequest(req, res);
+      res.end.mockImplementation(value => {
+        expect(getAsset).toBeCalledWith(
+          '../otherFolder/otherImage.png',
+          '/root',
+          ['/root'],
+          undefined,
+          expect.any(Array),
+        );
+        expect(value).toBe('i am image');
+        done();
+      });
+    });
   });
 
   describe('build(options)', () => {

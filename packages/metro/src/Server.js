@@ -27,6 +27,8 @@ const getAssets = require('./DeltaBundler/Serializers/getAssets');
 const getGraphId = require('./lib/getGraphId');
 const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
 const mime = require('mime-types');
+const nullthrows = require('nullthrows');
+const querystring = require('querystring');
 const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
 const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
 const path = require('path');
@@ -371,8 +373,21 @@ class Server {
 
   async _processSingleAssetRequest(req: IncomingMessage, res: ServerResponse) {
     const urlObj = url.parse(decodeURI(req.url), true);
-    const assetPath =
-      urlObj && urlObj.pathname && urlObj.pathname.match(/^\/assets\/(.+)$/);
+    let [, assetPath] =
+      (urlObj &&
+        urlObj.pathname &&
+        urlObj.pathname.match(/^\/assets\/(.+)$/)) ||
+      [];
+
+    if (!assetPath && urlObj && urlObj.query && urlObj.query.unstable_path) {
+      const [, actualPath, secondaryQuery] = nullthrows(
+        urlObj.query.unstable_path.match(/^([^?]*)\??(.*)$/),
+      );
+      if (secondaryQuery) {
+        Object.assign(urlObj.query, querystring.parse(secondaryQuery));
+      }
+      assetPath = actualPath;
+    }
 
     if (!assetPath) {
       throw new Error('Could not extract asset path from URL');
@@ -387,8 +402,8 @@ class Server {
 
     try {
       const data = await getAsset(
-        assetPath[1],
-        this._getServerRootDir(),
+        assetPath,
+        this._config.projectRoot,
         this._config.watchFolders,
         urlObj.query.platform,
         this._config.resolver.assetExts,
@@ -398,7 +413,7 @@ class Server {
       if (process.env.REACT_NATIVE_ENABLE_ASSET_CACHING === true) {
         res.setHeader('Cache-Control', 'max-age=31536000');
       }
-      res.end(this._rangeRequestMiddleware(req, res, data, assetPath[1]));
+      res.end(this._rangeRequestMiddleware(req, res, data, assetPath));
       process.nextTick(() => {
         log(createActionEndEntry(processingAssetRequestLogEntry));
       });
@@ -474,7 +489,7 @@ class Server {
         res,
         this._parseOptions(formattedUrl),
       );
-    } else if (pathname.startsWith('/assets/')) {
+    } else if (pathname.startsWith('/assets/') || pathname === '/assets') {
       await this._processSingleAssetRequest(req, res);
     } else if (pathname === '/symbolicate') {
       await this._symbolicate(req, res);
