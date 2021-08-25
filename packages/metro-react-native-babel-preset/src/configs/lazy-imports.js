@@ -58,7 +58,6 @@ module.exports = new Set([
   'AsyncStorage',
   'BackHandler',
   'Clipboard',
-  'DatePickerAndroid',
   'DeviceInfo',
   'Dimensions',
   'Easing',
