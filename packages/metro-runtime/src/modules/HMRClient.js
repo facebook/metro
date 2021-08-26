@@ -58,7 +58,7 @@ class HMRClient extends EventEmitter {
       this.emit('close');
     };
     this._ws.onmessage = message => {
-      const data: HmrMessage = JSON.parse(message.data);
+      const data: HmrMessage = JSON.parse(String(message.data));
 
       switch (data.type) {
         case 'bundle-registered':
