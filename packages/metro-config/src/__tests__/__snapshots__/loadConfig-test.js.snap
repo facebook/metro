@@ -67,7 +67,6 @@ Object {
       "ts",
       "tsx",
     ],
-    "unstable_rewriteHasteRequest": null,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -211,7 +210,6 @@ Object {
       "ts",
       "tsx",
     ],
-    "unstable_rewriteHasteRequest": null,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -355,7 +353,6 @@ Object {
       "ts",
       "tsx",
     ],
-    "unstable_rewriteHasteRequest": null,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -499,7 +496,6 @@ Object {
       "ts",
       "tsx",
     ],
-    "unstable_rewriteHasteRequest": null,
     "useWatchman": true,
   },
   "serializer": Object {

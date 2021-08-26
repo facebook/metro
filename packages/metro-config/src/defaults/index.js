@@ -43,7 +43,6 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     nodeModulesPaths: [],
     resolveRequest: null,
     resolverMainFields: ['browser', 'main'],
-    unstable_rewriteHasteRequest: null,
     useWatchman: true,
   },
 

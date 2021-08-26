@@ -230,7 +230,6 @@ class DependencyGraph extends EventEmitter {
         return assets.length ? assets : null;
       },
       resolveRequest: this._config.resolver.resolveRequest,
-      rewriteHasteRequest: this._config.resolver.unstable_rewriteHasteRequest,
       sourceExts: this._config.resolver.sourceExts,
     });
   }
