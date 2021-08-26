@@ -1010,16 +1010,15 @@ class Server {
     const getCodeFrame = (urls, symbolicatedStack) => {
       for (let i = 0; i < symbolicatedStack.length; i++) {
         const {collapse, column, file, lineNumber} = symbolicatedStack[i];
-        // $FlowFixMe[incompatible-call]
-        const entryPoint = this._getEntryPointAbsolutePath(file);
-        if (collapse || lineNumber == null || urls.has(entryPoint)) {
+        const fileAbsolute = path.resolve(this._config.projectRoot, file ?? '');
+        if (collapse || lineNumber == null || urls.has(fileAbsolute)) {
           continue;
         }
 
         try {
           return {
             content: codeFrameColumns(
-              fs.readFileSync(entryPoint, 'utf8'),
+              fs.readFileSync(fileAbsolute, 'utf8'),
               {
                 // Metro returns 0 based columns but codeFrameColumns expects 1-based columns
                 // $FlowFixMe[unsafe-addition]
