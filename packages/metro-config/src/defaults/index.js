@@ -66,6 +66,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     rewriteRequestUrl: url => url,
     runInspectorProxy: true,
     verifyConnections: false,
+    unstable_serverRoot: null,
   },
 
   symbolicator: {

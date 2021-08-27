@@ -300,9 +300,6 @@ class DependencyGraph extends EventEmitter {
     );
     let mapByPlatform = getOrCreate(mapByDirectory, to);
     let modulePath = mapByPlatform.get(platform);
-    if (!modulePath) {
-      modulePath = this._moduleMap.getModule(to, platform, true);
-    }
 
     if (!modulePath) {
       try {

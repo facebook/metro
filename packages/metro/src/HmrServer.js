@@ -85,16 +85,16 @@ class HmrServer<TClient: Client> {
     this._clientGroups = new Map();
   }
 
-  async onClientConnect(
+  onClientConnect: (
     requestUrl: string,
     sendFn: (data: string) => void,
-  ): Promise<Client> {
+  ) => Promise<Client> = async (requestUrl, sendFn) => {
     return {
       sendFn,
       revisionIds: [],
       optedIntoHMR: false,
     };
-  }
+  };
 
   async _registerEntryPoint(
     client: Client,
@@ -121,7 +121,8 @@ class HmrServer<TClient: Client> {
       transformOptions.platform,
     );
     const resolvedEntryFilePath = resolutionFn(
-      this._config.projectRoot + '/.',
+      (this._config.server.unstable_serverRoot ?? this._config.projectRoot) +
+        '/.',
       entryFile,
     );
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
@@ -185,11 +186,11 @@ class HmrServer<TClient: Client> {
     send([sendFn], {type: 'bundle-registered'});
   }
 
-  async onClientMessage(
+  onClientMessage: (
     client: TClient,
     message: string,
     sendFn: (data: string) => void,
-  ): Promise<void> {
+  ) => Promise<void> = async (client, message, sendFn) => {
     let data: HmrClientMessage;
     try {
       data = JSON.parse(message);
@@ -224,17 +225,17 @@ class HmrServer<TClient: Client> {
       }
     }
     return Promise.resolve();
-  }
+  };
 
-  onClientError(client: TClient, e: ErrorEvent): void {
+  onClientError: (client: TClient, e: ErrorEvent) => void = (client, e) => {
     this._config.reporter.update({
       type: 'hmr_client_error',
       error: e.error,
     });
     this.onClientDisconnect(client);
-  }
+  };
 
-  onClientDisconnect(client: TClient): void {
+  onClientDisconnect: (client: TClient) => void = client => {
     client.revisionIds.forEach(revisionId => {
       const group = this._clientGroups.get(revisionId);
       if (group != null) {
@@ -246,7 +247,7 @@ class HmrServer<TClient: Client> {
         }
       }
     });
-  }
+  };
 
   async _handleFileChange(
     group: ClientGroup,
@@ -320,7 +321,8 @@ class HmrServer<TClient: Client> {
 
       const hmrUpdate = hmrJSBundle(delta, revision.graph, {
         createModuleId: this._createModuleId,
-        projectRoot: this._config.projectRoot,
+        projectRoot:
+          this._config.server.unstable_serverRoot ?? this._config.projectRoot,
         clientUrl: group.clientUrl,
       });
 

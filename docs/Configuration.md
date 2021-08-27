@@ -137,7 +137,7 @@ This option works similarly to how [$NODE_PATHS](https://nodejs.org/api/modules.
 
 Type: `?CustomResolver`
 
-An optional function used to resolve requests. Ignored when the request can be resolved through Haste. Particularly useful for cases where aliases are used. For example:
+An optional function used to resolve requests. Particularly useful for cases where aliases are used. For example:
 
 ```javascript
 resolveRequest: (context, realModuleName, platform, moduleName) => {

@@ -12,6 +12,7 @@
 
 const InspectorProxy = require('./InspectorProxy');
 
+const {parse} = require('url');
 // Runs new HTTP Server and attaches Inspector Proxy to it.
 // Requires are inlined here because we don't want to import them
 // when someone needs only InspectorProxy instance (without starting
@@ -24,7 +25,24 @@ function runInspectorProxy(port: number, projectRoot: string) {
 
   const httpServer = require('http').createServer(app);
   httpServer.listen(port, '127.0.0.1', () => {
-    inspectorProxy.addWebSocketListener(httpServer);
+    const websocketEndpoints = inspectorProxy.createWebSocketListeners(
+      httpServer,
+    );
+    httpServer.on('upgrade', (request, socket, head) => {
+      const {pathname} = parse(request.url);
+      if (pathname != null && websocketEndpoints[pathname]) {
+        websocketEndpoints[pathname].handleUpgrade(
+          request,
+          socket,
+          head,
+          ws => {
+            websocketEndpoints[pathname].emit('connection', ws, request);
+          },
+        );
+      } else {
+        socket.destroy();
+      }
+    });
   });
 }
 

@@ -70,10 +70,7 @@ function resolve(
     return resolveModulePath(context, absPath, platform);
   }
 
-  // The Haste resolution must occur before the custom resolver because we want
-  // to allow overriding imports. It could be part of the custom resolver, but
-  // that's not the case right now.
-  if (context.allowHaste && !isDirectImport) {
+  if (!resolveRequest && context.allowHaste && !isDirectImport) {
     const normalizedName = normalizePath(realModuleName);
     const result = resolveHasteName(context, normalizedName, platform);
     if (result.type === 'resolved') {

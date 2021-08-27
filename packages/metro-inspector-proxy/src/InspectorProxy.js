@@ -95,15 +95,21 @@ class InspectorProxy {
   }
 
   // Adds websocket listeners to the provided HTTP/HTTPS server.
-  addWebSocketListener(server: HttpServer | HttpsServer) {
+  createWebSocketListeners(
+    server: HttpServer | HttpsServer,
+  ): {
+    [path: string]: typeof WS.Server,
+  } {
     const {port} = server.address();
     if (server.address().family === 'IPv6') {
       this._serverAddressWithPort = `[::1]:${port}`;
     } else {
       this._serverAddressWithPort = `localhost:${port}`;
     }
-    this._addDeviceConnectionHandler(server);
-    this._addDebuggerConnectionHandler(server);
+    return {
+      [WS_DEVICE_URL]: this._createDeviceConnectionWSServer(),
+      [WS_DEBUGGER_URL]: this._createDebuggerConnectionWSServer(),
+    };
   }
 
   // Converts page information received from device into PageDescription object
@@ -151,16 +157,15 @@ class InspectorProxy {
   // HTTP GET params.
   // For each new websocket connection we parse device and app names and create
   // new instance of Device class.
-  _addDeviceConnectionHandler(server: HttpServer | HttpsServer) {
+  _createDeviceConnectionWSServer() {
     const wss = new WS.Server({
-      server,
-      path: WS_DEVICE_URL,
+      noServer: true,
       perMessageDeflate: true,
     });
     // $FlowFixMe[value-as-type]
-    wss.on('connection', async (socket: WS) => {
+    wss.on('connection', async (socket: WS, req) => {
       try {
-        const query = url.parse(socket.upgradeReq.url || '', true).query || {};
+        const query = url.parse(req.url || '', true).query || {};
         const deviceName = query.name || 'Unknown';
         const appName = query.app || 'Unknown';
         const deviceId = this._deviceCounter++;
@@ -180,23 +185,23 @@ class InspectorProxy {
         socket.close(INTERNAL_ERROR_CODE, e);
       }
     });
+    return wss;
   }
 
-  // Adds websocket handler for debugger connections.
+  // Returns websocket handler for debugger connections.
   // Debugger connects to webSocketDebuggerUrl that we return as part of page description
   // in /json response.
   // When debugger connects we try to parse device and page IDs from the query and pass
   // websocket object to corresponding Device instance.
-  _addDebuggerConnectionHandler(server: HttpServer | HttpsServer) {
+  _createDebuggerConnectionWSServer() {
     const wss = new WS.Server({
-      server,
-      path: WS_DEBUGGER_URL,
+      noServer: true,
       perMessageDeflate: false,
     });
     // $FlowFixMe[value-as-type]
-    wss.on('connection', async (socket: WS) => {
+    wss.on('connection', async (socket: WS, req) => {
       try {
-        const query = url.parse(socket.upgradeReq.url || '', true).query || {};
+        const query = url.parse(req.url || '', true).query || {};
         const deviceId = query.device;
         const pageId = query.page;
 
@@ -215,6 +220,7 @@ class InspectorProxy {
         socket.close(INTERNAL_ERROR_CODE, e);
       }
     });
+    return wss;
   }
 }
 
