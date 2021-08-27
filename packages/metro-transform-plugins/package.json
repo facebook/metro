@@ -1,6 +1,6 @@
 {
   "name": "metro-transform-plugins",
-  "version": "0.64.0",
+  "version": "0.66.2",
   "description": "🚇 Transform plugins for Metro.",
   "main": "src/index.js",
   "repository": {
@@ -13,16 +13,17 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@babel/core": "^7.0.0",
-    "@babel/generator": "^7.5.0",
+    "@babel/core": "^7.14.0",
+    "@babel/generator": "^7.14.0",
     "@babel/template": "^7.0.0",
-    "@babel/traverse": "^7.0.0",
+    "@babel/traverse": "^7.14.0",
     "nullthrows": "^1.1.1"
   },
   "devDependencies": {
     "@babel/code-frame": "^7.0.0",
     "@babel/plugin-syntax-nullish-coalescing-operator": "^7.0.0",
     "@babel/plugin-transform-flow-strip-types": "^7.0.0",
-    "metro": "0.64.0"
+    "@babel/types": "^7.0.0",
+    "metro": "0.66.2"
   }
 }

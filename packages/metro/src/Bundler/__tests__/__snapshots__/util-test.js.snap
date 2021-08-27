@@ -13,7 +13,12 @@ exports[`Util generates a local asset for a given descriptor 1`] = `
 `;
 
 exports[`Util generates a remote asset for a given descriptor 1`] = `
-"module.exports = {
+"const {
+  pickScale,
+  getUrlCacheBreaker
+} = require(\\"react-native-module/asset-utils\\");
+
+module.exports = {
   \\"width\\": 240,
   \\"height\\": 24,
   \\"uri\\": \\"https://example.com\\" + {
@@ -22,6 +27,6 @@ exports[`Util generates a remote asset for a given descriptor 1`] = `
     \\"3\\": \\"GMEgUgG9llQL8EUBAAAAAAB2uXdrbnsvAAAZ\\",
     \\"4\\": \\"GFleUAEiuVDxD5wGAAAAAAZWLd1dbnsvAAAZ\\",
     \\"1.5\\": \\"GAdeUAEMbQH8hyQGAAAAAAC9H193bnsvAAAZ\\"
-  }[require(\\"react-native-module/asset-resolver\\").pickScale([1, 1.5, 2, 3, 4])]
+  }[pickScale([1, 1.5, 2, 3, 4])] + getUrlCacheBreaker()
 };"
 `;

@@ -98,7 +98,7 @@ export type PostProcessModules = (
 ) => $ReadOnlyArray<Module>;
 
 export type OutputFnArg = {|
-  dependencyMapReservedName?: string,
+  dependencyMapReservedName?: ?string,
   filename: string,
   globalPrefix: string,
   idsForPath: IdsForPathFn,
@@ -138,12 +138,15 @@ export type ConcreteTransformResult = {
   type: 'concrete',
   code: string,
   dependencies: $ReadOnlyArray<TransformResultDependency>,
-  dependencyMapName?: string,
   map: ?BasicSourceMap,
-  requireName: string,
   soundResources?: ?Array<string>,
+
+  // NOTE: requireName, importNames and dependencyMapName are only used by the
+  // optimizer. They are deleted when the transform result is serialized to
+  // JSON.
+  dependencyMapName?: string,
+  requireName?: string,
   importNames?: ImportNames,
-  isESModule?: true,
 };
 
 export type LinkedTransformResult = $ReadOnly<{
@@ -161,56 +164,69 @@ export type TransformedCodeFile = {|
   +file: string,
   +functionMap: ?FBSourceFunctionMap,
   +hasteID: ?string,
-  package?: PackageData,
+  +package?: PackageData,
   +transformed: TransformResults,
   +type: CodeFileTypes,
 |};
 
 export type ImageSize = {|+width: number, +height: number|};
 
-export type AssetFile = {|
-  /**
-   * The path of the asset that is shared by all potential variants
-   * of this asset. For example `foo/bar@3x.png` would have the
-   * asset path `foo/bar.png`.
-   */
-  +assetPath: string,
+export type AssetFileVariant = $ReadOnly<{
   /**
    * The content is encoded in Base64 so that it can be stored in JSON files,
    * that are used to communicate between different commands of a Buck
    * build worker, for example.
    */
-  +contentBase64: string,
-  /**
-   * Guessed from the file extension, for example `png` or `html`.
-   */
-  +contentType: string,
+  contentBase64: string,
   /**
    * Hash of the asset file content.
    */
-  +hash: string,
+  hash: string,
   /**
    * The path of the original file for this asset. For example
    * `foo/bar@3x.ios.png`. This is most useful for reporting purposes, such as
    * error messages.
    */
-  +filePath: string,
+  filePath: string,
   /**
    * If the asset is an image, this contain the size in physical pixels (ie.
-   * regarless of whether it's a `@2x` or `@3x` version of a smaller image).
+   * scale * logical pixels).
    */
-  +physicalSize: ?ImageSize,
+  physicalSize: ?ImageSize,
   /**
    * The platform this asset is designed for, for example `ios` if the file name
    * is `foo.ios.js`. `null` if the asset is not platform-specific.
    */
-  +platform: ?string,
+  platform: ?string,
   /**
    * The scale this asset is designed for, for example `2`
    * if the file name is `foo@2x.png`.
    */
-  +scale: number,
-|};
+  scale: number,
+}>;
+
+// A *virtual* asset file ( = one generated JS module in the bundle)
+// representing one or more asset variants ( = physical input files).
+export type AssetFile = $ReadOnly<{
+  /**
+   * The path of the asset that is shared by all potential variants
+   * of this asset. For example `foo/bar@3x.png` would have the
+   * asset path `foo/bar.png`.
+   */
+  assetPath: string,
+
+  /**
+   * Guessed from the file extension, for example `png` or `html`.
+   */
+  contentType: string,
+
+  /**
+   * The source files for this asset.
+   * TODO(moti): Guarantee that an AssetFile has *all* the source files for a
+   * given asset.
+   */
+  variants: $ReadOnlyArray<AssetFileVariant>,
+}>;
 
 export type TransformedSourceFile =
   | {|

@@ -65,6 +65,8 @@ module.exports = class HasteFS {
   matches(directory: string, pattern: RegExp): Array<string> {
     const entries = this.directoryEntries.get(directory);
 
+    // $FlowFixMe[method-unbinding] added when improving typing for this parameters
+    // $FlowFixMe[incompatible-call]
     return entries ? entries.filter(pattern.test, pattern) : [];
   }
 };

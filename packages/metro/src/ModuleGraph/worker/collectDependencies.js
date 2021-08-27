@@ -71,7 +71,7 @@ export type State<TSplitCondition> = {
 
 export type Options<TSplitCondition = void> = $ReadOnly<{
   asyncRequireModulePath: string,
-  dependencyMapName?: string,
+  dependencyMapName: ?string,
   dynamicRequires: DynamicRequiresBehavior,
   inlineableCalls: $ReadOnlyArray<string>,
   keepRequireNames: boolean,

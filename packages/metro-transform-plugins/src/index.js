@@ -10,38 +10,43 @@
 
 'use strict';
 
-import type {Visitors as ConstantFoldingPluginVisitors} from './constant-folding-plugin';
-import type {Visitors as ImportExportPluginVisitors} from './import-export-plugin';
-import type {
-  Visitors as InlinePluginVisitors,
-  Options as InlinePluginOptions,
-} from './inline-plugin';
-// Type only import, no runtime dependency
-// eslint-disable-next-line import/no-extraneous-dependencies
-import typeof * as Types from '@babel/types';
+import typeof ConstantFoldingPlugin from './constant-folding-plugin';
+import typeof ImportExportPlugin from './import-export-plugin';
+import typeof InlinePlugin from './inline-plugin';
+import typeof NormalizePseudoGlobalsFn from './normalizePseudoGlobals';
 
 export type {Options as InlinePluginOptions} from './inline-plugin';
 
-type BabelPlugin<VisitorT, OptionsT> = (
-  context: {types: Types, ...},
-  options: OptionsT,
-) => VisitorT;
-
 type TransformPlugins = {
   addParamsToDefineCall(string, ...Array<mixed>): string,
-  constantFoldingPlugin: BabelPlugin<ConstantFoldingPluginVisitors, {}>,
-  importExportPlugin: BabelPlugin<ImportExportPluginVisitors, {}>,
-  inlinePlugin: BabelPlugin<InlinePluginVisitors, InlinePluginOptions>,
-  normalizePseudoGlobals(ast: BabelNode): $ReadOnlyArray<string>,
+  constantFoldingPlugin: ConstantFoldingPlugin,
+  importExportPlugin: ImportExportPlugin,
+  inlinePlugin: InlinePlugin,
+  normalizePseudoGlobals: NormalizePseudoGlobalsFn,
   getTransformPluginCacheKeyFiles(): $ReadOnlyArray<string>,
 };
 
 module.exports = ({
-  addParamsToDefineCall: require('./addParamsToDefineCall'),
-  constantFoldingPlugin: require('./constant-folding-plugin'),
-  importExportPlugin: require('./import-export-plugin'),
-  inlinePlugin: require('./inline-plugin'),
-  normalizePseudoGlobals: require('./normalizePseudoGlobals'),
+  // $FlowIgnore[unsafe-getters-setters]
+  get addParamsToDefineCall() {
+    return require('./addParamsToDefineCall');
+  },
+  // $FlowIgnore[unsafe-getters-setters]
+  get constantFoldingPlugin() {
+    return require('./constant-folding-plugin');
+  },
+  // $FlowIgnore[unsafe-getters-setters]
+  get importExportPlugin() {
+    return require('./import-export-plugin');
+  },
+  // $FlowIgnore[unsafe-getters-setters]
+  get inlinePlugin() {
+    return require('./inline-plugin');
+  },
+  // $FlowIgnore[unsafe-getters-setters]
+  get normalizePseudoGlobals() {
+    return require('./normalizePseudoGlobals');
+  },
   getTransformPluginCacheKeyFiles: () => [
     require.resolve(__filename),
     require.resolve('./constant-folding-plugin'),

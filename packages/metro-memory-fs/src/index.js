@@ -196,7 +196,7 @@ class MemoryFs {
   _pathSep: string;
   _cwd: ?() => string;
   constants: any = constants;
-  promises: {[funcName: string]: (...args: Array<*>) => Promise<*>, ...};
+  promises: {[funcName: string]: (...args: Array<any>) => Promise<any>, ...};
   Dirent: typeof Dirent = Dirent;
 
   close: (fd: number, callback: (error: ?Error) => mixed) => void;
@@ -581,6 +581,7 @@ class MemoryFs {
     if (encoding == 'buffer') {
       return buf;
     }
+    // $FlowFixMe[incompatible-call]
     return buf.toString(encoding);
   };
 
@@ -856,10 +857,12 @@ class MemoryFs {
     const ffd = fd;
     const {readSync} = this;
     const ropt = {filePath, encoding, fd, highWaterMark, start, end, readSync};
+    // $FlowFixMe[incompatible-call]
     const rst = new ReadFileSteam(ropt);
     st = rst;
     if (autoClose !== false) {
       const doClose = () => {
+        // $FlowFixMe[incompatible-call]
         this.closeSync(ffd);
         rst.emit('close');
       };
@@ -1027,6 +1030,7 @@ class MemoryFs {
           flags?: string,
           mode?: number,
           start?: number,
+          emitClose?: boolean,
           ...
         }
       | Encoding,
@@ -1037,6 +1041,7 @@ class MemoryFs {
           autoClose?: boolean,
           encoding?: Encoding,
           fd?: ?number,
+          emitClose?: boolean,
           flags?: string,
           mode?: number,
           start?: number,
@@ -1044,9 +1049,9 @@ class MemoryFs {
         }
       | Encoding,
   ) => {
-    let autoClose, fd, flags, mode, start;
+    let autoClose, fd, flags, mode, start, emitClose;
     if (typeof options !== 'string' && options != null) {
-      ({autoClose, fd, flags, mode, start} = options);
+      ({autoClose, fd, flags, mode, start, emitClose} = options);
     }
     let st = null;
     if (fd == null) {
@@ -1054,13 +1059,21 @@ class MemoryFs {
       process.nextTick(() => (st: any).emit('open', fd));
     }
     const ffd = fd;
-    const ropt = {fd, writeSync: this._write.bind(this), filePath, start};
+    const ropt = {
+      fd,
+      // $FlowFixMe[method-unbinding] added when improving typing for this parameters
+      writeSync: this._write.bind(this),
+      filePath,
+      start,
+      emitClose: emitClose ?? false,
+    };
+    // $FlowFixMe[incompatible-call]
     const rst = new WriteFileStream(ropt);
     st = rst;
     if (autoClose !== false) {
       const doClose = () => {
+        // $FlowFixMe[incompatible-call]
         this.closeSync(ffd);
-        rst.emit('close');
       };
       rst.on('finish', doClose);
       rst.on('error', doClose);
@@ -1570,9 +1583,10 @@ class WriteFileStream extends stream.Writable {
     filePath: FilePath,
     writeSync: WriteSync,
     start?: number,
+    emitClose?: boolean,
     ...
   }) {
-    super();
+    super({emitClose: opts.emitClose, autoDestroy: true});
     this.path = opts.filePath;
     this.bytesWritten = 0;
     this._fd = opts.fd;

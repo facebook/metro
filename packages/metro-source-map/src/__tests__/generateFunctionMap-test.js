@@ -23,6 +23,7 @@ const {
 function getAst(source) {
   return parse(source, {
     plugins: ['classProperties', 'dynamicImport', 'jsx', 'flow'],
+    sourceType: 'unambiguous',
   });
 }
 
@@ -1259,6 +1260,7 @@ function parent2() {
             column: prev.start.column + 1,
             source: 'input.js',
           }),
+          // $FlowFixMe[incompatible-use]
         ).toBe(prev.name);
 
         expect(
@@ -1267,6 +1269,7 @@ function parent2() {
             column: column - 1,
             source: 'input.js',
           }),
+          // $FlowFixMe[incompatible-use]
         ).toBe(prev.name);
       }
       expect(consumer.functionNameFor({line, column, source: 'input.js'})).toBe(
@@ -1281,6 +1284,7 @@ function parent2() {
           column: 99999,
           source: 'input.js',
         }),
+        // $FlowFixMe[incompatible-use]
       ).toBe(prev.name);
     }
   });
@@ -1298,6 +1302,72 @@ function parent2() {
         "mappings": "AAA",
         "names": Array [
           "Foo",
+        ],
+      }
+    `);
+  });
+
+  it('infers a name for the default export', () => {
+    const ast = getAst('export default function() {}');
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      default from 1:15
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA,eC",
+        "names": Array [
+          "<global>",
+          "default",
+        ],
+      }
+    `);
+  });
+
+  it('infers a name for methods of the default export', () => {
+    const ast = getAst('export default class {foo() {}}');
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      default from 1:15
+      default#foo from 1:22
+      default from 1:30
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA,eC,OC,QD",
+        "names": Array [
+          "<global>",
+          "default",
+          "default#foo",
+        ],
+      }
+    `);
+  });
+
+  it("prefers the default export's name where available", () => {
+    const ast = getAst('export default class Foo {bar() {}}');
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      Foo from 1:15
+      Foo#bar from 1:26
+      Foo from 1:34
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA,eC,WC,QD",
+        "names": Array [
+          "<global>",
+          "Foo",
+          "Foo#bar",
         ],
       }
     `);

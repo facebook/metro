@@ -100,6 +100,7 @@ class Terminal {
   constructor(stream: UnderlyingStream) {
     this._logLines = [];
     this._nextStatusStr = '';
+    // $FlowFixMe[method-unbinding] added when improving typing for this parameters
     this._scheduleUpdate = throttle(this._update, 33);
     this._statusStr = '';
     this._stream = stream;

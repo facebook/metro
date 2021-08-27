@@ -9,9 +9,7 @@
 
 'use strict';
 
-const stringifyValidator = require('@babel/types/scripts/utils/stringifyValidator');
 const t = require('@babel/types');
-const toFunctionName = require('@babel/types/scripts/utils/toFunctionName');
 
 // This file is a copy of https://raw.githubusercontent.com/MichaReiser/babel/babel-types-flow-types/packages/babel-types/scripts/generators/flow.js
 // The goal is to remove this file after the PR has been merged into the babel repository.
@@ -133,14 +131,16 @@ for (let i = 0; i < t.TYPES.length; i++) {
   const type = t.TYPES[i];
   let decl = `declare export function is${type}(node: ?Object, opts?: ?Object): boolean`;
 
-  if (t.NODE_FIELDS[type]) {
-    decl += ` %checks (node != null && node.type === '${type}');`;
-  } else if (t.FLIPPED_ALIAS_KEYS[type]) {
-    const types = t.FLIPPED_ALIAS_KEYS[type];
+  const realName = t.DEPRECATED_KEYS[type] ?? type;
+
+  if (t.NODE_FIELDS[realName]) {
+    decl += ` %checks (node != null && node.type === '${realName}');`;
+  } else if (t.FLIPPED_ALIAS_KEYS[realName]) {
+    const types = t.FLIPPED_ALIAS_KEYS[realName];
     const checks = types.map(t => `node.type === '${t}'`).join(' || ');
     decl += ` %checks (node != null && (${checks}));`;
   } else {
-    decl += ';';
+    continue;
   }
 
   lines.push(decl);
@@ -290,3 +290,77 @@ code += `\ndeclare module "@babel/types" {
 }\n`;
 
 process.stdout.write(code);
+
+// Copied from https://raw.githubusercontent.com/babel/babel/main/packages/babel-types/scripts/utils/stringifyValidator.js
+function stringifyValidator(validator, nodePrefix: string): string {
+  if (validator === undefined) {
+    return 'any';
+  }
+
+  if (validator.each) {
+    return `Array<${stringifyValidator(validator.each, nodePrefix)}>`;
+  }
+
+  if (validator.chainOf) {
+    return stringifyValidator(validator.chainOf[1], nodePrefix);
+  }
+
+  if (validator.oneOf) {
+    return validator.oneOf.map(JSON.stringify).join(' | ');
+  }
+
+  if (validator.oneOfNodeTypes) {
+    return validator.oneOfNodeTypes.map(_ => nodePrefix + _).join(' | ');
+  }
+
+  if (validator.oneOfNodeOrValueTypes) {
+    return validator.oneOfNodeOrValueTypes
+      .map(_ => {
+        return isValueType(_) ? _ : nodePrefix + _;
+      })
+      .join(' | ');
+  }
+
+  if (validator.type) {
+    return validator.type;
+  }
+
+  if (validator.shapeOf) {
+    return (
+      '{ ' +
+      Object.keys(validator.shapeOf)
+        .map(shapeKey => {
+          const propertyDefinition = validator.shapeOf[shapeKey];
+          if (propertyDefinition.validate) {
+            const isOptional =
+              propertyDefinition.optional || propertyDefinition.default != null;
+            return (
+              shapeKey +
+              (isOptional ? '?: ' : ': ') +
+              stringifyValidator(propertyDefinition.validate)
+            );
+          }
+          return null;
+        })
+        .filter(Boolean)
+        .join(', ') +
+      ' }'
+    );
+  }
+
+  return ['any'];
+}
+
+/**
+ * Heuristic to decide whether or not the given type is a value type (eg. "null")
+ * or a Node type (eg. "Expression").
+ */
+function isValueType(type: string): boolean {
+  return type.charAt(0).toLowerCase() === type.charAt(0);
+}
+
+// Copied from https://raw.githubusercontent.com/babel/babel/main/packages/babel-types/scripts/utils/toFunctionName.js
+function toFunctionName(typeName: string): string {
+  const _ = typeName.replace(/^TS/, 'ts').replace(/^JSX/, 'jsx');
+  return _.slice(0, 1).toLowerCase() + _.slice(1);
+}

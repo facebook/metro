@@ -23,11 +23,11 @@ const transformHelpers = require('./lib/transformHelpers');
 
 import type {
   Options as DeltaBundlerOptions,
+  TransformInputOptions,
   Dependencies,
 } from './DeltaBundler/types.flow';
 import type {DeltaResult, Module, Graph} from './DeltaBundler';
 import type {GraphId} from './lib/getGraphId';
-import type {TransformInputOptions} from './lib/transformHelpers';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 export opaque type RevisionId: string = string;
@@ -121,6 +121,7 @@ class IncrementalBundler {
         this._config,
         transformOptions,
       ),
+      transformOptions,
       onProgress: otherOptions.onProgress,
       experimentalImportBundleSupport: this._config.transformer
         .experimentalImportBundleSupport,
@@ -161,6 +162,7 @@ class IncrementalBundler {
           this._config,
           transformOptions,
         ),
+        transformOptions,
         onProgress: otherOptions.onProgress,
         experimentalImportBundleSupport: this._config.transformer
           .experimentalImportBundleSupport,

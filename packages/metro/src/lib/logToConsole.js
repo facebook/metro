@@ -13,13 +13,19 @@
 'use strict';
 
 const chalk = require('chalk');
+const util = require('util');
 
 import type {Terminal} from 'metro-core';
 
 const groupStack = [];
 let collapsedGuardTimer;
 
-module.exports = (terminal: Terminal, level: string, ...data: Array<mixed>) => {
+module.exports = (
+  terminal: Terminal,
+  level: string,
+  mode: 'BRIDGE' | 'NOBRIDGE',
+  ...data: Array<mixed>
+) => {
   const logFunction = console[level] && level !== 'trace' ? level : 'log';
   const color =
     level === 'error'
@@ -58,10 +64,17 @@ module.exports = (terminal: Terminal, level: string, ...data: Array<mixed>) => {
     if (typeof lastItem === 'string') {
       data[data.length - 1] = lastItem.trimEnd();
     }
+
+    const modePrefix =
+      !mode || mode == 'BRIDGE' ? '' : `(${mode.toUpperCase()}) `;
     terminal.log(
-      color.bold(` ${logFunction.toUpperCase()} `) +
+      color.bold(` ${modePrefix}${logFunction.toUpperCase()} `) +
         ''.padEnd(groupStack.length * 2, ' '),
-      ...data,
+      // `util.format` actually accepts any arguments.
+      // If the first argument is a string, it tries to format it.
+      // Otherwise, it just concatenates all arguments.
+      // $FlowIssue[incompatible-call] util.format expected the first argument to be a string
+      util.format(...data),
     );
   }
 };

@@ -30,15 +30,15 @@ class FileStore<T> {
     this._createDirs();
   }
 
-  get(key: Buffer): ?T {
+  async get(key: Buffer): Promise<?T> {
     try {
-      const data = fs.readFileSync(this._getFilePath(key));
+      const data = await fs.promises.readFile(this._getFilePath(key));
 
       if (data[0] === NULL_BYTE) {
         return (data.slice(1): any);
-      } else {
-        return JSON.parse(data.toString('utf8'));
       }
+
+      return JSON.parse(data.toString('utf8'));
     } catch (err) {
       if (err.code === 'ENOENT' || err instanceof SyntaxError) {
         return null;
@@ -48,34 +48,28 @@ class FileStore<T> {
     }
   }
 
-  set(key: Buffer, value: T): void {
+  async set(key: Buffer, value: T): Promise<void> {
     const filePath = this._getFilePath(key);
     try {
-      this._set(filePath, value);
+      await this._set(filePath, value);
     } catch (err) {
       if (err.code === 'ENOENT') {
         mkdirp.sync(path.dirname(filePath));
-        this._set(filePath, value);
+        await this._set(filePath, value);
       } else {
         throw err;
       }
     }
   }
 
-  _set(filePath: string, value: T): void {
+  async _set(filePath: string, value: T): Promise<void> {
+    let content;
     if (value instanceof Buffer) {
-      const fd = fs.openSync(filePath, 'w');
-
-      fs.writeSync(fd, NULL_BYTE_BUFFER);
-      fs.writeSync(fd, value);
-
-      fs.closeSync(fd);
+      content = Buffer.concat([NULL_BYTE_BUFFER, value]);
     } else {
-      /* $FlowFixMe(>=0.95.0 site=react_native_fb) This comment suppresses an
-       * error found when Flow v0.95 was deployed. To see the error, delete
-       * this comment and run Flow. */
-      fs.writeFileSync(filePath, JSON.stringify(value));
+      content = JSON.stringify(value) ?? JSON.stringify(null);
     }
+    await fs.promises.writeFile(filePath, content);
   }
 
   clear() {

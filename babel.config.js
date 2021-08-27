@@ -17,31 +17,22 @@ const fs = require('fs');
 /*::
 import type {BabelCoreOptions} from '@babel/core';
 */
-
 const plugins = [
-  '@babel/plugin-proposal-object-rest-spread',
-  '@babel/plugin-transform-async-to-generator',
-  '@babel/plugin-transform-destructuring',
   '@babel/plugin-transform-flow-strip-types',
-  '@babel/plugin-syntax-dynamic-import',
-  '@babel/plugin-proposal-nullish-coalescing-operator',
-  '@babel/plugin-proposal-optional-chaining',
-
-  // TODO: Check if plugins from the list below are actually in use
-  '@babel/plugin-proposal-class-properties',
+  '@babel/plugin-proposal-nullish-coalescing-operator', // Node 14
+  '@babel/plugin-proposal-optional-chaining', // Node 14
   '@babel/plugin-transform-modules-commonjs',
-  '@babel/plugin-transform-parameters',
-  '@babel/plugin-transform-react-jsx',
-  '@babel/plugin-transform-spread',
+  '@babel/plugin-syntax-class-properties',
 ];
 
-const presets = ['babel-preset-jest'];
+const presets = [];
 
 function getConfig(api /*: any */) /*: BabelCoreOptions */ {
   api.cache.never();
 
   return {
     babelrc: false,
+    browserslistConfigFile: false,
     presets: presets.map(preset => require.resolve(preset)),
     plugins: plugins.map(plugin => require.resolve(plugin)),
   };

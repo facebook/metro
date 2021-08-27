@@ -66,6 +66,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     rewriteRequestUrl: url => url,
     runInspectorProxy: true,
     verifyConnections: false,
+    unstable_serverRoot: null,
   },
 
   symbolicator: {
@@ -91,6 +92,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
       ramGroups: [],
     }),
     globalPrefix: '',
+    hermesParser: false,
     minifierConfig: {
       mangle: {
         toplevel: false,
@@ -111,11 +113,16 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     },
     minifierPath: DEFAULT_METRO_MINIFIER_PATH,
     optimizationSizeLimit: 150 * 1024, // 150 KiB.
-    postMinifyProcess: x => x,
     transformVariants: {default: {}},
     workerPath: 'metro/src/DeltaBundler/Worker',
     publicPath: '/assets',
     allowOptionalDependencies: false,
+    unstable_collectDependenciesPath:
+      'metro/src/ModuleGraph/worker/collectDependencies.js',
+    unstable_dependencyMapReservedName: null,
+    unstable_disableModuleWrapping: false,
+    unstable_disableNormalizePseudoGlobals: false,
+    unstable_compactOutput: false,
   },
   cacheStores: [
     new FileStore({

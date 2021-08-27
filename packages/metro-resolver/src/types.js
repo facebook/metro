@@ -72,7 +72,8 @@ export type FileContext = {
   ...
 };
 
-export type FileOrDirContext = FileContext & {
+export type FileOrDirContext = {
+  ...FileContext,
   /**
    * This should return the path of the "main" module of the specified
    * `package.json` file, after post-processing: for example, applying the
@@ -86,7 +87,8 @@ export type FileOrDirContext = FileContext & {
   ...
 };
 
-export type HasteContext = FileOrDirContext & {
+export type HasteContext = {
+  ...FileOrDirContext,
   /**
    * Given a name, this should return the full path to the file that provides
    * a Haste module of that name. Ex. for `Foo` it may return `/smth/Foo.js`.
@@ -101,7 +103,8 @@ export type HasteContext = FileOrDirContext & {
   ...
 };
 
-export type ModulePathContext = FileOrDirContext & {
+export type ModulePathContext = {
+  ...FileOrDirContext,
   /**
    * Full path of the module that is requiring or importing the module to be
    * resolved.
@@ -110,18 +113,18 @@ export type ModulePathContext = FileOrDirContext & {
   ...
 };
 
-export type ResolutionContext = ModulePathContext &
-  HasteContext & {
-    allowHaste: boolean,
-    extraNodeModules: ?{[string]: string, ...},
-    originModulePath: string,
-    resolveRequest?: ?CustomResolver,
-    ...
-  };
+export type ResolutionContext = {
+  ...HasteContext,
+  allowHaste: boolean,
+  extraNodeModules: ?{[string]: string, ...},
+  originModulePath: string,
+  resolveRequest?: ?CustomResolver,
+  ...
+};
 
 export type CustomResolver = (
-  ResolutionContext,
-  string,
-  string | null,
-  string | null,
+  context: ResolutionContext,
+  realModuleName: string,
+  platform: string | null,
+  moduleName: string,
 ) => Resolution;

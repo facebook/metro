@@ -11,87 +11,112 @@
 'use strict';
 
 const traverse = require('@babel/traverse').default;
+const nullthrows = require('nullthrows');
 
-import type {NodePath} from '@babel/traverse';
+import type {NodePath, Scope} from '@babel/traverse';
 import type {Program} from '@babel/types';
 
-function normalizePseudoglobals(ast: BabelNode): $ReadOnlyArray<string> {
-  let pseudoglobals: Array<string> = [];
-  const reserved = [];
-  let params = null;
-  let body: ?NodePath<> = null;
+export type Options = {
+  reservedNames: $ReadOnlyArray<string>,
+};
 
+function normalizePseudoglobals(
+  ast: BabelNode,
+  options?: Options,
+): $ReadOnlyArray<string> {
+  const reservedNames = new Set(options?.reservedNames ?? []);
+  const renamedParamNames = [];
   traverse(ast, {
-    Program: {
-      enter(path: NodePath<Program>): void {
-        params = path.get('body.0.expression.arguments.0.params');
-        const bodyPath = path.get('body.0.expression.arguments.0.body');
+    Program(path: NodePath<Program>): void {
+      const params = path.get('body.0.expression.arguments.0.params');
+      const body = path.get('body.0.expression.arguments.0.body');
 
-        if (!bodyPath || Array.isArray(bodyPath) || !Array.isArray(params)) {
-          params = null;
-          body = null;
+      if (!body || Array.isArray(body) || !Array.isArray(params)) {
+        path.stop();
+        return;
+      }
 
-          return;
-        } else {
-          body = bodyPath;
-        }
-
+      const pseudoglobals: Array<string> = params
         // $FlowFixMe Flow error uncovered by typing Babel more strictly
-        pseudoglobals = params.map(path => path.node.name);
+        .map(path => path.node.name)
+        .filter(name => !reservedNames.has(name));
 
-        for (let i = 0; i < pseudoglobals.length; i++) {
-          // Try finding letters that are semantically relatable to the name
-          // of the variable given. For instance, in XMLHttpRequest, it will
-          // first match "X", then "H", then "R".
-          const regexp = /^[^A-Za-z]*([A-Za-z])|([A-Z])[a-z]|([A-Z])[A-Z]+$/g;
-          let match;
+      const usedShortNames = new Set<string>();
+      const namePairs: Array<[string, string]> = pseudoglobals.map(fullName => [
+        fullName,
+        getShortName(fullName, usedShortNames),
+      ]);
 
-          while ((match = regexp.exec(pseudoglobals[i]))) {
-            const name = (match[1] || match[2] || match[3] || '').toLowerCase();
-
-            if (!name) {
-              throw new ReferenceError(
-                'Could not identify any valid name for ' + pseudoglobals[i],
-              );
-            }
-
-            if (reserved.indexOf(name) === -1) {
-              reserved[i] = name;
-              break;
-            }
-          }
-        }
-
-        if (new Set(reserved).size !== pseudoglobals.length) {
+      for (const [fullName, shortName] of namePairs) {
+        if (reservedNames.has(shortName)) {
           throw new ReferenceError(
-            'Shortened variables are not unique: ' + reserved.join(', '),
+            'Could not reserve the identifier ' +
+              shortName +
+              ' because it is the short name for ' +
+              fullName,
           );
         }
-      },
-
-      exit(path: NodePath<>): void {
-        reserved.forEach((shortName: string, i: number) => {
-          if (pseudoglobals[i] && shortName && body && params) {
-            body.scope.rename(pseudoglobals[i], shortName);
-          }
-        });
-      },
-    },
-
-    Scope(path: NodePath<>): void {
-      path.scope.crawl();
-
-      if (body && params && path.node !== body.node) {
-        reserved.forEach((shortName: string, i: number) => {
-          if (pseudoglobals[i] && shortName) {
-            path.scope.rename(shortName, path.scope.generateUid(shortName));
-          }
-        });
+        renamedParamNames.push(rename(fullName, shortName, body.scope));
       }
+
+      path.stop();
     },
   });
 
-  return reserved;
+  return renamedParamNames;
+}
+
+function getShortName(fullName: string, usedNames: Set<string>): string {
+  // Try finding letters that are semantically relatable to the name
+  // of the variable given. For instance, in XMLHttpRequest, it will
+  // first match "X", then "H", then "R".
+  const regexp = /^[^A-Za-z]*([A-Za-z])|([A-Z])[a-z]|([A-Z])[A-Z]+$/g;
+  let match;
+
+  while ((match = regexp.exec(fullName))) {
+    const name = (match[1] || match[2] || match[3] || '').toLowerCase();
+
+    if (!name) {
+      throw new ReferenceError(
+        'Could not identify any valid name for ' + fullName,
+      );
+    }
+
+    if (!usedNames.has(name)) {
+      usedNames.add(name);
+      return name;
+    }
+  }
+
+  throw new ReferenceError(
+    `Unable to determine short name for ${fullName}. The variables are not unique: ${Array.from(
+      usedNames,
+    ).join(', ')}`,
+  );
+}
+
+function rename(fullName: string, shortName: string, scope: Scope): string {
+  let unusedName = shortName;
+
+  // `generateUid` generates a name of the form name_ even if there was no conflict which we don't want.
+  // Check if the desired name was never used and in that case proceed and only use `generateUid` if there's a
+  // name clash.
+  if (
+    scope.hasLabel(shortName) ||
+    scope.hasBinding(shortName) ||
+    scope.hasGlobal(shortName) ||
+    scope.hasReference(shortName)
+  ) {
+    unusedName = scope.generateUid(shortName);
+
+    const programScope = scope.getProgramParent();
+    nullthrows(programScope.references)[shortName] = true;
+    nullthrows(programScope.uids)[shortName] = true;
+  }
+
+  scope.rename(fullName, unusedName);
+
+  return unusedName;
 }
 
 module.exports = normalizePseudoglobals;

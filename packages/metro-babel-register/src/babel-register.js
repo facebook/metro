@@ -28,11 +28,11 @@ function config(onlyList, options) {
     babelrc: false,
     compact: false,
     configFile: false,
+    browserslistConfigFile: false,
     ignore: null,
     only: _only,
     plugins: [
       [require('@babel/plugin-transform-flow-strip-types').default],
-      [require('@babel/plugin-proposal-class-properties').default],
       [
         require('@babel/plugin-transform-modules-commonjs').default,
         {
@@ -41,6 +41,7 @@ function config(onlyList, options) {
       ],
       [require('@babel/plugin-proposal-nullish-coalescing-operator').default],
       [require('@babel/plugin-proposal-optional-chaining').default],
+      [require('@babel/plugin-syntax-class-properties').default],
     ],
     presets: [],
     retainLines: true,

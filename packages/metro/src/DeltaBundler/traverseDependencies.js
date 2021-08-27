@@ -272,6 +272,7 @@ async function processModule<T>(
   } catch (err) {
     // If there is an error, restore the previous dependency list.
     // This ensures we don't skip over them during the next traversal attempt.
+    // $FlowFixMe[cannot-write]
     module.dependencies = previousDependencies;
     throw err;
   }

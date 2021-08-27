@@ -365,13 +365,9 @@ function loadModuleImplementation(
     throw moduleThrewError(moduleId, module.error);
   }
 
-  // `metroRequire` calls into the require polyfill itself are not analyzed and
-  // replaced so that they use numeric module IDs.
-  // The systrace module will expose itself on the metroRequire function so that
-  // it can be used here.
-  // TODO(t9759686) Scan polyfills for dependencies, too
   if (__DEV__) {
-    var {Systrace, Refresh} = metroRequire;
+    var Systrace = requireSystrace();
+    var Refresh = requireRefresh();
   }
 
   // We must optimistically mark module as initialized before running the
@@ -385,7 +381,7 @@ function loadModuleImplementation(
   }
   try {
     if (__DEV__) {
-      // $FlowFixMe: we know that __DEV__ is const and `Systrace` exists
+      // $FlowIgnore: we know that __DEV__ is const and `Systrace` exists
       Systrace.beginEvent('JS_require_' + (module.verboseName || moduleId));
     }
 
@@ -428,7 +424,7 @@ function loadModuleImplementation(
     }
 
     if (__DEV__) {
-      // $FlowFixMe: we know that __DEV__ is const and `Systrace` exists
+      // $FlowIgnore: we know that __DEV__ is const and `Systrace` exists
       Systrace.endEvent();
 
       if (Refresh != null) {
@@ -481,7 +477,6 @@ if (__DEV__) {
     beginEvent: (): void => {},
     endEvent: (): void => {},
   };
-
   metroRequire.getModules = (): ModuleList => {
     return modules;
   };
@@ -528,7 +523,7 @@ if (__DEV__) {
       return;
     }
 
-    const {Refresh} = metroRequire;
+    const Refresh = requireRefresh();
     const refreshBoundaryIDs = new Set();
 
     // In this loop, we will traverse the dependency tree upwards from the
@@ -823,8 +818,7 @@ if (__DEV__) {
     ) {
       window.location.reload();
     } else {
-      // This is attached in setUpDeveloperTools.
-      const {Refresh} = metroRequire;
+      const Refresh = requireRefresh();
       if (Refresh != null) {
         const sourceName = modules.source?.verboseName ?? 'unknown';
         const failedName = modules.failed?.verboseName ?? 'unknown';
@@ -928,4 +922,24 @@ if (__DEV__) {
   };
 
   global.__accept = metroHotUpdateModule;
+}
+
+if (__DEV__) {
+  // The metro require polyfill can not have module dependencies.
+  // The Systrace and ReactRefresh dependencies are, therefore, made publicly
+  // available. Ideally, the dependency would be inversed in a way that
+  // Systrace / ReactRefresh could integrate into Metro rather than
+  // having to make them publicly available.
+
+  var requireSystrace = function requireSystrace() {
+    return (
+      global[__METRO_GLOBAL_PREFIX__ + '__SYSTRACE'] || metroRequire.Systrace
+    );
+  };
+
+  var requireRefresh = function requireRefresh() {
+    return (
+      global[__METRO_GLOBAL_PREFIX__ + '__ReactRefresh'] || metroRequire.Refresh
+    );
+  };
 }

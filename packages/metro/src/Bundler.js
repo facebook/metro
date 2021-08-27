@@ -33,6 +33,7 @@ class Bundler {
       .then((dependencyGraph: DependencyGraph) => {
         this._transformer = new Transformer(
           config,
+          // $FlowFixMe[method-unbinding] added when improving typing for this parameters
           dependencyGraph.getSha1.bind(dependencyGraph),
         );
       })

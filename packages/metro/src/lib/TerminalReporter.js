@@ -45,11 +45,11 @@ export type TerminalReportableEvent =
 
 type BuildPhase = 'in_progress' | 'done' | 'failed';
 
-type SnippetError = ErrnoError & {
-  filename?: string,
-  snippet?: string,
-  ...
-};
+type SnippetError = ErrnoError &
+  interface {
+    filename?: string,
+    snippet?: string,
+  };
 
 const GLOBAL_CACHE_DISABLED_MESSAGE_FORMAT =
   'The global cache is now disabled because %s';
@@ -272,7 +272,7 @@ class TerminalReporter {
         this._logHmrClientError(event.error);
         break;
       case 'client_log':
-        logToConsole(this.terminal, event.level, ...event.data);
+        logToConsole(this.terminal, event.level, event.mode, ...event.data);
         break;
       case 'dep_graph_loading':
         const color = event.hasReducedPerformance ? chalk.red : chalk.blue;
@@ -393,14 +393,7 @@ class TerminalReporter {
         };
         this._activeBundles.set(event.buildID, bundleProgress);
         break;
-      case 'bundle_transform_progressed':
-        if (event.totalFileCount === event.transformedFileCount) {
-          this._scheduleUpdateBundleProgress.cancel();
-          this._updateBundleProgress(event);
-        } else {
-          this._scheduleUpdateBundleProgress(event);
-        }
-        break;
+
       case 'bundle_transform_progressed_throttled':
         this._updateBundleProgress(event);
         break;
@@ -432,9 +425,14 @@ class TerminalReporter {
 
   /**
    * Single entry point for reporting events. That allows us to implement the
-   * corresponding JSON reporter easily and have a consistent reporting.
+   * corresponding JSON reporter easily and have a consistent repor∏ting.
    */
   update(event: TerminalReportableEvent): void {
+    if (event.type === 'bundle_transform_progressed') {
+      this._scheduleUpdateBundleProgress(event);
+      return;
+    }
+
     this._log(event);
     this._updateState(event);
     this.terminal.status(this._getStatusMessage());

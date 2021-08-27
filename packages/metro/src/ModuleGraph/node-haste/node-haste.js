@@ -93,6 +93,7 @@ const createModuleMap = ({files, moduleCache, sourceExts}) => {
       throw new Error(
         [
           '@providesModule naming collision:',
+          // $FlowFixMe[incompatible-type]
           `  Duplicate module name: \`${id}\``,
           `  Paths: \`${filePath}\` collides with \`${existingModule[0]}\``,
           '',
