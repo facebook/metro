@@ -14,20 +14,12 @@ const path = require('path');
 
 import type Bundler from '../Bundler';
 import type {TransformOptions} from '../DeltaBundler/Worker';
+import type {TransformInputOptions} from '../DeltaBundler/types.flow';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {Type} from 'metro-transform-worker';
 
 type InlineRequiresRaw = {+blockList: {[string]: true, ...}, ...} | boolean;
-
-export type TransformInputOptions = $Diff<
-  TransformOptions,
-  {
-    inlinePlatform: boolean,
-    inlineRequires: boolean,
-    ...
-  },
->;
 
 type TransformOptionsWithRawInlines = {|
   ...TransformOptions,
@@ -72,6 +64,7 @@ async function calcTransformerOptions(
         ...options,
         minify: false,
       }),
+      transformOptions: options,
       onProgress: null,
       experimentalImportBundleSupport:
         config.transformer.experimentalImportBundleSupport,
@@ -160,6 +153,7 @@ async function getResolveDependencyFn(
   const dependencyGraph = await await bundler.getDependencyGraph();
 
   return (from: string, to: string) =>
+    // $FlowFixMe[incompatible-call]
     dependencyGraph.resolveDependency(from, to, platform);
 }
 

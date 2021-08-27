@@ -10,6 +10,8 @@
 
 'use strict';
 
+import type {JsTransformOptions} from 'metro-transform-worker';
+
 export type MixedOutput = {|
   +data: mixed,
   +type: string,
@@ -63,10 +65,21 @@ export type Module<T = MixedOutput> = {|
 
 export type Dependencies<T = MixedOutput> = Map<string, Module<T>>;
 
+export type TransformInputOptions = $Diff<
+  JsTransformOptions,
+  {
+    inlinePlatform: boolean,
+    inlineRequires: boolean,
+    ...
+  },
+>;
+
 export type Graph<T = MixedOutput> = {|
   dependencies: Dependencies<T>,
   importBundleNames: Set<string>,
   +entryPoints: $ReadOnlyArray<string>,
+  // Unused in core but useful for custom serializers / experimentalSerializerHook
+  +transformOptions: TransformInputOptions,
 |};
 
 export type TransformResult<T = MixedOutput> = $ReadOnly<{|
@@ -92,6 +105,7 @@ export type AllowOptionalDependencies =
 export type Options<T = MixedOutput> = {|
   +resolve: (from: string, to: string) => string,
   +transform: TransformFn<T>,
+  +transformOptions: TransformInputOptions,
   +onProgress: ?(numProcessed: number, total: number) => mixed,
   +experimentalImportBundleSupport: boolean,
   +shallow: boolean,

@@ -39,7 +39,7 @@ module.exports = {
 
 #### `cacheStores`
 
-Type: `Array<CacheStore<TransformResult<>>`
+Type: `Array<CacheStore<TransformResult<>>>`
 
 List where we store our [caches](./Caching.md).
 
@@ -137,7 +137,7 @@ This option works similarly to how [$NODE_PATHS](https://nodejs.org/api/modules.
 
 Type: `?CustomResolver`
 
-An optional function used to resolve requests. Ignored when the request can be resolved through Haste. Particularly useful for cases where aliases are used. For example:
+An optional function used to resolve requests. Particularly useful for cases where aliases are used. For example:
 
 ```javascript
 resolveRequest: (context, realModuleName, platform, moduleName) => {
@@ -223,11 +223,11 @@ Type: `GetTransformOptions`
 
 Get the transform options.
 
-#### `postMinifyProcess`
+#### `hermesParser`
 
-Type: `PostMinifyProcess`
+Type: `boolean` (default: `false`)
 
-What happens after minification.
+Use the hermes-parser package to use call Hermes parser via WASM instead of the Babel parser.
 
 #### `minifierPath`
 

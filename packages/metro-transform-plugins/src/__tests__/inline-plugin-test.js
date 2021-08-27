@@ -312,6 +312,46 @@ describe('inline constants', () => {
     });
   });
 
+  it('inlines Platform.select in the code when using an ObjectMethod', () => {
+    const code = `
+      function a() {
+        var a = Platform.select({
+          ios() { return 1; },
+          async* android(a, b) { return 2; },
+        });
+      }
+    `;
+    const expected = `
+      function a() {
+        var a = async function*(a, b) { return 2; };
+      }
+    `;
+    compare([inlinePlugin], code, expected, {
+      inlinePlatform: 'true',
+      platform: 'android',
+    });
+  });
+
+  it('inlines Platform.select in the code when using an ObjectMethod with string keys', () => {
+    const code = `
+      function a() {
+        var a = Platform.select({
+          "ios"() { return 1; },
+          "android"() { return 2; },
+        });
+      }
+    `;
+    const expected = `
+      function a() {
+        var a = function() { return 2; };
+      }
+    `;
+    compare([inlinePlugin], code, expected, {
+      inlinePlatform: 'true',
+      platform: 'android',
+    });
+  });
+
   it('does not inline Platform.select in the code when some of the properties are dynamic', () => {
     const code = `
       function a() {
@@ -331,6 +371,53 @@ describe('inline constants', () => {
     const code = `
       function a() {
         var a = Platform.select({[COMPUTED_ANDROID]: 1, [COMPUTED_IOS]: 2});
+      }
+    `;
+
+    compare([inlinePlugin], code, code, {
+      inlinePlatform: true,
+      platform: 'android',
+    });
+  });
+
+  it('does not inline Platform.select when ObjectMethod properties are dynamic', () => {
+    const code = `
+      function a() {
+        const COMPUTED_IOS = 'ios';
+        const COMPUTED_ANDROID = 'android';
+        var a = Platform.select({[COMPUTED_ANDROID]() {}, [COMPUTED_IOS]() {}});
+      }
+    `;
+
+    compare([inlinePlugin], code, code, {
+      inlinePlatform: true,
+      platform: 'android',
+    });
+  });
+
+  it('does not inline Platform.select when the object has a getter or setter', () => {
+    const code = `
+      function a() {
+        var a = Platform.select({
+          get ios() {},
+          get android() {},
+        });
+      }
+    `;
+
+    compare([inlinePlugin], code, code, {
+      inlinePlatform: true,
+      platform: 'android',
+    });
+  });
+
+  it('does not inline Platform.select when the object has a spread', () => {
+    const code = `
+      function a() {
+        var a = Platform.select({
+          ...ios,
+          ...android,
+        });
       }
     `;
 

@@ -50,6 +50,7 @@ class DeltaCalculator<T> extends EventEmitter {
       dependencies: new Map(),
       entryPoints,
       importBundleNames: new Set(),
+      transformOptions: this._options.transformOptions,
     };
 
     this._dependencyGraph
@@ -72,6 +73,7 @@ class DeltaCalculator<T> extends EventEmitter {
       dependencies: new Map(),
       entryPoints: this._graph.entryPoints,
       importBundleNames: new Set(),
+      transformOptions: this._options.transformOptions,
     };
     this._modifiedFiles = new Set();
     this._deletedFiles = new Set();

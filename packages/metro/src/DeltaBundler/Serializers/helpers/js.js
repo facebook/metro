@@ -49,19 +49,29 @@ function wrapModule(module: Module<>, options: Options): string {
   return addParamsToDefineCall(output.data.code, ...params);
 }
 
-function getJsOutput(module: Module<>): JsOutput {
+function getJsOutput(
+  module: $ReadOnly<{
+    output: $ReadOnlyArray<MixedOutput>,
+    path?: string,
+    ...
+  }>,
+): JsOutput {
   const jsModules = module.output.filter(({type}) => type.startsWith('js/'));
 
   invariant(
     jsModules.length === 1,
-    `Modules must have exactly one JS output, but ${module.path} has ${jsModules.length} JS outputs.`,
+    `Modules must have exactly one JS output, but ${module.path ??
+      'unknown module'} has ${jsModules.length} JS outputs.`,
   );
 
-  const jsOutput = (jsModules[0]: any);
+  const jsOutput: JsOutput = (jsModules[0]: any);
 
   invariant(
     Number.isFinite(jsOutput.data.lineCount),
-    `JS output must populate lineCount, but ${module.path} has ${jsOutput.type} output with lineCount '${jsOutput.data.lineCount}'`,
+    `JS output must populate lineCount, but ${module.path ??
+      'unknown module'} has ${jsOutput.type} output with lineCount '${
+      jsOutput.data.lineCount
+    }'`,
   );
 
   return jsOutput;

@@ -20,9 +20,8 @@ function isTSXSource(fileName) {
   return !!fileName && fileName.endsWith('.tsx');
 }
 
-const defaultPlugins = [
+const defaultPluginsBeforeRegenerator = [
   [require('@babel/plugin-syntax-flow')],
-  [require('@babel/plugin-proposal-optional-catch-binding')],
   [require('@babel/plugin-transform-block-scoping')],
   [
     require('@babel/plugin-proposal-class-properties'),
@@ -32,67 +31,19 @@ const defaultPlugins = [
   [require('@babel/plugin-syntax-dynamic-import')],
   [require('@babel/plugin-syntax-export-default-from')],
   ...passthroughSyntaxPlugins,
-  [require('@babel/plugin-transform-destructuring')],
-  [require('@babel/plugin-transform-function-name')],
-  [require('@babel/plugin-transform-literals')],
-  [require('@babel/plugin-transform-parameters')],
-  [require('@babel/plugin-transform-regenerator')],
-  [require('@babel/plugin-transform-sticky-regex')],
+];
+
+const defaultPluginsAfterRegenerator = [
   [require('@babel/plugin-transform-unicode-regex')],
-];
-
-const es2015ArrowFunctions = [
-  require('@babel/plugin-transform-arrow-functions'),
-];
-const es2015Classes = [require('@babel/plugin-transform-classes')];
-const es2015ForOf = [require('@babel/plugin-transform-for-of'), {loose: true}];
-const es2015ComputedProperty = [
-  require('@babel/plugin-transform-computed-properties'),
-];
-const es2015Spread = [require('@babel/plugin-transform-spread')];
-const es2015TemplateLiterals = [
-  require('@babel/plugin-transform-template-literals'),
-  {loose: true}, // dont 'a'.concat('b'), just use 'a'+'b'
-];
-const exponentiationOperator = [
-  require('@babel/plugin-transform-exponentiation-operator'),
-];
-const shorthandProperties = [
-  require('@babel/plugin-transform-shorthand-properties'),
-];
-const objectAssign = [require('@babel/plugin-transform-object-assign')];
-const objectRestSpread = [
-  require('@babel/plugin-proposal-object-rest-spread'),
-  // Assume no dependence on getters or evaluation order. See https://github.com/babel/babel/pull/11520
-  {loose: true},
-];
-const nullishCoalescingOperator = [
-  require('@babel/plugin-proposal-nullish-coalescing-operator'),
-  {loose: true},
-];
-const optionalChaining = [
-  require('@babel/plugin-proposal-optional-chaining'),
-  {loose: true},
-];
-const reactDisplayName = [
-  require('@babel/plugin-transform-react-display-name'),
-];
-const reactJsxSource = [require('@babel/plugin-transform-react-jsx-source')];
-const reactJsxSelf = [require('@babel/plugin-transform-react-jsx-self')];
-
-const babelRuntime = [
-  require('@babel/plugin-transform-runtime'),
-  {
-    helpers: true,
-    regenerator: true,
-  },
 ];
 
 const getPreset = (src, options) => {
   const transformProfile =
     (options && options.unstable_transformProfile) || 'default';
   const isHermesStable = transformProfile === 'hermes-stable';
-  const isHermesCanary = transformProfile === 'hermes-canary';
+  // Temporarily treating canary profile as "ES5 Hermes".
+  // TODO(jsx): Restore check for transformProfile === 'hermes-canary'
+  const isHermesCanary = false;
   const isHermes = isHermesStable || isHermesCanary;
 
   const isNull = src == null;
@@ -124,56 +75,95 @@ const getPreset = (src, options) => {
   }
 
   if (hasClass) {
-    extraPlugins.push(es2015Classes);
+    extraPlugins.push([require('@babel/plugin-transform-classes')]);
   }
 
   // TODO(gaearon): put this back into '=>' indexOf bailout
   // and patch react-refresh to not depend on this transform.
-  extraPlugins.push(es2015ArrowFunctions);
+  extraPlugins.push([require('@babel/plugin-transform-arrow-functions')]);
 
   if (!isHermes) {
-    extraPlugins.push(es2015ComputedProperty);
+    extraPlugins.push([require('@babel/plugin-transform-computed-properties')]);
+    extraPlugins.push([require('@babel/plugin-transform-parameters')]);
+    extraPlugins.push([
+      require('@babel/plugin-transform-shorthand-properties'),
+    ]);
+    extraPlugins.push([
+      require('@babel/plugin-proposal-optional-catch-binding'),
+    ]);
+    extraPlugins.push([require('@babel/plugin-transform-function-name')]);
+    extraPlugins.push([require('@babel/plugin-transform-literals')]);
+    extraPlugins.push([require('@babel/plugin-transform-sticky-regex')]);
+  }
+  if (!isHermesCanary) {
+    extraPlugins.push([require('@babel/plugin-transform-destructuring')]);
   }
   if (!isHermes && (isNull || hasClass || src.indexOf('...') !== -1)) {
-    extraPlugins.push(es2015Spread);
-    extraPlugins.push(objectRestSpread);
+    extraPlugins.push(
+      [require('@babel/plugin-transform-spread')],
+      [
+        require('@babel/plugin-proposal-object-rest-spread'),
+        // Assume no dependence on getters or evaluation order. See https://github.com/babel/babel/pull/11520
+        {loose: true},
+      ],
+    );
   }
   if (!isHermes && (isNull || src.indexOf('`') !== -1)) {
-    extraPlugins.push(es2015TemplateLiterals);
+    extraPlugins.push([
+      require('@babel/plugin-transform-template-literals'),
+      {loose: true}, // dont 'a'.concat('b'), just use 'a'+'b'
+    ]);
+  }
+  if (isHermes && (isNull || src.indexOf('async') !== -1)) {
+    extraPlugins.push([require('@babel/plugin-transform-async-to-generator')]);
   }
   if (!isHermes && (isNull || src.indexOf('**') !== -1)) {
-    extraPlugins.push(exponentiationOperator);
+    extraPlugins.push([
+      require('@babel/plugin-transform-exponentiation-operator'),
+    ]);
   }
   if (!isHermes && (isNull || src.indexOf('Object.assign')) !== -1) {
-    extraPlugins.push(objectAssign);
+    extraPlugins.push([require('@babel/plugin-transform-object-assign')]);
   }
-  if (hasForOf) {
-    extraPlugins.push(es2015ForOf);
+  if (!isHermes && hasForOf) {
+    extraPlugins.push([
+      require('@babel/plugin-transform-for-of'),
+      {loose: true},
+    ]);
   }
   if (
     isNull ||
     src.indexOf('React.createClass') !== -1 ||
     src.indexOf('createReactClass') !== -1
   ) {
-    extraPlugins.push(reactDisplayName);
+    extraPlugins.push([require('@babel/plugin-transform-react-display-name')]);
   }
   if (!isHermes && (isNull || src.indexOf('?.') !== -1)) {
-    extraPlugins.push(optionalChaining);
+    extraPlugins.push([
+      require('@babel/plugin-proposal-optional-chaining'),
+      {loose: true},
+    ]);
   }
-  if (isNull || src.indexOf('??') !== -1) {
-    extraPlugins.push(nullishCoalescingOperator);
-  }
-  if (!isHermes) {
-    extraPlugins.push(shorthandProperties);
+  if (!isHermes && (isNull || src.indexOf('??') !== -1)) {
+    extraPlugins.push([
+      require('@babel/plugin-proposal-nullish-coalescing-operator'),
+      {loose: true},
+    ]);
   }
 
   if (options && options.dev && !options.useTransformReactJSXExperimental) {
-    extraPlugins.push(reactJsxSource);
-    extraPlugins.push(reactJsxSelf);
+    extraPlugins.push([require('@babel/plugin-transform-react-jsx-source')]);
+    extraPlugins.push([require('@babel/plugin-transform-react-jsx-self')]);
   }
 
   if (!options || options.enableBabelRuntime !== false) {
-    extraPlugins.push(babelRuntime);
+    extraPlugins.push([
+      require('@babel/plugin-transform-runtime'),
+      {
+        helpers: true,
+        regenerator: !isHermes,
+      },
+    ]);
   }
 
   return {
@@ -186,7 +176,11 @@ const getPreset = (src, options) => {
         plugins: [require('@babel/plugin-transform-flow-strip-types')],
       },
       {
-        plugins: defaultPlugins,
+        plugins: [
+          ...defaultPluginsBeforeRegenerator,
+          isHermes ? null : require('@babel/plugin-transform-regenerator'),
+          ...defaultPluginsAfterRegenerator,
+        ].filter(Boolean),
       },
       {
         test: isTypeScriptSource,

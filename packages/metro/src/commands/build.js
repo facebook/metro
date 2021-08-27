@@ -93,7 +93,7 @@ module.exports = (): ({|
       ): void => {
         updateReporter.update({
           buildID: '$',
-          type: 'bundle_transform_progressed_throttled',
+          type: 'bundle_transform_progressed',
           transformedFileCount,
           totalFileCount,
         });

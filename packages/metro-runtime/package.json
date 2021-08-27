@@ -1,6 +1,6 @@
 {
   "name": "metro-runtime",
-  "version": "0.64.0",
+  "version": "0.66.2",
   "description": "🚇 Module required for evaluating Metro bundles.",
   "main": "src",
   "repository": {
@@ -13,6 +13,6 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@babel/core": "^7.0.0"
+    "@babel/core": "^7.14.0"
   }
 }

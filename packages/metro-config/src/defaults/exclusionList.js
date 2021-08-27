@@ -11,7 +11,7 @@
 
 var path = require('path');
 
-var list = [/website\/node_modules\/.*/, /.*\/__tests__\/.*/];
+var list = [/\/__tests__\/.*/];
 
 function escapeRegExp(pattern) {
   if (Object.prototype.toString.call(pattern) === '[object RegExp]') {

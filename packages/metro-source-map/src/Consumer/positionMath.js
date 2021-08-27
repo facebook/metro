@@ -10,7 +10,7 @@
 
 'use strict';
 
-const {add, neg} = require('ob1');
+const {add, neg, add0, add1} = require('ob1');
 
 import type {GeneratedOffset} from './types.flow';
 import type {Number0, Number1} from 'ob1';
@@ -36,9 +36,15 @@ function subtractOffsetFromPosition<
     ...
   },
 >(pos: T, offset: GeneratedOffset): T {
+  if (pos.line === add1(offset.lines)) {
+    return shiftPositionByOffset(pos, {
+      lines: neg(offset.lines),
+      columns: neg(offset.columns),
+    });
+  }
   return shiftPositionByOffset(pos, {
     lines: neg(offset.lines),
-    columns: neg(offset.columns),
+    columns: add0(0),
   });
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "metro-babel-register",
-  "version": "0.64.0",
+  "version": "0.66.2",
   "description": "🚇 babel/register configuration for Metro.",
   "main": "src/babel-register.js",
   "repository": {
@@ -8,10 +8,10 @@
     "url": "git@github.com:facebook/metro.git"
   },
   "dependencies": {
-    "@babel/core": "^7.0.0",
-    "@babel/plugin-proposal-class-properties": "^7.0.0",
+    "@babel/core": "^7.14.0",
     "@babel/plugin-proposal-nullish-coalescing-operator": "^7.0.0",
     "@babel/plugin-proposal-optional-chaining": "^7.0.0",
+    "@babel/plugin-syntax-class-properties": "^7.0.0",
     "@babel/plugin-transform-flow-strip-types": "^7.0.0",
     "@babel/plugin-transform-modules-commonjs": "^7.0.0",
     "@babel/register": "^7.0.0",

@@ -53,7 +53,7 @@ class SectionsConsumer extends AbstractConsumer implements IConsumer {
     const [generatedOffset, consumer] =
       this._consumerForPosition(generatedPosition) || [];
     if (!consumer) {
-      return EMPTY_POSITION;
+      return {...EMPTY_POSITION};
     }
     return consumer.originalPositionFor(
       subtractOffsetFromPosition(generatedPosition, generatedOffset),

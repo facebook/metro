@@ -12,7 +12,8 @@
 
 const createInlinePlatformChecks = require('./utils/createInlinePlatformChecks');
 
-import type {NodePath} from '@babel/traverse';
+import type {PluginObj} from '@babel/core';
+import type {NodePath, Scope, Binding} from '@babel/traverse';
 // type only import. No runtime dependency
 // eslint-disable-next-line import/no-extraneous-dependencies
 import typeof * as Types from '@babel/types';
@@ -30,18 +31,9 @@ export type Options = {
   isWrapped: boolean,
   requireName?: string,
   platform: string,
-  ...
 };
 
-type State = {opts: Options, ...};
-
-export type Visitors = {|
-  visitor: {|
-    CallExpression: (path: NodePath<CallExpression>, state: State) => void,
-    Identifier: (path: NodePath<Identifier>, state: State) => void,
-    MemberExpression: (path: NodePath<MemberExpression>, state: State) => void,
-  |},
-|};
+type State = {opts: Options};
 
 const env = {name: 'env'};
 const nodeEnv = {name: 'NODE_ENV'};
@@ -50,41 +42,45 @@ const processId = {name: 'process'};
 const dev = {name: '__DEV__'};
 
 function inlinePlugin(
-  {types: t}: {types: Types, ...},
+  {types: t}: {types: Types},
   options: Options,
-): Visitors {
+): PluginObj<State> {
   const {
     isAssignmentExpression,
     isIdentifier,
-    isStringLiteral,
     isMemberExpression,
+    isObjectExpression,
+    isObjectMethod,
     isObjectProperty,
     isSpreadElement,
-    isObjectExpression,
+    isStringLiteral,
   } = t;
   const {isPlatformNode, isPlatformSelectNode} = createInlinePlatformChecks(
     t,
     options.requireName || 'require',
   );
 
-  const isGlobal = (binding): boolean %checks => !binding;
+  const isGlobal = (binding: ?Binding): boolean %checks => !binding;
 
-  const isFlowDeclared = binding => t.isDeclareVariable(binding.path);
+  const isFlowDeclared = (binding: Binding) =>
+    t.isDeclareVariable(binding.path);
 
-  const isGlobalOrFlowDeclared = (binding): boolean %checks =>
+  const isGlobalOrFlowDeclared = (binding: ?Binding): boolean %checks =>
     isGlobal(binding) || isFlowDeclared(binding);
 
-  const isLeftHandSideOfAssignmentExpression = (node: Node, parent: Node) =>
-    isAssignmentExpression(parent) && parent.left === node;
+  const isLeftHandSideOfAssignmentExpression = (
+    node: Node,
+    parent: Node,
+  ): boolean => isAssignmentExpression(parent) && parent.left === node;
 
-  const isProcessEnvNodeEnv = (node: MemberExpression, scope) =>
+  const isProcessEnvNodeEnv = (node: MemberExpression, scope: Scope): boolean =>
     isIdentifier(node.property, nodeEnv) &&
     isMemberExpression(node.object) &&
     isIdentifier(node.object.property, env) &&
     isIdentifier(node.object.object, processId) &&
     isGlobal(scope.getBinding(processId.name));
 
-  const isDev = (node: Identifier, parent: Node, scope) =>
+  const isDev = (node: Identifier, parent: Node, scope): boolean =>
     isIdentifier(node, dev) &&
     isGlobalOrFlowDeclared(scope.getBinding(dev.name)) &&
     !isMemberExpression(parent) &&
@@ -94,21 +90,25 @@ function inlinePlugin(
   function findProperty(
     objectExpression: ObjectExpression,
     key: string,
-    fallback,
-  ) {
+    fallback: () => Node,
+  ): Node {
     let value = null;
 
     for (const p of objectExpression.properties) {
-      if (!isObjectProperty(p)) {
+      if (!isObjectProperty(p) && !isObjectMethod(p)) {
         continue;
       }
-
       if (
         (isIdentifier(p.key) && p.key.name === key) ||
         (isStringLiteral(p.key) && p.key.value === key)
       ) {
-        value = p.value;
-        break;
+        if (isObjectProperty(p)) {
+          value = p.value;
+          break;
+        } else if (isObjectMethod(p)) {
+          value = t.toExpression(p);
+          break;
+        }
       }
     }
 
@@ -118,6 +118,9 @@ function inlinePlugin(
   function hasStaticProperties(objectExpression: ObjectExpression): boolean {
     return objectExpression.properties.every(p => {
       if (p.computed || isSpreadElement(p)) {
+        return false;
+      }
+      if (isObjectMethod(p) && p.kind !== 'method') {
         return false;
       }
 

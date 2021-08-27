@@ -26,6 +26,28 @@ const fs = require('fs');
 // flowlint-next-line untyped-import:off
 const through2 = require('through2');
 
+function printHelp() {
+  const usages = [
+    'Usage: ' + __filename + ' <source-map-file>',
+    '       ' + __filename + ' <source-map-file> <line> [column]',
+    '       ' + __filename + ' <source-map-file> <moduleId>.js <line> [column]',
+    '       ' + __filename + ' <source-map-file> <mapfile>.profmap',
+    '       ' +
+      __filename +
+      ' <source-map-file> --attribution < in.jsonl > out.jsonl',
+    '       ' + __filename + ' <source-map-file> <tracefile>.cpuprofile',
+    ' Optional flags:',
+    '  --no-function-names',
+    '  --hermes-crash (mutually exclusive with --hermes-coverage)',
+    '  --hermes-coverage (mutually exclusive with --hermes-crash)',
+    '  --input-line-start <line> (default: 1)',
+    '  --input-column-start <column> (default: 0)',
+    '  --output-line-start <line> (default: 1)',
+    '  --output-column-start <column> (default: 0)',
+  ];
+  console.error(usages.join('\n'));
+}
+
 async function main(
   argvInput: Array<string> = process.argv.slice(2),
   {
@@ -57,6 +79,7 @@ async function main(
   try {
     const noFunctionNames = checkAndRemoveArg('--no-function-names');
     const isHermesCrash = checkAndRemoveArg('--hermes-crash');
+    const isCoverage = checkAndRemoveArg('--hermes-coverage');
     const inputLineStart = Number.parseInt(
       checkAndRemoveArgWithValue('--input-line-start') || '1',
       10,
@@ -76,27 +99,15 @@ async function main(
 
     if (argv.length < 1 || argv.length > 4) {
       /* eslint no-path-concat: "off" */
+      printHelp();
+      return 1;
+    }
 
-      const usages = [
-        'Usage: ' + __filename + ' <source-map-file>',
-        '       ' + __filename + ' <source-map-file> <line> [column]',
-        '       ' +
-          __filename +
-          ' <source-map-file> <moduleId>.js <line> [column]',
-        '       ' + __filename + ' <source-map-file> <mapfile>.profmap',
-        '       ' +
-          __filename +
-          ' <source-map-file> --attribution < in.jsonl > out.jsonl',
-        '       ' + __filename + ' <source-map-file> <tracefile>.cpuprofile',
-        ' Optional flags:',
-        '  --no-function-names',
-        '  --hermes-crash',
-        '  --input-line-start <line> (default: 1)',
-        '  --input-column-start <column> (default: 0)',
-        '  --output-line-start <line> (default: 1)',
-        '  --output-column-start <column> (default: 0)',
-      ];
-      console.error(usages.join('\n'));
+    if (isHermesCrash && isCoverage) {
+      console.error(
+        'Pass either --hermes-crash or --hermes-coverage, not both',
+      );
+      printHelp();
       return 1;
     }
 
@@ -132,11 +143,26 @@ async function main(
           stackTraceJSON,
         );
         stdout.write(JSON.stringify(symbolicatedTrace));
+      } else if (isCoverage) {
+        const stackTraceJSON = JSON.parse(stackTrace);
+        const symbolicatedTrace = context.symbolicateHermesCoverageTrace(
+          stackTraceJSON,
+        );
+        stdout.write(JSON.stringify(symbolicatedTrace));
       } else {
         stdout.write(context.symbolicate(stackTrace));
       }
     } else if (argv[0].endsWith('.profmap')) {
       stdout.write(context.symbolicateProfilerMap(argv[0]));
+    } else if (
+      argv[0].endsWith('.heapsnapshot') ||
+      argv[0].endsWith('.heaptimeline')
+    ) {
+      stdout.write(
+        JSON.stringify(
+          context.symbolicateHeapSnapshot(fs.readFileSync(argv[0], 'utf8')),
+        ),
+      );
     } else if (argv[0] === '--attribution') {
       let buffer = '';
       await waitForStream(

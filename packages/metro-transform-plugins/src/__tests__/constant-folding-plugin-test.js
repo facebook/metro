@@ -346,4 +346,20 @@ describe('constant expressions', () => {
 
     compare([constantFoldingPlugin], nonChanged, nonChanged);
   });
+
+  it('does not confuse function identifiers with variables in inner scope', () => {
+    const code = `
+      export function foo() {
+        let foo;
+      }
+    `;
+
+    const expected = `
+      export function foo() {
+        let foo;
+      }
+    `;
+
+    compare([constantFoldingPlugin], code, expected);
+  });
 });

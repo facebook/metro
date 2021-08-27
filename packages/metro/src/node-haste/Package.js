@@ -57,17 +57,24 @@ class Package {
     const replacements = getReplacements(json, mainFields);
     if (replacements) {
       const variants = [main];
+      // $FlowFixMe[incompatible-use]
       if (main.slice(0, 2) === './') {
+        // $FlowFixMe[incompatible-use]
         variants.push(main.slice(2));
       } else {
+        // $FlowFixMe[incompatible-type]
         variants.push('./' + main);
       }
 
       for (const variant of variants) {
         const winner =
+          // $FlowFixMe[incompatible-type]
           replacements[variant] ||
+          // $FlowFixMe[incompatible-type]
           replacements[variant + '.js'] ||
+          // $FlowFixMe[incompatible-type]
           replacements[variant + '.json'] ||
+          // $FlowFixMe[incompatible-use]
           replacements[variant.replace(/(\.js|\.json)$/, '')];
 
         if (winner) {

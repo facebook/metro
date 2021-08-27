@@ -8,8 +8,6 @@
  * @format
  */
 
-'use strict';
-
 const SourceMetadataMapConsumer = require('./SourceMetadataMapConsumer');
 
 const fs = require('fs');
@@ -17,6 +15,9 @@ const invariant = require('invariant');
 const nullthrows = require('nullthrows');
 const path = require('path');
 
+const {ChromeHeapSnapshotProcessor} = require('./ChromeHeapSnapshot');
+
+import type {ChromeHeapSnapshot} from './ChromeHeapSnapshot';
 import type {MixedSourceMap, HermesFunctionOffsets} from 'metro-source-map';
 // flowlint-next-line untyped-type-import:off
 import {typeof SourceMapConsumer} from 'source-map';
@@ -77,6 +78,16 @@ type HermesMinidumpStackFrame = $ReadOnly<{|
   StackFrameRegOffs: string,
   SourceLocation?: string,
 |}>;
+
+type HermesCoverageInfo = {
+  +executedFunctions: $ReadOnlyArray<HermesCoverageStackFrame>,
+};
+
+type HermesCoverageStackFrame = $ReadOnly<{
+  line: number, // SegmentID or zero-based line,
+  column: number, // VirtualOffset or zero-based column,
+  SourceURL: ?string,
+}>;
 
 type NativeCodeStackFrame = $ReadOnly<{|
   NativeCode: true,
@@ -380,6 +391,87 @@ class SymbolicationContext<ModuleIdsT> {
     throw new Error('Not implemented');
   }
 
+  /**
+   * Symbolicates heap alloction stacks in a Chrome-formatted heap
+   * snapshot/timeline.
+   * Line and column offsets in options (both input and output) are _ignored_,
+   * because this format has a well-defined convention (1-based lines and
+   * columns).
+   */
+  symbolicateHeapSnapshot(
+    snapshotContents: string | ChromeHeapSnapshot,
+  ): ChromeHeapSnapshot {
+    const snapshotData: ChromeHeapSnapshot =
+      typeof snapshotContents === 'string'
+        ? JSON.parse(snapshotContents)
+        : snapshotContents;
+    const processor = new ChromeHeapSnapshotProcessor(snapshotData);
+    for (const frame of processor.traceFunctionInfos()) {
+      const moduleIds = this.parseFileName(frame.getString('script_name'));
+      const generatedLine = frame.getNumber('line');
+      const generatedColumn = frame.getNumber('column');
+      if (generatedLine === 0 && generatedColumn === 0) {
+        continue;
+      }
+      const {
+        line: originalLine,
+        column: originalColumn,
+        source: originalSource,
+        functionName: originalFunctionName,
+      } = this.getOriginalPositionDetailsFor(
+        frame.getNumber('line') - 1 + this.options.inputLineStart,
+        frame.getNumber('column') - 1 + this.options.inputColumnStart,
+        moduleIds,
+      );
+      if (originalSource != null) {
+        frame.setString('script_name', originalSource);
+        if (originalLine != null) {
+          frame.setNumber(
+            'line',
+            originalLine - this.options.outputLineStart + 1,
+          );
+        } else {
+          frame.setNumber('line', 0);
+        }
+        if (originalColumn != null) {
+          frame.setNumber(
+            'column',
+            originalColumn - this.options.outputColumnStart + 1,
+          );
+        } else {
+          frame.setNumber('column', 0);
+        }
+      }
+      frame.setString('name', originalFunctionName ?? frame.getString('name'));
+    }
+    return snapshotData;
+  }
+
+  /*
+   * Symbolicates the JavaScript stack trace extracted from the coverage information
+   * produced by HermesRuntime::getExecutedFunctions.
+   */
+  symbolicateHermesCoverageTrace(
+    coverageInfo: HermesCoverageInfo,
+  ): SymbolicatedStackTrace {
+    const symbolicatedTrace = [];
+    const {executedFunctions} = coverageInfo;
+
+    if (executedFunctions != null) {
+      for (const stackItem of executedFunctions) {
+        const {line, column, SourceURL} = stackItem;
+        const generatedLine = line + this.options.inputLineStart;
+        const generatedColumn = column + this.options.inputColumnStart;
+        const originalPosition = this.getOriginalPositionDetailsFor(
+          generatedLine,
+          generatedColumn,
+          this.parseFileName(SourceURL || ''),
+        );
+        symbolicatedTrace.push(originalPosition);
+      }
+    }
+    return symbolicatedTrace;
+  }
   /*
    * An internal helper function similar to getOriginalPositionFor. This one
    * returns both `name` and `functionName` fields so callers can distinguish the
@@ -409,7 +501,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
     |},
     ...,
   };
-  +_hasLegacySegments: boolean;
+  +_legacyFormat: boolean;
   // $FlowFixMe[value-as-type]
   +_SourceMapConsumer: SourceMapConsumer;
 
@@ -434,7 +526,9 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
         segments[key] = this._initSegment(map);
       }
     }
-    this._hasLegacySegments = sourceMapJson.x_facebook_segments != null;
+    this._legacyFormat =
+      sourceMapJson.x_facebook_segments != null ||
+      sourceMapJson.x_facebook_offsets != null;
     this._segments = segments;
   }
 
@@ -480,9 +574,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
             CJSModuleOffset ?? SegmentID,
             'Either CJSModuleOffset or SegmentID must be specified in the Hermes stack frame',
           );
-          const moduleInformation = this._hasLegacySegments
-            ? this.parseFileName(SourceURL)
-            : UNKNOWN_MODULE_IDS;
+          const moduleInformation = this.parseFileName(SourceURL);
           const generatedLine =
             cjsModuleOffsetOrSegmentID + this.options.inputLineStart;
           const segment = this._segments[
@@ -512,6 +604,28 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
             symbolicatedTrace.push(originalPosition);
           }
         }
+      }
+    }
+    return symbolicatedTrace;
+  }
+
+  symbolicateHermesCoverageTrace(
+    coverageInfo: HermesCoverageInfo,
+  ): SymbolicatedStackTrace {
+    const symbolicatedTrace = [];
+    const {executedFunctions} = coverageInfo;
+
+    if (executedFunctions != null) {
+      for (const stackItem of executedFunctions) {
+        const {line, column, SourceURL} = stackItem;
+        const generatedLine = line + this.options.inputLineStart;
+        const generatedColumn = column + this.options.inputColumnStart;
+        const originalPosition = this.getOriginalPositionDetailsFor(
+          generatedLine,
+          generatedColumn,
+          this.parseFileName(SourceURL || ''),
+        );
+        symbolicatedTrace.push(originalPosition);
       }
     }
     return symbolicatedTrace;
@@ -581,7 +695,11 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
   }
 
   parseFileName(str: string): SingleMapModuleIds {
-    return parseSingleMapFileName(str);
+    if (this._legacyFormat) {
+      return parseSingleMapFileName(str);
+    }
+
+    return UNKNOWN_MODULE_IDS;
   }
 }
 

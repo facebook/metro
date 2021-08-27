@@ -14,21 +14,23 @@ const normalizePseudoglobals = require('../normalizePseudoGlobals');
 
 const {transformSync, transformFromAstSync} = require('@babel/core');
 
-function normalizePseudoglobalsCall(source) {
+function normalizePseudoglobalsCall(source, options) {
   const {ast} = transformSync(source, {
     ast: true,
     babelrc: false,
+    browserslistConfigFile: false,
     code: false,
     compact: false,
     configFile: false,
     sourceType: 'module',
   });
 
-  const reserved = normalizePseudoglobals(ast);
+  const reserved = normalizePseudoglobals(ast, options);
 
   const {code} = transformFromAstSync(ast, source, {
     ast: false,
     babelrc: false,
+    browserslistConfigFile: false,
     code: true,
     compact: false,
     configFile: false,
@@ -45,7 +47,7 @@ it('minimizes arguments given', () => {
 
       (function() {
         {
-          const r = 1; // _$$_REQUIRE will be renamed to "r".
+          const r = 1; // _$$_REQUIRE will be renamed to "_r".
           return r++;
         }
       })();
@@ -57,16 +59,16 @@ it('minimizes arguments given', () => {
     })
   `);
 
-  expect(result.reserved).toEqual(['g', 'r', 'm', 'e', 'd']);
+  expect(result.reserved).toEqual(['g', '_r', 'm', 'e', 'd']);
   expect(result.code).toMatchInlineSnapshot(`
-    "__d(function (g, r, m, e, d) {
-      r(27).foo();
+    "__d(function (g, _r, m, e, d) {
+      _r(27).foo();
 
       (function () {
         {
-          const _r4 = 1; // _$$_REQUIRE will be renamed to \\"r\\".
+          const r = 1; // _$$_REQUIRE will be renamed to \\"_r\\".
 
-          return _r4++;
+          return r++;
         }
       })();
 
@@ -82,4 +84,44 @@ it('throws if two variables collapse to the same name', () => {
   expect(() =>
     normalizePseudoglobalsCall('__d(function (global, golf) {})'),
   ).toThrow(ReferenceError);
+});
+
+it('avoids renaming parameters appearing in reservedNames', () => {
+  const result = normalizePseudoglobalsCall(
+    `
+      __d(function (renameMe, doNotRenameMe) {
+        renameMe();
+        doNotRenameMe();
+      })
+    `,
+    {reservedNames: ['doNotRenameMe']},
+  );
+
+  expect(result.reserved).toMatchInlineSnapshot(`
+    Array [
+      "r",
+    ]
+  `);
+  expect(result.code).toMatchInlineSnapshot(`
+    "__d(function (r, doNotRenameMe) {
+      r();
+      doNotRenameMe();
+    });"
+  `);
+});
+
+it('throws if a reserved name collides with a short name', () => {
+  expect(() =>
+    normalizePseudoglobalsCall(
+      `
+        __d(function (require, r) {
+          require();
+          r();
+        })
+      `,
+      {reservedNames: ['r']},
+    ),
+  ).toThrowErrorMatchingInlineSnapshot(
+    `"Could not reserve the identifier r because it is the short name for require"`,
+  );
 });

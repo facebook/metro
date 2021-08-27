@@ -42,7 +42,6 @@ class Transformer {
     // can treat the transformer config params as opaque.
     const {
       getTransformOptions: _getTransformOptions,
-      postMinifyProcess: _postMinifyProcess,
       transformVariants: _transformVariants,
       workerPath: _workerPath,
       ...transformerConfig
@@ -55,11 +54,13 @@ class Transformer {
 
     this._workerFarm = new WorkerFarm(config, transformerOptions);
 
-    const globalCacheKey = getTransformCacheKey({
-      cacheVersion: this._config.cacheVersion,
-      projectRoot: this._config.projectRoot,
-      transformerConfig: transformerOptions,
-    });
+    const globalCacheKey = this._cache.isDisabled
+      ? ''
+      : getTransformCacheKey({
+          cacheVersion: this._config.cacheVersion,
+          projectRoot: this._config.projectRoot,
+          transformerConfig: transformerOptions,
+        });
 
     this._baseHash = stableHash([globalCacheKey]).toString('binary');
   }
@@ -88,6 +89,7 @@ class Transformer {
     } = transformerOptions;
 
     for (const key in extra) {
+      // $FlowFixMe[cannot-resolve-name]
       if (hasOwnProperty.call(extra, key)) {
         throw new Error(
           'Extra keys detected: ' + Object.keys(extra).join(', '),

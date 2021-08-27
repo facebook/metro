@@ -117,6 +117,7 @@ export type ReportableEvent =
         | 'groupEnd'
         | 'debug',
       data: Array<mixed>,
+      mode: 'BRIDGE' | 'NOBRIDGE',
       ...
     };
 
@@ -138,7 +139,7 @@ export type ReportableEvent =
  * TerminalReporter, that should be the only place in the application should
  * access the `terminal` module (nor the `console`).
  */
-export type Reporter = {update(event: ReportableEvent): void, ...};
+export type Reporter = interface {update(event: ReportableEvent): void};
 
 /**
  * A standard way to log a warning to the terminal. This should not be called
