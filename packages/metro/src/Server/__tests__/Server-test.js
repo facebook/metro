@@ -69,6 +69,7 @@ describe('processRequest', () => {
 
   const config = getDefaultValues('/');
   config.projectRoot = '/root';
+  config.roots = ['/root'];
   config.watchFolders = ['/root'];
   config.resolver.blockList = null;
   config.cacheVersion = null;

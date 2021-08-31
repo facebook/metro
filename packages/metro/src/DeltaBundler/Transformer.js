@@ -33,6 +33,7 @@ class Transformer {
   constructor(config: ConfigT, getSha1Fn: string => string) {
     this._config = config;
 
+    this._config.roots.forEach(verifyRootExists);
     this._config.watchFolders.forEach(verifyRootExists);
     this._cache = new Cache(config.cacheStores);
     this._getSha1 = getSha1Fn;

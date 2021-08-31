@@ -151,6 +151,7 @@ describe('loadConfig', () => {
     let defaultConfig = await getDefaultConfig(process.cwd());
     defaultConfig = {
       ...defaultConfig,
+      roots: [defaultConfig.projectRoot, ...defaultConfig.roots],
       watchFolders: [defaultConfig.projectRoot, ...defaultConfig.watchFolders],
     };
 

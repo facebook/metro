@@ -120,6 +120,7 @@ type MetalConfigT = {|
   transformerPath: string,
   reporter: Reporter,
   resetCache: boolean,
+  roots: $ReadOnlyArray<string>,
   watchFolders: $ReadOnlyArray<string>,
 |};
 
@@ -185,6 +186,7 @@ export type YargArguments = {
   port?: string | number,
   host?: string,
   projectRoot?: string,
+  roots?: Array<string>,
   watchFolders?: Array<string>,
   assetExts?: Array<string>,
   sourceExts?: Array<string>,

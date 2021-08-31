@@ -268,7 +268,7 @@ async function getAssetFiles(
 async function getAsset(
   relativePath: string,
   projectRoot: string,
-  watchFolders: $ReadOnlyArray<string>,
+  roots: $ReadOnlyArray<string>,
   platform: ?string = null,
   assetExts: $ReadOnlyArray<string>,
 ): Promise<Buffer> {
@@ -285,9 +285,9 @@ async function getAsset(
     );
   }
 
-  if (!pathBelongsToRoots(absolutePath, [projectRoot, ...watchFolders])) {
+  if (!pathBelongsToRoots(absolutePath, [projectRoot, ...roots])) {
     throw new Error(
-      `'${relativePath}' could not be found, because it cannot be found in the project root or any watch folder`,
+      `'${relativePath}' could not be found, because it cannot be found in the project root or any package root folder`,
     );
   }
 

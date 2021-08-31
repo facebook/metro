@@ -19,6 +19,7 @@ module.exports = {
   maxWorkers: 1,
   projectRoot: ROOT_PATH,
   reporter: {update() {}},
+  roots: [path.resolve(__dirname, '../../../')],
   watchFolders: [path.resolve(__dirname, '../../../')],
   server: {port: 10028},
   resolver: {

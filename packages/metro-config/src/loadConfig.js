@@ -221,6 +221,10 @@ function overrideConfigWithArguments(
     output.projectRoot = argv.projectRoot;
   }
 
+  if (argv.roots != null) {
+    output.roots = argv.roots;
+  }
+
   if (argv.watchFolders != null) {
     output.watchFolders = argv.watchFolders;
   }
@@ -302,13 +306,21 @@ async function loadConfig(
     };
   }
 
+  // Set the watchfolders to include the projectRoot, as Metro assumes that is
+  // the case
   overriddenConfig.watchFolders = [
     configWithArgs.projectRoot,
     ...configWithArgs.watchFolders,
   ];
 
-  // Set the watchfolders to include the projectRoot, as Metro assumes that is
-  // the case
+  // Ensure project roots are set. Default to watchFolders, if needed.
+  if (
+    !Array.isArray(configWithArgs.roots) ||
+    configWithArgs.roots.length === 0
+  ) {
+    overriddenConfig.roots = overriddenConfig.watchFolders;
+  }
+
   return mergeConfig(configWithArgs, overriddenConfig);
 }
 
