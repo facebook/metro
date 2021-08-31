@@ -602,16 +602,22 @@ it('skips minification in Hermes canary transform profile', async () => {
 });
 
 it('counts all line endings correctly', async () => {
-  const result = await Transformer.transform(
-    baseConfig,
-    '/root',
-    'local/file.js',
-    'one\rtwo\r\nthree\nfour\u2028five\u2029six',
-    {
+  const transformStr = str =>
+    Transformer.transform(baseConfig, '/root', 'local/file.js', str, {
       dev: false,
       minify: false,
       type: 'module',
-    },
+    });
+
+  const differentEndingsResult = await transformStr(
+    'one\rtwo\r\nthree\nfour\u2028five\u2029six',
   );
-  expect(result.output[0].data.lineCount).toEqual(9);
+
+  const standardEndingsResult = await transformStr(
+    'one\ntwo\nthree\nfour\nfive\nsix',
+  );
+
+  expect(differentEndingsResult.output[0].data.lineCount).toEqual(
+    standardEndingsResult.output[0].data.lineCount,
+  );
 });
