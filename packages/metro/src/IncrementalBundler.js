@@ -311,7 +311,10 @@ class IncrementalBundler {
     entryFiles: $ReadOnlyArray<string>,
   ): Promise<$ReadOnlyArray<string>> {
     const absoluteEntryFiles = entryFiles.map((entryFile: string) =>
-      path.resolve(this._config.projectRoot, entryFile),
+      path.resolve(
+        this._config.server.unstable_serverRoot ?? this._config.projectRoot,
+        entryFile,
+      ),
     );
 
     await Promise.all(
