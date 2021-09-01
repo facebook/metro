@@ -31,7 +31,7 @@ async function dependencies(args: any, config: any) {
   config.cacheStores = [];
 
   const relativePath = path.relative(
-    config.projectRoot,
+    config.server.unstable_serverRoot ?? config.projectRoot,
     rootModuleAbsolutePath,
   );
 
