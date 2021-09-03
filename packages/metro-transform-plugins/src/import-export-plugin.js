@@ -17,10 +17,9 @@ import type {NodePath} from '@babel/traverse';
 // Type only dependency. This is not a runtime dependency
 // eslint-disable-next-line import/no-extraneous-dependencies
 import typeof * as Types from '@babel/types';
+import type {PluginObj} from '@babel/core';
 import type {
   Node,
-  ExportAllDeclaration,
-  ExportDefaultDeclaration,
   ExportNamedDeclaration,
   ImportDeclaration,
   Statement,
@@ -48,31 +47,6 @@ type State = {
   },
   ...
 };
-
-export type Visitors = {|
-  visitor: {|
-    ExportAllDeclaration: (
-      path: NodePath<ExportAllDeclaration>,
-      state: State,
-    ) => void,
-    ExportDefaultDeclaration: (
-      path: NodePath<ExportDefaultDeclaration>,
-      state: State,
-    ) => void,
-    ExportNamedDeclaration: (
-      path: NodePath<ExportNamedDeclaration>,
-      state: State,
-    ) => void,
-    ImportDeclaration: (
-      path: NodePath<ImportDeclaration>,
-      state: State,
-    ) => void,
-    Program: {|
-      enter: (path: NodePath<Program>, state: State) => void,
-      exit: (path: NodePath<Program>, state: State) => void,
-    |},
-  |},
-|};
 
 /**
  * Produces a Babel template that transforms an "import * as x from ..." or an
@@ -172,7 +146,7 @@ function withLocation(node, loc) {
   return node;
 }
 
-function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
+function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
   const {isDeclaration, isVariableDeclaration} = t;
 
   return {
@@ -287,6 +261,13 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
             const local = s.local;
             const remote = s.exported;
 
+            if (remote.type === 'StringLiteral') {
+              // https://babeljs.io/docs/en/babel-plugin-syntax-module-string-names
+              throw path.buildCodeFrameError(
+                'Module string names are not supported',
+              );
+            }
+
             if (path.node.source) {
               const temp = path.scope.generateUidIdentifier(local.name);
 
@@ -294,9 +275,9 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                 path.insertBefore(
                   withLocation(
                     importTemplate({
-                      IMPORT: state.importDefault,
+                      IMPORT: t.cloneNode(state.importDefault),
                       FILE: resolvePath(
-                        nullthrows(path.node.source),
+                        t.cloneNode(nullthrows(path.node.source)),
                         state.opts.resolve,
                       ),
                       LOCAL: temp,
@@ -315,7 +296,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                   withLocation(
                     importNamedTemplate({
                       FILE: resolvePath(
-                        nullthrows(path.node.source),
+                        t.cloneNode(nullthrows(path.node.source)),
                         state.opts.resolve,
                       ),
                       LOCAL: temp,
@@ -331,7 +312,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                   withLocation(
                     importNamedTemplate({
                       FILE: resolvePath(
-                        nullthrows(path.node.source),
+                        t.cloneNode(nullthrows(path.node.source)),
                         state.opts.resolve,
                       ),
                       LOCAL: temp,
@@ -377,7 +358,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
           state.imports.push({
             node: withLocation(
               importSideEffectTemplate({
-                FILE: resolvePath(file, state.opts.resolve),
+                FILE: resolvePath(t.cloneNode(file), state.opts.resolve),
               }),
               loc,
             ),
@@ -387,7 +368,9 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
           if (
             specifiers.filter(
               s =>
-                s.type === 'ImportSpecifier' && s.imported.name !== 'default',
+                s.type === 'ImportSpecifier' &&
+                (s.imported.type === 'StringLiteral' ||
+                  s.imported.name !== 'default'),
             ).length > 1
           ) {
             sharedModuleImport = path.scope.generateUidIdentifierBasedOnNode(
@@ -397,7 +380,7 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
               id: sharedModuleImport,
               init: withLocation(
                 t.callExpression(t.identifier('require'), [
-                  resolvePath(file, state.opts.resolve),
+                  resolvePath(t.cloneNode(file), state.opts.resolve),
                 ]),
                 loc,
               ),
@@ -414,9 +397,9 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                 state.imports.push({
                   node: withLocation(
                     importTemplate({
-                      IMPORT: state.importAll,
-                      FILE: resolvePath(file, state.opts.resolve),
-                      LOCAL: local,
+                      IMPORT: t.cloneNode(state.importAll),
+                      FILE: resolvePath(t.cloneNode(file), state.opts.resolve),
+                      LOCAL: t.cloneNode(local),
                     }),
                     loc,
                   ),
@@ -427,9 +410,9 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                 state.imports.push({
                   node: withLocation(
                     importTemplate({
-                      IMPORT: state.importDefault,
-                      FILE: resolvePath(file, state.opts.resolve),
-                      LOCAL: local,
+                      IMPORT: t.cloneNode(state.importDefault),
+                      FILE: resolvePath(t.cloneNode(file), state.opts.resolve),
+                      LOCAL: t.cloneNode(local),
                     }),
                     loc,
                   ),
@@ -441,9 +424,12 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                   state.imports.push({
                     node: withLocation(
                       importTemplate({
-                        IMPORT: state.importDefault,
-                        FILE: resolvePath(file, state.opts.resolve),
-                        LOCAL: local,
+                        IMPORT: t.cloneNode(state.importDefault),
+                        FILE: resolvePath(
+                          t.cloneNode(file),
+                          state.opts.resolve,
+                        ),
+                        LOCAL: t.cloneNode(local),
                       }),
                       loc,
                     ),
@@ -452,7 +438,10 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                   path.scope.push({
                     id: local,
                     init: withLocation(
-                      t.memberExpression(sharedModuleImport, imported),
+                      t.memberExpression(
+                        t.cloneNode(sharedModuleImport),
+                        t.cloneNode(imported),
+                      ),
                       loc,
                     ),
                   });
@@ -460,9 +449,12 @@ function importExportPlugin({types: t}: {types: Types, ...}): Visitors {
                   state.imports.push({
                     node: withLocation(
                       importNamedTemplate({
-                        FILE: resolvePath(file, state.opts.resolve),
-                        LOCAL: local,
-                        REMOTE: imported,
+                        FILE: resolvePath(
+                          t.cloneNode(file),
+                          state.opts.resolve,
+                        ),
+                        LOCAL: t.cloneNode(local),
+                        REMOTE: t.cloneNode(imported),
                       }),
                       loc,
                     ),

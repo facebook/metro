@@ -12,7 +12,7 @@
 
 const canonicalize = require('metro-core/src/canonicalize');
 
-import type {TransformInputOptions} from './transformHelpers';
+import type {TransformInputOptions} from '../DeltaBundler/types.flow';
 
 export opaque type GraphId: string = string;
 

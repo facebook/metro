@@ -14,8 +14,8 @@ const IncrementalBundler = require('./IncrementalBundler');
 const MetroHmrServer = require('./HmrServer');
 const MetroServer = require('./Server');
 
-const attachWebsocketServer = require('./lib/attachWebsocketServer');
 const chalk = require('chalk');
+const createWebsocketServer = require('./lib/createWebsocketServer');
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
@@ -23,9 +23,11 @@ const makeBuildCommand = require('./commands/build');
 const makeDependenciesCommand = require('./commands/dependencies');
 const makeServeCommand = require('./commands/serve');
 const outputBundle = require('./shared/output/bundle');
+const ws = require('ws');
 
 const {loadConfig, mergeConfig, getDefaultConfig} = require('metro-config');
 const {InspectorProxy} = require('metro-inspector-proxy');
+const {parse} = require('url');
 
 import type {Graph} from './DeltaBundler';
 import type {ServerOptions} from './Server';
@@ -57,6 +59,9 @@ export type RunServerOptions = {|
   secure?: boolean, // deprecated
   secureCert?: string, // deprecated
   secureKey?: string, // deprecated
+  websocketEndpoints?: {
+    [path: string]: typeof ws.Server,
+  },
 |};
 
 type BuildGraphOptions = {|
@@ -148,14 +153,22 @@ exports.createConnectMiddleware = async function(
 
   return {
     attachHmrServer(httpServer: HttpServer | HttpsServer): void {
-      attachWebsocketServer({
-        httpServer,
-        path: '/hot',
+      const wss = createWebsocketServer({
         websocketServer: new MetroHmrServer(
           metroServer.getBundler(),
           metroServer.getCreateModuleId(),
           config,
         ),
+      });
+      httpServer.on('upgrade', (request, socket, head) => {
+        const {pathname} = parse(request.url);
+        if (pathname === '/hot') {
+          wss.handleUpgrade(request, socket, head, ws => {
+            wss.emit('connection', ws, request);
+          });
+        } else {
+          socket.destroy();
+        }
       });
     },
     metroServer,
@@ -177,6 +190,7 @@ exports.runServer = async (
     secure, //deprecated
     secureCert, // deprecated
     secureKey, // deprecated
+    websocketEndpoints = {},
   }: RunServerOptions,
 ): Promise<HttpServer | HttpsServer> => {
   if (secure != null || secureCert != null || secureKey != null) {
@@ -193,13 +207,12 @@ exports.runServer = async (
 
   const serverApp = connect();
 
-  const {
-    attachHmrServer,
-    middleware,
-    end,
-  } = await exports.createConnectMiddleware(config, {
-    hasReducedPerformance,
-  });
+  const {middleware, end, metroServer} = await exports.createConnectMiddleware(
+    config,
+    {
+      hasReducedPerformance,
+    },
+  );
 
   serverApp.use(middleware);
 
@@ -243,13 +256,40 @@ exports.runServer = async (
           onReady(httpServer);
         }
 
-        attachHmrServer(httpServer);
-        if (inspectorProxy) {
-          inspectorProxy.addWebSocketListener(httpServer);
+        Object.assign(websocketEndpoints, {
+          ...(inspectorProxy
+            ? {...inspectorProxy.createWebSocketListeners(httpServer)}
+            : {}),
+          '/hot': createWebsocketServer({
+            websocketServer: new MetroHmrServer(
+              metroServer.getBundler(),
+              metroServer.getCreateModuleId(),
+              config,
+            ),
+          }),
+        });
 
+        httpServer.on('upgrade', (request, socket, head) => {
+          const {pathname} = parse(request.url);
+          if (pathname != null && websocketEndpoints[pathname]) {
+            websocketEndpoints[pathname].handleUpgrade(
+              request,
+              socket,
+              head,
+              ws => {
+                websocketEndpoints[pathname].emit('connection', ws, request);
+              },
+            );
+          } else {
+            socket.destroy();
+          }
+        });
+
+        if (inspectorProxy) {
           // TODO(hypuk): Refactor inspectorProxy.processRequest into separate request handlers
           // so that we could provide routes (/json/list and /json/version) here.
           // Currently this causes Metro to give warning about T31407894.
+          // $FlowFixMe[method-unbinding] added when improving typing for this parameters
           serverApp.use(inspectorProxy.processRequest.bind(inspectorProxy));
         }
 

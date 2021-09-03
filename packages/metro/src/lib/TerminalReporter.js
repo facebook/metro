@@ -45,11 +45,11 @@ export type TerminalReportableEvent =
 
 type BuildPhase = 'in_progress' | 'done' | 'failed';
 
-type SnippetError = ErrnoError & {
-  filename?: string,
-  snippet?: string,
-  ...
-};
+type SnippetError = ErrnoError &
+  interface {
+    filename?: string,
+    snippet?: string,
+  };
 
 const GLOBAL_CACHE_DISABLED_MESSAGE_FORMAT =
   'The global cache is now disabled because %s';
@@ -272,7 +272,7 @@ class TerminalReporter {
         this._logHmrClientError(event.error);
         break;
       case 'client_log':
-        logToConsole(this.terminal, event.level, ...event.data);
+        logToConsole(this.terminal, event.level, event.mode, ...event.data);
         break;
       case 'dep_graph_loading':
         const color = event.hasReducedPerformance ? chalk.red : chalk.blue;

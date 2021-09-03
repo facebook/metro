@@ -1806,6 +1806,61 @@ let resolver;
           p('/root/hasteModule.js'),
         );
       });
+
+      it('respects package.json replacements for global (Haste) packages', async () => {
+        setMockFileSystem({
+          node_modules: {
+            aPackage: {
+              'package.json': JSON.stringify({
+                name: 'aPackage',
+                browser: {hastePackage: './hastePackage-local-override'},
+              }),
+              'index.js': '',
+              './hastePackage-local-override.js': '',
+            },
+          },
+          hastePackage: {
+            'package.json': JSON.stringify({
+              name: 'hastePackage',
+            }),
+            'index.js': '',
+          },
+        });
+
+        resolver = await createResolver(config);
+
+        expect(
+          resolver.resolve(
+            p('/root/node_modules/aPackage/index.js'),
+            'hastePackage',
+          ),
+        ).toBe(p('/root/node_modules/aPackage/hastePackage-local-override.js'));
+      });
+
+      it('respects package.json replacements for Haste modules', async () => {
+        setMockFileSystem({
+          node_modules: {
+            aPackage: {
+              'package.json': JSON.stringify({
+                name: 'aPackage',
+                browser: {hasteModule: './hasteModule-local-override'},
+              }),
+              'index.js': '',
+              './hasteModule-local-override.js': '',
+            },
+          },
+          'hasteModule.js': '@providesModule hasteModule',
+        });
+
+        resolver = await createResolver(config);
+
+        expect(
+          resolver.resolve(
+            p('/root/node_modules/aPackage/index.js'),
+            'hasteModule',
+          ),
+        ).toBe(p('/root/node_modules/aPackage/hasteModule-local-override.js'));
+      });
     });
 
     describe('extraNodeModules config param', () => {
@@ -1967,7 +2022,7 @@ let resolver;
         );
       });
 
-      it('does not override global package resolutions', async () => {
+      it('overrides global package resolutions', async () => {
         setMockFileSystem({
           'index.js': '',
           aPackage: {
@@ -1980,11 +2035,11 @@ let resolver;
         resolver = await createResolver({resolver: {resolveRequest}});
 
         expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-          p('/root/aPackage/index.js'),
+          p('/root/overriden.js'),
         );
       });
 
-      it('does not override haste names', async () => {
+      it('overrides haste names', async () => {
         setMockFileSystem({
           'index.js': '',
           'aPackage.js': '@providesModule aPackage',
@@ -2002,7 +2057,7 @@ let resolver;
         });
 
         expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-          p('/root/aPackage.js'),
+          p('/root/overriden.js'),
         );
       });
 

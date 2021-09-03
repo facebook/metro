@@ -84,8 +84,9 @@ type HermesCoverageInfo = {
 };
 
 type HermesCoverageStackFrame = $ReadOnly<{
-  SegmentID: number,
-  VirtualOffset: number,
+  line: number, // SegmentID or zero-based line,
+  column: number, // VirtualOffset or zero-based column,
+  SourceURL: ?string,
 }>;
 
 type NativeCodeStackFrame = $ReadOnly<{|
@@ -458,20 +459,19 @@ class SymbolicationContext<ModuleIdsT> {
 
     if (executedFunctions != null) {
       for (const stackItem of executedFunctions) {
-        const {SegmentID, VirtualOffset: localOffset} = stackItem;
-        const generatedLine = SegmentID + this.options.inputLineStart;
-        const generatedColumn = localOffset + this.options.inputColumnStart;
-
+        const {line, column, SourceURL} = stackItem;
+        const generatedLine = line + this.options.inputLineStart;
+        const generatedColumn = column + this.options.inputColumnStart;
         const originalPosition = this.getOriginalPositionDetailsFor(
           generatedLine,
           generatedColumn,
+          this.parseFileName(SourceURL || ''),
         );
         symbolicatedTrace.push(originalPosition);
       }
     }
     return symbolicatedTrace;
   }
-
   /*
    * An internal helper function similar to getOriginalPositionFor. This one
    * returns both `name` and `functionName` fields so callers can distinguish the
@@ -617,13 +617,13 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
 
     if (executedFunctions != null) {
       for (const stackItem of executedFunctions) {
-        const {SegmentID, VirtualOffset: localOffset} = stackItem;
-        const generatedLine = SegmentID + this.options.inputLineStart;
-        const generatedColumn = localOffset + this.options.inputColumnStart;
-
+        const {line, column, SourceURL} = stackItem;
+        const generatedLine = line + this.options.inputLineStart;
+        const generatedColumn = column + this.options.inputColumnStart;
         const originalPosition = this.getOriginalPositionDetailsFor(
           generatedLine,
           generatedColumn,
+          this.parseFileName(SourceURL || ''),
         );
         symbolicatedTrace.push(originalPosition);
       }

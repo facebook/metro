@@ -81,6 +81,7 @@ module.exports = (): ({|
       if (server) {
         // eslint-disable-next-line no-console
         console.log('Configuration changed. Restarting the server...');
+        // $FlowFixMe[method-unbinding] added when improving typing for this parameters
         await promisify(server.close).call(server);
       }
 

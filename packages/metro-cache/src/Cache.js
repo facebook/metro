@@ -50,6 +50,7 @@ class Cache<T> {
       try {
         const valueOrPromise = store.get(key);
 
+        // $FlowFixMe[method-unbinding] added when improving typing for this parameters
         if (valueOrPromise && typeof valueOrPromise.then === 'function') {
           value = await valueOrPromise;
         } else {
@@ -101,6 +102,13 @@ class Cache<T> {
         throw err;
       });
     });
+  }
+
+  // Returns true if the current configuration disables the cache, such that
+  // writing to the cache is a no-op and reading from the cache will always
+  // return null.
+  get isDisabled(): boolean {
+    return this._stores.length === 0;
   }
 }
 

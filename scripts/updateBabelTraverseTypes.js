@@ -50,17 +50,19 @@ content = replaceGeneratedBlock(
 fs.writeFileSync(declarationFileName, content);
 
 function generateVisitorMethods() {
-  const types = [...t.TYPES, ...Object.keys(t.FLIPPED_ALIAS_KEYS)].filter(
-    type => {
-      if (type === 'File') {
-        // The file node can not be visited using a visitor because traverse(node) only visits the
-        // children of the passed in node and File has no parent node.
-        return false;
-      }
+  const uniqueTypes = new Set([
+    ...t.TYPES,
+    ...Object.keys(t.FLIPPED_ALIAS_KEYS),
+  ]);
+  const types = [...uniqueTypes].filter(type => {
+    if (type === 'File') {
+      // The file node can not be visited using a visitor because traverse(node) only visits the
+      // children of the passed in node and File has no parent node.
+      return false;
+    }
 
-      return true;
-    },
-  );
+    return true;
+  });
 
   types.sort();
 
@@ -74,23 +76,18 @@ function generateVisitorMethods() {
 }
 
 function generateNodePathMethods() {
-  const is = [];
-  const assert = [];
+  const isTypes = [
+    ...new Set([
+      ...t.TYPES,
+      ...Object.keys(virtualTypes).filter(type => !type.startsWith('_')),
+    ]),
+  ].sort();
+  const is = isTypes.map(type => `    is${type}(opts?: Opts): boolean;`);
+  const asserts = t.TYPES.map(
+    type => `    assert${type}(opts?: Opts): void;`,
+  ).sort();
 
-  for (const type of [...t.TYPES].sort()) {
-    is.push(`    is${type}(opts?: Opts): boolean;`);
-    assert.push(`    assert${type}(opts?: Opts): void;`);
-  }
-
-  for (const type of Object.keys(virtualTypes).sort()) {
-    if (type[0] === '_') {
-      continue;
-    }
-
-    is.push(`    is${type}(opts?: Opts): boolean;`);
-  }
-
-  return `${is.join('\n')}\n${assert.join('\n')}`;
+  return `${is.join('\n')}\n${asserts.join('\n')}`;
 }
 
 function replaceGeneratedBlock(content, markerName, code) {

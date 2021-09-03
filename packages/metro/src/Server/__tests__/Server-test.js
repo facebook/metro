@@ -187,6 +187,7 @@ describe('processRequest', () => {
           entryPoints: ['/root/mybundle.js'],
           dependencies,
           importBundleNames: new Set(),
+          transformOptions: options.transformOptions,
         };
         currentGraphs.add(graph);
 
@@ -615,6 +616,16 @@ describe('processRequest', () => {
         resolve: expect.any(Function),
         shallow: false,
         transform: expect.any(Function),
+        transformOptions: {
+          customTransformOptions: {},
+          dev: true,
+          hot: true,
+          minify: false,
+          platform: 'ios',
+          runtimeBytecodeVersion: null,
+          type: 'module',
+          unstable_transformProfile: 'default',
+        },
       },
     );
   });
@@ -641,6 +652,16 @@ describe('processRequest', () => {
         resolve: expect.any(Function),
         shallow: false,
         transform: expect.any(Function),
+        transformOptions: {
+          customTransformOptions: {},
+          dev: true,
+          hot: true,
+          minify: false,
+          platform: null,
+          runtimeBytecodeVersion: null,
+          type: 'module',
+          unstable_transformProfile: 'hermes-stable',
+        },
       },
     );
   });
@@ -760,6 +781,63 @@ describe('processRequest', () => {
         done();
       });
     });
+
+    it('should use unstable_path if provided', done => {
+      const req = scaffoldReq({url: '/assets?unstable_path=imgs/a.png'});
+      const res = {end: jest.fn(), setHeader: jest.fn()};
+
+      getAsset.mockReturnValue(Promise.resolve('i am image'));
+
+      server.processRequest(req, res);
+      res.end.mockImplementation(value => {
+        expect(value).toBe('i am image');
+        done();
+      });
+    });
+
+    it('should parse the platform option if tacked onto unstable_path', done => {
+      const req = scaffoldReq({
+        url: '/assets?unstable_path=imgs/a.png?platform=ios',
+      });
+      const res = {end: jest.fn(), setHeader: jest.fn()};
+
+      getAsset.mockReturnValue(Promise.resolve('i am image'));
+
+      server.processRequest(req, res);
+      res.end.mockImplementation(value => {
+        expect(getAsset).toBeCalledWith(
+          'imgs/a.png',
+          '/root',
+          ['/root'],
+          'ios',
+          expect.any(Array),
+        );
+        expect(value).toBe('i am image');
+        done();
+      });
+    });
+
+    it('unstable_path can escape from projectRoot', done => {
+      const req = scaffoldReq({
+        url: '/assets?unstable_path=../otherFolder/otherImage.png',
+      });
+      const res = {end: jest.fn(), setHeader: jest.fn()};
+
+      getAsset.mockReturnValue(Promise.resolve('i am image'));
+
+      server.processRequest(req, res);
+      res.end.mockImplementation(value => {
+        expect(getAsset).toBeCalledWith(
+          '../otherFolder/otherImage.png',
+          '/root',
+          ['/root'],
+          undefined,
+          expect.any(Array),
+        );
+        expect(value).toBe('i am image');
+        done();
+      });
+    });
   });
 
   describe('build(options)', () => {
@@ -795,6 +873,16 @@ describe('processRequest', () => {
           resolve: expect.any(Function),
           shallow: false,
           transform: expect.any(Function),
+          transformOptions: {
+            customTransformOptions: {},
+            dev: true,
+            hot: false,
+            minify: false,
+            platform: undefined,
+            runtimeBytecodeVersion: null,
+            type: 'module',
+            unstable_transformProfile: 'default',
+          },
         },
       );
     });
@@ -827,10 +915,10 @@ describe('processRequest', () => {
       expect(JSON.parse(response.body)).toMatchInlineSnapshot(`
         Object {
           "codeFrame": Object {
-            "content": "[0m[31m[1m>[22m[39m[90m 1 | [39m[36mthis[39m[0m
-        [0m [90m   | [39m[31m[1m^[22m[39m[0m
-        [0m [90m 2 | [39mis[0m
-        [0m [90m 3 | [39mjust an example and it is all fake data[33m,[39m yay[33m![39m[0m",
+            "content": "[0m[31m[1m>[22m[39m[90m 1 |[39m [36mthis[39m[0m
+        [0m [90m   |[39m [31m[1m^[22m[39m[0m
+        [0m [90m 2 |[39m is[0m
+        [0m [90m 3 |[39m just an example and it is all fake data[33m,[39m yay[33m![39m[0m",
             "fileName": "/root/mybundle.js",
             "location": Object {
               "column": 0,
@@ -995,10 +1083,10 @@ describe('processRequest', () => {
       expect(JSON.parse(response.body)).toMatchInlineSnapshot(`
         Object {
           "codeFrame": Object {
-            "content": "[0m[31m[1m>[22m[39m[90m 1 | [39m[36mthis[39m[0m
-        [0m [90m   | [39m[31m[1m^[22m[39m[0m
-        [0m [90m 2 | [39mis[0m
-        [0m [90m 3 | [39mjust an example and it is all fake data[33m,[39m yay[33m![39m[0m",
+            "content": "[0m[31m[1m>[22m[39m[90m 1 |[39m [36mthis[39m[0m
+        [0m [90m   |[39m [31m[1m^[22m[39m[0m
+        [0m [90m 2 |[39m is[0m
+        [0m [90m 3 |[39m just an example and it is all fake data[33m,[39m yay[33m![39m[0m",
             "fileName": "/root/mybundle.js",
             "location": Object {
               "column": 0,

@@ -179,6 +179,16 @@ describe('coverage option', () => {
     expect(output).toMatchSnapshot();
   });
 
+  test('symbolicating a coverage stack trace Classic', async () => {
+    const output = JSON.parse(
+      await execute(
+        [HERMES_MAP, '--hermes-coverage'],
+        read('coverageStackTrace.json'),
+      ),
+    );
+    expect(output).toMatchSnapshot();
+  });
+
   test('symbolicating a CJS stack trace ignores the module id of the file name', async () => {
     const output = await execute([HERMES_MAP_CJS, '5.js', '52', '83']);
     expect(output).toMatchSnapshot();

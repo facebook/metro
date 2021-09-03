@@ -24,6 +24,7 @@ class JsonReporter<TEvent: {[string]: any, ...}> {
    * (Perhaps we should switch in favor of plain object?)
    */
   update(event: TEvent): void {
+    // $FlowFixMe[method-unbinding] added when improving typing for this parameters
     if (Object.prototype.toString.call(event.error) === '[object Error]') {
       event = Object.assign(event, {
         message: event.error.message,

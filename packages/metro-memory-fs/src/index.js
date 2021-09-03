@@ -196,7 +196,7 @@ class MemoryFs {
   _pathSep: string;
   _cwd: ?() => string;
   constants: any = constants;
-  promises: {[funcName: string]: (...args: Array<*>) => Promise<*>, ...};
+  promises: {[funcName: string]: (...args: Array<any>) => Promise<any>, ...};
   Dirent: typeof Dirent = Dirent;
 
   close: (fd: number, callback: (error: ?Error) => mixed) => void;
@@ -1061,6 +1061,7 @@ class MemoryFs {
     const ffd = fd;
     const ropt = {
       fd,
+      // $FlowFixMe[method-unbinding] added when improving typing for this parameters
       writeSync: this._write.bind(this),
       filePath,
       start,

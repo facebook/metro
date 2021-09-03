@@ -78,6 +78,7 @@ class AutoCleanFileStore<T> extends FileStore<T> {
   }
 
   _scheduleCleanup() {
+    // $FlowFixMe[method-unbinding] added when improving typing for this parameters
     setTimeout(this._doCleanup.bind(this), this._intervalMs);
   }
 

@@ -30,20 +30,18 @@ import type {
 
 export type DirExistsFn = (filePath: string) => boolean;
 
-export type Packageish = {
+export type Packageish = interface {
   path: string,
   redirectRequire(
     toModuleName: string,
     mainFields: $ReadOnlyArray<string>,
   ): string | false,
   getMain(mainFields: $ReadOnlyArray<string>): string,
-  ...
 };
 
-export type Moduleish = {
+export type Moduleish = interface {
   +path: string,
   getPackage(): ?Packageish,
-  ...
 };
 
 /**
@@ -63,14 +61,13 @@ export type ModuleMap = {
   ...
 };
 
-export type ModuleishCache<TModule, TPackage> = {
+export type ModuleishCache<TModule, TPackage> = interface {
   getPackage(
     name: string,
     platform?: string,
     supportsNativePlatform?: boolean,
   ): TPackage,
   getModule(path: string): TModule,
-  ...
 };
 
 type Options<TModule, TPackage> = {|
@@ -92,7 +89,9 @@ type Options<TModule, TPackage> = {|
 class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   _options: Options<TModule, TPackage>;
 
-  static EMPTY_MODULE: string = require.resolve('./assets/empty-module.js');
+  static EMPTY_MODULE: string = require.resolve(
+    'metro-runtime/src/modules/empty-module.js',
+  );
 
   constructor(options: Options<TModule, TPackage>) {
     this._options = options;
