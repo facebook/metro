@@ -298,4 +298,5 @@ export type ResolvedLibrary = {|
   +files: $ReadOnlyArray<ResolvedCodeFile>,
   /* cannot be a Map because it's JSONified later on */
   +assets: AssetContentsByPath,
+  +isPartiallyResolved?: boolean,
 |};
