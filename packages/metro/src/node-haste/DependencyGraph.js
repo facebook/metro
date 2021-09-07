@@ -289,16 +289,20 @@ class DependencyGraph extends EventEmitter {
       assumeFlatNodeModules: false,
     },
   ): string {
-    const isPath =
+    const isSensitiveToOriginFolder =
+      // Resolution is always relative to the origin folder unless we assume a flat node_modules
+      !assumeFlatNodeModules ||
+      // Path requests are resolved relative to the origin folder
       to.includes('/') ||
       to === '.' ||
       to === '..' ||
+      // Preserve standard assumptions under node_modules
       from.includes(path.sep + 'node_modules' + path.sep);
     const mapByDirectory = getOrCreate(
       this._resolutionCache,
-      isPath ? path.dirname(from) : '',
+      isSensitiveToOriginFolder ? path.dirname(from) : '',
     );
-    let mapByPlatform = getOrCreate(mapByDirectory, to);
+    const mapByPlatform = getOrCreate(mapByDirectory, to);
     let modulePath = mapByPlatform.get(platform);
 
     if (!modulePath) {
@@ -309,18 +313,6 @@ class DependencyGraph extends EventEmitter {
           true,
           platform,
         ).path;
-
-        // If we cannot assume that only one node_modules folder exists in the project,
-        // we need to cache packages by directory instead of globally.
-        if (
-          !assumeFlatNodeModules &&
-          modulePath.includes(path.sep + 'node_modules' + path.sep)
-        ) {
-          mapByPlatform = getOrCreate(
-            getOrCreate(this._resolutionCache, path.dirname(from)),
-            to,
-          );
-        }
       } catch (error) {
         if (error instanceof DuplicateHasteCandidatesError) {
           throw new AmbiguousModuleResolutionError(from, error);
