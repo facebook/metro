@@ -41,6 +41,7 @@ type ResolveOptions = {|
   platforms?: $ReadOnlyArray<string>,
 |};
 
+const NATIVE_PLATFORM = 'native';
 const GENERIC_PLATFORM = 'g';
 const PACKAGE_JSON = path.sep + 'package.json';
 const NULL_MODULE: Moduleish = {
@@ -59,7 +60,9 @@ const isNodeModules = file => file.includes(NODE_MODULES);
 
 // This function maps the ModuleGraph data structure to jest-haste-map's ModuleMap
 const createModuleMap = ({files, moduleCache, sourceExts, platforms}) => {
-  const platformSet = new Set(platforms ?? defaults.platforms);
+  const platformSet = new Set(
+    (platforms ?? defaults.platforms).concat([NATIVE_PLATFORM]),
+  );
 
   const map = new Map();
 
