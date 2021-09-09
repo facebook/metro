@@ -24,7 +24,6 @@ import type {
   FileCandidates,
   FileContext,
   FileOrDirContext,
-  FileResolution,
   HasteContext,
   ModulePathContext,
   ResolutionContext,
@@ -169,7 +168,7 @@ function resolveHasteName(
   context: HasteContext,
   moduleName: string,
   platform: string | null,
-): Result<FileResolution, void> {
+): Result<Resolution, void> {
   const modulePath = context.resolveHasteModule(moduleName);
   if (modulePath != null) {
     return resolvedAs({type: 'sourceFile', filePath: modulePath});
@@ -229,7 +228,7 @@ function resolveFileOrDir(
   context: FileOrDirContext,
   potentialModulePath: string,
   platform: string | null,
-): Result<FileResolution, FileAndDirCandidates> {
+): Result<Resolution, FileAndDirCandidates> {
   const dirPath = path.dirname(potentialModulePath);
   const fileNameHint = path.basename(potentialModulePath);
   const fileResult = resolveFile(context, dirPath, fileNameHint, platform);
@@ -257,7 +256,7 @@ function resolveDir(
   context: FileOrDirContext,
   potentialDirPath: string,
   platform: string | null,
-): Result<FileResolution, FileCandidates> {
+): Result<Resolution, FileCandidates> {
   const packageJsonPath = path.join(potentialDirPath, 'package.json');
   if (context.doesFileExist(packageJsonPath)) {
     const resolution = resolvePackage(context, packageJsonPath, platform);
@@ -277,7 +276,7 @@ function resolvePackage(
   context: FileOrDirContext,
   packageJsonPath: string,
   platform: string | null,
-): FileResolution {
+): Resolution {
   const mainPrefixPath = context.getPackageMainPath(packageJsonPath);
   const dirPath = path.dirname(mainPrefixPath);
   const prefixName = path.basename(mainPrefixPath);
@@ -311,7 +310,7 @@ function resolveFile(
   dirPath: string,
   fileName: string,
   platform: string | null,
-): Result<FileResolution, FileCandidates> {
+): Result<Resolution, FileCandidates> {
   const {isAssetFile, resolveAsset} = context;
   if (isAssetFile(fileName)) {
     const extension = path.extname(fileName);
@@ -336,9 +335,12 @@ function resolveFile(
   const candidateExts = [];
   const filePathPrefix = path.join(dirPath, fileName);
   const sfContext = {...context, candidateExts, filePathPrefix};
-  const filePath = resolveSourceFile(sfContext, platform);
-  if (filePath != null) {
-    return resolvedAs({type: 'sourceFile', filePath});
+  const sourceFileResolution = resolveSourceFile(sfContext, platform);
+  if (sourceFileResolution != null) {
+    if (typeof sourceFileResolution === 'string') {
+      return resolvedAs({type: 'sourceFile', filePath: sourceFileResolution});
+    }
+    return resolvedAs(sourceFileResolution);
   }
   return failedFor({type: 'sourceFile', filePathPrefix, candidateExts});
 }
@@ -348,6 +350,9 @@ type SourceFileContext = SourceFileForAllExtsContext & {
   ...
 };
 
+// Either a full path, or a restricted subset of Resolution.
+type SourceFileResolution = ?string | $ReadOnly<{type: 'empty'}>;
+
 /**
  * A particular 'base path' can resolve to a number of possibilities depending
  * on the context. For example `foo/bar` could resolve to `foo/bar.ios.js`, or
@@ -356,12 +361,12 @@ type SourceFileContext = SourceFileForAllExtsContext & {
  * `foo/bar.ios`, for historical reasons.
  *
  * Return the full path of the resolved module, `null` if no resolution could
- * be found.
+ * be found, or `{type: 'empty'}` if redirected to an empty module.
  */
 function resolveSourceFile(
   context: SourceFileContext,
   platform: ?string,
-): ?string {
+): SourceFileResolution {
   let filePath = resolveSourceFileForAllExts(context, '');
   if (filePath) {
     return filePath;
@@ -385,13 +390,14 @@ type SourceFileForAllExtsContext = SourceFileForExtContext & {
 /**
  * For a particular extension, ex. `js`, we want to try a few possibilities,
  * such as `foo.ios.js`, `foo.native.js`, and of course `foo.js`. Return the
- * full path of the resolved module, `null` if no resolution could be found.
+ * full path of the resolved module, `null` if no resolution could be found, or
+ * `{type: 'empty'}` if redirected to an empty module.
  */
 function resolveSourceFileForAllExts(
   context: SourceFileForAllExtsContext,
   sourceExt: string,
   platform: ?string,
-): ?string {
+): SourceFileResolution {
   if (platform != null) {
     const ext = `.${platform}${sourceExt}`;
     const filePath = resolveSourceFileForExt(context, ext);
@@ -413,6 +419,7 @@ type SourceFileForExtContext = {
   +candidateExts: Array<string>,
   +doesFileExist: DoesFileExist,
   +filePathPrefix: string,
+  +redirectModulePath: (modulePath: string) => string | false,
   ...
 };
 
@@ -423,10 +430,16 @@ type SourceFileForExtContext = {
 function resolveSourceFileForExt(
   context: SourceFileForExtContext,
   extension: string,
-): ?string {
+): SourceFileResolution {
   const filePath = `${context.filePathPrefix}${extension}`;
-  if (context.doesFileExist(filePath)) {
-    return filePath;
+  const redirectedPath =
+    // Any redirections for the bare path have already happened
+    extension !== '' ? context.redirectModulePath(filePath) : filePath;
+  if (redirectedPath === false) {
+    return {type: 'empty'};
+  }
+  if (context.doesFileExist(redirectedPath)) {
+    return redirectedPath;
   }
   context.candidateExts.push(extension);
   return null;
