@@ -38,9 +38,8 @@ type ResolveOptions = {|
   nodeModulesPaths: $ReadOnlyArray<string>,
   resolveRequest?: ?CustomResolver,
   transformedFiles: {[path: Path]: TransformedCodeFile, ...},
+  platforms?: $ReadOnlyArray<string>,
 |};
-
-const platforms = new Set(defaults.platforms);
 
 const GENERIC_PLATFORM = 'g';
 const PACKAGE_JSON = path.sep + 'package.json';
@@ -59,7 +58,9 @@ const NODE_MODULES = path.sep + 'node_modules' + path.sep;
 const isNodeModules = file => file.includes(NODE_MODULES);
 
 // This function maps the ModuleGraph data structure to jest-haste-map's ModuleMap
-const createModuleMap = ({files, moduleCache, sourceExts}) => {
+const createModuleMap = ({files, moduleCache, sourceExts, platforms}) => {
+  const platformSet = new Set(platforms ?? defaults.platforms);
+
   const map = new Map();
 
   files.forEach((filePath: string) => {
@@ -83,7 +84,7 @@ const createModuleMap = ({files, moduleCache, sourceExts}) => {
     const mapModule = map.get(id) || Object.create(null);
 
     const platform =
-      parsePlatformFilePath(filePath, platforms).platform || GENERIC_PLATFORM;
+      parsePlatformFilePath(filePath, platformSet).platform || GENERIC_PLATFORM;
 
     const existingModule = mapModule[platform];
     // 0 = Module, 1 = Package in jest-haste-map
@@ -116,6 +117,7 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     transformedFiles,
     sourceExts,
     platform,
+    platforms,
   } = options;
   const files = Object.keys(transformedFiles);
   function getTransformedFile(path: string): TransformedCodeFile {
@@ -145,7 +147,7 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
     moduleCache,
     moduleMap: new ModuleMap({
       duplicates: new Map(),
-      map: createModuleMap({files, moduleCache, sourceExts}),
+      map: createModuleMap({files, moduleCache, sourceExts, platforms}),
       mocks: new Map(),
       rootDir: '',
     }),
