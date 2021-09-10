@@ -134,7 +134,7 @@ Object {
     "unstable_dependencyMapReservedName": null,
     "unstable_disableModuleWrapping": false,
     "unstable_disableNormalizePseudoGlobals": false,
-    "workerPath": "metro/src/DeltaBundler/Worker",
+    "workerPath": "",
   },
   "transformerPath": "",
   "watchFolders": Array [
@@ -277,7 +277,7 @@ Object {
     "unstable_dependencyMapReservedName": null,
     "unstable_disableModuleWrapping": false,
     "unstable_disableNormalizePseudoGlobals": false,
-    "workerPath": "metro/src/DeltaBundler/Worker",
+    "workerPath": "",
   },
   "transformerPath": "",
   "watchFolders": Array [
@@ -420,7 +420,7 @@ Object {
     "unstable_dependencyMapReservedName": null,
     "unstable_disableModuleWrapping": false,
     "unstable_disableNormalizePseudoGlobals": false,
-    "workerPath": "metro/src/DeltaBundler/Worker",
+    "workerPath": "",
   },
   "transformerPath": "",
   "watchFolders": Array [
@@ -563,7 +563,7 @@ Object {
     "unstable_dependencyMapReservedName": null,
     "unstable_disableModuleWrapping": false,
     "unstable_disableNormalizePseudoGlobals": false,
-    "workerPath": "metro/src/DeltaBundler/Worker",
+    "workerPath": "",
   },
   "transformerPath": "",
   "watchFolders": Array [

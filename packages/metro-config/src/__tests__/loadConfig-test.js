@@ -31,6 +31,9 @@ describe('loadConfig', () => {
       maxWorkers: 2,
       cacheStores: [],
       transformerPath: '',
+      transformer: {
+        workerPath: '',
+      },
     };
 
     cosmiconfig.setResolvedConfig(config);
@@ -52,6 +55,9 @@ describe('loadConfig', () => {
         hasteImplModulePath: 'test',
       },
       transformerPath: '',
+      transformer: {
+        workerPath: '',
+      },
     });
 
     cosmiconfig.setResolvedConfig(config);
@@ -79,6 +85,10 @@ describe('loadConfig', () => {
       maxWorkers: 2,
       cacheStores: [],
       transformerPath: '',
+      transformer: {
+        ...defaultConfig.transformer,
+        workerPath: '',
+      },
     });
 
     cosmiconfig.setResolvedConfig(config);
@@ -101,6 +111,7 @@ describe('loadConfig', () => {
           ),
           result.transformer.babelTransformerPath,
         ),
+        workerPath: '',
       },
     };
     expect(relativizedResult).toMatchSnapshot();
@@ -137,6 +148,7 @@ describe('loadConfig', () => {
           ),
           result.transformer.babelTransformerPath,
         ),
+        workerPath: '',
       },
     };
     expect(relativizedResult).toMatchSnapshot();
@@ -197,6 +209,9 @@ describe('loadConfig', () => {
       maxWorkers: 2,
       cacheStores: jest.fn(() => []),
       transformerPath: '',
+      transformer: {
+        workerPath: '',
+      },
     };
 
     cosmiconfig.setResolvedConfig(config);
