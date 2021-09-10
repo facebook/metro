@@ -68,6 +68,7 @@ export type ModuleishCache<TModule, TPackage> = interface {
     supportsNativePlatform?: boolean,
   ): TPackage,
   getModule(path: string): TModule,
+  getPackageOf(modulePath: string): ?TPackage,
 };
 
 type Options<TModule, TPackage> = {|
@@ -136,7 +137,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         }
       } else {
         const pck = path.isAbsolute(modulePath)
-          ? moduleCache.getModule(modulePath).getPackage()
+          ? moduleCache.getPackageOf(modulePath)
           : fromModule.getPackage();
 
         if (pck) {
