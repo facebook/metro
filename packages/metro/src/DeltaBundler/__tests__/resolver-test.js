@@ -906,9 +906,52 @@ let resolver;
 
           it('supports excluding a package', async () => {
             // TODO: Make this configurable.
-            require('../../node-haste/DependencyGraph/ModuleResolution').ModuleResolver.EMPTY_MODULE = p(
+            require('../../node-haste/DependencyGraph/ModuleResolution').ModuleResolver.EMPTY_MODULE_NAME = p(
               '/root/emptyModule.js',
             );
+
+            setMockFileSystem({
+              'emptyModule.js': '',
+              'index.js': '',
+              node_modules: {
+                aPackage: {
+                  'package.json': JSON.stringify({
+                    name: 'aPackage',
+                    [browserField]: {'left-pad': false, './foo.js': false},
+                  }),
+                  'index.js': '',
+                },
+              },
+            });
+
+            resolver = await createResolver();
+
+            expect(
+              resolver.resolve(
+                p('/root/node_modules/aPackage/index.js'),
+                'left-pad',
+              ),
+            ).toBe(p('/root/emptyModule.js'));
+            expect(
+              resolver.resolve(
+                p('/root/node_modules/aPackage/index.js'),
+                './foo',
+              ),
+            ).toBe(p('/root/emptyModule.js'));
+
+            // TODO: Are the following two cases expected behaviour?
+            expect(() =>
+              resolver.resolve(p('/root/index.js'), 'aPackage/foo'),
+            ).toThrow();
+            expect(() =>
+              resolver.resolve(p('/root/index.js'), 'aPackage/foo.js'),
+            ).toThrow();
+          });
+
+          it('supports excluding a package when the empty module is a relative path', async () => {
+            // TODO: Make this configurable.
+            require('../../node-haste/DependencyGraph/ModuleResolution').ModuleResolver.EMPTY_MODULE_NAME =
+              './emptyModule.js';
 
             setMockFileSystem({
               'emptyModule.js': '',
