@@ -119,6 +119,12 @@ Type: `Array<string>`
 
 Specify the fields in package.json files that will be used by the module resolver to do redirections when requiring certain packages. For example, using `['browser', 'main']` will use the `browser` field if it exists and will default to `main` if it doesn't.
 
+#### `emptyModulePath`
+
+Type: `string`
+
+What module to use as the canonical "empty" module when one is needed. Defaults to using the one included in `metro-runtime`. You only need to change this if Metro is installed outside of your project.
+
 #### `extraNodeModules`
 
 Type: `{[name:string]:string}`

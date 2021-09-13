@@ -31,6 +31,9 @@ describe('loadConfig', () => {
       maxWorkers: 2,
       cacheStores: [],
       transformerPath: '',
+      resolver: {
+        emptyModulePath: 'metro-runtime/src/modules/empty-module',
+      },
     };
 
     cosmiconfig.setResolvedConfig(config);
@@ -79,6 +82,9 @@ describe('loadConfig', () => {
       maxWorkers: 2,
       cacheStores: [],
       transformerPath: '',
+      resolver: {
+        emptyModulePath: 'metro-runtime/src/modules/empty-module',
+      },
     });
 
     cosmiconfig.setResolvedConfig(config);
@@ -90,8 +96,8 @@ describe('loadConfig', () => {
     const relativizedResult = {
       ...result,
       transformer: {
-        ...result.transformer,
         // Remove absolute paths from the result.
+        ...result.transformer,
         babelTransformerPath: path.relative(
           path.join(
             require.resolve('metro-babel-transformer'),
@@ -115,6 +121,9 @@ describe('loadConfig', () => {
       maxWorkers: 2,
       cacheStores: [],
       transformerPath: '',
+      resolver: {
+        emptyModulePath: 'metro-runtime/src/modules/empty-module',
+      },
     });
 
     cosmiconfig.setResolvedConfig(config);
@@ -197,6 +206,9 @@ describe('loadConfig', () => {
       maxWorkers: 2,
       cacheStores: jest.fn(() => []),
       transformerPath: '',
+      resolver: {
+        emptyModulePath: 'metro-runtime/src/modules/empty-module',
+      },
     };
 
     cosmiconfig.setResolvedConfig(config);

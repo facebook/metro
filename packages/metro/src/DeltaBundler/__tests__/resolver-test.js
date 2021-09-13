@@ -905,11 +905,6 @@ let resolver;
           });
 
           it('supports excluding a package', async () => {
-            // TODO: Make this configurable.
-            require('../../node-haste/DependencyGraph/ModuleResolution').ModuleResolver.EMPTY_MODULE_NAME = p(
-              '/root/emptyModule.js',
-            );
-
             setMockFileSystem({
               'emptyModule.js': '',
               'index.js': '',
@@ -924,7 +919,9 @@ let resolver;
               },
             });
 
-            resolver = await createResolver();
+            resolver = await createResolver({
+              resolver: {emptyModulePath: p('/root/emptyModule.js')},
+            });
 
             expect(
               resolver.resolve(
@@ -949,10 +946,6 @@ let resolver;
           });
 
           it('supports excluding a package when the empty module is a relative path', async () => {
-            // TODO: Make this configurable.
-            require('../../node-haste/DependencyGraph/ModuleResolution').ModuleResolver.EMPTY_MODULE_NAME =
-              './emptyModule.js';
-
             setMockFileSystem({
               'emptyModule.js': '',
               'index.js': '',
@@ -967,7 +960,9 @@ let resolver;
               },
             });
 
-            resolver = await createResolver();
+            resolver = await createResolver({
+              resolver: {emptyModulePath: './emptyModule.js'},
+            });
 
             expect(
               resolver.resolve(

@@ -74,6 +74,7 @@ export type ModuleishCache<TModule, TPackage> = interface {
 type Options<TModule, TPackage> = {|
   +dirExists: DirExistsFn,
   +doesFileExist: DoesFileExist,
+  +emptyModulePath: string,
   +extraNodeModules: ?Object,
   +isAssetFile: IsAssetFile,
   +mainFields: $ReadOnlyArray<string>,
@@ -89,14 +90,10 @@ type Options<TModule, TPackage> = {|
 
 class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   _options: Options<TModule, TPackage>;
-  // A module representing the project root, used as the origin when resolving EMPTY_MODULE_NAME.
+  // A module representing the project root, used as the origin when resolving `emptyModulePath`.
   _projectRootFakeModule: Moduleish;
-  // An empty module, the result of resolving EMPTY_MODULE_NAME from the project root.
+  // An empty module, the result of resolving `emptyModulePath` from the project root.
   _cachedEmptyModule: ?TModule;
-
-  static EMPTY_MODULE_NAME: string = require.resolve(
-    'metro-runtime/src/modules/empty-module.js',
-  );
 
   constructor(options: Options<TModule, TPackage>) {
     this._options = options;
@@ -119,7 +116,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
     if (!emptyModule) {
       emptyModule = this.resolveDependency(
         this._projectRootFakeModule,
-        ModuleResolver.EMPTY_MODULE_NAME,
+        this._options.emptyModulePath,
         false,
         null,
       );
