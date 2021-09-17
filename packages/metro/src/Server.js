@@ -666,6 +666,8 @@ class Server {
           stack: formattedError.message,
         });
 
+        debug('Bundling error', error);
+
         return;
       }
 
