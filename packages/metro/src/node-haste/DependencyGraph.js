@@ -211,6 +211,7 @@ class DependencyGraph extends EventEmitter {
         return false;
       },
       doesFileExist: this._doesFileExist,
+      emptyModulePath: this._config.resolver.emptyModulePath,
       extraNodeModules: this._config.resolver.extraNodeModules,
       isAssetFile: file => this._assetExtensions.has(path.extname(file)),
       mainFields: this._config.resolver.resolverMainFields,

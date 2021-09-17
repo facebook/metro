@@ -74,6 +74,7 @@ type ResolverConfigT = {|
   blacklistRE?: RegExp | Array<RegExp>,
   blockList: RegExp | Array<RegExp>,
   dependencyExtractor: ?string,
+  emptyModulePath: string,
   extraNodeModules: {[name: string]: string, ...},
   hasteImplModulePath: ?string,
   nodeModulesPaths: $ReadOnlyArray<string>,

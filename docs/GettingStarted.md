@@ -40,8 +40,8 @@ const http = require('http');
 const Metro = require('metro');
 
 // We first load the config from the file system
-Metro.loadConfig().then(config => {
-  const metroBundlerServer = Metro.runMetro(config);
+Metro.loadConfig().then(async (config) => {
+  const metroBundlerServer = await Metro.runMetro(config);
 
   const httpServer = http.createServer(
     metroBundlerServer.processRequest.bind(metroBundlerServer),
@@ -134,6 +134,7 @@ Given a configuration and a set of options that you would typically pass to a se
 const config = await Metro.loadConfig();
 
 await Metro.runBuild(config, {
+  entry: 'index.js',
   platform: 'ios',
   minify: true,
   out: '/Users/Metro/metro-ios.js'
@@ -207,7 +208,7 @@ Mandatory method that will transform code. The object received has information a
 const babylon = require('@babel/parser');
 
 module.exports.transform = (file: {filename: string, src: string}) => {
-  const ast = babylon.parse(code, {sourceType: 'module'});
+  const ast = babylon.parse(file.src, {sourceType: 'module'});
 
   return {ast};
 };

@@ -39,6 +39,7 @@ type ResolveOptions = {|
   resolveRequest?: ?CustomResolver,
   transformedFiles: {[path: Path]: TransformedCodeFile, ...},
   platforms?: $ReadOnlyArray<string>,
+  +emptyModulePath: string,
 |};
 
 const NATIVE_PLATFORM = 'native';
@@ -143,6 +144,7 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
   const moduleResolver = new ModuleResolver({
     dirExists: (filePath: string): boolean => hasteFS.dirExists(filePath),
     doesFileExist: (filePath: string): boolean => hasteFS.exists(filePath),
+    emptyModulePath: options.emptyModulePath,
     extraNodeModules,
     isAssetFile,
     mainFields: options.mainFields,
