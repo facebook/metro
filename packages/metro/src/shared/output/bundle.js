@@ -18,7 +18,7 @@ const writeFile = require('./writeFile');
 import type {OutputOptions, RequestOptions} from '../types.flow';
 import type {MixedSourceMap} from 'metro-source-map';
 
-function buildBundle(
+async function buildBundle(
   packagerClient: Server,
   requestOptions: RequestOptions,
 ): Promise<{
@@ -26,11 +26,25 @@ function buildBundle(
   map: string,
   ...
 }> {
-  return packagerClient.build({
+  let bundle = await packagerClient.build({
     ...Server.DEFAULT_BUNDLE_OPTIONS,
     ...requestOptions,
     bundleType: 'bundle',
   });
+
+  const {postProcessBundleSourcemap} = requestOptions;
+  if (postProcessBundleSourcemap) {
+    const processedBundle = postProcessBundleSourcemap({
+      code: bundle.code,
+      map: (JSON.parse(bundle.map): MixedSourceMap),
+    });
+    bundle = {
+      ...bundle,
+      code: processedBundle.code,
+      map: JSON.stringify(processedBundle.map),
+    };
+  }
+  return bundle;
 }
 
 function relativateSerializedMap(

@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should call postProcessBundleSourcemap 1`] = `
+Object {
+  "code": "modified code",
+  "map": "{\\"ast\\":\\"some code\\"}",
+}
+`;
+
+exports[`should succeed 1`] = `
+Object {
+  "code": "code",
+  "map": "{\\"ast\\":\\"some code\\"}",
+}
+`;

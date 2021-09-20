@@ -28,13 +28,12 @@ import type Server from 'metro/src/Server';
 import type {Reporter} from 'metro/src/lib/reporting';
 
 export type PostProcessBundleSourcemap = ({
-  code: Buffer | string,
+  code: string,
   map: MixedSourceMap,
-  outFileName: string,
   ...
 }) => {
-  code: Buffer | string,
-  map: MixedSourceMap | string,
+  code: string,
+  map: MixedSourceMap,
   ...
 };
 
