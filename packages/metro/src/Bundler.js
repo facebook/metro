@@ -32,14 +32,20 @@ class Bundler {
 
     this._readyPromise = this._depGraphPromise
       .then((dependencyGraph: DependencyGraph) => {
+        config.reporter.update({type: 'transformer_load_started'});
         this._transformer = new Transformer(
           config,
           // $FlowFixMe[method-unbinding] added when improving typing for this parameters
           dependencyGraph.getSha1.bind(dependencyGraph),
         );
+        config.reporter.update({type: 'transformer_load_done'});
       })
       .catch(error => {
         console.error('Failed to construct transformer: ', error);
+        config.reporter.update({
+          type: 'transformer_load_failed',
+          error,
+        });
       });
   }
 

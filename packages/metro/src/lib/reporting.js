@@ -123,6 +123,16 @@ export type ReportableEvent =
       data: Array<mixed>,
       mode: 'BRIDGE' | 'NOBRIDGE',
       ...
+    }
+  | {
+      type: 'transformer_load_started',
+    }
+  | {
+      type: 'transformer_load_done',
+    }
+  | {
+      type: 'transformer_load_failed',
+      error: Error,
     };
 
 /**
