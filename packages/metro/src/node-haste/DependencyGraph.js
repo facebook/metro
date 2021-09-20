@@ -123,6 +123,7 @@ class DependencyGraph extends EventEmitter {
       extensions: config.resolver.sourceExts.concat(config.resolver.assetExts),
       forceNodeFilesystemAPI: !config.resolver.useWatchman,
       hasteImplModulePath: config.resolver.hasteImplModulePath,
+      hasteMapModulePath: config.resolver.unstable_hasteMapModulePath,
       ignorePattern: this._getIgnorePattern(config),
       maxWorkers: config.maxWorkers,
       mocksPattern: '',
