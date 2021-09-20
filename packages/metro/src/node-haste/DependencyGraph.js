@@ -8,14 +8,6 @@
  * @format
  */
 
-'use strict';
-
-const {AmbiguousModuleResolutionError} = require('metro-core');
-const {DuplicateHasteCandidatesError} = require('jest-haste-map').ModuleMap;
-const {InvalidPackageError} = require('metro-resolver');
-const {PackageResolutionError} = require('metro-core');
-
-const JestHasteMap = require('jest-haste-map');
 const Module = require('./Module');
 const ModuleCache = require('./ModuleCache');
 
@@ -26,13 +18,19 @@ const path = require('path');
 const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
 const {EventEmitter} = require('events');
 const {
+  AmbiguousModuleResolutionError,
   Logger: {createActionStartEntry, createActionEndEntry, log},
+  PackageResolutionError,
 } = require('metro-core');
+const {InvalidPackageError} = require('metro-resolver');
 
 import type {ModuleMap} from './DependencyGraph/ModuleResolution';
 import type Package from './Package';
 import type {HasteFS} from './types';
+import JestHasteMap, {ModuleMap as JestHasteModuleMap} from 'jest-haste-map';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
+
+const {DuplicateHasteCandidatesError} = JestHasteModuleMap;
 
 const JEST_HASTE_MAP_CACHE_BREAKER = 5;
 
@@ -118,7 +116,7 @@ class DependencyGraph extends EventEmitter {
 
   // $FlowFixMe[value-as-type]
   static _createHaste(config: ConfigT, watch?: boolean): JestHasteMap {
-    const haste = new JestHasteMap({
+    const haste = JestHasteMap.create({
       cacheDirectory: config.hasteMapCacheDirectory,
       dependencyExtractor: config.resolver.dependencyExtractor,
       computeSha1: true,
