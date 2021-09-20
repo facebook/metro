@@ -46,6 +46,10 @@ export type ReportableEvent =
       ...
     }
   | {
+      type: 'initialize_done',
+      port: number,
+    }
+  | {
       buildID: string,
       type: 'bundle_build_done',
       ...

@@ -336,6 +336,11 @@ class IncrementalBundler {
 
     return absoluteEntryFiles;
   }
+
+  // Wait for the bundler to become ready.
+  async ready(): Promise<void> {
+    await this._bundler.ready();
+  }
 }
 
 module.exports = IncrementalBundler;

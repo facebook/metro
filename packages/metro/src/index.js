@@ -120,16 +120,38 @@ async function runMetro(
   options?: ServerOptions,
 ): Promise<MetroServer> {
   const mergedConfig = await getConfig(config);
+  const {
+    reporter,
+    server: {port},
+  } = mergedConfig;
 
-  mergedConfig.reporter.update({
+  reporter.update({
     hasReducedPerformance: options
       ? Boolean(options.hasReducedPerformance)
       : false,
-    port: mergedConfig.server.port,
+    port,
     type: 'initialize_started',
   });
 
-  return new MetroServer(mergedConfig, options);
+  const server = new MetroServer(mergedConfig, options);
+
+  server
+    .ready()
+    .then(() => {
+      reporter.update({
+        type: 'initialize_done',
+        port,
+      });
+    })
+    .catch(error => {
+      reporter.update({
+        type: 'initialize_failed',
+        port,
+        error,
+      });
+    });
+
+  return server;
 }
 
 exports.runMetro = runMetro;

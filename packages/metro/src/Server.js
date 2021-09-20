@@ -1236,6 +1236,11 @@ class Server {
   _getEntryPointAbsolutePath(entryFile: string) {
     return path.resolve(this._getServerRootDir(), entryFile);
   }
+
+  // Wait for the server to finish initializing.
+  async ready(): Promise<void> {
+    await this._bundler.ready();
+  }
 }
 
 function* zip<X, Y>(xs: Iterable<X>, ys: Iterable<Y>): Iterable<[X, Y]> {

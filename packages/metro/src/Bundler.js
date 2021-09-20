@@ -24,12 +24,13 @@ export type BundlerOptions = $ReadOnly<{|
 
 class Bundler {
   _depGraphPromise: Promise<DependencyGraph>;
+  _readyPromise: Promise<void>;
   _transformer: Transformer;
 
   constructor(config: ConfigT, options?: BundlerOptions) {
     this._depGraphPromise = DependencyGraph.load(config, options);
 
-    this._depGraphPromise
+    this._readyPromise = this._depGraphPromise
       .then((dependencyGraph: DependencyGraph) => {
         this._transformer = new Transformer(
           config,
@@ -62,6 +63,11 @@ class Bundler {
     await this._depGraphPromise;
 
     return this._transformer.transformFile(filePath, transformOptions);
+  }
+
+  // Waits for the bundler to become ready.
+  async ready(): Promise<void> {
+    await this._readyPromise;
   }
 }
 
