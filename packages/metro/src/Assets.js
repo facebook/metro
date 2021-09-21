@@ -134,6 +134,7 @@ async function getAbsoluteAssetRecord(
   assetPath: string,
   platform: ?string = null,
 ): Promise<{|files: Array<string>, scales: Array<number>|}> {
+  assetPath = decodeURIComponent(assetPath)
   const filename = path.basename(assetPath);
   const dir = path.dirname(assetPath);
   const files = await readDir(dir);
