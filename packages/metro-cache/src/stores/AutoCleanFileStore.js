@@ -10,12 +10,11 @@
 
 'use strict';
 
-const FileStore = require('./FileStore');
+import type {Options} from './FileStore';
 
+const FileStore = require('./FileStore');
 const fs = require('fs');
 const path = require('path');
-
-import type {Options} from './FileStore';
 
 type CleanOptions = {
   ...Options,

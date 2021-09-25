@@ -7,9 +7,8 @@
 
 'use strict';
 
-const zlib = require('zlib');
-
 const {PassThrough} = require('stream');
+const zlib = require('zlib');
 
 describe('HttpGetStore', () => {
   let HttpGetStore;

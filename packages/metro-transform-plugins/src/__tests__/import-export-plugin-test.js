@@ -10,11 +10,10 @@
 
 'use strict';
 
-const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
-const importExportPlugin = require('../import-export-plugin');
-
 const {compare, transformToAst} = require('../__mocks__/test-helpers');
+const importExportPlugin = require('../import-export-plugin');
 const {codeFrameColumns} = require('@babel/code-frame');
+const collectDependencies = require('metro/src/ModuleGraph/worker/collectDependencies');
 
 const opts = {
   importAll: '_$$_IMPORT_ALL',

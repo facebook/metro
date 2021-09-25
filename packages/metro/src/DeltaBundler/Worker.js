@@ -10,17 +10,17 @@
 
 'use strict';
 
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
-const traverse = require('@babel/traverse').default;
-
 import type {TransformResult} from './types.flow';
 import type {LogEntry} from 'metro-core/src/Logger';
 import type {
-  JsTransformOptions,
   JsTransformerConfig,
+  JsTransformOptions,
 } from 'metro-transform-worker';
+
+const traverse = require('@babel/traverse').default;
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 export type {JsTransformOptions as TransformOptions} from 'metro-transform-worker';
 

@@ -9,22 +9,23 @@
  */
 
 import type {
-  Page,
-  MessageFromDevice,
-  MessageToDevice,
   DebuggerRequest,
   DebuggerResponse,
-  SetBreakpointByUrlRequest,
   GetScriptSourceRequest,
   GetScriptSourceResponse,
+  MessageFromDevice,
+  MessageToDevice,
+  Page,
+  SetBreakpointByUrlRequest,
 } from './types';
+
 import * as fs from 'fs';
 import * as path from 'path';
 import WS from 'ws';
 
-const PAGES_POLLING_INTERVAL = 1000;
-
 const debug = require('debug')('Metro:InspectorProxy');
+
+const PAGES_POLLING_INTERVAL = 1000;
 
 // Android's stock emulator and other emulators such as genymotion use a standard localhost alias.
 const EMULATOR_LOCALHOST_ADDRESSES: Array<string> = ['10.0.2.2', '10.0.3.2'];

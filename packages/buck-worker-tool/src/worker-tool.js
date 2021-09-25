@@ -10,17 +10,16 @@
 
 'use strict';
 
+import type {Writable} from 'stream';
+
 const JSONStream = require('JSONStream');
 
-const duplexer = require('duplexer');
+const {startProfiling, stopProfilingAndWrite} = require('./profiling');
 const each = require('async/each');
+const {Console} = require('console');
+const duplexer = require('duplexer');
 const fs = require('fs');
 const invariant = require('invariant');
-
-const {startProfiling, stopProfilingAndWrite} = require('./profiling');
-const {Console} = require('console');
-
-import type {Writable} from 'stream';
 
 export type Command = (
   argv: Array<string>,

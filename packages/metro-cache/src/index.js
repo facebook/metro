@@ -10,13 +10,12 @@
 
 'use strict';
 
-const AutoCleanFileStore = require('./stores/AutoCleanFileStore');
 const Cache = require('./Cache');
+const stableHash = require('./stableHash');
+const AutoCleanFileStore = require('./stores/AutoCleanFileStore');
 const FileStore = require('./stores/FileStore');
 const HttpGetStore = require('./stores/HttpGetStore');
 const HttpStore = require('./stores/HttpStore');
-
-const stableHash = require('./stableHash');
 
 export type {Options as FileOptions} from './stores/FileStore';
 export type {Options as HttpOptions} from './stores/HttpStore';

@@ -10,14 +10,12 @@
 
 'use strict';
 
-const os = require('os');
-const path = require('path');
-
-const {EventEmitter} = require('events');
-
 import type {BundleOptions} from 'metro/src/shared/types.flow';
 
 const VERSION = require('../package.json').version;
+const {EventEmitter} = require('events');
+const os = require('os');
+const path = require('path');
 
 export type ActionLogEntryData = {
   action_name: string,

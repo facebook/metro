@@ -10,18 +10,17 @@
 
 'use strict';
 
-const vlq = require('vlq');
-
-const {normalizeSourcePath} = require('metro-source-map');
-
 import type {
-  MixedSourceMap,
-  FBSourcesArray,
+  BasicSourceMap,
   FBSourceFunctionMap,
   FBSourceMetadata,
-  BasicSourceMap,
+  FBSourcesArray,
   IndexMap,
+  MixedSourceMap,
 } from 'metro-source-map';
+
+const {normalizeSourcePath} = require('metro-source-map');
+const vlq = require('vlq');
 
 const METADATA_FIELD_FUNCTIONS = 0;
 

@@ -11,9 +11,8 @@
 
 'use strict';
 
-const ESLintTester = require('eslint').RuleTester;
-
 const rule = require('../strictly-null.js');
+const ESLintTester = require('eslint').RuleTester;
 
 ESLintTester.setDefaultConfig({
   parser: require.resolve('babel-eslint'),

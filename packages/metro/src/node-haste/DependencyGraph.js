@@ -8,27 +8,26 @@
  * @format
  */
 
-const Module = require('./Module');
-const ModuleCache = require('./ModuleCache');
+import type {ModuleMap} from './DependencyGraph/ModuleResolution';
+import type Package from './Package';
+import type {HasteFS} from './types';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
-const ci = require('ci-info');
-const fs = require('fs');
-const path = require('path');
+import JestHasteMap, {ModuleMap as JestHasteModuleMap} from 'jest-haste-map';
 
 const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
+const Module = require('./Module');
+const ModuleCache = require('./ModuleCache');
+const ci = require('ci-info');
 const {EventEmitter} = require('events');
+const fs = require('fs');
 const {
   AmbiguousModuleResolutionError,
   Logger: {createActionStartEntry, createActionEndEntry, log},
   PackageResolutionError,
 } = require('metro-core');
 const {InvalidPackageError} = require('metro-resolver');
-
-import type {ModuleMap} from './DependencyGraph/ModuleResolution';
-import type Package from './Package';
-import type {HasteFS} from './types';
-import JestHasteMap, {ModuleMap as JestHasteModuleMap} from 'jest-haste-map';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+const path = require('path');
 
 const {DuplicateHasteCandidatesError} = JestHasteModuleMap;
 

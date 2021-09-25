@@ -12,9 +12,8 @@
 
 jest.mock('../../../Assets');
 
-const getAssets = require('../getAssets');
-
 const {getAssetData} = require('../../../Assets');
+const getAssets = require('../getAssets');
 
 beforeEach(() => {
   getAssetData.mockImplementation(async (path, localPath) => ({

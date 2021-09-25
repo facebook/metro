@@ -10,16 +10,15 @@
 
 'use strict';
 
+import type {Agent as HttpAgent} from 'http';
+import type {Agent as HttpsAgent} from 'https';
+
 const HttpError = require('./HttpError');
 const NetworkError = require('./NetworkError');
-
 const http = require('http');
 const https = require('https');
 const url = require('url');
 const zlib = require('zlib');
-
-import type {Agent as HttpAgent} from 'http';
-import type {Agent as HttpsAgent} from 'https';
 
 export type Options = {|
   endpoint: string,

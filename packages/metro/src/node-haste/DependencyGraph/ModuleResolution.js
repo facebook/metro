@@ -10,15 +10,6 @@
 
 'use strict';
 
-const Resolver = require('metro-resolver');
-
-const fs = require('fs');
-const invariant = require('invariant');
-const path = require('path');
-const util = require('util');
-
-const {codeFrameColumns} = require('@babel/code-frame');
-
 import type {
   CustomResolver,
   DoesFileExist,
@@ -27,6 +18,13 @@ import type {
   Resolution,
   ResolveAsset,
 } from 'metro-resolver';
+
+const {codeFrameColumns} = require('@babel/code-frame');
+const fs = require('fs');
+const invariant = require('invariant');
+const Resolver = require('metro-resolver');
+const path = require('path');
+const util = require('util');
 
 export type DirExistsFn = (filePath: string) => boolean;
 

@@ -13,6 +13,8 @@
 
 import type {BasicSourceMap} from 'metro-source-map';
 
+const minify = require('..');
+
 jest.mock('uglify-es', () => ({
   minify: jest.fn(code => {
     return {
@@ -21,8 +23,6 @@ jest.mock('uglify-es', () => ({
     };
   }),
 }));
-
-const minify = require('..');
 const {objectContaining} = expect;
 
 function getFakeMap(): BasicSourceMap {

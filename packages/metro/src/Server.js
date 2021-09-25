@@ -9,45 +9,6 @@
  */
 
 'use strict';
-const IncrementalBundler = require('./IncrementalBundler');
-const MultipartResponse = require('./Server/MultipartResponse');
-const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
-
-const baseBytecodeBundle = require('./DeltaBundler/Serializers/baseBytecodeBundle');
-const baseJSBundle = require('./DeltaBundler/Serializers/baseJSBundle');
-const bundleToBytecode = require('./lib/bundleToBytecode');
-const bundleToString = require('./lib/bundleToString');
-
-const {codeFrameColumns} = require('@babel/code-frame');
-const debug = require('debug')('Metro:Server');
-const formatBundlingError = require('./lib/formatBundlingError');
-const fs = require('graceful-fs');
-const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
-const getAssets = require('./DeltaBundler/Serializers/getAssets');
-const getGraphId = require('./lib/getGraphId');
-const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
-const mime = require('mime-types');
-const nullthrows = require('nullthrows');
-const querystring = require('querystring');
-const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
-const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
-const path = require('path');
-const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
-const splitBundleOptions = require('./lib/splitBundleOptions');
-const symbolicate = require('./Server/symbolicate');
-const transformHelpers = require('./lib/transformHelpers');
-const url = require('url');
-
-const {VERSION: BYTECODE_VERSION} = require('metro-hermes-compiler');
-const {getAsset} = require('./Assets');
-const {
-  getExplodedSourceMap,
-} = require('./DeltaBundler/Serializers/getExplodedSourceMap');
-const {
-  Logger,
-  Logger: {createActionStartEntry, createActionEndEntry, log},
-} = require('metro-core');
-
 import type {AssetData} from './Assets';
 import type {ExplodedSourceMap} from './DeltaBundler/Serializers/getExplodedSourceMap';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
@@ -73,6 +34,42 @@ import type {
   ActionStartLogEntry,
   LogEntry,
 } from 'metro-core/src/Logger';
+
+const {getAsset} = require('./Assets');
+const baseBytecodeBundle = require('./DeltaBundler/Serializers/baseBytecodeBundle');
+const baseJSBundle = require('./DeltaBundler/Serializers/baseJSBundle');
+const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
+const getAssets = require('./DeltaBundler/Serializers/getAssets');
+const {
+  getExplodedSourceMap,
+} = require('./DeltaBundler/Serializers/getExplodedSourceMap');
+const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
+const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
+const IncrementalBundler = require('./IncrementalBundler');
+const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
+const bundleToBytecode = require('./lib/bundleToBytecode');
+const bundleToString = require('./lib/bundleToString');
+const formatBundlingError = require('./lib/formatBundlingError');
+const getGraphId = require('./lib/getGraphId');
+const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
+const splitBundleOptions = require('./lib/splitBundleOptions');
+const transformHelpers = require('./lib/transformHelpers');
+const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
+const MultipartResponse = require('./Server/MultipartResponse');
+const symbolicate = require('./Server/symbolicate');
+const {codeFrameColumns} = require('@babel/code-frame');
+const debug = require('debug')('Metro:Server');
+const fs = require('graceful-fs');
+const {
+  Logger,
+  Logger: {createActionStartEntry, createActionEndEntry, log},
+} = require('metro-core');
+const {VERSION: BYTECODE_VERSION} = require('metro-hermes-compiler');
+const mime = require('mime-types');
+const nullthrows = require('nullthrows');
+const path = require('path');
+const querystring = require('querystring');
+const url = require('url');
 
 export type SegmentLoadData = {[number]: [Array<number>, ?number], ...};
 export type BundleMetadata = {

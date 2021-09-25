@@ -11,8 +11,6 @@
 
 'use strict';
 
-import type {JsTransformerConfig} from '../index';
-
 jest
   .mock('../utils/getMinifier', () => () => ({code, map}) => ({
     code: code.replace('arbitrary(code)', 'minified(code)'),
@@ -25,14 +23,16 @@ jest
   }))
   .mock('metro-minify-uglify');
 
-const HermesCompiler = require('metro-hermes-compiler');
+import type {JsTransformerConfig} from '../index';
 
+const HermesCompiler = require('metro-hermes-compiler');
 const path = require('path');
 
 const babelTransformerPath = require.resolve(
   'metro-react-native-babel-transformer',
 );
-const transformerContents = require('fs').readFileSync(babelTransformerPath);
+const transformerContents = (() =>
+  require('fs').readFileSync(babelTransformerPath))();
 
 const HEADER_DEV =
   '__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {';

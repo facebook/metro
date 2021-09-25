@@ -10,12 +10,12 @@
 
 'use strict';
 
-const DependencyGraph = require('./node-haste/DependencyGraph');
-const Transformer = require('./DeltaBundler/Transformer');
-
-import type {TransformOptions} from './DeltaBundler/Worker';
 import type {TransformResultWithSource} from './DeltaBundler';
+import type {TransformOptions} from './DeltaBundler/Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
+
+const Transformer = require('./DeltaBundler/Transformer');
+const DependencyGraph = require('./node-haste/DependencyGraph');
 
 export type BundlerOptions = $ReadOnly<{|
   hasReducedPerformance?: boolean,

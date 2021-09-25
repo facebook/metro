@@ -11,9 +11,7 @@
 'use strict';
 
 const HmrServer = require('../HmrServer');
-
 const getGraphId = require('../lib/getGraphId');
-
 const {getDefaultValues} = require('metro-config/src/defaults');
 
 jest.mock('../lib/transformHelpers', () => ({

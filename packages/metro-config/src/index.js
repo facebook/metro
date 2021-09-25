@@ -11,8 +11,7 @@
 'use strict';
 
 const getDefaultConfig = require('./defaults');
-
-const {loadConfig, resolveConfig, mergeConfig} = require('./loadConfig');
+const {loadConfig, mergeConfig, resolveConfig} = require('./loadConfig');
 
 module.exports = {
   loadConfig,

@@ -13,11 +13,10 @@
 
 declare var jest: any;
 
-const multipleFilesRamBundle = require('../multiple-files-ram-bundle');
-
-const {getModuleCodeAndMap} = require('../util');
-
 import type {Module} from '../../types.flow';
+
+const multipleFilesRamBundle = require('../multiple-files-ram-bundle');
+const {getModuleCodeAndMap} = require('../util');
 
 declare var describe: any;
 declare var expect: any;

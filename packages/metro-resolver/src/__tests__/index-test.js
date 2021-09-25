@@ -11,12 +11,11 @@
 
 'use strict';
 
+import type {ResolutionContext} from '../index';
+
 const FailedToResolvePathError = require('../FailedToResolvePathError');
 const Resolver = require('../index');
-
 const path = require('path');
-
-import type {ResolutionContext} from '../index';
 
 const CONTEXT: ResolutionContext = (() => {
   const fileSet = new Set();

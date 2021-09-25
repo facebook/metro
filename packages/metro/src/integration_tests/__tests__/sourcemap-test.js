@@ -11,7 +11,6 @@
 'use strict';
 
 const Metro = require('../../..');
-
 const execBundle = require('../execBundle');
 const fs = require('fs');
 const sourceMap = require('source-map');

@@ -11,9 +11,9 @@
 'use strict';
 
 import type {
-  MixedSourceMap,
-  FBSourceFunctionMap,
   BasicSourceMap,
+  FBSourceFunctionMap,
+  MixedSourceMap,
 } from 'metro-source-map';
 import type {TransformResultDependency} from 'metro/src/DeltaBundler';
 

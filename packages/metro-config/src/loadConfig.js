@@ -10,18 +10,16 @@
 
 'use strict';
 
-const MetroCache = require('metro-cache');
+import type {ConfigT, InputConfigT, YargArguments} from './configTypes.flow';
 
+const getDefaultConfig = require('./defaults');
+const validConfig = require('./defaults/validConfig');
 const cosmiconfig = require('cosmiconfig');
 const fs = require('fs');
-const getDefaultConfig = require('./defaults');
-const path = require('path');
-const validConfig = require('./defaults/validConfig');
-
 const {validate} = require('jest-validate');
+const MetroCache = require('metro-cache');
+const path = require('path');
 const {dirname, join} = require('path');
-
-import type {ConfigT, InputConfigT, YargArguments} from './configTypes.flow';
 
 type CosmiConfigResult = {
   filepath: string,

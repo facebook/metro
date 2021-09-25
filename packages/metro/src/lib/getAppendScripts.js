@@ -10,13 +10,13 @@
 
 'use strict';
 
-const countLines = require('./countLines');
+import type {Module} from '../DeltaBundler';
+
 const getInlineSourceMappingURL = require('../DeltaBundler/Serializers/helpers/getInlineSourceMappingURL');
+const sourceMapString = require('../DeltaBundler/Serializers/sourceMapString');
+const countLines = require('./countLines');
 const nullthrows = require('nullthrows');
 const path = require('path');
-const sourceMapString = require('../DeltaBundler/Serializers/sourceMapString');
-
-import type {Module} from '../DeltaBundler';
 
 type Options<T: number | string> = {
   +asyncRequireModulePath: string,

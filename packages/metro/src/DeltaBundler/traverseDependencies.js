@@ -10,8 +10,6 @@
 
 'use strict';
 
-const nullthrows = require('nullthrows');
-
 import type {
   Dependency,
   Graph,
@@ -19,6 +17,8 @@ import type {
   Options,
   TransformResultDependency,
 } from './types.flow';
+
+const nullthrows = require('nullthrows');
 
 type Result<T> = {
   added: Map<string, Module<T>>,

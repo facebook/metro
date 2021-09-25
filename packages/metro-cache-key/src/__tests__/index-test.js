@@ -13,8 +13,8 @@
 
 jest.mock('fs', () => new (require('metro-memory-fs'))());
 
-const fs = require('fs');
 const getCacheKey = require('../index');
+const fs = require('fs');
 
 beforeAll(() => {
   fs.writeFileSync('/a.txt', 'fake content for a.txt');

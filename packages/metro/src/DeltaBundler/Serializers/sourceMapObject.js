@@ -10,13 +10,13 @@
 
 'use strict';
 
+import type {Module} from '../types.flow';
+import type {MixedSourceMap} from 'metro-source-map';
+
 const {
   sourceMapGenerator,
   sourceMapGeneratorNonBlocking,
 } = require('./sourceMapGenerator');
-
-import type {Module} from '../types.flow';
-import type {MixedSourceMap} from 'metro-source-map';
 
 function sourceMapObject(
   modules: $ReadOnlyArray<Module<>>,

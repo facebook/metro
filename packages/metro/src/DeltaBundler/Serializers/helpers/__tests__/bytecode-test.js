@@ -12,7 +12,6 @@
 'use strict';
 
 const createModuleIdFactory = require('../../../../lib/createModuleIdFactory');
-
 const {wrapModule} = require('../bytecode');
 const {compile, validateBytecodeModule} = require('metro-hermes-compiler');
 

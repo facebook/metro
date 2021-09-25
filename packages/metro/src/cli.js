@@ -11,9 +11,8 @@
 
 'use strict';
 
+const {attachMetroCli} = require('./index');
 // flowlint-next-line untyped-import:off
 const yargs = require('yargs');
-
-const {attachMetroCli} = require('./index');
 
 attachMetroCli(yargs.demandCommand(1)).argv;

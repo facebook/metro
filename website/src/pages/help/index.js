@@ -10,8 +10,8 @@
 'use strict';
 
 import Layout from '@theme/Layout';
-import ReactMarkdown from 'react-markdown';
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
 
 const supportLinks = [
   {

@@ -10,9 +10,8 @@
 
 'use strict';
 
-const path = require('path');
-
 const {mergeConfig} = require('metro-config');
+const path = require('path');
 const mockPlatform = process.platform;
 
 jest.useRealTimers();

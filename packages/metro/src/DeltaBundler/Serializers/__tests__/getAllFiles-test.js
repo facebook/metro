@@ -12,9 +12,8 @@
 
 jest.mock('../../../Assets');
 
-const getAllFiles = require('../getAllFiles');
-
 const {getAssetFiles} = require('../../../Assets');
+const getAllFiles = require('../getAllFiles');
 
 describe('getOrderedDependencyPaths', () => {
   beforeEach(() => {

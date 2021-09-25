@@ -10,15 +10,14 @@
 
 'use strict';
 
-const path = require('path');
-const url = require('url');
-
-const {isJsModule, wrapModule} = require('./helpers/js');
-const {addParamsToDefineCall} = require('metro-transform-plugins');
-
 import type {EntryPointURL} from '../../HmrServer';
 import type {DeltaResult, Graph, Module} from '../types.flow';
 import type {HmrModule} from 'metro-runtime/src/modules/types.flow';
+
+const {isJsModule, wrapModule} = require('./helpers/js');
+const {addParamsToDefineCall} = require('metro-transform-plugins');
+const path = require('path');
+const url = require('url');
 
 type Options = {
   +clientUrl: EntryPointURL,

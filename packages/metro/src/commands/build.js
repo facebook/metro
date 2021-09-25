@@ -10,16 +10,15 @@
 
 'use strict';
 
-const MetroApi = require('../index');
-const TerminalReporter = require('../lib/TerminalReporter');
-
-const {makeAsyncCommand} = require('../cli-utils');
-const {loadConfig} = require('metro-config');
-const {Terminal} = require('metro-core');
-
 import type {RunBuildOptions} from '../index';
 import type {YargArguments} from 'metro-config/src/configTypes.flow';
 import typeof Yargs from 'yargs';
+
+const {makeAsyncCommand} = require('../cli-utils');
+const MetroApi = require('../index');
+const TerminalReporter = require('../lib/TerminalReporter');
+const {loadConfig} = require('metro-config');
+const {Terminal} = require('metro-core');
 
 const term = new Terminal(process.stdout);
 const updateReporter = new TerminalReporter(term);

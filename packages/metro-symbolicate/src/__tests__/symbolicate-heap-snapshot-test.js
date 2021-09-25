@@ -11,11 +11,10 @@
 
 'use strict';
 
+const {ChromeHeapSnapshotProcessor} = require('../ChromeHeapSnapshot');
+const symbolicate = require('../symbolicate');
 const fs = require('fs');
 const path = require('path');
-const symbolicate = require('../symbolicate');
-
-const {ChromeHeapSnapshotProcessor} = require('../ChromeHeapSnapshot');
 const {PassThrough} = require('stream');
 const resolve = fileName => path.resolve(__dirname, '__fixtures__', fileName);
 const read = fileName => fs.readFileSync(resolve(fileName), 'utf8');

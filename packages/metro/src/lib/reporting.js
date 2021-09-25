@@ -11,10 +11,9 @@
 'use strict';
 
 const chalk = require('chalk');
+const {Terminal} = require('metro-core');
 const stripAnsi = require('strip-ansi');
 const util = require('util');
-
-const {Terminal} = require('metro-core');
 
 export type GlobalCacheDisabledReason = 'too_many_errors' | 'too_many_misses';
 

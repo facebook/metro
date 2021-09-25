@@ -10,13 +10,13 @@
 
 'use strict';
 
-const {isJsModule, getJsOutput} = require('./helpers/js');
-
 import type {Module} from '../types.flow';
 import type {
-  MetroSourceMapSegmentTuple,
   FBSourceFunctionMap,
+  MetroSourceMapSegmentTuple,
 } from 'metro-source-map';
+
+const {getJsOutput, isJsModule} = require('./helpers/js');
 
 export type ExplodedSourceMap = $ReadOnlyArray<{|
   +map: Array<MetroSourceMapSegmentTuple>,

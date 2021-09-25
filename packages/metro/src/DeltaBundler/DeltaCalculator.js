@@ -10,15 +10,15 @@
 
 'use strict';
 
+import type DependencyGraph from '../node-haste/DependencyGraph';
+import type {DeltaResult, Graph, Options} from './types.flow';
+
 const {
   initialTraverseDependencies,
   reorderGraph,
   traverseDependencies,
 } = require('./traverseDependencies');
 const {EventEmitter} = require('events');
-
-import type DependencyGraph from '../node-haste/DependencyGraph';
-import type {DeltaResult, Graph, Options} from './types.flow';
 
 /**
  * This class is in charge of calculating the delta of changed modules that

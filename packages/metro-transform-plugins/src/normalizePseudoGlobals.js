@@ -10,11 +10,11 @@
 
 'use strict';
 
-const traverse = require('@babel/traverse').default;
-const nullthrows = require('nullthrows');
-
 import type {NodePath, Scope} from '@babel/traverse';
 import type {Program} from '@babel/types';
+
+const traverse = require('@babel/traverse').default;
+const nullthrows = require('nullthrows');
 
 export type Options = {
   reservedNames: $ReadOnlyArray<string>,

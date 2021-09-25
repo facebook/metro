@@ -10,13 +10,13 @@
 
 'use strict';
 
-const nullthrows = require('nullthrows');
-const parseCustomTransformOptions = require('./parseCustomTransformOptions');
+import type {BundleOptions} from '../shared/types.flow';
+
 const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
+const parseCustomTransformOptions = require('./parseCustomTransformOptions');
+const nullthrows = require('nullthrows');
 const path = require('path');
 const url = require('url');
-
-import type {BundleOptions} from '../shared/types.flow';
 
 const getBoolean = (query, opt, defaultValue) =>
   query[opt] == null

@@ -12,9 +12,9 @@
 
 const {
   addModuleIdsToModuleWrapper,
-  inlineModuleIdsAndAddParamsToDefineCall,
   createIdForPathFn,
   getModuleCodeAndMap,
+  inlineModuleIdsAndAddParamsToDefineCall,
 } = require('../util');
 
 const {any} = jasmine;

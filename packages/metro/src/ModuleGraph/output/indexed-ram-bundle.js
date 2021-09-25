@@ -10,18 +10,17 @@
 
 'use strict';
 
-const buildSourcemapWithMetadata = require('../../shared/output/RamBundle/buildSourcemapWithMetadata.js');
-const invariant = require('invariant');
+import type {Module, OutputFn, OutputFnArg} from '../types.flow';
+import type {IndexMap} from 'metro-source-map';
 
 const {createRamBundleGroups} = require('../../Bundler/util');
 const {
   buildTableAndContents,
   createModuleGroups,
 } = require('../../shared/output/RamBundle/as-indexed-file');
+const buildSourcemapWithMetadata = require('../../shared/output/RamBundle/buildSourcemapWithMetadata.js');
 const {getModuleCodeAndMap, partition, toModuleTransport} = require('./util');
-
-import type {Module, OutputFn, OutputFnArg} from '../types.flow';
-import type {IndexMap} from 'metro-source-map';
+const invariant = require('invariant');
 
 function asIndexedRamBundle({
   dependencyMapReservedName,

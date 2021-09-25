@@ -10,15 +10,6 @@
 
 'use strict';
 
-const MAGIC_UNBUNDLE_FILE_HEADER = require('./magic-number');
-
-const buildSourcemapWithMetadata = require('./buildSourcemapWithMetadata');
-const fs = require('fs');
-const relativizeSourceMapInline = require('../../../lib/relativizeSourceMap');
-const writeSourceMap = require('./write-sourcemap');
-
-const {joinModules} = require('./util');
-
 import type {RamBundleInfo} from '../../../DeltaBundler/Serializers/getRamBundleInfo';
 import type {
   ModuleGroups,
@@ -26,6 +17,13 @@ import type {
   OutputOptions,
 } from '../../types.flow';
 import type {WriteStream} from 'fs';
+
+const relativizeSourceMapInline = require('../../../lib/relativizeSourceMap');
+const buildSourcemapWithMetadata = require('./buildSourcemapWithMetadata');
+const MAGIC_UNBUNDLE_FILE_HEADER = require('./magic-number');
+const {joinModules} = require('./util');
+const writeSourceMap = require('./write-sourcemap');
+const fs = require('fs');
 
 const SIZEOF_UINT32 = 4;
 

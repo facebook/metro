@@ -13,6 +13,8 @@
 
 import type {BasicSourceMap} from 'metro-source-map';
 
+const minify = require('..');
+
 jest.mock('terser', () => ({
   minify: jest.fn(code => {
     return {
@@ -21,8 +23,6 @@ jest.mock('terser', () => ({
     };
   }),
 }));
-
-const minify = require('..');
 const {objectContaining} = expect;
 
 function getFakeMap(): BasicSourceMap {

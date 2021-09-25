@@ -10,25 +10,23 @@
 
 'use strict';
 
-const TerminalReporter = require('metro/src/lib/TerminalReporter');
-
-const exclusionList = require('./exclusionList');
-const getMaxWorkers = require('metro/src/lib/getMaxWorkers');
-const os = require('os');
-const path = require('path');
+import type {ConfigT} from '../configTypes.flow';
 
 const {
+  DEFAULT_METRO_MINIFIER_PATH,
   assetExts,
   assetResolutions,
-  sourceExts,
-  platforms,
-  DEFAULT_METRO_MINIFIER_PATH,
   defaultCreateModuleIdFactory,
+  platforms,
+  sourceExts,
 } = require('./defaults');
+const exclusionList = require('./exclusionList');
 const {FileStore} = require('metro-cache');
 const {Terminal} = require('metro-core');
-
-import type {ConfigT} from '../configTypes.flow';
+const getMaxWorkers = require('metro/src/lib/getMaxWorkers');
+const TerminalReporter = require('metro/src/lib/TerminalReporter');
+const os = require('os');
+const path = require('path');
 
 const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   resolver: {

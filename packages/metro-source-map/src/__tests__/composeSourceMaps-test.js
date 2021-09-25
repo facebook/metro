@@ -13,15 +13,13 @@
 
 /* eslint-disable no-multi-str */
 
-const Consumer = require('../Consumer');
-
 const composeSourceMaps = require('../composeSourceMaps');
+const Consumer = require('../Consumer');
 const fs = require('fs');
 const invariant = require('invariant');
+const {add0, add1} = require('ob1');
 const path = require('path');
 const uglifyEs = require('uglify-es');
-
-const {add0, add1} = require('ob1');
 
 const TestScript1 =
   '/* Half of a program that throws */\

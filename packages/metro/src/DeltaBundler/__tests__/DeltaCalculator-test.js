@@ -13,14 +13,12 @@
 jest.mock('../../Bundler');
 jest.mock('../traverseDependencies');
 
+const DeltaCalculator = require('../DeltaCalculator');
 const {
   initialTraverseDependencies,
   traverseDependencies,
 } = require('../traverseDependencies');
-
 const {EventEmitter} = require('events');
-
-const DeltaCalculator = require('../DeltaCalculator');
 
 describe('DeltaCalculator', () => {
   let entryModule;

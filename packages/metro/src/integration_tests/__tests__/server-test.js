@@ -11,7 +11,6 @@
 'use strict';
 
 const Metro = require('../../..');
-
 const execBundle = require('../execBundle');
 const fetch = require('node-fetch');
 

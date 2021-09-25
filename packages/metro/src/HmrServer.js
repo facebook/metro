@@ -10,33 +10,31 @@
 
 'use strict';
 
-const GraphNotFoundError = require('./IncrementalBundler/GraphNotFoundError');
-const IncrementalBundler = require('./IncrementalBundler');
-const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundError');
+import type {RevisionId} from './IncrementalBundler';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {
+  HmrClientMessage,
+  HmrErrorMessage,
+  HmrMessage,
+  HmrUpdateMessage,
+} from 'metro-runtime/src/modules/types.flow';
 
+const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
+const IncrementalBundler = require('./IncrementalBundler');
+const GraphNotFoundError = require('./IncrementalBundler/GraphNotFoundError');
+const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundError');
 const debounceAsyncQueue = require('./lib/debounceAsyncQueue');
 const formatBundlingError = require('./lib/formatBundlingError');
 const getGraphId = require('./lib/getGraphId');
-const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
-const nullthrows = require('nullthrows');
 const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
 const splitBundleOptions = require('./lib/splitBundleOptions');
 const transformHelpers = require('./lib/transformHelpers');
-const url = require('url');
-
 const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
 const {VERSION: BYTECODE_VERSION} = require('metro-hermes-compiler');
-
-import type {RevisionId} from './IncrementalBundler';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
-import type {
-  HmrMessage,
-  HmrClientMessage,
-  HmrUpdateMessage,
-  HmrErrorMessage,
-} from 'metro-runtime/src/modules/types.flow';
+const nullthrows = require('nullthrows');
+const url = require('url');
 
 type $ReturnType<F> = $Call<<A, R>((...A) => R) => R, F>;
 export type EntryPointURL = $ReturnType<typeof url.parse>;

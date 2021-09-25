@@ -29,8 +29,8 @@
 
 'use strict';
 
-const createReporter = require('istanbul-api').createReporter;
 const coverage = require('../coverage/coverage-final.json');
+const createReporter = require('istanbul-api').createReporter;
 const istanbulCoverage = require('istanbul-lib-coverage');
 
 const map = istanbulCoverage.createCoverageMap();

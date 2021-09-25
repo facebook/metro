@@ -16,8 +16,8 @@ import type {
 } from '../DeltaBundler/types.flow';
 import type {TransformProfile} from 'metro-babel-transformer';
 import type {
-  MixedSourceMap,
   MetroSourceMapSegmentTuple,
+  MixedSourceMap,
 } from 'metro-source-map';
 import type {
   CustomTransformOptions,

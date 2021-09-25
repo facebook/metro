@@ -10,13 +10,13 @@
 
 'use strict';
 
-const {getJsOutput} = require('./js');
-
 import type {Module} from '../../types.flow';
 import type {
-  MetroSourceMapSegmentTuple,
   FBSourceFunctionMap,
+  MetroSourceMapSegmentTuple,
 } from 'metro-source-map';
+
+const {getJsOutput} = require('./js');
 
 function getSourceMapInfo(
   module: Module<>,

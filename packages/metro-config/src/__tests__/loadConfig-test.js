@@ -13,8 +13,8 @@
 
 jest.mock('cosmiconfig');
 
-const {loadConfig} = require('../loadConfig');
 const getDefaultConfig = require('../defaults');
+const {loadConfig} = require('../loadConfig');
 const cosmiconfig = require('cosmiconfig');
 const path = require('path');
 const prettyFormat = require('pretty-format');

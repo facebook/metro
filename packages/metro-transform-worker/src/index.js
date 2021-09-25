@@ -10,52 +10,50 @@
 
 'use strict';
 
-const HermesCompiler = require('metro-hermes-compiler');
-const JsFileWrapping = require('metro/src/ModuleGraph/worker/JsFileWrapping');
-
-const babylon = require('@babel/parser');
-const generateImportNames = require('metro/src/ModuleGraph/worker/generateImportNames');
-
-const {
-  InvalidRequireCallError: InternalInvalidRequireCallError,
-} = require('metro/src/ModuleGraph/worker/collectDependencies');
-const generate = require('@babel/generator').default;
-const getCacheKey = require('metro-cache-key');
-const getMinifier = require('./utils/getMinifier');
-const metroTransformPlugins = require('metro-transform-plugins');
-const {transformFromAstSync} = require('@babel/core');
-const {stableHash} = require('metro-cache');
-const types = require('@babel/types');
-const countLines = require('metro/src/lib/countLines');
-const nullthrows = require('nullthrows');
-
-const {
-  fromRawMappings,
-  toBabelSegments,
-  toSegmentTuple,
-} = require('metro-source-map');
-import type {TransformResultDependency} from 'metro/src/DeltaBundler';
-import type {AllowOptionalDependencies} from 'metro/src/DeltaBundler/types.flow.js';
-import type {
-  DependencyTransformer,
-  DynamicRequiresBehavior,
-} from 'metro/src/ModuleGraph/worker/collectDependencies';
-import type {
-  BasicSourceMap,
-  FBSourceFunctionMap,
-  MetroSourceMapSegmentTuple,
-} from 'metro-source-map';
-import type {
-  HermesCompilerResult,
-  Options as HermesCompilerOptions,
-} from 'metro-hermes-compiler';
 import type {
   BabelTransformer,
   BabelTransformerArgs,
   CustomTransformOptions,
   TransformProfile,
 } from 'metro-babel-transformer';
+import type {
+  HermesCompilerResult,
+  Options as HermesCompilerOptions,
+} from 'metro-hermes-compiler';
+import type {
+  BasicSourceMap,
+  FBSourceFunctionMap,
+  MetroSourceMapSegmentTuple,
+} from 'metro-source-map';
+import type {TransformResultDependency} from 'metro/src/DeltaBundler';
+import type {AllowOptionalDependencies} from 'metro/src/DeltaBundler/types.flow.js';
+import type {
+  DependencyTransformer,
+  DynamicRequiresBehavior,
+} from 'metro/src/ModuleGraph/worker/collectDependencies';
 import typeof CollectDependenciesFn from 'metro/src/ModuleGraph/worker/collectDependencies';
+
+const getMinifier = require('./utils/getMinifier');
+const {transformFromAstSync} = require('@babel/core');
+const generate = require('@babel/generator').default;
+const babylon = require('@babel/parser');
+const types = require('@babel/types');
+const {stableHash} = require('metro-cache');
+const getCacheKey = require('metro-cache-key');
+const HermesCompiler = require('metro-hermes-compiler');
+const {
+  fromRawMappings,
+  toBabelSegments,
+  toSegmentTuple,
+} = require('metro-source-map');
+const metroTransformPlugins = require('metro-transform-plugins');
+const countLines = require('metro/src/lib/countLines');
+const {
+  InvalidRequireCallError: InternalInvalidRequireCallError,
+} = require('metro/src/ModuleGraph/worker/collectDependencies');
+const generateImportNames = require('metro/src/ModuleGraph/worker/generateImportNames');
+const JsFileWrapping = require('metro/src/ModuleGraph/worker/JsFileWrapping');
+const nullthrows = require('nullthrows');
 
 type MinifierConfig = $ReadOnly<{[string]: mixed, ...}>;
 

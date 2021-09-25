@@ -10,41 +10,41 @@
 
 'use strict';
 
-const B64Builder = require('./B64Builder');
-
-const fsPath = require('path');
-const nullthrows = require('nullthrows');
-const t = require('@babel/types');
-
 import type {FBSourceFunctionMap} from './source-map';
-import traverse from '@babel/traverse';
 import type {NodePath} from '@babel/traverse';
+import type {Node} from '@babel/types';
+
+import traverse from '@babel/traverse';
 import {
-  isProgram,
-  isIdentifier,
-  isJSXIdentifier,
+  isAssignmentExpression,
   isCallExpression,
+  isClassBody,
+  isClassMethod,
+  isClassProperty,
+  isExportDefaultDeclaration,
+  isIdentifier,
+  isImport,
+  isJSXAttribute,
+  isJSXElement,
+  isJSXExpressionContainer,
+  isJSXIdentifier,
+  isLiteral,
   isNewExpression,
-  isTypeCastExpression,
+  isNullLiteral,
+  isObjectExpression,
+  isObjectMethod,
+  isObjectProperty,
+  isProgram,
   isRegExpLiteral,
   isTemplateLiteral,
-  isLiteral,
-  isObjectMethod,
-  isClassMethod,
-  isObjectProperty,
-  isClassProperty,
+  isTypeCastExpression,
   isVariableDeclarator,
-  isAssignmentExpression,
-  isJSXExpressionContainer,
-  isJSXElement,
-  isJSXAttribute,
-  isNullLiteral,
-  isImport,
-  isClassBody,
-  isObjectExpression,
-  isExportDefaultDeclaration,
 } from '@babel/types';
-import type {Node} from '@babel/types';
+
+const B64Builder = require('./B64Builder');
+const t = require('@babel/types');
+const nullthrows = require('nullthrows');
+const fsPath = require('path');
 
 type Position = {
   line: number,

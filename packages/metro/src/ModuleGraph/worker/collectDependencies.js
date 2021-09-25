@@ -10,22 +10,21 @@
 
 'use strict';
 
-const invariant = require('invariant');
-const nullthrows = require('nullthrows');
-
-const generate = require('@babel/generator').default;
-const template = require('@babel/template').default;
-const traverse = require('@babel/traverse').default;
-const types = require('@babel/types');
-
-const {isImport} = types;
-
 import type {NodePath} from '@babel/traverse';
 import type {CallExpression, Identifier, StringLiteral} from '@babel/types';
 import type {
   AllowOptionalDependencies,
   AsyncDependencyType,
 } from 'metro/src/DeltaBundler/types.flow.js';
+
+const generate = require('@babel/generator').default;
+const template = require('@babel/template').default;
+const traverse = require('@babel/traverse').default;
+const types = require('@babel/types');
+const invariant = require('invariant');
+const nullthrows = require('nullthrows');
+
+const {isImport} = types;
 
 type ImportDependencyOptions = $ReadOnly<{
   asyncType: AsyncDependencyType,

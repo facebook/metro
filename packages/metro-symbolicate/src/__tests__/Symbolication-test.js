@@ -11,10 +11,8 @@
 'use strict';
 
 const Symbolication = require('../Symbolication.js');
-
 const fs = require('fs');
 const path = require('path');
-
 const {SourceMapConsumer} = require('source-map');
 
 const resolve = fileName => path.resolve(__dirname, '__fixtures__', fileName);

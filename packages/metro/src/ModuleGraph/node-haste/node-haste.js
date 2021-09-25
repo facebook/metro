@@ -8,23 +8,22 @@
  * @format
  */
 
-const HasteFS = require('./HasteFS');
-const Module = require('./Module');
-const ModuleCache = require('./ModuleCache');
+import type {Moduleish} from '../../node-haste/DependencyGraph/ModuleResolution';
+import type {ResolveFn, TransformedCodeFile} from '../types.flow';
+import type {Extensions, Path} from './node-haste.flow';
+import type {CustomResolver} from 'metro-resolver';
 
-const defaults = require('metro-config/src/defaults/defaults');
-const parsePlatformFilePath = require('../../node-haste/lib/parsePlatformFilePath');
-const path = require('path');
+import {ModuleMap} from 'jest-haste-map';
 
 const {
   ModuleResolver,
 } = require('../../node-haste/DependencyGraph/ModuleResolution');
-
-import type {Moduleish} from '../../node-haste/DependencyGraph/ModuleResolution';
-import type {ResolveFn, TransformedCodeFile} from '../types.flow';
-import type {Extensions, Path} from './node-haste.flow';
-import {ModuleMap} from 'jest-haste-map';
-import type {CustomResolver} from 'metro-resolver';
+const parsePlatformFilePath = require('../../node-haste/lib/parsePlatformFilePath');
+const HasteFS = require('./HasteFS');
+const Module = require('./Module');
+const ModuleCache = require('./ModuleCache');
+const defaults = require('metro-config/src/defaults/defaults');
+const path = require('path');
 
 type ResolveOptions = {|
   +platform: string,

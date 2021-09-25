@@ -23,10 +23,10 @@
 
 'use strict';
 
+const getPackages = require('./_getPackages');
 const babel = require('@babel/core');
 const chalk = require('chalk');
 const fs = require('fs');
-const getPackages = require('./_getPackages');
 const glob = require('glob');
 const micromatch = require('micromatch');
 const mkdirp = require('mkdirp');

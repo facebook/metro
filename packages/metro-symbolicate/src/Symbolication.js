@@ -8,19 +8,18 @@
  * @format
  */
 
-const SourceMetadataMapConsumer = require('./SourceMetadataMapConsumer');
+import type {ChromeHeapSnapshot} from './ChromeHeapSnapshot';
+import type {HermesFunctionOffsets, MixedSourceMap} from 'metro-source-map';
 
+// flowlint-next-line untyped-type-import:off
+import {typeof SourceMapConsumer} from 'source-map';
+
+const {ChromeHeapSnapshotProcessor} = require('./ChromeHeapSnapshot');
+const SourceMetadataMapConsumer = require('./SourceMetadataMapConsumer');
 const fs = require('fs');
 const invariant = require('invariant');
 const nullthrows = require('nullthrows');
 const path = require('path');
-
-const {ChromeHeapSnapshotProcessor} = require('./ChromeHeapSnapshot');
-
-import type {ChromeHeapSnapshot} from './ChromeHeapSnapshot';
-import type {MixedSourceMap, HermesFunctionOffsets} from 'metro-source-map';
-// flowlint-next-line untyped-type-import:off
-import {typeof SourceMapConsumer} from 'source-map';
 
 type SingleMapModuleIds = {
   segmentId: number,

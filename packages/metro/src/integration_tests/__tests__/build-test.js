@@ -12,9 +12,8 @@
 'use strict';
 
 const Metro = require('../../..');
-const MetroConfig = require('metro-config');
-
 const execBundle = require('../execBundle');
+const MetroConfig = require('metro-config');
 const path = require('path');
 
 jest.unmock('cosmiconfig');

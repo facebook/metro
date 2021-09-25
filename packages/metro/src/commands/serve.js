@@ -10,15 +10,14 @@
 
 'use strict';
 
-const MetroApi = require('../index');
-
-const {watchFile, makeAsyncCommand} = require('../cli-utils');
-const {loadConfig, resolveConfig} = require('metro-config');
-const {promisify} = require('util');
-
 import type {RunServerOptions} from '../index';
 import type {YargArguments} from 'metro-config/src/configTypes.flow';
 import typeof Yargs from 'yargs';
+
+const {makeAsyncCommand, watchFile} = require('../cli-utils');
+const MetroApi = require('../index');
+const {loadConfig, resolveConfig} = require('metro-config');
+const {promisify} = require('util');
 
 module.exports = (): ({|
   // $FlowFixMe[value-as-type]

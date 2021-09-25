@@ -10,9 +10,9 @@
 
 'use strict';
 
-const formatFileCandidates = require('./formatFileCandidates');
-
 import type {FileAndDirCandidates} from './types';
+
+const formatFileCandidates = require('./formatFileCandidates');
 
 class FailedToResolvePathError extends Error {
   candidates: FileAndDirCandidates;

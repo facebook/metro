@@ -10,20 +10,19 @@
 
 'use strict';
 
-const Device = require('./Device');
-const WS = require('ws');
-
-const debug = require('debug')('Metro:InspectorProxy');
-const url = require('url');
-
 import type {
   JsonPagesListResponse,
   JsonVersionResponse,
   Page,
   PageDescription,
 } from './types';
-import type {Server as HttpServer, IncomingMessage, ServerResponse} from 'http';
+import type {IncomingMessage, Server as HttpServer, ServerResponse} from 'http';
 import type {Server as HttpsServer} from 'https';
+
+const Device = require('./Device');
+const debug = require('debug')('Metro:InspectorProxy');
+const url = require('url');
+const WS = require('ws');
 
 const WS_DEVICE_URL = '/inspector/device';
 const WS_DEBUGGER_URL = '/inspector/debug';

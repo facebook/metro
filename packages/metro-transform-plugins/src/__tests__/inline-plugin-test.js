@@ -11,10 +11,9 @@
 
 'use strict';
 
+const {compare} = require('../__mocks__/test-helpers');
 const inlinePlugin = require('../inline-plugin');
 const stripFlow = require('@babel/plugin-transform-flow-strip-types');
-
-const {compare} = require('../__mocks__/test-helpers');
 
 describe('inline constants', () => {
   it('replaces __DEV__ in the code', () => {

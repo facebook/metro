@@ -10,9 +10,9 @@
 
 'use strict';
 
-const {sourceMapGenerator} = require('./sourceMapGenerator');
-
 import type {Module} from '../types.flow';
+
+const {sourceMapGenerator} = require('./sourceMapGenerator');
 
 function sourceMapString(
   modules: $ReadOnlyArray<Module<>>,

@@ -10,9 +10,9 @@
 
 'use strict';
 
-const {isJsModule, wrapModule} = require('./js');
-
 import type {Module} from '../../types.flow';
+
+const {isJsModule, wrapModule} = require('./js');
 
 function processModules(
   modules: $ReadOnlyArray<Module<>>,

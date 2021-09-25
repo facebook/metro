@@ -10,21 +10,19 @@
 
 'use strict';
 
-const generate = require('../worker/generate');
-const mergeSourceMaps = require('../worker/mergeSourceMaps');
-const nullthrows = require('nullthrows');
-const reverseDependencyMapReferences = require('./reverse-dependency-map-references');
-
-const {addParamsToDefineCall} = require('metro-transform-plugins');
-const virtualModule = require('../module').virtual;
-
-// flowlint-next-line untyped-import:off
-const {passthroughSyntaxPlugins} = require('metro-react-native-babel-preset');
-const {parseSync, transformFromAstSync} = require('@babel/core');
-const HermesParser = require('hermes-parser');
-
 import type {Dependency, IdsForPathFn, Module} from '../types.flow';
 import type {BasicSourceMap} from 'metro-source-map';
+
+const virtualModule = require('../module').virtual;
+const generate = require('../worker/generate');
+const mergeSourceMaps = require('../worker/mergeSourceMaps');
+const reverseDependencyMapReferences = require('./reverse-dependency-map-references');
+const {parseSync, transformFromAstSync} = require('@babel/core');
+const HermesParser = require('hermes-parser');
+// flowlint-next-line untyped-import:off
+const {passthroughSyntaxPlugins} = require('metro-react-native-babel-preset');
+const {addParamsToDefineCall} = require('metro-transform-plugins');
+const nullthrows = require('nullthrows');
 
 // Transformed modules have the form
 //   __d(function(require, module, global, exports, dependencyMap) {

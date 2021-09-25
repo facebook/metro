@@ -11,9 +11,9 @@
 
 'use strict';
 
-const nullthrows = require('nullthrows');
-
 import type {CustomTransformOptions} from 'metro-transform-worker';
+
+const nullthrows = require('nullthrows');
 
 const PREFIX = 'transform.';
 

@@ -10,16 +10,17 @@
 
 'use strict';
 
-const invariant = require('invariant');
-
-import countLines from '../../../lib/countLines';
 import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
 import type {
+  BasicSourceMap,
   IndexMap,
   IndexMapSection,
   MixedSourceMap,
-  BasicSourceMap,
 } from 'metro-source-map';
+
+import countLines from '../../../lib/countLines';
+
+const invariant = require('invariant');
 
 function lineToLineSourceMap(
   source: string,

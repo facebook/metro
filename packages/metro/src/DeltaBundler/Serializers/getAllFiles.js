@@ -10,10 +10,10 @@
 
 'use strict';
 
+import type {Graph, Module} from '../types.flow';
+
 const {getAssetFiles} = require('../../Assets');
 const {getJsOutput, isJsModule} = require('./helpers/js');
-
-import type {Graph, Module} from '../types.flow';
 
 type Options = {|
   platform: ?string,

@@ -11,17 +11,15 @@
 'use strict';
 
 const ResourceNotFoundError = require('../../IncrementalBundler/ResourceNotFoundError');
-
-const path = require('path');
-
 const {MAGIC_NUMBER} = require('../../lib/bundleToBytecode');
 const {getDefaultValues} = require('metro-config/src/defaults');
 const {
-  compile,
-  align,
-  validateBytecodeModule,
   VERSION: BYTECODE_VERSION,
+  align,
+  compile,
+  validateBytecodeModule,
 } = require('metro-hermes-compiler');
+const path = require('path');
 
 jest
   .mock('jest-worker', () => ({}))

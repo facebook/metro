@@ -10,25 +10,24 @@
 
 'use strict';
 
+import type {DeltaResult, Graph, Module} from './DeltaBundler';
+import type {
+  Dependencies,
+  Options as DeltaBundlerOptions,
+  TransformInputOptions,
+} from './DeltaBundler/types.flow';
+import type {GraphId} from './lib/getGraphId';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
+
 const Bundler = require('./Bundler');
 const DeltaBundler = require('./DeltaBundler');
 const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
-
-const crypto = require('crypto');
-const fs = require('fs');
 const getGraphId = require('./lib/getGraphId');
 const getPrependedScripts = require('./lib/getPrependedScripts');
-const path = require('path');
 const transformHelpers = require('./lib/transformHelpers');
-
-import type {
-  Options as DeltaBundlerOptions,
-  TransformInputOptions,
-  Dependencies,
-} from './DeltaBundler/types.flow';
-import type {DeltaResult, Module, Graph} from './DeltaBundler';
-import type {GraphId} from './lib/getGraphId';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 export opaque type RevisionId: string = string;
 

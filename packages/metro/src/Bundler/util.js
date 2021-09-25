@@ -10,14 +10,14 @@
 
 'use strict';
 
-const babelTypes = require('@babel/types');
-const babylon = require('@babel/parser');
-const nullthrows = require('nullthrows');
-const template = require('@babel/template').default;
-
 import type {AssetDataFiltered, AssetDataWithoutFiles} from '../Assets';
 import type {ModuleTransportLike} from '../shared/types.flow';
 import type {File} from '@babel/types';
+
+const babylon = require('@babel/parser');
+const template = require('@babel/template').default;
+const babelTypes = require('@babel/types');
+const nullthrows = require('nullthrows');
 
 // Structure of the object: dir.name.scale = asset
 export type RemoteFileMap = {

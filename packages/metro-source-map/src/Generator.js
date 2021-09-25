@@ -10,13 +10,13 @@
 
 'use strict';
 
-const B64Builder = require('./B64Builder');
-
 import type {
   BasicSourceMap,
-  FBSourceMetadata,
   FBSourceFunctionMap,
+  FBSourceMetadata,
 } from './source-map';
+
+const B64Builder = require('./B64Builder');
 
 /**
  * Generates a source map from raw mappings.

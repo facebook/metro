@@ -10,20 +10,20 @@
 
 'use strict';
 
-const createInlinePlatformChecks = require('./utils/createInlinePlatformChecks');
-
 import type {PluginObj} from '@babel/core';
-import type {NodePath, Scope, Binding} from '@babel/traverse';
-// type only import. No runtime dependency
-// eslint-disable-next-line import/no-extraneous-dependencies
-import typeof * as Types from '@babel/types';
+import type {Binding, NodePath, Scope} from '@babel/traverse';
 import type {
-  Node,
   CallExpression,
   Identifier,
   MemberExpression,
+  Node,
   ObjectExpression,
 } from '@babel/types';
+// type only import. No runtime dependency
+// eslint-disable-next-line import/no-extraneous-dependencies
+import typeof * as Types from '@babel/types';
+
+const createInlinePlatformChecks = require('./utils/createInlinePlatformChecks');
 
 export type Options = {
   dev: boolean,

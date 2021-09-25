@@ -10,9 +10,9 @@
 
 'use strict';
 
-const EventEmitter = require('./vendor/eventemitter3');
-
 import type {HmrMessage, HmrUpdate} from './types.flow';
+
+const EventEmitter = require('./vendor/eventemitter3');
 
 type SocketState = 'opening' | 'open' | 'closed';
 

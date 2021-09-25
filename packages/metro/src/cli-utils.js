@@ -10,9 +10,9 @@
 
 'use strict';
 
-const fs = require('fs-extra');
-
 import type {YargArguments} from 'metro-config/src/configTypes.flow';
+
+const fs = require('fs-extra');
 
 exports.watchFile = async function(
   filename: string,

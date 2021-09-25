@@ -10,9 +10,6 @@
 
 'use strict';
 
-const getAppendScripts = require('../../lib/getAppendScripts');
-const processModules = require('./helpers/processModules');
-
 import type {
   Graph,
   MixedOutput,
@@ -20,6 +17,9 @@ import type {
   SerializerOptions,
 } from '../types.flow';
 import type {Bundle} from 'metro-runtime/src/modules/types.flow';
+
+const getAppendScripts = require('../../lib/getAppendScripts');
+const processModules = require('./helpers/processModules');
 
 function baseJSBundle(
   entryPoint: string,

@@ -10,9 +10,9 @@
 
 'use strict';
 
-const babelGenerate = require('@babel/generator').default;
-
 import type {GeneratorResult} from '@babel/generator';
+
+const babelGenerate = require('@babel/generator').default;
 
 function generate(
   ast: BabelNode,

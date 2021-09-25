@@ -10,11 +10,10 @@
 
 'use strict';
 
-const HttpStore = require('./HttpStore');
-
-const {Logger} = require('metro-core');
-
 import type {HttpOptions} from 'metro-cache';
+
+const HttpStore = require('./HttpStore');
+const {Logger} = require('metro-core');
 
 class HttpGetStore<T> extends HttpStore<T> {
   _warned: boolean;

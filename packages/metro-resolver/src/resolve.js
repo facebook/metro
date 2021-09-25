@@ -10,14 +10,6 @@
 
 'use strict';
 
-const FailedToResolveNameError = require('./FailedToResolveNameError');
-const FailedToResolvePathError = require('./FailedToResolvePathError');
-const InvalidPackageError = require('./InvalidPackageError');
-
-const formatFileCandidates = require('./formatFileCandidates');
-const isAbsolutePath = require('absolute-path');
-const path = require('path');
-
 import type {
   DoesFileExist,
   FileAndDirCandidates,
@@ -26,10 +18,17 @@ import type {
   FileOrDirContext,
   HasteContext,
   ModulePathContext,
-  ResolutionContext,
   Resolution,
+  ResolutionContext,
   Result,
 } from './types';
+
+const FailedToResolveNameError = require('./FailedToResolveNameError');
+const FailedToResolvePathError = require('./FailedToResolvePathError');
+const formatFileCandidates = require('./formatFileCandidates');
+const InvalidPackageError = require('./InvalidPackageError');
+const isAbsolutePath = require('absolute-path');
+const path = require('path');
 
 function resolve(
   context: ResolutionContext,

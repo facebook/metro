@@ -12,9 +12,9 @@
 'use strict';
 
 const {
-  createEntry,
-  createActionStartEntry,
   createActionEndEntry,
+  createActionStartEntry,
+  createEntry,
 } = require('../Logger');
 
 /* eslint-disable no-console */

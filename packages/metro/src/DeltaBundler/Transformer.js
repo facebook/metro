@@ -10,18 +10,16 @@
 
 'use strict';
 
-const WorkerFarm = require('./WorkerFarm');
+import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
+import type {TransformerConfig, TransformOptions} from './Worker';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
+const getTransformCacheKey = require('./getTransformCacheKey');
+const WorkerFarm = require('./WorkerFarm');
 const assert = require('assert');
 const fs = require('fs');
-const getTransformCacheKey = require('./getTransformCacheKey');
-const path = require('path');
-
 const {Cache, stableHash} = require('metro-cache');
-
-import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
-import type {TransformOptions, TransformerConfig} from './Worker';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+const path = require('path');
 
 class Transformer {
   _config: ConfigT;
