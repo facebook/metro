@@ -46,6 +46,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     resolveRequest: null,
     resolverMainFields: ['browser', 'main'],
     useWatchman: true,
+    ignoreRequireCyclePrefixes: [],
   },
 
   serializer: {

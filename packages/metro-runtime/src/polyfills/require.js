@@ -15,6 +15,9 @@
 
 declare var __DEV__: boolean;
 declare var __METRO_GLOBAL_PREFIX__: string;
+// JSON-encoded array of strings that we should not print require cycle errors
+// for
+declare var __IGNORE_REQUIRE_CYCLE_PREFIXES__: string;
 
 type DependencyMap = Array<ModuleID>;
 type Exports = any;
@@ -178,11 +181,13 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
         );
       // We want to show A -> B -> A:
       cycle.push(cycle[0]);
-      console.warn(
-        `Require cycle: ${cycle.join(' -> ')}\n\n` +
-          'Require cycles are allowed, but can result in uninitialized values. ' +
-          'Consider refactoring to remove the need for a cycle.',
-      );
+      if (shouldPrintRequireCycle(cycle[0])) {
+        console.warn(
+          `Require cycle: ${cycle.join(' -> ')}\n\n` +
+            'Require cycles are allowed, but can result in uninitialized values. ' +
+            'Consider refactoring to remove the need for a cycle.',
+        );
+      }
     }
   }
 
@@ -191,6 +196,17 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
   return module && module.isInitialized
     ? module.publicModule.exports
     : guardedLoadModule(moduleIdReallyIsNumber, module);
+}
+
+function shouldPrintRequireCycle(module: string): boolean {
+  const prefixes = __IGNORE_REQUIRE_CYCLE_PREFIXES__;
+  if (!prefixes || !Array.isArray(prefixes)) return true;
+
+  for (const prefix of prefixes) {
+    if (module.startsWith(prefix)) return false;
+  }
+
+  return true;
 }
 
 function metroImportDefault(moduleId: ModuleID | VerboseModuleNameForDev) {

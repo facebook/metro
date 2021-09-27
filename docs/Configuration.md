@@ -182,6 +182,12 @@ Type: `Array<string>`
 
 Additional platforms to look out for, For example, if you want to add a "custom" platform, and use modules ending in .custom.js, you would return ['custom'] here.
 
+#### `ignoreRequireCyclePrefixes`
+
+Type: `Array<string>`
+
+In development mode, suppress require cycle warnings for modules that start with one of the prefixes in this array. This is useful if a module you use has a require cycle that's not worth fixing.
+
 ---
 ### Transformer Options
 

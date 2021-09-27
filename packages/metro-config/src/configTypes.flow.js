@@ -84,6 +84,7 @@ type ResolverConfigT = {|
   resolverMainFields: $ReadOnlyArray<string>,
   sourceExts: $ReadOnlyArray<string>,
   useWatchman: boolean,
+  ignoreRequireCyclePrefixes: $ReadOnlyArray<string>,
 |};
 
 type SerializerConfigT = {|
