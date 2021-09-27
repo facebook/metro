@@ -50,6 +50,7 @@ Object {
     "emptyModulePath": "metro-runtime/src/modules/empty-module",
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
+    "ignoreRequireCyclePrefixes": Array [],
     "nodeModulesPaths": Array [],
     "platforms": Array [
       "ios",
@@ -195,6 +196,7 @@ Object {
     "emptyModulePath": "metro-runtime/src/modules/empty-module",
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
+    "ignoreRequireCyclePrefixes": Array [],
     "nodeModulesPaths": Array [],
     "platforms": Array [
       "ios",
@@ -340,6 +342,7 @@ Object {
     "emptyModulePath": "metro-runtime/src/modules/empty-module",
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
+    "ignoreRequireCyclePrefixes": Array [],
     "nodeModulesPaths": Array [],
     "platforms": Array [
       "ios",
@@ -485,6 +488,7 @@ Object {
     "emptyModulePath": "metro-runtime/src/modules/empty-module",
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
+    "ignoreRequireCyclePrefixes": Array [],
     "nodeModulesPaths": Array [],
     "platforms": Array [
       "ios",
