@@ -188,6 +188,8 @@ Type: `Array<string>`
 
 In development mode, suppress require cycle warnings for modules that start with one of the prefixes in this array. This is useful if a module you use has a require cycle that's not worth fixing.
 
+Note that paths are relative to the root of the project. For example, if you want to exclude all files of a module named `my-library` in `node_modules`, you should use `['node_modules/my-library']`. 
+
 ---
 ### Transformer Options
 
