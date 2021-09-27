@@ -666,6 +666,29 @@ describe('require', () => {
       console.warn = warn;
     });
 
+    it('does not log warning for cyclic dependency in ignore list', () => {
+      createModuleSystem(moduleSystem, true, '', ['foo']);
+
+      createModule(moduleSystem, 0, 'foo.js', (global, require) => {
+        require(1);
+      });
+
+      createModule(moduleSystem, 1, 'bar.js', (global, require) => {
+        require(2);
+      });
+
+      createModule(moduleSystem, 2, 'baz.js', (global, require) => {
+        require(0);
+      });
+
+      const warn = console.warn;
+      console.warn = jest.fn();
+
+      moduleSystem.__r(0);
+      expect(console.warn).toHaveBeenCalledTimes(0);
+      console.warn = warn;
+    });
+
     it('sets the exports value to their current value', () => {
       createModuleSystem(moduleSystem, false, '');
 
