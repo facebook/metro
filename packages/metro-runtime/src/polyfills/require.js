@@ -17,7 +17,7 @@ declare var __DEV__: boolean;
 declare var __METRO_GLOBAL_PREFIX__: string;
 // JSON-encoded array of strings that we should not print require cycle errors
 // for
-declare var __IGNORE_REQUIRE_CYCLE_PREFIXES__: string;
+declare var __IGNORE_REQUIRE_CYCLE_PREFIXES__: $ReadOnlyArray<string>;
 
 type DependencyMap = Array<ModuleID>;
 type Exports = any;
@@ -198,9 +198,9 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
     : guardedLoadModule(moduleIdReallyIsNumber, module);
 }
 
-function shouldPrintRequireCycle(module: string): boolean {
+function shouldPrintRequireCycle(module: ?string): boolean {
   const prefixes = __IGNORE_REQUIRE_CYCLE_PREFIXES__;
-  if (!prefixes || !Array.isArray(prefixes)) return true;
+  if (!module || !prefixes || !Array.isArray(prefixes)) return true;
 
   for (const prefix of prefixes) {
     if (module.startsWith(prefix)) return false;

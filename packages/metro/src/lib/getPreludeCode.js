@@ -19,7 +19,7 @@ function getPreludeCode({
   +extraVars?: {[string]: mixed, ...},
   +isDev: boolean,
   +globalPrefix: string,
-  +ignoreRequireCyclePrefixes: string[],
+  +ignoreRequireCyclePrefixes: $ReadOnlyArray<string>,
 |}): string {
   const vars = [
     // Ensure these variable names match the ones referenced in metro-runtime

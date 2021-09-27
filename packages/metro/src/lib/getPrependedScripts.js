@@ -82,7 +82,7 @@ function _getPrelude({
 }: {
   dev: boolean,
   globalPrefix: string,
-  ignoreRequireCyclePrefixes: string[],
+  ignoreRequireCyclePrefixes: $ReadOnlyArray<string>,
   ...
 }): Module<> {
   const code = getPreludeCode({
