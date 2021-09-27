@@ -14,9 +14,8 @@
 
 // $FlowFixMe: not defined by Flow
 const constants = require('constants');
-const stream = require('stream');
-
 const {EventEmitter} = require('events');
+const stream = require('stream');
 
 type NodeBase = {|
   gid: number,

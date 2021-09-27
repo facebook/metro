@@ -14,9 +14,8 @@ jest.mock('../../Bundler');
 jest.mock('../DeltaCalculator');
 
 const Bundler = require('../../Bundler');
-const DeltaCalculator = require('../DeltaCalculator');
-
 const DeltaBundler = require('../../DeltaBundler');
+const DeltaCalculator = require('../DeltaCalculator');
 
 describe('DeltaBundler', () => {
   let deltaBundler;

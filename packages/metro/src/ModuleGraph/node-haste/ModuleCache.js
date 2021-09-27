@@ -10,10 +10,10 @@
 
 'use strict';
 
+import type {PackageData, TransformedCodeFile} from '../types.flow';
+
 const Module = require('./Module');
 const Package = require('./Package');
-
-import type {PackageData, TransformedCodeFile} from '../types.flow';
 
 type GetClosestPackageFn = (filePath: string) => ?string;
 

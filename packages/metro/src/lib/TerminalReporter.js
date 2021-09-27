@@ -10,20 +10,19 @@
 
 'use strict';
 
-const chalk = require('chalk');
-const logToConsole = require('./logToConsole');
-const path = require('path');
-const reporting = require('./reporting');
-const throttle = require('lodash.throttle');
-
-const {AmbiguousModuleResolutionError} = require('metro-core');
-
 import type {
   BundleDetails,
-  ReportableEvent,
   GlobalCacheDisabledReason,
+  ReportableEvent,
 } from './reporting';
 import type {Terminal} from 'metro-core';
+
+const logToConsole = require('./logToConsole');
+const reporting = require('./reporting');
+const chalk = require('chalk');
+const throttle = require('lodash.throttle');
+const {AmbiguousModuleResolutionError} = require('metro-core');
+const path = require('path');
 
 type BundleProgress = {
   bundleDetails: BundleDetails,

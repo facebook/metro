@@ -12,24 +12,22 @@
 
 'use strict';
 
-const HermesParser = require('hermes-parser');
-
-const crypto = require('crypto');
-const fs = require('fs');
-const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
-const makeHMRConfig = require('metro-react-native-babel-preset/src/configs/hmr');
-const nullthrows = require('nullthrows');
-const path = require('path');
-
-const {parseSync, transformFromAstSync} = require('@babel/core');
-const {generateFunctionMap} = require('metro-source-map');
-
 import type {BabelCoreOptions, Plugins} from '@babel/core';
 import type {
   BabelTransformer,
   BabelTransformerArgs,
 } from 'metro-babel-transformer';
 import type {FBSourceFunctionMap} from 'metro-source-map/src/source-map';
+
+const {parseSync, transformFromAstSync} = require('@babel/core');
+const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
+const crypto = require('crypto');
+const fs = require('fs');
+const HermesParser = require('hermes-parser');
+const makeHMRConfig = require('metro-react-native-babel-preset/src/configs/hmr');
+const {generateFunctionMap} = require('metro-source-map');
+const nullthrows = require('nullthrows');
+const path = require('path');
 
 const cacheKeyParts = [
   fs.readFileSync(__filename),

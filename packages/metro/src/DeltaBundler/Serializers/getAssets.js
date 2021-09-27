@@ -10,13 +10,12 @@
 
 'use strict';
 
-const path = require('path');
+import type {AssetData} from '../../Assets';
+import type {Dependencies, Module} from '../types.flow';
 
 const {getAssetData} = require('../../Assets');
 const {getJsOutput, isJsModule} = require('./helpers/js');
-
-import type {AssetData} from '../../Assets';
-import type {Dependencies, Module} from '../types.flow';
+const path = require('path');
 
 type Options = {|
   +processModuleFilter: (module: Module<>) => boolean,

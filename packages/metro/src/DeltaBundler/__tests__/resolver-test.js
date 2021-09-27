@@ -10,9 +10,8 @@
 
 'use strict';
 
-const path = require('path');
-
 const {mergeConfig} = require('metro-config');
+const path = require('path');
 const mockPlatform = process.platform;
 
 jest.useRealTimers();
@@ -905,11 +904,6 @@ let resolver;
           });
 
           it('supports excluding a package', async () => {
-            // TODO: Make this configurable.
-            require('../../node-haste/DependencyGraph/ModuleResolution').ModuleResolver.EMPTY_MODULE = p(
-              '/root/emptyModule.js',
-            );
-
             setMockFileSystem({
               'emptyModule.js': '',
               'index.js': '',
@@ -924,7 +918,50 @@ let resolver;
               },
             });
 
-            resolver = await createResolver();
+            resolver = await createResolver({
+              resolver: {emptyModulePath: p('/root/emptyModule.js')},
+            });
+
+            expect(
+              resolver.resolve(
+                p('/root/node_modules/aPackage/index.js'),
+                'left-pad',
+              ),
+            ).toBe(p('/root/emptyModule.js'));
+            expect(
+              resolver.resolve(
+                p('/root/node_modules/aPackage/index.js'),
+                './foo',
+              ),
+            ).toBe(p('/root/emptyModule.js'));
+
+            // TODO: Are the following two cases expected behaviour?
+            expect(() =>
+              resolver.resolve(p('/root/index.js'), 'aPackage/foo'),
+            ).toThrow();
+            expect(() =>
+              resolver.resolve(p('/root/index.js'), 'aPackage/foo.js'),
+            ).toThrow();
+          });
+
+          it('supports excluding a package when the empty module is a relative path', async () => {
+            setMockFileSystem({
+              'emptyModule.js': '',
+              'index.js': '',
+              node_modules: {
+                aPackage: {
+                  'package.json': JSON.stringify({
+                    name: 'aPackage',
+                    [browserField]: {'left-pad': false, './foo.js': false},
+                  }),
+                  'index.js': '',
+                },
+              },
+            });
+
+            resolver = await createResolver({
+              resolver: {emptyModulePath: './emptyModule.js'},
+            });
 
             expect(
               resolver.resolve(
@@ -2091,6 +2128,110 @@ let resolver;
         expect(context.originModulePath).toEqual(p('/root/index.js'));
         expect(request).toEqual('./foo');
         expect(platform).toEqual('ios');
+      });
+
+      it('caches resolutions by origin folder', async () => {
+        setMockFileSystem({
+          root1: {
+            dir: {
+              'a.js': '',
+              'b.js': '',
+            },
+          },
+          root2: {
+            dir: {
+              'a.js': '',
+              'b.js': '',
+            },
+          },
+          'target1.js': {},
+          'target2.js': {},
+        });
+        resolver = await createResolver({resolver: {resolveRequest}});
+
+        resolveRequest.mockReturnValue({
+          type: 'sourceFile',
+          filePath: p('/target1.js'),
+        });
+        expect(resolver.resolve(p('/root1/dir/a.js'), 'target')).toBe(
+          p('/target1.js'),
+        );
+        expect(resolver.resolve(p('/root1/dir/b.js'), 'target')).toBe(
+          p('/target1.js'),
+        );
+        expect(resolveRequest).toHaveBeenCalledTimes(1);
+        expect(resolver.resolve(p('/root1/fake.js'), 'target')).toBe(
+          p('/target1.js'),
+        );
+        expect(resolveRequest).toHaveBeenCalledTimes(2);
+
+        resolveRequest.mockReturnValue({
+          type: 'sourceFile',
+          filePath: p('/target2.js'),
+        });
+        expect(resolver.resolve(p('/root2/dir/a.js'), 'target')).toBe(
+          p('/target2.js'),
+        );
+        expect(resolver.resolve(p('/root2/dir/b.js'), 'target')).toBe(
+          p('/target2.js'),
+        );
+        expect(resolveRequest).toHaveBeenCalledTimes(3);
+        expect(resolver.resolve(p('/root2/fake.js'), 'target')).toBe(
+          p('/target2.js'),
+        );
+        expect(resolveRequest).toHaveBeenCalledTimes(4);
+      });
+
+      it('caches resolutions globally if assumeFlatNodeModules=true', async () => {
+        setMockFileSystem({
+          root1: {
+            dir: {
+              'a.js': '',
+              'b.js': '',
+            },
+          },
+          root2: {
+            dir: {
+              'a.js': '',
+              'b.js': '',
+            },
+          },
+          'target-always.js': {},
+          'target-never.js': {},
+        });
+        resolver = await createResolver({resolver: {resolveRequest}});
+
+        resolveRequest.mockReturnValue({
+          type: 'sourceFile',
+          filePath: p('/target-always.js'),
+        });
+        expect(
+          resolver.resolve(p('/root1/dir/a.js'), 'target', {
+            assumeFlatNodeModules: true,
+          }),
+        ).toBe(p('/target-always.js'));
+        expect(
+          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+            assumeFlatNodeModules: true,
+          }),
+        ).toBe(p('/target-always.js'));
+
+        resolveRequest.mockReturnValue({
+          type: 'sourceFile',
+          filePath: p('/target-never.js'),
+        });
+        expect(
+          resolver.resolve(p('/root2/dir/a.js'), 'target', {
+            assumeFlatNodeModules: true,
+          }),
+        ).toBe(p('/target-always.js'));
+        expect(
+          resolver.resolve(p('/root2/dir/b.js'), 'target', {
+            assumeFlatNodeModules: true,
+          }),
+        ).toBe(p('/target-always.js'));
+
+        expect(resolveRequest).toHaveBeenCalledTimes(1);
       });
     });
   });

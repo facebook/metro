@@ -11,11 +11,9 @@
 
 'use strict';
 
-const JsFileWrapping = require('../JsFileWrapping');
-
-const babylon = require('@babel/parser');
-
 const {codeFromAst, comparableCode} = require('../../test-helpers');
+const JsFileWrapping = require('../JsFileWrapping');
+const babylon = require('@babel/parser');
 
 const {WRAP_NAME} = JsFileWrapping;
 // Note; it's not important HOW Babel changes the name. Only THAT it does.

@@ -10,11 +10,10 @@
 
 'use strict';
 
-const fs = require('fs');
 const getPackages = require('../_getPackages');
-const path = require('path');
-
 const METRO_VERSION = require('../../lerna.json').version;
+const fs = require('fs');
+const path = require('path');
 
 function readPackageJson(packagePath) {
   return require(path.join(packagePath, 'package.json'));

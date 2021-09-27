@@ -10,13 +10,12 @@
 
 'use strict';
 
-const invariant = require('invariant');
-const path = require('path');
-
-const {addParamsToDefineCall} = require('metro-transform-plugins');
-
 import type {MixedOutput, Module} from '../../types.flow';
 import type {JsOutput} from 'metro-transform-worker';
+
+const invariant = require('invariant');
+const {addParamsToDefineCall} = require('metro-transform-plugins');
+const path = require('path');
 
 export type Options = {
   +createModuleId: string => number | string,

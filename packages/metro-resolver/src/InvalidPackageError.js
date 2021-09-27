@@ -10,9 +10,9 @@
 
 'use strict';
 
-const formatFileCandidates = require('./formatFileCandidates');
-
 import type {FileCandidates} from './types';
+
+const formatFileCandidates = require('./formatFileCandidates');
 
 class InvalidPackageError extends Error {
   /**

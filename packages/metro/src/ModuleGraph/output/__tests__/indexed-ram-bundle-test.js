@@ -13,11 +13,10 @@
 
 declare var jest: any;
 
-const indexedRamBundle = require('../indexed-ram-bundle');
-
-const {getModuleCodeAndMap} = require('../util');
-
 import type {IndexMapSection} from 'metro-source-map';
+
+const indexedRamBundle = require('../indexed-ram-bundle');
+const {getModuleCodeAndMap} = require('../util');
 
 declare var describe: any;
 declare var expect: any;

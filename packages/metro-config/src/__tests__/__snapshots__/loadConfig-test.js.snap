@@ -47,6 +47,7 @@ Object {
     ],
     "blockList": /\\(\\\\/__tests__\\\\/\\.\\*\\)\\$/,
     "dependencyExtractor": undefined,
+    "emptyModulePath": "metro-runtime/src/modules/empty-module",
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
     "nodeModulesPaths": Array [],
@@ -67,6 +68,7 @@ Object {
       "ts",
       "tsx",
     ],
+    "unstable_hasteMapModulePath": undefined,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -190,6 +192,7 @@ Object {
     ],
     "blockList": /\\(\\\\/__tests__\\\\/\\.\\*\\)\\$/,
     "dependencyExtractor": undefined,
+    "emptyModulePath": "metro-runtime/src/modules/empty-module",
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
     "nodeModulesPaths": Array [],
@@ -210,6 +213,7 @@ Object {
       "ts",
       "tsx",
     ],
+    "unstable_hasteMapModulePath": undefined,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -333,6 +337,7 @@ Object {
     ],
     "blockList": /\\(\\\\/__tests__\\\\/\\.\\*\\)\\$/,
     "dependencyExtractor": undefined,
+    "emptyModulePath": "metro-runtime/src/modules/empty-module",
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
     "nodeModulesPaths": Array [],
@@ -353,6 +358,7 @@ Object {
       "ts",
       "tsx",
     ],
+    "unstable_hasteMapModulePath": undefined,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -476,6 +482,7 @@ Object {
     ],
     "blockList": /\\(\\\\/__tests__\\\\/\\.\\*\\)\\$/,
     "dependencyExtractor": undefined,
+    "emptyModulePath": "metro-runtime/src/modules/empty-module",
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
     "nodeModulesPaths": Array [],
@@ -496,6 +503,7 @@ Object {
       "ts",
       "tsx",
     ],
+    "unstable_hasteMapModulePath": undefined,
     "useWatchman": true,
   },
   "serializer": Object {

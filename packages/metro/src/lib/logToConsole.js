@@ -12,10 +12,10 @@
 
 'use strict';
 
+import type {Terminal} from 'metro-core';
+
 const chalk = require('chalk');
 const util = require('util');
-
-import type {Terminal} from 'metro-core';
 
 const groupStack = [];
 let collapsedGuardTimer;

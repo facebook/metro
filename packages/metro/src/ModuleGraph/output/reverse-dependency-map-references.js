@@ -11,8 +11,9 @@
 'use strict';
 
 import type {NodePath} from '@babel/traverse';
-import typeof * as Types from '@babel/types';
 import type {CallExpression} from '@babel/types';
+import typeof * as Types from '@babel/types';
+
 import invariant from 'invariant';
 import nullthrows from 'nullthrows';
 

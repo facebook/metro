@@ -10,20 +10,17 @@
 
 'use strict';
 
-const invariant = require('invariant');
-
 import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
 import type {
+  BasicSourceMap,
   IndexMap,
   IndexMapSection,
   MixedSourceMap,
-  BasicSourceMap,
 } from 'metro-source-map';
 
-const newline = /\r\n?|\n|\u2028|\u2029/g;
-// fastest implementation
-const countLines = (string: string): number =>
-  (string.match(newline) || []).length + 1;
+import countLines from '../../../lib/countLines';
+
+const invariant = require('invariant');
 
 function lineToLineSourceMap(
   source: string,

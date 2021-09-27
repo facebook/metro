@@ -10,10 +10,10 @@
 
 'use strict';
 
-const isAbsolutePath = require('absolute-path');
-
 import type ModuleCache from './ModuleCache';
 import type Package from './Package';
+
+const isAbsolutePath = require('absolute-path');
 
 class Module {
   path: string;

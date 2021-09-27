@@ -10,13 +10,12 @@
 
 'use strict';
 
-const meta = require('../../shared/output/meta');
-
-const {getModuleCodeAndMap, concat} = require('./util');
-const {BundleBuilder} = require('metro-source-map');
-
 import type {OutputFn} from '../types.flow';
 import type {MixedSourceMap} from 'metro-source-map';
+
+const meta = require('../../shared/output/meta');
+const {concat, getModuleCodeAndMap} = require('./util');
+const {BundleBuilder} = require('metro-source-map');
 
 function asPlainBundle({
   dependencyMapReservedName,

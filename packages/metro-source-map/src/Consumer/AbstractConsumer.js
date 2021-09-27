@@ -10,17 +10,16 @@
 
 'use strict';
 
-const invariant = require('invariant');
-
-const {GENERATED_ORDER, iterationOrderToString} = require('./constants');
-
 import type {
-  SourcePosition,
   GeneratedPositionLookup,
-  Mapping,
   IConsumer,
   IterationOrder,
+  Mapping,
+  SourcePosition,
 } from './types.flow';
+
+const {GENERATED_ORDER, iterationOrderToString} = require('./constants');
+const invariant = require('invariant');
 
 // Implementation details shared between MappingsConsumer and SectionsConsumer
 class AbstractConsumer implements IConsumer {

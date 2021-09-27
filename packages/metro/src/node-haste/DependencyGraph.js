@@ -8,31 +8,28 @@
  * @format
  */
 
-'use strict';
-
-const {AmbiguousModuleResolutionError} = require('metro-core');
-const {DuplicateHasteCandidatesError} = require('jest-haste-map').ModuleMap;
-const {InvalidPackageError} = require('metro-resolver');
-const {PackageResolutionError} = require('metro-core');
-
-const JestHasteMap = require('jest-haste-map');
-const Module = require('./Module');
-const ModuleCache = require('./ModuleCache');
-
-const ci = require('ci-info');
-const fs = require('fs');
-const path = require('path');
-
-const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
-const {EventEmitter} = require('events');
-const {
-  Logger: {createActionStartEntry, createActionEndEntry, log},
-} = require('metro-core');
-
 import type {ModuleMap} from './DependencyGraph/ModuleResolution';
 import type Package from './Package';
 import type {HasteFS} from './types';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
+
+import JestHasteMap, {ModuleMap as JestHasteModuleMap} from 'jest-haste-map';
+
+const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
+const Module = require('./Module');
+const ModuleCache = require('./ModuleCache');
+const ci = require('ci-info');
+const {EventEmitter} = require('events');
+const fs = require('fs');
+const {
+  AmbiguousModuleResolutionError,
+  Logger: {createActionStartEntry, createActionEndEntry, log},
+  PackageResolutionError,
+} = require('metro-core');
+const {InvalidPackageError} = require('metro-resolver');
+const path = require('path');
+
+const {DuplicateHasteCandidatesError} = JestHasteModuleMap;
 
 const JEST_HASTE_MAP_CACHE_BREAKER = 5;
 
@@ -118,13 +115,14 @@ class DependencyGraph extends EventEmitter {
 
   // $FlowFixMe[value-as-type]
   static _createHaste(config: ConfigT, watch?: boolean): JestHasteMap {
-    const haste = new JestHasteMap({
+    const haste = JestHasteMap.create({
       cacheDirectory: config.hasteMapCacheDirectory,
       dependencyExtractor: config.resolver.dependencyExtractor,
       computeSha1: true,
       extensions: config.resolver.sourceExts.concat(config.resolver.assetExts),
       forceNodeFilesystemAPI: !config.resolver.useWatchman,
       hasteImplModulePath: config.resolver.hasteImplModulePath,
+      hasteMapModulePath: config.resolver.unstable_hasteMapModulePath,
       ignorePattern: this._getIgnorePattern(config),
       maxWorkers: config.maxWorkers,
       mocksPattern: '',
@@ -211,6 +209,7 @@ class DependencyGraph extends EventEmitter {
         return false;
       },
       doesFileExist: this._doesFileExist,
+      emptyModulePath: this._config.resolver.emptyModulePath,
       extraNodeModules: this._config.resolver.extraNodeModules,
       isAssetFile: file => this._assetExtensions.has(path.extname(file)),
       mainFields: this._config.resolver.resolverMainFields,
@@ -289,16 +288,20 @@ class DependencyGraph extends EventEmitter {
       assumeFlatNodeModules: false,
     },
   ): string {
-    const isPath =
+    const isSensitiveToOriginFolder =
+      // Resolution is always relative to the origin folder unless we assume a flat node_modules
+      !assumeFlatNodeModules ||
+      // Path requests are resolved relative to the origin folder
       to.includes('/') ||
       to === '.' ||
       to === '..' ||
+      // Preserve standard assumptions under node_modules
       from.includes(path.sep + 'node_modules' + path.sep);
     const mapByDirectory = getOrCreate(
       this._resolutionCache,
-      isPath ? path.dirname(from) : '',
+      isSensitiveToOriginFolder ? path.dirname(from) : '',
     );
-    let mapByPlatform = getOrCreate(mapByDirectory, to);
+    const mapByPlatform = getOrCreate(mapByDirectory, to);
     let modulePath = mapByPlatform.get(platform);
 
     if (!modulePath) {
@@ -309,18 +312,6 @@ class DependencyGraph extends EventEmitter {
           true,
           platform,
         ).path;
-
-        // If we cannot assume that only one node_modules folder exists in the project,
-        // we need to cache packages by directory instead of globally.
-        if (
-          !assumeFlatNodeModules &&
-          modulePath.includes(path.sep + 'node_modules' + path.sep)
-        ) {
-          mapByPlatform = getOrCreate(
-            getOrCreate(this._resolutionCache, path.dirname(from)),
-            to,
-          );
-        }
       } catch (error) {
         if (error instanceof DuplicateHasteCandidatesError) {
           throw new AmbiguousModuleResolutionError(from, error);

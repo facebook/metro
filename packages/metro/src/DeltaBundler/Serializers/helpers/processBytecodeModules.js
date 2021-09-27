@@ -10,9 +10,9 @@
 
 'use strict';
 
-const {isBytecodeModule, wrapModule} = require('./bytecode');
-
 import type {Module} from '../../types.flow';
+
+const {isBytecodeModule, wrapModule} = require('./bytecode');
 
 function processBytecodeModules(
   modules: $ReadOnlyArray<Module<>>,

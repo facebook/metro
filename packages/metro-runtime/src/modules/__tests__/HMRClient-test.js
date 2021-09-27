@@ -11,9 +11,9 @@
 
 'use strict';
 
-const HMRClient = require('../HMRClient');
-
 import type {HmrUpdate} from '../types.flow';
+
+const HMRClient = require('../HMRClient');
 
 let mockSocket = null;
 let evaledCode = '';

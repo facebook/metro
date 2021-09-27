@@ -10,14 +10,14 @@
 
 'use strict';
 
+import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
+import type {IndexMap} from 'metro-source-map';
+
 const {
   combineSourceMaps,
   combineSourceMapsAddingOffsets,
   joinModules,
 } = require('./util');
-
-import type {ModuleGroups, ModuleTransportLike} from '../../types.flow';
-import type {IndexMap} from 'metro-source-map';
 
 type Params = {|
   fixWrapperOffset: boolean,

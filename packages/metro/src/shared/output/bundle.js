@@ -10,13 +10,12 @@
 
 'use strict';
 
-const Server = require('../../Server');
-
-const relativizeSourceMapInline = require('../../lib/relativizeSourceMap');
-const writeFile = require('./writeFile');
-
 import type {OutputOptions, RequestOptions} from '../types.flow';
 import type {MixedSourceMap} from 'metro-source-map';
+
+const relativizeSourceMapInline = require('../../lib/relativizeSourceMap');
+const Server = require('../../Server');
+const writeFile = require('./writeFile');
 
 function buildBundle(
   packagerClient: Server,

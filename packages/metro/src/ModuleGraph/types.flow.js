@@ -11,9 +11,9 @@
 'use strict';
 
 import type {
-  MixedSourceMap,
-  FBSourceFunctionMap,
   BasicSourceMap,
+  FBSourceFunctionMap,
+  MixedSourceMap,
 } from 'metro-source-map';
 import type {TransformResultDependency} from 'metro/src/DeltaBundler';
 
@@ -298,4 +298,5 @@ export type ResolvedLibrary = {|
   +files: $ReadOnlyArray<ResolvedCodeFile>,
   /* cannot be a Map because it's JSONified later on */
   +assets: AssetContentsByPath,
+  +isPartiallyResolved?: boolean,
 |};

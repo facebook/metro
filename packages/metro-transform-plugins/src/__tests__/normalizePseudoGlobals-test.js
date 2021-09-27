@@ -11,8 +11,7 @@
 'use strict';
 
 const normalizePseudoglobals = require('../normalizePseudoGlobals');
-
-const {transformSync, transformFromAstSync} = require('@babel/core');
+const {transformFromAstSync, transformSync} = require('@babel/core');
 
 function normalizePseudoglobalsCall(source, options) {
   const {ast} = transformSync(source, {

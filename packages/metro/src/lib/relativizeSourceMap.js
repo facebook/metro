@@ -10,9 +10,9 @@
 
 'use strict';
 
-const path = require('path');
-
 import type {MixedSourceMap} from 'metro-source-map';
+
+const path = require('path');
 
 function relativizeSourceMapInline(
   sourceMap: MixedSourceMap,

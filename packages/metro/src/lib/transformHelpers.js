@@ -10,14 +10,14 @@
 
 'use strict';
 
-const path = require('path');
-
 import type Bundler from '../Bundler';
-import type {TransformOptions} from '../DeltaBundler/Worker';
-import type {TransformInputOptions} from '../DeltaBundler/types.flow';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
+import type {TransformInputOptions} from '../DeltaBundler/types.flow';
+import type {TransformOptions} from '../DeltaBundler/Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {Type} from 'metro-transform-worker';
+
+const path = require('path');
 
 type InlineRequiresRaw = {+blockList: {[string]: true, ...}, ...} | boolean;
 

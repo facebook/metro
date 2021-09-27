@@ -10,8 +10,8 @@
 
 'use strict';
 
-const baseJSBundle = require('../baseJSBundle');
 const createModuleIdFactory = require('../../../lib/createModuleIdFactory');
+const baseJSBundle = require('../baseJSBundle');
 const path = require('path');
 
 const polyfill = {

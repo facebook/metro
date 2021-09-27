@@ -11,7 +11,6 @@
 'use strict';
 
 const Metro = require('../../..');
-
 const path = require('path');
 
 jest.unmock('cosmiconfig');

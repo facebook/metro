@@ -10,10 +10,10 @@
 
 'use strict';
 
-const {add, neg, add0, add1} = require('ob1');
-
 import type {GeneratedOffset} from './types.flow';
 import type {Number0, Number1} from 'ob1';
+
+const {add, add0, add1, neg} = require('ob1');
 
 function shiftPositionByOffset<
   T: {

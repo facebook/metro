@@ -11,25 +11,24 @@
 
 'use strict';
 
-const babylon = require('@babel/parser');
-const collectDependencies = require('../collectDependencies');
-const dedent = require('dedent');
-const nullthrows = require('nullthrows');
-const t = require('@babel/types');
-
-const {codeFromAst, comparableCode} = require('../../test-helpers');
-const {codeFrameColumns} = require('@babel/code-frame');
-
 import type {
-  Options,
-  State,
-  ModuleDependencyRegistry,
-  MutableInternalDependency,
+  DependencyTransformer,
   ImportQualifier,
   InternalDependency,
-  DependencyTransformer,
+  ModuleDependencyRegistry,
+  MutableInternalDependency,
+  Options,
+  State,
 } from '../collectDependencies';
 import type {NodePath} from '@babel/traverse';
+
+const {codeFromAst, comparableCode} = require('../../test-helpers');
+const collectDependencies = require('../collectDependencies');
+const {codeFrameColumns} = require('@babel/code-frame');
+const babylon = require('@babel/parser');
+const t = require('@babel/types');
+const dedent = require('dedent');
+const nullthrows = require('nullthrows');
 
 const {any, objectContaining} = expect;
 

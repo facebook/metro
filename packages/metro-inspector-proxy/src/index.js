@@ -11,7 +11,6 @@
 'use strict';
 
 const InspectorProxy = require('./InspectorProxy');
-
 const {parse} = require('url');
 // Runs new HTTP Server and attaches Inspector Proxy to it.
 // Requires are inlined here because we don't want to import them

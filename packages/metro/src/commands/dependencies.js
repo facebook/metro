@@ -9,16 +9,14 @@
 
 'use strict';
 
-const Server = require('../Server');
-
-const denodeify = require('denodeify');
-const fs = require('fs');
-const path = require('path');
+import typeof Yargs from 'yargs';
 
 const {makeAsyncCommand} = require('../cli-utils');
+const Server = require('../Server');
+const denodeify = require('denodeify');
+const fs = require('fs');
 const {loadConfig} = require('metro-config');
-
-import typeof Yargs from 'yargs';
+const path = require('path');
 
 async function dependencies(args: any, config: any) {
   const rootModuleAbsolutePath = args.entryFile;

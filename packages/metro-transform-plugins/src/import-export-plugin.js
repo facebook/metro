@@ -10,21 +10,21 @@
 
 'use strict';
 
-const nullthrows = require('nullthrows');
-const template = require('@babel/template').default;
-
+import type {PluginObj} from '@babel/core';
 import type {NodePath} from '@babel/traverse';
+import type {
+  ExportNamedDeclaration,
+  ImportDeclaration,
+  Node,
+  Program,
+  Statement,
+} from '@babel/types';
 // Type only dependency. This is not a runtime dependency
 // eslint-disable-next-line import/no-extraneous-dependencies
 import typeof * as Types from '@babel/types';
-import type {PluginObj} from '@babel/core';
-import type {
-  Node,
-  ExportNamedDeclaration,
-  ImportDeclaration,
-  Statement,
-  Program,
-} from '@babel/types';
+
+const template = require('@babel/template').default;
+const nullthrows = require('nullthrows');
 
 type State = {
   exportAll: Array<{file: string, loc: ?BabelSourceLocation, ...}>,

@@ -10,9 +10,9 @@
 
 'use strict';
 
-const {Logger} = require('metro-core');
-
 import type {CacheStore} from 'metro-cache';
+
+const {Logger} = require('metro-core');
 
 /**
  * Main cache class. Receives an array of cache instances, and sequentially

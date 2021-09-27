@@ -12,8 +12,7 @@
 'use strict';
 
 const Consumer = require('../Consumer');
-
-const {add1, add0} = require('ob1');
+const {add0, add1} = require('ob1');
 
 const {objectContaining} = expect;
 

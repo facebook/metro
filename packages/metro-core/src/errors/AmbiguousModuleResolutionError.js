@@ -8,10 +8,8 @@
  * @format
  */
 
-'use strict';
-
-const {DuplicateHasteCandidatesError} = (require('jest-haste-map')
-  .ModuleMap: any);
+import {ModuleMap} from 'jest-haste-map';
+const {DuplicateHasteCandidatesError} = ModuleMap;
 
 class AmbiguousModuleResolutionError extends Error {
   fromModulePath: string;

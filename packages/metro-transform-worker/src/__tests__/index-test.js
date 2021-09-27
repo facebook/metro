@@ -11,8 +11,6 @@
 
 'use strict';
 
-import type {JsTransformerConfig} from '../index';
-
 jest
   .mock('../utils/getMinifier', () => () => ({code, map}) => ({
     code: code.replace('arbitrary(code)', 'minified(code)'),
@@ -25,14 +23,16 @@ jest
   }))
   .mock('metro-minify-uglify');
 
-const HermesCompiler = require('metro-hermes-compiler');
+import type {JsTransformerConfig} from '../index';
 
+const HermesCompiler = require('metro-hermes-compiler');
 const path = require('path');
 
 const babelTransformerPath = require.resolve(
   'metro-react-native-babel-transformer',
 );
-const transformerContents = require('fs').readFileSync(babelTransformerPath);
+const transformerContents = (() =>
+  require('fs').readFileSync(babelTransformerPath))();
 
 const HEADER_DEV =
   '__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {';
@@ -599,4 +599,25 @@ it('skips minification in Hermes canary transform profile', async () => {
       arbitrary(code);
     });"
   `);
+});
+
+it('counts all line endings correctly', async () => {
+  const transformStr = str =>
+    Transformer.transform(baseConfig, '/root', 'local/file.js', str, {
+      dev: false,
+      minify: false,
+      type: 'module',
+    });
+
+  const differentEndingsResult = await transformStr(
+    'one\rtwo\r\nthree\nfour\u2028five\u2029six',
+  );
+
+  const standardEndingsResult = await transformStr(
+    'one\ntwo\nthree\nfour\nfive\nsix',
+  );
+
+  expect(differentEndingsResult.output[0].data.lineCount).toEqual(
+    standardEndingsResult.output[0].data.lineCount,
+  );
 });

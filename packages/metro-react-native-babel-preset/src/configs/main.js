@@ -9,8 +9,8 @@
 
 'use strict';
 
-const lazyImports = require('./lazy-imports');
 const passthroughSyntaxPlugins = require('../passthrough-syntax-plugins');
+const lazyImports = require('./lazy-imports');
 
 function isTypeScriptSource(fileName) {
   return !!fileName && fileName.endsWith('.ts');

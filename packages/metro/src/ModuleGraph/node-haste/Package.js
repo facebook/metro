@@ -10,10 +10,10 @@
 
 'use strict';
 
+import type {PackageData} from '../types.flow';
+
 const nullthrows = require('nullthrows');
 const path = require('path');
-
-import type {PackageData} from '../types.flow';
 
 module.exports = class Package {
   data: PackageData;

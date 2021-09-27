@@ -10,17 +10,17 @@
 
 'use strict';
 
-const DeltaCalculator = require('./DeltaBundler/DeltaCalculator');
-
 import type Bundler from './Bundler';
 import type {
   DeltaResult,
-  Graph,
   Dependencies,
+  Graph,
   // eslint-disable-next-line no-unused-vars
   MixedOutput,
   Options,
 } from './DeltaBundler/types.flow';
+
+const DeltaCalculator = require('./DeltaBundler/DeltaCalculator');
 
 export type {
   DeltaResult,

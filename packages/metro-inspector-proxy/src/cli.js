@@ -10,9 +10,8 @@
 
 'use strict';
 
-const yargs = require('yargs');
-
 const {runInspectorProxy} = require('./index');
+const yargs = require('yargs');
 
 const argv = yargs
   .option('port', {

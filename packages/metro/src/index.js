@@ -10,28 +10,9 @@
 
 'use strict';
 
-const IncrementalBundler = require('./IncrementalBundler');
-const MetroHmrServer = require('./HmrServer');
-const MetroServer = require('./Server');
-
-const chalk = require('chalk');
-const createWebsocketServer = require('./lib/createWebsocketServer');
-const fs = require('fs');
-const http = require('http');
-const https = require('https');
-const makeBuildCommand = require('./commands/build');
-const makeDependenciesCommand = require('./commands/dependencies');
-const makeServeCommand = require('./commands/serve');
-const outputBundle = require('./shared/output/bundle');
-const ws = require('ws');
-
-const {loadConfig, mergeConfig, getDefaultConfig} = require('metro-config');
-const {InspectorProxy} = require('metro-inspector-proxy');
-const {parse} = require('url');
-
 import type {Graph} from './DeltaBundler';
 import type {ServerOptions} from './Server';
-import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
+import type {OutputOptions, RequestOptions} from './shared/types.flow.js';
 import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
 import type {
@@ -41,6 +22,23 @@ import type {
 } from 'metro-config/src/configTypes.flow';
 import type {CustomTransformOptions} from 'metro-transform-worker';
 import typeof Yargs from 'yargs';
+
+const makeBuildCommand = require('./commands/build');
+const makeDependenciesCommand = require('./commands/dependencies');
+const makeServeCommand = require('./commands/serve');
+const MetroHmrServer = require('./HmrServer');
+const IncrementalBundler = require('./IncrementalBundler');
+const createWebsocketServer = require('./lib/createWebsocketServer');
+const MetroServer = require('./Server');
+const outputBundle = require('./shared/output/bundle');
+const chalk = require('chalk');
+const fs = require('fs');
+const http = require('http');
+const https = require('https');
+const {getDefaultConfig, loadConfig, mergeConfig} = require('metro-config');
+const {InspectorProxy} = require('metro-inspector-proxy');
+const {parse} = require('url');
+const ws = require('ws');
 
 type MetroMiddleWare = {|
   attachHmrServer: (httpServer: HttpServer | HttpsServer) => void,
@@ -120,16 +118,38 @@ async function runMetro(
   options?: ServerOptions,
 ): Promise<MetroServer> {
   const mergedConfig = await getConfig(config);
+  const {
+    reporter,
+    server: {port},
+  } = mergedConfig;
 
-  mergedConfig.reporter.update({
+  reporter.update({
     hasReducedPerformance: options
       ? Boolean(options.hasReducedPerformance)
       : false,
-    port: mergedConfig.server.port,
+    port,
     type: 'initialize_started',
   });
 
-  return new MetroServer(mergedConfig, options);
+  const server = new MetroServer(mergedConfig, options);
+
+  server
+    .ready()
+    .then(() => {
+      reporter.update({
+        type: 'initialize_done',
+        port,
+      });
+    })
+    .catch(error => {
+      reporter.update({
+        type: 'initialize_failed',
+        port,
+        error,
+      });
+    });
+
+  return server;
 }
 
 exports.runMetro = runMetro;

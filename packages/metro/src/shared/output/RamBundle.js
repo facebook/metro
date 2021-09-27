@@ -10,13 +10,12 @@
 
 'use strict';
 
-const Server = require('../../Server');
+import type {RamBundleInfo} from '../../DeltaBundler/Serializers/getRamBundleInfo';
+import type {OutputOptions, RequestOptions} from '../types.flow';
 
+const Server = require('../../Server');
 const asAssets = require('./RamBundle/as-assets');
 const asIndexedFile = require('./RamBundle/as-indexed-file').save;
-
-import type {OutputOptions, RequestOptions} from '../types.flow';
-import type {RamBundleInfo} from '../../DeltaBundler/Serializers/getRamBundleInfo';
 
 async function build(
   packagerClient: Server,

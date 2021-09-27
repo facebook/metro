@@ -10,8 +10,8 @@
 
 'use strict';
 
-const nullthrows = require('nullthrows');
 const traverse = require('@babel/traverse').default;
+const nullthrows = require('nullthrows');
 
 /**
  * Select unused names for "metroImportDefault" and "metroImportAll", by

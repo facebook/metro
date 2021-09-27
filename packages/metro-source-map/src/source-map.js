@@ -10,21 +10,19 @@
 
 'use strict';
 
+import type {IConsumer} from './Consumer/types.flow';
+import type {BabelSourceMapSegment} from '@babel/generator';
+
+const {BundleBuilder, createIndexMap} = require('./BundleBuilder');
+const composeSourceMaps = require('./composeSourceMaps');
 const Consumer = require('./Consumer');
+// We need to export this for `metro-symbolicate`
+const normalizeSourcePath = require('./Consumer/normalizeSourcePath');
+const {generateFunctionMap} = require('./generateFunctionMap');
 const Generator = require('./Generator');
 const SourceMap = require('source-map');
 
-import type {IConsumer} from './Consumer/types.flow';
 export type {IConsumer};
-
-// We need to export this for `metro-symbolicate`
-const normalizeSourcePath = require('./Consumer/normalizeSourcePath');
-
-const composeSourceMaps = require('./composeSourceMaps');
-const {createIndexMap, BundleBuilder} = require('./BundleBuilder');
-const {generateFunctionMap} = require('./generateFunctionMap');
-
-import type {BabelSourceMapSegment} from '@babel/generator';
 
 type GeneratedCodeMapping = [number, number];
 type SourceMapping = [number, number, number, number];
@@ -277,9 +275,10 @@ function addMapping(generator, mapping, carryOver) {
   }
 }
 
-function countLines(string) {
-  return string.split('\n').length;
-}
+const newline = /\r\n?|\n|\u2028|\u2029/g;
+
+const countLines = (string: string): number =>
+  (string.match(newline) || []).length + 1;
 
 module.exports = {
   BundleBuilder,

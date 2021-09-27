@@ -10,20 +10,18 @@
 
 'use strict';
 
-const AssetPaths = require('./node-haste/lib/AssetPaths');
+import type {AssetPath} from './node-haste/lib/AssetPaths';
 
+const {isAssetTypeAnImage} = require('./Bundler/util');
+const AssetPaths = require('./node-haste/lib/AssetPaths');
 const crypto = require('crypto');
 const denodeify = require('denodeify');
 const fs = require('fs');
 const imageSize = require('image-size');
 const path = require('path');
 
-const {isAssetTypeAnImage} = require('./Bundler/util');
-
 const readDir = denodeify(fs.readdir);
 const readFile = denodeify(fs.readFile);
-
-import type {AssetPath} from './node-haste/lib/AssetPaths';
 
 export type AssetInfo = {|
   +files: Array<string>,

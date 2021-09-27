@@ -18,11 +18,10 @@
 
 'use strict';
 
+const Symbolication = require('./Symbolication.js');
+const fs = require('fs');
 // flowlint-next-line untyped-import:off
 const SourceMapConsumer = require('source-map').SourceMapConsumer;
-const Symbolication = require('./Symbolication.js');
-
-const fs = require('fs');
 // flowlint-next-line untyped-import:off
 const through2 = require('through2');
 

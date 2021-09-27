@@ -12,7 +12,6 @@
 'use strict';
 
 const createModuleIdFactory = require('../../../../lib/createModuleIdFactory');
-
 const {wrapModule} = require('../js');
 
 let myModule;

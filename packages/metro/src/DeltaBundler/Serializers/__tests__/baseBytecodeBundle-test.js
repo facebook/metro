@@ -11,9 +11,8 @@
 'use strict';
 
 const baseBytecodeBundle = require('../baseBytecodeBundle');
-const path = require('path');
-
 const {compile, validateBytecodeModule} = require('metro-hermes-compiler');
+const path = require('path');
 
 const polyfillCode = '__d(function() {/* code for polyfill */});';
 const polyfillBytecode = compile(polyfillCode, {

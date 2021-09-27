@@ -10,13 +10,12 @@
 
 'use strict';
 
-const crypto = require('crypto');
-const getCacheKey = require('metro-cache-key');
-
-const VERSION = require('../../package.json').version;
-
 import type {TransformerConfig} from './Worker';
 import type {JsTransformerConfig} from 'metro-transform-worker';
+
+const VERSION = require('../../package.json').version;
+const crypto = require('crypto');
+const getCacheKey = require('metro-cache-key');
 
 type CacheKeyProvider = {
   getCacheKey?: JsTransformerConfig => string,

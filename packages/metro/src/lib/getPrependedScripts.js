@@ -10,17 +10,16 @@
 
 'use strict';
 
+import type Bundler from '../Bundler';
+import type DeltaBundler, {Module} from '../DeltaBundler';
+import type {TransformInputOptions} from '../DeltaBundler/types.flow';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
+
 const countLines = require('./countLines');
-const defaults = require('metro-config/src/defaults/defaults');
 const getPreludeCode = require('./getPreludeCode');
 const transformHelpers = require('./transformHelpers');
-
+const defaults = require('metro-config/src/defaults/defaults');
 const {compile} = require('metro-hermes-compiler');
-
-import type Bundler from '../Bundler';
-import type {TransformInputOptions} from '../DeltaBundler/types.flow';
-import type DeltaBundler, {Module} from '../DeltaBundler';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 async function getPrependedScripts(
   config: ConfigT,

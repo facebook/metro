@@ -10,15 +10,14 @@
 
 'use strict';
 
+import type {IConsumer, MixedSourceMap} from './source-map';
+import type {Number0, Number1} from 'ob1';
+
 const Consumer = require('./Consumer');
+const {SourceMapGenerator} = require('source-map');
 
 // TODO(t67648443): Bypass the `sort-requires` rule for this file because of a dependency cycle.
 Consumer;
-
-const {SourceMapGenerator} = require('source-map');
-
-import type {IConsumer, MixedSourceMap} from './source-map';
-import type {Number0, Number1} from 'ob1';
 
 // Originally based on https://github.com/jakobwesthoff/source-map-merger
 function composeSourceMaps(

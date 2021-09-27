@@ -10,15 +10,14 @@
 
 'use strict';
 
-const getSourceMapInfo = require('./helpers/getSourceMapInfo');
+import type {Module} from '../types.flow';
 
+const getSourceMapInfo = require('./helpers/getSourceMapInfo');
 const {isJsModule} = require('./helpers/js');
 const {
   fromRawMappings,
   fromRawMappingsNonBlocking,
 } = require('metro-source-map');
-
-import type {Module} from '../types.flow';
 
 type ReturnType<F> = $Call<<A, R>((...A) => R) => R, F>;
 

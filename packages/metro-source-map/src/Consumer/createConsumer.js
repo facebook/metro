@@ -10,10 +10,10 @@
 
 'use strict';
 
-const invariant = require('invariant');
-
 import type {MixedSourceMap} from '../source-map';
 import type {IConsumer} from './types.flow';
+
+const invariant = require('invariant');
 
 function createConsumer(sourceMap: MixedSourceMap): IConsumer {
   invariant(

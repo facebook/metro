@@ -10,13 +10,12 @@
 
 'use strict';
 
-const invariant = require('invariant');
-const path = require('path');
-
-const {compile} = require('metro-hermes-compiler');
-
 import type {Module} from '../../types.flow';
 import type {BytecodeOutput} from 'metro-transform-worker';
+
+const invariant = require('invariant');
+const {compile} = require('metro-hermes-compiler');
+const path = require('path');
 
 export type Options = {
   +createModuleId: string => number | string,

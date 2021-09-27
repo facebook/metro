@@ -11,12 +11,11 @@
 
 'use strict';
 
+import type {ResolutionContext} from '../index';
+
 const FailedToResolvePathError = require('../FailedToResolvePathError');
 const Resolver = require('../index');
-
 const path = require('path');
-
-import type {ResolutionContext} from '../index';
 
 const CONTEXT: ResolutionContext = (() => {
   const fileSet = new Set();
@@ -307,7 +306,7 @@ describe('redirectModulePath', () => {
   it('can be used to redirect to an arbitrary relative module', () => {
     redirectModulePath
       .mockImplementationOnce(filePath => '../smth/beep')
-      .mockImplementationOnce(filePath => filePath);
+      .mockImplementation(filePath => filePath);
     expect(Resolver.resolve(context, 'does-not-exist', null))
       .toMatchInlineSnapshot(`
       Object {
@@ -315,9 +314,97 @@ describe('redirectModulePath', () => {
         "type": "sourceFile",
       }
     `);
-    expect(redirectModulePath).toBeCalledTimes(2);
-    expect(redirectModulePath).toBeCalledWith('does-not-exist');
-    expect(redirectModulePath).toBeCalledWith('/root/smth/beep');
+    expect(redirectModulePath.mock.calls).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          "does-not-exist",
+        ],
+        Array [
+          "/root/smth/beep",
+        ],
+        Array [
+          "/root/smth/beep.js",
+        ],
+      ]
+    `);
+  });
+
+  it("is called for source extension candidates that don't exist on disk", () => {
+    redirectModulePath.mockImplementation(filePath =>
+      filePath.replace('.another-fake-ext', '.js'),
+    );
+    expect(
+      Resolver.resolve(
+        {...context, sourceExts: ['fake-ext', 'another-fake-ext']},
+        '../smth/beep',
+        null,
+      ),
+    ).toMatchInlineSnapshot(`
+      Object {
+        "filePath": "/root/smth/beep.js",
+        "type": "sourceFile",
+      }
+    `);
+    expect(redirectModulePath.mock.calls).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          "/root/smth/beep",
+        ],
+        Array [
+          "/root/smth/beep.fake-ext",
+        ],
+        Array [
+          "/root/smth/beep.another-fake-ext",
+        ],
+      ]
+    `);
+  });
+
+  it('can resolve to empty from a candidate with an added source extension', () => {
+    redirectModulePath.mockImplementation(filePath =>
+      filePath.endsWith('.fake-ext') ? false : filePath,
+    );
+    expect(
+      Resolver.resolve(
+        {...context, sourceExts: ['fake-ext', 'js']},
+        '../smth/beep',
+        null,
+      ),
+    ).toMatchInlineSnapshot(`
+      Object {
+        "type": "empty",
+      }
+    `);
+    expect(redirectModulePath.mock.calls).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          "/root/smth/beep",
+        ],
+        Array [
+          "/root/smth/beep.fake-ext",
+        ],
+      ]
+    `);
+  });
+
+  it('is not called redundantly for a candidate that does exist on disk', () => {
+    redirectModulePath.mockImplementation(filePath => filePath);
+    expect(Resolver.resolve(context, './bar', null)).toMatchInlineSnapshot(`
+      Object {
+        "filePath": "/root/project/bar.js",
+        "type": "sourceFile",
+      }
+    `);
+    expect(redirectModulePath.mock.calls).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          "/root/project/bar",
+        ],
+        Array [
+          "/root/project/bar.js",
+        ],
+      ]
+    `);
   });
 });
 

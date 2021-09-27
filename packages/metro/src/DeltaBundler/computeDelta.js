@@ -11,8 +11,8 @@
 'use strict';
 
 import type {
-  ModuleMap,
   DeltaBundle,
+  ModuleMap,
 } from 'metro-runtime/src/modules/types.flow';
 
 function computeDelta(entries1: ModuleMap, entries2: ModuleMap): DeltaBundle {

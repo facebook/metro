@@ -10,11 +10,11 @@
 
 'use strict';
 
-const babelGenerate = require('@babel/generator').default;
 const {
   generateAssetCodeFileAst,
   generateRemoteAssetCodeFileAst,
 } = require('../util');
+const babelGenerate = require('@babel/generator').default;
 
 describe('Util', () => {
   const assetDescriptor = {

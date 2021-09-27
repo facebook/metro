@@ -10,12 +10,12 @@
 
 'use strict';
 
-const {getFileLength} = require('metro-hermes-compiler');
-
 import type {
-  BytecodeBundle,
   BundleMetadata,
+  BytecodeBundle,
 } from 'metro-runtime/src/modules/types.flow';
+
+const {getFileLength} = require('metro-hermes-compiler');
 
 // The magic number is used as a header for bytecode.
 // It represents a Metro tunnel in binary.

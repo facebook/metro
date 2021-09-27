@@ -12,11 +12,10 @@
 
 const Metro = require('../../..');
 const RamBundleParser = require('../../lib/RamBundleParser');
-
+const ramBundleOutput = require('../../shared/output/unbundle');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const ramBundleOutput = require('../../shared/output/unbundle');
 const vm = require('vm');
 
 jest.unmock('cosmiconfig');

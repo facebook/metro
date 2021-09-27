@@ -30,13 +30,13 @@ jest
   .useRealTimers();
 
 const JSONStream = require('JSONStream');
-const buckWorker = require('../worker-tool');
-const path = require('path');
-const mkdirp = require('mkdirp');
 
+const buckWorker = require('../worker-tool');
 // mocked
 const {Console} = require('console');
 const fs = require('fs');
+const mkdirp = require('mkdirp');
+const path = require('path');
 
 const {any, anything} = expect;
 

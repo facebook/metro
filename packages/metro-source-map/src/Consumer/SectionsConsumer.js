@@ -10,23 +10,21 @@
 
 'use strict';
 
-const AbstractConsumer = require('./AbstractConsumer');
-
-const createConsumer = require('./createConsumer');
-
-const {FIRST_COLUMN, FIRST_LINE, EMPTY_POSITION} = require('./constants');
-const {subtractOffsetFromPosition} = require('./positionMath');
-const {greatestLowerBound} = require('./search');
-const {add, get0, get1, add0, sub1, sub} = require('ob1');
-
 import type {IndexMap} from '../source-map';
 import type {
   GeneratedOffset,
-  SourcePosition,
   GeneratedPositionLookup,
-  Mapping,
   IConsumer,
+  Mapping,
+  SourcePosition,
 } from './types.flow';
+
+const AbstractConsumer = require('./AbstractConsumer');
+const {EMPTY_POSITION, FIRST_COLUMN, FIRST_LINE} = require('./constants');
+const createConsumer = require('./createConsumer');
+const {subtractOffsetFromPosition} = require('./positionMath');
+const {greatestLowerBound} = require('./search');
+const {add, add0, get0, get1, sub, sub1} = require('ob1');
 
 /**
  * A source map consumer that supports "indexed" source maps (that have a

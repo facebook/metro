@@ -10,10 +10,10 @@
 
 'use strict';
 
+import type {BasicSourceMap, MixedSourceMap} from 'metro-source-map';
+
 // $FlowExpectedError: TODO(t67543266): `source-map` is hard to type.
 const sourceMap = require('source-map');
-
-import type {MixedSourceMap, BasicSourceMap} from 'metro-source-map';
 
 function mergeSourceMaps(
   file: string,

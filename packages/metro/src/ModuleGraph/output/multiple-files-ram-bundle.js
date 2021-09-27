@@ -10,17 +10,16 @@
 
 'use strict';
 
-const MAGIC_UNBUNDLE_NUMBER = require('../../shared/output/RamBundle/magic-number');
-const MAGIC_UNBUNDLE_FILENAME = 'UNBUNDLE';
-const JS_MODULES = 'js-modules';
+import type {Module, OutputFn, OutputFnArg, OutputResult} from '../types.flow';
+import type {IndexMap} from 'metro-source-map';
 
 const buildSourcemapWithMetadata = require('../../shared/output/RamBundle/buildSourcemapWithMetadata.js');
+const MAGIC_UNBUNDLE_NUMBER = require('../../shared/output/RamBundle/magic-number');
+const {getModuleCodeAndMap, partition, toModuleTransport} = require('./util');
 const path = require('path');
 
-const {getModuleCodeAndMap, partition, toModuleTransport} = require('./util');
-
-import type {IndexMap} from 'metro-source-map';
-import type {Module, OutputFn, OutputFnArg, OutputResult} from '../types.flow';
+const MAGIC_UNBUNDLE_FILENAME = 'UNBUNDLE';
+const JS_MODULES = 'js-modules';
 
 function asMultipleFilesRamBundle({
   dependencyMapReservedName,

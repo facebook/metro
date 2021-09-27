@@ -10,9 +10,9 @@
 
 'use strict';
 
-const canonicalize = require('metro-core/src/canonicalize');
-
 import type {TransformInputOptions} from '../DeltaBundler/types.flow';
+
+const canonicalize = require('metro-core/src/canonicalize');
 
 export opaque type GraphId: string = string;
 

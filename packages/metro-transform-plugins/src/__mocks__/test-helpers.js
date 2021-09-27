@@ -10,10 +10,9 @@
 
 'use strict';
 
+const {transformSync} = require('@babel/core');
 const generate = require('@babel/generator').default;
 const t = require('@babel/types');
-
-const {transformSync} = require('@babel/core');
 
 opaque type Code = string;
 opaque type Plugin = () => {};
