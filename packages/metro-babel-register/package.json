@@ -14,7 +14,9 @@
     "@babel/plugin-syntax-class-properties": "^7.0.0",
     "@babel/plugin-transform-flow-strip-types": "^7.0.0",
     "@babel/plugin-transform-modules-commonjs": "^7.0.0",
+    "@babel/preset-typescript": "^7.15.0",
     "@babel/register": "^7.0.0",
+    "babel-plugin-replace-ts-export-assignment": "^0.0.2",
     "escape-string-regexp": "^1.0.5"
   },
   "scripts": {

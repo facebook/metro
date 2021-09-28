@@ -19,7 +19,19 @@ function register(onlyList) {
   // plugins/presets that we are require-ing themselves before setting up the
   // actual config.
   require('@babel/register')({only: [], babelrc: false, configFile: false});
-  require('@babel/register')(config(onlyList));
+  require('@babel/register')({
+    ...config(onlyList),
+    extensions: [
+      '.ts',
+      '.tsx',
+      // Babel's default extensions
+      '.es6',
+      '.es',
+      '.jsx',
+      '.js',
+      '.mjs',
+    ],
+  });
 }
 
 function config(onlyList, options) {
@@ -46,6 +58,26 @@ function config(onlyList, options) {
     presets: [],
     retainLines: true,
     sourceMaps: 'inline',
+    overrides: [
+      {
+        test: /\.tsx?$/,
+        plugins: [
+          require('babel-plugin-replace-ts-export-assignment'),
+          require('./plugins/babel-plugin-metro-replace-ts-require-assignment'),
+        ],
+        presets: [
+          [
+            require('@babel/preset-typescript').default,
+            {
+              // will be the default in Babel 8, so let's just turn it on now
+              allowDeclareFields: true,
+              // will be default in the future, but we don't want to use it
+              allowNamespaces: false,
+            },
+          ],
+        ],
+      },
+    ],
   };
 }
 
