@@ -87,6 +87,7 @@ We recommend using `runMetro` instead of `runServer`, `runMetro` calls this func
 * `secureKey (string)`: **DEPRECATED** The key to use for `https` when `secure` is on.
 * `secureCert (string)`: **DEPRECATED** The cert to use for `https` when `secure` is on.
 * `secureServerOptions (Object)`: The options object to pass to the Metro's https server. The presence of this object will make Metro's server run on `https`. Refer to the [nodejs docs](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener) for valid options.
+* `waitForBundler (boolean)`: Whether to wait for the bundler to finish initializing before returning the server instance.
 
 ```js
 const config = await Metro.loadConfig();

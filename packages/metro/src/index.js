@@ -47,6 +47,11 @@ type MetroMiddleWare = {|
   middleware: Middleware,
 |};
 
+export type RunMetroOptions = {
+  ...ServerOptions,
+  waitForBundler?: boolean,
+};
+
 export type RunServerOptions = {|
   hasReducedPerformance?: boolean,
   host?: string,
@@ -57,6 +62,7 @@ export type RunServerOptions = {|
   secure?: boolean, // deprecated
   secureCert?: string, // deprecated
   secureKey?: string, // deprecated
+  waitForBundler?: boolean,
   websocketEndpoints?: {
     [path: string]: typeof ws.Server,
   },
@@ -115,7 +121,7 @@ async function getConfig(config: InputConfigT): Promise<ConfigT> {
 
 async function runMetro(
   config: InputConfigT,
-  options?: ServerOptions,
+  options?: RunMetroOptions,
 ): Promise<MetroServer> {
   const mergedConfig = await getConfig(config);
   const {
@@ -131,9 +137,10 @@ async function runMetro(
     type: 'initialize_started',
   });
 
-  const server = new MetroServer(mergedConfig, options);
+  const {waitForBundler = false, ...serverOptions} = options ?? {};
+  const server = new MetroServer(mergedConfig, serverOptions);
 
-  server
+  const readyPromise = server
     .ready()
     .then(() => {
       reporter.update({
@@ -148,6 +155,9 @@ async function runMetro(
         error,
       });
     });
+  if (waitForBundler) {
+    await readyPromise;
+  }
 
   return server;
 }
@@ -157,7 +167,7 @@ exports.loadConfig = loadConfig;
 
 exports.createConnectMiddleware = async function(
   config: ConfigT,
-  options?: ServerOptions,
+  options?: RunMetroOptions,
 ): Promise<MetroMiddleWare> {
   const metroServer = await runMetro(config, options);
 
@@ -210,6 +220,7 @@ exports.runServer = async (
     secure, //deprecated
     secureCert, // deprecated
     secureKey, // deprecated
+    waitForBundler = false,
     websocketEndpoints = {},
   }: RunServerOptions,
 ): Promise<HttpServer | HttpsServer> => {
@@ -231,6 +242,7 @@ exports.runServer = async (
     config,
     {
       hasReducedPerformance,
+      waitForBundler,
     },
   );
 
