@@ -27,6 +27,7 @@ const {
   PackageResolutionError,
 } = require('metro-core');
 const {InvalidPackageError} = require('metro-resolver');
+const nullthrows = require('nullthrows');
 const path = require('path');
 
 const {DuplicateHasteCandidatesError} = JestHasteModuleMap;
@@ -115,10 +116,12 @@ class DependencyGraph extends EventEmitter {
 
   // $FlowFixMe[value-as-type]
   static _createHaste(config: ConfigT, watch?: boolean): JestHasteMap {
+    const computeDependencies = config.resolver.dependencyExtractor != null;
     const haste = JestHasteMap.create({
       cacheDirectory: config.hasteMapCacheDirectory,
-      dependencyExtractor: config.resolver.dependencyExtractor,
+      computeDependencies,
       computeSha1: true,
+      dependencyExtractor: config.resolver.dependencyExtractor,
       extensions: config.resolver.sourceExts.concat(config.resolver.assetExts),
       forceNodeFilesystemAPI: !config.resolver.useWatchman,
       hasteImplModulePath: config.resolver.hasteImplModulePath,
@@ -126,7 +129,11 @@ class DependencyGraph extends EventEmitter {
       ignorePattern: this._getIgnorePattern(config),
       maxWorkers: config.maxWorkers,
       mocksPattern: '',
-      name: 'metro-' + JEST_HASTE_MAP_CACHE_BREAKER,
+      name:
+        'metro-' +
+        JEST_HASTE_MAP_CACHE_BREAKER +
+        // TODO: Remove the deps/nodeps suffix once https://github.com/facebook/jest/pull/11916 lands
+        (computeDependencies ? '-deps' : '-nodeps'),
       platforms: config.resolver.platforms,
       retainAllFiles: true,
       resetCache: config.resetCache,
@@ -346,7 +353,7 @@ class DependencyGraph extends EventEmitter {
   }
 
   getDependencies(filePath: string): Array<string> {
-    return this._hasteFS.getDependencies(filePath);
+    return nullthrows(this._hasteFS.getDependencies(filePath));
   }
 }
 
