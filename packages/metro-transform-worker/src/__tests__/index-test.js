@@ -153,7 +153,7 @@ it('transforms a module with dependencies', async () => {
       HEADER_DEV,
       '  "use strict";',
       '',
-      '  var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0], "@babel/runtime/helpers/interopRequireDefault");',
+      '  var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0], "@babel/runtime/helpers/interopRequireDefault").default;',
       '',
       '  var _c = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[1], "./c"));',
       '',
