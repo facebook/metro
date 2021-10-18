@@ -162,6 +162,7 @@ const getPreset = (src, options) => {
       {
         helpers: true,
         regenerator: !isHermes,
+        version: require('@babel/runtime/package.json').version,
       },
     ]);
   }
