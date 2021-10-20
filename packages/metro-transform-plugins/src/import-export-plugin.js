@@ -364,7 +364,8 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
             ),
           });
         } else {
-          let sharedModuleImport = null;
+          let sharedModuleImport;
+          let sharedModuleVariableDeclaration = null;
           if (
             specifiers.filter(
               s =>
@@ -376,15 +377,18 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
             sharedModuleImport = path.scope.generateUidIdentifierBasedOnNode(
               file,
             );
-            path.scope.push({
-              id: sharedModuleImport,
-              init: withLocation(
-                t.callExpression(t.identifier('require'), [
-                  resolvePath(t.cloneNode(file), state.opts.resolve),
-                ]),
-                loc,
-              ),
-            });
+            sharedModuleVariableDeclaration = withLocation(
+              t.variableDeclaration('var', [
+                t.variableDeclarator(
+                  t.cloneNode(sharedModuleImport),
+                  t.callExpression(t.identifier('require'), [
+                    resolvePath(t.cloneNode(file), state.opts.resolve),
+                  ]),
+                ),
+              ]),
+              loc,
+            );
+            state.imports.push({node: sharedModuleVariableDeclaration});
           }
 
           specifiers.forEach(s => {
@@ -434,17 +438,19 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
                       loc,
                     ),
                   });
-                } else if (sharedModuleImport != null) {
-                  path.scope.push({
-                    id: local,
-                    init: withLocation(
-                      t.memberExpression(
-                        t.cloneNode(sharedModuleImport),
-                        t.cloneNode(imported),
+                } else if (sharedModuleVariableDeclaration != null) {
+                  sharedModuleVariableDeclaration.declarations.push(
+                    withLocation(
+                      t.variableDeclarator(
+                        t.cloneNode(local),
+                        t.memberExpression(
+                          t.cloneNode(sharedModuleImport),
+                          t.cloneNode(imported),
+                        ),
                       ),
                       loc,
                     ),
-                  });
+                  );
                 } else {
                   state.imports.push({
                     node: withLocation(
