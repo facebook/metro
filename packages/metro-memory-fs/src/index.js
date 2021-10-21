@@ -580,7 +580,6 @@ class MemoryFs {
     if (encoding == 'buffer') {
       return buf;
     }
-    // $FlowFixMe[incompatible-call]
     return buf.toString(encoding);
   };
 
@@ -856,12 +855,10 @@ class MemoryFs {
     const ffd = fd;
     const {readSync} = this;
     const ropt = {filePath, encoding, fd, highWaterMark, start, end, readSync};
-    // $FlowFixMe[incompatible-call]
     const rst = new ReadFileSteam(ropt);
     st = rst;
     if (autoClose !== false) {
       const doClose = () => {
-        // $FlowFixMe[incompatible-call]
         this.closeSync(ffd);
         rst.emit('close');
       };
@@ -1066,12 +1063,10 @@ class MemoryFs {
       start,
       emitClose: emitClose ?? false,
     };
-    // $FlowFixMe[incompatible-call]
     const rst = new WriteFileStream(ropt);
     st = rst;
     if (autoClose !== false) {
       const doClose = () => {
-        // $FlowFixMe[incompatible-call]
         this.closeSync(ffd);
       };
       rst.on('finish', doClose);

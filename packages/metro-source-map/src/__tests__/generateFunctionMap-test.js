@@ -1260,7 +1260,6 @@ function parent2() {
             column: prev.start.column + 1,
             source: 'input.js',
           }),
-          // $FlowFixMe[incompatible-use]
         ).toBe(prev.name);
 
         expect(
@@ -1269,7 +1268,6 @@ function parent2() {
             column: column - 1,
             source: 'input.js',
           }),
-          // $FlowFixMe[incompatible-use]
         ).toBe(prev.name);
       }
       expect(consumer.functionNameFor({line, column, source: 'input.js'})).toBe(
@@ -1284,7 +1282,6 @@ function parent2() {
           column: 99999,
           source: 'input.js',
         }),
-        // $FlowFixMe[incompatible-use]
       ).toBe(prev.name);
     }
   });
