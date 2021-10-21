@@ -148,7 +148,6 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
           // Since the redirected path is still relative to the package root,
           // we have to transform it back to be module-relative (as it
           // originally was)
-          // $FlowFixMe[incompatible-type]
           if (redirectedPath !== false) {
             redirectedPath =
               './' +

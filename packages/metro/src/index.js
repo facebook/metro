@@ -444,7 +444,6 @@ exports.buildGraph = async function(
 };
 
 exports.attachMetroCli = function(
-  // $FlowFixMe[value-as-type]
   yargs: Yargs,
   {
     build = {},
@@ -456,7 +455,6 @@ exports.attachMetroCli = function(
     dependencies: any,
     ...
   } = {},
-  // $FlowFixMe[value-as-type]
 ): Yargs {
   if (build) {
     const {command, description, builder, handler} = makeBuildCommand();

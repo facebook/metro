@@ -20,7 +20,6 @@ const {loadConfig, resolveConfig} = require('metro-config');
 const {promisify} = require('util');
 
 module.exports = (): ({|
-  // $FlowFixMe[value-as-type]
   builder: (yargs: Yargs) => void,
   command: $TEMPORARY$string<'serve'>,
   description: string,
@@ -30,7 +29,6 @@ module.exports = (): ({|
 
   description: 'Starts Metro on the given port, building bundles on the fly',
 
-  // $FlowFixMe[value-as-type]
   builder: (yargs: Yargs): void => {
     yargs.option('project-roots', {
       alias: 'P',

@@ -148,7 +148,6 @@ class HmrServer<TClient: Client> {
       clientUrl.protocol = 'http';
       const {dev, minify, runModule, bundleEntry: _bundleEntry, ...query} =
         clientUrl.query || {};
-      // $FlowFixMe[incompatible-type]
       clientUrl.query = {
         ...query,
         dev: dev || 'true',

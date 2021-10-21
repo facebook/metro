@@ -40,6 +40,13 @@ module.exports = {
   },
   overrides: [
     {
+      files: ['flow-typed/**/*.js'],
+      rules: {
+        'babel/quotes': 'off',
+        'lint/flow-function-shape': 'off',
+      },
+    },
+    {
       files: ['packages/metro-source-map/**/*.js'],
       rules: {
         'operator-assignment': ['error', 'never'],
