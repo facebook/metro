@@ -26,17 +26,18 @@ const defaults = require('metro-config/src/defaults/defaults');
 const path = require('path');
 
 type ResolveOptions = {|
-  +platform: string,
-  +sourceExts: Extensions,
   assetExts: Extensions,
   assetResolutions: $ReadOnlyArray<string>,
+  +disableHierarchicalLookup: boolean,
+  +emptyModulePath: string,
   extraNodeModules: {[id: string]: string, ...},
   mainFields: $ReadOnlyArray<string>,
   nodeModulesPaths: $ReadOnlyArray<string>,
-  resolveRequest?: ?CustomResolver,
-  transformedFiles: {[path: Path]: TransformedCodeFile, ...},
+  +platform: string,
   platforms?: $ReadOnlyArray<string>,
-  +emptyModulePath: string,
+  resolveRequest?: ?CustomResolver,
+  +sourceExts: Extensions,
+  transformedFiles: {[path: Path]: TransformedCodeFile, ...},
 |};
 
 const NATIVE_PLATFORM = 'native';
@@ -139,6 +140,7 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
 
   const moduleResolver = new ModuleResolver({
     dirExists: (filePath: string): boolean => hasteFS.dirExists(filePath),
+    disableHierarchicalLookup: options.disableHierarchicalLookup,
     doesFileExist: (filePath: string): boolean => hasteFS.exists(filePath),
     emptyModulePath: options.emptyModulePath,
     extraNodeModules,

@@ -79,6 +79,7 @@ const CONTEXT: ResolutionContext = (() => {
   );
   return {
     allowHaste: true,
+    disableHierarchicalLookup: false,
     doesFileExist: filePath => fileSet.has(filePath),
     extraNodeModules: null,
     getPackageMainPath: dirPath => path.join(path.dirname(dirPath), 'main'),
@@ -221,6 +222,63 @@ it('uses `nodeModulesPaths` to find additional node_modules not in the direct pa
       /node_modules
     "
   `);
+});
+
+describe('disableHierarchicalLookup', () => {
+  const context = Object.assign({}, CONTEXT, {
+    disableHierarchicalLookup: true,
+  });
+
+  it('disables node_modules lookup', () => {
+    expect(() => Resolver.resolve(context, 'apple', null))
+      .toThrowErrorMatchingInlineSnapshot(`
+      "Module does not exist in the Haste module map
+
+      "
+    `);
+  });
+
+  it('respects nodeModulesPaths', () => {
+    const contextWithOtherRoot = {
+      ...context,
+      nodeModulesPaths: ['/other-root/node_modules'],
+    };
+
+    // apple exists in /root/node_modules
+    expect(() => Resolver.resolve(contextWithOtherRoot, 'apple', null))
+      .toThrowErrorMatchingInlineSnapshot(`
+      "Module does not exist in the Haste module map or in these directories:
+        /other-root/node_modules
+      "
+    `);
+
+    expect(Resolver.resolve(contextWithOtherRoot, 'banana', null)).toEqual({
+      type: 'sourceFile',
+      filePath: '/other-root/node_modules/banana/main.js',
+    });
+
+    // kiwi doesn't exist anywhere
+    expect(() => Resolver.resolve(contextWithOtherRoot, 'kiwi', null))
+      .toThrowErrorMatchingInlineSnapshot(`
+      "Module does not exist in the Haste module map or in these directories:
+        /other-root/node_modules
+      "
+    `);
+  });
+
+  it('respects extraNodeModules', () => {
+    const contextWithExtra = {
+      ...context,
+      extraNodeModules: {
+        'renamed-apple': '/root/node_modules/apple',
+      },
+    };
+
+    expect(Resolver.resolve(contextWithExtra, 'renamed-apple', null)).toEqual({
+      type: 'sourceFile',
+      filePath: '/root/node_modules/apple/main.js',
+    });
+  });
 });
 
 it('resolves Haste modules', () => {

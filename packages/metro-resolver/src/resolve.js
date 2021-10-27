@@ -92,12 +92,15 @@ function resolve(
 
   const nodeModulesPaths = Array.from(context.nodeModulesPaths);
   let next = path.dirname(originModulePath);
-  let candidate;
-  do {
-    candidate = next;
-    nodeModulesPaths.push(path.join(candidate, 'node_modules'));
-    next = path.dirname(candidate);
-  } while (candidate !== next);
+  const {disableHierarchicalLookup} = context;
+  if (!disableHierarchicalLookup) {
+    let candidate;
+    do {
+      candidate = next;
+      nodeModulesPaths.push(path.join(candidate, 'node_modules'));
+      next = path.dirname(candidate);
+    } while (candidate !== next);
+  }
 
   const extraPaths = [];
   const {extraNodeModules} = context;

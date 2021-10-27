@@ -215,6 +215,8 @@ class DependencyGraph extends EventEmitter {
         } catch (e) {}
         return false;
       },
+      disableHierarchicalLookup: this._config.resolver
+        .disableHierarchicalLookup,
       doesFileExist: this._doesFileExist,
       emptyModulePath: this._config.resolver.emptyModulePath,
       extraNodeModules: this._config.resolver.extraNodeModules,

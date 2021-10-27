@@ -71,6 +71,7 @@ export type ModuleishCache<TModule, TPackage> = interface {
 
 type Options<TModule, TPackage> = {|
   +dirExists: DirExistsFn,
+  +disableHierarchicalLookup: boolean,
   +doesFileExist: DoesFileExist,
   +emptyModulePath: string,
   +extraNodeModules: ?Object,

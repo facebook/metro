@@ -116,6 +116,7 @@ export type ModulePathContext = {
 export type ResolutionContext = {
   ...HasteContext,
   allowHaste: boolean,
+  disableHierarchicalLookup: boolean,
   extraNodeModules: ?{[string]: string, ...},
   originModulePath: string,
   resolveRequest?: ?CustomResolver,
