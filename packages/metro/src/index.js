@@ -165,7 +165,7 @@ async function runMetro(
 exports.runMetro = runMetro;
 exports.loadConfig = loadConfig;
 
-exports.createConnectMiddleware = async function(
+const createConnectMiddleware = async function(
   config: ConfigT,
   options?: RunMetroOptions,
 ): Promise<MetroMiddleWare> {
@@ -208,6 +208,7 @@ exports.createConnectMiddleware = async function(
     },
   };
 };
+exports.createConnectMiddleware = createConnectMiddleware;
 
 exports.runServer = async (
   config: ConfigT,
@@ -238,13 +239,10 @@ exports.runServer = async (
 
   const serverApp = connect();
 
-  const {middleware, end, metroServer} = await exports.createConnectMiddleware(
-    config,
-    {
-      hasReducedPerformance,
-      waitForBundler,
-    },
-  );
+  const {middleware, end, metroServer} = await createConnectMiddleware(config, {
+    hasReducedPerformance,
+    waitForBundler,
+  });
 
   serverApp.use(middleware);
 
