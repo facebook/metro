@@ -13,4 +13,8 @@ export default interface A {}
 
 export class B {
   constructor(public name: string){}
+
+  // Support declaring class fields
+  // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#the-usedefineforclassfields-flag-and-the-declare-property-modifier
+  declare context: A;
 }
