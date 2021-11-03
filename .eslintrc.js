@@ -37,6 +37,9 @@ module.exports = {
     quotes: 'off',
     'sort-keys': 'off',
     'flowtype/object-type-delimiter': 'off',
+    // TODO: Replace these 2 rules with `eslint-config-prettier`.
+    'brace-style': 'off',
+    'space-before-function-paren': 'off',
   },
   overrides: [
     {
