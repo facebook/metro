@@ -35,11 +35,7 @@ describe('HttpGetStore', () => {
   }
 
   beforeEach(() => {
-    jest
-      .resetModules()
-      .resetAllMocks()
-      .useFakeTimers()
-      .mock('http');
+    jest.resetModules().resetAllMocks().useFakeTimers().mock('http');
 
     httpPassThrough = new PassThrough();
     require('http').request.mockReturnValue(httpPassThrough);

@@ -30,13 +30,13 @@ type FileList = {
 };
 
 // List all files in a directory in Node.js recursively in a synchronous fashion
-const walkSync = function(
+const walkSync = function (
   dir: string,
   filelist: Array<FileList>,
 ): Array<FileList> {
   const files = fs.readdirSync(dir);
   filelist = filelist || [];
-  files.forEach(function(file) {
+  files.forEach(function (file) {
     const fullPath = path.join(dir, file);
     const stats = fs.statSync(fullPath);
     if (stats.isDirectory()) {

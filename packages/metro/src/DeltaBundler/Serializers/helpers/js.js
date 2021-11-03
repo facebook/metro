@@ -59,18 +59,18 @@ function getJsOutput(
 
   invariant(
     jsModules.length === 1,
-    `Modules must have exactly one JS output, but ${module.path ??
-      'unknown module'} has ${jsModules.length} JS outputs.`,
+    `Modules must have exactly one JS output, but ${
+      module.path ?? 'unknown module'
+    } has ${jsModules.length} JS outputs.`,
   );
 
   const jsOutput: JsOutput = (jsModules[0]: any);
 
   invariant(
     Number.isFinite(jsOutput.data.lineCount),
-    `JS output must populate lineCount, but ${module.path ??
-      'unknown module'} has ${jsOutput.type} output with lineCount '${
-      jsOutput.data.lineCount
-    }'`,
+    `JS output must populate lineCount, but ${
+      module.path ?? 'unknown module'
+    } has ${jsOutput.type} output with lineCount '${jsOutput.data.lineCount}'`,
   );
 
   return jsOutput;

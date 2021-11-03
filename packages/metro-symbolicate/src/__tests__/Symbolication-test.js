@@ -76,7 +76,7 @@ test('constructs consumer instances lazily and caches them afterwards', () => {
     names: [],
     sources: [],
     x_facebook_segments: {
-      '1': {version: 3, mappings: 'A', names: [], sources: []},
+      1: {version: 3, mappings: 'A', names: [], sources: []},
     },
   };
   let consumerCount = 0;

@@ -27,12 +27,7 @@ function minifier(options: MinifierOptions): MinifierResult {
   return {code: result.code, map: {...map, sources: [options.filename]}};
 }
 
-function minify({
-  code,
-  map,
-  reserved,
-  config,
-}: MinifierOptions): {
+function minify({code, map, reserved, config}: MinifierOptions): {
   code: string,
   map: ?string,
   ...

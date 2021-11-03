@@ -48,7 +48,7 @@ function isTSXSource(fileName) {
  * project level .babelrc file, and if it doesn't exist, reads the
  * default RN babelrc file and uses that.
  */
-const getBabelRC = (function() {
+const getBabelRC = (function () {
   let babelRC: ?BabelCoreOptions = null;
 
   return function _getBabelRC({
@@ -180,12 +180,7 @@ function buildBabelConfig(
   };
 }
 
-function transform({
-  filename,
-  options,
-  src,
-  plugins,
-}: BabelTransformerArgs): {
+function transform({filename, options, src, plugins}: BabelTransformerArgs): {
   ast: BabelNodeFile,
   functionMap: ?FBSourceFunctionMap,
   ...

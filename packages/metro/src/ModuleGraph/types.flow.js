@@ -108,9 +108,8 @@ export type OutputFnArg = {|
   enableIDInlining: boolean,
   segmentID: number,
 |};
-export type OutputFn<
-  M: MixedSourceMap = MixedSourceMap,
-> = OutputFnArg => OutputResult<M>;
+export type OutputFn<M: MixedSourceMap = MixedSourceMap> =
+  OutputFnArg => OutputResult<M>;
 
 export type OutputResult<M: MixedSourceMap> = {|
   code: string | Buffer,
@@ -256,7 +255,7 @@ export type AssetContents = {
 };
 export type AssetContentsByPath = {
   +[moduleFilePath: string]: $ReadOnlyArray<AssetContents>,
-  ...,
+  ...
 };
 
 export type ResolvedCodeFile = {|

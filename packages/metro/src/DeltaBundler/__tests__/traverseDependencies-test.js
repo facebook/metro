@@ -805,7 +805,7 @@ describe('edge cases', () => {
       };
     }
 
-    const assertOrder = async function() {
+    const assertOrder = async function () {
       graph = {
         dependencies: new Map(),
         entryPoints: ['/bundle'],
@@ -901,7 +901,7 @@ describe('optional dependencies', () => {
   };
 
   const mockTransform = (notOptional?: string[]) => {
-    return function(path) {
+    return function (path) {
       const result = options.transform.apply(this, arguments);
       result.dependencies.forEach(dep => {
         if (notOptional && notOptional.includes(dep.name)) {

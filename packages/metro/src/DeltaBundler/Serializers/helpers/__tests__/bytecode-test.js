@@ -19,9 +19,7 @@ let myModule, bytecode;
 
 beforeEach(() => {
   const code = '__d(function() { console.log("foo") });';
-  ({
-    bytecode,
-  } = compile(
+  ({bytecode} = compile(
     '__d(function() { console.log("foo") },$$_METRO_DEFINE_GLOBAL[0],$$_METRO_DEFINE_GLOBAL[1]);',
     {sourceURL: 'test.js'},
   ));

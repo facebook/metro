@@ -219,9 +219,9 @@ declare module '@babel/traverse' {
     /** Walks the scope tree and gathers **all** bindings. */
     getAllBindings(): {[name: string]: Binding};
 
-    getAllBindingsOfKind(
-      ...kind: Array<BindingKind>
-    ): {[name: string]: Binding};
+    getAllBindingsOfKind(...kind: Array<BindingKind>): {
+      [name: string]: Binding,
+    };
 
     bindingIdentifierEquals(name: string, node: BabelNode): boolean;
 
@@ -741,23 +741,23 @@ declare module '@babel/traverse' {
       context?: boolean | TraversalContext,
     ): NodePath<> | Array<NodePath<>>;
 
-    getBindingIdentifiers(
-      duplicates?: void | false,
-    ): {[key: string]: BabelNodeIdentifier};
+    getBindingIdentifiers(duplicates?: void | false): {
+      [key: string]: BabelNodeIdentifier,
+    };
 
-    getBindingIdentifiers(
-      duplicates: true,
-    ): {[key: string]: Array<BabelNodeIdentifier>};
+    getBindingIdentifiers(duplicates: true): {
+      [key: string]: Array<BabelNodeIdentifier>,
+    };
 
-    getOuterBindingIdentifiers(
-      duplicates: true,
-    ): {[key: string]: Array<BabelNodeIdentifier>};
-    getOuterBindingIdentifiers(
-      duplicates?: false,
-    ): {[key: string]: BabelNodeIdentifier};
-    getOuterBindingIdentifiers(
-      duplicates: boolean,
-    ): {[key: string]: BabelNodeIdentifier | Array<BabelNodeIdentifier>};
+    getOuterBindingIdentifiers(duplicates: true): {
+      [key: string]: Array<BabelNodeIdentifier>,
+    };
+    getOuterBindingIdentifiers(duplicates?: false): {
+      [key: string]: BabelNodeIdentifier,
+    };
+    getOuterBindingIdentifiers(duplicates: boolean): {
+      [key: string]: BabelNodeIdentifier | Array<BabelNodeIdentifier>,
+    };
 
     getBindingIdentifierPaths(
       duplicates?: void | false,
@@ -769,13 +769,13 @@ declare module '@babel/traverse' {
       outerOnly?: boolean,
     ): {[key: string]: Array<NodePath<BabelNodeIdentifier>>};
 
-    getOuterBindingIdentifierPaths(
-      duplicates?: void | false,
-    ): {[key: string]: NodePath<BabelNodeIdentifier>};
+    getOuterBindingIdentifierPaths(duplicates?: void | false): {
+      [key: string]: NodePath<BabelNodeIdentifier>,
+    };
 
-    getOuterBindingIdentifierPaths(
-      duplicates: true,
-    ): {[key: string]: Array<NodePath<BabelNodeIdentifier>>};
+    getOuterBindingIdentifierPaths(duplicates: true): {
+      [key: string]: Array<NodePath<BabelNodeIdentifier>>,
+    };
 
     // comments
     shareCommentsWithSiblings(): void;

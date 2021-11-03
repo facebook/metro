@@ -102,7 +102,7 @@ describe('HmrServer', () => {
     options.reporter.update = jest.fn();
     options.transformer.experimentalImportBundleSupport = false;
     options.resolver.platforms = [];
-    options.server.rewriteRequestUrl = function(requrl) {
+    options.server.rewriteRequestUrl = function (requrl) {
       const rewritten = requrl.replace(/__REMOVE_THIS_WHEN_REWRITING__/g, '');
       if (rewritten !== requrl) {
         return rewritten + '&TEST_URL_WAS_REWRITTEN=true';

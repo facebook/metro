@@ -94,7 +94,7 @@ const FLAGS_SPECS: {
     writable?: true,
     ...
   },
-  ...,
+  ...
 } = {
   r: {mustExist: true, readable: true},
   'r+': {mustExist: true, readable: true, writable: true},
@@ -267,7 +267,7 @@ class MemoryFs {
     this.reset();
     ASYNC_FUNC_NAMES.forEach(funcName => {
       const func = (this: $FlowFixMe)[`${funcName}Sync`];
-      (this: $FlowFixMe)[funcName] = function(...args) {
+      (this: $FlowFixMe)[funcName] = function (...args) {
         const callback = args.pop();
         process.nextTick(() => {
           let retval;
@@ -1191,9 +1191,7 @@ class MemoryFs {
     });
   }
 
-  _parsePath(
-    filePath: string,
-  ): {|
+  _parsePath(filePath: string): {|
     +drive: ?string,
     +entNames: Array<string>,
   |} {

@@ -24,9 +24,8 @@ function runInspectorProxy(port: number, projectRoot: string) {
 
   const httpServer = require('http').createServer(app);
   httpServer.listen(port, '127.0.0.1', () => {
-    const websocketEndpoints = inspectorProxy.createWebSocketListeners(
-      httpServer,
-    );
+    const websocketEndpoints =
+      inspectorProxy.createWebSocketListeners(httpServer);
     httpServer.on('upgrade', (request, socket, head) => {
       const {pathname} = parse(request.url);
       if (pathname != null && websocketEndpoints[pathname]) {

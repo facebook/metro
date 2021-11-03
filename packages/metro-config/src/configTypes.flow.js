@@ -65,7 +65,7 @@ export type GetTransformOptions = (
 export type Middleware = (
   IncomingMessage,
   ServerResponse,
-  (e: ?Error) => mixed,
+  ((e: ?Error) => mixed),
 ) => mixed;
 
 type ResolverConfigT = {|

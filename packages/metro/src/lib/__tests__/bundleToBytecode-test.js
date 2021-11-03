@@ -42,12 +42,9 @@ it('serializes a bundle into a bytecode bundle', () => {
       getBufferWithNumber(bundleToBytecode.MAGIC_NUMBER),
       getBufferWithNumber(6),
       // Module 3 comes before Module 5 in the final output
-      ...[
-        ...pre,
-        ...modules[1][1],
-        ...modules[0][1],
-        ...post,
-      ].flatMap(buffer => [getBufferWithNumber(4), buffer]),
+      ...[...pre, ...modules[1][1], ...modules[0][1], ...post].flatMap(
+        buffer => [getBufferWithNumber(4), buffer],
+      ),
     ]),
   );
 });

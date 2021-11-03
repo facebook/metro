@@ -746,7 +746,8 @@ function astFromCode(code: string): BabelNodeFile {
 // extracted dependency. Collapsing dependencies is implemented by specific
 // `collectDependencies` implementations and should be tested there.
 class MockModuleDependencyRegistry<TSplitCondition>
-  implements ModuleDependencyRegistry<TSplitCondition> {
+  implements ModuleDependencyRegistry<TSplitCondition>
+{
   _dependencies: Array<InternalDependency<TSplitCondition>> = [];
 
   registerDependency(

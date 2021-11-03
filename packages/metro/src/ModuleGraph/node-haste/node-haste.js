@@ -110,7 +110,7 @@ const createModuleMap = ({files, moduleCache, sourceExts, platforms}) => {
   return map;
 };
 
-exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
+exports.createResolveFn = function (options: ResolveOptions): ResolveFn {
   const {
     assetExts,
     assetResolutions,

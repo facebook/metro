@@ -72,10 +72,7 @@ async function transform(
   };
 
   const data = fs.readFileSync(path.resolve(projectRoot, filename));
-  const sha1 = crypto
-    .createHash('sha1')
-    .update(data)
-    .digest('hex');
+  const sha1 = crypto.createHash('sha1').update(data).digest('hex');
 
   const result = await Transformer.transform(
     transformerConfig.transformerConfig,

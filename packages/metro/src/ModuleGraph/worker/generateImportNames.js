@@ -17,9 +17,7 @@ const nullthrows = require('nullthrows');
  * Select unused names for "metroImportDefault" and "metroImportAll", by
  * calling "generateUid".
  */
-function generateImportNames(
-  ast: BabelNode,
-): {
+function generateImportNames(ast: BabelNode): {
   importAll: string,
   importDefault: string,
 } {

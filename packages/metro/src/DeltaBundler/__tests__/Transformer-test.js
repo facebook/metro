@@ -24,13 +24,13 @@ var {getDefaultValues} = require('metro-config/src/defaults');
 var {mergeConfig} = require('metro-config/src/loadConfig');
 const mkdirp = require('mkdirp');
 
-describe('Transformer', function() {
+describe('Transformer', function () {
   let watchFolders;
   let projectRoot;
   let commonOptions;
   const getSha1 = jest.fn(() => '0123456789012345678901234567890123456789');
 
-  beforeEach(function() {
+  beforeEach(function () {
     const baseConfig = {
       resolver: {
         extraNodeModules: {},

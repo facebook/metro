@@ -109,10 +109,7 @@ describe('Startup section optimization', () => {
       codeOffset + startupSectionLength - 1,
     );
     expect(startupSection.toString()).toBe(
-      preloaded
-        .concat([requireCall])
-        .map(expectedCode)
-        .join('\n'),
+      preloaded.concat([requireCall]).map(expectedCode).join('\n'),
     );
 
     preloaded.forEach(m => {
@@ -344,6 +341,6 @@ function lineByLineMap(file) {
 }
 
 const not = fn =>
-  function() {
+  function () {
     return !fn.apply(this, arguments);
   };

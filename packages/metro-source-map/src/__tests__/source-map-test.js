@@ -21,8 +21,7 @@ const {
 describe('flattening mappings / compacting', () => {
   it('flattens simple mappings', () => {
     expect(toSegmentTuple({generated: {line: 12, column: 34}})).toEqual([
-      12,
-      34,
+      12, 34,
     ]);
   });
 

@@ -149,8 +149,9 @@ function inlineModuleIds(
         if (idStr.length > match.length) {
           // Stop the build rather than silently emit an incorrect source map.
           throw new Error(
-            `Module ID doesn't fit in available space; add ${idStr.length -
-              match.length} more characters to 'dependencyMapReservedName'.`,
+            `Module ID doesn't fit in available space; add ${
+              idStr.length - match.length
+            } more characters to 'dependencyMapReservedName'.`,
           );
         }
         return idStr.padEnd(match.length);
@@ -214,7 +215,8 @@ function inlineModuleIdsAndAddParamsToDefineCall(
 }
 
 exports.inlineModuleIds = inlineModuleIds;
-exports.inlineModuleIdsAndAddParamsToDefineCall = inlineModuleIdsAndAddParamsToDefineCall;
+exports.inlineModuleIdsAndAddParamsToDefineCall =
+  inlineModuleIdsAndAddParamsToDefineCall;
 
 function escapeRegex(str: string): string {
   // From http://stackoverflow.com/questions/14076210/
@@ -297,7 +299,7 @@ exports.createIdForPathFn = (): (({path: string, ...}) => number) => {
 
 // creates a series of virtual modules with require calls to the passed-in
 // modules.
-exports.requireCallsTo = function*(
+exports.requireCallsTo = function* (
   modules: Iterable<Module>,
   idForPath: IdForPathFn,
   getRunModuleStatement: (id: number | string) => string,

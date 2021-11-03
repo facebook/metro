@@ -561,8 +561,10 @@ class ChromeHeapSnapshotRecordAccessor {
 }
 
 // $FlowIssue[prop-missing] Flow doesn't see that we implement the iteration protocol
-class ChromeHeapSnapshotRecordIterator extends ChromeHeapSnapshotRecordAccessor
-  implements Iterable<ChromeHeapSnapshotRecordAccessor> {
+class ChromeHeapSnapshotRecordIterator
+  extends ChromeHeapSnapshotRecordAccessor
+  implements Iterable<ChromeHeapSnapshotRecordAccessor>
+{
   constructor(
     buffer: RawBuffer,
     recordFields: Array<string>,

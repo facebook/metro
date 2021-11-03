@@ -94,9 +94,7 @@ class InspectorProxy {
   }
 
   // Adds websocket listeners to the provided HTTP/HTTPS server.
-  createWebSocketListeners(
-    server: HttpServer | HttpsServer,
-  ): {
+  createWebSocketListeners(server: HttpServer | HttpsServer): {
     [path: string]: typeof WS.Server,
   } {
     const {port} = server.address();

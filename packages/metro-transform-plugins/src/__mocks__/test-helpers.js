@@ -66,7 +66,7 @@ function transform(
   return generate(transformToAst(plugins, code, options)).code;
 }
 
-exports.compare = function(
+exports.compare = function (
   plugins: $ReadOnlyArray<Plugin>,
   code: Code,
   expected: Code,

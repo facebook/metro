@@ -43,9 +43,8 @@ function getAppendScripts<T: number | string>(
     const importBundleNamesObject = Object.create(null);
     importBundleNames.forEach(absolutePath => {
       const bundlePath = path.relative(options.projectRoot, absolutePath);
-      importBundleNamesObject[
-        options.createModuleId(absolutePath)
-      ] = bundlePath.slice(0, -path.extname(bundlePath).length);
+      importBundleNamesObject[options.createModuleId(absolutePath)] =
+        bundlePath.slice(0, -path.extname(bundlePath).length);
     });
     const code = `(function(){var $$=${options.getRunModuleStatement(
       options.createModuleId(options.asyncRequireModulePath),

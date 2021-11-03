@@ -283,10 +283,7 @@ lines.push(
 );
 
 code += `\ndeclare module "@babel/types" {
-  ${lines
-    .join('\n')
-    .replace(/\n/g, '\n  ')
-    .trim()}
+  ${lines.join('\n').replace(/\n/g, '\n  ').trim()}
 }\n`;
 
 process.stdout.write(code);

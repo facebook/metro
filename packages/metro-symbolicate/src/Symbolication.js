@@ -498,7 +498,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
       +sourceFunctionsConsumer: ?SourceMetadataMapConsumer,
       +hermesOffsets: ?HermesFunctionOffsets,
     |},
-    ...,
+    ...
   };
   +_legacyFormat: boolean;
   // $FlowFixMe[value-as-type]
@@ -576,9 +576,8 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
           const moduleInformation = this.parseFileName(SourceURL);
           const generatedLine =
             cjsModuleOffsetOrSegmentID + this.options.inputLineStart;
-          const segment = this._segments[
-            moduleInformation.segmentId.toString()
-          ];
+          const segment =
+            this._segments[moduleInformation.segmentId.toString()];
           const hermesOffsets = segment?.hermesOffsets;
           if (!hermesOffsets) {
             symbolicatedTrace.push({

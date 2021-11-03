@@ -9,6 +9,6 @@
 
 'use strict';
 
-module.exports = function(data, callback) {
+module.exports = function (data, callback) {
   callback(null, {});
 };

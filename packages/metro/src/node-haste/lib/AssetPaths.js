@@ -23,9 +23,7 @@ export type AssetPath = {|
 
 const ASSET_BASE_NAME_RE = /(.+?)(@([\d.]+)x)?$/;
 
-function parseBaseName(
-  baseName: string,
-): {
+function parseBaseName(baseName: string): {
   resolution: number,
   rootName: string,
   ...

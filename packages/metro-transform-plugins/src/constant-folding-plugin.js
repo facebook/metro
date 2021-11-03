@@ -29,9 +29,10 @@ function constantFoldingPlugin(context: {
 
   const traverse = context.traverse;
 
-  const evaluate = function(
-    path: NodePath<>,
-  ): {confident: boolean, value: mixed} {
+  const evaluate = function (path: NodePath<>): {
+    confident: boolean,
+    value: mixed,
+  } {
     const state = {safe: true};
     const unsafe = (path, state) => {
       state.safe = false;

@@ -140,10 +140,7 @@ class WorkerFarm {
     const error = new TransformError(`${filename}: ${err.message}`);
 
     return Object.assign(error, {
-      stack: (err.stack || '')
-        .split('\n')
-        .slice(0, -1)
-        .join('\n'),
+      stack: (err.stack || '').split('\n').slice(0, -1).join('\n'),
       lineNumber: 0,
     });
   }

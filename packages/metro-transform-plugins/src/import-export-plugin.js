@@ -374,9 +374,8 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
                   s.imported.name !== 'default'),
             ).length > 1
           ) {
-            sharedModuleImport = path.scope.generateUidIdentifierBasedOnNode(
-              file,
-            );
+            sharedModuleImport =
+              path.scope.generateUidIdentifierBasedOnNode(file);
             sharedModuleVariableDeclaration = withLocation(
               t.variableDeclaration('var', [
                 t.variableDeclarator(

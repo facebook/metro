@@ -67,9 +67,8 @@ class IncrementalBundler {
   _revisionsById: Map<RevisionId, Promise<GraphRevision>> = new Map();
   _revisionsByGraphId: Map<GraphId, Promise<GraphRevision>> = new Map();
 
-  static revisionIdFromString: (
-    str: string,
-  ) => RevisionId = revisionIdFromString;
+  static revisionIdFromString: (str: string) => RevisionId =
+    revisionIdFromString;
 
   constructor(config: ConfigT, options?: IncrementalBundlerOptions) {
     this._config = config;
@@ -122,8 +121,8 @@ class IncrementalBundler {
       ),
       transformOptions,
       onProgress: otherOptions.onProgress,
-      experimentalImportBundleSupport: this._config.transformer
-        .experimentalImportBundleSupport,
+      experimentalImportBundleSupport:
+        this._config.transformer.experimentalImportBundleSupport,
       shallow: otherOptions.shallow,
     });
 
@@ -163,8 +162,8 @@ class IncrementalBundler {
         ),
         transformOptions,
         onProgress: otherOptions.onProgress,
-        experimentalImportBundleSupport: this._config.transformer
-          .experimentalImportBundleSupport,
+        experimentalImportBundleSupport:
+          this._config.transformer.experimentalImportBundleSupport,
         shallow: otherOptions.shallow,
       },
     );
@@ -217,8 +216,8 @@ class IncrementalBundler {
   }> {
     const graphId = getGraphId(entryFile, transformOptions, {
       shallow: otherOptions.shallow,
-      experimentalImportBundleSupport: this._config.transformer
-        .experimentalImportBundleSupport,
+      experimentalImportBundleSupport:
+        this._config.transformer.experimentalImportBundleSupport,
     });
     const revisionId = createRevisionId();
     const revisionPromise = (async () => {

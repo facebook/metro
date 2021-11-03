@@ -38,10 +38,7 @@ function escapeRegExp(pattern) {
 function exclusionList(additionalExclusions) {
   return new RegExp(
     '(' +
-      (additionalExclusions || [])
-        .concat(list)
-        .map(escapeRegExp)
-        .join('|') +
+      (additionalExclusions || []).concat(list).map(escapeRegExp).join('|') +
       ')$',
   );
 }

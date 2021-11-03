@@ -16,11 +16,7 @@ const BOUNDARY = '3beqjf3apnqeu3h5jqorms4i';
 
 class MultipartResponse {
   static wrap(req, res) {
-    if (
-      accepts(req)
-        .types()
-        .includes('multipart/mixed')
-    ) {
+    if (accepts(req).types().includes('multipart/mixed')) {
       return new MultipartResponse(res);
     }
     // Ugly hack, ideally wrap function should always return a proxy

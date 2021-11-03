@@ -24,12 +24,7 @@ type State = {|
   |},
 |};
 
-function reverseDependencyMapReferences({
-  types: t,
-}: {
-  types: Types,
-  ...
-}): {|
+function reverseDependencyMapReferences({types: t}: {types: Types, ...}): {|
   visitor: {|
     CallExpression: (path: NodePath<CallExpression>, state: State) => void,
   |},
