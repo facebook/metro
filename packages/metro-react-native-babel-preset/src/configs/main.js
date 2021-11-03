@@ -20,17 +20,13 @@ function isTSXSource(fileName) {
   return !!fileName && fileName.endsWith('.tsx');
 }
 
-function notTypeScriptSource(fileName) {
-  return !isTypeScriptSource(fileName) && !isTSXSource(fileName);
-}
-
-function optionsForTransformTS(opts) {
+const COMMON_TS_OPTIONS = {
   // `allowDeclareFields` will be enabled by default in Babel 8
-  return {...opts, allowDeclareFields: true, allowNamespaces: true};
-}
+  allowDeclareFields: true,
+  allowNamespaces: true,
+};
 
 const defaultPluginsBeforeRegenerator = [
-  [require('@babel/plugin-syntax-flow')],
   [require('@babel/plugin-transform-block-scoping')],
   [
     require('@babel/plugin-proposal-class-properties'),
@@ -182,7 +178,7 @@ const getPreset = (src, options) => {
       // the flow strip types plugin must go BEFORE class properties!
       // there'll be a test case that fails if you don't.
       {
-        test: notTypeScriptSource,
+        test: file => !isTypeScriptSource(file) && !isTSXSource(file),
         plugins: [require('@babel/plugin-transform-flow-strip-types')],
       },
       {
@@ -190,7 +186,7 @@ const getPreset = (src, options) => {
         plugins: [
           [
             require('@babel/plugin-transform-typescript'),
-            optionsForTransformTS({isTSX: false}),
+            {isTSX: false, ...COMMON_TS_OPTIONS},
           ],
         ],
       },
@@ -199,7 +195,7 @@ const getPreset = (src, options) => {
         plugins: [
           [
             require('@babel/plugin-transform-typescript'),
-            optionsForTransformTS({isTSX: true}),
+            {isTSX: true, ...COMMON_TS_OPTIONS},
           ],
         ],
       },
