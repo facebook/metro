@@ -242,11 +242,6 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
           [
             `${moduleName} could not be found within the project${hint || '.'}`,
             ...displayDirPaths.map((dirPath: string) => `  ${dirPath}`),
-            '\nIf you are sure the module exists, try these steps:',
-            ' 1. Clear watchman watches: watchman watch-del-all',
-            ' 2. Delete node_modules and run yarn install',
-            " 3. Reset Metro's cache: yarn start --reset-cache",
-            ' 4. Remove the cache: rm -rf /tmp/metro-*',
           ].join('\n'),
         );
       }
