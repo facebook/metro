@@ -17,7 +17,7 @@ module.exports = {
   env: {
     node: true,
   },
-  extends: 'eslint-config-fb-strict',
+  extends: ['eslint-config-fb-strict', 'plugin:prettier/recommended'],
   plugins: ['babel', 'flowtype', 'import', 'lint', 'prettier'],
   parser: 'babel-eslint',
   rules: {
@@ -31,15 +31,10 @@ module.exports = {
     'no-console': 'error',
     'no-unused-vars': 'error',
     'no-var': 'off',
-    'prefer-arrow-callback': 'off',
     'prefer-const': ['warn', {destructuring: 'all'}],
-    'prettier/prettier': ['error', 'fb', '@format'],
     quotes: 'off',
     'sort-keys': 'off',
     'flowtype/object-type-delimiter': 'off',
-    // TODO: Replace these 2 rules with `eslint-config-prettier`.
-    'brace-style': 'off',
-    'space-before-function-paren': 'off',
   },
   overrides: [
     {

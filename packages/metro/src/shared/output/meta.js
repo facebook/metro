@@ -10,8 +10,6 @@
 
 'use strict';
 
-/* global Buffer: true */
-
 const crypto = require('crypto');
 
 const isUTF8 = (encoding: 'ascii' | 'utf16le' | 'utf8') =>

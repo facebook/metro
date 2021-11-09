@@ -17,8 +17,6 @@ const {
   inlineModuleIdsAndAddParamsToDefineCall,
 } = require('../util');
 
-const {any} = jasmine;
-
 describe('addModuleIdsToModuleWrapper', () => {
   const path = 'path/to/file';
   const createModule = (dependencies = []) => ({
@@ -190,7 +188,7 @@ describe('`createIdForPathFn`', () => {
   });
 
   it('returns a number for a string', () => {
-    expect(idForPath({path: 'arbitrary'})).toEqual(any(Number));
+    expect(idForPath({path: 'arbitrary'})).toEqual(expect.any(Number));
   });
 
   it('returns consecutive numbers', () => {

@@ -36,9 +36,9 @@ describe('getAsset', () => {
   it('should fail if the extension is not registerd', async () => {
     writeImages({'b.png': 'b image', 'b@2x.png': 'b2 image'});
 
-    expect(getAssetStr('imgs/b.png', '/root', [], ['jpg'])).rejects.toThrow(
-      Error,
-    );
+    await expect(
+      getAssetStr('imgs/b.png', '/root', [], ['jpg']),
+    ).rejects.toThrow(Error);
   });
 
   it('should work for the simple case', () => {

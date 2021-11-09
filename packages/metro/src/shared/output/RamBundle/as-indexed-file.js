@@ -82,8 +82,6 @@ function saveAsIndexedFile(
   }
 }
 
-/* global Buffer: true */
-
 const fileHeader = Buffer.alloc(4);
 fileHeader.writeUInt32LE(MAGIC_UNBUNDLE_FILE_HEADER, 0);
 const nullByteBuffer: Buffer = Buffer.alloc(1).fill(0);
