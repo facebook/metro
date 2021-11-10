@@ -239,7 +239,19 @@ function toSegmentTuple(
   return [line, column, original.line, original.column, name];
 }
 
-function addMappingsForFile(generator, mappings, module, carryOver) {
+function addMappingsForFile(
+  generator: Generator,
+  mappings: Array<MetroSourceMapSegmentTuple>,
+  module: {
+    +code: string,
+    +functionMap: ?FBSourceFunctionMap,
+    +map: ?Array<MetroSourceMapSegmentTuple>,
+    +path: string,
+    +source: string,
+    ...
+  },
+  carryOver: number,
+) {
   generator.startFile(module.path, module.source, module.functionMap);
 
   for (let i = 0, n = mappings.length; i < n; ++i) {
@@ -249,7 +261,11 @@ function addMappingsForFile(generator, mappings, module, carryOver) {
   generator.endFile();
 }
 
-function addMapping(generator, mapping, carryOver) {
+function addMapping(
+  generator: Generator,
+  mapping: MetroSourceMapSegmentTuple,
+  carryOver: number,
+) {
   const n = mapping.length;
   const line = mapping[0] + carryOver;
   // lines start at 1, columns start at 0

@@ -9,6 +9,10 @@
  */
 
 'use strict';
+import type {
+  MetroSourceMapSegmentTuple,
+  FBSourceFunctionMap,
+} from '../../../metro-source-map/src/source-map';
 
 import type {ExplodedSourceMap} from '../DeltaBundler/Serializers/getExplodedSourceMap';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
@@ -124,7 +128,15 @@ async function symbolicate(
     };
   }
 
-  function findFunctionName(originalPos, module): ?string {
+  function findFunctionName(
+    originalPos: Position,
+    module: {
+      +firstLine1Based: number,
+      +functionMap: ?FBSourceFunctionMap,
+      +map: Array<MetroSourceMapSegmentTuple>,
+      +path: string,
+    },
+  ): ?string {
     if (module.functionMap) {
       let getFunctionName = functionNameGetters.get(module);
       if (!getFunctionName) {

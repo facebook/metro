@@ -263,14 +263,18 @@ async function execCommand(
   respond(makeResponse(messageId));
 }
 
-function shouldDebugCommand(argsString) {
+function shouldDebugCommand(argsString: string) {
   return DEBUG_RE && DEBUG_RE.test(argsString);
 }
 
-const error = (id, exitCode) => ({type: 'error', id, exit_code: exitCode});
-const unknownMessage = id => error(id, 1);
-const invalidMessage = id => error(id, 2);
-const commandError = id => error(id, 3);
-const success = id => ({type: 'result', id, exit_code: 0});
+const error = (id: number, exitCode: number) => ({
+  type: 'error',
+  id,
+  exit_code: exitCode,
+});
+const unknownMessage = (id: number) => error(id, 1);
+const invalidMessage = (id: number) => error(id, 2);
+const commandError = (id: number) => error(id, 3);
+const success = (id: number) => ({type: 'result', id, exit_code: 0});
 
 module.exports = buckWorker;

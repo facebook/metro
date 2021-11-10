@@ -42,7 +42,7 @@ async function main() {
   await formatWithPrettier(babelTypesFlowDefinitionPath);
 }
 
-async function formatWithPrettier(fileName) {
+async function formatWithPrettier(fileName: string) {
   const config = await prettier.resolveConfig(fileName);
   fs.writeFileSync(
     fileName,

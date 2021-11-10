@@ -602,7 +602,9 @@ it('skips minification in Hermes canary transform profile', async () => {
 });
 
 it('counts all line endings correctly', async () => {
-  const transformStr = str =>
+  const transformStr = (
+    str: $TEMPORARY$string<'one\ntwo\nthree\nfour\nfive\nsix'> | string,
+  ) =>
     Transformer.transform(baseConfig, '/root', 'local/file.js', str, {
       dev: false,
       minify: false,

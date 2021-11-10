@@ -9,6 +9,7 @@
  */
 
 'use strict';
+import type {OutputFnArg} from '../types.flow';
 
 import type {OutputFn} from '../types.flow';
 import type {MixedSourceMap} from 'metro-source-map';
@@ -26,7 +27,7 @@ function asPlainBundle({
   requireCalls,
   sourceMapPath,
   enableIDInlining,
-}): {|
+}: OutputFnArg): {|
   code: string | Buffer,
   extraFiles?: Iterable<[string, string | Buffer]>,
   map: MixedSourceMap,

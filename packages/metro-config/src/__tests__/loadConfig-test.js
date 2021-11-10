@@ -45,7 +45,7 @@ describe('loadConfig', () => {
   });
 
   it('can load config from function', async () => {
-    const config = defaultConfig => ({
+    const config = (defaultConfig: any) => ({
       ...defaultConfig,
       cacheStores: [],
       reporter: null,
@@ -75,7 +75,7 @@ describe('loadConfig', () => {
   });
 
   it('can load the config from a path', async () => {
-    const config = defaultConfig => ({
+    const config = (defaultConfig: any) => ({
       ...defaultConfig,
       projectRoot: '/',
       reporter: null,
@@ -114,7 +114,7 @@ describe('loadConfig', () => {
   });
 
   it('can load the config from a path pointing to a directory', async () => {
-    const config = defaultConfig => ({
+    const config = (defaultConfig: any) => ({
       ...defaultConfig,
       projectRoot: '/',
       reporter: null,
@@ -168,7 +168,7 @@ describe('loadConfig', () => {
 
   it('validates config for server', async () => {
     expect.assertions(1);
-    const config = defaultConfig => ({
+    const config = (defaultConfig: any) => ({
       ...defaultConfig,
       server: {
         useGlobalHotkey: 'test',
@@ -186,7 +186,7 @@ describe('loadConfig', () => {
 
   it('validates config for projectRoot', async () => {
     expect.assertions(1);
-    const config = defaultConfig => ({
+    const config = (defaultConfig: any) => ({
       ...defaultConfig,
       projectRoot: ['test'],
     });

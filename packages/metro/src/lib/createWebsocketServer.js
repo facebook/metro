@@ -50,7 +50,7 @@ module.exports = function createWebsocketServer<TClient: Object>({
     let connected = true;
     const url = req.url;
 
-    const sendFn = (...args) => {
+    const sendFn = (...args: Array<string>) => {
       if (connected) {
         ws.send(...args);
       }

@@ -105,7 +105,7 @@ function forEachMapping(
   let tailPos = {line: 1, column: 0};
   let tailName = null;
 
-  function advanceToPos(pos) {
+  function advanceToPos(pos: {column: number, line: number}) {
     if (tailPos && positionGreater(pos, tailPos)) {
       const name = nameStack[0].name; // We always have at least Program
       if (name !== tailName) {
@@ -142,7 +142,12 @@ function forEachMapping(
     : null;
 
   const visitor = {
-    enter(path) {
+    enter(
+      path:
+        | NodePath<BabelNodeProgram>
+        | NodePath<BabelNodeFunction>
+        | NodePath<BabelNodeClass>,
+    ) {
       let name = getNameForPath(path);
       if (basename) {
         name = removeNamePrefix(name, basename);
@@ -151,7 +156,12 @@ function forEachMapping(
       pushFrame(name, nullthrows(path.node.loc));
     },
 
-    exit(path): void {
+    exit(
+      path:
+        | NodePath<BabelNodeProgram>
+        | NodePath<BabelNodeFunction>
+        | NodePath<BabelNodeClass>,
+    ): void {
       popFrame();
     },
   };
@@ -487,7 +497,12 @@ class RelativeValue {
   }
 }
 
-function positionGreater(x, y) {
+function positionGreater(
+  x: {column: number, line: number},
+  y:
+    | {column: number, line: number}
+    | $TEMPORARY$object<{column: number, line: number}>,
+) {
   return x.line > y.line || (x.line === y.line && x.column > y.column);
 }
 

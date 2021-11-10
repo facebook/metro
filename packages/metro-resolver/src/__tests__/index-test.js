@@ -19,7 +19,7 @@ const path = require('path');
 
 const CONTEXT: ResolutionContext = (() => {
   const fileSet = new Set();
-  (function fillFileSet(fileTree, prefix) {
+  (function fillFileSet(fileTree, prefix: string) {
     for (const entName in fileTree) {
       const entPath = path.join(prefix, entName);
       if (fileTree[entName] === true) {
@@ -80,23 +80,24 @@ const CONTEXT: ResolutionContext = (() => {
   return {
     allowHaste: true,
     disableHierarchicalLookup: false,
-    doesFileExist: filePath => fileSet.has(filePath),
+    doesFileExist: (filePath: string) => fileSet.has(filePath),
     extraNodeModules: null,
-    getPackageMainPath: dirPath => path.join(path.dirname(dirPath), 'main'),
+    getPackageMainPath: (dirPath: string) =>
+      path.join(path.dirname(dirPath), 'main'),
     isAssetFile: () => false,
     nodeModulesPaths: [],
     originModulePath: '/root/project/foo.js',
     preferNativePlatform: false,
-    redirectModulePath: filePath => filePath,
-    resolveAsset: filePath => null,
-    resolveHasteModule: name => {
+    redirectModulePath: (filePath: string) => filePath,
+    resolveAsset: (filePath: string) => null,
+    resolveHasteModule: (name: string) => {
       const candidate = '/haste/' + name + '.js';
       if (fileSet.has(candidate)) {
         return candidate;
       }
       return null;
     },
-    resolveHastePackage: name => {
+    resolveHastePackage: (name: string) => {
       const candidate = '/haste/' + name + '/package.json';
       if (fileSet.has(candidate)) {
         return candidate;

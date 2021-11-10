@@ -57,10 +57,10 @@ const explorer = cosmiconfig('metro', {
   },
 });
 
-const isFile = filePath =>
+const isFile = (filePath: string) =>
   fs.existsSync(filePath) && !fs.lstatSync(filePath).isDirectory();
 
-const resolve = filePath => {
+const resolve = (filePath: string) => {
   // Attempt to resolve the path with the node resolution algorithm but fall back to resolving
   // the file relative to the current working directory if the input is not an absolute path.
   try {

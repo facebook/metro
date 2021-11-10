@@ -80,7 +80,7 @@ function inlinePlugin(
     isIdentifier(node.object.object, processId) &&
     isGlobal(scope.getBinding(processId.name));
 
-  const isDev = (node: Identifier, parent: Node, scope): boolean =>
+  const isDev = (node: Identifier, parent: Node, scope: Scope): boolean =>
     isIdentifier(node, dev) &&
     isGlobalOrFlowDeclared(scope.getBinding(dev.name)) &&
     !isMemberExpression(parent) &&

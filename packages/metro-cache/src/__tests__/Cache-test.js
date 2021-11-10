@@ -16,7 +16,12 @@ describe('Cache', () => {
   let Logger;
   let log;
 
-  function createStore(name = '') {
+  function createStore(
+    name:
+      | string
+      | $TEMPORARY$string<'Local'>
+      | $TEMPORARY$string<'Network'> = '',
+  ) {
     // eslint-disable-next-line no-eval
     const TempClass = eval(`(class ${name} {})`);
 

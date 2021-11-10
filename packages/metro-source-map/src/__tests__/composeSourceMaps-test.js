@@ -10,6 +10,7 @@
  */
 
 'use strict';
+import type {MixedSourceMap, IndexMap, BasicSourceMap} from '../source-map';
 
 /* eslint-disable no-multi-str */
 
@@ -42,11 +43,14 @@ function topLevel() {\
    throwSomething();\
 }';
 
-function symbolicate(backtrace, sourceMap) {
+function symbolicate(
+  backtrace: empty,
+  sourceMap: any | string | BasicSourceMap | IndexMap | MixedSourceMap,
+) {
   const consumer = new Consumer(
     typeof sourceMap === 'string' ? JSON.parse(sourceMap) : sourceMap,
   );
-  function replaceSymbol(match, source, line, col) {
+  function replaceSymbol(match: any, source: any, line, col: number) {
     var original = consumer.originalPositionFor({
       line: add1(line - 1),
       column: add0(col),

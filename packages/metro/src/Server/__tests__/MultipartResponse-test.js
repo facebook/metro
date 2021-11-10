@@ -137,7 +137,9 @@ describe('MultipartResponse', () => {
   });
 });
 
-function mockNodeRequest(headers = {}) {
+function mockNodeRequest(
+  headers: $TEMPORARY$object<{...}> | $TEMPORARY$object<{accept: string}> = {},
+) {
   return {headers};
 }
 

@@ -36,7 +36,9 @@ function generateModules(
   for (const module of sourceModules) {
     if (isJsModule(module)) {
       // Construct a bundle URL for this specific module only
-      const getURL = extension => {
+      const getURL = (
+        extension: $TEMPORARY$string<'bundle'> | $TEMPORARY$string<'map'>,
+      ) => {
         options.clientUrl.pathname = path.relative(
           options.projectRoot,
           path.join(

@@ -450,7 +450,7 @@ function resolveSourceFileForExt(
 // HasteFS stores paths with backslashes on Windows, this ensures the path is in
 // the proper format. Will also add drive letter if not present so `/root` will
 // resolve to `C:\root`. Noop on other platforms.
-function resolveWindowsPath(modulePath) {
+function resolveWindowsPath(modulePath: string) {
   if (path.sep !== '\\') {
     return modulePath;
   }
@@ -461,7 +461,7 @@ function isRelativeImport(filePath: string) {
   return /^[.][.]?(?:[/]|$)/.test(filePath);
 }
 
-function normalizePath(modulePath) {
+function normalizePath(modulePath: any | string) {
   if (path.sep === '/') {
     modulePath = path.normalize(modulePath);
   } else if (path.posix) {
