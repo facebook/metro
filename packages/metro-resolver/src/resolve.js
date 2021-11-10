@@ -103,6 +103,7 @@ function resolve(
     } while (candidate !== next);
   }
 
+  // Fall back to `nodeModulesPaths` after hierarchical lookup, similar to $NODE_PATH
   nodeModulesPaths.push(...context.nodeModulesPaths);
 
   const extraPaths = [];
