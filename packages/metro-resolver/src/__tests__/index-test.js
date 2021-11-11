@@ -56,9 +56,19 @@ const CONTEXT: ResolutionContext = (() => {
       },
       'other-root': {
         node_modules: {
+          'banana-module': {
+            'package.json': true,
+            'main.js': true,
+          },
           banana: {
             'package.json': true,
             'main.js': true,
+            node_modules: {
+              'banana-module': {
+                'package.json': true,
+                'main.js': true,
+              },
+            },
           },
         },
       },
@@ -217,12 +227,33 @@ it('uses `nodeModulesPaths` to find additional node_modules not in the direct pa
   expect(() => Resolver.resolve(context, 'kiwi', null))
     .toThrowErrorMatchingInlineSnapshot(`
     "Module does not exist in the Haste module map or in these directories:
-      /other-root/node_modules
       /root/project/node_modules
       /root/node_modules
       /node_modules
+      /other-root/node_modules
     "
   `);
+});
+
+it('resolves transitive dependencies when using `nodeModulesPaths`', () => {
+  const context = Object.assign(
+    {},
+    {...CONTEXT, originModulePath: '/other-root/node_modules/banana/main.js'},
+    {
+      nodeModulesPaths: ['/other-root/node_modules'],
+    },
+  );
+
+  expect(Resolver.resolve(context, 'banana-module', null)).toEqual({
+    type: 'sourceFile',
+    filePath:
+      '/other-root/node_modules/banana/node_modules/banana-module/main.js',
+  });
+
+  expect(Resolver.resolve(context, 'banana-module', null)).not.toEqual({
+    type: 'sourceFile',
+    filePath: '/other-root/node_modules/banana-module/main.js',
+  });
 });
 
 describe('disableHierarchicalLookup', () => {

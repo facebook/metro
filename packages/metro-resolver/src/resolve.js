@@ -90,9 +90,10 @@ function resolve(
     } catch (error) {}
   }
 
-  const nodeModulesPaths = Array.from(context.nodeModulesPaths);
+  const nodeModulesPaths = [];
   let next = path.dirname(originModulePath);
   const {disableHierarchicalLookup} = context;
+
   if (!disableHierarchicalLookup) {
     let candidate;
     do {
@@ -101,6 +102,9 @@ function resolve(
       next = path.dirname(candidate);
     } while (candidate !== next);
   }
+
+  // Fall back to `nodeModulesPaths` after hierarchical lookup, similar to $NODE_PATH
+  nodeModulesPaths.push(...context.nodeModulesPaths);
 
   const extraPaths = [];
   const {extraNodeModules} = context;
