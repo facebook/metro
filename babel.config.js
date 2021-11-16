@@ -35,7 +35,6 @@ function getConfig(api /*: any */) /*: BabelCoreOptions */ {
     browserslistConfigFile: false,
     presets: presets.map(preset => require.resolve(preset)),
     plugins: plugins.map(plugin => require.resolve(plugin)),
-    exclude: /\.tsx?$/, // Don't use `plugin-transform-flow-strip-types` with TypeScript files
   };
 }
 

@@ -20,12 +20,6 @@ function isTSXSource(fileName) {
   return !!fileName && fileName.endsWith('.tsx');
 }
 
-const COMMON_TS_OPTIONS = {
-  // `allowDeclareFields` will be enabled by default in Babel 8
-  allowDeclareFields: true,
-  allowNamespaces: true,
-};
-
 const defaultPluginsBeforeRegenerator = [
   [require('@babel/plugin-transform-block-scoping')],
   [
@@ -186,7 +180,7 @@ const getPreset = (src, options) => {
         plugins: [
           [
             require('@babel/plugin-transform-typescript'),
-            {isTSX: false, ...COMMON_TS_OPTIONS},
+            {isTSX: false, allowNamespaces: true},
           ],
         ],
       },
@@ -195,7 +189,7 @@ const getPreset = (src, options) => {
         plugins: [
           [
             require('@babel/plugin-transform-typescript'),
-            {isTSX: true, ...COMMON_TS_OPTIONS},
+            {isTSX: true, allowNamespaces: true},
           ],
         ],
       },
