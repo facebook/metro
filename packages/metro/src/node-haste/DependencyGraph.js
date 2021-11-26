@@ -129,11 +129,7 @@ class DependencyGraph extends EventEmitter {
       ignorePattern: this._getIgnorePattern(config),
       maxWorkers: config.maxWorkers,
       mocksPattern: '',
-      name:
-        'metro-' +
-        JEST_HASTE_MAP_CACHE_BREAKER +
-        // TODO: Remove the deps/nodeps suffix once https://github.com/facebook/jest/pull/11916 lands
-        (computeDependencies ? '-deps' : '-nodeps'),
+      name: 'metro-' + JEST_HASTE_MAP_CACHE_BREAKER,
       platforms: config.resolver.platforms,
       retainAllFiles: true,
       resetCache: config.resetCache,
