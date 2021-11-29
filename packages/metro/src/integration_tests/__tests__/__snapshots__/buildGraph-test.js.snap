@@ -13,7 +13,7 @@ Array [
 
   var TypeScript = _$$_REQUIRE(_dependencyMap[2]);
 
-  var Bar2 = Object.assign({}, Bar);
+  Object.keys(Object.assign({}, Bar));
   module.exports = {
     Foo: Foo,
     Bar: Bar,
@@ -153,32 +153,40 @@ Array [
           0,
           18,
           0,
+          "Object",
         ],
         Array [
           10,
-          6,
+          2,
+          18,
+          0,
+          "Object",
+        ],
+        Array [
+          10,
+          8,
           18,
           6,
-          "Bar2",
         ],
         Array [
           10,
-          10,
+          9,
           18,
-          10,
+          7,
+          "keys",
         ],
         Array [
           10,
-          31,
+          13,
           18,
-          17,
+          0,
+        ],
+        Array [
+          10,
+          32,
+          18,
+          16,
           "Bar",
-        ],
-        Array [
-          10,
-          34,
-          18,
-          10,
         ],
         Array [
           10,
