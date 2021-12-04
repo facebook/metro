@@ -115,6 +115,9 @@ const getPreset = (src, options) => {
     ]);
   }
   if (isHermes && (isNull || src.indexOf('async') !== -1)) {
+    extraPlugins.push([
+      require('@babel/plugin-proposal-async-generator-functions'),
+    ]);
     extraPlugins.push([require('@babel/plugin-transform-async-to-generator')]);
   }
   if (!isHermes && (isNull || src.indexOf('**') !== -1)) {
