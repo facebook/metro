@@ -272,6 +272,32 @@ Object {
 }
 `;
 
+exports[`transforms async generators 1`] = `
+"__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0], \\"@babel/runtime/helpers/interopRequireDefault\\");
+
+  Object.defineProperty(exports, \\"__esModule\\", {
+    value: true
+  });
+  exports.test = test;
+
+  var _awaitAsyncGenerator2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[1], \\"@babel/runtime/helpers/awaitAsyncGenerator\\"));
+
+  var _wrapAsyncGenerator2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[2], \\"@babel/runtime/helpers/wrapAsyncGenerator\\"));
+
+  function test() {
+    return _test.apply(this, arguments);
+  }
+
+  function _test() {
+    _test = (0, _wrapAsyncGenerator2.default)(function* () {
+      yield \\"ok\\";
+    });
+    return _test.apply(this, arguments);
+  }
+});"
+`;
+
 exports[`transforms import/export syntax when experimental flag is on 1`] = `
 Array [
   Array [

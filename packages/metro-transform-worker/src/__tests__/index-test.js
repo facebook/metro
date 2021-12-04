@@ -211,6 +211,36 @@ it('transforms an es module with regenerator', async () => {
   ]);
 });
 
+it('transforms async generators', async () => {
+  const result = await Transformer.transform(
+    baseConfig,
+    '/root',
+    'local/file.js',
+    'export async function* test() { yield "ok"; }',
+    {
+      dev: true,
+      type: 'module',
+      unstable_transformProfile: 'hermes-stable',
+    },
+  );
+
+  expect(result.output[0].data.code).toMatchSnapshot();
+  expect(result.dependencies).toEqual([
+    {
+      data: expect.objectContaining({asyncType: null}),
+      name: '@babel/runtime/helpers/interopRequireDefault',
+    },
+    {
+      data: expect.objectContaining({asyncType: null}),
+      name: '@babel/runtime/helpers/awaitAsyncGenerator',
+    },
+    {
+      data: expect.objectContaining({asyncType: null}),
+      name: '@babel/runtime/helpers/wrapAsyncGenerator',
+    },
+  ]);
+});
+
 it('transforms import/export syntax when experimental flag is on', async () => {
   const contents = ['import c from "./c";'].join('\n');
 
