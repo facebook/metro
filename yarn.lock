@@ -3906,10 +3906,17 @@ has@^1.0.3:
   dependencies:
     function-bind "^1.1.1"
 
-hermes-parser@0.4.7:
-  version "0.4.7"
-  resolved "https://registry.yarnpkg.com/hermes-parser/-/hermes-parser-0.4.7.tgz#410f5129d57183784d205a0538e6fbdcf614c9ea"
-  integrity sha512-jc+zCtXbtwTiXoMAoXOHepxAaGVFIp89wwE9qcdwnMd/uGVEtPoY8FaFSsx0ThPvyKirdR2EsIIDVrpbSXz1Ag==
+hermes-estree@0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/hermes-estree/-/hermes-estree-0.5.0.tgz#36432a2b12f01b217244da098924efdfdfc12327"
+  integrity sha512-1h8rvG23HhIR5K6Kt0e5C7BC72J1Ath/8MmSta49vxXp/j6wl7IMHvIRFYBQr35tWnQY97dSGR2uoAJ5pHUQkg==
+
+hermes-parser@0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/hermes-parser/-/hermes-parser-0.5.0.tgz#8b678dd8b29a08b57cbaf60adba4896494c59a53"
+  integrity sha512-ARnJBScKAkkq8j3BHrNGBUv/4cSpZNbKDsVizEtzmsFeqC67Dopa5s4XRe+e3wN52Dh5Mj2kDB5wJvhcxwDkPg==
+  dependencies:
+    hermes-estree "0.5.0"
 
 hosted-git-info@^2.1.4, hosted-git-info@^2.5.0:
   version "2.8.9"
