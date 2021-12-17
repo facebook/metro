@@ -34,14 +34,20 @@ function minify({code, map, reserved, config}: MinifierOptions): {
 } {
   const options = {
     ...config,
-    mangle: {
-      ...config.mangle,
-      reserved,
-    },
-    sourceMap: {
-      ...config.sourceMap,
-      content: map,
-    },
+    mangle:
+      typeof config.mangle === 'object'
+        ? {
+            ...config.mangle,
+            reserved,
+          }
+        : config.mangle,
+    sourceMap:
+      typeof config.sourceMap === 'object'
+        ? {
+            ...config.sourceMap,
+            content: map,
+          }
+        : config.sourceMap,
   };
 
   /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
