@@ -50,13 +50,15 @@ Object {
     "emptyModulePath": "metro-runtime/src/modules/empty-module",
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
-    "ignoreRequireCyclePrefixes": Array [],
     "nodeModulesPaths": Array [],
     "platforms": Array [
       "ios",
       "android",
       "windows",
       "web",
+    ],
+    "requireCycleIgnorePatterns": Array [
+      "(^|\\\\/|\\\\\\\\)node_modules($|\\\\/|\\\\\\\\)",
     ],
     "resolveRequest": null,
     "resolverMainFields": Array [
@@ -196,13 +198,15 @@ Object {
     "emptyModulePath": "metro-runtime/src/modules/empty-module",
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
-    "ignoreRequireCyclePrefixes": Array [],
     "nodeModulesPaths": Array [],
     "platforms": Array [
       "ios",
       "android",
       "windows",
       "web",
+    ],
+    "requireCycleIgnorePatterns": Array [
+      "(^|\\\\/|\\\\\\\\)node_modules($|\\\\/|\\\\\\\\)",
     ],
     "resolveRequest": null,
     "resolverMainFields": Array [
@@ -342,13 +346,15 @@ Object {
     "emptyModulePath": "metro-runtime/src/modules/empty-module",
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
-    "ignoreRequireCyclePrefixes": Array [],
     "nodeModulesPaths": Array [],
     "platforms": Array [
       "ios",
       "android",
       "windows",
       "web",
+    ],
+    "requireCycleIgnorePatterns": Array [
+      "(^|\\\\/|\\\\\\\\)node_modules($|\\\\/|\\\\\\\\)",
     ],
     "resolveRequest": null,
     "resolverMainFields": Array [
@@ -488,13 +494,15 @@ Object {
     "emptyModulePath": "metro-runtime/src/modules/empty-module",
     "extraNodeModules": Object {},
     "hasteImplModulePath": undefined,
-    "ignoreRequireCyclePrefixes": Array [],
     "nodeModulesPaths": Array [],
     "platforms": Array [
       "ios",
       "android",
       "windows",
       "web",
+    ],
+    "requireCycleIgnorePatterns": Array [
+      "(^|\\\\/|\\\\\\\\)node_modules($|\\\\/|\\\\\\\\)",
     ],
     "resolveRequest": null,
     "resolverMainFields": Array [

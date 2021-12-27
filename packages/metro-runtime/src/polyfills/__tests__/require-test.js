@@ -43,7 +43,7 @@ describe('require', () => {
     'global',
     '__DEV__',
     '__METRO_GLOBAL_PREFIX__',
-    '__IGNORE_REQUIRE_CYCLE_PREFIXES__',
+    '__METRO_REQUIRE_CYCLE_IGNORE_PATTERNS__',
     moduleSystemCode,
   );
 

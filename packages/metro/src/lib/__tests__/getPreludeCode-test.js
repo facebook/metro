@@ -18,13 +18,13 @@ const vm = require('vm');
   describe(`${mode} mode`, () => {
     const isDev = mode === 'development';
     const globalPrefix = '';
-    const ignoreRequireCyclePrefixes = [];
+    const requireCycleIgnorePatterns = [];
 
     it('sets up `process.env.NODE_ENV` and `__DEV__`', () => {
       const sandbox: $FlowFixMe = {};
       vm.createContext(sandbox);
       vm.runInContext(
-        getPreludeCode({isDev, globalPrefix, ignoreRequireCyclePrefixes}),
+        getPreludeCode({isDev, globalPrefix, requireCycleIgnorePatterns}),
         sandbox,
       );
       expect(sandbox.process.env.NODE_ENV).toEqual(mode);
@@ -38,25 +38,34 @@ const vm = require('vm');
         getPreludeCode({
           isDev,
           globalPrefix: '__metro',
-          ignoreRequireCyclePrefixes,
+          requireCycleIgnorePatterns,
         }),
         sandbox,
       );
       expect(sandbox.__METRO_GLOBAL_PREFIX__).toBe('__metro');
     });
 
-    it('sets up `__IGNORE_REQUIRE_CYCLE_PREFIXES__`', () => {
+    it('sets up `__METRO_REQUIRE_CYCLE_IGNORE_PATTERNS__` in development', () => {
       const sandbox: $FlowFixMe = {};
       vm.createContext(sandbox);
       vm.runInContext(
         getPreludeCode({
           isDev,
           globalPrefix,
-          ignoreRequireCyclePrefixes: ['blah'],
+          requireCycleIgnorePatterns: ['blah'],
         }),
         sandbox,
       );
-      expect(sandbox.__IGNORE_REQUIRE_CYCLE_PREFIXES__).toEqual(['blah']);
+
+      if (isDev) {
+        expect(sandbox.__METRO_REQUIRE_CYCLE_IGNORE_PATTERNS__).toEqual([
+          'blah',
+        ]);
+      } else {
+        expect(
+          sandbox.__METRO_REQUIRE_CYCLE_IGNORE_PATTERNS__,
+        ).not.toBeDefined();
+      }
     });
 
     it('does not override an existing `process.env`', () => {
@@ -64,7 +73,7 @@ const vm = require('vm');
       const sandbox: $FlowFixMe = {process: {nextTick, env: {FOOBAR: 123}}};
       vm.createContext(sandbox);
       vm.runInContext(
-        getPreludeCode({isDev, globalPrefix, ignoreRequireCyclePrefixes}),
+        getPreludeCode({isDev, globalPrefix, requireCycleIgnorePatterns}),
         sandbox,
       );
       expect(sandbox.process.env.NODE_ENV).toEqual(mode);
@@ -81,7 +90,7 @@ const vm = require('vm');
         getPreludeCode({
           isDev,
           globalPrefix,
-          ignoreRequireCyclePrefixes,
+          requireCycleIgnorePatterns,
           extraVars: {FOO, BAR},
         }),
         sandbox,
@@ -97,7 +106,7 @@ const vm = require('vm');
         getPreludeCode({
           isDev,
           globalPrefix,
-          ignoreRequireCyclePrefixes,
+          requireCycleIgnorePatterns,
           extraVars: {__DEV__: 123},
         }),
         sandbox,
