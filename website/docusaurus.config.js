@@ -16,7 +16,7 @@ const siteConfig = {
       {
         docs: {
           path: '../docs',
-          editUrl: 'https://github.com/facebook/metro/edit/master/website',
+          editUrl: 'https://github.com/facebook/metro/edit/main/docs',
           sidebarPath: require.resolve('./sidebars.json'),
         },
         theme: {
