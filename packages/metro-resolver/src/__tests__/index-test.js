@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -19,7 +19,7 @@ const path = require('path');
 
 const CONTEXT: ResolutionContext = (() => {
   const fileSet = new Set();
-  (function fillFileSet(fileTree, prefix) {
+  (function fillFileSet(fileTree, prefix: string) {
     for (const entName in fileTree) {
       const entPath = path.join(prefix, entName);
       if (fileTree[entName] === true) {
@@ -56,9 +56,19 @@ const CONTEXT: ResolutionContext = (() => {
       },
       'other-root': {
         node_modules: {
+          'banana-module': {
+            'package.json': true,
+            'main.js': true,
+          },
           banana: {
             'package.json': true,
             'main.js': true,
+            node_modules: {
+              'banana-module': {
+                'package.json': true,
+                'main.js': true,
+              },
+            },
           },
         },
       },
@@ -80,23 +90,24 @@ const CONTEXT: ResolutionContext = (() => {
   return {
     allowHaste: true,
     disableHierarchicalLookup: false,
-    doesFileExist: filePath => fileSet.has(filePath),
+    doesFileExist: (filePath: string) => fileSet.has(filePath),
     extraNodeModules: null,
-    getPackageMainPath: dirPath => path.join(path.dirname(dirPath), 'main'),
+    getPackageMainPath: (dirPath: string) =>
+      path.join(path.dirname(dirPath), 'main'),
     isAssetFile: () => false,
     nodeModulesPaths: [],
     originModulePath: '/root/project/foo.js',
     preferNativePlatform: false,
-    redirectModulePath: filePath => filePath,
-    resolveAsset: filePath => null,
-    resolveHasteModule: name => {
+    redirectModulePath: (filePath: string) => filePath,
+    resolveAsset: (filePath: string) => null,
+    resolveHasteModule: (name: string) => {
       const candidate = '/haste/' + name + '.js';
       if (fileSet.has(candidate)) {
         return candidate;
       }
       return null;
     },
-    resolveHastePackage: name => {
+    resolveHastePackage: (name: string) => {
       const candidate = '/haste/' + name + '/package.json';
       if (fileSet.has(candidate)) {
         return candidate;
@@ -216,12 +227,33 @@ it('uses `nodeModulesPaths` to find additional node_modules not in the direct pa
   expect(() => Resolver.resolve(context, 'kiwi', null))
     .toThrowErrorMatchingInlineSnapshot(`
     "Module does not exist in the Haste module map or in these directories:
-      /other-root/node_modules
       /root/project/node_modules
       /root/node_modules
       /node_modules
+      /other-root/node_modules
     "
   `);
+});
+
+it('resolves transitive dependencies when using `nodeModulesPaths`', () => {
+  const context = Object.assign(
+    {},
+    {...CONTEXT, originModulePath: '/other-root/node_modules/banana/main.js'},
+    {
+      nodeModulesPaths: ['/other-root/node_modules'],
+    },
+  );
+
+  expect(Resolver.resolve(context, 'banana-module', null)).toEqual({
+    type: 'sourceFile',
+    filePath:
+      '/other-root/node_modules/banana/node_modules/banana-module/main.js',
+  });
+
+  expect(Resolver.resolve(context, 'banana-module', null)).not.toEqual({
+    type: 'sourceFile',
+    filePath: '/other-root/node_modules/banana-module/main.js',
+  });
 });
 
 describe('disableHierarchicalLookup', () => {

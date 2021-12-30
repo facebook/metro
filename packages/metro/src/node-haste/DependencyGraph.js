@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -129,11 +129,7 @@ class DependencyGraph extends EventEmitter {
       ignorePattern: this._getIgnorePattern(config),
       maxWorkers: config.maxWorkers,
       mocksPattern: '',
-      name:
-        'metro-' +
-        JEST_HASTE_MAP_CACHE_BREAKER +
-        // TODO: Remove the deps/nodeps suffix once https://github.com/facebook/jest/pull/11916 lands
-        (computeDependencies ? '-deps' : '-nodeps'),
+      name: 'metro-' + JEST_HASTE_MAP_CACHE_BREAKER,
       platforms: config.resolver.platforms,
       retainAllFiles: true,
       resetCache: config.resetCache,

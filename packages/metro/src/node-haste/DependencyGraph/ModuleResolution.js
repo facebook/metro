@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -242,11 +242,6 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
           [
             `${moduleName} could not be found within the project${hint || '.'}`,
             ...displayDirPaths.map((dirPath: string) => `  ${dirPath}`),
-            '\nIf you are sure the module exists, try these steps:',
-            ' 1. Clear watchman watches: watchman watch-del-all',
-            ' 2. Delete node_modules and run yarn install',
-            " 3. Reset Metro's cache: yarn start --reset-cache",
-            ' 4. Remove the cache: rm -rf /tmp/metro-*',
           ].join('\n'),
         );
       }

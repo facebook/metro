@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -90,9 +90,10 @@ function resolve(
     } catch (error) {}
   }
 
-  const nodeModulesPaths = Array.from(context.nodeModulesPaths);
+  const nodeModulesPaths = [];
   let next = path.dirname(originModulePath);
   const {disableHierarchicalLookup} = context;
+
   if (!disableHierarchicalLookup) {
     let candidate;
     do {
@@ -101,6 +102,9 @@ function resolve(
       next = path.dirname(candidate);
     } while (candidate !== next);
   }
+
+  // Fall back to `nodeModulesPaths` after hierarchical lookup, similar to $NODE_PATH
+  nodeModulesPaths.push(...context.nodeModulesPaths);
 
   const extraPaths = [];
   const {extraNodeModules} = context;
@@ -450,7 +454,7 @@ function resolveSourceFileForExt(
 // HasteFS stores paths with backslashes on Windows, this ensures the path is in
 // the proper format. Will also add drive letter if not present so `/root` will
 // resolve to `C:\root`. Noop on other platforms.
-function resolveWindowsPath(modulePath) {
+function resolveWindowsPath(modulePath: string) {
   if (path.sep !== '\\') {
     return modulePath;
   }
@@ -461,7 +465,7 @@ function isRelativeImport(filePath: string) {
   return /^[.][.]?(?:[/]|$)/.test(filePath);
 }
 
-function normalizePath(modulePath) {
+function normalizePath(modulePath: any | string) {
   if (path.sep === '/') {
     modulePath = path.normalize(modulePath);
   } else if (path.posix) {

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -36,9 +36,9 @@ describe('getAsset', () => {
   it('should fail if the extension is not registerd', async () => {
     writeImages({'b.png': 'b image', 'b@2x.png': 'b2 image'});
 
-    expect(getAssetStr('imgs/b.png', '/root', [], ['jpg'])).rejects.toThrow(
-      Error,
-    );
+    await expect(
+      getAssetStr('imgs/b.png', '/root', [], ['jpg']),
+    ).rejects.toThrow(Error);
   });
 
   it('should work for the simple case', () => {

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -9,6 +9,7 @@
  */
 
 'use strict';
+import type {OutputFnArg} from '../types.flow';
 
 import type {OutputFn} from '../types.flow';
 import type {MixedSourceMap} from 'metro-source-map';
@@ -26,7 +27,7 @@ function asPlainBundle({
   requireCalls,
   sourceMapPath,
   enableIDInlining,
-}): {|
+}: OutputFnArg): {|
   code: string | Buffer,
   extraFiles?: Iterable<[string, string | Buffer]>,
   map: MixedSourceMap,
