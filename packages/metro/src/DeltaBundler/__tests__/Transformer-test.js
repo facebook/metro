@@ -45,6 +45,7 @@ describe('Transformer', function () {
       projectRoot: '/root',
       resetCache: false,
       transformerPath: '/path/to/transformer.js',
+      roots: ['/root'],
       watchFolders: ['/root'],
     };
 

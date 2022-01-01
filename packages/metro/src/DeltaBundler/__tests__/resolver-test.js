@@ -79,6 +79,7 @@ let resolver;
     reporter: require('../../lib/reporting').nullReporter,
     transformer: {},
     watch: true,
+    roots: [p('/root')],
     watchFolders: [p('/root')],
   };
 

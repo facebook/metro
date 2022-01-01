@@ -400,7 +400,7 @@ class Server {
       const data = await getAsset(
         assetPath,
         this._config.projectRoot,
-        this._config.watchFolders,
+        this._config.roots,
         urlObj.query.platform,
         this._config.resolver.assetExts,
       );

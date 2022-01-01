@@ -134,7 +134,7 @@ class DependencyGraph extends EventEmitter {
       retainAllFiles: true,
       resetCache: config.resetCache,
       rootDir: config.projectRoot,
-      roots: config.watchFolders,
+      roots: config.roots,
       throwOnModuleCollision: true,
       useWatchman: config.resolver.useWatchman,
       watch: watch == null ? !ci.isCI : watch,

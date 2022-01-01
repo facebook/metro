@@ -72,6 +72,9 @@ Object {
     "unstable_hasteMapModulePath": undefined,
     "useWatchman": true,
   },
+  "roots": Array [
+    "/",
+  ],
   "serializer": Object {
     "createModuleIdFactory": [Function],
     "customSerializer": null,
@@ -218,6 +221,9 @@ Object {
     "unstable_hasteMapModulePath": undefined,
     "useWatchman": true,
   },
+  "roots": Array [
+    "/",
+  ],
   "serializer": Object {
     "createModuleIdFactory": [Function],
     "customSerializer": null,
@@ -364,6 +370,9 @@ Object {
     "unstable_hasteMapModulePath": undefined,
     "useWatchman": true,
   },
+  "roots": Array [
+    "/",
+  ],
   "serializer": Object {
     "createModuleIdFactory": [Function],
     "customSerializer": null,
@@ -510,6 +519,9 @@ Object {
     "unstable_hasteMapModulePath": undefined,
     "useWatchman": true,
   },
+  "roots": Array [
+    "/",
+  ],
   "serializer": Object {
     "createModuleIdFactory": [Function],
     "customSerializer": null,

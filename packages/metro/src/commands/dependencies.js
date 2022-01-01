@@ -54,8 +54,7 @@ async function dependencies(args: any, config: any) {
     // (a) JS code to not depend on anything outside this directory, or
     // (b) Come up with a way to declare this dependency in Buck.
     const isInsideProjectRoots =
-      config.watchFolders.filter(root => modulePath.startsWith(root)).length >
-      0;
+      config.roots.filter(root => modulePath.startsWith(root)).length > 0;
     if (isInsideProjectRoots) {
       outStream.write(modulePath + '\n');
     }
