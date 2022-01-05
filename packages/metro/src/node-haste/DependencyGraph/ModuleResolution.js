@@ -10,6 +10,7 @@
 
 'use strict';
 
+import type {ModuleMap} from './types';
 import type {
   CustomResolver,
   DoesFileExist,
@@ -40,23 +41,6 @@ export type Packageish = interface {
 export type Moduleish = interface {
   +path: string,
   getPackage(): ?Packageish,
-};
-
-/**
- * `jest-haste-map`'s interface for ModuleMap.
- */
-export type ModuleMap = {
-  getModule(
-    name: string,
-    platform: string | null,
-    supportsNativePlatform: ?boolean,
-  ): ?string,
-  getPackage(
-    name: string,
-    platform: string | null,
-    supportsNativePlatform: ?boolean,
-  ): ?string,
-  ...
 };
 
 export type ModuleishCache<TModule, TPackage> = interface {

@@ -53,7 +53,7 @@ class Bundler {
     const dependencyGraph = await this._depGraphPromise;
 
     this._transformer.end();
-    dependencyGraph.getWatcher().end();
+    dependencyGraph.end();
   }
 
   async getDependencyGraph(): Promise<DependencyGraph> {
