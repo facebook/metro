@@ -1372,4 +1372,82 @@ function parent2() {
       }
     `);
   });
+
+  it('method of generic class', () => {
+    const ast = getAst(`
+      class C<T> {
+        m() {
+          ++x;
+        }
+      }
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      C from 2:6
+      C#m from 3:8
+      C from 5:9
+      <global> from 6:7
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;MCC;QCC;SDE;ODC",
+        "names": Array [
+          "<global>",
+          "C",
+          "C#m",
+        ],
+      }
+    `);
+  });
+
+  it('generic method of class', () => {
+    const ast = getAst(`
+      class C {
+        m<T>() {
+          ++x;
+        }
+      }
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      C from 2:6
+      C#m from 3:8
+      C from 5:9
+      <global> from 6:7
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;MCC;QCC;SDE;ODC",
+        "names": Array [
+          "<global>",
+          "C",
+          "C#m",
+        ],
+      }
+    `);
+  });
+
+  it('generic function', () => {
+    const ast = getAst('function a<T>(){}');
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      a from 1:0
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA",
+        "names": Array [
+          "a",
+        ],
+      }
+    `);
+  });
 });
