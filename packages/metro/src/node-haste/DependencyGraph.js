@@ -8,17 +8,16 @@
  * @format
  */
 
-import type {ModuleMap} from './DependencyGraph/ModuleResolution';
+import type {HasteFS, HasteMap, ModuleMap} from './DependencyGraph/types';
 import type Package from './Package';
-import type {HasteFS} from './types';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
-import JestHasteMap, {ModuleMap as JestHasteModuleMap} from 'jest-haste-map';
+import {ModuleMap as JestHasteModuleMap} from 'jest-haste-map';
 
+const createHasteMap = require('./DependencyGraph/createHasteMap');
 const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
 const Module = require('./Module');
 const ModuleCache = require('./ModuleCache');
-const ci = require('ci-info');
 const {EventEmitter} = require('events');
 const fs = require('fs');
 const {
@@ -31,8 +30,6 @@ const nullthrows = require('nullthrows');
 const path = require('path');
 
 const {DuplicateHasteCandidatesError} = JestHasteModuleMap;
-
-const JEST_HASTE_MAP_CACHE_BREAKER = 5;
 
 function getOrCreate<T>(
   map: Map<string, Map<string, T>>,
@@ -49,8 +46,7 @@ function getOrCreate<T>(
 class DependencyGraph extends EventEmitter {
   _assetExtensions: Set<string>;
   _config: ConfigT;
-  // $FlowFixMe[value-as-type]
-  _haste: JestHasteMap;
+  _haste: HasteMap;
   _hasteFS: HasteFS;
   _moduleCache: ModuleCache;
   _moduleMap: ModuleMap;
@@ -64,8 +60,7 @@ class DependencyGraph extends EventEmitter {
     initialModuleMap,
   }: {|
     +config: ConfigT,
-    // $FlowFixMe[value-as-type]
-    +haste: JestHasteMap,
+    +haste: HasteMap,
     +initialHasteFS: HasteFS,
     +initialModuleMap: ModuleMap,
   |}) {
@@ -84,87 +79,25 @@ class DependencyGraph extends EventEmitter {
     this._createModuleResolver();
   }
 
-  static _getIgnorePattern(config: ConfigT): RegExp {
-    /*
-      For now we support both blockList and blacklistRE options
-    */
-    const {blockList, blacklistRE} = config.resolver;
-
-    const combine = regexes =>
-      new RegExp(
-        regexes
-          .map(regex => '(' + regex.source.replace(/\//g, path.sep) + ')')
-          .join('|'),
-      );
-
-    // If `blacklistRE` is set - use it,
-    // if `blockList` is set - use it
-    const ignorePattern = blacklistRE || blockList;
-
-    // If neither option has been set, use default pattern
-    if (!ignorePattern) {
-      return / ^/;
-    }
-
-    // If ignorePattern is an array, merge it into one
-    if (Array.isArray(ignorePattern)) {
-      return combine(ignorePattern);
-    }
-
-    return ignorePattern;
-  }
-
-  // $FlowFixMe[value-as-type]
-  static _createHaste(config: ConfigT, watch?: boolean): JestHasteMap {
-    const computeDependencies = config.resolver.dependencyExtractor != null;
-    const haste = JestHasteMap.create({
-      cacheDirectory: config.hasteMapCacheDirectory,
-      computeDependencies,
-      computeSha1: true,
-      dependencyExtractor: config.resolver.dependencyExtractor,
-      extensions: config.resolver.sourceExts.concat(config.resolver.assetExts),
-      forceNodeFilesystemAPI: !config.resolver.useWatchman,
-      hasteImplModulePath: config.resolver.hasteImplModulePath,
-      hasteMapModulePath: config.resolver.unstable_hasteMapModulePath,
-      ignorePattern: this._getIgnorePattern(config),
-      maxWorkers: config.maxWorkers,
-      mocksPattern: '',
-      name: 'metro-' + JEST_HASTE_MAP_CACHE_BREAKER,
-      platforms: config.resolver.platforms,
-      retainAllFiles: true,
-      resetCache: config.resetCache,
-      rootDir: config.projectRoot,
-      roots: config.watchFolders,
-      throwOnModuleCollision: true,
-      useWatchman: config.resolver.useWatchman,
-      watch: watch == null ? !ci.isCI : watch,
-    });
-
-    // We can have a lot of graphs listening to Haste for changes.
-    // Bump this up to silence the max listeners EventEmitter warning.
-    haste.setMaxListeners(1000);
-
-    return haste;
-  }
-
   static async load(
     config: ConfigT,
     options?: {|+hasReducedPerformance?: boolean, +watch?: boolean|},
   ): Promise<DependencyGraph> {
+    const {hasReducedPerformance, watch} = options ?? {};
     const initializingMetroLogEntry = log(
       createActionStartEntry('Initializing Metro'),
     );
 
     config.reporter.update({
       type: 'dep_graph_loading',
-      hasReducedPerformance: options
-        ? Boolean(options.hasReducedPerformance)
-        : false,
+      hasReducedPerformance: !!hasReducedPerformance,
     });
-    const haste = DependencyGraph._createHaste(
-      config,
-      options && options.watch,
-    );
+    const haste = createHasteMap(config, {watch});
+
+    // We can have a lot of graphs listening to Haste for changes.
+    // Bump this up to silence the max listeners EventEmitter warning.
+    haste.setMaxListeners(1000);
+
     const {hasteFS, moduleMap} = await haste.build();
 
     log(createActionEndEntry(initializingMetroLogEntry));
@@ -276,8 +209,7 @@ class DependencyGraph extends EventEmitter {
     return sha1;
   }
 
-  // $FlowFixMe[value-as-type]
-  getWatcher(): JestHasteMap {
+  getWatcher(): EventEmitter {
     return this._haste;
   }
 
