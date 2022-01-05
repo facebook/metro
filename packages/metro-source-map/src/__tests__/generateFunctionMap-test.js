@@ -893,6 +893,52 @@ function parent2() {
     `);
   });
 
+  it('callback of optional method', () => {
+    const ast = getAst(`
+      object?.method(() => {}, [])
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      object.method$argument_0 from 2:21
+      <global> from 2:29
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;qBCC,QD",
+        "names": Array [
+          "<global>",
+          "object.method$argument_0",
+        ],
+      }
+    `);
+  });
+
+  it('optional call', () => {
+    const ast = getAst(`
+      func?.(() => {}, [])
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      func$argument_0 from 2:13
+      <global> from 2:21
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;aCC,QD",
+        "names": Array [
+          "<global>",
+          "func$argument_0",
+        ],
+      }
+    `);
+  });
+
   it('JSX prop', () => {
     const ast = getAst(`
       <Button onClick={() => {}} />

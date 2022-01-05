@@ -17,7 +17,6 @@ import type {Node} from '@babel/types';
 import traverse from '@babel/traverse';
 import {
   isAssignmentExpression,
-  isCallExpression,
   isClassBody,
   isClassMethod,
   isClassProperty,
@@ -29,7 +28,6 @@ import {
   isJSXExpressionContainer,
   isJSXIdentifier,
   isLiteral,
-  isNewExpression,
   isNullLiteral,
   isObjectExpression,
   isObjectMethod,
@@ -246,7 +244,7 @@ function getNameForPath(path: NodePath<>): string {
 
   if (name == null) {
     // We couldn't find a name directly. Try the parent in certain cases.
-    if (isCallExpression(parent) || isNewExpression(parent)) {
+    if (isAnyCallExpression(parent)) {
       // foo(function () {})
       const argIndex = parent.arguments.indexOf(node);
       if (argIndex !== -1) {
@@ -296,9 +294,19 @@ function getNameForPath(path: NodePath<>): string {
   return name;
 }
 
+function isAnyCallExpression(node: Node): boolean %checks {
+  return (
+    node.type === 'CallExpression' ||
+    node.type === 'NewExpression' ||
+    node.type === 'OptionalCallExpression'
+  );
+}
+
 function isAnyMemberExpression(node: Node): boolean %checks {
   return (
-    node.type === 'MemberExpression' || node.type === 'JSXMemberExpression'
+    node.type === 'MemberExpression' ||
+    node.type === 'JSXMemberExpression' ||
+    node.type === 'OptionalMemberExpression'
   );
 }
 
@@ -331,7 +339,7 @@ function getNamePartsFromId(id: Node): $ReadOnlyArray<string> {
     return [];
   }
 
-  if (isCallExpression(id) || isNewExpression(id)) {
+  if (isAnyCallExpression(id)) {
     return getNamePartsFromId(id.callee);
   }
 
