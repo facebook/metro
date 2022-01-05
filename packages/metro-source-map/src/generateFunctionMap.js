@@ -172,7 +172,6 @@ function forEachMapping(
 }
 
 const ANONYMOUS_NAME = '<anonymous>';
-const CALLEES_TO_SKIP = ['Object.freeze'];
 
 /**
  * Derive a contextual name for the given AST node (Function, Program, Class or
@@ -250,7 +249,14 @@ function getNameForPath(path: NodePath<>): string {
       if (argIndex !== -1) {
         const calleeName = getNameFromId(parent.callee);
         // var f = Object.freeze(function () {})
-        if (CALLEES_TO_SKIP.indexOf(calleeName) !== -1) {
+        if (argIndex === 0 && calleeName === 'Object.freeze') {
+          return getNameForPath(nullthrows(parentPath));
+        }
+        // var f = useCallback(function () {})
+        if (
+          argIndex === 0 &&
+          (calleeName === 'useCallback' || calleeName === 'React.useCallback')
+        ) {
           return getNameForPath(nullthrows(parentPath));
         }
         if (calleeName) {

@@ -1496,4 +1496,111 @@ function parent2() {
       }
     `);
   });
+
+  describe('React hooks', () => {
+    it('useCallback', () => {
+      const ast = getAst('const cb = useCallback(() => {})');
+
+      expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+        "
+        <global> from 1:0
+        cb from 1:23
+        <global> from 1:31
+        "
+      `);
+      expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+        Object {
+          "mappings": "AAA,uBC,QD",
+          "names": Array [
+            "<global>",
+            "cb",
+          ],
+        }
+      `);
+    });
+
+    it('useCallback with deps', () => {
+      const ast = getAst('const cb = useCallback(() => {}, [dep1, dep2])');
+
+      expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+        "
+        <global> from 1:0
+        cb from 1:23
+        <global> from 1:31
+        "
+      `);
+      expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+        Object {
+          "mappings": "AAA,uBC,QD",
+          "names": Array [
+            "<global>",
+            "cb",
+          ],
+        }
+      `);
+    });
+
+    it('React.useCallback', () => {
+      const ast = getAst('const cb = React.useCallback(() => {})');
+
+      expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+        "
+        <global> from 1:0
+        cb from 1:29
+        <global> from 1:37
+        "
+      `);
+      expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+        Object {
+          "mappings": "AAA,6BC,QD",
+          "names": Array [
+            "<global>",
+            "cb",
+          ],
+        }
+      `);
+    });
+
+    it('treats SomeOtherNamespace.useCallback like any other function', () => {
+      const ast = getAst('const cb = SomeOtherNamespace.useCallback(() => {})');
+
+      expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+        "
+        <global> from 1:0
+        SomeOtherNamespace.useCallback$argument_0 from 1:42
+        <global> from 1:50
+        "
+      `);
+      expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+        Object {
+          "mappings": "AAA,0CC,QD",
+          "names": Array [
+            "<global>",
+            "SomeOtherNamespace.useCallback$argument_0",
+          ],
+        }
+      `);
+    });
+
+    it('named callback takes precedence', () => {
+      const ast = getAst('const cb = useCallback(function inner() {})');
+
+      expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+        "
+        <global> from 1:0
+        inner from 1:23
+        <global> from 1:42
+        "
+      `);
+      expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+        Object {
+          "mappings": "AAA,uBC,mBD",
+          "names": Array [
+            "<global>",
+            "inner",
+          ],
+        }
+      `);
+    });
+  });
 });
