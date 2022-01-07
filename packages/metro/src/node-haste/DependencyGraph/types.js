@@ -80,8 +80,9 @@ export type ModuleMap = {
   ...
 };
 
-// Interface as used by node-haste, satisfied by JestHasteMap
+// Interface as used by node-haste / internal tools, satisfied by JestHasteMap
 export interface HasteMap extends EventEmitter {
   build: () => Promise<{hasteFS: HasteFS, moduleMap: ModuleMap}>;
   end: () => void;
+  getCacheFilePath: () => string;
 }
