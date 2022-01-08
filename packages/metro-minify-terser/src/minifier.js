@@ -34,19 +34,19 @@ function minify({code, map, reserved, config}: MinifierOptions): {
   const options = {
     ...config,
     mangle:
-      typeof config.mangle === 'object'
-        ? {
+      config.mangle === false 
+        ? false
+        : {
             ...config.mangle,
             reserved,
-          }
-        : config.mangle,
+          },
     sourceMap: map
-      ? typeof config.sourceMap === 'object'
-        ? {
+      ? config.sourceMap === false
+        ? false
+        : {
             ...config.sourceMap,
             content: map,
           }
-        : config.sourceMap
       : false,
   };
 
