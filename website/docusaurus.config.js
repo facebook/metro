@@ -18,6 +18,7 @@ const siteConfig = {
           path: '../docs',
           editUrl: 'https://github.com/facebook/metro/edit/main/docs',
           sidebarPath: require.resolve('./sidebars.json'),
+          showLastUpdateTime: true,
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
