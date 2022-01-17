@@ -33,15 +33,20 @@ function minify({code, map, reserved, config}: MinifierOptions): {
 } {
   const options = {
     ...config,
-    mangle: {
-      ...config.mangle,
-      reserved,
-    },
+    mangle:
+      config.mangle === false
+        ? false
+        : {
+            ...config.mangle,
+            reserved,
+          },
     sourceMap: map
-      ? {
-          ...config.sourceMap,
-          content: map,
-        }
+      ? config.sourceMap === false
+        ? false
+        : {
+            ...config.sourceMap,
+            content: map,
+          }
       : false,
   };
 
