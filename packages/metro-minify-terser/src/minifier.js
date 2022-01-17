@@ -34,7 +34,7 @@ function minify({code, map, reserved, config}: MinifierOptions): {
   const options = {
     ...config,
     mangle:
-      config.mangle === false 
+      config.mangle === false
         ? false
         : {
             ...config.mangle,
