@@ -220,7 +220,6 @@ it('transforms async generators', async () => {
     {
       dev: true,
       type: 'module',
-      unstable_transformProfile: 'hermes-stable',
     },
   );
 
@@ -229,6 +228,10 @@ it('transforms async generators', async () => {
     {
       data: expect.objectContaining({asyncType: null}),
       name: '@babel/runtime/helpers/interopRequireDefault',
+    },
+    {
+      data: expect.objectContaining({asyncType: null}),
+      name: '@babel/runtime/regenerator',
     },
     {
       data: expect.objectContaining({asyncType: null}),

@@ -281,18 +281,32 @@ exports[`transforms async generators 1`] = `
   });
   exports.test = test;
 
-  var _awaitAsyncGenerator2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[1], \\"@babel/runtime/helpers/awaitAsyncGenerator\\"));
+  var _regenerator = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[1], \\"@babel/runtime/regenerator\\"));
 
-  var _wrapAsyncGenerator2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[2], \\"@babel/runtime/helpers/wrapAsyncGenerator\\"));
+  var _awaitAsyncGenerator2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[2], \\"@babel/runtime/helpers/awaitAsyncGenerator\\"));
+
+  var _wrapAsyncGenerator2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[3], \\"@babel/runtime/helpers/wrapAsyncGenerator\\"));
 
   function test() {
     return _test.apply(this, arguments);
   }
 
   function _test() {
-    _test = (0, _wrapAsyncGenerator2.default)(function* () {
-      yield \\"ok\\";
-    });
+    _test = (0, _wrapAsyncGenerator2.default)(_regenerator.default.mark(function _callee() {
+      return _regenerator.default.wrap(function _callee$(_context) {
+        while (1) {
+          switch (_context.prev = _context.next) {
+            case 0:
+              _context.next = 2;
+              return \\"ok\\";
+
+            case 2:
+            case \\"end\\":
+              return _context.stop();
+          }
+        }
+      }, _callee);
+    }));
     return _test.apply(this, arguments);
   }
 });"
