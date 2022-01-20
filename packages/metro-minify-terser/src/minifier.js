@@ -15,8 +15,8 @@ import type {MinifierOptions, MinifierResult} from 'metro-transform-worker';
 
 const terser = require('terser');
 
-function minifier(options: MinifierOptions): MinifierResult {
-  const result = minify(options);
+async function minifier(options: MinifierOptions): Promise<MinifierResult> {
+  const result = await minify(options);
 
   if (!options.map || result.map == null) {
     return {code: result.code};
@@ -27,10 +27,12 @@ function minifier(options: MinifierOptions): MinifierResult {
   return {code: result.code, map: {...map, sources: [options.filename]}};
 }
 
-function minify({code, map, reserved, config}: MinifierOptions): {
-  code: string,
-  map: ?string,
-} {
+async function minify({
+  code,
+  map,
+  reserved,
+  config,
+}: MinifierOptions): Promise<{code: string, map: ?string}> {
   const options = {
     ...config,
     mangle:
@@ -53,11 +55,7 @@ function minify({code, map, reserved, config}: MinifierOptions): {
   /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
    * error found when Flow v0.111 was deployed. To see the error, delete this
    * comment and run Flow. */
-  const result = terser.minify(code, options);
-
-  if (result.error) {
-    throw result.error;
-  }
+  const result = await terser.minify(code, options);
 
   return {
     code: result.code,
