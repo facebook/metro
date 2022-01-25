@@ -78,7 +78,9 @@ module.exports = function parseOptionsFromUrl(
       // protocol-relative URLs, which is why we must force the HTTP protocol
       // when loading the bundle for either Android or iOS.
       protocol:
-        platform != null && platform.match(/^(android|ios|windows|macos)$/) ? 'http' : '',
+        platform != null && platform.match(/^(android|ios|windows|macos)$/)
+          ? 'http'
+          : '',
       pathname: pathname.replace(/\.(bundle|delta)$/, '.map'),
     }),
     sourceUrl: requestUrl,
