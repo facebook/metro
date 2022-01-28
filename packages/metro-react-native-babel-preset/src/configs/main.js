@@ -144,6 +144,17 @@ const getPreset = (src, options) => {
       {loose: true},
     ]);
   }
+  if (
+    !isHermes &&
+    (isNull ||
+      src.indexOf('&&=') !== -1 ||
+      src.indexOf('??=') !== -1 ||
+      src.indexOf('||=') !== -1)
+  ) {
+    extraPlugins.push([
+      require('@babel/plugin-proposal-logical-assignment-operators'),
+    ]);
+  }
   if (!isHermes && (isNull || src.indexOf('??') !== -1)) {
     extraPlugins.push([
       require('@babel/plugin-proposal-nullish-coalescing-operator'),

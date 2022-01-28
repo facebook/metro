@@ -16,6 +16,7 @@
 //    the Metro Babel transformer.
 const passthroughSyntaxPlugins = [
   [require('@babel/plugin-syntax-nullish-coalescing-operator')],
+  [require('@babel/plugin-syntax-logical-assignment-operators')],
   [require('@babel/plugin-syntax-optional-chaining')],
 ];
 
