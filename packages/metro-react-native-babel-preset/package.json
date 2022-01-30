@@ -57,7 +57,7 @@
     "@babel/plugin-transform-typescript": "^7.5.0",
     "@babel/plugin-transform-unicode-regex": "^7.0.0",
     "@babel/template": "^7.0.0",
-    "react-refresh": "^0.4.0"
+    "react-refresh": "^0.11.0"
   },
   "peerDependencies": {
     "@babel/core": "*"
