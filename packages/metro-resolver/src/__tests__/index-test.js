@@ -516,10 +516,9 @@ describe('resolveRequest', () => {
     `);
     expect(resolveRequest).toBeCalledTimes(1);
     expect(resolveRequest).toBeCalledWith(
-      context,
+      {...context, resolveRequest: Resolver.resolve},
       'does-not-exist',
       null,
-      'does-not-exist',
     );
   });
 
@@ -532,10 +531,9 @@ describe('resolveRequest', () => {
     `);
     expect(resolveRequest).toBeCalledTimes(1);
     expect(resolveRequest).toBeCalledWith(
-      context,
+      {...context, resolveRequest: Resolver.resolve},
       './does-not-exist',
       null,
-      './does-not-exist',
     );
   });
 
@@ -548,10 +546,9 @@ describe('resolveRequest', () => {
     `);
     expect(resolveRequest).toBeCalledTimes(1);
     expect(resolveRequest).toBeCalledWith(
-      context,
+      {...context, resolveRequest: Resolver.resolve},
       '/does-not-exist',
       null,
-      '/does-not-exist',
     );
   });
 
@@ -564,10 +561,9 @@ describe('resolveRequest', () => {
     `);
     expect(resolveRequest).toBeCalledTimes(1);
     expect(resolveRequest).toBeCalledWith(
-      context,
+      {...context, resolveRequest: Resolver.resolve},
       'some-package',
       null,
-      'some-package',
     );
   });
 
@@ -578,10 +574,14 @@ describe('resolveRequest', () => {
       }
     `);
     expect(resolveRequest).toBeCalledTimes(1);
-    expect(resolveRequest).toBeCalledWith(context, 'Foo', null, 'Foo');
+    expect(resolveRequest).toBeCalledWith(
+      {...context, resolveRequest: Resolver.resolve},
+      'Foo',
+      null,
+    );
   });
 
-  it('is called with the platform and redirected module path', () => {
+  it('is called with the platform and non-redirected module path', () => {
     const contextWithRedirect = Object.assign({}, context, {
       redirectModulePath: filePath => filePath + '.redirected',
     });
@@ -593,37 +593,44 @@ describe('resolveRequest', () => {
     `);
     expect(resolveRequest).toBeCalledTimes(1);
     expect(resolveRequest).toBeCalledWith(
-      contextWithRedirect,
-      'does-not-exist.redirected',
-      'android',
+      {...contextWithRedirect, resolveRequest: Resolver.resolve},
       'does-not-exist',
+      'android',
     );
   });
 
-  it('is not called if redirectModulePath returns false', () => {
+  it('is called if redirectModulePath returns false', () => {
+    resolveRequest.mockImplementation(() => ({
+      type: 'sourceFile',
+      filePath: '/some/fake/path',
+    }));
     const contextWithRedirect = Object.assign({}, context, {
       redirectModulePath: filePath => false,
     });
     expect(Resolver.resolve(contextWithRedirect, 'does-not-exist', 'android'))
       .toMatchInlineSnapshot(`
       Object {
-        "type": "empty",
+        "filePath": "/some/fake/path",
+        "type": "sourceFile",
       }
     `);
-    expect(resolveRequest).not.toBeCalled();
+    expect(resolveRequest).toBeCalledTimes(1);
+    expect(resolveRequest).toBeCalledWith(
+      {...contextWithRedirect, resolveRequest: Resolver.resolve},
+      'does-not-exist',
+      'android',
+    );
   });
 
   it('can forward requests to the standard resolver', () => {
     // This test shows a common pattern for wrapping the standard resolver.
-    resolveRequest.mockImplementation(
-      (ctx, realModuleName, platform, moduleName) => {
-        return Resolver.resolve(
-          Object.assign({}, ctx, {resolveRequest: null}),
-          moduleName,
-          platform,
-        );
-      },
-    );
+    resolveRequest.mockImplementation((ctx, moduleName, platform) => {
+      return Resolver.resolve(
+        Object.assign({}, ctx, {resolveRequest: null}),
+        moduleName,
+        platform,
+      );
+    });
     expect(() => {
       Resolver.resolve(context, 'does-not-exist', 'android');
     }).toThrowErrorMatchingInlineSnapshot(`
@@ -635,23 +642,20 @@ describe('resolveRequest', () => {
     `);
     expect(resolveRequest).toBeCalledTimes(1);
     expect(resolveRequest).toBeCalledWith(
-      context,
+      {...context, resolveRequest: Resolver.resolve},
       'does-not-exist',
       'android',
-      'does-not-exist',
     );
   });
 
   it('can forward Haste requests to the standard resolver', () => {
-    resolveRequest.mockImplementation(
-      (ctx, realModuleName, platform, moduleName) => {
-        return Resolver.resolve(
-          {...ctx, resolveRequest: null},
-          moduleName,
-          platform,
-        );
-      },
-    );
+    resolveRequest.mockImplementation((ctx, moduleName, platform) => {
+      return Resolver.resolve(
+        {...ctx, resolveRequest: null},
+        moduleName,
+        platform,
+      );
+    });
     expect(Resolver.resolve(context, 'Foo', null)).toMatchInlineSnapshot(`
       Object {
         "filePath": "/haste/Foo.js",
@@ -659,6 +663,61 @@ describe('resolveRequest', () => {
       }
     `);
     expect(resolveRequest).toBeCalledTimes(1);
-    expect(resolveRequest).toBeCalledWith(context, 'Foo', null, 'Foo');
+    expect(resolveRequest).toBeCalledWith(
+      {...context, resolveRequest: Resolver.resolve},
+      'Foo',
+      null,
+    );
+  });
+
+  it('can forward requests to the standard resolver via resolveRequest', () => {
+    resolveRequest.mockImplementation((ctx, moduleName, platform) => {
+      return ctx.resolveRequest(ctx, moduleName, platform);
+    });
+    expect(() => {
+      Resolver.resolve(context, 'does-not-exist', 'android');
+    }).toThrowErrorMatchingInlineSnapshot(`
+      "Module does not exist in the Haste module map or in these directories:
+        /root/project/node_modules
+        /root/node_modules
+        /node_modules
+      "
+    `);
+    expect(resolveRequest).toBeCalledTimes(1);
+    expect(resolveRequest).toBeCalledWith(
+      {...context, resolveRequest: Resolver.resolve},
+      'does-not-exist',
+      'android',
+    );
+  });
+
+  it('throwing an error stops the standard resolution', () => {
+    resolveRequest.mockImplementation((ctx, moduleName, platform) => {
+      throw new Error('Custom resolver hit an error');
+    });
+    const {resolveRequest: _, ...contextWithoutCustomResolver} = context;
+    // Ensure that the request has a standard resolution.
+    expect(
+      Resolver.resolve(
+        contextWithoutCustomResolver,
+        '/root/project/foo.js',
+        'android',
+      ),
+    ).toMatchInlineSnapshot(`
+      Object {
+        "filePath": "/root/project/foo.js",
+        "type": "sourceFile",
+      }
+    `);
+    // Ensure that we don't get this standard resolution if we throw.
+    expect(() => {
+      Resolver.resolve(context, '/root/project/foo.js', 'android');
+    }).toThrowErrorMatchingInlineSnapshot(`"Custom resolver hit an error"`);
+    expect(resolveRequest).toBeCalledTimes(1);
+    expect(resolveRequest).toBeCalledWith(
+      {...context, resolveRequest: Resolver.resolve},
+      '/root/project/foo.js',
+      'android',
+    );
   });
 });
