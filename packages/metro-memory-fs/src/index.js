@@ -1297,7 +1297,7 @@ class MemoryFs {
     if (filePath === '') {
       throw makeError('ENOENT', filePath, 'no such file or directory');
     }
-    let {drive, entNames} = this._parsePathWithCwd(filePath);
+    const {drive, entNames} = this._parsePathWithCwd(filePath);
     checkPathLength(entNames, filePath);
     const root = this._getRoot(drive, filePath);
     const context = {
