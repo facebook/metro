@@ -94,7 +94,8 @@ const siteConfig = {
     },
     image: 'img/opengraph.png',
     algolia: {
-      apiKey: process.env.ALGOLIA_METRO_API_KEY || ' ',
+      apiKey: 'd51e7fbd21ccab3db4c83f0f736f6a3a',
+      appId: 'T38HJZTD87',
       indexName: 'metro',
     },
     gtag: {
