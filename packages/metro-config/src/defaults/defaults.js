@@ -50,7 +50,7 @@ exports.assetExts = [
 
 exports.assetResolutions = ['1', '1.5', '2', '3', '4'];
 
-exports.sourceExts = ['js', 'json', 'ts', 'tsx'];
+exports.sourceExts = ['js', 'json', 'ts', 'tsx', 'mjs', 'cjs'];
 
 exports.moduleSystem = (require.resolve(
   'metro-runtime/src/polyfills/require.js',
