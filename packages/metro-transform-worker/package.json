@@ -30,7 +30,6 @@
   "devDependencies": {
     "metro-memory-fs": "0.68.0",
     "metro-minify-uglify": "0.68.0",
-    "metro-react-native-babel-transformer": "0.68.0",
-    "mkdirp": "^0.5.1"
+    "metro-react-native-babel-transformer": "0.68.0"
   }
 }

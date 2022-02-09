@@ -11,7 +11,6 @@
 'use strict';
 
 const fs = require('fs');
-const mkdirp = require('mkdirp');
 const path = require('path');
 const rimraf = require('rimraf');
 
@@ -54,7 +53,7 @@ class FileStore<T> {
       await this._set(filePath, value);
     } catch (err) {
       if (err.code === 'ENOENT') {
-        mkdirp.sync(path.dirname(filePath));
+        fs.mkdirSync(path.dirname(filePath), {recursive: true});
         await this._set(filePath, value);
       } else {
         throw err;
@@ -87,7 +86,9 @@ class FileStore<T> {
 
   _createDirs() {
     for (let i = 0; i < 256; i++) {
-      mkdirp.sync(path.join(this._root, ('0' + i.toString(16)).slice(-2)));
+      fs.mkdirSync(path.join(this._root, ('0' + i.toString(16)).slice(-2)), {
+        recursive: true,
+      });
     }
   }
 
