@@ -1,6 +1,6 @@
 {
   "name": "metro-react-native-babel-preset",
-  "version": "0.67.0",
+  "version": "0.68.0",
   "description": "Babel preset for React Native applications",
   "main": "src/index.js",
   "repository": {
