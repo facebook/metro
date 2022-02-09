@@ -37,9 +37,18 @@ function resolve(
 ): Resolution {
   const resolveRequest = context.resolveRequest;
   if (
-    !resolveRequest &&
-    (isRelativeImport(moduleName) || isAbsolutePath(moduleName))
+    resolveRequest &&
+    // Prevent infinite recursion in the trivial case
+    resolveRequest !== resolve
   ) {
+    return resolveRequest(
+      Object.freeze({...context, resolveRequest: resolve}),
+      moduleName,
+      platform,
+    );
+  }
+
+  if (isRelativeImport(moduleName) || isAbsolutePath(moduleName)) {
     return resolveModulePath(context, moduleName, platform);
   }
 
@@ -55,8 +64,7 @@ function resolve(
   const isDirectImport =
     isRelativeImport(realModuleName) || isAbsolutePath(realModuleName);
 
-  // We disable the direct file loading to let the custom resolvers deal with it
-  if (!resolveRequest && isDirectImport) {
+  if (isDirectImport) {
     // derive absolute path /.../node_modules/originModuleDir/realModuleName
     const fromModuleParentIdx =
       originModulePath.lastIndexOf('node_modules' + path.sep) + 13;
@@ -68,7 +76,7 @@ function resolve(
     return resolveModulePath(context, absPath, platform);
   }
 
-  if (!resolveRequest && context.allowHaste && !isDirectImport) {
+  if (context.allowHaste && !isDirectImport) {
     const normalizedName = normalizePath(realModuleName);
     const result = resolveHasteName(context, normalizedName, platform);
     if (result.type === 'resolved') {
@@ -76,23 +84,10 @@ function resolve(
     }
   }
 
-  if (resolveRequest) {
-    try {
-      const resolution = resolveRequest(
-        context,
-        realModuleName,
-        platform,
-        moduleName,
-      );
-      if (resolution) {
-        return resolution;
-      }
-    } catch (error) {}
-  }
+  const {disableHierarchicalLookup} = context;
 
   const nodeModulesPaths = [];
   let next = path.dirname(originModulePath);
-  const {disableHierarchicalLookup} = context;
 
   if (!disableHierarchicalLookup) {
     let candidate;

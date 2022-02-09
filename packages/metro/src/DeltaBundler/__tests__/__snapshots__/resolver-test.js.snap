@@ -165,14 +165,6 @@ None of these files exist:
   3 | import bar from 'foo';"
 `;
 
-exports[`linux resolveRequest config param throws if resolveRequest returns null 1`] = `
-"Unable to resolve module ./foo from /root/index.js: ./foo could not be found within the project.
-  1 | import foo from 'bar';
-> 2 | import f from './foo';
-    |                ^
-  3 | import bar from 'foo';"
-`;
-
 exports[`win32 assets checks asset extensions case insensitively 1`] = `
 "Unable to resolve module ./asset.PNG from C:\\\\root\\\\index.js: 
 
@@ -335,13 +327,5 @@ None of these files exist:
   1 | import foo from 'bar';
 > 2 | import root from './a.another';
     |                   ^
-  3 | import bar from 'foo';"
-`;
-
-exports[`win32 resolveRequest config param throws if resolveRequest returns null 1`] = `
-"Unable to resolve module ./foo from C:\\\\root\\\\index.js: ./foo could not be found within the project.
-  1 | import foo from 'bar';
-> 2 | import f from './foo';
-    |                ^
   3 | import bar from 'foo';"
 `;

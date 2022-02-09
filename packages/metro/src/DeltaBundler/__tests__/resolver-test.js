@@ -2098,20 +2098,6 @@ let resolver;
         );
       });
 
-      it('throws if resolveRequest returns null', async () => {
-        setMockFileSystem({
-          'index.js': mockFileImport("import f from './foo';"),
-          'foo.js': '',
-        });
-
-        resolveRequest.mockReturnValue(null);
-        resolver = await createResolver({resolver: {resolveRequest}});
-
-        expect(() =>
-          resolver.resolve(p('/root/index.js'), './foo'),
-        ).toThrowErrorMatchingSnapshot();
-      });
-
       it('calls resolveRequest with the correct arguments', async () => {
         setMockFileSystem({
           'index.js': '',

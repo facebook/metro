@@ -1,6 +1,6 @@
 {
   "name": "metro-runtime",
-  "version": "0.66.2",
+  "version": "0.67.0",
   "description": "🚇 Module required for evaluating Metro bundles.",
   "main": "src",
   "repository": {

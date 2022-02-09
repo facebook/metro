@@ -149,16 +149,20 @@ This option works similarly to how [$NODE_PATH](https://nodejs.org/api/modules.h
 
 Type: `?CustomResolver`
 
-An optional function used to resolve requests. Particularly useful for cases where aliases are used. For example:
+An optional function used to resolve requests. Particularly useful for cases where aliases or custom protocols are used. For example:
 
 ```javascript
-resolveRequest: (context, realModuleName, platform, moduleName) => {
-  // Resolve file path logic...
-
-  return {
-    filePath: "path/to/file",
-    type: 'sourceFile',
-  };
+resolveRequest: (context, moduleName, platform) => {
+  if (moduleName.startsWith('my-custom-resolver:')) {
+    // Resolve file path logic...
+    // NOTE: Throw an error if there is no resolution.
+    return {
+      filePath: "path/to/file",
+      type: 'sourceFile',
+    };
+  }
+  // Optionally, chain to the standard Metro resolver.
+  return context.resolveRequest(context, moduleName, platform);
 }
 ```
 
