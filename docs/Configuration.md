@@ -229,9 +229,12 @@ Whether we should use the `.babelrc` config file.
 
 #### `enableBabelRuntime`
 
-Type: `boolean` (default: `true`)
+Type: `boolean | string` (default: `true`)
 
 Whether the transformer should use the `@babel/transform/runtime` plugin.
+
+If the value is a string, it is treated as a runtime version number and passed as `version` to the `@babel/plugin-transform-runtime` configuration. This allows you to optimize the generated babel runtime based on the
+runtime in the app's node modules confugration.
 
 #### `getTransformOptions`
 

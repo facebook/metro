@@ -30,7 +30,7 @@ type BabelTransformerOptions = $ReadOnly<{
   customTransformOptions?: CustomTransformOptions,
   dev: boolean,
   enableBabelRCLookup?: boolean,
-  enableBabelRuntime: boolean,
+  enableBabelRuntime: boolean | string,
   extendsBabelConfigPath?: string,
   experimentalImportSupport?: boolean,
   hermesParser?: boolean,
