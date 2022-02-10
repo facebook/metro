@@ -165,7 +165,7 @@ const getPreset = (src, options) => {
 
   if (!options || options.enableBabelRuntime !== false) {
     // Allows configuring a specific runtime version to optimize output
-    const isVersion = typeof options.enableBabelRuntime === 'string';
+    const isVersion = typeof options?.enableBabelRuntime === 'string';
 
     extraPlugins.push([
       require('@babel/plugin-transform-runtime'),
