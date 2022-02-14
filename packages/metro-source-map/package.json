@@ -24,6 +24,6 @@
   "license": "MIT",
   "devDependencies": {
     "@babel/parser": "^7.14.0",
-    "uglify-js": "^3.13.0"
+    "uglify-js": "^3.15.0"
   }
 }
