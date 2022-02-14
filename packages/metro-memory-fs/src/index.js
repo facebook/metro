@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -94,7 +94,7 @@ const FLAGS_SPECS: {
     writable?: true,
     ...
   },
-  ...,
+  ...
 } = {
   r: {mustExist: true, readable: true},
   'r+': {mustExist: true, readable: true, writable: true},
@@ -267,7 +267,7 @@ class MemoryFs {
     this.reset();
     ASYNC_FUNC_NAMES.forEach(funcName => {
       const func = (this: $FlowFixMe)[`${funcName}Sync`];
-      (this: $FlowFixMe)[funcName] = function(...args) {
+      (this: $FlowFixMe)[funcName] = function (...args) {
         const callback = args.pop();
         process.nextTick(() => {
           let retval;
@@ -580,7 +580,6 @@ class MemoryFs {
     if (encoding == 'buffer') {
       return buf;
     }
-    // $FlowFixMe[incompatible-call]
     return buf.toString(encoding);
   };
 
@@ -856,12 +855,10 @@ class MemoryFs {
     const ffd = fd;
     const {readSync} = this;
     const ropt = {filePath, encoding, fd, highWaterMark, start, end, readSync};
-    // $FlowFixMe[incompatible-call]
     const rst = new ReadFileSteam(ropt);
     st = rst;
     if (autoClose !== false) {
       const doClose = () => {
-        // $FlowFixMe[incompatible-call]
         this.closeSync(ffd);
         rst.emit('close');
       };
@@ -1066,12 +1063,10 @@ class MemoryFs {
       start,
       emitClose: emitClose ?? false,
     };
-    // $FlowFixMe[incompatible-call]
     const rst = new WriteFileStream(ropt);
     st = rst;
     if (autoClose !== false) {
       const doClose = () => {
-        // $FlowFixMe[incompatible-call]
         this.closeSync(ffd);
       };
       rst.on('finish', doClose);
@@ -1196,9 +1191,7 @@ class MemoryFs {
     });
   }
 
-  _parsePath(
-    filePath: string,
-  ): {|
+  _parsePath(filePath: string): {|
     +drive: ?string,
     +entNames: Array<string>,
   |} {

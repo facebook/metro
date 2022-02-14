@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -138,15 +138,13 @@ async function main(
       const stackTrace = await readAll(stdin);
       if (isHermesCrash) {
         const stackTraceJSON = JSON.parse(stackTrace);
-        const symbolicatedTrace = context.symbolicateHermesMinidumpTrace(
-          stackTraceJSON,
-        );
+        const symbolicatedTrace =
+          context.symbolicateHermesMinidumpTrace(stackTraceJSON);
         stdout.write(JSON.stringify(symbolicatedTrace));
       } else if (isCoverage) {
         const stackTraceJSON = JSON.parse(stackTrace);
-        const symbolicatedTrace = context.symbolicateHermesCoverageTrace(
-          stackTraceJSON,
-        );
+        const symbolicatedTrace =
+          context.symbolicateHermesCoverageTrace(stackTraceJSON);
         stdout.write(JSON.stringify(symbolicatedTrace));
       } else {
         stdout.write(context.symbolicate(stackTrace));
@@ -167,7 +165,7 @@ async function main(
       await waitForStream(
         stdin
           .pipe(
-            through2(function(data, enc, callback) {
+            through2(function (data, enc, callback) {
               // Take arbitrary strings, output single lines
               buffer += data;
               const lines = buffer.split('\n');
@@ -179,7 +177,7 @@ async function main(
             }),
           )
           .pipe(
-            through2.obj(function(data, enc, callback) {
+            through2.obj(function (data, enc, callback) {
               // This is JSONL, so each line is a separate JSON object
               const obj = JSON.parse(data);
               context.symbolicateAttribution(obj);

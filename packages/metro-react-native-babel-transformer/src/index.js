@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -48,7 +48,7 @@ function isTSXSource(fileName) {
  * project level .babelrc file, and if it doesn't exist, reads the
  * default RN babelrc file and uses that.
  */
-const getBabelRC = (function() {
+const getBabelRC = (function () {
   let babelRC: ?BabelCoreOptions = null;
 
   return function _getBabelRC({
@@ -84,14 +84,12 @@ const getBabelRC = (function() {
       }
 
       // babel.config.js
-      // $FlowFixMe[incompatible-call]
       if (!fs.existsSync(projectBabelRCPath)) {
         projectBabelRCPath = path.resolve(projectRoot, 'babel.config.js');
       }
 
       // If we found a babel config file, extend our config off of it
       // otherwise the default config will be used
-      // $FlowFixMe[incompatible-call]
       if (fs.existsSync(projectBabelRCPath)) {
         babelRC.extends = projectBabelRCPath;
       }
@@ -182,12 +180,7 @@ function buildBabelConfig(
   };
 }
 
-function transform({
-  filename,
-  options,
-  src,
-  plugins,
-}: BabelTransformerArgs): {
+function transform({filename, options, src, plugins}: BabelTransformerArgs): {
   ast: BabelNodeFile,
   functionMap: ?FBSourceFunctionMap,
   ...

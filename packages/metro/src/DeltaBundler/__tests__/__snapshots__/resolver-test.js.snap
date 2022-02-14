@@ -50,12 +50,6 @@ None of these files exist:
 
 exports[`linux global packages uses the name in the package.json as the package name 1`] = `
 "Unable to resolve module aPackage from /root/index.js: aPackage could not be found within the project.
-
-If you are sure the module exists, try these steps:
- 1. Clear watchman watches: watchman watch-del-all
- 2. Delete node_modules and run yarn install
- 3. Reset Metro's cache: yarn start --reset-cache
- 4. Remove the cache: rm -rf /tmp/metro-*
   1 | import foo from 'bar';
 > 2 | import a from 'aPackage';
     |                ^
@@ -65,12 +59,6 @@ If you are sure the module exists, try these steps:
 exports[`linux hasteImpl config param does not resolve haste names in node_modules folders 1`] = `
 "Unable to resolve module hasteModule from /root/index.js: hasteModule could not be found within the project or in these directories:
   node_modules
-
-If you are sure the module exists, try these steps:
- 1. Clear watchman watches: watchman watch-del-all
- 2. Delete node_modules and run yarn install
- 3. Reset Metro's cache: yarn start --reset-cache
- 4. Remove the cache: rm -rf /tmp/metro-*
   1 | import foo from 'bar';
 > 2 | import hasteModule from 'hasteModule';
     |                          ^
@@ -79,12 +67,6 @@ If you are sure the module exists, try these steps:
 
 exports[`linux hasteImpl config param does not take file name or extension into account 1`] = `
 "Unable to resolve module hasteModule.js from /root/index.js: hasteModule.js could not be found within the project.
-
-If you are sure the module exists, try these steps:
- 1. Clear watchman watches: watchman watch-del-all
- 2. Delete node_modules and run yarn install
- 3. Reset Metro's cache: yarn start --reset-cache
- 4. Remove the cache: rm -rf /tmp/metro-*
   1 | import foo from 'bar';
 > 2 | import module from 'hasteModule.js';
     |                     ^
@@ -93,12 +75,6 @@ If you are sure the module exists, try these steps:
 
 exports[`linux hasteImpl config param does not take file name or extension into account 2`] = `
 "Unable to resolve module invalidName from /root/lib.js: invalidName could not be found within the project.
-
-If you are sure the module exists, try these steps:
- 1. Clear watchman watches: watchman watch-del-all
- 2. Delete node_modules and run yarn install
- 3. Reset Metro's cache: yarn start --reset-cache
- 4. Remove the cache: rm -rf /tmp/metro-*
   1 | import foo from 'bar';
 > 2 | import invalid from 'invalidName';
     |                      ^
@@ -120,12 +96,6 @@ None of these files exist:
 exports[`linux packages in node_modules/ browser field in package.json resolves mappings to other packages 1`] = `
 "Unable to resolve module left-pad/main from /root/node_modules/aPackage/index.js: left-pad/main could not be found within the project or in these directories:
   node_modules
-
-If you are sure the module exists, try these steps:
- 1. Clear watchman watches: watchman watch-del-all
- 2. Delete node_modules and run yarn install
- 3. Reset Metro's cache: yarn start --reset-cache
- 4. Remove the cache: rm -rf /tmp/metro-*
   1 | import foo from 'bar';
 > 2 | import main from 'left-pad/main';
     |                   ^
@@ -135,12 +105,6 @@ If you are sure the module exists, try these steps:
 exports[`linux packages in node_modules/ finds nested packages in node_modules 1`] = `
 "Unable to resolve module qux from /root/index.js: qux could not be found within the project or in these directories:
   node_modules
-
-If you are sure the module exists, try these steps:
- 1. Clear watchman watches: watchman watch-del-all
- 2. Delete node_modules and run yarn install
- 3. Reset Metro's cache: yarn start --reset-cache
- 4. Remove the cache: rm -rf /tmp/metro-*
   1 | import foo from 'bar';
 > 2 | import qux from 'qux';
     |                  ^
@@ -162,12 +126,6 @@ None of these files exist:
 exports[`linux packages in node_modules/ react-native field in package.json resolves mappings to other packages 1`] = `
 "Unable to resolve module left-pad/main from /root/node_modules/aPackage/index.js: left-pad/main could not be found within the project or in these directories:
   node_modules
-
-If you are sure the module exists, try these steps:
- 1. Clear watchman watches: watchman watch-del-all
- 2. Delete node_modules and run yarn install
- 3. Reset Metro's cache: yarn start --reset-cache
- 4. Remove the cache: rm -rf /tmp/metro-*
   1 | import foo from 'bar';
 > 2 | import main from 'left-pad/main';
     |                   ^
@@ -177,12 +135,6 @@ If you are sure the module exists, try these steps:
 exports[`linux packages in node_modules/ uses the folder name and not the name in the package.json 1`] = `
 "Unable to resolve module invalidName from /root/index.js: invalidName could not be found within the project or in these directories:
   node_modules
-
-If you are sure the module exists, try these steps:
- 1. Clear watchman watches: watchman watch-del-all
- 2. Delete node_modules and run yarn install
- 3. Reset Metro's cache: yarn start --reset-cache
- 4. Remove the cache: rm -rf /tmp/metro-*
   1 | import foo from 'bar';
 > 2 | import * as invalidName from 'invalidName';
     |                               ^
@@ -210,20 +162,6 @@ None of these files exist:
   1 | import foo from 'bar';
 > 2 | import root from './a.another';
     |                   ^
-  3 | import bar from 'foo';"
-`;
-
-exports[`linux resolveRequest config param throws if resolveRequest returns null 1`] = `
-"Unable to resolve module ./foo from /root/index.js: ./foo could not be found within the project.
-
-If you are sure the module exists, try these steps:
- 1. Clear watchman watches: watchman watch-del-all
- 2. Delete node_modules and run yarn install
- 3. Reset Metro's cache: yarn start --reset-cache
- 4. Remove the cache: rm -rf /tmp/metro-*
-  1 | import foo from 'bar';
-> 2 | import f from './foo';
-    |                ^
   3 | import bar from 'foo';"
 `;
 
@@ -277,12 +215,6 @@ None of these files exist:
 
 exports[`win32 global packages uses the name in the package.json as the package name 1`] = `
 "Unable to resolve module aPackage from C:\\\\root\\\\index.js: aPackage could not be found within the project.
-
-If you are sure the module exists, try these steps:
- 1. Clear watchman watches: watchman watch-del-all
- 2. Delete node_modules and run yarn install
- 3. Reset Metro's cache: yarn start --reset-cache
- 4. Remove the cache: rm -rf /tmp/metro-*
   1 | import foo from 'bar';
 > 2 | import a from 'aPackage';
     |                ^
@@ -292,12 +224,6 @@ If you are sure the module exists, try these steps:
 exports[`win32 hasteImpl config param does not resolve haste names in node_modules folders 1`] = `
 "Unable to resolve module hasteModule from C:\\\\root\\\\index.js: hasteModule could not be found within the project or in these directories:
   node_modules
-
-If you are sure the module exists, try these steps:
- 1. Clear watchman watches: watchman watch-del-all
- 2. Delete node_modules and run yarn install
- 3. Reset Metro's cache: yarn start --reset-cache
- 4. Remove the cache: rm -rf /tmp/metro-*
   1 | import foo from 'bar';
 > 2 | import hasteModule from 'hasteModule';
     |                          ^
@@ -306,12 +232,6 @@ If you are sure the module exists, try these steps:
 
 exports[`win32 hasteImpl config param does not take file name or extension into account 1`] = `
 "Unable to resolve module hasteModule.js from C:\\\\root\\\\index.js: hasteModule.js could not be found within the project.
-
-If you are sure the module exists, try these steps:
- 1. Clear watchman watches: watchman watch-del-all
- 2. Delete node_modules and run yarn install
- 3. Reset Metro's cache: yarn start --reset-cache
- 4. Remove the cache: rm -rf /tmp/metro-*
   1 | import foo from 'bar';
 > 2 | import module from 'hasteModule.js';
     |                     ^
@@ -320,12 +240,6 @@ If you are sure the module exists, try these steps:
 
 exports[`win32 hasteImpl config param does not take file name or extension into account 2`] = `
 "Unable to resolve module invalidName from C:\\\\root\\\\lib.js: invalidName could not be found within the project.
-
-If you are sure the module exists, try these steps:
- 1. Clear watchman watches: watchman watch-del-all
- 2. Delete node_modules and run yarn install
- 3. Reset Metro's cache: yarn start --reset-cache
- 4. Remove the cache: rm -rf /tmp/metro-*
   1 | import foo from 'bar';
 > 2 | import invalid from 'invalidName';
     |                      ^
@@ -347,12 +261,6 @@ None of these files exist:
 exports[`win32 packages in node_modules/ browser field in package.json resolves mappings to other packages 1`] = `
 "Unable to resolve module left-pad/main from C:\\\\root\\\\node_modules\\\\aPackage\\\\index.js: left-pad/main could not be found within the project or in these directories:
   node_modules
-
-If you are sure the module exists, try these steps:
- 1. Clear watchman watches: watchman watch-del-all
- 2. Delete node_modules and run yarn install
- 3. Reset Metro's cache: yarn start --reset-cache
- 4. Remove the cache: rm -rf /tmp/metro-*
   1 | import foo from 'bar';
 > 2 | import main from 'left-pad/main';
     |                   ^
@@ -362,12 +270,6 @@ If you are sure the module exists, try these steps:
 exports[`win32 packages in node_modules/ finds nested packages in node_modules 1`] = `
 "Unable to resolve module qux from C:\\\\root\\\\index.js: qux could not be found within the project or in these directories:
   node_modules
-
-If you are sure the module exists, try these steps:
- 1. Clear watchman watches: watchman watch-del-all
- 2. Delete node_modules and run yarn install
- 3. Reset Metro's cache: yarn start --reset-cache
- 4. Remove the cache: rm -rf /tmp/metro-*
   1 | import foo from 'bar';
 > 2 | import qux from 'qux';
     |                  ^
@@ -389,12 +291,6 @@ None of these files exist:
 exports[`win32 packages in node_modules/ react-native field in package.json resolves mappings to other packages 1`] = `
 "Unable to resolve module left-pad/main from C:\\\\root\\\\node_modules\\\\aPackage\\\\index.js: left-pad/main could not be found within the project or in these directories:
   node_modules
-
-If you are sure the module exists, try these steps:
- 1. Clear watchman watches: watchman watch-del-all
- 2. Delete node_modules and run yarn install
- 3. Reset Metro's cache: yarn start --reset-cache
- 4. Remove the cache: rm -rf /tmp/metro-*
   1 | import foo from 'bar';
 > 2 | import main from 'left-pad/main';
     |                   ^
@@ -404,12 +300,6 @@ If you are sure the module exists, try these steps:
 exports[`win32 packages in node_modules/ uses the folder name and not the name in the package.json 1`] = `
 "Unable to resolve module invalidName from C:\\\\root\\\\index.js: invalidName could not be found within the project or in these directories:
   node_modules
-
-If you are sure the module exists, try these steps:
- 1. Clear watchman watches: watchman watch-del-all
- 2. Delete node_modules and run yarn install
- 3. Reset Metro's cache: yarn start --reset-cache
- 4. Remove the cache: rm -rf /tmp/metro-*
   1 | import foo from 'bar';
 > 2 | import * as invalidName from 'invalidName';
     |                               ^
@@ -437,19 +327,5 @@ None of these files exist:
   1 | import foo from 'bar';
 > 2 | import root from './a.another';
     |                   ^
-  3 | import bar from 'foo';"
-`;
-
-exports[`win32 resolveRequest config param throws if resolveRequest returns null 1`] = `
-"Unable to resolve module ./foo from C:\\\\root\\\\index.js: ./foo could not be found within the project.
-
-If you are sure the module exists, try these steps:
- 1. Clear watchman watches: watchman watch-del-all
- 2. Delete node_modules and run yarn install
- 3. Reset Metro's cache: yarn start --reset-cache
- 4. Remove the cache: rm -rf /tmp/metro-*
-  1 | import foo from 'bar';
-> 2 | import f from './foo';
-    |                ^
   3 | import bar from 'foo';"
 `;

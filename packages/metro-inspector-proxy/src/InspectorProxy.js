@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -94,9 +94,7 @@ class InspectorProxy {
   }
 
   // Adds websocket listeners to the provided HTTP/HTTPS server.
-  createWebSocketListeners(
-    server: HttpServer | HttpsServer,
-  ): {
+  createWebSocketListeners(server: HttpServer | HttpsServer): {
     [path: string]: typeof WS.Server,
   } {
     const {port} = server.address();
@@ -121,7 +119,7 @@ class InspectorProxy {
     const debuggerUrl = `${this._serverAddressWithPort}${WS_DEBUGGER_URL}?device=${deviceId}&page=${page.id}`;
     const webSocketDebuggerUrl = 'ws://' + debuggerUrl;
     const devtoolsFrontendUrl =
-      'chrome-devtools://devtools/bundled/inspector.html?experiments=true&v8only=true&ws=' +
+      'devtools://devtools/bundled/js_app.html?experiments=true&v8only=true&ws=' +
       encodeURIComponent(debuggerUrl);
     return {
       id: `${deviceId}-${page.id}`,

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15,8 +15,9 @@ const symbolicate = require('../symbolicate');
 const fs = require('fs');
 const path = require('path');
 const {PassThrough} = require('stream');
-const resolve = fileName => path.resolve(__dirname, '__fixtures__', fileName);
-const read = fileName => fs.readFileSync(resolve(fileName), 'utf8');
+const resolve = (fileName: string | $TEMPORARY$string<'directory'>) =>
+  path.resolve(__dirname, '__fixtures__', fileName);
+const read = (fileName: string) => fs.readFileSync(resolve(fileName), 'utf8');
 
 const execute = async (
   args: Array<string>,

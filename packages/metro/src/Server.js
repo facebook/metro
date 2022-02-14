@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -167,9 +167,7 @@ class Server {
     return this._createModuleId;
   }
 
-  async build(
-    options: BundleOptions,
-  ): Promise<{
+  async build(options: BundleOptions): Promise<{
     code: string,
     map: string,
     ...
@@ -204,9 +202,10 @@ class Server {
       dev: transformOptions.dev,
       projectRoot: this._config.projectRoot,
       modulesOnly: serializerOptions.modulesOnly,
-      runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-        path.relative(this._config.projectRoot, entryPoint),
-      ),
+      runBeforeMainModule:
+        this._config.serializer.getModulesRunBeforeMainModule(
+          path.relative(this._config.projectRoot, entryPoint),
+        ),
       runModule: serializerOptions.runModule,
       sourceMapUrl: serializerOptions.sourceMapUrl,
       sourceUrl: serializerOptions.sourceUrl,
@@ -278,9 +277,10 @@ class Server {
       platform: transformOptions.platform,
       projectRoot: this._config.projectRoot,
       modulesOnly: serializerOptions.modulesOnly,
-      runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-        path.relative(this._config.projectRoot, entryPoint),
-      ),
+      runBeforeMainModule:
+        this._config.serializer.getModulesRunBeforeMainModule(
+          path.relative(this._config.projectRoot, entryPoint),
+        ),
       runModule: serializerOptions.runModule,
       sourceMapUrl: serializerOptions.sourceMapUrl,
       sourceUrl: serializerOptions.sourceUrl,
@@ -289,9 +289,8 @@ class Server {
   }
 
   async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {
-    const {entryFile, transformOptions, onProgress} = splitBundleOptions(
-      options,
-    );
+    const {entryFile, transformOptions, onProgress} =
+      splitBundleOptions(options);
 
     const dependencies = await this._bundler.getDependencies(
       [entryFile],
@@ -424,7 +423,7 @@ class Server {
   processRequest: (
     IncomingMessage,
     ServerResponse,
-    (e: ?Error) => mixed,
+    ((e: ?Error) => mixed),
   ) => void = (
     req: IncomingMessage,
     res: ServerResponse,
@@ -515,12 +514,8 @@ class Server {
       res: ServerResponse,
       bundleOptions: BundleOptions,
     ): Promise<void> {
-      const {
-        entryFile,
-        graphOptions,
-        transformOptions,
-        serializerOptions,
-      } = splitBundleOptions(bundleOptions);
+      const {entryFile, graphOptions, transformOptions, serializerOptions} =
+        splitBundleOptions(bundleOptions);
 
       /**
        * `entryFile` is relative to projectRoot, we need to use resolution function
@@ -532,8 +527,8 @@ class Server {
       });
       const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
         shallow: graphOptions.shallow,
-        experimentalImportBundleSupport: this._config.transformer
-          .experimentalImportBundleSupport,
+        experimentalImportBundleSupport:
+          this._config.transformer.experimentalImportBundleSupport,
       });
 
       // For resources that support deletion, handle the DELETE method.
@@ -751,9 +746,10 @@ class Server {
           dev: transformOptions.dev,
           projectRoot: this._config.projectRoot,
           modulesOnly: serializerOptions.modulesOnly,
-          runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-            path.relative(this._config.projectRoot, entryFile),
-          ),
+          runBeforeMainModule:
+            this._config.serializer.getModulesRunBeforeMainModule(
+              path.relative(this._config.projectRoot, entryFile),
+            ),
           runModule: serializerOptions.runModule,
           sourceMapUrl: serializerOptions.sourceMapUrl,
           sourceUrl: serializerOptions.sourceUrl,
@@ -858,9 +854,10 @@ class Server {
           dev: transformOptions.dev,
           projectRoot: this._config.projectRoot,
           modulesOnly: serializerOptions.modulesOnly,
-          runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-            path.relative(this._config.projectRoot, entryFile),
-          ),
+          runBeforeMainModule:
+            this._config.serializer.getModulesRunBeforeMainModule(
+              path.relative(this._config.projectRoot, entryFile),
+            ),
           runModule: serializerOptions.runModule,
           sourceMapUrl: serializerOptions.sourceMapUrl,
           sourceUrl: serializerOptions.sourceUrl,
@@ -1127,8 +1124,8 @@ class Server {
 
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
       shallow: graphOptions.shallow,
-      experimentalImportBundleSupport: this._config.transformer
-        .experimentalImportBundleSupport,
+      experimentalImportBundleSupport:
+        this._config.transformer.experimentalImportBundleSupport,
     });
     let revision;
     const revPromise = this._bundler.getRevisionByGraphId(graphId);

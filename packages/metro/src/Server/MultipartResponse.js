@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16,11 +16,7 @@ const BOUNDARY = '3beqjf3apnqeu3h5jqorms4i';
 
 class MultipartResponse {
   static wrap(req, res) {
-    if (
-      accepts(req)
-        .types()
-        .includes('multipart/mixed')
-    ) {
+    if (accepts(req).types().includes('multipart/mixed')) {
       return new MultipartResponse(res);
     }
     // Ugly hack, ideally wrap function should always return a proxy

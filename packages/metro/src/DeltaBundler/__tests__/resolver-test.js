@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -2096,20 +2096,6 @@ let resolver;
         expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
           p('/root/overriden.js'),
         );
-      });
-
-      it('throws if resolveRequest returns null', async () => {
-        setMockFileSystem({
-          'index.js': mockFileImport("import f from './foo';"),
-          'foo.js': '',
-        });
-
-        resolveRequest.mockReturnValue(null);
-        resolver = await createResolver({resolver: {resolveRequest}});
-
-        expect(() =>
-          resolver.resolve(p('/root/index.js'), './foo'),
-        ).toThrowErrorMatchingSnapshot();
       });
 
       it('calls resolveRequest with the correct arguments', async () => {

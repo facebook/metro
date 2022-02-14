@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -36,6 +36,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     sourceExts,
     blockList: exclusionList(),
     dependencyExtractor: undefined,
+    disableHierarchicalLookup: false,
     emptyModulePath: require.resolve(
       'metro-runtime/src/modules/empty-module.js',
     ),

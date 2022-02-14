@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -207,6 +207,39 @@ it('transforms an es module with regenerator', async () => {
     {
       data: expect.objectContaining({asyncType: null}),
       name: '@babel/runtime/regenerator',
+    },
+  ]);
+});
+
+it('transforms async generators', async () => {
+  const result = await Transformer.transform(
+    baseConfig,
+    '/root',
+    'local/file.js',
+    'export async function* test() { yield "ok"; }',
+    {
+      dev: true,
+      type: 'module',
+    },
+  );
+
+  expect(result.output[0].data.code).toMatchSnapshot();
+  expect(result.dependencies).toEqual([
+    {
+      data: expect.objectContaining({asyncType: null}),
+      name: '@babel/runtime/helpers/interopRequireDefault',
+    },
+    {
+      data: expect.objectContaining({asyncType: null}),
+      name: '@babel/runtime/regenerator',
+    },
+    {
+      data: expect.objectContaining({asyncType: null}),
+      name: '@babel/runtime/helpers/awaitAsyncGenerator',
+    },
+    {
+      data: expect.objectContaining({asyncType: null}),
+      name: '@babel/runtime/helpers/wrapAsyncGenerator',
     },
   ]);
 });
@@ -602,7 +635,9 @@ it('skips minification in Hermes canary transform profile', async () => {
 });
 
 it('counts all line endings correctly', async () => {
-  const transformStr = str =>
+  const transformStr = (
+    str: $TEMPORARY$string<'one\ntwo\nthree\nfour\nfive\nsix'> | string,
+  ) =>
     Transformer.transform(baseConfig, '/root', 'local/file.js', str, {
       dev: false,
       minify: false,

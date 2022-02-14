@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -27,26 +27,27 @@ function minifier(options: MinifierOptions): MinifierResult {
   return {code: result.code, map: {...map, sources: [options.filename]}};
 }
 
-function minify({
-  code,
-  map,
-  reserved,
-  config,
-}: MinifierOptions): {
+function minify({code, map, reserved, config}: MinifierOptions): {
   code: string,
   map: ?string,
   ...
 } {
   const options = {
     ...config,
-    mangle: {
-      ...config.mangle,
-      reserved,
-    },
-    sourceMap: {
-      ...config.sourceMap,
-      content: map,
-    },
+    mangle:
+      config.mangle === false
+        ? false
+        : {
+            ...config.mangle,
+            reserved,
+          },
+    sourceMap:
+      config.sourceMap === false
+        ? false
+        : {
+            ...config.sourceMap,
+            content: map,
+          },
   };
 
   /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an

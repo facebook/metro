@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16,8 +16,9 @@ const siteConfig = {
       {
         docs: {
           path: '../docs',
-          editUrl: 'https://github.com/facebook/metro/edit/master/website',
+          editUrl: 'https://github.com/facebook/metro/edit/main/docs',
           sidebarPath: require.resolve('./sidebars.json'),
+          showLastUpdateTime: true,
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -93,7 +94,8 @@ const siteConfig = {
     },
     image: 'img/opengraph.png',
     algolia: {
-      apiKey: process.env.ALGOLIA_METRO_API_KEY || ' ',
+      apiKey: 'd51e7fbd21ccab3db4c83f0f736f6a3a',
+      appId: 'T38HJZTD87',
       indexName: 'metro',
     },
     gtag: {

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -26,17 +26,18 @@ const defaults = require('metro-config/src/defaults/defaults');
 const path = require('path');
 
 type ResolveOptions = {|
-  +platform: string,
-  +sourceExts: Extensions,
   assetExts: Extensions,
   assetResolutions: $ReadOnlyArray<string>,
+  +disableHierarchicalLookup: boolean,
+  +emptyModulePath: string,
   extraNodeModules: {[id: string]: string, ...},
   mainFields: $ReadOnlyArray<string>,
   nodeModulesPaths: $ReadOnlyArray<string>,
-  resolveRequest?: ?CustomResolver,
-  transformedFiles: {[path: Path]: TransformedCodeFile, ...},
+  +platform: string,
   platforms?: $ReadOnlyArray<string>,
-  +emptyModulePath: string,
+  resolveRequest?: ?CustomResolver,
+  +sourceExts: Extensions,
+  transformedFiles: {[path: Path]: TransformedCodeFile, ...},
 |};
 
 const NATIVE_PLATFORM = 'native';
@@ -95,7 +96,6 @@ const createModuleMap = ({files, moduleCache, sourceExts, platforms}) => {
       throw new Error(
         [
           '@providesModule naming collision:',
-          // $FlowFixMe[incompatible-type]
           `  Duplicate module name: \`${id}\``,
           `  Paths: \`${filePath}\` collides with \`${existingModule[0]}\``,
           '',
@@ -110,7 +110,7 @@ const createModuleMap = ({files, moduleCache, sourceExts, platforms}) => {
   return map;
 };
 
-exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
+exports.createResolveFn = function (options: ResolveOptions): ResolveFn {
   const {
     assetExts,
     assetResolutions,
@@ -140,6 +140,7 @@ exports.createResolveFn = function(options: ResolveOptions): ResolveFn {
 
   const moduleResolver = new ModuleResolver({
     dirExists: (filePath: string): boolean => hasteFS.dirExists(filePath),
+    disableHierarchicalLookup: options.disableHierarchicalLookup,
     doesFileExist: (filePath: string): boolean => hasteFS.exists(filePath),
     emptyModulePath: options.emptyModulePath,
     extraNodeModules,

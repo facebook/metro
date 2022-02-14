@@ -119,6 +119,12 @@ Type: `Array<string>`
 
 Specify the fields in package.json files that will be used by the module resolver to do redirections when requiring certain packages. The default is `['browser', 'main']`, so the resolver will use the `browser` field if it exists and `main` otherwise.
 
+#### `disableHierarchicalLookup`
+
+Type: `boolean`
+
+Whether to disable [looking up modules in `node_modules` folders](https://nodejs.org/api/modules.html#modules_loading_from_node_modules_folders). This only affects the default search through the directory tree, not other Metro options like `extraNodeModules` or `nodeModulesPaths`. Defaults to `false`.
+
 #### `emptyModulePath`
 
 Type: `string`
@@ -137,22 +143,26 @@ Type: `Array<string>`
 
 This option can be used to add additional `node_modules` folders for Metro to locate third-party dependencies when resolving modules. This is useful if third-party dependencies are installed in a different location outside of the direct path of source files.
 
-This option works similarly to how [$NODE_PATHS](https://nodejs.org/api/modules.html#modules_addenda_package_manager_tips) works for Node.js based tooling.
+This option works similarly to how [$NODE_PATH](https://nodejs.org/api/modules.html#modules_loading_from_the_global_folders) works for Node.js based tooling, except that `nodeModulesPaths` takes precedence over hierarchical `node_modules` lookup.
 
 #### `resolveRequest`
 
 Type: `?CustomResolver`
 
-An optional function used to resolve requests. Particularly useful for cases where aliases are used. For example:
+An optional function used to resolve requests. Particularly useful for cases where aliases or custom protocols are used. For example:
 
 ```javascript
-resolveRequest: (context, realModuleName, platform, moduleName) => {
-  // Resolve file path logic...
-
-  return {
-    filePath: "path/to/file",
-    type: 'sourceFile',
-  };
+resolveRequest: (context, moduleName, platform) => {
+  if (moduleName.startsWith('my-custom-resolver:')) {
+    // Resolve file path logic...
+    // NOTE: Throw an error if there is no resolution.
+    return {
+      filePath: "path/to/file",
+      type: 'sourceFile',
+    };
+  }
+  // Optionally, chain to the standard Metro resolver.
+  return context.resolveRequest(context, moduleName, platform);
 }
 ```
 

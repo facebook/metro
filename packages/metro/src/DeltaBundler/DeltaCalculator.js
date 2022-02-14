@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -228,9 +228,9 @@ class DeltaCalculator<T> extends EventEmitter {
     });
 
     // We only want to process files that are in the bundle.
-    const modifiedDependencies = Array.from(
-      modifiedFiles,
-    ).filter((filePath: string) => this._graph.dependencies.has(filePath));
+    const modifiedDependencies = Array.from(modifiedFiles).filter(
+      (filePath: string) => this._graph.dependencies.has(filePath),
+    );
 
     // No changes happened. Return empty delta.
     if (modifiedDependencies.length === 0) {

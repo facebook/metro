@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -19,7 +19,7 @@ const path = require('path');
 
 const CONTEXT: ResolutionContext = (() => {
   const fileSet = new Set();
-  (function fillFileSet(fileTree, prefix) {
+  (function fillFileSet(fileTree, prefix: string) {
     for (const entName in fileTree) {
       const entPath = path.join(prefix, entName);
       if (fileTree[entName] === true) {
@@ -56,9 +56,19 @@ const CONTEXT: ResolutionContext = (() => {
       },
       'other-root': {
         node_modules: {
+          'banana-module': {
+            'package.json': true,
+            'main.js': true,
+          },
           banana: {
             'package.json': true,
             'main.js': true,
+            node_modules: {
+              'banana-module': {
+                'package.json': true,
+                'main.js': true,
+              },
+            },
           },
         },
       },
@@ -79,23 +89,25 @@ const CONTEXT: ResolutionContext = (() => {
   );
   return {
     allowHaste: true,
-    doesFileExist: filePath => fileSet.has(filePath),
+    disableHierarchicalLookup: false,
+    doesFileExist: (filePath: string) => fileSet.has(filePath),
     extraNodeModules: null,
-    getPackageMainPath: dirPath => path.join(path.dirname(dirPath), 'main'),
+    getPackageMainPath: (dirPath: string) =>
+      path.join(path.dirname(dirPath), 'main'),
     isAssetFile: () => false,
     nodeModulesPaths: [],
     originModulePath: '/root/project/foo.js',
     preferNativePlatform: false,
-    redirectModulePath: filePath => filePath,
-    resolveAsset: filePath => null,
-    resolveHasteModule: name => {
+    redirectModulePath: (filePath: string) => filePath,
+    resolveAsset: (filePath: string) => null,
+    resolveHasteModule: (name: string) => {
       const candidate = '/haste/' + name + '.js';
       if (fileSet.has(candidate)) {
         return candidate;
       }
       return null;
     },
-    resolveHastePackage: name => {
+    resolveHastePackage: (name: string) => {
       const candidate = '/haste/' + name + '/package.json';
       if (fileSet.has(candidate)) {
         return candidate;
@@ -215,12 +227,90 @@ it('uses `nodeModulesPaths` to find additional node_modules not in the direct pa
   expect(() => Resolver.resolve(context, 'kiwi', null))
     .toThrowErrorMatchingInlineSnapshot(`
     "Module does not exist in the Haste module map or in these directories:
-      /other-root/node_modules
       /root/project/node_modules
       /root/node_modules
       /node_modules
+      /other-root/node_modules
     "
   `);
+});
+
+it('resolves transitive dependencies when using `nodeModulesPaths`', () => {
+  const context = Object.assign(
+    {},
+    {...CONTEXT, originModulePath: '/other-root/node_modules/banana/main.js'},
+    {
+      nodeModulesPaths: ['/other-root/node_modules'],
+    },
+  );
+
+  expect(Resolver.resolve(context, 'banana-module', null)).toEqual({
+    type: 'sourceFile',
+    filePath:
+      '/other-root/node_modules/banana/node_modules/banana-module/main.js',
+  });
+
+  expect(Resolver.resolve(context, 'banana-module', null)).not.toEqual({
+    type: 'sourceFile',
+    filePath: '/other-root/node_modules/banana-module/main.js',
+  });
+});
+
+describe('disableHierarchicalLookup', () => {
+  const context = Object.assign({}, CONTEXT, {
+    disableHierarchicalLookup: true,
+  });
+
+  it('disables node_modules lookup', () => {
+    expect(() => Resolver.resolve(context, 'apple', null))
+      .toThrowErrorMatchingInlineSnapshot(`
+      "Module does not exist in the Haste module map
+
+      "
+    `);
+  });
+
+  it('respects nodeModulesPaths', () => {
+    const contextWithOtherRoot = {
+      ...context,
+      nodeModulesPaths: ['/other-root/node_modules'],
+    };
+
+    // apple exists in /root/node_modules
+    expect(() => Resolver.resolve(contextWithOtherRoot, 'apple', null))
+      .toThrowErrorMatchingInlineSnapshot(`
+      "Module does not exist in the Haste module map or in these directories:
+        /other-root/node_modules
+      "
+    `);
+
+    expect(Resolver.resolve(contextWithOtherRoot, 'banana', null)).toEqual({
+      type: 'sourceFile',
+      filePath: '/other-root/node_modules/banana/main.js',
+    });
+
+    // kiwi doesn't exist anywhere
+    expect(() => Resolver.resolve(contextWithOtherRoot, 'kiwi', null))
+      .toThrowErrorMatchingInlineSnapshot(`
+      "Module does not exist in the Haste module map or in these directories:
+        /other-root/node_modules
+      "
+    `);
+  });
+
+  it('respects extraNodeModules', () => {
+    const contextWithExtra = {
+      ...context,
+      extraNodeModules: {
+        'renamed-apple': '/root/node_modules/apple',
+      },
+    };
+
+    expect(Resolver.resolve(contextWithExtra, 'renamed-apple', null)).toEqual({
+      type: 'sourceFile',
+      filePath: '/root/node_modules/apple/main.js',
+    });
+  });
 });
 
 it('resolves Haste modules', () => {
@@ -426,10 +516,9 @@ describe('resolveRequest', () => {
     `);
     expect(resolveRequest).toBeCalledTimes(1);
     expect(resolveRequest).toBeCalledWith(
-      context,
+      {...context, resolveRequest: Resolver.resolve},
       'does-not-exist',
       null,
-      'does-not-exist',
     );
   });
 
@@ -442,10 +531,9 @@ describe('resolveRequest', () => {
     `);
     expect(resolveRequest).toBeCalledTimes(1);
     expect(resolveRequest).toBeCalledWith(
-      context,
+      {...context, resolveRequest: Resolver.resolve},
       './does-not-exist',
       null,
-      './does-not-exist',
     );
   });
 
@@ -458,10 +546,9 @@ describe('resolveRequest', () => {
     `);
     expect(resolveRequest).toBeCalledTimes(1);
     expect(resolveRequest).toBeCalledWith(
-      context,
+      {...context, resolveRequest: Resolver.resolve},
       '/does-not-exist',
       null,
-      '/does-not-exist',
     );
   });
 
@@ -474,10 +561,9 @@ describe('resolveRequest', () => {
     `);
     expect(resolveRequest).toBeCalledTimes(1);
     expect(resolveRequest).toBeCalledWith(
-      context,
+      {...context, resolveRequest: Resolver.resolve},
       'some-package',
       null,
-      'some-package',
     );
   });
 
@@ -488,10 +574,14 @@ describe('resolveRequest', () => {
       }
     `);
     expect(resolveRequest).toBeCalledTimes(1);
-    expect(resolveRequest).toBeCalledWith(context, 'Foo', null, 'Foo');
+    expect(resolveRequest).toBeCalledWith(
+      {...context, resolveRequest: Resolver.resolve},
+      'Foo',
+      null,
+    );
   });
 
-  it('is called with the platform and redirected module path', () => {
+  it('is called with the platform and non-redirected module path', () => {
     const contextWithRedirect = Object.assign({}, context, {
       redirectModulePath: filePath => filePath + '.redirected',
     });
@@ -503,37 +593,44 @@ describe('resolveRequest', () => {
     `);
     expect(resolveRequest).toBeCalledTimes(1);
     expect(resolveRequest).toBeCalledWith(
-      contextWithRedirect,
-      'does-not-exist.redirected',
-      'android',
+      {...contextWithRedirect, resolveRequest: Resolver.resolve},
       'does-not-exist',
+      'android',
     );
   });
 
-  it('is not called if redirectModulePath returns false', () => {
+  it('is called if redirectModulePath returns false', () => {
+    resolveRequest.mockImplementation(() => ({
+      type: 'sourceFile',
+      filePath: '/some/fake/path',
+    }));
     const contextWithRedirect = Object.assign({}, context, {
       redirectModulePath: filePath => false,
     });
     expect(Resolver.resolve(contextWithRedirect, 'does-not-exist', 'android'))
       .toMatchInlineSnapshot(`
       Object {
-        "type": "empty",
+        "filePath": "/some/fake/path",
+        "type": "sourceFile",
       }
     `);
-    expect(resolveRequest).not.toBeCalled();
+    expect(resolveRequest).toBeCalledTimes(1);
+    expect(resolveRequest).toBeCalledWith(
+      {...contextWithRedirect, resolveRequest: Resolver.resolve},
+      'does-not-exist',
+      'android',
+    );
   });
 
   it('can forward requests to the standard resolver', () => {
     // This test shows a common pattern for wrapping the standard resolver.
-    resolveRequest.mockImplementation(
-      (ctx, realModuleName, platform, moduleName) => {
-        return Resolver.resolve(
-          Object.assign({}, ctx, {resolveRequest: null}),
-          moduleName,
-          platform,
-        );
-      },
-    );
+    resolveRequest.mockImplementation((ctx, moduleName, platform) => {
+      return Resolver.resolve(
+        Object.assign({}, ctx, {resolveRequest: null}),
+        moduleName,
+        platform,
+      );
+    });
     expect(() => {
       Resolver.resolve(context, 'does-not-exist', 'android');
     }).toThrowErrorMatchingInlineSnapshot(`
@@ -545,23 +642,20 @@ describe('resolveRequest', () => {
     `);
     expect(resolveRequest).toBeCalledTimes(1);
     expect(resolveRequest).toBeCalledWith(
-      context,
+      {...context, resolveRequest: Resolver.resolve},
       'does-not-exist',
       'android',
-      'does-not-exist',
     );
   });
 
   it('can forward Haste requests to the standard resolver', () => {
-    resolveRequest.mockImplementation(
-      (ctx, realModuleName, platform, moduleName) => {
-        return Resolver.resolve(
-          {...ctx, resolveRequest: null},
-          moduleName,
-          platform,
-        );
-      },
-    );
+    resolveRequest.mockImplementation((ctx, moduleName, platform) => {
+      return Resolver.resolve(
+        {...ctx, resolveRequest: null},
+        moduleName,
+        platform,
+      );
+    });
     expect(Resolver.resolve(context, 'Foo', null)).toMatchInlineSnapshot(`
       Object {
         "filePath": "/haste/Foo.js",
@@ -569,6 +663,61 @@ describe('resolveRequest', () => {
       }
     `);
     expect(resolveRequest).toBeCalledTimes(1);
-    expect(resolveRequest).toBeCalledWith(context, 'Foo', null, 'Foo');
+    expect(resolveRequest).toBeCalledWith(
+      {...context, resolveRequest: Resolver.resolve},
+      'Foo',
+      null,
+    );
+  });
+
+  it('can forward requests to the standard resolver via resolveRequest', () => {
+    resolveRequest.mockImplementation((ctx, moduleName, platform) => {
+      return ctx.resolveRequest(ctx, moduleName, platform);
+    });
+    expect(() => {
+      Resolver.resolve(context, 'does-not-exist', 'android');
+    }).toThrowErrorMatchingInlineSnapshot(`
+      "Module does not exist in the Haste module map or in these directories:
+        /root/project/node_modules
+        /root/node_modules
+        /node_modules
+      "
+    `);
+    expect(resolveRequest).toBeCalledTimes(1);
+    expect(resolveRequest).toBeCalledWith(
+      {...context, resolveRequest: Resolver.resolve},
+      'does-not-exist',
+      'android',
+    );
+  });
+
+  it('throwing an error stops the standard resolution', () => {
+    resolveRequest.mockImplementation((ctx, moduleName, platform) => {
+      throw new Error('Custom resolver hit an error');
+    });
+    const {resolveRequest: _, ...contextWithoutCustomResolver} = context;
+    // Ensure that the request has a standard resolution.
+    expect(
+      Resolver.resolve(
+        contextWithoutCustomResolver,
+        '/root/project/foo.js',
+        'android',
+      ),
+    ).toMatchInlineSnapshot(`
+      Object {
+        "filePath": "/root/project/foo.js",
+        "type": "sourceFile",
+      }
+    `);
+    // Ensure that we don't get this standard resolution if we throw.
+    expect(() => {
+      Resolver.resolve(context, '/root/project/foo.js', 'android');
+    }).toThrowErrorMatchingInlineSnapshot(`"Custom resolver hit an error"`);
+    expect(resolveRequest).toBeCalledTimes(1);
+    expect(resolveRequest).toBeCalledWith(
+      {...context, resolveRequest: Resolver.resolve},
+      '/root/project/foo.js',
+      'android',
+    );
   });
 });

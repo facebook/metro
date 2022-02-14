@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -47,6 +47,11 @@ type MetroMiddleWare = {|
   middleware: Middleware,
 |};
 
+export type RunMetroOptions = {
+  ...ServerOptions,
+  waitForBundler?: boolean,
+};
+
 export type RunServerOptions = {|
   hasReducedPerformance?: boolean,
   host?: string,
@@ -57,6 +62,7 @@ export type RunServerOptions = {|
   secure?: boolean, // deprecated
   secureCert?: string, // deprecated
   secureKey?: string, // deprecated
+  waitForBundler?: boolean,
   websocketEndpoints?: {
     [path: string]: typeof ws.Server,
   },
@@ -115,7 +121,7 @@ async function getConfig(config: InputConfigT): Promise<ConfigT> {
 
 async function runMetro(
   config: InputConfigT,
-  options?: ServerOptions,
+  options?: RunMetroOptions,
 ): Promise<MetroServer> {
   const mergedConfig = await getConfig(config);
   const {
@@ -131,9 +137,10 @@ async function runMetro(
     type: 'initialize_started',
   });
 
-  const server = new MetroServer(mergedConfig, options);
+  const {waitForBundler = false, ...serverOptions} = options ?? {};
+  const server = new MetroServer(mergedConfig, serverOptions);
 
-  server
+  const readyPromise = server
     .ready()
     .then(() => {
       reporter.update({
@@ -148,6 +155,9 @@ async function runMetro(
         error,
       });
     });
+  if (waitForBundler) {
+    await readyPromise;
+  }
 
   return server;
 }
@@ -155,9 +165,9 @@ async function runMetro(
 exports.runMetro = runMetro;
 exports.loadConfig = loadConfig;
 
-exports.createConnectMiddleware = async function(
+const createConnectMiddleware = async function (
   config: ConfigT,
-  options?: ServerOptions,
+  options?: RunMetroOptions,
 ): Promise<MetroMiddleWare> {
   const metroServer = await runMetro(config, options);
 
@@ -198,6 +208,7 @@ exports.createConnectMiddleware = async function(
     },
   };
 };
+exports.createConnectMiddleware = createConnectMiddleware;
 
 exports.runServer = async (
   config: ConfigT,
@@ -210,6 +221,7 @@ exports.runServer = async (
     secure, //deprecated
     secureCert, // deprecated
     secureKey, // deprecated
+    waitForBundler = false,
     websocketEndpoints = {},
   }: RunServerOptions,
 ): Promise<HttpServer | HttpsServer> => {
@@ -227,12 +239,10 @@ exports.runServer = async (
 
   const serverApp = connect();
 
-  const {middleware, end, metroServer} = await exports.createConnectMiddleware(
-    config,
-    {
-      hasReducedPerformance,
-    },
-  );
+  const {middleware, end, metroServer} = await createConnectMiddleware(config, {
+    hasReducedPerformance,
+    waitForBundler,
+  });
 
   serverApp.use(middleware);
 
@@ -401,7 +411,7 @@ exports.runBuild = async (
   }
 };
 
-exports.buildGraph = async function(
+exports.buildGraph = async function (
   config: InputConfigT,
   {
     customTransformOptions = Object.create(null),
@@ -431,8 +441,7 @@ exports.buildGraph = async function(
   }
 };
 
-exports.attachMetroCli = function(
-  // $FlowFixMe[value-as-type]
+exports.attachMetroCli = function (
   yargs: Yargs,
   {
     build = {},
@@ -444,7 +453,6 @@ exports.attachMetroCli = function(
     dependencies: any,
     ...
   } = {},
-  // $FlowFixMe[value-as-type]
 ): Yargs {
   if (build) {
     const {command, description, builder, handler} = makeBuildCommand();

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -498,7 +498,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
       +sourceFunctionsConsumer: ?SourceMetadataMapConsumer,
       +hermesOffsets: ?HermesFunctionOffsets,
     |},
-    ...,
+    ...
   };
   +_legacyFormat: boolean;
   // $FlowFixMe[value-as-type]
@@ -576,9 +576,8 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
           const moduleInformation = this.parseFileName(SourceURL);
           const generatedLine =
             cjsModuleOffsetOrSegmentID + this.options.inputLineStart;
-          const segment = this._segments[
-            moduleInformation.segmentId.toString()
-          ];
+          const segment =
+            this._segments[moduleInformation.segmentId.toString()];
           const hermesOffsets = segment?.hermesOffsets;
           if (!hermesOffsets) {
             symbolicatedTrace.push({

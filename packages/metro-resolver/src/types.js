@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -61,7 +61,7 @@ export type ResolveAsset = (
   extension: string,
 ) => ?$ReadOnlyArray<string>;
 
-export type FileContext = {
+export type FileContext = $ReadOnly<{
   +doesFileExist: DoesFileExist,
   +isAssetFile: IsAssetFile,
   +nodeModulesPaths: $ReadOnlyArray<string>,
@@ -70,9 +70,9 @@ export type FileContext = {
   +resolveAsset: ResolveAsset,
   +sourceExts: $ReadOnlyArray<string>,
   ...
-};
+}>;
 
-export type FileOrDirContext = {
+export type FileOrDirContext = $ReadOnly<{
   ...FileContext,
   /**
    * This should return the path of the "main" module of the specified
@@ -85,9 +85,9 @@ export type FileOrDirContext = {
    */
   +getPackageMainPath: (packageJsonPath: string) => string,
   ...
-};
+}>;
 
-export type HasteContext = {
+export type HasteContext = $ReadOnly<{
   ...FileOrDirContext,
   /**
    * Given a name, this should return the full path to the file that provides
@@ -101,9 +101,9 @@ export type HasteContext = {
    */
   +resolveHastePackage: (name: string) => ?string,
   ...
-};
+}>;
 
-export type ModulePathContext = {
+export type ModulePathContext = $ReadOnly<{
   ...FileOrDirContext,
   /**
    * Full path of the module that is requiring or importing the module to be
@@ -111,20 +111,26 @@ export type ModulePathContext = {
    */
   +originModulePath: string,
   ...
-};
+}>;
 
-export type ResolutionContext = {
+export type ResolutionContext = $ReadOnly<{
   ...HasteContext,
   allowHaste: boolean,
+  disableHierarchicalLookup: boolean,
   extraNodeModules: ?{[string]: string, ...},
   originModulePath: string,
   resolveRequest?: ?CustomResolver,
   ...
-};
+}>;
+
+export type CustomResolutionContext = $ReadOnly<{
+  ...ResolutionContext,
+  resolveRequest: CustomResolver,
+  ...
+}>;
 
 export type CustomResolver = (
-  context: ResolutionContext,
-  realModuleName: string,
-  platform: string | null,
+  context: CustomResolutionContext,
   moduleName: string,
+  platform: string | null,
 ) => Resolution;

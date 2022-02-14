@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -283,9 +283,7 @@ function guardedLoadModule(
 const ID_MASK_SHIFT = 16;
 const LOCAL_ID_MASK = ~0 >>> ID_MASK_SHIFT;
 
-function unpackModuleId(
-  moduleId: ModuleID,
-): {
+function unpackModuleId(moduleId: ModuleID): {
   localId: number,
   segmentId: number,
   ...
@@ -482,7 +480,7 @@ if (__DEV__) {
   };
 
   // HOT MODULE RELOADING
-  var createHotReloadingObject = function() {
+  var createHotReloadingObject = function () {
     const hot: HotModuleReloadingData = {
       _acceptCallback: null,
       _disposeCallback: null,
@@ -500,7 +498,7 @@ if (__DEV__) {
 
   let reactRefreshTimeout = null;
 
-  const metroHotUpdateModule = function(
+  const metroHotUpdateModule = function (
     id: ModuleID,
     factory: FactoryFn,
     dependencyMap: DependencyMap,
@@ -704,7 +702,7 @@ if (__DEV__) {
     }
   };
 
-  const topologicalSort = function<T>(
+  const topologicalSort = function <T>(
     roots: Array<T>,
     getEdges: T => Array<T>,
     earlyStop: T => boolean,
@@ -733,7 +731,7 @@ if (__DEV__) {
     return result;
   };
 
-  const runUpdatedModule = function(
+  const runUpdatedModule = function (
     id: ModuleID,
     factory?: FactoryFn,
     dependencyMap?: DependencyMap,
@@ -832,7 +830,7 @@ if (__DEV__) {
   };
 
   // Modules that only export components become React Refresh boundaries.
-  var isReactRefreshBoundary = function(Refresh, moduleExports): boolean {
+  var isReactRefreshBoundary = function (Refresh, moduleExports): boolean {
     if (Refresh.isLikelyComponentType(moduleExports)) {
       return true;
     }

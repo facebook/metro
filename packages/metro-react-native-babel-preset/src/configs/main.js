@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -114,8 +114,15 @@ const getPreset = (src, options) => {
       {loose: true}, // dont 'a'.concat('b'), just use 'a'+'b'
     ]);
   }
-  if (isHermes && (isNull || src.indexOf('async') !== -1)) {
-    extraPlugins.push([require('@babel/plugin-transform-async-to-generator')]);
+  if (isNull || src.indexOf('async') !== -1) {
+    extraPlugins.push([
+      require('@babel/plugin-proposal-async-generator-functions'),
+    ]);
+    if (isHermes) {
+      extraPlugins.push([
+        require('@babel/plugin-transform-async-to-generator'),
+      ]);
+    }
   }
   if (!isHermes && (isNull || src.indexOf('**') !== -1)) {
     extraPlugins.push([

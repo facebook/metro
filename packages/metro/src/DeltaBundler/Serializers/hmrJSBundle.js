@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -36,7 +36,9 @@ function generateModules(
   for (const module of sourceModules) {
     if (isJsModule(module)) {
       // Construct a bundle URL for this specific module only
-      const getURL = extension => {
+      const getURL = (
+        extension: $TEMPORARY$string<'bundle'> | $TEMPORARY$string<'map'>,
+      ) => {
         options.clientUrl.pathname = path.relative(
           options.projectRoot,
           path.join(
