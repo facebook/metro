@@ -10,9 +10,7 @@
  */
 
 'use strict';
-import type {MixedSourceMap, IndexMap, BasicSourceMap} from '../source-map';
-
-/* eslint-disable no-multi-str */
+import type {BasicSourceMap, IndexMap, MixedSourceMap} from '../source-map';
 
 const composeSourceMaps = require('../composeSourceMaps');
 const Consumer = require('../Consumer');
@@ -21,6 +19,8 @@ const invariant = require('invariant');
 const {add0, add1} = require('ob1');
 const path = require('path');
 const {minify} = require('uglify-js');
+
+/* eslint-disable no-multi-str */
 
 const TestScript1 =
   '/* Half of a program that throws */\
