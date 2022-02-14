@@ -53,7 +53,9 @@ const getPreset = (src, options) => {
 
   const extraPlugins = [];
   if (!options.useTransformReactJSXExperimental) {
-    extraPlugins.push([require('@babel/plugin-transform-react-jsx')]);
+    extraPlugins.push([
+      require('@babel/plugin-transform-react-jsx', {useBuiltIns: true}),
+    ]);
   }
 
   if (!options || !options.disableImportExportTransform) {
@@ -96,7 +98,10 @@ const getPreset = (src, options) => {
     extraPlugins.push([require('@babel/plugin-transform-sticky-regex')]);
   }
   if (!isHermesCanary) {
-    extraPlugins.push([require('@babel/plugin-transform-destructuring')]);
+    extraPlugins.push([
+      require('@babel/plugin-transform-destructuring'),
+      {useBuiltIns: true},
+    ]);
   }
   if (!isHermes && (isNull || hasClass || src.indexOf('...') !== -1)) {
     extraPlugins.push(
@@ -104,7 +109,7 @@ const getPreset = (src, options) => {
       [
         require('@babel/plugin-proposal-object-rest-spread'),
         // Assume no dependence on getters or evaluation order. See https://github.com/babel/babel/pull/11520
-        {loose: true},
+        {loose: true, useBuiltIns: true},
       ],
     );
   }
@@ -128,9 +133,6 @@ const getPreset = (src, options) => {
     extraPlugins.push([
       require('@babel/plugin-transform-exponentiation-operator'),
     ]);
-  }
-  if (!isHermes && (isNull || src.indexOf('Object.assign')) !== -1) {
-    extraPlugins.push([require('@babel/plugin-transform-object-assign')]);
   }
   if (!isHermes && hasForOf) {
     extraPlugins.push([
