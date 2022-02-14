@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,8 +11,8 @@
 'use strict';
 
 import type {PluginObj} from '@babel/core';
+import type {NodePath, VisitNode, Visitor} from '@babel/traverse';
 import typeof Traverse from '@babel/traverse';
-import type {NodePath, Visitor, VisitNode} from '@babel/traverse';
 // This is only a typeof import, no runtime dependency exists
 // eslint-disable-next-line import/no-extraneous-dependencies
 import typeof * as Types from '@babel/types';
@@ -29,9 +29,10 @@ function constantFoldingPlugin(context: {
 
   const traverse = context.traverse;
 
-  const evaluate = function(
-    path: NodePath<>,
-  ): {confident: boolean, value: mixed} {
+  const evaluate = function (path: NodePath<>): {
+    confident: boolean,
+    value: mixed,
+  } {
     const state = {safe: true};
     const unsafe = (path, state) => {
       state.safe = false;

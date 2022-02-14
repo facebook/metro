@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,17 +10,16 @@
 
 'use strict';
 
+import type {Writable} from 'stream';
+
 const JSONStream = require('JSONStream');
 
-const duplexer = require('duplexer');
+const {startProfiling, stopProfilingAndWrite} = require('./profiling');
 const each = require('async/each');
+const {Console} = require('console');
+const duplexer = require('duplexer');
 const fs = require('fs');
 const invariant = require('invariant');
-
-const {startProfiling, stopProfilingAndWrite} = require('./profiling');
-const {Console} = require('console');
-
-import type {Writable} from 'stream';
 
 export type Command = (
   argv: Array<string>,
@@ -264,14 +263,18 @@ async function execCommand(
   respond(makeResponse(messageId));
 }
 
-function shouldDebugCommand(argsString) {
+function shouldDebugCommand(argsString: string) {
   return DEBUG_RE && DEBUG_RE.test(argsString);
 }
 
-const error = (id, exitCode) => ({type: 'error', id, exit_code: exitCode});
-const unknownMessage = id => error(id, 1);
-const invalidMessage = id => error(id, 2);
-const commandError = id => error(id, 3);
-const success = id => ({type: 'result', id, exit_code: 0});
+const error = (id: number, exitCode: number) => ({
+  type: 'error',
+  id,
+  exit_code: exitCode,
+});
+const unknownMessage = (id: number) => error(id, 1);
+const invalidMessage = (id: number) => error(id, 2);
+const commandError = (id: number) => error(id, 3);
+const success = (id: number) => ({type: 'result', id, exit_code: 0});
 
 module.exports = buckWorker;

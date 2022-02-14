@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,13 +10,12 @@
 
 'use strict';
 
-const Server = require('../../Server');
-
-const relativizeSourceMapInline = require('../../lib/relativizeSourceMap');
-const writeFile = require('./writeFile');
-
 import type {OutputOptions, RequestOptions} from '../types.flow';
 import type {MixedSourceMap} from 'metro-source-map';
+
+const relativizeSourceMapInline = require('../../lib/relativizeSourceMap');
+const Server = require('../../Server');
+const writeFile = require('./writeFile');
 
 function buildBundle(
   packagerClient: Server,

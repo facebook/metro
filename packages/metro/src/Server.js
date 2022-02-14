@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -9,47 +9,14 @@
  */
 
 'use strict';
-const IncrementalBundler = require('./IncrementalBundler');
-const MultipartResponse = require('./Server/MultipartResponse');
-const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
-
-const baseBytecodeBundle = require('./DeltaBundler/Serializers/baseBytecodeBundle');
-const baseJSBundle = require('./DeltaBundler/Serializers/baseJSBundle');
-const bundleToBytecode = require('./lib/bundleToBytecode');
-const bundleToString = require('./lib/bundleToString');
-
-const {codeFrameColumns} = require('@babel/code-frame');
-const debug = require('debug')('Metro:Server');
-const formatBundlingError = require('./lib/formatBundlingError');
-const fs = require('graceful-fs');
-const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
-const getAssets = require('./DeltaBundler/Serializers/getAssets');
-const getGraphId = require('./lib/getGraphId');
-const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
-const mime = require('mime-types');
-const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
-const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
-const path = require('path');
-const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
-const splitBundleOptions = require('./lib/splitBundleOptions');
-const symbolicate = require('./Server/symbolicate');
-const transformHelpers = require('./lib/transformHelpers');
-const url = require('url');
-
-const {VERSION: BYTECODE_VERSION} = require('metro-hermes-compiler');
-const {getAsset} = require('./Assets');
-const {
-  getExplodedSourceMap,
-} = require('./DeltaBundler/Serializers/getExplodedSourceMap');
-const {
-  Logger,
-  Logger: {createActionStartEntry, createActionEndEntry, log},
-} = require('metro-core');
-
 import type {AssetData} from './Assets';
 import type {ExplodedSourceMap} from './DeltaBundler/Serializers/getExplodedSourceMap';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
-import type {Graph, Module} from './DeltaBundler/types.flow';
+import type {
+  Graph,
+  Module,
+  TransformInputOptions,
+} from './DeltaBundler/types.flow';
 import type {MixedOutput, TransformResult} from './DeltaBundler/types.flow';
 import type {RevisionId} from './IncrementalBundler';
 import type {GraphId} from './lib/getGraphId';
@@ -67,6 +34,42 @@ import type {
   ActionStartLogEntry,
   LogEntry,
 } from 'metro-core/src/Logger';
+
+const {getAsset} = require('./Assets');
+const baseBytecodeBundle = require('./DeltaBundler/Serializers/baseBytecodeBundle');
+const baseJSBundle = require('./DeltaBundler/Serializers/baseJSBundle');
+const getAllFiles = require('./DeltaBundler/Serializers/getAllFiles');
+const getAssets = require('./DeltaBundler/Serializers/getAssets');
+const {
+  getExplodedSourceMap,
+} = require('./DeltaBundler/Serializers/getExplodedSourceMap');
+const getRamBundleInfo = require('./DeltaBundler/Serializers/getRamBundleInfo');
+const sourceMapString = require('./DeltaBundler/Serializers/sourceMapString');
+const IncrementalBundler = require('./IncrementalBundler');
+const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
+const bundleToBytecode = require('./lib/bundleToBytecode');
+const bundleToString = require('./lib/bundleToString');
+const formatBundlingError = require('./lib/formatBundlingError');
+const getGraphId = require('./lib/getGraphId');
+const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
+const splitBundleOptions = require('./lib/splitBundleOptions');
+const transformHelpers = require('./lib/transformHelpers');
+const parsePlatformFilePath = require('./node-haste/lib/parsePlatformFilePath');
+const MultipartResponse = require('./Server/MultipartResponse');
+const symbolicate = require('./Server/symbolicate');
+const {codeFrameColumns} = require('@babel/code-frame');
+const debug = require('debug')('Metro:Server');
+const fs = require('graceful-fs');
+const {
+  Logger,
+  Logger: {createActionStartEntry, createActionEndEntry, log},
+} = require('metro-core');
+const {VERSION: BYTECODE_VERSION} = require('metro-hermes-compiler');
+const mime = require('mime-types');
+const nullthrows = require('nullthrows');
+const path = require('path');
+const querystring = require('querystring');
+const url = require('url');
 
 export type SegmentLoadData = {[number]: [Array<number>, ?number], ...};
 export type BundleMetadata = {
@@ -164,9 +167,7 @@ class Server {
     return this._createModuleId;
   }
 
-  async build(
-    options: BundleOptions,
-  ): Promise<{
+  async build(options: BundleOptions): Promise<{
     code: string,
     map: string,
     ...
@@ -188,12 +189,12 @@ class Server {
       },
     );
 
-    const entryPoint = path.resolve(this._config.projectRoot, entryFile);
+    const entryPoint = this._getEntryPointAbsolutePath(entryFile);
 
     const bundleOptions = {
       asyncRequireModulePath: await this._resolveRelativePath(
         this._config.transformer.asyncRequireModulePath,
-        {transformOptions},
+        {transformOptions, relativeTo: 'project'},
       ),
       processModuleFilter: this._config.serializer.processModuleFilter,
       createModuleId: this._createModuleId,
@@ -201,9 +202,10 @@ class Server {
       dev: transformOptions.dev,
       projectRoot: this._config.projectRoot,
       modulesOnly: serializerOptions.modulesOnly,
-      runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-        path.relative(this._config.projectRoot, entryPoint),
-      ),
+      runBeforeMainModule:
+        this._config.serializer.getModulesRunBeforeMainModule(
+          path.relative(this._config.projectRoot, entryPoint),
+        ),
       runModule: serializerOptions.runModule,
       sourceMapUrl: serializerOptions.sourceMapUrl,
       sourceUrl: serializerOptions.sourceUrl,
@@ -259,12 +261,12 @@ class Server {
       {onProgress, shallow: graphOptions.shallow},
     );
 
-    const entryPoint = path.resolve(this._config.projectRoot, entryFile);
+    const entryPoint = this._getEntryPointAbsolutePath(entryFile);
 
     return await getRamBundleInfo(entryPoint, prepend, graph, {
       asyncRequireModulePath: await this._resolveRelativePath(
         this._config.transformer.asyncRequireModulePath,
-        {transformOptions},
+        {transformOptions, relativeTo: 'project'},
       ),
       processModuleFilter: this._config.serializer.processModuleFilter,
       createModuleId: this._createModuleId,
@@ -275,9 +277,10 @@ class Server {
       platform: transformOptions.platform,
       projectRoot: this._config.projectRoot,
       modulesOnly: serializerOptions.modulesOnly,
-      runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-        path.relative(this._config.projectRoot, entryPoint),
-      ),
+      runBeforeMainModule:
+        this._config.serializer.getModulesRunBeforeMainModule(
+          path.relative(this._config.projectRoot, entryPoint),
+        ),
       runModule: serializerOptions.runModule,
       sourceMapUrl: serializerOptions.sourceMapUrl,
       sourceUrl: serializerOptions.sourceUrl,
@@ -286,9 +289,8 @@ class Server {
   }
 
   async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {
-    const {entryFile, transformOptions, onProgress} = splitBundleOptions(
-      options,
-    );
+    const {entryFile, transformOptions, onProgress} =
+      splitBundleOptions(options);
 
     const dependencies = await this._bundler.getDependencies(
       [entryFile],
@@ -300,7 +302,7 @@ class Server {
       processModuleFilter: this._config.serializer.processModuleFilter,
       assetPlugins: this._config.transformer.assetPlugins,
       platform: transformOptions.platform,
-      projectRoot: this._config.projectRoot,
+      projectRoot: this._getServerRootDir(),
       publicPath: this._config.transformer.publicPath,
     });
   }
@@ -367,8 +369,21 @@ class Server {
 
   async _processSingleAssetRequest(req: IncomingMessage, res: ServerResponse) {
     const urlObj = url.parse(decodeURI(req.url), true);
-    const assetPath =
-      urlObj && urlObj.pathname && urlObj.pathname.match(/^\/assets\/(.+)$/);
+    let [, assetPath] =
+      (urlObj &&
+        urlObj.pathname &&
+        urlObj.pathname.match(/^\/assets\/(.+)$/)) ||
+      [];
+
+    if (!assetPath && urlObj && urlObj.query && urlObj.query.unstable_path) {
+      const [, actualPath, secondaryQuery] = nullthrows(
+        urlObj.query.unstable_path.match(/^([^?]*)\??(.*)$/),
+      );
+      if (secondaryQuery) {
+        Object.assign(urlObj.query, querystring.parse(secondaryQuery));
+      }
+      assetPath = actualPath;
+    }
 
     if (!assetPath) {
       throw new Error('Could not extract asset path from URL');
@@ -383,7 +398,7 @@ class Server {
 
     try {
       const data = await getAsset(
-        assetPath[1],
+        assetPath,
         this._config.projectRoot,
         this._config.watchFolders,
         urlObj.query.platform,
@@ -394,7 +409,7 @@ class Server {
       if (process.env.REACT_NATIVE_ENABLE_ASSET_CACHING === true) {
         res.setHeader('Cache-Control', 'max-age=31536000');
       }
-      res.end(this._rangeRequestMiddleware(req, res, data, assetPath[1]));
+      res.end(this._rangeRequestMiddleware(req, res, data, assetPath));
       process.nextTick(() => {
         log(createActionEndEntry(processingAssetRequestLogEntry));
       });
@@ -408,7 +423,7 @@ class Server {
   processRequest: (
     IncomingMessage,
     ServerResponse,
-    (e: ?Error) => mixed,
+    ((e: ?Error) => mixed),
   ) => void = (
     req: IncomingMessage,
     res: ServerResponse,
@@ -470,7 +485,7 @@ class Server {
         res,
         this._parseOptions(formattedUrl),
       );
-    } else if (pathname.startsWith('/assets/')) {
+    } else if (pathname.startsWith('/assets/') || pathname === '/assets') {
       await this._processSingleAssetRequest(req, res);
     } else if (pathname === '/symbolicate') {
       await this._symbolicate(req, res);
@@ -499,12 +514,8 @@ class Server {
       res: ServerResponse,
       bundleOptions: BundleOptions,
     ): Promise<void> {
-      const {
-        entryFile,
-        graphOptions,
-        transformOptions,
-        serializerOptions,
-      } = splitBundleOptions(bundleOptions);
+      const {entryFile, graphOptions, transformOptions, serializerOptions} =
+        splitBundleOptions(bundleOptions);
 
       /**
        * `entryFile` is relative to projectRoot, we need to use resolution function
@@ -512,11 +523,12 @@ class Server {
        */
       const resolvedEntryFilePath = await this._resolveRelativePath(entryFile, {
         transformOptions,
+        relativeTo: 'server',
       });
       const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
         shallow: graphOptions.shallow,
-        experimentalImportBundleSupport: this._config.transformer
-          .experimentalImportBundleSupport,
+        experimentalImportBundleSupport:
+          this._config.transformer.experimentalImportBundleSupport,
       });
 
       // For resources that support deletion, handle the DELETE method.
@@ -646,6 +658,8 @@ class Server {
           stack: formattedError.message,
         });
 
+        debug('Bundling error', error);
+
         return;
       }
 
@@ -724,7 +738,7 @@ class Server {
         {
           asyncRequireModulePath: await this._resolveRelativePath(
             this._config.transformer.asyncRequireModulePath,
-            {transformOptions},
+            {transformOptions, relativeTo: 'project'},
           ),
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
@@ -732,9 +746,10 @@ class Server {
           dev: transformOptions.dev,
           projectRoot: this._config.projectRoot,
           modulesOnly: serializerOptions.modulesOnly,
-          runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-            path.relative(this._config.projectRoot, entryFile),
-          ),
+          runBeforeMainModule:
+            this._config.serializer.getModulesRunBeforeMainModule(
+              path.relative(this._config.projectRoot, entryFile),
+            ),
           runModule: serializerOptions.runModule,
           sourceMapUrl: serializerOptions.sourceMapUrl,
           sourceUrl: serializerOptions.sourceUrl,
@@ -770,7 +785,7 @@ class Server {
           String(result.numModifiedFiles),
         );
         mres.setHeader(DELTA_ID_HEADER, String(result.nextRevId));
-        mres.setHeader('Content-Type', 'application/javascript');
+        mres.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
         mres.setHeader('Last-Modified', result.lastModifiedDate.toUTCString());
         mres.setHeader(
           'Content-Length',
@@ -831,7 +846,7 @@ class Server {
         baseBytecodeBundle(entryFile, revision.prepend, revision.graph, {
           asyncRequireModulePath: await this._resolveRelativePath(
             this._config.transformer.asyncRequireModulePath,
-            {transformOptions},
+            {transformOptions, relativeTo: 'project'},
           ),
           processModuleFilter: this._config.serializer.processModuleFilter,
           createModuleId: this._createModuleId,
@@ -839,9 +854,10 @@ class Server {
           dev: transformOptions.dev,
           projectRoot: this._config.projectRoot,
           modulesOnly: serializerOptions.modulesOnly,
-          runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-            path.relative(this._config.projectRoot, entryFile),
-          ),
+          runBeforeMainModule:
+            this._config.serializer.getModulesRunBeforeMainModule(
+              path.relative(this._config.projectRoot, entryFile),
+            ),
           runModule: serializerOptions.runModule,
           sourceMapUrl: serializerOptions.sourceMapUrl,
           sourceUrl: serializerOptions.sourceUrl,
@@ -990,16 +1006,15 @@ class Server {
     const getCodeFrame = (urls, symbolicatedStack) => {
       for (let i = 0; i < symbolicatedStack.length; i++) {
         const {collapse, column, file, lineNumber} = symbolicatedStack[i];
-        // $FlowFixMe[incompatible-call]
-        const entryPoint = path.resolve(this._config.projectRoot, file);
-        if (collapse || lineNumber == null || urls.has(entryPoint)) {
+        const fileAbsolute = path.resolve(this._config.projectRoot, file ?? '');
+        if (collapse || lineNumber == null || urls.has(fileAbsolute)) {
           continue;
         }
 
         try {
           return {
             content: codeFrameColumns(
-              fs.readFileSync(entryPoint, 'utf8'),
+              fs.readFileSync(fileAbsolute, 'utf8'),
               {
                 // Metro returns 0 based columns but codeFrameColumns expects 1-based columns
                 // $FlowFixMe[unsafe-addition]
@@ -1104,12 +1119,13 @@ class Server {
      */
     const resolvedEntryFilePath = await this._resolveRelativePath(entryFile, {
       transformOptions,
+      relativeTo: 'server',
     });
 
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
       shallow: graphOptions.shallow,
-      experimentalImportBundleSupport: this._config.transformer
-        .experimentalImportBundleSupport,
+      experimentalImportBundleSupport:
+        this._config.transformer.experimentalImportBundleSupport,
     });
     let revision;
     const revPromise = this._bundler.getRevisionByGraphId(graphId);
@@ -1136,12 +1152,25 @@ class Server {
     );
   }
 
-  async _resolveRelativePath(filePath, {transformOptions}) {
+  async _resolveRelativePath(
+    filePath,
+    {
+      transformOptions,
+      relativeTo,
+    }: $ReadOnly<{
+      transformOptions: TransformInputOptions,
+      relativeTo: 'project' | 'server',
+    }>,
+  ) {
     const resolutionFn = await transformHelpers.getResolveDependencyFn(
       this._bundler.getBundler(),
       transformOptions.platform,
     );
-    return resolutionFn(`${this._config.projectRoot}/.`, filePath);
+    const rootDir =
+      relativeTo === 'server'
+        ? this._getServerRootDir()
+        : this._config.projectRoot;
+    return resolutionFn(`${rootDir}/.`, filePath);
   }
 
   getNewBuildID(): string {
@@ -1193,6 +1222,19 @@ class Server {
     sourceMapUrl: null,
     sourceUrl: null,
   };
+
+  _getServerRootDir() {
+    return this._config.server.unstable_serverRoot ?? this._config.projectRoot;
+  }
+
+  _getEntryPointAbsolutePath(entryFile: string) {
+    return path.resolve(this._getServerRootDir(), entryFile);
+  }
+
+  // Wait for the server to finish initializing.
+  async ready(): Promise<void> {
+    await this._bundler.ready();
+  }
 }
 
 function* zip<X, Y>(xs: Iterable<X>, ys: Iterable<Y>): Iterable<[X, Y]> {

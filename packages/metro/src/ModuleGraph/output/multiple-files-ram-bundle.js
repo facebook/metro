@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -9,18 +9,18 @@
  */
 
 'use strict';
+import type {IdsForPathFn} from '../types.flow';
 
-const MAGIC_UNBUNDLE_NUMBER = require('../../shared/output/RamBundle/magic-number');
-const MAGIC_UNBUNDLE_FILENAME = 'UNBUNDLE';
-const JS_MODULES = 'js-modules';
+import type {Module, OutputFn, OutputFnArg, OutputResult} from '../types.flow';
+import type {IndexMap} from 'metro-source-map';
 
 const buildSourcemapWithMetadata = require('../../shared/output/RamBundle/buildSourcemapWithMetadata.js');
+const MAGIC_UNBUNDLE_NUMBER = require('../../shared/output/RamBundle/magic-number');
+const {getModuleCodeAndMap, partition, toModuleTransport} = require('./util');
 const path = require('path');
 
-const {getModuleCodeAndMap, partition, toModuleTransport} = require('./util');
-
-import type {IndexMap} from 'metro-source-map';
-import type {Module, OutputFn, OutputFnArg, OutputResult} from '../types.flow';
+const MAGIC_UNBUNDLE_FILENAME = 'UNBUNDLE';
+const JS_MODULES = 'js-modules';
 
 function asMultipleFilesRamBundle({
   dependencyMapReservedName,
@@ -30,7 +30,19 @@ function asMultipleFilesRamBundle({
   modules,
   requireCalls,
   preloadedModules,
-}): OutputResult<IndexMap> {
+}: $TEMPORARY$object<{
+  dependencyMapReservedName?: ?string,
+  enableIDInlining: boolean,
+  filename: string,
+  globalPrefix: string,
+  idsForPath: IdsForPathFn,
+  modules: Iterable<Module>,
+  preloadedModules: Set<string>,
+  ramGroupHeads: ?$ReadOnlyArray<string>,
+  requireCalls: Iterable<Module>,
+  segmentID: number,
+  sourceMapPath?: ?string,
+}>): OutputResult<IndexMap> {
   const idForPath = (x: {path: string, ...}) => idsForPath(x).moduleId;
   const [startup, deferred] = partition(modules, preloadedModules);
   const startupModules = [...startup, ...requireCalls];

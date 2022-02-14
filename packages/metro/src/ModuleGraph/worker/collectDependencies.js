@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,22 +10,21 @@
 
 'use strict';
 
-const invariant = require('invariant');
-const nullthrows = require('nullthrows');
-
-const generate = require('@babel/generator').default;
-const template = require('@babel/template').default;
-const traverse = require('@babel/traverse').default;
-const types = require('@babel/types');
-
-const {isImport} = types;
-
 import type {NodePath} from '@babel/traverse';
 import type {CallExpression, Identifier, StringLiteral} from '@babel/types';
 import type {
   AllowOptionalDependencies,
   AsyncDependencyType,
 } from 'metro/src/DeltaBundler/types.flow.js';
+
+const generate = require('@babel/generator').default;
+const template = require('@babel/template').default;
+const traverse = require('@babel/traverse').default;
+const types = require('@babel/types');
+const invariant = require('invariant');
+const nullthrows = require('nullthrows');
+
+const {isImport} = types;
 
 type ImportDependencyOptions = $ReadOnly<{
   asyncType: AsyncDependencyType,
@@ -224,9 +223,8 @@ function collectDependencies<TSplitCondition = void>(
           options.dependencyMapName,
         );
       } else {
-        state.dependencyMapIdentifier = path.scope.generateUidIdentifier(
-          'dependencyMap',
-        );
+        state.dependencyMapIdentifier =
+          path.scope.generateUidIdentifier('dependencyMap');
       }
 
       state.dependencyCalls = new Set(['require', ...options.inlineableCalls]);
@@ -549,15 +547,15 @@ function createModuleNameLiteral(dependency: InternalDependency<mixed>) {
 }
 
 class DefaultModuleDependencyRegistry<TSplitCondition = void>
-  implements ModuleDependencyRegistry<TSplitCondition> {
+  implements ModuleDependencyRegistry<TSplitCondition>
+{
   _dependencies: Map<string, InternalDependency<TSplitCondition>> = new Map();
 
   registerDependency(
     qualifier: ImportQualifier,
   ): InternalDependency<TSplitCondition> {
-    let dependency: ?InternalDependency<TSplitCondition> = this._dependencies.get(
-      qualifier.name,
-    );
+    let dependency: ?InternalDependency<TSplitCondition> =
+      this._dependencies.get(qualifier.name);
 
     if (dependency == null) {
       const newDependency: MutableInternalDependency<TSplitCondition> = {

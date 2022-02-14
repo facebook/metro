@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,13 +10,13 @@
 
 'use strict';
 
-const {Logger} = require('metro-core');
-const JestWorker = require('jest-worker').default;
-
-import type {Readable} from 'stream';
 import type {TransformResult} from '../DeltaBundler';
-import type {TransformOptions, TransformerConfig, Worker} from './Worker';
+import type {TransformerConfig, TransformOptions, Worker} from './Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {Readable} from 'stream';
+
+const JestWorker = require('jest-worker').default;
+const {Logger} = require('metro-core');
 
 type WorkerInterface = {|
   getStdout(): Readable,
@@ -140,10 +140,7 @@ class WorkerFarm {
     const error = new TransformError(`${filename}: ${err.message}`);
 
     return Object.assign(error, {
-      stack: (err.stack || '')
-        .split('\n')
-        .slice(0, -1)
-        .join('\n'),
+      stack: (err.stack || '').split('\n').slice(0, -1).join('\n'),
       lineNumber: 0,
     });
   }

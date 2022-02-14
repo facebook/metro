@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,11 +10,10 @@
 
 'use strict';
 
-const fs = require('fs');
 const getPackages = require('../_getPackages');
-const path = require('path');
-
 const METRO_VERSION = require('../../lerna.json').version;
+const fs = require('fs');
+const path = require('path');
 
 function readPackageJson(packagePath) {
   return require(path.join(packagePath, 'package.json'));

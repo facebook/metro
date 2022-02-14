@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,13 +10,12 @@
 
 'use strict';
 
-const path = require('path');
+import type {AssetData} from '../../Assets';
+import type {Dependencies, Module} from '../types.flow';
 
 const {getAssetData} = require('../../Assets');
 const {getJsOutput, isJsModule} = require('./helpers/js');
-
-import type {AssetData} from '../../Assets';
-import type {Dependencies, Module} from '../types.flow';
+const path = require('path');
 
 type Options = {|
   +processModuleFilter: (module: Module<>) => boolean,

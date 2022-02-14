@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,9 +10,9 @@
 
 'use strict';
 
-const {Logger} = require('metro-core');
-
 import type {CacheStore} from 'metro-cache';
+
+const {Logger} = require('metro-core');
 
 /**
  * Main cache class. Receives an array of cache instances, and sequentially

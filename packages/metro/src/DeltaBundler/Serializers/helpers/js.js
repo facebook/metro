@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,13 +10,12 @@
 
 'use strict';
 
-const invariant = require('invariant');
-const path = require('path');
-
-const {addParamsToDefineCall} = require('metro-transform-plugins');
-
 import type {MixedOutput, Module} from '../../types.flow';
 import type {JsOutput} from 'metro-transform-worker';
+
+const invariant = require('invariant');
+const {addParamsToDefineCall} = require('metro-transform-plugins');
+const path = require('path');
 
 export type Options = {
   +createModuleId: string => number | string,
@@ -60,18 +59,18 @@ function getJsOutput(
 
   invariant(
     jsModules.length === 1,
-    `Modules must have exactly one JS output, but ${module.path ??
-      'unknown module'} has ${jsModules.length} JS outputs.`,
+    `Modules must have exactly one JS output, but ${
+      module.path ?? 'unknown module'
+    } has ${jsModules.length} JS outputs.`,
   );
 
   const jsOutput: JsOutput = (jsModules[0]: any);
 
   invariant(
     Number.isFinite(jsOutput.data.lineCount),
-    `JS output must populate lineCount, but ${module.path ??
-      'unknown module'} has ${jsOutput.type} output with lineCount '${
-      jsOutput.data.lineCount
-    }'`,
+    `JS output must populate lineCount, but ${
+      module.path ?? 'unknown module'
+    } has ${jsOutput.type} output with lineCount '${jsOutput.data.lineCount}'`,
   );
 
   return jsOutput;

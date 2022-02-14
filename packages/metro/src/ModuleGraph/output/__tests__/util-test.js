@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,12 +12,10 @@
 
 const {
   addModuleIdsToModuleWrapper,
-  inlineModuleIdsAndAddParamsToDefineCall,
   createIdForPathFn,
   getModuleCodeAndMap,
+  inlineModuleIdsAndAddParamsToDefineCall,
 } = require('../util');
-
-const {any} = jasmine;
 
 describe('addModuleIdsToModuleWrapper', () => {
   const path = 'path/to/file';
@@ -190,7 +188,7 @@ describe('`createIdForPathFn`', () => {
   });
 
   it('returns a number for a string', () => {
-    expect(idForPath({path: 'arbitrary'})).toEqual(any(Number));
+    expect(idForPath({path: 'arbitrary'})).toEqual(expect.any(Number));
   });
 
   it('returns consecutive numbers', () => {

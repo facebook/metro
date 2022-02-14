@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,26 +10,9 @@
 
 'use strict';
 
-const IncrementalBundler = require('./IncrementalBundler');
-const MetroHmrServer = require('./HmrServer');
-const MetroServer = require('./Server');
-
-const attachWebsocketServer = require('./lib/attachWebsocketServer');
-const chalk = require('chalk');
-const fs = require('fs');
-const http = require('http');
-const https = require('https');
-const makeBuildCommand = require('./commands/build');
-const makeDependenciesCommand = require('./commands/dependencies');
-const makeServeCommand = require('./commands/serve');
-const outputBundle = require('./shared/output/bundle');
-
-const {loadConfig, mergeConfig, getDefaultConfig} = require('metro-config');
-const {InspectorProxy} = require('metro-inspector-proxy');
-
 import type {Graph} from './DeltaBundler';
 import type {ServerOptions} from './Server';
-import type {RequestOptions, OutputOptions} from './shared/types.flow.js';
+import type {OutputOptions, RequestOptions} from './shared/types.flow.js';
 import type {Server as HttpServer} from 'http';
 import type {Server as HttpsServer} from 'https';
 import type {
@@ -40,12 +23,34 @@ import type {
 import type {CustomTransformOptions} from 'metro-transform-worker';
 import typeof Yargs from 'yargs';
 
+const makeBuildCommand = require('./commands/build');
+const makeDependenciesCommand = require('./commands/dependencies');
+const makeServeCommand = require('./commands/serve');
+const MetroHmrServer = require('./HmrServer');
+const IncrementalBundler = require('./IncrementalBundler');
+const createWebsocketServer = require('./lib/createWebsocketServer');
+const MetroServer = require('./Server');
+const outputBundle = require('./shared/output/bundle');
+const chalk = require('chalk');
+const fs = require('fs');
+const http = require('http');
+const https = require('https');
+const {getDefaultConfig, loadConfig, mergeConfig} = require('metro-config');
+const {InspectorProxy} = require('metro-inspector-proxy');
+const {parse} = require('url');
+const ws = require('ws');
+
 type MetroMiddleWare = {|
   attachHmrServer: (httpServer: HttpServer | HttpsServer) => void,
   end: () => void,
   metroServer: MetroServer,
   middleware: Middleware,
 |};
+
+export type RunMetroOptions = {
+  ...ServerOptions,
+  waitForBundler?: boolean,
+};
 
 export type RunServerOptions = {|
   hasReducedPerformance?: boolean,
@@ -57,6 +62,10 @@ export type RunServerOptions = {|
   secure?: boolean, // deprecated
   secureCert?: string, // deprecated
   secureKey?: string, // deprecated
+  waitForBundler?: boolean,
+  websocketEndpoints?: {
+    [path: string]: typeof ws.Server,
+  },
 |};
 
 type BuildGraphOptions = {|
@@ -112,27 +121,53 @@ async function getConfig(config: InputConfigT): Promise<ConfigT> {
 
 async function runMetro(
   config: InputConfigT,
-  options?: ServerOptions,
+  options?: RunMetroOptions,
 ): Promise<MetroServer> {
   const mergedConfig = await getConfig(config);
+  const {
+    reporter,
+    server: {port},
+  } = mergedConfig;
 
-  mergedConfig.reporter.update({
+  reporter.update({
     hasReducedPerformance: options
       ? Boolean(options.hasReducedPerformance)
       : false,
-    port: mergedConfig.server.port,
+    port,
     type: 'initialize_started',
   });
 
-  return new MetroServer(mergedConfig, options);
+  const {waitForBundler = false, ...serverOptions} = options ?? {};
+  const server = new MetroServer(mergedConfig, serverOptions);
+
+  const readyPromise = server
+    .ready()
+    .then(() => {
+      reporter.update({
+        type: 'initialize_done',
+        port,
+      });
+    })
+    .catch(error => {
+      reporter.update({
+        type: 'initialize_failed',
+        port,
+        error,
+      });
+    });
+  if (waitForBundler) {
+    await readyPromise;
+  }
+
+  return server;
 }
 
 exports.runMetro = runMetro;
 exports.loadConfig = loadConfig;
 
-exports.createConnectMiddleware = async function(
+const createConnectMiddleware = async function (
   config: ConfigT,
-  options?: ServerOptions,
+  options?: RunMetroOptions,
 ): Promise<MetroMiddleWare> {
   const metroServer = await runMetro(config, options);
 
@@ -148,15 +183,22 @@ exports.createConnectMiddleware = async function(
 
   return {
     attachHmrServer(httpServer: HttpServer | HttpsServer): void {
-      attachWebsocketServer({
-        httpServer,
-        path: '/hot',
-        // $FlowFixMe[method-unbinding]
+      const wss = createWebsocketServer({
         websocketServer: new MetroHmrServer(
           metroServer.getBundler(),
           metroServer.getCreateModuleId(),
           config,
         ),
+      });
+      httpServer.on('upgrade', (request, socket, head) => {
+        const {pathname} = parse(request.url);
+        if (pathname === '/hot') {
+          wss.handleUpgrade(request, socket, head, ws => {
+            wss.emit('connection', ws, request);
+          });
+        } else {
+          socket.destroy();
+        }
       });
     },
     metroServer,
@@ -166,6 +208,7 @@ exports.createConnectMiddleware = async function(
     },
   };
 };
+exports.createConnectMiddleware = createConnectMiddleware;
 
 exports.runServer = async (
   config: ConfigT,
@@ -178,6 +221,8 @@ exports.runServer = async (
     secure, //deprecated
     secureCert, // deprecated
     secureKey, // deprecated
+    waitForBundler = false,
+    websocketEndpoints = {},
   }: RunServerOptions,
 ): Promise<HttpServer | HttpsServer> => {
   if (secure != null || secureCert != null || secureKey != null) {
@@ -194,12 +239,9 @@ exports.runServer = async (
 
   const serverApp = connect();
 
-  const {
-    attachHmrServer,
-    middleware,
-    end,
-  } = await exports.createConnectMiddleware(config, {
+  const {middleware, end, metroServer} = await createConnectMiddleware(config, {
     hasReducedPerformance,
+    waitForBundler,
   });
 
   serverApp.use(middleware);
@@ -244,10 +286,36 @@ exports.runServer = async (
           onReady(httpServer);
         }
 
-        attachHmrServer(httpServer);
-        if (inspectorProxy) {
-          inspectorProxy.addWebSocketListener(httpServer);
+        Object.assign(websocketEndpoints, {
+          ...(inspectorProxy
+            ? {...inspectorProxy.createWebSocketListeners(httpServer)}
+            : {}),
+          '/hot': createWebsocketServer({
+            websocketServer: new MetroHmrServer(
+              metroServer.getBundler(),
+              metroServer.getCreateModuleId(),
+              config,
+            ),
+          }),
+        });
 
+        httpServer.on('upgrade', (request, socket, head) => {
+          const {pathname} = parse(request.url);
+          if (pathname != null && websocketEndpoints[pathname]) {
+            websocketEndpoints[pathname].handleUpgrade(
+              request,
+              socket,
+              head,
+              ws => {
+                websocketEndpoints[pathname].emit('connection', ws, request);
+              },
+            );
+          } else {
+            socket.destroy();
+          }
+        });
+
+        if (inspectorProxy) {
           // TODO(hypuk): Refactor inspectorProxy.processRequest into separate request handlers
           // so that we could provide routes (/json/list and /json/version) here.
           // Currently this causes Metro to give warning about T31407894.
@@ -343,7 +411,7 @@ exports.runBuild = async (
   }
 };
 
-exports.buildGraph = async function(
+exports.buildGraph = async function (
   config: InputConfigT,
   {
     customTransformOptions = Object.create(null),
@@ -373,8 +441,7 @@ exports.buildGraph = async function(
   }
 };
 
-exports.attachMetroCli = function(
-  // $FlowFixMe[value-as-type]
+exports.attachMetroCli = function (
   yargs: Yargs,
   {
     build = {},
@@ -386,7 +453,6 @@ exports.attachMetroCli = function(
     dependencies: any,
     ...
   } = {},
-  // $FlowFixMe[value-as-type]
 ): Yargs {
   if (build) {
     const {command, description, builder, handler} = makeBuildCommand();

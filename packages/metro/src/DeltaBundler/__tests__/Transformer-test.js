@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -19,18 +19,18 @@ jest
   .mock('/path/to/transformer.js', () => ({}), {virtual: true});
 
 var Transformer = require('../Transformer');
+var fs = require('fs');
 var {getDefaultValues} = require('metro-config/src/defaults');
 var {mergeConfig} = require('metro-config/src/loadConfig');
-var fs = require('fs');
 const mkdirp = require('mkdirp');
 
-describe('Transformer', function() {
+describe('Transformer', function () {
   let watchFolders;
   let projectRoot;
   let commonOptions;
   const getSha1 = jest.fn(() => '0123456789012345678901234567890123456789');
 
-  beforeEach(function() {
+  beforeEach(function () {
     const baseConfig = {
       resolver: {
         extraNodeModules: {},

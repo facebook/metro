@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,8 +11,7 @@
 'use strict';
 
 const getDefaultConfig = require('./defaults');
-
-const {loadConfig, resolveConfig, mergeConfig} = require('./loadConfig');
+const {loadConfig, mergeConfig, resolveConfig} = require('./loadConfig');
 
 module.exports = {
   loadConfig,

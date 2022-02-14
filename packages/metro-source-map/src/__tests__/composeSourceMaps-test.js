@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,18 +10,17 @@
  */
 
 'use strict';
+import type {MixedSourceMap, IndexMap, BasicSourceMap} from '../source-map';
 
 /* eslint-disable no-multi-str */
 
-const Consumer = require('../Consumer');
-
 const composeSourceMaps = require('../composeSourceMaps');
+const Consumer = require('../Consumer');
 const fs = require('fs');
 const invariant = require('invariant');
+const {add0, add1} = require('ob1');
 const path = require('path');
 const uglifyEs = require('uglify-js');
-
-const {add0, add1} = require('ob1');
 
 const TestScript1 =
   '/* Half of a program that throws */\
@@ -44,11 +43,14 @@ function topLevel() {\
    throwSomething();\
 }';
 
-function symbolicate(backtrace, sourceMap) {
+function symbolicate(
+  backtrace: empty,
+  sourceMap: any | string | BasicSourceMap | IndexMap | MixedSourceMap,
+) {
   const consumer = new Consumer(
     typeof sourceMap === 'string' ? JSON.parse(sourceMap) : sourceMap,
   );
-  function replaceSymbol(match, source, line, col) {
+  function replaceSymbol(match: any, source: any, line, col: number) {
     var original = consumer.originalPositionFor({
       line: add1(line - 1),
       column: add0(col),

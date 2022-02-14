@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -98,9 +98,10 @@ class BundleBuilder {
 
 const reLineBreak = /\r\n|\r|\n/g;
 
-function measureString(
-  str: string,
-): {|lineBreaks: number, lastLineColumns: number|} {
+function measureString(str: string): {|
+  lineBreaks: number,
+  lastLineColumns: number,
+|} {
   let lineBreaks = 0;
   let match;
   let lastLineStart = 0;

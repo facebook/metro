@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,11 +10,11 @@
 
 'use strict';
 
-const traverse = require('@babel/traverse').default;
-const nullthrows = require('nullthrows');
-
 import type {NodePath, Scope} from '@babel/traverse';
 import type {Program} from '@babel/types';
+
+const traverse = require('@babel/traverse').default;
+const nullthrows = require('nullthrows');
 
 export type Options = {
   reservedNames: $ReadOnlyArray<string>,

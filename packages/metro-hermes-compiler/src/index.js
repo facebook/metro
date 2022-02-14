@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -76,7 +76,7 @@ const align = (offset: number): number =>
 
 module.exports.align = align;
 
-module.exports.compile = function(
+module.exports.compile = function (
   source: string | Buffer,
   {sourceURL, sourceMap}: Options,
 ): HermesCompilerResult {
@@ -133,7 +133,7 @@ module.exports.compile = function(
   }
 };
 
-module.exports.validateBytecodeModule = function(
+module.exports.validateBytecodeModule = function (
   bytecode: Buffer,
   offset: number,
 ): void {
@@ -170,7 +170,7 @@ module.exports.validateBytecodeModule = function(
   }
 };
 
-module.exports.getFileLength = function(
+module.exports.getFileLength = function (
   bytecode: Buffer,
   offset: number,
 ): number {

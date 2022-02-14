@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,9 +10,8 @@
 
 'use strict';
 
-const path = require('path');
-
 const {mergeConfig} = require('metro-config');
+const path = require('path');
 const mockPlatform = process.platform;
 
 jest.useRealTimers();
@@ -905,11 +904,6 @@ let resolver;
           });
 
           it('supports excluding a package', async () => {
-            // TODO: Make this configurable.
-            require('../../node-haste/DependencyGraph/ModuleResolution').ModuleResolver.EMPTY_MODULE = p(
-              '/root/emptyModule.js',
-            );
-
             setMockFileSystem({
               'emptyModule.js': '',
               'index.js': '',
@@ -924,7 +918,50 @@ let resolver;
               },
             });
 
-            resolver = await createResolver();
+            resolver = await createResolver({
+              resolver: {emptyModulePath: p('/root/emptyModule.js')},
+            });
+
+            expect(
+              resolver.resolve(
+                p('/root/node_modules/aPackage/index.js'),
+                'left-pad',
+              ),
+            ).toBe(p('/root/emptyModule.js'));
+            expect(
+              resolver.resolve(
+                p('/root/node_modules/aPackage/index.js'),
+                './foo',
+              ),
+            ).toBe(p('/root/emptyModule.js'));
+
+            // TODO: Are the following two cases expected behaviour?
+            expect(() =>
+              resolver.resolve(p('/root/index.js'), 'aPackage/foo'),
+            ).toThrow();
+            expect(() =>
+              resolver.resolve(p('/root/index.js'), 'aPackage/foo.js'),
+            ).toThrow();
+          });
+
+          it('supports excluding a package when the empty module is a relative path', async () => {
+            setMockFileSystem({
+              'emptyModule.js': '',
+              'index.js': '',
+              node_modules: {
+                aPackage: {
+                  'package.json': JSON.stringify({
+                    name: 'aPackage',
+                    [browserField]: {'left-pad': false, './foo.js': false},
+                  }),
+                  'index.js': '',
+                },
+              },
+            });
+
+            resolver = await createResolver({
+              resolver: {emptyModulePath: './emptyModule.js'},
+            });
 
             expect(
               resolver.resolve(
@@ -1806,6 +1843,61 @@ let resolver;
           p('/root/hasteModule.js'),
         );
       });
+
+      it('respects package.json replacements for global (Haste) packages', async () => {
+        setMockFileSystem({
+          node_modules: {
+            aPackage: {
+              'package.json': JSON.stringify({
+                name: 'aPackage',
+                browser: {hastePackage: './hastePackage-local-override'},
+              }),
+              'index.js': '',
+              './hastePackage-local-override.js': '',
+            },
+          },
+          hastePackage: {
+            'package.json': JSON.stringify({
+              name: 'hastePackage',
+            }),
+            'index.js': '',
+          },
+        });
+
+        resolver = await createResolver(config);
+
+        expect(
+          resolver.resolve(
+            p('/root/node_modules/aPackage/index.js'),
+            'hastePackage',
+          ),
+        ).toBe(p('/root/node_modules/aPackage/hastePackage-local-override.js'));
+      });
+
+      it('respects package.json replacements for Haste modules', async () => {
+        setMockFileSystem({
+          node_modules: {
+            aPackage: {
+              'package.json': JSON.stringify({
+                name: 'aPackage',
+                browser: {hasteModule: './hasteModule-local-override'},
+              }),
+              'index.js': '',
+              './hasteModule-local-override.js': '',
+            },
+          },
+          'hasteModule.js': '@providesModule hasteModule',
+        });
+
+        resolver = await createResolver(config);
+
+        expect(
+          resolver.resolve(
+            p('/root/node_modules/aPackage/index.js'),
+            'hasteModule',
+          ),
+        ).toBe(p('/root/node_modules/aPackage/hasteModule-local-override.js'));
+      });
     });
 
     describe('extraNodeModules config param', () => {
@@ -1967,7 +2059,7 @@ let resolver;
         );
       });
 
-      it('does not override global package resolutions', async () => {
+      it('overrides global package resolutions', async () => {
         setMockFileSystem({
           'index.js': '',
           aPackage: {
@@ -1980,11 +2072,11 @@ let resolver;
         resolver = await createResolver({resolver: {resolveRequest}});
 
         expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-          p('/root/aPackage/index.js'),
+          p('/root/overriden.js'),
         );
       });
 
-      it('does not override haste names', async () => {
+      it('overrides haste names', async () => {
         setMockFileSystem({
           'index.js': '',
           'aPackage.js': '@providesModule aPackage',
@@ -2002,22 +2094,8 @@ let resolver;
         });
 
         expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
-          p('/root/aPackage.js'),
+          p('/root/overriden.js'),
         );
-      });
-
-      it('throws if resolveRequest returns null', async () => {
-        setMockFileSystem({
-          'index.js': mockFileImport("import f from './foo';"),
-          'foo.js': '',
-        });
-
-        resolveRequest.mockReturnValue(null);
-        resolver = await createResolver({resolver: {resolveRequest}});
-
-        expect(() =>
-          resolver.resolve(p('/root/index.js'), './foo'),
-        ).toThrowErrorMatchingSnapshot();
       });
 
       it('calls resolveRequest with the correct arguments', async () => {
@@ -2036,6 +2114,110 @@ let resolver;
         expect(context.originModulePath).toEqual(p('/root/index.js'));
         expect(request).toEqual('./foo');
         expect(platform).toEqual('ios');
+      });
+
+      it('caches resolutions by origin folder', async () => {
+        setMockFileSystem({
+          root1: {
+            dir: {
+              'a.js': '',
+              'b.js': '',
+            },
+          },
+          root2: {
+            dir: {
+              'a.js': '',
+              'b.js': '',
+            },
+          },
+          'target1.js': {},
+          'target2.js': {},
+        });
+        resolver = await createResolver({resolver: {resolveRequest}});
+
+        resolveRequest.mockReturnValue({
+          type: 'sourceFile',
+          filePath: p('/target1.js'),
+        });
+        expect(resolver.resolve(p('/root1/dir/a.js'), 'target')).toBe(
+          p('/target1.js'),
+        );
+        expect(resolver.resolve(p('/root1/dir/b.js'), 'target')).toBe(
+          p('/target1.js'),
+        );
+        expect(resolveRequest).toHaveBeenCalledTimes(1);
+        expect(resolver.resolve(p('/root1/fake.js'), 'target')).toBe(
+          p('/target1.js'),
+        );
+        expect(resolveRequest).toHaveBeenCalledTimes(2);
+
+        resolveRequest.mockReturnValue({
+          type: 'sourceFile',
+          filePath: p('/target2.js'),
+        });
+        expect(resolver.resolve(p('/root2/dir/a.js'), 'target')).toBe(
+          p('/target2.js'),
+        );
+        expect(resolver.resolve(p('/root2/dir/b.js'), 'target')).toBe(
+          p('/target2.js'),
+        );
+        expect(resolveRequest).toHaveBeenCalledTimes(3);
+        expect(resolver.resolve(p('/root2/fake.js'), 'target')).toBe(
+          p('/target2.js'),
+        );
+        expect(resolveRequest).toHaveBeenCalledTimes(4);
+      });
+
+      it('caches resolutions globally if assumeFlatNodeModules=true', async () => {
+        setMockFileSystem({
+          root1: {
+            dir: {
+              'a.js': '',
+              'b.js': '',
+            },
+          },
+          root2: {
+            dir: {
+              'a.js': '',
+              'b.js': '',
+            },
+          },
+          'target-always.js': {},
+          'target-never.js': {},
+        });
+        resolver = await createResolver({resolver: {resolveRequest}});
+
+        resolveRequest.mockReturnValue({
+          type: 'sourceFile',
+          filePath: p('/target-always.js'),
+        });
+        expect(
+          resolver.resolve(p('/root1/dir/a.js'), 'target', {
+            assumeFlatNodeModules: true,
+          }),
+        ).toBe(p('/target-always.js'));
+        expect(
+          resolver.resolve(p('/root1/dir/b.js'), 'target', {
+            assumeFlatNodeModules: true,
+          }),
+        ).toBe(p('/target-always.js'));
+
+        resolveRequest.mockReturnValue({
+          type: 'sourceFile',
+          filePath: p('/target-never.js'),
+        });
+        expect(
+          resolver.resolve(p('/root2/dir/a.js'), 'target', {
+            assumeFlatNodeModules: true,
+          }),
+        ).toBe(p('/target-always.js'));
+        expect(
+          resolver.resolve(p('/root2/dir/b.js'), 'target', {
+            assumeFlatNodeModules: true,
+          }),
+        ).toBe(p('/target-always.js'));
+
+        expect(resolveRequest).toHaveBeenCalledTimes(1);
       });
     });
   });

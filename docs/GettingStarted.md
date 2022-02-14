@@ -40,8 +40,8 @@ const http = require('http');
 const Metro = require('metro');
 
 // We first load the config from the file system
-Metro.loadConfig().then(config => {
-  const metroBundlerServer = Metro.runMetro(config);
+Metro.loadConfig().then(async (config) => {
+  const metroBundlerServer = await Metro.runMetro(config);
 
   const httpServer = http.createServer(
     metroBundlerServer.processRequest.bind(metroBundlerServer),
@@ -87,6 +87,7 @@ We recommend using `runMetro` instead of `runServer`, `runMetro` calls this func
 * `secureKey (string)`: **DEPRECATED** The key to use for `https` when `secure` is on.
 * `secureCert (string)`: **DEPRECATED** The cert to use for `https` when `secure` is on.
 * `secureServerOptions (Object)`: The options object to pass to the Metro's https server. The presence of this object will make Metro's server run on `https`. Refer to the [nodejs docs](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener) for valid options.
+* `waitForBundler (boolean)`: Whether to wait for the bundler to finish initializing before returning the server instance.
 
 ```js
 const config = await Metro.loadConfig();
@@ -134,6 +135,7 @@ Given a configuration and a set of options that you would typically pass to a se
 const config = await Metro.loadConfig();
 
 await Metro.runBuild(config, {
+  entry: 'index.js',
   platform: 'ios',
   minify: true,
   out: '/Users/Metro/metro-ios.js'
@@ -207,7 +209,7 @@ Mandatory method that will transform code. The object received has information a
 const babylon = require('@babel/parser');
 
 module.exports.transform = (file: {filename: string, src: string}) => {
-  const ast = babylon.parse(code, {sourceType: 'module'});
+  const ast = babylon.parse(file.src, {sourceType: 'module'});
 
   return {ast};
 };

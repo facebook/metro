@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,10 +10,10 @@
 
 'use strict';
 
-const {add, neg, add0, add1} = require('ob1');
-
 import type {GeneratedOffset} from './types.flow';
 import type {Number0, Number1} from 'ob1';
+
+const {add, add0, add1, neg} = require('ob1');
 
 function shiftPositionByOffset<
   T: {

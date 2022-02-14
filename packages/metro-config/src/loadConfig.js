@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,18 +10,16 @@
 
 'use strict';
 
-const MetroCache = require('metro-cache');
+import type {ConfigT, InputConfigT, YargArguments} from './configTypes.flow';
 
+const getDefaultConfig = require('./defaults');
+const validConfig = require('./defaults/validConfig');
 const cosmiconfig = require('cosmiconfig');
 const fs = require('fs');
-const getDefaultConfig = require('./defaults');
-const path = require('path');
-const validConfig = require('./defaults/validConfig');
-
 const {validate} = require('jest-validate');
+const MetroCache = require('metro-cache');
+const path = require('path');
 const {dirname, join} = require('path');
-
-import type {ConfigT, InputConfigT, YargArguments} from './configTypes.flow';
 
 type CosmiConfigResult = {
   filepath: string,
@@ -59,10 +57,10 @@ const explorer = cosmiconfig('metro', {
   },
 });
 
-const isFile = filePath =>
+const isFile = (filePath: string) =>
   fs.existsSync(filePath) && !fs.lstatSync(filePath).isDirectory();
 
-const resolve = filePath => {
+const resolve = (filePath: string) => {
   // Attempt to resolve the path with the node resolution algorithm but fall back to resolving
   // the file relative to the current working directory if the input is not an absolute path.
   try {

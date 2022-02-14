@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,7 +12,6 @@
 'use strict';
 
 const createModuleIdFactory = require('../../../../lib/createModuleIdFactory');
-
 const {wrapModule} = require('../bytecode');
 const {compile, validateBytecodeModule} = require('metro-hermes-compiler');
 
@@ -20,9 +19,7 @@ let myModule, bytecode;
 
 beforeEach(() => {
   const code = '__d(function() { console.log("foo") });';
-  ({
-    bytecode,
-  } = compile(
+  ({bytecode} = compile(
     '__d(function() { console.log("foo") },$$_METRO_DEFINE_GLOBAL[0],$$_METRO_DEFINE_GLOBAL[1]);',
     {sourceURL: 'test.js'},
   ));

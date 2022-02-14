@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,15 +10,7 @@
 
 'use strict';
 
-const Resolver = require('metro-resolver');
-
-const fs = require('fs');
-const invariant = require('invariant');
-const path = require('path');
-const util = require('util');
-
-const {codeFrameColumns} = require('@babel/code-frame');
-
+import type {ModuleMap} from './types';
 import type {
   CustomResolver,
   DoesFileExist,
@@ -27,6 +19,13 @@ import type {
   Resolution,
   ResolveAsset,
 } from 'metro-resolver';
+
+const {codeFrameColumns} = require('@babel/code-frame');
+const fs = require('fs');
+const invariant = require('invariant');
+const Resolver = require('metro-resolver');
+const path = require('path');
+const util = require('util');
 
 export type DirExistsFn = (filePath: string) => boolean;
 
@@ -44,23 +43,6 @@ export type Moduleish = interface {
   getPackage(): ?Packageish,
 };
 
-/**
- * `jest-haste-map`'s interface for ModuleMap.
- */
-export type ModuleMap = {
-  getModule(
-    name: string,
-    platform: string | null,
-    supportsNativePlatform: ?boolean,
-  ): ?string,
-  getPackage(
-    name: string,
-    platform: string | null,
-    supportsNativePlatform: ?boolean,
-  ): ?string,
-  ...
-};
-
 export type ModuleishCache<TModule, TPackage> = interface {
   getPackage(
     name: string,
@@ -68,11 +50,14 @@ export type ModuleishCache<TModule, TPackage> = interface {
     supportsNativePlatform?: boolean,
   ): TPackage,
   getModule(path: string): TModule,
+  getPackageOf(modulePath: string): ?TPackage,
 };
 
 type Options<TModule, TPackage> = {|
   +dirExists: DirExistsFn,
+  +disableHierarchicalLookup: boolean,
   +doesFileExist: DoesFileExist,
+  +emptyModulePath: string,
   +extraNodeModules: ?Object,
   +isAssetFile: IsAssetFile,
   +mainFields: $ReadOnlyArray<string>,
@@ -88,14 +73,42 @@ type Options<TModule, TPackage> = {|
 
 class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   _options: Options<TModule, TPackage>;
-
-  static EMPTY_MODULE: string = require.resolve('./assets/empty-module.js');
+  // A module representing the project root, used as the origin when resolving `emptyModulePath`.
+  _projectRootFakeModule: Moduleish;
+  // An empty module, the result of resolving `emptyModulePath` from the project root.
+  _cachedEmptyModule: ?TModule;
 
   constructor(options: Options<TModule, TPackage>) {
     this._options = options;
+    const {projectRoot, moduleCache} = this._options;
+    this._projectRootFakeModule = {
+      path: path.join(projectRoot, '_'),
+      getPackage: () =>
+        moduleCache.getPackageOf(this._projectRootFakeModule.path),
+      isHaste() {
+        throw new Error('not implemented');
+      },
+      getName() {
+        throw new Error('not implemented');
+      },
+    };
   }
 
-  _redirectRequire(fromModule: TModule, modulePath: string): string | false {
+  _getEmptyModule() {
+    let emptyModule = this._cachedEmptyModule;
+    if (!emptyModule) {
+      emptyModule = this.resolveDependency(
+        this._projectRootFakeModule,
+        this._options.emptyModulePath,
+        false,
+        null,
+      );
+      this._cachedEmptyModule = emptyModule;
+    }
+    return emptyModule;
+  }
+
+  _redirectRequire(fromModule: Moduleish, modulePath: string): string | false {
     const moduleCache = this._options.moduleCache;
     try {
       if (modulePath.startsWith('.')) {
@@ -120,7 +133,6 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
           // Since the redirected path is still relative to the package root,
           // we have to transform it back to be module-relative (as it
           // originally was)
-          // $FlowFixMe[incompatible-type]
           if (redirectedPath !== false) {
             redirectedPath =
               './' +
@@ -134,7 +146,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         }
       } else {
         const pck = path.isAbsolute(modulePath)
-          ? moduleCache.getModule(modulePath).getPackage()
+          ? moduleCache.getPackageOf(modulePath)
           : fromModule.getPackage();
 
         if (pck) {
@@ -150,7 +162,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   }
 
   resolveDependency(
-    fromModule: TModule,
+    fromModule: Moduleish,
     moduleName: string,
     allowHaste: boolean,
     platform: string | null,
@@ -214,11 +226,6 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
           [
             `${moduleName} could not be found within the project${hint || '.'}`,
             ...displayDirPaths.map((dirPath: string) => `  ${dirPath}`),
-            '\nIf you are sure the module exists, try these steps:',
-            ' 1. Clear watchman watches: watchman watch-del-all',
-            ' 2. Delete node_modules and run yarn install',
-            " 3. Reset Metro's cache: yarn start --reset-cache",
-            ' 4. Remove the cache: rm -rf /tmp/metro-*',
           ].join('\n'),
         );
       }
@@ -246,10 +253,7 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         invariant(arbitrary != null, 'invalid asset resolution');
         return this._options.moduleCache.getModule(arbitrary);
       case 'empty':
-        const {moduleCache} = this._options;
-        const module_ = moduleCache.getModule(ModuleResolver.EMPTY_MODULE);
-        invariant(module_ != null, 'empty module is not available');
-        return module_;
+        return this._getEmptyModule();
       default:
         (resolution.type: empty);
         throw new Error('invalid type');

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,24 +12,22 @@
 
 'use strict';
 
-const HermesParser = require('hermes-parser');
-
-const crypto = require('crypto');
-const fs = require('fs');
-const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
-const makeHMRConfig = require('metro-react-native-babel-preset/src/configs/hmr');
-const nullthrows = require('nullthrows');
-const path = require('path');
-
-const {parseSync, transformFromAstSync} = require('@babel/core');
-const {generateFunctionMap} = require('metro-source-map');
-
 import type {BabelCoreOptions, Plugins} from '@babel/core';
 import type {
   BabelTransformer,
   BabelTransformerArgs,
 } from 'metro-babel-transformer';
 import type {FBSourceFunctionMap} from 'metro-source-map/src/source-map';
+
+const {parseSync, transformFromAstSync} = require('@babel/core');
+const inlineRequiresPlugin = require('babel-preset-fbjs/plugins/inline-requires');
+const crypto = require('crypto');
+const fs = require('fs');
+const HermesParser = require('hermes-parser');
+const makeHMRConfig = require('metro-react-native-babel-preset/src/configs/hmr');
+const {generateFunctionMap} = require('metro-source-map');
+const nullthrows = require('nullthrows');
+const path = require('path');
 
 const cacheKeyParts = [
   fs.readFileSync(__filename),
@@ -50,7 +48,7 @@ function isTSXSource(fileName) {
  * project level .babelrc file, and if it doesn't exist, reads the
  * default RN babelrc file and uses that.
  */
-const getBabelRC = (function() {
+const getBabelRC = (function () {
   let babelRC: ?BabelCoreOptions = null;
 
   return function _getBabelRC({
@@ -86,14 +84,12 @@ const getBabelRC = (function() {
       }
 
       // babel.config.js
-      // $FlowFixMe[incompatible-call]
       if (!fs.existsSync(projectBabelRCPath)) {
         projectBabelRCPath = path.resolve(projectRoot, 'babel.config.js');
       }
 
       // If we found a babel config file, extend our config off of it
       // otherwise the default config will be used
-      // $FlowFixMe[incompatible-call]
       if (fs.existsSync(projectBabelRCPath)) {
         babelRC.extends = projectBabelRCPath;
       }
@@ -184,12 +180,7 @@ function buildBabelConfig(
   };
 }
 
-function transform({
-  filename,
-  options,
-  src,
-  plugins,
-}: BabelTransformerArgs): {
+function transform({filename, options, src, plugins}: BabelTransformerArgs): {
   ast: BabelNodeFile,
   functionMap: ?FBSourceFunctionMap,
   ...

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,25 +10,24 @@
 
 'use strict';
 
+import type {DeltaResult, Graph, Module} from './DeltaBundler';
+import type {
+  Dependencies,
+  Options as DeltaBundlerOptions,
+  TransformInputOptions,
+} from './DeltaBundler/types.flow';
+import type {GraphId} from './lib/getGraphId';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
+
 const Bundler = require('./Bundler');
 const DeltaBundler = require('./DeltaBundler');
 const ResourceNotFoundError = require('./IncrementalBundler/ResourceNotFoundError');
-
-const crypto = require('crypto');
-const fs = require('fs');
 const getGraphId = require('./lib/getGraphId');
 const getPrependedScripts = require('./lib/getPrependedScripts');
-const path = require('path');
 const transformHelpers = require('./lib/transformHelpers');
-
-import type {
-  Options as DeltaBundlerOptions,
-  TransformInputOptions,
-  Dependencies,
-} from './DeltaBundler/types.flow';
-import type {DeltaResult, Module, Graph} from './DeltaBundler';
-import type {GraphId} from './lib/getGraphId';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 export opaque type RevisionId: string = string;
 
@@ -68,9 +67,8 @@ class IncrementalBundler {
   _revisionsById: Map<RevisionId, Promise<GraphRevision>> = new Map();
   _revisionsByGraphId: Map<GraphId, Promise<GraphRevision>> = new Map();
 
-  static revisionIdFromString: (
-    str: string,
-  ) => RevisionId = revisionIdFromString;
+  static revisionIdFromString: (str: string) => RevisionId =
+    revisionIdFromString;
 
   constructor(config: ConfigT, options?: IncrementalBundlerOptions) {
     this._config = config;
@@ -123,8 +121,8 @@ class IncrementalBundler {
       ),
       transformOptions,
       onProgress: otherOptions.onProgress,
-      experimentalImportBundleSupport: this._config.transformer
-        .experimentalImportBundleSupport,
+      experimentalImportBundleSupport:
+        this._config.transformer.experimentalImportBundleSupport,
       shallow: otherOptions.shallow,
     });
 
@@ -164,8 +162,8 @@ class IncrementalBundler {
         ),
         transformOptions,
         onProgress: otherOptions.onProgress,
-        experimentalImportBundleSupport: this._config.transformer
-          .experimentalImportBundleSupport,
+        experimentalImportBundleSupport:
+          this._config.transformer.experimentalImportBundleSupport,
         shallow: otherOptions.shallow,
       },
     );
@@ -218,8 +216,8 @@ class IncrementalBundler {
   }> {
     const graphId = getGraphId(entryFile, transformOptions, {
       shallow: otherOptions.shallow,
-      experimentalImportBundleSupport: this._config.transformer
-        .experimentalImportBundleSupport,
+      experimentalImportBundleSupport:
+        this._config.transformer.experimentalImportBundleSupport,
     });
     const revisionId = createRevisionId();
     const revisionPromise = (async () => {
@@ -311,7 +309,10 @@ class IncrementalBundler {
     entryFiles: $ReadOnlyArray<string>,
   ): Promise<$ReadOnlyArray<string>> {
     const absoluteEntryFiles = entryFiles.map((entryFile: string) =>
-      path.resolve(this._config.projectRoot, entryFile),
+      path.resolve(
+        this._config.server.unstable_serverRoot ?? this._config.projectRoot,
+        entryFile,
+      ),
     );
 
     await Promise.all(
@@ -332,6 +333,11 @@ class IncrementalBundler {
     );
 
     return absoluteEntryFiles;
+  }
+
+  // Wait for the bundler to become ready.
+  async ready(): Promise<void> {
+    await this._bundler.ready();
   }
 }
 

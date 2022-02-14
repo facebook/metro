@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -23,10 +23,10 @@
 
 'use strict';
 
+const getPackages = require('./_getPackages');
 const babel = require('@babel/core');
 const chalk = require('chalk');
 const fs = require('fs');
-const getPackages = require('./_getPackages');
 const glob = require('glob');
 const micromatch = require('micromatch');
 const mkdirp = require('mkdirp');

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -9,14 +9,15 @@
  */
 
 'use strict';
-
-const EventEmitter = require('./vendor/eventemitter3');
+import type {HmrModule} from './types.flow';
 
 import type {HmrMessage, HmrUpdate} from './types.flow';
 
+const EventEmitter = require('./vendor/eventemitter3');
+
 type SocketState = 'opening' | 'open' | 'closed';
 
-const inject = ({module: [id, code], sourceURL}) => {
+const inject = ({module: [id, code], sourceURL}: HmrModule) => {
   // Some engines do not support `sourceURL` as a comment. We expose a
   // `globalEvalWithSourceUrl` function to handle updates in that case.
   if (global.globalEvalWithSourceUrl) {
@@ -27,7 +28,7 @@ const inject = ({module: [id, code], sourceURL}) => {
   }
 };
 
-const injectUpdate = update => {
+const injectUpdate = (update: HmrUpdate) => {
   update.added.forEach(inject);
   update.modified.forEach(inject);
 };
@@ -58,7 +59,7 @@ class HMRClient extends EventEmitter {
       this.emit('close');
     };
     this._ws.onmessage = message => {
-      const data: HmrMessage = JSON.parse(message.data);
+      const data: HmrMessage = JSON.parse(String(message.data));
 
       switch (data.type) {
         case 'bundle-registered':

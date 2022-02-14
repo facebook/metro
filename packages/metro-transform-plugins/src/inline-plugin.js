@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,20 +10,20 @@
 
 'use strict';
 
-const createInlinePlatformChecks = require('./utils/createInlinePlatformChecks');
-
 import type {PluginObj} from '@babel/core';
-import type {NodePath, Scope, Binding} from '@babel/traverse';
-// type only import. No runtime dependency
-// eslint-disable-next-line import/no-extraneous-dependencies
-import typeof * as Types from '@babel/types';
+import type {Binding, NodePath, Scope} from '@babel/traverse';
 import type {
-  Node,
   CallExpression,
   Identifier,
   MemberExpression,
+  Node,
   ObjectExpression,
 } from '@babel/types';
+// type only import. No runtime dependency
+// eslint-disable-next-line import/no-extraneous-dependencies
+import typeof * as Types from '@babel/types';
+
+const createInlinePlatformChecks = require('./utils/createInlinePlatformChecks');
 
 export type Options = {
   dev: boolean,
@@ -80,7 +80,7 @@ function inlinePlugin(
     isIdentifier(node.object.object, processId) &&
     isGlobal(scope.getBinding(processId.name));
 
-  const isDev = (node: Identifier, parent: Node, scope): boolean =>
+  const isDev = (node: Identifier, parent: Node, scope: Scope): boolean =>
     isIdentifier(node, dev) &&
     isGlobalOrFlowDeclared(scope.getBinding(dev.name)) &&
     !isMemberExpression(parent) &&

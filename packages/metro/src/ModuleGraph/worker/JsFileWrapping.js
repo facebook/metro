@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,10 +10,11 @@
 
 'use strict';
 
+import type {FunctionExpression, Identifier, Program} from '@babel/types';
+
 import template from '@babel/template';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
-import type {Program, FunctionExpression, Identifier} from '@babel/types';
 import invariant from 'invariant';
 
 const WRAP_NAME = '$$_REQUIRE'; // note: babel will prefix this with _

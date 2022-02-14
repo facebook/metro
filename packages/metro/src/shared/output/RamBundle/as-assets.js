@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,20 +10,18 @@
 
 'use strict';
 
-const MAGIC_RAM_BUNDLE_NUMBER = require('./magic-number');
-
-const buildSourcemapWithMetadata = require('./buildSourcemapWithMetadata');
-const mkdirp = require('mkdirp');
-const path = require('path');
-const relativizeSourceMapInline = require('../../../lib/relativizeSourceMap');
-const writeFile = require('../writeFile');
-const writeSourceMap = require('./write-sourcemap');
-
-const {joinModules} = require('./util');
-
 import type {RamBundleInfo} from '../../../DeltaBundler/Serializers/getRamBundleInfo';
 import type {ModuleTransportLike} from '../../../shared/types.flow';
 import type {OutputOptions} from '../../types.flow';
+
+const relativizeSourceMapInline = require('../../../lib/relativizeSourceMap');
+const writeFile = require('../writeFile');
+const buildSourcemapWithMetadata = require('./buildSourcemapWithMetadata');
+const MAGIC_RAM_BUNDLE_NUMBER = require('./magic-number');
+const {joinModules} = require('./util');
+const writeSourceMap = require('./write-sourcemap');
+const mkdirp = require('mkdirp');
+const path = require('path');
 // must not start with a dot, as that won't go into the apk
 const MAGIC_RAM_BUNDLE_FILENAME = 'UNBUNDLE';
 const MODULES_DIR = 'js-modules';

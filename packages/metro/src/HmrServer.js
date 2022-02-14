@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,33 +10,31 @@
 
 'use strict';
 
-const GraphNotFoundError = require('./IncrementalBundler/GraphNotFoundError');
-const IncrementalBundler = require('./IncrementalBundler');
-const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundError');
+import type {RevisionId} from './IncrementalBundler';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type {
+  HmrClientMessage,
+  HmrErrorMessage,
+  HmrMessage,
+  HmrUpdateMessage,
+} from 'metro-runtime/src/modules/types.flow';
 
+const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
+const IncrementalBundler = require('./IncrementalBundler');
+const GraphNotFoundError = require('./IncrementalBundler/GraphNotFoundError');
+const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundError');
 const debounceAsyncQueue = require('./lib/debounceAsyncQueue');
 const formatBundlingError = require('./lib/formatBundlingError');
 const getGraphId = require('./lib/getGraphId');
-const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
-const nullthrows = require('nullthrows');
 const parseOptionsFromUrl = require('./lib/parseOptionsFromUrl');
 const splitBundleOptions = require('./lib/splitBundleOptions');
 const transformHelpers = require('./lib/transformHelpers');
-const url = require('url');
-
 const {
   Logger: {createActionStartEntry, createActionEndEntry, log},
 } = require('metro-core');
 const {VERSION: BYTECODE_VERSION} = require('metro-hermes-compiler');
-
-import type {RevisionId} from './IncrementalBundler';
-import type {ConfigT} from 'metro-config/src/configTypes.flow';
-import type {
-  HmrMessage,
-  HmrClientMessage,
-  HmrUpdateMessage,
-  HmrErrorMessage,
-} from 'metro-runtime/src/modules/types.flow';
+const nullthrows = require('nullthrows');
+const url = require('url');
 
 type $ReturnType<F> = $Call<<A, R>((...A) => R) => R, F>;
 export type EntryPointURL = $ReturnType<typeof url.parse>;
@@ -85,16 +83,16 @@ class HmrServer<TClient: Client> {
     this._clientGroups = new Map();
   }
 
-  async onClientConnect(
+  onClientConnect: (
     requestUrl: string,
     sendFn: (data: string) => void,
-  ): Promise<Client> {
+  ) => Promise<Client> = async (requestUrl, sendFn) => {
     return {
       sendFn,
       revisionIds: [],
       optedIntoHMR: false,
     };
-  }
+  };
 
   async _registerEntryPoint(
     client: Client,
@@ -108,9 +106,8 @@ class HmrServer<TClient: Client> {
       new Set(this._config.resolver.platforms),
       BYTECODE_VERSION,
     );
-    const {entryFile, transformOptions, graphOptions} = splitBundleOptions(
-      options,
-    );
+    const {entryFile, transformOptions, graphOptions} =
+      splitBundleOptions(options);
 
     /**
      * `entryFile` is relative to projectRoot, we need to use resolution function
@@ -121,13 +118,14 @@ class HmrServer<TClient: Client> {
       transformOptions.platform,
     );
     const resolvedEntryFilePath = resolutionFn(
-      this._config.projectRoot + '/.',
+      (this._config.server.unstable_serverRoot ?? this._config.projectRoot) +
+        '/.',
       entryFile,
     );
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
       shallow: graphOptions.shallow,
-      experimentalImportBundleSupport: this._config.transformer
-        .experimentalImportBundleSupport,
+      experimentalImportBundleSupport:
+        this._config.transformer.experimentalImportBundleSupport,
     });
     const revPromise = this._bundler.getRevisionByGraphId(graphId);
     if (!revPromise) {
@@ -147,9 +145,13 @@ class HmrServer<TClient: Client> {
     } else {
       // Prepare the clientUrl to be used as sourceUrl in HMR updates.
       clientUrl.protocol = 'http';
-      const {dev, minify, runModule, bundleEntry: _bundleEntry, ...query} =
-        clientUrl.query || {};
-      // $FlowFixMe[incompatible-type]
+      const {
+        dev,
+        minify,
+        runModule,
+        bundleEntry: _bundleEntry,
+        ...query
+      } = clientUrl.query || {};
       clientUrl.query = {
         ...query,
         dev: dev || 'true',
@@ -185,11 +187,11 @@ class HmrServer<TClient: Client> {
     send([sendFn], {type: 'bundle-registered'});
   }
 
-  async onClientMessage(
+  onClientMessage: (
     client: TClient,
     message: string,
     sendFn: (data: string) => void,
-  ): Promise<void> {
+  ) => Promise<void> = async (client, message, sendFn) => {
     let data: HmrClientMessage;
     try {
       data = JSON.parse(message);
@@ -224,17 +226,17 @@ class HmrServer<TClient: Client> {
       }
     }
     return Promise.resolve();
-  }
+  };
 
-  onClientError(client: TClient, e: Error): void {
+  onClientError: (client: TClient, e: ErrorEvent) => void = (client, e) => {
     this._config.reporter.update({
       type: 'hmr_client_error',
-      error: e,
+      error: e.error,
     });
     this.onClientDisconnect(client);
-  }
+  };
 
-  onClientDisconnect(client: TClient): void {
+  onClientDisconnect: (client: TClient) => void = client => {
     client.revisionIds.forEach(revisionId => {
       const group = this._clientGroups.get(revisionId);
       if (group != null) {
@@ -246,7 +248,7 @@ class HmrServer<TClient: Client> {
         }
       }
     });
-  }
+  };
 
   async _handleFileChange(
     group: ClientGroup,
@@ -320,7 +322,8 @@ class HmrServer<TClient: Client> {
 
       const hmrUpdate = hmrJSBundle(delta, revision.graph, {
         createModuleId: this._createModuleId,
-        projectRoot: this._config.projectRoot,
+        projectRoot:
+          this._config.server.unstable_serverRoot ?? this._config.projectRoot,
         clientUrl: group.clientUrl,
       });
 

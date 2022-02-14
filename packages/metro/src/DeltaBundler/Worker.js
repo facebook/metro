@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,17 +10,17 @@
 
 'use strict';
 
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
-const traverse = require('@babel/traverse').default;
-
 import type {TransformResult} from './types.flow';
 import type {LogEntry} from 'metro-core/src/Logger';
 import type {
-  JsTransformOptions,
   JsTransformerConfig,
+  JsTransformOptions,
 } from 'metro-transform-worker';
+
+const traverse = require('@babel/traverse').default;
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 export type {JsTransformOptions as TransformOptions} from 'metro-transform-worker';
 
@@ -72,10 +72,7 @@ async function transform(
   };
 
   const data = fs.readFileSync(path.resolve(projectRoot, filename));
-  const sha1 = crypto
-    .createHash('sha1')
-    .update(data)
-    .digest('hex');
+  const sha1 = crypto.createHash('sha1').update(data).digest('hex');
 
   const result = await Transformer.transform(
     transformerConfig.transformerConfig,

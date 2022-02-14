@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,21 +10,19 @@
 
 'use strict';
 
-const ErrorStackParser = require('error-stack-parser');
+import type {FormattedError} from 'metro-runtime/src/modules/types.flow';
+
 const GraphNotFoundError = require('../IncrementalBundler/GraphNotFoundError');
 const ResourceNotFoundError = require('../IncrementalBundler/ResourceNotFoundError');
 const RevisionNotFoundError = require('../IncrementalBundler/RevisionNotFoundError');
-
-const fs = require('fs');
-const serializeError = require('serialize-error');
-
 const {
   UnableToResolveError,
 } = require('../node-haste/DependencyGraph/ModuleResolution');
 const {codeFrameColumns} = require('@babel/code-frame');
+const ErrorStackParser = require('error-stack-parser');
+const fs = require('fs');
 const {AmbiguousModuleResolutionError} = require('metro-core');
-
-import type {FormattedError} from 'metro-runtime/src/modules/types.flow';
+const serializeError = require('serialize-error');
 
 export type CustomError = Error &
   interface {

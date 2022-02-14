@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -9,19 +9,20 @@
  */
 
 'use strict';
+import type {IdsForPathFn, Dependency} from '../types.flow';
+import type {BasicSourceMap} from '../../../../metro-source-map/src/source-map';
 
-const buildSourcemapWithMetadata = require('../../shared/output/RamBundle/buildSourcemapWithMetadata.js');
-const invariant = require('invariant');
+import type {Module, OutputFn, OutputFnArg} from '../types.flow';
+import type {IndexMap} from 'metro-source-map';
 
 const {createRamBundleGroups} = require('../../Bundler/util');
 const {
   buildTableAndContents,
   createModuleGroups,
 } = require('../../shared/output/RamBundle/as-indexed-file');
+const buildSourcemapWithMetadata = require('../../shared/output/RamBundle/buildSourcemapWithMetadata.js');
 const {getModuleCodeAndMap, partition, toModuleTransport} = require('./util');
-
-import type {Module, OutputFn, OutputFnArg} from '../types.flow';
-import type {IndexMap} from 'metro-source-map';
+const invariant = require('invariant');
 
 function asIndexedRamBundle({
   dependencyMapReservedName,
@@ -32,7 +33,19 @@ function asIndexedRamBundle({
   preloadedModules,
   ramGroupHeads,
   requireCalls,
-}): {|
+}: $TEMPORARY$object<{
+  dependencyMapReservedName?: ?string,
+  enableIDInlining: boolean,
+  filename: string,
+  globalPrefix: string,
+  idsForPath: IdsForPathFn,
+  modules: Iterable<Module>,
+  preloadedModules: Set<string>,
+  ramGroupHeads: ?$ReadOnlyArray<string>,
+  requireCalls: Iterable<Module>,
+  segmentID: number,
+  sourceMapPath?: ?string,
+}>): {|
   code: string | Buffer,
   extraFiles?: Iterable<[string, string | Buffer]>,
   map: IndexMap,
@@ -90,8 +103,27 @@ function asIndexedRamBundle({
 }
 
 function* subtree(
-  moduleTransport,
-  moduleTransportsByPath,
+  moduleTransport: {
+    code: string,
+    dependencies: Array<Dependency>,
+    id: number,
+    map: ?BasicSourceMap,
+    name: string,
+    sourcePath: string,
+    ...
+  },
+  moduleTransportsByPath: Map<
+    string,
+    {
+      code: string,
+      dependencies: Array<Dependency>,
+      id: number,
+      map: ?BasicSourceMap,
+      name: string,
+      sourcePath: string,
+      ...
+    },
+  >,
   seen: Set<number> = new Set(),
 ): Generator<number, void, void> {
   seen.add(moduleTransport.id);

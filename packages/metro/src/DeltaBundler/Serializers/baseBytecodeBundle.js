@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,12 +10,6 @@
 
 'use strict';
 
-const getAppendScripts = require('../../lib/getAppendScripts');
-const processBytecodeModules = require('./helpers/processBytecodeModules');
-
-const {getJsOutput} = require('./helpers/js');
-const {compile} = require('metro-hermes-compiler');
-
 import type {
   Graph,
   MixedOutput,
@@ -23,6 +17,11 @@ import type {
   SerializerOptions,
 } from '../types.flow';
 import type {BytecodeBundle} from 'metro-runtime/src/modules/types.flow';
+
+const getAppendScripts = require('../../lib/getAppendScripts');
+const {getJsOutput} = require('./helpers/js');
+const processBytecodeModules = require('./helpers/processBytecodeModules');
+const {compile} = require('metro-hermes-compiler');
 
 function baseBytecodeBundle(
   entryPoint: string,

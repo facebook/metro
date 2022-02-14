@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,30 +10,28 @@
 
 'use strict';
 
+import type {BasicSourceMap} from '../source-map';
+import type {
+  GeneratedPositionLookup,
+  IConsumer,
+  Mapping,
+  SourcePosition,
+} from './types.flow';
+import type {Number0} from 'ob1';
+
 const AbstractConsumer = require('./AbstractConsumer');
-
-const invariant = require('invariant');
-const normalizeSourcePath = require('./normalizeSourcePath');
-
 const {
+  EMPTY_POSITION,
   FIRST_COLUMN,
   FIRST_LINE,
   GREATEST_LOWER_BOUND,
-  EMPTY_POSITION,
   lookupBiasToString,
 } = require('./constants');
+const normalizeSourcePath = require('./normalizeSourcePath');
 const {greatestLowerBound} = require('./search');
-const {add, get0, add0, sub, inc} = require('ob1');
+const invariant = require('invariant');
+const {add, add0, get0, inc, sub} = require('ob1');
 const {decode: decodeVlq} = require('vlq');
-
-import type {BasicSourceMap} from '../source-map';
-import type {
-  SourcePosition,
-  GeneratedPositionLookup,
-  Mapping,
-  IConsumer,
-} from './types.flow';
-import type {Number0} from 'ob1';
 
 /**
  * A source map consumer that supports "basic" source maps (that have a

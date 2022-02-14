@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,21 +10,20 @@
 
 'use strict';
 
-const getAppendScripts = require('../../lib/getAppendScripts');
-const getTransitiveDependencies = require('./helpers/getTransitiveDependencies');
-const nullthrows = require('nullthrows');
-const path = require('path');
-
-const {createRamBundleGroups} = require('../../Bundler/util');
-const {isJsModule, wrapModule} = require('./helpers/js');
-const {sourceMapObject} = require('./sourceMapObject');
-
 import type {
   ModuleTransportLike,
   RamModuleTransport,
 } from '../../shared/types.flow';
 import type {Graph, Module, SerializerOptions} from '../types.flow';
 import type {GetTransformOptions} from 'metro-config/src/configTypes.flow.js';
+
+const {createRamBundleGroups} = require('../../Bundler/util');
+const getAppendScripts = require('../../lib/getAppendScripts');
+const getTransitiveDependencies = require('./helpers/getTransitiveDependencies');
+const {isJsModule, wrapModule} = require('./helpers/js');
+const {sourceMapObject} = require('./sourceMapObject');
+const nullthrows = require('nullthrows');
+const path = require('path');
 
 type Options = {|
   ...SerializerOptions,

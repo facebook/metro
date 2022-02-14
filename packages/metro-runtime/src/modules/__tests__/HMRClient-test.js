@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,9 +11,9 @@
 
 'use strict';
 
-const HMRClient = require('../HMRClient');
-
 import type {HmrUpdate} from '../types.flow';
+
+const HMRClient = require('../HMRClient');
 
 let mockSocket = null;
 let evaledCode = '';
@@ -23,6 +23,7 @@ beforeEach(() => {
   global.globalEvalWithSourceUrl = (code, sourceURL) => {
     evaledCode += '\n/* ' + sourceURL + ' */\n  ' + code;
   };
+  // $FlowFixMe[cannot-write]
   global.WebSocket = jest.fn(() => {
     mockSocket = {
       onerror: jest.fn(),
@@ -33,7 +34,7 @@ beforeEach(() => {
           mockSocket.onclose();
         }
       }),
-      mockEmit: (type: string, data) => {
+      mockEmit: (type: string, data: $TEMPORARY$object<{data: string}>) => {
         if (mockSocket) {
           if (type === 'error') {
             mockSocket.onerror(data);
@@ -48,6 +49,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // $FlowFixMe[cannot-write]
   delete global.WebSocket;
   delete global.globalEvalWithSourceUrl;
 });

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,20 +10,18 @@
 
 'use strict';
 
-const AssetPaths = require('./node-haste/lib/AssetPaths');
+import type {AssetPath} from './node-haste/lib/AssetPaths';
 
+const {isAssetTypeAnImage} = require('./Bundler/util');
+const AssetPaths = require('./node-haste/lib/AssetPaths');
 const crypto = require('crypto');
 const denodeify = require('denodeify');
 const fs = require('fs');
 const imageSize = require('image-size');
 const path = require('path');
 
-const {isAssetTypeAnImage} = require('./Bundler/util');
-
 const readDir = denodeify(fs.readdir);
 const readFile = denodeify(fs.readFile);
-
-import type {AssetPath} from './node-haste/lib/AssetPaths';
 
 export type AssetInfo = {|
   +files: Array<string>,
@@ -92,7 +90,7 @@ function buildAssetMap(
     AssetPaths.tryParse(file, platforms),
   );
   const map = new Map();
-  assets.forEach(function(asset: ?AssetPath, i: number) {
+  assets.forEach(function (asset: ?AssetPath, i: number) {
     if (asset == null) {
       return;
     }

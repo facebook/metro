@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,10 +11,10 @@
 'use strict';
 
 import type {Scope} from '@babel/traverse';
+import type {CallExpression, MemberExpression} from '@babel/types';
 // Type only import. No runtime dependency
 // eslint-disable-next-line import/no-extraneous-dependencies
 import typeof * as Types from '@babel/types';
-import type {MemberExpression, CallExpression} from '@babel/types';
 
 const importMap = new Map([['ReactNative', 'react-native']]);
 

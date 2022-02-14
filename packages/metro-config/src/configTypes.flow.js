@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,21 +11,21 @@
 'use strict';
 
 import type {IncomingMessage, ServerResponse} from 'http';
-import typeof MetroCache from 'metro-cache';
 import type {CacheStore} from 'metro-cache';
+import typeof MetroCache from 'metro-cache';
 import type {CustomResolver} from 'metro-resolver';
 import type {MixedSourceMap} from 'metro-source-map';
 import type {JsTransformerConfig} from 'metro-transform-worker';
+import type {TransformResult} from 'metro/src/DeltaBundler';
 import type {
   DeltaResult,
   Graph,
   Module,
   SerializerOptions,
 } from 'metro/src/DeltaBundler/types.flow.js';
-import type {TransformResult} from 'metro/src/DeltaBundler';
+import type {Reporter} from 'metro/src/lib/reporting';
 import type {TransformVariants} from 'metro/src/ModuleGraph/types.flow.js';
 import type Server from 'metro/src/Server';
-import type {Reporter} from 'metro/src/lib/reporting';
 
 export type PostProcessBundleSourcemap = ({
   code: Buffer | string,
@@ -65,7 +65,7 @@ export type GetTransformOptions = (
 export type Middleware = (
   IncomingMessage,
   ServerResponse,
-  (e: ?Error) => mixed,
+  ((e: ?Error) => mixed),
 ) => mixed;
 
 type ResolverConfigT = {|
@@ -73,9 +73,12 @@ type ResolverConfigT = {|
   assetResolutions: $ReadOnlyArray<string>,
   blacklistRE?: RegExp | Array<RegExp>,
   blockList: RegExp | Array<RegExp>,
+  disableHierarchicalLookup: boolean,
   dependencyExtractor: ?string,
+  emptyModulePath: string,
   extraNodeModules: {[name: string]: string, ...},
   hasteImplModulePath: ?string,
+  unstable_hasteMapModulePath: ?string,
   nodeModulesPaths: $ReadOnlyArray<string>,
   platforms: $ReadOnlyArray<string>,
   resolveRequest: ?CustomResolver,
@@ -127,6 +130,7 @@ type ServerConfigT = {|
   enhanceMiddleware: (Middleware, Server) => Middleware,
   useGlobalHotkey: boolean,
   port: number,
+  unstable_serverRoot: ?string,
   rewriteRequestUrl: string => string,
   runInspectorProxy: boolean,
   verifyConnections: boolean,

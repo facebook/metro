@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,10 +10,9 @@
 
 'use strict';
 
+const {transformSync} = require('@babel/core');
 const generate = require('@babel/generator').default;
 const t = require('@babel/types');
-
-const {transformSync} = require('@babel/core');
 
 opaque type Code = string;
 opaque type Plugin = () => {};
@@ -67,7 +66,7 @@ function transform(
   return generate(transformToAst(plugins, code, options)).code;
 }
 
-exports.compare = function(
+exports.compare = function (
   plugins: $ReadOnlyArray<Plugin>,
   code: Code,
   expected: Code,

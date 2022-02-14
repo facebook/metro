@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,9 +11,8 @@
 
 'use strict';
 
-const ESLintTester = require('eslint').RuleTester;
-
 const rule = require('../strictly-null.js');
+const ESLintTester = require('eslint').RuleTester;
 
 ESLintTester.setDefaultConfig({
   parser: require.resolve('babel-eslint'),
@@ -25,7 +24,7 @@ ESLintTester.setDefaultConfig({
 
 const eslintTester = new ESLintTester();
 
-function strictCase(code, output) {
+function strictCase(code: string, output: string) {
   expect(typeof rule.messages.WEAK_NULL).toBe('string');
   return {
     code,
@@ -34,7 +33,7 @@ function strictCase(code, output) {
   };
 }
 
-function weakCase(code, output) {
+function weakCase(code: string, output: string) {
   expect(typeof rule.messages.CHECK_NULL).toBe('string');
   return {
     code,

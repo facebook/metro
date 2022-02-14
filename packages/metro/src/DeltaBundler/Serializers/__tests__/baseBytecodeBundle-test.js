@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,9 +11,8 @@
 'use strict';
 
 const baseBytecodeBundle = require('../baseBytecodeBundle');
-const path = require('path');
-
 const {compile, validateBytecodeModule} = require('metro-hermes-compiler');
+const path = require('path');
 
 const polyfillCode = '__d(function() {/* code for polyfill */});';
 const polyfillBytecode = compile(polyfillCode, {

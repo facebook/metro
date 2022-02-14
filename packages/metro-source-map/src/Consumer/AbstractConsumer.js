@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,17 +10,16 @@
 
 'use strict';
 
-const invariant = require('invariant');
-
-const {GENERATED_ORDER, iterationOrderToString} = require('./constants');
-
 import type {
-  SourcePosition,
   GeneratedPositionLookup,
-  Mapping,
   IConsumer,
   IterationOrder,
+  Mapping,
+  SourcePosition,
 } from './types.flow';
+
+const {GENERATED_ORDER, iterationOrderToString} = require('./constants');
+const invariant = require('invariant');
 
 // Implementation details shared between MappingsConsumer and SectionsConsumer
 class AbstractConsumer implements IConsumer {

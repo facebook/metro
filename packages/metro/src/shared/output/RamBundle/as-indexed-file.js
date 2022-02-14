@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,15 +10,6 @@
 
 'use strict';
 
-const MAGIC_UNBUNDLE_FILE_HEADER = require('./magic-number');
-
-const buildSourcemapWithMetadata = require('./buildSourcemapWithMetadata');
-const fs = require('fs');
-const relativizeSourceMapInline = require('../../../lib/relativizeSourceMap');
-const writeSourceMap = require('./write-sourcemap');
-
-const {joinModules} = require('./util');
-
 import type {RamBundleInfo} from '../../../DeltaBundler/Serializers/getRamBundleInfo';
 import type {
   ModuleGroups,
@@ -26,6 +17,13 @@ import type {
   OutputOptions,
 } from '../../types.flow';
 import type {WriteStream} from 'fs';
+
+const relativizeSourceMapInline = require('../../../lib/relativizeSourceMap');
+const buildSourcemapWithMetadata = require('./buildSourcemapWithMetadata');
+const MAGIC_UNBUNDLE_FILE_HEADER = require('./magic-number');
+const {joinModules} = require('./util');
+const writeSourceMap = require('./write-sourcemap');
+const fs = require('fs');
 
 const SIZEOF_UINT32 = 4;
 
@@ -83,8 +81,6 @@ function saveAsIndexedFile(
     return writeUnbundle;
   }
 }
-
-/* global Buffer: true */
 
 const fileHeader = Buffer.alloc(4);
 fileHeader.writeUInt32LE(MAGIC_UNBUNDLE_FILE_HEADER, 0);

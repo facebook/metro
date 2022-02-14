@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,8 +11,9 @@
 'use strict';
 
 import type {NodePath} from '@babel/traverse';
-import typeof * as Types from '@babel/types';
 import type {CallExpression} from '@babel/types';
+import typeof * as Types from '@babel/types';
+
 import invariant from 'invariant';
 import nullthrows from 'nullthrows';
 
@@ -23,12 +24,7 @@ type State = {|
   |},
 |};
 
-function reverseDependencyMapReferences({
-  types: t,
-}: {
-  types: Types,
-  ...
-}): {|
+function reverseDependencyMapReferences({types: t}: {types: Types, ...}): {|
   visitor: {|
     CallExpression: (path: NodePath<CallExpression>, state: State) => void,
   |},

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,11 +11,9 @@
 
 'use strict';
 
-const JsFileWrapping = require('../JsFileWrapping');
-
-const babylon = require('@babel/parser');
-
 const {codeFromAst, comparableCode} = require('../../test-helpers');
+const JsFileWrapping = require('../JsFileWrapping');
+const babylon = require('@babel/parser');
 
 const {WRAP_NAME} = JsFileWrapping;
 // Note; it's not important HOW Babel changes the name. Only THAT it does.

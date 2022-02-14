@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,10 +10,10 @@
 
 'use strict';
 
+import type {Graph, Module} from '../types.flow';
+
 const {getAssetFiles} = require('../../Assets');
 const {getJsOutput, isJsModule} = require('./helpers/js');
-
-import type {Graph, Module} from '../types.flow';
 
 type Options = {|
   platform: ?string,

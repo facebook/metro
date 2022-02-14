@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,21 +10,19 @@
 
 'use strict';
 
-const generate = require('../worker/generate');
-const mergeSourceMaps = require('../worker/mergeSourceMaps');
-const nullthrows = require('nullthrows');
-const reverseDependencyMapReferences = require('./reverse-dependency-map-references');
-
-const {addParamsToDefineCall} = require('metro-transform-plugins');
-const virtualModule = require('../module').virtual;
-
-// flowlint-next-line untyped-import:off
-const {passthroughSyntaxPlugins} = require('metro-react-native-babel-preset');
-const {parseSync, transformFromAstSync} = require('@babel/core');
-const HermesParser = require('hermes-parser');
-
 import type {Dependency, IdsForPathFn, Module} from '../types.flow';
 import type {BasicSourceMap} from 'metro-source-map';
+
+const virtualModule = require('../module').virtual;
+const generate = require('../worker/generate');
+const mergeSourceMaps = require('../worker/mergeSourceMaps');
+const reverseDependencyMapReferences = require('./reverse-dependency-map-references');
+const {parseSync, transformFromAstSync} = require('@babel/core');
+const HermesParser = require('hermes-parser');
+// flowlint-next-line untyped-import:off
+const {passthroughSyntaxPlugins} = require('metro-react-native-babel-preset');
+const {addParamsToDefineCall} = require('metro-transform-plugins');
+const nullthrows = require('nullthrows');
 
 // Transformed modules have the form
 //   __d(function(require, module, global, exports, dependencyMap) {
@@ -151,8 +149,9 @@ function inlineModuleIds(
         if (idStr.length > match.length) {
           // Stop the build rather than silently emit an incorrect source map.
           throw new Error(
-            `Module ID doesn't fit in available space; add ${idStr.length -
-              match.length} more characters to 'dependencyMapReservedName'.`,
+            `Module ID doesn't fit in available space; add ${
+              idStr.length - match.length
+            } more characters to 'dependencyMapReservedName'.`,
           );
         }
         return idStr.padEnd(match.length);
@@ -216,7 +215,8 @@ function inlineModuleIdsAndAddParamsToDefineCall(
 }
 
 exports.inlineModuleIds = inlineModuleIds;
-exports.inlineModuleIdsAndAddParamsToDefineCall = inlineModuleIdsAndAddParamsToDefineCall;
+exports.inlineModuleIdsAndAddParamsToDefineCall =
+  inlineModuleIdsAndAddParamsToDefineCall;
 
 function escapeRegex(str: string): string {
   // From http://stackoverflow.com/questions/14076210/
@@ -268,7 +268,6 @@ function getModuleCodeAndMap(
     }
     moduleMap = {...moduleMap, x_facebook_sources};
   }
-  // $FlowFixMe[incompatible-return]
   return {moduleCode, moduleMap};
 }
 
@@ -300,7 +299,7 @@ exports.createIdForPathFn = (): (({path: string, ...}) => number) => {
 
 // creates a series of virtual modules with require calls to the passed-in
 // modules.
-exports.requireCallsTo = function*(
+exports.requireCallsTo = function* (
   modules: Iterable<Module>,
   idForPath: IdForPathFn,
   getRunModuleStatement: (id: number | string) => string,

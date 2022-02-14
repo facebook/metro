@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -9,16 +9,14 @@
 
 'use strict';
 
-const Server = require('../Server');
-
-const denodeify = require('denodeify');
-const fs = require('fs');
-const path = require('path');
+import typeof Yargs from 'yargs';
 
 const {makeAsyncCommand} = require('../cli-utils');
+const Server = require('../Server');
+const denodeify = require('denodeify');
+const fs = require('fs');
 const {loadConfig} = require('metro-config');
-
-import typeof Yargs from 'yargs';
+const path = require('path');
 
 async function dependencies(args: any, config: any) {
   const rootModuleAbsolutePath = args.entryFile;
@@ -31,7 +29,7 @@ async function dependencies(args: any, config: any) {
   config.cacheStores = [];
 
   const relativePath = path.relative(
-    config.projectRoot,
+    config.server.unstable_serverRoot ?? config.projectRoot,
     rootModuleAbsolutePath,
   );
 

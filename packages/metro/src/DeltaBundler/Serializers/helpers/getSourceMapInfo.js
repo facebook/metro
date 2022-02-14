@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,13 +10,13 @@
 
 'use strict';
 
-const {getJsOutput} = require('./js');
-
 import type {Module} from '../../types.flow';
 import type {
-  MetroSourceMapSegmentTuple,
   FBSourceFunctionMap,
+  MetroSourceMapSegmentTuple,
 } from 'metro-source-map';
+
+const {getJsOutput} = require('./js');
 
 function getSourceMapInfo(
   module: Module<>,

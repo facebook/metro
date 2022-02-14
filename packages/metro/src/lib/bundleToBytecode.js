@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,12 +10,12 @@
 
 'use strict';
 
-const {getFileLength} = require('metro-hermes-compiler');
-
 import type {
-  BytecodeBundle,
   BundleMetadata,
+  BytecodeBundle,
 } from 'metro-runtime/src/modules/types.flow';
+
+const {getFileLength} = require('metro-hermes-compiler');
 
 // The magic number is used as a header for bytecode.
 // It represents a Metro tunnel in binary.
@@ -49,9 +49,10 @@ function addModuleHeader(buffer: Buffer): [Buffer, Buffer] {
  * ...
  *
  */
-function bundleToBytecode(
-  bundle: BytecodeBundle,
-): {|+bytecode: Buffer, +metadata: BundleMetadata|} {
+function bundleToBytecode(bundle: BytecodeBundle): {|
+  +bytecode: Buffer,
+  +metadata: BundleMetadata,
+|} {
   const buffers = [];
 
   if (bundle.pre.length) {

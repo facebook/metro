@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,19 +8,18 @@
  * @format
  */
 
-const SourceMetadataMapConsumer = require('./SourceMetadataMapConsumer');
+import type {ChromeHeapSnapshot} from './ChromeHeapSnapshot';
+import type {HermesFunctionOffsets, MixedSourceMap} from 'metro-source-map';
 
+// flowlint-next-line untyped-type-import:off
+import {typeof SourceMapConsumer} from 'source-map';
+
+const {ChromeHeapSnapshotProcessor} = require('./ChromeHeapSnapshot');
+const SourceMetadataMapConsumer = require('./SourceMetadataMapConsumer');
 const fs = require('fs');
 const invariant = require('invariant');
 const nullthrows = require('nullthrows');
 const path = require('path');
-
-const {ChromeHeapSnapshotProcessor} = require('./ChromeHeapSnapshot');
-
-import type {ChromeHeapSnapshot} from './ChromeHeapSnapshot';
-import type {MixedSourceMap, HermesFunctionOffsets} from 'metro-source-map';
-// flowlint-next-line untyped-type-import:off
-import {typeof SourceMapConsumer} from 'source-map';
 
 type SingleMapModuleIds = {
   segmentId: number,
@@ -499,7 +498,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
       +sourceFunctionsConsumer: ?SourceMetadataMapConsumer,
       +hermesOffsets: ?HermesFunctionOffsets,
     |},
-    ...,
+    ...
   };
   +_legacyFormat: boolean;
   // $FlowFixMe[value-as-type]
@@ -577,9 +576,8 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
           const moduleInformation = this.parseFileName(SourceURL);
           const generatedLine =
             cjsModuleOffsetOrSegmentID + this.options.inputLineStart;
-          const segment = this._segments[
-            moduleInformation.segmentId.toString()
-          ];
+          const segment =
+            this._segments[moduleInformation.segmentId.toString()];
           const hermesOffsets = segment?.hermesOffsets;
           if (!hermesOffsets) {
             symbolicatedTrace.push({

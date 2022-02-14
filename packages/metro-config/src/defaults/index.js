@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,25 +10,23 @@
 
 'use strict';
 
-const TerminalReporter = require('metro/src/lib/TerminalReporter');
-
-const exclusionList = require('./exclusionList');
-const getMaxWorkers = require('metro/src/lib/getMaxWorkers');
-const os = require('os');
-const path = require('path');
+import type {ConfigT} from '../configTypes.flow';
 
 const {
+  DEFAULT_METRO_MINIFIER_PATH,
   assetExts,
   assetResolutions,
-  sourceExts,
-  platforms,
-  DEFAULT_METRO_MINIFIER_PATH,
   defaultCreateModuleIdFactory,
+  platforms,
+  sourceExts,
 } = require('./defaults');
+const exclusionList = require('./exclusionList');
 const {FileStore} = require('metro-cache');
 const {Terminal} = require('metro-core');
-
-import type {ConfigT} from '../configTypes.flow';
+const getMaxWorkers = require('metro/src/lib/getMaxWorkers');
+const TerminalReporter = require('metro/src/lib/TerminalReporter');
+const os = require('os');
+const path = require('path');
 
 const getDefaultValues = (projectRoot: ?string): ConfigT => ({
   resolver: {
@@ -38,8 +36,13 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     sourceExts,
     blockList: exclusionList(),
     dependencyExtractor: undefined,
+    disableHierarchicalLookup: false,
+    emptyModulePath: require.resolve(
+      'metro-runtime/src/modules/empty-module.js',
+    ),
     extraNodeModules: {},
     hasteImplModulePath: undefined,
+    unstable_hasteMapModulePath: undefined,
     nodeModulesPaths: [],
     resolveRequest: null,
     resolverMainFields: ['browser', 'main'],
@@ -66,6 +69,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     rewriteRequestUrl: url => url,
     runInspectorProxy: true,
     verifyConnections: false,
+    unstable_serverRoot: null,
   },
 
   symbolicator: {

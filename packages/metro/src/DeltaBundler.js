@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,17 +10,17 @@
 
 'use strict';
 
-const DeltaCalculator = require('./DeltaBundler/DeltaCalculator');
-
 import type Bundler from './Bundler';
 import type {
   DeltaResult,
-  Graph,
   Dependencies,
+  Graph,
   // eslint-disable-next-line no-unused-vars
   MixedOutput,
   Options,
 } from './DeltaBundler/types.flow';
+
+const DeltaCalculator = require('./DeltaBundler/DeltaCalculator');
 
 export type {
   DeltaResult,

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,21 +10,19 @@
 
 'use strict';
 
+import type {IConsumer} from './Consumer/types.flow';
+import type {BabelSourceMapSegment} from '@babel/generator';
+
+const {BundleBuilder, createIndexMap} = require('./BundleBuilder');
+const composeSourceMaps = require('./composeSourceMaps');
 const Consumer = require('./Consumer');
+// We need to export this for `metro-symbolicate`
+const normalizeSourcePath = require('./Consumer/normalizeSourcePath');
+const {generateFunctionMap} = require('./generateFunctionMap');
 const Generator = require('./Generator');
 const SourceMap = require('source-map');
 
-import type {IConsumer} from './Consumer/types.flow';
 export type {IConsumer};
-
-// We need to export this for `metro-symbolicate`
-const normalizeSourcePath = require('./Consumer/normalizeSourcePath');
-
-const composeSourceMaps = require('./composeSourceMaps');
-const {createIndexMap, BundleBuilder} = require('./BundleBuilder');
-const {generateFunctionMap} = require('./generateFunctionMap');
-
-import type {BabelSourceMapSegment} from '@babel/generator';
 
 type GeneratedCodeMapping = [number, number];
 type SourceMapping = [number, number, number, number];
@@ -241,7 +239,19 @@ function toSegmentTuple(
   return [line, column, original.line, original.column, name];
 }
 
-function addMappingsForFile(generator, mappings, module, carryOver) {
+function addMappingsForFile(
+  generator: Generator,
+  mappings: Array<MetroSourceMapSegmentTuple>,
+  module: {
+    +code: string,
+    +functionMap: ?FBSourceFunctionMap,
+    +map: ?Array<MetroSourceMapSegmentTuple>,
+    +path: string,
+    +source: string,
+    ...
+  },
+  carryOver: number,
+) {
   generator.startFile(module.path, module.source, module.functionMap);
 
   for (let i = 0, n = mappings.length; i < n; ++i) {
@@ -251,7 +261,11 @@ function addMappingsForFile(generator, mappings, module, carryOver) {
   generator.endFile();
 }
 
-function addMapping(generator, mapping, carryOver) {
+function addMapping(
+  generator: Generator,
+  mapping: MetroSourceMapSegmentTuple,
+  carryOver: number,
+) {
   const n = mapping.length;
   const line = mapping[0] + carryOver;
   // lines start at 1, columns start at 0
@@ -277,9 +291,10 @@ function addMapping(generator, mapping, carryOver) {
   }
 }
 
-function countLines(string) {
-  return string.split('\n').length;
-}
+const newline = /\r\n?|\n|\u2028|\u2029/g;
+
+const countLines = (string: string): number =>
+  (string.match(newline) || []).length + 1;
 
 module.exports = {
   BundleBuilder,

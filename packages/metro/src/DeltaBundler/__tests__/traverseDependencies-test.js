@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -805,7 +805,7 @@ describe('edge cases', () => {
       };
     }
 
-    const assertOrder = async function() {
+    const assertOrder = async function () {
       graph = {
         dependencies: new Map(),
         entryPoints: ['/bundle'],
@@ -901,7 +901,7 @@ describe('optional dependencies', () => {
   };
 
   const mockTransform = (notOptional?: string[]) => {
-    return function(path) {
+    return function (path) {
       const result = options.transform.apply(this, arguments);
       result.dependencies.forEach(dep => {
         if (notOptional && notOptional.includes(dep.name)) {

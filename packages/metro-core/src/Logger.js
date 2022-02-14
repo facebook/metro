@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,14 +10,12 @@
 
 'use strict';
 
-const os = require('os');
-const path = require('path');
-
-const {EventEmitter} = require('events');
-
 import type {BundleOptions} from 'metro/src/shared/types.flow';
 
 const VERSION = require('../package.json').version;
+const {EventEmitter} = require('events');
+const os = require('os');
+const path = require('path');
 
 export type ActionLogEntryData = {
   action_name: string,

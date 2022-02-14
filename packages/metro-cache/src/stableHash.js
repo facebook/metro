@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,13 +10,13 @@
 
 'use strict';
 
-const canonicalize = require('metro-core/src/canonicalize');
 const crypto = require('crypto');
+const canonicalize = require('metro-core/src/canonicalize');
 
 function stableHash(value: mixed): Buffer {
   return (
     crypto
-      .createHash('md4')
+      .createHash('md5')
       /* $FlowFixMe(>=0.95.0 site=react_native_fb) This comment suppresses an
        * error found when Flow v0.95 was deployed. To see the error, delete this
        * comment and run Flow. */

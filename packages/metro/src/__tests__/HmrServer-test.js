@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,9 +11,7 @@
 'use strict';
 
 const HmrServer = require('../HmrServer');
-
 const getGraphId = require('../lib/getGraphId');
-
 const {getDefaultValues} = require('metro-config/src/defaults');
 
 jest.mock('../lib/transformHelpers', () => ({
@@ -104,7 +102,7 @@ describe('HmrServer', () => {
     options.reporter.update = jest.fn();
     options.transformer.experimentalImportBundleSupport = false;
     options.resolver.platforms = [];
-    options.server.rewriteRequestUrl = function(requrl) {
+    options.server.rewriteRequestUrl = function (requrl) {
       const rewritten = requrl.replace(/__REMOVE_THIS_WHEN_REWRITING__/g, '');
       if (rewritten !== requrl) {
         return rewritten + '&TEST_URL_WAS_REWRITTEN=true';

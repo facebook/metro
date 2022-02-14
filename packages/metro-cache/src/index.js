@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,13 +10,12 @@
 
 'use strict';
 
-const AutoCleanFileStore = require('./stores/AutoCleanFileStore');
 const Cache = require('./Cache');
+const stableHash = require('./stableHash');
+const AutoCleanFileStore = require('./stores/AutoCleanFileStore');
 const FileStore = require('./stores/FileStore');
 const HttpGetStore = require('./stores/HttpGetStore');
 const HttpStore = require('./stores/HttpStore');
-
-const stableHash = require('./stableHash');
 
 export type {Options as FileOptions} from './stores/FileStore';
 export type {Options as HttpOptions} from './stores/HttpStore';

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14,9 +14,8 @@ jest.mock('../../Bundler');
 jest.mock('../DeltaCalculator');
 
 const Bundler = require('../../Bundler');
-const DeltaCalculator = require('../DeltaCalculator');
-
 const DeltaBundler = require('../../DeltaBundler');
+const DeltaCalculator = require('../DeltaCalculator');
 
 describe('DeltaBundler', () => {
   let deltaBundler;

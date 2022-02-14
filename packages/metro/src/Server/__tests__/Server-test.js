@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,17 +11,15 @@
 'use strict';
 
 const ResourceNotFoundError = require('../../IncrementalBundler/ResourceNotFoundError');
-
-const path = require('path');
-
 const {MAGIC_NUMBER} = require('../../lib/bundleToBytecode');
 const {getDefaultValues} = require('metro-config/src/defaults');
 const {
-  compile,
-  align,
-  validateBytecodeModule,
   VERSION: BYTECODE_VERSION,
+  align,
+  compile,
+  validateBytecodeModule,
 } = require('metro-hermes-compiler');
+const path = require('path');
 
 jest
   .mock('jest-worker', () => ({}))
@@ -77,7 +75,7 @@ describe('processRequest', () => {
   config.reporter = require('../../lib/reporting').nullReporter;
   config.serializer.polyfillModuleNames = null;
   config.serializer.getModulesRunBeforeMainModule = () => ['InitializeCore'];
-  config.server.rewriteRequestUrl = function(requrl) {
+  config.server.rewriteRequestUrl = function (requrl) {
     const rewritten = requrl.replace(/__REMOVE_THIS_WHEN_REWRITING__/g, '');
     if (rewritten !== requrl) {
       return rewritten + '&TEST_URL_WAS_REWRITTEN=true';
@@ -781,6 +779,63 @@ describe('processRequest', () => {
         done();
       });
     });
+
+    it('should use unstable_path if provided', done => {
+      const req = scaffoldReq({url: '/assets?unstable_path=imgs/a.png'});
+      const res = {end: jest.fn(), setHeader: jest.fn()};
+
+      getAsset.mockReturnValue(Promise.resolve('i am image'));
+
+      server.processRequest(req, res);
+      res.end.mockImplementation(value => {
+        expect(value).toBe('i am image');
+        done();
+      });
+    });
+
+    it('should parse the platform option if tacked onto unstable_path', done => {
+      const req = scaffoldReq({
+        url: '/assets?unstable_path=imgs/a.png?platform=ios',
+      });
+      const res = {end: jest.fn(), setHeader: jest.fn()};
+
+      getAsset.mockReturnValue(Promise.resolve('i am image'));
+
+      server.processRequest(req, res);
+      res.end.mockImplementation(value => {
+        expect(getAsset).toBeCalledWith(
+          'imgs/a.png',
+          '/root',
+          ['/root'],
+          'ios',
+          expect.any(Array),
+        );
+        expect(value).toBe('i am image');
+        done();
+      });
+    });
+
+    it('unstable_path can escape from projectRoot', done => {
+      const req = scaffoldReq({
+        url: '/assets?unstable_path=../otherFolder/otherImage.png',
+      });
+      const res = {end: jest.fn(), setHeader: jest.fn()};
+
+      getAsset.mockReturnValue(Promise.resolve('i am image'));
+
+      server.processRequest(req, res);
+      res.end.mockImplementation(value => {
+        expect(getAsset).toBeCalledWith(
+          '../otherFolder/otherImage.png',
+          '/root',
+          ['/root'],
+          undefined,
+          expect.any(Array),
+        );
+        expect(value).toBe('i am image');
+        done();
+      });
+    });
   });
 
   describe('build(options)', () => {
@@ -895,8 +950,7 @@ describe('processRequest', () => {
           rawBody: JSON.stringify({
             stack: [
               {
-                file:
-                  'http://localhost:8081/my__REMOVE_THIS_WHEN_REWRITING__bundle.bundle?runModule=true',
+                file: 'http://localhost:8081/my__REMOVE_THIS_WHEN_REWRITING__bundle.bundle?runModule=true',
                 ...mappedLocation,
               },
             ],
@@ -910,8 +964,7 @@ describe('processRequest', () => {
                 rawBody: JSON.stringify({
                   stack: [
                     {
-                      file:
-                        'http://localhost:8081/mybundle.bundle?runModule=true',
+                      file: 'http://localhost:8081/mybundle.bundle?runModule=true',
                       ...mappedLocation,
                     },
                   ],
@@ -934,8 +987,7 @@ describe('processRequest', () => {
           rawBody: JSON.stringify({
             stack: [
               {
-                file:
-                  'http://localhost:8081/my__REMOVE_THIS_WHEN_REWRITING__bundle.bundle?runModule=true',
+                file: 'http://localhost:8081/my__REMOVE_THIS_WHEN_REWRITING__bundle.bundle?runModule=true',
                 ...unmappedLocation,
               },
             ],
@@ -987,8 +1039,7 @@ describe('processRequest', () => {
         rawBody: JSON.stringify({
           stack: [
             {
-              file:
-                'http://localhost:8081/mybundle.bundle?runModule=true&modulesOnly=true',
+              file: 'http://localhost:8081/mybundle.bundle?runModule=true&modulesOnly=true',
               lineNumber: 2,
               column: 16,
             },
@@ -1012,8 +1063,7 @@ describe('processRequest', () => {
         rawBody: JSON.stringify({
           stack: [
             {
-              file:
-                'http://localhost:8081/mybundle.bundle?runModule=true&shallow=true',
+              file: 'http://localhost:8081/mybundle.bundle?runModule=true&shallow=true',
               lineNumber: 2,
               column: 18,
               customPropShouldBeLeftUnchanged: 'foo',

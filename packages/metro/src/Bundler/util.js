@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,14 +10,14 @@
 
 'use strict';
 
-const babelTypes = require('@babel/types');
-const babylon = require('@babel/parser');
-const nullthrows = require('nullthrows');
-const template = require('@babel/template').default;
-
 import type {AssetDataFiltered, AssetDataWithoutFiles} from '../Assets';
 import type {ModuleTransportLike} from '../shared/types.flow';
 import type {File} from '@babel/types';
+
+const babylon = require('@babel/parser');
+const template = require('@babel/template').default;
+const babelTypes = require('@babel/types');
+const nullthrows = require('nullthrows');
 
 // Structure of the object: dir.name.scale = asset
 export type RemoteFileMap = {
@@ -28,9 +28,9 @@ export type RemoteFileMap = {
         hash: string,
         ...
       },
-      ...,
+      ...
     },
-    ...,
+    ...
   },
   __proto__: null,
   ...
@@ -207,8 +207,9 @@ function createRamBundleGroups<T: ModuleTransportLike>(
       const parentNames = parents.map(byId.get, byId);
       const lastName = parentNames.pop();
       throw new Error(
-        `Module ${byId.get(moduleId) ||
-          moduleId} belongs to groups ${parentNames.join(', ')}, and ${String(
+        `Module ${
+          byId.get(moduleId) || moduleId
+        } belongs to groups ${parentNames.join(', ')}, and ${String(
           lastName,
         )}. Ensure that each module is only part of one group.`,
       );

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,28 +10,48 @@
 
 'use strict';
 
-const nullthrows = require('nullthrows');
-const parseCustomTransformOptions = require('./parseCustomTransformOptions');
+import type {BundleOptions} from '../shared/types.flow';
+
 const parsePlatformFilePath = require('../node-haste/lib/parsePlatformFilePath');
+const parseCustomTransformOptions = require('./parseCustomTransformOptions');
+const nullthrows = require('nullthrows');
 const path = require('path');
 const url = require('url');
 
-import type {BundleOptions} from '../shared/types.flow';
-
-const getBoolean = (query, opt, defaultValue) =>
+const getBoolean = (
+  query: {[string]: string},
+  opt:
+    | $TEMPORARY$string<'dev'>
+    | $TEMPORARY$string<'excludeSource'>
+    | $TEMPORARY$string<'inlineSourceMap'>
+    | $TEMPORARY$string<'minify'>
+    | $TEMPORARY$string<'modulesOnly'>
+    | $TEMPORARY$string<'runModule'>
+    | $TEMPORARY$string<'shallow'>,
+  defaultValue: boolean,
+) =>
   query[opt] == null
     ? defaultValue
     : query[opt] === 'true' || query[opt] === '1';
 
-const getNumber = (query, opt, defaultValue) => {
+const getNumber = (
+  query: {[string]: string},
+  opt: $TEMPORARY$string<'runtimeBytecodeVersion'>,
+  defaultValue: null,
+) => {
   const number = parseInt(query[opt], 10);
   return Number.isNaN(number) ? defaultValue : number;
 };
 
-const getBundleType = bundleType =>
+const getBundleType = (bundleType: string | $TEMPORARY$string<'map'>) =>
   bundleType === 'map' ? bundleType : 'bundle';
 
-const getTransformProfile = transformProfile =>
+const getTransformProfile = (
+  transformProfile:
+    | string
+    | $TEMPORARY$string<'hermes-canary'>
+    | $TEMPORARY$string<'hermes-stable'>,
+) =>
   transformProfile === 'hermes-stable' || transformProfile === 'hermes-canary'
     ? transformProfile
     : 'default';

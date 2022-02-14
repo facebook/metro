@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,9 +10,6 @@
 
 'use strict';
 
-const getAppendScripts = require('../../lib/getAppendScripts');
-const processModules = require('./helpers/processModules');
-
 import type {
   Graph,
   MixedOutput,
@@ -20,6 +17,9 @@ import type {
   SerializerOptions,
 } from '../types.flow';
 import type {Bundle} from 'metro-runtime/src/modules/types.flow';
+
+const getAppendScripts = require('../../lib/getAppendScripts');
+const processModules = require('./helpers/processModules');
 
 function baseJSBundle(
   entryPoint: string,

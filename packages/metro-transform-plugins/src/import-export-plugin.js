@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,21 +10,21 @@
 
 'use strict';
 
-const nullthrows = require('nullthrows');
-const template = require('@babel/template').default;
-
+import type {PluginObj} from '@babel/core';
 import type {NodePath} from '@babel/traverse';
+import type {
+  ExportNamedDeclaration,
+  ImportDeclaration,
+  Node,
+  Program,
+  Statement,
+} from '@babel/types';
 // Type only dependency. This is not a runtime dependency
 // eslint-disable-next-line import/no-extraneous-dependencies
 import typeof * as Types from '@babel/types';
-import type {PluginObj} from '@babel/core';
-import type {
-  Node,
-  ExportNamedDeclaration,
-  ImportDeclaration,
-  Statement,
-  Program,
-} from '@babel/types';
+
+const template = require('@babel/template').default;
+const nullthrows = require('nullthrows');
 
 type State = {
   exportAll: Array<{file: string, loc: ?BabelSourceLocation, ...}>,
@@ -364,7 +364,8 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
             ),
           });
         } else {
-          let sharedModuleImport = null;
+          let sharedModuleImport;
+          let sharedModuleVariableDeclaration = null;
           if (
             specifiers.filter(
               s =>
@@ -373,18 +374,20 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
                   s.imported.name !== 'default'),
             ).length > 1
           ) {
-            sharedModuleImport = path.scope.generateUidIdentifierBasedOnNode(
-              file,
+            sharedModuleImport =
+              path.scope.generateUidIdentifierBasedOnNode(file);
+            sharedModuleVariableDeclaration = withLocation(
+              t.variableDeclaration('var', [
+                t.variableDeclarator(
+                  t.cloneNode(sharedModuleImport),
+                  t.callExpression(t.identifier('require'), [
+                    resolvePath(t.cloneNode(file), state.opts.resolve),
+                  ]),
+                ),
+              ]),
+              loc,
             );
-            path.scope.push({
-              id: sharedModuleImport,
-              init: withLocation(
-                t.callExpression(t.identifier('require'), [
-                  resolvePath(t.cloneNode(file), state.opts.resolve),
-                ]),
-                loc,
-              ),
-            });
+            state.imports.push({node: sharedModuleVariableDeclaration});
           }
 
           specifiers.forEach(s => {
@@ -434,17 +437,19 @@ function importExportPlugin({types: t}: {types: Types, ...}): PluginObj<State> {
                       loc,
                     ),
                   });
-                } else if (sharedModuleImport != null) {
-                  path.scope.push({
-                    id: local,
-                    init: withLocation(
-                      t.memberExpression(
-                        t.cloneNode(sharedModuleImport),
-                        t.cloneNode(imported),
+                } else if (sharedModuleVariableDeclaration != null) {
+                  sharedModuleVariableDeclaration.declarations.push(
+                    withLocation(
+                      t.variableDeclarator(
+                        t.cloneNode(local),
+                        t.memberExpression(
+                          t.cloneNode(sharedModuleImport),
+                          t.cloneNode(imported),
+                        ),
                       ),
                       loc,
                     ),
-                  });
+                  );
                 } else {
                   state.imports.push({
                     node: withLocation(

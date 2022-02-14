@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,10 +11,9 @@
 'use strict';
 
 const chalk = require('chalk');
+const {Terminal} = require('metro-core');
 const stripAnsi = require('strip-ansi');
 const util = require('util');
-
-const {Terminal} = require('metro-core');
 
 export type GlobalCacheDisabledReason = 'too_many_errors' | 'too_many_misses';
 
@@ -44,6 +43,10 @@ export type ReportableEvent =
       port: number,
       error: Error,
       ...
+    }
+  | {
+      type: 'initialize_done',
+      port: number,
     }
   | {
       buildID: string,
@@ -119,6 +122,16 @@ export type ReportableEvent =
       data: Array<mixed>,
       mode: 'BRIDGE' | 'NOBRIDGE',
       ...
+    }
+  | {
+      type: 'transformer_load_started',
+    }
+  | {
+      type: 'transformer_load_done',
+    }
+  | {
+      type: 'transformer_load_failed',
+      error: Error,
     };
 
 /**
