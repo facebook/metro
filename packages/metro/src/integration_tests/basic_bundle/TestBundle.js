@@ -15,4 +15,6 @@ const Foo = require('./Foo');
 // $FlowFixMe: Flow doesn't understand TypeScript
 const TypeScript = require('./TypeScript');
 
+Object.keys({...Bar});
+
 module.exports = {Foo, Bar, TypeScript};

@@ -35,7 +35,6 @@ const buckWorker = require('../worker-tool');
 // mocked
 const {Console} = require('console');
 const fs = require('fs');
-const mkdirp = require('mkdirp');
 const path = require('path');
 
 const {any, anything} = expect;
@@ -123,7 +122,7 @@ describe('Buck worker:', () => {
           fs.writeFileSync(path.join(dirPath, key), entry || '');
         } else {
           const subDirPath = path.join(dirPath, key);
-          mkdirp.sync(subDirPath);
+          fs.mkdirSync(subDirPath, {recursive: true});
           writeFiles(entry, subDirPath);
         }
       }

@@ -16,7 +16,6 @@ jest.mock('image-size');
 const {getAsset, getAssetData} = require('../Assets');
 const crypto = require('crypto');
 const fs = require('fs');
-const mkdirp = require('mkdirp');
 const path = require('path');
 
 const mockImageWidth = 300;
@@ -30,7 +29,7 @@ require('image-size').mockReturnValue({
 describe('getAsset', () => {
   beforeEach(() => {
     fs.reset();
-    mkdirp.sync('/root/imgs');
+    fs.mkdirSync('/root/imgs', {recursive: true});
   });
 
   it('should fail if the extension is not registerd', async () => {
@@ -121,7 +120,7 @@ describe('getAsset', () => {
   });
 
   it('should find an image located on a watchFolder', async () => {
-    mkdirp.sync('/anotherfolder');
+    fs.mkdirSync('/anotherfolder', {recursive: true});
 
     writeImages({
       '../../anotherfolder/b.png': 'b image',
@@ -139,7 +138,7 @@ describe('getAsset', () => {
   });
 
   it('should throw an error if an image is not located on any watchFolder', async () => {
-    mkdirp.sync('/anotherfolder');
+    fs.mkdirSync('/anotherfolder', {recursive: true});
 
     writeImages({
       '../../anotherfolder/b.png': 'b image',
@@ -154,7 +153,7 @@ describe('getAsset', () => {
 describe('getAssetData', () => {
   beforeEach(() => {
     fs.reset();
-    mkdirp.sync('/root/imgs');
+    fs.mkdirSync('/root/imgs', {recursive: true});
   });
 
   it('should get assetData', () => {

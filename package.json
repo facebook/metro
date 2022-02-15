@@ -32,7 +32,6 @@
     "jest": "^26.6.3",
     "lerna": "2.4.0",
     "micromatch": "^4.0.2",
-    "mkdirp": "^0.5.1",
     "prettier": "^2.4.1",
     "progress": "^2.0.0",
     "promise": "^8.0.3",

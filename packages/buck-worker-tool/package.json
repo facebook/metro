@@ -12,8 +12,7 @@
     "temp": "^0.8.3"
   },
   "devDependencies": {
-    "metro-memory-fs": "0.68.0",
-    "mkdirp": "^0.5.1"
+    "metro-memory-fs": "0.68.0"
   },
   "scripts": {
     "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",

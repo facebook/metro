@@ -39,7 +39,6 @@ const HEADER_DEV =
 const HEADER_PROD = '__d(function (g, r, i, a, m, e, d) {';
 
 let fs;
-let mkdirp;
 let Transformer;
 
 const baseConfig: JsTransformerConfig = {
@@ -72,12 +71,11 @@ beforeEach(() => {
   jest.mock('fs', () => new (require('metro-memory-fs'))());
 
   fs = require('fs');
-  mkdirp = require('mkdirp');
   Transformer = require('../');
   fs.reset();
 
-  mkdirp.sync('/root/local');
-  mkdirp.sync(path.dirname(babelTransformerPath));
+  fs.mkdirSync('/root/local', {recursive: true});
+  fs.mkdirSync(path.dirname(babelTransformerPath), {recursive: true});
   fs.writeFileSync(babelTransformerPath, transformerContents);
 });
 

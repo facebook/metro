@@ -29,7 +29,6 @@ const chalk = require('chalk');
 const fs = require('fs');
 const glob = require('glob');
 const micromatch = require('micromatch');
-const mkdirp = require('mkdirp');
 const path = require('path');
 const prettier = require('prettier');
 
@@ -80,7 +79,7 @@ function buildPackage(p) {
 function buildFile(file, silent) {
   const destPath = getBuildPath(file, BUILD_DIR);
 
-  mkdirp.sync(path.dirname(destPath));
+  fs.mkdirSync(path.dirname(destPath), {recursive: true});
   if (micromatch.isMatch(file, IGNORE_PATTERN)) {
     silent ||
       process.stdout.write(
