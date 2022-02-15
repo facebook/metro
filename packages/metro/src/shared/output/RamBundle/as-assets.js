@@ -20,7 +20,7 @@ const buildSourcemapWithMetadata = require('./buildSourcemapWithMetadata');
 const MAGIC_RAM_BUNDLE_NUMBER = require('./magic-number');
 const {joinModules} = require('./util');
 const writeSourceMap = require('./write-sourcemap');
-const mkdirp = require('mkdirp');
+const fsPromises = require('fs').promises;
 const path = require('path');
 // must not start with a dot, as that won't go into the apk
 const MAGIC_RAM_BUNDLE_FILENAME = 'UNBUNDLE';
@@ -85,10 +85,8 @@ function saveAsAssets(
   }
 }
 
-function createDir(dirName: string): Promise<empty> {
-  return new Promise((resolve: void => void, reject: mixed => mixed) =>
-    mkdirp(dirName, error => (error ? reject(error) : resolve())),
-  );
+function createDir(dirName: string): Promise<void> {
+  return fsPromises.mkdir(dirName, {recursive: true});
 }
 
 function writeModuleFile(
