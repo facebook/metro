@@ -81,7 +81,6 @@ const HomeSplash = () => {
   );
 };
 
-
 const VideoContainer = () => {
   return (
     <div className="container text--center margin-bottom--xl">
