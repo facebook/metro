@@ -102,7 +102,7 @@ const VideoContainer = () => {
       </div>
     </div>
   );
-}
+};
 
 const Index = () => {
   return (
