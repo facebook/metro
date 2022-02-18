@@ -32,7 +32,6 @@ module.exports = new Set([
   'SafeAreaView',
   'ScrollView',
   'SectionList',
-  'SegmentedControlIOS',
   'Slider',
   'Switch',
   'RefreshControl',
