@@ -74,7 +74,13 @@ type JSONReaderEndHandler = () => mixed;
 
 type JSONReaderDataListener = ('data', JSONReaderDataHandler) => JSONReader;
 type JSONReaderEndListener = ('end', JSONReaderEndHandler) => JSONReader;
-type JSONReaderListener = JSONReaderDataListener & JSONReaderEndListener;
+type JSONReaderRootEndListener = (
+  'root_end',
+  JSONReaderEndHandler,
+) => JSONReader;
+type JSONReaderListener = JSONReaderDataListener &
+  JSONReaderEndListener &
+  JSONReaderRootEndListener;
 
 type JSONReader = {
   on: JSONReaderListener,
@@ -151,9 +157,17 @@ function buckWorker(commands: Commands): any {
     }
   }
 
-  reader.on('data', handleHandshake).on('end', () => {
+  let ended = false;
+  function end() {
+    if (ended) {
+      return;
+    }
+    ended = true;
     stopProfilingAndWrite(JS_WORKER_TOOL_NAME).then(() => writer.end());
-  });
+  }
+  reader.on('data', handleHandshake);
+  reader.on('end', end);
+  reader.on('root_end', end);
   return duplexer(reader, writer);
 }
 

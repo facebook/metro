@@ -35,6 +35,7 @@ const buckWorker = require('../worker-tool');
 const {Console} = require('console');
 const fs = require('fs');
 const path = require('path');
+const through = require('through');
 
 const {any, anything} = expect;
 
@@ -487,6 +488,33 @@ describe('Buck worker:', () => {
       }
     }).then(JSON.parse);
   }
+});
+
+test('terminates on ] even if stdin remains open', async () => {
+  const output = [];
+  await new Promise((resolve, reject) => {
+    const worker = buckWorker({});
+    worker.on('data', chunk => output.push(chunk));
+    worker.once('error', reject);
+    worker.once('end', resolve);
+
+    const inStream = through();
+    inStream.pipe(worker);
+    inStream.write('[');
+    inStream.write(JSON.stringify(handshake()));
+    inStream.write(']');
+    // do not end() the input stream
+  });
+  expect(JSON.parse(output.join(''))).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "capabilities": Array [],
+        "id": 0,
+        "protocol_version": "0",
+        "type": "handshake",
+      },
+    ]
+  `);
 });
 
 function command(overrides) {
