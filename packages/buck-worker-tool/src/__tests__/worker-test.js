@@ -29,8 +29,7 @@ jest
   }))
   .useRealTimers();
 
-const JSONStream = require('JSONStream');
-
+const JSONStream = require('../third-party/JSONStream');
 const buckWorker = require('../worker-tool');
 // mocked
 const {Console} = require('console');

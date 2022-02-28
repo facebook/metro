@@ -12,9 +12,8 @@
 
 import type {Writable} from 'stream';
 
-const JSONStream = require('JSONStream');
-
 const {startProfiling, stopProfilingAndWrite} = require('./profiling');
+const JSONStream = require('./third-party/JSONStream');
 const each = require('async/each');
 const {Console} = require('console');
 const duplexer = require('duplexer');
