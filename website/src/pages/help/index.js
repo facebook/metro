@@ -86,10 +86,12 @@ const Help = () => {
           often around and available for questions.
         </p>
 
-        <div class="row">
-          {supportLinks.map(({content, summary, title}) => {
+        <div className="row">
+          {supportLinks.map(({content, summary, title}, i) => {
             return (
-              <div className="col col--4 margin-vert--md">
+              <div
+                key={`help-column-${i}`}
+                className="col col--4 margin-vert--md">
                 <h2>{title}</h2>
                 <p>{summary}</p>
                 {content}

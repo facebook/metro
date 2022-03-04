@@ -22,3 +22,14 @@
   --ifm-color-primary-lightest: #f69696;
   --ifm-code-font-size: 95%;
 }
+
+/* Announcement banner */
+div[class^="announcementBarContent"] {
+  a {
+    display: inline-block;
+    color: var(--brand) !important;
+    &:hover {
+      color: var(--ifm-color-primary) !important;
+    }
+  }
+}

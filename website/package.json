@@ -12,9 +12,11 @@
     "@docusaurus/core": "2.0.0-beta.16",
     "@docusaurus/preset-classic":"2.0.0-beta.16",
     "classnames": "2.2.6",
+    "docusaurus-plugin-sass": "^0.2.1",
     "react": "16.13.0",
     "react-dom": "16.13.0",
-    "react-github-btn": "1.1.1"
+    "react-github-btn": "1.1.1",
+    "sass": "^1.46.0"
   },
   "devDependencies": {
     "prettier": "^2.4.1"

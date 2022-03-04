@@ -21,7 +21,7 @@ const siteConfig = {
           showLastUpdateTime: true,
         },
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: require.resolve('./src/css/custom.scss'),
         },
         gtag: {
           trackingID: 'UA-44373548-17',
@@ -29,6 +29,7 @@ const siteConfig = {
       },
     ],
   ],
+  plugins: ['docusaurus-plugin-sass'],
   title: 'Metro',
   tagline: '\ud83d\ude87 The JavaScript bundler for React Native',
   organizationName: 'facebook',
