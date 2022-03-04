@@ -387,6 +387,7 @@ class Device {
           debuggerInfo.prependedFilePrefix = true;
         }
 
+        // $FlowFixMe[prop-missing]
         if (params.scriptId != null) {
           this._scriptIdToSourcePathMapping.set(params.scriptId, params.url);
         }
