@@ -9,13 +9,12 @@
     "deploy": "docusaurus deploy"
   },
   "dependencies": {
-    "@docusaurus/core": "2.0.0-alpha.61",
-    "@docusaurus/preset-classic":"2.0.0-alpha.61",
+    "@docusaurus/core": "2.0.0-beta.16",
+    "@docusaurus/preset-classic":"2.0.0-beta.16",
     "classnames": "2.2.6",
     "react": "16.13.0",
     "react-dom": "16.13.0",
-    "react-github-btn": "1.1.1",
-    "react-markdown":"4.3.1"
+    "react-github-btn": "1.1.1"
   },
   "devDependencies": {
     "prettier": "^2.4.1"

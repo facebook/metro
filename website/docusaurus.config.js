@@ -23,6 +23,9 @@ const siteConfig = {
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
+        gtag: {
+          trackingID: 'UA-44373548-17',
+        },
       },
     ],
   ],
@@ -40,6 +43,7 @@ const siteConfig = {
         'Support Ukraine 🇺🇦 <a target="_blank" rel="noopener noreferrer" href="https://opensource.facebook.com/support-ukraine"> Help Provide Humanitarian Aid to Ukraine</a>.',
       backgroundColor: '#20232a',
       textColor: '#fff',
+      isCloseable: false,
     },
     navbar: {
       title: 'Metro',
@@ -104,9 +108,6 @@ const siteConfig = {
       apiKey: 'd51e7fbd21ccab3db4c83f0f736f6a3a',
       appId: 'T38HJZTD87',
       indexName: 'metro',
-    },
-    gtag: {
-      trackingID: 'UA-44373548-17',
     },
   },
   scripts: ['https://buttons.github.io/buttons.js'],
