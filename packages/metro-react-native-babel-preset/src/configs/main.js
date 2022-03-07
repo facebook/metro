@@ -172,7 +172,7 @@ const getPreset = (src, options) => {
       {
         helpers: true,
         regenerator: !isHermes,
-        version: isVersion ? options.enableBabelRuntime : '7.0.0-beta.0',
+        ...(isVersion && {version: options.enableBabelRuntime}),
       },
     ]);
   }
