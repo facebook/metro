@@ -12,6 +12,7 @@
 
 export type {
   AssetFileResolution,
+  CustomResolutionContext,
   CustomResolver,
   DoesFileExist,
   FileAndDirCandidates,
