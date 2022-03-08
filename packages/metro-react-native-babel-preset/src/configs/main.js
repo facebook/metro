@@ -77,7 +77,12 @@ const getPreset = (src, options) => {
   }
 
   if (hasClass) {
-    extraPlugins.push([require('@babel/plugin-transform-classes')]);
+    // If the code makes heavy use of classes, we can save a lot of bytes by
+    // avoiding injecting `@babel/runtime` helpers.
+    extraPlugins.push([
+      require('@babel/plugin-transform-classes'),
+      {loose: !options.dev},
+    ]);
   }
 
   // TODO(gaearon): put this back into '=>' indexOf bailout
