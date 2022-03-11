@@ -120,11 +120,9 @@ const getPreset = (src, options) => {
     extraPlugins.push([
       require('@babel/plugin-proposal-async-generator-functions'),
     ]);
-    if (isHermes) {
-      extraPlugins.push([
-        require('@babel/plugin-transform-async-to-generator'),
-      ]);
-    }
+    extraPlugins.push([
+      require('@babel/plugin-transform-async-to-generator'),
+    ]);
   }
   if (!isHermes && (isNull || src.indexOf('**') !== -1)) {
     extraPlugins.push([
