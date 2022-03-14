@@ -34,6 +34,7 @@ const defaultPluginsBeforeRegenerator = [
 ];
 
 const defaultPluginsAfterRegenerator = [
+  [require('@babel/plugin-transform-named-capturing-groups-regex')],
   [require('@babel/plugin-transform-unicode-regex')],
 ];
 
