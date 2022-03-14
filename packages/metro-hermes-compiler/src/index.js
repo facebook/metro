@@ -10,6 +10,9 @@
 
 'use strict';
 
+// Capture any uncaughtException listeners already set, see below.
+const uncaughtExceptionHandlers = process.listeners('uncaughtException');
+
 const hermesc = require('./emhermesc.js')({
   noInitialRun: true,
   noExitRuntime: true,
@@ -17,6 +20,18 @@ const hermesc = require('./emhermesc.js')({
   print: () => {},
   printErr: () => {},
 });
+
+// Workaround: Emscripten adds an uncaught exception listener on startup, which
+// rethrows and causes node to exit with code 7 and print emhermesc.js (1.4MB)
+// to stdout. This removes any newly-set listeners.
+//
+// Remove when emhermesc.js is rebuilt with NODEJS_CATCH_EXIT=0 (D34790356)
+const hermesUncaughtExceptionHandler = process
+  .listeners('uncaughtException')
+  .find(listener => !uncaughtExceptionHandlers.includes(listener));
+if (hermesUncaughtExceptionHandler != null) {
+  process.removeListener('uncaughtException', hermesUncaughtExceptionHandler);
+}
 
 export type Options = {|
   sourceURL: string,
