@@ -43,8 +43,6 @@ const getPreset = (src, options) => {
 
   const isNull = src == null;
   const hasClass = isNull || src.indexOf('class') !== -1;
-  const hasForOf =
-    isNull || (src.indexOf('for') !== -1 && src.indexOf('of') !== -1);
 
   const extraPlugins = [];
   if (!options.useTransformReactJSXExperimental) {
@@ -123,12 +121,6 @@ const getPreset = (src, options) => {
   if (!isHermes && (isNull || src.indexOf('**') !== -1)) {
     extraPlugins.push([
       require('@babel/plugin-transform-exponentiation-operator'),
-    ]);
-  }
-  if (!isHermes && hasForOf) {
-    extraPlugins.push([
-      require('@babel/plugin-transform-for-of'),
-      {loose: true},
     ]);
   }
   if (
