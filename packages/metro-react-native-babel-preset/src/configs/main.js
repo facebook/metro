@@ -20,7 +20,7 @@ function isTSXSource(fileName) {
   return !!fileName && fileName.endsWith('.tsx');
 }
 
-const defaultPluginsBeforeRegenerator = [
+const defaultPlugins = [
   [require('@babel/plugin-syntax-flow')],
   [require('@babel/plugin-transform-block-scoping')],
   [
@@ -31,9 +31,6 @@ const defaultPluginsBeforeRegenerator = [
   [require('@babel/plugin-syntax-dynamic-import')],
   [require('@babel/plugin-syntax-export-default-from')],
   ...passthroughSyntaxPlugins,
-];
-
-const defaultPluginsAfterRegenerator = [
   [require('@babel/plugin-transform-named-capturing-groups-regex')],
   [require('@babel/plugin-transform-unicode-regex')],
 ];
@@ -122,11 +119,7 @@ const getPreset = (src, options) => {
     extraPlugins.push([
       require('@babel/plugin-proposal-async-generator-functions'),
     ]);
-    if (isHermes) {
-      extraPlugins.push([
-        require('@babel/plugin-transform-async-to-generator'),
-      ]);
-    }
+    extraPlugins.push([require('@babel/plugin-transform-async-to-generator')]);
   }
   if (!isHermes && (isNull || src.indexOf('**') !== -1)) {
     extraPlugins.push([
@@ -165,11 +158,15 @@ const getPreset = (src, options) => {
   }
 
   if (!options || options.enableBabelRuntime !== false) {
+    // Allows configuring a specific runtime version to optimize output
+    const isVersion = typeof options?.enableBabelRuntime === 'string';
+
     extraPlugins.push([
       require('@babel/plugin-transform-runtime'),
       {
         helpers: true,
         regenerator: !isHermes,
+        ...(isVersion && {version: options.enableBabelRuntime}),
       },
     ]);
   }
@@ -184,11 +181,7 @@ const getPreset = (src, options) => {
         plugins: [require('@babel/plugin-transform-flow-strip-types')],
       },
       {
-        plugins: [
-          ...defaultPluginsBeforeRegenerator,
-          isHermes ? null : require('@babel/plugin-transform-regenerator'),
-          ...defaultPluginsAfterRegenerator,
-        ].filter(Boolean),
+        plugins: defaultPlugins,
       },
       {
         test: isTypeScriptSource,

@@ -45,3 +45,10 @@ it('throws syntax errors as exceptions', () => {
     "1:73:'}' expected at end of block",
   );
 });
+
+it('does not set a global listener for uncaughtException', () => {
+  const listenerCountBefore = process.listenerCount('uncaughtException');
+  jest.resetModules();
+  require('../index');
+  expect(process.listenerCount('uncaughtException')).toBe(listenerCountBefore);
+});
