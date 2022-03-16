@@ -31,7 +31,6 @@ const defaultPlugins = [
   [require('@babel/plugin-syntax-dynamic-import')],
   [require('@babel/plugin-syntax-export-default-from')],
   ...passthroughSyntaxPlugins,
-  [require('@babel/plugin-transform-named-capturing-groups-regex')],
   [require('@babel/plugin-transform-unicode-regex')],
 ];
 
@@ -92,6 +91,10 @@ const getPreset = (src, options) => {
     extraPlugins.push([require('@babel/plugin-transform-function-name')]);
     extraPlugins.push([require('@babel/plugin-transform-literals')]);
     extraPlugins.push([require('@babel/plugin-transform-sticky-regex')]);
+  } else {
+    extraPlugins.push([
+      require('@babel/plugin-transform-named-capturing-groups-regex'),
+    ]);
   }
   if (!isHermesCanary) {
     extraPlugins.push([
