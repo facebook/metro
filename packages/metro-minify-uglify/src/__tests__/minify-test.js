@@ -15,7 +15,7 @@ import type {BasicSourceMap} from 'metro-source-map';
 
 const minify = require('..');
 
-jest.mock('uglify-es', () => ({
+jest.mock('uglify-js', () => ({
   minify: jest.fn(code => {
     return {
       code: code.replace(/(^|\W)\s+/g, '$1'),
@@ -49,7 +49,8 @@ describe('Minification:', () => {
   let uglify;
 
   beforeEach(() => {
-    uglify = require('uglify-es');
+    // $FlowIgnore[untyped-import]
+    uglify = require('uglify-js');
     /* $FlowFixMe(>=0.99.0 site=react_native_fb) This comment suppresses an
      * error found when Flow v0.99 was deployed. To see the error, delete this
      * comment and run Flow. */
