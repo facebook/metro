@@ -13,7 +13,7 @@
 import type {BasicSourceMap} from 'metro-source-map';
 import type {MinifierOptions, MinifierResult} from 'metro-transform-worker';
 
-const uglify = require('uglify-es');
+const uglify = require('uglify-js');
 
 function minifier(options: MinifierOptions): MinifierResult {
   const result = minify(options);
