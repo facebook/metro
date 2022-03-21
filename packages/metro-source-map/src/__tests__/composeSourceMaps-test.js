@@ -95,6 +95,7 @@ describe('composeSourceMaps', () => {
     // $FlowFixMe: this refinement doesn't work
     const {code: code1, map: map1} = stage1;
     const stage2 = uglifyEs.minify(
+      // $FlowFixMe[incompatible-call]
       {'intermediate.js': code1},
       {compress: true, mangle: true, sourceMap: true},
     );
@@ -103,6 +104,7 @@ describe('composeSourceMaps', () => {
     const {code: code2, map: map2} = stage2;
 
     // Generate a merged source map.
+    // $FlowFixMe[incompatible-call]
     const mergedMap = composeSourceMaps([map1, map2].map(m => JSON.parse(m)));
 
     // Run the error-producing code and verify it symbolicates identically
@@ -113,6 +115,7 @@ describe('composeSourceMaps', () => {
     let backtrace = null;
     try {
       // eslint-disable-next-line no-eval
+      // $FlowFixMe[incompatible-type]
       eval(code2 + '\n//@ sourceURL=intermediate.js');
     } catch (err) {
       backtrace = err.stack;
