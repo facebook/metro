@@ -1,0 +1,98 @@
+name: Build and commit/verify emhermesc.js
+
+on:
+  push:
+    branches:
+      - "main"
+    paths:
+      - "packages/metro-hermes-compiler/**"
+      - ".github/workflows/build-emhermesc.yml"
+  pull_request:
+    paths:
+      - "packages/metro-hermes-compiler/**"
+      - ".github/workflows/build-emhermesc.yml"
+
+jobs:
+  build-emhermesc-js:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code (PR)
+        uses: actions/checkout@v2.0.0
+        # https://github.com/stefanzweifel/git-auto-commit-action#checkout-the-correct-branch
+        if: github.event_name == 'pull_request' 
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Checkout code (Push)
+        uses: actions/checkout@v2.0.0
+        if: github.event_name == 'push'
+
+      - name: Determine target revision from packages/metro-hermes-compiler/hermes-revision
+        run: echo "HERMES_REVISION=`cat packages/metro-hermes-compiler/hermes-revision`" >> $GITHUB_ENV
+
+      - name: Clone hermes at ${{ env.HERMES_REVISION }}
+        run: |
+          mkdir $RUNNER_TEMP/hermes && curl \
+            -L https://api.github.com/repos/facebook/hermes/tarball/${{ env.HERMES_REVISION }} \
+            | tar xzf - -C $RUNNER_TEMP/hermes \
+            && echo "HERMES_CHECKOUT=`ls -d $RUNNER_TEMP/hermes/*`" >> $GITHUB_ENV
+
+      - name: Setup Ninja
+        uses: seanmiddleditch/gha-setup-ninja@856654e80dd21909aec244cd01bb96e5c841d64f
+        with:
+          destination: ${{ runner.temp }}/ninja
+
+      - name: Configure build_host_hermes
+        run: python3 $HERMES_CHECKOUT/utils/build/configure.py $RUNNER_TEMP/build_host_hermes
+      
+      - name: Build build_host_hermes
+        run: cmake --build $RUNNER_TEMP/build_host_hermes --target hermesc
+
+      - name: Setup Emscripten SDK
+        uses: mymindstorm/setup-emsdk@v11
+
+      - name: Configure Emscripten hermes build
+        run: |
+          cmake $HERMES_CHECKOUT \
+            -B $RUNNER_TEMP/embuild \
+            -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_EXE_LINKER_FLAGS=" \
+              -s BINARYEN_ASYNC_COMPILATION=0 \
+              -s ENVIRONMENT=node \
+              -s EXPORT_NAME=createHermesc \
+              -s EXTRA_EXPORTED_RUNTIME_METHODS=[cwrap,ccall] \
+              -s MODULARIZE=1 \
+              -s NODERAWFS=1 \
+              -s WASM=1 \
+              -s ALLOW_MEMORY_GROWTH=1 \
+              -s NODEJS_CATCH_EXIT=0 \
+              -s NODEJS_CATCH_REJECTION=0 \
+              -s WASM_ASYNC_COMPILATION=0 \
+              -s SINGLE_FILE=1 \
+              " \
+            -DIMPORT_HERMESC:PATH="$RUNNER_TEMP/build_host_hermes/ImportHermesc.cmake"
+
+      - name: Build emhermesc
+        run: cmake --build $RUNNER_TEMP/embuild --target emhermesc
+
+      - name: Concatenate with emhermesc.js.header and move to packages/metro-hermes-compiler/src/emhermesc.js
+        run: |
+          cat packages/metro-hermes-compiler/src/emhermesc.js.header $RUNNER_TEMP/embuild/bin/emhermesc.js \
+          > packages/metro-hermes-compiler/src/emhermesc.js
+        
+      - name: Upload emhermesc.js as a CI artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: emhermesc.js
+          path: packages/metro-hermes-compiler/src/emhermesc.js
+
+      - name: Commit updated emhermesc.js (PR only)
+        uses: stefanzweifel/git-auto-commit-action@d0487b9fa3a792b5e90562c27541eedecc2548b4
+        if: github.event_name == 'pull_request' 
+        with:
+          commit_message: "Auto: Build emhermesc.js from hermes/${{ env.HERMES_REVISION }}"
+
+      - name: Fail if emhermesc.js is out of sync with hermes-revision
+        run: if [ -n "$(git status --porcelain)" ]; then exit 1; fi
