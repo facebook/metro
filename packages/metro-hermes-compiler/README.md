@@ -4,15 +4,14 @@ This experimental module provides a high-level API to work with the Hermes bytec
 
 ## How to build HBC
 
-A pre-configured emscripten environment can be used through this [Docker image](https://hub.docker.com/r/trzeci/emscripten/). Docker can be installed via its [desktop app](https://docs.docker.com/docker-for-mac/). Make sure to increase resource limits (16G RAM, as much CPU as possible).
+[`./src/emhermesc.js`](https://github.com/rh389/metro/blob/main/packages/metro-hermes-compiler/src/emhermesc.js) is built by a [GitHub action on the Metro repository](https://github.com/rh389/metro/blob/main/.github/workflows/build-emhermesc.yml). It works by:
 
-```
-cd path/to/hermes/checkout
-docker run -i -t --rm -v `pwd`:`pwd` trzeci/emscripten bash
-apt-get update -y && apt-get install -y icu-devtools
-cd path/to/hermes/checkout
-cmake . -DCMAKE_TOOLCHAIN_FILE=/emsdk_portable/emscripten/sdk/cmake/Modules/Platform/Emscripten.cmake -DCMAKE_BUILD_TYPE=Release
-make -j emhermesc
-```
+1. Checking out the [`facebook/hermes`](https://github.com/facebook/hermes) repo at a particular GitHub `ref` (commit or tag) specified by [`./hermes-github-ref`](https://github.com/rh389/metro/blob/main/packages/metro-hermes-compiler/hermes-github-ref)
+2. Following the two stage process outlined at [`facebook/hermes/doc/Emscripten.md`](https://github.com/facebook/hermes/blob/17d632d0802a0a3fb97a962ede6a6291e5029c84/doc/Emscripten.md) to build with Emscripten and CMake, and
+3. Prepending our custom header from [`./src/emhermesc.js.header`](https://github.com/rh389/metro/blob/main/packages/metro-hermes-compiler/src/emhermesc.js.header).
 
-After the build process finishes the Hermes Bytecode Compiler JavaScript file will be available in the `bin` folder.
+To update the build, open a GitHub PR (or export one from Phabricator) that changes the contents of `hermes-github-ref` to the new target `ref`. The GH action should run on the PR and then push a new commit to the PR branch (if it has access) with the updated `emhermesc.js` - that's it!
+
+The PR can then be (re-)imported and pushed. The action will run again on a push to `main` to verify that `hermes-github-ref` and `emhermesc.js` are in sync.
+
+**If** the action is able to build `emhermesc.js` but doesn't have permission to push to the PR branch, or fails validation on `main`, you can still use the build output and update it manually - you'll find it uploaded as an artifact on the action instance.
