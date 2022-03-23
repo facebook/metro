@@ -28,13 +28,13 @@ jobs:
         uses: actions/checkout@v2.0.0
         if: github.event_name == 'push'
 
-      - name: Determine target revision from packages/metro-hermes-compiler/hermes-revision
-        run: echo "HERMES_REVISION=`cat packages/metro-hermes-compiler/hermes-revision`" >> $GITHUB_ENV
+      - name: Determine target revision from packages/metro-hermes-compiler/hermes-github-ref
+        run: echo "HERMES_GITHUB_REF=`cat packages/metro-hermes-compiler/hermes-github-ref`" >> $GITHUB_ENV
 
-      - name: Clone hermes at ${{ env.HERMES_REVISION }}
+      - name: Download hermes at ${{ env.HERMES_GITHUB_REF }}
         run: |
           mkdir $RUNNER_TEMP/hermes && curl \
-            -L https://api.github.com/repos/facebook/hermes/tarball/${{ env.HERMES_REVISION }} \
+            -L https://api.github.com/repos/facebook/hermes/tarball/${{ env.HERMES_GITHUB_REF }} \
             | tar xzf - -C $RUNNER_TEMP/hermes \
             && echo "HERMES_CHECKOUT=`ls -d $RUNNER_TEMP/hermes/*`" >> $GITHUB_ENV
 
