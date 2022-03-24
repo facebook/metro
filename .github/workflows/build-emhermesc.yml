@@ -20,7 +20,7 @@ jobs:
       - name: Checkout code (PR)
         uses: actions/checkout@v2.0.0
         # https://github.com/stefanzweifel/git-auto-commit-action#checkout-the-correct-branch
-        if: github.event_name == 'pull_request' 
+        if: github.event_name == 'pull_request'
         with:
           ref: ${{ github.head_ref }}
 
@@ -45,7 +45,7 @@ jobs:
 
       - name: Configure build_host_hermes
         run: python3 $HERMES_CHECKOUT/utils/build/configure.py $RUNNER_TEMP/build_host_hermes
-      
+
       - name: Build build_host_hermes
         run: cmake --build $RUNNER_TEMP/build_host_hermes --target hermesc
 
@@ -81,7 +81,7 @@ jobs:
         run: |
           cat packages/metro-hermes-compiler/src/emhermesc.js.header $RUNNER_TEMP/embuild/bin/emhermesc.js \
           > packages/metro-hermes-compiler/src/emhermesc.js
-        
+
       - name: Upload emhermesc.js as a CI artifact
         uses: actions/upload-artifact@v3
         with:
@@ -90,7 +90,7 @@ jobs:
 
       - name: Commit updated emhermesc.js (PR only)
         uses: stefanzweifel/git-auto-commit-action@d0487b9fa3a792b5e90562c27541eedecc2548b4
-        if: github.event_name == 'pull_request' 
+        if: github.event_name == 'pull_request'
         with:
           commit_message: "Auto: Build emhermesc.js from hermes/${{ env.HERMES_REVISION }}"
 
