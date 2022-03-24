@@ -10,9 +10,7 @@
  */
 
 'use strict';
-import type {MixedSourceMap, IndexMap, BasicSourceMap} from '../source-map';
-
-/* eslint-disable no-multi-str */
+import type {BasicSourceMap, IndexMap, MixedSourceMap} from '../source-map';
 
 const composeSourceMaps = require('../composeSourceMaps');
 const Consumer = require('../Consumer');
@@ -21,6 +19,8 @@ const invariant = require('invariant');
 const {add0, add1} = require('ob1');
 const path = require('path');
 const uglifyEs = require('uglify-es');
+
+/* eslint-disable no-multi-str */
 
 const TestScript1 =
   '/* Half of a program that throws */\
@@ -91,20 +91,23 @@ describe('composeSourceMaps', () => {
         sourceMap: true,
       },
     );
-    invariant(!('error' in stage1), 'Minification error in stage1');
-    // $FlowFixMe: this refinement doesn't work
+    invariant(
+      typeof stage1.code === 'string' && typeof stage1.map === 'string',
+      'Minification error in stage1',
+    );
     const {code: code1, map: map1} = stage1;
     const stage2 = uglifyEs.minify(
-      // $FlowFixMe[incompatible-call]
       {'intermediate.js': code1},
       {compress: true, mangle: true, sourceMap: true},
     );
-    invariant(!('error' in stage2), 'Minification error in stage1');
-    // $FlowFixMe: this refinement doesn't work
+    invariant(
+      typeof stage2.code === 'string' && typeof stage2.map === 'string',
+      'Minification error in stage2',
+    );
+
     const {code: code2, map: map2} = stage2;
 
     // Generate a merged source map.
-    // $FlowFixMe[incompatible-call]
     const mergedMap = composeSourceMaps([map1, map2].map(m => JSON.parse(m)));
 
     // Run the error-producing code and verify it symbolicates identically
@@ -115,7 +118,6 @@ describe('composeSourceMaps', () => {
     let backtrace = null;
     try {
       // eslint-disable-next-line no-eval
-      // $FlowFixMe[incompatible-type]
       eval(code2 + '\n//@ sourceURL=intermediate.js');
     } catch (err) {
       backtrace = err.stack;
