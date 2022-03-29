@@ -129,6 +129,7 @@ export type SerializerOptions = {|
   +projectRoot: string,
   +runBeforeMainModule: $ReadOnlyArray<string>,
   +runModule: boolean,
+  +serverRoot: string,
   +sourceMapUrl: ?string,
   +sourceUrl: ?string,
 |};

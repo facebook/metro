@@ -24,6 +24,7 @@ type Options<T: number | string> = {
   +getRunModuleStatement: T => string,
   +inlineSourceMap: ?boolean,
   +projectRoot: string,
+  +serverRoot: string,
   +runBeforeMainModule: $ReadOnlyArray<string>,
   +runModule: boolean,
   +sourceMapUrl: ?string,
@@ -42,7 +43,7 @@ function getAppendScripts<T: number | string>(
   if (importBundleNames.size) {
     const importBundleNamesObject = Object.create(null);
     importBundleNames.forEach(absolutePath => {
-      const bundlePath = path.relative(options.projectRoot, absolutePath);
+      const bundlePath = path.relative(options.serverRoot, absolutePath);
       importBundleNamesObject[options.createModuleId(absolutePath)] =
         bundlePath.slice(0, -path.extname(bundlePath).length);
     });

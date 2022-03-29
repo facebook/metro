@@ -210,6 +210,8 @@ class Server {
       sourceMapUrl: serializerOptions.sourceMapUrl,
       sourceUrl: serializerOptions.sourceUrl,
       inlineSourceMap: serializerOptions.inlineSourceMap,
+      serverRoot:
+        this._config.server.unstable_serverRoot ?? this._config.projectRoot,
     };
     let bundleCode = null;
     let bundleMap = null;
@@ -285,6 +287,8 @@ class Server {
       sourceMapUrl: serializerOptions.sourceMapUrl,
       sourceUrl: serializerOptions.sourceUrl,
       inlineSourceMap: serializerOptions.inlineSourceMap,
+      serverRoot:
+        this._config.server.unstable_serverRoot ?? this._config.projectRoot,
     });
   }
 
@@ -754,6 +758,8 @@ class Server {
           sourceMapUrl: serializerOptions.sourceMapUrl,
           sourceUrl: serializerOptions.sourceUrl,
           inlineSourceMap: serializerOptions.inlineSourceMap,
+          serverRoot:
+            this._config.server.unstable_serverRoot ?? this._config.projectRoot,
         },
       );
 
@@ -862,6 +868,8 @@ class Server {
           sourceMapUrl: serializerOptions.sourceMapUrl,
           sourceUrl: serializerOptions.sourceUrl,
           inlineSourceMap: serializerOptions.inlineSourceMap,
+          serverRoot:
+            this._config.server.unstable_serverRoot ?? this._config.projectRoot,
         }),
       );
 

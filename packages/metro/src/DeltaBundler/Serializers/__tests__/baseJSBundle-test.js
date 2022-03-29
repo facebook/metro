@@ -309,6 +309,7 @@ it('adds lazy imports at the end of a bundle', () => {
         projectRoot: '/root',
         runBeforeMainModule: [],
         runModule: true,
+        serverRoot: '/root',
         sourceMapUrl: 'http://localhost/bundle.map',
       },
     ),
@@ -325,6 +326,52 @@ it('adds lazy imports at the end of a bundle', () => {
         ],
       ],
       "post": "(function(){var $$=require(\\"asyncRequire.js\\");$$.addImportBundleNames({\\"module.js\\":\\"../path/to/async/module\\"})})();
+    require(\\"foo\\");
+    //# sourceMappingURL=http://localhost/bundle.map",
+      "pre": "__d(function() {/* code for polyfill */});",
+    }
+  `);
+});
+
+it('lazy imports are relative to serverRoot if it differs from projectRoot', () => {
+  expect(
+    baseJSBundle(
+      '/root/foo',
+      [polyfill],
+      {
+        dependencies: new Map([
+          ['/root/foo', fooModule],
+          ['/root/bar', barModule],
+        ]),
+        entryPoints: ['foo'],
+        importBundleNames: new Set(['/path/to/async/module.js']),
+      },
+      {
+        asyncRequireModulePath: '/asyncRequire.js',
+        processModuleFilter: () => true,
+        createModuleId: filePath => path.basename(filePath),
+        dev: true,
+        getRunModuleStatement,
+        projectRoot: '/root',
+        runBeforeMainModule: [],
+        runModule: true,
+        serverRoot: '/',
+        sourceMapUrl: 'http://localhost/bundle.map',
+      },
+    ),
+  ).toMatchInlineSnapshot(`
+    Object {
+      "modules": Array [
+        Array [
+          "foo",
+          "__d(function() {/* code for foo */},\\"foo\\",[\\"bar\\"],\\"foo\\");",
+        ],
+        Array [
+          "bar",
+          "__d(function() {/* code for bar */},\\"bar\\",[],\\"bar\\");",
+        ],
+      ],
+      "post": "(function(){var $$=require(\\"asyncRequire.js\\");$$.addImportBundleNames({\\"module.js\\":\\"path/to/async/module\\"})})();
     require(\\"foo\\");
     //# sourceMappingURL=http://localhost/bundle.map",
       "pre": "__d(function() {/* code for polyfill */});",

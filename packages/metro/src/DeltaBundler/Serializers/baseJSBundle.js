@@ -65,6 +65,7 @@ function baseJSBundle(
         projectRoot: options.projectRoot,
         runBeforeMainModule: options.runBeforeMainModule,
         runModule: options.runModule,
+        serverRoot: options.serverRoot,
         sourceMapUrl: options.sourceMapUrl,
         sourceUrl: options.sourceUrl,
       },
