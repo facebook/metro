@@ -70,17 +70,15 @@ class InspectorProxy {
     ) {
       // Build list of pages from all devices.
       let result = [];
-      Array.from(this._devices.entries()).forEach(
-        ([deviceId: number, device: Device]) => {
-          result = result.concat(
-            device
-              .getPagesList()
-              .map((page: Page) =>
-                this._buildPageDescription(deviceId, device, page),
-              ),
-          );
-        },
-      );
+      Array.from(this._devices.entries()).forEach(([deviceId, device]) => {
+        result = result.concat(
+          device
+            .getPagesList()
+            .map((page: Page) =>
+              this._buildPageDescription(deviceId, device, page),
+            ),
+        );
+      });
 
       this._sendJsonResponse(response, result);
     } else if (request.url === PAGES_LIST_JSON_VERSION_URL) {
