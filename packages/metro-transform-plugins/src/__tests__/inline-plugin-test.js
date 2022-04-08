@@ -795,6 +795,60 @@ describe('inline constants', () => {
     );
   });
 
+  it('can work with transformed import calls', () => {
+    const code = `
+      __arbitrary(require, function(arbitraryMapName) {
+        var _reactNative = require(arbitraryMapName[123]);
+
+        function a() {
+          if (_reactNative.Platform.OS === 'android') {
+            a = function() {};
+          }
+
+          var b = a.Platform.OS;
+        }
+      });
+    `;
+
+    compare(
+      [inlinePlugin],
+      code,
+      code.replace(/_reactNative\.Platform\.OS/, '"ios"'),
+      {
+        inlinePlatform: true,
+        platform: 'ios',
+        isWrapped: true,
+      },
+    );
+  });
+
+  it('can work with transformed import calls numbered', () => {
+    const code = `
+      __arbitrary($$require, function(arbitraryMapName) {
+        var _reactNative2 = $$require(arbitraryMapName[123]);
+
+        function a() {
+          if (_reactNative2.Platform.OS === 'android') {
+            a = function() {};
+          }
+
+          var b = a.Platform.OS;
+        }
+      });
+    `;
+
+    compare(
+      [inlinePlugin],
+      code,
+      code.replace(/_reactNative2\.Platform\.OS/, '"ios"'),
+      {
+        inlinePlatform: true,
+        platform: 'ios',
+        isWrapped: true,
+      },
+    );
+  });
+
   it('works with flow-declared variables', () => {
     const code = `
       declare var __DEV__;
