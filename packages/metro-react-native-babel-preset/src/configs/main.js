@@ -173,7 +173,13 @@ const getPreset = (src, options) => {
       // the flow strip types plugin must go BEFORE class properties!
       // there'll be a test case that fails if you don't.
       {
-        plugins: [require('@babel/plugin-transform-flow-strip-types')],
+        plugins: [
+          [
+            require('@babel/plugin-transform-flow-strip-types'),
+            // Can be removed when updating to babel 8 since this will be the default.
+            {allowDeclareFields: true},
+          ],
+        ],
       },
       {
         plugins: defaultPlugins,
