@@ -15,7 +15,7 @@ import type {TransformerConfig, TransformOptions, Worker} from './Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {Readable} from 'stream';
 
-const JestWorker = require('jest-worker').default;
+const {Worker: JestWorker} = require('jest-worker');
 const {Logger} = require('metro-core');
 
 type WorkerInterface = {|

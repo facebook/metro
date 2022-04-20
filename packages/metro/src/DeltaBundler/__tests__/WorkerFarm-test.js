@@ -25,15 +25,15 @@ describe('Worker Farm', function () {
       .resetModules()
       .mock('fs', () => ({writeFileSync: jest.fn()}))
       .mock('temp', () => ({path: () => '/arbitrary/path'}))
-      .mock('jest-worker', () => ({__esModule: true, default: jest.fn()}));
+      .mock('jest-worker', () => ({__esModule: true, Worker: jest.fn()}));
 
     const fs = require('fs');
     const jestWorker = require('jest-worker');
     config = await getDefaultConfig();
 
     fs.writeFileSync.mockClear();
-    jestWorker.default.mockClear();
-    jestWorker.default.mockImplementation(function (workerPath, opts) {
+    jestWorker.Worker.mockClear();
+    jestWorker.Worker.mockImplementation(function (workerPath, opts) {
       api = {
         end: jest.fn(),
         getStdout: () => new Readable({read() {}}),

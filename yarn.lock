@@ -4998,7 +4998,7 @@ jest-watcher@^26.6.2:
     jest-util "^26.6.2"
     string-length "^4.0.1"
 
-jest-worker@^26.0.0, jest-worker@^26.6.2:
+jest-worker@^26.6.2:
   version "26.6.2"
   resolved "https://registry.yarnpkg.com/jest-worker/-/jest-worker-26.6.2.tgz#7f72cbc4d643c365e27b9fd775f9d0eaa9c7a8ed"
   integrity sha512-KWYVV1c4i+jbMpaBC+U++4Va0cp8OisU185o73T1vo99hqi7w8tSJfUXYswwqqrjzwxa6KpRK54WhPvwf5w6PQ==
@@ -5007,10 +5007,10 @@ jest-worker@^26.0.0, jest-worker@^26.6.2:
     merge-stream "^2.0.0"
     supports-color "^7.0.0"
 
-jest-worker@^27.3.1:
-  version "27.3.1"
-  resolved "https://registry.yarnpkg.com/jest-worker/-/jest-worker-27.3.1.tgz#0def7feae5b8042be38479799aeb7b5facac24b2"
-  integrity sha512-ks3WCzsiZaOPJl/oMsDjaf0TRiSv7ctNgs0FqRr2nARsovz6AWWy4oLElwcquGSz692DzgZQrCLScPNs5YlC4g==
+jest-worker@^27.2.0, jest-worker@^27.3.1:
+  version "27.5.1"
+  resolved "https://registry.yarnpkg.com/jest-worker/-/jest-worker-27.5.1.tgz#8d146f0900e8973b106b6f73cc1e9a8cb86f8db0"
+  integrity sha512-7vuh85V5cdDofPyxn58nrPjBktZo0u9x1g8WtjQol+jZDaE+fhN+cIvTj11GndBnMnyfrUOG1sZQxCdjKh+DKg==
   dependencies:
     "@types/node" "*"
     merge-stream "^2.0.0"
