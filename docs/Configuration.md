@@ -119,6 +119,8 @@ Type: `Array<string>`
 
 Specify the fields in package.json files that will be used by the module resolver to do redirections when requiring certain packages. The default is `['browser', 'main']`, so the resolver will use the `browser` field if it exists and `main` otherwise.
 
+> **Note:**  When Metro is started via the React Native CLI this will default to `['react-native', 'browser', 'main']`.
+
 #### `disableHierarchicalLookup`
 
 Type: `boolean`
