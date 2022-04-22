@@ -60,6 +60,7 @@ Object {
     ],
     "resolveRequest": null,
     "resolverMainFields": Array [
+      "react-native",
       "browser",
       "main",
     ],
@@ -206,6 +207,7 @@ Object {
     ],
     "resolveRequest": null,
     "resolverMainFields": Array [
+      "react-native",
       "browser",
       "main",
     ],
@@ -352,6 +354,7 @@ Object {
     ],
     "resolveRequest": null,
     "resolverMainFields": Array [
+      "react-native",
       "browser",
       "main",
     ],
@@ -498,6 +501,7 @@ Object {
     ],
     "resolveRequest": null,
     "resolverMainFields": Array [
+      "react-native",
       "browser",
       "main",
     ],

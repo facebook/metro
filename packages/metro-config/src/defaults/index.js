@@ -45,7 +45,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     unstable_hasteMapModulePath: undefined,
     nodeModulesPaths: [],
     resolveRequest: null,
-    resolverMainFields: ['browser', 'main'],
+    resolverMainFields: ['react-native', 'browser', 'main'],
     useWatchman: true,
   },
 

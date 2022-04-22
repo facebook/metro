@@ -117,7 +117,7 @@ An array of source extensions to include in the bundle. For example, if you woul
 
 Type: `Array<string>`
 
-Specify the fields in package.json files that will be used by the module resolver to do redirections when requiring certain packages. The default is `['browser', 'main']`, so the resolver will use the `browser` field if it exists and `main` otherwise.
+Specify the fields in package.json files that will be used by the module resolver to do redirections when requiring certain packages. The default is `['react-native', 'browser', 'main']`, so the resolver will use the `react-native` field if it exists, alternatively the `browser` and `main` otherwise.
 
 #### `disableHierarchicalLookup`
 
