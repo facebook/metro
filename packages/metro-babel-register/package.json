@@ -1,6 +1,6 @@
 {
   "name": "metro-babel-register",
-  "version": "0.70.1",
+  "version": "0.70.2",
   "description": "🚇 babel/register configuration for Metro.",
   "main": "src/babel-register.js",
   "repository": {

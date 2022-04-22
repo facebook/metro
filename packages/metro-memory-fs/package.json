@@ -1,6 +1,6 @@
 {
   "name": "metro-memory-fs",
-  "version": "0.70.1",
+  "version": "0.70.2",
   "description": "🚇 A memory-based implementation of `fs` useful for testing.",
   "main": "src/index.js",
   "repository": {

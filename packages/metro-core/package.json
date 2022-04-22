@@ -1,6 +1,6 @@
 {
   "name": "metro-core",
-  "version": "0.70.1",
+  "version": "0.70.2",
   "description": "🚇 Metro's core package.",
   "main": "src/index.js",
   "repository": {
@@ -14,7 +14,7 @@
   "dependencies": {
     "jest-haste-map": "^27.3.1",
     "lodash.throttle": "^4.1.1",
-    "metro-resolver": "0.70.1"
+    "metro-resolver": "0.70.2"
   },
   "license": "MIT"
 }

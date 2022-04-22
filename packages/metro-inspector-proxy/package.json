@@ -1,6 +1,6 @@
 {
   "name": "metro-inspector-proxy",
-  "version": "0.70.1",
+  "version": "0.70.2",
   "description": "🚇 Inspector proxy for React Native and dev tools integration.",
   "main": "src/index.js",
   "bin": "src/cli.js",

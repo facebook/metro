@@ -1,6 +1,6 @@
 {
   "name": "metro-minify-terser",
-  "version": "0.70.1",
+  "version": "0.70.2",
   "description": "🚇 Minifier for Metro based on Terser.",
   "main": "src/index.js",
   "repository": {
