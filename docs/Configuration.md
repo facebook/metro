@@ -11,6 +11,8 @@ A Metro config can be created in these three ways (ordered by priority):
 
 You can also give a custom file to the configuration by specifying `--config <path/to/config>` when calling the CLI.
 
+> **Note:** When Metro is started via the React Native CLI, some defaults are different from those mentioned below. See the [React Native repository](https://github.com/react-native-community/cli/blob/master/packages/cli-plugin-metro/src/tools/loadMetroConfig.ts) for details.
+
 ## Configuration Structure
 
 The configuration is based on [our concepts](./Concepts.md), which means that for every module we have a separate config option. A common configuration structure in Metro looks like this:
@@ -119,7 +121,7 @@ Type: `Array<string>`
 
 Specify the fields in package.json files that will be used by the module resolver to do redirections when requiring certain packages. The default is `['browser', 'main']`, so the resolver will use the `browser` field if it exists and `main` otherwise.
 
-> **Note:**  When Metro is started via the React Native CLI this will default to `['react-native', 'browser', 'main']`.
+> **Note:** When Metro is started via the React Native CLI this will default to `['react-native', 'browser', 'main']`.
 
 #### `disableHierarchicalLookup`
 
