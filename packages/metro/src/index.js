@@ -268,19 +268,19 @@ exports.runServer = async (
   } else {
     httpServer = http.createServer(serverApp);
   }
-
-  httpServer.on('error', error => {
-    if (onError) {
-      onError(error);
-    }
-    end();
-  });
-
   return new Promise(
     (
       resolve: (result: HttpServer | HttpsServer) => void,
       reject: mixed => mixed,
     ) => {
+      httpServer.on('error', error => {
+        if (onError) {
+          onError(error);
+        }
+        reject(error);
+        end();
+      });
+
       httpServer.listen(config.server.port, host, () => {
         if (onReady) {
           onReady(httpServer);
@@ -330,11 +330,6 @@ exports.runServer = async (
       // requests in case it takes the packager more than the default
       // timeout of 120 seconds to respond to a request.
       httpServer.timeout = 0;
-
-      httpServer.on('error', error => {
-        end();
-        reject(error);
-      });
 
       httpServer.on('close', () => {
         end();
