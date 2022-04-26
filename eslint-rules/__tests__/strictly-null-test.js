@@ -25,19 +25,19 @@ ESLintTester.setDefaultConfig({
 const eslintTester = new ESLintTester();
 
 function strictCase(code: string, output: string) {
-  expect(typeof rule.messages.WEAK_NULL).toBe('string');
+  expect(typeof rule.meta.messages.WEAK_NULL).toBe('string');
   return {
     code,
-    errors: [{message: rule.messages.WEAK_NULL}],
+    errors: [{messageId: 'WEAK_NULL'}],
     output,
   };
 }
 
 function weakCase(code: string, output: string) {
-  expect(typeof rule.messages.CHECK_NULL).toBe('string');
+  expect(typeof rule.meta.messages.CHECK_NULL).toBe('string');
   return {
     code,
-    errors: [{message: rule.messages.CHECK_NULL}],
+    errors: [{messageId: 'CHECK_NULL'}],
     output,
   };
 }
