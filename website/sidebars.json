@@ -14,7 +14,8 @@
     ],
     "Deep Dives": [
       "bundling",
-      "caching"
+      "caching",
+      "resolution"
     ]
   }
 }
