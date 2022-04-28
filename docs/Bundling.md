@@ -1,6 +1,6 @@
 ---
 id: bundling
-title: Bundling
+title: Bundle Formats
 ---
 
 When bundling, each of the modules gets assigned a numeric id, meaning no dynamic requires are supported. Requires are changed by its numeric version, and modules are stored in different possible formats. Three different formats of bundling are supported:
