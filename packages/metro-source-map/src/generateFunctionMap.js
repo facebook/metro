@@ -190,7 +190,8 @@ function getNameForPath(path: NodePath<>): string {
     return node.id.name;
   }
   let propertyPath;
-  let kind = '';
+  let kind: ?(string | $TEMPORARY$string<'get'> | $TEMPORARY$string<'set'>) =
+    '';
 
   // Find or construct an AST node that names the current node.
   if (isObjectMethod(node) || isClassMethod(node)) {

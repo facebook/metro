@@ -69,7 +69,7 @@ class ModuleCache {
   }
 
   getPackageOf(modulePath: string): ?Package {
-    let packagePath = this._packagePathByModulePath[modulePath];
+    let packagePath: ?string = this._packagePathByModulePath[modulePath];
     if (packagePath && this._packageCache[packagePath]) {
       return this._packageCache[packagePath];
     }

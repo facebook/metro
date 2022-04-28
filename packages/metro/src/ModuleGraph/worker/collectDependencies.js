@@ -332,7 +332,7 @@ function processRequireCall<TSplitCondition>(
 }
 
 function getNearestLocFromPath(path: NodePath<>): ?BabelSourceLocation {
-  let current = path;
+  let current: ?(NodePath<> | NodePath<BabelNode>) = path;
   while (current && !current.node.loc) {
     current = current.parentPath;
   }
@@ -383,7 +383,7 @@ function isOptionalDependency<TSplitCondition>(
 
   // Valid statement stack for single-level try-block: expressionStatement -> blockStatement -> tryStatement
   let sCount = 0;
-  let p = path;
+  let p: ?(NodePath<> | NodePath<BabelNode>) = path;
   while (p && sCount < 3) {
     if (p.isStatement()) {
       if (p.node.type === 'BlockStatement') {
