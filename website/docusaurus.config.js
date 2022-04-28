@@ -66,7 +66,6 @@ const siteConfig = {
         {label: 'Docs', to: 'docs/getting-started'},
         {label: 'API', to: 'docs/api'},
         {label: 'Help', to: 'help'},
-        {label: 'Blog', to: 'blog'},
         {
           label: 'Twitter',
           href: 'https://twitter.com/MetroBundler',
@@ -102,7 +101,6 @@ const siteConfig = {
         {
           title: 'More',
           items: [
-            {label: 'Blog', to: 'blog'},
             {label: 'Github', href: 'https://github.com/facebook/metro'},
           ],
         },
