@@ -37,6 +37,7 @@ const http = require('http');
 const https = require('https');
 const {getDefaultConfig, loadConfig, mergeConfig} = require('metro-config');
 const {InspectorProxy} = require('metro-inspector-proxy');
+const net = require('net');
 const {parse} = require('url');
 const ws = require('ws');
 
@@ -225,6 +226,8 @@ exports.runServer = async (
     websocketEndpoints = {},
   }: RunServerOptions,
 ): Promise<HttpServer | HttpsServer> => {
+  await earlyPortCheck(host, config.server.port);
+
   if (secure != null || secureCert != null || secureKey != null) {
     // eslint-disable-next-line no-console
     console.warn(
@@ -463,3 +466,17 @@ exports.attachMetroCli = function (
   }
   return yargs;
 };
+
+async function earlyPortCheck(host: void | string, port: number) {
+  const server = net.createServer(c => c.end());
+  try {
+    await new Promise((resolve, reject) => {
+      server.on('error', err => {
+        reject(err);
+      });
+      server.listen(port, host, undefined, () => resolve());
+    });
+  } finally {
+    await new Promise(resolve => server.close(() => resolve()));
+  }
+}
