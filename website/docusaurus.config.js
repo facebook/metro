@@ -100,9 +100,7 @@ const siteConfig = {
         },
         {
           title: 'More',
-          items: [
-            {label: 'Github', href: 'https://github.com/facebook/metro'},
-          ],
+          items: [{label: 'GitHub', href: 'https://github.com/facebook/metro'}],
         },
       ],
       logo: {
