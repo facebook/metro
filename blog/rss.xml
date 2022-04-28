@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+<rss version="2.0">
     <channel>
         <title>Metro Blog</title>
         <link>https://facebook.github.io/metro/blog</link>
@@ -10,10 +10,9 @@
         <item>
             <title><![CDATA[Train Approaching]]></title>
             <link>https://facebook.github.io/metro/blog/2017/11/22/train-approaching</link>
-            <guid>/2017/11/22/train-approaching</guid>
+            <guid>Train Approaching</guid>
             <pubDate>Wed, 22 Nov 2017 00:00:00 GMT</pubDate>
             <description><![CDATA[The Metro website is live.]]></description>
-            <content:encoded><![CDATA[<p>The Metro website is live.</p>]]></content:encoded>
         </item>
     </channel>
 </rss>
