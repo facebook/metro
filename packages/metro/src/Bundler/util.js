@@ -155,7 +155,7 @@ function filterObject(
   object: AssetDataWithoutFiles,
   blockList: Set<string>,
 ): AssetDataFiltered {
-  const copied = Object.assign({}, object);
+  const copied = {...object};
   for (const key of blockList) {
     delete copied[key];
   }

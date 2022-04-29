@@ -259,13 +259,11 @@ exports.runServer = async (
   if (secure || secureServerOptions != null) {
     let options = secureServerOptions;
     if (typeof secureKey === 'string' && typeof secureCert === 'string') {
-      options = Object.assign(
-        {
-          key: fs.readFileSync(secureKey),
-          cert: fs.readFileSync(secureCert),
-        },
-        secureServerOptions,
-      );
+      options = {
+        key: fs.readFileSync(secureKey),
+        cert: fs.readFileSync(secureCert),
+        ...secureServerOptions,
+      };
     }
     httpServer = https.createServer(options, serverApp);
   } else {

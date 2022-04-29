@@ -170,7 +170,7 @@ function buildBabelConfig(
     if (mayContainEditableReactComponents) {
       const hmrConfig = makeHMRConfig();
       hmrConfig.plugins = withExtrPlugins.concat(hmrConfig.plugins);
-      config = Object.assign({}, config, hmrConfig);
+      config = {...config, ...hmrConfig};
     }
   }
 
