@@ -216,9 +216,7 @@ it('does not resolve to additional `node_modules` if `nodeModulesPaths` is not s
 });
 
 it('uses `nodeModulesPaths` to find additional node_modules not in the direct path', () => {
-  const context = Object.assign({}, CONTEXT, {
-    nodeModulesPaths: ['/other-root/node_modules'],
-  });
+  const context = {...CONTEXT, nodeModulesPaths: ['/other-root/node_modules']};
   expect(Resolver.resolve(context, 'banana', null)).toEqual({
     type: 'sourceFile',
     filePath: '/other-root/node_modules/banana/main.js',
@@ -236,13 +234,11 @@ it('uses `nodeModulesPaths` to find additional node_modules not in the direct pa
 });
 
 it('resolves transitive dependencies when using `nodeModulesPaths`', () => {
-  const context = Object.assign(
-    {},
-    {...CONTEXT, originModulePath: '/other-root/node_modules/banana/main.js'},
-    {
-      nodeModulesPaths: ['/other-root/node_modules'],
-    },
-  );
+  const context = {
+    ...CONTEXT,
+    originModulePath: '/other-root/node_modules/banana/main.js',
+    nodeModulesPaths: ['/other-root/node_modules'],
+  };
 
   expect(Resolver.resolve(context, 'banana-module', null)).toEqual({
     type: 'sourceFile',
@@ -257,9 +253,7 @@ it('resolves transitive dependencies when using `nodeModulesPaths`', () => {
 });
 
 describe('disableHierarchicalLookup', () => {
-  const context = Object.assign({}, CONTEXT, {
-    disableHierarchicalLookup: true,
-  });
+  const context = {...CONTEXT, disableHierarchicalLookup: true};
 
   it('disables node_modules lookup', () => {
     expect(() => Resolver.resolve(context, 'apple', null))
@@ -353,9 +347,7 @@ it('throws a descriptive error when a file inside a Haste package cannot be reso
 
 describe('redirectModulePath', () => {
   const redirectModulePath = jest.fn();
-  const context = Object.assign({}, CONTEXT, {
-    redirectModulePath,
-  });
+  const context = {...CONTEXT, redirectModulePath};
 
   beforeEach(() => {
     redirectModulePath.mockReset();
@@ -500,7 +492,7 @@ describe('redirectModulePath', () => {
 
 describe('resolveRequest', () => {
   const resolveRequest = jest.fn();
-  const context = Object.assign({}, CONTEXT, {resolveRequest});
+  const context = {...CONTEXT, resolveRequest};
 
   beforeEach(() => {
     resolveRequest.mockReset();
@@ -582,9 +574,10 @@ describe('resolveRequest', () => {
   });
 
   it('is called with the platform and non-redirected module path', () => {
-    const contextWithRedirect = Object.assign({}, context, {
+    const contextWithRedirect = {
+      ...context,
       redirectModulePath: filePath => filePath + '.redirected',
-    });
+    };
     expect(Resolver.resolve(contextWithRedirect, 'does-not-exist', 'android'))
       .toMatchInlineSnapshot(`
       Object {
@@ -604,9 +597,10 @@ describe('resolveRequest', () => {
       type: 'sourceFile',
       filePath: '/some/fake/path',
     }));
-    const contextWithRedirect = Object.assign({}, context, {
+    const contextWithRedirect = {
+      ...context,
       redirectModulePath: filePath => false,
-    });
+    };
     expect(Resolver.resolve(contextWithRedirect, 'does-not-exist', 'android'))
       .toMatchInlineSnapshot(`
       Object {
@@ -626,7 +620,7 @@ describe('resolveRequest', () => {
     // This test shows a common pattern for wrapping the standard resolver.
     resolveRequest.mockImplementation((ctx, moduleName, platform) => {
       return Resolver.resolve(
-        Object.assign({}, ctx, {resolveRequest: null}),
+        {...ctx, resolveRequest: null},
         moduleName,
         platform,
       );
