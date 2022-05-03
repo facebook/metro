@@ -93,8 +93,8 @@ function findOriginalPosition(
   name: ?string,
   ...
 } {
-  let currentLine = generatedLine;
-  let currentColumn = generatedColumn;
+  let currentLine: ?Number1 = generatedLine;
+  let currentColumn: ?Number0 = generatedColumn;
   let original = {
     line: null,
     column: null,

@@ -172,7 +172,7 @@ const createConnectMiddleware = async function (
 ): Promise<MetroMiddleWare> {
   const metroServer = await runMetro(config, options);
 
-  let enhancedMiddleware = metroServer.processRequest;
+  let enhancedMiddleware: Middleware = metroServer.processRequest;
 
   // Enhance the resulting middleware using the config options
   if (config.server.enhanceMiddleware) {
