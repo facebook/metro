@@ -260,7 +260,7 @@ async function execCommand(
   respond: RespondFn,
   messageId: number,
 ) {
-  let makeResponse = success;
+  let makeResponse: (id: number) => Response = success;
   try {
     if (shouldDebugCommand(argsString)) {
       throw new Error(
