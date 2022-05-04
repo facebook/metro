@@ -163,17 +163,16 @@ class SourceMetadataMapConsumer {
 
     if ('x_facebook_sources' in map) {
       const basicMap: BasicSourceMap = map;
-      return (basicMap.x_facebook_sources || []).reduce(
-        (acc, metadata, index) => {
-          let source = basicMap.sources[index];
-          if (source != null) {
-            source = this._normalizeSource(source, basicMap);
-            acc[source] = metadata;
-          }
-          return acc;
-        },
-        {},
-      );
+      return (basicMap.x_facebook_sources || []).reduce<{
+        [string]: ?FBSourceMetadata,
+      }>((acc, metadata, index) => {
+        let source = basicMap.sources[index];
+        if (source != null) {
+          source = this._normalizeSource(source, basicMap);
+          acc[source] = metadata;
+        }
+        return acc;
+      }, {});
     }
     return {};
   }

@@ -95,7 +95,7 @@ function generateRemoteAssetCodeFileAst(
 
   const file = remoteFileMap[assetDescriptor.fileSystemLocation];
   const descriptor = file && file[assetDescriptor.name];
-  const data = {};
+  const data: {[number]: string} = {};
 
   if (!descriptor) {
     return null;

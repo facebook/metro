@@ -240,7 +240,7 @@ function metroImportAll(moduleId: ModuleID | VerboseModuleNameForDev | number) {
   if (exports && exports.__esModule) {
     importedAll = exports;
   } else {
-    importedAll = {};
+    importedAll = ({}: {[string]: any});
 
     // Refrain from using Object.assign, it has to work in ES3 environments.
     if (exports) {

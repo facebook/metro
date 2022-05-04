@@ -288,19 +288,22 @@ class MemoryFs {
     this.promises = PROMISE_FUNC_NAMES.filter(
       // $FlowFixMe: No indexer
       funcName => typeof this[`${funcName}Sync`] === 'function',
-    ).reduce((promises, funcName) => {
-      promises[funcName] = (...args) =>
-        new Promise((resolve, reject) => {
-          try {
-            // $FlowFixMe: No indexer
-            resolve(this[`${funcName}Sync`](...args));
-          } catch (error) {
-            reject(error);
-          }
-        });
+    ).reduce<{[string]: (...args: Array<any>) => Promise<any>}>(
+      (promises, funcName) => {
+        promises[funcName] = (...args) =>
+          new Promise((resolve, reject) => {
+            try {
+              // $FlowFixMe: No indexer
+              resolve(this[`${funcName}Sync`](...args));
+            } catch (error) {
+              reject(error);
+            }
+          });
 
-      return promises;
-    }, {});
+        return promises;
+      },
+      {},
+    );
   }
 
   reset() {
