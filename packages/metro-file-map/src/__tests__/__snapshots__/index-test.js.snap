@@ -17,13 +17,13 @@ exports[`HasteMap file system changes processing recovery from duplicate module 
 `;
 
 exports[`HasteMap tries to crawl using node as a fallback 1`] = `
-"jest-haste-map: Watchman crawl failed. Retrying once with node crawler.
+"metro-file-map: Watchman crawl failed. Retrying once with node crawler.
   Usually this happens when watchman isn't running. Create an empty \`.watchmanconfig\` file in your project's root folder or initialize a git or hg repository in your project.
   Error: watchman error"
 `;
 
 exports[`HasteMap warns on duplicate mock files 1`] = `
-"jest-haste-map: duplicate manual mock found: subdir/Blueberry
+"metro-file-map: duplicate manual mock found: subdir/Blueberry
   The following files share their name; please delete one of them:
     * <rootDir>/fruits1/__mocks__/subdir/Blueberry.js
     * <rootDir>/fruits2/__mocks__/subdir/Blueberry.js
@@ -31,7 +31,7 @@ exports[`HasteMap warns on duplicate mock files 1`] = `
 `;
 
 exports[`HasteMap warns on duplicate module ids 1`] = `
-"jest-haste-map: Haste module naming collision: Strawberry
+"metro-file-map: Haste module naming collision: Strawberry
   The following files share their name; please adjust your hasteImpl:
     * <rootDir>/fruits/Strawberry.js
     * <rootDir>/fruits/other/Strawberry.js

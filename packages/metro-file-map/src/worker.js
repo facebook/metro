@@ -38,7 +38,7 @@ async function worker(
     data.hasteImplModulePath !== hasteImplModulePath
   ) {
     if (hasteImpl) {
-      throw new Error('jest-haste-map: hasteImplModulePath changed');
+      throw new Error('metro-file-map: hasteImplModulePath changed');
     }
     hasteImplModulePath = data.hasteImplModulePath;
     // $FlowFixMe[unsupported-syntax] - dynamic require

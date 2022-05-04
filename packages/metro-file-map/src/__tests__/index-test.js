@@ -357,7 +357,7 @@ describe('HasteMap', () => {
       await new HasteMap(config).build();
     } catch (err) {
       expect(err.message).toBe(
-        'jest-haste-map: the `ignorePattern` option must be a RegExp',
+        'metro-file-map: the `ignorePattern` option must be a RegExp',
       );
     }
   });
