@@ -290,7 +290,7 @@ async function loadConfig(
   // Override the configuration with cli parameters
   const configWithArgs = overrideConfigWithArguments(configuration, argv);
 
-  const overriddenConfig = {};
+  const overriddenConfig: {[string]: mixed} = {};
 
   // The resolver breaks if "json" is missing from `resolver.sourceExts`
   const sourceExts = configWithArgs.resolver.sourceExts;

@@ -1527,7 +1527,11 @@ describe('promises', () => {
   });
 });
 
-function expectFsError(code, handler, {noSnapshot} = {}) {
+function expectFsError(
+  code,
+  handler,
+  {noSnapshot} = ({...null}: {noSnapshot?: boolean}),
+) {
   try {
     handler();
     throw new Error('an error was expected but did not happen');
