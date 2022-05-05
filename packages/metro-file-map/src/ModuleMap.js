@@ -25,7 +25,7 @@ const EMPTY_OBJ: {[string]: ModuleMetaData} = {};
 const EMPTY_MAP = new Map();
 
 export default class ModuleMap implements IModuleMap<SerializableModuleMap> {
-  static DuplicateHasteCandidatesError: typeof DuplicateHasteCandidatesError;
+  static DuplicateHasteCandidatesError: Class<DuplicateHasteCandidatesError>;
   +_raw: RawModuleMap;
   _json: ?SerializableModuleMap;
 

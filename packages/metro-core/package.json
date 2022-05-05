@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "lodash.throttle": "^4.1.1",
-    "metro-file-map": "0.70.2",
     "metro-resolver": "0.70.2"
   },
   "license": "MIT"

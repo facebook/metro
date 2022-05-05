@@ -122,6 +122,8 @@ interface Watcher {
 
 type WorkerInterface = {worker: typeof worker, getSha1: typeof getSha1};
 
+export const DuplicateHasteCandidatesError =
+  HasteModuleMap.DuplicateHasteCandidatesError;
 export {default as ModuleMap} from './ModuleMap';
 export type {SerializableModuleMap} from './flow-types';
 export type {IModuleMap} from './flow-types';
