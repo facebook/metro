@@ -8,11 +8,9 @@
  * @format
  */
 
-import type {HasteConfig, HasteMap} from './types';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
-// $FlowFixMe: Types for `jest-haste-map`
-import JestHasteMap from 'jest-haste-map';
+import MetroFileMap from 'metro-file-map';
 
 const ci = require('ci-info');
 const path = require('path');
@@ -52,14 +50,14 @@ function createHasteMap(
     throwOnModuleCollision?: boolean,
     name?: string,
   }>,
-): HasteMap {
+): MetroFileMap {
   const dependencyExtractor =
     options?.extractDependencies === false
       ? null
       : config.resolver.dependencyExtractor;
   const computeDependencies = dependencyExtractor != null;
 
-  const hasteConfig: HasteConfig = {
+  return MetroFileMap.create({
     cacheDirectory: config.hasteMapCacheDirectory,
     computeDependencies,
     computeSha1: true,
@@ -80,9 +78,7 @@ function createHasteMap(
     throwOnModuleCollision: options?.throwOnModuleCollision ?? true,
     useWatchman: config.resolver.useWatchman,
     watch: options?.watch == null ? !ci.isCI : options.watch,
-  };
-
-  return JestHasteMap.create(hasteConfig);
+  });
 }
 
 module.exports = createHasteMap;

@@ -170,13 +170,13 @@ The default implementation of this function respects [`resolver.resolverMainFiel
 
 Resolves a Haste module name to an absolute path. Returns `null` if no such module exists.
 
-The default implementation of this function uses [jest-haste-map](https://www.npmjs.com/package/jest-haste-map)'s `getModule` method.
+The default implementation of this function uses [metro-file-map](https://www.npmjs.com/package/metro-file-map)'s `getModule` method.
 
 #### `resolveHastePackage: string => ?string`
 
 Resolves a Haste package name to an absolute `package.json` path. Returns `null` if no such package exists.
 
-The default implementation of this function uses [jest-haste-map](https://www.npmjs.com/package/jest-haste-map)'s `getPackage` method.
+The default implementation of this function uses [metro-file-map](https://www.npmjs.com/package/metro-file-map)'s `getPackage` method.
 
 #### `allowHaste: boolean`
 

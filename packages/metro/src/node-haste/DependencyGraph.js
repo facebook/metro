@@ -8,11 +8,11 @@
  * @format
  */
 
-import type {HasteFS, HasteMap, ModuleMap} from './DependencyGraph/types';
 import type Package from './Package';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type MetroFileMap, {HasteFS} from 'metro-file-map';
 
-import {ModuleMap as JestHasteModuleMap} from 'jest-haste-map';
+import {ModuleMap as MetroFileMapModuleMap} from 'metro-file-map';
 
 const createHasteMap = require('./DependencyGraph/createHasteMap');
 const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
@@ -29,7 +29,7 @@ const {InvalidPackageError} = require('metro-resolver');
 const nullthrows = require('nullthrows');
 const path = require('path');
 
-const {DuplicateHasteCandidatesError} = JestHasteModuleMap;
+const {DuplicateHasteCandidatesError} = MetroFileMapModuleMap;
 
 function getOrCreate<T>(
   map: Map<string, Map<string, T>>,
@@ -46,10 +46,10 @@ function getOrCreate<T>(
 class DependencyGraph extends EventEmitter {
   _assetExtensions: Set<string>;
   _config: ConfigT;
-  _haste: HasteMap;
+  _haste: MetroFileMap;
   _hasteFS: HasteFS;
   _moduleCache: ModuleCache;
-  _moduleMap: ModuleMap;
+  _moduleMap: MetroFileMapModuleMap;
   _moduleResolver: ModuleResolver<Module, Package>;
   _resolutionCache: Map<string, Map<string, Map<string, string>>>;
 
@@ -60,9 +60,9 @@ class DependencyGraph extends EventEmitter {
     initialModuleMap,
   }: {|
     +config: ConfigT,
-    +haste: HasteMap,
+    +haste: MetroFileMap,
     +initialHasteFS: HasteFS,
-    +initialModuleMap: ModuleMap,
+    +initialModuleMap: MetroFileMapModuleMap,
   |}) {
     super();
     this._config = config;

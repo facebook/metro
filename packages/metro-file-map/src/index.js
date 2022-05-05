@@ -22,6 +22,7 @@ import type {
   InternalHasteMap,
   MockData,
   ModuleMapData,
+  ModuleMapItem,
   ModuleMetaData,
   Path,
   PerfLogger,
@@ -61,7 +62,9 @@ const {version: VERSION} = require('../package.json');
 const nodeCrawl = require('./crawlers/node');
 const watchmanCrawl = require('./crawlers/watchman');
 
-type Options = {
+export type {HasteFS, ModuleMapData, ModuleMapItem};
+
+type Options = $ReadOnly<{
   cacheDirectory?: ?string,
   computeDependencies?: ?boolean,
   computeSha1?: ?boolean,
@@ -69,10 +72,10 @@ type Options = {
   dependencyExtractor?: ?string,
   enableSymlinks?: ?boolean,
   extensions: $ReadOnlyArray<string>,
-  forceNodeFilesystemAPI?: boolean,
+  forceNodeFilesystemAPI?: ?boolean,
   hasteImplModulePath?: ?string,
   hasteMapModulePath?: ?string,
-  ignorePattern?: HasteRegExp,
+  ignorePattern?: ?HasteRegExp,
   maxWorkers: number,
   mocksPattern?: ?string,
   name: string,
@@ -86,7 +89,7 @@ type Options = {
   throwOnModuleCollision?: ?boolean,
   useWatchman?: ?boolean,
   watch?: ?boolean,
-};
+}>;
 
 type InternalOptions = {
   cacheDirectory: string,

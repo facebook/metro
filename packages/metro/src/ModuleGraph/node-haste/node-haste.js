@@ -11,9 +11,10 @@
 import type {Moduleish} from '../../node-haste/DependencyGraph/ModuleResolution';
 import type {ResolveFn, TransformedCodeFile} from '../types.flow';
 import type {Extensions, Path} from './node-haste.flow';
+import type {ModuleMapData, ModuleMapItem} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
 
-import {ModuleMap} from 'jest-haste-map';
+import {ModuleMap} from 'metro-file-map';
 
 const {
   ModuleResolver,
@@ -57,8 +58,13 @@ const NULL_MODULE: Moduleish = {
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
 const isNodeModules = file => file.includes(NODE_MODULES);
 
-// This function maps the ModuleGraph data structure to jest-haste-map's ModuleMap
-const createModuleMap = ({files, moduleCache, sourceExts, platforms}) => {
+// This function maps the ModuleGraph data structure to metro-file-map's ModuleMap
+const createModuleMap = ({
+  files,
+  moduleCache,
+  sourceExts,
+  platforms,
+}): ModuleMapData => {
   const platformSet = new Set(
     (platforms ?? defaults.platforms).concat([NATIVE_PLATFORM]),
   );
@@ -83,13 +89,13 @@ const createModuleMap = ({files, moduleCache, sourceExts, platforms}) => {
       return;
     }
 
-    const mapModule = map.get(id) || Object.create(null);
+    const mapModule: ModuleMapItem = map.get(id) || Object.create(null);
 
     const platform =
       parsePlatformFilePath(filePath, platformSet).platform || GENERIC_PLATFORM;
 
     const existingModule = mapModule[platform];
-    // 0 = Module, 1 = Package in jest-haste-map
+    // 0 = Module, 1 = Package in metro-file-map
     mapModule[platform] = [filePath, module.type === 'Package' ? 1 : 0];
 
     if (existingModule && existingModule[0] !== filePath) {

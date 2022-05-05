@@ -1484,7 +1484,7 @@ let resolver;
         );
         expect(console.error).toHaveBeenCalledWith(
           [
-            'jest-haste-map: Haste module naming collision: aPackage',
+            'metro-file-map: Haste module naming collision: aPackage',
             '  The following files share their name; please adjust your hasteImpl:',
             `    * ${joinPath('<rootDir>', 'aPackage', 'package.json')}`,
             `    * ${joinPath('<rootDir>', 'anotherPackage', 'package.json')}`,
@@ -1511,7 +1511,7 @@ let resolver;
         );
         expect(console.error).toHaveBeenCalledWith(
           [
-            'jest-haste-map: Haste module naming collision: aPackage',
+            'metro-file-map: Haste module naming collision: aPackage',
             '  The following files share their name; please adjust your hasteImpl:',
             `    * ${joinPath(
               '<rootDir>',
@@ -1697,7 +1697,7 @@ let resolver;
         );
         expect(console.error).toHaveBeenCalledWith(
           [
-            'jest-haste-map: Haste module naming collision: hasteModule',
+            'metro-file-map: Haste module naming collision: hasteModule',
             '  The following files share their name; please adjust your hasteImpl:',
             `    * ${joinPath('<rootDir>', 'hasteModule.js')}`,
             `    * ${joinPath('<rootDir>', 'anotherHasteModule.js')}`,
@@ -1738,7 +1738,7 @@ let resolver;
         );
         expect(console.error).toHaveBeenCalledWith(
           [
-            'jest-haste-map: Haste module naming collision: hasteModule',
+            'metro-file-map: Haste module naming collision: hasteModule',
             '  The following files share their name; please adjust your hasteImpl:',
             `    * ${joinPath('<rootDir>', 'hasteModule.js')}`,
             `    * ${joinPath('<rootDir>', 'aPackage', 'package.json')}`,
@@ -1800,7 +1800,7 @@ let resolver;
         );
         expect(console.error).toHaveBeenCalledWith(
           [
-            'jest-haste-map: Haste module naming collision: hasteModule',
+            'metro-file-map: Haste module naming collision: hasteModule',
             '  The following files share their name; please adjust your hasteImpl:',
             `    * ${joinPath('<rootDir>', 'hasteModule.js')}`,
             `    * ${joinPath('<rootDir>', 'hasteModule.invalid.js')}`,

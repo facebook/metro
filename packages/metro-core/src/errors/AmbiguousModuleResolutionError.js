@@ -8,7 +8,7 @@
  * @format
  */
 
-import {ModuleMap} from 'jest-haste-map';
+import {ModuleMap} from 'metro-file-map';
 const {DuplicateHasteCandidatesError} = ModuleMap;
 
 class AmbiguousModuleResolutionError extends Error {

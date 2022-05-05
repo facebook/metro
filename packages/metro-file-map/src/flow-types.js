@@ -123,7 +123,10 @@ export interface IModuleMap<S = SerializableModuleMap> {
 export type MockData = Map<string, Path>;
 export type ModuleMapData = Map<string, ModuleMapItem>;
 
-type ModuleMapItem = {[platform: string]: ModuleMetaData};
+export type ModuleMapItem = {
+  [platform: string]: ModuleMetaData,
+  __proto__: null,
+};
 export type ModuleMetaData = [/* path */ string, /* type */ number];
 
 export type Path = string;

@@ -10,7 +10,7 @@
 
 'use strict';
 
-import type {ModuleMap} from './types';
+import type {ModuleMap} from 'metro-file-map';
 import type {
   CustomResolver,
   DoesFileExist,
