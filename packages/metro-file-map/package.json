@@ -26,5 +26,8 @@
   },
   "devDependencies": {
     "slash": "^3.0.0"
+  },
+  "optionalDependencies": {
+    "fsevents": "^2.1.2"
   }
 }
