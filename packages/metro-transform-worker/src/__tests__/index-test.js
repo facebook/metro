@@ -74,6 +74,7 @@ beforeEach(() => {
 
   fs = require('fs');
   Transformer = require('../');
+  // $FlowFixMe[prop-missing] Cannot call `fs.reset` because property `reset` is missing in  module `fs`
   fs.reset();
 
   fs.mkdirSync('/root/local', {recursive: true});

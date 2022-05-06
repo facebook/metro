@@ -91,15 +91,19 @@ const getBabelRC = (function () {
       // If we found a babel config file, extend our config off of it
       // otherwise the default config will be used
       if (fs.existsSync(projectBabelRCPath)) {
+        // $FlowFixMe[incompatible-use] `extends` is missing in null or undefined.
         babelRC.extends = projectBabelRCPath;
       }
     }
 
     // If a babel config file doesn't exist in the project then
     // the default preset for react-native will be used instead.
+    // $FlowFixMe[incompatible-use] `extends` is missing in null or undefined.
+    // $FlowFixMe[incompatible-type] `extends` is missing in null or undefined.
     if (!babelRC.extends) {
       const {experimentalImportSupport, ...presetOptions} = options;
 
+      // $FlowFixMe[incompatible-use] `presets` is missing in null or undefined.
       babelRC.presets = [
         [
           require('metro-react-native-babel-preset'),
