@@ -477,6 +477,7 @@ class Device {
       if (req.params.urlRegex) {
         req.params.urlRegex = req.params.urlRegex.replace(
           /localhost/g,
+          // $FlowFixMe[incompatible-call]
           debuggerInfo.originalSourceURLAddress,
         );
       }
