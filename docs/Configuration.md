@@ -73,7 +73,7 @@ Specify any additional (to projectRoot) watch folders, this is used to know whic
 
 Type: `string`
 
-The path to the transformer to use.
+The absolute path of a module (or a package name resolvable from the `metro` package) exporting a `transform` function.
 
 #### `reporter`
 
