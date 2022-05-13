@@ -204,15 +204,8 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
         );
       }
       if (error instanceof Resolver.FailedToResolveNameError) {
-        const {
-          dirPaths,
-          extraPaths,
-        }: {
-          // $flowfixme these types are defined explicitly in FailedToResolveNameError but Flow refuses to recognize them here
-          dirPaths: $ReadOnlyArray<string>,
-          extraPaths: $ReadOnlyArray<string>,
-          ...
-        } = error;
+        const dirPaths = error.dirPaths;
+        const extraPaths = error.extraPaths;
         const displayDirPaths = dirPaths
           .filter((dirPath: string) => this._options.dirExists(dirPath))
           .map(dirPath => path.relative(this._options.projectRoot, dirPath))
