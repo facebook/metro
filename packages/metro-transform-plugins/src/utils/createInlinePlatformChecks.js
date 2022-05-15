@@ -18,6 +18,13 @@ import typeof * as Types from '@babel/types';
 
 const importMap = new Map([['ReactNative', 'react-native']]);
 
+const RN_BINDING_PATTERNS = [
+  {name: 'React'},
+  {name: 'ReactNative'},
+  // This is the format babel uses when transforming es module imports.
+  {name: /^_reactNative[0-9]*$/},
+];
+
 type PlatformChecks = {
   isPlatformNode: (
     node: MemberExpression,
@@ -73,7 +80,7 @@ function createInlinePlatformChecks(
     isImportOrGlobal(
       node.object.object,
       scope,
-      [{name: 'React'}, {name: 'ReactNative'}],
+      RN_BINDING_PATTERNS,
       isWrappedModule,
     );
 
@@ -99,38 +106,50 @@ function createInlinePlatformChecks(
     isImportOrGlobal(
       node.callee.object.object,
       scope,
-      [{name: 'React'}, {name: 'ReactNative'}],
+      RN_BINDING_PATTERNS,
       isWrappedModule,
     );
 
   const isGlobal = (binding): boolean %checks => !binding;
+
+  const matchIdentifierNamed = (node, pattern: string | RegExp): boolean =>
+    isIdentifier(node) &&
+    (typeof pattern === 'string'
+      ? node.name === pattern
+      : pattern.test(node.name));
 
   const isRequireCall = (node, dependencyId: string, scope): boolean =>
     isCallExpression(node) &&
     isIdentifier(node.callee, {name: requireName}) &&
     checkRequireArgs(node.arguments, dependencyId);
 
-  const isImport = (node, scope, patterns: Array<{|name: string|}>): boolean =>
-    patterns.some((pattern: {|name: string|}) => {
-      const importName = importMap.get(pattern.name) || pattern.name;
+  const isImport = (
+    node,
+    scope,
+    patterns: Array<{|name: string | RegExp|}>,
+  ): boolean =>
+    patterns.some(pattern => {
+      const patternName = pattern.name;
+      if (typeof patternName !== 'string') {
+        return false;
+      }
+      const importName = importMap.get(patternName) || patternName;
       return isRequireCall(node, importName, scope);
     });
 
   const isImportOrGlobal = (
     node,
     scope,
-    patterns: Array<{|name: string|}>,
+    patterns: Array<{|name: string | RegExp|}>,
     isWrappedModule: boolean,
   ): boolean => {
-    const identifier = patterns.find((pattern: {|name: string|}) =>
-      isIdentifier(node, pattern),
+    const matchesPattern = patterns.some(pattern =>
+      matchIdentifierNamed(node, pattern.name),
     );
     return (
-      (!!identifier &&
-        isToplevelBinding(
-          scope.getBinding(identifier.name),
-          isWrappedModule,
-        )) ||
+      (matchesPattern &&
+        isIdentifier(node) &&
+        isToplevelBinding(scope.getBinding(node.name), isWrappedModule)) ||
       isImport(node, scope, patterns)
     );
   };
