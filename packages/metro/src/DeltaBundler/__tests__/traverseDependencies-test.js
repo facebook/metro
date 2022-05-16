@@ -13,7 +13,7 @@
 const {
   initialTraverseDependencies,
   reorderGraph,
-  traverseDependencies,
+  traverseDependencies: traverseDependenciesImpl,
 } = require('../traverseDependencies');
 
 let dependencyGraph;
@@ -101,6 +101,53 @@ function getPaths({added, modified, deleted}) {
     modified: new Set(modifiedPaths),
     deleted,
   };
+}
+
+// Compute a delta between the keys of modules1 and modules2, in the same
+// format returned by getPaths. Modified paths are passed in as modifiedPaths
+// because our mocks don't actually model file contents.
+function computeDelta(modules1, modules2, modifiedPaths) {
+  const added = new Set();
+  const modified = new Set();
+  const deleted = new Set();
+
+  for (const id of modules1.keys()) {
+    if (!modules2.has(id)) {
+      deleted.add(id);
+    } else if (modifiedPaths.has(id)) {
+      modified.add(id);
+    }
+  }
+
+  for (const id of modules2.keys()) {
+    if (!modules1.has(id)) {
+      added.add(id);
+    }
+  }
+
+  return {
+    added,
+    modified,
+    deleted,
+  };
+}
+
+async function traverseDependencies(paths, graph, options) {
+  // Get a snapshot of the graph before the traversal.
+  const dependenciesBefore = new Set(graph.dependencies.keys());
+  const pathsBefore = new Set(paths);
+
+  // Mutate the graph and calculate a delta.
+  const delta = await traverseDependenciesImpl(paths, graph, options);
+
+  // Validate the delta against the current state of the graph.
+  const expectedDelta = computeDelta(
+    dependenciesBefore,
+    graph.dependencies,
+    pathsBefore,
+  );
+  expect(getPaths(delta)).toEqual(expectedDelta);
+  return delta;
 }
 
 beforeEach(async () => {
