@@ -26,7 +26,7 @@ const ModuleCache = require('./ModuleCache');
 const defaults = require('metro-config/src/defaults/defaults');
 const path = require('path');
 
-type ResolveOptions = {|
+type ResolveOptions = {
   assetExts: Extensions,
   assetResolutions: $ReadOnlyArray<string>,
   +disableHierarchicalLookup: boolean,
@@ -39,7 +39,7 @@ type ResolveOptions = {|
   resolveRequest?: ?CustomResolver,
   +sourceExts: Extensions,
   transformedFiles: {[path: Path]: TransformedCodeFile, ...},
-|};
+};
 
 const NATIVE_PLATFORM = 'native';
 const GENERIC_PLATFORM = 'g';

@@ -24,9 +24,9 @@ const path = require('path');
 
 export type {JsTransformOptions as TransformOptions} from 'metro-transform-worker';
 
-export type Worker = {|
+export type Worker = {
   +transform: typeof transform,
-|};
+};
 
 type TransformerInterface = {
   transform(
@@ -44,12 +44,12 @@ export type TransformerConfig = {
   ...
 };
 
-type Data = $ReadOnly<{|
+type Data = $ReadOnly<{
   result: TransformResult<>,
   sha1: string,
   transformFileStartLogEntry: LogEntry,
   transformFileEndLogEntry: LogEntry,
-|}>;
+}>;
 
 async function transform(
   filename: string,

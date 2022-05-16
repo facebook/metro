@@ -16,10 +16,10 @@ const {sourceMapGenerator} = require('./sourceMapGenerator');
 
 function sourceMapString(
   modules: $ReadOnlyArray<Module<>>,
-  options: {|
+  options: {
     +excludeSource: boolean,
     +processModuleFilter: (module: Module<>) => boolean,
-  |},
+  },
 ): string {
   return sourceMapGenerator(modules, options).toString(undefined, {
     excludeSource: options.excludeSource,

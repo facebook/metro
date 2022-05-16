@@ -17,31 +17,31 @@ const constants = require('constants');
 const {EventEmitter} = require('events');
 const stream = require('stream');
 
-type NodeBase = {|
+type NodeBase = {
   gid: number,
   id: number,
   mode: number,
   uid: number,
   watchers: Array<NodeWatcher>,
-|};
+};
 
-type DirectoryNode = {|
+type DirectoryNode = {
   ...NodeBase,
   type: 'directory',
   entries: Map<string, EntityNode>,
-|};
+};
 
-type FileNode = {|
+type FileNode = {
   ...NodeBase,
   type: 'file',
   content: Buffer,
-|};
+};
 
-type SymbolicLinkNode = {|
+type SymbolicLinkNode = {
   ...NodeBase,
   type: 'symbolicLink',
   target: string,
-|};
+};
 
 type EntityNode = DirectoryNode | FileNode | SymbolicLinkNode;
 
@@ -62,22 +62,22 @@ type Encoding =
   | 'utf16le'
   | 'utf8';
 
-type Resolution = {|
+type Resolution = {
   +basename: string,
   +dirNode: DirectoryNode,
   +dirPath: Array<[string, EntityNode]>,
   +drive: string,
   +node: ?EntityNode,
   +realpath: string,
-|};
+};
 
-type Descriptor = {|
+type Descriptor = {
   +nodePath: Array<[string, EntityNode]>,
   +node: FileNode,
   +readable: boolean,
   +writable: boolean,
   position: number,
-|};
+};
 
 type FilePath = string | Buffer;
 
@@ -1232,10 +1232,10 @@ class MemoryFs {
     });
   }
 
-  _parsePath(filePath: string): {|
+  _parsePath(filePath: string): {
     +drive: ?string,
     +entNames: Array<string>,
-  |} {
+  } {
     let drive;
     const sep = this._platform === 'win32' ? /[\\/]/ : /\//;
     if (this._platform === 'win32' && filePath.match(/^[a-zA-Z]:[\\/]/)) {
@@ -1257,10 +1257,10 @@ class MemoryFs {
     return {entNames: filePath.split(sep), drive};
   }
 
-  _parsePathWithCwd(filePath: string): {|
+  _parsePathWithCwd(filePath: string): {
     +drive: string,
     +entNames: Array<string>,
-  |} {
+  } {
     let {drive, entNames} = this._parsePath(filePath);
     if (drive == null) {
       const {_cwd} = this;

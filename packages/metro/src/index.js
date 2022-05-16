@@ -41,22 +41,22 @@ const net = require('net');
 const {parse} = require('url');
 const ws = require('ws');
 
-type MetroMiddleWare = {|
+type MetroMiddleWare = {
   attachHmrServer: (httpServer: HttpServer | HttpsServer) => void,
   end: () => void,
   metroServer: MetroServer,
   middleware: Middleware,
-|};
+};
 
 export type RunMetroOptions = {
   ...ServerOptions,
   waitForBundler?: boolean,
 };
 
-export type RunServerOptions = {|
+export type RunServerOptions = {
   hasReducedPerformance?: boolean,
   host?: string,
-  onError?: (Error & {|code?: string|}) => void,
+  onError?: (Error & {code?: string}) => void,
   onReady?: (server: HttpServer | HttpsServer) => void,
   runInspectorProxy?: boolean,
   secureServerOptions?: Object,
@@ -67,9 +67,9 @@ export type RunServerOptions = {|
   websocketEndpoints?: {
     [path: string]: typeof ws.Server,
   },
-|};
+};
 
-type BuildGraphOptions = {|
+type BuildGraphOptions = {
   entries: $ReadOnlyArray<string>,
   customTransformOptions?: CustomTransformOptions,
   dev?: boolean,
@@ -77,9 +77,9 @@ type BuildGraphOptions = {|
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
   platform?: string,
   type?: 'module' | 'script',
-|};
+};
 
-export type RunBuildOptions = {|
+export type RunBuildOptions = {
   entry: string,
   dev?: boolean,
   out?: string,
@@ -110,10 +110,10 @@ export type RunBuildOptions = {|
   platform?: string,
   sourceMap?: boolean,
   sourceMapUrl?: string,
-|};
+};
 
-type BuildCommandOptions = {||} | null;
-type ServeCommandOptions = {||} | null;
+type BuildCommandOptions = {} | null;
+type ServeCommandOptions = {} | null;
 
 async function getConfig(config: InputConfigT): Promise<ConfigT> {
   const defaultConfig = await getDefaultConfig(config.projectRoot);

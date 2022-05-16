@@ -15,10 +15,10 @@ import type {Graph, Module} from '../types.flow';
 const {getAssetFiles} = require('../../Assets');
 const {getJsOutput, isJsModule} = require('./helpers/js');
 
-type Options = {|
+type Options = {
   platform: ?string,
   +processModuleFilter: (module: Module<>) => boolean,
-|};
+};
 
 async function getAllFiles(
   pre: $ReadOnlyArray<Module<>>,

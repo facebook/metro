@@ -15,11 +15,11 @@
 'use strict';
 
 declare module '@babel/traverse' {
-  declare export type TraverseOptions<TState> = {|
+  declare export type TraverseOptions<TState> = {
     ...Visitor<TState>,
     scope?: Scope,
     noScope?: boolean,
-  |};
+  };
 
   declare export interface HubInterface {
     getCode(): ?string;
@@ -1416,16 +1416,16 @@ declare module '@babel/traverse' {
     state: TState,
   ) => void;
 
-  declare export type VisitNodeObject<-TNode: BabelNode, TState> = $Shape<{|
+  declare export type VisitNodeObject<-TNode: BabelNode, TState> = $Shape<{
     enter(path: NodePath<TNode>, state: TState): void,
     exit(path: NodePath<TNode>, state: TState): void,
-  |}>;
+  }>;
 
   declare export type VisitNode<-TNode: BabelNode, TState> =
     | VisitNodeFunction<TNode, TState>
     | VisitNodeObject<TNode, TState>;
 
-  declare export type Visitor<TState = void> = $ReadOnly<{|
+  declare export type Visitor<TState = void> = $ReadOnly<{
     enter?: VisitNodeFunction<BabelNode, TState>,
     exit?: VisitNodeFunction<BabelNode, TState>,
 
@@ -1829,7 +1829,7 @@ declare module '@babel/traverse' {
     WithStatement?: VisitNode<BabelNodeWithStatement, TState>,
     YieldExpression?: VisitNode<BabelNodeYieldExpression, TState>,
     // END GENERATED VISITOR METHODS
-  |}>;
+  }>;
 
   declare type Visitors = {
     explode<TState>(visitor: Visitor<TState>): Visitor<TState>,

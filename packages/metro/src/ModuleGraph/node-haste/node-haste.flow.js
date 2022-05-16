@@ -55,13 +55,13 @@ export type FastFS = {
   ...
 };
 
-type HasteMapOptions = {|
+type HasteMapOptions = {
   extensions: Extensions,
   files: Array<string>,
   moduleCache: ModuleCache,
   platforms: Platforms,
   preferNativePlatform: true,
-|};
+};
 
 declare class HasteMap {
   // node-haste/DependencyGraph/HasteMap.js

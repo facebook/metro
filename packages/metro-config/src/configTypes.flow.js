@@ -41,20 +41,20 @@ export type PostProcessBundleSourcemap = ({
 type ExtraTransformOptions = {
   +preloadedModules: {[path: string]: true, ...} | false,
   +ramGroups: Array<string>,
-  +transform: {|
+  +transform: {
     +experimentalImportSupport: boolean,
     +inlineRequires: {+blockList: {[string]: true, ...}, ...} | boolean,
     +nonInlinedRequires?: $ReadOnlyArray<string>,
     +unstable_disableES6Transforms?: boolean,
-  |},
+  },
   ...
 };
 
-export type GetTransformOptionsOpts = {|
+export type GetTransformOptionsOpts = {
   dev: boolean,
   hot: boolean,
   platform: ?string,
-|};
+};
 
 export type GetTransformOptions = (
   entryPoints: $ReadOnlyArray<string>,
@@ -68,7 +68,7 @@ export type Middleware = (
   ((e: ?Error) => mixed),
 ) => mixed;
 
-type ResolverConfigT = {|
+type ResolverConfigT = {
   assetExts: $ReadOnlyArray<string>,
   assetResolutions: $ReadOnlyArray<string>,
   blacklistRE?: RegExp | Array<RegExp>,
@@ -85,16 +85,16 @@ type ResolverConfigT = {|
   resolverMainFields: $ReadOnlyArray<string>,
   sourceExts: $ReadOnlyArray<string>,
   useWatchman: boolean,
-|};
+};
 
-type SerializerConfigT = {|
+type SerializerConfigT = {
   createModuleIdFactory: () => (path: string) => number,
   customSerializer: ?(
     entryPoint: string,
     preModules: $ReadOnlyArray<Module<>>,
     graph: Graph<>,
     options: SerializerOptions,
-  ) => Promise<string | {|code: string, map: string|}>,
+  ) => Promise<string | {code: string, map: string}>,
   experimentalSerializerHook: (graph: Graph<>, delta: DeltaResult<>) => mixed,
   getModulesRunBeforeMainModule: (entryFilePath: string) => Array<string>,
   getPolyfills: ({platform: ?string, ...}) => $ReadOnlyArray<string>,
@@ -102,18 +102,18 @@ type SerializerConfigT = {|
   polyfillModuleNames: $ReadOnlyArray<string>,
   postProcessBundleSourcemap: PostProcessBundleSourcemap,
   processModuleFilter: (modules: Module<>) => boolean,
-|};
+};
 
-type TransformerConfigT = {|
+type TransformerConfigT = {
   ...JsTransformerConfig,
   getTransformOptions: GetTransformOptions,
   transformVariants: TransformVariants,
   workerPath: string,
   publicPath: string,
   experimentalImportBundleSupport: boolean,
-|};
+};
 
-type MetalConfigT = {|
+type MetalConfigT = {
   cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
   cacheVersion: string,
   hasteMapCacheDirectory?: string,
@@ -124,9 +124,9 @@ type MetalConfigT = {|
   reporter: Reporter,
   resetCache: boolean,
   watchFolders: $ReadOnlyArray<string>,
-|};
+};
 
-type ServerConfigT = {|
+type ServerConfigT = {
   enhanceMiddleware: (Middleware, Server) => Middleware,
   useGlobalHotkey: boolean,
   port: number,
@@ -134,21 +134,21 @@ type ServerConfigT = {|
   rewriteRequestUrl: string => string,
   runInspectorProxy: boolean,
   verifyConnections: boolean,
-|};
+};
 
-type SymbolicatorConfigT = {|
+type SymbolicatorConfigT = {
   customizeFrame: ({
     +file: ?string,
     +lineNumber: ?number,
     +column: ?number,
     +methodName: ?string,
     ...
-  }) => ?{|+collapse?: boolean|} | Promise<?{|+collapse?: boolean|}>,
-|};
+  }) => ?{+collapse?: boolean} | Promise<?{+collapse?: boolean}>,
+};
 
-export type InputConfigT = $Shape<{|
+export type InputConfigT = $Shape<{
   ...MetalConfigT,
-  ...$ReadOnly<{|
+  ...$ReadOnly<{
     cacheStores:
       | $ReadOnlyArray<CacheStore<TransformResult<>>>
       | (MetroCache => $ReadOnlyArray<CacheStore<TransformResult<>>>),
@@ -157,30 +157,30 @@ export type InputConfigT = $Shape<{|
     serializer: $Shape<SerializerConfigT>,
     symbolicator: $Shape<SymbolicatorConfigT>,
     transformer: $Shape<TransformerConfigT>,
-  |}>,
-|}>;
+  }>,
+}>;
 
-export type IntermediateConfigT = {|
+export type IntermediateConfigT = {
   ...MetalConfigT,
-  ...{|
+  ...{
     resolver: ResolverConfigT,
     server: ServerConfigT,
     serializer: SerializerConfigT,
     symbolicator: SymbolicatorConfigT,
     transformer: TransformerConfigT,
-  |},
-|};
+  },
+};
 
-export type ConfigT = $ReadOnly<{|
+export type ConfigT = $ReadOnly<{
   ...$ReadOnly<MetalConfigT>,
-  ...$ReadOnly<{|
+  ...$ReadOnly<{
     resolver: $ReadOnly<ResolverConfigT>,
     server: $ReadOnly<ServerConfigT>,
     serializer: $ReadOnly<SerializerConfigT>,
     symbolicator: $ReadOnly<SymbolicatorConfigT>,
     transformer: $ReadOnly<TransformerConfigT>,
-  |}>,
-|}>;
+  }>,
+}>;
 
 export type YargArguments = {
   config?: string,

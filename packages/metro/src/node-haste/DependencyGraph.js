@@ -58,12 +58,12 @@ class DependencyGraph extends EventEmitter {
     haste,
     initialHasteFS,
     initialModuleMap,
-  }: {|
+  }: {
     +config: ConfigT,
     +haste: MetroFileMap,
     +initialHasteFS: HasteFS,
     +initialModuleMap: MetroFileMapModuleMap,
-  |}) {
+  }) {
     super();
     this._config = config;
     this._haste = haste;
@@ -81,7 +81,7 @@ class DependencyGraph extends EventEmitter {
 
   static async load(
     config: ConfigT,
-    options?: {|+hasReducedPerformance?: boolean, +watch?: boolean|},
+    options?: {+hasReducedPerformance?: boolean, +watch?: boolean},
   ): Promise<DependencyGraph> {
     const {hasReducedPerformance, watch} = options ?? {};
     const initializingMetroLogEntry = log(

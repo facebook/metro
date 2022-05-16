@@ -124,11 +124,11 @@ function hmrJSBundle(
   delta: DeltaResult<>,
   graph: Graph<>,
   options: Options,
-): {|
+): {
   +added: $ReadOnlyArray<HmrModule>,
   +deleted: $ReadOnlyArray<number>,
   +modified: $ReadOnlyArray<HmrModule>,
-|} {
+} {
   return {
     added: generateModules(delta.added.values(), graph, options),
     modified: generateModules(delta.modified.values(), graph, options),

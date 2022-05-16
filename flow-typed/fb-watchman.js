@@ -15,28 +15,28 @@ declare module 'fb-watchman' {
     ...
   }>;
 
-  declare type WatchmanFile = $ReadOnly<{|
+  declare type WatchmanFile = $ReadOnly<{
     +exists: true,
     +name: string,
     +'content.sha1hex': string,
-  |}>;
+  }>;
 
-  declare type WatchmanQueryResponse = $ReadOnly<{|
+  declare type WatchmanQueryResponse = $ReadOnly<{
     files: $ReadOnlyArray<WatchmanFile>,
-  |}>;
+  }>;
 
   declare type WatchmanExpression = Array<
     string | $ReadOnly<{includedotfiles: boolean}> | WatchmanExpression,
   >;
 
-  declare type WatchmanQuerySince = {|
+  declare type WatchmanQuerySince = {
     scm: {
       'mergebase-with': string,
       ...
     },
-  |};
+  };
 
-  declare type WatchmanQuery = {|
+  declare type WatchmanQuery = {
     expression: WatchmanExpression,
     fields: $ReadOnlyArray<string>,
     glob?: $ReadOnlyArray<string>,
@@ -47,7 +47,7 @@ declare module 'fb-watchman' {
     relative_root?: string,
     since?: WatchmanQuerySince,
     suffix?: string,
-  |};
+  };
 
   declare class Client {
     // $FlowFixMe[unclear-type] - Check implementation for types

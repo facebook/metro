@@ -25,10 +25,10 @@ function getSourceMapInfosImpl(
   isBlocking: boolean,
   onDone: ($ReadOnlyArray<ReturnType<typeof getSourceMapInfo>>) => void,
   modules: $ReadOnlyArray<Module<>>,
-  options: {|
+  options: {
     +excludeSource: boolean,
     +processModuleFilter: (module: Module<>) => boolean,
-  |},
+  },
 ): void {
   const sourceMapInfos = [];
   const modulesToProcess = modules
@@ -76,10 +76,10 @@ function getSourceMapInfosImpl(
 
 function sourceMapGenerator(
   modules: $ReadOnlyArray<Module<>>,
-  options: {|
+  options: {
     +excludeSource: boolean,
     +processModuleFilter: (module: Module<>) => boolean,
-  |},
+  },
 ): ReturnType<typeof fromRawMappings> {
   let sourceMapInfos;
   getSourceMapInfosImpl(
@@ -100,10 +100,10 @@ function sourceMapGenerator(
 
 async function sourceMapGeneratorNonBlocking(
   modules: $ReadOnlyArray<Module<>>,
-  options: {|
+  options: {
     +excludeSource: boolean,
     +processModuleFilter: (module: Module<>) => boolean,
-  |},
+  },
 ): ReturnType<typeof fromRawMappingsNonBlocking> {
   const sourceMapInfos = await new Promise(resolve => {
     getSourceMapInfosImpl(false, resolve, modules, options);

@@ -19,12 +19,12 @@ const MetroApi = require('../index');
 const {loadConfig, resolveConfig} = require('metro-config');
 const {promisify} = require('util');
 
-module.exports = (): ({|
+module.exports = (): ({
   builder: (yargs: Yargs) => void,
   command: $TEMPORARY$string<'serve'>,
   description: string,
   handler: (argv: YargArguments) => void,
-|}) => ({
+}) => ({
   command: 'serve',
 
   description: 'Starts Metro on the given port, building bundles on the fly',

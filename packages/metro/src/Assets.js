@@ -23,13 +23,13 @@ const path = require('path');
 const readDir = denodeify(fs.readdir);
 const readFile = denodeify(fs.readFile);
 
-export type AssetInfo = {|
+export type AssetInfo = {
   +files: Array<string>,
   +hash: string,
   +name: string,
   +scales: Array<number>,
   +type: string,
-|};
+};
 
 export type AssetDataWithoutFiles = {
   +__packager_asset: boolean,
@@ -84,7 +84,7 @@ function buildAssetMap(
   dir: string,
   files: $ReadOnlyArray<string>,
   platform: ?string,
-): Map<string, {|files: Array<string>, scales: Array<number>|}> {
+): Map<string, {files: Array<string>, scales: Array<number>}> {
   const platforms = new Set(platform != null ? [platform] : []);
   const assets = files.map((file: string) =>
     AssetPaths.tryParse(file, platforms),
@@ -131,7 +131,7 @@ function getAssetKey(assetName: string, platform: ?string): string {
 async function getAbsoluteAssetRecord(
   assetPath: string,
   platform: ?string = null,
-): Promise<{|files: Array<string>, scales: Array<number>|}> {
+): Promise<{files: Array<string>, scales: Array<number>}> {
   const filename = path.basename(assetPath);
   const dir = path.dirname(assetPath);
   const files = await readDir(dir);

@@ -78,7 +78,7 @@ export type Minifier = MinifierOptions =>
 
 export type Type = 'script' | 'module' | 'asset';
 
-export type JsTransformerConfig = $ReadOnly<{|
+export type JsTransformerConfig = $ReadOnly<{
   assetPlugins: $ReadOnlyArray<string>,
   assetRegistryPath: string,
   asyncRequireModulePath: string,
@@ -99,11 +99,11 @@ export type JsTransformerConfig = $ReadOnly<{|
   unstable_disableModuleWrapping: boolean,
   unstable_disableNormalizePseudoGlobals: boolean,
   unstable_compactOutput: boolean,
-|}>;
+}>;
 
 export type {CustomTransformOptions} from 'metro-babel-transformer';
 
-export type JsTransformOptions = $ReadOnly<{|
+export type JsTransformOptions = $ReadOnly<{
   customTransformOptions?: CustomTransformOptions,
   dev: boolean,
   experimentalImportSupport?: boolean,
@@ -117,7 +117,7 @@ export type JsTransformOptions = $ReadOnly<{|
   type: Type,
   unstable_disableES6Transforms?: boolean,
   unstable_transformProfile: TransformProfile,
-|}>;
+}>;
 
 export type BytecodeFileType =
   | 'bytecode/module'
@@ -157,20 +157,20 @@ type TransformationContext = $ReadOnly<{
   options: JsTransformOptions,
 }>;
 
-export type JsOutput = $ReadOnly<{|
-  data: $ReadOnly<{|
+export type JsOutput = $ReadOnly<{
+  data: $ReadOnly<{
     code: string,
     lineCount: number,
     map: Array<MetroSourceMapSegmentTuple>,
     functionMap: ?FBSourceFunctionMap,
-  |}>,
+  }>,
   type: JSFileType,
-|}>;
+}>;
 
-export type BytecodeOutput = $ReadOnly<{|
+export type BytecodeOutput = $ReadOnly<{
   data: HermesCompilerResult,
   type: BytecodeFileType,
-|}>;
+}>;
 
 type DependencySplitCondition = $PropertyType<
   $PropertyType<TransformResultDependency, 'data'>,

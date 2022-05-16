@@ -14,11 +14,11 @@ function getPreludeCode({
   extraVars,
   isDev,
   globalPrefix,
-}: {|
+}: {
   +extraVars?: {[string]: mixed, ...},
   +isDev: boolean,
   +globalPrefix: string,
-|}): string {
+}): string {
   const vars = [
     '__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now()',
     `__DEV__=${String(isDev)}`,

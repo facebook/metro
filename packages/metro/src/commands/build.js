@@ -23,12 +23,12 @@ const {Terminal} = require('metro-core');
 const term = new Terminal(process.stdout);
 const updateReporter = new TerminalReporter(term);
 
-module.exports = (): ({|
+module.exports = (): ({
   builder: (yargs: Yargs) => void,
   command: string,
   description: string,
   handler: (argv: YargArguments) => void,
-|}) => ({
+}) => ({
   command: 'build <entry>',
 
   description:

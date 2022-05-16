@@ -11,20 +11,20 @@
 'use strict';
 
 export type Result<+TResolution, +TCandidates> =
-  | {|+type: 'resolved', +resolution: TResolution|}
-  | {|+type: 'failed', +candidates: TCandidates|};
+  | {+type: 'resolved', +resolution: TResolution}
+  | {+type: 'failed', +candidates: TCandidates};
 
-export type Resolution = FileResolution | {|+type: 'empty'|};
+export type Resolution = FileResolution | {+type: 'empty'};
 
 export type AssetFileResolution = $ReadOnlyArray<string>;
 export type FileResolution =
-  | {|+type: 'sourceFile', +filePath: string|}
-  | {|+type: 'assetFiles', +filePaths: AssetFileResolution|};
+  | {+type: 'sourceFile', +filePath: string}
+  | {+type: 'assetFiles', +filePaths: AssetFileResolution};
 
-export type FileAndDirCandidates = {|
+export type FileAndDirCandidates = {
   +dir: FileCandidates,
   +file: FileCandidates,
-|};
+};
 
 /**
  * This is a way to describe what files we tried to look for when resolving
@@ -33,15 +33,15 @@ export type FileAndDirCandidates = {|
  */
 export type FileCandidates =
   // We only tried to resolve a specific asset.
-  | {|+type: 'asset', +name: string|}
+  | {+type: 'asset', +name: string}
   // We attempted to resolve a name as being a source file (ex. JavaScript,
   // JSON...), in which case there can be several extensions we tried, for
   // example `/js/foo.ios.js`, `/js/foo.js`, etc. for a single prefix '/js/foo'.
-  | {|
+  | {
       +type: 'sourceFile',
       filePathPrefix: string,
       +candidateExts: $ReadOnlyArray<string>,
-    |};
+    };
 
 /**
  * Check existence of a single file.

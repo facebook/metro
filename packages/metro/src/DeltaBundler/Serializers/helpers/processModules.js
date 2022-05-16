@@ -21,12 +21,12 @@ function processModules(
     createModuleId,
     dev,
     projectRoot,
-  }: {|
+  }: {
     +filter?: (module: Module<>) => boolean,
     +createModuleId: string => number,
     +dev: boolean,
     +projectRoot: string,
-  |},
+  },
 ): $ReadOnlyArray<[Module<>, string]> {
   return [...modules]
     .filter(isJsModule)

@@ -21,12 +21,12 @@ function processBytecodeModules(
     createModuleId,
     dev,
     projectRoot,
-  }: {|
+  }: {
     +filter?: (module: Module<>) => boolean,
     +createModuleId: string => number,
     +dev: boolean,
     +projectRoot: string,
-  |},
+  },
 ): $ReadOnlyArray<[Module<>, Array<Buffer>]> {
   return [...modules]
     .filter(isBytecodeModule)

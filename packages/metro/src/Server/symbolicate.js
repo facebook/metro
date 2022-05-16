@@ -35,7 +35,7 @@ export type StackFrameOutput = $ReadOnly<{
   ...
 }>;
 type ExplodedSourceMapModule = $ElementType<ExplodedSourceMap, number>;
-type Position = {|+line1Based: number, column0Based: number|};
+type Position = {+line1Based: number, column0Based: number};
 
 function createFunctionNameGetter(
   module: ExplodedSourceMapModule,

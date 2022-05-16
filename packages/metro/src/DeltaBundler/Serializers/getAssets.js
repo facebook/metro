@@ -17,13 +17,13 @@ const {getAssetData} = require('../../Assets');
 const {getJsOutput, isJsModule} = require('./helpers/js');
 const path = require('path');
 
-type Options = {|
+type Options = {
   +processModuleFilter: (module: Module<>) => boolean,
   assetPlugins: $ReadOnlyArray<string>,
   platform: ?string,
   projectRoot: string,
   publicPath: string,
-|};
+};
 
 async function getAssets(
   dependencies: Dependencies<>,

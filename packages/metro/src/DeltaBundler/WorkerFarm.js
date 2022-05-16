@@ -18,17 +18,17 @@ import type {Readable} from 'stream';
 const {Worker: JestWorker} = require('jest-worker');
 const {Logger} = require('metro-core');
 
-type WorkerInterface = {|
+type WorkerInterface = {
   getStdout(): Readable,
   getStderr(): Readable,
   end(): void,
   ...Worker,
-|};
+};
 
-type TransformerResult = $ReadOnly<{|
+type TransformerResult = $ReadOnly<{
   result: TransformResult<>,
   sha1: string,
-|}>;
+}>;
 
 class WorkerFarm {
   _config: ConfigT;

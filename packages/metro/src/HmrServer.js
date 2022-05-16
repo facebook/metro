@@ -39,18 +39,18 @@ const url = require('url');
 type $ReturnType<F> = $Call<<A, R>((...A) => R) => R, F>;
 export type EntryPointURL = $ReturnType<typeof url.parse>;
 
-type Client = {|
+type Client = {
   optedIntoHMR: boolean,
   revisionIds: Array<RevisionId>,
   +sendFn: string => void,
-|};
+};
 
-type ClientGroup = {|
+type ClientGroup = {
   +clients: Set<Client>,
   clientUrl: EntryPointURL,
   revisionId: RevisionId,
   +unlisten: () => void,
-|};
+};
 
 function send(sendFns: Array<(string) => void>, message: HmrMessage): void {
   const strMessage = JSON.stringify(message);
@@ -252,7 +252,7 @@ class HmrServer<TClient: Client> {
 
   async _handleFileChange(
     group: ClientGroup,
-    options: {|isInitialUpdate: boolean|},
+    options: {isInitialUpdate: boolean},
   ): Promise<void> {
     const optedIntoHMR = [...group.clients].some(
       (client: Client) => client.optedIntoHMR,
@@ -292,7 +292,7 @@ class HmrServer<TClient: Client> {
 
   async _prepareMessage(
     group: ClientGroup,
-    options: {|isInitialUpdate: boolean|},
+    options: {isInitialUpdate: boolean},
   ): Promise<HmrUpdateMessage | HmrErrorMessage> {
     try {
       const revPromise = this._bundler.getRevision(group.revisionId);

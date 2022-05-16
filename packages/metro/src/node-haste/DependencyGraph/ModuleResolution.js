@@ -53,7 +53,7 @@ export type ModuleishCache<TModule, TPackage> = interface {
   getPackageOf(modulePath: string): ?TPackage,
 };
 
-type Options<TModule, TPackage> = {|
+type Options<TModule, TPackage> = {
   +dirExists: DirExistsFn,
   +disableHierarchicalLookup: boolean,
   +doesFileExist: DoesFileExist,
@@ -69,7 +69,7 @@ type Options<TModule, TPackage> = {|
   +resolveAsset: ResolveAsset,
   +resolveRequest: ?CustomResolver,
   +sourceExts: $ReadOnlyArray<string>,
-|};
+};
 
 class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   _options: Options<TModule, TPackage>;

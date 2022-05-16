@@ -31,14 +31,14 @@ const B64Builder = require('./B64Builder');
  */
 class Generator {
   builder: B64Builder;
-  last: {|
+  last: {
     generatedColumn: number,
     generatedLine: number,
     name: number,
     source: number,
     sourceColumn: number,
     sourceLine: number,
-  |};
+  };
   names: IndexedSet;
   source: number;
   sources: Array<string>;

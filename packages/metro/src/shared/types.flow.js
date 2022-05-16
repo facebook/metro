@@ -61,33 +61,33 @@ export type BundleOptions = {
   ...
 };
 
-export type SerializerOptions = {|
+export type SerializerOptions = {
   +sourceMapUrl: ?string,
   +sourceUrl: ?string,
   +runModule: boolean,
   +excludeSource: boolean,
   +inlineSourceMap: boolean,
   +modulesOnly: boolean,
-|};
+};
 
-export type GraphOptions = {|
+export type GraphOptions = {
   +shallow: boolean,
-|};
+};
 
 // Stricter representation of BundleOptions.
-export type SplitBundleOptions = {|
+export type SplitBundleOptions = {
   +entryFile: string,
   +transformOptions: TransformInputOptions,
   +serializerOptions: SerializerOptions,
   +graphOptions: GraphOptions,
   +onProgress: $PropertyType<DeltaBundlerOptions<>, 'onProgress'>,
-|};
+};
 
-export type ModuleGroups = {|
+export type ModuleGroups = {
   groups: Map<number, Set<number>>,
   modulesById: Map<number, ModuleTransportLike>,
   modulesInGroups: Set<number>,
-|};
+};
 
 export type ModuleTransportLike = {
   +code: string,
@@ -97,18 +97,18 @@ export type ModuleTransportLike = {
   +sourcePath: string,
   ...
 };
-export type ModuleTransportLikeStrict = {|
+export type ModuleTransportLikeStrict = {
   +code: string,
   +id: number,
   +map: ?MetroSourceMapOrMappings,
   +name?: string,
   +sourcePath: string,
-|};
-export type RamModuleTransport = {|
+};
+export type RamModuleTransport = {
   ...ModuleTransportLikeStrict,
   +source: string,
   +type: string,
-|};
+};
 
 export type OutputOptions = {
   bundleOutput: string,
@@ -122,7 +122,7 @@ export type OutputOptions = {
   ...
 };
 
-export type RequestOptions = {|
+export type RequestOptions = {
   entryFile: string,
   inlineSourceMap?: boolean,
   sourceMapUrl?: string,
@@ -131,6 +131,6 @@ export type RequestOptions = {|
   platform: string,
   createModuleIdFactory?: () => (path: string) => number,
   onProgress?: (transformedFileCount: number, totalFileCount: number) => void,
-|};
+};
 
 export type {MinifierOptions};

@@ -39,27 +39,27 @@ declare module "yargs" {
     ...
   }>;
 
-  declare type CommonModuleObject = {|
+  declare type CommonModuleObject = {
     command?: string | Array<string>,
     aliases?: Array<string> | string,
     builder?: { [key: string]: Options, ... } | ((yargsInstance: Yargs) => mixed),
     handler?: ((argv: Argv) => void) | ((argv: Argv) => Promise<void>)
-  |};
+  };
 
-  declare type ModuleObjectDesc = {|
+  declare type ModuleObjectDesc = {
     ...CommonModuleObject,
     desc?: string | false
-  |};
+  };
 
-  declare type ModuleObjectDescribe = {|
+  declare type ModuleObjectDescribe = {
     ...CommonModuleObject,
     describe?: string | false
-  |};
+  };
 
-  declare type ModuleObjectDescription = {|
+  declare type ModuleObjectDescription = {
     ...CommonModuleObject,
     description?: string | false
-  |};
+  };
 
   declare type ModuleObject =
     | ModuleObjectDesc

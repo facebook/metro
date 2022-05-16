@@ -67,7 +67,7 @@ type HermesMinidumpCrashInfo = {
   ...
 };
 
-type HermesMinidumpStackFrame = $ReadOnly<{|
+type HermesMinidumpStackFrame = $ReadOnly<{
   ByteCodeOffset: number,
   FunctionID: number,
   // NOTE: CJSModuleOffset has been renamed to SegmentID. Support both formats for now.
@@ -76,7 +76,7 @@ type HermesMinidumpStackFrame = $ReadOnly<{|
   SourceURL: string,
   StackFrameRegOffs: string,
   SourceLocation?: string,
-|}>;
+}>;
 
 type HermesCoverageInfo = {
   +executedFunctions: $ReadOnlyArray<HermesCoverageStackFrame>,
@@ -88,22 +88,22 @@ type HermesCoverageStackFrame = $ReadOnly<{
   SourceURL: ?string,
 }>;
 
-type NativeCodeStackFrame = $ReadOnly<{|
+type NativeCodeStackFrame = $ReadOnly<{
   NativeCode: true,
   StackFrameRegOffs: string,
-|}>;
+}>;
 
 type SymbolicatedStackTrace = $ReadOnlyArray<
   SymbolicatedStackFrame | NativeCodeStackFrame,
 >;
 
-type SymbolicatedStackFrame = $ReadOnly<{|
+type SymbolicatedStackFrame = $ReadOnly<{
   line: ?number,
   column: ?number,
   source: ?string,
   functionName: ?string,
   name: ?string,
-|}>;
+}>;
 
 const UNKNOWN_MODULE_IDS: SingleMapModuleIds = {
   segmentId: 0,
@@ -361,12 +361,12 @@ class SymbolicationContext<ModuleIdsT> {
     lineNumber: ?number,
     columnNumber: ?number,
     moduleIds: ?ModuleIdsT,
-  ): {|
+  ): {
     line: ?number,
     column: ?number,
     source: ?string,
     name: ?string,
-  |} {
+  } {
     const position = this.getOriginalPositionDetailsFor(
       lineNumber,
       columnNumber,
@@ -491,13 +491,13 @@ class SymbolicationContext<ModuleIdsT> {
 
 class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModuleIds> {
   +_segments: {
-    +[id: string]: {|
+    +[id: string]: {
       // $FlowFixMe[value-as-type]
       +consumer: SourceMapConsumer,
       +moduleOffsets: $ReadOnlyArray<number>,
       +sourceFunctionsConsumer: ?SourceMetadataMapConsumer,
       +hermesOffsets: ?HermesFunctionOffsets,
-    |},
+    },
     ...
   };
   +_legacyFormat: boolean;
@@ -845,12 +845,12 @@ function getOriginalPositionFor<ModuleIdsT>(
   columnNumber: ?number,
   moduleIds: ?ModuleIdsT,
   context: SymbolicationContext<ModuleIdsT>,
-): {|
+): {
   line: ?number,
   column: ?number,
   source: ?string,
   name: ?string,
-|} {
+} {
   return context.getOriginalPositionFor(lineNumber, columnNumber, moduleIds);
 }
 

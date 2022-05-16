@@ -47,21 +47,21 @@ type BabelTransformerOptions = $ReadOnly<{
   ...
 }>;
 
-export type BabelTransformerArgs = $ReadOnly<{|
+export type BabelTransformerArgs = $ReadOnly<{
   filename: string,
   options: BabelTransformerOptions,
   plugins?: $PropertyType<BabelCoreOptions, 'plugins'>,
   src: string,
-|}>;
+}>;
 
-export type BabelTransformer = {|
+export type BabelTransformer = {
   transform: BabelTransformerArgs => {
     ast: BabelNodeFile,
     functionMap: ?FBSourceFunctionMap,
     ...
   },
   getCacheKey?: () => string,
-|};
+};
 
 function transform({filename, options, plugins, src}: BabelTransformerArgs) {
   const OLD_BABEL_ENV = process.env.BABEL_ENV;

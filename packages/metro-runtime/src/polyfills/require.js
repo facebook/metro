@@ -28,13 +28,13 @@ type FactoryFn = (
   dependencyMap: ?DependencyMap,
 ) => void;
 type HotModuleReloadingCallback = () => void;
-type HotModuleReloadingData = {|
+type HotModuleReloadingData = {
   _acceptCallback: ?HotModuleReloadingCallback,
   _disposeCallback: ?HotModuleReloadingCallback,
   _didAccept: boolean,
   accept: (callback?: HotModuleReloadingCallback) => void,
   dispose: (callback?: HotModuleReloadingCallback) => void,
-|};
+};
 type ModuleID = number;
 type Module = {
   id?: ModuleID,
@@ -42,7 +42,7 @@ type Module = {
   hot?: HotModuleReloadingData,
   ...
 };
-type ModuleDefinition = {|
+type ModuleDefinition = {
   dependencyMap: ?DependencyMap,
   error?: any,
   factory: FactoryFn,
@@ -54,7 +54,7 @@ type ModuleDefinition = {|
   path?: string,
   publicModule: Module,
   verboseName?: string,
-|};
+};
 type ModuleList = {
   [number]: ?ModuleDefinition,
   __proto__: null,

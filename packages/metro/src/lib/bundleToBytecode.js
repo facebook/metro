@@ -49,10 +49,10 @@ function addModuleHeader(buffer: Buffer): [Buffer, Buffer] {
  * ...
  *
  */
-function bundleToBytecode(bundle: BytecodeBundle): {|
+function bundleToBytecode(bundle: BytecodeBundle): {
   +bytecode: Buffer,
   +metadata: BundleMetadata,
-|} {
+} {
   const buffers = [];
 
   if (bundle.pre.length) {

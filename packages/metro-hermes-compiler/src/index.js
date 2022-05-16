@@ -33,14 +33,14 @@ if (hermesUncaughtExceptionHandler != null) {
   process.removeListener('uncaughtException', hermesUncaughtExceptionHandler);
 }
 
-export type Options = {|
+export type Options = {
   sourceURL: string,
   sourceMap?: string,
-|};
+};
 
-export type HermesCompilerResult = $ReadOnly<{|
+export type HermesCompilerResult = $ReadOnly<{
   bytecode: Buffer,
-|}>;
+}>;
 
 const compileToBytecode = hermesc.cwrap('hermesCompileToBytecode', 'number', [
   'number',

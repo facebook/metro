@@ -17,9 +17,9 @@ const rimraf = require('rimraf');
 const NULL_BYTE = 0x00;
 const NULL_BYTE_BUFFER = Buffer.from([NULL_BYTE]);
 
-export type Options = {|
+export type Options = {
   root: string,
-|};
+};
 
 class FileStore<T> {
   _root: string;

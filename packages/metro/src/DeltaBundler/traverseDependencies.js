@@ -32,21 +32,21 @@ type Result<T> = {
  * files have been modified. This allows to return the added modules before the
  * modified ones (which is useful for things like Hot Module Reloading).
  **/
-type Delta = $ReadOnly<{|
+type Delta = $ReadOnly<{
   added: Set<string>,
   modified: Set<string>,
   deleted: Set<string>,
   inverseDependencies: Map<string, Set<string>>,
-|}>;
+}>;
 
-type InternalOptions<T> = $ReadOnly<{|
+type InternalOptions<T> = $ReadOnly<{
   experimentalImportBundleSupport: boolean,
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
   resolve: $PropertyType<Options<T>, 'resolve'>,
   transform: $PropertyType<Options<T>, 'transform'>,
   shallow: boolean,
-|}>;
+}>;
 
 function getInternalOptions<T>({
   transform,

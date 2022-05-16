@@ -27,11 +27,11 @@ function asPlainBundle({
   requireCalls,
   sourceMapPath,
   enableIDInlining,
-}: OutputFnArg): {|
+}: OutputFnArg): {
   code: string | Buffer,
   extraFiles?: Iterable<[string, string | Buffer]>,
   map: MixedSourceMap,
-|} {
+} {
   const builder = new BundleBuilder(filename);
   const modIdForPath = (x: {path: string, ...}) => idsForPath(x).moduleId;
 

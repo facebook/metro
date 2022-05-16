@@ -45,11 +45,11 @@ function asIndexedRamBundle({
   requireCalls: Iterable<Module>,
   segmentID: number,
   sourceMapPath?: ?string,
-}>): {|
+}>): {
   code: string | Buffer,
   extraFiles?: Iterable<[string, string | Buffer]>,
   map: IndexMap,
-|} {
+} {
   const idForPath = (x: {path: string, ...}) => idsForPath(x).moduleId;
   const [startup, deferred] = partition(modules, preloadedModules);
   const startupModules = [...startup, ...requireCalls];

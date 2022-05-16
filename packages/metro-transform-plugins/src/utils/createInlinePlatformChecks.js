@@ -110,8 +110,8 @@ function createInlinePlatformChecks(
     isIdentifier(node.callee, {name: requireName}) &&
     checkRequireArgs(node.arguments, dependencyId);
 
-  const isImport = (node, scope, patterns: Array<{|name: string|}>): boolean =>
-    patterns.some((pattern: {|name: string|}) => {
+  const isImport = (node, scope, patterns: Array<{name: string}>): boolean =>
+    patterns.some((pattern: {name: string}) => {
       const importName = importMap.get(pattern.name) || pattern.name;
       return isRequireCall(node, importName, scope);
     });
@@ -119,10 +119,10 @@ function createInlinePlatformChecks(
   const isImportOrGlobal = (
     node,
     scope,
-    patterns: Array<{|name: string|}>,
+    patterns: Array<{name: string}>,
     isWrappedModule: boolean,
   ): boolean => {
-    const identifier = patterns.find((pattern: {|name: string|}) =>
+    const identifier = patterns.find((pattern: {name: string}) =>
       isIdentifier(node, pattern),
     );
     return (

@@ -37,14 +37,14 @@ export type HermesFunctionOffsets = {[number]: $ReadOnlyArray<number>, ...};
 
 export type FBSourcesArray = $ReadOnlyArray<?FBSourceMetadata>;
 export type FBSourceMetadata = [?FBSourceFunctionMap];
-export type FBSourceFunctionMap = {|
+export type FBSourceFunctionMap = {
   +names: $ReadOnlyArray<string>,
   +mappings: string,
-|};
+};
 
 export type FBSegmentMap = {[id: string]: MixedSourceMap, ...};
 
-export type BasicSourceMap = {|
+export type BasicSourceMap = {
   +file?: string,
   +mappings: string,
   +names: Array<string>,
@@ -57,7 +57,7 @@ export type BasicSourceMap = {|
   +x_facebook_sources?: FBSourcesArray,
   +x_facebook_segments?: FBSegmentMap,
   +x_hermes_function_offsets?: HermesFunctionOffsets,
-|};
+};
 
 export type IndexMapSection = {
   map: IndexMap | BasicSourceMap,
@@ -69,7 +69,7 @@ export type IndexMapSection = {
   ...
 };
 
-export type IndexMap = {|
+export type IndexMap = {
   +file?: string,
   +mappings?: void, // avoids SourceMap being a disjoint union
   +sourcesContent?: void,
@@ -80,7 +80,7 @@ export type IndexMap = {|
   +x_facebook_sources?: void,
   +x_facebook_segments?: FBSegmentMap,
   +x_hermes_function_offsets?: HermesFunctionOffsets,
-|};
+};
 
 export type MixedSourceMap = IndexMap | BasicSourceMap;
 

@@ -109,7 +109,7 @@ function moduleToBuffer(
   id: number,
   code: string,
   encoding: void | 'ascii' | 'utf16le' | 'utf8',
-): {|buffer: Buffer, id: number|} {
+): {buffer: Buffer, id: number} {
   return {
     id,
     buffer: nullTerminatedBuffer(code, encoding),

@@ -81,7 +81,7 @@ export type BundleMetadata = {
   ...
 };
 
-type ProcessStartContext = {|
+type ProcessStartContext = {
   +buildID: string,
   +bundleOptions: BundleOptions,
   +graphId: GraphId,
@@ -91,24 +91,24 @@ type ProcessStartContext = {|
   +req: IncomingMessage,
   +revisionId?: ?RevisionId,
   ...SplitBundleOptions,
-|};
+};
 
-type ProcessDeleteContext = {|
+type ProcessDeleteContext = {
   +graphId: GraphId,
   +req: IncomingMessage,
   +res: ServerResponse,
-|};
+};
 
-type ProcessEndContext<T> = {|
+type ProcessEndContext<T> = {
   ...ProcessStartContext,
   +result: T,
-|};
+};
 
-export type ServerOptions = $ReadOnly<{|
+export type ServerOptions = $ReadOnly<{
   hasReducedPerformance?: boolean,
   onBundleBuilt?: (bundlePath: string) => void,
   watch?: boolean,
-|}>;
+}>;
 
 const DELTA_ID_HEADER = 'X-Metro-Delta-ID';
 const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';
@@ -504,7 +504,7 @@ class Server {
     build,
     delete: deleteFn,
     finish,
-  }: {|
+  }: {
     +createStartEntry: (context: ProcessStartContext) => ActionLogEntryData,
     +createEndEntry: (
       context: ProcessEndContext<T>,
@@ -512,7 +512,7 @@ class Server {
     +build: (context: ProcessStartContext) => Promise<T>,
     +delete?: (context: ProcessDeleteContext) => Promise<void>,
     +finish: (context: ProcessEndContext<T>) => void,
-  |}) {
+  }) {
     return async function requestProcessor(
       req: IncomingMessage,
       res: ServerResponse,
@@ -703,12 +703,12 @@ class Server {
       };
     },
     createEndEntry(
-      context: ProcessEndContext<{|
+      context: ProcessEndContext<{
         bundle: string,
         lastModifiedDate: Date,
         nextRevId: RevisionId,
         numModifiedFiles: number,
-      |}>,
+      }>,
     ) {
       return {
         outdated_modules: context.result.numModifiedFiles,
@@ -820,12 +820,12 @@ class Server {
       };
     },
     createEndEntry(
-      context: ProcessEndContext<{|
+      context: ProcessEndContext<{
         bytecode: Buffer,
         lastModifiedDate: Date,
         nextRevId: RevisionId,
         numModifiedFiles: number,
-      |}>,
+      }>,
     ) {
       return {
         outdated_modules: context.result.numModifiedFiles,
@@ -1193,14 +1193,14 @@ class Server {
     return this._config.watchFolders;
   }
 
-  static DEFAULT_GRAPH_OPTIONS: {|
+  static DEFAULT_GRAPH_OPTIONS: {
     customTransformOptions: any,
     dev: boolean,
     hot: boolean,
     minify: boolean,
     runtimeBytecodeVersion: ?number,
     unstable_transformProfile: 'default',
-  |} = {
+  } = {
     customTransformOptions: Object.create(null),
     dev: true,
     hot: false,
@@ -1209,7 +1209,7 @@ class Server {
     unstable_transformProfile: 'default',
   };
 
-  static DEFAULT_BUNDLE_OPTIONS: {|
+  static DEFAULT_BUNDLE_OPTIONS: {
     ...typeof Server.DEFAULT_GRAPH_OPTIONS,
     excludeSource: false,
     inlineSourceMap: false,
@@ -1219,7 +1219,7 @@ class Server {
     shallow: false,
     sourceMapUrl: null,
     sourceUrl: null,
-  |} = {
+  } = {
     ...Server.DEFAULT_GRAPH_OPTIONS,
     excludeSource: false,
     inlineSourceMap: false,

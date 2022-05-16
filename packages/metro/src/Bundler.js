@@ -17,10 +17,10 @@ import type {ConfigT} from 'metro-config/src/configTypes.flow';
 const Transformer = require('./DeltaBundler/Transformer');
 const DependencyGraph = require('./node-haste/DependencyGraph');
 
-export type BundlerOptions = $ReadOnly<{|
+export type BundlerOptions = $ReadOnly<{
   hasReducedPerformance?: boolean,
   watch?: boolean,
-|}>;
+}>;
 
 class Bundler {
   _depGraphPromise: Promise<DependencyGraph>;

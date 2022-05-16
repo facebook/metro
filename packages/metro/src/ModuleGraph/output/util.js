@@ -238,10 +238,10 @@ function getModuleCodeAndMap(
     dependencyMapReservedName: ?string,
     globalPrefix: string,
   }>,
-): {|
+): {
   moduleCode: string,
   moduleMap: ?BasicSourceMap,
-|} {
+} {
   const {file} = module;
   let moduleCode, moduleMap;
 

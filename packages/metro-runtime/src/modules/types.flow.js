@@ -13,70 +13,70 @@
 export type ModuleMap = $ReadOnlyArray<[number, string]>;
 export type BytecodeModuleMap = $ReadOnlyArray<[number, Array<Buffer>]>;
 
-export type Bundle = {|
+export type Bundle = {
   +modules: ModuleMap,
   +post: string,
   +pre: string,
-|};
+};
 
-export type BytecodeBundle = {|
+export type BytecodeBundle = {
   +modules: BytecodeModuleMap,
   +post: Array<Buffer>,
   +pre: Array<Buffer>,
-|};
+};
 
-export type DeltaBundle = {|
+export type DeltaBundle = {
   +added: ModuleMap,
   +modified: ModuleMap,
   +deleted: $ReadOnlyArray<number>,
-|};
+};
 
 export type BundleVariant =
-  | {|+base: true, +revisionId: string, ...Bundle|}
-  | {|+base: false, +revisionId: string, ...DeltaBundle|};
+  | {+base: true, +revisionId: string, ...Bundle}
+  | {+base: false, +revisionId: string, ...DeltaBundle};
 
-export type BundleMetadata = {|
+export type BundleMetadata = {
   +pre: number,
   +post: number,
   +modules: $ReadOnlyArray<[number, number]>,
-|};
+};
 
-export type FormattedError = {|
+export type FormattedError = {
   +type: string,
   +message: string,
   +errors: Array<{description: string, ...}>,
-|};
+};
 
-export type HmrModule = {|
+export type HmrModule = {
   +module: [number, string],
   +sourceMappingURL: string,
   +sourceURL: string,
-|};
+};
 
-export type HmrUpdate = {|
+export type HmrUpdate = {
   +added: $ReadOnlyArray<HmrModule>,
   +deleted: $ReadOnlyArray<number>,
   +isInitialUpdate: boolean,
   +modified: $ReadOnlyArray<HmrModule>,
   +revisionId: string,
-|};
+};
 
-export type HmrUpdateMessage = {|
+export type HmrUpdateMessage = {
   +type: 'update',
   +body: HmrUpdate,
-|};
+};
 
-export type HmrErrorMessage = {|
+export type HmrErrorMessage = {
   +type: 'error',
   +body: FormattedError,
-|};
+};
 
 export type HmrClientMessage =
-  | {|
+  | {
       +type: 'register-entrypoints',
       +entryPoints: Array<string>,
-    |}
-  | {|
+    }
+  | {
       +type: 'log',
       +level:
         | 'trace'
@@ -89,23 +89,23 @@ export type HmrClientMessage =
         | 'debug',
       +data: Array<mixed>,
       +mode: 'BRIDGE' | 'NOBRIDGE',
-    |}
-  | {|
+    }
+  | {
       +type: 'log-opt-in',
-    |};
+    };
 
 export type HmrMessage =
-  | {|
+  | {
       +type: 'bundle-registered',
-    |}
-  | {|
+    }
+  | {
       +type: 'update-start',
-      +body: {|
+      +body: {
         +isInitialUpdate: boolean,
-      |},
-    |}
-  | {|
+      },
+    }
+  | {
       +type: 'update-done',
-    |}
+    }
   | HmrUpdateMessage
   | HmrErrorMessage;

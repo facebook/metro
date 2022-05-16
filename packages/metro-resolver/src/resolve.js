@@ -201,12 +201,12 @@ class MissingFileInHastePackageError extends Error {
   packageName: string;
   pathInModule: string;
 
-  constructor(opts: {|
+  constructor(opts: {
     +candidates: FileAndDirCandidates,
     +moduleName: string,
     +packageName: string,
     +pathInModule: string,
-  |}) {
+  }) {
     super(
       `While resolving module \`${opts.moduleName}\`, ` +
         `the Haste package \`${opts.packageName}\` was found. However the ` +

@@ -21,10 +21,10 @@ const path = require('path');
 
 type InlineRequiresRaw = {+blockList: {[string]: true, ...}, ...} | boolean;
 
-type TransformOptionsWithRawInlines = {|
+type TransformOptionsWithRawInlines = {
   ...TransformOptions,
   +inlineRequires: InlineRequiresRaw,
-|};
+};
 
 const baseIgnoredInlineRequires = ['React', 'react', 'react-native'];
 

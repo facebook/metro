@@ -191,13 +191,13 @@ function countLines(module: Module): number {
   return module.file.code.split('\n').length;
 }
 
-function lineByLineMap(file: string): {|
+function lineByLineMap(file: string): {
   file: string,
   mappings: string,
   names: Array<empty>,
   sources: Array<string>,
   version: number,
-|} {
+} {
   return {
     file,
     mappings: '',

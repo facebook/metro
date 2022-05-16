@@ -18,11 +18,11 @@ class PackageResolutionError extends Error {
   packageError: InvalidPackageError;
   targetModuleName: string;
 
-  constructor(opts: {|
+  constructor(opts: {
     +originModulePath: string,
     +packageError: InvalidPackageError,
     +targetModuleName: string,
-  |}) {
+  }) {
     const perr = opts.packageError;
     super(
       `While trying to resolve module \`${opts.targetModuleName}\` from file ` +

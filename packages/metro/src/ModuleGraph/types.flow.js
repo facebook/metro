@@ -22,19 +22,19 @@ export type BuildResult = GraphResult;
 export type Callback<A = void, B = void> = (Error => void) &
   ((null | void, A, B) => void);
 
-export type Dependency = {|
+export type Dependency = {
   // The module name or path used to require the dependency
   id: string,
   +isAsync: boolean,
   +isPrefetchOnly: boolean,
-  +splitCondition: ?{|
+  +splitCondition: ?{
     +mobileConfigName: string,
-  |},
+  },
   path: string,
   +locs: $ReadOnlyArray<BabelSourceLocation>,
-|};
+};
 
-export type File = {|
+export type File = {
   code: string,
   map: ?BasicSourceMap,
   functionMap: ?FBSourceFunctionMap,
@@ -42,7 +42,7 @@ export type File = {|
   type: CodeFileTypes,
   libraryIdx: ?number,
   soundResources?: ?Array<string>,
-|};
+};
 
 type CodeFileTypes = 'module' | 'script';
 
@@ -51,11 +51,11 @@ export type GraphFn = (
   // platform: string,
 ) => GraphResult;
 
-export type GraphResult = {|
+export type GraphResult = {
   modules: Array<Module>,
-|};
+};
 
-export type ModuleIds = {|
+export type ModuleIds = {
   /**
    * The module ID is global across all segments and identifies the module
    * uniquely. This is useful to cache modules that has been loaded already at
@@ -71,7 +71,7 @@ export type ModuleIds = {|
    * case this property does not apply and will be omitted.
    */
   +localId?: number,
-|};
+};
 
 /**
  * Indempotent function that gets us the IDs corresponding to a particular
@@ -87,17 +87,17 @@ export type LoadResult = {
 
 export type LoadFn = (file: string) => LoadResult;
 
-export type Module = {|
+export type Module = {
   dependencies: Array<Dependency>,
   file: File,
-|};
+};
 
 export type PostProcessModules = (
   modules: $ReadOnlyArray<Module>,
   entryPoints: Array<string>,
 ) => $ReadOnlyArray<Module>;
 
-export type OutputFnArg = {|
+export type OutputFnArg = {
   dependencyMapReservedName?: ?string,
   filename: string,
   globalPrefix: string,
@@ -107,22 +107,22 @@ export type OutputFnArg = {|
   sourceMapPath?: ?string,
   enableIDInlining: boolean,
   segmentID: number,
-|};
+};
 export type OutputFn<M: MixedSourceMap = MixedSourceMap> =
   OutputFnArg => OutputResult<M>;
 
-export type OutputResult<M: MixedSourceMap> = {|
+export type OutputResult<M: MixedSourceMap> = {
   code: string | Buffer,
   extraFiles?: Iterable<[string, string | Buffer]>,
   map: M,
-|};
+};
 
-export type PackageData = {|
+export type PackageData = {
   browser?: Object | string,
   main?: string,
   name?: string,
   'react-native'?: Object | string,
-|};
+};
 
 export type ResolveFn = (id: string, source: ?string) => string;
 
@@ -159,16 +159,16 @@ export type TransformResults = {
 
 export type TransformVariants = {+[name: string]: {...}};
 
-export type TransformedCodeFile = {|
+export type TransformedCodeFile = {
   +file: string,
   +functionMap: ?FBSourceFunctionMap,
   +hasteID: ?string,
   +package?: PackageData,
   +transformed: TransformResults,
   +type: CodeFileTypes,
-|};
+};
 
-export type ImageSize = {|+width: number, +height: number|};
+export type ImageSize = {+width: number, +height: number};
 
 export type AssetFileVariant = $ReadOnly<{
   /**
@@ -228,24 +228,24 @@ export type AssetFile = $ReadOnly<{
 }>;
 
 export type TransformedSourceFile =
-  | {|
+  | {
       +type: 'code',
       +details: TransformedCodeFile,
-    |}
-  | {|
+    }
+  | {
       +type: 'asset',
       +details: AssetFile,
-    |}
-  | {|
+    }
+  | {
       +type: 'unknown',
-    |};
+    };
 
-export type LibraryOptions = {|
+export type LibraryOptions = {
   dependencies?: Array<string>,
   optimize: boolean,
   platform?: string,
   rebasePath: string => string,
-|};
+};
 
 export type Base64Content = string;
 export type AssetContents = {
@@ -258,7 +258,7 @@ export type AssetContentsByPath = {
   ...
 };
 
-export type ResolvedCodeFile = {|
+export type ResolvedCodeFile = {
   +codeFile: TransformedCodeFile,
   /**
    * Imagine we have a source file that contains a `require('foo')`. The library
@@ -267,35 +267,35 @@ export type ResolvedCodeFile = {|
    * `{'foo': 'bar/foo.js', 'bar': 'node_modules/bar/index.js'}`.
    */
   +filePathsByDependencyName: {[dependencyName: string]: string, ...},
-|};
+};
 
-export type LibraryBoundCodeFile = {|
+export type LibraryBoundCodeFile = {
   ...ResolvedCodeFile,
   /**
    * Index of the library that this code file has been exported from.
    */
   +libraryIdx: number,
-|};
+};
 
 /**
  * Describe a set of JavaScript files and the associated assets. It could be
  * depending on modules from other libraries. To be able to resolve these
  * dependencies, these libraries need to be provided by callsites (ex. Buck).
  */
-export type Library = {|
+export type Library = {
   +files: Array<TransformedCodeFile>,
   /* cannot be a Map because it's JSONified later on */
   +assets: AssetContentsByPath,
-|};
+};
 
 /**
  * Just like a `Library`, but it also contains module resolutions. For example
  * if there is a `require('foo')` in some JavaScript file, we keep track of the
  * path it resolves to, ex. `beep/glo/foo.js`.
  */
-export type ResolvedLibrary = {|
+export type ResolvedLibrary = {
   +files: $ReadOnlyArray<ResolvedCodeFile>,
   /* cannot be a Map because it's JSONified later on */
   +assets: AssetContentsByPath,
   +isPartiallyResolved?: boolean,
-|};
+};

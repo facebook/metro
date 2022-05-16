@@ -20,14 +20,14 @@ const https = require('https');
 const url = require('url');
 const zlib = require('zlib');
 
-export type Options = {|
+export type Options = {
   endpoint: string,
   family?: 4 | 6,
   timeout?: number,
   key?: string | $ReadOnlyArray<string> | Buffer | $ReadOnlyArray<Buffer>,
   cert?: string | $ReadOnlyArray<string> | Buffer | $ReadOnlyArray<Buffer>,
   ca?: string | $ReadOnlyArray<string> | Buffer | $ReadOnlyArray<Buffer>,
-|};
+};
 
 const ZLIB_OPTIONS = {
   level: 9,

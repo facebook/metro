@@ -20,17 +20,17 @@ const {getJsOutput} = require('./js');
 
 function getSourceMapInfo(
   module: Module<>,
-  options: {|
+  options: {
     +excludeSource: boolean,
-  |},
-): {|
+  },
+): {
   +map: Array<MetroSourceMapSegmentTuple>,
   +functionMap: ?FBSourceFunctionMap,
   +code: string,
   +path: string,
   +source: string,
   +lineCount: number,
-|} {
+} {
   return {
     ...getJsOutput(module).data,
     path: module.path,

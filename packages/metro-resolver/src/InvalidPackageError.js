@@ -37,12 +37,12 @@ class InvalidPackageError extends Error {
    */
   packageJsonPath: string;
 
-  constructor(opts: {|
+  constructor(opts: {
     +fileCandidates: FileCandidates,
     +indexCandidates: FileCandidates,
     +mainPrefixPath: string,
     +packageJsonPath: string,
-  |}) {
+  }) {
     super(
       `The package \`${opts.packageJsonPath}\` is invalid because it ` +
         'specifies a `main` module field that could not be resolved (' +

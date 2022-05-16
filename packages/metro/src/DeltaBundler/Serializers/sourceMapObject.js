@@ -20,10 +20,10 @@ const {
 
 function sourceMapObject(
   modules: $ReadOnlyArray<Module<>>,
-  options: {|
+  options: {
     +excludeSource: boolean,
     +processModuleFilter: (module: Module<>) => boolean,
-  |},
+  },
 ): MixedSourceMap {
   const generator = sourceMapGenerator(modules, options);
   return generator.toMap(undefined, {
@@ -33,10 +33,10 @@ function sourceMapObject(
 
 async function sourceMapObjectNonBlocking(
   modules: $ReadOnlyArray<Module<>>,
-  options: {|
+  options: {
     +excludeSource: boolean,
     +processModuleFilter: (module: Module<>) => boolean,
-  |},
+  },
 ): Promise<MixedSourceMap> {
   const generator = await sourceMapGeneratorNonBlocking(modules, options);
   return generator.toMap(undefined, {
