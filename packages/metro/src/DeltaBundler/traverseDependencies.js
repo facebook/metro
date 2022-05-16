@@ -94,10 +94,7 @@ async function traverseDependencies<T>(
   const internalOptions = getInternalOptions(options);
 
   for (const path of paths) {
-    // Only process the path if it's part of the dependency graph. It's possible
-    // that this method receives a path that is no longer part of it (e.g if a
-    // module gets removed from the dependency graph and just afterwards it gets
-    // modified), and we have to ignore these cases.
+    // Start traversing from modules that are already part of the dependency graph.
     if (graph.dependencies.get(path)) {
       delta.modified.add(path);
 
@@ -111,30 +108,13 @@ async function traverseDependencies<T>(
   }
 
   const added = new Map();
-  const modified = new Map();
-  const deleted = new Set();
-
-  for (const path of delta.deleted) {
-    // If a dependency has been marked both as added and deleted, it means that
-    // this is a renamed file (or that dependency has been removed from one path
-    // but added back in a different path). In this case the addition and
-    // deletion "get cancelled".
-    if (!delta.added.has(path)) {
-      deleted.add(path);
-    }
-
-    delta.modified.delete(path);
-    delta.added.delete(path);
-  }
-
   for (const path of delta.added) {
     added.set(path, nullthrows(graph.dependencies.get(path)));
   }
 
+  const modified = new Map();
   for (const path of delta.modified) {
-    // Similarly to the above, a file can be marked as both added and modified
-    // when its path and dependencies have changed. In this case, we only
-    // consider the addition.
+    // Only report a module as modified if we're not already reporting it as added.
     if (!delta.added.has(path)) {
       modified.set(path, nullthrows(graph.dependencies.get(path)));
     }
@@ -143,7 +123,7 @@ async function traverseDependencies<T>(
   return {
     added,
     modified,
-    deleted,
+    deleted: delta.deleted,
   };
 }
 
@@ -304,7 +284,14 @@ async function addDependency<T>(
     return;
   }
 
-  delta.added.add(path);
+  if (delta.deleted.has(path)) {
+    // Mark the addition by clearing a prior deletion.
+    delta.deleted.delete(path);
+  } else {
+    // Mark the addition in the added set.
+    delta.added.add(path);
+    delta.modified.delete(path);
+  }
   delta.inverseDependencies.set(path, new Set([parentModule.path]));
 
   options.onDependencyAdd();
@@ -385,7 +372,7 @@ function canSafelyRemoveFromParentModule<T>(
 
   const undeletedInverseDependencies = Array.from(
     topInverseDependencies,
-  ).filter(x => !delta.deleted.has(x));
+  ).filter(x => graph.dependencies.has(x));
 
   /**
    * We can only mark the `visited` Set of modules to be safely removable if
@@ -443,7 +430,20 @@ function removeDependency<T>(
     }
   }
 
-  delta.deleted.add(module.path);
+  if (delta.added.has(module.path)) {
+    // Mark the deletion by clearing a prior addition.
+    delta.added.delete(module.path);
+  } else {
+    // Mark the deletion in the deleted set.
+    delta.deleted.add(module.path);
+    delta.modified.delete(module.path);
+  }
+
+  // This module is not used anywhere else! We can clear it from the bundle.
+  // Clean up all the state associated with this module in order to correctly
+  // re-add it if we encounter it again.
+  graph.dependencies.delete(module.path);
+  delta.inverseDependencies.delete(module.path);
 
   // Now we need to iterate through the module dependencies in order to
   // clean up everything (we cannot read the module because it may have
@@ -451,7 +451,7 @@ function removeDependency<T>(
   Array.from(module.dependencies.values())
     .filter(
       dependency =>
-        !delta.deleted.has(dependency.absolutePath) &&
+        graph.dependencies.has(dependency.absolutePath) &&
         dependency.absolutePath !== parentModule.path,
     )
     .forEach(dependency =>
@@ -463,8 +463,6 @@ function removeDependency<T>(
         canBeRemovedSafely,
       ),
     );
-  // This module is not used anywhere else!! we can clear it from the bundle
-  graph.dependencies.delete(module.path);
 }
 
 function resolveDependencies<T>(
