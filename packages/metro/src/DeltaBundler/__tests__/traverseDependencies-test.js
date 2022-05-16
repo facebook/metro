@@ -209,7 +209,18 @@ beforeEach(async () => {
     shallow: false,
   };
 
-  // Generate the initial dependency graph.
+  /*
+  Generate the initial dependency graph:
+  ┌─────────┐     ┌──────┐     ┌──────┐
+  │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+  └─────────┘     └──────┘     └──────┘
+                    │
+                    │
+                    ▼
+                  ┌──────┐
+                  │ /baz │
+                  └──────┘
+  */
   entryModule = Actions.createFile('/bundle');
   moduleFoo = Actions.createFile('/foo');
   moduleBar = Actions.createFile('/bar');
@@ -726,6 +737,509 @@ describe('edge cases', () => {
         {absolutePath: '/baz', data: {data: {isAsync: false}, name: 'baz'}},
       ],
     ]);
+  });
+
+  describe('adding a new module while one of its ancestors is being deleted', () => {
+    /**
+     * In all of these tests, we make various mutations to the following graph:
+     *
+     * ┌─────────┐     ┌──────┐     ┌──────┐
+     * │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+     * └─────────┘     └──────┘     └──────┘
+     *                   │
+     *                   │
+     *                   ▼
+     *                 ┌──────┐
+     *                 │ /baz │
+     *                 └──────┘
+     *
+     * The order and chunking of mutations should not affect the correctness of the graph
+     * (but has been known to cause bugs, hence these regression tests).
+     *
+     * Terminology:
+     *   * A "live" edge is one that makes it to the final state of graph.
+     *   * A "dead" edge is one that is pruned from the final graph.
+     */
+    it('all in one delta, adding the live edge first', async () => {
+      await initialTraverseDependencies(graph, options);
+
+      /*
+      ┌─────────┐     ┌──────┐     ┌──────┐
+      │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘     └──────┘     └──────┘
+                        │
+                        │
+                        ▼
+      ┏━━━━━━━━━┓     ┌──────┐
+      ┃  /quux  ┃     │ /baz │
+      ┗━━━━━━━━━┛     └──────┘
+      */
+      Actions.createFile('/quux');
+
+      /*
+      ┌─────────┐     ┌──────┐     ┌──────┐
+      │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘     └──────┘     └──────┘
+        ┃	              │
+        ┃               │
+        ▼               ▼
+      ┌─────────┐     ┌──────┐
+      │  /quux  │     │ /baz │
+      └─────────┘     └──────┘
+      */
+      Actions.addDependency('/bundle', '/quux');
+
+      /*
+      ┏━━━━━━━━━━━━━━━━━━━━┓
+      ┃                    ┃
+      ┃  ┌─────────┐     ┌──────┐     ┌──────┐
+      ┃  │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      ┃  └─────────┘     └──────┘     └──────┘
+      ┃    │               │
+      ┃    │               │
+      ┃    ▼               ▼
+      ┃  ┌─────────┐     ┌──────┐
+      ┗▶ │  /quux  │     │ /baz │
+         └─────────┘     └──────┘
+      */
+      Actions.addDependency('/foo', '/quux');
+
+      /*
+      ┌────────────────────┐
+      │                    │
+      │  ┌─────────┐   / ┌──────┐     ┌──────┐
+      │  │ /bundle │ ┈/▷ │ /foo │ ──▶ │ /bar │
+      │  └─────────┘ /   └──────┘     └──────┘
+      │    │               │
+      │    │               │
+      │    ▼               ▼
+      │  ┌─────────┐     ┌──────┐
+      └▶ │  /quux  │     │ /baz │
+         └─────────┘     └──────┘
+      */
+      Actions.removeDependency('/bundle', '/foo');
+
+      /*
+      Compute the delta for the current graph:
+      ┌─────────┐     ┌───────┐
+      │ /bundle │ ──▶ │ /quux │
+      └─────────┘     └───────┘
+      (modified)       (added)
+      */
+      expect(
+        getPaths(await traverseDependencies([...files], graph, options)),
+      ).toEqual({
+        added: new Set(['/quux']),
+        deleted: new Set(['/foo', '/bar', '/baz']),
+        modified: new Set(['/bundle']),
+      });
+    });
+
+    it('all in one delta, adding the live edge after the dead edge', async () => {
+      await initialTraverseDependencies(graph, options);
+
+      /*
+      ┌─────────┐     ┌──────┐     ┌──────┐
+      │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘     └──────┘     └──────┘
+                        │
+                        │
+                        ▼
+      ┏━━━━━━━━━┓     ┌──────┐
+      ┃  /quux  ┃     │ /baz │
+      ┗━━━━━━━━━┛     └──────┘
+      */
+      Actions.createFile('/quux');
+
+      /*
+      ┏━━━━━━━━━━━━━━━━━━━━┓
+      ┃                    ┃
+      ┃  ┌─────────┐     ┌──────┐     ┌──────┐
+      ┃  │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      ┃  └─────────┘     └──────┘     └──────┘
+      ┃                    │
+      ┃                    │
+      ┃                    ▼
+      ┃  ┌─────────┐     ┌──────┐
+      ┗▶ │  /quux  │     │ /baz │
+         └─────────┘     └──────┘
+      */
+      Actions.addDependency('/foo', '/quux');
+
+      /*
+      ┌────────────────────┐
+      │                    │
+      │  ┌─────────┐     ┌──────┐     ┌──────┐
+      │  │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      │  └─────────┘     └──────┘     └──────┘
+      │    ┃               │
+      │    ┃               │
+      │    ▼               ▼
+      │  ┌─────────┐     ┌──────┐
+      └▶ │  /quux  │     │ /baz │
+         └─────────┘     └──────┘
+      */
+      Actions.addDependency('/bundle', '/quux');
+
+      /*
+      ┌────────────────────┐
+      │                    │
+      │  ┌─────────┐   / ┌──────┐     ┌──────┐
+      │  │ /bundle │ ┈/▷ │ /foo │ ──▶ │ /bar │
+      │  └─────────┘ /   └──────┘     └──────┘
+      │    │               │
+      │    │               │
+      │    ▼               ▼
+      │  ┌─────────┐     ┌──────┐
+      └▶ │  /quux  │     │ /baz │
+         └─────────┘     └──────┘
+      */
+      Actions.removeDependency('/bundle', '/foo');
+
+      /*
+      Compute the delta for the current graph:
+      ┌─────────┐     ┌───────┐
+      │ /bundle │ ──▶ │ /quux │
+      └─────────┘     └───────┘
+      (modified)       (added)
+      */
+      expect(
+        getPaths(await traverseDependencies([...files], graph, options)),
+      ).toEqual({
+        added: new Set(['/quux']),
+        deleted: new Set(['/foo', '/bar', '/baz']),
+        modified: new Set(['/bundle']),
+      });
+    });
+
+    it('add the dead edge, compute a delta, then add the live edge', async () => {
+      await initialTraverseDependencies(graph, options);
+
+      /*
+      ┌─────────┐     ┌──────┐     ┌──────┐
+      │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘     └──────┘     └──────┘
+                        │
+                        │
+                        ▼
+      ┏━━━━━━━━━┓     ┌──────┐
+      ┃  /quux  ┃     │ /baz │
+      ┗━━━━━━━━━┛     └──────┘
+      */
+      Actions.createFile('/quux');
+
+      /*
+      ┏━━━━━━━━━━━━━━━━━━━━┓
+      ┃                    ┃
+      ┃  ┌─────────┐     ┌──────┐     ┌──────┐
+      ┃  │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      ┃  └─────────┘     └──────┘     └──────┘
+      ┃                    │
+      ┃                    │
+      ┃                    ▼
+      ┃  ┌─────────┐     ┌──────┐
+      ┗▶ │  /quux  │     │ /baz │
+         └─────────┘     └──────┘
+      */
+      Actions.addDependency('/foo', '/quux');
+
+      /*
+      Compute the delta for the current graph:
+      ┌────────────────────┐
+      │                    │
+      │  ┌─────────┐     ┌──────┐       ┌──────┐
+      │  │ /bundle │ ──▶ │ /foo │ ────▶ │ /bar │
+      │  └─────────┘     └──────┘       └──────┘
+      │                    │ (modified)
+      │                    │
+      │                    ▼
+      │  ┌─────────┐     ┌──────┐
+      └▶ │  /quux  │     │ /baz │
+         └─────────┘     └──────┘
+           (added)
+      */
+      expect(
+        getPaths(await traverseDependencies([...files], graph, options)),
+      ).toEqual({
+        added: new Set(['/quux']),
+        deleted: new Set([]),
+        modified: new Set(['/foo']),
+      });
+      files.clear();
+
+      /*
+      ┌────────────────────┐
+      │                    │
+      │  ┌─────────┐     ┌──────┐     ┌──────┐
+      │  │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      │  └─────────┘     └──────┘     └──────┘
+      │    ┃               │
+      │    ┃               │
+      │    ▼               ▼
+      │  ┌─────────┐     ┌──────┐
+      └▶ │  /quux  │     │ /baz │
+         └─────────┘     └──────┘
+      */
+      Actions.addDependency('/bundle', '/quux');
+
+      /*
+      ┌────────────────────┐
+      │                    │
+      │  ┌─────────┐   / ┌──────┐     ┌──────┐
+      │  │ /bundle │ ┈/▷ │ /foo │ ──▶ │ /bar │
+      │  └─────────┘ /   └──────┘     └──────┘
+      │    │               │
+      │    │               │
+      │    ▼               ▼
+      │  ┌─────────┐     ┌──────┐
+      └▶ │  /quux  │     │ /baz │
+         └─────────┘     └──────┘
+      */
+      Actions.removeDependency('/bundle', '/foo');
+
+      /*
+      Compute another delta for the current graph:
+      ┌─────────┐     ┌───────┐
+      │ /bundle │ ──▶ │ /quux │
+      └─────────┘     └───────┘
+      (modified)
+      */
+      expect(
+        getPaths(await traverseDependencies([...files], graph, options)),
+      ).toEqual({
+        added: new Set([]),
+        deleted: new Set(['/foo', '/bar', '/baz']),
+        modified: new Set(['/bundle']),
+      });
+    });
+
+    it('create the module, compute a delta, then add the dead edge and the live edge', async () => {
+      await initialTraverseDependencies(graph, options);
+
+      /*
+      ┌─────────┐     ┌──────┐     ┌──────┐
+      │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘     └──────┘     └──────┘
+                        │
+                        │
+                        ▼
+      ┏━━━━━━━━━┓     ┌──────┐
+      ┃  /quux  ┃     │ /baz │
+      ┗━━━━━━━━━┛     └──────┘
+      */
+      Actions.createFile('/quux');
+
+      /*
+      Compute the delta for the current graph:
+      ┌─────────┐     ┌──────┐     ┌──────┐
+      │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘     └──────┘     └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      expect(
+        getPaths(await traverseDependencies([...files], graph, options)),
+      ).toEqual({
+        added: new Set([]),
+        deleted: new Set([]),
+        modified: new Set([]),
+      });
+      files.clear();
+
+      /*
+      ┏━━━━━━━━━━━━━━━━━━━━┓
+      ┃                    ┃
+      ┃  ┌─────────┐     ┌──────┐     ┌──────┐
+      ┃  │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      ┃  └─────────┘     └──────┘     └──────┘
+      ┃                    │
+      ┃                    │
+      ┃                    ▼
+      ┃  ┌─────────┐     ┌──────┐
+      ┗▶ │  /quux  │     │ /baz │
+         └─────────┘     └──────┘
+      */
+      Actions.addDependency('/foo', '/quux');
+
+      /*
+      Compute the delta for the current graph:
+      ┌────────────────────┐
+      │                    │
+      │  ┌─────────┐     ┌──────┐       ┌──────┐
+      │  │ /bundle │ ──▶ │ /foo │ ────▶ │ /bar │
+      │  └─────────┘     └──────┘       └──────┘
+      │                    │ (modified)
+      │                    │
+      │                    ▼
+      │  ┌─────────┐     ┌──────┐
+      └▶ │  /quux  │     │ /baz │
+         └─────────┘     └──────┘
+           (added)
+      */
+      expect(
+        getPaths(await traverseDependencies([...files], graph, options)),
+      ).toEqual({
+        added: new Set(['/quux']),
+        deleted: new Set([]),
+        modified: new Set(['/foo']),
+      });
+      files.clear();
+
+      /*
+      ┌────────────────────┐
+      │                    │
+      │  ┌─────────┐     ┌──────┐     ┌──────┐
+      │  │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      │  └─────────┘     └──────┘     └──────┘
+      │    ┃               │
+      │    ┃               │
+      │    ▼               ▼
+      │  ┌─────────┐     ┌──────┐
+      └▶ │  /quux  │     │ /baz │
+         └─────────┘     └──────┘
+      */
+      Actions.addDependency('/bundle', '/quux');
+
+      /*
+      ┌────────────────────┐
+      │                    │
+      │  ┌─────────┐   / ┌──────┐     ┌──────┐
+      │  │ /bundle │ ┈/▷ │ /foo │ ──▶ │ /bar │
+      │  └─────────┘ /   └──────┘     └──────┘
+      │    │               │
+      │    │               │
+      │    ▼               ▼
+      │  ┌─────────┐     ┌──────┐
+      └▶ │  /quux  │     │ /baz │
+         └─────────┘     └──────┘
+      */
+      Actions.removeDependency('/bundle', '/foo');
+
+      /*
+      Compute another delta for the current graph:
+      ┌─────────┐     ┌───────┐
+      │ /bundle │ ──▶ │ /quux │
+      └─────────┘     └───────┘
+      (modified)
+      */
+      expect(
+        getPaths(await traverseDependencies([...files], graph, options)),
+      ).toEqual({
+        added: new Set([]),
+        deleted: new Set(['/foo', '/bar', '/baz']),
+        modified: new Set(['/bundle']),
+      });
+    });
+
+    it('more than two state transitions in one delta calculation', async () => {
+      await initialTraverseDependencies(graph, options);
+
+      /*
+      ┌─────────┐     ┌──────┐     ┌──────┐     ┏━━━━━━━┓
+      │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │     ┃ /quux ┃
+      └─────────┘     └──────┘     └──────┘     ┗━━━━━━━┛
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      Actions.createFile('/quux');
+
+      /*
+      Compute the delta for the current graph:
+      ┌─────────┐     ┌──────┐     ┌──────┐
+      │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘     └──────┘     └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      expect(
+        getPaths(await traverseDependencies([...files], graph, options)),
+      ).toEqual({
+        added: new Set([]),
+        deleted: new Set([]),
+        modified: new Set([]),
+      });
+      files.clear();
+
+      /*
+      ┌─────────┐     ┌──────┐     ┌──────┐     ┌───────┐
+      │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │ ━━▶ │ /quux │
+      └─────────┘     └──────┘     └──────┘     └───────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      /bar is modified and reachable, so /quux will be marked as added
+      ( = first transition).
+      */
+      Actions.addDependency('/bar', '/quux');
+
+      /*
+      ┌─────────┐     ┌──────┐   / ┌──────┐     ┌───────┐
+      │ /bundle │ ──▶ │ /foo │ ┈/▷ │ /bar │ ──▶ │ /quux │
+      └─────────┘     └──────┘ /   └──────┘     └───────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      /foo is modified and reachable, so we will see that /bar is unreachable
+      and unmark /quux as added ( = second transition).
+      */
+      Actions.removeDependency('/foo', '/bar');
+
+      /*
+        ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+        ┃                                         ▼
+      ┌─────────┐     ┌──────┐     ┌──────┐     ┌───────┐
+      │ /bundle │ ──▶ │ /foo │     │ /bar │ ──▶ │ /quux │
+      └─────────┘     └──────┘     └──────┘     └───────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      Finally, /bundle is modified and reachable, so we will mark /quux as
+      added again ( = third transition)
+      */
+      Actions.addDependency('/bundle', '/quux');
+
+      /*
+      Compute another delta for the current graph:
+      ┌─────────┐     ┌──────┐          ┌┈┈┈┈┈┈┐
+      │ /bundle │ ──▶ │ /foo │          ┊ /bar ┊
+      └─────────┘     └──────┘          └┈┈┈┈┈┈┘
+        │ (modified)    │ (modified)    (deleted)
+        │               │
+        ▼               ▼
+      ┌─────────┐     ┌──────┐
+      │ /quux   │     │ /baz │
+      └─────────┘     └──────┘
+          (added)
+      */
+      expect(
+        getPaths(await traverseDependencies([...files], graph, options)),
+      ).toEqual({
+        added: new Set(['/quux']),
+        deleted: new Set(['/bar']),
+        modified: new Set(['/foo', '/bundle']),
+      });
+    });
   });
 
   it('should try to transform every file only once', async () => {
