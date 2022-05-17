@@ -13,10 +13,11 @@
 import type {DeltaResult, Graph, Options} from './types.flow';
 
 const {
+  createGraph,
   initialTraverseDependencies,
   reorderGraph,
   traverseDependencies,
-} = require('./traverseDependencies');
+} = require('./graphOperations');
 const {EventEmitter} = require('events');
 
 /**
@@ -45,12 +46,10 @@ class DeltaCalculator<T> extends EventEmitter {
     this._options = options;
     this._changeEventSource = changeEventSource;
 
-    this._graph = {
-      dependencies: new Map(),
+    this._graph = createGraph({
       entryPoints,
-      importBundleNames: new Set(),
       transformOptions: this._options.transformOptions,
-    };
+    });
 
     this._changeEventSource.on('change', this._handleMultipleFileChanges);
   }
@@ -67,12 +66,10 @@ class DeltaCalculator<T> extends EventEmitter {
     this.removeAllListeners();
 
     // Clean up all the cache data structures to deallocate memory.
-    this._graph = {
-      dependencies: new Map(),
+    this._graph = createGraph({
       entryPoints: this._graph.entryPoints,
-      importBundleNames: new Set(),
       transformOptions: this._options.transformOptions,
-    };
+    });
     this._modifiedFiles = new Set();
     this._deletedFiles = new Set();
   }

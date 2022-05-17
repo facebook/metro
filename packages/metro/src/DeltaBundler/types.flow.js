@@ -10,6 +10,7 @@
 
 'use strict';
 
+import type {PrivateState} from './graphOperations';
 import type {JsTransformOptions} from 'metro-transform-worker';
 
 export type MixedOutput = {
@@ -74,12 +75,17 @@ export type TransformInputOptions = $Diff<
   },
 >;
 
-export type Graph<T = MixedOutput> = {
-  dependencies: Dependencies<T>,
-  importBundleNames: Set<string>,
-  +entryPoints: $ReadOnlyArray<string>,
+export type GraphInputOptions = $ReadOnly<{
+  entryPoints: $ReadOnlyArray<string>,
   // Unused in core but useful for custom serializers / experimentalSerializerHook
-  +transformOptions: TransformInputOptions,
+  transformOptions: TransformInputOptions,
+}>;
+
+export type Graph<T = MixedOutput> = {
+  ...$ReadOnly<GraphInputOptions>,
+  dependencies: Dependencies<T>,
+  +importBundleNames: Set<string>,
+  +privateState: PrivateState,
 };
 
 export type TransformResult<T = MixedOutput> = $ReadOnly<{

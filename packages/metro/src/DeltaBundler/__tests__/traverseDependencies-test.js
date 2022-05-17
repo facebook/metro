@@ -16,10 +16,11 @@ import type {Graph} from '../types.flow';
 import nullthrows from 'nullthrows';
 
 const {
+  createGraph,
   initialTraverseDependencies,
   reorderGraph,
   traverseDependencies: traverseDependenciesImpl,
-} = require('../traverseDependencies');
+} = require('../graphOperations');
 
 let mockedDependencies: Set<string> = new Set();
 let mockedDependencyTree: Map<
@@ -240,12 +241,10 @@ beforeEach(async () => {
 
   files.clear();
 
-  graph = {
-    dependencies: new Map(),
+  graph = createGraph({
     entryPoints: ['/bundle'],
-    importBundleNames: new Set(),
     transformOptions: options.transformOptions,
-  };
+  });
 });
 
 it('should do the initial traversal correctly', async () => {
@@ -257,6 +256,8 @@ it('should do the initial traversal correctly', async () => {
     deleted: new Set(),
   });
 
+  // $FlowIgnore[incompatible-type] for snapshot purposes
+  delete graph.privateState;
   expect(graph).toMatchSnapshot();
 });
 
@@ -379,6 +380,8 @@ it('should not traverse past the initial module if `shallow` is passed', async (
     deleted: new Set(),
   });
 
+  // $FlowIgnore[incompatible-type] for snapshot purposes
+  delete graph.privateState;
   expect(graph).toMatchSnapshot();
 });
 
@@ -1336,12 +1339,10 @@ describe('edge cases', () => {
 
     files.clear();
 
-    graph = {
-      dependencies: new Map(),
+    graph = createGraph({
       entryPoints: ['/bundle', '/bundle-2'],
-      importBundleNames: new Set(),
       transformOptions: options.transformOptions,
-    };
+    });
 
     await initialTraverseDependencies(graph, options);
 
@@ -1391,12 +1392,10 @@ describe('edge cases', () => {
     }
 
     const assertOrder = async function () {
-      graph = {
-        dependencies: new Map(),
+      graph = createGraph({
         entryPoints: ['/bundle'],
-        importBundleNames: new Set(),
         transformOptions: options.transformOptions,
-      };
+      });
 
       expect(
         Array.from(
@@ -1461,20 +1460,19 @@ describe('reorderGraph', () => {
       inverseDependencies: new Set(),
     });
 
-    // prettier-ignore
-    const graph = {
-      dependencies: new Map([
-        ['/2', mod({path: '/2', dependencies: new Map()})],
-        ['/0', mod({path: '/0', dependencies: new Map([['/1', dep('/1')], ['/2', dep('/2')]])})],
-        ['/1', mod({path: '/1', dependencies: new Map([['/2', dep('/2')]])})],
-        ['/3', mod({path: '/3', dependencies: new Map([])})],
-        ['/b', mod({path: '/b', dependencies: new Map([['/3', dep('/3')]])})],
-        ['/a', mod({path: '/a', dependencies: new Map([['/0', dep('/0')]])})],
-      ]),
+    const graph = createGraph({
       entryPoints: ['/a', '/b'],
-      importBundleNames: new Set(),
       transformOptions: options.transformOptions,
-    };
+    });
+    // prettier-ignore
+    graph.dependencies = new Map([
+      ['/2', mod({path: '/2', dependencies: new Map()})],
+      ['/0', mod({path: '/0', dependencies: new Map([['/1', dep('/1')], ['/2', dep('/2')]])})],
+      ['/1', mod({path: '/1', dependencies: new Map([['/2', dep('/2')]])})],
+      ['/3', mod({path: '/3', dependencies: new Map([])})],
+      ['/b', mod({path: '/b', dependencies: new Map([['/3', dep('/3')]])})],
+      ['/a', mod({path: '/a', dependencies: new Map([['/0', dep('/0')]])})],
+    ]);
 
     reorderGraph(graph, {shallow: false});
 
@@ -1551,12 +1549,10 @@ describe('optional dependencies', () => {
 
     Actions.deleteFile('/optional-b');
 
-    localGraph = {
-      dependencies: new Map(),
+    localGraph = createGraph({
       entryPoints: ['/bundle-o'],
-      importBundleNames: new Set(),
       transformOptions: options.transformOptions,
-    };
+    });
   });
 
   it('missing optional dependency will be skipped', async () => {

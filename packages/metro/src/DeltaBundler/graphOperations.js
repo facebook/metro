@@ -13,12 +13,27 @@
 import type {
   Dependency,
   Graph,
+  GraphInputOptions,
   Module,
   Options,
   TransformResultDependency,
 } from './types.flow';
 
 const nullthrows = require('nullthrows');
+
+// Private state for the graph that persists between operations.
+export opaque type PrivateState = {
+  // TODO: Track e.g. GC scheduling here.
+};
+
+function createGraph<T>(options: GraphInputOptions): Graph<T> {
+  return {
+    ...options,
+    dependencies: new Map(),
+    importBundleNames: new Set(),
+    privateState: {},
+  };
+}
 
 type Result<T> = {
   added: Map<string, Module<T>>,
@@ -43,8 +58,8 @@ type InternalOptions<T> = $ReadOnly<{
   experimentalImportBundleSupport: boolean,
   onDependencyAdd: () => mixed,
   onDependencyAdded: () => mixed,
-  resolve: $PropertyType<Options<T>, 'resolve'>,
-  transform: $PropertyType<Options<T>, 'transform'>,
+  resolve: Options<T>['resolve'],
+  transform: Options<T>['transform'],
   shallow: boolean,
 }>;
 
@@ -558,6 +573,7 @@ function reorderDependencies<T>(
 }
 
 module.exports = {
+  createGraph,
   initialTraverseDependencies,
   traverseDependencies,
   reorderGraph,

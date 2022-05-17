@@ -12,13 +12,17 @@
 'use strict';
 
 jest.mock('../../Bundler');
-jest.mock('../traverseDependencies');
-
-const DeltaCalculator = require('../DeltaCalculator');
-const {
+const initialTraverseDependencies = jest.fn();
+const traverseDependencies = jest.fn();
+const reorderGraph = jest.fn();
+jest.doMock('../graphOperations', () => ({
+  ...jest.requireActual('../graphOperations'),
   initialTraverseDependencies,
   traverseDependencies,
-} = require('../traverseDependencies');
+  reorderGraph,
+}));
+
+const DeltaCalculator = require('../DeltaCalculator');
 const {EventEmitter} = require('events');
 
 describe('DeltaCalculator', () => {
@@ -56,7 +60,6 @@ describe('DeltaCalculator', () => {
   beforeEach(async () => {
     fileWatcher = new EventEmitter();
 
-    // $FlowFixMe[prop-missing] Automatic mocks and Flow don't mix
     initialTraverseDependencies.mockImplementationOnce(async (graph, opt) => {
       entryModule = {
         dependencies: new Map([
@@ -128,9 +131,7 @@ describe('DeltaCalculator', () => {
   afterEach(() => {
     deltaCalculator.end();
 
-    // $FlowFixMe[prop-missing] Automatic mocks and Flow don't mix
     traverseDependencies.mockReset();
-    // $FlowFixMe[prop-missing] Automatic mocks and Flow don't mix
     initialTraverseDependencies.mockReset();
   });
 
@@ -178,7 +179,6 @@ describe('DeltaCalculator', () => {
       reset: false,
     });
 
-    // $FlowFixMe[prop-missing] Automatic mocks and Flow don't mix
     expect(traverseDependencies.mock.calls.length).toBe(0);
   });
 
@@ -209,7 +209,6 @@ describe('DeltaCalculator', () => {
 
     fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
 
-    // $FlowFixMe[prop-missing] Automatic mocks and Flow don't mix
     traverseDependencies.mockReturnValue(
       Promise.resolve({
         added: new Map(),
@@ -230,7 +229,6 @@ describe('DeltaCalculator', () => {
       reset: false,
     });
 
-    // $FlowFixMe[prop-missing] Automatic mocks and Flow don't mix
     expect(traverseDependencies.mock.calls.length).toBe(1);
   });
 
@@ -240,7 +238,6 @@ describe('DeltaCalculator', () => {
 
     fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
 
-    // $FlowFixMe[prop-missing] Automatic mocks and Flow don't mix
     traverseDependencies.mockReturnValue(
       Promise.resolve({
         added: new Map(),
@@ -261,7 +258,6 @@ describe('DeltaCalculator', () => {
       reset: false,
     });
 
-    // $FlowFixMe[prop-missing] Automatic mocks and Flow don't mix
     expect(traverseDependencies.mock.calls.length).toBe(1);
   });
 
@@ -278,7 +274,6 @@ describe('DeltaCalculator', () => {
       path: '/qux',
     };
 
-    // $FlowFixMe[prop-missing] Automatic mocks and Flow don't mix
     traverseDependencies.mockImplementation(async (path, graph, options) => {
       graph.dependencies.set('/qux', quxModule);
 
@@ -337,7 +332,6 @@ describe('DeltaCalculator', () => {
 
     fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
 
-    // $FlowFixMe[prop-missing] Automatic mocks and Flow don't mix
     traverseDependencies.mockReturnValue(Promise.reject(new Error()));
 
     await expect(
@@ -361,7 +355,6 @@ describe('DeltaCalculator', () => {
       eventsQueue: [{type: 'delete', filePath: '/foo'}],
     });
 
-    // $FlowFixMe[prop-missing] Automatic mocks and Flow don't mix
     traverseDependencies.mockReturnValue(
       Promise.resolve({
         added: new Map(),
@@ -380,7 +373,6 @@ describe('DeltaCalculator', () => {
     });
 
     expect(traverseDependencies).toHaveBeenCalledTimes(1);
-    // $FlowFixMe[prop-missing] Automatic mocks and Flow don't mix
     expect(traverseDependencies.mock.calls[0][0]).toEqual(['/bundle']);
   });
 
@@ -397,7 +389,6 @@ describe('DeltaCalculator', () => {
       eventsQueue: [{type: 'delete', filePath: '/qux'}],
     });
 
-    // $FlowFixMe[prop-missing] Automatic mocks and Flow don't mix
     traverseDependencies.mockReturnValue(
       Promise.resolve({
         added: new Map(),
@@ -411,7 +402,6 @@ describe('DeltaCalculator', () => {
     // Only the /bundle module should have been traversed (since it's an
     // inverse dependency of /foo).
     expect(traverseDependencies).toHaveBeenCalledTimes(1);
-    // $FlowFixMe[prop-missing] Automatic mocks and Flow don't mix
     expect(traverseDependencies.mock.calls[0][0]).toEqual(['/bundle']);
   });
 
@@ -426,7 +416,6 @@ describe('DeltaCalculator', () => {
     // Then add it again
     fileWatcher.emit('change', {eventsQueue: [{filePath: '/foo'}]});
 
-    // $FlowFixMe[prop-missing] Automatic mocks and Flow don't mix
     traverseDependencies.mockReturnValue(
       Promise.resolve({
         added: new Map(),
@@ -438,7 +427,6 @@ describe('DeltaCalculator', () => {
     await deltaCalculator.getDelta({reset: false, shallow: false});
 
     expect(traverseDependencies).toHaveBeenCalledTimes(1);
-    // $FlowFixMe[prop-missing] Automatic mocks and Flow don't mix
     expect(traverseDependencies.mock.calls[0][0]).toEqual(['/foo']);
   });
 
