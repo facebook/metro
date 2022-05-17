@@ -13,13 +13,12 @@
 jest.mock('../../Bundler');
 jest.mock('../DeltaCalculator');
 
-const Bundler = require('../../Bundler');
 const DeltaBundler = require('../../DeltaBundler');
 const DeltaCalculator = require('../DeltaCalculator');
+const {EventEmitter} = require('events');
 
 describe('DeltaBundler', () => {
   let deltaBundler;
-  let bundler;
 
   const graph = {
     dependencides: new Map([
@@ -30,8 +29,8 @@ describe('DeltaBundler', () => {
   };
 
   beforeEach(() => {
-    bundler = new Bundler();
-    deltaBundler = new DeltaBundler(bundler, {});
+    const fileEmitter = new EventEmitter();
+    deltaBundler = new DeltaBundler(fileEmitter, {});
 
     DeltaCalculator.prototype.getDelta.mockImplementation(async ({reset}) =>
       Promise.resolve({

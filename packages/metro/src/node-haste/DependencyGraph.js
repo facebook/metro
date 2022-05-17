@@ -52,37 +52,22 @@ class DependencyGraph extends EventEmitter {
   _moduleMap: MetroFileMapModuleMap;
   _moduleResolver: ModuleResolver<Module, Package>;
   _resolutionCache: Map<string, Map<string, Map<string, string>>>;
+  _readyPromise: Promise<void>;
 
-  constructor({
-    config,
-    haste,
-    initialHasteFS,
-    initialModuleMap,
-  }: {
-    +config: ConfigT,
-    +haste: MetroFileMap,
-    +initialHasteFS: HasteFS,
-    +initialModuleMap: MetroFileMapModuleMap,
-  }) {
+  constructor(
+    config: ConfigT,
+    options?: {
+      +hasReducedPerformance?: boolean,
+      +watch?: boolean,
+    },
+  ) {
     super();
+
     this._config = config;
-    this._haste = haste;
-    this._hasteFS = initialHasteFS;
-    this._moduleMap = initialModuleMap;
     this._assetExtensions = new Set(
       config.resolver.assetExts.map(asset => '.' + asset),
     );
-    // $FlowFixMe[method-unbinding] added when improving typing for this parameters
-    this._haste.on('change', this._onHasteChange.bind(this));
-    this._resolutionCache = new Map();
-    this._moduleCache = this._createModuleCache();
-    this._createModuleResolver();
-  }
 
-  static async load(
-    config: ConfigT,
-    options?: {+hasReducedPerformance?: boolean, +watch?: boolean},
-  ): Promise<DependencyGraph> {
     const {hasReducedPerformance, watch} = options ?? {};
     const initializingMetroLogEntry = log(
       createActionStartEntry('Initializing Metro'),
@@ -98,17 +83,38 @@ class DependencyGraph extends EventEmitter {
     // Bump this up to silence the max listeners EventEmitter warning.
     haste.setMaxListeners(1000);
 
-    const {hasteFS, moduleMap} = await haste.build();
+    this._haste = haste;
 
-    log(createActionEndEntry(initializingMetroLogEntry));
-    config.reporter.update({type: 'dep_graph_loaded'});
+    this._readyPromise = haste.build().then(({hasteFS, moduleMap}) => {
+      log(createActionEndEntry(initializingMetroLogEntry));
+      config.reporter.update({type: 'dep_graph_loaded'});
 
-    return new DependencyGraph({
-      haste,
-      initialHasteFS: hasteFS,
-      initialModuleMap: moduleMap,
-      config,
+      this._hasteFS = hasteFS;
+      this._moduleMap = moduleMap;
+
+      // $FlowFixMe[method-unbinding] added when improving typing for this parameters
+      this._haste.on('change', this._onHasteChange.bind(this));
+      this._resolutionCache = new Map();
+      this._moduleCache = this._createModuleCache();
+      this._createModuleResolver();
     });
+  }
+
+  // Waits for the dependency graph to become ready after initialisation.
+  // Don't read anything from the graph until this resolves.
+  async ready(): Promise<void> {
+    await this._readyPromise;
+  }
+
+  // Creates the dependency graph and waits for it to become ready.
+  // @deprecated Use the constructor + ready() directly.
+  static async load(
+    config: ConfigT,
+    options?: {+hasReducedPerformance?: boolean, +watch?: boolean},
+  ): Promise<DependencyGraph> {
+    const self = new DependencyGraph(config, options);
+    await self.ready();
+    return self;
   }
 
   _getClosestPackage(filePath: string): ?string {

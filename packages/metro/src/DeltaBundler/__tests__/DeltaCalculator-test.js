@@ -46,12 +46,6 @@ describe('DeltaCalculator', () => {
   beforeEach(async () => {
     fileWatcher = new EventEmitter();
 
-    const dependencyGraph = {
-      getWatcher() {
-        return fileWatcher;
-      },
-    };
-
     initialTraverseDependencies.mockImplementationOnce(async (graph, opt) => {
       entryModule = {
         dependencies: new Map([
@@ -117,11 +111,7 @@ describe('DeltaCalculator', () => {
       };
     });
 
-    deltaCalculator = new DeltaCalculator(
-      ['/bundle'],
-      dependencyGraph,
-      options,
-    );
+    deltaCalculator = new DeltaCalculator(['/bundle'], fileWatcher, options);
   });
 
   afterEach(() => {

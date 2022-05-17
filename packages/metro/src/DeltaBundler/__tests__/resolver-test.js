@@ -84,9 +84,10 @@ let resolver;
 
   async function createResolver(config = {}, platform = '') {
     const DependencyGraph = require('../../node-haste/DependencyGraph');
-    const dependencyGraph = await DependencyGraph.load(
+    const dependencyGraph = new DependencyGraph(
       mergeConfig(defaultConfig, config),
     );
+    await dependencyGraph.ready();
 
     return {
       resolve: (from, to, options) =>

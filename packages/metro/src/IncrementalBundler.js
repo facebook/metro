@@ -73,7 +73,7 @@ class IncrementalBundler {
   constructor(config: ConfigT, options?: IncrementalBundlerOptions) {
     this._config = config;
     this._bundler = new Bundler(config, options);
-    this._deltaBundler = new DeltaBundler(this._bundler);
+    this._deltaBundler = new DeltaBundler(this._bundler.getWatcher());
   }
 
   end(): void {
