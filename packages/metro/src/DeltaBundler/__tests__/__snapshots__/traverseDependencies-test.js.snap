@@ -106,9 +106,9 @@ Object {
       "path": "/baz",
     },
   },
-  "entryPoints": Array [
+  "entryPoints": Set {
     "/bundle",
-  ],
+  },
   "importBundleNames": Set {},
   "transformOptions": Object {
     "dev": false,
@@ -153,9 +153,9 @@ Object {
       "path": "/bundle",
     },
   },
-  "entryPoints": Array [
+  "entryPoints": Set {
     "/bundle",
-  ],
+  },
   "importBundleNames": Set {},
   "transformOptions": Object {
     "dev": false,

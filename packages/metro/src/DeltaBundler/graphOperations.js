@@ -156,7 +156,7 @@ async function initialTraverseDependencies<T>(
   const internalOptions = getInternalOptions(options);
 
   await Promise.all(
-    graph.entryPoints.map((path: string) =>
+    [...graph.entryPoints].map((path: string) =>
       traverseDependenciesForSingleFile(path, graph, delta, internalOptions),
     ),
   );

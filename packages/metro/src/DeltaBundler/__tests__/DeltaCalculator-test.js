@@ -125,7 +125,11 @@ describe('DeltaCalculator', () => {
       };
     });
 
-    deltaCalculator = new DeltaCalculator(['/bundle'], fileWatcher, options);
+    deltaCalculator = new DeltaCalculator(
+      new Set(['/bundle']),
+      fileWatcher,
+      options,
+    );
   });
 
   afterEach(() => {

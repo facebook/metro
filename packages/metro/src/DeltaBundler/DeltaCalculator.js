@@ -37,7 +37,7 @@ class DeltaCalculator<T> extends EventEmitter {
   _graph: Graph<T>;
 
   constructor(
-    entryPoints: $ReadOnlyArray<string>,
+    entryPoints: $ReadOnlySet<string>,
     changeEventSource: EventEmitter,
     options: Options<T>,
   ) {

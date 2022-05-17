@@ -242,7 +242,7 @@ beforeEach(async () => {
   files.clear();
 
   graph = createGraph({
-    entryPoints: ['/bundle'],
+    entryPoints: new Set(['/bundle']),
     transformOptions: options.transformOptions,
   });
 });
@@ -422,7 +422,7 @@ describe('Progress updates', () => {
     Actions.createFile('/bundle-2');
     Actions.addDependency('/bundle-2', '/qux');
     Actions.addDependency('/bundle-2', '/foo');
-    graph.entryPoints = ['/bundle', '/bundle-2'];
+    graph.entryPoints = new Set(['/bundle', '/bundle-2']);
 
     await initialTraverseDependencies(graph, {...options, onProgress});
 
@@ -1283,7 +1283,7 @@ describe('edge cases', () => {
     files.clear();
 
     // Add a second entry point to the graph.
-    graph.entryPoints = ['/bundle', '/bundle-2'];
+    graph.entryPoints = new Set(['/bundle', '/bundle-2']);
 
     await initialTraverseDependencies(graph, options);
 
@@ -1340,7 +1340,7 @@ describe('edge cases', () => {
     files.clear();
 
     graph = createGraph({
-      entryPoints: ['/bundle', '/bundle-2'],
+      entryPoints: new Set(['/bundle', '/bundle-2']),
       transformOptions: options.transformOptions,
     });
 
@@ -1393,7 +1393,7 @@ describe('edge cases', () => {
 
     const assertOrder = async function () {
       graph = createGraph({
-        entryPoints: ['/bundle'],
+        entryPoints: new Set(['/bundle']),
         transformOptions: options.transformOptions,
       });
 
@@ -1461,7 +1461,7 @@ describe('reorderGraph', () => {
     });
 
     const graph = createGraph({
-      entryPoints: ['/a', '/b'],
+      entryPoints: new Set(['/a', '/b']),
       transformOptions: options.transformOptions,
     });
     // prettier-ignore
@@ -1550,7 +1550,7 @@ describe('optional dependencies', () => {
     Actions.deleteFile('/optional-b');
 
     localGraph = createGraph({
-      entryPoints: ['/bundle-o'],
+      entryPoints: new Set(['/bundle-o']),
       transformOptions: options.transformOptions,
     });
   });

@@ -76,7 +76,7 @@ export type TransformInputOptions = $Diff<
 >;
 
 export type GraphInputOptions = $ReadOnly<{
-  entryPoints: $ReadOnlyArray<string>,
+  entryPoints: $ReadOnlySet<string>,
   // Unused in core but useful for custom serializers / experimentalSerializerHook
   transformOptions: TransformInputOptions,
 }>;

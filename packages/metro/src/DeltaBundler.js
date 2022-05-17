@@ -60,7 +60,7 @@ class DeltaBundler<T = MixedOutput> {
     options: Options<T>,
   ): Promise<Dependencies<T>> {
     const deltaCalculator = new DeltaCalculator(
-      entryPoints,
+      new Set(entryPoints),
       this._changeEventSource,
       options,
     );
@@ -80,7 +80,7 @@ class DeltaBundler<T = MixedOutput> {
     options: Options<T>,
   ): Promise<Graph<T>> {
     const deltaCalculator = new DeltaCalculator(
-      entryPoints,
+      new Set(entryPoints),
       this._changeEventSource,
       options,
     );
