@@ -177,6 +177,7 @@ async function processModule<T>(
   options: InternalOptions<T>,
 ): Promise<Module<T>> {
   // Transform the file via the given option.
+  // TODO: Unbind the transform method from options
   const result = await options.transform(path);
 
   // Get the absolute path of all sub-dependencies (some of them could have been

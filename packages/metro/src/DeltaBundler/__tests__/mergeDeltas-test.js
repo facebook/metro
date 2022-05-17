@@ -6,13 +6,14 @@
  *
  * @emails oncall+metro_bundler
  * @format
+ * @flow strict-local
  */
 
 'use strict';
 
 const mergeDeltas = require('../mergeDeltas');
 
-function sortById([id1]: [number, mixed], [id2]: [number, mixed]): number {
+function sortById<T>([id1]: [number, T], [id2]: [number, T]): number {
   return id1 - id2;
 }
 

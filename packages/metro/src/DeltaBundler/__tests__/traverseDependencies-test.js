@@ -6,9 +6,14 @@
  *
  * @emails oncall+metro_bundler
  * @format
+ * @flow strict-local
  */
 
 'use strict';
+
+import type {Graph} from '../types.flow';
+
+import nullthrows from 'nullthrows';
 
 const {
   initialTraverseDependencies,
@@ -16,17 +21,24 @@ const {
   traverseDependencies: traverseDependenciesImpl,
 } = require('../traverseDependencies');
 
-let dependencyGraph;
-let mockedDependencies;
-let mockedDependencyTree;
-let files = new Set();
-let graph;
+let mockedDependencies: Set<string> = new Set();
+let mockedDependencyTree: Map<
+  string,
+  Array<$ReadOnly<{name: string, path: string}>>,
+> = new Map();
+const files = new Set();
+let graph: {
+  // For convenience, we mutate the graph sometimes
+  ...Graph<>,
+};
 let options;
 
 let entryModule;
 let moduleFoo;
 let moduleBar;
 let moduleBaz;
+
+let mockTransform;
 
 const Actions = {
   modifyFile(path: string) {
@@ -54,16 +66,18 @@ const Actions = {
   addDependency(
     path: string,
     dependencyPath: string,
-    position?: number,
-    name = null,
+    position?: ?number,
+    name?: string,
   ) {
-    const deps = mockedDependencyTree.get(path);
-    name = name || dependencyPath.replace('/', '');
-
+    const deps = nullthrows(mockedDependencyTree.get(path));
+    const dep = {
+      name: name ?? dependencyPath.replace('/', ''),
+      path: dependencyPath,
+    };
     if (position == null) {
-      deps.push({name, path: dependencyPath});
+      deps.push(dep);
     } else {
-      deps.splice(position, 0, {name, path: dependencyPath});
+      deps.splice(position, 0, dep);
     }
 
     mockedDependencyTree.set(path, deps);
@@ -73,7 +87,7 @@ const Actions = {
   },
 
   removeDependency(path: string, dependencyPath: string) {
-    const deps = mockedDependencyTree.get(path);
+    const deps = nullthrows(mockedDependencyTree.get(path));
 
     const index = deps.findIndex(({path}) => path === dependencyPath);
     if (index !== -1) {
@@ -154,29 +168,34 @@ beforeEach(async () => {
   mockedDependencies = new Set();
   mockedDependencyTree = new Map();
 
-  dependencyGraph = {
-    getAbsolutePath(path: string) {
-      return '/' + path;
-    },
-    getModuleForPath(path: string) {
-      return Array.from(mockedDependencies).find(dep => dep.path === path);
-    },
-    resolveDependency(module, relativePath: string) {
-      const deps = mockedDependencyTree.get(module.path);
-      const {dependency} = deps.filter(dep => dep.name === relativePath)[0];
-
-      if (!mockedDependencies.has(dependency)) {
-        throw new Error(
-          `Dependency not found: ${module.path}->${relativePath}`,
-        );
-      }
-      return dependency;
-    },
-  };
+  mockTransform = jest.fn().mockImplementation(async path => {
+    return {
+      dependencies: (mockedDependencyTree.get(path) || []).map(dep => ({
+        name: dep.name,
+        data: {
+          asyncType: null,
+          locs: [],
+        },
+      })),
+      getSource: () => Buffer.from('// source'),
+      output: [
+        {
+          data: {
+            code: '// code',
+            lineCount: 1,
+            map: [],
+          },
+          type: 'js/module',
+        },
+      ],
+    };
+  });
 
   options = {
+    experimentalImportBundleSupport: false,
+    onProgress: null,
     resolve: (from, to) => {
-      const deps = mockedDependencyTree.get(from);
+      const deps = nullthrows(mockedDependencyTree.get(from));
       const {path} = deps.filter(dep => dep.name === to)[0];
 
       if (!mockedDependencies.has(path)) {
@@ -184,28 +203,17 @@ beforeEach(async () => {
       }
       return path;
     },
-    transform: jest.fn().mockImplementation(path => {
-      return {
-        dependencies: (mockedDependencyTree.get(path) || []).map(dep => ({
-          name: dep.name,
-          data: {
-            isAsync: false,
-          },
-        })),
-        getSource: () => Buffer.from('// source'),
-        output: [
-          {
-            data: {
-              code: '// code',
-              lineCount: 1,
-              map: [],
-            },
-            type: 'js/module',
-          },
-        ],
-      };
-    }),
-    onProgress: null,
+    transform: mockTransform,
+    transformOptions: {
+      // NOTE: These options are ignored because we mock out the transformer.
+      dev: false,
+      hot: false,
+      minify: false,
+      platform: null,
+      runtimeBytecodeVersion: null,
+      type: 'module',
+      unstable_transformProfile: 'default',
+    },
     shallow: false,
   };
 
@@ -230,11 +238,13 @@ beforeEach(async () => {
   Actions.addDependency('/foo', '/bar');
   Actions.addDependency('/foo', '/baz');
 
-  files = new Set();
+  files.clear();
 
   graph = {
     dependencies: new Map(),
     entryPoints: ['/bundle'],
+    importBundleNames: new Set(),
+    transformOptions: options.transformOptions,
   };
 });
 
@@ -256,9 +266,9 @@ it('should populate all the inverse dependencies', async () => {
 
   await initialTraverseDependencies(graph, options);
 
-  expect(graph.dependencies.get('/bar').inverseDependencies).toEqual(
-    new Set(['/foo', '/bundle']),
-  );
+  expect(
+    nullthrows(graph.dependencies.get('/bar')).inverseDependencies,
+  ).toEqual(new Set(['/foo', '/bundle']));
 });
 
 it('should return an empty result when there are no changes', async () => {
@@ -328,6 +338,7 @@ it('should retry traversing dependencies after a transform error', async () => {
       if (path === '/bad') {
         throw new BadError();
       }
+      // $FlowFixMe[object-this-reference]: transform should not be bound to anything
       return options.transform.apply(this, arguments);
     },
   };
@@ -408,7 +419,7 @@ describe('Progress updates', () => {
     Actions.createFile('/bundle-2');
     Actions.addDependency('/bundle-2', '/qux');
     Actions.addDependency('/bundle-2', '/foo');
-    graph.entryPoints.push('/bundle-2');
+    graph.entryPoints = ['/bundle', '/bundle-2'];
 
     await initialTraverseDependencies(graph, {...options, onProgress});
 
@@ -430,7 +441,7 @@ describe('Progress updates', () => {
 describe('edge cases', () => {
   it('should handle cyclic dependencies', async () => {
     Actions.addDependency('/baz', '/foo');
-    files = new Set();
+    files.clear();
 
     expect(getPaths(await initialTraverseDependencies(graph, options))).toEqual(
       {
@@ -440,9 +451,9 @@ describe('edge cases', () => {
       },
     );
 
-    expect(graph.dependencies.get('/foo').inverseDependencies).toEqual(
-      new Set(['/bundle', '/baz']),
-    );
+    expect(
+      nullthrows(graph.dependencies.get('/foo')).inverseDependencies,
+    ).toEqual(new Set(['/bundle', '/baz']));
   });
 
   it('should handle renames correctly', async () => {
@@ -539,7 +550,7 @@ describe('edge cases', () => {
     Actions.addDependency('/bar', '/bar1');
     Actions.addDependency('/bar1', '/foo');
     Actions.addDependency('/bundle', '/bar');
-    files = new Set();
+    files.clear();
 
     await initialTraverseDependencies(graph, options);
 
@@ -563,7 +574,7 @@ describe('edge cases', () => {
     Actions.addDependency('/a', '/baz');
     Actions.addDependency('/bundle', '/core');
     Actions.addDependency('/foo', '/core');
-    files = new Set();
+    files.clear();
 
     await initialTraverseDependencies(graph, options);
 
@@ -602,7 +613,7 @@ describe('edge cases', () => {
     Actions.createFile('/toFoo');
     Actions.addDependency('/toFoo', '/baz');
     Actions.addDependency('/bundle', '/toFoo');
-    files = new Set();
+    files.clear();
 
     await initialTraverseDependencies(graph, options);
 
@@ -619,7 +630,7 @@ describe('edge cases', () => {
 
   it('removes a cyclic dependency', async () => {
     Actions.addDependency('/baz', '/foo');
-    files = new Set();
+    files.clear();
 
     await initialTraverseDependencies(graph, options);
 
@@ -637,7 +648,7 @@ describe('edge cases', () => {
   it('removes a cyclic dependency which is both inverse dependency and direct dependency', async () => {
     Actions.addDependency('/foo', '/bundle');
 
-    files = new Set();
+    files.clear();
 
     await initialTraverseDependencies(graph, options);
 
@@ -657,7 +668,7 @@ describe('edge cases', () => {
     Actions.addDependency('/baz', '/baz1');
     Actions.addDependency('/baz1', '/foo');
 
-    files = new Set();
+    files.clear();
 
     await initialTraverseDependencies(graph, options);
 
@@ -678,7 +689,7 @@ describe('edge cases', () => {
     Actions.addDependency('/bar2', '/bar');
     Actions.addDependency('/foo', '/bundle');
 
-    files = new Set();
+    files.clear();
 
     await initialTraverseDependencies(graph, options);
 
@@ -723,18 +734,29 @@ describe('edge cases', () => {
       deleted: new Set(),
     });
 
-    expect([...graph.dependencies.get(moduleFoo).dependencies]).toEqual([
+    expect([
+      ...nullthrows(graph.dependencies.get(moduleFoo)).dependencies,
+    ]).toEqual([
       [
         'qux',
-        {absolutePath: '/qux', data: {data: {isAsync: false}, name: 'qux'}},
+        {
+          absolutePath: '/qux',
+          data: {data: {asyncType: null, locs: []}, name: 'qux'},
+        },
       ],
       [
         'bar',
-        {absolutePath: '/bar', data: {data: {isAsync: false}, name: 'bar'}},
+        {
+          absolutePath: '/bar',
+          data: {data: {asyncType: null, locs: []}, name: 'bar'},
+        },
       ],
       [
         'baz',
-        {absolutePath: '/baz', data: {data: {isAsync: false}, name: 'baz'}},
+        {
+          absolutePath: '/baz',
+          data: {data: {asyncType: null, locs: []}, name: 'baz'},
+        },
       ],
     ]);
   });
@@ -1245,24 +1267,24 @@ describe('edge cases', () => {
   it('should try to transform every file only once', async () => {
     // create a second inverse dependency on /bar to add a cycle.
     Actions.addDependency('/bundle', '/bar');
-    files = new Set();
+    files.clear();
 
     await initialTraverseDependencies(graph, options);
 
-    expect(options.transform.mock.calls.length).toBe(4);
+    expect(mockTransform.mock.calls.length).toBe(4);
   });
 
   it('should try to transform every file only once with multiple entry points', async () => {
     Actions.createFile('/bundle-2');
     Actions.addDependency('/bundle-2', '/foo');
-    files = new Set();
+    files.clear();
 
     // Add a second entry point to the graph.
     graph.entryPoints = ['/bundle', '/bundle-2'];
 
     await initialTraverseDependencies(graph, options);
 
-    expect(options.transform.mock.calls.length).toBe(5);
+    expect(mockTransform.mock.calls.length).toBe(5);
   });
 
   it('should create two entries when requiring the same file in different forms', async () => {
@@ -1279,13 +1301,15 @@ describe('edge cases', () => {
       deleted: new Set(),
     });
 
-    expect([...graph.dependencies.get(entryModule).dependencies]).toEqual([
+    expect([
+      ...nullthrows(graph.dependencies.get(entryModule)).dependencies,
+    ]).toEqual([
       [
         'foo.js',
         {
           absolutePath: '/foo',
           data: {
-            data: {isAsync: false},
+            data: {asyncType: null, locs: []},
             name: 'foo.js',
           },
         },
@@ -1295,7 +1319,7 @@ describe('edge cases', () => {
         {
           absolutePath: '/foo',
           data: {
-            data: {isAsync: false},
+            data: {asyncType: null, locs: []},
             name: 'foo',
           },
         },
@@ -1310,11 +1334,13 @@ describe('edge cases', () => {
     Actions.addDependency('/bundle-2', '/bundle-2-bar');
     Actions.addDependency('/bundle-2', '/bar');
 
-    files = new Set();
+    files.clear();
 
     graph = {
       dependencies: new Map(),
       entryPoints: ['/bundle', '/bundle-2'],
+      importBundleNames: new Set(),
+      transformOptions: options.transformOptions,
     };
 
     await initialTraverseDependencies(graph, options);
@@ -1331,18 +1357,16 @@ describe('edge cases', () => {
   });
 
   it('should traverse the dependency tree in a deterministic order', async () => {
-    // Mocks the shallow dependency call, always resolving the module in
-    // `slowPath` after the module in `fastPath`.
-    function mockShallowDependencies(slowPath: string, fastPath: string) {
+    const localMockTransform = jest.fn();
+
+    // Mocks the transformer call, always resolving the module in `slowPath`
+    // after the module in `fastPath`.
+    function setMockTransformOrder(fastPath: string, slowPath: string) {
       let deferredSlow;
       let fastResolved = false;
 
-      dependencyGraph.getShallowDependencies = async path => {
-        const deps = mockedDependencyTree.get(path);
-
-        const result = deps
-          ? await Promise.all(deps.map(dep => dep.getName()))
-          : [];
+      localMockTransform.mockImplementation(async path => {
+        const result = await mockTransform(path);
 
         if (path === slowPath && !fastResolved) {
           // Return a Promise that won't be resolved after fastPath.
@@ -1363,18 +1387,25 @@ describe('edge cases', () => {
         }
 
         return result;
-      };
+      });
     }
 
     const assertOrder = async function () {
       graph = {
         dependencies: new Map(),
         entryPoints: ['/bundle'],
+        importBundleNames: new Set(),
+        transformOptions: options.transformOptions,
       };
 
       expect(
         Array.from(
-          getPaths(await initialTraverseDependencies(graph, options)).added,
+          getPaths(
+            await initialTraverseDependencies(graph, {
+              ...options,
+              transform: localMockTransform,
+            }),
+          ).added,
         ),
       ).toEqual(['/bundle', '/foo', '/baz', '/bar']);
     };
@@ -1394,11 +1425,17 @@ describe('edge cases', () => {
 
     // Test that even when having different modules taking longer, the order
     // remains the same.
-    mockShallowDependencies('/foo', '/bar');
+    mockTransform.mockClear();
+    setMockTransformOrder('/foo', '/bar');
     await assertOrder();
+    expect(mockTransform).toHaveBeenCalledWith('/foo');
+    expect(mockTransform).toHaveBeenCalledWith('/bar');
 
-    mockShallowDependencies('/bar', '/foo');
+    mockTransform.mockClear();
+    setMockTransformOrder('/bar', '/foo');
     await assertOrder();
+    expect(mockTransform).toHaveBeenCalledWith('/bar');
+    expect(mockTransform).toHaveBeenCalledWith('/foo');
   });
 });
 
@@ -1406,23 +1443,40 @@ describe('reorderGraph', () => {
   it('should reorder any unordered graph in DFS order', async () => {
     const dep = path => ({
       absolutePath: path,
-      data: {isAsync: false, name: path.substr(1)},
+      data: {
+        data: {
+          asyncType: null,
+          locs: [],
+        },
+        name: path.substr(1),
+      },
+    });
+
+    const mod = moduleData => ({
+      ...moduleData,
+      output: [],
+      getSource: () => Buffer.from('// source'),
+      // NOTE: inverseDependencies is traversal state/output, not input, so we
+      // don't pre-populate it.
+      inverseDependencies: new Set(),
     });
 
     // prettier-ignore
     const graph = {
       dependencies: new Map([
-        ['/2', {path: '/2', dependencies: new Map()}],
-        ['/0', {path: '/0', dependencies: new Map([['/1', dep('/1')], ['/2', dep('/2')]])}],
-        ['/1', {path: '/1', dependencies: new Map([['/2', dep('/2')]])}],
-        ['/3', {path: '/3', dependencies: new Map([])}],
-        ['/b', {path: '/b', dependencies: new Map([['/3', dep('/3')]])}],
-        ['/a', {path: '/a', dependencies: new Map([['/0', dep('/0')]])}],
+        ['/2', mod({path: '/2', dependencies: new Map()})],
+        ['/0', mod({path: '/0', dependencies: new Map([['/1', dep('/1')], ['/2', dep('/2')]])})],
+        ['/1', mod({path: '/1', dependencies: new Map([['/2', dep('/2')]])})],
+        ['/3', mod({path: '/3', dependencies: new Map([])})],
+        ['/b', mod({path: '/b', dependencies: new Map([['/3', dep('/3')]])})],
+        ['/a', mod({path: '/a', dependencies: new Map([['/0', dep('/0')]])})],
       ]),
       entryPoints: ['/a', '/b'],
+      importBundleNames: new Set(),
+      transformOptions: options.transformOptions,
     };
 
-    reorderGraph(graph);
+    reorderGraph(graph, {shallow: false});
 
     expect([...graph.dependencies.keys()]).toEqual([
       '/a',
@@ -1461,17 +1515,28 @@ describe('optional dependencies', () => {
     expect(count).toBe(allDependency.size);
   };
 
-  const mockTransform = (notOptional?: string[]) => {
-    return function (path) {
-      const result = options.transform.apply(this, arguments);
-      result.dependencies.forEach(dep => {
-        if (notOptional && notOptional.includes(dep.name)) {
-          dep.data.isOptional = false;
-        } else {
-          dep.data.isOptional = dep.name.includes('optional-');
-        }
-      });
-      return result;
+  const createMockTransform = (notOptional?: string[]) => {
+    return async function (path) {
+      // $FlowFixMe[object-this-reference]: transform should not be bound to anything
+      const result = await mockTransform.apply(this, arguments);
+      return {
+        ...result,
+        dependencies: result.dependencies.map(dep => {
+          let isOptional;
+          if (notOptional && notOptional.includes(dep.name)) {
+            isOptional = false;
+          } else {
+            isOptional = dep.name.includes('optional-');
+          }
+          return {
+            ...dep,
+            data: {
+              ...dep.data,
+              isOptional,
+            },
+          };
+        }),
+      };
     };
   };
 
@@ -1489,13 +1554,15 @@ describe('optional dependencies', () => {
     localGraph = {
       dependencies: new Map(),
       entryPoints: ['/bundle-o'],
+      importBundleNames: new Set(),
+      transformOptions: options.transformOptions,
     };
   });
 
   it('missing optional dependency will be skipped', async () => {
     localOptions = {
       ...options,
-      transform: mockTransform(),
+      transform: createMockTransform(),
     };
 
     const result = await initialTraverseDependencies(localGraph, localOptions);
@@ -1506,7 +1573,7 @@ describe('optional dependencies', () => {
   it('missing non-optional dependency will throw', async () => {
     localOptions = {
       ...options,
-      transform: mockTransform(['optional-b']),
+      transform: createMockTransform(['optional-b']),
     };
     await expect(
       initialTraverseDependencies(localGraph, localOptions),
