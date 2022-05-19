@@ -177,7 +177,7 @@ class InspectorProxy {
         });
       } catch (e) {
         console.error('error', e);
-        socket.close(INTERNAL_ERROR_CODE, e);
+        socket.close(INTERNAL_ERROR_CODE, e?.toString() ?? 'Unknown error');
       }
     });
     return wss;
@@ -212,7 +212,7 @@ class InspectorProxy {
         device.handleDebuggerConnection(socket, pageId);
       } catch (e) {
         console.error(e);
-        socket.close(INTERNAL_ERROR_CODE, e);
+        socket.close(INTERNAL_ERROR_CODE, e?.toString() ?? 'Unknown error');
       }
     });
     return wss;
