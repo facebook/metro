@@ -99,11 +99,17 @@ Type: `number`
 
 The number of workers we should parallelize the transformer on.
 
-#### `hasteMapCacheDirectory`
+#### `fileMapCacheDirectory`
 
 Type: `string`
 
-The path to the haste map cache directory, defaults to `os.tmpdir()`.
+The path to the `metro-file-map` cache directory, defaults to `os.tmpdir()`.
+
+#### Deprecated: `hasteMapCacheDirectory`
+
+Type: `string`
+
+Alias of `fileMapCacheDirectory`
 
 ---
 ### Resolver Options

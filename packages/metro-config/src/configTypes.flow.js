@@ -116,7 +116,8 @@ type TransformerConfigT = {
 type MetalConfigT = {
   cacheStores: $ReadOnlyArray<CacheStore<TransformResult<>>>,
   cacheVersion: string,
-  hasteMapCacheDirectory?: string,
+  fileMapCacheDirectory?: string,
+  hasteMapCacheDirectory?: string, // Deprecated, alias of fileMapCacheDirectory
   maxWorkers: number,
   projectRoot: string,
   stickyWorkers: boolean,

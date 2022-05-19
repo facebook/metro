@@ -1,7 +1,7 @@
 {
   "name": "metro-file-map",
   "version": "0.70.2",
-  "description": "🚇 File crawling, watching and mapping for Metro",
+  "description": "[Experimental] - 🚇 File crawling, watching and mapping for Metro",
   "main": "src/index.js",
   "repository": {
     "type": "git",
