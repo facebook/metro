@@ -107,6 +107,7 @@ let resolver;
   const joinPath = osPlatform === 'win32' ? path.win32.join : path.posix.join;
 
   describe(osPlatform, () => {
+    let originalError = console.error;
     beforeEach(() => {
       jest.resetModules();
 
@@ -130,14 +131,26 @@ let resolver;
       require('os').tmpdir = () => p('/tmp');
 
       fs = require('fs');
-
-      jest.spyOn(console, 'error');
+      originalError = console.error;
+      console.error = jest.fn((...args) => {
+        // Silence expected errors that we assert on later
+        if (
+          typeof args[0] === 'string' &&
+          args[0].startsWith('metro-file-map:')
+        ) {
+          return;
+        }
+        originalError(...args);
+      });
     });
 
     afterEach(async () => {
-      resolver && (await resolver.end());
-      resolver = null;
-      console.error.mockRestore();
+      try {
+        resolver && (await resolver.end());
+      } finally {
+        resolver = null;
+        console.error = originalError;
+      }
     });
 
     describe('relative paths', () => {
