@@ -201,6 +201,9 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
               this._removeRoot(candidates.dir),
             )}`,
           ].join('\n'),
+          {
+            cause: error,
+          },
         );
       }
       if (error instanceof Resolver.FailedToResolveNameError) {
@@ -220,6 +223,9 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
             `${moduleName} could not be found within the project${hint || '.'}`,
             ...displayDirPaths.map((dirPath: string) => `  ${dirPath}`),
           ].join('\n'),
+          {
+            cause: error,
+          },
         );
       }
       throw error;
@@ -287,11 +293,18 @@ class UnableToResolveError extends Error {
    * ex. `./bar`, or `invariant`.
    */
   targetModuleName: string;
+  /**
+   * Original error that causes this error
+   */
+  cause: ?Error;
 
   constructor(
     originModulePath: string,
     targetModuleName: string,
     message: string,
+    options?: $ReadOnly<{
+      cause?: Error,
+    }>,
   ) {
     super();
     this.originModulePath = originModulePath;
@@ -304,6 +317,8 @@ class UnableToResolveError extends Error {
         originModulePath,
         message,
       ) + (codeFrameMessage ? '\n' + codeFrameMessage : '');
+
+    this.cause = options?.cause;
   }
 
   buildCodeFrameMessage(): ?string {
