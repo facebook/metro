@@ -81,3 +81,20 @@ it('forces all packages to have a src/ folder', () => {
     );
   });
 });
+
+it('forces all packages to have an .npmignore with expected entries', () => {
+  checkAssertionInPackages(getPackages(), packagePath => {
+    const npmIgnorePath = path.join(packagePath, '.npmignore');
+    expect(fs.existsSync(npmIgnorePath)).toBe(true);
+    const lines = fs.readFileSync(npmIgnorePath, 'utf-8').split('\n');
+    expect(lines).toEqual(
+      expect.arrayContaining([
+        '**/__mocks__/**',
+        '**/__tests__/**',
+        'build',
+        'src.real',
+        'yarn.lock',
+      ]),
+    );
+  });
+});
