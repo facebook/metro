@@ -64,8 +64,6 @@ export type InternalDependency<TSplitCondition> = $ReadOnly<
 
 export type State<TSplitCondition> = {
   asyncRequireModulePathStringLiteral: ?StringLiteral,
-  /** Path to file for handling `require.context` statements */
-  requireContextModulePathStringLiteral: ?StringLiteral,
   dependencyCalls: Set<string>,
   dependencyRegistry: ModuleDependencyRegistry<TSplitCondition>,
   dependencyTransformer: DependencyTransformer<TSplitCondition>,
@@ -77,8 +75,6 @@ export type State<TSplitCondition> = {
 
 export type Options<TSplitCondition = void> = $ReadOnly<{
   asyncRequireModulePath: string,
-  /** Path to file for handling `require.context` statements */
-  requireContextModulePath: string,
   dependencyMapName: ?string,
   dynamicRequires: DynamicRequiresBehavior,
   inlineableCalls: $ReadOnlyArray<string>,
@@ -151,7 +147,6 @@ function collectDependencies<TSplitCondition = void>(
 
   const state: State<TSplitCondition> = {
     asyncRequireModulePathStringLiteral: null,
-    requireContextModulePathStringLiteral: null,
     dependencyCalls: new Set(),
     dependencyRegistry:
       options.dependencyRegistry ?? new DefaultModuleDependencyRegistry(),
@@ -209,10 +204,17 @@ function collectDependencies<TSplitCondition = void>(
         return;
       }
 
+      // Match `require.context`
       if (
         callee.type === 'MemberExpression' &&
-        (callee.object || {}).name === 'require' &&
-        (callee.property || {}).name === 'context'
+        callee.object &&
+        // `require`
+        callee.object.type === 'Identifier' &&
+        callee.object.name === 'require' &&
+        // `context`
+        callee.property &&
+        callee.property.type === 'Identifier' &&
+        callee.property.name === 'context'
       ) {
         processRequireContextCall(path, state);
         visited.add(path.node);
@@ -549,10 +551,6 @@ const makeJSResourceTemplate = template.statement(`
   require(ASYNC_REQUIRE_MODULE_PATH).resource(MODULE_ID, MODULE_NAME)
 `);
 
-const makeRequireContextTemplate = template.statement(`
-  require(REQUIRE_CONTEXT_MODULE_PATH).context(MODULE_ID_ARRAY, MODULE_NAME)
-`);
-
 const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
   transformSyncRequire(
     path: NodePath<CallExpression>,
@@ -597,22 +595,6 @@ const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
           state.asyncRequireModulePathStringLiteral,
         ),
         MODULE_ID: createModuleIDExpression(dependency, state),
-        MODULE_NAME: createModuleNameLiteral(dependency),
-      }),
-    );
-  },
-
-  transformRequireContext(
-    path: NodePath<>,
-    dependency: InternalDependency<mixed>,
-    state: State<mixed>,
-  ): void {
-    path.replaceWith(
-      makeRequireContextTemplate({
-        REQUIRE_CONTEXT_MODULE_PATH: nullthrows(
-          state.requireContextModulePathStringLiteral,
-        ),
-        MODULE_ID_ARRAY: createModuleIDExpression(dependency, state),
         MODULE_NAME: createModuleNameLiteral(dependency),
       }),
     );
