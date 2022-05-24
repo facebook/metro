@@ -45,6 +45,11 @@ type DependencyData<TSplitCondition> = $ReadOnly<{
   // If left unspecified, then the dependency is unconditionally split.
   splitCondition?: TSplitCondition,
   locs: Array<BabelSourceLocation>,
+
+  /** Should search recursively through folders. */
+  recursive?: boolean,
+  /** A filter to run against files that match the directory */
+  filter?: string,
 }>;
 
 export type MutableInternalDependency<TSplitCondition> = {
@@ -59,6 +64,8 @@ export type InternalDependency<TSplitCondition> = $ReadOnly<
 
 export type State<TSplitCondition> = {
   asyncRequireModulePathStringLiteral: ?StringLiteral,
+  /** Path to file for handling `require.context` statements */
+  requireContextModulePathStringLiteral: ?StringLiteral,
   dependencyCalls: Set<string>,
   dependencyRegistry: ModuleDependencyRegistry<TSplitCondition>,
   dependencyTransformer: DependencyTransformer<TSplitCondition>,
@@ -70,6 +77,8 @@ export type State<TSplitCondition> = {
 
 export type Options<TSplitCondition = void> = $ReadOnly<{
   asyncRequireModulePath: string,
+  /** Path to file for handling `require.context` statements */
+  requireContextModulePath: string,
   dependencyMapName: ?string,
   dynamicRequires: DynamicRequiresBehavior,
   inlineableCalls: $ReadOnlyArray<string>,
@@ -142,6 +151,7 @@ function collectDependencies<TSplitCondition = void>(
 
   const state: State<TSplitCondition> = {
     asyncRequireModulePathStringLiteral: null,
+    requireContextModulePathStringLiteral: null,
     dependencyCalls: new Set(),
     dependencyRegistry:
       options.dependencyRegistry ?? new DefaultModuleDependencyRegistry(),
@@ -200,6 +210,16 @@ function collectDependencies<TSplitCondition = void>(
       }
 
       if (
+        callee.type === 'MemberExpression' &&
+        (callee.object || {}).name === 'require' &&
+        (callee.property || {}).name === 'context'
+      ) {
+        processRequireContextCall(path, state);
+        visited.add(path.node);
+        return;
+      }
+
+      if (
         name != null &&
         state.dependencyCalls.has(name) &&
         !path.scope.getBinding(name)
@@ -249,6 +269,70 @@ function collectDependencies<TSplitCondition = void>(
     dependencies,
     dependencyMapName: nullthrows(state.dependencyMapIdentifier).name,
   };
+}
+
+/** Extract args passed to `require.context` method. Exposed for testing. */
+function getRequireContextArgs(path: NodePath<CallExpression>): {
+  directory: string,
+  /* optional, default true */
+  recursive: boolean,
+  /* optional, default /^\.\/.*$/, any file */
+  filter: string,
+} {
+  const args = path.get('arguments');
+
+  if (
+    !Array.isArray(args) ||
+    args.length < 1 ||
+    args[0].node.type !== 'StringLiteral'
+  ) {
+    throw new InvalidRequireCallError(path);
+  }
+
+  let recursive: boolean = true;
+  if (args.length > 1) {
+    if (args[1].node.type !== 'BooleanLiteral') {
+      throw new InvalidRequireCallError(path);
+    }
+    recursive = args[1].node.value;
+  }
+  let filter = '^\\.\\/.*$';
+  if (args.length > 2) {
+    if (args[2].node.type !== 'RegExpLiteral') {
+      throw new InvalidRequireCallError(path);
+    }
+    filter = args[2].node.pattern;
+  }
+
+  return {
+    directory: args[0].node.value,
+    recursive,
+    filter,
+  };
+}
+collectDependencies.getRequireContextArgs = getRequireContextArgs;
+
+function processRequireContextCall<TSplitCondition>(
+  path: NodePath<CallExpression>,
+  state: State<TSplitCondition>,
+): void {
+  const {directory, filter, recursive} = getRequireContextArgs(path);
+  const transformer = state.dependencyTransformer;
+  const dep = registerDependency(
+    state,
+    {
+      // We basically want to "import" every file in a folder and then filter them out with the given `filter` RegExp.
+      name: directory,
+      // Capture the matching context
+      filter,
+      recursive,
+      asyncType: null,
+      optional: isOptionalDependency(directory, path, state),
+    },
+    path,
+  );
+
+  transformer.transformSyncRequire(path, dep, state);
 }
 
 function collectImports<TSplitCondition>(
@@ -344,6 +428,10 @@ export type ImportQualifier = $ReadOnly<{
   asyncType: AsyncDependencyType | null,
   splitCondition?: NodePath<>,
   optional: boolean,
+  /* Should search for files recursively. Optional, default `true` when `require.context` is used */
+  recursive?: boolean,
+  /* Filename filter pattern for use in `require.context`. Optional, default `/^\.\/.*$/` (any file) when `require.context` is used */
+  filter?: string,
 }>;
 
 function registerDependency<TSplitCondition>(
@@ -352,7 +440,6 @@ function registerDependency<TSplitCondition>(
   path: NodePath<>,
 ): InternalDependency<TSplitCondition> {
   const dependency = state.dependencyRegistry.registerDependency(qualifier);
-
   const loc = getNearestLocFromPath(path);
   if (loc != null) {
     dependency.locs.push(loc);
@@ -462,6 +549,10 @@ const makeJSResourceTemplate = template.statement(`
   require(ASYNC_REQUIRE_MODULE_PATH).resource(MODULE_ID, MODULE_NAME)
 `);
 
+const makeRequireContextTemplate = template.statement(`
+  require(REQUIRE_CONTEXT_MODULE_PATH).context(MODULE_ID_ARRAY, MODULE_NAME)
+`);
+
 const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
   transformSyncRequire(
     path: NodePath<CallExpression>,
@@ -469,9 +560,30 @@ const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
     state: State<mixed>,
   ): void {
     const moduleIDExpression = createModuleIDExpression(dependency, state);
-    path.node.arguments = state.keepRequireNames
-      ? [moduleIDExpression, types.stringLiteral(dependency.name)]
-      : [moduleIDExpression];
+    path.node.arguments = [moduleIDExpression];
+    // `require.context` adds the filter parameter so we can push it on the arguments with recursive.
+    if (dependency.filter) {
+      // Push object props for context, ex: { recursive: true, filter: /foobar/ }
+      path.node.arguments.push(
+        // { }
+        types.objectExpression([
+          // { recursive: true }
+          types.objectProperty(
+            types.identifier('recursive'),
+            types.booleanLiteral(dependency.recursive),
+          ),
+          // { filter: /foobar/ }
+          types.objectProperty(
+            types.identifier('filter'),
+            types.regExpLiteral(dependency.filter),
+          ),
+        ]),
+      );
+    }
+    // Always add the debug name argument last
+    if (state.keepRequireNames) {
+      path.node.arguments.push(types.stringLiteral(dependency.name));
+    }
   },
 
   transformImportCall(
@@ -485,6 +597,22 @@ const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
           state.asyncRequireModulePathStringLiteral,
         ),
         MODULE_ID: createModuleIDExpression(dependency, state),
+        MODULE_NAME: createModuleNameLiteral(dependency),
+      }),
+    );
+  },
+
+  transformRequireContext(
+    path: NodePath<>,
+    dependency: InternalDependency<mixed>,
+    state: State<mixed>,
+  ): void {
+    path.replaceWith(
+      makeRequireContextTemplate({
+        REQUIRE_CONTEXT_MODULE_PATH: nullthrows(
+          state.requireContextModulePathStringLiteral,
+        ),
+        MODULE_ID_ARRAY: createModuleIDExpression(dependency, state),
         MODULE_NAME: createModuleNameLiteral(dependency),
       }),
     );
@@ -567,6 +695,12 @@ class DefaultModuleDependencyRegistry<TSplitCondition = void>
 
       if (qualifier.optional) {
         newDependency.isOptional = true;
+      }
+      if (qualifier.filter) {
+        newDependency.filter = qualifier.filter;
+      }
+      if (qualifier.recursive) {
+        newDependency.recursive = qualifier.recursive;
       }
 
       dependency = newDependency;

@@ -42,6 +42,22 @@ const opts = {
   dependencyMapName: null,
 };
 
+it(`collects require context arguments`, () => {
+  const ast = astFromCode(`
+  const a = require.context('./', true, /foobar/);
+`);
+  const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
+
+  expect(dependencies).toEqual([
+    {name: './', data: objectContaining({asyncType: null})},
+  ]);
+  expect(codeFromAst(ast)).toEqual(
+    comparableCode(`
+      const a = require.context(${dependencyMapName}[0], { recursive: true, filter: /foobar/ }, "./");
+    `),
+  );
+});
+
 it('collects unique dependency identifiers and transforms the AST', () => {
   const ast = astFromCode(`
     const a = require('b/lib/a');
