@@ -46,7 +46,10 @@ it(`collects require context arguments`, () => {
   const ast = astFromCode(`
   const a = require.context('./', true, /foobar/);
 `);
-  const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
+  const {dependencies, dependencyMapName} = collectDependencies(ast, {
+    ...opts,
+    unstable_allowRequireContext: true,
+  });
 
   expect(dependencies).toEqual([
     {name: './', data: objectContaining({asyncType: null})},

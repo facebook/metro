@@ -120,6 +120,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     workerPath: 'metro/src/DeltaBundler/Worker',
     publicPath: '/assets',
     allowOptionalDependencies: false,
+    unstable_allowRequireContext: false,
     unstable_collectDependenciesPath:
       'metro/src/ModuleGraph/worker/collectDependencies.js',
     unstable_dependencyMapReservedName: null,

@@ -71,6 +71,8 @@ export type State<TSplitCondition> = {
   dependencyMapIdentifier: ?Identifier,
   keepRequireNames: boolean,
   allowOptionalDependencies: AllowOptionalDependencies,
+  /** Enable `require.context` statements which can be used to import multiple files in a directory. */
+  unstable_allowRequireContext?: boolean,
 };
 
 export type Options<TSplitCondition = void> = $ReadOnly<{
@@ -82,6 +84,8 @@ export type Options<TSplitCondition = void> = $ReadOnly<{
   allowOptionalDependencies: AllowOptionalDependencies,
   dependencyRegistry?: ModuleDependencyRegistry<TSplitCondition>,
   dependencyTransformer?: DependencyTransformer<TSplitCondition>,
+  /** Enable `require.context` statements which can be used to import multiple files in a directory. */
+  unstable_allowRequireContext?: boolean,
 }>;
 
 export type CollectedDependencies<+TSplitCondition> = $ReadOnly<{
@@ -156,6 +160,7 @@ function collectDependencies<TSplitCondition = void>(
     dynamicRequires: options.dynamicRequires,
     keepRequireNames: options.keepRequireNames,
     allowOptionalDependencies: options.allowOptionalDependencies,
+    unstable_allowRequireContext: options.unstable_allowRequireContext,
   };
 
   const visitor = {
@@ -206,6 +211,7 @@ function collectDependencies<TSplitCondition = void>(
 
       // Match `require.context`
       if (
+        state.unstable_allowRequireContext &&
         callee.type === 'MemberExpression' &&
         callee.object &&
         // `require`
