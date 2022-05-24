@@ -279,13 +279,13 @@ function collectDependencies<TSplitCondition = void>(
   };
 }
 
-/** Extract args passed to `require.context` method. Exposed for testing. */
+/** Extract args passed to the `require.context` method. */
 function getRequireContextArgs(path: NodePath<CallExpression>): {
   directory: string,
   /* optional, default true */
   recursive: boolean,
   /* optional, default /^\.\/.*$/, any file */
-  filter: string,
+  filter: RegExp,
 } {
   const args = path.get('arguments');
 
@@ -304,12 +304,15 @@ function getRequireContextArgs(path: NodePath<CallExpression>): {
     }
     recursive = args[1].node.value;
   }
-  let filter = '^\\.\\/.*$';
+  let filter = /^\.\/.*$/;
   if (args.length > 2) {
-    if (args[2].node.type !== 'RegExpLiteral') {
+    const argNode = args[2].node;
+    if (argNode.type === 'RegExpLiteral') {
+      filter = new RegExp(argNode.pattern, argNode.flags);
+    } else {
+      // TODO: Handle `new RegExp(...)` -- `argNode.type === 'NewExpression'`
       throw new InvalidRequireCallError(path);
     }
-    filter = args[2].node.pattern;
   }
 
   return {
@@ -439,7 +442,7 @@ export type ImportQualifier = $ReadOnly<{
   /* Should search for files recursively. Optional, default `true` when `require.context` is used */
   recursive?: boolean,
   /* Filename filter pattern for use in `require.context`. Optional, default `/^\.\/.*$/` (any file) when `require.context` is used */
-  filter?: string,
+  filter?: RegExp,
 }>;
 
 function registerDependency<TSplitCondition>(
@@ -565,25 +568,6 @@ const DefaultDependencyTransformer: DependencyTransformer<mixed> = {
   ): void {
     const moduleIDExpression = createModuleIDExpression(dependency, state);
     path.node.arguments = [moduleIDExpression];
-    // `require.context` adds the filter parameter so we can push it on the arguments with recursive.
-    if (dependency.filter) {
-      // Push object props for context, ex: { recursive: true, filter: /foobar/ }
-      path.node.arguments.push(
-        // { }
-        types.objectExpression([
-          // { recursive: true }
-          types.objectProperty(
-            types.identifier('recursive'),
-            types.booleanLiteral(dependency.recursive),
-          ),
-          // { filter: /foobar/ }
-          types.objectProperty(
-            types.identifier('filter'),
-            types.regExpLiteral(dependency.filter),
-          ),
-        ]),
-      );
-    }
     // Always add the debug name argument last
     if (state.keepRequireNames) {
       path.node.arguments.push(types.stringLiteral(dependency.name));

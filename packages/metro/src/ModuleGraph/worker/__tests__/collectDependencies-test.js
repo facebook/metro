@@ -44,19 +44,35 @@ const opts = {
 
 it(`collects require context arguments`, () => {
   const ast = astFromCode(`
-  const a = require.context('./', true, /foobar/);
+  const a = require.context('./', false, /foobar/m);
+  const b = require.context('./baz');
 `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, {
     ...opts,
     unstable_allowRequireContext: true,
   });
 
+  expect(dependencies[0].data.recursive).not.toBeDefined();
   expect(dependencies).toEqual([
-    {name: './', data: objectContaining({asyncType: null})},
+    {
+      name: './',
+      data: objectContaining({
+        filter: /foobar/m,
+      }),
+    },
+    {
+      name: './baz',
+      data: objectContaining({
+        filter: /^\.\/.*$/,
+        recursive: true,
+      }),
+    },
   ]);
+
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
-      const a = require.context(${dependencyMapName}[0], { recursive: true, filter: /foobar/ }, "./");
+      const a = require.context(${dependencyMapName}[0], "./");
+      const b = require.context(${dependencyMapName}[1], "./baz");
     `),
   );
 });
