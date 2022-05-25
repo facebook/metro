@@ -37,13 +37,15 @@ export type Dependency<TSplitCondition> = $ReadOnly<{
   name: string,
 }>;
 
+type ContextMode = 'sync' | 'eager' | 'lazy' | 'lazy-once';
+
 type RequireContextParams = $ReadOnly<{
   /* Should search for files recursively. Optional, default `true` when `require.context` is used */
-  recursive?: boolean,
+  recursive: boolean,
   /* Filename filter pattern for use in `require.context`. Optional, default `/^\.\/.*$/` (any file) when `require.context` is used */
-  filter?: RegExp,
+  filter: RegExp,
   /** Mode for resolving dynamic dependencies. Defaults to `sync` */
-  mode: 'sync' | 'eager' | 'lazy' | 'lazy-once',
+  mode: ContextMode,
 }>;
 
 type DependencyData<TSplitCondition> = $ReadOnly<{
@@ -288,23 +290,20 @@ function collectDependencies<TSplitCondition = void>(
 }
 
 /** Extract args passed to the `require.context` method. */
-function getRequireContextArgs(path: NodePath<CallExpression>): {
-  directory: string,
-  /* optional, default true */
-  recursive: boolean,
-  /* optional, default /^\.\/.*$/, any file */
-  filter: RegExp,
-  /** Mode for resolving dynamic dependencies. Defaults to `sync` */
-  mode: 'sync' | 'eager' | 'lazy' | 'lazy-once',
-} {
+function getRequireContextArgs(
+  path: NodePath<CallExpression>,
+): [string, RequireContextParams] {
   const args = path.get('arguments');
 
+  let directory: string;
   if (
     !Array.isArray(args) ||
     args.length < 1 ||
     args[0].node.type !== 'StringLiteral'
   ) {
     throw new InvalidRequireCallError(path);
+  } else {
+    directory = args[0].node.value;
   }
 
   // Default to requiring through all directories.
@@ -327,45 +326,54 @@ function getRequireContextArgs(path: NodePath<CallExpression>): {
     }
   }
   // Default to `sync`.
-  let mode = 'sync';
+  let mode: ContextMode = 'sync';
   if (args.length > 3) {
     const argNode = args[3].node;
     if (argNode.type === 'StringLiteral') {
-      mode = argNode.value;
-
-      if (mode === 'weak') {
-        throw new Error('require.context "weak" mode is not supported.');
-      }
+      mode = getContextMode(argNode.value);
     } else {
       // TODO: Handle `new RegExp(...)` -- `argNode.type === 'NewExpression'`
       throw new InvalidRequireCallError(path);
     }
   }
 
-  return {
-    directory: args[0].node.value,
-    recursive,
-    filter,
-    mode,
-  };
+  return [
+    directory,
+    {
+      recursive,
+      filter,
+      mode,
+    },
+  ];
 }
+
+function getContextMode(mode: any): ContextMode {
+  if (
+    typeof mode === 'string' &&
+    ['sync', 'eager', 'lazy', 'lazy-once'].includes(mode)
+  ) {
+    return ((mode: any): ContextMode);
+  }
+  throw new Error(`require.context "${mode}" mode is not supported.`);
+}
+
 collectDependencies.getRequireContextArgs = getRequireContextArgs;
 
 function processRequireContextCall<TSplitCondition>(
   path: NodePath<CallExpression>,
   state: State<TSplitCondition>,
 ): void {
-  const contextParams = getRequireContextArgs(path);
+  const [directory, contextParams] = getRequireContextArgs(path);
   const transformer = state.dependencyTransformer;
   const dep = registerDependency(
     state,
     {
       // We basically want to "import" every file in a folder and then filter them out with the given `filter` RegExp.
-      name: contextParams.directory,
+      name: directory,
       // Capture the matching context
       contextParams,
       asyncType: null,
-      optional: isOptionalDependency(contextParams.directory, path, state),
+      optional: isOptionalDependency(directory, path, state),
     },
     path,
   );
