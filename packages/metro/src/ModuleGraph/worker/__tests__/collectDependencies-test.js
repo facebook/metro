@@ -57,7 +57,6 @@ it(`collects require context arguments`, () => {
       name: './',
       data: objectContaining({
         contextParams: {
-          directory: './',
           filter: /foobar/m,
           mode: 'eager',
           recursive: false,
@@ -68,7 +67,6 @@ it(`collects require context arguments`, () => {
       name: './baz',
       data: objectContaining({
         contextParams: {
-          directory: './baz',
           filter: /^\.\/.*$/,
           mode: 'sync',
           recursive: true,
