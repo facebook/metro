@@ -216,6 +216,7 @@ function collectDependencies<TSplitCondition = void>(
 
       // Match `require.context`
       if (
+        // Feature gate, defaults to `false`.
         state.unstable_allowRequireContext &&
         callee.type === 'MemberExpression' &&
         callee.object &&
@@ -225,7 +226,9 @@ function collectDependencies<TSplitCondition = void>(
         // `context`
         callee.property &&
         callee.property.type === 'Identifier' &&
-        callee.property.name === 'context'
+        callee.property.name === 'context' &&
+        // Ensure `require` refers to the global and not something else.
+        !path.scope.getBinding('require')
       ) {
         processRequireContextCall(path, state);
         visited.add(path.node);
@@ -304,6 +307,7 @@ function getRequireContextArgs(path: NodePath<CallExpression>): {
     throw new InvalidRequireCallError(path);
   }
 
+  // Default to requiring through all directories.
   let recursive: boolean = true;
   if (args.length > 1) {
     if (args[1].node.type !== 'BooleanLiteral') {
@@ -311,6 +315,7 @@ function getRequireContextArgs(path: NodePath<CallExpression>): {
     }
     recursive = args[1].node.value;
   }
+  // Default to all files.
   let filter = /^\.\/.*$/;
   if (args.length > 2) {
     const argNode = args[2].node;
@@ -321,6 +326,7 @@ function getRequireContextArgs(path: NodePath<CallExpression>): {
       throw new InvalidRequireCallError(path);
     }
   }
+  // Default to `sync`.
   let mode = 'sync';
   if (args.length > 3) {
     const argNode = args[3].node;
