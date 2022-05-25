@@ -44,7 +44,7 @@ const opts = {
 
 it(`collects require context arguments`, () => {
   const ast = astFromCode(`
-  const a = require.context('./', false, /foobar/m);
+  const a = require.context('./', false, /foobar/m, 'eager');
   const b = require.context('./baz');
 `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, {
@@ -59,7 +59,7 @@ it(`collects require context arguments`, () => {
         contextParams: {
           directory: './',
           filter: /foobar/m,
-          mode: 'sync',
+          mode: 'eager',
           recursive: false,
         },
       }),
