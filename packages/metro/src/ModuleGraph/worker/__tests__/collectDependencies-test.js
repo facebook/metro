@@ -52,19 +52,27 @@ it(`collects require context arguments`, () => {
     unstable_allowRequireContext: true,
   });
 
-  expect(dependencies[0].data.recursive).not.toBeDefined();
   expect(dependencies).toEqual([
     {
       name: './',
       data: objectContaining({
-        filter: /foobar/m,
+        contextParams: {
+          directory: './',
+          filter: /foobar/m,
+          mode: 'sync',
+          recursive: false,
+        },
       }),
     },
     {
       name: './baz',
       data: objectContaining({
-        filter: /^\.\/.*$/,
-        recursive: true,
+        contextParams: {
+          directory: './baz',
+          filter: /^\.\/.*$/,
+          mode: 'sync',
+          recursive: true,
+        },
       }),
     },
   ]);

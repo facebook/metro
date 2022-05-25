@@ -37,6 +37,15 @@ export type Dependency<TSplitCondition> = $ReadOnly<{
   name: string,
 }>;
 
+type RequireContextParams = $ReadOnly<{
+  /* Should search for files recursively. Optional, default `true` when `require.context` is used */
+  recursive?: boolean,
+  /* Filename filter pattern for use in `require.context`. Optional, default `/^\.\/.*$/` (any file) when `require.context` is used */
+  filter?: RegExp,
+  /** Mode for resolving dynamic dependencies. Defaults to `sync` */
+  mode: 'sync' | 'eager' | 'lazy' | 'lazy-once',
+}>;
+
 type DependencyData<TSplitCondition> = $ReadOnly<{
   // If null, then the dependency is synchronous.
   // (ex. `require('foo')`)
@@ -45,11 +54,7 @@ type DependencyData<TSplitCondition> = $ReadOnly<{
   // If left unspecified, then the dependency is unconditionally split.
   splitCondition?: TSplitCondition,
   locs: Array<BabelSourceLocation>,
-
-  /** Should search recursively through folders. */
-  recursive?: boolean,
-  /** A filter to run against files that match the directory */
-  filter?: string,
+  contextParams?: RequireContextParams,
 }>;
 
 export type MutableInternalDependency<TSplitCondition> = {
@@ -286,6 +291,8 @@ function getRequireContextArgs(path: NodePath<CallExpression>): {
   recursive: boolean,
   /* optional, default /^\.\/.*$/, any file */
   filter: RegExp,
+  /** Mode for resolving dynamic dependencies. Defaults to `sync` */
+  mode: 'sync' | 'eager' | 'lazy' | 'lazy-once',
 } {
   const args = path.get('arguments');
 
@@ -314,11 +321,26 @@ function getRequireContextArgs(path: NodePath<CallExpression>): {
       throw new InvalidRequireCallError(path);
     }
   }
+  let mode = 'sync';
+  if (args.length > 3) {
+    const argNode = args[3].node;
+    if (argNode.type === 'StringLiteral') {
+      mode = argNode.value;
+
+      if (mode === 'weak') {
+        throw new Error('require.context "weak" mode is not supported.');
+      }
+    } else {
+      // TODO: Handle `new RegExp(...)` -- `argNode.type === 'NewExpression'`
+      throw new InvalidRequireCallError(path);
+    }
+  }
 
   return {
     directory: args[0].node.value,
     recursive,
     filter,
+    mode,
   };
 }
 collectDependencies.getRequireContextArgs = getRequireContextArgs;
@@ -327,18 +349,17 @@ function processRequireContextCall<TSplitCondition>(
   path: NodePath<CallExpression>,
   state: State<TSplitCondition>,
 ): void {
-  const {directory, filter, recursive} = getRequireContextArgs(path);
+  const contextParams = getRequireContextArgs(path);
   const transformer = state.dependencyTransformer;
   const dep = registerDependency(
     state,
     {
       // We basically want to "import" every file in a folder and then filter them out with the given `filter` RegExp.
-      name: directory,
+      name: contextParams.directory,
       // Capture the matching context
-      filter,
-      recursive,
+      contextParams,
       asyncType: null,
-      optional: isOptionalDependency(directory, path, state),
+      optional: isOptionalDependency(contextParams.directory, path, state),
     },
     path,
   );
@@ -439,10 +460,7 @@ export type ImportQualifier = $ReadOnly<{
   asyncType: AsyncDependencyType | null,
   splitCondition?: NodePath<>,
   optional: boolean,
-  /* Should search for files recursively. Optional, default `true` when `require.context` is used */
-  recursive?: boolean,
-  /* Filename filter pattern for use in `require.context`. Optional, default `/^\.\/.*$/` (any file) when `require.context` is used */
-  filter?: RegExp,
+  contextParams?: RequireContextParams,
 }>;
 
 function registerDependency<TSplitCondition>(
@@ -668,11 +686,8 @@ class DefaultModuleDependencyRegistry<TSplitCondition = void>
       if (qualifier.optional) {
         newDependency.isOptional = true;
       }
-      if (qualifier.filter) {
-        newDependency.filter = qualifier.filter;
-      }
-      if (qualifier.recursive) {
-        newDependency.recursive = qualifier.recursive;
+      if (qualifier.contextParams) {
+        newDependency.contextParams = qualifier.contextParams;
       }
 
       dependency = newDependency;
