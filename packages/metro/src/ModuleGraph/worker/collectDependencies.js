@@ -405,6 +405,7 @@ function processRequireContextCall<TSplitCondition>(
     path,
   );
 
+  // require() the generated module representing this context
   transformer.transformSyncRequire(path, dep, state);
 }
 
