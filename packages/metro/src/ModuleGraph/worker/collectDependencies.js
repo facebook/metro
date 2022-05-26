@@ -388,11 +388,10 @@ function getContextMode(
   mode: string,
 ): ContextMode {
   if (
-    typeof mode === 'string' &&
-    (mode === 'sync' ||
-      mode === 'eager' ||
-      mode === 'lazy' ||
-      mode === 'lazy-once')
+    mode === 'sync' ||
+    mode === 'eager' ||
+    mode === 'lazy' ||
+    mode === 'lazy-once'
   ) {
     return mode;
   }
