@@ -335,6 +335,10 @@ function getRequireContextArgs(
     }
   }
 
+  if (args.length > 4) {
+    throw new InvalidRequireCallError(path);
+  }
+
   return [
     directory,
     {
