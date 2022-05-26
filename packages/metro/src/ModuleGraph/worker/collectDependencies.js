@@ -37,6 +37,7 @@ export type Dependency<TSplitCondition> = $ReadOnly<{
   name: string,
 }>;
 
+// TODO: Convert to a Flow enum
 type ContextMode = 'sync' | 'eager' | 'lazy' | 'lazy-once';
 
 type RequireContextParams = $ReadOnly<{
