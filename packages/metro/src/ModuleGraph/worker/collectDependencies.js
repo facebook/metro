@@ -336,7 +336,7 @@ function getRequireContextArgs(
         `Second argument of \`require.context\` should be an optional boolean indicating if files should be imported recursively or not, instead found node of type: ${argNode.type}.`,
       );
     }
-    recursive = args[1].node.value;
+    recursive = argNode.value;
   }
 
   // Default to all files.
