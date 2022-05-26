@@ -32,7 +32,8 @@ const nullthrows = require('nullthrows');
 
 const {any, objectContaining} = expect;
 
-const {InvalidRequireCallError} = collectDependencies;
+const {InvalidRequireCallError, DefaultModuleDependencyRegistry} =
+  collectDependencies;
 const opts = {
   asyncRequireModulePath: 'asyncRequire',
   dynamicRequires: 'reject',
@@ -41,6 +42,67 @@ const opts = {
   allowOptionalDependencies: false,
   dependencyMapName: null,
 };
+
+describe(DefaultModuleDependencyRegistry, () => {
+  describe('getKeyForDependency', () => {
+    it(`generates basic key`, () => {
+      expect(
+        DefaultModuleDependencyRegistry.getKeyForDependency({
+          name: './file.js',
+        }),
+      ).toBe('./file.js');
+    });
+    it(`generates require.context key`, () => {
+      expect(
+        DefaultModuleDependencyRegistry.getKeyForDependency({
+          name: './dir',
+          contextParams: {
+            recursive: true,
+            filter: /foobar/,
+            mode: 'lazy',
+          },
+        }),
+      ).toBe('./dir__true__/foobar/__lazy');
+    });
+  });
+
+  it(`registers dependencies without collision`, () => {
+    const registry = new DefaultModuleDependencyRegistry();
+
+    registry.registerDependency({
+      name: './dir',
+    });
+
+    registry.registerDependency({
+      name: './dir',
+      contextParams: {
+        recursive: true,
+        filter: /foobar/,
+        mode: 'lazy',
+      },
+    });
+
+    expect(registry.getDependencies()).toEqual([
+      {
+        asyncType: undefined,
+        index: 0,
+        locs: [],
+        name: './dir',
+      },
+      {
+        asyncType: undefined,
+        contextParams: {
+          filter: /foobar/,
+          mode: 'lazy',
+          recursive: true,
+        },
+        index: 1,
+        locs: [],
+        name: './dir',
+      },
+    ]);
+  });
+});
 
 it(`collects require context arguments`, () => {
   const ast = astFromCode(`

@@ -103,9 +103,26 @@ export type CollectedDependencies<+TSplitCondition> = $ReadOnly<{
 
 // Registry for the dependency of a module.
 // Defines when dependencies should be collapsed.
-// E.g. should a module that's once required optinally and once not
-// be tretaed as the smae or different dependencies.
+// E.g. should a module that's once required optionally and once not
+// be treated as the same or different dependencies.
 export interface ModuleDependencyRegistry<+TSplitCondition> {
+  /**
+   * Given an import qualifier, return a key used to register the dependency.
+   * Generally this return the `ImportQualifier.name` property, but in the case
+   * of `require.context` more attributes can be appended to distinguish various combinations that would otherwise conflict.
+   *
+   * For example, the following case would have collision issues if they all utilized the `name` property:
+   * ```
+   * require('./foo');
+   * require.context('./foo');
+   * require.context('./foo', true, /something/);
+   * require.context('./foo', false, /something/);
+   * require.context('./foo', false, /something/, 'lazy');
+   * ```
+   *
+   * This method should be utilized by `registerDependency`.
+   */
+  getKeyForDependency(qualifier: ImportQualifier): string;
   registerDependency(
     qualifier: ImportQualifier,
   ): InternalDependency<TSplitCondition>;
@@ -709,13 +726,36 @@ function createModuleNameLiteral(dependency: InternalDependency<mixed>) {
 class DefaultModuleDependencyRegistry<TSplitCondition = void>
   implements ModuleDependencyRegistry<TSplitCondition>
 {
+  /** Default key resolver. */
+  static getKeyForDependency(qualifier: ImportQualifier): string {
+    let key = qualifier.name;
+
+    // Add extra qualifiers when using `require.context` to prevent collisions.
+    if (qualifier.contextParams) {
+      // NOTE(EvanBacon): Keep this synchronized with `RequireContextParams`, if any other properties are added
+      // then this key algorithm should be updated to account for those properties.
+      // Example: `./directory__true__/foobar/m__lazy`
+      key += [
+        '',
+        String(qualifier.contextParams.recursive),
+        String(qualifier.contextParams.filter),
+        qualifier.contextParams.mode,
+        // Join together and append to the name:
+      ].join('__');
+    }
+    return key;
+  }
+
   _dependencies: Map<string, InternalDependency<TSplitCondition>> = new Map();
+
+  getKeyForDependency = DefaultModuleDependencyRegistry.getKeyForDependency;
 
   registerDependency(
     qualifier: ImportQualifier,
   ): InternalDependency<TSplitCondition> {
+    const key = this.getKeyForDependency(qualifier);
     let dependency: ?InternalDependency<TSplitCondition> =
-      this._dependencies.get(qualifier.name);
+      this._dependencies.get(key);
 
     if (dependency == null) {
       const newDependency: MutableInternalDependency<TSplitCondition> = {
@@ -733,12 +773,12 @@ class DefaultModuleDependencyRegistry<TSplitCondition = void>
       }
 
       dependency = newDependency;
-      this._dependencies.set(qualifier.name, dependency);
+      this._dependencies.set(key, dependency);
     } else {
       const original = dependency;
       dependency = collapseDependencies(original, qualifier);
       if (original !== dependency) {
-        this._dependencies.set(qualifier.name, dependency);
+        this._dependencies.set(key, dependency);
       }
     }
 
@@ -749,6 +789,9 @@ class DefaultModuleDependencyRegistry<TSplitCondition = void>
     return Array.from(this._dependencies.values());
   }
 }
+
+collectDependencies.DefaultModuleDependencyRegistry =
+  DefaultModuleDependencyRegistry;
 
 function collapseDependencies<TSplitCondition>(
   dependency: InternalDependency<TSplitCondition>,
