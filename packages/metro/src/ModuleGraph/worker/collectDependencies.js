@@ -318,7 +318,7 @@ function getRequireContextArgs(
     const argNode = args[0].node;
     if (argNode.type !== 'StringLiteral') {
       throw new InvalidRequireCallError(
-        argNode,
+        args[0],
         `First argument of \`require.context\` should be a string denoting the directory to require, instead found node of type: ${argNode.type}.`,
       );
     }
@@ -331,7 +331,7 @@ function getRequireContextArgs(
     const argNode = args[1].node;
     if (argNode.type !== 'BooleanLiteral') {
       throw new InvalidRequireCallError(
-        argNode,
+        args[1],
         `Second argument of \`require.context\` should be an optional boolean indicating if files should be imported recursively or not, instead found node of type: ${argNode.type}.`,
       );
     }
@@ -345,7 +345,7 @@ function getRequireContextArgs(
     if (argNode.type !== 'RegExpLiteral') {
       // TODO: Handle `new RegExp(...)` -- `argNode.type === 'NewExpression'`
       throw new InvalidRequireCallError(
-        argNode,
+        args[2],
         `Third argument of \`require.context\` should be an optional RegExp pattern matching all of the files to import, instead found node of type: ${argNode.type}.`,
       );
     }
@@ -358,11 +358,11 @@ function getRequireContextArgs(
     const argNode = args[3].node;
     if (argNode.type !== 'StringLiteral') {
       throw new InvalidRequireCallError(
-        path,
+        args[3],
         `Fourth argument of \`require.context\` should be an optional string "mode" denoting how the modules will be resolved, instead found node of type: ${argNode.type}.`,
       );
     }
-    mode = getContextMode(argNode, argNode.value);
+    mode = getContextMode(args[3], argNode.value);
   }
 
   if (args.length > 4) {
@@ -397,7 +397,7 @@ function getContextMode(
   }
   throw new InvalidRequireCallError(
     path,
-    `require.context "${mode}" mode is not supported.`,
+    `require.context "${mode}" mode is not supported. Expected one of: sync, eager, lazy, lazy-once`,
   );
 }
 
@@ -594,14 +594,20 @@ function getModuleNameFromCallArgs(path: NodePath<CallExpression>): ?string {
 
   return null;
 }
+
 collectDependencies.getModuleNameFromCallArgs = getModuleNameFromCallArgs;
 
 class InvalidRequireCallError extends Error {
-  constructor({node}: any) {
+  constructor({node}: any, message?: string) {
     const line = node.loc && node.loc.start && node.loc.start.line;
 
     super(
-      `Invalid call at line ${line || '<unknown>'}: ${generate(node).code}`,
+      [
+        `Invalid call at line ${line || '<unknown>'}: ${generate(node).code}`,
+        message,
+      ]
+        .filter(Boolean)
+        .join('\n'),
     );
   }
 }
