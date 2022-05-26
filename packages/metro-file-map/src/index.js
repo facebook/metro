@@ -295,6 +295,7 @@ export default class HasteMap extends EventEmitter {
     if (options.ignorePattern) {
       const inputIgnorePattern = options.ignorePattern;
       if (inputIgnorePattern instanceof RegExp) {
+        // $FlowFixMe[prop-missing]
         this._options.ignorePattern = new RegExp(
           inputIgnorePattern.source.concat('|' + VCS_DIRECTORIES),
           inputIgnorePattern.flags,
@@ -305,6 +306,7 @@ export default class HasteMap extends EventEmitter {
         );
       }
     } else {
+      // $FlowFixMe[prop-missing]
       this._options.ignorePattern = new RegExp(VCS_DIRECTORIES);
     }
 

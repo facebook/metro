@@ -744,6 +744,7 @@ module.exports = {
       ...metroTransformPlugins.getTransformPluginCacheKeyFiles(),
     ]);
 
+    // $FlowFixMe[unsupported-syntax]
     const babelTransformer = require(babelTransformerPath);
     return [
       filesKey,

@@ -60,6 +60,7 @@ class MappingsConsumer extends AbstractConsumer implements IConsumer {
       invariant(
         generatedPosition.bias === GREATEST_LOWER_BOUND,
         `Unimplemented lookup bias: ${lookupBiasToString(
+          // $FlowFixMe[incompatible-call]
           generatedPosition.bias,
         )}`,
       );
