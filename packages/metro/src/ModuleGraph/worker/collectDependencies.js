@@ -295,49 +295,64 @@ function getRequireContextArgs(
   const args = path.get('arguments');
 
   let directory: string;
-  if (
-    !Array.isArray(args) ||
-    args.length < 1 ||
-    args[0].node.type !== 'StringLiteral'
-  ) {
+  if (!Array.isArray(args) || args.length < 1) {
     throw new InvalidRequireCallError(path);
   } else {
-    directory = args[0].node.value;
+    const argNode = args[0].node;
+    if (argNode.type !== 'StringLiteral') {
+      throw new InvalidRequireCallError(
+        argNode,
+        `First argument of \`require.context\` should be a string denoting the directory to require, instead found node of type: ${argNode.type}.`,
+      );
+    }
+    directory = argNode.value;
   }
 
   // Default to requiring through all directories.
   let recursive: boolean = true;
   if (args.length > 1) {
-    if (args[1].node.type !== 'BooleanLiteral') {
-      throw new InvalidRequireCallError(path);
+    const argNode = args[1].node;
+    if (argNode.type !== 'BooleanLiteral') {
+      throw new InvalidRequireCallError(
+        argNode,
+        `Second argument of \`require.context\` should be an optional boolean indicating if files should be imported recursively or not, instead found node of type: ${argNode.type}.`,
+      );
     }
     recursive = args[1].node.value;
   }
+
   // Default to all files.
   let filter = /^\.\/.*$/;
   if (args.length > 2) {
     const argNode = args[2].node;
-    if (argNode.type === 'RegExpLiteral') {
-      filter = new RegExp(argNode.pattern, argNode.flags);
-    } else {
+    if (argNode.type !== 'RegExpLiteral') {
       // TODO: Handle `new RegExp(...)` -- `argNode.type === 'NewExpression'`
-      throw new InvalidRequireCallError(path);
+      throw new InvalidRequireCallError(
+        argNode,
+        `Third argument of \`require.context\` should be an optional RegExp pattern matching all of the files to import, instead found node of type: ${argNode.type}.`,
+      );
     }
+    filter = new RegExp(argNode.pattern, argNode.flags);
   }
+
   // Default to `sync`.
   let mode: ContextMode = 'sync';
   if (args.length > 3) {
     const argNode = args[3].node;
-    if (argNode.type === 'StringLiteral') {
-      mode = getContextMode(argNode.value);
-    } else {
-      // TODO: Handle `new RegExp(...)` -- `argNode.type === 'NewExpression'`
-      throw new InvalidRequireCallError(path);
+    if (argNode.type !== 'StringLiteral') {
+      throw new InvalidRequireCallError(
+        path,
+        `Fourth argument of \`require.context\` should be an optional string "mode" denoting how the modules will be resolved, instead found node of type: ${argNode.type}.`,
+      );
     }
+    mode = getContextMode(argNode, argNode.value);
   }
 
   if (args.length > 4) {
-    throw new InvalidRequireCallError(path);
+    throw new InvalidRequireCallError(
+      path,
+      `Too many arguments provided to \`require.context\` call. Expected 4, got: ${args.length}`,
+    );
   }
 
   return [
@@ -350,14 +365,23 @@ function getRequireContextArgs(
   ];
 }
 
-function getContextMode(mode: any): ContextMode {
+function getContextMode(
+  path: NodePath<CallExpression>,
+  mode: string,
+): ContextMode {
   if (
     typeof mode === 'string' &&
-    ['sync', 'eager', 'lazy', 'lazy-once'].includes(mode)
+    (mode === 'sync' ||
+      mode === 'eager' ||
+      mode === 'lazy' ||
+      mode === 'lazy-once')
   ) {
-    return ((mode: any): ContextMode);
+    return mode;
   }
-  throw new Error(`require.context "${mode}" mode is not supported.`);
+  throw new InvalidRequireCallError(
+    path,
+    `require.context "${mode}" mode is not supported.`,
+  );
 }
 
 collectDependencies.getRequireContextArgs = getRequireContextArgs;
