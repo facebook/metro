@@ -227,6 +227,7 @@ function collectDependencies<TSplitCondition = void>(
         // `context`
         callee.property.type === 'Identifier' &&
         callee.property.name === 'context' &&
+        !callee.computed &&
         // Ensure `require` refers to the global and not something else.
         !path.scope.getBinding('require')
       ) {
