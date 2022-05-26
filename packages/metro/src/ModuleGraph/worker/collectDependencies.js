@@ -79,7 +79,7 @@ export type State<TSplitCondition> = {
   keepRequireNames: boolean,
   allowOptionalDependencies: AllowOptionalDependencies,
   /** Enable `require.context` statements which can be used to import multiple files in a directory. */
-  unstable_allowRequireContext?: boolean,
+  unstable_allowRequireContext: boolean,
 };
 
 export type Options<TSplitCondition = void> = $ReadOnly<{
@@ -92,7 +92,7 @@ export type Options<TSplitCondition = void> = $ReadOnly<{
   dependencyRegistry?: ModuleDependencyRegistry<TSplitCondition>,
   dependencyTransformer?: DependencyTransformer<TSplitCondition>,
   /** Enable `require.context` statements which can be used to import multiple files in a directory. */
-  unstable_allowRequireContext?: boolean,
+  unstable_allowRequireContext: boolean,
 }>;
 
 export type CollectedDependencies<+TSplitCondition> = $ReadOnly<{
@@ -221,12 +221,10 @@ function collectDependencies<TSplitCondition = void>(
         // Feature gate, defaults to `false`.
         state.unstable_allowRequireContext &&
         callee.type === 'MemberExpression' &&
-        callee.object &&
         // `require`
         callee.object.type === 'Identifier' &&
         callee.object.name === 'require' &&
         // `context`
-        callee.property &&
         callee.property.type === 'Identifier' &&
         callee.property.name === 'context' &&
         // Ensure `require` refers to the global and not something else.

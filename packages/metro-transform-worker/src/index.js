@@ -100,7 +100,7 @@ export type JsTransformerConfig = $ReadOnly<{
   unstable_disableNormalizePseudoGlobals: boolean,
   unstable_compactOutput: boolean,
   /** Enable `require.context` statements which can be used to import multiple files in a directory. */
-  unstable_allowRequireContext?: boolean,
+  unstable_allowRequireContext: boolean,
 }>;
 
 export type {CustomTransformOptions} from 'metro-babel-transformer';
