@@ -87,12 +87,12 @@ export default class HasteFS {
   /** Given a search context, return a list of file paths matching the query. */
   matchFilesWithContext(
     root: Path,
-    context: {
+    context: $ReadOnly<{
       /* Should search for files recursively. */
       recursive: boolean,
-      /* Filter files against a pattern. */
+      /* Filter relative paths against a pattern. */
       filter: RegExp,
-    },
+    }>,
   ): Array<Path> {
     const files = [];
     for (const file of this.getAbsoluteFileIterator()) {

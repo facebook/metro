@@ -224,14 +224,14 @@ class DependencyGraph extends EventEmitter {
   }
 
   /** Given a search context, return a list of file paths matching the query. */
-  resolveContext(
+  matchFilesWithContext(
     from: string,
-    context: {
-      /* Should search for files recursively. Optional, default `true` when `require.context` is used */
+    context: $ReadOnly<{
+      /* Should search for files recursively. */
       recursive: boolean,
-      /* Filename filter pattern for use in `require.context`. Optional, default `/^\.\/.*$/` (any file) when `require.context` is used */
+      /* Filter relative paths against a pattern. */
       filter: RegExp,
-    },
+    }>,
   ): string[] {
     return this._hasteFS.matchFilesWithContext(from, context);
   }
