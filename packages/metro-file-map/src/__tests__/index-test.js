@@ -298,6 +298,59 @@ describe('HasteMap', () => {
     expect(hasteMap1.getCacheFilePath()).not.toBe(hasteMap2.getCacheFilePath());
   });
 
+  describe('matchFilesWithContext', () => {
+    it('matches all files', async () => {
+      const {hasteFS} = await new HasteMap(defaultConfig).build();
+      expect(
+        hasteFS.matchFilesWithContext(path.resolve('/'), {
+          filter: /.*/,
+          recursive: true,
+        }),
+      ).toEqual([
+        path.resolve('/project/fruits/Banana.js'),
+        path.resolve('/project/fruits/Pear.js'),
+        path.resolve('/project/fruits/Strawberry.js'),
+        path.resolve('/project/fruits/__mocks__/Pear.js'),
+        path.resolve('/project/vegetables/Melon.js'),
+      ]);
+    });
+    it('matches files in a deep folder', async () => {
+      const {hasteFS} = await new HasteMap(defaultConfig).build();
+      expect(
+        hasteFS.matchFilesWithContext('/project/fruits/__mocks__', {
+          filter: /.*/,
+          recursive: true,
+        }),
+      ).toEqual([path.resolve('/project/fruits/__mocks__/Pear.js')]);
+    });
+    it('matches files shallow', async () => {
+      const {hasteFS} = await new HasteMap(defaultConfig).build();
+      expect(
+        hasteFS.matchFilesWithContext(path.resolve('/project/fruits'), {
+          filter: /.*/,
+          recursive: false,
+        }),
+      ).toEqual([
+        path.resolve('/project/fruits/Banana.js'),
+        path.resolve('/project/fruits/Pear.js'),
+        path.resolve('/project/fruits/Strawberry.js'),
+      ]);
+    });
+    it('matches files with a more specific regex', async () => {
+      const {hasteFS} = await new HasteMap(defaultConfig).build();
+      expect(
+        hasteFS.matchFilesWithContext(path.resolve('/project'), {
+          filter: /[BP]/,
+          recursive: true,
+        }),
+      ).toEqual([
+        path.resolve('/project/fruits/Banana.js'),
+        path.resolve('/project/fruits/Pear.js'),
+        path.resolve('/project/fruits/__mocks__/Pear.js'),
+      ]);
+    });
+  });
+
   it('matches files against a pattern', async () => {
     const {hasteFS} = await new HasteMap(defaultConfig).build();
     expect(
