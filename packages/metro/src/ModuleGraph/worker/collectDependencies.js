@@ -383,10 +383,7 @@ function getRequireContextArgs(
   ];
 }
 
-function getContextMode(
-  path: NodePath<CallExpression>,
-  mode: string,
-): ContextMode {
+function getContextMode(path: NodePath<any>, mode: string): ContextMode {
   if (
     mode === 'sync' ||
     mode === 'eager' ||
@@ -732,29 +729,29 @@ function createModuleNameLiteral(dependency: InternalDependency<mixed>) {
 class DefaultModuleDependencyRegistry<TSplitCondition = void>
   implements ModuleDependencyRegistry<TSplitCondition>
 {
+  _dependencies: Map<string, InternalDependency<TSplitCondition>> = new Map();
+
   /** Default key resolver. */
-  static getKeyForDependency(qualifier: ImportQualifier): string {
+  getKeyForDependency(qualifier: ImportQualifier): string {
     let key = qualifier.name;
 
+    const {contextParams} = qualifier;
     // Add extra qualifiers when using `require.context` to prevent collisions.
-    if (qualifier.contextParams) {
+    if (contextParams) {
       // NOTE(EvanBacon): Keep this synchronized with `RequireContextParams`, if any other properties are added
       // then this key algorithm should be updated to account for those properties.
       // Example: `./directory__true__/foobar/m__lazy`
       key += [
         '',
-        String(qualifier.contextParams.recursive),
-        String(qualifier.contextParams.filter),
-        qualifier.contextParams.mode,
+        'context',
+        String(contextParams.recursive),
+        String(contextParams.filter),
+        contextParams.mode,
         // Join together and append to the name:
       ].join('__');
     }
     return key;
   }
-
-  _dependencies: Map<string, InternalDependency<TSplitCondition>> = new Map();
-
-  getKeyForDependency = DefaultModuleDependencyRegistry.getKeyForDependency;
 
   registerDependency(
     qualifier: ImportQualifier,

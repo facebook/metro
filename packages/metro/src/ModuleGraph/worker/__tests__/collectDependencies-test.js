@@ -46,23 +46,30 @@ const opts = {
 describe(DefaultModuleDependencyRegistry, () => {
   describe('getKeyForDependency', () => {
     it(`generates basic key`, () => {
+      const registry = new DefaultModuleDependencyRegistry();
       expect(
-        DefaultModuleDependencyRegistry.getKeyForDependency({
+        registry.getKeyForDependency({
           name: './file.js',
+          optional: false,
+          asyncType: null,
         }),
       ).toBe('./file.js');
     });
     it(`generates require.context key`, () => {
+      const registry = new DefaultModuleDependencyRegistry();
+
       expect(
-        DefaultModuleDependencyRegistry.getKeyForDependency({
+        registry.getKeyForDependency({
           name: './dir',
+          optional: false,
+          asyncType: null,
           contextParams: {
             recursive: true,
             filter: /foobar/,
             mode: 'lazy',
           },
         }),
-      ).toBe('./dir__true__/foobar/__lazy');
+      ).toBe('./dir__context__true__/foobar/__lazy');
     });
   });
 
@@ -71,10 +78,14 @@ describe(DefaultModuleDependencyRegistry, () => {
 
     registry.registerDependency({
       name: './dir',
+      optional: false,
+      asyncType: null,
     });
 
     registry.registerDependency({
       name: './dir',
+      optional: false,
+      asyncType: null,
       contextParams: {
         recursive: true,
         filter: /foobar/,
