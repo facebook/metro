@@ -43,7 +43,7 @@ const opts = {
   dependencyMapName: null,
 };
 
-describe(DefaultModuleDependencyRegistry, () => {
+describe('DefaultModuleDependencyRegistry', () => {
   describe('getKeyForDependency', () => {
     it(`generates basic key`, () => {
       const registry = new DefaultModuleDependencyRegistry();
