@@ -8,8 +8,9 @@
  * @flow strict-local
  */
 
-import type {FileData, Path} from './flow-types';
 import {sep} from 'path';
+
+import type {FileData, Path} from './flow-types';
 import H from './constants';
 import * as fastPath from './lib/fast_path';
 // $FlowFixMe[untyped-import] - jest-util
