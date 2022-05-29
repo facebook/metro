@@ -31,6 +31,7 @@
     "istanbul-lib-coverage": "3.0.0",
     "jest": "^26.6.3",
     "lerna": "2.4.0",
+    "metro-babel-register": "*",
     "micromatch": "^4.0.4",
     "prettier": "^2.4.1",
     "progress": "^2.0.0",
