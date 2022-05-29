@@ -11,6 +11,11 @@
 
 'use strict';
 
+try {
+  // $FlowFixMe[untyped-import]
+  require('metro-babel-register').registerForMetroMonorepo();
+} catch {}
+
 const {attachMetroCli} = require('./index');
 const yargs = require('yargs');
 
