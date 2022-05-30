@@ -115,7 +115,7 @@ function registerForMetroMonorepo() {
   // Noop if we are in NODE_ENV=production or seem to be outside of the Metro
   // source tree.
   if (
-    process.env.NODE_ENV !== 'production' ||
+    process.env.NODE_ENV === 'production' ||
     !__dirname.endsWith(
       ['', 'packages', 'metro-babel-register', 'src'].join(path.sep),
     )
