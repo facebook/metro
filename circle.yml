@@ -42,9 +42,6 @@ jobs:
       - yarn_install
       - yarn_run:
           command: test-ci
-      - yarn_run:
-          command: test-smoke
-
 
   test-node-12:
     docker:
