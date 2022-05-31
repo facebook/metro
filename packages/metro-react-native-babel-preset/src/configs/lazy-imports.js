@@ -90,10 +90,4 @@ module.exports = new Set([
   'Platform',
   'processColor',
   'requireNativeComponent',
-
-  // Prop Types
-  'DeprecatedColorPropType',
-  'DeprecatedEdgeInsetsPropType',
-  'DeprecatedPointPropType',
-  'DeprecatedViewPropTypes',
 ]);
