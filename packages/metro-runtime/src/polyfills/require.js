@@ -207,16 +207,11 @@ function shouldPrintRequireCycle(modules: $ReadOnlyArray<?string>): boolean {
   }
 
   const regExps = regExpStrings.map(regExpString => new RegExp(regExpString));
+  const isIgnored = module =>
+    module != null && regExps.some(regExp => regExp.test(module));
 
-  for (const module of modules) {
-    if (module != null) {
-      for (const regExp of regExps) {
-        if (regExp.test(module)) return false;
-      }
-    }
-  }
-
-  return true;
+  // Print the cycle unless any part of it is ignored
+  return modules.every(module => !isIgnored(module));
 }
 
 function metroImportDefault(moduleId: ModuleID | VerboseModuleNameForDev) {
