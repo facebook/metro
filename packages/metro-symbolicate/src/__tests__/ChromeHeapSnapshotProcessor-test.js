@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -196,27 +196,17 @@ describe('ChromeHeapSnapshotProcessor', () => {
         locations: [],
         nodes: [
           // -- Node #0 --
-          /* type (synthetic) */ 9,
-          /* name */ 0,
-          /* id */ 1,
-          /* self_size */ 0,
-          /* edge_count */ 1,
-          /* trace_node_id */ 0,
-          /* detachedness */ 0,
+          /* type (synthetic) */ 9, /* name */ 0, /* id */ 1, /* self_size */ 0,
+          /* edge_count */ 1, /* trace_node_id */ 0, /* detachedness */ 0,
 
           // -- Node #1 --
-          /* type (native) */ 8,
-          /* name */ 1,
-          /* id */ 43,
-          /* self_size */ 4320,
-          /* edge_count */ 0,
-          /* trace_node_id */ 0,
+          /* type (native) */ 8, /* name */ 1, /* id */ 43,
+          /* self_size */ 4320, /* edge_count */ 0, /* trace_node_id */ 0,
           /* detachedness */ 0,
         ],
         edges: [
           // -- Edge #0 --
-          /* type (element) */ 1,
-          /* name_or_index */ 1,
+          /* type (element) */ 1, /* name_or_index */ 1,
           /* to_node (Node #1) */ 7,
         ],
         samples: [],
@@ -228,12 +218,8 @@ describe('ChromeHeapSnapshotProcessor', () => {
         ],
         trace_function_infos: [
           // -- Trace function info #0 --
-          /* function_id */ 0,
-          /* name */ 2,
-          /* script_name */ 3,
-          /* script_id */ 0,
-          /* line */ 10,
-          /* column */ 20,
+          /* function_id */ 0, /* name */ 2, /* script_name */ 3,
+          /* script_id */ 0, /* line */ 10, /* column */ 20,
         ],
         trace_tree: [
           /* id */ 1,
@@ -603,24 +589,15 @@ describe('ChromeHeapSnapshotProcessor', () => {
         locations: [],
         nodes: [
           // -- Node #0 --
-          /* type (synthetic) */ 9,
-          /* name */ 0,
-          /* id */ 1,
-          /* self_size */ 0,
-          /* edge_count */ 0,
-          /* trace_node_id */ 0,
-          /* detachedness */ 0,
+          /* type (synthetic) */ 9, /* name */ 0, /* id */ 1, /* self_size */ 0,
+          /* edge_count */ 0, /* trace_node_id */ 0, /* detachedness */ 0,
         ],
         samples: [],
         strings: ['Node #0'],
         trace_function_infos: [
           // -- Trace function info #0 --
-          /* function_id */ 0,
-          /* name */ 2,
-          /* script_name */ 3,
-          /* script_id */ 0,
-          /* line */ 10,
-          /* column */ 20,
+          /* function_id */ 0, /* name */ 2, /* script_name */ 3,
+          /* script_id */ 0, /* line */ 10, /* column */ 20,
         ],
         trace_tree: [
           /* id */ 1,
@@ -805,21 +782,12 @@ describe('ChromeHeapSnapshotProcessor', () => {
         locations: [],
         nodes: [
           // -- Node #0 --
-          /* type (synthetic) */ 9,
-          /* name */ 0,
-          /* id */ 1,
-          /* self_size */ 0,
-          /* edge_count */ 0,
-          /* trace_node_id */ 0,
-          /* detachedness */ 0,
+          /* type (synthetic) */ 9, /* name */ 0, /* id */ 1, /* self_size */ 0,
+          /* edge_count */ 0, /* trace_node_id */ 0, /* detachedness */ 0,
 
           // -- Node #1 --
-          /* type (native) */ 8,
-          /* name */ -1,
-          /* id */ 43,
-          /* self_size */ 4320,
-          /* edge_count */ 0,
-          /* trace_node_id */ 0,
+          /* type (native) */ 8, /* name */ -1, /* id */ 43,
+          /* self_size */ 4320, /* edge_count */ 0, /* trace_node_id */ 0,
           /* detachedness */ 0,
         ],
         samples: [],
@@ -846,22 +814,12 @@ describe('ChromeHeapSnapshotProcessor', () => {
         locations: [],
         nodes: [
           // -- Node #0 --
-          /* type */ 42,
-          /* name */ 0,
-          /* id */ 1,
-          /* self_size */ 0,
-          /* edge_count */ 0,
-          /* trace_node_id */ 0,
-          /* detachedness */ 0,
+          /* type */ 42, /* name */ 0, /* id */ 1, /* self_size */ 0,
+          /* edge_count */ 0, /* trace_node_id */ 0, /* detachedness */ 0,
 
           // -- Node #1 --
-          /* type */ -1,
-          /* name */ 0,
-          /* id */ 43,
-          /* self_size */ 4320,
-          /* edge_count */ 0,
-          /* trace_node_id */ 0,
-          /* detachedness */ 0,
+          /* type */ -1, /* name */ 0, /* id */ 43, /* self_size */ 4320,
+          /* edge_count */ 0, /* trace_node_id */ 0, /* detachedness */ 0,
         ],
         samples: [],
         strings: [''],
@@ -887,18 +845,11 @@ describe('ChromeHeapSnapshotProcessor', () => {
         locations: [],
         nodes: [
           // -- Node #0 --
-          /* type (synthetic) */ 9,
-          /* name */ 0,
-          /* id */ 1,
-          /* self_size */ 0,
-          /* edge_count */ 0,
-          /* trace_node_id */ 0,
-          /* detachedness */ 0,
+          /* type (synthetic) */ 9, /* name */ 0, /* id */ 1, /* self_size */ 0,
+          /* edge_count */ 0, /* trace_node_id */ 0, /* detachedness */ 0,
 
           // -- Node #1 --
-          /* type (native) */ 9,
-          /* name */ 0,
-          /* id */ 43,
+          /* type (native) */ 9, /* name */ 0, /* id */ 43,
           /* self_size */ 4320,
           // Missing fields:
           /* edge_count */
@@ -923,21 +874,12 @@ describe('ChromeHeapSnapshotProcessor', () => {
         locations: [],
         nodes: [
           // -- Node #0 --
-          /* type (synthetic) */ 9,
-          /* name */ 0,
-          /* id */ 1,
-          /* self_size */ 0,
-          /* edge_count */ 0,
-          /* trace_node_id */ 0,
-          /* detachedness */ 0,
+          /* type (synthetic) */ 9, /* name */ 0, /* id */ 1, /* self_size */ 0,
+          /* edge_count */ 0, /* trace_node_id */ 0, /* detachedness */ 0,
 
           // -- Node #1 --
-          /* type (native) */ 8,
-          /* name */ 0,
-          /* id */ 43,
-          /* self_size */ 4320,
-          /* edge_count */ 0,
-          /* trace_node_id */ 0,
+          /* type (native) */ 8, /* name */ 0, /* id */ 43,
+          /* self_size */ 4320, /* edge_count */ 0, /* trace_node_id */ 0,
           /* detachedness */ 0,
         ],
         samples: [],

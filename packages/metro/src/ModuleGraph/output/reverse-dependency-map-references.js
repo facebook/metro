@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17,23 +17,18 @@ import typeof * as Types from '@babel/types';
 import invariant from 'invariant';
 import nullthrows from 'nullthrows';
 
-type State = {|
-  opts: {|
+type State = {
+  opts: {
     +dependencyIds: $ReadOnlyArray<number>,
     +globalPrefix: string,
-  |},
-|};
+  },
+};
 
-function reverseDependencyMapReferences({
-  types: t,
-}: {
-  types: Types,
-  ...
-}): {|
-  visitor: {|
+function reverseDependencyMapReferences({types: t}: {types: Types, ...}): {
+  visitor: {
     CallExpression: (path: NodePath<CallExpression>, state: State) => void,
-  |},
-|} {
+  },
+} {
   return {
     visitor: {
       CallExpression(path: NodePath<CallExpression>, state: State) {

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -37,14 +37,14 @@ export type HermesFunctionOffsets = {[number]: $ReadOnlyArray<number>, ...};
 
 export type FBSourcesArray = $ReadOnlyArray<?FBSourceMetadata>;
 export type FBSourceMetadata = [?FBSourceFunctionMap];
-export type FBSourceFunctionMap = {|
+export type FBSourceFunctionMap = {
   +names: $ReadOnlyArray<string>,
   +mappings: string,
-|};
+};
 
 export type FBSegmentMap = {[id: string]: MixedSourceMap, ...};
 
-export type BasicSourceMap = {|
+export type BasicSourceMap = {
   +file?: string,
   +mappings: string,
   +names: Array<string>,
@@ -57,7 +57,7 @@ export type BasicSourceMap = {|
   +x_facebook_sources?: FBSourcesArray,
   +x_facebook_segments?: FBSegmentMap,
   +x_hermes_function_offsets?: HermesFunctionOffsets,
-|};
+};
 
 export type IndexMapSection = {
   map: IndexMap | BasicSourceMap,
@@ -69,7 +69,7 @@ export type IndexMapSection = {
   ...
 };
 
-export type IndexMap = {|
+export type IndexMap = {
   +file?: string,
   +mappings?: void, // avoids SourceMap being a disjoint union
   +sourcesContent?: void,
@@ -80,7 +80,7 @@ export type IndexMap = {|
   +x_facebook_sources?: void,
   +x_facebook_segments?: FBSegmentMap,
   +x_hermes_function_offsets?: HermesFunctionOffsets,
-|};
+};
 
 export type MixedSourceMap = IndexMap | BasicSourceMap;
 
@@ -239,7 +239,19 @@ function toSegmentTuple(
   return [line, column, original.line, original.column, name];
 }
 
-function addMappingsForFile(generator, mappings, module, carryOver) {
+function addMappingsForFile(
+  generator: Generator,
+  mappings: Array<MetroSourceMapSegmentTuple>,
+  module: {
+    +code: string,
+    +functionMap: ?FBSourceFunctionMap,
+    +map: ?Array<MetroSourceMapSegmentTuple>,
+    +path: string,
+    +source: string,
+    ...
+  },
+  carryOver: number,
+) {
   generator.startFile(module.path, module.source, module.functionMap);
 
   for (let i = 0, n = mappings.length; i < n; ++i) {
@@ -249,7 +261,11 @@ function addMappingsForFile(generator, mappings, module, carryOver) {
   generator.endFile();
 }
 
-function addMapping(generator, mapping, carryOver) {
+function addMapping(
+  generator: Generator,
+  mapping: MetroSourceMapSegmentTuple,
+  carryOver: number,
+) {
   const n = mapping.length;
   const line = mapping[0] + carryOver;
   // lines start at 1, columns start at 0

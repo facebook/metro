@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16,7 +16,6 @@ jest.mock('image-size');
 const {getAsset, getAssetData} = require('../Assets');
 const crypto = require('crypto');
 const fs = require('fs');
-const mkdirp = require('mkdirp');
 const path = require('path');
 
 const mockImageWidth = 300;
@@ -30,15 +29,15 @@ require('image-size').mockReturnValue({
 describe('getAsset', () => {
   beforeEach(() => {
     fs.reset();
-    mkdirp.sync('/root/imgs');
+    fs.mkdirSync('/root/imgs', {recursive: true});
   });
 
   it('should fail if the extension is not registerd', async () => {
     writeImages({'b.png': 'b image', 'b@2x.png': 'b2 image'});
 
-    expect(getAssetStr('imgs/b.png', '/root', [], ['jpg'])).rejects.toThrow(
-      Error,
-    );
+    await expect(
+      getAssetStr('imgs/b.png', '/root', [], ['jpg']),
+    ).rejects.toThrow(Error);
   });
 
   it('should work for the simple case', () => {
@@ -121,7 +120,7 @@ describe('getAsset', () => {
   });
 
   it('should find an image located on a watchFolder', async () => {
-    mkdirp.sync('/anotherfolder');
+    fs.mkdirSync('/anotherfolder', {recursive: true});
 
     writeImages({
       '../../anotherfolder/b.png': 'b image',
@@ -139,7 +138,7 @@ describe('getAsset', () => {
   });
 
   it('should throw an error if an image is not located on any watchFolder', async () => {
-    mkdirp.sync('/anotherfolder');
+    fs.mkdirSync('/anotherfolder', {recursive: true});
 
     writeImages({
       '../../anotherfolder/b.png': 'b image',
@@ -154,7 +153,7 @@ describe('getAsset', () => {
 describe('getAssetData', () => {
   beforeEach(() => {
     fs.reset();
-    mkdirp.sync('/root/imgs');
+    fs.mkdirSync('/root/imgs', {recursive: true});
   });
 
   it('should get assetData', () => {
@@ -264,10 +263,7 @@ describe('getAssetData', () => {
       'mockPlugin1',
       () => {
         return asset => {
-          asset.extraReverseHash = asset.hash
-            .split('')
-            .reverse()
-            .join('');
+          asset.extraReverseHash = asset.hash.split('').reverse().join('');
           return asset;
         };
       },

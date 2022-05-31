@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -13,7 +13,7 @@
 import type {IterationOrder, LookupBias} from './constants';
 import type {Number0, Number1} from 'ob1';
 export type {IterationOrder, LookupBias};
-export type GeneratedOffset = {|+lines: Number0, +columns: Number0|};
+export type GeneratedOffset = {+lines: Number0, +columns: Number0};
 export type SourcePosition = {
   source: ?string,
   line: ?Number1,

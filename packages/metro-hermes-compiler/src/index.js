@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,6 +10,9 @@
 
 'use strict';
 
+// Capture any uncaughtException listeners already set, see below.
+const uncaughtExceptionHandlers = process.listeners('uncaughtException');
+
 const hermesc = require('./emhermesc.js')({
   noInitialRun: true,
   noExitRuntime: true,
@@ -18,14 +21,26 @@ const hermesc = require('./emhermesc.js')({
   printErr: () => {},
 });
 
-export type Options = {|
+// Workaround: Emscripten adds an uncaught exception listener on startup, which
+// rethrows and causes node to exit with code 7 and print emhermesc.js (1.4MB)
+// to stdout. This removes any newly-set listeners.
+//
+// Remove when emhermesc.js is rebuilt with NODEJS_CATCH_EXIT=0 (D34790356)
+const hermesUncaughtExceptionHandler = process
+  .listeners('uncaughtException')
+  .find(listener => !uncaughtExceptionHandlers.includes(listener));
+if (hermesUncaughtExceptionHandler != null) {
+  process.removeListener('uncaughtException', hermesUncaughtExceptionHandler);
+}
+
+export type Options = {
   sourceURL: string,
   sourceMap?: string,
-|};
+};
 
-export type HermesCompilerResult = $ReadOnly<{|
+export type HermesCompilerResult = $ReadOnly<{
   bytecode: Buffer,
-|}>;
+}>;
 
 const compileToBytecode = hermesc.cwrap('hermesCompileToBytecode', 'number', [
   'number',
@@ -76,7 +91,7 @@ const align = (offset: number): number =>
 
 module.exports.align = align;
 
-module.exports.compile = function(
+module.exports.compile = function (
   source: string | Buffer,
   {sourceURL, sourceMap}: Options,
 ): HermesCompilerResult {
@@ -133,7 +148,7 @@ module.exports.compile = function(
   }
 };
 
-module.exports.validateBytecodeModule = function(
+module.exports.validateBytecodeModule = function (
   bytecode: Buffer,
   offset: number,
 ): void {
@@ -170,7 +185,7 @@ module.exports.validateBytecodeModule = function(
   }
 };
 
-module.exports.getFileLength = function(
+module.exports.getFileLength = function (
   bytecode: Buffer,
   offset: number,
 ): number {

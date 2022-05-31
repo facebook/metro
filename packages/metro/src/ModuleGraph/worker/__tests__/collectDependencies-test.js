@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -746,7 +746,8 @@ function astFromCode(code: string): BabelNodeFile {
 // extracted dependency. Collapsing dependencies is implemented by specific
 // `collectDependencies` implementations and should be tested there.
 class MockModuleDependencyRegistry<TSplitCondition>
-  implements ModuleDependencyRegistry<TSplitCondition> {
+  implements ModuleDependencyRegistry<TSplitCondition>
+{
   _dependencies: Array<InternalDependency<TSplitCondition>> = [];
 
   registerDependency(

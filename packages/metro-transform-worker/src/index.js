@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -72,18 +72,20 @@ export type MinifierResult = {
   ...
 };
 
-export type Minifier = MinifierOptions => MinifierResult;
+export type Minifier = MinifierOptions =>
+  | MinifierResult
+  | Promise<MinifierResult>;
 
 export type Type = 'script' | 'module' | 'asset';
 
-export type JsTransformerConfig = $ReadOnly<{|
+export type JsTransformerConfig = $ReadOnly<{
   assetPlugins: $ReadOnlyArray<string>,
   assetRegistryPath: string,
   asyncRequireModulePath: string,
   babelTransformerPath: string,
   dynamicDepsInPackages: DynamicRequiresBehavior,
   enableBabelRCLookup: boolean,
-  enableBabelRuntime: boolean,
+  enableBabelRuntime: boolean | string,
   experimentalImportBundleSupport: boolean,
   globalPrefix: string,
   hermesParser: boolean,
@@ -97,11 +99,11 @@ export type JsTransformerConfig = $ReadOnly<{|
   unstable_disableModuleWrapping: boolean,
   unstable_disableNormalizePseudoGlobals: boolean,
   unstable_compactOutput: boolean,
-|}>;
+}>;
 
 export type {CustomTransformOptions} from 'metro-babel-transformer';
 
-export type JsTransformOptions = $ReadOnly<{|
+export type JsTransformOptions = $ReadOnly<{
   customTransformOptions?: CustomTransformOptions,
   dev: boolean,
   experimentalImportSupport?: boolean,
@@ -115,7 +117,7 @@ export type JsTransformOptions = $ReadOnly<{|
   type: Type,
   unstable_disableES6Transforms?: boolean,
   unstable_transformProfile: TransformProfile,
-|}>;
+}>;
 
 export type BytecodeFileType =
   | 'bytecode/module'
@@ -155,20 +157,20 @@ type TransformationContext = $ReadOnly<{
   options: JsTransformOptions,
 }>;
 
-export type JsOutput = $ReadOnly<{|
-  data: $ReadOnly<{|
+export type JsOutput = $ReadOnly<{
+  data: $ReadOnly<{
     code: string,
     lineCount: number,
     map: Array<MetroSourceMapSegmentTuple>,
     functionMap: ?FBSourceFunctionMap,
-  |}>,
+  }>,
   type: JSFileType,
-|}>;
+}>;
 
-export type BytecodeOutput = $ReadOnly<{|
+export type BytecodeOutput = $ReadOnly<{
   data: HermesCompilerResult,
   type: BytecodeFileType,
-|}>;
+}>;
 
 type DependencySplitCondition = $PropertyType<
   $PropertyType<TransformResultDependency, 'data'>,
@@ -218,7 +220,7 @@ const minifyCode = async (
   const minify = getMinifier(config.minifierPath);
 
   try {
-    const minified = minify({
+    const minified = await minify({
       code,
       map: sourceMap,
       filename,
@@ -742,6 +744,7 @@ module.exports = {
       ...metroTransformPlugins.getTransformPluginCacheKeyFiles(),
     ]);
 
+    // $FlowFixMe[unsupported-syntax]
     const babelTransformer = require(babelTransformerPath);
     return [
       filesKey,

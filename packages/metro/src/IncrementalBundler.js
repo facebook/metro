@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -33,24 +33,24 @@ export opaque type RevisionId: string = string;
 
 export type OutputGraph = Graph<>;
 
-type OtherOptions = {|
+type OtherOptions = {
   +onProgress: $PropertyType<DeltaBundlerOptions<>, 'onProgress'>,
   +shallow: boolean,
-|};
+};
 
-export type GraphRevision = {|
+export type GraphRevision = {
   // Identifies the last computed revision.
   +id: RevisionId,
   +date: Date,
   +graphId: GraphId,
   +graph: OutputGraph,
   +prepend: $ReadOnlyArray<Module<>>,
-|};
+};
 
-export type IncrementalBundlerOptions = $ReadOnly<{|
+export type IncrementalBundlerOptions = $ReadOnly<{
   hasReducedPerformance?: boolean,
   watch?: boolean,
-|}>;
+}>;
 
 function createRevisionId(): RevisionId {
   return crypto.randomBytes(8).toString('hex');
@@ -67,14 +67,13 @@ class IncrementalBundler {
   _revisionsById: Map<RevisionId, Promise<GraphRevision>> = new Map();
   _revisionsByGraphId: Map<GraphId, Promise<GraphRevision>> = new Map();
 
-  static revisionIdFromString: (
-    str: string,
-  ) => RevisionId = revisionIdFromString;
+  static revisionIdFromString: (str: string) => RevisionId =
+    revisionIdFromString;
 
   constructor(config: ConfigT, options?: IncrementalBundlerOptions) {
     this._config = config;
     this._bundler = new Bundler(config, options);
-    this._deltaBundler = new DeltaBundler(this._bundler);
+    this._deltaBundler = new DeltaBundler(this._bundler.getWatcher());
   }
 
   end(): void {
@@ -122,8 +121,8 @@ class IncrementalBundler {
       ),
       transformOptions,
       onProgress: otherOptions.onProgress,
-      experimentalImportBundleSupport: this._config.transformer
-        .experimentalImportBundleSupport,
+      experimentalImportBundleSupport:
+        this._config.transformer.experimentalImportBundleSupport,
       shallow: otherOptions.shallow,
     });
 
@@ -163,8 +162,8 @@ class IncrementalBundler {
         ),
         transformOptions,
         onProgress: otherOptions.onProgress,
-        experimentalImportBundleSupport: this._config.transformer
-          .experimentalImportBundleSupport,
+        experimentalImportBundleSupport:
+          this._config.transformer.experimentalImportBundleSupport,
         shallow: otherOptions.shallow,
       },
     );
@@ -179,7 +178,7 @@ class IncrementalBundler {
       onProgress: null,
       shallow: false,
     },
-  ): Promise<{|+graph: OutputGraph, +prepend: $ReadOnlyArray<Module<>>|}> {
+  ): Promise<{+graph: OutputGraph, +prepend: $ReadOnlyArray<Module<>>}> {
     const graph = await this.buildGraphForEntries(
       [entryFile],
       transformOptions,
@@ -217,8 +216,8 @@ class IncrementalBundler {
   }> {
     const graphId = getGraphId(entryFile, transformOptions, {
       shallow: otherOptions.shallow,
-      experimentalImportBundleSupport: this._config.transformer
-        .experimentalImportBundleSupport,
+      experimentalImportBundleSupport:
+        this._config.transformer.experimentalImportBundleSupport,
     });
     const revisionId = createRevisionId();
     const revisionPromise = (async () => {

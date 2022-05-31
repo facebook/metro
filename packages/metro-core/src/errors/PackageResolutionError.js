@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18,11 +18,11 @@ class PackageResolutionError extends Error {
   packageError: InvalidPackageError;
   targetModuleName: string;
 
-  constructor(opts: {|
+  constructor(opts: {
     +originModulePath: string,
     +packageError: InvalidPackageError,
     +targetModuleName: string,
-  |}) {
+  }) {
     const perr = opts.packageError;
     super(
       `While trying to resolve module \`${opts.targetModuleName}\` from file ` +

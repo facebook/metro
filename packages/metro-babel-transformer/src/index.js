@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -30,7 +30,7 @@ type BabelTransformerOptions = $ReadOnly<{
   customTransformOptions?: CustomTransformOptions,
   dev: boolean,
   enableBabelRCLookup?: boolean,
-  enableBabelRuntime: boolean,
+  enableBabelRuntime: boolean | string,
   extendsBabelConfigPath?: string,
   experimentalImportSupport?: boolean,
   hermesParser?: boolean,
@@ -47,21 +47,21 @@ type BabelTransformerOptions = $ReadOnly<{
   ...
 }>;
 
-export type BabelTransformerArgs = $ReadOnly<{|
+export type BabelTransformerArgs = $ReadOnly<{
   filename: string,
   options: BabelTransformerOptions,
   plugins?: $PropertyType<BabelCoreOptions, 'plugins'>,
   src: string,
-|}>;
+}>;
 
-export type BabelTransformer = {|
+export type BabelTransformer = {
   transform: BabelTransformerArgs => {
     ast: BabelNodeFile,
     functionMap: ?FBSourceFunctionMap,
     ...
   },
   getCacheKey?: () => string,
-|};
+};
 
 function transform({filename, options, plugins, src}: BabelTransformerArgs) {
   const OLD_BABEL_ENV = process.env.BABEL_ENV;

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16,8 +16,9 @@ const symbolicate = require('../symbolicate');
 const fs = require('fs');
 const path = require('path');
 const {PassThrough} = require('stream');
-const resolve = fileName => path.resolve(__dirname, '__fixtures__', fileName);
-const read = fileName => fs.readFileSync(resolve(fileName), 'utf8');
+const resolve = (fileName: string) =>
+  path.resolve(__dirname, '__fixtures__', fileName);
+const read = (fileName: string) => fs.readFileSync(resolve(fileName), 'utf8');
 
 const execute = async (
   args: Array<string>,
@@ -52,7 +53,7 @@ const execute = async (
 
 describe('heap snapshots/timelines', () => {
   test('symbolicating allocation stacks', async () => {
-    function findKnownAllocationStack(heapSnapshotStr) {
+    function findKnownAllocationStack(heapSnapshotStr: string) {
       const rawData = JSON.parse(heapSnapshotStr);
       const data = new ChromeHeapSnapshotProcessor(rawData);
       const node = findObjectByInboundProperty('RETAIN_ME', data, rawData);
@@ -77,7 +78,11 @@ describe('heap snapshots/timelines', () => {
 
 // Returns a node in the heap snapshot that has an incoming property edge with
 // the name passed as `propertyName`.
-function findObjectByInboundProperty(propertyName, data, rawData) {
+function findObjectByInboundProperty(
+  propertyName: $TEMPORARY$string<'RETAIN_ME'>,
+  data: ChromeHeapSnapshotProcessor,
+  rawData: $FlowFixMe,
+) {
   const sigilStrIndex = rawData.strings.indexOf(propertyName);
   for (const edge of data.edges()) {
     if (
@@ -98,7 +103,7 @@ function findObjectByInboundProperty(propertyName, data, rawData) {
 
 // Find a given trace node in the trace tree and record the path from the root
 // (reversed and translated into readable stack frames).
-function getStackTrace(traceNodeId, data) {
+function getStackTrace(traceNodeId: number, data: ChromeHeapSnapshotProcessor) {
   const functionInfoStack = [];
   const FOUND = Symbol('FOUND');
 

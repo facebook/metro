@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -24,9 +24,9 @@ const path = require('path');
 
 export type {JsTransformOptions as TransformOptions} from 'metro-transform-worker';
 
-export type Worker = {|
+export type Worker = {
   +transform: typeof transform,
-|};
+};
 
 type TransformerInterface = {
   transform(
@@ -44,12 +44,12 @@ export type TransformerConfig = {
   ...
 };
 
-type Data = $ReadOnly<{|
+type Data = $ReadOnly<{
   result: TransformResult<>,
   sha1: string,
   transformFileStartLogEntry: LogEntry,
   transformFileEndLogEntry: LogEntry,
-|}>;
+}>;
 
 async function transform(
   filename: string,
@@ -72,10 +72,7 @@ async function transform(
   };
 
   const data = fs.readFileSync(path.resolve(projectRoot, filename));
-  const sha1 = crypto
-    .createHash('sha1')
-    .update(data)
-    .digest('hex');
+  const sha1 = crypto.createHash('sha1').update(data).digest('hex');
 
   const result = await Transformer.transform(
     transformerConfig.transformerConfig,

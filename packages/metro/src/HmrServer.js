@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -39,18 +39,18 @@ const url = require('url');
 type $ReturnType<F> = $Call<<A, R>((...A) => R) => R, F>;
 export type EntryPointURL = $ReturnType<typeof url.parse>;
 
-type Client = {|
+type Client = {
   optedIntoHMR: boolean,
   revisionIds: Array<RevisionId>,
   +sendFn: string => void,
-|};
+};
 
-type ClientGroup = {|
+type ClientGroup = {
   +clients: Set<Client>,
   clientUrl: EntryPointURL,
   revisionId: RevisionId,
   +unlisten: () => void,
-|};
+};
 
 function send(sendFns: Array<(string) => void>, message: HmrMessage): void {
   const strMessage = JSON.stringify(message);
@@ -106,9 +106,8 @@ class HmrServer<TClient: Client> {
       new Set(this._config.resolver.platforms),
       BYTECODE_VERSION,
     );
-    const {entryFile, transformOptions, graphOptions} = splitBundleOptions(
-      options,
-    );
+    const {entryFile, transformOptions, graphOptions} =
+      splitBundleOptions(options);
 
     /**
      * `entryFile` is relative to projectRoot, we need to use resolution function
@@ -125,8 +124,8 @@ class HmrServer<TClient: Client> {
     );
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
       shallow: graphOptions.shallow,
-      experimentalImportBundleSupport: this._config.transformer
-        .experimentalImportBundleSupport,
+      experimentalImportBundleSupport:
+        this._config.transformer.experimentalImportBundleSupport,
     });
     const revPromise = this._bundler.getRevisionByGraphId(graphId);
     if (!revPromise) {
@@ -146,9 +145,13 @@ class HmrServer<TClient: Client> {
     } else {
       // Prepare the clientUrl to be used as sourceUrl in HMR updates.
       clientUrl.protocol = 'http';
-      const {dev, minify, runModule, bundleEntry: _bundleEntry, ...query} =
-        clientUrl.query || {};
-      // $FlowFixMe[incompatible-type]
+      const {
+        dev,
+        minify,
+        runModule,
+        bundleEntry: _bundleEntry,
+        ...query
+      } = clientUrl.query || {};
       clientUrl.query = {
         ...query,
         dev: dev || 'true',
@@ -249,7 +252,7 @@ class HmrServer<TClient: Client> {
 
   async _handleFileChange(
     group: ClientGroup,
-    options: {|isInitialUpdate: boolean|},
+    options: {isInitialUpdate: boolean},
   ): Promise<void> {
     const optedIntoHMR = [...group.clients].some(
       (client: Client) => client.optedIntoHMR,
@@ -289,7 +292,7 @@ class HmrServer<TClient: Client> {
 
   async _prepareMessage(
     group: ClientGroup,
-    options: {|isInitialUpdate: boolean|},
+    options: {isInitialUpdate: boolean},
   ): Promise<HmrUpdateMessage | HmrErrorMessage> {
     try {
       const revPromise = this._bundler.getRevision(group.revisionId);

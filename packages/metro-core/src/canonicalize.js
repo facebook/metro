@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -22,7 +22,7 @@ function canonicalize(key: string, value: mixed): mixed {
 
   const keys = Object.keys(value).sort();
   const length = keys.length;
-  const object = {};
+  const object: {[string]: mixed} = {};
 
   for (let i = 0; i < length; i++) {
     object[keys[i]] = value[keys[i]];

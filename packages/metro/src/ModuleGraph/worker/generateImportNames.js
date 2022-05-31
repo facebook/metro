@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17,9 +17,7 @@ const nullthrows = require('nullthrows');
  * Select unused names for "metroImportDefault" and "metroImportAll", by
  * calling "generateUid".
  */
-function generateImportNames(
-  ast: BabelNode,
-): {
+function generateImportNames(ast: BabelNode): {
   importAll: string,
   importDefault: string,
 } {

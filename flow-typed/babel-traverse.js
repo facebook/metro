@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15,11 +15,11 @@
 'use strict';
 
 declare module '@babel/traverse' {
-  declare export type TraverseOptions<TState> = {|
+  declare export type TraverseOptions<TState> = {
     ...Visitor<TState>,
     scope?: Scope,
     noScope?: boolean,
-  |};
+  };
 
   declare export interface HubInterface {
     getCode(): ?string;
@@ -219,9 +219,9 @@ declare module '@babel/traverse' {
     /** Walks the scope tree and gathers **all** bindings. */
     getAllBindings(): {[name: string]: Binding};
 
-    getAllBindingsOfKind(
-      ...kind: Array<BindingKind>
-    ): {[name: string]: Binding};
+    getAllBindingsOfKind(...kind: Array<BindingKind>): {
+      [name: string]: Binding,
+    };
 
     bindingIdentifierEquals(name: string, node: BabelNode): boolean;
 
@@ -741,23 +741,23 @@ declare module '@babel/traverse' {
       context?: boolean | TraversalContext,
     ): NodePath<> | Array<NodePath<>>;
 
-    getBindingIdentifiers(
-      duplicates?: void | false,
-    ): {[key: string]: BabelNodeIdentifier};
+    getBindingIdentifiers(duplicates?: void | false): {
+      [key: string]: BabelNodeIdentifier,
+    };
 
-    getBindingIdentifiers(
-      duplicates: true,
-    ): {[key: string]: Array<BabelNodeIdentifier>};
+    getBindingIdentifiers(duplicates: true): {
+      [key: string]: Array<BabelNodeIdentifier>,
+    };
 
-    getOuterBindingIdentifiers(
-      duplicates: true,
-    ): {[key: string]: Array<BabelNodeIdentifier>};
-    getOuterBindingIdentifiers(
-      duplicates?: false,
-    ): {[key: string]: BabelNodeIdentifier};
-    getOuterBindingIdentifiers(
-      duplicates: boolean,
-    ): {[key: string]: BabelNodeIdentifier | Array<BabelNodeIdentifier>};
+    getOuterBindingIdentifiers(duplicates: true): {
+      [key: string]: Array<BabelNodeIdentifier>,
+    };
+    getOuterBindingIdentifiers(duplicates?: false): {
+      [key: string]: BabelNodeIdentifier,
+    };
+    getOuterBindingIdentifiers(duplicates: boolean): {
+      [key: string]: BabelNodeIdentifier | Array<BabelNodeIdentifier>,
+    };
 
     getBindingIdentifierPaths(
       duplicates?: void | false,
@@ -769,13 +769,13 @@ declare module '@babel/traverse' {
       outerOnly?: boolean,
     ): {[key: string]: Array<NodePath<BabelNodeIdentifier>>};
 
-    getOuterBindingIdentifierPaths(
-      duplicates?: void | false,
-    ): {[key: string]: NodePath<BabelNodeIdentifier>};
+    getOuterBindingIdentifierPaths(duplicates?: void | false): {
+      [key: string]: NodePath<BabelNodeIdentifier>,
+    };
 
-    getOuterBindingIdentifierPaths(
-      duplicates: true,
-    ): {[key: string]: Array<NodePath<BabelNodeIdentifier>>};
+    getOuterBindingIdentifierPaths(duplicates: true): {
+      [key: string]: Array<NodePath<BabelNodeIdentifier>>,
+    };
 
     // comments
     shareCommentsWithSiblings(): void;
@@ -1416,16 +1416,16 @@ declare module '@babel/traverse' {
     state: TState,
   ) => void;
 
-  declare export type VisitNodeObject<-TNode: BabelNode, TState> = $Shape<{|
+  declare export type VisitNodeObject<-TNode: BabelNode, TState> = $Shape<{
     enter(path: NodePath<TNode>, state: TState): void,
     exit(path: NodePath<TNode>, state: TState): void,
-  |}>;
+  }>;
 
   declare export type VisitNode<-TNode: BabelNode, TState> =
     | VisitNodeFunction<TNode, TState>
     | VisitNodeObject<TNode, TState>;
 
-  declare export type Visitor<TState = void> = $ReadOnly<{|
+  declare export type Visitor<TState = void> = $ReadOnly<{
     enter?: VisitNodeFunction<BabelNode, TState>,
     exit?: VisitNodeFunction<BabelNode, TState>,
 
@@ -1829,7 +1829,7 @@ declare module '@babel/traverse' {
     WithStatement?: VisitNode<BabelNodeWithStatement, TState>,
     YieldExpression?: VisitNode<BabelNodeYieldExpression, TState>,
     // END GENERATED VISITOR METHODS
-  |}>;
+  }>;
 
   declare type Visitors = {
     explode<TState>(visitor: Visitor<TState>): Visitor<TState>,

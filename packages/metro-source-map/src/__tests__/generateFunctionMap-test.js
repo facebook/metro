@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -28,7 +28,10 @@ function getAst(source) {
 }
 
 // A test helper for compact, readable snapshots
-function generateCompactRawMappings(ast, context) {
+function generateCompactRawMappings(
+  ast: BabelNodeFile,
+  context: void | $TEMPORARY$object<{filename?: string}>,
+) {
   const mappings = generateFunctionMappingsArray(ast, context);
   return (
     '\n' +
@@ -890,6 +893,52 @@ function parent2() {
     `);
   });
 
+  it('callback of optional method', () => {
+    const ast = getAst(`
+      object?.method(() => {}, [])
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      object.method$argument_0 from 2:21
+      <global> from 2:29
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;qBCC,QD",
+        "names": Array [
+          "<global>",
+          "object.method$argument_0",
+        ],
+      }
+    `);
+  });
+
+  it('optional call', () => {
+    const ast = getAst(`
+      func?.(() => {}, [])
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      func$argument_0 from 2:13
+      <global> from 2:21
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;aCC,QD",
+        "names": Array [
+          "<global>",
+          "func$argument_0",
+        ],
+      }
+    `);
+  });
+
   it('JSX prop', () => {
     const ast = getAst(`
       <Button onClick={() => {}} />
@@ -1260,7 +1309,6 @@ function parent2() {
             column: prev.start.column + 1,
             source: 'input.js',
           }),
-          // $FlowFixMe[incompatible-use]
         ).toBe(prev.name);
 
         expect(
@@ -1269,7 +1317,6 @@ function parent2() {
             column: column - 1,
             source: 'input.js',
           }),
-          // $FlowFixMe[incompatible-use]
         ).toBe(prev.name);
       }
       expect(consumer.functionNameFor({line, column, source: 'input.js'})).toBe(
@@ -1284,7 +1331,6 @@ function parent2() {
           column: 99999,
           source: 'input.js',
         }),
-        // $FlowFixMe[incompatible-use]
       ).toBe(prev.name);
     }
   });
@@ -1371,5 +1417,190 @@ function parent2() {
         ],
       }
     `);
+  });
+
+  it('method of generic class', () => {
+    const ast = getAst(`
+      class C<T> {
+        m() {
+          ++x;
+        }
+      }
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      C from 2:6
+      C#m from 3:8
+      C from 5:9
+      <global> from 6:7
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;MCC;QCC;SDE;ODC",
+        "names": Array [
+          "<global>",
+          "C",
+          "C#m",
+        ],
+      }
+    `);
+  });
+
+  it('generic method of class', () => {
+    const ast = getAst(`
+      class C {
+        m<T>() {
+          ++x;
+        }
+      }
+    `);
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      <global> from 1:0
+      C from 2:6
+      C#m from 3:8
+      C from 5:9
+      <global> from 6:7
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA;MCC;QCC;SDE;ODC",
+        "names": Array [
+          "<global>",
+          "C",
+          "C#m",
+        ],
+      }
+    `);
+  });
+
+  it('generic function', () => {
+    const ast = getAst('function a<T>(){}');
+
+    expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+      "
+      a from 1:0
+      "
+    `);
+    expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAA",
+        "names": Array [
+          "a",
+        ],
+      }
+    `);
+  });
+
+  describe('React hooks', () => {
+    it('useCallback', () => {
+      const ast = getAst('const cb = useCallback(() => {})');
+
+      expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+        "
+        <global> from 1:0
+        cb from 1:23
+        <global> from 1:31
+        "
+      `);
+      expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+        Object {
+          "mappings": "AAA,uBC,QD",
+          "names": Array [
+            "<global>",
+            "cb",
+          ],
+        }
+      `);
+    });
+
+    it('useCallback with deps', () => {
+      const ast = getAst('const cb = useCallback(() => {}, [dep1, dep2])');
+
+      expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+        "
+        <global> from 1:0
+        cb from 1:23
+        <global> from 1:31
+        "
+      `);
+      expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+        Object {
+          "mappings": "AAA,uBC,QD",
+          "names": Array [
+            "<global>",
+            "cb",
+          ],
+        }
+      `);
+    });
+
+    it('React.useCallback', () => {
+      const ast = getAst('const cb = React.useCallback(() => {})');
+
+      expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+        "
+        <global> from 1:0
+        cb from 1:29
+        <global> from 1:37
+        "
+      `);
+      expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+        Object {
+          "mappings": "AAA,6BC,QD",
+          "names": Array [
+            "<global>",
+            "cb",
+          ],
+        }
+      `);
+    });
+
+    it('treats SomeOtherNamespace.useCallback like any other function', () => {
+      const ast = getAst('const cb = SomeOtherNamespace.useCallback(() => {})');
+
+      expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+        "
+        <global> from 1:0
+        SomeOtherNamespace.useCallback$argument_0 from 1:42
+        <global> from 1:50
+        "
+      `);
+      expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+        Object {
+          "mappings": "AAA,0CC,QD",
+          "names": Array [
+            "<global>",
+            "SomeOtherNamespace.useCallback$argument_0",
+          ],
+        }
+      `);
+    });
+
+    it('named callback takes precedence', () => {
+      const ast = getAst('const cb = useCallback(function inner() {})');
+
+      expect(generateCompactRawMappings(ast)).toMatchInlineSnapshot(`
+        "
+        <global> from 1:0
+        inner from 1:23
+        <global> from 1:42
+        "
+      `);
+      expect(generateFunctionMap(ast)).toMatchInlineSnapshot(`
+        Object {
+          "mappings": "AAA,uBC,mBD",
+          "names": Array [
+            "<global>",
+            "inner",
+          ],
+        }
+      `);
+    });
   });
 });

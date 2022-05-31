@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -82,8 +82,6 @@ function saveAsIndexedFile(
   }
 }
 
-/* global Buffer: true */
-
 const fileHeader = Buffer.alloc(4);
 fileHeader.writeUInt32LE(MAGIC_UNBUNDLE_FILE_HEADER, 0);
 const nullByteBuffer: Buffer = Buffer.alloc(1).fill(0);
@@ -111,7 +109,7 @@ function moduleToBuffer(
   id: number,
   code: string,
   encoding: void | 'ascii' | 'utf16le' | 'utf8',
-): {|buffer: Buffer, id: number|} {
+): {buffer: Buffer, id: number} {
   return {
     id,
     buffer: nullTerminatedBuffer(code, encoding),

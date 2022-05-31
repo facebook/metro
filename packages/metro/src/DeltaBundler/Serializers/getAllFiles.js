@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15,10 +15,10 @@ import type {Graph, Module} from '../types.flow';
 const {getAssetFiles} = require('../../Assets');
 const {getJsOutput, isJsModule} = require('./helpers/js');
 
-type Options = {|
+type Options = {
   platform: ?string,
   +processModuleFilter: (module: Module<>) => boolean,
-|};
+};
 
 async function getAllFiles(
   pre: $ReadOnlyArray<Module<>>,

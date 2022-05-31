@@ -2,9 +2,7 @@
   "docs": {
     "Introduction": [
       "getting-started",
-      "concepts",
-      "bundling",
-      "caching"
+      "concepts"
     ],
     "API Reference": [
       "api",
@@ -13,6 +11,11 @@
     ],
     "Guides": [
       "troubleshooting"
+    ],
+    "Deep Dives": [
+      "bundling",
+      "caching",
+      "resolution"
     ]
   }
 }

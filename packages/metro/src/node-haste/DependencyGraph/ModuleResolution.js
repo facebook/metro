@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,6 +10,7 @@
 
 'use strict';
 
+import type {ModuleMap} from 'metro-file-map';
 import type {
   CustomResolver,
   DoesFileExist,
@@ -42,23 +43,6 @@ export type Moduleish = interface {
   getPackage(): ?Packageish,
 };
 
-/**
- * `jest-haste-map`'s interface for ModuleMap.
- */
-export type ModuleMap = {
-  getModule(
-    name: string,
-    platform: string | null,
-    supportsNativePlatform: ?boolean,
-  ): ?string,
-  getPackage(
-    name: string,
-    platform: string | null,
-    supportsNativePlatform: ?boolean,
-  ): ?string,
-  ...
-};
-
 export type ModuleishCache<TModule, TPackage> = interface {
   getPackage(
     name: string,
@@ -69,8 +53,9 @@ export type ModuleishCache<TModule, TPackage> = interface {
   getPackageOf(modulePath: string): ?TPackage,
 };
 
-type Options<TModule, TPackage> = {|
+type Options<TModule, TPackage> = {
   +dirExists: DirExistsFn,
+  +disableHierarchicalLookup: boolean,
   +doesFileExist: DoesFileExist,
   +emptyModulePath: string,
   +extraNodeModules: ?Object,
@@ -84,7 +69,7 @@ type Options<TModule, TPackage> = {|
   +resolveAsset: ResolveAsset,
   +resolveRequest: ?CustomResolver,
   +sourceExts: $ReadOnlyArray<string>,
-|};
+};
 
 class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
   _options: Options<TModule, TPackage>;
@@ -148,7 +133,6 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
           // Since the redirected path is still relative to the package root,
           // we have to transform it back to be module-relative (as it
           // originally was)
-          // $FlowFixMe[incompatible-type]
           if (redirectedPath !== false) {
             redirectedPath =
               './' +
@@ -217,18 +201,14 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
               this._removeRoot(candidates.dir),
             )}`,
           ].join('\n'),
+          {
+            cause: error,
+          },
         );
       }
       if (error instanceof Resolver.FailedToResolveNameError) {
-        const {
-          dirPaths,
-          extraPaths,
-        }: {
-          // $flowfixme these types are defined explicitly in FailedToResolveNameError but Flow refuses to recognize them here
-          dirPaths: $ReadOnlyArray<string>,
-          extraPaths: $ReadOnlyArray<string>,
-          ...
-        } = error;
+        const dirPaths = error.dirPaths;
+        const extraPaths = error.extraPaths;
         const displayDirPaths = dirPaths
           .filter((dirPath: string) => this._options.dirExists(dirPath))
           .map(dirPath => path.relative(this._options.projectRoot, dirPath))
@@ -242,12 +222,10 @@ class ModuleResolver<TModule: Moduleish, TPackage: Packageish> {
           [
             `${moduleName} could not be found within the project${hint || '.'}`,
             ...displayDirPaths.map((dirPath: string) => `  ${dirPath}`),
-            '\nIf you are sure the module exists, try these steps:',
-            ' 1. Clear watchman watches: watchman watch-del-all',
-            ' 2. Delete node_modules and run yarn install',
-            " 3. Reset Metro's cache: yarn start --reset-cache",
-            ' 4. Remove the cache: rm -rf /tmp/metro-*',
           ].join('\n'),
+          {
+            cause: error,
+          },
         );
       }
       throw error;
@@ -315,11 +293,18 @@ class UnableToResolveError extends Error {
    * ex. `./bar`, or `invariant`.
    */
   targetModuleName: string;
+  /**
+   * Original error that causes this error
+   */
+  cause: ?Error;
 
   constructor(
     originModulePath: string,
     targetModuleName: string,
     message: string,
+    options?: $ReadOnly<{
+      cause?: Error,
+    }>,
   ) {
     super();
     this.originModulePath = originModulePath;
@@ -332,6 +317,8 @@ class UnableToResolveError extends Error {
         originModulePath,
         message,
       ) + (codeFrameMessage ? '\n' + codeFrameMessage : '');
+
+    this.cause = options?.cause;
   }
 
   buildCodeFrameMessage(): ?string {

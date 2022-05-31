@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -84,9 +84,10 @@ let resolver;
 
   async function createResolver(config = {}, platform = '') {
     const DependencyGraph = require('../../node-haste/DependencyGraph');
-    const dependencyGraph = await DependencyGraph.load(
+    const dependencyGraph = new DependencyGraph(
       mergeConfig(defaultConfig, config),
     );
+    await dependencyGraph.ready();
 
     return {
       resolve: (from, to, options) =>
@@ -106,6 +107,7 @@ let resolver;
   const joinPath = osPlatform === 'win32' ? path.win32.join : path.posix.join;
 
   describe(osPlatform, () => {
+    let originalError = console.error;
     beforeEach(() => {
       jest.resetModules();
 
@@ -129,14 +131,26 @@ let resolver;
       require('os').tmpdir = () => p('/tmp');
 
       fs = require('fs');
-
-      jest.spyOn(console, 'error');
+      originalError = console.error;
+      console.error = jest.fn((...args) => {
+        // Silence expected errors that we assert on later
+        if (
+          typeof args[0] === 'string' &&
+          args[0].startsWith('metro-file-map:')
+        ) {
+          return;
+        }
+        originalError(...args);
+      });
     });
 
     afterEach(async () => {
-      resolver && (await resolver.end());
-      resolver = null;
-      console.error.mockRestore();
+      try {
+        resolver && (await resolver.end());
+      } finally {
+        resolver = null;
+        console.error = originalError;
+      }
     });
 
     describe('relative paths', () => {
@@ -1484,7 +1498,7 @@ let resolver;
         );
         expect(console.error).toHaveBeenCalledWith(
           [
-            'jest-haste-map: Haste module naming collision: aPackage',
+            'metro-file-map: Haste module naming collision: aPackage',
             '  The following files share their name; please adjust your hasteImpl:',
             `    * ${joinPath('<rootDir>', 'aPackage', 'package.json')}`,
             `    * ${joinPath('<rootDir>', 'anotherPackage', 'package.json')}`,
@@ -1511,7 +1525,7 @@ let resolver;
         );
         expect(console.error).toHaveBeenCalledWith(
           [
-            'jest-haste-map: Haste module naming collision: aPackage',
+            'metro-file-map: Haste module naming collision: aPackage',
             '  The following files share their name; please adjust your hasteImpl:',
             `    * ${joinPath(
               '<rootDir>',
@@ -1697,7 +1711,7 @@ let resolver;
         );
         expect(console.error).toHaveBeenCalledWith(
           [
-            'jest-haste-map: Haste module naming collision: hasteModule',
+            'metro-file-map: Haste module naming collision: hasteModule',
             '  The following files share their name; please adjust your hasteImpl:',
             `    * ${joinPath('<rootDir>', 'hasteModule.js')}`,
             `    * ${joinPath('<rootDir>', 'anotherHasteModule.js')}`,
@@ -1738,7 +1752,7 @@ let resolver;
         );
         expect(console.error).toHaveBeenCalledWith(
           [
-            'jest-haste-map: Haste module naming collision: hasteModule',
+            'metro-file-map: Haste module naming collision: hasteModule',
             '  The following files share their name; please adjust your hasteImpl:',
             `    * ${joinPath('<rootDir>', 'hasteModule.js')}`,
             `    * ${joinPath('<rootDir>', 'aPackage', 'package.json')}`,
@@ -1800,7 +1814,7 @@ let resolver;
         );
         expect(console.error).toHaveBeenCalledWith(
           [
-            'jest-haste-map: Haste module naming collision: hasteModule',
+            'metro-file-map: Haste module naming collision: hasteModule',
             '  The following files share their name; please adjust your hasteImpl:',
             `    * ${joinPath('<rootDir>', 'hasteModule.js')}`,
             `    * ${joinPath('<rootDir>', 'hasteModule.invalid.js')}`,
@@ -2096,20 +2110,6 @@ let resolver;
         expect(resolver.resolve(p('/root/index.js'), 'aPackage')).toBe(
           p('/root/overriden.js'),
         );
-      });
-
-      it('throws if resolveRequest returns null', async () => {
-        setMockFileSystem({
-          'index.js': mockFileImport("import f from './foo';"),
-          'foo.js': '',
-        });
-
-        resolveRequest.mockReturnValue(null);
-        resolver = await createResolver({resolver: {resolveRequest}});
-
-        expect(() =>
-          resolver.resolve(p('/root/index.js'), './foo'),
-        ).toThrowErrorMatchingSnapshot();
       });
 
       it('calls resolveRequest with the correct arguments', async () => {

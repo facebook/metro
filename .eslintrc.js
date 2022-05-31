@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17,7 +17,7 @@ module.exports = {
   env: {
     node: true,
   },
-  extends: 'eslint-config-fb-strict',
+  extends: ['eslint-config-fb-strict', 'plugin:prettier/recommended'],
   plugins: ['babel', 'flowtype', 'import', 'lint', 'prettier'],
   parser: 'babel-eslint',
   rules: {
@@ -31,14 +31,19 @@ module.exports = {
     'no-console': 'error',
     'no-unused-vars': 'error',
     'no-var': 'off',
-    'prefer-arrow-callback': 'off',
     'prefer-const': ['warn', {destructuring: 'all'}],
-    'prettier/prettier': ['error', 'fb', '@format'],
     quotes: 'off',
     'sort-keys': 'off',
     'flowtype/object-type-delimiter': 'off',
   },
   overrides: [
+    {
+      files: ['flow-typed/**/*.js'],
+      rules: {
+        'babel/quotes': 'off',
+        'lint/flow-function-shape': 'off',
+      },
+    },
     {
       files: ['packages/metro-source-map/**/*.js'],
       rules: {

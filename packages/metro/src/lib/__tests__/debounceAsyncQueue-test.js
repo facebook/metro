@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -40,7 +40,9 @@ describe('debounceAsyncQueue', () => {
   });
 
   it('queues calls that happen while the previous call is still executing', async () => {
-    let finishExecuting = (result: string) => {};
+    let finishExecuting:
+      | ((result?: Promise<string>) => void)
+      | ((result: string) => void) = (result: string) => {};
     const fn = jest.fn(
       () =>
         new Promise((resolve: (result?: Promise<string>) => void) => {

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -70,17 +70,15 @@ class InspectorProxy {
     ) {
       // Build list of pages from all devices.
       let result = [];
-      Array.from(this._devices.entries()).forEach(
-        ([deviceId: number, device: Device]) => {
-          result = result.concat(
-            device
-              .getPagesList()
-              .map((page: Page) =>
-                this._buildPageDescription(deviceId, device, page),
-              ),
-          );
-        },
-      );
+      Array.from(this._devices.entries()).forEach(([deviceId, device]) => {
+        result = result.concat(
+          device
+            .getPagesList()
+            .map((page: Page) =>
+              this._buildPageDescription(deviceId, device, page),
+            ),
+        );
+      });
 
       this._sendJsonResponse(response, result);
     } else if (request.url === PAGES_LIST_JSON_VERSION_URL) {
@@ -94,9 +92,7 @@ class InspectorProxy {
   }
 
   // Adds websocket listeners to the provided HTTP/HTTPS server.
-  createWebSocketListeners(
-    server: HttpServer | HttpsServer,
-  ): {
+  createWebSocketListeners(server: HttpServer | HttpsServer): {
     [path: string]: typeof WS.Server,
   } {
     const {port} = server.address();
@@ -121,7 +117,7 @@ class InspectorProxy {
     const debuggerUrl = `${this._serverAddressWithPort}${WS_DEBUGGER_URL}?device=${deviceId}&page=${page.id}`;
     const webSocketDebuggerUrl = 'ws://' + debuggerUrl;
     const devtoolsFrontendUrl =
-      'chrome-devtools://devtools/bundled/inspector.html?experiments=true&v8only=true&ws=' +
+      'devtools://devtools/bundled/js_app.html?experiments=true&v8only=true&ws=' +
       encodeURIComponent(debuggerUrl);
     return {
       id: `${deviceId}-${page.id}`,
@@ -181,7 +177,7 @@ class InspectorProxy {
         });
       } catch (e) {
         console.error('error', e);
-        socket.close(INTERNAL_ERROR_CODE, e);
+        socket.close(INTERNAL_ERROR_CODE, e?.toString() ?? 'Unknown error');
       }
     });
     return wss;
@@ -216,7 +212,7 @@ class InspectorProxy {
         device.handleDebuggerConnection(socket, pageId);
       } catch (e) {
         console.error(e);
-        socket.close(INTERNAL_ERROR_CODE, e);
+        socket.close(INTERNAL_ERROR_CODE, e?.toString() ?? 'Unknown error');
       }
     });
     return wss;

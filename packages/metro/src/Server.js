@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -81,7 +81,7 @@ export type BundleMetadata = {
   ...
 };
 
-type ProcessStartContext = {|
+type ProcessStartContext = {
   +buildID: string,
   +bundleOptions: BundleOptions,
   +graphId: GraphId,
@@ -91,24 +91,24 @@ type ProcessStartContext = {|
   +req: IncomingMessage,
   +revisionId?: ?RevisionId,
   ...SplitBundleOptions,
-|};
+};
 
-type ProcessDeleteContext = {|
+type ProcessDeleteContext = {
   +graphId: GraphId,
   +req: IncomingMessage,
   +res: ServerResponse,
-|};
+};
 
-type ProcessEndContext<T> = {|
+type ProcessEndContext<T> = {
   ...ProcessStartContext,
   +result: T,
-|};
+};
 
-export type ServerOptions = $ReadOnly<{|
+export type ServerOptions = $ReadOnly<{
   hasReducedPerformance?: boolean,
   onBundleBuilt?: (bundlePath: string) => void,
   watch?: boolean,
-|}>;
+}>;
 
 const DELTA_ID_HEADER = 'X-Metro-Delta-ID';
 const FILES_CHANGED_COUNT_HEADER = 'X-Metro-Files-Changed-Count';
@@ -167,9 +167,7 @@ class Server {
     return this._createModuleId;
   }
 
-  async build(
-    options: BundleOptions,
-  ): Promise<{
+  async build(options: BundleOptions): Promise<{
     code: string,
     map: string,
     ...
@@ -204,13 +202,16 @@ class Server {
       dev: transformOptions.dev,
       projectRoot: this._config.projectRoot,
       modulesOnly: serializerOptions.modulesOnly,
-      runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-        path.relative(this._config.projectRoot, entryPoint),
-      ),
+      runBeforeMainModule:
+        this._config.serializer.getModulesRunBeforeMainModule(
+          path.relative(this._config.projectRoot, entryPoint),
+        ),
       runModule: serializerOptions.runModule,
       sourceMapUrl: serializerOptions.sourceMapUrl,
       sourceUrl: serializerOptions.sourceUrl,
       inlineSourceMap: serializerOptions.inlineSourceMap,
+      serverRoot:
+        this._config.server.unstable_serverRoot ?? this._config.projectRoot,
     };
     let bundleCode = null;
     let bundleMap = null;
@@ -278,20 +279,22 @@ class Server {
       platform: transformOptions.platform,
       projectRoot: this._config.projectRoot,
       modulesOnly: serializerOptions.modulesOnly,
-      runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-        path.relative(this._config.projectRoot, entryPoint),
-      ),
+      runBeforeMainModule:
+        this._config.serializer.getModulesRunBeforeMainModule(
+          path.relative(this._config.projectRoot, entryPoint),
+        ),
       runModule: serializerOptions.runModule,
       sourceMapUrl: serializerOptions.sourceMapUrl,
       sourceUrl: serializerOptions.sourceUrl,
       inlineSourceMap: serializerOptions.inlineSourceMap,
+      serverRoot:
+        this._config.server.unstable_serverRoot ?? this._config.projectRoot,
     });
   }
 
   async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {
-    const {entryFile, transformOptions, onProgress} = splitBundleOptions(
-      options,
-    );
+    const {entryFile, transformOptions, onProgress} =
+      splitBundleOptions(options);
 
     const dependencies = await this._bundler.getDependencies(
       [entryFile],
@@ -424,7 +427,7 @@ class Server {
   processRequest: (
     IncomingMessage,
     ServerResponse,
-    (e: ?Error) => mixed,
+    ((e: ?Error) => mixed),
   ) => void = (
     req: IncomingMessage,
     res: ServerResponse,
@@ -501,7 +504,7 @@ class Server {
     build,
     delete: deleteFn,
     finish,
-  }: {|
+  }: {
     +createStartEntry: (context: ProcessStartContext) => ActionLogEntryData,
     +createEndEntry: (
       context: ProcessEndContext<T>,
@@ -509,18 +512,14 @@ class Server {
     +build: (context: ProcessStartContext) => Promise<T>,
     +delete?: (context: ProcessDeleteContext) => Promise<void>,
     +finish: (context: ProcessEndContext<T>) => void,
-  |}) {
+  }) {
     return async function requestProcessor(
       req: IncomingMessage,
       res: ServerResponse,
       bundleOptions: BundleOptions,
     ): Promise<void> {
-      const {
-        entryFile,
-        graphOptions,
-        transformOptions,
-        serializerOptions,
-      } = splitBundleOptions(bundleOptions);
+      const {entryFile, graphOptions, transformOptions, serializerOptions} =
+        splitBundleOptions(bundleOptions);
 
       /**
        * `entryFile` is relative to projectRoot, we need to use resolution function
@@ -532,8 +531,8 @@ class Server {
       });
       const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
         shallow: graphOptions.shallow,
-        experimentalImportBundleSupport: this._config.transformer
-          .experimentalImportBundleSupport,
+        experimentalImportBundleSupport:
+          this._config.transformer.experimentalImportBundleSupport,
       });
 
       // For resources that support deletion, handle the DELETE method.
@@ -704,12 +703,12 @@ class Server {
       };
     },
     createEndEntry(
-      context: ProcessEndContext<{|
+      context: ProcessEndContext<{
         bundle: string,
         lastModifiedDate: Date,
         nextRevId: RevisionId,
         numModifiedFiles: number,
-      |}>,
+      }>,
     ) {
       return {
         outdated_modules: context.result.numModifiedFiles,
@@ -751,13 +750,16 @@ class Server {
           dev: transformOptions.dev,
           projectRoot: this._config.projectRoot,
           modulesOnly: serializerOptions.modulesOnly,
-          runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-            path.relative(this._config.projectRoot, entryFile),
-          ),
+          runBeforeMainModule:
+            this._config.serializer.getModulesRunBeforeMainModule(
+              path.relative(this._config.projectRoot, entryFile),
+            ),
           runModule: serializerOptions.runModule,
           sourceMapUrl: serializerOptions.sourceMapUrl,
           sourceUrl: serializerOptions.sourceUrl,
           inlineSourceMap: serializerOptions.inlineSourceMap,
+          serverRoot:
+            this._config.server.unstable_serverRoot ?? this._config.projectRoot,
         },
       );
 
@@ -818,12 +820,12 @@ class Server {
       };
     },
     createEndEntry(
-      context: ProcessEndContext<{|
+      context: ProcessEndContext<{
         bytecode: Buffer,
         lastModifiedDate: Date,
         nextRevId: RevisionId,
         numModifiedFiles: number,
-      |}>,
+      }>,
     ) {
       return {
         outdated_modules: context.result.numModifiedFiles,
@@ -858,13 +860,16 @@ class Server {
           dev: transformOptions.dev,
           projectRoot: this._config.projectRoot,
           modulesOnly: serializerOptions.modulesOnly,
-          runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
-            path.relative(this._config.projectRoot, entryFile),
-          ),
+          runBeforeMainModule:
+            this._config.serializer.getModulesRunBeforeMainModule(
+              path.relative(this._config.projectRoot, entryFile),
+            ),
           runModule: serializerOptions.runModule,
           sourceMapUrl: serializerOptions.sourceMapUrl,
           sourceUrl: serializerOptions.sourceUrl,
           inlineSourceMap: serializerOptions.inlineSourceMap,
+          serverRoot:
+            this._config.server.unstable_serverRoot ?? this._config.projectRoot,
         }),
       );
 
@@ -1127,8 +1132,8 @@ class Server {
 
     const graphId = getGraphId(resolvedEntryFilePath, transformOptions, {
       shallow: graphOptions.shallow,
-      experimentalImportBundleSupport: this._config.transformer
-        .experimentalImportBundleSupport,
+      experimentalImportBundleSupport:
+        this._config.transformer.experimentalImportBundleSupport,
     });
     let revision;
     const revPromise = this._bundler.getRevisionByGraphId(graphId);
@@ -1188,14 +1193,14 @@ class Server {
     return this._config.watchFolders;
   }
 
-  static DEFAULT_GRAPH_OPTIONS: {|
+  static DEFAULT_GRAPH_OPTIONS: {
     customTransformOptions: any,
     dev: boolean,
     hot: boolean,
     minify: boolean,
     runtimeBytecodeVersion: ?number,
     unstable_transformProfile: 'default',
-  |} = {
+  } = {
     customTransformOptions: Object.create(null),
     dev: true,
     hot: false,
@@ -1204,7 +1209,7 @@ class Server {
     unstable_transformProfile: 'default',
   };
 
-  static DEFAULT_BUNDLE_OPTIONS: {|
+  static DEFAULT_BUNDLE_OPTIONS: {
     ...typeof Server.DEFAULT_GRAPH_OPTIONS,
     excludeSource: false,
     inlineSourceMap: false,
@@ -1214,7 +1219,7 @@ class Server {
     shallow: false,
     sourceMapUrl: null,
     sourceUrl: null,
-  |} = {
+  } = {
     ...Server.DEFAULT_GRAPH_OPTIONS,
     excludeSource: false,
     inlineSourceMap: false,

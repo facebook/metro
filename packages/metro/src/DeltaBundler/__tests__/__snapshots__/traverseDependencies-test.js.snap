@@ -9,7 +9,8 @@ Object {
           "absolutePath": "/foo",
           "data": Object {
             "data": Object {
-              "isAsync": false,
+              "asyncType": null,
+              "locs": Array [],
             },
             "name": "foo",
           },
@@ -35,7 +36,8 @@ Object {
           "absolutePath": "/bar",
           "data": Object {
             "data": Object {
-              "isAsync": false,
+              "asyncType": null,
+              "locs": Array [],
             },
             "name": "bar",
           },
@@ -44,7 +46,8 @@ Object {
           "absolutePath": "/baz",
           "data": Object {
             "data": Object {
-              "isAsync": false,
+              "asyncType": null,
+              "locs": Array [],
             },
             "name": "baz",
           },
@@ -103,9 +106,19 @@ Object {
       "path": "/baz",
     },
   },
-  "entryPoints": Array [
+  "entryPoints": Set {
     "/bundle",
-  ],
+  },
+  "importBundleNames": Set {},
+  "transformOptions": Object {
+    "dev": false,
+    "hot": false,
+    "minify": false,
+    "platform": null,
+    "runtimeBytecodeVersion": null,
+    "type": "module",
+    "unstable_transformProfile": "default",
+  },
 }
 `;
 
@@ -118,7 +131,8 @@ Object {
           "absolutePath": "/foo",
           "data": Object {
             "data": Object {
-              "isAsync": false,
+              "asyncType": null,
+              "locs": Array [],
             },
             "name": "foo",
           },
@@ -139,8 +153,18 @@ Object {
       "path": "/bundle",
     },
   },
-  "entryPoints": Array [
+  "entryPoints": Set {
     "/bundle",
-  ],
+  },
+  "importBundleNames": Set {},
+  "transformOptions": Object {
+    "dev": false,
+    "hot": false,
+    "minify": false,
+    "platform": null,
+    "runtimeBytecodeVersion": null,
+    "type": "module",
+    "unstable_transformProfile": "default",
+  },
 }
 `;

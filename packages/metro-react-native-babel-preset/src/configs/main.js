@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -20,7 +20,7 @@ function isTSXSource(fileName) {
   return !!fileName && fileName.endsWith('.tsx');
 }
 
-const defaultPluginsBeforeRegenerator = [
+const defaultPlugins = [
   [require('@babel/plugin-syntax-flow')],
   [require('@babel/plugin-transform-block-scoping')],
   [
@@ -31,9 +31,6 @@ const defaultPluginsBeforeRegenerator = [
   [require('@babel/plugin-syntax-dynamic-import')],
   [require('@babel/plugin-syntax-export-default-from')],
   ...passthroughSyntaxPlugins,
-];
-
-const defaultPluginsAfterRegenerator = [
   [require('@babel/plugin-transform-unicode-regex')],
 ];
 
@@ -41,19 +38,17 @@ const getPreset = (src, options) => {
   const transformProfile =
     (options && options.unstable_transformProfile) || 'default';
   const isHermesStable = transformProfile === 'hermes-stable';
-  // Temporarily treating canary profile as "ES5 Hermes".
-  // TODO(jsx): Restore check for transformProfile === 'hermes-canary'
-  const isHermesCanary = false;
+  const isHermesCanary = transformProfile === 'hermes-canary';
   const isHermes = isHermesStable || isHermesCanary;
 
   const isNull = src == null;
   const hasClass = isNull || src.indexOf('class') !== -1;
-  const hasForOf =
-    isNull || (src.indexOf('for') !== -1 && src.indexOf('of') !== -1);
 
   const extraPlugins = [];
   if (!options.useTransformReactJSXExperimental) {
-    extraPlugins.push([require('@babel/plugin-transform-react-jsx')]);
+    extraPlugins.push([
+      require('@babel/plugin-transform-react-jsx', {useBuiltIns: true}),
+    ]);
   }
 
   if (!options || !options.disableImportExportTransform) {
@@ -94,9 +89,16 @@ const getPreset = (src, options) => {
     extraPlugins.push([require('@babel/plugin-transform-function-name')]);
     extraPlugins.push([require('@babel/plugin-transform-literals')]);
     extraPlugins.push([require('@babel/plugin-transform-sticky-regex')]);
+  } else {
+    extraPlugins.push([
+      require('@babel/plugin-transform-named-capturing-groups-regex'),
+    ]);
   }
   if (!isHermesCanary) {
-    extraPlugins.push([require('@babel/plugin-transform-destructuring')]);
+    extraPlugins.push([
+      require('@babel/plugin-transform-destructuring'),
+      {useBuiltIns: true},
+    ]);
   }
   if (!isHermes && (isNull || hasClass || src.indexOf('...') !== -1)) {
     extraPlugins.push(
@@ -104,7 +106,7 @@ const getPreset = (src, options) => {
       [
         require('@babel/plugin-proposal-object-rest-spread'),
         // Assume no dependence on getters or evaluation order. See https://github.com/babel/babel/pull/11520
-        {loose: true},
+        {loose: true, useBuiltIns: true},
       ],
     );
   }
@@ -114,21 +116,15 @@ const getPreset = (src, options) => {
       {loose: true}, // dont 'a'.concat('b'), just use 'a'+'b'
     ]);
   }
-  if (isHermes && (isNull || src.indexOf('async') !== -1)) {
+  if (isNull || src.indexOf('async') !== -1) {
+    extraPlugins.push([
+      require('@babel/plugin-proposal-async-generator-functions'),
+    ]);
     extraPlugins.push([require('@babel/plugin-transform-async-to-generator')]);
   }
   if (!isHermes && (isNull || src.indexOf('**') !== -1)) {
     extraPlugins.push([
       require('@babel/plugin-transform-exponentiation-operator'),
-    ]);
-  }
-  if (!isHermes && (isNull || src.indexOf('Object.assign')) !== -1) {
-    extraPlugins.push([require('@babel/plugin-transform-object-assign')]);
-  }
-  if (!isHermes && hasForOf) {
-    extraPlugins.push([
-      require('@babel/plugin-transform-for-of'),
-      {loose: true},
     ]);
   }
   if (
@@ -157,11 +153,15 @@ const getPreset = (src, options) => {
   }
 
   if (!options || options.enableBabelRuntime !== false) {
+    // Allows configuring a specific runtime version to optimize output
+    const isVersion = typeof options?.enableBabelRuntime === 'string';
+
     extraPlugins.push([
       require('@babel/plugin-transform-runtime'),
       {
         helpers: true,
         regenerator: !isHermes,
+        ...(isVersion && {version: options.enableBabelRuntime}),
       },
     ]);
   }
@@ -176,11 +176,7 @@ const getPreset = (src, options) => {
         plugins: [require('@babel/plugin-transform-flow-strip-types')],
       },
       {
-        plugins: [
-          ...defaultPluginsBeforeRegenerator,
-          isHermes ? null : require('@babel/plugin-transform-regenerator'),
-          ...defaultPluginsAfterRegenerator,
-        ].filter(Boolean),
+        plugins: defaultPlugins,
       },
       {
         test: isTypeScriptSource,

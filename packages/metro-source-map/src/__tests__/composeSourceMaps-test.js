@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,8 +10,7 @@
  */
 
 'use strict';
-
-/* eslint-disable no-multi-str */
+import type {BasicSourceMap, IndexMap, MixedSourceMap} from '../source-map';
 
 const composeSourceMaps = require('../composeSourceMaps');
 const Consumer = require('../Consumer');
@@ -20,6 +19,8 @@ const invariant = require('invariant');
 const {add0, add1} = require('ob1');
 const path = require('path');
 const uglifyEs = require('uglify-es');
+
+/* eslint-disable no-multi-str */
 
 const TestScript1 =
   '/* Half of a program that throws */\
@@ -42,11 +43,14 @@ function topLevel() {\
    throwSomething();\
 }';
 
-function symbolicate(backtrace, sourceMap) {
+function symbolicate(
+  backtrace: empty,
+  sourceMap: any | string | BasicSourceMap | IndexMap | MixedSourceMap,
+) {
   const consumer = new Consumer(
     typeof sourceMap === 'string' ? JSON.parse(sourceMap) : sourceMap,
   );
-  function replaceSymbol(match, source, line, col) {
+  function replaceSymbol(match: any, source: any, line, col: number) {
     var original = consumer.originalPositionFor({
       line: add1(line - 1),
       column: add0(col),
@@ -57,7 +61,7 @@ function symbolicate(backtrace, sourceMap) {
 }
 
 describe('composeSourceMaps', () => {
-  const fixtures = {};
+  const fixtures: {[string]: any} = {};
 
   beforeAll(() => {
     for (const fixtureName of [
@@ -87,15 +91,20 @@ describe('composeSourceMaps', () => {
         sourceMap: true,
       },
     );
-    invariant(!('error' in stage1), 'Minification error in stage1');
-    // $FlowFixMe: this refinement doesn't work
+    invariant(
+      typeof stage1.code === 'string' && typeof stage1.map === 'string',
+      'Minification error in stage1',
+    );
     const {code: code1, map: map1} = stage1;
     const stage2 = uglifyEs.minify(
       {'intermediate.js': code1},
       {compress: true, mangle: true, sourceMap: true},
     );
-    invariant(!('error' in stage2), 'Minification error in stage1');
-    // $FlowFixMe: this refinement doesn't work
+    invariant(
+      typeof stage2.code === 'string' && typeof stage2.map === 'string',
+      'Minification error in stage2',
+    );
+
     const {code: code2, map: map2} = stage2;
 
     // Generate a merged source map.

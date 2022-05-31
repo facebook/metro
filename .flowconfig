@@ -5,7 +5,6 @@
 emoji=true
 
 exact_by_default=true
-indexed_access=false
 
 format.bracket_spacing=false
 
@@ -28,7 +27,6 @@ nonstrict-import=warn
 deprecated-type=error
 unsafe-getters-setters=warn
 unnecessary-invariant=warn
-signature-verification-failure=warn
 
 [strict]
 deprecated-type
@@ -40,4 +38,4 @@ untyped-import
 untyped-type-import
 
 [version]
-^0.160.2
+^0.178.1

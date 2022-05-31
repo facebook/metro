@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -48,7 +48,7 @@ function isTSXSource(fileName) {
  * project level .babelrc file, and if it doesn't exist, reads the
  * default RN babelrc file and uses that.
  */
-const getBabelRC = (function() {
+const getBabelRC = (function () {
   let babelRC: ?BabelCoreOptions = null;
 
   return function _getBabelRC({
@@ -84,24 +84,26 @@ const getBabelRC = (function() {
       }
 
       // babel.config.js
-      // $FlowFixMe[incompatible-call]
       if (!fs.existsSync(projectBabelRCPath)) {
         projectBabelRCPath = path.resolve(projectRoot, 'babel.config.js');
       }
 
       // If we found a babel config file, extend our config off of it
       // otherwise the default config will be used
-      // $FlowFixMe[incompatible-call]
       if (fs.existsSync(projectBabelRCPath)) {
+        // $FlowFixMe[incompatible-use] `extends` is missing in null or undefined.
         babelRC.extends = projectBabelRCPath;
       }
     }
 
     // If a babel config file doesn't exist in the project then
     // the default preset for react-native will be used instead.
+    // $FlowFixMe[incompatible-use] `extends` is missing in null or undefined.
+    // $FlowFixMe[incompatible-type] `extends` is missing in null or undefined.
     if (!babelRC.extends) {
       const {experimentalImportSupport, ...presetOptions} = options;
 
+      // $FlowFixMe[incompatible-use] `presets` is missing in null or undefined.
       babelRC.presets = [
         [
           require('metro-react-native-babel-preset'),
@@ -172,7 +174,7 @@ function buildBabelConfig(
     if (mayContainEditableReactComponents) {
       const hmrConfig = makeHMRConfig();
       hmrConfig.plugins = withExtrPlugins.concat(hmrConfig.plugins);
-      config = Object.assign({}, config, hmrConfig);
+      config = {...config, ...hmrConfig};
     }
   }
 
@@ -182,12 +184,7 @@ function buildBabelConfig(
   };
 }
 
-function transform({
-  filename,
-  options,
-  src,
-  plugins,
-}: BabelTransformerArgs): {
+function transform({filename, options, src, plugins}: BabelTransformerArgs): {
   ast: BabelNodeFile,
   functionMap: ?FBSourceFunctionMap,
   ...

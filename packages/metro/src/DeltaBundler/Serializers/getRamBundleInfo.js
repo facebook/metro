@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -25,19 +25,19 @@ const {sourceMapObject} = require('./sourceMapObject');
 const nullthrows = require('nullthrows');
 const path = require('path');
 
-type Options = {|
+type Options = {
   ...SerializerOptions,
   +excludeSource: boolean,
   +getTransformOptions: ?GetTransformOptions,
   +platform: ?string,
-|};
+};
 
-export type RamBundleInfo = {|
+export type RamBundleInfo = {
   getDependencies: string => Set<string>,
   startupModules: $ReadOnlyArray<ModuleTransportLike>,
   lazyModules: $ReadOnlyArray<ModuleTransportLike>,
   groups: Map<number, Set<number>>,
-|};
+};
 
 async function getRamBundleInfo(
   entryPoint: string,
@@ -144,10 +144,10 @@ async function _getRamOptions(
   },
   getDependencies: string => Iterable<string>,
   getTransformOptions: ?GetTransformOptions,
-): Promise<{|
+): Promise<{
   +preloadedModules: {[string]: true, ...},
   +ramGroups: Array<string>,
-|}> {
+}> {
   if (getTransformOptions == null) {
     return {
       preloadedModules: {},

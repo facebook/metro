@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -64,14 +64,14 @@ function rule(context) {
   function reportStrict(parent, childToKeep, eqToken, childToDitch) {
     context.report({
       node: parent,
-      message: messages.WEAK_NULL,
+      messageId: 'WEAK_NULL',
       fix: createAutofixer(parent, childToKeep, eqToken, childToDitch),
     });
   }
   function reportWeak(parent, childToKeep, eqToken, childToDitch) {
     context.report({
       node: parent,
-      message: messages.CHECK_NULL,
+      messageId: 'CHECK_NULL',
       fix: createAutofixer(parent, childToKeep, eqToken, childToDitch),
     });
   }
@@ -119,8 +119,10 @@ function isVoidNode(node) {
   );
 }
 
-rule.messages = messages;
-rule.schema = []; // none, but mandatory field
-rule.meta = {fixable: 'code'};
-
-module.exports = rule;
+module.exports = {
+  create: rule,
+  meta: {
+    fixable: 'code',
+    messages,
+  },
+};

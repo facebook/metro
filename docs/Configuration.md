@@ -11,6 +11,13 @@ A Metro config can be created in these three ways (ordered by priority):
 
 You can also give a custom file to the configuration by specifying `--config <path/to/config>` when calling the CLI.
 
+:::note
+
+When Metro is started via the React Native CLI, some defaults are different from those mentioned below.
+See the [React Native repository](https://github.com/react-native-community/cli/blob/master/packages/cli-plugin-metro/src/tools/loadMetroConfig.ts) for details.
+
+:::
+
 ## Configuration Structure
 
 The configuration is based on [our concepts](./Concepts.md), which means that for every module we have a separate config option. A common configuration structure in Metro looks like this:
@@ -66,7 +73,7 @@ Specify any additional (to projectRoot) watch folders, this is used to know whic
 
 Type: `string`
 
-The path to the transformer to use.
+The absolute path of a module (or a package name resolvable from the `metro` package) exporting a `transform` function.
 
 #### `reporter`
 
@@ -92,11 +99,17 @@ Type: `number`
 
 The number of workers we should parallelize the transformer on.
 
-#### `hasteMapCacheDirectory`
+#### `fileMapCacheDirectory`
 
 Type: `string`
 
-The path to the haste map cache directory, defaults to `os.tmpdir()`.
+The path to the `metro-file-map` cache directory, defaults to `os.tmpdir()`.
+
+#### Deprecated: `hasteMapCacheDirectory`
+
+Type: `string`
+
+Alias of `fileMapCacheDirectory`
 
 ---
 ### Resolver Options
@@ -119,6 +132,18 @@ Type: `Array<string>`
 
 Specify the fields in package.json files that will be used by the module resolver to do redirections when requiring certain packages. The default is `['browser', 'main']`, so the resolver will use the `browser` field if it exists and `main` otherwise.
 
+:::note
+
+When Metro is started via the React Native CLI this will default to `['react-native', 'browser', 'main']`.
+
+:::
+
+#### `disableHierarchicalLookup`
+
+Type: `boolean`
+
+Whether to disable [looking up modules in `node_modules` folders](https://nodejs.org/api/modules.html#modules_loading_from_node_modules_folders). This only affects the default search through the directory tree, not other Metro options like `extraNodeModules` or `nodeModulesPaths`. Defaults to `false`.
+
 #### `emptyModulePath`
 
 Type: `string`
@@ -137,22 +162,26 @@ Type: `Array<string>`
 
 This option can be used to add additional `node_modules` folders for Metro to locate third-party dependencies when resolving modules. This is useful if third-party dependencies are installed in a different location outside of the direct path of source files.
 
-This option works similarly to how [$NODE_PATHS](https://nodejs.org/api/modules.html#modules_addenda_package_manager_tips) works for Node.js based tooling.
+This option works similarly to how [$NODE_PATH](https://nodejs.org/api/modules.html#modules_loading_from_the_global_folders) works for Node.js based tooling, except that `nodeModulesPaths` takes precedence over hierarchical `node_modules` lookup.
 
 #### `resolveRequest`
 
 Type: `?CustomResolver`
 
-An optional function used to resolve requests. Particularly useful for cases where aliases are used. For example:
+An optional function used to resolve requests. Particularly useful for cases where aliases or custom protocols are used. For example:
 
 ```javascript
-resolveRequest: (context, realModuleName, platform, moduleName) => {
-  // Resolve file path logic...
-
-  return {
-    filePath: "path/to/file",
-    type: 'sourceFile',
-  };
+resolveRequest: (context, moduleName, platform) => {
+  if (moduleName.startsWith('my-custom-resolver:')) {
+    // Resolve file path logic...
+    // NOTE: Throw an error if there is no resolution.
+    return {
+      filePath: "path/to/file",
+      type: 'sourceFile',
+    };
+  }
+  // Optionally, chain to the standard Metro resolver.
+  return context.resolveRequest(context, moduleName, platform);
 }
 ```
 
@@ -229,9 +258,12 @@ Whether we should use the `.babelrc` config file.
 
 #### `enableBabelRuntime`
 
-Type: `boolean` (default: `true`)
+Type: `boolean | string` (default: `true`)
 
 Whether the transformer should use the `@babel/transform/runtime` plugin.
+
+If the value is a string, it is treated as a runtime version number and passed as `version` to the `@babel/plugin-transform-runtime` configuration. This allows you to optimize the generated babel runtime based on the
+runtime in the app's node modules confugration.
 
 #### `getTransformOptions`
 
@@ -360,8 +392,12 @@ Using the `metro-config` package it is possible to merge multiple configurations
 | --------------------------------------- | ---------------------------------------------------------------------- |
 | `mergeConfig(...configs): MergedConfig` | Returns the merged configuration of two or more configuration objects. |
 
-> **Note:** Arrays and function based config parameters do not deeply merge and will instead override any pre-existing config parameters.
-> This allows overriding and removing default config parameters such as `platforms` or `getModulesRunBeforeMainModule` that may not be required in your environment.
+:::note
+
+Arrays and function based config parameters do not deeply merge and will instead override any pre-existing config parameters.
+This allows overriding and removing default config parameters such as `platforms` or `getModulesRunBeforeMainModule` that may not be required in your environment.
+
+:::
 
 #### Merging Example
 

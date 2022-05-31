@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -55,13 +55,13 @@ export type FastFS = {
   ...
 };
 
-type HasteMapOptions = {|
+type HasteMapOptions = {
   extensions: Extensions,
   files: Array<string>,
   moduleCache: ModuleCache,
   platforms: Platforms,
   preferNativePlatform: true,
-|};
+};
 
 declare class HasteMap {
   // node-haste/DependencyGraph/HasteMap.js

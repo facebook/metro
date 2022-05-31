@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,20 +11,20 @@
 'use strict';
 
 export type Result<+TResolution, +TCandidates> =
-  | {|+type: 'resolved', +resolution: TResolution|}
-  | {|+type: 'failed', +candidates: TCandidates|};
+  | {+type: 'resolved', +resolution: TResolution}
+  | {+type: 'failed', +candidates: TCandidates};
 
-export type Resolution = FileResolution | {|+type: 'empty'|};
+export type Resolution = FileResolution | {+type: 'empty'};
 
 export type AssetFileResolution = $ReadOnlyArray<string>;
 export type FileResolution =
-  | {|+type: 'sourceFile', +filePath: string|}
-  | {|+type: 'assetFiles', +filePaths: AssetFileResolution|};
+  | {+type: 'sourceFile', +filePath: string}
+  | {+type: 'assetFiles', +filePaths: AssetFileResolution};
 
-export type FileAndDirCandidates = {|
+export type FileAndDirCandidates = {
   +dir: FileCandidates,
   +file: FileCandidates,
-|};
+};
 
 /**
  * This is a way to describe what files we tried to look for when resolving
@@ -33,15 +33,15 @@ export type FileAndDirCandidates = {|
  */
 export type FileCandidates =
   // We only tried to resolve a specific asset.
-  | {|+type: 'asset', +name: string|}
+  | {+type: 'asset', +name: string}
   // We attempted to resolve a name as being a source file (ex. JavaScript,
   // JSON...), in which case there can be several extensions we tried, for
   // example `/js/foo.ios.js`, `/js/foo.js`, etc. for a single prefix '/js/foo'.
-  | {|
+  | {
       +type: 'sourceFile',
       filePathPrefix: string,
       +candidateExts: $ReadOnlyArray<string>,
-    |};
+    };
 
 /**
  * Check existence of a single file.
@@ -61,7 +61,7 @@ export type ResolveAsset = (
   extension: string,
 ) => ?$ReadOnlyArray<string>;
 
-export type FileContext = {
+export type FileContext = $ReadOnly<{
   +doesFileExist: DoesFileExist,
   +isAssetFile: IsAssetFile,
   +nodeModulesPaths: $ReadOnlyArray<string>,
@@ -70,9 +70,9 @@ export type FileContext = {
   +resolveAsset: ResolveAsset,
   +sourceExts: $ReadOnlyArray<string>,
   ...
-};
+}>;
 
-export type FileOrDirContext = {
+export type FileOrDirContext = $ReadOnly<{
   ...FileContext,
   /**
    * This should return the path of the "main" module of the specified
@@ -85,9 +85,9 @@ export type FileOrDirContext = {
    */
   +getPackageMainPath: (packageJsonPath: string) => string,
   ...
-};
+}>;
 
-export type HasteContext = {
+export type HasteContext = $ReadOnly<{
   ...FileOrDirContext,
   /**
    * Given a name, this should return the full path to the file that provides
@@ -101,9 +101,9 @@ export type HasteContext = {
    */
   +resolveHastePackage: (name: string) => ?string,
   ...
-};
+}>;
 
-export type ModulePathContext = {
+export type ModulePathContext = $ReadOnly<{
   ...FileOrDirContext,
   /**
    * Full path of the module that is requiring or importing the module to be
@@ -111,20 +111,26 @@ export type ModulePathContext = {
    */
   +originModulePath: string,
   ...
-};
+}>;
 
-export type ResolutionContext = {
+export type ResolutionContext = $ReadOnly<{
   ...HasteContext,
   allowHaste: boolean,
+  disableHierarchicalLookup: boolean,
   extraNodeModules: ?{[string]: string, ...},
   originModulePath: string,
   resolveRequest?: ?CustomResolver,
   ...
-};
+}>;
+
+export type CustomResolutionContext = $ReadOnly<{
+  ...ResolutionContext,
+  resolveRequest: CustomResolver,
+  ...
+}>;
 
 export type CustomResolver = (
-  context: ResolutionContext,
-  realModuleName: string,
-  platform: string | null,
+  context: CustomResolutionContext,
   moduleName: string,
+  platform: string | null,
 ) => Resolution;

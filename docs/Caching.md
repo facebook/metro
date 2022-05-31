@@ -21,9 +21,9 @@ Let's say you have two cache stores: one on a server and one on your local file 
 const config = {
   cacheStores: [
     new FileStore({/*opts*/}),
-    new NetworkStore({/*opts*/})
+    new HttpStore({/*opts*/})
   ]
 }
 ```
 
-Metro will first look into the `FileStore` when we retrieve a cache. If it can't find the cache there it will check `NetworkStore`, and so on. Finally if there's no cache there it will generate a new cache itself. As soon as the cache has been generated, Metro will go again from top to bottom to store the cache in _all_ stores. This also happens if a cache is found. For example, if Metro finds a cache in the `NetworkStore` it will store it in `FileStore` as well.
+Metro will first look into the `FileStore` when we retrieve a cache. If it can't find the cache there it will check `HttpStore`, and so on. Finally if there's no cache there it will generate a new cache itself. As soon as the cache has been generated, Metro will go again from top to bottom to store the cache in _all_ stores. This also happens if a cache is found. For example, if Metro finds a cache in the `HttpStore` it will store it in `FileStore` as well.

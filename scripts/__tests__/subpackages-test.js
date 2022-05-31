@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -78,6 +78,23 @@ it('forces all packages to have a src/ folder', () => {
   checkAssertionInPackages(getPackages(), packagePath => {
     expect(fs.lstatSync(path.join(packagePath, 'src')).isDirectory()).toBe(
       true,
+    );
+  });
+});
+
+it('forces all packages to have an .npmignore with expected entries', () => {
+  checkAssertionInPackages(getPackages(), packagePath => {
+    const npmIgnorePath = path.join(packagePath, '.npmignore');
+    expect(fs.existsSync(npmIgnorePath)).toBe(true);
+    const lines = fs.readFileSync(npmIgnorePath, 'utf-8').split('\n');
+    expect(lines).toEqual(
+      expect.arrayContaining([
+        '**/__mocks__/**',
+        '**/__tests__/**',
+        'build',
+        'src.real',
+        'yarn.lock',
+      ]),
     );
   });
 });

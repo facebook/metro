@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,14 +10,14 @@
 
 'use strict';
 
-import type DependencyGraph from '../node-haste/DependencyGraph';
 import type {DeltaResult, Graph, Options} from './types.flow';
 
 const {
+  createGraph,
   initialTraverseDependencies,
   reorderGraph,
   traverseDependencies,
-} = require('./traverseDependencies');
+} = require('./graphOperations');
 const {EventEmitter} = require('events');
 
 /**
@@ -27,7 +27,7 @@ const {EventEmitter} = require('events');
  * traverse the whole dependency tree for trivial small changes.
  */
 class DeltaCalculator<T> extends EventEmitter {
-  _dependencyGraph: DependencyGraph;
+  _changeEventSource: EventEmitter;
   _options: Options<T>;
 
   _currentBuildPromise: ?Promise<DeltaResult<T>>;
@@ -37,44 +37,39 @@ class DeltaCalculator<T> extends EventEmitter {
   _graph: Graph<T>;
 
   constructor(
-    entryPoints: $ReadOnlyArray<string>,
-    dependencyGraph: DependencyGraph,
+    entryPoints: $ReadOnlySet<string>,
+    changeEventSource: EventEmitter,
     options: Options<T>,
   ) {
     super();
 
     this._options = options;
-    this._dependencyGraph = dependencyGraph;
+    this._changeEventSource = changeEventSource;
 
-    this._graph = {
-      dependencies: new Map(),
+    this._graph = createGraph({
       entryPoints,
-      importBundleNames: new Set(),
       transformOptions: this._options.transformOptions,
-    };
+    });
 
-    this._dependencyGraph
-      .getWatcher()
-      .on('change', this._handleMultipleFileChanges);
+    this._changeEventSource.on('change', this._handleMultipleFileChanges);
   }
 
   /**
    * Stops listening for file changes and clears all the caches.
    */
   end(): void {
-    this._dependencyGraph
-      .getWatcher()
-      .removeListener('change', this._handleMultipleFileChanges);
+    this._changeEventSource.removeListener(
+      'change',
+      this._handleMultipleFileChanges,
+    );
 
     this.removeAllListeners();
 
     // Clean up all the cache data structures to deallocate memory.
-    this._graph = {
-      dependencies: new Map(),
+    this._graph = createGraph({
       entryPoints: this._graph.entryPoints,
-      importBundleNames: new Set(),
       transformOptions: this._options.transformOptions,
-    };
+    });
     this._modifiedFiles = new Set();
     this._deletedFiles = new Set();
   }
@@ -228,9 +223,9 @@ class DeltaCalculator<T> extends EventEmitter {
     });
 
     // We only want to process files that are in the bundle.
-    const modifiedDependencies = Array.from(
-      modifiedFiles,
-    ).filter((filePath: string) => this._graph.dependencies.has(filePath));
+    const modifiedDependencies = Array.from(modifiedFiles).filter(
+      (filePath: string) => this._graph.dependencies.has(filePath),
+    );
 
     // No changes happened. Return empty delta.
     if (modifiedDependencies.length === 0) {

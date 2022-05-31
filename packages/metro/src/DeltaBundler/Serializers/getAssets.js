@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17,13 +17,13 @@ const {getAssetData} = require('../../Assets');
 const {getJsOutput, isJsModule} = require('./helpers/js');
 const path = require('path');
 
-type Options = {|
+type Options = {
   +processModuleFilter: (module: Module<>) => boolean,
   assetPlugins: $ReadOnlyArray<string>,
   platform: ?string,
   projectRoot: string,
   publicPath: string,
-|};
+};
 
 async function getAssets(
   dependencies: Dependencies<>,

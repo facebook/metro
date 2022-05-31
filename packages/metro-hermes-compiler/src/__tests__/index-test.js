@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -44,4 +44,11 @@ it('throws syntax errors as exceptions', () => {
   return expect(() => compile(sourceCode, {sourceURL: 'test.js'})).toThrowError(
     "1:73:'}' expected at end of block",
   );
+});
+
+it('does not set a global listener for uncaughtException', () => {
+  const listenerCountBefore = process.listenerCount('uncaughtException');
+  jest.resetModules();
+  require('../index');
+  expect(process.listenerCount('uncaughtException')).toBe(listenerCountBefore);
 });

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -20,17 +20,17 @@ const {getJsOutput} = require('./js');
 
 function getSourceMapInfo(
   module: Module<>,
-  options: {|
+  options: {
     +excludeSource: boolean,
-  |},
-): {|
+  },
+): {
   +map: Array<MetroSourceMapSegmentTuple>,
   +functionMap: ?FBSourceFunctionMap,
   +code: string,
   +path: string,
   +source: string,
   +lineCount: number,
-|} {
+} {
   return {
     ...getJsOutput(module).data,
     path: module.path,

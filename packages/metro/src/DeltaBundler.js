@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,7 +10,6 @@
 
 'use strict';
 
-import type Bundler from './Bundler';
 import type {
   DeltaResult,
   Dependencies,
@@ -21,6 +20,7 @@ import type {
 } from './DeltaBundler/types.flow';
 
 const DeltaCalculator = require('./DeltaBundler/DeltaCalculator');
+const {EventEmitter} = require('events');
 
 export type {
   DeltaResult,
@@ -41,11 +41,11 @@ export type {
  * `clientId` param (which maps a client to a specific delta transformer).
  */
 class DeltaBundler<T = MixedOutput> {
-  _bundler: Bundler;
+  _changeEventSource: EventEmitter;
   _deltaCalculators: Map<Graph<T>, DeltaCalculator<T>> = new Map();
 
-  constructor(bundler: Bundler) {
-    this._bundler = bundler;
+  constructor(changeEventSource: EventEmitter) {
+    this._changeEventSource = changeEventSource;
   }
 
   end(): void {
@@ -59,9 +59,11 @@ class DeltaBundler<T = MixedOutput> {
     entryPoints: $ReadOnlyArray<string>,
     options: Options<T>,
   ): Promise<Dependencies<T>> {
-    const depGraph = await this._bundler.getDependencyGraph();
-
-    const deltaCalculator = new DeltaCalculator(entryPoints, depGraph, options);
+    const deltaCalculator = new DeltaCalculator(
+      new Set(entryPoints),
+      this._changeEventSource,
+      options,
+    );
 
     await deltaCalculator.getDelta({reset: true, shallow: options.shallow});
     const graph = deltaCalculator.getGraph();
@@ -77,9 +79,11 @@ class DeltaBundler<T = MixedOutput> {
     entryPoints: $ReadOnlyArray<string>,
     options: Options<T>,
   ): Promise<Graph<T>> {
-    const depGraph = await this._bundler.getDependencyGraph();
-
-    const deltaCalculator = new DeltaCalculator(entryPoints, depGraph, options);
+    const deltaCalculator = new DeltaCalculator(
+      new Set(entryPoints),
+      this._changeEventSource,
+      options,
+    );
 
     await deltaCalculator.getDelta({reset: true, shallow: options.shallow});
     const graph = deltaCalculator.getGraph();

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15,12 +15,12 @@ function getPreludeCode({
   isDev,
   globalPrefix,
   requireCycleIgnorePatterns,
-}: {|
+}: {
   +extraVars?: {[string]: mixed, ...},
   +isDev: boolean,
   +globalPrefix: string,
   +requireCycleIgnorePatterns: $ReadOnlyArray<string>,
-|}): string {
+}): string {
   const vars = [
     // Ensure these variable names match the ones referenced in metro-runtime
     // require.js

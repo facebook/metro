@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,9 +12,8 @@
 
 import type {Writable} from 'stream';
 
-const JSONStream = require('JSONStream');
-
 const {startProfiling, stopProfilingAndWrite} = require('./profiling');
+const JSONStream = require('./third-party/JSONStream');
 const each = require('async/each');
 const {Console} = require('console');
 const duplexer = require('duplexer');
@@ -75,7 +74,13 @@ type JSONReaderEndHandler = () => mixed;
 
 type JSONReaderDataListener = ('data', JSONReaderDataHandler) => JSONReader;
 type JSONReaderEndListener = ('end', JSONReaderEndHandler) => JSONReader;
-type JSONReaderListener = JSONReaderDataListener & JSONReaderEndListener;
+type JSONReaderRootEndListener = (
+  'root_end',
+  JSONReaderEndHandler,
+) => JSONReader;
+type JSONReaderListener = JSONReaderDataListener &
+  JSONReaderEndListener &
+  JSONReaderRootEndListener;
 
 type JSONReader = {
   on: JSONReaderListener,
@@ -152,9 +157,17 @@ function buckWorker(commands: Commands): any {
     }
   }
 
-  reader.on('data', handleHandshake).on('end', () => {
+  let ended = false;
+  function end() {
+    if (ended) {
+      return;
+    }
+    ended = true;
     stopProfilingAndWrite(JS_WORKER_TOOL_NAME).then(() => writer.end());
-  });
+  }
+  reader.on('data', handleHandshake);
+  reader.on('end', end);
+  reader.on('root_end', end);
   return duplexer(reader, writer);
 }
 
@@ -247,7 +260,7 @@ async function execCommand(
   respond: RespondFn,
   messageId: number,
 ) {
-  let makeResponse = success;
+  let makeResponse: (id: number) => Response = success;
   try {
     if (shouldDebugCommand(argsString)) {
       throw new Error(
@@ -263,14 +276,18 @@ async function execCommand(
   respond(makeResponse(messageId));
 }
 
-function shouldDebugCommand(argsString) {
+function shouldDebugCommand(argsString: string) {
   return DEBUG_RE && DEBUG_RE.test(argsString);
 }
 
-const error = (id, exitCode) => ({type: 'error', id, exit_code: exitCode});
-const unknownMessage = id => error(id, 1);
-const invalidMessage = id => error(id, 2);
-const commandError = id => error(id, 3);
-const success = id => ({type: 'result', id, exit_code: 0});
+const error = (id: number, exitCode: number) => ({
+  type: 'error',
+  id,
+  exit_code: exitCode,
+});
+const unknownMessage = (id: number) => error(id, 1);
+const invalidMessage = (id: number) => error(id, 2);
+const commandError = (id: number) => error(id, 3);
+const success = (id: number) => ({type: 'result', id, exit_code: 0});
 
 module.exports = buckWorker;

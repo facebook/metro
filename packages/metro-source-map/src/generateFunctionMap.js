@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17,7 +17,6 @@ import type {Node} from '@babel/types';
 import traverse from '@babel/traverse';
 import {
   isAssignmentExpression,
-  isCallExpression,
   isClassBody,
   isClassMethod,
   isClassProperty,
@@ -29,7 +28,6 @@ import {
   isJSXExpressionContainer,
   isJSXIdentifier,
   isLiteral,
-  isNewExpression,
   isNullLiteral,
   isObjectExpression,
   isObjectMethod,
@@ -105,7 +103,7 @@ function forEachMapping(
   let tailPos = {line: 1, column: 0};
   let tailName = null;
 
-  function advanceToPos(pos) {
+  function advanceToPos(pos: {column: number, line: number}) {
     if (tailPos && positionGreater(pos, tailPos)) {
       const name = nameStack[0].name; // We always have at least Program
       if (name !== tailName) {
@@ -142,7 +140,12 @@ function forEachMapping(
     : null;
 
   const visitor = {
-    enter(path) {
+    enter(
+      path:
+        | NodePath<BabelNodeProgram>
+        | NodePath<BabelNodeFunction>
+        | NodePath<BabelNodeClass>,
+    ) {
       let name = getNameForPath(path);
       if (basename) {
         name = removeNamePrefix(name, basename);
@@ -151,7 +154,12 @@ function forEachMapping(
       pushFrame(name, nullthrows(path.node.loc));
     },
 
-    exit(path): void {
+    exit(
+      path:
+        | NodePath<BabelNodeProgram>
+        | NodePath<BabelNodeFunction>
+        | NodePath<BabelNodeClass>,
+    ): void {
       popFrame();
     },
   };
@@ -164,7 +172,6 @@ function forEachMapping(
 }
 
 const ANONYMOUS_NAME = '<anonymous>';
-const CALLEES_TO_SKIP = ['Object.freeze'];
 
 /**
  * Derive a contextual name for the given AST node (Function, Program, Class or
@@ -183,7 +190,8 @@ function getNameForPath(path: NodePath<>): string {
     return node.id.name;
   }
   let propertyPath;
-  let kind = '';
+  let kind: ?(string | $TEMPORARY$string<'get'> | $TEMPORARY$string<'set'>) =
+    '';
 
   // Find or construct an AST node that names the current node.
   if (isObjectMethod(node) || isClassMethod(node)) {
@@ -236,13 +244,20 @@ function getNameForPath(path: NodePath<>): string {
 
   if (name == null) {
     // We couldn't find a name directly. Try the parent in certain cases.
-    if (isCallExpression(parent) || isNewExpression(parent)) {
+    if (isAnyCallExpression(parent)) {
       // foo(function () {})
       const argIndex = parent.arguments.indexOf(node);
       if (argIndex !== -1) {
         const calleeName = getNameFromId(parent.callee);
         // var f = Object.freeze(function () {})
-        if (CALLEES_TO_SKIP.indexOf(calleeName) !== -1) {
+        if (argIndex === 0 && calleeName === 'Object.freeze') {
+          return getNameForPath(nullthrows(parentPath));
+        }
+        // var f = useCallback(function () {})
+        if (
+          argIndex === 0 &&
+          (calleeName === 'useCallback' || calleeName === 'React.useCallback')
+        ) {
           return getNameForPath(nullthrows(parentPath));
         }
         if (calleeName) {
@@ -276,7 +291,6 @@ function getNameForPath(path: NodePath<>): string {
         name = className + separator + name;
       }
     } else if (isObjectExpression(propertyPath.parent)) {
-      // $FlowFixMe[incompatible-use]
       const objectName = getNameForPath(nullthrows(propertyPath.parentPath));
       if (objectName !== ANONYMOUS_NAME) {
         name = objectName + '.' + name;
@@ -287,9 +301,19 @@ function getNameForPath(path: NodePath<>): string {
   return name;
 }
 
+function isAnyCallExpression(node: Node): boolean %checks {
+  return (
+    node.type === 'CallExpression' ||
+    node.type === 'NewExpression' ||
+    node.type === 'OptionalCallExpression'
+  );
+}
+
 function isAnyMemberExpression(node: Node): boolean %checks {
   return (
-    node.type === 'MemberExpression' || node.type === 'JSXMemberExpression'
+    node.type === 'MemberExpression' ||
+    node.type === 'JSXMemberExpression' ||
+    node.type === 'OptionalMemberExpression'
   );
 }
 
@@ -322,7 +346,7 @@ function getNamePartsFromId(id: Node): $ReadOnlyArray<string> {
     return [];
   }
 
-  if (isCallExpression(id) || isNewExpression(id)) {
+  if (isAnyCallExpression(id)) {
     return getNamePartsFromId(id.callee);
   }
 
@@ -488,7 +512,12 @@ class RelativeValue {
   }
 }
 
-function positionGreater(x, y) {
+function positionGreater(
+  x: {column: number, line: number},
+  y:
+    | {column: number, line: number}
+    | $TEMPORARY$object<{column: number, line: number}>,
+) {
   return x.line > y.line || (x.line === y.line && x.column > y.column);
 }
 

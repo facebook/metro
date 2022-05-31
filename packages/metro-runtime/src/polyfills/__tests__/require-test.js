@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -181,7 +181,7 @@ describe('require', () => {
 
   it('works with segmented bundles', () => {
     const createSegmentDefiner = modules => {
-      return jest.fn(function(moduleId) {
+      return jest.fn(function (moduleId) {
         const mockModule = modules.find(m => m.moduleId === moduleId);
         moduleSystem.__d(mockModule.factory, mockModule.moduleId, []);
       });
@@ -706,7 +706,7 @@ describe('require', () => {
         1,
         'foo.js',
         (global, require, importDefault, importAll, module) => {
-          module.exports.bar = function() {
+          module.exports.bar = function () {
             return require(0);
           };
         },
@@ -734,7 +734,7 @@ describe('require', () => {
         1,
         'foo.js',
         (global, require, importDefault, importAll, module) => {
-          module.exports.bar = function() {
+          module.exports.bar = function () {
             expect(require(0).baz).not.toBeDefined();
             return require(0).foo + '-cyclic';
           };
@@ -768,7 +768,7 @@ describe('require', () => {
         1,
         'foo.js',
         (global, require, importDefault, importAll, module) => {
-          module.exports.bar = function() {
+          module.exports.bar = function () {
             return require(0).foo + '-cyclic';
           };
         },
@@ -2550,7 +2550,7 @@ describe('require', () => {
         'foo.js',
         (global, require, importDefault, importAll, module, exports) => {
           log.push('init FooV1');
-          exports.loadBar = function() {
+          exports.loadBar = function () {
             require(1);
           };
         },

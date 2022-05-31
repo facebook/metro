@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -37,9 +37,18 @@ function resolve(
 ): Resolution {
   const resolveRequest = context.resolveRequest;
   if (
-    !resolveRequest &&
-    (isRelativeImport(moduleName) || isAbsolutePath(moduleName))
+    resolveRequest &&
+    // Prevent infinite recursion in the trivial case
+    resolveRequest !== resolve
   ) {
+    return resolveRequest(
+      Object.freeze({...context, resolveRequest: resolve}),
+      moduleName,
+      platform,
+    );
+  }
+
+  if (isRelativeImport(moduleName) || isAbsolutePath(moduleName)) {
     return resolveModulePath(context, moduleName, platform);
   }
 
@@ -55,8 +64,7 @@ function resolve(
   const isDirectImport =
     isRelativeImport(realModuleName) || isAbsolutePath(realModuleName);
 
-  // We disable the direct file loading to let the custom resolvers deal with it
-  if (!resolveRequest && isDirectImport) {
+  if (isDirectImport) {
     // derive absolute path /.../node_modules/originModuleDir/realModuleName
     const fromModuleParentIdx =
       originModulePath.lastIndexOf('node_modules' + path.sep) + 13;
@@ -68,7 +76,7 @@ function resolve(
     return resolveModulePath(context, absPath, platform);
   }
 
-  if (!resolveRequest && context.allowHaste && !isDirectImport) {
+  if (context.allowHaste && !isDirectImport) {
     const normalizedName = normalizePath(realModuleName);
     const result = resolveHasteName(context, normalizedName, platform);
     if (result.type === 'resolved') {
@@ -76,28 +84,22 @@ function resolve(
     }
   }
 
-  if (resolveRequest) {
-    try {
-      const resolution = resolveRequest(
-        context,
-        realModuleName,
-        platform,
-        moduleName,
-      );
-      if (resolution) {
-        return resolution;
-      }
-    } catch (error) {}
+  const {disableHierarchicalLookup} = context;
+
+  const nodeModulesPaths = [];
+  let next = path.dirname(originModulePath);
+
+  if (!disableHierarchicalLookup) {
+    let candidate;
+    do {
+      candidate = next;
+      nodeModulesPaths.push(path.join(candidate, 'node_modules'));
+      next = path.dirname(candidate);
+    } while (candidate !== next);
   }
 
-  const nodeModulesPaths = Array.from(context.nodeModulesPaths);
-  let next = path.dirname(originModulePath);
-  let candidate;
-  do {
-    candidate = next;
-    nodeModulesPaths.push(path.join(candidate, 'node_modules'));
-    next = path.dirname(candidate);
-  } while (candidate !== next);
+  // Fall back to `nodeModulesPaths` after hierarchical lookup, similar to $NODE_PATH
+  nodeModulesPaths.push(...context.nodeModulesPaths);
 
   const extraPaths = [];
   const {extraNodeModules} = context;
@@ -199,12 +201,12 @@ class MissingFileInHastePackageError extends Error {
   packageName: string;
   pathInModule: string;
 
-  constructor(opts: {|
+  constructor(opts: {
     +candidates: FileAndDirCandidates,
     +moduleName: string,
     +packageName: string,
     +pathInModule: string,
-  |}) {
+  }) {
     super(
       `While resolving module \`${opts.moduleName}\`, ` +
         `the Haste package \`${opts.packageName}\` was found. However the ` +
@@ -447,7 +449,7 @@ function resolveSourceFileForExt(
 // HasteFS stores paths with backslashes on Windows, this ensures the path is in
 // the proper format. Will also add drive letter if not present so `/root` will
 // resolve to `C:\root`. Noop on other platforms.
-function resolveWindowsPath(modulePath) {
+function resolveWindowsPath(modulePath: string) {
   if (path.sep !== '\\') {
     return modulePath;
   }
@@ -458,7 +460,7 @@ function isRelativeImport(filePath: string) {
   return /^[.][.]?(?:[/]|$)/.test(filePath);
 }
 
-function normalizePath(modulePath) {
+function normalizePath(modulePath: any | string) {
   if (path.sep === '/') {
     modulePath = path.normalize(modulePath);
   } else if (path.posix) {

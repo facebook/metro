@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -75,7 +75,7 @@ describe('processRequest', () => {
   config.reporter = require('../../lib/reporting').nullReporter;
   config.serializer.polyfillModuleNames = null;
   config.serializer.getModulesRunBeforeMainModule = () => ['InitializeCore'];
-  config.server.rewriteRequestUrl = function(requrl) {
+  config.server.rewriteRequestUrl = function (requrl) {
     const rewritten = requrl.replace(/__REMOVE_THIS_WHEN_REWRITING__/g, '');
     if (rewritten !== requrl) {
       return rewritten + '&TEST_URL_WAS_REWRITTEN=true';
@@ -950,8 +950,7 @@ describe('processRequest', () => {
           rawBody: JSON.stringify({
             stack: [
               {
-                file:
-                  'http://localhost:8081/my__REMOVE_THIS_WHEN_REWRITING__bundle.bundle?runModule=true',
+                file: 'http://localhost:8081/my__REMOVE_THIS_WHEN_REWRITING__bundle.bundle?runModule=true',
                 ...mappedLocation,
               },
             ],
@@ -965,8 +964,7 @@ describe('processRequest', () => {
                 rawBody: JSON.stringify({
                   stack: [
                     {
-                      file:
-                        'http://localhost:8081/mybundle.bundle?runModule=true',
+                      file: 'http://localhost:8081/mybundle.bundle?runModule=true',
                       ...mappedLocation,
                     },
                   ],
@@ -989,8 +987,7 @@ describe('processRequest', () => {
           rawBody: JSON.stringify({
             stack: [
               {
-                file:
-                  'http://localhost:8081/my__REMOVE_THIS_WHEN_REWRITING__bundle.bundle?runModule=true',
+                file: 'http://localhost:8081/my__REMOVE_THIS_WHEN_REWRITING__bundle.bundle?runModule=true',
                 ...unmappedLocation,
               },
             ],
@@ -1042,8 +1039,7 @@ describe('processRequest', () => {
         rawBody: JSON.stringify({
           stack: [
             {
-              file:
-                'http://localhost:8081/mybundle.bundle?runModule=true&modulesOnly=true',
+              file: 'http://localhost:8081/mybundle.bundle?runModule=true&modulesOnly=true',
               lineNumber: 2,
               column: 16,
             },
@@ -1067,8 +1063,7 @@ describe('processRequest', () => {
         rawBody: JSON.stringify({
           stack: [
             {
-              file:
-                'http://localhost:8081/mybundle.bundle?runModule=true&shallow=true',
+              file: 'http://localhost:8081/mybundle.bundle?runModule=true&shallow=true',
               lineNumber: 2,
               column: 18,
               customPropShouldBeLeftUnchanged: 'foo',

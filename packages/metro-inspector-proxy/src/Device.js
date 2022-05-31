@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -205,7 +205,7 @@ class Device {
     });
 
     const sendFunc = socket.send;
-    socket.send = function(message: string) {
+    socket.send = function (message: string) {
       debug('(Debugger) <- (Proxy)    (Device): ' + message);
       return sendFunc.call(socket, message);
     };
@@ -387,6 +387,7 @@ class Device {
           debuggerInfo.prependedFilePrefix = true;
         }
 
+        // $FlowFixMe[prop-missing]
         if (params.scriptId != null) {
           this._scriptIdToSourcePathMapping.set(params.scriptId, params.url);
         }
@@ -470,12 +471,14 @@ class Device {
           debuggerInfo.prependedFilePrefix
         ) {
           // Remove fake URL prefix if we modified URL in _processMessageFromDevice.
+          // $FlowFixMe[incompatible-use]
           req.params.url = req.params.url.slice(FILE_PREFIX.length);
         }
       }
       if (req.params.urlRegex) {
         req.params.urlRegex = req.params.urlRegex.replace(
           /localhost/g,
+          // $FlowFixMe[incompatible-call]
           debuggerInfo.originalSourceURLAddress,
         );
       }

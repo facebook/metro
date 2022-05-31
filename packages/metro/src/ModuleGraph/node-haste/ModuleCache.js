@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -36,7 +36,7 @@ module.exports = class ModuleCache {
   getModule(path: string): Module {
     // This is hacky as hell... `ModuleGraph` handles relative paths but which
     // start with a slash (so we can have `/js/foo.js` or even `/../foo.js`).
-    // This does not play well with `jest-haste-map`, which tries to convert
+    // This does not play well with `metro-file-map`, which tries to convert
     // paths to absolute (https://fburl.com/vbwmjsxa) causing an additional
     // slashed to be prepended in the file path.
     // TODO: Refactor the way metro-buck handles paths to make them either
