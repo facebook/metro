@@ -9,9 +9,7 @@
  * @flow strict-local
  */
 
-'use strict';
-
-import type {Graph} from '../types.flow';
+import type {Graph, TransformResultDependency} from '../types.flow';
 
 import nullthrows from 'nullthrows';
 
@@ -22,10 +20,18 @@ const {
   traverseDependencies: traverseDependenciesImpl,
 } = require('../graphOperations');
 
+type DependencyDataInput = $Shape<TransformResultDependency['data']>;
+
 let mockedDependencies: Set<string> = new Set();
 let mockedDependencyTree: Map<
   string,
-  Array<$ReadOnly<{name: string, path: string}>>,
+  Array<
+    $ReadOnly<{
+      name: string,
+      path: string,
+      data?: DependencyDataInput,
+    }>,
+  >,
 > = new Map();
 const files = new Set();
 let graph: {
@@ -69,11 +75,13 @@ const Actions = {
     dependencyPath: string,
     position?: ?number,
     name?: string,
+    data?: DependencyDataInput,
   ) {
     const deps = nullthrows(mockedDependencyTree.get(path));
     const dep = {
       name: name ?? dependencyPath.replace('/', ''),
       path: dependencyPath,
+      data: data ?? {},
     };
     if (position == null) {
       deps.push(dep);
@@ -147,6 +155,30 @@ function computeDelta(modules1, modules2, modifiedPaths) {
   };
 }
 
+function computeInverseDependencies(graph, options) {
+  const allInverseDependencies = new Map();
+  for (const path of graph.dependencies.keys()) {
+    allInverseDependencies.set(path, new Set());
+  }
+  for (const module of graph.dependencies.values()) {
+    for (const dependency of module.dependencies.values()) {
+      if (
+        options.experimentalImportBundleSupport &&
+        dependency.data.data.asyncType != null
+      ) {
+        // Async deps aren't tracked in inverseDependencies
+        continue;
+      }
+      const inverseDependencies =
+        allInverseDependencies.get(dependency.absolutePath) ?? new Set();
+      allInverseDependencies.set(dependency.absolutePath, inverseDependencies);
+
+      inverseDependencies.add(module.path);
+    }
+  }
+  return allInverseDependencies;
+}
+
 async function traverseDependencies(paths, graph, options) {
   // Get a snapshot of the graph before the traversal.
   const dependenciesBefore = new Set(graph.dependencies.keys());
@@ -162,6 +194,18 @@ async function traverseDependencies(paths, graph, options) {
     pathsBefore,
   );
   expect(getPaths(delta)).toEqual(expectedDelta);
+
+  // Ensure the inverseDependencies and dependencies sets are in sync.
+  const expectedInverseDependencies = computeInverseDependencies(
+    graph,
+    options,
+  );
+  const actualInverseDependencies = new Map();
+  for (const [path, module] of graph.dependencies) {
+    actualInverseDependencies.set(path, module.inverseDependencies);
+  }
+  expect(actualInverseDependencies).toEqual(expectedInverseDependencies);
+
   return delta;
 }
 
@@ -176,6 +220,7 @@ beforeEach(async () => {
         data: {
           asyncType: null,
           locs: [],
+          ...dep.data,
         },
       })),
       getSource: () => Buffer.from('// source'),
@@ -1264,6 +1309,553 @@ describe('edge cases', () => {
         deleted: new Set(['/bar']),
         modified: new Set(['/foo', '/bundle']),
       });
+    });
+  });
+
+  describe('lazy traversal of async imports', () => {
+    let localOptions;
+    beforeEach(() => {
+      localOptions = {
+        ...options,
+        experimentalImportBundleSupport: true,
+      };
+    });
+
+    it('async dependencies and their deps are omitted from the initial graph', async () => {
+      Actions.removeDependency('/bundle', '/foo');
+      Actions.addDependency('/bundle', '/foo', undefined, undefined, {
+        asyncType: 'async',
+      });
+
+      /*
+      ┌─────────┐  async   ┌──────┐     ┌──────┐
+      │ /bundle │ ·······▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘          └──────┘     └──────┘
+                            │
+                            │
+                            ▼
+                          ┌──────┐
+                          │ /baz │
+                          └──────┘
+      */
+      expect(
+        getPaths(await initialTraverseDependencies(graph, localOptions)),
+      ).toEqual({
+        added: new Set(['/bundle']),
+        deleted: new Set([]),
+        modified: new Set([]),
+      });
+      expect(graph.dependencies.get('/bar')).toBeUndefined();
+    });
+
+    it('initial async dependencies are collected in importBundleNames', async () => {
+      Actions.removeDependency('/bundle', '/foo');
+      Actions.addDependency('/bundle', '/foo', undefined, undefined, {
+        asyncType: 'async',
+      });
+
+      /*
+      ┌─────────┐  async   ┌──────┐     ┌──────┐
+      │ /bundle │ ·······▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘          └──────┘     └──────┘
+                            │
+                            │
+                            ▼
+                          ┌──────┐
+                          │ /baz │
+                          └──────┘
+      */
+      await initialTraverseDependencies(graph, localOptions);
+      expect(graph.importBundleNames).toEqual(new Set(['/foo']));
+    });
+
+    it('adding a new async dependency updates importBundleNames', async () => {
+      Actions.removeDependency('/bundle', '/foo');
+      Actions.addDependency('/bundle', '/foo', undefined, undefined, {
+        asyncType: 'async',
+      });
+
+      /*
+      ┌─────────┐  async   ┌──────┐     ┌──────┐
+      │ /bundle │ ·······▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘          └──────┘     └──────┘
+                            │
+                            │
+                            ▼
+                          ┌──────┐
+                          │ /baz │
+                          └──────┘
+      */
+      await initialTraverseDependencies(graph, localOptions);
+      files.clear();
+
+      Actions.createFile('/quux');
+      Actions.addDependency('/bundle', '/quux', undefined, undefined, {
+        asyncType: 'async',
+      });
+
+      /*
+      ┌─────────┐  async   ┌──────┐     ┌──────┐
+      │ /bundle │ ·······▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘          └──────┘     └──────┘
+        :                    │
+        : async              │
+        ▼                    ▼
+      ┌─────────┐          ┌──────┐
+      │  /quux  │          │ /baz │
+      └─────────┘          └──────┘
+      */
+      expect(
+        getPaths(await traverseDependencies([...files], graph, localOptions)),
+      ).toEqual({
+        added: new Set([]),
+        deleted: new Set([]),
+        modified: new Set(['/bundle']),
+      });
+      expect(graph.importBundleNames).toEqual(new Set(['/foo', '/quux']));
+    });
+
+    it('changing a sync dependency to async is a deletion', async () => {
+      /*
+      ┌─────────┐     ┌──────┐     ┌──────┐
+      │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘     └──────┘     └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      await initialTraverseDependencies(graph, localOptions);
+      files.clear();
+
+      Actions.removeDependency('/bundle', '/foo');
+      Actions.addDependency('/bundle', '/foo', undefined, undefined, {
+        asyncType: 'async',
+      });
+
+      /*
+      ┌─────────┐  async   ┌──────┐     ┌──────┐
+      │ /bundle │ ·······▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘          └──────┘     └──────┘
+                            │
+                            │
+                            ▼
+                          ┌──────┐
+                          │ /baz │
+                          └──────┘
+      */
+      expect(
+        getPaths(await traverseDependencies([...files], graph, localOptions)),
+      ).toEqual({
+        added: new Set([]),
+        deleted: new Set(['/foo', '/bar', '/baz']),
+        modified: new Set(['/bundle']),
+      });
+    });
+
+    it('changing a sync dependency to async updates importBundleNames', async () => {
+      /*
+      ┌─────────┐     ┌──────┐     ┌──────┐
+      │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘     └──────┘     └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      await initialTraverseDependencies(graph, localOptions);
+      files.clear();
+
+      Actions.removeDependency('/bundle', '/foo');
+      Actions.addDependency('/bundle', '/foo', undefined, undefined, {
+        asyncType: 'async',
+      });
+
+      /*
+      ┌─────────┐  async   ┌──────┐     ┌──────┐
+      │ /bundle │ ·······▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘          └──────┘     └──────┘
+                            │
+                            │
+                            ▼
+                          ┌──────┐
+                          │ /baz │
+                          └──────┘
+      */
+      await traverseDependencies([...files], graph, localOptions);
+      expect(graph.importBundleNames).toEqual(new Set(['/foo']));
+    });
+
+    it('changing an async dependency to sync is an addition', async () => {
+      Actions.removeDependency('/bundle', '/foo');
+      Actions.addDependency('/bundle', '/foo', undefined, undefined, {
+        asyncType: 'async',
+      });
+
+      /*
+      ┌─────────┐  async   ┌──────┐     ┌──────┐
+      │ /bundle │ ·······▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘          └──────┘     └──────┘
+                            │
+                            │
+                            ▼
+                          ┌──────┐
+                          │ /baz │
+                          └──────┘
+      */
+      await initialTraverseDependencies(graph, localOptions);
+      files.clear();
+
+      Actions.removeDependency('/bundle', '/foo');
+      Actions.addDependency('/bundle', '/foo');
+
+      /*
+      ┌─────────┐     ┌──────┐     ┌──────┐
+      │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘     └──────┘     └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      expect(
+        getPaths(await traverseDependencies([...files], graph, localOptions)),
+      ).toEqual({
+        added: new Set(['/foo', '/bar', '/baz']),
+        modified: new Set(['/bundle']),
+        deleted: new Set([]),
+      });
+    });
+
+    it('changing an async dependency to sync updates importBundleNames', async () => {
+      Actions.removeDependency('/bundle', '/foo');
+      Actions.addDependency('/bundle', '/foo', undefined, undefined, {
+        asyncType: 'async',
+      });
+
+      /*
+      ┌─────────┐  async   ┌──────┐     ┌──────┐
+      │ /bundle │ ·······▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘          └──────┘     └──────┘
+                            │
+                            │
+                            ▼
+                          ┌──────┐
+                          │ /baz │
+                          └──────┘
+      */
+      await initialTraverseDependencies(graph, localOptions);
+      files.clear();
+
+      Actions.removeDependency('/bundle', '/foo');
+      Actions.addDependency('/bundle', '/foo');
+
+      /*
+      ┌─────────┐     ┌──────┐     ┌──────┐
+      │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘     └──────┘     └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      await traverseDependencies([...files], graph, localOptions);
+      expect(graph.importBundleNames).toEqual(new Set());
+    });
+
+    it('initial graph can have async+sync edges to the same module', async () => {
+      Actions.addDependency('/bar', '/foo', undefined, undefined, {
+        asyncType: 'async',
+      });
+
+      /*
+                                    async
+                        ┌·················┐
+                        ▼                 :
+      ┌─────────┐     ┌──────┐          ┌──────┐
+      │ /bundle │ ──▶ │ /foo │ ───────▶ │ /bar │
+      └─────────┘     └──────┘          └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      await initialTraverseDependencies(graph, localOptions);
+
+      expect(graph.importBundleNames).toEqual(new Set(['/foo']));
+      expect(graph.dependencies.get('/foo')).not.toBeUndefined();
+    });
+
+    it('adding an async edge pointing at an existing module in the graph', async () => {
+      /*
+      ┌─────────┐     ┌──────┐     ┌──────┐
+      │ /bundle │ ──▶ │ /foo │ ──▶ │ /bar │
+      └─────────┘     └──────┘     └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      await initialTraverseDependencies(graph, options);
+
+      Actions.addDependency('/bar', '/foo', undefined, undefined, {
+        asyncType: 'async',
+      });
+
+      /*
+                                    async
+                        ┌·················┐
+                        ▼                 :
+      ┌─────────┐     ┌──────┐          ┌──────┐
+      │ /bundle │ ──▶ │ /foo │ ───────▶ │ /bar │
+      └─────────┘     └──────┘          └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      expect(
+        getPaths(await traverseDependencies([...files], graph, localOptions)),
+      ).toEqual({
+        added: new Set([]),
+        modified: new Set(['/bar']),
+        deleted: new Set([]),
+      });
+      expect(graph.importBundleNames).toEqual(new Set(['/foo']));
+    });
+
+    it('adding a sync edge brings in a module that is already the target of an async edge', async () => {
+      Actions.removeDependency('/foo', '/bar');
+      Actions.addDependency('/foo', '/bar', undefined, undefined, {
+        asyncType: 'async',
+      });
+
+      /*
+      ┌─────────┐     ┌──────┐  async   ┌──────┐
+      │ /bundle │ ──▶ │ /foo │ ·······▶ │ /bar │
+      └─────────┘     └──────┘          └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      await initialTraverseDependencies(graph, localOptions);
+      files.clear();
+
+      Actions.addDependency('/bundle', '/bar');
+
+      /*
+        ┌─────────────────────────────────┐
+        │                                 ▼
+      ┌─────────┐     ┌──────┐  async   ┌──────┐
+      │ /bundle │ ──▶ │ /foo │ ·······▶ │ /bar │
+      └─────────┘     └──────┘          └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      expect(
+        getPaths(await traverseDependencies([...files], graph, localOptions)),
+      ).toEqual({
+        added: new Set(['/bar']),
+        modified: new Set(['/bundle']),
+        deleted: new Set([]),
+      });
+      expect(graph.importBundleNames).toEqual(new Set(['/bar']));
+    });
+
+    it('on initial traversal, modules are not kept alive by a cycle with an async dep', async () => {
+      Actions.removeDependency('/foo', '/bar');
+      Actions.addDependency('/foo', '/bar', undefined, undefined, {
+        asyncType: 'async',
+      });
+      Actions.addDependency('/bar', '/foo');
+      Actions.removeDependency('/bundle', '/foo');
+
+      /*
+                        ┌─────────────────┐
+                        ▼                 │
+      ┌─────────┐     ┌──────┐  async   ┌──────┐
+      │ /bundle │     │ /foo │ ·······▶ │ /bar │
+      └─────────┘     └──────┘          └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      expect(
+        getPaths(await initialTraverseDependencies(graph, localOptions)),
+      ).toEqual({
+        added: new Set(['/bundle']),
+        deleted: new Set([]),
+        modified: new Set([]),
+      });
+    });
+
+    it('on incremental traversal, modules are not kept alive by a cycle with an async dep - deleting the sync edge in a delta', async () => {
+      Actions.removeDependency('/foo', '/bar');
+      Actions.addDependency('/foo', '/bar', undefined, undefined, {
+        asyncType: 'async',
+      });
+      Actions.addDependency('/bar', '/foo');
+
+      /*
+                        ┌─────────────────┐
+                        ▼                 │
+      ┌─────────┐     ┌──────┐  async   ┌──────┐
+      │ /bundle │ ──▶ │ /foo │ ·······▶ │ /bar │
+      └─────────┘     └──────┘          └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      await initialTraverseDependencies(graph, localOptions);
+      files.clear();
+
+      Actions.removeDependency('/bundle', '/foo');
+
+      /*
+                        ┌─────────────────┐
+                        ▼                 │
+      ┌─────────┐   / ┌──────┐  async   ┌──────┐
+      │ /bundle │ ┈/▷ │ /foo │ ·······▶ │ /bar │
+      └─────────┘ /   └──────┘          └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      expect(
+        getPaths(await traverseDependencies([...files], graph, localOptions)),
+      ).toEqual({
+        added: new Set([]),
+        deleted: new Set(['/foo', '/baz']),
+        modified: new Set(['/bundle']),
+      });
+      expect(graph.importBundleNames).toEqual(new Set());
+    });
+
+    it('on incremental traversal, modules are not kept alive by a cycle with an async dep - adding the async edge in a delta', async () => {
+      Actions.removeDependency('/foo', '/bar');
+      Actions.addDependency('/bar', '/foo');
+      Actions.removeDependency('/bundle', '/foo');
+
+      /*
+                        ┌─────────────────┐
+                        ▼                 │
+      ┌─────────┐     ┌──────┐          ┌──────┐
+      │ /bundle │     │ /foo │          │ /bar │
+      └─────────┘     └──────┘          └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      await initialTraverseDependencies(graph, localOptions);
+      files.clear();
+
+      Actions.addDependency('/foo', '/bar', undefined, undefined, {
+        asyncType: 'async',
+      });
+
+      /*
+                        ┌─────────────────┐
+                        ▼                 │
+      ┌─────────┐     ┌──────┐          ┌──────┐
+      │ /bundle │     │ /foo │ ───────▶ │ /bar │
+      └─────────┘     └──────┘          └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      // At this point neither of /foo and /bar is reachable from /bundle.
+      expect(
+        getPaths(await traverseDependencies([...files], graph, localOptions)),
+      ).toEqual({
+        added: new Set([]),
+        deleted: new Set([]),
+        modified: new Set([]),
+      });
+      expect(graph.importBundleNames).toEqual(new Set());
+    });
+
+    it('on incremental traversal, modules are not kept alive by a cycle with an async dep - deletion + add async in the same delta', async () => {
+      Actions.removeDependency('/foo', '/bar');
+      Actions.addDependency('/bar', '/foo');
+
+      /*
+                        ┌─────────────────┐
+                        ▼                 │
+      ┌─────────┐     ┌──────┐          ┌──────┐
+      │ /bundle │ ──▶ │ /foo │          │ /bar │
+      └─────────┘     └──────┘          └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      await initialTraverseDependencies(graph, localOptions);
+      files.clear();
+
+      Actions.addDependency('/foo', '/bar', undefined, undefined, {
+        asyncType: 'async',
+      });
+      Actions.removeDependency('/bundle', '/foo');
+
+      /*
+                        ┌─────────────────┐
+                        ▼                 │
+      ┌─────────┐   / ┌──────┐  async   ┌──────┐
+      │ /bundle │ ┈/▷ │ /foo │ ·······▶ │ /bar │
+      └─────────┘ /   └──────┘          └──────┘
+                        │
+                        │
+                        ▼
+                      ┌──────┐
+                      │ /baz │
+                      └──────┘
+      */
+      expect(
+        getPaths(await traverseDependencies([...files], graph, localOptions)),
+      ).toEqual({
+        added: new Set([]),
+        deleted: new Set(['/foo', '/baz']),
+        modified: new Set(['/bundle']),
+      });
+      expect(graph.importBundleNames).toEqual(new Set());
     });
   });
 
