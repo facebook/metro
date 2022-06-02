@@ -49,6 +49,7 @@ function printHelp() {
 
 async function main(
   argvInput: Array<string> = process.argv.slice(2),
+  // prettier-ignore
   {
     stdin,
     stderr,
@@ -58,6 +59,7 @@ async function main(
     stderr: stream$Writable,
     stdout: stream$Writable,
     ...
+    // $FlowFixMe[class-object-subtyping]
   } = process,
 ): Promise<number> {
   const argv = argvInput.slice();
