@@ -521,7 +521,7 @@ describe('HasteMap', () => {
 
     // The cache file must exactly mirror the data structure returned from a
     // build
-    expect(deepNormalize(hasteMap.read())).toEqual(data);
+    expect(deepNormalize(await hasteMap.read())).toEqual(data);
   });
 
   it('throws if both symlinks and watchman is enabled', () => {
@@ -664,7 +664,7 @@ describe('HasteMap', () => {
         }),
       );
 
-      expect(deepNormalize(hasteMap.read())).toEqual(data);
+      expect(deepNormalize(await hasteMap.read())).toEqual(data);
     });
   });
 

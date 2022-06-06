@@ -60,7 +60,7 @@ import * as path from 'path';
 const nodeCrawl = require('./crawlers/node');
 const watchmanCrawl = require('./crawlers/watchman');
 
-export type {HasteFS, ModuleMapData, ModuleMapItem};
+export type {HasteFS, HasteMap, InternalData, ModuleMapData, ModuleMapItem};
 
 type InputOptions = $ReadOnly<{
   computeDependencies?: ?boolean,
@@ -212,7 +212,6 @@ const canUseWatchman = ((): boolean => {
  *     * the average case is a small number of changed files.
  *
  *  4. serialize the new `HasteMap` in a cache file.
- *     Worker processes can directly access the cache through `HasteMap.read()`.
  *
  */
 export default class HasteMap extends EventEmitter {
@@ -362,7 +361,7 @@ export default class HasteMap extends EventEmitter {
           data.removedFiles.size > 0
         ) {
           hasteMap = await this._buildHasteMap(data);
-          this._persist(hasteMap);
+          await this._persist(hasteMap);
         } else {
           hasteMap = data.hasteMap;
         }
@@ -397,7 +396,7 @@ export default class HasteMap extends EventEmitter {
   /**
    * 1. read data from the cache or create an empty structure.
    */
-  read(): InternalData {
+  async read(): Promise<InternalData> {
     let data: InternalData;
 
     this._options.perfLogger?.markerPoint('read_start');
@@ -412,8 +411,8 @@ export default class HasteMap extends EventEmitter {
     return data;
   }
 
-  readModuleMap(): HasteModuleMap {
-    const data = this.read();
+  async readModuleMap(): Promise<HasteModuleMap> {
+    const data = await this.read();
     return new HasteModuleMap({
       duplicates: data.duplicates,
       map: data.map,
@@ -747,7 +746,7 @@ export default class HasteMap extends EventEmitter {
   /**
    * 4. serialize the new `HasteMap` in a cache file.
    */
-  _persist(hasteMap: InternalData) {
+  async _persist(hasteMap: InternalData) {
     this._options.perfLogger?.markerPoint('persist_start');
     serializer.writeFileSync(this._cachePath, hasteMap);
     this._options.perfLogger?.markerPoint('persist_end');
