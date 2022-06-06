@@ -15,8 +15,6 @@ import MetroFileMap from 'metro-file-map';
 const ci = require('ci-info');
 const path = require('path');
 
-const JEST_HASTE_MAP_CACHE_BREAKER = 5;
-
 function getIgnorePattern(config: ConfigT): RegExp {
   // For now we support both options
   const {blockList, blacklistRE} = config.resolver;
@@ -48,7 +46,7 @@ function createHasteMap(
     extractDependencies?: boolean,
     watch?: boolean,
     throwOnModuleCollision?: boolean,
-    name?: string,
+    cacheFilePrefix?: string,
   }>,
 ): MetroFileMap {
   const dependencyExtractor =
@@ -70,7 +68,7 @@ function createHasteMap(
     ignorePattern: getIgnorePattern(config),
     maxWorkers: config.maxWorkers,
     mocksPattern: '',
-    name: `${options?.name ?? 'metro'}-${JEST_HASTE_MAP_CACHE_BREAKER}`,
+    cacheFilePrefix: options?.cacheFilePrefix,
     platforms: config.resolver.platforms,
     retainAllFiles: true,
     resetCache: config.resetCache,

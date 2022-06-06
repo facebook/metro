@@ -14,6 +14,27 @@ import type HasteFS from './HasteFS';
 import type ModuleMap from './ModuleMap';
 import type {Stats} from 'graceful-fs';
 
+// These inputs affect the internal data collected for a given filesystem
+// state, and changes may invalidate a cache.
+export type BuildParameters = $ReadOnly<{
+  computeDependencies: boolean,
+  computeSha1: boolean,
+  enableSymlinks: boolean,
+  extensions: $ReadOnlyArray<string>,
+  forceNodeFilesystemAPI: boolean,
+  ignorePattern: RegExp,
+  mocksPattern: ?RegExp,
+  platforms: $ReadOnlyArray<string>,
+  retainAllFiles: boolean,
+  rootDir: string,
+  roots: $ReadOnlyArray<string>,
+  skipPackageJson: boolean,
+
+  // Module paths that should export a 'getCacheKey' method
+  dependencyExtractor: ?string,
+  hasteImplModulePath: ?string,
+}>;
+
 export type ChangeEvent = {
   eventsQueue: EventsQueue,
   hasteFS: HasteFS,
@@ -25,7 +46,7 @@ export type Console = typeof global.console;
 export type CrawlerOptions = {
   computeSha1: boolean,
   enableSymlinks: boolean,
-  data: InternalHasteMap,
+  data: InternalData,
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI: boolean,
   ignore: IgnoreMatcher,
@@ -46,19 +67,17 @@ export type EventsQueue = Array<{
 export type HasteMap = {
   hasteFS: HasteFS,
   moduleMap: ModuleMap,
-  __hasteMapForTest?: ?InternalHasteMap,
+  __hasteMapForTest?: ?InternalData,
 };
 
 export type HasteMapStatic<S = SerializableModuleMap> = {
   getCacheFilePath(
-    tmpdir: Path,
-    name: string,
-    ...extra: $ReadOnlyArray<string>
+    cacheDirectory: string,
+    cacheFilePrefix: string,
+    buildParameters: BuildParameters,
   ): string,
   getModuleMapFromJSON(json: S): IModuleMap<S>,
 };
-
-export type HasteRegExp = RegExp | ((str: string) => boolean);
 
 export type HType = {
   ID: 0,
@@ -80,7 +99,7 @@ export type HTypeValue = $Values<HType>;
 
 export type IgnoreMatcher = (item: string) => boolean;
 
-export type InternalHasteMap = {
+export type InternalData = {
   clocks: WatchmanClocks,
   duplicates: DuplicatesIndex,
   files: FileData,

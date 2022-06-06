@@ -9,6 +9,7 @@
  */
 
 import type {
+  BuildParameters,
   ChangeEvent,
   Console,
   CrawlerOptions,
@@ -17,9 +18,8 @@ import type {
   FileMetaData,
   HasteMap as InternalHasteMapObject,
   HasteMapStatic,
-  HasteRegExp,
   HType,
-  InternalHasteMap,
+  InternalData,
   MockData,
   ModuleMapData,
   ModuleMapItem,
@@ -37,6 +37,7 @@ import HasteFS from './HasteFS';
 import * as fastPath from './lib/fast_path';
 import getPlatformExtension from './lib/getPlatformExtension';
 import normalizePathSep from './lib/normalizePathSep';
+import rootRelativeCacheKeys from './lib/rootRelativeCacheKeys';
 import HasteModuleMap from './ModuleMap';
 import FSEventsWatcher from './watchers/FSEventsWatcher';
 // $FlowFixMe[untyped-import] - it's a fork: https://github.com/facebook/jest/pull/10919
@@ -45,7 +46,6 @@ import NodeWatcher from './watchers/NodeWatcher';
 import WatchmanWatcher from './watchers/WatchmanWatcher';
 import {getSha1, worker} from './worker';
 import {execSync} from 'child_process';
-import {createHash} from 'crypto';
 import EventEmitter from 'events';
 import invariant from 'invariant';
 // $FlowFixMe[untyped-import] - jest-regex-util
@@ -57,60 +57,46 @@ import {Worker} from 'jest-worker';
 import {tmpdir} from 'os';
 import * as path from 'path';
 
-// $FlowFixMe[untyped-import] - requiring JSON
-const {version: VERSION} = require('../package.json');
 const nodeCrawl = require('./crawlers/node');
 const watchmanCrawl = require('./crawlers/watchman');
 
 export type {HasteFS, ModuleMapData, ModuleMapItem};
 
-type Options = $ReadOnly<{
-  cacheDirectory?: ?string,
+type InputOptions = $ReadOnly<{
   computeDependencies?: ?boolean,
   computeSha1?: ?boolean,
-  console?: ?Console,
-  dependencyExtractor?: ?string,
   enableSymlinks?: ?boolean,
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI?: ?boolean,
-  hasteImplModulePath?: ?string,
-  hasteMapModulePath?: ?string,
-  ignorePattern?: ?HasteRegExp,
-  maxWorkers: number,
+  ignorePattern?: ?RegExp,
   mocksPattern?: ?string,
-  name: string,
-  perfLogger?: ?PerfLogger,
   platforms: $ReadOnlyArray<string>,
-  resetCache?: ?boolean,
   retainAllFiles: boolean,
   rootDir: string,
   roots: $ReadOnlyArray<string>,
   skipPackageJson?: ?boolean,
+
+  // Module paths that should export a 'getCacheKey' method
+  dependencyExtractor?: ?string,
+  hasteImplModulePath?: ?string,
+
+  perfLogger?: ?PerfLogger,
+  resetCache?: ?boolean,
+  maxWorkers: number,
   throwOnModuleCollision?: ?boolean,
   useWatchman?: ?boolean,
   watch?: ?boolean,
+  hasteMapModulePath?: ?string,
+  console?: Console,
+  cacheDirectory?: ?string,
+  cacheFilePrefix?: ?string,
 }>;
 
 type InternalOptions = {
-  cacheDirectory: string,
-  computeDependencies: boolean,
-  computeSha1: boolean,
-  dependencyExtractor: ?string,
-  enableSymlinks: boolean,
-  extensions: $ReadOnlyArray<string>,
-  forceNodeFilesystemAPI: boolean,
-  hasteImplModulePath: ?string,
-  ignorePattern: HasteRegExp,
-  maxWorkers: number,
-  mocksPattern: ?RegExp,
-  name: string,
+  ...BuildParameters,
   perfLogger: ?PerfLogger,
-  platforms: $ReadOnlyArray<string>,
   resetCache: ?boolean,
-  retainAllFiles: boolean,
-  rootDir: string,
-  roots: $ReadOnlyArray<string>,
-  skipPackageJson: boolean,
+  maxWorkers: number,
   throwOnModuleCollision: boolean,
   useWatchman: boolean,
   watch: boolean,
@@ -129,6 +115,11 @@ export type {SerializableModuleMap} from './flow-types';
 export type {IModuleMap} from './flow-types';
 export type {default as FS} from './HasteFS';
 export type {ChangeEvent, HasteMap as HasteMapObject} from './flow-types';
+
+// This should be bumped whenever a code change to `metro-file-map` itself
+// would cause a change to the cache data structure and/or content (for a given
+// filesystem state and build parameters).
+const CACHE_BREAKER = '1';
 
 const CHANGE_INTERVAL = 30;
 const MAX_WAIT_TIME = 240000;
@@ -245,7 +236,7 @@ export default class HasteMap extends EventEmitter {
     return HasteMap;
   }
 
-  static create(options: Options): HasteMap {
+  static create(options: InputOptions): HasteMap {
     if (options.hasteMapModulePath != null) {
       // $FlowFixMe[unsupported-syntax] - Dynamic require
       const CustomHasteMap = require(options.hasteMapModulePath);
@@ -254,15 +245,31 @@ export default class HasteMap extends EventEmitter {
     return new HasteMap(options);
   }
 
-  constructor(options: Options) {
+  constructor(options: InputOptions) {
     if (options.perfLogger) {
       options.perfLogger?.markerPoint('constructor_start');
     }
     super();
 
-    // $FlowFixMe[prop-missing] - ignorePattern is added later
-    this._options = {
-      cacheDirectory: options.cacheDirectory ?? tmpdir(),
+    // Add VCS_DIRECTORIES to provided ignorePattern
+    let ignorePattern;
+    if (options.ignorePattern) {
+      const inputIgnorePattern = options.ignorePattern;
+      if (inputIgnorePattern instanceof RegExp) {
+        ignorePattern = new RegExp(
+          inputIgnorePattern.source.concat('|' + VCS_DIRECTORIES),
+          inputIgnorePattern.flags,
+        );
+      } else {
+        throw new Error(
+          'metro-file-map: the `ignorePattern` option must be a RegExp',
+        );
+      }
+    } else {
+      ignorePattern = new RegExp(VCS_DIRECTORIES);
+    }
+
+    const buildParameters: BuildParameters = {
       computeDependencies:
         options.computeDependencies == null
           ? true
@@ -273,42 +280,29 @@ export default class HasteMap extends EventEmitter {
       extensions: options.extensions,
       forceNodeFilesystemAPI: !!options.forceNodeFilesystemAPI,
       hasteImplModulePath: options.hasteImplModulePath,
-      maxWorkers: options.maxWorkers,
+      ignorePattern,
       mocksPattern:
         options.mocksPattern != null && options.mocksPattern !== ''
           ? new RegExp(options.mocksPattern)
           : null,
-      name: options.name,
-      perfLogger: options.perfLogger,
       platforms: options.platforms,
-      resetCache: options.resetCache,
       retainAllFiles: options.retainAllFiles,
       rootDir: options.rootDir,
       roots: Array.from(new Set(options.roots)),
       skipPackageJson: !!options.skipPackageJson,
+    };
+
+    this._options = {
+      ...buildParameters,
+      maxWorkers: options.maxWorkers,
+      perfLogger: options.perfLogger,
+      resetCache: options.resetCache,
       throwOnModuleCollision: !!options.throwOnModuleCollision,
       useWatchman: options.useWatchman == null ? true : options.useWatchman,
       watch: !!options.watch,
     };
-    this._console = options.console || global.console;
 
-    if (options.ignorePattern) {
-      const inputIgnorePattern = options.ignorePattern;
-      if (inputIgnorePattern instanceof RegExp) {
-        // $FlowFixMe[prop-missing]
-        this._options.ignorePattern = new RegExp(
-          inputIgnorePattern.source.concat('|' + VCS_DIRECTORIES),
-          inputIgnorePattern.flags,
-        );
-      } else {
-        throw new Error(
-          'metro-file-map: the `ignorePattern` option must be a RegExp',
-        );
-      }
-    } else {
-      // $FlowFixMe[prop-missing]
-      this._options.ignorePattern = new RegExp(VCS_DIRECTORIES);
-    }
+    this._console = options.console || global.console;
 
     if (this._options.enableSymlinks && this._options.useWatchman) {
       throw new Error(
@@ -318,43 +312,12 @@ export default class HasteMap extends EventEmitter {
       );
     }
 
-    const rootDirHash = createHash('md5').update(options.rootDir).digest('hex');
-    let hasteImplHash = '';
-    let dependencyExtractorHash = '';
-
-    if (options.hasteImplModulePath != null) {
-      // $FlowFixMe[unsupported-syntax] - Dynamic require
-      const hasteImpl = require(options.hasteImplModulePath);
-      if (hasteImpl.getCacheKey) {
-        hasteImplHash = String(hasteImpl.getCacheKey());
-      }
-    }
-
-    if (options.dependencyExtractor != null) {
-      // $FlowFixMe[unsupported-syntax] - Dynamic require
-      const dependencyExtractor = require(options.dependencyExtractor);
-      if (dependencyExtractor.getCacheKey) {
-        dependencyExtractorHash = String(dependencyExtractor.getCacheKey());
-      }
-    }
-
     this._cachePath = HasteMap.getCacheFilePath(
-      this._options.cacheDirectory,
-      `haste-map-${this._options.name}-${rootDirHash}`,
-      VERSION,
-      this._options.name,
-      this._options.roots
-        .map(root => fastPath.relative(options.rootDir, root))
-        .join(':'),
-      this._options.extensions.join(':'),
-      this._options.platforms.join(':'),
-      this._options.computeSha1.toString(),
-      options.mocksPattern || '',
-      (options.ignorePattern || '').toString(),
-      hasteImplHash,
-      dependencyExtractorHash,
-      this._options.computeDependencies.toString(),
+      options.cacheDirectory ?? tmpdir(),
+      options.cacheFilePrefix ?? 'metro-file-map',
+      buildParameters,
     );
+
     this._buildPromise = null;
     this._watchers = [];
     this._worker = null;
@@ -362,14 +325,17 @@ export default class HasteMap extends EventEmitter {
   }
 
   static getCacheFilePath(
-    tmpdir: Path,
-    name: string,
-    ...extra: Array<string>
+    cacheDirectory: string,
+    cacheFilePrefix: string,
+    buildParameters: BuildParameters,
   ): string {
-    const hash = createHash('md5').update(extra.join(''));
+    const {rootDirHash, relativeConfigHash} = rootRelativeCacheKeys(
+      buildParameters,
+      CACHE_BREAKER,
+    );
     return path.join(
-      tmpdir,
-      name.replace(/\W/g, '-') + '-' + hash.digest('hex'),
+      cacheDirectory,
+      `${cacheFilePrefix}-${rootDirHash}-${relativeConfigHash}`,
     );
   }
 
@@ -389,7 +355,7 @@ export default class HasteMap extends EventEmitter {
 
         // Persist when we don't know if files changed (changedFiles undefined)
         // or when we know a file was changed or deleted.
-        let hasteMap: InternalHasteMap;
+        let hasteMap: InternalData;
         if (
           data.changedFiles == null ||
           data.changedFiles.size > 0 ||
@@ -431,19 +397,19 @@ export default class HasteMap extends EventEmitter {
   /**
    * 1. read data from the cache or create an empty structure.
    */
-  read(): InternalHasteMap {
-    let hasteMap: InternalHasteMap;
+  read(): InternalData {
+    let data: InternalData;
 
     this._options.perfLogger?.markerPoint('read_start');
     try {
       // $FlowFixMe[incompatible-cast] - readFileSync returns mixed
-      hasteMap = (serializer.readFileSync(this._cachePath): InternalHasteMap);
+      data = (serializer.readFileSync(this._cachePath): InternalData);
     } catch {
-      hasteMap = this._createEmptyMap();
+      data = this._createEmptyMap();
     }
     this._options.perfLogger?.markerPoint('read_end');
 
-    return hasteMap;
+    return data;
   }
 
   readModuleMap(): HasteModuleMap {
@@ -462,9 +428,9 @@ export default class HasteMap extends EventEmitter {
   async _buildFileMap(): Promise<{
     removedFiles: FileData,
     changedFiles?: FileData,
-    hasteMap: InternalHasteMap,
+    hasteMap: InternalData,
   }> {
-    let hasteMap: InternalHasteMap;
+    let hasteMap: InternalData;
     this._options.perfLogger?.markerPoint('buildFileMap_start');
     try {
       hasteMap =
@@ -484,7 +450,7 @@ export default class HasteMap extends EventEmitter {
    * 3. parse and extract metadata from changed files.
    */
   _processFile(
-    hasteMap: InternalHasteMap,
+    hasteMap: InternalData,
     map: ModuleMapData,
     mocks: MockData,
     filePath: Path,
@@ -709,8 +675,8 @@ export default class HasteMap extends EventEmitter {
   _buildHasteMap(data: {
     removedFiles: FileData,
     changedFiles?: FileData,
-    hasteMap: InternalHasteMap,
-  }): Promise<InternalHasteMap> {
+    hasteMap: InternalData,
+  }): Promise<InternalData> {
     this._options.perfLogger?.markerPoint('buildHasteMap_start');
     const {removedFiles, changedFiles, hasteMap} = data;
 
@@ -781,7 +747,7 @@ export default class HasteMap extends EventEmitter {
   /**
    * 4. serialize the new `HasteMap` in a cache file.
    */
-  _persist(hasteMap: InternalHasteMap) {
+  _persist(hasteMap: InternalData) {
     this._options.perfLogger?.markerPoint('persist_start');
     serializer.writeFileSync(this._cachePath, hasteMap);
     this._options.perfLogger?.markerPoint('persist_end');
@@ -806,7 +772,7 @@ export default class HasteMap extends EventEmitter {
     return this._worker;
   }
 
-  _crawl(hasteMap: InternalHasteMap) {
+  _crawl(hasteMap: InternalData) {
     this._options.perfLogger?.markerPoint('crawl_start');
     const options = this._options;
     const ignore = filePath => this._ignore(filePath);
@@ -862,7 +828,7 @@ export default class HasteMap extends EventEmitter {
   /**
    * Watch mode
    */
-  _watch(hasteMap: InternalHasteMap): Promise<void> {
+  _watch(hasteMap: InternalData): Promise<void> {
     this._options.perfLogger?.markerPoint('watch_start');
     if (!this._options.watch) {
       this._options.perfLogger?.markerPoint('watch_end');
@@ -1089,7 +1055,7 @@ export default class HasteMap extends EventEmitter {
    * correct resolution for its ID, and cleanup the duplicates index.
    */
   _recoverDuplicates(
-    hasteMap: InternalHasteMap,
+    hasteMap: InternalData,
     relativeFilePath: string,
     moduleName: string,
   ) {
@@ -1167,7 +1133,7 @@ export default class HasteMap extends EventEmitter {
     );
   }
 
-  _createEmptyMap(): InternalHasteMap {
+  _createEmptyMap(): InternalData {
     return {
       clocks: new Map(),
       duplicates: new Map(),

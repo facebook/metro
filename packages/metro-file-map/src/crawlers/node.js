@@ -12,7 +12,7 @@ import type {
   CrawlerOptions,
   FileData,
   IgnoreMatcher,
-  InternalHasteMap,
+  InternalData,
 } from '../flow-types';
 
 import H from '../constants';
@@ -206,7 +206,7 @@ function findNative(
 
 module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
   removedFiles: FileData,
-  hasteMap: InternalHasteMap,
+  hasteMap: InternalData,
 }> {
   const {
     data,

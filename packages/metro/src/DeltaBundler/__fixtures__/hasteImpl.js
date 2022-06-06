@@ -27,4 +27,7 @@ module.exports = {
 
     return matches[1];
   },
+  getCacheKey() {
+    return 'hasteImplFixture';
+  },
 };

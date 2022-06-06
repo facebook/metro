@@ -12,7 +12,7 @@ import type {
   CrawlerOptions,
   FileData,
   FileMetaData,
-  InternalHasteMap,
+  InternalData,
   Path,
 } from '../flow-types';
 
@@ -106,7 +106,7 @@ module.exports = async function watchmanCrawl(
 ): Promise<{
   changedFiles?: FileData,
   removedFiles: FileData,
-  hasteMap: InternalHasteMap,
+  hasteMap: InternalData,
 }> {
   const fields = ['name', 'exists', 'mtime_ms', 'size'];
   const {data, extensions, ignore, rootDir, roots, perfLogger} = options;

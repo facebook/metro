@@ -121,7 +121,7 @@ jest.mock('graceful-fs', () => ({
   }),
 }));
 
-const cacheFilePath = '/cache-file';
+const mockCacheFilePath = '/cache-file';
 const object = data => Object.assign(Object.create(null), data);
 const createMap = obj => new Map(Object.keys(obj).map(key => [key, obj[key]]));
 
@@ -202,7 +202,7 @@ describe('HasteMap', () => {
     H = HasteMap.H;
 
     getCacheFilePath = HasteMap.getCacheFilePath;
-    HasteMap.getCacheFilePath = jest.fn(() => cacheFilePath);
+    HasteMap.getCacheFilePath = jest.fn(() => mockCacheFilePath);
 
     defaultConfig = {
       extensions: ['js', 'json'],
@@ -234,11 +234,11 @@ describe('HasteMap', () => {
     HasteMap = require('../').default;
 
     expect(
-      HasteMap.getCacheFilePath('/', '@scoped/package', 'random-value'),
+      HasteMap.getCacheFilePath('/some-dir', 'file-prefix', defaultConfig),
     ).toMatch(
       process.platform === 'win32'
-        ? /^\\-scoped-package-(.*)$/
-        : /^\/-scoped-package-(.*)$/,
+        ? /^\\some-dir\\file-prefix-(.*)$/
+        : /^\/some-dir\/file-prefix-(.*)$/,
     );
   });
 
@@ -293,8 +293,14 @@ describe('HasteMap', () => {
   it('creates different cache file paths for different projects', () => {
     jest.resetModules();
     const HasteMap = require('../').default;
-    const hasteMap1 = new HasteMap({...defaultConfig, name: '@scoped/package'});
-    const hasteMap2 = new HasteMap({...defaultConfig, name: '-scoped-package'});
+    const hasteMap1 = new HasteMap({
+      ...defaultConfig,
+      cacheFilePrefix: 'prefix-a',
+    });
+    const hasteMap2 = new HasteMap({
+      ...defaultConfig,
+      cacheFilePrefix: 'prefix-b',
+    });
     expect(hasteMap1.getCacheFilePath()).not.toBe(hasteMap2.getCacheFilePath());
   });
 
@@ -878,9 +884,9 @@ describe('HasteMap', () => {
     const {__hasteMapForTest: data} = await new HasteMap(defaultConfig).build();
     expect(fs.readFileSync.mock.calls.length).toBe(1);
     if (require('v8').deserialize) {
-      expect(fs.readFileSync).toBeCalledWith(cacheFilePath);
+      expect(fs.readFileSync).toBeCalledWith(mockCacheFilePath);
     } else {
-      expect(fs.readFileSync).toBeCalledWith(cacheFilePath, 'utf8');
+      expect(fs.readFileSync).toBeCalledWith(mockCacheFilePath, 'utf8');
     }
     expect(deepNormalize(data.clocks)).toEqual(mockClocks);
     expect(deepNormalize(data.files)).toEqual(initialData.files);
@@ -911,9 +917,9 @@ describe('HasteMap', () => {
     expect(fs.readFileSync.mock.calls.length).toBe(2);
 
     if (require('v8').serialize) {
-      expect(fs.readFileSync).toBeCalledWith(cacheFilePath);
+      expect(fs.readFileSync).toBeCalledWith(mockCacheFilePath);
     } else {
-      expect(fs.readFileSync).toBeCalledWith(cacheFilePath, 'utf8');
+      expect(fs.readFileSync).toBeCalledWith(mockCacheFilePath, 'utf8');
     }
     expect(fs.readFileSync).toBeCalledWith(
       path.join('/', 'project', 'fruits', 'Banana.js'),
