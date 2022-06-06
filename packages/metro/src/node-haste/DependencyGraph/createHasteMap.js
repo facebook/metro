@@ -56,13 +56,15 @@ function createHasteMap(
   const computeDependencies = dependencyExtractor != null;
 
   return MetroFileMap.create({
-    cacheManagerFactory: buildParameters =>
-      new DiskCacheManager({
-        buildParameters,
-        cacheDirectory:
-          config.fileMapCacheDirectory ?? config.hasteMapCacheDirectory,
-        cacheFilePrefix: options?.cacheFilePrefix,
-      }),
+    cacheManagerFactory:
+      config?.unstable_fileMapCacheManagerFactory ??
+      (buildParameters =>
+        new DiskCacheManager({
+          buildParameters,
+          cacheDirectory:
+            config.fileMapCacheDirectory ?? config.hasteMapCacheDirectory,
+          cacheFilePrefix: options?.cacheFilePrefix,
+        })),
     computeDependencies,
     computeSha1: true,
     dependencyExtractor: config.resolver.dependencyExtractor,

@@ -13,6 +13,7 @@
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
 import typeof MetroCache from 'metro-cache';
+import type {CacheManagerFactory} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
 import type {MixedSourceMap} from 'metro-source-map';
 import type {JsTransformerConfig} from 'metro-transform-worker';
@@ -118,6 +119,7 @@ type MetalConfigT = {
   cacheVersion: string,
   fileMapCacheDirectory?: string,
   hasteMapCacheDirectory?: string, // Deprecated, alias of fileMapCacheDirectory
+  unstable_fileMapCacheManagerFactory?: CacheManagerFactory,
   maxWorkers: number,
   projectRoot: string,
   stickyWorkers: boolean,
