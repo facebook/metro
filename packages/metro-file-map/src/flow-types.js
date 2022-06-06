@@ -33,7 +33,18 @@ export type BuildParameters = $ReadOnly<{
   // Module paths that should export a 'getCacheKey' method
   dependencyExtractor: ?string,
   hasteImplModulePath: ?string,
+
+  cacheBreaker: string,
 }>;
+
+export interface CacheManager {
+  read(): Promise<?InternalData>;
+  write(dataSnapshot: InternalData): Promise<void>;
+}
+
+export type CacheManagerFactory = (
+  buildParameters: BuildParameters,
+) => CacheManager;
 
 export type ChangeEvent = {
   eventsQueue: EventsQueue,
@@ -67,7 +78,6 @@ export type EventsQueue = Array<{
 export type HasteMap = {
   hasteFS: HasteFS,
   moduleMap: ModuleMap,
-  __hasteMapForTest?: ?InternalData,
 };
 
 export type HasteMapStatic<S = SerializableModuleMap> = {

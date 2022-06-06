@@ -10,13 +10,15 @@
 
 import type {
   BuildParameters,
+  CacheManager,
+  CacheManagerFactory,
   ChangeEvent,
   Console,
   CrawlerOptions,
   EventsQueue,
   FileData,
   FileMetaData,
-  HasteMap as InternalHasteMapObject,
+  HasteMap as InternalDataObject,
   HasteMapStatic,
   HType,
   InternalData,
@@ -31,9 +33,11 @@ import type {
 } from './flow-types';
 import type {Stats} from 'graceful-fs';
 
+import {DiskCacheManager} from './cache/DiskCacheManager';
 import H from './constants';
 import getMockName from './getMockName';
 import HasteFS from './HasteFS';
+import deepCloneInternalData from './lib/deepCloneInternalData';
 import * as fastPath from './lib/fast_path';
 import getPlatformExtension from './lib/getPlatformExtension';
 import normalizePathSep from './lib/normalizePathSep';
@@ -50,11 +54,8 @@ import EventEmitter from 'events';
 import invariant from 'invariant';
 // $FlowFixMe[untyped-import] - jest-regex-util
 import {escapePathForRegex} from 'jest-regex-util';
-// $FlowFixMe[untyped-import] - jest-serializer untyped (in OSS only)
-import serializer from 'jest-serializer';
 // $FlowFixMe[untyped-import] - jest-worker
 import {Worker} from 'jest-worker';
-import {tmpdir} from 'os';
 import * as path from 'path';
 
 const nodeCrawl = require('./crawlers/node');
@@ -62,7 +63,7 @@ const watchmanCrawl = require('./crawlers/watchman');
 
 export type {HasteFS, HasteMap, InternalData, ModuleMapData, ModuleMapItem};
 
-type InputOptions = $ReadOnly<{
+export type InputOptions = $ReadOnly<{
   computeDependencies?: ?boolean,
   computeSha1?: ?boolean,
   enableSymlinks?: ?boolean,
@@ -88,8 +89,7 @@ type InputOptions = $ReadOnly<{
   watch?: ?boolean,
   hasteMapModulePath?: ?string,
   console?: Console,
-  cacheDirectory?: ?string,
-  cacheFilePrefix?: ?string,
+  cacheManagerFactory?: ?CacheManagerFactory,
 }>;
 
 type InternalOptions = {
@@ -111,10 +111,16 @@ type WorkerInterface = {worker: typeof worker, getSha1: typeof getSha1};
 export const DuplicateHasteCandidatesError =
   HasteModuleMap.DuplicateHasteCandidatesError;
 export {default as ModuleMap} from './ModuleMap';
+export {DiskCacheManager} from './cache/DiskCacheManager';
 export type {SerializableModuleMap} from './flow-types';
 export type {IModuleMap} from './flow-types';
 export type {default as FS} from './HasteFS';
-export type {ChangeEvent, HasteMap as HasteMapObject} from './flow-types';
+export type {
+  CacheManager,
+  CacheManagerFactory,
+  ChangeEvent,
+  HasteMap as HasteMapObject,
+} from './flow-types';
 
 // This should be bumped whenever a code change to `metro-file-map` itself
 // would cause a change to the cache data structure and/or content (for a given
@@ -215,13 +221,14 @@ const canUseWatchman = ((): boolean => {
  *
  */
 export default class HasteMap extends EventEmitter {
-  _buildPromise: ?Promise<InternalHasteMapObject>;
+  _buildPromise: ?Promise<InternalDataObject>;
   _cachePath: Path;
   _changeInterval: ?IntervalID;
   _console: Console;
   _options: InternalOptions;
   _watchers: Array<Watcher>;
   _worker: ?WorkerInterface;
+  _cacheManager: CacheManager;
 
   static getStatic(
     config: $ReadOnly<{haste: $ReadOnly<{hasteMapModulePath?: string}>}>,
@@ -289,6 +296,7 @@ export default class HasteMap extends EventEmitter {
       rootDir: options.rootDir,
       roots: Array.from(new Set(options.roots)),
       skipPackageJson: !!options.skipPackageJson,
+      cacheBreaker: CACHE_BREAKER,
     };
 
     this._options = {
@@ -302,6 +310,11 @@ export default class HasteMap extends EventEmitter {
     };
 
     this._console = options.console || global.console;
+    this._cacheManager = options.cacheManagerFactory
+      ? options.cacheManagerFactory.call(null, buildParameters)
+      : new DiskCacheManager({
+          buildParameters,
+        });
 
     if (this._options.enableSymlinks && this._options.useWatchman) {
       throw new Error(
@@ -310,12 +323,6 @@ export default class HasteMap extends EventEmitter {
           'Set either `enableSymlinks` to false or `useWatchman` to false.',
       );
     }
-
-    this._cachePath = HasteMap.getCacheFilePath(
-      options.cacheDirectory ?? tmpdir(),
-      options.cacheFilePrefix ?? 'metro-file-map',
-      buildParameters,
-    );
 
     this._buildPromise = null;
     this._watchers = [];
@@ -328,10 +335,8 @@ export default class HasteMap extends EventEmitter {
     cacheFilePrefix: string,
     buildParameters: BuildParameters,
   ): string {
-    const {rootDirHash, relativeConfigHash} = rootRelativeCacheKeys(
-      buildParameters,
-      CACHE_BREAKER,
-    );
+    const {rootDirHash, relativeConfigHash} =
+      rootRelativeCacheKeys(buildParameters);
     return path.join(
       cacheDirectory,
       `${cacheFilePrefix}-${rootDirHash}-${relativeConfigHash}`,
@@ -343,10 +348,15 @@ export default class HasteMap extends EventEmitter {
   }
 
   getCacheFilePath(): string {
-    return this._cachePath;
+    if (!(this._cacheManager instanceof DiskCacheManager)) {
+      throw new Error(
+        'metro-file-map: getCacheFilePath is only supported when using DiskCacheManager',
+      );
+    }
+    return this._cacheManager.getCacheFilePath();
   }
 
-  build(): Promise<InternalHasteMapObject> {
+  build(): Promise<InternalDataObject> {
     this._options.perfLogger?.markerPoint('build_start');
     if (!this._buildPromise) {
       this._buildPromise = (async () => {
@@ -377,11 +387,8 @@ export default class HasteMap extends EventEmitter {
           mocks: hasteMap.mocks,
           rootDir,
         });
-        const __hasteMapForTest =
-          (process.env.NODE_ENV === 'test' && hasteMap) || null;
         await this._watch(hasteMap);
         return {
-          __hasteMapForTest,
           hasteFS,
           moduleMap,
         };
@@ -397,15 +404,13 @@ export default class HasteMap extends EventEmitter {
    * 1. read data from the cache or create an empty structure.
    */
   async read(): Promise<InternalData> {
-    let data: InternalData;
+    let data: ?InternalData;
 
     this._options.perfLogger?.markerPoint('read_start');
     try {
-      // $FlowFixMe[incompatible-cast] - readFileSync returns mixed
-      data = (serializer.readFileSync(this._cachePath): InternalData);
-    } catch {
-      data = this._createEmptyMap();
-    }
+      data = await this._cacheManager.read();
+    } catch {}
+    data = data ?? this._createEmptyMap();
     this._options.perfLogger?.markerPoint('read_end');
 
     return data;
@@ -748,7 +753,8 @@ export default class HasteMap extends EventEmitter {
    */
   async _persist(hasteMap: InternalData) {
     this._options.perfLogger?.markerPoint('persist_start');
-    serializer.writeFileSync(this._cachePath, hasteMap);
+    const snapshot = deepCloneInternalData(hasteMap);
+    await this._cacheManager.write(snapshot);
     this._options.perfLogger?.markerPoint('persist_end');
   }
 

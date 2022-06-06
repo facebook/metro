@@ -10,7 +10,7 @@
 
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
-import MetroFileMap from 'metro-file-map';
+import MetroFileMap, {DiskCacheManager} from 'metro-file-map';
 
 const ci = require('ci-info');
 const path = require('path');
@@ -56,8 +56,13 @@ function createHasteMap(
   const computeDependencies = dependencyExtractor != null;
 
   return MetroFileMap.create({
-    cacheDirectory:
-      config.fileMapCacheDirectory ?? config.hasteMapCacheDirectory,
+    cacheManagerFactory: buildParameters =>
+      new DiskCacheManager({
+        buildParameters,
+        cacheDirectory:
+          config.fileMapCacheDirectory ?? config.hasteMapCacheDirectory,
+        cacheFilePrefix: options?.cacheFilePrefix,
+      }),
     computeDependencies,
     computeSha1: true,
     dependencyExtractor: config.resolver.dependencyExtractor,
@@ -68,7 +73,6 @@ function createHasteMap(
     ignorePattern: getIgnorePattern(config),
     maxWorkers: config.maxWorkers,
     mocksPattern: '',
-    cacheFilePrefix: options?.cacheFilePrefix,
     platforms: config.resolver.platforms,
     retainAllFiles: true,
     resetCache: config.resetCache,

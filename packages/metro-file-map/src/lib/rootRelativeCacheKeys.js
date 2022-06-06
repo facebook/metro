@@ -31,7 +31,6 @@ function moduleCacheKey(modulePath: ?string) {
 
 export default function rootRelativeCacheKeys(
   buildParameters: BuildParameters,
-  cacheBreaker?: string,
 ): {
   rootDirHash: string,
   relativeConfigHash: string,
@@ -51,11 +50,11 @@ export default function rootRelativeCacheKeys(
     buildParameters.platforms,
     buildParameters.computeSha1,
     buildParameters.mocksPattern?.toString() ?? null,
-    buildParameters.ignorePattern?.toString() ?? null,
+    buildParameters.ignorePattern.toString(),
     moduleCacheKey(buildParameters.hasteImplModulePath),
     moduleCacheKey(buildParameters.dependencyExtractor),
     buildParameters.computeDependencies,
-    cacheBreaker,
+    buildParameters.cacheBreaker,
   ]);
   const relativeConfigHash = createHash('md5')
     .update(serializedConfig)
