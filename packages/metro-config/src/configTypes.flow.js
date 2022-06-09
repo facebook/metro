@@ -96,7 +96,6 @@ type ResolverConfigT = {
   emptyModulePath: string,
   extraNodeModules: {[name: string]: string, ...},
   hasteImplModulePath: ?string,
-  unstable_hasteMapModulePath: ?string,
   nodeModulesPaths: $ReadOnlyArray<string>,
   platforms: $ReadOnlyArray<string>,
   resolveRequest: ?CustomResolver,

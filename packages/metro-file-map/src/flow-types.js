@@ -83,15 +83,6 @@ export type HasteMap = {
   moduleMap: ModuleMap,
 };
 
-export type HasteMapStatic<S = SerializableModuleMap> = {
-  getCacheFilePath(
-    cacheDirectory: string,
-    cacheFilePrefix: string,
-    buildParameters: BuildParameters,
-  ): string,
-  getModuleMapFromJSON(json: S): IModuleMap<S>,
-};
-
 export type HType = {
   ID: 0,
   MTIME: 1,

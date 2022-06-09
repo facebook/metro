@@ -42,7 +42,6 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     ),
     extraNodeModules: {},
     hasteImplModulePath: undefined,
-    unstable_hasteMapModulePath: undefined,
     nodeModulesPaths: [],
     resolveRequest: null,
     resolverMainFields: ['browser', 'main'],

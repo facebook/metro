@@ -72,7 +72,6 @@ function createHasteMap(
     extensions: config.resolver.sourceExts.concat(config.resolver.assetExts),
     forceNodeFilesystemAPI: !config.resolver.useWatchman,
     hasteImplModulePath: config.resolver.hasteImplModulePath,
-    hasteMapModulePath: config.resolver.unstable_hasteMapModulePath,
     ignorePattern: getIgnorePattern(config),
     maxWorkers: config.maxWorkers,
     mocksPattern: '',

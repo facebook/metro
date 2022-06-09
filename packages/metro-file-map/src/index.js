@@ -19,7 +19,6 @@ import type {
   FileData,
   FileMetaData,
   HasteMap as InternalDataObject,
-  HasteMapStatic,
   HType,
   InternalData,
   MockData,
@@ -87,7 +86,6 @@ export type InputOptions = $ReadOnly<{
   throwOnModuleCollision?: ?boolean,
   useWatchman?: ?boolean,
   watch?: ?boolean,
-  hasteMapModulePath?: ?string,
   console?: Console,
   cacheManagerFactory?: ?CacheManagerFactory,
 }>;
@@ -230,24 +228,7 @@ export default class HasteMap extends EventEmitter {
   _worker: ?WorkerInterface;
   _cacheManager: CacheManager;
 
-  static getStatic(
-    config: $ReadOnly<{haste: $ReadOnly<{hasteMapModulePath?: string}>}>,
-  ): HasteMapStatic<> {
-    if (config.haste.hasteMapModulePath != null) {
-      // $FlowFixMe[unsupported-syntax] - Dynamic require
-      return require(config.haste.hasteMapModulePath);
-    }
-    // $FlowFixMe[prop-missing] - returning static class
-    // $FlowFixMe[method-unbinding] - returning static class
-    return HasteMap;
-  }
-
   static create(options: InputOptions): HasteMap {
-    if (options.hasteMapModulePath != null) {
-      // $FlowFixMe[unsupported-syntax] - Dynamic require
-      const CustomHasteMap = require(options.hasteMapModulePath);
-      return new CustomHasteMap(options);
-    }
     return new HasteMap(options);
   }
 
