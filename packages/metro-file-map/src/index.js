@@ -253,7 +253,7 @@ export default class HasteMap extends EventEmitter {
 
   constructor(options: InputOptions) {
     if (options.perfLogger) {
-      options.perfLogger?.markerPoint('constructor_start');
+      options.perfLogger?.point('constructor_start');
     }
     super();
 
@@ -327,7 +327,7 @@ export default class HasteMap extends EventEmitter {
     this._buildPromise = null;
     this._watchers = [];
     this._worker = null;
-    this._options.perfLogger?.markerPoint('constructor_end');
+    this._options.perfLogger?.point('constructor_end');
   }
 
   static getCacheFilePath(
@@ -357,7 +357,7 @@ export default class HasteMap extends EventEmitter {
   }
 
   build(): Promise<InternalDataObject> {
-    this._options.perfLogger?.markerPoint('build_start');
+    this._options.perfLogger?.point('build_start');
     if (!this._buildPromise) {
       this._buildPromise = (async () => {
         const data = await this._buildFileMap();
@@ -395,7 +395,7 @@ export default class HasteMap extends EventEmitter {
       })();
     }
     return this._buildPromise.then(result => {
-      this._options.perfLogger?.markerPoint('build_end');
+      this._options.perfLogger?.point('build_end');
       return result;
     });
   }
@@ -406,12 +406,12 @@ export default class HasteMap extends EventEmitter {
   async read(): Promise<InternalData> {
     let data: ?InternalData;
 
-    this._options.perfLogger?.markerPoint('read_start');
+    this._options.perfLogger?.point('read_start');
     try {
       data = await this._cacheManager.read();
     } catch {}
     data = data ?? this._createEmptyMap();
-    this._options.perfLogger?.markerPoint('read_end');
+    this._options.perfLogger?.point('read_end');
 
     return data;
   }
@@ -435,7 +435,7 @@ export default class HasteMap extends EventEmitter {
     hasteMap: InternalData,
   }> {
     let hasteMap: InternalData;
-    this._options.perfLogger?.markerPoint('buildFileMap_start');
+    this._options.perfLogger?.point('buildFileMap_start');
     try {
       hasteMap =
         this._options.resetCache === true
@@ -445,7 +445,7 @@ export default class HasteMap extends EventEmitter {
       hasteMap = this._createEmptyMap();
     }
     return this._crawl(hasteMap).then(result => {
-      this._options.perfLogger?.markerPoint('buildFileMap_end');
+      this._options.perfLogger?.point('buildFileMap_end');
       return result;
     });
   }
@@ -681,7 +681,7 @@ export default class HasteMap extends EventEmitter {
     changedFiles?: FileData,
     hasteMap: InternalData,
   }): Promise<InternalData> {
-    this._options.perfLogger?.markerPoint('buildHasteMap_start');
+    this._options.perfLogger?.point('buildHasteMap_start');
     const {removedFiles, changedFiles, hasteMap} = data;
 
     // If any files were removed or we did not track what files changed, process
@@ -727,7 +727,7 @@ export default class HasteMap extends EventEmitter {
         this._cleanup();
         hasteMap.map = map;
         hasteMap.mocks = mocks;
-        this._options.perfLogger?.markerPoint('buildHasteMap_end');
+        this._options.perfLogger?.point('buildHasteMap_end');
         return hasteMap;
       },
       error => {
@@ -752,10 +752,10 @@ export default class HasteMap extends EventEmitter {
    * 4. serialize the new `HasteMap` in a cache file.
    */
   async _persist(hasteMap: InternalData) {
-    this._options.perfLogger?.markerPoint('persist_start');
+    this._options.perfLogger?.point('persist_start');
     const snapshot = deepCloneInternalData(hasteMap);
     await this._cacheManager.write(snapshot);
-    this._options.perfLogger?.markerPoint('persist_end');
+    this._options.perfLogger?.point('persist_end');
   }
 
   /**
@@ -778,7 +778,7 @@ export default class HasteMap extends EventEmitter {
   }
 
   _crawl(hasteMap: InternalData) {
-    this._options.perfLogger?.markerPoint('crawl_start');
+    this._options.perfLogger?.point('crawl_start');
     const options = this._options;
     const ignore = filePath => this._ignore(filePath);
     const crawl =
@@ -819,7 +819,7 @@ export default class HasteMap extends EventEmitter {
     };
 
     const logEnd = <T>(result: T): T => {
-      this._options.perfLogger?.markerPoint('crawl_end');
+      this._options.perfLogger?.point('crawl_end');
       return result;
     };
 
@@ -834,9 +834,9 @@ export default class HasteMap extends EventEmitter {
    * Watch mode
    */
   _watch(hasteMap: InternalData): Promise<void> {
-    this._options.perfLogger?.markerPoint('watch_start');
+    this._options.perfLogger?.point('watch_start');
     if (!this._options.watch) {
-      this._options.perfLogger?.markerPoint('watch_end');
+      this._options.perfLogger?.point('watch_end');
       return Promise.resolve();
     }
 
@@ -1046,7 +1046,7 @@ export default class HasteMap extends EventEmitter {
     return Promise.all(this._options.roots.map(createWatcher)).then(
       watchers => {
         this._watchers = watchers;
-        this._options.perfLogger?.markerPoint('watch_end');
+        this._options.perfLogger?.point('watch_end');
       },
     );
   }

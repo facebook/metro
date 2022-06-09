@@ -13,6 +13,9 @@
 import type HasteFS from './HasteFS';
 import type ModuleMap from './ModuleMap';
 import type {Stats} from 'graceful-fs';
+import type {PerfLogger} from 'metro-config';
+
+export type {PerfLogger};
 
 // These inputs affect the internal data collected for a given filesystem
 // state, and changes may invalidate a cache.
@@ -159,22 +162,6 @@ export type ModuleMapItem = {
 export type ModuleMetaData = [/* path */ string, /* type */ number];
 
 export type Path = string;
-
-export interface PerfLogger {
-  markerPoint(name: string): void;
-  markerAnnotate(annotations: PerfAnnotations): void;
-}
-
-export type PerfAnnotations = $Shape<{
-  string: {[key: string]: string},
-  int: {[key: string]: number},
-  double: {[key: string]: number},
-  bool: {[key: string]: boolean},
-  string_array: {[key: string]: Array<string>},
-  int_array: {[key: string]: Array<number>},
-  double_array: {[key: string]: Array<number>},
-  bool_array: {[key: string]: Array<boolean>},
-}>;
 
 export type RawModuleMap = {
   rootDir: Path,
