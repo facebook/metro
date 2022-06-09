@@ -14,7 +14,6 @@ const babelJest = require('babel-jest');
 
 const BABEL_CONFIG_PATH = require.resolve('../babel.config.js');
 
-// $FlowFixME
 const transformer /*: any */ = babelJest.createTransformer({
   configFile: BABEL_CONFIG_PATH,
 });
