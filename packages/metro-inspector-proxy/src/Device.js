@@ -471,6 +471,7 @@ class Device {
           debuggerInfo.prependedFilePrefix
         ) {
           // Remove fake URL prefix if we modified URL in _processMessageFromDevice.
+          // $FlowFixMe[incompatible-use]
           req.params.url = req.params.url.slice(FILE_PREFIX.length);
         }
       }

@@ -69,7 +69,6 @@ Object {
       "ts",
       "tsx",
     ],
-    "unstable_hasteMapModulePath": undefined,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -215,7 +214,6 @@ Object {
       "ts",
       "tsx",
     ],
-    "unstable_hasteMapModulePath": undefined,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -361,7 +359,6 @@ Object {
       "ts",
       "tsx",
     ],
-    "unstable_hasteMapModulePath": undefined,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -507,7 +504,6 @@ Object {
       "ts",
       "tsx",
     ],
-    "unstable_hasteMapModulePath": undefined,
     "useWatchman": true,
   },
   "serializer": Object {

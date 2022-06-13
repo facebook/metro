@@ -10,6 +10,7 @@
 'use strict';
 
 const escapeRegExp = require('escape-string-regexp');
+const fs = require('fs');
 const path = require('path');
 
 let _only = [];
@@ -104,6 +105,38 @@ function buildRegExps(basePath, dirPaths) {
   );
 }
 
+let isRegisteredForMetroMonorepo = false;
+
+function registerForMetroMonorepo() {
+  // Noop if we have already registered Babel here.
+  if (isRegisteredForMetroMonorepo) {
+    return;
+  }
+  // Noop if we are in NODE_ENV=production.
+  if (process.env.NODE_ENV === 'production') {
+    return;
+  }
+  // Noop if we seem to be outside of the Metro source tree.
+  if (
+    !__dirname.endsWith(
+      ['', 'packages', 'metro-babel-register', 'src'].join(path.sep),
+    )
+  ) {
+    return;
+  }
+  // Bail out if prepare-release has run here.
+  if (
+    fs.existsSync(
+      path.join(__dirname, '..', 'src.real', path.basename(__filename)),
+    )
+  ) {
+    return;
+  }
+  register([path.resolve(__dirname, '..', '..')]);
+  isRegisteredForMetroMonorepo = true;
+}
+
 module.exports = register;
 module.exports.config = config;
 module.exports.buildRegExps = buildRegExps;
+module.exports.unstable_registerForMetroMonorepo = registerForMetroMonorepo;

@@ -140,6 +140,7 @@ class SymbolicationContext<ModuleIdsT> {
         }
       }
       if (options.nameSource != null) {
+        // $FlowFixMe[cannot-write]
         this.options.nameSource = options.nameSource;
       }
     }
@@ -521,6 +522,7 @@ class SingleMapSymbolicationContext extends SymbolicationContext<SingleMapModule
     };
     if (sourceMapJson.x_facebook_segments) {
       for (const key of Object.keys(sourceMapJson.x_facebook_segments)) {
+        // $FlowFixMe[incompatible-use]
         const map = sourceMapJson.x_facebook_segments[key];
         segments[key] = this._initSegment(map);
       }

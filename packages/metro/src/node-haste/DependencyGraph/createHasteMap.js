@@ -10,12 +10,10 @@
 
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
-import MetroFileMap from 'metro-file-map';
+import MetroFileMap, {DiskCacheManager} from 'metro-file-map';
 
 const ci = require('ci-info');
 const path = require('path');
-
-const JEST_HASTE_MAP_CACHE_BREAKER = 5;
 
 function getIgnorePattern(config: ConfigT): RegExp {
   // For now we support both options
@@ -48,7 +46,7 @@ function createHasteMap(
     extractDependencies?: boolean,
     watch?: boolean,
     throwOnModuleCollision?: boolean,
-    name?: string,
+    cacheFilePrefix?: string,
   }>,
 ): MetroFileMap {
   const dependencyExtractor =
@@ -58,19 +56,25 @@ function createHasteMap(
   const computeDependencies = dependencyExtractor != null;
 
   return MetroFileMap.create({
-    cacheDirectory:
-      config.fileMapCacheDirectory ?? config.hasteMapCacheDirectory,
+    cacheManagerFactory:
+      config?.unstable_fileMapCacheManagerFactory ??
+      (buildParameters =>
+        new DiskCacheManager({
+          buildParameters,
+          cacheDirectory:
+            config.fileMapCacheDirectory ?? config.hasteMapCacheDirectory,
+          cacheFilePrefix: options?.cacheFilePrefix,
+        })),
+    perfLogger: config.unstable_perfLogger?.subSpan('hasteMap') ?? null,
     computeDependencies,
     computeSha1: true,
     dependencyExtractor: config.resolver.dependencyExtractor,
     extensions: config.resolver.sourceExts.concat(config.resolver.assetExts),
     forceNodeFilesystemAPI: !config.resolver.useWatchman,
     hasteImplModulePath: config.resolver.hasteImplModulePath,
-    hasteMapModulePath: config.resolver.unstable_hasteMapModulePath,
     ignorePattern: getIgnorePattern(config),
     maxWorkers: config.maxWorkers,
     mocksPattern: '',
-    name: `${options?.name ?? 'metro'}-${JEST_HASTE_MAP_CACHE_BREAKER}`,
     platforms: config.resolver.platforms,
     retainAllFiles: true,
     resetCache: config.resetCache,

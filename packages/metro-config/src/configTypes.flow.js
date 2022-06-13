@@ -13,6 +13,7 @@
 import type {IncomingMessage, ServerResponse} from 'http';
 import type {CacheStore} from 'metro-cache';
 import typeof MetroCache from 'metro-cache';
+import type {CacheManagerFactory} from 'metro-file-map';
 import type {CustomResolver} from 'metro-resolver';
 import type {MixedSourceMap} from 'metro-source-map';
 import type {JsTransformerConfig} from 'metro-transform-worker';
@@ -68,6 +69,23 @@ export type Middleware = (
   ((e: ?Error) => mixed),
 ) => mixed;
 
+type PerfAnnotations = $Shape<{
+  string: {[key: string]: string},
+  int: {[key: string]: number},
+  double: {[key: string]: number},
+  bool: {[key: string]: boolean},
+  string_array: {[key: string]: Array<string>},
+  int_array: {[key: string]: Array<number>},
+  double_array: {[key: string]: Array<number>},
+  bool_array: {[key: string]: Array<boolean>},
+}>;
+
+export interface PerfLogger {
+  point(name: string): void;
+  annotate(annotations: PerfAnnotations): void;
+  subSpan(label: string): PerfLogger;
+}
+
 type ResolverConfigT = {
   assetExts: $ReadOnlyArray<string>,
   assetResolutions: $ReadOnlyArray<string>,
@@ -78,7 +96,6 @@ type ResolverConfigT = {
   emptyModulePath: string,
   extraNodeModules: {[name: string]: string, ...},
   hasteImplModulePath: ?string,
-  unstable_hasteMapModulePath: ?string,
   nodeModulesPaths: $ReadOnlyArray<string>,
   platforms: $ReadOnlyArray<string>,
   resolveRequest: ?CustomResolver,
@@ -118,7 +135,9 @@ type MetalConfigT = {
   cacheVersion: string,
   fileMapCacheDirectory?: string,
   hasteMapCacheDirectory?: string, // Deprecated, alias of fileMapCacheDirectory
+  unstable_fileMapCacheManagerFactory?: CacheManagerFactory,
   maxWorkers: number,
+  unstable_perfLogger?: ?PerfLogger,
   projectRoot: string,
   stickyWorkers: boolean,
   transformerPath: string,

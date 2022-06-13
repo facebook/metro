@@ -13,6 +13,41 @@
 import type HasteFS from './HasteFS';
 import type ModuleMap from './ModuleMap';
 import type {Stats} from 'graceful-fs';
+import type {PerfLogger} from 'metro-config';
+
+export type {PerfLogger};
+
+// These inputs affect the internal data collected for a given filesystem
+// state, and changes may invalidate a cache.
+export type BuildParameters = $ReadOnly<{
+  computeDependencies: boolean,
+  computeSha1: boolean,
+  enableSymlinks: boolean,
+  extensions: $ReadOnlyArray<string>,
+  forceNodeFilesystemAPI: boolean,
+  ignorePattern: RegExp,
+  mocksPattern: ?RegExp,
+  platforms: $ReadOnlyArray<string>,
+  retainAllFiles: boolean,
+  rootDir: string,
+  roots: $ReadOnlyArray<string>,
+  skipPackageJson: boolean,
+
+  // Module paths that should export a 'getCacheKey' method
+  dependencyExtractor: ?string,
+  hasteImplModulePath: ?string,
+
+  cacheBreaker: string,
+}>;
+
+export interface CacheManager {
+  read(): Promise<?InternalData>;
+  write(dataSnapshot: InternalData): Promise<void>;
+}
+
+export type CacheManagerFactory = (
+  buildParameters: BuildParameters,
+) => CacheManager;
 
 export type ChangeEvent = {
   eventsQueue: EventsQueue,
@@ -25,7 +60,7 @@ export type Console = typeof global.console;
 export type CrawlerOptions = {
   computeSha1: boolean,
   enableSymlinks: boolean,
-  data: InternalHasteMap,
+  data: InternalData,
   extensions: $ReadOnlyArray<string>,
   forceNodeFilesystemAPI: boolean,
   ignore: IgnoreMatcher,
@@ -46,19 +81,7 @@ export type EventsQueue = Array<{
 export type HasteMap = {
   hasteFS: HasteFS,
   moduleMap: ModuleMap,
-  __hasteMapForTest?: ?InternalHasteMap,
 };
-
-export type HasteMapStatic<S = SerializableModuleMap> = {
-  getCacheFilePath(
-    tmpdir: Path,
-    name: string,
-    ...extra: $ReadOnlyArray<string>
-  ): string,
-  getModuleMapFromJSON(json: S): IModuleMap<S>,
-};
-
-export type HasteRegExp = RegExp | ((str: string) => boolean);
 
 export type HType = {
   ID: 0,
@@ -80,7 +103,7 @@ export type HTypeValue = $Values<HType>;
 
 export type IgnoreMatcher = (item: string) => boolean;
 
-export type InternalHasteMap = {
+export type InternalData = {
   clocks: WatchmanClocks,
   duplicates: DuplicatesIndex,
   files: FileData,
@@ -130,22 +153,6 @@ export type ModuleMapItem = {
 export type ModuleMetaData = [/* path */ string, /* type */ number];
 
 export type Path = string;
-
-export interface PerfLogger {
-  markerPoint(name: string): void;
-  markerAnnotate(annotations: PerfAnnotations): void;
-}
-
-export type PerfAnnotations = $Shape<{
-  string: {[key: string]: string},
-  int: {[key: string]: number},
-  double: {[key: string]: number},
-  bool: {[key: string]: boolean},
-  string_array: {[key: string]: Array<string>},
-  int_array: {[key: string]: Array<number>},
-  double_array: {[key: string]: Array<number>},
-  bool_array: {[key: string]: Array<boolean>},
-}>;
 
 export type RawModuleMap = {
   rootDir: Path,

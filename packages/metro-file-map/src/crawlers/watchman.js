@@ -12,7 +12,7 @@ import type {
   CrawlerOptions,
   FileData,
   FileMetaData,
-  InternalHasteMap,
+  InternalData,
   Path,
 } from '../flow-types';
 
@@ -106,16 +106,16 @@ module.exports = async function watchmanCrawl(
 ): Promise<{
   changedFiles?: FileData,
   removedFiles: FileData,
-  hasteMap: InternalHasteMap,
+  hasteMap: InternalData,
 }> {
   const fields = ['name', 'exists', 'mtime_ms', 'size'];
   const {data, extensions, ignore, rootDir, roots, perfLogger} = options;
   const clocks = data.clocks;
 
-  perfLogger?.markerPoint('watchmanCrawl_start');
+  perfLogger?.point('watchmanCrawl_start');
   const client = new watchman.Client();
 
-  perfLogger?.markerPoint('watchmanCrawl/negotiateCapabilities_start');
+  perfLogger?.point('watchmanCrawl/negotiateCapabilities_start');
   // https://facebook.github.io/watchman/docs/capabilities.html
   // Check adds about ~28ms
   const capabilities = await capabilityCheck(client, {
@@ -172,21 +172,21 @@ module.exports = async function watchmanCrawl(
     }
   }
 
-  perfLogger?.markerPoint('watchmanCrawl/negotiateCapabilities_end');
+  perfLogger?.point('watchmanCrawl/negotiateCapabilities_end');
 
   async function getWatchmanRoots(
     roots: $ReadOnlyArray<Path>,
   ): Promise<WatchmanRoots> {
-    perfLogger?.markerPoint('watchmanCrawl/getWatchmanRoots_start');
+    perfLogger?.point('watchmanCrawl/getWatchmanRoots_start');
     const watchmanRoots = new Map();
     await Promise.all(
       roots.map(async (root, index) => {
-        perfLogger?.markerPoint(`watchmanCrawl/watchProject_${index}_start`);
+        perfLogger?.point(`watchmanCrawl/watchProject_${index}_start`);
         const response = await cmd<WatchmanWatchProjectResponse>(
           'watch-project',
           root,
         );
-        perfLogger?.markerPoint(`watchmanCrawl/watchProject_${index}_end`);
+        perfLogger?.point(`watchmanCrawl/watchProject_${index}_end`);
         const existing = watchmanRoots.get(response.watch);
         // A root can only be filtered if it was never seen with a
         // relative_path before.
@@ -207,12 +207,12 @@ module.exports = async function watchmanCrawl(
         }
       }),
     );
-    perfLogger?.markerPoint('watchmanCrawl/getWatchmanRoots_end');
+    perfLogger?.point('watchmanCrawl/getWatchmanRoots_end');
     return watchmanRoots;
   }
 
   async function queryWatchmanForDirs(rootProjectDirMappings: WatchmanRoots) {
-    perfLogger?.markerPoint('watchmanCrawl/queryWatchmanForDirs_start');
+    perfLogger?.point('watchmanCrawl/queryWatchmanForDirs_start');
     const results = new Map<string, WatchmanQueryResponse>();
     let isFresh = false;
     await Promise.all(
@@ -228,7 +228,7 @@ module.exports = async function watchmanCrawl(
           // system and import it, transforming the clock into a local clock.
           const since = clocks.get(fastPath.relative(rootDir, root));
 
-          perfLogger?.markerAnnotate({
+          perfLogger?.annotate({
             bool: {
               [`watchmanCrawl/query_${index}_has_clock`]: since != null,
             },
@@ -294,19 +294,19 @@ module.exports = async function watchmanCrawl(
             queryGenerator = 'suffix';
           }
 
-          perfLogger?.markerAnnotate({
+          perfLogger?.annotate({
             string: {
               [`watchmanCrawl/query_${index}_generator`]: queryGenerator,
             },
           });
 
-          perfLogger?.markerPoint(`watchmanCrawl/query_${index}_start`);
+          perfLogger?.point(`watchmanCrawl/query_${index}_start`);
           const response = await cmd<WatchmanQueryResponse>(
             'query',
             root,
             query,
           );
-          perfLogger?.markerPoint(`watchmanCrawl/query_${index}_end`);
+          perfLogger?.point(`watchmanCrawl/query_${index}_end`);
 
           if ('warning' in response) {
             console.warn('watchman warning: ', response.warning);
@@ -326,7 +326,7 @@ module.exports = async function watchmanCrawl(
       ),
     );
 
-    perfLogger?.markerPoint('watchmanCrawl/queryWatchmanForDirs_end');
+    perfLogger?.point('watchmanCrawl/queryWatchmanForDirs_end');
 
     return {
       isFresh,
@@ -357,11 +357,11 @@ module.exports = async function watchmanCrawl(
   }
 
   if (clientError) {
-    perfLogger?.markerPoint('watchmanCrawl_end');
+    perfLogger?.point('watchmanCrawl_end');
     throw clientError;
   }
 
-  perfLogger?.markerPoint('watchmanCrawl/processResults_start');
+  perfLogger?.point('watchmanCrawl/processResults_start');
 
   for (const [watchRoot, response] of results) {
     const fsRoot = normalizePathSep(watchRoot);
@@ -438,8 +438,8 @@ module.exports = async function watchmanCrawl(
 
   data.files = files;
 
-  perfLogger?.markerPoint('watchmanCrawl/processResults_end');
-  perfLogger?.markerPoint('watchmanCrawl_end');
+  perfLogger?.point('watchmanCrawl/processResults_end');
+  perfLogger?.point('watchmanCrawl_end');
   if (didLogWatchmanWaitMessage) {
     console.warn('Watchman query finished.');
   }
