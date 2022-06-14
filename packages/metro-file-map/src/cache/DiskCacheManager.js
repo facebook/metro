@@ -8,7 +8,12 @@
  * @format
  */
 
-import type {BuildParameters, CacheManager, InternalData} from '../flow-types';
+import type {
+  BuildParameters,
+  CacheManager,
+  FileData,
+  InternalData,
+} from '../flow-types';
 
 import rootRelativeCacheKeys from '../lib/rootRelativeCacheKeys';
 import {readFileSync, writeFileSync} from 'graceful-fs';
@@ -68,7 +73,12 @@ export class DiskCacheManager implements CacheManager {
     return null;
   }
 
-  async write(dataSnapshot: InternalData): Promise<void> {
-    writeFileSync(this._cachePath, serialize(dataSnapshot));
+  async write(
+    dataSnapshot: InternalData,
+    {changed, removed}: $ReadOnly<{changed: FileData, removed: FileData}>,
+  ): Promise<void> {
+    if (changed.size > 0 || removed.size > 0) {
+      writeFileSync(this._cachePath, serialize(dataSnapshot));
+    }
   }
 }

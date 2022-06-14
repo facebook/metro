@@ -62,6 +62,7 @@ const watchmanCrawl = require('./crawlers/watchman');
 
 export type {
   BuildParameters,
+  FileData,
   HasteFS,
   HasteMap,
   InternalData,
@@ -359,10 +360,15 @@ export default class HasteMap extends EventEmitter {
           data.removedFiles.size > 0
         ) {
           hasteMap = await this._buildHasteMap(data);
-          await this._persist(hasteMap);
         } else {
           hasteMap = data.hasteMap;
         }
+
+        await this._persist(
+          hasteMap,
+          data.changedFiles ?? new Map(),
+          data.removedFiles ?? new Map(),
+        );
 
         const rootDir = this._options.rootDir;
         const hasteFS = new HasteFS({
@@ -739,10 +745,10 @@ export default class HasteMap extends EventEmitter {
   /**
    * 4. serialize the new `HasteMap` in a cache file.
    */
-  async _persist(hasteMap: InternalData) {
+  async _persist(hasteMap: InternalData, changed: FileData, removed: FileData) {
     this._options.perfLogger?.point('persist_start');
     const snapshot = deepCloneInternalData(hasteMap);
-    await this._cacheManager.write(snapshot);
+    await this._cacheManager.write(snapshot, {changed, removed});
     this._options.perfLogger?.point('persist_end');
   }
 

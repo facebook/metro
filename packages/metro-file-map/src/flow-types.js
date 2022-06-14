@@ -42,7 +42,10 @@ export type BuildParameters = $ReadOnly<{
 
 export interface CacheManager {
   read(): Promise<?InternalData>;
-  write(dataSnapshot: InternalData): Promise<void>;
+  write(
+    dataSnapshot: InternalData,
+    delta: $ReadOnly<{changed: FileData, removed: FileData}>,
+  ): Promise<void>;
 }
 
 export type CacheManagerFactory = (
