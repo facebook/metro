@@ -131,6 +131,7 @@ Object {
     "transformVariants": Object {
       "default": Object {},
     },
+    "unstable_allowRequireContext": false,
     "unstable_collectDependenciesPath": "metro/src/ModuleGraph/worker/collectDependencies.js",
     "unstable_compactOutput": false,
     "unstable_dependencyMapReservedName": null,
@@ -276,6 +277,7 @@ Object {
     "transformVariants": Object {
       "default": Object {},
     },
+    "unstable_allowRequireContext": false,
     "unstable_collectDependenciesPath": "metro/src/ModuleGraph/worker/collectDependencies.js",
     "unstable_compactOutput": false,
     "unstable_dependencyMapReservedName": null,
@@ -421,6 +423,7 @@ Object {
     "transformVariants": Object {
       "default": Object {},
     },
+    "unstable_allowRequireContext": false,
     "unstable_collectDependenciesPath": "metro/src/ModuleGraph/worker/collectDependencies.js",
     "unstable_compactOutput": false,
     "unstable_dependencyMapReservedName": null,
@@ -566,6 +569,7 @@ Object {
     "transformVariants": Object {
       "default": Object {},
     },
+    "unstable_allowRequireContext": false,
     "unstable_collectDependenciesPath": "metro/src/ModuleGraph/worker/collectDependencies.js",
     "unstable_compactOutput": false,
     "unstable_dependencyMapReservedName": null,

@@ -538,6 +538,7 @@ it('allows replacing the collectDependencies implementation', async () => {
       dynamicRequires: 'reject',
       inlineableCalls: ['_$$_IMPORT_DEFAULT', '_$$_IMPORT_ALL'],
       keepRequireNames: options.dev,
+      unstable_allowRequireContext: false,
       dependencyMapName: null,
     },
   );
