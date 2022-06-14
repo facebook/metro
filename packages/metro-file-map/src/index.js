@@ -60,7 +60,14 @@ import * as path from 'path';
 const nodeCrawl = require('./crawlers/node');
 const watchmanCrawl = require('./crawlers/watchman');
 
-export type {HasteFS, HasteMap, InternalData, ModuleMapData, ModuleMapItem};
+export type {
+  BuildParameters,
+  HasteFS,
+  HasteMap,
+  InternalData,
+  ModuleMapData,
+  ModuleMapItem,
+};
 
 export type InputOptions = $ReadOnly<{
   computeDependencies?: ?boolean,
