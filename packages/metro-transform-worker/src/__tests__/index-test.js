@@ -65,6 +65,7 @@ const baseConfig: JsTransformerConfig = {
   unstable_compactOutput: false,
   unstable_disableModuleWrapping: false,
   unstable_disableNormalizePseudoGlobals: false,
+  unstable_allowRequireContext: false,
 };
 
 beforeEach(() => {

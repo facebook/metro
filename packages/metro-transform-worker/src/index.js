@@ -398,6 +398,7 @@ async function transformJS(
         keepRequireNames: options.dev,
         allowOptionalDependencies: config.allowOptionalDependencies,
         dependencyMapName: config.unstable_dependencyMapReservedName,
+        unstable_allowRequireContext: config.unstable_allowRequireContext,
       };
       // $FlowFixMe[unsupported-syntax] dynamic require
       const collectDependencies: CollectDependenciesFn<DependencySplitCondition> = require(config.unstable_collectDependenciesPath);

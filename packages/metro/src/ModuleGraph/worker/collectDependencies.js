@@ -43,8 +43,8 @@ type ContextMode = 'sync' | 'eager' | 'lazy' | 'lazy-once';
 type RequireContextParams = $ReadOnly<{
   /* Should search for files recursively. Optional, default `true` when `require.context` is used */
   recursive: boolean,
-  /* Filename filter pattern for use in `require.context`. Optional, default `/^\.\/.*$/` (any file) when `require.context` is used */
-  filter: RegExp,
+  /* Filename filter pattern for use in `require.context`. Optional, default `.*` (any file) when `require.context` is used */
+  filter: {pattern: string, flags?: string},
   /** Mode for resolving dynamic dependencies. Defaults to `sync` */
   mode: ContextMode,
 }>;
@@ -57,6 +57,7 @@ type DependencyData<TSplitCondition> = $ReadOnly<{
   // If left unspecified, then the dependency is unconditionally split.
   splitCondition?: TSplitCondition,
   locs: Array<BabelSourceLocation>,
+  /** Context for requiring a collection of modules. */
   contextParams?: RequireContextParams,
 }>;
 
@@ -107,23 +108,6 @@ export type CollectedDependencies<+TSplitCondition> = $ReadOnly<{
 // E.g. should a module that's once required optionally and once not
 // be treated as the same or different dependencies.
 export interface ModuleDependencyRegistry<+TSplitCondition> {
-  /**
-   * Given an import qualifier, return a key used to register the dependency.
-   * Generally this return the `ImportQualifier.name` property, but in the case
-   * of `require.context` more attributes can be appended to distinguish various combinations that would otherwise conflict.
-   *
-   * For example, the following case would have collision issues if they all utilized the `name` property:
-   * ```
-   * require('./foo');
-   * require.context('./foo');
-   * require.context('./foo', true, /something/);
-   * require.context('./foo', false, /something/);
-   * require.context('./foo', false, /something/, 'lazy');
-   * ```
-   *
-   * This method should be utilized by `registerDependency`.
-   */
-  getKeyForDependency(qualifier: ImportQualifier): string;
   registerDependency(
     qualifier: ImportQualifier,
   ): InternalDependency<TSplitCondition>;
@@ -340,7 +324,7 @@ function getRequireContextArgs(
   }
 
   // Default to all files.
-  let filter = /^\.\/.*$/;
+  let filter = {pattern: '.*'};
   if (args.length > 2) {
     const argNode = args[2].node;
     if (argNode.type !== 'RegExpLiteral') {
@@ -350,7 +334,7 @@ function getRequireContextArgs(
         `Third argument of \`require.context\` should be an optional RegExp pattern matching all of the files to import, instead found node of type: ${argNode.type}.`,
       );
     }
-    filter = new RegExp(argNode.pattern, argNode.flags);
+    filter = {pattern: argNode.pattern, flags: argNode.flags};
   }
 
   // Default to `sync`.
@@ -397,8 +381,6 @@ function getContextMode(path: NodePath<any>, mode: string): ContextMode {
     `require.context "${mode}" mode is not supported. Expected one of: sync, eager, lazy, lazy-once`,
   );
 }
-
-collectDependencies.getRequireContextArgs = getRequireContextArgs;
 
 function processRequireContextCall<TSplitCondition>(
   path: NodePath<CallExpression>,
@@ -726,37 +708,53 @@ function createModuleNameLiteral(dependency: InternalDependency<mixed>) {
   return types.stringLiteral(dependency.name);
 }
 
+/**
+ * Given an import qualifier, return a key used to register the dependency.
+ * Generally this return the `ImportQualifier.name` property, but in the case
+ * of `require.context` more attributes can be appended to distinguish various combinations that would otherwise conflict.
+ *
+ * For example, the following case would have collision issues if they all utilized the `name` property:
+ * ```
+ * require('./foo');
+ * require.context('./foo');
+ * require.context('./foo', true, /something/);
+ * require.context('./foo', false, /something/);
+ * require.context('./foo', false, /something/, 'lazy');
+ * ```
+ *
+ * This method should be utilized by `registerDependency`.
+ */
+function getKeyForDependency(qualifier: ImportQualifier): string {
+  let key = qualifier.name;
+
+  const {contextParams} = qualifier;
+  // Add extra qualifiers when using `require.context` to prevent collisions.
+  if (contextParams) {
+    // NOTE(EvanBacon): Keep this synchronized with `RequireContextParams`, if any other properties are added
+    // then this key algorithm should be updated to account for those properties.
+    // Example: `./directory__true__/foobar/m__lazy`
+    key += [
+      '',
+      'context',
+      String(contextParams.recursive),
+      String(contextParams.filter.pattern),
+      String(contextParams.filter.flags),
+      contextParams.mode,
+      // Join together and append to the name:
+    ].join('__');
+  }
+  return key;
+}
+
 class DefaultModuleDependencyRegistry<TSplitCondition = void>
   implements ModuleDependencyRegistry<TSplitCondition>
 {
   _dependencies: Map<string, InternalDependency<TSplitCondition>> = new Map();
 
-  /** Default key resolver. */
-  getKeyForDependency(qualifier: ImportQualifier): string {
-    let key = qualifier.name;
-
-    const {contextParams} = qualifier;
-    // Add extra qualifiers when using `require.context` to prevent collisions.
-    if (contextParams) {
-      // NOTE(EvanBacon): Keep this synchronized with `RequireContextParams`, if any other properties are added
-      // then this key algorithm should be updated to account for those properties.
-      // Example: `./directory__true__/foobar/m__lazy`
-      key += [
-        '',
-        'context',
-        String(contextParams.recursive),
-        String(contextParams.filter),
-        contextParams.mode,
-        // Join together and append to the name:
-      ].join('__');
-    }
-    return key;
-  }
-
   registerDependency(
     qualifier: ImportQualifier,
   ): InternalDependency<TSplitCondition> {
-    const key = this.getKeyForDependency(qualifier);
+    const key = getKeyForDependency(qualifier);
     let dependency: ?InternalDependency<TSplitCondition> =
       this._dependencies.get(key);
 
@@ -792,9 +790,6 @@ class DefaultModuleDependencyRegistry<TSplitCondition = void>
     return Array.from(this._dependencies.values());
   }
 }
-
-collectDependencies.DefaultModuleDependencyRegistry =
-  DefaultModuleDependencyRegistry;
 
 function collapseDependencies<TSplitCondition>(
   dependency: InternalDependency<TSplitCondition>,

@@ -32,8 +32,7 @@ const nullthrows = require('nullthrows');
 
 const {any, objectContaining} = expect;
 
-const {InvalidRequireCallError, DefaultModuleDependencyRegistry} =
-  collectDependencies;
+const {InvalidRequireCallError} = collectDependencies;
 const opts = {
   asyncRequireModulePath: 'asyncRequire',
   dynamicRequires: 'reject',
@@ -41,85 +40,16 @@ const opts = {
   keepRequireNames: true,
   allowOptionalDependencies: false,
   dependencyMapName: null,
+  unstable_allowRequireContext: true,
 };
-
-describe('DefaultModuleDependencyRegistry', () => {
-  describe('getKeyForDependency', () => {
-    it(`generates basic key`, () => {
-      const registry = new DefaultModuleDependencyRegistry();
-      expect(
-        registry.getKeyForDependency({
-          name: './file.js',
-          optional: false,
-          asyncType: null,
-        }),
-      ).toBe('./file.js');
-    });
-    it(`generates require.context key`, () => {
-      const registry = new DefaultModuleDependencyRegistry();
-
-      expect(
-        registry.getKeyForDependency({
-          name: './dir',
-          optional: false,
-          asyncType: null,
-          contextParams: {
-            recursive: true,
-            filter: /foobar/,
-            mode: 'lazy',
-          },
-        }),
-      ).toBe('./dir__context__true__/foobar/__lazy');
-    });
-  });
-
-  it(`registers dependencies without collision`, () => {
-    const registry = new DefaultModuleDependencyRegistry();
-
-    registry.registerDependency({
-      name: './dir',
-      optional: false,
-      asyncType: null,
-    });
-
-    registry.registerDependency({
-      name: './dir',
-      optional: false,
-      asyncType: null,
-      contextParams: {
-        recursive: true,
-        filter: /foobar/,
-        mode: 'lazy',
-      },
-    });
-
-    expect(registry.getDependencies()).toEqual([
-      {
-        asyncType: undefined,
-        index: 0,
-        locs: [],
-        name: './dir',
-      },
-      {
-        asyncType: undefined,
-        contextParams: {
-          filter: /foobar/,
-          mode: 'lazy',
-          recursive: true,
-        },
-        index: 1,
-        locs: [],
-        name: './dir',
-      },
-    ]);
-  });
-});
 
 describe(`require.context`, () => {
   it(`collects require context arguments`, () => {
     const ast = astFromCode(`
   const a = require.context('./', false, /foobar/m, 'eager');
   const b = require.context('./baz');
+  const c = require.context('./dir', true);
+  const d = require.context('./dir');
 `);
     const {dependencies, dependencyMapName} = collectDependencies(ast, {
       ...opts,
@@ -131,7 +61,10 @@ describe(`require.context`, () => {
         name: './',
         data: objectContaining({
           contextParams: {
-            filter: /foobar/m,
+            filter: {
+              pattern: 'foobar',
+              flags: 'm',
+            },
             mode: 'eager',
             recursive: false,
           },
@@ -141,7 +74,21 @@ describe(`require.context`, () => {
         name: './baz',
         data: objectContaining({
           contextParams: {
-            filter: /^\.\/.*$/,
+            filter: {
+              pattern: '.*',
+            },
+            mode: 'sync',
+            recursive: true,
+          },
+        }),
+      },
+      {
+        name: './dir',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+            },
             mode: 'sync',
             recursive: true,
           },
@@ -153,6 +100,8 @@ describe(`require.context`, () => {
       comparableCode(`
       const a = require.context(${dependencyMapName}[0], "./");
       const b = require.context(${dependencyMapName}[1], "./baz");
+      const c = require.context(${dependencyMapName}[2], "./dir");
+      const d = require.context(${dependencyMapName}[2], "./dir");
     `),
     );
   });
@@ -533,6 +482,7 @@ describe('Evaluating static arguments', () => {
       keepRequireNames: true,
       allowOptionalDependencies: false,
       dependencyMapName: null,
+      unstable_allowRequireContext: false,
     };
     const {dependencies} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([]);
@@ -694,6 +644,7 @@ describe('optional dependencies', () => {
     keepRequireNames: true,
     allowOptionalDependencies: true,
     dependencyMapName: null,
+    unstable_allowRequireContext: false,
   };
   const validateDependencies = (dependencies, expectedCount) => {
     let hasAsync = false;
