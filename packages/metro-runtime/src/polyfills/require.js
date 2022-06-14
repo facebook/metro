@@ -15,9 +15,6 @@
 
 declare var __DEV__: boolean;
 declare var __METRO_GLOBAL_PREFIX__: string;
-// JSON-encoded array of strings that we should not print require cycle errors
-// for
-declare var __METRO_REQUIRE_CYCLE_IGNORE_PATTERNS__: $ReadOnlyArray<string>;
 
 type DependencyMap = Array<ModuleID>;
 type Exports = any;
@@ -180,9 +177,9 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
         .map((id: number) =>
           modules[id] ? modules[id].verboseName : '[unknown]',
         );
-      // We want to show A -> B -> A:
-      cycle.push(cycle[0]);
+
       if (shouldPrintRequireCycle(cycle)) {
+        cycle.push(cycle[0]); // We want to print A -> B -> A:
         console.warn(
           `Require cycle: ${cycle.join(' -> ')}\n\n` +
             'Require cycles are allowed, but can result in uninitialized values. ' +
@@ -202,12 +199,12 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
 // We print require cycles unless they match a pattern in the
 // `requireCycleIgnorePatterns` configuration.
 function shouldPrintRequireCycle(modules: $ReadOnlyArray<?string>): boolean {
-  const regExpStrings = __METRO_REQUIRE_CYCLE_IGNORE_PATTERNS__;
-  if (!regExpStrings || !Array.isArray(regExpStrings)) {
+  const regExps =
+    global[__METRO_GLOBAL_PREFIX__ + '__requireCycleIgnorePatterns'];
+  if (!regExps || !Array.isArray(regExps)) {
     return true;
   }
 
-  const regExps = regExpStrings.map(regExpString => new RegExp(regExpString));
   const isIgnored = module =>
     module != null && regExps.some(regExp => regExp.test(module));
 

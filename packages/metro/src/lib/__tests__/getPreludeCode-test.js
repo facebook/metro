@@ -17,7 +17,7 @@ const vm = require('vm');
 ['development', 'production'].forEach((mode: string) => {
   describe(`${mode} mode`, () => {
     const isDev = mode === 'development';
-    const globalPrefix = '';
+    const globalPrefix = '__metro';
     const requireCycleIgnorePatterns = [];
 
     it('sets up `process.env.NODE_ENV` and `__DEV__`', () => {
@@ -37,33 +37,37 @@ const vm = require('vm');
       vm.runInContext(
         getPreludeCode({
           isDev,
-          globalPrefix: '__metro',
+          globalPrefix: '__customPrefix',
           requireCycleIgnorePatterns,
         }),
         sandbox,
       );
-      expect(sandbox.__METRO_GLOBAL_PREFIX__).toBe('__metro');
+      expect(sandbox.__METRO_GLOBAL_PREFIX__).toBe('__customPrefix');
     });
 
-    it('sets up `__METRO_REQUIRE_CYCLE_IGNORE_PATTERNS__` in development', () => {
+    it('sets up `${globalPrefix}__requireCycleIgnorePatterns` in development', () => {
       const sandbox: $FlowFixMe = {};
       vm.createContext(sandbox);
       vm.runInContext(
         getPreludeCode({
           isDev,
           globalPrefix,
-          requireCycleIgnorePatterns: ['blah'],
+          requireCycleIgnorePatterns: [
+            /blah/,
+            /(^|\/|\\)node_modules($|\/|\\)/,
+          ],
         }),
         sandbox,
       );
 
       if (isDev) {
-        expect(sandbox.__METRO_REQUIRE_CYCLE_IGNORE_PATTERNS__).toEqual([
-          'blah',
+        expect(sandbox[`${globalPrefix}__requireCycleIgnorePatterns`]).toEqual([
+          /blah/,
+          /(^|\/|\\)node_modules($|\/|\\)/,
         ]);
       } else {
         expect(
-          sandbox.__METRO_REQUIRE_CYCLE_IGNORE_PATTERNS__,
+          sandbox[`${globalPrefix}__requireCycleIgnorePatterns`],
         ).not.toBeDefined();
       }
     });

@@ -47,7 +47,7 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     resolveRequest: null,
     resolverMainFields: ['browser', 'main'],
     useWatchman: true,
-    requireCycleIgnorePatterns: ['(^|\\/|\\\\)node_modules($|\\/|\\\\)'],
+    requireCycleIgnorePatterns: [/(^|\/|\\)node_modules($|\/|\\)/],
   },
 
   serializer: {

@@ -19,7 +19,7 @@ function getPreludeCode({
   +extraVars?: {[string]: mixed, ...},
   +isDev: boolean,
   +globalPrefix: string,
-  +requireCycleIgnorePatterns: $ReadOnlyArray<string>,
+  +requireCycleIgnorePatterns: $ReadOnlyArray<RegExp>,
 }): string {
   const vars = [
     // Ensure these variable names match the ones referenced in metro-runtime
@@ -35,9 +35,9 @@ function getPreludeCode({
     // Ensure these variable names match the ones referenced in metro-runtime
     // require.js
     vars.push(
-      `__METRO_REQUIRE_CYCLE_IGNORE_PATTERNS__=${JSON.stringify(
-        requireCycleIgnorePatterns,
-      )}`,
+      `${globalPrefix}__requireCycleIgnorePatterns=[${requireCycleIgnorePatterns
+        .map(regex => regex.toString())
+        .join(',')}]`,
     );
   }
 

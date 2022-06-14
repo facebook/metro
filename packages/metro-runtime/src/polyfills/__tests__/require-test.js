@@ -19,8 +19,14 @@ function createModule(
   verboseName,
   factory,
   dependencyMap = [],
+  globalPrefix = '',
 ) {
-  moduleSystem.__d(factory, moduleId, dependencyMap, verboseName);
+  moduleSystem[globalPrefix + '__d'](
+    factory,
+    moduleId,
+    dependencyMap,
+    verboseName,
+  );
 }
 
 describe('require', () => {
@@ -43,7 +49,6 @@ describe('require', () => {
     'global',
     '__DEV__',
     '__METRO_GLOBAL_PREFIX__',
-    '__METRO_REQUIRE_CYCLE_IGNORE_PATTERNS__',
     moduleSystemCode,
   );
 
@@ -667,19 +672,41 @@ describe('require', () => {
     });
 
     it('does not log warning for cyclic dependency in ignore list', () => {
-      createModuleSystem(moduleSystem, true, '', ['foo']);
+      moduleSystem.__customPrefix__requireCycleIgnorePatterns = [/foo/];
+      createModuleSystem(moduleSystem, true, '__customPrefix');
 
-      createModule(moduleSystem, 0, 'foo.js', (global, require) => {
-        require(1);
-      });
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require) => {
+          require(1);
+        },
+        [],
+        '__customPrefix',
+      );
 
-      createModule(moduleSystem, 1, 'bar.js', (global, require) => {
-        require(2);
-      });
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require) => {
+          require(2);
+        },
+        [],
+        '__customPrefix',
+      );
 
-      createModule(moduleSystem, 2, 'baz.js', (global, require) => {
-        require(0);
-      });
+      createModule(
+        moduleSystem,
+        2,
+        'baz.js',
+        (global, require) => {
+          require(0);
+        },
+        [],
+        '__customPrefix',
+      );
 
       const warn = console.warn;
       console.warn = jest.fn();

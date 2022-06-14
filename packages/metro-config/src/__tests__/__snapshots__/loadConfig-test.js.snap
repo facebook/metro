@@ -59,7 +59,7 @@ Object {
       "web",
     ],
     "requireCycleIgnorePatterns": Array [
-      "(^|\\\\/|\\\\\\\\)node_modules($|\\\\/|\\\\\\\\)",
+      /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
     ],
     "resolveRequest": null,
     "resolverMainFields": Array [
@@ -208,7 +208,7 @@ Object {
       "web",
     ],
     "requireCycleIgnorePatterns": Array [
-      "(^|\\\\/|\\\\\\\\)node_modules($|\\\\/|\\\\\\\\)",
+      /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
     ],
     "resolveRequest": null,
     "resolverMainFields": Array [
@@ -357,7 +357,7 @@ Object {
       "web",
     ],
     "requireCycleIgnorePatterns": Array [
-      "(^|\\\\/|\\\\\\\\)node_modules($|\\\\/|\\\\\\\\)",
+      /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
     ],
     "resolveRequest": null,
     "resolverMainFields": Array [
@@ -506,7 +506,7 @@ Object {
       "web",
     ],
     "requireCycleIgnorePatterns": Array [
-      "(^|\\\\/|\\\\\\\\)node_modules($|\\\\/|\\\\\\\\)",
+      /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
     ],
     "resolveRequest": null,
     "resolverMainFields": Array [
