@@ -213,13 +213,11 @@ Additional platforms to look out for, For example, if you want to add a "custom"
 
 #### `requireCycleIgnorePatterns`
 
-Type: `Array<string>` (default: `['(^|\\/|\\\\)node_modules($|\\/|\\\\)']`)
+Type: `Array<RegExp>` (default: `[/(^|\/|\\)node_modules($|\/|\\)/]`)
 
-In development mode, suppress require cycle warnings for modules that match any of these RegExps. This is useful if a module you use has a require cycle that's not worth fixing.
+In development mode, suppress require cycle warnings for any cycle involving a module that matches any of these expressions. This is useful for third-party code and first-party expected cycles.
 
-Metro will instantiate RegExps from your strings by running `new RegExp('yourString')`, so make sure to omit the leading/ending slashes.
-
-Note that if you override the default, you must add the `node_modules` rule to your own array. Metro will not concatenate them.
+Note that if you specify your own value for this config option it will replace (not concatenate with) Metro's default.
 
 ---
 ### Transformer Options
