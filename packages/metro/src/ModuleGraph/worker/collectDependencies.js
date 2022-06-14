@@ -40,11 +40,13 @@ export type Dependency<TSplitCondition> = $ReadOnly<{
 // TODO: Convert to a Flow enum
 type ContextMode = 'sync' | 'eager' | 'lazy' | 'lazy-once';
 
-type RequireContextParams = $ReadOnly<{
+type ContextFilter = {pattern: string, flags: string};
+
+export type RequireContextParams = $ReadOnly<{
   /* Should search for files recursively. Optional, default `true` when `require.context` is used */
   recursive: boolean,
   /* Filename filter pattern for use in `require.context`. Optional, default `.*` (any file) when `require.context` is used */
-  filter: {pattern: string, flags?: string},
+  filter: $ReadOnly<ContextFilter>,
   /** Mode for resolving dynamic dependencies. Defaults to `sync` */
   mode: ContextMode,
 }>;
@@ -324,7 +326,7 @@ function getRequireContextArgs(
   }
 
   // Default to all files.
-  let filter = {pattern: '.*'};
+  let filter: ContextFilter = {pattern: '.*', flags: ''};
   if (args.length > 2) {
     const argNode = args[2].node;
     if (argNode.type !== 'RegExpLiteral') {
@@ -334,7 +336,7 @@ function getRequireContextArgs(
         `Third argument of \`require.context\` should be an optional RegExp pattern matching all of the files to import, instead found node of type: ${argNode.type}.`,
       );
     }
-    filter = {pattern: argNode.pattern, flags: argNode.flags};
+    filter = {pattern: argNode.pattern, flags: argNode.flags || ''};
   }
 
   // Default to `sync`.

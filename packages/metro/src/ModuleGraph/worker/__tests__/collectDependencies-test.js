@@ -76,6 +76,7 @@ describe(`require.context`, () => {
           contextParams: {
             filter: {
               pattern: '.*',
+              flags: '',
             },
             mode: 'sync',
             recursive: true,
@@ -88,6 +89,7 @@ describe(`require.context`, () => {
           contextParams: {
             filter: {
               pattern: '.*',
+              flags: '',
             },
             mode: 'sync',
             recursive: true,
