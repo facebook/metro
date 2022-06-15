@@ -37,6 +37,12 @@ module.exports = {
   },
   server: {
     /* server options */
+  },
+  watcher: {
+    /* watcher options */
+    watchman: {
+      /* Watchman-specific options */
+    }
   }
 };
 ```
@@ -373,6 +379,25 @@ Type: `boolean` (default: `true`)
 
 Run Inspector Proxy server inside Metro to be able to inspect React Native code.
 
+---
+
+### Watcher Options
+
+Options for the filesystem watcher.
+
+:::note
+
+Dot notation in this section indicates a nested structure, e.g. `watchman: { deferStates: ... }`.
+
+:::
+
+#### `watchman.deferStates`
+
+Type: `Array<string>`
+
+Applies when using Watchman. Metro will [defer processing filesystem updates](https://facebook.github.io/watchman/docs/cmd/subscribe.html#defer) while these [states](https://facebook.github.io/watchman/docs/cmd/state-enter.html) are asserted in the watch. This is useful for debouncing builds while the filesystem hasn't settled, e.g. during large source control operations.
+
+The default value is `['hg.update']`.
 
 ## Merging Configurations
 
