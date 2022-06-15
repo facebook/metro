@@ -136,8 +136,7 @@ describe(`require.context`, () => {
     );
   });
 
-  it.skip('can pass undefined for 2nd-4th arguments', () => {
-    // TODO(moti): fix meta-evaluation of undefined
+  it('can pass undefined for 2nd-4th arguments', () => {
     const ast = astFromCode(`
       const a = require.context('./', undefined, undefined, undefined);
       const b = require.context('./', false, undefined, undefined);
@@ -208,6 +207,81 @@ describe(`require.context`, () => {
         const b = require(${dependencyMapName}[1], "./");
         const c = require(${dependencyMapName}[2], "./");
         const d = require(${dependencyMapName}[3], "./");
+      `),
+    );
+  });
+
+  it('can understand constant assignments', () => {
+    const ast = astFromCode(`
+      const DOT_SLASH_FOO = './foo';
+      const FALSE = false;
+      const EAGER = 'eager';
+      const a = require.context(DOT_SLASH_FOO, FALSE, /pattern/, EAGER);
+    `);
+    const {dependencies, dependencyMapName} = collectDependencies(
+      ast,
+      optsWithContext,
+    );
+    expect(dependencies).toEqual([
+      {
+        name: './foo',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: 'pattern',
+              flags: '',
+            },
+            mode: 'eager',
+            recursive: false,
+          },
+        }),
+      },
+    ]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        const DOT_SLASH_FOO = './foo';
+        const FALSE = false;
+        const EAGER = 'eager';
+        const a = require(${dependencyMapName}[0], "./foo");
+      `),
+    );
+  });
+
+  it.skip('can understand regex constant assignments', () => {
+    // TODO: augment Babel's path.evaluate() with regex support
+    const ast = astFromCode(`
+      const DOT_SLASH_FOO = './foo';
+      const FALSE = false;
+      const EAGER = 'eager';
+      const PATTERN = /pattern/;
+      const a = require.context(DOT_SLASH_FOO, FALSE, PATTERN, EAGER);
+    `);
+    const {dependencies, dependencyMapName} = collectDependencies(
+      ast,
+      optsWithContext,
+    );
+    expect(dependencies).toEqual([
+      {
+        name: './foo',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: 'pattern',
+              flags: '',
+            },
+            mode: 'eager',
+            recursive: false,
+          },
+        }),
+      },
+    ]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        const DOT_SLASH_FOO = "./foo";
+        const FALSE = false;
+        const EAGER = "eager";
+        const PATTERN = /pattern/;
+        const a = require(${dependencyMapName}[0], "./foo");
       `),
     );
   });
@@ -606,7 +680,7 @@ describe(`require.context`, () => {
     expect(() => collectDependencies(ast, optsWithContext))
       .toThrowErrorMatchingInlineSnapshot(`
       "Invalid call at line 2: 42
-      First argument of \`require.context\` should be a string denoting the directory to require, instead found node of type: NumericLiteral."
+      First argument of \`require.context\` should be a string denoting the directory to require."
     `);
   });
   it(`asserts invalid second argument`, () => {
@@ -616,7 +690,7 @@ describe(`require.context`, () => {
     expect(() => collectDependencies(ast, optsWithContext))
       .toThrowErrorMatchingInlineSnapshot(`
       "Invalid call at line 2: 'hey'
-      Second argument of \`require.context\` should be an optional boolean indicating if files should be imported recursively or not, instead found node of type: StringLiteral."
+      Second argument of \`require.context\` should be an optional boolean indicating if files should be imported recursively or not."
     `);
   });
   it(`asserts invalid third argument`, () => {
@@ -636,7 +710,7 @@ describe(`require.context`, () => {
     expect(() => collectDependencies(ast, optsWithContext))
       .toThrowErrorMatchingInlineSnapshot(`
       "Invalid call at line 2: 34
-      Fourth argument of \`require.context\` should be an optional string \\"mode\\" denoting how the modules will be resolved, instead found node of type: NumericLiteral."
+      Fourth argument of \`require.context\` should be an optional string \\"mode\\" denoting how the modules will be resolved."
     `);
   });
   it(`asserts invalid fourth argument enum value`, () => {
