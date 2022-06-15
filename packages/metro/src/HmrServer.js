@@ -10,7 +10,7 @@
 
 'use strict';
 
-import type {RevisionId} from './IncrementalBundler';
+import type IncrementalBundler, {RevisionId} from './IncrementalBundler';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {
   HmrClientMessage,
@@ -20,7 +20,6 @@ import type {
 } from 'metro-runtime/src/modules/types.flow';
 
 const hmrJSBundle = require('./DeltaBundler/Serializers/hmrJSBundle');
-const IncrementalBundler = require('./IncrementalBundler');
 const GraphNotFoundError = require('./IncrementalBundler/GraphNotFoundError');
 const RevisionNotFoundError = require('./IncrementalBundler/RevisionNotFoundError');
 const debounceAsyncQueue = require('./lib/debounceAsyncQueue');

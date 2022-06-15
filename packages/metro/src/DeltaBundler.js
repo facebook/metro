@@ -18,9 +18,9 @@ import type {
   MixedOutput,
   Options,
 } from './DeltaBundler/types.flow';
+import type EventEmitter from 'events';
 
 const DeltaCalculator = require('./DeltaBundler/DeltaCalculator');
-const {EventEmitter} = require('events');
 
 export type {
   DeltaResult,

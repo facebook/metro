@@ -11,12 +11,12 @@
 import type Package from './Package';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type MetroFileMap, {HasteFS} from 'metro-file-map';
+import type Module from './Module';
 
 import {ModuleMap as MetroFileMapModuleMap} from 'metro-file-map';
 
 const createHasteMap = require('./DependencyGraph/createHasteMap');
 const {ModuleResolver} = require('./DependencyGraph/ModuleResolution');
-const Module = require('./Module');
 const ModuleCache = require('./ModuleCache');
 const {EventEmitter} = require('events');
 const fs = require('fs');

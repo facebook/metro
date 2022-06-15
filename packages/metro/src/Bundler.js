@@ -13,10 +13,10 @@
 import type {TransformResultWithSource} from './DeltaBundler';
 import type {TransformOptions} from './DeltaBundler/Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
+import type EventEmitter from 'events';
 
 const Transformer = require('./DeltaBundler/Transformer');
 const DependencyGraph = require('./node-haste/DependencyGraph');
-const {EventEmitter} = require('events');
 
 export type BundlerOptions = $ReadOnly<{
   hasReducedPerformance?: boolean,

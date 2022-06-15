@@ -15,7 +15,7 @@ const rule = require('../strictly-null.js');
 const ESLintTester = require('eslint').RuleTester;
 
 ESLintTester.setDefaultConfig({
-  parser: require.resolve('babel-eslint'),
+  parser: require.resolve('hermes-eslint'),
   parserOptions: {
     ecmaVersion: 6,
     sourceType: 'module',
