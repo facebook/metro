@@ -35,6 +35,7 @@ exports.assignOptions = function (watcher, opts) {
   watcher.globs = opts.glob || [];
   watcher.dot = opts.dot || false;
   watcher.ignored = opts.ignored || false;
+  watcher.watchmanDeferStates = opts.watchmanDeferStates;
 
   if (!Array.isArray(watcher.globs)) {
     watcher.globs = [watcher.globs];

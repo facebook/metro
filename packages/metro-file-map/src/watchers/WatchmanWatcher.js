@@ -119,6 +119,7 @@ WatchmanWatcher.prototype.init = function () {
     const options = {
       fields: ['name', 'exists', 'new'],
       since: resp.clock,
+      defer: self.watchmanDeferStates,
     };
 
     // If the server has the wildmatch capability available it supports

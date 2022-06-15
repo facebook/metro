@@ -94,6 +94,7 @@ export default class FSEventsWatcher extends EventEmitter {
       ignored?: Matcher,
       glob: string | $ReadOnlyArray<string>,
       dot: boolean,
+      ...
     }>,
   ) {
     if (!fsevents) {

@@ -142,6 +142,13 @@ Object {
   "watchFolders": Array [
     "/",
   ],
+  "watcher": Object {
+    "watchman": Object {
+      "deferStates": Array [
+        "hg.update",
+      ],
+    },
+  },
 }
 `;
 
@@ -287,6 +294,13 @@ Object {
   "watchFolders": Array [
     "/",
   ],
+  "watcher": Object {
+    "watchman": Object {
+      "deferStates": Array [
+        "hg.update",
+      ],
+    },
+  },
 }
 `;
 
@@ -432,6 +446,13 @@ Object {
   "watchFolders": Array [
     "/",
   ],
+  "watcher": Object {
+    "watchman": Object {
+      "deferStates": Array [
+        "hg.update",
+      ],
+    },
+  },
 }
 `;
 
@@ -577,6 +598,13 @@ Object {
   "watchFolders": Array [
     "/",
   ],
+  "watcher": Object {
+    "watchman": Object {
+      "deferStates": Array [
+        "hg.update",
+      ],
+    },
+  },
 }
 `;
 

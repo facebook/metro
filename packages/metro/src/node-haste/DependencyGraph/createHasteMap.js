@@ -83,6 +83,7 @@ function createHasteMap(
     throwOnModuleCollision: options?.throwOnModuleCollision ?? true,
     useWatchman: config.resolver.useWatchman,
     watch: options?.watch == null ? !ci.isCI : options.watch,
+    watchmanDeferStates: config.watcher.watchman.deferStates,
   });
 }
 

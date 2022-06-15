@@ -126,6 +126,11 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     unstable_disableNormalizePseudoGlobals: false,
     unstable_compactOutput: false,
   },
+  watcher: {
+    watchman: {
+      deferStates: ['hg.update'],
+    },
+  },
   cacheStores: [
     new FileStore({
       root: path.join(os.tmpdir(), 'metro-cache'),

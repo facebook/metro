@@ -166,6 +166,12 @@ type SymbolicatorConfigT = {
   }) => ?{+collapse?: boolean} | Promise<?{+collapse?: boolean}>,
 };
 
+type WatcherConfigT = {
+  watchman: {
+    deferStates?: $ReadOnlyArray<string>,
+  },
+};
+
 export type InputConfigT = $Shape<{
   ...MetalConfigT,
   ...$ReadOnly<{
@@ -177,6 +183,7 @@ export type InputConfigT = $Shape<{
     serializer: $Shape<SerializerConfigT>,
     symbolicator: $Shape<SymbolicatorConfigT>,
     transformer: $Shape<TransformerConfigT>,
+    watcher: $Shape<WatcherConfigT>,
   }>,
 }>;
 
@@ -188,6 +195,7 @@ export type IntermediateConfigT = {
     serializer: SerializerConfigT,
     symbolicator: SymbolicatorConfigT,
     transformer: TransformerConfigT,
+    watcher: WatcherConfigT,
   },
 };
 
@@ -199,6 +207,7 @@ export type ConfigT = $ReadOnly<{
     serializer: $ReadOnly<SerializerConfigT>,
     symbolicator: $ReadOnly<SymbolicatorConfigT>,
     transformer: $ReadOnly<TransformerConfigT>,
+    watcher: $ReadOnly<WatcherConfigT>,
   }>,
 }>;
 

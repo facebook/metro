@@ -93,6 +93,7 @@ export type InputOptions = $ReadOnly<{
   maxWorkers: number,
   throwOnModuleCollision?: ?boolean,
   useWatchman?: ?boolean,
+  watchmanDeferStates?: $ReadOnlyArray<string>,
   watch?: ?boolean,
   console?: Console,
   cacheManagerFactory?: ?CacheManagerFactory,
@@ -106,6 +107,7 @@ type InternalOptions = {
   throwOnModuleCollision: boolean,
   useWatchman: boolean,
   watch: boolean,
+  watchmanDeferStates: $ReadOnlyArray<string>,
 };
 
 interface Watcher {
@@ -296,6 +298,7 @@ export default class HasteMap extends EventEmitter {
       throwOnModuleCollision: !!options.throwOnModuleCollision,
       useWatchman: options.useWatchman == null ? true : options.useWatchman,
       watch: !!options.watch,
+      watchmanDeferStates: options.watchmanDeferStates ?? [],
     };
 
     this._console = options.console || global.console;
@@ -861,6 +864,7 @@ export default class HasteMap extends EventEmitter {
         dot: true,
         glob: extensions.map(extension => '**/*.' + extension),
         ignored: ignorePattern,
+        watchmanDeferStates: this._options.watchmanDeferStates,
       });
 
       return new Promise((resolve, reject) => {
