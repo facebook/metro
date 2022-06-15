@@ -305,7 +305,7 @@ function getRequireContextArgs(
     const result = args[0].evaluate();
     if (result.confident && typeof result.value === 'string') {
       directory = result.value;
-    } else if (!(result.confident && typeof result.value === 'undefined')) {
+    } else {
       throw new InvalidRequireCallError(
         result.deopt ?? args[0],
         'First argument of `require.context` should be a string denoting the directory to require.',
