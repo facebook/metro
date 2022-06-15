@@ -15,7 +15,8 @@
     "Deep Dives": [
       "bundling",
       "caching",
-      "resolution"
+      "resolution",
+      "source-map-format"
     ]
   }
 }
