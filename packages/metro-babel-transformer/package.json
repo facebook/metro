@@ -18,7 +18,7 @@
   "license": "MIT",
   "dependencies": {
     "@babel/core": "^7.14.0",
-    "hermes-parser": "0.6.0",
+    "hermes-parser": "0.8.0",
     "metro-source-map": "0.71.1",
     "nullthrows": "^1.1.1"
   }

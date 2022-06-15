@@ -31,7 +31,7 @@
     "error-stack-parser": "^2.0.6",
     "fs-extra": "^1.0.0",
     "graceful-fs": "^4.2.4",
-    "hermes-parser": "0.6.0",
+    "hermes-parser": "0.8.0",
     "image-size": "^0.6.0",
     "invariant": "^2.2.4",
     "jest-worker": "^27.2.0",
