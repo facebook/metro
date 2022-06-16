@@ -387,7 +387,7 @@ Options for the filesystem watcher.
 
 :::note
 
-Dot notation in this section indicates a nested structure, e.g. `watchman: { deferStates: ... }`.
+Dot notation in this section indicates a nested configuration object, e.g. `watchman.deferStates` → `watchman: { deferStates: ... }`.
 
 :::
 
