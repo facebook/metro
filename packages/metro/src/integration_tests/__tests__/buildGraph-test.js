@@ -10,6 +10,8 @@
 
 'use strict';
 
+import CountingSet from '../../lib/CountingSet';
+
 const Metro = require('../../..');
 const path = require('path');
 
@@ -50,7 +52,7 @@ it('should build the dependency graph', async () => {
   expect(graph.dependencies.get(entryPoint)).toEqual(
     expect.objectContaining({
       path: entryPoint,
-      inverseDependencies: new Set(),
+      inverseDependencies: new CountingSet(),
       output: [
         expect.objectContaining({
           type: 'js/module',

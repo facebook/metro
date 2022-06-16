@@ -17,7 +17,7 @@ Object {
         },
       },
       "getSource": [Function],
-      "inverseDependencies": Set {},
+      "inverseDependencies": Array [],
       "output": Array [
         Object {
           "data": Object {
@@ -54,9 +54,9 @@ Object {
         },
       },
       "getSource": [Function],
-      "inverseDependencies": Set {
+      "inverseDependencies": Array [
         "/bundle",
-      },
+      ],
       "output": Array [
         Object {
           "data": Object {
@@ -72,9 +72,9 @@ Object {
     "/bar" => Object {
       "dependencies": Map {},
       "getSource": [Function],
-      "inverseDependencies": Set {
+      "inverseDependencies": Array [
         "/foo",
-      },
+      ],
       "output": Array [
         Object {
           "data": Object {
@@ -90,9 +90,9 @@ Object {
     "/baz" => Object {
       "dependencies": Map {},
       "getSource": [Function],
-      "inverseDependencies": Set {
+      "inverseDependencies": Array [
         "/foo",
-      },
+      ],
       "output": Array [
         Object {
           "data": Object {
@@ -139,7 +139,7 @@ Object {
         },
       },
       "getSource": [Function],
-      "inverseDependencies": Set {},
+      "inverseDependencies": Array [],
       "output": Array [
         Object {
           "data": Object {

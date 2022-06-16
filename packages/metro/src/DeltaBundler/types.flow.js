@@ -14,6 +14,8 @@ import type {RequireContextParams} from '../ModuleGraph/worker/collectDependenci
 import type {PrivateState} from './graphOperations';
 import type {JsTransformOptions} from 'metro-transform-worker';
 
+import CountingSet from '../lib/CountingSet';
+
 export type MixedOutput = {
   +data: mixed,
   +type: string,
@@ -62,7 +64,7 @@ export type Dependency = {
 
 export type Module<T = MixedOutput> = {
   +dependencies: Map<string, Dependency>,
-  +inverseDependencies: Set<string>,
+  +inverseDependencies: CountingSet<string>,
   +output: $ReadOnlyArray<T>,
   +path: string,
   +getSource: () => Buffer,

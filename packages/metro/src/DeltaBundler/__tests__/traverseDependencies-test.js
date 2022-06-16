@@ -11,6 +11,7 @@
 
 import type {Graph, TransformResultDependency} from '../types.flow';
 
+import CountingSet from '../../lib/CountingSet';
 import nullthrows from 'nullthrows';
 
 const {
@@ -202,7 +203,7 @@ async function traverseDependencies(paths, graph, options) {
   );
   const actualInverseDependencies = new Map();
   for (const [path, module] of graph.dependencies) {
-    actualInverseDependencies.set(path, module.inverseDependencies);
+    actualInverseDependencies.set(path, new Set(module.inverseDependencies));
   }
   expect(actualInverseDependencies).toEqual(expectedInverseDependencies);
 
@@ -314,7 +315,7 @@ it('should populate all the inverse dependencies', async () => {
 
   expect(
     nullthrows(graph.dependencies.get('/bar')).inverseDependencies,
-  ).toEqual(new Set(['/foo', '/bundle']));
+  ).toEqual(new CountingSet(['/foo', '/bundle']));
 });
 
 it('should return an empty result when there are no changes', async () => {
@@ -501,7 +502,7 @@ describe('edge cases', () => {
 
     expect(
       nullthrows(graph.dependencies.get('/foo')).inverseDependencies,
-    ).toEqual(new Set(['/bundle', '/baz']));
+    ).toEqual(new CountingSet(['/baz', '/bundle']));
   });
 
   it('should handle renames correctly', async () => {
@@ -2049,7 +2050,7 @@ describe('reorderGraph', () => {
       getSource: () => Buffer.from('// source'),
       // NOTE: inverseDependencies is traversal state/output, not input, so we
       // don't pre-populate it.
-      inverseDependencies: new Set(),
+      inverseDependencies: new CountingSet(),
     });
 
     const graph = createGraph({
@@ -2166,5 +2167,101 @@ describe('optional dependencies', () => {
     await expect(
       initialTraverseDependencies(localGraph, localOptions),
     ).rejects.toThrow();
+  });
+});
+
+describe('parallel edges', () => {
+  it('add twice w/ same key, build and remove once', async () => {
+    // Create a second edge between /foo and /bar.
+    Actions.addDependency('/foo', '/bar', undefined);
+
+    await initialTraverseDependencies(graph, options);
+
+    const fooDeps = nullthrows(graph.dependencies.get('/foo')).dependencies;
+    const fooDepsResolved = [...fooDeps.values()].map(dep => dep.absolutePath);
+    // We dedupe the dependencies because they have the same `name`.
+    expect(fooDepsResolved).toEqual(['/bar', '/baz']);
+
+    // Remove one of the edges between /foo and /bar (arbitrarily)
+    Actions.removeDependency('/foo', '/bar');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/foo']),
+      deleted: new Set(),
+    });
+  });
+
+  it('add twice w/ same key, build and remove twice', async () => {
+    // Create a second edge between /foo and /bar.
+    Actions.addDependency('/foo', '/bar', undefined);
+
+    await initialTraverseDependencies(graph, options);
+
+    const fooDeps = nullthrows(graph.dependencies.get('/foo')).dependencies;
+    const fooDepsResolved = [...fooDeps.values()].map(dep => dep.absolutePath);
+    // We dedupe the dependencies because they have the same `name`.
+    expect(fooDepsResolved).toEqual(['/bar', '/baz']);
+
+    // Remove both edges between /foo and /bar
+    Actions.removeDependency('/foo', '/bar');
+    Actions.removeDependency('/foo', '/bar');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/foo']),
+      deleted: new Set(['/bar']),
+    });
+  });
+
+  it('add twice w/ different keys, build and remove once', async () => {
+    // Create a second edge between /foo and /bar, with a different `name`.
+    Actions.addDependency('/foo', '/bar', undefined, 'bar-second');
+
+    await initialTraverseDependencies(graph, options);
+
+    const fooDeps = nullthrows(graph.dependencies.get('/foo')).dependencies;
+    const fooDepsResolved = [...fooDeps.values()].map(dep => dep.absolutePath);
+    // We don't dedupe the dependencies because they have different `name`s.
+    expect(fooDepsResolved).toEqual(['/bar', '/baz', '/bar']);
+
+    // Remove one of the edges between /foo and /bar (arbitrarily)
+    Actions.removeDependency('/foo', '/bar');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/foo']),
+      deleted: new Set(),
+    });
+  });
+
+  it('add twice w/ different keys, build and remove twice', async () => {
+    // Create a second edge between /foo and /bar, with a different `name`.
+    Actions.addDependency('/foo', '/bar', undefined, 'bar-second');
+
+    await initialTraverseDependencies(graph, options);
+
+    const fooDeps = nullthrows(graph.dependencies.get('/foo')).dependencies;
+    const fooDepsResolved = [...fooDeps.values()].map(dep => dep.absolutePath);
+    // We don't dedupe the dependencies because they have different `name`s.
+    expect(fooDepsResolved).toEqual(['/bar', '/baz', '/bar']);
+
+    // Remove both edges between /foo and /bar
+    Actions.removeDependency('/foo', '/bar');
+    Actions.removeDependency('/foo', '/bar');
+
+    expect(
+      getPaths(await traverseDependencies([...files], graph, options)),
+    ).toEqual({
+      added: new Set(),
+      modified: new Set(['/foo']),
+      deleted: new Set(['/bar']),
+    });
   });
 });

@@ -15,6 +15,8 @@ import type DeltaBundler, {Module} from '../DeltaBundler';
 import type {TransformInputOptions} from '../DeltaBundler/types.flow';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
+import CountingSet from './CountingSet';
+
 const countLines = require('./countLines');
 const getPreludeCode = require('./getPreludeCode');
 const transformHelpers = require('./transformHelpers');
@@ -88,7 +90,7 @@ function _getPrelude({
   return {
     dependencies: new Map(),
     getSource: (): Buffer => Buffer.from(code),
-    inverseDependencies: new Set(),
+    inverseDependencies: new CountingSet(),
     path: name,
     output: [
       {

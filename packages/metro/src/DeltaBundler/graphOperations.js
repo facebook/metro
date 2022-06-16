@@ -39,6 +39,8 @@ import type {
   TransformResultDependency,
 } from './types.flow';
 
+import CountingSet from '../lib/CountingSet';
+
 const invariant = require('invariant');
 const nullthrows = require('nullthrows');
 
@@ -104,7 +106,7 @@ type Delta = $ReadOnly<{
 
   // A place to temporarily track inverse dependencies for a module while it is
   // being processed but has not been added to `graph.dependencies` yet.
-  earlyInverseDependencies: Map<string, Set<string>>,
+  earlyInverseDependencies: Map<string, CountingSet<string>>,
 }>;
 
 type InternalOptions<T> = $ReadOnly<{
@@ -277,7 +279,8 @@ async function processModule<T>(
   );
 
   const previousModule = graph.dependencies.get(path) || {
-    inverseDependencies: delta.earlyInverseDependencies.get(path) || new Set(),
+    inverseDependencies:
+      delta.earlyInverseDependencies.get(path) || new CountingSet(),
     path,
   };
   const previousDependencies = previousModule.dependencies || new Map();
@@ -397,7 +400,7 @@ async function addDependency<T>(
           delta.added.add(path);
           delta.modified.delete(path);
         }
-        delta.earlyInverseDependencies.set(path, new Set([parentModule.path]));
+        delta.earlyInverseDependencies.set(path, new CountingSet());
 
         options.onDependencyAdd();
         module = await processModule(path, graph, delta, options);

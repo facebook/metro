@@ -11,6 +11,8 @@
 
 'use strict';
 
+import CountingSet from '../../../../lib/CountingSet';
+
 const createModuleIdFactory = require('../../../../lib/createModuleIdFactory');
 const {wrapModule} = require('../bytecode');
 const {compile, validateBytecodeModule} = require('metro-hermes-compiler');
@@ -43,7 +45,7 @@ beforeEach(() => {
       ],
     ]),
     getSource: () => Buffer.from(''),
-    inverseDependencies: new Set(),
+    inverseDependencies: new CountingSet(),
     output: [
       {
         data: {
