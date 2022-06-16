@@ -1261,7 +1261,7 @@ describe('optional dependencies', () => {
     const {dependencies} = collectDependencies(ast, opts);
     validateDependencies(dependencies, 1);
   });
-  it('independent of sibiling context', () => {
+  it('independent of sibling context', () => {
     const ast = astFromCode(`
       try {
         const x = whatever;
@@ -1333,6 +1333,18 @@ describe('optional dependencies', () => {
     expect(deps3).toEqual([
       {name: 'A-3', data: objectContaining({isOptional: true})},
       {name: 'A-5', data: expect.not.objectContaining({isOptional: true})},
+    ]);
+  });
+  it('collapses optional and non-optional requires of the same module', () => {
+    const ast = astFromCode(`
+      const nonOptional = require('foo');
+      try {
+        const optional = require('foo');
+      } catch {}
+    `);
+    const {dependencies} = collectDependencies(ast, opts);
+    expect(dependencies).toEqual([
+      {name: 'foo', data: expect.not.objectContaining({isOptional: true})},
     ]);
   });
 });
