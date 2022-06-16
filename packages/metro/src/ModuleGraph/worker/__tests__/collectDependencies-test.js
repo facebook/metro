@@ -40,7 +40,710 @@ const opts = {
   keepRequireNames: true,
   allowOptionalDependencies: false,
   dependencyMapName: null,
+  unstable_allowRequireContext: false,
 };
+
+describe(`require.context`, () => {
+  const optsWithoutContext = {...opts, unstable_allowRequireContext: false};
+  const optsWithContext = {...opts, unstable_allowRequireContext: true};
+
+  it('does not extract/transform if feature is disabled', () => {
+    // TODO: Should this error/warn?
+    const ast = astFromCode(`
+      require.context('./', false, /foobar/m, 'eager');
+    `);
+    const {dependencies} = collectDependencies(ast, optsWithoutContext);
+    expect(dependencies).toEqual([]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        require.context('./', false, /foobar/m, 'eager');
+      `),
+    );
+  });
+
+  it('can omit 2nd-4th arguments', () => {
+    const ast = astFromCode(`
+      const a = require.context('./');
+      const b = require.context('./', false);
+      const c = require.context('./', true, /custom/i);
+      const d = require.context('./', true, /.*/, 'eager')
+    `);
+    const {dependencies, dependencyMapName} = collectDependencies(
+      ast,
+      optsWithContext,
+    );
+    expect(dependencies).toEqual([
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+              flags: '',
+            },
+            mode: 'sync',
+            recursive: true,
+          },
+        }),
+      },
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+              flags: '',
+            },
+            mode: 'sync',
+            recursive: false,
+          },
+        }),
+      },
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: 'custom',
+              flags: 'i',
+            },
+            mode: 'sync',
+            recursive: true,
+          },
+        }),
+      },
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+              flags: '',
+            },
+            mode: 'eager',
+            recursive: true,
+          },
+        }),
+      },
+    ]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        const a = require(${dependencyMapName}[0], "./");
+        const b = require(${dependencyMapName}[1], "./");
+        const c = require(${dependencyMapName}[2], "./");
+        const d = require(${dependencyMapName}[3], "./");
+      `),
+    );
+  });
+
+  it('can pass undefined for 2nd-4th arguments', () => {
+    const ast = astFromCode(`
+      const a = require.context('./', undefined, undefined, undefined);
+      const b = require.context('./', false, undefined, undefined);
+      const c = require.context('./', undefined, /custom/i, undefined);
+      const d = require.context('./', undefined, undefined, 'eager');
+    `);
+    const {dependencies, dependencyMapName} = collectDependencies(
+      ast,
+      optsWithContext,
+    );
+    expect(dependencies).toEqual([
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+              flags: '',
+            },
+            mode: 'sync',
+            recursive: true,
+          },
+        }),
+      },
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+              flags: '',
+            },
+            mode: 'sync',
+            recursive: false,
+          },
+        }),
+      },
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: 'custom',
+              flags: 'i',
+            },
+            mode: 'sync',
+            recursive: true,
+          },
+        }),
+      },
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+              flags: '',
+            },
+            mode: 'eager',
+            recursive: true,
+          },
+        }),
+      },
+    ]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        const a = require(${dependencyMapName}[0], "./");
+        const b = require(${dependencyMapName}[1], "./");
+        const c = require(${dependencyMapName}[2], "./");
+        const d = require(${dependencyMapName}[3], "./");
+      `),
+    );
+  });
+
+  it('can understand constant assignments', () => {
+    const ast = astFromCode(`
+      const DOT_SLASH_FOO = './foo';
+      const FALSE = false;
+      const EAGER = 'eager';
+      const a = require.context(DOT_SLASH_FOO, FALSE, /pattern/, EAGER);
+    `);
+    const {dependencies, dependencyMapName} = collectDependencies(
+      ast,
+      optsWithContext,
+    );
+    expect(dependencies).toEqual([
+      {
+        name: './foo',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: 'pattern',
+              flags: '',
+            },
+            mode: 'eager',
+            recursive: false,
+          },
+        }),
+      },
+    ]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        const DOT_SLASH_FOO = './foo';
+        const FALSE = false;
+        const EAGER = 'eager';
+        const a = require(${dependencyMapName}[0], "./foo");
+      `),
+    );
+  });
+
+  it.skip('can understand regex constant assignments', () => {
+    // TODO: augment Babel's path.evaluate() with regex support
+    const ast = astFromCode(`
+      const DOT_SLASH_FOO = './foo';
+      const FALSE = false;
+      const EAGER = 'eager';
+      const PATTERN = /pattern/;
+      const a = require.context(DOT_SLASH_FOO, FALSE, PATTERN, EAGER);
+    `);
+    const {dependencies, dependencyMapName} = collectDependencies(
+      ast,
+      optsWithContext,
+    );
+    expect(dependencies).toEqual([
+      {
+        name: './foo',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: 'pattern',
+              flags: '',
+            },
+            mode: 'eager',
+            recursive: false,
+          },
+        }),
+      },
+    ]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        const DOT_SLASH_FOO = "./foo";
+        const FALSE = false;
+        const EAGER = "eager";
+        const PATTERN = /pattern/;
+        const a = require(${dependencyMapName}[0], "./foo");
+      `),
+    );
+  });
+
+  it('distinguishes require from require.context', () => {
+    const ast = astFromCode(`
+      const a = require.context('./');
+      const anotherA = require.context('./');
+      const b = require('./');
+      const anotherB = require('./');
+    `);
+    const {dependencies, dependencyMapName} = collectDependencies(
+      ast,
+      optsWithContext,
+    );
+    expect(dependencies).toEqual([
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+              flags: '',
+            },
+            mode: 'sync',
+            recursive: true,
+          },
+        }),
+      },
+      {
+        name: './',
+        data: expect.not.objectContaining({
+          contextParams: expect.anything(),
+        }),
+      },
+    ]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        const a = require(${dependencyMapName}[0], "./");
+        const anotherA = require(${dependencyMapName}[0], "./");
+        const b = require(${dependencyMapName}[1], "./");
+        const anotherB = require(${dependencyMapName}[1], "./");
+      `),
+    );
+  });
+
+  it('distinguishes require.context based on path', () => {
+    const ast = astFromCode(`
+      const a = require.context('./a/');
+      const anotherA = require.context('./a/');
+      const b = require.context('./b/');
+      const anotherB = require.context('./b/');
+    `);
+    const {dependencies, dependencyMapName} = collectDependencies(
+      ast,
+      optsWithContext,
+    );
+    expect(dependencies).toEqual([
+      {
+        name: './a/',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+              flags: '',
+            },
+            mode: 'sync',
+            recursive: true,
+          },
+        }),
+      },
+      {
+        name: './b/',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+              flags: '',
+            },
+            mode: 'sync',
+            recursive: true,
+          },
+        }),
+      },
+    ]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        const a = require(${dependencyMapName}[0], "./a/");
+        const anotherA = require(${dependencyMapName}[0], "./a/");
+        const b = require(${dependencyMapName}[1], "./b/");
+        const anotherB = require(${dependencyMapName}[1], "./b/");
+      `),
+    );
+  });
+
+  it('distinguishes require.context based on trailing slash in path', () => {
+    // TODO: Can/should we merge these two?
+    const ast = astFromCode(`
+      const a = require.context('.');
+      const anotherA = require.context('.');
+      const b = require.context('./');
+      const anotherB = require.context('./');
+    `);
+    const {dependencies, dependencyMapName} = collectDependencies(
+      ast,
+      optsWithContext,
+    );
+    expect(dependencies).toEqual([
+      {
+        name: '.',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+              flags: '',
+            },
+            mode: 'sync',
+            recursive: true,
+          },
+        }),
+      },
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+              flags: '',
+            },
+            mode: 'sync',
+            recursive: true,
+          },
+        }),
+      },
+    ]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        const a = require(${dependencyMapName}[0], ".");
+        const anotherA = require(${dependencyMapName}[0], ".");
+        const b = require(${dependencyMapName}[1], "./");
+        const anotherB = require(${dependencyMapName}[1], "./");
+      `),
+    );
+  });
+
+  it('distinguishes between backslash and slash in path', () => {
+    // TODO: Can/should we merge these two?
+    const ast = astFromCode(`
+      const a = require.context('.\\\\');
+      const anotherA = require.context('.\\\\');
+      const b = require.context('./');
+      const anotherB = require.context('./');
+    `);
+    const {dependencies, dependencyMapName} = collectDependencies(
+      ast,
+      optsWithContext,
+    );
+    expect(dependencies).toEqual([
+      {
+        name: '.\\',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+              flags: '',
+            },
+            mode: 'sync',
+            recursive: true,
+          },
+        }),
+      },
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+              flags: '',
+            },
+            mode: 'sync',
+            recursive: true,
+          },
+        }),
+      },
+    ]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        const a = require(${dependencyMapName}[0], ".\\\\");
+        const anotherA = require(${dependencyMapName}[0], ".\\\\");
+        const b = require(${dependencyMapName}[1], "./");
+        const anotherB = require(${dependencyMapName}[1], "./");
+      `),
+    );
+  });
+
+  it('distinguishes require.context based on `recursive`', () => {
+    const ast = astFromCode(`
+      const a = require.context('./', true);
+      const anotherA = require.context('./');
+      const b = require.context('./', false);
+      const anotherB = require.context('./', false);
+    `);
+    const {dependencies, dependencyMapName} = collectDependencies(
+      ast,
+      optsWithContext,
+    );
+    expect(dependencies).toEqual([
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+              flags: '',
+            },
+            mode: 'sync',
+            recursive: true,
+          },
+        }),
+      },
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+              flags: '',
+            },
+            mode: 'sync',
+            recursive: false,
+          },
+        }),
+      },
+    ]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        const a = require(${dependencyMapName}[0], "./");
+        const anotherA = require(${dependencyMapName}[0], "./");
+        const b = require(${dependencyMapName}[1], "./");
+        const anotherB = require(${dependencyMapName}[1], "./");
+      `),
+    );
+  });
+
+  it('distinguishes require.context based on filter pattern', () => {
+    const ast = astFromCode(`
+      const a = require.context('./', true, /foo/);
+      const anotherA = require.context('./', true, /foo/);
+      const b = require.context('./', true, /.*/);
+      const anotherB = require.context('./', true);
+    `);
+    const {dependencies, dependencyMapName} = collectDependencies(
+      ast,
+      optsWithContext,
+    );
+    expect(dependencies).toEqual([
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: 'foo',
+              flags: '',
+            },
+            mode: 'sync',
+            recursive: true,
+          },
+        }),
+      },
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+              flags: '',
+            },
+            mode: 'sync',
+            recursive: true,
+          },
+        }),
+      },
+    ]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        const a = require(${dependencyMapName}[0], "./");
+        const anotherA = require(${dependencyMapName}[0], "./");
+        const b = require(${dependencyMapName}[1], "./");
+        const anotherB = require(${dependencyMapName}[1], "./");
+      `),
+    );
+  });
+
+  it('distinguishes require.context based on filter flags', () => {
+    const ast = astFromCode(`
+      const a = require.context('./', true, /foo/m);
+      const anotherA = require.context('./', true, /foo/m);
+      const b = require.context('./', true, /foo/);
+      const anotherB = require.context('./', true, /foo/);
+    `);
+    const {dependencies, dependencyMapName} = collectDependencies(
+      ast,
+      optsWithContext,
+    );
+    expect(dependencies).toEqual([
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: 'foo',
+              flags: 'm',
+            },
+            mode: 'sync',
+            recursive: true,
+          },
+        }),
+      },
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: 'foo',
+              flags: '',
+            },
+            mode: 'sync',
+            recursive: true,
+          },
+        }),
+      },
+    ]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        const a = require(${dependencyMapName}[0], "./");
+        const anotherA = require(${dependencyMapName}[0], "./");
+        const b = require(${dependencyMapName}[1], "./");
+        const anotherB = require(${dependencyMapName}[1], "./");
+      `),
+    );
+  });
+
+  it('distinguishes require.context based on mode', () => {
+    const ast = astFromCode(`
+      const a = require.context('./', true, /.*/, 'sync');
+      const anotherA = require.context('./', true, /.*/);
+      const b = require.context('./', true, /.*/, 'eager');
+      const anotherB = require.context('./', true, /.*/, 'eager');
+    `);
+    const {dependencies, dependencyMapName} = collectDependencies(
+      ast,
+      optsWithContext,
+    );
+    expect(dependencies).toEqual([
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+              flags: '',
+            },
+            mode: 'sync',
+            recursive: true,
+          },
+        }),
+      },
+      {
+        name: './',
+        data: objectContaining({
+          contextParams: {
+            filter: {
+              pattern: '.*',
+              flags: '',
+            },
+            mode: 'eager',
+            recursive: true,
+          },
+        }),
+      },
+    ]);
+    expect(codeFromAst(ast)).toEqual(
+      comparableCode(`
+        const a = require(${dependencyMapName}[0], "./");
+        const anotherA = require(${dependencyMapName}[0], "./");
+        const b = require(${dependencyMapName}[1], "./");
+        const anotherB = require(${dependencyMapName}[1], "./");
+      `),
+    );
+  });
+
+  it(`asserts invalid first argument`, () => {
+    const ast = astFromCode(`
+  const a = require.context(42);
+`);
+    expect(() => collectDependencies(ast, optsWithContext))
+      .toThrowErrorMatchingInlineSnapshot(`
+      "Invalid call at line 2: 42
+      First argument of \`require.context\` should be a string denoting the directory to require."
+    `);
+  });
+  it(`asserts invalid second argument`, () => {
+    const ast = astFromCode(`
+  const a = require.context('./dir', 'hey');
+`);
+    expect(() => collectDependencies(ast, optsWithContext))
+      .toThrowErrorMatchingInlineSnapshot(`
+      "Invalid call at line 2: 'hey'
+      Second argument of \`require.context\` should be an optional boolean indicating if files should be imported recursively or not."
+    `);
+  });
+  it(`asserts invalid third argument`, () => {
+    const ast = astFromCode(`
+  const a = require.context('./dir', false, new RegExp('foobar'));
+`);
+    expect(() => collectDependencies(ast, optsWithContext))
+      .toThrowErrorMatchingInlineSnapshot(`
+      "Invalid call at line 2: new RegExp('foobar')
+      Third argument of \`require.context\` should be an optional RegExp pattern matching all of the files to import, instead found node of type: NewExpression."
+    `);
+  });
+  it(`asserts invalid fourth argument`, () => {
+    const ast = astFromCode(`
+  const a = require.context('./dir', false, /foobar/, 34);
+`);
+    expect(() => collectDependencies(ast, optsWithContext))
+      .toThrowErrorMatchingInlineSnapshot(`
+      "Invalid call at line 2: 34
+      Fourth argument of \`require.context\` should be an optional string \\"mode\\" denoting how the modules will be resolved."
+    `);
+  });
+  it(`asserts invalid fourth argument enum value`, () => {
+    const ast = astFromCode(`
+  const a = require.context('./dir', false, /foobar/, 'hello');
+`);
+    expect(() => collectDependencies(ast, optsWithContext))
+      .toThrowErrorMatchingInlineSnapshot(`
+      "Invalid call at line 2: 'hello'
+      require.context \\"hello\\" mode is not supported. Expected one of: sync, eager, lazy, lazy-once"
+    `);
+  });
+  it(`asserts too many arguments`, () => {
+    const ast = astFromCode(`
+  const a = require.context('./dir', false, /foobar/, 'sync', 'hey');
+`);
+    expect(() => collectDependencies(ast, optsWithContext))
+      .toThrowErrorMatchingInlineSnapshot(`
+      "Invalid call at line 2: require.context('./dir', false, /foobar/, 'sync', 'hey')
+      Too many arguments provided to \`require.context\` call. Expected 4, got: 5"
+    `);
+  });
+  it(`asserts no arguments`, () => {
+    const ast = astFromCode(`
+  const a = require.context();
+`);
+    expect(() =>
+      collectDependencies(ast, optsWithContext),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `"Invalid call at line 2: require.context()"`,
+    );
+  });
+});
 
 it('collects unique dependency identifiers and transforms the AST', () => {
   const ast = astFromCode(`
@@ -319,6 +1022,7 @@ describe('Evaluating static arguments', () => {
       keepRequireNames: true,
       allowOptionalDependencies: false,
       dependencyMapName: null,
+      unstable_allowRequireContext: false,
     };
     const {dependencies} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([]);
@@ -480,6 +1184,7 @@ describe('optional dependencies', () => {
     keepRequireNames: true,
     allowOptionalDependencies: true,
     dependencyMapName: null,
+    unstable_allowRequireContext: false,
   };
   const validateDependencies = (dependencies, expectedCount) => {
     let hasAsync = false;
