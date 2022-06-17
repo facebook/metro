@@ -22,6 +22,7 @@ import type {
 import * as fs from 'fs';
 import * as path from 'path';
 import WS from 'ws';
+import fetch from 'node-fetch';
 
 const debug = require('debug')('Metro:InspectorProxy');
 
@@ -173,10 +174,10 @@ class Device {
       },
     });
 
-    socket.on('message', (message: string) => {
+    socket.on('message', async (message: string) => {
       debug('(Debugger) -> (Proxy)    (Device): ' + message);
       const debuggerRequest = JSON.parse(message);
-      const interceptedResponse = this._interceptMessageFromDebugger(
+      const interceptedResponse = await this._interceptMessageFromDebugger(
         debuggerRequest,
         debuggerInfo,
       );
@@ -437,17 +438,17 @@ class Device {
   }
 
   // Allows to make changes in incoming messages from debugger.
-  _interceptMessageFromDebugger(
+  async _interceptMessageFromDebugger(
     req: DebuggerRequest,
     debuggerInfo: DebuggerInfo,
-  ): ?DebuggerResponse {
+  ): Promise<?DebuggerResponse> {
     let response = null;
     if (req.method === 'Debugger.setBreakpointByUrl') {
       this._processDebuggerSetBreakpointByUrl(req, debuggerInfo);
     } else if (req.method === 'Debugger.getScriptSource') {
       response = {
         id: req.id,
-        result: this._processDebuggerGetScriptSource(req),
+        result: await this._processDebuggerGetScriptSource(req),
       };
     }
     return response;
@@ -485,9 +486,9 @@ class Device {
     }
   }
 
-  _processDebuggerGetScriptSource(
+  async _processDebuggerGetScriptSource(
     req: GetScriptSourceRequest,
-  ): GetScriptSourceResponse {
+  ): Promise<GetScriptSourceResponse> {
     let scriptSource = `Source for script with id '${req.params.scriptId}' was not found.`;
 
     const pathToSource = this._scriptIdToSourcePathMapping.get(
@@ -495,10 +496,18 @@ class Device {
     );
     if (pathToSource) {
       try {
-        scriptSource = fs.readFileSync(
-          path.resolve(this._projectRoot, pathToSource),
-          'utf8',
-        );
+        if (
+          pathToSource.startsWith('http://') ||
+          pathToSource.startsWith('https://')
+        ) {
+          const res = await fetch(pathToSource);
+          scriptSource = await res.text();
+        } else {
+          scriptSource = fs.readFileSync(
+            path.resolve(this._projectRoot, pathToSource),
+            'utf8',
+          );
+        }
       } catch (err) {
         scriptSource = err.message;
       }

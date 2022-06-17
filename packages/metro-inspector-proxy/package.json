@@ -19,6 +19,7 @@
   "dependencies": {
     "connect": "^3.6.5",
     "debug": "^2.2.0",
+    "node-fetch": "^2.2.0",
     "ws": "^7.5.1",
     "yargs": "^15.3.1"
   }
