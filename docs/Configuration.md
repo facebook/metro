@@ -217,6 +217,16 @@ Type: `Array<string>`
 
 Additional platforms to look out for, For example, if you want to add a "custom" platform, and use modules ending in .custom.js, you would return ['custom'] here.
 
+#### `requireCycleIgnorePatterns`
+
+Type: `Array<RegExp>`
+
+In development mode, suppress require cycle warnings for any cycle involving a module that matches any of these expressions. This is useful for third-party code and first-party expected cycles.
+
+Note that if you specify your own value for this config option it will replace (not concatenate with) Metro's default.
+
+Defaults to `[/(^|\/|\\)node_modules($|\/|\\)/]`.
+
 ---
 ### Transformer Options
 

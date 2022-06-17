@@ -58,6 +58,9 @@ Object {
       "windows",
       "web",
     ],
+    "requireCycleIgnorePatterns": Array [
+      /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
+    ],
     "resolveRequest": null,
     "resolverMainFields": Array [
       "browser",
@@ -210,6 +213,9 @@ Object {
       "android",
       "windows",
       "web",
+    ],
+    "requireCycleIgnorePatterns": Array [
+      /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
     ],
     "resolveRequest": null,
     "resolverMainFields": Array [
@@ -364,6 +370,9 @@ Object {
       "windows",
       "web",
     ],
+    "requireCycleIgnorePatterns": Array [
+      /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
+    ],
     "resolveRequest": null,
     "resolverMainFields": Array [
       "browser",
@@ -516,6 +525,9 @@ Object {
       "android",
       "windows",
       "web",
+    ],
+    "requireCycleIgnorePatterns": Array [
+      /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
     ],
     "resolveRequest": null,
     "resolverMainFields": Array [

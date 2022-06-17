@@ -19,8 +19,14 @@ function createModule(
   verboseName,
   factory,
   dependencyMap = [],
+  globalPrefix = '',
 ) {
-  moduleSystem.__d(factory, moduleId, dependencyMap, verboseName);
+  moduleSystem[globalPrefix + '__d'](
+    factory,
+    moduleId,
+    dependencyMap,
+    verboseName,
+  );
 }
 
 describe('require', () => {
@@ -662,6 +668,51 @@ describe('require', () => {
         ].join('\n'),
       );
 
+      console.warn = warn;
+    });
+
+    it('does not log warning for cyclic dependency in ignore list', () => {
+      moduleSystem.__customPrefix__requireCycleIgnorePatterns = [/foo/];
+      createModuleSystem(moduleSystem, true, '__customPrefix');
+
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require) => {
+          require(1);
+        },
+        [],
+        '__customPrefix',
+      );
+
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require) => {
+          require(2);
+        },
+        [],
+        '__customPrefix',
+      );
+
+      createModule(
+        moduleSystem,
+        2,
+        'baz.js',
+        (global, require) => {
+          require(0);
+        },
+        [],
+        '__customPrefix',
+      );
+
+      const warn = console.warn;
+      console.warn = jest.fn();
+
+      moduleSystem.__r(0);
+      expect(console.warn).toHaveBeenCalledTimes(0);
       console.warn = warn;
     });
 

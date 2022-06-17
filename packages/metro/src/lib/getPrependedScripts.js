@@ -71,6 +71,7 @@ async function getPrependedScripts(
     _getPrelude({
       dev: options.dev,
       globalPrefix: config.transformer.globalPrefix,
+      requireCycleIgnorePatterns: config.resolver.requireCycleIgnorePatterns,
     }),
     ...dependencies.values(),
   ];
@@ -79,12 +80,18 @@ async function getPrependedScripts(
 function _getPrelude({
   dev,
   globalPrefix,
+  requireCycleIgnorePatterns,
 }: {
   dev: boolean,
   globalPrefix: string,
+  requireCycleIgnorePatterns: $ReadOnlyArray<RegExp>,
   ...
 }): Module<> {
-  const code = getPreludeCode({isDev: dev, globalPrefix});
+  const code = getPreludeCode({
+    isDev: dev,
+    globalPrefix,
+    requireCycleIgnorePatterns,
+  });
   const name = '__prelude__';
 
   return {

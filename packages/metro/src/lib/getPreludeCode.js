@@ -14,18 +14,33 @@ function getPreludeCode({
   extraVars,
   isDev,
   globalPrefix,
+  requireCycleIgnorePatterns,
 }: {
   +extraVars?: {[string]: mixed, ...},
   +isDev: boolean,
   +globalPrefix: string,
+  +requireCycleIgnorePatterns: $ReadOnlyArray<RegExp>,
 }): string {
   const vars = [
+    // Ensure these variable names match the ones referenced in metro-runtime
+    // require.js
     '__BUNDLE_START_TIME__=this.nativePerformanceNow?nativePerformanceNow():Date.now()',
     `__DEV__=${String(isDev)}`,
     ...formatExtraVars(extraVars),
     'process=this.process||{}',
     `__METRO_GLOBAL_PREFIX__='${globalPrefix}'`,
   ];
+
+  if (isDev) {
+    // Ensure these variable names match the ones referenced in metro-runtime
+    // require.js
+    vars.push(
+      `${globalPrefix}__requireCycleIgnorePatterns=[${requireCycleIgnorePatterns
+        .map(regex => regex.toString())
+        .join(',')}]`,
+    );
+  }
+
   return `var ${vars.join(',')};${processEnv(
     isDev ? 'development' : 'production',
   )}`;
