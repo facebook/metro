@@ -21,6 +21,8 @@ const {
   traverseDependencies: traverseDependenciesImpl,
 } = require('../graphOperations');
 
+const {objectContaining} = expect;
+
 type DependencyDataInput = $Shape<TransformResultDependency['data']>;
 
 let mockedDependencies: Set<string> = new Set();
@@ -30,7 +32,7 @@ let mockedDependencyTree: Map<
     $ReadOnly<{
       name: string,
       path: string,
-      data?: DependencyDataInput,
+      data: DependencyDataInput,
     }>,
   >,
 > = new Map();
@@ -79,11 +81,22 @@ const Actions = {
     data?: DependencyDataInput,
   ) {
     const deps = nullthrows(mockedDependencyTree.get(path));
+    const depName = name ?? dependencyPath.replace('/', '');
+    const key = require('crypto')
+      .createHash('sha1')
+      .update(depName)
+      .digest('base64');
     const dep = {
-      name: name ?? dependencyPath.replace('/', ''),
+      name: depName,
       path: dependencyPath,
-      data: data ?? {},
+      data: {key, ...(data ?? {})},
     };
+    if (
+      deps.findIndex(existingDep => existingDep.data.key === dep.data.key) !==
+      -1
+    ) {
+      throw new Error('Found existing mock dep with key: ' + dep.data.key);
+    }
     if (position == null) {
       deps.push(dep);
     } else {
@@ -221,6 +234,7 @@ beforeEach(async () => {
         data: {
           asyncType: null,
           locs: [],
+          key: dep.data.key,
           ...dep.data,
         },
       })),
@@ -787,24 +801,33 @@ describe('edge cases', () => {
       ...nullthrows(graph.dependencies.get(moduleFoo)).dependencies,
     ]).toEqual([
       [
-        'qux',
+        expect.any(String),
         {
           absolutePath: '/qux',
-          data: {data: {asyncType: null, locs: []}, name: 'qux'},
+          data: {
+            data: objectContaining({asyncType: null, locs: []}),
+            name: 'qux',
+          },
         },
       ],
       [
-        'bar',
+        expect.any(String),
         {
           absolutePath: '/bar',
-          data: {data: {asyncType: null, locs: []}, name: 'bar'},
+          data: {
+            data: objectContaining({asyncType: null, locs: []}),
+            name: 'bar',
+          },
         },
       ],
       [
-        'baz',
+        expect.any(String),
         {
           absolutePath: '/baz',
-          data: {data: {asyncType: null, locs: []}, name: 'baz'},
+          data: {
+            data: objectContaining({asyncType: null, locs: []}),
+            name: 'baz',
+          },
         },
       ],
     ]);
@@ -1901,21 +1924,21 @@ describe('edge cases', () => {
       ...nullthrows(graph.dependencies.get(entryModule)).dependencies,
     ]).toEqual([
       [
-        'foo.js',
+        expect.any(String),
         {
           absolutePath: '/foo',
           data: {
-            data: {asyncType: null, locs: []},
+            data: objectContaining({asyncType: null, locs: []}),
             name: 'foo.js',
           },
         },
       ],
       [
-        'foo',
+        expect.any(String),
         {
           absolutePath: '/foo',
           data: {
-            data: {asyncType: null, locs: []},
+            data: objectContaining({asyncType: null, locs: []}),
             name: 'foo',
           },
         },
@@ -2007,12 +2030,12 @@ describe('edge cases', () => {
       [
         entryModule,
         [
-          {name: 'foo', path: moduleFoo},
-          {name: 'bar', path: moduleBar},
+          {name: 'foo', path: moduleFoo, data: {key: 'foo'}},
+          {name: 'bar', path: moduleBar, data: {key: 'bar'}},
         ],
       ],
-      [moduleFoo, [{name: 'baz', path: moduleBaz}]],
-      [moduleBar, [{name: 'baz', path: moduleBaz}]],
+      [moduleFoo, [{name: 'baz', path: moduleBaz, data: {key: 'baz'}}]],
+      [moduleBar, [{name: 'baz', path: moduleBaz, data: {key: 'baz'}}]],
     ]);
 
     // Test that even when having different modules taking longer, the order
@@ -2039,6 +2062,7 @@ describe('reorderGraph', () => {
         data: {
           asyncType: null,
           locs: [],
+          key: path.substr(1),
         },
         name: path.substr(1),
       },
@@ -2171,16 +2195,13 @@ describe('optional dependencies', () => {
 });
 
 describe('parallel edges', () => {
-  it('add twice w/ same key, build and remove once', async () => {
+  it('add twice w/ same name, build and remove once', async () => {
     // Create a second edge between /foo and /bar.
-    Actions.addDependency('/foo', '/bar', undefined);
+    Actions.addDependency('/foo', '/bar', undefined, undefined, {
+      key: 'bar-second-key',
+    });
 
     await initialTraverseDependencies(graph, options);
-
-    const fooDeps = nullthrows(graph.dependencies.get('/foo')).dependencies;
-    const fooDepsResolved = [...fooDeps.values()].map(dep => dep.absolutePath);
-    // We dedupe the dependencies because they have the same `name`.
-    expect(fooDepsResolved).toEqual(['/bar', '/baz']);
 
     // Remove one of the edges between /foo and /bar (arbitrarily)
     Actions.removeDependency('/foo', '/bar');
@@ -2194,16 +2215,13 @@ describe('parallel edges', () => {
     });
   });
 
-  it('add twice w/ same key, build and remove twice', async () => {
+  it('add twice w/ same name, build and remove twice', async () => {
     // Create a second edge between /foo and /bar.
-    Actions.addDependency('/foo', '/bar', undefined);
+    Actions.addDependency('/foo', '/bar', undefined, undefined, {
+      key: 'bar-second-key',
+    });
 
     await initialTraverseDependencies(graph, options);
-
-    const fooDeps = nullthrows(graph.dependencies.get('/foo')).dependencies;
-    const fooDepsResolved = [...fooDeps.values()].map(dep => dep.absolutePath);
-    // We dedupe the dependencies because they have the same `name`.
-    expect(fooDepsResolved).toEqual(['/bar', '/baz']);
 
     // Remove both edges between /foo and /bar
     Actions.removeDependency('/foo', '/bar');
@@ -2218,16 +2236,11 @@ describe('parallel edges', () => {
     });
   });
 
-  it('add twice w/ different keys, build and remove once', async () => {
+  it('add twice w/ different names, build and remove once', async () => {
     // Create a second edge between /foo and /bar, with a different `name`.
     Actions.addDependency('/foo', '/bar', undefined, 'bar-second');
 
     await initialTraverseDependencies(graph, options);
-
-    const fooDeps = nullthrows(graph.dependencies.get('/foo')).dependencies;
-    const fooDepsResolved = [...fooDeps.values()].map(dep => dep.absolutePath);
-    // We don't dedupe the dependencies because they have different `name`s.
-    expect(fooDepsResolved).toEqual(['/bar', '/baz', '/bar']);
 
     // Remove one of the edges between /foo and /bar (arbitrarily)
     Actions.removeDependency('/foo', '/bar');
@@ -2241,16 +2254,11 @@ describe('parallel edges', () => {
     });
   });
 
-  it('add twice w/ different keys, build and remove twice', async () => {
+  it('add twice w/ different names, build and remove twice', async () => {
     // Create a second edge between /foo and /bar, with a different `name`.
     Actions.addDependency('/foo', '/bar', undefined, 'bar-second');
 
     await initialTraverseDependencies(graph, options);
-
-    const fooDeps = nullthrows(graph.dependencies.get('/foo')).dependencies;
-    const fooDepsResolved = [...fooDeps.values()].map(dep => dep.absolutePath);
-    // We don't dedupe the dependencies because they have different `name`s.
-    expect(fooDepsResolved).toEqual(['/bar', '/baz', '/bar']);
 
     // Remove both edges between /foo and /bar
     Actions.removeDependency('/foo', '/bar');

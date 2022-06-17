@@ -1476,6 +1476,9 @@ class MockModuleDependencyRegistry<TSplitCondition>
       asyncType: qualifier.asyncType,
       isOptional: qualifier.optional ?? false,
       locs: [],
+
+      // Index = easy key for every dependency since we don't collapse/reorder
+      key: String(this._dependencies.length),
     };
 
     if (qualifier.splitCondition) {
