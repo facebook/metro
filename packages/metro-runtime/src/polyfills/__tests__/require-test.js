@@ -19,8 +19,14 @@ function createModule(
   verboseName,
   factory,
   dependencyMap = [],
+  globalPrefix = '',
 ) {
-  moduleSystem.__d(factory, moduleId, dependencyMap, verboseName);
+  moduleSystem[globalPrefix + '__d'](
+    factory,
+    moduleId,
+    dependencyMap,
+    verboseName,
+  );
 }
 
 describe('require', () => {
@@ -662,6 +668,51 @@ describe('require', () => {
         ].join('\n'),
       );
 
+      console.warn = warn;
+    });
+
+    it('does not log warning for cyclic dependency in ignore list', () => {
+      moduleSystem.__customPrefix__requireCycleIgnorePatterns = [/foo/];
+      createModuleSystem(moduleSystem, true, '__customPrefix');
+
+      createModule(
+        moduleSystem,
+        0,
+        'foo.js',
+        (global, require) => {
+          require(1);
+        },
+        [],
+        '__customPrefix',
+      );
+
+      createModule(
+        moduleSystem,
+        1,
+        'bar.js',
+        (global, require) => {
+          require(2);
+        },
+        [],
+        '__customPrefix',
+      );
+
+      createModule(
+        moduleSystem,
+        2,
+        'baz.js',
+        (global, require) => {
+          require(0);
+        },
+        [],
+        '__customPrefix',
+      );
+
+      const warn = console.warn;
+      console.warn = jest.fn();
+
+      moduleSystem.__r(0);
+      expect(console.warn).toHaveBeenCalledTimes(0);
       console.warn = warn;
     });
 
@@ -2562,6 +2613,201 @@ describe('require', () => {
       log = [];
       jest.runAllTimers();
       expect(Refresh.performReactRefresh).not.toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
+    });
+
+    it('bails out if the update involves a cycle', () => {
+      // NOTE: A sufficiently clever algorithm may be able to avoid bailing out
+      // in some cases, but right now this is how we handle cycles; it beats
+      // leaving stale versions of updated modules in the graph.
+
+      createModuleSystem(moduleSystem, true, '');
+      const Refresh = createReactRefreshMock(moduleSystem);
+
+      // This is the module graph:
+      // ┌─────────┐      ┌─────────┐ ────▶ ┌─────────┐
+      // |  Root*  | ───▶ │ MiddleA │ ◀──── | MiddleC |
+      // └─────────┘      └─────────┘       └─────────┘
+      //                     │ ▲              |
+      //                     │ │              |
+      //                     ▼ │              ▼
+      //                  ┌─────────┐       ┌────────┐
+      //                  | MiddleB | ────▶ |  Leaf  |
+      //                  └─────────┘       └────────┘
+      //
+      // * - refresh boundary (exports a component)
+
+      const ids = Object.fromEntries([
+        ['root.js', 0],
+        ['middleA.js', 1],
+        ['middleB.js', 2],
+        ['middleC.js', 3],
+        ['leaf.js', 4],
+      ]);
+
+      createModule(
+        moduleSystem,
+        ids['root.js'],
+        'root.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          require(ids['middleA.js']);
+          module.exports = function Root() {};
+        },
+      );
+      createModule(
+        moduleSystem,
+        ids['middleA.js'],
+        'middleA.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          const MB = require(ids['middleB.js']);
+          require(ids['middleC.js']);
+          module.exports = MB;
+        },
+      );
+      createModule(
+        moduleSystem,
+        ids['middleB.js'],
+        'middleB.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          require(ids['middleA.js']);
+          const L = require(ids['leaf.js']); // Import leaf
+          module.exports = L;
+        },
+      );
+      createModule(
+        moduleSystem,
+        ids['middleC.js'],
+        'middleC.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          require(ids['middleA.js']);
+          require(ids['leaf.js']);
+          module.exports = 0;
+        },
+      );
+      createModule(
+        moduleSystem,
+        ids['leaf.js'],
+        'leaf.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          module.exports = 'version 1';
+        },
+      );
+      moduleSystem.__r(ids['root.js']);
+
+      expect(moduleSystem.__r('middleA.js')).toBe('version 1');
+
+      moduleSystem.__accept(
+        ids['leaf.js'],
+        (global, require, importDefault, importAll, module, exports) => {
+          module.exports = 'version 2';
+        },
+        [],
+        // Inverse dependency map.
+        {
+          [ids['leaf.js']]: [ids['middleC.js'], ids['middleB.js']],
+          [ids['middleC.js']]: [ids['middleA.js']],
+          [ids['middleB.js']]: [ids['middleA.js']],
+          [ids['middleA.js']]: [
+            ids['middleC.js'],
+            ids['middleB.js'],
+            ids['root.js'],
+          ],
+          [ids['root.js']]: [],
+        },
+        undefined,
+      );
+
+      jest.runAllTimers();
+
+      expect(Refresh.performReactRefresh).not.toHaveBeenCalled();
+      expect(Refresh.performFullRefresh).toHaveBeenCalled();
+    });
+
+    it('performs an update when there is an unaffected cycle', () => {
+      createModuleSystem(moduleSystem, true, '');
+      const Refresh = createReactRefreshMock(moduleSystem);
+
+      // This is the module graph:
+      //                 ┌───────────────────┐
+      //                 │                   ▼
+      // ┌───────┐     ┌───┐     ┌───┐     ┌───┐
+      // │ Root* │ ──▶ │ A │ ──▶ │ B │ ──▶ │ C │
+      // └───────┘     └───┘     └───┘     └───┘
+      //                           ▲         │
+      //                           └─────────┘
+      // * - refresh boundary (exports a component)
+
+      const ids = Object.fromEntries([
+        ['root.js', 0],
+        ['A.js', 1],
+        ['B.js', 2],
+        ['C.js', 3],
+      ]);
+
+      createModule(
+        moduleSystem,
+        ids['root.js'],
+        'root.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          require(ids['A.js']);
+          module.exports = function Root() {};
+        },
+      );
+      createModule(
+        moduleSystem,
+        ids['A.js'],
+        'A.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          const B = require(ids['B.js']);
+          const C = require(ids['C.js']);
+          module.exports = 'A = ' + B + C + ' version 1';
+        },
+      );
+      createModule(
+        moduleSystem,
+        ids['B.js'],
+        'B.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          require(ids['C.js']);
+          module.exports = 'B';
+        },
+      );
+      createModule(
+        moduleSystem,
+        ids['C.js'],
+        'C.js',
+        (global, require, importDefault, importAll, module, exports) => {
+          require(ids['B.js']);
+          module.exports = 'C';
+        },
+      );
+      moduleSystem.__r(ids['root.js']);
+
+      expect(moduleSystem.__r(ids['A.js'])).toBe('A = BC version 1');
+
+      moduleSystem.__accept(
+        ids['A.js'],
+        (global, require, importDefault, importAll, module, exports) => {
+          const B = require(ids['B.js']);
+          const C = require(ids['C.js']);
+          module.exports = 'A = ' + B + C + ' version 2';
+        },
+        [],
+        // Inverse dependency map.
+        {
+          [ids['root.js']]: [],
+          [ids['A.js']]: [ids['root.js']],
+          [ids['B.js']]: [ids['A.js'], ids['C.js']],
+          [ids['C.js']]: [ids['A.js'], ids['B.js']],
+        },
+        undefined,
+      );
+
+      expect(moduleSystem.__r(ids['A.js'])).toBe('A = BC version 2');
+
+      jest.runAllTimers();
+
+      expect(Refresh.performReactRefresh).toHaveBeenCalled();
       expect(Refresh.performFullRefresh).not.toHaveBeenCalled();
     });
   });

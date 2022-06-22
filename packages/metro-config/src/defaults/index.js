@@ -42,11 +42,11 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     ),
     extraNodeModules: {},
     hasteImplModulePath: undefined,
-    unstable_hasteMapModulePath: undefined,
     nodeModulesPaths: [],
     resolveRequest: null,
     resolverMainFields: ['browser', 'main'],
     useWatchman: true,
+    requireCycleIgnorePatterns: [/(^|\/|\\)node_modules($|\/|\\)/],
   },
 
   serializer: {
@@ -120,12 +120,18 @@ const getDefaultValues = (projectRoot: ?string): ConfigT => ({
     workerPath: 'metro/src/DeltaBundler/Worker',
     publicPath: '/assets',
     allowOptionalDependencies: false,
+    unstable_allowRequireContext: false,
     unstable_collectDependenciesPath:
       'metro/src/ModuleGraph/worker/collectDependencies.js',
     unstable_dependencyMapReservedName: null,
     unstable_disableModuleWrapping: false,
     unstable_disableNormalizePseudoGlobals: false,
     unstable_compactOutput: false,
+  },
+  watcher: {
+    watchman: {
+      deferStates: ['hg.update'],
+    },
   },
   cacheStores: [
     new FileStore({

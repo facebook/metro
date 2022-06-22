@@ -11,6 +11,8 @@
 
 'use strict';
 
+import CountingSet from '../../../../lib/CountingSet';
+
 const createModuleIdFactory = require('../../../../lib/createModuleIdFactory');
 const {wrapModule} = require('../js');
 
@@ -36,7 +38,7 @@ beforeEach(() => {
       ],
     ]),
     getSource: () => Buffer.from(''),
-    inverseDependencies: new Set(),
+    inverseDependencies: new CountingSet(),
     output: [
       {
         data: {

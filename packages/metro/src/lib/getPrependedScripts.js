@@ -15,6 +15,8 @@ import type DeltaBundler, {Module} from '../DeltaBundler';
 import type {TransformInputOptions} from '../DeltaBundler/types.flow';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
+import CountingSet from './CountingSet';
+
 const countLines = require('./countLines');
 const getPreludeCode = require('./getPreludeCode');
 const transformHelpers = require('./transformHelpers');
@@ -69,6 +71,7 @@ async function getPrependedScripts(
     _getPrelude({
       dev: options.dev,
       globalPrefix: config.transformer.globalPrefix,
+      requireCycleIgnorePatterns: config.resolver.requireCycleIgnorePatterns,
     }),
     ...dependencies.values(),
   ];
@@ -77,18 +80,24 @@ async function getPrependedScripts(
 function _getPrelude({
   dev,
   globalPrefix,
+  requireCycleIgnorePatterns,
 }: {
   dev: boolean,
   globalPrefix: string,
+  requireCycleIgnorePatterns: $ReadOnlyArray<RegExp>,
   ...
 }): Module<> {
-  const code = getPreludeCode({isDev: dev, globalPrefix});
+  const code = getPreludeCode({
+    isDev: dev,
+    globalPrefix,
+    requireCycleIgnorePatterns,
+  });
   const name = '__prelude__';
 
   return {
     dependencies: new Map(),
     getSource: (): Buffer => Buffer.from(code),
-    inverseDependencies: new Set(),
+    inverseDependencies: new CountingSet(),
     path: name,
     output: [
       {

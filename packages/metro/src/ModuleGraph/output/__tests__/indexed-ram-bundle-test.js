@@ -11,8 +11,6 @@
 
 'use strict';
 
-declare var jest: any;
-
 import type {IndexMapSection} from 'metro-source-map';
 
 const indexedRamBundle = require('../indexed-ram-bundle');

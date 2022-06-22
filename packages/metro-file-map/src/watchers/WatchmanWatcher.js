@@ -15,6 +15,8 @@ import watchman from 'fb-watchman';
 import * as fs from 'graceful-fs';
 import path from 'path';
 
+const debug = require('debug')('Metro:WatchmanWatcher');
+
 const CHANGE_EVENT = common.CHANGE_EVENT;
 const DELETE_EVENT = common.DELETE_EVENT;
 const ADD_EVENT = common.ADD_EVENT;
@@ -119,6 +121,7 @@ WatchmanWatcher.prototype.init = function () {
     const options = {
       fields: ['name', 'exists', 'new'],
       since: resp.clock,
+      defer: self.watchmanDeferStates,
     };
 
     // If the server has the wildmatch capability available it supports
@@ -199,6 +202,16 @@ WatchmanWatcher.prototype.handleChangeEvent = function (resp) {
   }
   if (Array.isArray(resp.files)) {
     resp.files.forEach(this.handleFileChange, this);
+  }
+  if ((this.watchmanDeferStates ?? []).includes(resp['state-enter'])) {
+    debug(
+      `Watchman reports ${resp['state-enter']} just started. Filesystem notifications are paused.`,
+    );
+  }
+  if ((this.watchmanDeferStates ?? []).includes(resp['state-leave'])) {
+    debug(
+      `Watchman reports ${resp['state-leave']} ended. Filesystem notifications resumed.`,
+    );
   }
 };
 

@@ -10,8 +10,9 @@
 
 'use strict';
 
+import type {InvalidPackageError} from 'metro-resolver';
+
 const {formatFileCandidates} = require('metro-resolver');
-const {InvalidPackageError} = require('metro-resolver');
 
 class PackageResolutionError extends Error {
   originModulePath: string;

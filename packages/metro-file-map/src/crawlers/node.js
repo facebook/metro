@@ -12,7 +12,7 @@ import type {
   CrawlerOptions,
   FileData,
   IgnoreMatcher,
-  InternalHasteMap,
+  InternalData,
 } from '../flow-types';
 
 import H from '../constants';
@@ -206,7 +206,7 @@ function findNative(
 
 module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
   removedFiles: FileData,
-  hasteMap: InternalHasteMap,
+  hasteMap: InternalData,
 }> {
   const {
     data,
@@ -218,7 +218,7 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
     perfLogger,
     roots,
   } = options;
-  perfLogger?.markerPoint('nodeCrawl_start');
+  perfLogger?.point('nodeCrawl_start');
   const useNativeFind = await hasNativeFindSupport(forceNodeFilesystemAPI);
 
   return new Promise(resolve => {
@@ -239,7 +239,7 @@ module.exports = async function nodeCrawl(options: CrawlerOptions): Promise<{
       });
       data.files = files;
 
-      perfLogger?.markerPoint('nodeCrawl_end');
+      perfLogger?.point('nodeCrawl_end');
       resolve({
         hasteMap: data,
         removedFiles,

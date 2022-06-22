@@ -162,6 +162,14 @@ function mergeConfig<T: InputConfigT>(
         ...totalConfig.symbolicator,
         ...(nextConfig.symbolicator || {}),
       },
+      watcher: {
+        ...totalConfig.watcher,
+        ...nextConfig.watcher,
+        watchman: {
+          ...totalConfig.watcher?.watchman,
+          ...nextConfig.watcher?.watchman,
+        },
+      },
     }),
     defaultConfig,
   );

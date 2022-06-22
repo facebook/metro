@@ -12,6 +12,8 @@
 
 import type {Module} from '../DeltaBundler';
 
+import CountingSet from './CountingSet';
+
 const getInlineSourceMappingURL = require('../DeltaBundler/Serializers/helpers/getInlineSourceMappingURL');
 const sourceMapString = require('../DeltaBundler/Serializers/sourceMapString');
 const countLines = require('./countLines');
@@ -56,7 +58,7 @@ function getAppendScripts<T: number | string>(
       path: '$$importBundleNames',
       dependencies: new Map(),
       getSource: (): Buffer => Buffer.from(''),
-      inverseDependencies: new Set(),
+      inverseDependencies: new CountingSet(),
       output: [
         {
           type: 'js/script/virtual',
@@ -82,7 +84,7 @@ function getAppendScripts<T: number | string>(
           path: `require-${path}`,
           dependencies: new Map(),
           getSource: (): Buffer => Buffer.from(''),
-          inverseDependencies: new Set(),
+          inverseDependencies: new CountingSet(),
           output: [
             {
               type: 'js/script/virtual',
@@ -113,7 +115,7 @@ function getAppendScripts<T: number | string>(
       path: 'source-map',
       dependencies: new Map(),
       getSource: (): Buffer => Buffer.from(''),
-      inverseDependencies: new Set(),
+      inverseDependencies: new CountingSet(),
       output: [
         {
           type: 'js/script/virtual',
@@ -133,7 +135,7 @@ function getAppendScripts<T: number | string>(
       path: 'source-url',
       dependencies: new Map(),
       getSource: (): Buffer => Buffer.from(''),
-      inverseDependencies: new Set(),
+      inverseDependencies: new CountingSet(),
       output: [
         {
           type: 'js/script/virtual',

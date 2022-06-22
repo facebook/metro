@@ -10,8 +10,6 @@
 
 'use strict';
 
-'use strict';
-
 type ModuleID = string;
 export type Path = string;
 type Platform = string;
@@ -63,6 +61,7 @@ type HasteMapOptions = {
   preferNativePlatform: true,
 };
 
+// eslint-disable-next-line no-unused-vars
 declare class HasteMap {
   // node-haste/DependencyGraph/HasteMap.js
   build(): Promise<Object>;

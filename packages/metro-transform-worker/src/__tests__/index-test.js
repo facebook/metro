@@ -65,6 +65,7 @@ const baseConfig: JsTransformerConfig = {
   unstable_compactOutput: false,
   unstable_disableModuleWrapping: false,
   unstable_disableNormalizePseudoGlobals: false,
+  unstable_allowRequireContext: false,
 };
 
 beforeEach(() => {
@@ -537,6 +538,7 @@ it('allows replacing the collectDependencies implementation', async () => {
       dynamicRequires: 'reject',
       inlineableCalls: ['_$$_IMPORT_DEFAULT', '_$$_IMPORT_ALL'],
       keepRequireNames: options.dev,
+      unstable_allowRequireContext: false,
       dependencyMapName: null,
     },
   );

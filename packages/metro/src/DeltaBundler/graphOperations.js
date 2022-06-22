@@ -8,6 +8,26 @@
  * @format
  */
 
+/**
+ * Portions of this code are based on the Synchronous Cycle Collection
+ * algorithm described in:
+ *
+ * David F. Bacon and V. T. Rajan. 2001. Concurrent Cycle Collection in
+ * Reference Counted Systems. In Proceedings of the 15th European Conference on
+ * Object-Oriented Programming (ECOOP '01). Springer-Verlag, Berlin,
+ * Heidelberg, 207–235.
+ *
+ * Notable differences from the algorithm in the paper:
+ * 1. Our implementation uses the inverseDependencies set (which we already
+ *    have to maintain) instead of a separate refcount variable. A module's
+ *    reference count is equal to the size of its inverseDependencies set, plus
+ *    1 if it's an entry point of the graph.
+ * 2. We keep the "root buffer" (possibleCycleRoots) free of duplicates by
+ *    making it a Set, instead of storing a "buffered" flag on each node.
+ * 3. On top of tracking edges between nodes, we also count references between
+ *    nodes and entries in the importBundleNames set.
+ */
+
 'use strict';
 
 import type {
@@ -19,11 +39,38 @@ import type {
   TransformResultDependency,
 } from './types.flow';
 
+import CountingSet from '../lib/CountingSet';
+
+const invariant = require('invariant');
 const nullthrows = require('nullthrows');
+
+// TODO: Convert to a Flow enum
+type NodeColor =
+  // In use or free
+  | 'black'
+
+  // Possible member of cycle
+  | 'gray'
+
+  // Member of garbage cycle
+  | 'white'
+
+  // Possible root of cycle
+  | 'purple'
+
+  // Inherently acyclic node (Not currently used)
+  | 'green';
 
 // Private state for the graph that persists between operations.
 export opaque type PrivateState = {
-  // TODO: Track e.g. GC scheduling here.
+  +gc: {
+    // GC state for nodes in the graph (graph.dependencies)
+    +color: Map<string, NodeColor>,
+    +possibleCycleRoots: Set<string>,
+
+    // Reference counts for entries in importBundleNames
+    +importBundleRefs: Map<string, number>,
+  },
 };
 
 function createGraph<T>(options: GraphInputOptions): Graph<T> {
@@ -31,7 +78,13 @@ function createGraph<T>(options: GraphInputOptions): Graph<T> {
     ...options,
     dependencies: new Map(),
     importBundleNames: new Set(),
-    privateState: {},
+    privateState: {
+      gc: {
+        color: new Map(),
+        possibleCycleRoots: new Set(),
+        importBundleRefs: new Map(),
+      },
+    },
   };
 }
 
@@ -39,7 +92,6 @@ type Result<T> = {
   added: Map<string, Module<T>>,
   modified: Map<string, Module<T>>,
   deleted: Set<string>,
-  ...
 };
 
 /**
@@ -51,7 +103,10 @@ type Delta = $ReadOnly<{
   added: Set<string>,
   modified: Set<string>,
   deleted: Set<string>,
-  inverseDependencies: Map<string, Set<string>>,
+
+  // A place to temporarily track inverse dependencies for a module while it is
+  // being processed but has not been added to `graph.dependencies` yet.
+  earlyInverseDependencies: Map<string, CountingSet<string>>,
 }>;
 
 type InternalOptions<T> = $ReadOnly<{
@@ -103,7 +158,7 @@ async function traverseDependencies<T>(
     added: new Set(),
     modified: new Set(),
     deleted: new Set(),
-    inverseDependencies: new Map(),
+    earlyInverseDependencies: new Map(),
   };
 
   const internalOptions = getInternalOptions(options);
@@ -121,6 +176,8 @@ async function traverseDependencies<T>(
       );
     }
   }
+
+  collectCycles(graph, delta);
 
   const added = new Map();
   for (const path of delta.added) {
@@ -150,10 +207,28 @@ async function initialTraverseDependencies<T>(
     added: new Set(),
     modified: new Set(),
     deleted: new Set(),
-    inverseDependencies: new Map(),
+    earlyInverseDependencies: new Map(),
   };
 
   const internalOptions = getInternalOptions(options);
+
+  invariant(
+    graph.dependencies.size === 0,
+    'initialTraverseDependencies called on nonempty graph',
+  );
+  invariant(
+    graph.importBundleNames.size === 0,
+    'initialTraverseDependencies called on nonempty graph',
+  );
+
+  graph.privateState.gc.color.clear();
+  graph.privateState.gc.possibleCycleRoots.clear();
+  graph.privateState.gc.importBundleRefs.clear();
+
+  for (const path of graph.entryPoints) {
+    // Each entry point implicitly has a refcount of 1, so mark them all black.
+    graph.privateState.gc.color.set(path, 'black');
+  }
 
   await Promise.all(
     [...graph.entryPoints].map((path: string) =>
@@ -204,7 +279,8 @@ async function processModule<T>(
   );
 
   const previousModule = graph.dependencies.get(path) || {
-    inverseDependencies: delta.inverseDependencies.get(path) || new Set(),
+    inverseDependencies:
+      delta.earlyInverseDependencies.get(path) || new CountingSet(),
     path,
   };
   const previousDependencies = previousModule.dependencies || new Map();
@@ -212,273 +288,177 @@ async function processModule<T>(
   // Update the module information.
   const module = {
     ...previousModule,
-    dependencies: new Map(),
+    dependencies: new Map(previousDependencies),
     getSource: result.getSource,
     output: result.output,
   };
   graph.dependencies.set(module.path, module);
 
-  for (const [relativePath, dependency] of currentDependencies) {
-    module.dependencies.set(relativePath, dependency);
-  }
-
-  Array.from(previousDependencies.entries())
-    .filter(
-      ([relativePath, dependency]) =>
-        !currentDependencies.has(relativePath) ||
-        nullthrows(currentDependencies.get(relativePath)).absolutePath !==
-          dependency.absolutePath,
-    )
-    .forEach(([relativePath, dependency]) =>
+  // Diff dependencies (1/2): remove dependencies that have changed or been removed.
+  for (const [relativePath, prevDependency] of previousDependencies) {
+    const curDependency = currentDependencies.get(relativePath);
+    if (
+      !curDependency ||
+      curDependency.absolutePath !== prevDependency.absolutePath ||
+      (options.experimentalImportBundleSupport &&
+        curDependency.data.data.asyncType !==
+          prevDependency.data.data.asyncType)
+    ) {
       removeDependency(
         module,
-        dependency.absolutePath,
+        relativePath,
+        prevDependency,
         graph,
         delta,
-        new Set(),
-      ),
-    );
-
-  // Check all the module dependencies and start traversing the tree from each
-  // added and removed dependency, to get all the modules that have to be added
-  // and removed from the dependency graph.
-  const promises = [];
-
-  for (const [relativePath, dependency] of currentDependencies) {
-    if (!options.shallow) {
-      if (
-        options.experimentalImportBundleSupport &&
-        dependency.data.data.asyncType != null
-      ) {
-        graph.importBundleNames.add(dependency.absolutePath);
-      } else if (
-        !previousDependencies.has(relativePath) ||
-        nullthrows(previousDependencies.get(relativePath)).absolutePath !==
-          dependency.absolutePath
-      ) {
-        promises.push(
-          addDependency(module, dependency.absolutePath, graph, delta, options),
-        );
-      }
+        options,
+      );
     }
   }
 
-  try {
-    await Promise.all(promises);
-  } catch (err) {
-    // If there is an error, restore the previous dependency list.
-    // This ensures we don't skip over them during the next traversal attempt.
-    // $FlowFixMe[cannot-write]
-    module.dependencies = previousDependencies;
-    throw err;
+  // Diff dependencies (2/2): add dependencies that have changed or been added.
+  const promises = [];
+  for (const [relativePath, curDependency] of currentDependencies) {
+    const prevDependency = previousDependencies.get(relativePath);
+    if (
+      !prevDependency ||
+      prevDependency.absolutePath !== curDependency.absolutePath ||
+      (options.experimentalImportBundleSupport &&
+        prevDependency.data.data.asyncType !==
+          curDependency.data.data.asyncType)
+    ) {
+      promises.push(
+        addDependency(
+          module,
+          relativePath,
+          curDependency,
+          graph,
+          delta,
+          options,
+        ),
+      );
+    }
   }
+
+  await Promise.all(promises);
+
+  // Replace dependencies with the correctly-ordered version. As long as all
+  // the above promises have resolved, this will be the same map but without
+  // the added nondeterminism of promise resolution order. Because this
+  // assignment does not add or remove edges, it does NOT invalidate any of the
+  // garbage collection state.
+
+  // Catch obvious errors with a cheap assertion.
+  invariant(
+    module.dependencies.size === currentDependencies.size,
+    'Failed to add the correct dependencies',
+  );
+
+  // $FlowFixMe[cannot-write]
+  module.dependencies = currentDependencies;
+
   return module;
 }
 
 async function addDependency<T>(
   parentModule: Module<T>,
-  path: string,
+  relativePath: string,
+  dependency: Dependency,
   graph: Graph<T>,
   delta: Delta,
   options: InternalOptions<T>,
 ): Promise<void> {
-  // The new dependency was already in the graph, we don't need to do anything.
-  const existingModule = graph.dependencies.get(path);
+  const path = dependency.absolutePath;
 
-  if (existingModule) {
-    existingModule.inverseDependencies.add(parentModule.path);
+  // The module may already exist, in which case we just need to update some
+  // bookkeeping instead of adding a new node to the graph.
+  let module = graph.dependencies.get(path);
 
-    return;
-  }
-
-  // This module is being transformed at the moment in parallel, so we should
-  // only mark its parent as an inverse dependency.
-  const inverse = delta.inverseDependencies.get(path);
-  if (inverse) {
-    inverse.add(parentModule.path);
-
-    return;
-  }
-
-  if (delta.deleted.has(path)) {
-    // Mark the addition by clearing a prior deletion.
-    delta.deleted.delete(path);
+  if (options.shallow) {
+    // Don't add a node for the module if the graph is shallow (single-module).
+  } else if (
+    options.experimentalImportBundleSupport &&
+    dependency.data.data.asyncType != null
+  ) {
+    // Don't add a node for the module if we are traversing async dependencies
+    // lazily (and this is an async dependency). Instead, record it in
+    // importBundleNames.
+    incrementImportBundleReference(dependency, graph);
   } else {
-    // Mark the addition in the added set.
-    delta.added.add(path);
-    delta.modified.delete(path);
-  }
-  delta.inverseDependencies.set(path, new Set([parentModule.path]));
+    if (!module) {
+      // Add a new node to the graph.
+      const earlyInverseDependencies = delta.earlyInverseDependencies.get(path);
+      if (earlyInverseDependencies) {
+        // This module is being transformed at the moment in parallel, so we
+        // should only mark its parent as an inverse dependency.
+        earlyInverseDependencies.add(parentModule.path);
+      } else {
+        if (delta.deleted.has(path)) {
+          // Mark the addition by clearing a prior deletion.
+          delta.deleted.delete(path);
+        } else {
+          // Mark the addition in the added set.
+          delta.added.add(path);
+          delta.modified.delete(path);
+        }
+        delta.earlyInverseDependencies.set(path, new CountingSet());
 
-  options.onDependencyAdd();
+        options.onDependencyAdd();
+        module = await processModule(path, graph, delta, options);
+        options.onDependencyAdded();
 
-  const module = await processModule(path, graph, delta, options);
-
-  graph.dependencies.set(module.path, module);
-  module.inverseDependencies.add(parentModule.path);
-
-  options.onDependencyAdded();
-}
-
-/**
- * Recursively look up `inverseDependencies` until it is empty,
- * returning a set of paths for the last module that does not have
- * `inverseDependencies`.
- */
-function getAllTopLevelInverseDependencies<T>(
-  inverseDependencies: Set<string>,
-  graph: Graph<T>,
-  currModule: string,
-  visited: Set<string>,
-): Set<string> {
-  if (visited.has(currModule)) {
-    return new Set();
-  }
-  visited.add(currModule);
-  if (!inverseDependencies.size) {
-    return new Set([currModule]);
-  }
-
-  return Array.from(inverseDependencies)
-    .filter(inverseDep => graph.dependencies.has(inverseDep))
-    .reduce((acc, inverseDep) => {
-      const mod = graph.dependencies.get(inverseDep);
-      if (!mod) {
-        return acc;
+        graph.dependencies.set(module.path, module);
       }
-      getAllTopLevelInverseDependencies(
-        mod.inverseDependencies,
-        graph,
-        inverseDep,
-        visited,
-      ).forEach(x => {
-        acc.add(x);
-      });
-      return acc;
-    }, new Set());
-}
-
-/**
- * Given `inverseDependencies`, tracing back inverse dependencies to
- * see if it only leads back to `parentModule`.
- */
-function canSafelyRemoveFromParentModule<T>(
-  inverseDependencies: Set<string>,
-  parentModule: string,
-  graph: Graph<T>,
-  canBeRemovedSafely: Set<string>,
-  delta: Delta,
-): boolean {
-  const visited = new Set();
-  const topInverseDependencies = getAllTopLevelInverseDependencies(
-    inverseDependencies,
-    graph,
-    '', // current module name
-    visited,
-  );
-
-  if (!topInverseDependencies.size) {
-    /**
-     * This happens when parentModule and inverseDependencies have a circular dependency.
-     * This will eventually become an empty set due to the `visited` Set being the
-     * base case for the recursive call.
-     */
-    return true;
+    }
+    if (module) {
+      // We either added a new node to the graph, or we're updating an existing one.
+      module.inverseDependencies.add(parentModule.path);
+      markModuleInUse(module, graph);
+    }
   }
 
-  const undeletedInverseDependencies = Array.from(
-    topInverseDependencies,
-  ).filter(x => graph.dependencies.has(x));
-
-  /**
-   * We can only mark the `visited` Set of modules to be safely removable if
-   * 1. We do not have top a level module to compare with parentModule.
-   *   This can happen when trying to see if we can safely remove from
-   *   a module that was deleted. This is why we filtered them out with `delta.deleted`
-   * 2. We have one top module and it is parentModule
-   */
-  const canSafelyRemove =
-    !undeletedInverseDependencies.length ||
-    (undeletedInverseDependencies.length === 1 &&
-      undeletedInverseDependencies[0] === parentModule);
-
-  if (canSafelyRemove) {
-    visited.forEach(mod => {
-      canBeRemovedSafely.add(mod);
-    });
-  }
-  return canSafelyRemove;
+  // Always update the parent's dependency map.
+  // This means the parent's dependencies can get desynced from
+  // inverseDependencies and the other fields in the case of lazy edges.
+  // Not an optimal representation :(
+  parentModule.dependencies.set(relativePath, dependency);
 }
 
 function removeDependency<T>(
   parentModule: Module<T>,
-  absolutePath: string,
+  relativePath: string,
+  dependency: Dependency,
   graph: Graph<T>,
   delta: Delta,
-  // We use `canBeRemovedSafely` set to keep track of visited
-  // module(s) that we're sure can be removed. This will skip expensive
-  // inverse dependency traversals.
-  canBeRemovedSafely: Set<string> = new Set(),
+  options: InternalOptions<T>,
 ): void {
+  parentModule.dependencies.delete(relativePath);
+
+  const {absolutePath} = dependency;
+
+  if (
+    options.experimentalImportBundleSupport &&
+    dependency.data.data.asyncType != null
+  ) {
+    decrementImportBundleReference(dependency, graph);
+  }
+
   const module = graph.dependencies.get(absolutePath);
 
   if (!module) {
     return;
   }
-
   module.inverseDependencies.delete(parentModule.path);
-
-  // Even if there are modules still using parentModule, we want to ensure
-  // there is no circular dependency. Thus, we check if it can be safely removed
-  // by tracing back the inverseDependencies.
-  if (!canBeRemovedSafely.has(module.path)) {
-    if (
-      module.inverseDependencies.size &&
-      !canSafelyRemoveFromParentModule(
-        module.inverseDependencies,
-        module.path,
-        graph,
-        canBeRemovedSafely,
-        delta,
-      )
-    ) {
-      return;
-    }
-  }
-
-  if (delta.added.has(module.path)) {
-    // Mark the deletion by clearing a prior addition.
-    delta.added.delete(module.path);
+  if (
+    module.inverseDependencies.size > 0 ||
+    graph.entryPoints.has(absolutePath)
+  ) {
+    // The reference count has decreased, but not to zero.
+    // NOTE: Each entry point implicitly has a refcount of 1.
+    markAsPossibleCycleRoot(module, graph);
   } else {
-    // Mark the deletion in the deleted set.
-    delta.deleted.add(module.path);
-    delta.modified.delete(module.path);
+    // The reference count has decreased to zero.
+    releaseModule(module, graph, delta, options);
   }
-
-  // This module is not used anywhere else! We can clear it from the bundle.
-  // Clean up all the state associated with this module in order to correctly
-  // re-add it if we encounter it again.
-  graph.dependencies.delete(module.path);
-  delta.inverseDependencies.delete(module.path);
-
-  // Now we need to iterate through the module dependencies in order to
-  // clean up everything (we cannot read the module because it may have
-  // been deleted).
-  Array.from(module.dependencies.values())
-    .filter(
-      dependency =>
-        graph.dependencies.has(dependency.absolutePath) &&
-        dependency.absolutePath !== parentModule.path,
-    )
-    .forEach(dependency =>
-      removeDependency(
-        module,
-        dependency.absolutePath,
-        graph,
-        delta,
-        canBeRemovedSafely,
-      ),
-    );
 }
 
 function resolveDependencies<T>(
@@ -571,6 +551,198 @@ function reorderDependencies<T>(
     reorderDependencies(graph, childModule, orderedDependencies, options);
   });
 }
+
+/** Garbage collection functions */
+
+// Add an entry to importBundleNames (or increase the reference count of an existing one)
+function incrementImportBundleReference<T>(
+  dependency: Dependency,
+  graph: Graph<T>,
+) {
+  const {absolutePath} = dependency;
+
+  graph.privateState.gc.importBundleRefs.set(
+    absolutePath,
+    (graph.privateState.gc.importBundleRefs.get(absolutePath) ?? 0) + 1,
+  );
+  graph.importBundleNames.add(absolutePath);
+}
+
+// Decrease the reference count of an entry in importBundleNames (and delete it if necessary)
+function decrementImportBundleReference<T>(
+  dependency: Dependency,
+  graph: Graph<T>,
+) {
+  const {absolutePath} = dependency;
+
+  const prevRefCount = nullthrows(
+    graph.privateState.gc.importBundleRefs.get(absolutePath),
+  );
+  invariant(
+    prevRefCount > 0,
+    'experimentalImportBundleSupport: import bundle refcount not valid',
+  );
+  graph.privateState.gc.importBundleRefs.set(absolutePath, prevRefCount - 1);
+  if (prevRefCount === 1) {
+    graph.privateState.gc.importBundleRefs.delete(absolutePath);
+    graph.importBundleNames.delete(absolutePath);
+  }
+}
+
+// Mark a module as in use (ref count >= 1)
+function markModuleInUse<T>(module: Module<T>, graph: Graph<T>) {
+  graph.privateState.gc.color.set(module.path, 'black');
+}
+
+// Delete an unreachable module from the graph immediately, unless it's queued
+// for later deletion as a potential cycle root. Delete the module's outbound
+// edges.
+// Called when the reference count of a module has reached 0.
+function releaseModule<T>(
+  module: Module<T>,
+  graph: Graph<T>,
+  delta: Delta,
+  options: InternalOptions<T>,
+) {
+  for (const [relativePath, dependency] of module.dependencies) {
+    removeDependency(module, relativePath, dependency, graph, delta, options);
+  }
+  graph.privateState.gc.color.set(module.path, 'black');
+  if (!graph.privateState.gc.possibleCycleRoots.has(module.path)) {
+    freeModule(module, graph, delta);
+  }
+}
+
+// Delete an unreachable module from the graph.
+function freeModule<T>(module: Module<T>, graph: Graph<T>, delta: Delta) {
+  if (delta.added.has(module.path)) {
+    // Mark the deletion by clearing a prior addition.
+    delta.added.delete(module.path);
+  } else {
+    // Mark the deletion in the deleted set.
+    delta.deleted.add(module.path);
+    delta.modified.delete(module.path);
+  }
+
+  // This module is not used anywhere else! We can clear it from the bundle.
+  // Clean up all the state associated with this module in order to correctly
+  // re-add it if we encounter it again.
+  graph.dependencies.delete(module.path);
+  delta.earlyInverseDependencies.delete(module.path);
+  graph.privateState.gc.possibleCycleRoots.delete(module.path);
+  graph.privateState.gc.color.delete(module.path);
+}
+
+// Mark a module as a possible cycle root
+function markAsPossibleCycleRoot<T>(module: Module<T>, graph: Graph<T>) {
+  if (nullthrows(graph.privateState.gc.color.get(module.path)) !== 'purple') {
+    graph.privateState.gc.color.set(module.path, 'purple');
+    graph.privateState.gc.possibleCycleRoots.add(module.path);
+  }
+}
+
+// Collect any unreachable cycles in the graph.
+function collectCycles<T>(graph: Graph<T>, delta: Delta) {
+  // Mark recursively from roots (trial deletion)
+  for (const path of graph.privateState.gc.possibleCycleRoots) {
+    const module = nullthrows(graph.dependencies.get(path));
+    const color = nullthrows(graph.privateState.gc.color.get(path));
+    if (color === 'purple') {
+      markGray(module, graph);
+    } else {
+      graph.privateState.gc.possibleCycleRoots.delete(path);
+      if (
+        color === 'black' &&
+        module.inverseDependencies.size === 0 &&
+        !graph.entryPoints.has(path)
+      ) {
+        freeModule(module, graph, delta);
+      }
+    }
+  }
+  // Scan recursively from roots (undo unsuccessful trial deletions)
+  for (const path of graph.privateState.gc.possibleCycleRoots) {
+    const module = nullthrows(graph.dependencies.get(path));
+    scan(module, graph);
+  }
+  // Collect recursively from roots (free unreachable cycles)
+  for (const path of graph.privateState.gc.possibleCycleRoots) {
+    graph.privateState.gc.possibleCycleRoots.delete(path);
+    const module = nullthrows(graph.dependencies.get(path));
+    collectWhite(module, graph, delta);
+  }
+}
+
+function markGray<T>(module: Module<T>, graph: Graph<T>) {
+  const color = nullthrows(graph.privateState.gc.color.get(module.path));
+  if (color !== 'gray') {
+    graph.privateState.gc.color.set(module.path, 'gray');
+    for (const dependency of module.dependencies.values()) {
+      const childModule = nullthrows(
+        graph.dependencies.get(dependency.absolutePath),
+      );
+      // The inverse dependency will be restored during the scan phase if this module remains live.
+      childModule.inverseDependencies.delete(module.path);
+      markGray(childModule, graph);
+    }
+  }
+}
+
+function scan<T>(module: Module<T>, graph: Graph<T>) {
+  const color = nullthrows(graph.privateState.gc.color.get(module.path));
+  if (color === 'gray') {
+    if (
+      module.inverseDependencies.size > 0 ||
+      graph.entryPoints.has(module.path)
+    ) {
+      scanBlack(module, graph);
+    } else {
+      graph.privateState.gc.color.set(module.path, 'white');
+      for (const dependency of module.dependencies.values()) {
+        const childModule = nullthrows(
+          graph.dependencies.get(dependency.absolutePath),
+        );
+        scan(childModule, graph);
+      }
+    }
+  }
+}
+
+function scanBlack<T>(module: Module<T>, graph: Graph<T>) {
+  graph.privateState.gc.color.set(module.path, 'black');
+  for (const dependency of module.dependencies.values()) {
+    const childModule = nullthrows(
+      graph.dependencies.get(dependency.absolutePath),
+    );
+    // The inverse dependency must have been deleted during the mark phase.
+    childModule.inverseDependencies.add(module.path);
+    const childColor = nullthrows(
+      graph.privateState.gc.color.get(childModule.path),
+    );
+    if (childColor !== 'black') {
+      scanBlack(childModule, graph);
+    }
+  }
+}
+
+function collectWhite<T>(module: Module<T>, graph: Graph<T>, delta: Delta) {
+  const color = nullthrows(graph.privateState.gc.color.get(module.path));
+  if (
+    color === 'white' &&
+    !graph.privateState.gc.possibleCycleRoots.has(module.path)
+  ) {
+    graph.privateState.gc.color.set(module.path, 'black');
+    for (const dependency of module.dependencies.values()) {
+      const childModule = nullthrows(
+        graph.dependencies.get(dependency.absolutePath),
+      );
+      collectWhite(childModule, graph, delta);
+    }
+    freeModule(module, graph, delta);
+  }
+}
+
+/** End of garbage collection functions */
 
 module.exports = {
   createGraph,

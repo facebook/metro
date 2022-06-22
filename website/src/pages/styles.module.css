@@ -32,3 +32,9 @@
   max-width: 80px;
   margin-bottom: 20px;
 }
+
+.video {
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 1.777;
+}

@@ -37,6 +37,12 @@ module.exports = {
   },
   server: {
     /* server options */
+  },
+  watcher: {
+    /* watcher options */
+    watchman: {
+      /* Watchman-specific options */
+    }
   }
 };
 ```
@@ -211,6 +217,16 @@ Type: `Array<string>`
 
 Additional platforms to look out for, For example, if you want to add a "custom" platform, and use modules ending in .custom.js, you would return ['custom'] here.
 
+#### `requireCycleIgnorePatterns`
+
+Type: `Array<RegExp>`
+
+In development mode, suppress require cycle warnings for any cycle involving a module that matches any of these expressions. This is useful for third-party code and first-party expected cycles.
+
+Note that if you specify your own value for this config option it will replace (not concatenate with) Metro's default.
+
+Defaults to `[/(^|\/|\\)node_modules($|\/|\\)/]`.
+
 ---
 ### Transformer Options
 
@@ -373,6 +389,25 @@ Type: `boolean` (default: `true`)
 
 Run Inspector Proxy server inside Metro to be able to inspect React Native code.
 
+---
+
+### Watcher Options
+
+Options for the filesystem watcher.
+
+:::note
+
+Dot notation in this section indicates a nested configuration object, e.g. `watchman.deferStates` → `watchman: { deferStates: ... }`.
+
+:::
+
+#### `watchman.deferStates`
+
+Type: `Array<string>`
+
+Applies when using Watchman. Metro will [defer processing filesystem updates](https://facebook.github.io/watchman/docs/cmd/subscribe.html#defer) while these [states](https://facebook.github.io/watchman/docs/cmd/state-enter.html) are asserted in the watch. This is useful for debouncing builds while the filesystem hasn't settled, e.g. during large source control operations.
+
+The default value is `['hg.update']`.
 
 ## Merging Configurations
 

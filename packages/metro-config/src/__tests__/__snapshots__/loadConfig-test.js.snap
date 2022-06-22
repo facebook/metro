@@ -58,6 +58,9 @@ Object {
       "windows",
       "web",
     ],
+    "requireCycleIgnorePatterns": Array [
+      /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
+    ],
     "resolveRequest": null,
     "resolverMainFields": Array [
       "browser",
@@ -69,7 +72,6 @@ Object {
       "ts",
       "tsx",
     ],
-    "unstable_hasteMapModulePath": undefined,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -132,6 +134,7 @@ Object {
     "transformVariants": Object {
       "default": Object {},
     },
+    "unstable_allowRequireContext": false,
     "unstable_collectDependenciesPath": "metro/src/ModuleGraph/worker/collectDependencies.js",
     "unstable_compactOutput": false,
     "unstable_dependencyMapReservedName": null,
@@ -143,6 +146,13 @@ Object {
   "watchFolders": Array [
     "/",
   ],
+  "watcher": Object {
+    "watchman": Object {
+      "deferStates": Array [
+        "hg.update",
+      ],
+    },
+  },
 }
 `;
 
@@ -204,6 +214,9 @@ Object {
       "windows",
       "web",
     ],
+    "requireCycleIgnorePatterns": Array [
+      /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
+    ],
     "resolveRequest": null,
     "resolverMainFields": Array [
       "browser",
@@ -215,7 +228,6 @@ Object {
       "ts",
       "tsx",
     ],
-    "unstable_hasteMapModulePath": undefined,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -278,6 +290,7 @@ Object {
     "transformVariants": Object {
       "default": Object {},
     },
+    "unstable_allowRequireContext": false,
     "unstable_collectDependenciesPath": "metro/src/ModuleGraph/worker/collectDependencies.js",
     "unstable_compactOutput": false,
     "unstable_dependencyMapReservedName": null,
@@ -289,6 +302,13 @@ Object {
   "watchFolders": Array [
     "/",
   ],
+  "watcher": Object {
+    "watchman": Object {
+      "deferStates": Array [
+        "hg.update",
+      ],
+    },
+  },
 }
 `;
 
@@ -350,6 +370,9 @@ Object {
       "windows",
       "web",
     ],
+    "requireCycleIgnorePatterns": Array [
+      /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
+    ],
     "resolveRequest": null,
     "resolverMainFields": Array [
       "browser",
@@ -361,7 +384,6 @@ Object {
       "ts",
       "tsx",
     ],
-    "unstable_hasteMapModulePath": undefined,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -424,6 +446,7 @@ Object {
     "transformVariants": Object {
       "default": Object {},
     },
+    "unstable_allowRequireContext": false,
     "unstable_collectDependenciesPath": "metro/src/ModuleGraph/worker/collectDependencies.js",
     "unstable_compactOutput": false,
     "unstable_dependencyMapReservedName": null,
@@ -435,6 +458,13 @@ Object {
   "watchFolders": Array [
     "/",
   ],
+  "watcher": Object {
+    "watchman": Object {
+      "deferStates": Array [
+        "hg.update",
+      ],
+    },
+  },
 }
 `;
 
@@ -496,6 +526,9 @@ Object {
       "windows",
       "web",
     ],
+    "requireCycleIgnorePatterns": Array [
+      /\\(\\^\\|\\\\/\\|\\\\\\\\\\)node_modules\\(\\$\\|\\\\/\\|\\\\\\\\\\)/,
+    ],
     "resolveRequest": null,
     "resolverMainFields": Array [
       "browser",
@@ -507,7 +540,6 @@ Object {
       "ts",
       "tsx",
     ],
-    "unstable_hasteMapModulePath": undefined,
     "useWatchman": true,
   },
   "serializer": Object {
@@ -570,6 +602,7 @@ Object {
     "transformVariants": Object {
       "default": Object {},
     },
+    "unstable_allowRequireContext": false,
     "unstable_collectDependenciesPath": "metro/src/ModuleGraph/worker/collectDependencies.js",
     "unstable_compactOutput": false,
     "unstable_dependencyMapReservedName": null,
@@ -581,6 +614,13 @@ Object {
   "watchFolders": Array [
     "/",
   ],
+  "watcher": Object {
+    "watchman": Object {
+      "deferStates": Array [
+        "hg.update",
+      ],
+    },
+  },
 }
 `;
 

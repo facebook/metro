@@ -74,6 +74,7 @@ var modules = clear();
 // Don't use a Symbol here, it would pull in an extra polyfill with all sorts of
 // additional stuff (e.g. Array.from).
 const EMPTY = {};
+const CYCLE_DETECTED = {};
 const {hasOwnProperty} = {};
 
 if (__DEV__) {
@@ -176,13 +177,15 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
         .map((id: number) =>
           modules[id] ? modules[id].verboseName : '[unknown]',
         );
-      // We want to show A -> B -> A:
-      cycle.push(cycle[0]);
-      console.warn(
-        `Require cycle: ${cycle.join(' -> ')}\n\n` +
-          'Require cycles are allowed, but can result in uninitialized values. ' +
-          'Consider refactoring to remove the need for a cycle.',
-      );
+
+      if (shouldPrintRequireCycle(cycle)) {
+        cycle.push(cycle[0]); // We want to print A -> B -> A:
+        console.warn(
+          `Require cycle: ${cycle.join(' -> ')}\n\n` +
+            'Require cycles are allowed, but can result in uninitialized values. ' +
+            'Consider refactoring to remove the need for a cycle.',
+        );
+      }
     }
   }
 
@@ -191,6 +194,22 @@ function metroRequire(moduleId: ModuleID | VerboseModuleNameForDev): Exports {
   return module && module.isInitialized
     ? module.publicModule.exports
     : guardedLoadModule(moduleIdReallyIsNumber, module);
+}
+
+// We print require cycles unless they match a pattern in the
+// `requireCycleIgnorePatterns` configuration.
+function shouldPrintRequireCycle(modules: $ReadOnlyArray<?string>): boolean {
+  const regExps =
+    global[__METRO_GLOBAL_PREFIX__ + '__requireCycleIgnorePatterns'];
+  if (!Array.isArray(regExps)) {
+    return true;
+  }
+
+  const isIgnored = module =>
+    module != null && regExps.some(regExp => regExp.test(module));
+
+  // Print the cycle unless any part of it is ignored
+  return modules.every(module => !isIgnored(module));
 }
 
 function metroImportDefault(moduleId: ModuleID | VerboseModuleNameForDev) {
@@ -542,56 +561,67 @@ if (__DEV__) {
     // have side effects and lead to confusing and meaningless crashes.
 
     let didBailOut = false;
-    const updatedModuleIDs = topologicalSort(
-      [id], // Start with the changed module and go upwards
-      pendingID => {
-        const pendingModule = modules[pendingID];
-        if (pendingModule == null) {
-          // Nothing to do.
-          return [];
-        }
-        const pendingHot = pendingModule.hot;
-        if (pendingHot == null) {
-          throw new Error(
-            '[Refresh] Expected module.hot to always exist in DEV.',
-          );
-        }
-        // A module can be accepted manually from within itself.
-        let canAccept = pendingHot._didAccept;
-        if (!canAccept && Refresh != null) {
-          // Or React Refresh may mark it accepted based on exports.
-          const isBoundary = isReactRefreshBoundary(
-            Refresh,
-            pendingModule.publicModule.exports,
-          );
-          if (isBoundary) {
-            canAccept = true;
-            refreshBoundaryIDs.add(pendingID);
+    let updatedModuleIDs;
+    try {
+      updatedModuleIDs = topologicalSort(
+        [id], // Start with the changed module and go upwards
+        pendingID => {
+          const pendingModule = modules[pendingID];
+          if (pendingModule == null) {
+            // Nothing to do.
+            return [];
           }
-        }
-        if (canAccept) {
-          // Don't look at parents.
-          return [];
-        }
-        // If we bubble through the roof, there is no way to do a hot update.
-        // Bail out altogether. This is the failure case.
-        const parentIDs = inverseDependencies[pendingID];
-        if (parentIDs.length === 0) {
-          // Reload the app because the hot reload can't succeed.
-          // This should work both on web and React Native.
-          performFullRefresh('No root boundary', {
-            source: mod,
-            failed: pendingModule,
-          });
-          didBailOut = true;
-          return [];
-        }
-        // This module can't handle the update but maybe all its parents can?
-        // Put them all in the queue to run the same set of checks.
-        return parentIDs;
-      },
-      () => didBailOut, // Should we stop?
-    ).reverse();
+          const pendingHot = pendingModule.hot;
+          if (pendingHot == null) {
+            throw new Error(
+              '[Refresh] Expected module.hot to always exist in DEV.',
+            );
+          }
+          // A module can be accepted manually from within itself.
+          let canAccept = pendingHot._didAccept;
+          if (!canAccept && Refresh != null) {
+            // Or React Refresh may mark it accepted based on exports.
+            const isBoundary = isReactRefreshBoundary(
+              Refresh,
+              pendingModule.publicModule.exports,
+            );
+            if (isBoundary) {
+              canAccept = true;
+              refreshBoundaryIDs.add(pendingID);
+            }
+          }
+          if (canAccept) {
+            // Don't look at parents.
+            return [];
+          }
+          // If we bubble through the roof, there is no way to do a hot update.
+          // Bail out altogether. This is the failure case.
+          const parentIDs = inverseDependencies[pendingID];
+          if (parentIDs.length === 0) {
+            // Reload the app because the hot reload can't succeed.
+            // This should work both on web and React Native.
+            performFullRefresh('No root boundary', {
+              source: mod,
+              failed: pendingModule,
+            });
+            didBailOut = true;
+            return [];
+          }
+          // This module can't handle the update but maybe all its parents can?
+          // Put them all in the queue to run the same set of checks.
+          return parentIDs;
+        },
+        () => didBailOut, // Should we stop?
+      ).reverse();
+    } catch (e) {
+      if (e === CYCLE_DETECTED) {
+        performFullRefresh('Dependency cycle', {
+          source: mod,
+        });
+        return;
+      }
+      throw e;
+    }
 
     if (didBailOut) {
       return;
@@ -601,7 +631,6 @@ if (__DEV__) {
     // Run the actual factories.
     const seenModuleIDs = new Set();
     for (let i = 0; i < updatedModuleIDs.length; i++) {
-      // Don't process twice if we have a cycle.
       const updatedID = updatedModuleIDs[i];
       if (seenModuleIDs.has(updatedID)) {
         continue;
@@ -709,24 +738,29 @@ if (__DEV__) {
   ): Array<T> {
     const result = [];
     const visited = new Set();
+    const stack = new Set();
     function traverseDependentNodes(node: T) {
+      if (stack.has(node)) {
+        throw CYCLE_DETECTED;
+      }
+      if (visited.has(node)) {
+        return;
+      }
       visited.add(node);
+      stack.add(node);
       const dependentNodes = getEdges(node);
       if (earlyStop(node)) {
+        stack.delete(node);
         return;
       }
       dependentNodes.forEach(dependent => {
-        if (visited.has(dependent)) {
-          return;
-        }
         traverseDependentNodes(dependent);
       });
+      stack.delete(node);
       result.push(node);
     }
     roots.forEach(root => {
-      if (!visited.has(root)) {
-        traverseDependentNodes(root);
-      }
+      traverseDependentNodes(root);
     });
     return result;
   };
@@ -806,7 +840,10 @@ if (__DEV__) {
 
   const performFullRefresh = (
     reason: string,
-    modules: $ReadOnly<{source: ModuleDefinition, failed: ModuleDefinition}>,
+    modules: $ReadOnly<{
+      source?: ModuleDefinition,
+      failed?: ModuleDefinition,
+    }>,
   ) => {
     /* global window */
     if (

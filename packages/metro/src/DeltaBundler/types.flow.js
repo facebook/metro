@@ -10,8 +10,11 @@
 
 'use strict';
 
+import type {RequireContextParams} from '../ModuleGraph/worker/collectDependencies';
 import type {PrivateState} from './graphOperations';
 import type {JsTransformOptions} from 'metro-transform-worker';
+
+import CountingSet from '../lib/CountingSet';
 
 export type MixedOutput = {
   +data: mixed,
@@ -48,6 +51,9 @@ export type TransformResultDependency = {
     +isOptional?: boolean,
 
     +locs: $ReadOnlyArray<BabelSourceLocation>,
+
+    /** Context for requiring a collection of modules. */
+    +contextParams?: RequireContextParams,
   },
 };
 
@@ -58,7 +64,7 @@ export type Dependency = {
 
 export type Module<T = MixedOutput> = {
   +dependencies: Map<string, Dependency>,
-  +inverseDependencies: Set<string>,
+  +inverseDependencies: CountingSet<string>,
   +output: $ReadOnlyArray<T>,
   +path: string,
   +getSource: () => Buffer,

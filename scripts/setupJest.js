@@ -10,3 +10,6 @@
 'use strict';
 
 global.Promise = require('promise');
+
+// Make sure nothing registers Babel on top of Jest's setup during tests.
+require('metro-babel-register').unstable_registerForMetroMonorepo = () => {};

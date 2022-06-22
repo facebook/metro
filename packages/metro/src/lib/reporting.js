@@ -10,8 +10,9 @@
 
 'use strict';
 
+import type {Terminal} from 'metro-core';
+
 const chalk = require('chalk');
-const {Terminal} = require('metro-core');
 const stripAnsi = require('strip-ansi');
 const util = require('util');
 

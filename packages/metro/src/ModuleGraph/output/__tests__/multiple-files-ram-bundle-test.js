@@ -11,17 +11,10 @@
 
 'use strict';
 
-declare var jest: any;
-
 import type {Module} from '../../types.flow';
 
 const multipleFilesRamBundle = require('../multiple-files-ram-bundle');
 const {getModuleCodeAndMap} = require('../util');
-
-declare var describe: any;
-declare var expect: any;
-declare var it: (string, () => ?Promise<any>) => void;
-declare var beforeAll: (() => ?Promise<any>) => void;
 
 let code;
 let map;
