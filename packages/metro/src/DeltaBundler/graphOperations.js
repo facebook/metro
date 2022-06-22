@@ -37,10 +37,16 @@ import type {
   Module,
   Options,
   TransformResultDependency,
+  RequireContext,
 } from './types.flow';
 
 import CountingSet from '../lib/CountingSet';
+import {
+  appendContextQueryParam,
+  removeContextQueryParam,
+} from '../lib/contextModule';
 
+import * as path from 'path';
 const invariant = require('invariant');
 const nullthrows = require('nullthrows');
 
@@ -115,11 +121,13 @@ type InternalOptions<T> = $ReadOnly<{
   onDependencyAdded: () => mixed,
   resolve: Options<T>['resolve'],
   transform: Options<T>['transform'],
+  transformContext: Options<T>['transformContext'],
   shallow: boolean,
 }>;
 
 function getInternalOptions<T>({
   transform,
+  transformContext,
   resolve,
   onProgress,
   experimentalImportBundleSupport,
@@ -131,6 +139,7 @@ function getInternalOptions<T>({
   return {
     experimentalImportBundleSupport,
     transform,
+    transformContext,
     resolve,
     onDependencyAdd: () => onProgress && onProgress(numProcessed, ++total),
     onDependencyAdded: () => onProgress && onProgress(++numProcessed, total),
@@ -144,7 +153,7 @@ function getInternalOptions<T>({
  * dependency graph.
  * Instead of traversing the whole graph each time, it just calculates the
  * difference between runs by only traversing the added/removed dependencies.
- * To do so, it uses the passed passed graph dependencies and it mutates it.
+ * To do so, it uses the passed graph dependencies and it mutates it.
  * The paths parameter contains the absolute paths of the root files that the
  * method should traverse. Normally, these paths should be the modified files
  * since the last traversal.
@@ -255,7 +264,13 @@ async function traverseDependenciesForSingleFile<T>(
 ): Promise<void> {
   options.onDependencyAdd();
 
-  await processModule(path, graph, delta, options);
+  await processModule(
+    path,
+    graph,
+    delta,
+    options,
+    graph.dependencies.get(path)?.contextParams,
+  );
 
   options.onDependencyAdded();
 }
@@ -265,10 +280,20 @@ async function processModule<T>(
   graph: Graph<T>,
   delta: Delta,
   options: InternalOptions<T>,
+  contextParams?: RequireContext,
 ): Promise<Module<T>> {
+  const resolvedContextParams =
+    contextParams || graph.dependencies.get(path)?.contextParams;
+
   // Transform the file via the given option.
   // TODO: Unbind the transform method from options
-  const result = await options.transform(path);
+  let result;
+  if (resolvedContextParams) {
+    const modulePath = removeContextQueryParam(path);
+    result = await options.transformContext(modulePath, resolvedContextParams);
+  } else {
+    result = await options.transform(path);
+  }
 
   // Get the absolute path of all sub-dependencies (some of them could have been
   // moved but maintain the same relative path).
@@ -288,6 +313,7 @@ async function processModule<T>(
   // Update the module information.
   const module = {
     ...previousModule,
+    contextParams: resolvedContextParams,
     dependencies: new Map(previousDependencies),
     getSource: result.getSource,
     output: result.output,
@@ -403,7 +429,13 @@ async function addDependency<T>(
         delta.earlyInverseDependencies.set(path, new CountingSet());
 
         options.onDependencyAdd();
-        module = await processModule(path, graph, delta, options);
+        module = await processModule(
+          path,
+          graph,
+          delta,
+          options,
+          dependency.data.data.contextParams,
+        );
         options.onDependencyAdded();
 
         graph.dependencies.set(module.path, module);
@@ -469,6 +501,27 @@ function resolveDependencies<T>(
   const resolve = (parentPath: string, result: TransformResultDependency) => {
     const relativePath = result.name;
     try {
+      // `require.context`
+      if (result.data.contextParams) {
+        let absolutePath = path.join(parentPath, '..', result.name);
+
+        // Ensure the filepath has uniqueness applied to ensure multiple `require.context`
+        // statements can be used to target the same file with different properties.
+        absolutePath = appendContextQueryParam(
+          absolutePath,
+          result.data.contextParams,
+        );
+
+        return [
+          relativePath,
+          {
+            // TODO: Verify directory exists
+            // absolutePath: options.resolve(parentPath, dep.name),
+            absolutePath,
+            data: result,
+          },
+        ];
+      }
       return [
         relativePath,
         {

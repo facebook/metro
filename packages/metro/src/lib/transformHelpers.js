@@ -139,43 +139,18 @@ async function getTransformContextFn(
     options,
   );
 
-  // Cache all of the modules for intermittent updates.
-  const moduleCache = {};
-
   return async (modulePath: string, requireContext: RequireContext) => {
     const graph = await bundler.getDependencyGraph();
 
-    let files = [];
-    if (modulePath in moduleCache && requireContext.delta) {
-      // Get the cached modules
-      files = moduleCache[modulePath];
+    // TODO: Check delta changes to avoid having to look over all files each time
+    // this is a massive performance boost.
 
-      // Remove files from the cache.
-      const deletedFiles = requireContext.delta.deletedFiles;
-      if (deletedFiles.size) {
-        files = files.filter(filePath => !deletedFiles.has(filePath));
-      }
-
-      // Add files to the cache.
-      const addedFiles = requireContext.delta?.addedFiles;
-      addedFiles?.forEach(filePath => {
-        if (
-          !files.includes(filePath) &&
-          fileMatchesContext(modulePath, filePath, requireContext)
-        ) {
-          files.push(filePath);
-        }
-      });
-    } else {
-      // Search against all files, this is very expensive.
-      // TODO: Maybe we could let the user specify which root to check against.
-      files = graph.matchFilesWithContext(modulePath, {
-        filter: requireContext.filter,
-        recursive: requireContext.recursive,
-      });
-    }
-
-    moduleCache[modulePath] = files;
+    // Search against all files, this is very expensive.
+    // TODO: Maybe we could let the user specify which root to check against.
+    const files = graph.matchFilesWithContext(modulePath, {
+      filter: requireContext.filter,
+      recursive: requireContext.recursive,
+    });
 
     const template = getContextModuleTemplate(
       requireContext.mode,

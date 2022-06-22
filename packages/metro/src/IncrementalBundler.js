@@ -130,6 +130,8 @@ class IncrementalBundler {
       onProgress: otherOptions.onProgress,
       experimentalImportBundleSupport:
         this._config.transformer.experimentalImportBundleSupport,
+      unstable_allowRequireContext:
+        this._config.transformer.unstable_allowRequireContext,
       shallow: otherOptions.shallow,
     });
 
@@ -160,6 +162,13 @@ class IncrementalBundler {
           this._bundler,
           transformOptions.platform,
         ),
+        transformContext: await transformHelpers.getTransformContextFn(
+          absoluteEntryFiles,
+          this._bundler,
+          this._deltaBundler,
+          this._config,
+          transformOptions,
+        ),
         transform: await transformHelpers.getTransformFn(
           absoluteEntryFiles,
           this._bundler,
@@ -171,6 +180,8 @@ class IncrementalBundler {
         onProgress: otherOptions.onProgress,
         experimentalImportBundleSupport:
           this._config.transformer.experimentalImportBundleSupport,
+        unstable_allowRequireContext:
+          this._config.transformer.unstable_allowRequireContext,
         shallow: otherOptions.shallow,
       },
     );
@@ -225,6 +236,8 @@ class IncrementalBundler {
       shallow: otherOptions.shallow,
       experimentalImportBundleSupport:
         this._config.transformer.experimentalImportBundleSupport,
+      unstable_allowRequireContext:
+        this._config.transformer.unstable_allowRequireContext,
     });
     const revisionId = createRevisionId();
     const revisionPromise = (async () => {

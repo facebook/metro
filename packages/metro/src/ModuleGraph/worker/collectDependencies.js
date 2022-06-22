@@ -38,7 +38,7 @@ export type Dependency<TSplitCondition> = $ReadOnly<{
 }>;
 
 // TODO: Convert to a Flow enum
-type ContextMode = 'sync' | 'eager' | 'lazy' | 'lazy-once';
+export type ContextMode = 'sync' | 'eager' | 'lazy' | 'lazy-once';
 
 type ContextFilter = {pattern: string, flags: string};
 
