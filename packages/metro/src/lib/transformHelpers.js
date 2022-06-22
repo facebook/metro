@@ -12,10 +12,18 @@
 
 import type Bundler from '../Bundler';
 import type DeltaBundler, {TransformFn} from '../DeltaBundler';
-import type {TransformInputOptions} from '../DeltaBundler/types.flow';
+import type {
+  TransformContextFn,
+  TransformInputOptions,
+  RequireContext,
+} from '../DeltaBundler/types.flow';
+import type {ContextMode} from '../ModuleGraph/worker/collectDependencies';
 import type {TransformOptions} from '../DeltaBundler/Worker';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 import type {Type} from 'metro-transform-worker';
+
+import {getContextModuleTemplate} from './contextModuleTemplates';
+import {getContextModuleId, fileMatchesContext} from './contextModule';
 
 const path = require('path');
 
@@ -60,6 +68,16 @@ async function calcTransformerOptions(
   const getDependencies = async (path: string) => {
     const dependencies = await deltaBundler.getDependencies([path], {
       resolve: await getResolveDependencyFn(bundler, options.platform),
+      transformContext: await getTransformContextFn(
+        [path],
+        bundler,
+        deltaBundler,
+        config,
+        {
+          ...options,
+          minify: false,
+        },
+      ),
       transform: await getTransformFn([path], bundler, deltaBundler, config, {
         ...options,
         minify: false,
@@ -68,6 +86,8 @@ async function calcTransformerOptions(
       onProgress: null,
       experimentalImportBundleSupport:
         config.transformer.experimentalImportBundleSupport,
+      unstable_allowRequireContext:
+        config.transformer.unstable_allowRequireContext,
       shallow: false,
     });
 
@@ -101,6 +121,85 @@ function removeInlineRequiresBlockListFromOptions(
   }
 
   return inlineRequires;
+}
+
+/** Generate the default method for transforming a `require.context` module. */
+async function getTransformContextFn(
+  entryFiles: $ReadOnlyArray<string>,
+  bundler: Bundler,
+  deltaBundler: DeltaBundler<>,
+  config: ConfigT,
+  options: TransformInputOptions,
+): Promise<TransformContextFn<>> {
+  const {inlineRequires, ...transformOptions} = await calcTransformerOptions(
+    entryFiles,
+    bundler,
+    deltaBundler,
+    config,
+    options,
+  );
+
+  // Cache all of the modules for intermittent updates.
+  const moduleCache = {};
+
+  return async (modulePath: string, requireContext: RequireContext) => {
+    const graph = await bundler.getDependencyGraph();
+
+    let files = [];
+    if (modulePath in moduleCache && requireContext.delta) {
+      // Get the cached modules
+      files = moduleCache[modulePath];
+
+      // Remove files from the cache.
+      const deletedFiles = requireContext.delta.deletedFiles;
+      if (deletedFiles.size) {
+        files = files.filter(filePath => !deletedFiles.has(filePath));
+      }
+
+      // Add files to the cache.
+      const addedFiles = requireContext.delta?.addedFiles;
+      addedFiles?.forEach(filePath => {
+        if (
+          !files.includes(filePath) &&
+          fileMatchesContext(modulePath, filePath, requireContext)
+        ) {
+          files.push(filePath);
+        }
+      });
+    } else {
+      // Search against all files, this is very expensive.
+      // TODO: Maybe we could let the user specify which root to check against.
+      files = graph.matchFilesWithContext(modulePath, {
+        filter: requireContext.filter,
+        recursive: requireContext.recursive,
+      });
+    }
+
+    moduleCache[modulePath] = files;
+
+    const template = getContextModuleTemplate(
+      requireContext.mode,
+      modulePath,
+      files,
+      getContextModuleId(modulePath, requireContext),
+    );
+    return await bundler.transformFile(
+      modulePath,
+      {
+        ...transformOptions,
+        type: getType(
+          transformOptions.type,
+          modulePath,
+          config.resolver.assetExts,
+        ),
+        inlineRequires: removeInlineRequiresBlockListFromOptions(
+          modulePath,
+          inlineRequires,
+        ),
+      },
+      Buffer.from(template),
+    );
+  };
 }
 
 async function getTransformFn(
@@ -159,5 +258,6 @@ async function getResolveDependencyFn(
 
 module.exports = {
   getTransformFn,
+  getTransformContextFn,
   getResolveDependencyFn,
 };

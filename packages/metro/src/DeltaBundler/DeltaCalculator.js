@@ -10,7 +10,13 @@
 
 'use strict';
 
+import * as path from 'path';
 import type {DeltaResult, Graph, Options} from './types.flow';
+
+import {
+  removeContextQueryParam,
+  fileMatchesContext,
+} from '../lib/contextModule';
 
 const {
   createGraph,
@@ -33,6 +39,7 @@ class DeltaCalculator<T> extends EventEmitter {
   _currentBuildPromise: ?Promise<DeltaResult<T>>;
   _deletedFiles: Set<string> = new Set();
   _modifiedFiles: Set<string> = new Set();
+  _addedFiles: Set<string> = new Set();
 
   _graph: Graph<T>;
 
@@ -72,6 +79,7 @@ class DeltaCalculator<T> extends EventEmitter {
     });
     this._modifiedFiles = new Set();
     this._deletedFiles = new Set();
+    this._addedFiles = new Set();
   }
 
   /**
@@ -99,6 +107,8 @@ class DeltaCalculator<T> extends EventEmitter {
     this._modifiedFiles = new Set();
     const deletedFiles = this._deletedFiles;
     this._deletedFiles = new Set();
+    const addedFiles = this._addedFiles;
+    this._addedFiles = new Set();
 
     // Concurrent requests should reuse the same bundling process. To do so,
     // this method stores the promise as an instance variable, and then it's
@@ -106,6 +116,7 @@ class DeltaCalculator<T> extends EventEmitter {
     this._currentBuildPromise = this._getChangedDependencies(
       modifiedFiles,
       deletedFiles,
+      addedFiles,
     );
 
     let result;
@@ -121,6 +132,7 @@ class DeltaCalculator<T> extends EventEmitter {
       // which is not correct.
       modifiedFiles.forEach((file: string) => this._modifiedFiles.add(file));
       deletedFiles.forEach((file: string) => this._deletedFiles.add(file));
+      addedFiles.forEach((file: string) => this._addedFiles.add(file));
 
       // If after an error the number of modules has changed, we could be in
       // a weird state. As a safe net we clean the dependency modules to force
@@ -178,9 +190,17 @@ class DeltaCalculator<T> extends EventEmitter {
     if (type === 'delete') {
       this._deletedFiles.add(filePath);
       this._modifiedFiles.delete(filePath);
-    } else {
+      this._addedFiles.delete(filePath);
+    } else if (type === 'add') {
+      this._addedFiles.add(filePath);
+
       this._deletedFiles.delete(filePath);
+      this._modifiedFiles.delete(filePath);
+    } else {
       this._modifiedFiles.add(filePath);
+
+      this._deletedFiles.delete(filePath);
+      this._addedFiles.delete(filePath);
     }
 
     // Notify users that there is a change in some of the bundle files. This
@@ -191,6 +211,7 @@ class DeltaCalculator<T> extends EventEmitter {
   async _getChangedDependencies(
     modifiedFiles: Set<string>,
     deletedFiles: Set<string>,
+    addedFiles: Set<string>,
   ): Promise<DeltaResult<T>> {
     if (!this._graph.dependencies.size) {
       const {added} = await initialTraverseDependencies(
@@ -226,6 +247,35 @@ class DeltaCalculator<T> extends EventEmitter {
     const modifiedDependencies = Array.from(modifiedFiles).filter(
       (filePath: string) => this._graph.dependencies.has(filePath),
     );
+
+    // NOTE(EvanBacon): This check adds extra complexity so we feature gate it
+    // to enable users to opt out.
+    if (this._options.unstable_allowRequireContext) {
+      const checkModifiedContextDependencies = (filePath: string) => {
+        this._graph.dependencies.forEach(value => {
+          if (
+            value.contextParams &&
+            !modifiedDependencies.includes(value.path) &&
+            fileMatchesContext(
+              removeContextQueryParam(value.path),
+              filePath,
+              value.contextParams,
+            )
+          ) {
+            modifiedDependencies.push(value.path);
+          }
+        });
+      };
+
+      // Check if any added or removed files are matched in a context module.
+      Array.from(addedFiles).forEach(filePath =>
+        checkModifiedContextDependencies(filePath),
+      );
+
+      Array.from(deletedFiles).forEach(filePath =>
+        checkModifiedContextDependencies(filePath),
+      );
+    }
 
     // No changes happened. Return empty delta.
     if (modifiedDependencies.length === 0) {

@@ -78,6 +78,7 @@ class WorkerFarm {
   async transform(
     filename: string,
     options: TransformOptions,
+    fileBuffer?: Buffer,
   ): Promise<TransformerResult> {
     try {
       const data = await this._worker.transform(
@@ -85,6 +86,7 @@ class WorkerFarm {
         options,
         this._config.projectRoot,
         this._transformerConfig,
+        fileBuffer,
       );
 
       Logger.log(data.transformFileStartLogEntry);

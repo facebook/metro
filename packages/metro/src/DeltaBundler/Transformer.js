@@ -12,6 +12,8 @@
 
 import type {TransformResult, TransformResultWithSource} from '../DeltaBundler';
 import type {TransformerConfig, TransformOptions} from './Worker';
+import {toRequireContext} from '../lib/contextModule';
+import crypto from 'crypto';
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 const getTransformCacheKey = require('./getTransformCacheKey');
@@ -66,6 +68,7 @@ class Transformer {
   async transformFile(
     filePath: string,
     transformerOptions: TransformOptions,
+    fileBuffer?: Buffer,
   ): Promise<TransformResultWithSource<>> {
     const cache = this._cache;
 
@@ -119,7 +122,13 @@ class Transformer {
       unstable_transformProfile,
     ]);
 
-    const sha1 = this._getSha1(filePath);
+    let sha1: string;
+    if (fileBuffer) {
+      sha1 = crypto.createHash('sha1').update(fileBuffer).digest('hex');
+    } else {
+      sha1 = this._getSha1(filePath);
+    }
+
     let fullKey = Buffer.concat([partialKey, Buffer.from(sha1, 'hex')]);
     const result = await cache.get(fullKey);
 
@@ -127,7 +136,20 @@ class Transformer {
     // the transformer to computed the corresponding result.
     const data = result
       ? {result, sha1}
-      : await this._workerFarm.transform(localPath, transformerOptions);
+      : await this._workerFarm.transform(
+          localPath,
+          transformerOptions,
+          fileBuffer,
+        );
+
+    data.result.dependencies.forEach(dependency => {
+      if (dependency.data.contextParams) {
+        // Convert JSON regular expression into RegExp.
+        dependency.data.contextParams = toRequireContext(
+          dependency.data.contextParams,
+        );
+      }
+    });
 
     // Only re-compute the full key if the SHA-1 changed. This is because
     // references are used by the cache implementation in a weak map to keep
@@ -141,6 +163,9 @@ class Transformer {
     return {
       ...data.result,
       getSource(): Buffer {
+        if (fileBuffer) {
+          return fileBuffer;
+        }
         return fs.readFileSync(filePath);
       },
     };

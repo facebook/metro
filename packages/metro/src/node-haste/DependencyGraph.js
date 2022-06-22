@@ -100,7 +100,7 @@ class DependencyGraph extends EventEmitter {
     });
   }
 
-  // Waits for the dependency graph to become ready after initialisation.
+  // Waits for the dependency graph to become ready after initialization.
   // Don't read anything from the graph until this resolves.
   async ready(): Promise<void> {
     await this._readyPromise;

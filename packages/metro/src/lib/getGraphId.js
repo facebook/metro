@@ -22,9 +22,11 @@ function getGraphId(
   {
     shallow,
     experimentalImportBundleSupport,
+    unstable_allowRequireContext,
   }: {
     +shallow: boolean,
     +experimentalImportBundleSupport: boolean,
+    +unstable_allowRequireContext: boolean,
     ...
   },
 ): GraphId {
@@ -41,10 +43,12 @@ function getGraphId(
         hot: options.hot,
         minify: options.minify,
         unstable_disableES6Transforms: options.unstable_disableES6Transforms,
+        requireContext: options.requireContext,
         platform: options.platform != null ? options.platform : null,
         runtimeBytecodeVersion: options.runtimeBytecodeVersion,
         type: options.type,
         experimentalImportBundleSupport,
+        unstable_allowRequireContext,
         shallow,
         unstable_transformProfile:
           options.unstable_transformProfile || 'default',
