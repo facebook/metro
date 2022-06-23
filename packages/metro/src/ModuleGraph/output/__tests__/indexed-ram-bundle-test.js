@@ -10,6 +10,7 @@
  */
 
 'use strict';
+import type {File, Dependency} from '../../types.flow';
 
 import type {IndexMapSection} from 'metro-source-map';
 
@@ -24,7 +25,7 @@ declare var beforeAll: (() => ?Promise<any>) => void;
 let code: Buffer;
 let map;
 let ids, modules, requireCall;
-const idsForPath = ({path}) => {
+const idsForPath = ({path}: File | {path: string, ...}) => {
   const id = getId(path);
   return {moduleId: id, localId: id};
 };
@@ -198,17 +199,24 @@ describe('RAM groups / common sections', () => {
       });
   });
 
-  function moduleLineOffsets([offsets = [], line = 0], module) {
+  function moduleLineOffsets(
+    [offsets = [], line = 0],
+    module: {dependencies: Array<Dependency>, file: File},
+  ) {
     return [[...offsets, line], line + countLines(module)];
   }
 });
 
-function createRamBundle(preloadedModules = new Set(), ramGroups) {
+function createRamBundle(
+  preloadedModules: Set<string> = new Set(),
+  ramGroups: void | Array<string>,
+) {
   const build = indexedRamBundle.createBuilder(preloadedModules, ramGroups);
   const result = build({
     filename: 'arbitrary/filename.js',
     globalPrefix: '',
     idsForPath,
+    // $FlowFixMe[incompatible-call]
     modules,
     requireCalls: [requireCall],
     enableIDInlining: true,
@@ -223,9 +231,9 @@ function createRamBundle(preloadedModules = new Set(), ramGroups) {
 
 function makeModule(
   name: string,
-  deps = [],
-  type = 'module',
-  moduleCode = `var ${name};`,
+  deps: Array<string> = [],
+  type: string = 'module',
+  moduleCode: string = `var ${name};`,
 ) {
   const path = makeModulePath(name);
   return {
@@ -256,11 +264,11 @@ function makeModuleCode(moduleCode: string) {
   return `__d(() => {${moduleCode}})`;
 }
 
-function makeModulePath(name) {
+function makeModulePath(name: string) {
   return `/${name}.js`;
 }
 
-function makeDependency(name) {
+function makeDependency(name: string) {
   const path = makeModulePath(name);
   return {
     id: name,
@@ -272,7 +280,10 @@ function makeDependency(name) {
   };
 }
 
-function expectedCodeAndMap(module) {
+function expectedCodeAndMap(module: {
+  dependencies: Array<Dependency>,
+  file: File,
+}) {
   return getModuleCodeAndMap(module, x => idsForPath(x).moduleId, {
     dependencyMapReservedName: undefined,
     enableIDInlining: true,
@@ -280,15 +291,15 @@ function expectedCodeAndMap(module) {
   });
 }
 
-function expectedCode(module) {
+function expectedCode(module: {dependencies: Array<Dependency>, file: File}) {
   return expectedCodeAndMap(module).moduleCode;
 }
 
-function expectedMap(module) {
+function expectedMap(module: {dependencies: Array<Dependency>, file: File}) {
   return expectedCodeAndMap(module).moduleMap;
 }
 
-function getId(path) {
+function getId(path: string) {
   if (path === requireCall.file.path) {
     return -1;
   }
@@ -300,7 +311,7 @@ function getId(path) {
   return id;
 }
 
-function getPath(module) {
+function getPath(module: {dependencies: Array<Dependency>, file: File}) {
   return module.file.path;
 }
 
@@ -324,11 +335,14 @@ function parseOffsetTable(buffer: Buffer) {
   };
 }
 
-function countLines(module): number {
+function countLines(module: {
+  dependencies: Array<Dependency>,
+  file: File,
+}): number {
   return module.file.code.split('\n').length;
 }
 
-function lineByLineMap(file) {
+function lineByLineMap(file: string) {
   return {
     file,
     mappings: '',
@@ -338,7 +352,7 @@ function lineByLineMap(file) {
   };
 }
 
-const not = fn =>
+const not = (fn: (value: mixed) => boolean) =>
   function () {
     return !fn.apply(this, arguments);
   };

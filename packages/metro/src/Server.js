@@ -9,6 +9,8 @@
  */
 
 'use strict';
+
+import type {StackFrameOutput} from './Server/symbolicate';
 import type {AssetData} from './Assets';
 import type {ExplodedSourceMap} from './DeltaBundler/Serializers/getExplodedSourceMap';
 import type {RamBundleInfo} from './DeltaBundler/Serializers/getRamBundleInfo';
@@ -1011,7 +1013,10 @@ class Server {
   });
 
   async _symbolicate(req: IncomingMessage, res: ServerResponse) {
-    const getCodeFrame = (urls, symbolicatedStack) => {
+    const getCodeFrame = (
+      urls: Set<string>,
+      symbolicatedStack: $ReadOnlyArray<StackFrameOutput>,
+    ) => {
       for (let i = 0; i < symbolicatedStack.length; i++) {
         const {collapse, column, file, lineNumber} = symbolicatedStack[i];
         const fileAbsolute = path.resolve(this._config.projectRoot, file ?? '');
@@ -1161,7 +1166,7 @@ class Server {
   }
 
   async _resolveRelativePath(
-    filePath,
+    filePath: string,
     {
       transformOptions,
       relativeTo,
