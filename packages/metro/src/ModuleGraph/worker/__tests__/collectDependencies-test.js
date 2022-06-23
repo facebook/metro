@@ -10,6 +10,7 @@
  */
 
 'use strict';
+import type {Dependency} from '../collectDependencies';
 
 import type {
   DependencyTransformer,
@@ -1186,7 +1187,10 @@ describe('optional dependencies', () => {
     dependencyMapName: null,
     unstable_allowRequireContext: false,
   };
-  const validateDependencies = (dependencies, expectedCount) => {
+  const validateDependencies = (
+    dependencies: $ReadOnlyArray<Dependency<void>>,
+    expectedCount: number,
+  ) => {
     let hasAsync = false;
     let checked = 0;
     dependencies.forEach(d => {
@@ -1417,7 +1421,10 @@ it('uses the dependency registry specified in the options to register dependenci
   ]);
 });
 
-function formatDependencyLocs(dependencies, code) {
+function formatDependencyLocs(
+  dependencies: $ReadOnlyArray<Dependency<mixed>>,
+  code: any,
+) {
   return (
     '\n' +
     dependencies
@@ -1432,18 +1439,23 @@ function formatDependencyLocs(dependencies, code) {
   );
 }
 
-function adjustPosForCodeFrame(pos) {
+function adjustPosForCodeFrame(pos: {+column: number, +line: number}) {
   return pos ? {...pos, column: pos.column + 1} : pos;
 }
 
-function adjustLocForCodeFrame(loc) {
+function adjustLocForCodeFrame(loc: BabelSourceLocation) {
   return {
     start: adjustPosForCodeFrame(loc.start),
     end: adjustPosForCodeFrame(loc.end),
   };
 }
 
-function formatLoc(loc, depIndex, dep, code) {
+function formatLoc(
+  loc: BabelSourceLocation,
+  depIndex: number,
+  dep: Dependency<mixed>,
+  code: any,
+) {
   return codeFrameColumns(code, adjustLocForCodeFrame(loc), {
     message: `dep #${depIndex} (${dep.name})`,
     linesAbove: 0,

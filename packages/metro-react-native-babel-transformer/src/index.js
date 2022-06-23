@@ -35,11 +35,11 @@ const cacheKeyParts = [
 ];
 
 // TS detection conditions copied from metro-react-native-babel-preset
-function isTypeScriptSource(fileName) {
+function isTypeScriptSource(fileName: string) {
   return !!fileName && fileName.endsWith('.ts');
 }
 
-function isTSXSource(fileName) {
+function isTSXSource(fileName: string) {
   return !!fileName && fileName.endsWith('.tsx');
 }
 
@@ -129,7 +129,7 @@ const getBabelRC = (function () {
  * config object with the appropriate plugins.
  */
 function buildBabelConfig(
-  filename,
+  filename: string,
   options,
   plugins?: Plugins = [],
 ): BabelCoreOptions {

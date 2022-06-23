@@ -63,7 +63,7 @@ async function main(
   } = process,
 ): Promise<number> {
   const argv = argvInput.slice();
-  function checkAndRemoveArg(arg, valuesPerArg = 0) {
+  function checkAndRemoveArg(arg: string, valuesPerArg: number = 0) {
     let values = null;
     for (let idx = argv.indexOf(arg); idx !== -1; idx = argv.indexOf(arg)) {
       argv.splice(idx, 1);
@@ -73,7 +73,7 @@ async function main(
     return values;
   }
 
-  function checkAndRemoveArgWithValue(arg) {
+  function checkAndRemoveArgWithValue(arg: string) {
     const values = checkAndRemoveArg(arg, 1);
     return values ? values[0][0] : null;
   }
@@ -224,7 +224,7 @@ async function main(
   return 0;
 }
 
-function readAll(stream) {
+function readAll(stream: stream$Readable | tty$ReadStream) {
   return new Promise(resolve => {
     let data = '';
     if (stream.isTTY === true) {
@@ -246,7 +246,7 @@ function readAll(stream) {
   });
 }
 
-function waitForStream(stream) {
+function waitForStream(stream: $FlowFixMe) {
   return new Promise(resolve => {
     stream.on('finish', resolve);
   });

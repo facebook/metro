@@ -136,7 +136,7 @@ class WorkerFarm {
     return null;
   }
 
-  _formatGenericError(err, filename: string): TransformError {
+  _formatGenericError(err: any, filename: string): TransformError {
     const error = new TransformError(`${filename}: ${err.message}`);
 
     return Object.assign(error, {
@@ -145,7 +145,7 @@ class WorkerFarm {
     });
   }
 
-  _formatBabelError(err, filename: string): TransformError {
+  _formatBabelError(err: any, filename: string): TransformError {
     const error = new TransformError(
       `${err.type || 'Error'}${
         err.message.includes(filename) ? '' : ' in ' + filename

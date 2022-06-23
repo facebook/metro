@@ -777,7 +777,7 @@ export default class HasteMap extends EventEmitter {
   _crawl(hasteMap: InternalData) {
     this._options.perfLogger?.point('crawl_start');
     const options = this._options;
-    const ignore = filePath => this._ignore(filePath);
+    const ignore = (filePath: string) => this._ignore(filePath);
     const crawl =
       canUseWatchman && this._options.useWatchman ? watchmanCrawl : nodeCrawl;
     const crawlerOptions: CrawlerOptions = {
