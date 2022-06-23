@@ -56,7 +56,7 @@ const NULL_MODULE: Moduleish = {
 };
 
 const NODE_MODULES = path.sep + 'node_modules' + path.sep;
-const isNodeModules = file => file.includes(NODE_MODULES);
+const isNodeModules = (file: string) => file.includes(NODE_MODULES);
 
 // This function maps the ModuleGraph data structure to metro-file-map's ModuleMap
 const createModuleMap = ({
@@ -64,6 +64,11 @@ const createModuleMap = ({
   moduleCache,
   sourceExts,
   platforms,
+}: {
+  files: Array<string>,
+  moduleCache: ModuleCache,
+  platforms: void | $ReadOnlyArray<string>,
+  sourceExts: Extensions,
 }): ModuleMapData => {
   const platformSet = new Set(
     (platforms ?? defaults.platforms).concat([NATIVE_PLATFORM]),
@@ -142,7 +147,7 @@ exports.createResolveFn = function (options: ResolveOptions): ResolveFn {
   );
 
   const assetExtensions = new Set(assetExts.map(asset => '.' + asset));
-  const isAssetFile = file => assetExtensions.has(path.extname(file));
+  const isAssetFile = (file: string) => assetExtensions.has(path.extname(file));
 
   const moduleResolver = new ModuleResolver({
     dirExists: (filePath: string): boolean => hasteFS.dirExists(filePath),

@@ -175,7 +175,10 @@ function collectDependencies<TSplitCondition = void>(
   };
 
   const visitor = {
-    CallExpression(path, state): void {
+    CallExpression(
+      path: NodePath<BabelNodeCallExpression>,
+      state: State<TSplitCondition>,
+    ): void {
       if (visited.has(path.node)) {
         return;
       }
@@ -254,7 +257,7 @@ function collectDependencies<TSplitCondition = void>(
     ExportNamedDeclaration: collectImports,
     ExportAllDeclaration: collectImports,
 
-    Program(path, state) {
+    Program(path: NodePath<BabelNodeProgram>, state: State<TSplitCondition>) {
       state.asyncRequireModulePathStringLiteral = types.stringLiteral(
         options.asyncRequireModulePath,
       );

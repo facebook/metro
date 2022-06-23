@@ -576,7 +576,7 @@ describe('resolveRequest', () => {
   it('is called with the platform and non-redirected module path', () => {
     const contextWithRedirect = {
       ...context,
-      redirectModulePath: filePath => filePath + '.redirected',
+      redirectModulePath: (filePath: string) => filePath + '.redirected',
     };
     expect(Resolver.resolve(contextWithRedirect, 'does-not-exist', 'android'))
       .toMatchInlineSnapshot(`
@@ -599,7 +599,7 @@ describe('resolveRequest', () => {
     }));
     const contextWithRedirect = {
       ...context,
-      redirectModulePath: filePath => false,
+      redirectModulePath: (filePath: string) => false,
     };
     expect(Resolver.resolve(contextWithRedirect, 'does-not-exist', 'android'))
       .toMatchInlineSnapshot(`

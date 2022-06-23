@@ -9,6 +9,15 @@
  * @flow strict-local
  */
 
+import type {
+  TransformInputOptions,
+  TransformFn,
+  Module,
+  MixedOutput,
+  Dependency,
+  Dependencies,
+} from '../types.flow';
+import type {PrivateState} from '../graphOperations';
 import type {Graph, TransformResultDependency} from '../types.flow';
 
 import CountingSet from '../../lib/CountingSet';
@@ -109,7 +118,11 @@ const Actions = {
   },
 };
 
-function deferred(value) {
+function deferred(value: {
+  +dependencies: $ReadOnlyArray<TransformResultDependency>,
+  +getSource: () => Buffer,
+  +output: $ReadOnlyArray<MixedOutput>,
+}) {
   let resolve;
   const promise = new Promise(res => (resolve = res));
 
@@ -130,7 +143,11 @@ function getPaths({added, modified, deleted}) {
 // Compute a delta between the keys of modules1 and modules2, in the same
 // format returned by getPaths. Modified paths are passed in as modifiedPaths
 // because our mocks don't actually model file contents.
-function computeDelta(modules1, modules2, modifiedPaths) {
+function computeDelta(
+  modules1: Set<string>,
+  modules2: Dependencies<>,
+  modifiedPaths: Set<string>,
+) {
   const added = new Set();
   const modified = new Set();
   const deleted = new Set();
@@ -156,7 +173,23 @@ function computeDelta(modules1, modules2, modifiedPaths) {
   };
 }
 
-function computeInverseDependencies(graph, options) {
+function computeInverseDependencies(
+  graph: {
+    dependencies: Dependencies<>,
+    entryPoints: $ReadOnlySet<string>,
+    importBundleNames: Set<string>,
+    privateState: PrivateState,
+    transformOptions: TransformInputOptions,
+  },
+  options: {
+    +experimentalImportBundleSupport: boolean,
+    +onProgress: ?(numProcessed: number, total: number) => mixed,
+    +resolve: (from: string, to: string) => string,
+    +shallow: boolean,
+    +transform: TransformFn<>,
+    +transformOptions: TransformInputOptions,
+  },
+) {
   const allInverseDependencies = new Map();
   for (const path of graph.dependencies.keys()) {
     allInverseDependencies.set(path, new Set());
@@ -180,7 +213,24 @@ function computeInverseDependencies(graph, options) {
   return allInverseDependencies;
 }
 
-async function traverseDependencies(paths, graph, options) {
+async function traverseDependencies(
+  paths: Array<string>,
+  graph: {
+    dependencies: Dependencies<>,
+    entryPoints: $ReadOnlySet<string>,
+    importBundleNames: Set<string>,
+    privateState: PrivateState,
+    transformOptions: TransformInputOptions,
+  },
+  options: {
+    +experimentalImportBundleSupport: boolean,
+    +onProgress: ?(numProcessed: number, total: number) => mixed,
+    +resolve: (from: string, to: string) => string,
+    +shallow: boolean,
+    +transform: TransformFn<>,
+    +transformOptions: TransformInputOptions,
+  },
+) {
   // Get a snapshot of the graph before the traversal.
   const dependenciesBefore = new Set(graph.dependencies.keys());
   const pathsBefore = new Set(paths);
@@ -241,7 +291,7 @@ beforeEach(async () => {
   options = {
     experimentalImportBundleSupport: false,
     onProgress: null,
-    resolve: (from, to) => {
+    resolve: (from: string, to: string) => {
       const deps = nullthrows(mockedDependencyTree.get(from));
       const {path} = deps.filter(dep => dep.name === to)[0];
 
@@ -381,7 +431,7 @@ it('should retry traversing dependencies after a transform error', async () => {
 
   const localOptions = {
     ...options,
-    transform(path) {
+    transform(path: string) {
       if (path === '/bad') {
         throw new BadError();
       }
@@ -2033,7 +2083,7 @@ describe('edge cases', () => {
 
 describe('reorderGraph', () => {
   it('should reorder any unordered graph in DFS order', async () => {
-    const dep = path => ({
+    const dep = (path: string) => ({
       absolutePath: path,
       data: {
         data: {
@@ -2044,7 +2094,10 @@ describe('reorderGraph', () => {
       },
     });
 
-    const mod = moduleData => ({
+    const mod = (moduleData: {
+      dependencies: Map<string, Dependency>,
+      path: string,
+    }) => ({
       ...moduleData,
       output: [],
       getSource: () => Buffer.from('// source'),
@@ -2090,7 +2143,10 @@ describe('optional dependencies', () => {
     });
     return all;
   };
-  const assertResults = (dependencies, expectedMissing) => {
+  const assertResults = (
+    dependencies: Map<string, Module<>>,
+    expectedMissing: Array<string>,
+  ) => {
     let count = 0;
     const allDependency = getAllDependencies();
     allDependency.forEach(m => {
@@ -2107,7 +2163,7 @@ describe('optional dependencies', () => {
   };
 
   const createMockTransform = (notOptional?: string[]) => {
-    return async function (path) {
+    return async function (path: string) {
       // $FlowFixMe[object-this-reference]: transform should not be bound to anything
       const result = await mockTransform.apply(this, arguments);
       return {

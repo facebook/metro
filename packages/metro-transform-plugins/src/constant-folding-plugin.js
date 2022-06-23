@@ -34,7 +34,12 @@ function constantFoldingPlugin(context: {
     value: mixed,
   } {
     const state = {safe: true};
-    const unsafe = (path, state) => {
+    const unsafe = (
+      path:
+        | NodePath<BabelNodeAssignmentExpression>
+        | NodePath<BabelNodeCallExpression>,
+      state: {safe: boolean},
+    ) => {
       state.safe = false;
     };
 
@@ -58,7 +63,7 @@ function constantFoldingPlugin(context: {
   };
 
   const FunctionDeclaration = {
-    exit(path, state): void {
+    exit(path: NodePath<BabelNodeFunctionDeclaration>, state: State): void {
       const binding =
         path.node.id != null && path.scope.parent.getBinding(path.node.id.name);
 
@@ -124,7 +129,7 @@ function constantFoldingPlugin(context: {
   };
 
   const LogicalExpression = {
-    exit(path) {
+    exit(path: NodePath<BabelNodeLogicalExpression>) {
       const node = path.node;
       const result = evaluate(path.get('left'));
 
@@ -149,11 +154,11 @@ function constantFoldingPlugin(context: {
   };
 
   const Program = {
-    enter(path, state): void {
+    enter(path: NodePath<BabelNodeProgram>, state: State): void {
       state.stripped = false;
     },
 
-    exit(path, state): void {
+    exit(path: NodePath<BabelNodeProgram>, state: State): void {
       path.traverse(
         {
           ArrowFunctionExpression: FunctionExpression,

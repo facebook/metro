@@ -33,7 +33,7 @@ const {DuplicateHasteCandidatesError} = MetroFileMapModuleMap;
 
 function getOrCreate<T>(
   map: Map<string, Map<string, T>>,
-  field,
+  field: string,
 ): Map<string, T> {
   let subMap = map.get(field);
   if (!subMap) {

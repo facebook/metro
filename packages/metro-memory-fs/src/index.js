@@ -1337,7 +1337,7 @@ class MemoryFs {
     };
   }
 
-  _resolveEnt(context, filePath, entName) {
+  _resolveEnt(context, filePath: string, entName: any | string) {
     const {node} = context;
     if (node == null) {
       throw makeError('ENOENT', filePath, 'no such file or directory');
@@ -1581,7 +1581,7 @@ class ReadFileSteam extends stream.Readable {
     }
   }
 
-  _read(size) {
+  _read(size: any) {
     let bytesRead;
     const {_buffer} = this;
     do {
@@ -1637,7 +1637,7 @@ class WriteFileStream extends stream.Writable {
     }
   }
 
-  _write(buffer, encoding, callback) {
+  _write(buffer, encoding: any, callback) {
     try {
       const bytesWritten = this._writeSync(this._fd, buffer, 0, buffer.length);
       this.bytesWritten += bytesWritten;
@@ -1682,7 +1682,7 @@ class FSWatcher extends EventEmitter {
     clearInterval(this._persistIntervalId);
   }
 
-  _listener = (eventType, filePath: string) => {
+  _listener = (eventType: 'change' | 'rename', filePath: string) => {
     const encFilePath =
       this._encoding === 'buffer' ? Buffer.from(filePath, 'utf8') : filePath;
     try {
@@ -1735,7 +1735,10 @@ class Dirent {
   }
 }
 
-function checkPathLength(entNames, filePath) {
+function checkPathLength(
+  entNames: Array<string> | Array<any | string>,
+  filePath: string,
+) {
   if (entNames.length > 32) {
     throw makeError(
       'ENAMETOOLONG',
