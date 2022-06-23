@@ -200,6 +200,8 @@ describe('RAM groups / common sections', () => {
   });
 
   function moduleLineOffsets(
+    /* $FlowFixMe[missing-local-annot] The type annotation(s) required by
+     * Flow's LTI update could not be added via codemod */
     [offsets = [], line = 0],
     module: {dependencies: Array<Dependency>, file: File},
   ) {

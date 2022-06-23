@@ -51,6 +51,8 @@ function isTSXSource(fileName: string) {
 const getBabelRC = (function () {
   let babelRC: ?BabelCoreOptions = null;
 
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
   return function _getBabelRC({
     projectRoot,
     extendsBabelConfigPath,
@@ -130,6 +132,8 @@ const getBabelRC = (function () {
  */
 function buildBabelConfig(
   filename: string,
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
   options,
   plugins?: Plugins = [],
 ): BabelCoreOptions {

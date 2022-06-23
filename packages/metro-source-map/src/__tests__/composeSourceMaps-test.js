@@ -50,6 +50,8 @@ function symbolicate(
   const consumer = new Consumer(
     typeof sourceMap === 'string' ? JSON.parse(sourceMap) : sourceMap,
   );
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
   function replaceSymbol(match: any, source: any, line, col: number) {
     var original = consumer.originalPositionFor({
       line: add1(line - 1),

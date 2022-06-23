@@ -1337,6 +1337,8 @@ class MemoryFs {
     };
   }
 
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
   _resolveEnt(context, filePath: string, entName: any | string) {
     const {node} = context;
     if (node == null) {
@@ -1637,6 +1639,8 @@ class WriteFileStream extends stream.Writable {
     }
   }
 
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
   _write(buffer, encoding: any, callback) {
     try {
       const bytesWritten = this._writeSync(this._fd, buffer, 0, buffer.length);

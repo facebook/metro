@@ -158,6 +158,8 @@ class DeltaCalculator<T> extends EventEmitter {
     return this._graph;
   }
 
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
   _handleMultipleFileChanges = ({eventsQueue}) => {
     eventsQueue.forEach(this._handleFileChange);
   };

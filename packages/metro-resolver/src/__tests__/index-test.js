@@ -19,6 +19,8 @@ const path = require('path');
 
 const CONTEXT: ResolutionContext = (() => {
   const fileSet = new Set();
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
   (function fillFileSet(fileTree, prefix: string) {
     for (const entName in fileTree) {
       const entPath = path.join(prefix, entName);

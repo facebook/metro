@@ -107,6 +107,8 @@ function getStackTrace(traceNodeId: number, data: ChromeHeapSnapshotProcessor) {
   const functionInfoStack = [];
   const FOUND = Symbol('FOUND');
 
+  /* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+   * LTI update could not be added via codemod */
   function visit(traceNode) {
     functionInfoStack.push(traceNode.getNumber('function_info_index'));
     if (traceNode.getNumber('id') === traceNodeId) {

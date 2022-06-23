@@ -630,6 +630,8 @@ describe('posix support', () => {
 
     function collectWatchEvents(
       entPath: string,
+      /* $FlowFixMe[missing-local-annot] The type annotation(s) required by
+       * Flow's LTI update could not be added via codemod */
       options,
       events: Array<Array<?(Buffer | string | 'change' | 'rename')>>,
     ) {

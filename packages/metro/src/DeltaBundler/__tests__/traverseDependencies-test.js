@@ -129,6 +129,8 @@ function deferred(value: {
   return {promise, resolve: () => resolve(value)};
 }
 
+/* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
+ * LTI update could not be added via codemod */
 function getPaths({added, modified, deleted}) {
   const addedPaths = [...added.values()].map(module => module.path);
   const modifiedPaths = [...modified.values()].map(module => module.path);

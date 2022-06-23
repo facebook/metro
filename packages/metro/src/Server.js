@@ -735,6 +735,8 @@ class Server {
 
       const serializer =
         this._config.serializer.customSerializer ||
+        /* $FlowFixMe[missing-local-annot] The type annotation(s) required by
+         * Flow's LTI update could not be added via codemod */
         ((...args) => bundleToString(baseJSBundle(...args)).code);
 
       const bundle = await serializer(
