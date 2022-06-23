@@ -56,6 +56,8 @@ import {escapePathForRegex} from 'jest-regex-util';
 // $FlowFixMe[untyped-import] - jest-worker
 import {Worker} from 'jest-worker';
 import * as path from 'path';
+// $FlowFixMe[untyped-import] - this is a polyfill
+import AbortController from 'abort-controller';
 
 const nodeCrawl = require('./crawlers/node');
 const watchmanCrawl = require('./crawlers/watchman');
@@ -237,6 +239,7 @@ export default class HasteMap extends EventEmitter {
   _watchers: Array<Watcher>;
   _worker: ?WorkerInterface;
   _cacheManager: CacheManager;
+  _crawlerAbortController: typeof AbortController;
 
   static create(options: InputOptions): HasteMap {
     return new HasteMap(options);
@@ -320,6 +323,7 @@ export default class HasteMap extends EventEmitter {
     this._watchers = [];
     this._worker = null;
     this._options.perfLogger?.point('constructor_end');
+    this._crawlerAbortController = new AbortController();
   }
 
   static getCacheFilePath(
@@ -781,6 +785,7 @@ export default class HasteMap extends EventEmitter {
     const crawl =
       canUseWatchman && this._options.useWatchman ? watchmanCrawl : nodeCrawl;
     const crawlerOptions: CrawlerOptions = {
+      abortSignal: this._crawlerAbortController.signal,
       computeSha1: options.computeSha1,
       data: hasteMap,
       enableSymlinks: options.enableSymlinks,
@@ -1118,6 +1123,7 @@ export default class HasteMap extends EventEmitter {
     await Promise.all(this._watchers.map(watcher => watcher.close()));
 
     this._watchers = [];
+    this._crawlerAbortController.abort();
   }
 
   /**

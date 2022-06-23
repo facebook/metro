@@ -114,6 +114,7 @@ module.exports = async function watchmanCrawl(
 
   perfLogger?.point('watchmanCrawl_start');
   const client = new watchman.Client();
+  options.abortSignal?.addEventListener('abort', () => client.end());
 
   perfLogger?.point('watchmanCrawl/negotiateCapabilities_start');
   // https://facebook.github.io/watchman/docs/capabilities.html
