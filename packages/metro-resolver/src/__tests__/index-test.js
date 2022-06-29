@@ -493,7 +493,8 @@ describe('redirectModulePath', () => {
 });
 
 describe('resolveRequest', () => {
-  const resolveRequest = jest.fn();
+  // $FlowFixMe[unclear-type]: `resolveRequest` is used too dynamically.
+  const resolveRequest = jest.fn<any, any>();
   const context = {...CONTEXT, resolveRequest};
 
   beforeEach(() => {
