@@ -24,7 +24,9 @@ declare var beforeAll: (() => ?Promise<any>) => void;
 
 let code: Buffer;
 let map;
-let ids, modules, requireCall;
+let ids: Map<string, number>,
+  modules: Array<{dependencies: Array<Dependency>, file: File}>,
+  requireCall: {dependencies: Array<Dependency>, file: File};
 const idsForPath = ({path}: File | {path: string, ...}) => {
   const id = getId(path);
   return {moduleId: id, localId: id};
@@ -234,7 +236,7 @@ function createRamBundle(
 function makeModule(
   name: string,
   deps: Array<string> = [],
-  type: string = 'module',
+  type: 'module' | 'script' = 'module',
   moduleCode: string = `var ${name};`,
 ) {
   const path = makeModulePath(name);
