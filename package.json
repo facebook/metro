@@ -24,7 +24,7 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.26.1",
     "eslint-plugin-relay": "^1.8.2",
-    "flow-bin": "^0.181.0",
+    "flow-bin": "^0.181.2",
     "glob": "^7.1.1",
     "hermes-eslint": "0.8.0",
     "istanbul-api": "3.0.0",
