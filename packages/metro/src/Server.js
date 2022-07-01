@@ -1021,7 +1021,7 @@ class Server {
     ) => {
       for (let i = 0; i < symbolicatedStack.length; i++) {
         const {collapse, column, file, lineNumber} = symbolicatedStack[i];
-        if (file.startsWith('http')) {
+        if (file.includes('http')) {
           continue;
         }
 
