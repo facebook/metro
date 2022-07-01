@@ -1021,6 +1021,10 @@ class Server {
     ) => {
       for (let i = 0; i < symbolicatedStack.length; i++) {
         const {collapse, column, file, lineNumber} = symbolicatedStack[i];
+        if (file.startsWith('http')) {
+          continue;
+        }
+
         const fileAbsolute = path.resolve(this._config.projectRoot, file ?? '');
         if (collapse || lineNumber == null || urls.has(fileAbsolute)) {
           continue;
