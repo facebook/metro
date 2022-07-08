@@ -2165,6 +2165,8 @@ describe('optional dependencies', () => {
   };
 
   const createMockTransform = (notOptional?: string[]) => {
+    /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s) required by
+     * Flow's LTI update could not be added via codemod */
     return async function (path: string) {
       // $FlowFixMe[object-this-reference]: transform should not be bound to anything
       const result = await mockTransform.apply(this, arguments);

@@ -515,6 +515,8 @@ class Server {
     +delete?: (context: ProcessDeleteContext) => Promise<void>,
     +finish: (context: ProcessEndContext<T>) => void,
   }) {
+    /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s) required by
+     * Flow's LTI update could not be added via codemod */
     return async function requestProcessor(
       req: IncomingMessage,
       res: ServerResponse,

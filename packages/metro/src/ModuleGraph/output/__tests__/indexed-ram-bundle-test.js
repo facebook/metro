@@ -357,6 +357,8 @@ function lineByLineMap(file: string) {
 }
 
 const not = (fn: (value: mixed) => boolean) =>
+  /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s) required by
+   * Flow's LTI update could not be added via codemod */
   function () {
     return !fn.apply(this, arguments);
   };

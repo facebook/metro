@@ -167,6 +167,8 @@ async function main(
       await waitForStream(
         stdin
           .pipe(
+            /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s)
+             * required by Flow's LTI update could not be added via codemod */
             through2(function (data, enc, callback) {
               // Take arbitrary strings, output single lines
               buffer += data;
@@ -179,6 +181,8 @@ async function main(
             }),
           )
           .pipe(
+            /* $FlowFixMe[missing-this-annot] The 'this' type annotation(s)
+             * required by Flow's LTI update could not be added via codemod */
             through2.obj(function (data, enc, callback) {
               // This is JSONL, so each line is a separate JSON object
               const obj = JSON.parse(data);
