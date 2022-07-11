@@ -138,7 +138,9 @@ async function runMetro(
     type: 'initialize_started',
   });
 
-  const {waitForBundler = false, ...serverOptions} = options ?? {};
+  const {waitForBundler = false, ...serverOptions} = options ?? {
+    ...null,
+  };
   const server = new MetroServer(mergedConfig, serverOptions);
 
   const readyPromise = server
@@ -223,7 +225,9 @@ exports.runServer = async (
     secureCert, // deprecated
     secureKey, // deprecated
     waitForBundler = false,
-    websocketEndpoints = {},
+    websocketEndpoints = {
+      ...null,
+    },
   }: RunServerOptions,
 ): Promise<HttpServer | HttpsServer> => {
   await earlyPortCheck(host, config.server.port);
@@ -290,7 +294,9 @@ exports.runServer = async (
         Object.assign(websocketEndpoints, {
           ...(inspectorProxy
             ? {...inspectorProxy.createWebSocketListeners(httpServer)}
-            : {}),
+            : {
+                ...null,
+              }),
           '/hot': createWebsocketServer({
             websocketServer: new MetroHmrServer(
               metroServer.getBundler(),
@@ -440,15 +446,26 @@ exports.buildGraph = async function (
 exports.attachMetroCli = function (
   yargs: Yargs,
   {
-    build = {},
-    serve = {},
-    dependencies = {},
+    build = {
+      ...null,
+    },
+    serve = {
+      ...null,
+    },
+    dependencies = {
+      ...null,
+    },
   }: {
     build: BuildCommandOptions,
     serve: ServeCommandOptions,
     dependencies: any,
     ...
-  } = {},
+  }
+  // prettier-ignore
+  // $FlowFixMe[prop-missing]
+  = {
+    ...null,
+  },
 ): Yargs {
   if (build) {
     const {command, description, builder, handler} = makeBuildCommand();
