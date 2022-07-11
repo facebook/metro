@@ -154,8 +154,9 @@ async function getAbsoluteAssetRecord(
 
   if (!record) {
     throw new Error(
-      /* $FlowFixMe: platform can be null */
-      `Asset not found: ${assetPath} for platform: ${platform}`,
+      `Asset not found: ${assetPath} for platform: ${
+        platform ?? '(unspecified)'
+      }`,
     );
   }
 
