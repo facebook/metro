@@ -90,7 +90,7 @@ declare module '@babel/traverse' {
     bindings?: {[name: string]: Binding};
     references?: {[name: string]: boolean};
     // One globals definition is a static class property and the other is an instance property
-    // eslint-disable-next-line flowtype/no-dupe-keys
+    // eslint-disable-next-line ft-flow/no-dupe-keys
     globals?: {[name: string]: BabelNode};
     uids?: {[name: string]: boolean};
     data?: {[key: string]: any};
