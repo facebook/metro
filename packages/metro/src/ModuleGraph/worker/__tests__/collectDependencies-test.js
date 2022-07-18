@@ -820,7 +820,7 @@ it('collects asynchronous dependencies', () => {
   );
 });
 
-it('collects mixed dependencies as being sync', () => {
+it('distinguishes sync and async dependencies on the same module', () => {
   const ast = astFromCode(`
     const a = require("some/async/module");
     import("some/async/module").then(foo => {});
@@ -828,30 +828,32 @@ it('collects mixed dependencies as being sync', () => {
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
     {name: 'some/async/module', data: objectContaining({asyncType: null})},
+    {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
     {name: 'asyncRequire', data: objectContaining({asyncType: null})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
       const a = require(${dependencyMapName}[0], "some/async/module");
-      require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0], "some/async/module").then(foo => {});
+      require(${dependencyMapName}[2], "asyncRequire")(${dependencyMapName}[1], "some/async/module").then(foo => {});
     `),
   );
 });
 
-it('collects mixed dependencies as being sync; reverse order', () => {
+it('distinguishes sync and async dependencies on the same module; reverse order', () => {
   const ast = astFromCode(`
     import("some/async/module").then(foo => {});
     const a = require("some/async/module");
   `);
   const {dependencies, dependencyMapName} = collectDependencies(ast, opts);
   expect(dependencies).toEqual([
-    {name: 'some/async/module', data: objectContaining({asyncType: null})},
+    {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
     {name: 'asyncRequire', data: objectContaining({asyncType: null})},
+    {name: 'some/async/module', data: objectContaining({asyncType: null})},
   ]);
   expect(codeFromAst(ast)).toEqual(
     comparableCode(`
       require(${dependencyMapName}[1], "asyncRequire")(${dependencyMapName}[0], "some/async/module").then(foo => {});
-      const a = require(${dependencyMapName}[0], "some/async/module");
+      const a = require(${dependencyMapName}[2], "some/async/module");
     `),
   );
 });
@@ -904,15 +906,19 @@ describe('import() prefetching', () => {
     );
   });
 
-  it('disable prefetch-only flag for mixed import/prefetch calls', () => {
+  it('distinguishes between import and prefetch dependncies on the same module', () => {
     const ast = astFromCode(`
       __prefetchImport("some/async/module");
       import("some/async/module").then(() => {});
     `);
     const {dependencies} = collectDependencies(ast, opts);
     expect(dependencies).toEqual([
-      {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
+      {
+        name: 'some/async/module',
+        data: objectContaining({asyncType: 'prefetch'}),
+      },
       {name: 'asyncRequire', data: objectContaining({asyncType: null})},
+      {name: 'some/async/module', data: objectContaining({asyncType: 'async'})},
     ]);
   });
 });
@@ -1381,7 +1387,7 @@ it('uses the dependency transformer specified in the options to transform the de
       require("asyncRequire").async(_dependencyMap[3], "some/async/module").then(foo => {});
       require("asyncRequire").jsresource(_dependencyMap[3], "some/async/module");
       require("asyncRequire").jsresource(_dependencyMap[3], "some/async/module");
-      require("asyncRequire").prefetch(_dependencyMap[3], "some/async/module");
+      require("asyncRequire").prefetch(_dependencyMap[4], "some/async/module");
       `),
   );
 });

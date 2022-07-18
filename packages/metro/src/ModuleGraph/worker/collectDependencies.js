@@ -729,8 +729,9 @@ function createModuleNameLiteral(dependency: InternalDependency<mixed>) {
 
 /**
  * Given an import qualifier, return a key used to register the dependency.
- * Generally this return the `ImportQualifier.name` property, but in the case
- * of `require.context` more attributes can be appended to distinguish various combinations that would otherwise conflict.
+ * Generally this return the `ImportQualifier.name` property, but more
+ * attributes can be appended to distinguish various combinations that would
+ * otherwise conflict.
  *
  * For example, the following case would have collision issues if they all utilized the `name` property:
  * ```
@@ -746,6 +747,11 @@ function createModuleNameLiteral(dependency: InternalDependency<mixed>) {
 function getKeyForDependency(qualifier: ImportQualifier): string {
   let key = qualifier.name;
 
+  const {asyncType} = qualifier;
+  if (asyncType) {
+    key += ['', asyncType].join('\0');
+  }
+
   const {contextParams} = qualifier;
   // Add extra qualifiers when using `require.context` to prevent collisions.
   if (contextParams) {
@@ -760,7 +766,7 @@ function getKeyForDependency(qualifier: ImportQualifier): string {
       String(contextParams.filter.flags),
       contextParams.mode,
       // Join together and append to the name:
-    ].join('__');
+    ].join('\0');
   }
   return key;
 }
@@ -794,14 +800,18 @@ class DefaultModuleDependencyRegistry<TSplitCondition = void>
       }
 
       dependency = newDependency;
-      this._dependencies.set(key, dependency);
     } else {
-      const original = dependency;
-      dependency = collapseDependencies(original, qualifier);
-      if (original !== dependency) {
-        this._dependencies.set(key, dependency);
+      if (dependency.isOptional && !qualifier.optional) {
+        // A previously optionally required dependency was required non-optionally.
+        // Mark it non optional for the whole module
+        dependency = {
+          ...dependency,
+          isOptional: false,
+        };
       }
     }
+
+    this._dependencies.set(key, dependency);
 
     return dependency;
   }
@@ -809,38 +819,6 @@ class DefaultModuleDependencyRegistry<TSplitCondition = void>
   getDependencies(): Array<InternalDependency<TSplitCondition>> {
     return Array.from(this._dependencies.values());
   }
-}
-
-function collapseDependencies<TSplitCondition>(
-  dependency: InternalDependency<TSplitCondition>,
-  qualifier: ImportQualifier,
-): InternalDependency<TSplitCondition> {
-  let collapsed = dependency;
-
-  // A previously optionally required dependency was required non-optionaly.
-  // Mark it non optional for the whole module
-  if (collapsed.isOptional && !qualifier.optional) {
-    collapsed = {
-      ...dependency,
-      isOptional: false,
-    };
-  }
-
-  // A previously asynchronously (or prefetch) required module was required synchronously.
-  // Make the dependency sync.
-  if (collapsed.asyncType != null && qualifier.asyncType == null) {
-    collapsed = {...dependency, asyncType: null};
-  }
-
-  // A prefetched dependency was required async in the module. Mark it as async.
-  if (collapsed.asyncType === 'prefetch' && qualifier.asyncType === 'async') {
-    collapsed = {
-      ...dependency,
-      asyncType: 'async',
-    };
-  }
-
-  return collapsed;
 }
 
 module.exports = collectDependencies;
