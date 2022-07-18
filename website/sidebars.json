@@ -12,6 +12,9 @@
     "Guides": [
       "troubleshooting"
     ],
+    "Contributing": [
+      "local-development"
+    ],
     "Deep Dives": [
       "bundling",
       "caching",
