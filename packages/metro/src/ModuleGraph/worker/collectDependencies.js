@@ -17,6 +17,7 @@ import type {
   AsyncDependencyType,
 } from 'metro/src/DeltaBundler/types.flow.js';
 
+const crypto = require('crypto');
 const generate = require('@babel/generator').default;
 const template = require('@babel/template').default;
 const traverse = require('@babel/traverse').default;
@@ -52,6 +53,8 @@ export type RequireContextParams = $ReadOnly<{
 }>;
 
 type DependencyData<TSplitCondition> = $ReadOnly<{
+  // A locally unique key for this dependency within the current module.
+  key: string,
   // If null, then the dependency is synchronous.
   // (ex. `require('foo')`)
   asyncType: AsyncDependencyType | null,
@@ -780,6 +783,7 @@ class DefaultModuleDependencyRegistry<TSplitCondition = void>
         asyncType: qualifier.asyncType,
         locs: [],
         index: this._dependencies.size,
+        key: crypto.createHash('sha1').update(key).digest('base64'),
       };
 
       if (qualifier.optional) {

@@ -31,10 +31,13 @@ export type TransformResultDependency = {
   +name: string,
 
   /**
-   * Extra data returned by the dependency extractor. Whatever is added here is
-   * blindly piped by Metro to the serializers.
+   * Extra data returned by the dependency extractor.
    */
   +data: {
+    /**
+     * A locally unique key for this dependency within the current module.
+     */
+    +key: string,
     /**
      * If not null, this dependency is due to a dynamic `import()` or `__prefetchImport()` call.
      */

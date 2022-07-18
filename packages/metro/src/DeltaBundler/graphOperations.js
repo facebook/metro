@@ -295,8 +295,8 @@ async function processModule<T>(
   graph.dependencies.set(module.path, module);
 
   // Diff dependencies (1/2): remove dependencies that have changed or been removed.
-  for (const [relativePath, prevDependency] of previousDependencies) {
-    const curDependency = currentDependencies.get(relativePath);
+  for (const [key, prevDependency] of previousDependencies) {
+    const curDependency = currentDependencies.get(key);
     if (
       !curDependency ||
       curDependency.absolutePath !== prevDependency.absolutePath ||
@@ -304,21 +304,14 @@ async function processModule<T>(
         curDependency.data.data.asyncType !==
           prevDependency.data.data.asyncType)
     ) {
-      removeDependency(
-        module,
-        relativePath,
-        prevDependency,
-        graph,
-        delta,
-        options,
-      );
+      removeDependency(module, key, prevDependency, graph, delta, options);
     }
   }
 
   // Diff dependencies (2/2): add dependencies that have changed or been added.
   const promises = [];
-  for (const [relativePath, curDependency] of currentDependencies) {
-    const prevDependency = previousDependencies.get(relativePath);
+  for (const [key, curDependency] of currentDependencies) {
+    const prevDependency = previousDependencies.get(key);
     if (
       !prevDependency ||
       prevDependency.absolutePath !== curDependency.absolutePath ||
@@ -327,14 +320,7 @@ async function processModule<T>(
           curDependency.data.data.asyncType)
     ) {
       promises.push(
-        addDependency(
-          module,
-          relativePath,
-          curDependency,
-          graph,
-          delta,
-          options,
-        ),
+        addDependency(module, key, curDependency, graph, delta, options),
       );
     }
   }
@@ -361,7 +347,7 @@ async function processModule<T>(
 
 async function addDependency<T>(
   parentModule: Module<T>,
-  relativePath: string,
+  key: string,
   dependency: Dependency,
   graph: Graph<T>,
   delta: Delta,
@@ -420,18 +406,18 @@ async function addDependency<T>(
   // This means the parent's dependencies can get desynced from
   // inverseDependencies and the other fields in the case of lazy edges.
   // Not an optimal representation :(
-  parentModule.dependencies.set(relativePath, dependency);
+  parentModule.dependencies.set(key, dependency);
 }
 
 function removeDependency<T>(
   parentModule: Module<T>,
-  relativePath: string,
+  key: string,
   dependency: Dependency,
   graph: Graph<T>,
   delta: Delta,
   options: InternalOptions<T>,
 ): void {
-  parentModule.dependencies.delete(relativePath);
+  parentModule.dependencies.delete(key);
 
   const {absolutePath} = dependency;
 
@@ -466,37 +452,42 @@ function resolveDependencies<T>(
   dependencies: $ReadOnlyArray<TransformResultDependency>,
   options: InternalOptions<T>,
 ): Map<string, Dependency> {
-  const resolve = (parentPath: string, result: TransformResultDependency) => {
-    const relativePath = result.name;
+  const maybeResolvedDeps = new Map();
+  for (const dep of dependencies) {
+    let resolvedDep;
     try {
-      return [
-        relativePath,
-        {
-          absolutePath: options.resolve(parentPath, relativePath),
-          data: result,
-        },
-      ];
+      resolvedDep = {
+        absolutePath: options.resolve(parentPath, dep.name),
+        data: dep,
+      };
     } catch (error) {
       // Ignore unavailable optional dependencies. They are guarded
       // with a try-catch block and will be handled during runtime.
-      if (result.data.isOptional !== true) {
+      if (dep.data.isOptional !== true) {
         throw error;
       }
     }
-    return undefined;
-  };
+    const key = dep.data.key;
+    if (maybeResolvedDeps.has(key)) {
+      throw new Error(
+        `resolveDependencies: Found duplicate dependency key '${key}' in ${parentPath}`,
+      );
+    }
+    maybeResolvedDeps.set(key, resolvedDep);
+  }
 
-  const resolved = dependencies.reduce(
-    (list: Array<[string, Dependency]>, result: TransformResultDependency) => {
-      const resolvedPath = resolve(parentPath, result);
-      if (resolvedPath) {
-        list.push(resolvedPath);
-      }
-      return list;
-    },
-    [],
-  );
-  return new Map(resolved);
+  const resolvedDeps = new Map();
+  // Return just the dependencies we successfully resolved.
+  // FIXME: This has a bad bug affecting all dependencies *after* an unresolved
+  // optional dependency. We'll need to propagate the nulls all the way to the
+  // serializer and the require() runtime to keep the dependency map from being
+  // desynced from the contents of the module.
+  for (const [key, resolvedDep] of maybeResolvedDeps) {
+    if (resolvedDep) {
+      resolvedDeps.set(key, resolvedDep);
+    }
+  }
+  return resolvedDeps;
 }
 
 /**
@@ -604,8 +595,8 @@ function releaseModule<T>(
   delta: Delta,
   options: InternalOptions<T>,
 ) {
-  for (const [relativePath, dependency] of module.dependencies) {
-    removeDependency(module, relativePath, dependency, graph, delta, options);
+  for (const [key, dependency] of module.dependencies) {
+    removeDependency(module, key, dependency, graph, delta, options);
   }
   graph.privateState.gc.color.set(module.path, 'black');
   if (!graph.privateState.gc.possibleCycleRoots.has(module.path)) {
