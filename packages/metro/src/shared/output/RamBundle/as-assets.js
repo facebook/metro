@@ -70,7 +70,7 @@ function saveAsAssets(
       moduleGroups: null,
       startupModules: startupModules.concat(),
     });
-    if (sourcemapSourcesRoot != null) {
+    if (sourcemapSourcesRoot !== undefined) {
       relativizeSourceMapInline(sourceMap, sourcemapSourcesRoot);
     }
     const wroteSourceMap = writeSourceMap(

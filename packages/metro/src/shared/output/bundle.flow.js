@@ -67,7 +67,7 @@ async function saveBundleAndMap(
 
   if (sourcemapOutput) {
     let {map} = bundle;
-    if (sourcemapSourcesRoot != null) {
+    if (sourcemapSourcesRoot !== undefined) {
       log('start relativating source map');
       map = relativateSerializedMap(map, sourcemapSourcesRoot);
       log('finished relativating');

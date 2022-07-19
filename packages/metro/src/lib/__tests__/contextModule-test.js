@@ -23,7 +23,7 @@ describe('getContextModuleId', () => {
           mode: 'eager',
           recursive: true,
         },
-        '/path/to eager recursive /[a-zA-Z]+/',
+        '/path/to eager recursive /.*/',
       ],
       [
         {

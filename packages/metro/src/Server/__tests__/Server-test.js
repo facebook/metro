@@ -624,6 +624,7 @@ describe('processRequest', () => {
           type: 'module',
           unstable_transformProfile: 'default',
         },
+        unstable_allowRequireContext: false,
       },
     );
   });
@@ -881,6 +882,7 @@ describe('processRequest', () => {
             type: 'module',
             unstable_transformProfile: 'default',
           },
+          unstable_allowRequireContext: false,
         },
       );
     });
