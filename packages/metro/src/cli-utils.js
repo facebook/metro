@@ -27,7 +27,7 @@ exports.watchFile = async function (
 
 exports.makeAsyncCommand =
   (
-    command: (argv: YargArguments) => Promise<mixed>,
+    command: (argv: YargArguments) => Promise<void>,
   ): ((argv: YargArguments) => void) =>
   (argv: YargArguments) => {
     Promise.resolve(command(argv)).catch(error => {

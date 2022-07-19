@@ -453,18 +453,18 @@ exports.attachMetroCli = function (
   // $FlowFixMe[prop-missing]
   = {},
 ): Yargs {
+  yargs.strict();
+
   if (build) {
-    const {command, description, builder, handler} = makeBuildCommand();
-    yargs.command(command, description, builder, handler);
+    yargs.command(makeBuildCommand());
   }
   if (serve) {
-    const {command, description, builder, handler} = makeServeCommand();
-    yargs.command(command, description, builder, handler);
+    yargs.command(makeServeCommand());
   }
   if (dependencies) {
-    const {command, description, builder, handler} = makeDependenciesCommand();
-    yargs.command(command, description, builder, handler);
+    yargs.command(makeDependenciesCommand());
   }
+
   return yargs;
 };
 
